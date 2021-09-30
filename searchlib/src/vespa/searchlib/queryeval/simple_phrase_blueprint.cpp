@@ -2,6 +2,7 @@
 
 #include "simple_phrase_blueprint.h"
 #include "simple_phrase_search.h"
+#include "emptysearch.h"
 #include "field_spec.hpp"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.hpp>
@@ -60,13 +61,17 @@ SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmd
     assert(tfmda.size() == 1);
     fef::MatchData::UP md = _layout.createMatchData();
     fef::TermFieldMatchDataArray childMatch;
-    SimplePhraseSearch::Children children(_terms.size());
+    SimplePhraseSearch::Children children;
+    children.reserve(_terms.size());
     std::multimap<uint32_t, uint32_t> order_map;
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
         assert(childState.numFields() == 1);
-        childMatch.add(childState.field(0).resolve(*md));
-        children[i] = _terms[i]->createSearch(*md, strict).release();
+        auto *child_term_field_match_data = childState.field(0).resolve(*md);
+        child_term_field_match_data->setNeedInterleavedFeatures(tfmda[0]->needs_interleaved_features());
+        child_term_field_match_data->setNeedNormalFeatures(true);
+        childMatch.add(child_term_field_match_data);
+        children.push_back(_terms[i]->createSearch(*md, strict));
         order_map.insert(std::make_pair(childState.estimate().estHits, i));
     }
     std::vector<uint32_t> eval_order;
@@ -74,12 +79,29 @@ SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmd
         eval_order.push_back(child.second);
     }
     
-    auto phrase = std::make_unique<SimplePhraseSearch>(children, std::move(md), childMatch,
+    auto phrase = std::make_unique<SimplePhraseSearch>(std::move(children),
+                                                       std::move(md), childMatch,
                                                        eval_order, *tfmda[0], strict);
     phrase->setDoom(& _doom);
     return phrase;
 }
 
+SearchIterator::UP
+SimplePhraseBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    if (constraint == FilterConstraint::UPPER_BOUND) {
+        MultiSearch::Children children;
+        children.reserve(_terms.size());
+        for (size_t i = 0; i < _terms.size(); ++i) {
+            bool child_strict = strict && (i == 0);
+            children.push_back(_terms[i]->createFilterSearch(child_strict, constraint));
+        }
+        UnpackInfo unpack_info;
+        return AndSearch::create(std::move(children), strict, unpack_info);
+    } else {
+        return std::make_unique<EmptySearch>();
+    }
+}
 
 void
 SimplePhraseBlueprint::fetchPostings(const ExecuteInfo &execInfo)

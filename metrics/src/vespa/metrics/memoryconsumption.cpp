@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "memoryconsumption.h"
 #include <vespa/vespalib/stllike/hash_set.hpp>
+#include <vespa/vespalib/util/size_literals.h>
 #include <sstream>
 
 namespace metrics {
@@ -125,12 +126,12 @@ MemoryConsumption::print(std::ostream& out, bool verbose,
 std::string
 MemoryConsumption::bval(uint32_t bytes) {
     std::ostringstream ost;
-    if (bytes < 10 * 1024) {
+    if (bytes < 10_Ki) {
         ost << bytes << " B";
-    } else if (bytes < 10 * 1024 * 1024) {
-        ost << (bytes / 1024) << " kB";
+    } else if (bytes < 10_Mi) {
+        ost << (bytes / 1_Ki) << " kB";
     } else {
-        ost << (bytes / (1024 * 1024)) << " MB";
+        ost << (bytes / 1_Mi) << " MB";
     }
     return ost.str();
 }

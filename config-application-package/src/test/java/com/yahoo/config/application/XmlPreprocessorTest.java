@@ -6,13 +6,8 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.transform.TransformerException;
 import java.io.File;
-import java.io.IOException;
 import java.io.StringReader;
 
 /**
@@ -24,7 +19,7 @@ public class XmlPreprocessorTest {
     private static final File services = new File(appDir, "services.xml");
 
     @Test
-    public void testPreProcessing() throws IOException, SAXException, ParserConfigurationException, TransformerException {
+    public void testPreProcessing() throws Exception {
         String expectedDev =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
@@ -49,7 +44,7 @@ public class XmlPreprocessorTest {
                 "      </nodes>\n" +
                 "    </container>\n" +
                 "</services>";
-        TestBase.assertDocument(expectedDev, new XmlPreProcessor(appDir, services, InstanceName.defaultName(), Environment.dev, RegionName.from("default")).run());
+        TestBase.assertDocument(expectedDev, new XmlPreProcessor(appDir, services, InstanceName.defaultName(), Environment.dev, RegionName.defaultName()).run());
 
         String expectedStaging =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
@@ -75,8 +70,7 @@ public class XmlPreprocessorTest {
                 "      </nodes>\n" +
                 "    </container>\n" +
                 "</services>";
-        // System.out.println(Xml.documentAsString(new XmlPreProcessor(appDir, services, Environment.staging, RegionName.from("default")).run()));
-        TestBase.assertDocument(expectedStaging, new XmlPreProcessor(appDir, services, InstanceName.defaultName(), Environment.staging, RegionName.from("default")).run());
+        TestBase.assertDocument(expectedStaging, new XmlPreProcessor(appDir, services, InstanceName.defaultName(), Environment.staging, RegionName.defaultName()).run());
 
         String expectedUsWest =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
@@ -150,7 +144,7 @@ public class XmlPreprocessorTest {
     }
 
     @Test
-    public void testPropertiesWithOverlappingNames() throws IOException, SAXException, ParserConfigurationException, TransformerException {
+    public void testPropertiesWithOverlappingNames() throws Exception {
         String input =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">" +
@@ -190,7 +184,7 @@ public class XmlPreprocessorTest {
                 "    <adminserver hostalias=\"node0\"/>" +
                 "  </admin>" +
                 "</services>";
-        Document docDev = (new XmlPreProcessor(appDir, new StringReader(input), InstanceName.defaultName(), Environment.prod, RegionName.from("default")).run());
+        Document docDev = (new XmlPreProcessor(appDir, new StringReader(input), InstanceName.defaultName(), Environment.prod, RegionName.defaultName()).run());
         TestBase.assertDocument(expectedProd, docDev);
     }
 

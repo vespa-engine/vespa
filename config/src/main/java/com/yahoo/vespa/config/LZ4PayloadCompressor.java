@@ -1,9 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
-import com.yahoo.vespa.config.util.ConfigUtils;
-import net.jpountz.lz4.LZ4Compressor;
-import net.jpountz.lz4.LZ4Factory;
+import com.yahoo.compress.CompressionType;
+import com.yahoo.compress.Compressor;
+
+import java.nio.ByteBuffer;
 
 /**
  * Wrapper for LZ4 compression that selects compression level based on properties.
@@ -12,29 +13,24 @@ import net.jpountz.lz4.LZ4Factory;
  */
 public class LZ4PayloadCompressor {
 
-    private static final LZ4Factory lz4Factory = LZ4Factory.safeInstance();
-    private static final String VESPA_CONFIG_PROTOCOL_COMPRESSION_LEVEL = "VESPA_CONFIG_PROTOCOL_COMPRESSION_LEVEL";
-    private static final int compressionLevel = getCompressionLevel();
-
-    private static int getCompressionLevel() {
-        return Integer.parseInt(ConfigUtils.getEnvValue("0",
-                System.getenv(VESPA_CONFIG_PROTOCOL_COMPRESSION_LEVEL),
-                System.getenv("services__config_protocol_compression_level"),
-                System.getProperty(VESPA_CONFIG_PROTOCOL_COMPRESSION_LEVEL)));
-    }
+    private static final Compressor compressor = new Compressor(CompressionType.LZ4, 0);
 
     public byte[] compress(byte[] input) {
-        return getCompressor().compress(input);
+        return compressor.compressUnconditionally(input);
     }
 
-    public void decompress(byte[] input, byte[] outputbuffer) {
-        if (input.length > 0) {
-            lz4Factory.safeDecompressor().decompress(input, outputbuffer);
-        }
+    public byte[] compress(ByteBuffer input) {
+        return compressor.compressUnconditionally(input);
     }
 
-    private LZ4Compressor getCompressor() {
-        return (compressionLevel < 7) ? lz4Factory.fastCompressor() : lz4Factory.highCompressor();
+    public byte [] decompress(byte[] input, int uncompressedLen) {
+        return compressor.decompressUnconditionally(input, 0, uncompressedLen);
+    }
+
+    public byte [] decompress(ByteBuffer input, int uncompressedLen) {
+        ByteBuffer uncompressed = ByteBuffer.allocate(uncompressedLen);
+        compressor.decompressUnconditionally(input, uncompressed);
+        return uncompressed.array();
     }
 
 }

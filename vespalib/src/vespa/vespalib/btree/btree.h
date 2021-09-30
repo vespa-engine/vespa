@@ -6,7 +6,7 @@
 #include "noaggrcalc.h"
 #include <vespa/vespalib/util/generationhandler.h>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 /**
  * Class that wraps a btree root and an allocator and that provides the same API as
@@ -148,6 +148,8 @@ public:
         assert(&itr.getAllocator() == &getAllocator());
         _tree.thaw(itr);
     }
+
+    void compact_worst();
 
     template <typename FunctionType>
     void

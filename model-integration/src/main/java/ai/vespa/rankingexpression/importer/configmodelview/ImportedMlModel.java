@@ -12,12 +12,20 @@ import java.util.Optional;
  */
 public interface ImportedMlModel {
 
+    enum ModelType {
+        VESPA, XGBOOST, LIGHTGBM, TENSORFLOW, ONNX
+    }
+
     String name();
     String source();
+    ModelType modelType();
+
     Optional<String> inputTypeSpec(String input);
     Map<String, String> smallConstants();
     Map<String, String> largeConstants();
     Map<String, String> functions();
     List<ImportedMlFunction> outputExpressions();
 
+    boolean isNative();
+    ImportedMlModel asNative();
 }

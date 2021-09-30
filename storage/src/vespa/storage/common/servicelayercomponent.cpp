@@ -24,20 +24,4 @@ ServiceLayerComponent::getBucketDatabase(BucketSpace bucketSpace) const
     return _bucketSpaceRepo->get(bucketSpace).bucketDatabase();
 }
 
-uint16_t
-ServiceLayerComponent::getIdealPartition(const document::Bucket& bucket) const
-{
-    return _bucketSpaceRepo->get(bucket.getBucketSpace()).getDistribution()->getIdealDisk(
-            *getStateUpdater().getReportedNodeState(), getIndex(), bucket.getBucketId(),
-            lib::Distribution::IDEAL_DISK_EVEN_IF_DOWN);
-}
-
-uint16_t
-ServiceLayerComponent::getPreferredAvailablePartition(
-        const document::Bucket& bucket) const
-{
-    return _bucketSpaceRepo->get(bucket.getBucketSpace()).getDistribution()->getPreferredAvailableDisk(
-            *getStateUpdater().getReportedNodeState(), getIndex(), bucket.getBucketId());
-}
-
 } // storage

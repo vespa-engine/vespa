@@ -4,13 +4,14 @@ package com.yahoo.jdisc.http.filter.security.base;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.FastContentWriter;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.io.UncheckedIOException;
 import java.util.Optional;
@@ -21,7 +22,7 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
-public abstract class JsonSecurityRequestFilterBase implements SecurityRequestFilter {
+public abstract class JsonSecurityRequestFilterBase extends AbstractComponent implements SecurityRequestFilter {
 
     private static final Logger log = Logger.getLogger(JsonSecurityRequestFilterBase.class.getName());
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -40,7 +41,7 @@ public abstract class JsonSecurityRequestFilterBase implements SecurityRequestFi
         errorMessage.put("message", error.message);
         error.response.headers().put("Content-Type", "application/json"); // Note: Overwrites header if already exists
         error.response.headers().put("Cache-Control", "must-revalidate,no-cache,no-store");
-        log.log(LogLevel.DEBUG, () -> String.format("Error response for '%s': statusCode=%d, errorCode=%d, message='%s'",
+        log.log(Level.FINE, () -> String.format("Error response for '%s': statusCode=%d, errorCode=%d, message='%s'",
                                                     request, error.response.getStatus(), error.errorCode, error.message));
         try (FastContentWriter writer = ResponseDispatch.newInstance(error.response).connectFastWriter(responseHandler)) {
             writer.write(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(errorMessage));

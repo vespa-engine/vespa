@@ -3,6 +3,7 @@
 #include "hitcollector.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/sort.h>
+#include <cassert>
 
 namespace search::queryeval {
 
@@ -45,9 +46,7 @@ HitCollector::HitCollector(uint32_t numDocs,
       _bitVector(),
       _reRankedHits(),
       _scale(1.0),
-      _adjust(0),
-      _hasReRanked(false),
-      _needReScore(false)
+      _adjust(0)
 {
     if (_maxHitsSize > 0) {
         _collector = std::make_unique<RankedHitCollector>(*this);
@@ -174,32 +173,12 @@ HitCollector::getSortedHitSequence(size_t max_hits)
     return SortedHitSequence(&_hits[0], &_scoreOrder[0], num_hits);
 }
 
-size_t
-HitCollector::reRank(DocumentScorer &scorer, std::vector<Hit> hits) {
-    if (hits.empty()) { return 0; }
-    
-    size_t hitsToReRank = hits.size();
-    Scores &initScores = _ranges.first;
-    Scores &finalScores = _ranges.second;
-    initScores = Scores(hits.back().second, hits.front().second);
-    finalScores = Scores(std::numeric_limits<feature_t>::max(),
-                         -std::numeric_limits<feature_t>::max());
-
-    std::sort(hits.begin(), hits.end()); // sort on docId
-    for (auto &hit : hits) {
-        hit.second = scorer.score(hit.first);
-        finalScores.low = std::min(finalScores.low, hit.second);
-        finalScores.high = std::max(finalScores.high, hit.second);
-    }
-    _reRankedHits = std::move(hits);
-    _hasReRanked = true;
-    return hitsToReRank;
-}
-
-std::pair<Scores, Scores>
-HitCollector::getRanges() const
+void
+HitCollector::setReRankedHits(std::vector<Hit> hits)
 {
-    return _ranges;
+    auto sort_on_docid = [](const Hit &a, const Hit &b){ return (a.first < b.first); };
+    std::sort(hits.begin(), hits.end(), sort_on_docid);
+    _reRankedHits = std::move(hits);
 }
 
 void
@@ -230,6 +209,7 @@ mergeHitsIntoResultSet(const std::vector<HitCollector::Hit> &hits, ResultSet &re
 std::unique_ptr<ResultSet>
 HitCollector::getResultSet(HitRank default_value)
 {
+    bool needReScore = false;
     Scores &initHeapScores = _ranges.first;
     Scores &finalHeapScores = _ranges.second;
     if (initHeapScores.low > finalHeapScores.low) {
@@ -242,7 +222,7 @@ HitCollector::getResultSet(HitRank default_value)
         if (finalRange < 1.0) finalRange = 1.0f;
         _scale = finalRange / initRange;
         _adjust = initHeapScores.low * _scale - finalHeapScores.low;
-        _needReScore = true;
+        needReScore = true;
     }
 
     // destroys the heap property or score sort order
@@ -252,7 +232,7 @@ HitCollector::getResultSet(HitRank default_value)
     if ( ! _collector->isDocIdCollector() ) {
         unsigned int iSize = _hits.size();
         rs->allocArray(iSize);
-        if (_needReScore) {
+        if (needReScore) {
             for (uint32_t i = 0; i < iSize; ++i) {
                 rs->push_back(RankedHit(_hits[i].first, getReScore(_hits[i].second)));
             }
@@ -269,7 +249,7 @@ HitCollector::getResultSet(HitRank default_value)
         unsigned int jSize = _docIdVector.size();
         rs->allocArray(jSize);
         uint32_t i = 0;
-        if (_needReScore) {
+        if (needReScore) {
             for (uint32_t j = 0; j < jSize; ++j) {
                 uint32_t docId = _docIdVector[j];
                 if (i < iSize && docId == _hits[i].first) {
@@ -292,7 +272,7 @@ HitCollector::getResultSet(HitRank default_value)
         }
     }
 
-    if (_hasReRanked) {
+    if (!_reRankedHits.empty()) {
         mergeHitsIntoResultSet(_reRankedHits, *rs);
     }
 

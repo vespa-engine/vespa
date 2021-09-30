@@ -33,7 +33,7 @@ private:
     using CommandMap = std::map<document::BucketId, CommandPtr>;
     CommandMap _activeCommands;
 
-    vespalib::Lock _mutex;
+    std::mutex _mutex;
 };
 
 struct RecoveryVisitorFactory : public VisitorFactory {

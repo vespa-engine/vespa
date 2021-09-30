@@ -24,10 +24,10 @@ public class GroupOperation implements IGroupOperation {
     @Override
     public String toString() {
         if (value != null) {
-            return String.format("%s(%s)", type, value);
+            return Text.format("%s(%s)", type, value);
         }
 
-        return String.format("%s(%s)",
+        return Text.format("%s(%s)",
                              type,
                              Stream.of(aggregators).map(Objects::toString).collect(Collectors.joining(" ")));
     }

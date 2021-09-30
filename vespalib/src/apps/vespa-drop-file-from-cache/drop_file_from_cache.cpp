@@ -21,12 +21,14 @@ int main(int argc, char **argv) {
     }
 
     int retval = 0;
+#ifdef __linux__
     int err = posix_fadvise(fh, 0, 0, POSIX_FADV_DONTNEED);
     if (err != 0) {
         std::error_code ec(errno, std::system_category());
         fprintf(stderr, "posix_fadvise failed: %s\n", ec.message().c_str());
         retval = 3;
     }
+#endif
     close(fh);
     return retval;
 }

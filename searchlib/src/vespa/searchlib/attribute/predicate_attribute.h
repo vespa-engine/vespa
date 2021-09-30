@@ -47,7 +47,7 @@ public:
     predicate::PredicateIndex &getIndex() { return *_index; }
 
     void onSave(IAttributeSaveTarget & saveTarget) override;
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
     void onCommit() override;
     void removeOldGenerations(generation_t firstUsed) override;
     void onGenerationChange(generation_t generation) override;
@@ -80,7 +80,6 @@ public:
 
     void populateIfNeeded();
 private:
-    vespalib::string _base_file_name;
     const AttributeVectorDocIdLimitProvider _limit_provider;
     std::unique_ptr<predicate::PredicateIndex> _index;
     int64_t _lower_bound;

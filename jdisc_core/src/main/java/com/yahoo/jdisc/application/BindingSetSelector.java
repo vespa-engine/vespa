@@ -29,5 +29,6 @@ public interface BindingSetSelector {
      * @param uri The URI to select on.
      * @return The name of selected BindingSet.
      */
-    public String select(URI uri);
+    String select(URI uri);
+
 }

@@ -1,62 +1,42 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "domainpart.h"
-#include "session.h"
+#include "domainconfig.h"
 #include <vespa/vespalib/util/threadexecutor.h>
-#include <chrono>
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
 
+namespace search::common { class FileHeaderContext; }
 namespace search::transactionlog {
 
-struct PartInfo {
-    SerialNumRange range;
-    size_t numEntries;
-    size_t byteSize;
-    vespalib::string file;
-    PartInfo(SerialNumRange range_in, size_t numEntries_in,
-             size_t byteSize_in,
-             vespalib::stringref file_in)
-        : range(range_in), numEntries(numEntries_in), byteSize(byteSize_in),
-          file(file_in) {}
-};
+class DomainPart;
+class Session;
 
-struct DomainInfo {
-    using DurationSeconds = std::chrono::duration<double>;
-    SerialNumRange range;
-    size_t numEntries;
-    size_t byteSize;
-    DurationSeconds maxSessionRunTime;
-    std::vector<PartInfo> parts;
-    DomainInfo(SerialNumRange range_in, size_t numEntries_in, size_t byteSize_in, DurationSeconds maxSessionRunTime_in)
-        : range(range_in), numEntries(numEntries_in), byteSize(byteSize_in), maxSessionRunTime(maxSessionRunTime_in), parts() {}
-    DomainInfo()
-        : range(), numEntries(0), byteSize(0), maxSessionRunTime(), parts() {}
-};
-
-typedef std::map<vespalib::string, DomainInfo> DomainStats;
-
-class Domain
+class Domain : public Writer
 {
 public:
     using SP = std::shared_ptr<Domain>;
     using Executor = vespalib::SyncableThreadExecutor;
-    Domain(const vespalib::string &name, const vespalib::string &baseDir, Executor & commitExecutor,
-           Executor & sessionExecutor, uint64_t domainPartSize, DomainPart::Crc defaultCrcType,
-           const common::FileHeaderContext &fileHeaderContext);
+    using DomainPartSP = std::shared_ptr<DomainPart>;
+    using FileHeaderContext = common::FileHeaderContext;
+    Domain(const vespalib::string &name, const vespalib::string &baseDir, Executor & executor,
+           const DomainConfig & cfg, const FileHeaderContext &fileHeaderContext);
 
-    virtual ~Domain();
+    ~Domain() override;
 
     DomainInfo getDomainInfo() const;
     const vespalib::string & name() const { return _name; }
     bool erase(SerialNum to);
 
-    void commit(const Packet & packet);
-    int visit(const Domain::SP & self, SerialNum from, SerialNum to, std::unique_ptr<Session::Destination> dest);
+    void append(const Packet & packet, Writer::DoneCallback onDone) override;
+    [[nodiscard]] CommitResult startCommit(DoneCallback onDone) override;
+    int visit(const Domain::SP & self, SerialNum from, SerialNum to, std::unique_ptr<Destination> dest);
 
     SerialNum begin() const;
     SerialNum end() const;
     SerialNum getSynced() const;
-    void triggerSyncNow();
+    void triggerSyncNow(std::unique_ptr<vespalib::Executor::Task> done_sync_task);
     bool getMarkedDeleted() const { return _markedDeleted; }
     void markDeleted() { _markedDeleted = true; }
 
@@ -67,50 +47,63 @@ public:
     int closeSession(int sessionId);
 
     SerialNum findOldestActiveVisit() const;
-    DomainPart::SP findPart(SerialNum s);
+    DomainPartSP findPart(SerialNum s);
 
     static vespalib::string
     getDir(const vespalib::string & base, const vespalib::string & domain) {
         return base + "/" + domain;
     }
-    vespalib::Executor::Task::UP execute(vespalib::Executor::Task::UP task) {
-        return _sessionExecutor.execute(std::move(task));
-    }
+    vespalib::Executor::Task::UP execute(vespalib::Executor::Task::UP task);
     uint64_t size() const;
-
+    Domain & setConfig(const DomainConfig & cfg);
 private:
-    SerialNum begin(const vespalib::LockGuard & guard) const;
-    SerialNum end(const vespalib::LockGuard & guard) const;
-    size_t byteSize(const vespalib::LockGuard & guard) const;
-    uint64_t size(const vespalib::LockGuard & guard) const;
+    using UniqueLock = std::unique_lock<std::mutex>;
+    DomainPartSP getActivePart();
+    void verifyLock(const UniqueLock & guard) const;
+    void commitIfFull(const UniqueLock & guard);
+    void commitAndTransferResponses(const UniqueLock & guard);
+
+    std::unique_ptr<CommitChunk> grabCurrentChunk(const UniqueLock & guard);
+    void commitChunk(std::unique_ptr<CommitChunk> chunk, const UniqueLock & chunkOrderGuard);
+    void doCommit(std::unique_ptr<CommitChunk> chunk);
+    SerialNum begin(const UniqueLock & guard) const;
+    SerialNum end(const UniqueLock & guard) const;
+    size_t byteSize(const UniqueLock & guard) const;
+    uint64_t size(const UniqueLock & guard) const;
     void cleanSessions();
     vespalib::string dir() const { return getDir(_baseDir, _name); }
-    void addPart(int64_t partId, bool isLastPart);
+    void addPart(SerialNum partId, bool isLastPart);
+    DomainPartSP optionallyRotateFile(SerialNum serialNum);
 
     using SerialNumList = std::vector<SerialNum>;
 
     SerialNumList scanDir();
 
-    using SessionList = std::map<int, Session::SP>;
-    using DomainPartList = std::map<int64_t, DomainPart::SP>;
+    using SessionList = std::map<int, std::shared_ptr<Session>>;
+    using DomainPartList = std::map<SerialNum, DomainPartSP>;
     using DurationSeconds = std::chrono::duration<double>;
 
-    DomainPart::Crc     _defaultCrcType;
-    Executor          & _commitExecutor;
-    Executor          & _sessionExecutor;
-    std::atomic<int>    _sessionId;
-    vespalib::Monitor   _syncMonitor;
-    bool                _pendingSync;
-    vespalib::string    _name;
-    uint64_t            _domainPartSize;
-    DomainPartList      _parts;
-    vespalib::Lock      _lock;
-    vespalib::Lock      _sessionLock;
-    SessionList         _sessions;
-    DurationSeconds     _maxSessionRunTime;
-    vespalib::string    _baseDir;
-    const common::FileHeaderContext &_fileHeaderContext;
-    bool                _markedDeleted;
+    DomainConfig                 _config;
+    std::unique_ptr<CommitChunk> _currentChunk;
+    SerialNum                    _lastSerial;
+    std::unique_ptr<Executor>    _singleCommitter;
+    Executor                    &_executor;
+    std::atomic<int>             _sessionId;
+    std::mutex                   _syncMonitor;
+    std::condition_variable      _syncCond;
+    bool                         _pendingSync;
+    std::vector<std::unique_ptr<vespalib::Executor::Task>> _done_sync_tasks;
+    vespalib::string             _name;
+    DomainPartList               _parts;
+    mutable std::mutex           _lock;
+    std::mutex                   _currentChunkMonitor;
+    std::condition_variable      _currentChunkCond;
+    mutable std::mutex           _sessionLock;
+    SessionList                  _sessions;
+    DurationSeconds              _maxSessionRunTime;
+    vespalib::string             _baseDir;
+    const FileHeaderContext     &_fileHeaderContext;
+    bool                         _markedDeleted;
 };
 
 }

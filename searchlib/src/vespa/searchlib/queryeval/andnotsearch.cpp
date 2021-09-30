@@ -51,7 +51,7 @@ public:
      *
      * @param children the search objects we are andnot'ing
      **/
-    AndNotSearchStrict(const Children & children) : AndNotSearchStrictBase(children)
+    AndNotSearchStrict(Children children) : AndNotSearchStrictBase(std::move(children))
     {
     }
 
@@ -105,8 +105,8 @@ AndNotSearchStrict::internalSeek(uint32_t docid)
 
 }  // namespace
 
-OptimizedAndNotForBlackListing::OptimizedAndNotForBlackListing(const MultiSearch::Children & children) :
-    AndNotSearchStrictBase(children)
+OptimizedAndNotForBlackListing::OptimizedAndNotForBlackListing(MultiSearch::Children children) :
+    AndNotSearchStrictBase(std::move(children))
 {   
 }
     
@@ -131,23 +131,24 @@ void OptimizedAndNotForBlackListing::doUnpack(uint32_t docid)
     positive()->doUnpack(docid);
 } 
 
-SearchIterator *
-AndNotSearch::create(const AndNotSearch::Children &children, bool strict) {
+std::unique_ptr<SearchIterator>
+AndNotSearch::create(ChildrenIterators children_in, bool strict) {
+    MultiSearch::Children children = std::move(children_in);
     if (strict) {
-        if ((children.size() == 2) && OptimizedAndNotForBlackListing::isBlackListIterator(children[1])) {
-            return new OptimizedAndNotForBlackListing(children);
+        if ((children.size() == 2) && OptimizedAndNotForBlackListing::isBlackListIterator(children[1].get())) {
+            return std::make_unique<OptimizedAndNotForBlackListing>(std::move(children));
         } else {
-            return new AndNotSearchStrict(children);
+            return std::make_unique<AndNotSearchStrict>(std::move(children));
         }
     } else {
-        return new AndNotSearch(children);
+        return SearchIterator::UP(new AndNotSearch(std::move(children)));
     }
 }
 
 BitVector::UP
 AndNotSearch::get_hits(uint32_t begin_id) {
     const Children &children = getChildren();
-    BitVector::UP result = children.front()->get_hits(begin_id);
+    BitVector::UP result = children[0]->get_hits(begin_id);
     result->notSelf();
     result = TermwiseHelper::orChildren(std::move(result), children.begin()+1, children.end(), begin_id);
     result->notSelf();

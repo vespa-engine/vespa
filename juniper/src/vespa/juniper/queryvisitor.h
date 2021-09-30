@@ -22,6 +22,8 @@ namespace juniper {
 class QueryVisitor : public juniper::IQueryVisitor
 {
 public:
+    QueryVisitor(QueryVisitor &) = delete;
+    QueryVisitor &operator=(QueryVisitor &) = delete;
     QueryVisitor(const IQuery& query, QueryHandle* qhandle, juniper::QueryModifier & queryModifier);
     ~QueryVisitor();
 
@@ -33,7 +35,6 @@ public:
     bool VisitRANK(const QueryItem* item, int arity) override;
     bool VisitPHRASE(const QueryItem* item, int arity) override;
     bool VisitANDNOT(const QueryItem* item, int arity) override;
-    bool VisitTHRESHOLD(const QueryItem* item, int arity, int threshold) override;
     bool VisitOther(const QueryItem* item, int arity) override;
     void VisitKeyword(const QueryItem* item, const char* keyword,
                       const size_t length = 0, bool prefix = false, bool specialToken = false) override;
@@ -49,7 +50,6 @@ protected:
     std::string get_index(const QueryItem* item);
 private:
     // Helper functions/members for use during construction only.
-    void update_parameters(const char* options);
     void insert(QueryExpr* expr);
     void postprocess_query();
     juniper::QueryModifier & _queryModifier;
@@ -62,9 +62,6 @@ private:
     QueryHandle* _qhandle;
     int _term_index;
     bool _got_stack; // Set when we have created a stack root
-
-    QueryVisitor(QueryVisitor &);
-    QueryVisitor &operator=(QueryVisitor &);
 };
 
 

@@ -1,6 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/frt/target.h>
+#include <vespa/fnet/channel.h>
+#include <vespa/fnet/info.h>
 #include <mutex>
 #include <condition_variable>
  
@@ -68,6 +72,8 @@ TEST("size of important objects")
 {
 #ifdef __APPLE__
     constexpr size_t MUTEX_SIZE = 64u;
+#elif defined(__aarch64__)
+    constexpr size_t MUTEX_SIZE = 48u;
 #else
     constexpr size_t MUTEX_SIZE = 40u;
 #endif

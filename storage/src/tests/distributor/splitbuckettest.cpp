@@ -1,14 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <tests/common/dummystoragelink.h>
-#include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
+#include "dummy_cluster_context.h"
+#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/base/documentid.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storage/distributor/idealstatemanager.h>
-#include <tests/distributor/distributortestutil.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
+#include <vespa/storage/distributor/idealstatemanager.h>
+#include <vespa/storage/distributor/operation_sequencer.h>
+#include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
+#include <vespa/storageapi/message/bucketsplitting.h>
+#include <vespa/storageapi/message/persistence.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using document::test::makeDocumentBucket;
 using namespace document;
@@ -16,7 +18,7 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-struct SplitOperationTest : Test, DistributorTestUtil {
+struct SplitOperationTest : Test, DistributorStripeTestUtil {
     uint32_t splitByteSize;
     uint32_t tooLargeBucketSize;
     uint32_t splitCount;
@@ -26,9 +28,10 @@ struct SplitOperationTest : Test, DistributorTestUtil {
 
     void SetUp() override {
         createLinks();
-        getConfig().setSplitCount(splitCount);
-        getConfig().setSplitSize(splitByteSize);
-
+        auto cfg = make_config();
+        cfg->setSplitCount(splitCount);
+        cfg->setSplitSize(splitByteSize);
+        configure_stripe(cfg);
     }
 
     void TearDown() override {
@@ -37,20 +40,24 @@ struct SplitOperationTest : Test, DistributorTestUtil {
 };
 
 SplitOperationTest::SplitOperationTest()
-    : splitByteSize(10*1024*1024),
+    : splitByteSize(10_Mi),
       tooLargeBucketSize(splitByteSize * 1.1),
       splitCount(UINT32_MAX),
       maxSplitBits(58)
 {
 }
 
+namespace {
+    api::StorageMessageAddress _Storage0Address(dummy_cluster_context.cluster_name_ptr(), lib::NodeType::STORAGE, 0);
+}
+
 TEST_F(SplitOperationTest, simple) {
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
 
     insertBucketInfo(document::BucketId(16, 1), 0, 0xabc, 1000,
                      tooLargeBucketSize, 250);
 
-    SplitOperation op("storage",
+    SplitOperation op(dummy_cluster_context,
                       BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0)),
                       maxSplitBits,
@@ -65,7 +72,7 @@ TEST_F(SplitOperationTest, simple) {
 
         std::shared_ptr<api::StorageCommand> msg  = _sender.command(0);
         ASSERT_EQ(msg->getType(), api::MessageType::SPLITBUCKET);
-        EXPECT_EQ(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0).toString(),
+        EXPECT_EQ(_Storage0Address.toString(),
                   msg->getAddress()->toString());
 
         std::shared_ptr<api::StorageReply> reply(msg->makeReply().release());
@@ -117,9 +124,9 @@ TEST_F(SplitOperationTest, multi_node_failure) {
         getBucketDatabase().update(entry);
     }
 
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
-    SplitOperation op("storage",
+    SplitOperation op(dummy_cluster_context,
                       BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0,1)),
                       maxSplitBits,
@@ -135,7 +142,7 @@ TEST_F(SplitOperationTest, multi_node_failure) {
         {
             std::shared_ptr<api::StorageCommand> msg  = _sender.command(0);
             ASSERT_EQ(msg->getType(), api::MessageType::SPLITBUCKET);
-            EXPECT_EQ(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0).toString(),
+            EXPECT_EQ(_Storage0Address.toString(),
                       msg->getAddress()->toString());
 
             auto* sreply = static_cast<api::SplitBucketReply*>(msg->makeReply().release());
@@ -191,7 +198,7 @@ TEST_F(SplitOperationTest, multi_node_failure) {
 }
 
 TEST_F(SplitOperationTest, copy_trusted_status_not_carried_over_after_split) {
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     document::BucketId sourceBucket(16, 1);
     /*
@@ -204,7 +211,7 @@ TEST_F(SplitOperationTest, copy_trusted_status_not_carried_over_after_split) {
     addNodesToBucketDB(sourceBucket, "0=150/20/30000000/t,1=450/50/60000/u,"
                                      "2=550/60/70000");
 
-    SplitOperation op("storage",
+    SplitOperation op(dummy_cluster_context,
                       BucketAndNodes(makeDocumentBucket(sourceBucket), toVector<uint16_t>(0, 1)),
                       maxSplitBits,
                       splitCount,
@@ -254,9 +261,9 @@ TEST_F(SplitOperationTest, operation_blocked_by_pending_join) {
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
     clock.setAbsoluteTimeInSeconds(1);
-    PendingMessageTracker tracker(compReg);
+    OperationSequencer op_seq;
 
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     document::BucketId joinTarget(2, 1);
     std::vector<document::BucketId> joinSources = {
@@ -264,31 +271,51 @@ TEST_F(SplitOperationTest, operation_blocked_by_pending_join) {
     };
     auto joinCmd = std::make_shared<api::JoinBucketsCommand>(makeDocumentBucket(joinTarget));
     joinCmd->getSourceBuckets() = joinSources;
-    joinCmd->setAddress(
-            api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0));
+    joinCmd->setAddress(_Storage0Address);
 
-    tracker.insert(joinCmd);
+    pending_message_tracker().insert(joinCmd);
 
     insertBucketInfo(joinTarget, 0, 0xabc, 1000, 1234, true);
 
-    SplitOperation op("storage",
+    SplitOperation op(dummy_cluster_context,
                       BucketAndNodes(makeDocumentBucket(joinTarget), toVector<uint16_t>(0)),
                       maxSplitBits,
                       splitCount,
                       splitByteSize);
 
-    EXPECT_TRUE(op.isBlocked(tracker));
+    EXPECT_TRUE(op.isBlocked(operation_context(), op_seq));
 
     // Now, pretend there's a join for another node in the same bucket. This
     // will happen when a join is partially completed.
-    tracker.clearMessagesForNode(0);
-    EXPECT_FALSE(op.isBlocked(tracker));
+    pending_message_tracker().clearMessagesForNode(0);
+    EXPECT_FALSE(op.isBlocked(operation_context(), op_seq));
 
-    joinCmd->setAddress(
-            api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
-    tracker.insert(joinCmd);
+    joinCmd->setAddress(api::StorageMessageAddress::create(dummy_cluster_context.cluster_name_ptr(),
+                                                           lib::NodeType::STORAGE, 1));
+    pending_message_tracker().insert(joinCmd);
 
-    EXPECT_TRUE(op.isBlocked(tracker));
+    EXPECT_TRUE(op.isBlocked(operation_context(), op_seq));
+}
+
+TEST_F(SplitOperationTest, split_is_blocked_by_locked_bucket) {
+    StorageComponentRegisterImpl compReg;
+    framework::defaultimplementation::FakeClock clock;
+    compReg.setClock(clock);
+    clock.setAbsoluteTimeInSeconds(1);
+    OperationSequencer op_seq;
+
+    enable_cluster_state("distributor:1 storage:2");
+
+    document::BucketId source_bucket(16, 1);
+    insertBucketInfo(source_bucket, 0, 0xabc, 1000, tooLargeBucketSize, 250);
+
+    SplitOperation op(dummy_cluster_context, BucketAndNodes(makeDocumentBucket(source_bucket), toVector<uint16_t>(0)),
+                      maxSplitBits, splitCount, splitByteSize);
+
+    EXPECT_FALSE(op.isBlocked(operation_context(), op_seq));
+    auto token = op_seq.try_acquire(makeDocumentBucket(source_bucket), "foo");
+    EXPECT_TRUE(token.valid());
+    EXPECT_TRUE(op.isBlocked(operation_context(), op_seq));
 }
 
 } // storage::distributor

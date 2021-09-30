@@ -2,21 +2,20 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.component.Version;
 import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
-import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
-import com.yahoo.jdisc.core.SystemTimer;
+import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
@@ -31,7 +30,6 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -40,8 +38,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
-import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.BOOTSTRAP_IN_SEPARATE_THREAD;
-import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.INITIALIZE_ONLY;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode.VIP_STATUS_FILE;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode.VIP_STATUS_PROGRAMMATICALLY;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
@@ -55,37 +51,40 @@ import static org.junit.Assert.assertTrue;
  */
 public class ConfigServerBootstrapTest {
 
+    private final MockCurator curator = new MockCurator();
+
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
     public void testBootstrap() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3", "host4");
-        DeployTester tester = new DeployTester(List.of(createHostedModelFactory()), configserverConfig, provisioner);
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(7, false);
+        DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
+                .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
 
-        File versionFile = temporaryFolder.newFile();
-        VersionState versionState = new VersionState(versionFile);
+        VersionState versionState = createVersionState();
         assertTrue(versionState.isUpgraded());
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
         // Take a host away so that there are too few for the application, to verify we can still bootstrap
         provisioner.allocations().values().iterator().next().remove(0);
-        StateMonitor stateMonitor = new StateMonitor();
+        StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer,
-                                                                    versionState, stateMonitor,
-                                                                    vipStatus, INITIALIZE_ONLY, VIP_STATUS_PROGRAMMATICALLY);
+        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
+                                                                    stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY);
         assertFalse(vipStatus.isInRotation());
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
+        assertTrue(rpcServer.isServingConfigRequests());
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(vipStatus::isInRotation, "failed waiting for server to be in rotation");
 
         bootstrap.deconstruct();
         assertEquals(StateMonitor.Status.down, bootstrap.status());
         assertFalse(rpcServer.isRunning());
+        assertTrue(rpcServer.isServingConfigRequests());
         assertFalse(vipStatus.isInRotation());
     }
 
@@ -94,24 +93,24 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrapWithVipStatusFile() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3", "host4");
-        DeployTester tester = new DeployTester(List.of(createHostedModelFactory()), configserverConfig, provisioner);
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(7, false);
+        DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
+                .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
 
-        File versionFile = temporaryFolder.newFile();
-        VersionState versionState = new VersionState(versionFile);
+        VersionState versionState = createVersionState();
         assertTrue(versionState.isUpgraded());
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        StateMonitor stateMonitor = new StateMonitor();
+        StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer,
-                                                                    versionState, stateMonitor,
-                                                                    vipStatus, INITIALIZE_ONLY, VIP_STATUS_FILE);
+        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
+                                                                    stateMonitor, vipStatus, VIP_STATUS_FILE);
         assertTrue(vipStatus.isInRotation()); // default is in rotation when using status file
 
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
+        assertTrue(rpcServer.isServingConfigRequests());
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(vipStatus::isInRotation, "failed waiting for server to be in rotation");
         bootstrap.deconstruct();
@@ -120,11 +119,11 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrapWhenRedeploymentFails() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        DeployTester tester = new DeployTester(List.of(createHostedModelFactory()), configserverConfig);
+        DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
+                .configserverConfig(configserverConfig).build();
         tester.deployApp("src/test/apps/hosted/");
 
-        File versionFile = temporaryFolder.newFile();
-        VersionState versionState = new VersionState(versionFile);
+        VersionState versionState = createVersionState();
         assertTrue(versionState.isUpgraded());
 
         // Manipulate application package so that it will fail deployment when config server starts
@@ -134,18 +133,18 @@ public class ConfigServerBootstrapTest {
                                            .resolve("sessions/2/services.xml"));
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        StateMonitor stateMonitor = new StateMonitor();
+        StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    stateMonitor,
-                                                                    vipStatus, INITIALIZE_ONLY, VIP_STATUS_PROGRAMMATICALLY);
+                                                                    stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY);
         assertFalse(vipStatus.isInRotation());
         // Call method directly, to be sure that it is finished redeploying all applications and we can check status
         bootstrap.start();
         // App is invalid, bootstrapping was unsuccessful. Status should be 'initializing',
         // rpc server should not be running and it should be out of rotation
         assertEquals(StateMonitor.Status.initializing, stateMonitor.status());
-        assertFalse(rpcServer.isRunning());
+        assertTrue(rpcServer.isRunning());
+        assertFalse(rpcServer.isServingConfigRequests());
         assertFalse(vipStatus.isInRotation());
 
         bootstrap.deconstruct();
@@ -157,18 +156,19 @@ public class ConfigServerBootstrapTest {
     public void testBootstrapNonHostedOneConfigModel() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfigNonHosted(temporaryFolder);
         String vespaVersion = "1.2.3";
-        List<ModelFactory> modelFactories = Collections.singletonList(DeployTester.createModelFactory(Version.fromString(vespaVersion)));
         List<Host> hosts = createHosts(vespaVersion);
-        InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
         Curator curator = new MockCurator();
-        DeployTester tester = new DeployTester(modelFactories, configserverConfig,
-                                               Clock.systemUTC(), new Zone(Environment.dev, RegionName.defaultName()),
-                                               provisioner, curator);
-        tester.deployApp("src/test/apps/app/", vespaVersion, Instant.now());
+        DeployTester tester = new DeployTester.Builder()
+                .modelFactory(DeployTester.createModelFactory(Version.fromString(vespaVersion)))
+                .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false))
+                .configserverConfig(configserverConfig)
+                .zone(new Zone(Environment.dev, RegionName.defaultName()))
+                .curator(curator)
+                .build();
+        tester.deployApp("src/test/apps/app/", vespaVersion);
         ApplicationId applicationId = tester.applicationId();
 
-        File versionFile = temporaryFolder.newFile();
-        VersionState versionState = new VersionState(versionFile);
+        VersionState versionState = createVersionState();
         assertTrue(versionState.isUpgraded());
 
         // Ugly hack, but I see no other way of doing it:
@@ -177,12 +177,13 @@ public class ConfigServerBootstrapTest {
         curator.set(Path.fromString("/config/v2/tenants/" + applicationId.tenant().value() + "/sessions/2/version"), Utf8.toBytes("1.2.2"));
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        StateMonitor stateMonitor = createStateMonitor();
+        StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    stateMonitor, vipStatus,
-                                                                    BOOTSTRAP_IN_SEPARATE_THREAD, VIP_STATUS_PROGRAMMATICALLY);
+                                                                    stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY);
+        bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
+        assertTrue(rpcServer.isServingConfigRequests());
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(vipStatus::isInRotation, "failed waiting for server to be in rotation");
     }
@@ -198,13 +199,8 @@ public class ConfigServerBootstrapTest {
         throw new RuntimeException(messageIfWaitingFails);
     }
 
-    private MockRpc createRpcServer(ConfigserverConfig configserverConfig) throws IOException {
-        return new MockRpc(configserverConfig.rpcport(), temporaryFolder.newFolder());
-    }
-
-    private StateMonitor createStateMonitor() {
-        return new StateMonitor(new HealthMonitorConfig(new HealthMonitorConfig.Builder().initialStatus("initializing")),
-                                new SystemTimer());
+    private MockRpcServer createRpcServer(ConfigserverConfig configserverConfig) throws IOException {
+        return new MockRpcServer(configserverConfig.rpcport(), temporaryFolder.newFolder());
     }
 
     private static ConfigserverConfig createConfigserverConfig(TemporaryFolder temporaryFolder) throws IOException {
@@ -219,6 +215,7 @@ public class ConfigServerBootstrapTest {
         return new ConfigserverConfig(new ConfigserverConfig.Builder()
                                               .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
                                               .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
+                                              .fileReferencesDir(temporaryFolder.newFolder("filedistribution").getAbsolutePath())
                                               .hostedVespa(hosted)
                                               .multitenant(hosted)
                                               .maxDurationOfBootstrap(2) /* seconds */
@@ -235,15 +232,21 @@ public class ConfigServerBootstrapTest {
 
     private VipStatus createVipStatus(StateMonitor stateMonitor) {
         return new VipStatus(new QrSearchersConfig.Builder().build(),
+                             new VipStatusConfig.Builder().build(),
                              new ClustersStatus(),
-                             stateMonitor);
+                             stateMonitor,
+                             new NullMetric());
     }
 
-    public static class MockRpc extends com.yahoo.vespa.config.server.rpc.MockRpc {
+    private VersionState createVersionState() throws IOException {
+        return new VersionState(temporaryFolder.newFile(), curator);
+    }
+
+    public static class MockRpcServer extends com.yahoo.vespa.config.server.rpc.MockRpcServer {
 
         volatile boolean isRunning = false;
 
-        MockRpc(int port, File tempDir) {
+        MockRpcServer(int port, File tempDir) {
             super(port, tempDir);
         }
 

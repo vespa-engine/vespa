@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/util/growstrategy.h>
 #include <cstdint>
+#include <iosfwd>
 
 namespace search {
 
@@ -15,13 +16,13 @@ private:
     uint32_t _docsGrowDelta;
     float    _multiValueAllocGrowFactor;
 public:
-    GrowStrategy()
+    GrowStrategy() noexcept
         : GrowStrategy(1024, 0.5, 0, 0.2)
     {}
-    GrowStrategy(uint32_t docsInitialCapacity, float docsGrowPercent,
-                 uint32_t docsGrowDelta, float multiValueAllocGrowFactor)
+    GrowStrategy(uint32_t docsInitialCapacity, float docsGrowFactor,
+                 uint32_t docsGrowDelta, float multiValueAllocGrowFactor) noexcept
         : _docsInitialCapacity(docsInitialCapacity),
-          _docsGrowFactor(docsGrowPercent),
+          _docsGrowFactor(docsGrowFactor),
           _docsGrowDelta(docsGrowDelta),
           _multiValueAllocGrowFactor(multiValueAllocGrowFactor)
     {
@@ -53,6 +54,8 @@ public:
         return !(operator==(rhs));
     }
 };
+
+std::ostream& operator<<(std::ostream& os, const GrowStrategy& grow_strategy);
 
 }
 

@@ -15,7 +15,11 @@ import java.io.OutputStream;
  */
 public class SlimeJsonResponse extends HttpResponse {
 
-    private final Slime slime;
+    protected final Slime slime;
+
+    public SlimeJsonResponse() {
+        this(new Slime());
+    }
 
     public SlimeJsonResponse(Slime slime) {
         super(200);

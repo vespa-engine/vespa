@@ -59,7 +59,6 @@ public:
     void addMetricToSum(const AddendMetric&);
     void removeMetricFromSum(const AddendMetric&);
 
-    bool logEvent(const String& fullName) const override;
     void print(std::ostream&, bool verbose, const std::string& indent, uint64_t secondsPassed) const override;
     int64_t getLongValue(stringref id) const override;
     double getDoubleValue(stringref id) const override;
@@ -70,6 +69,7 @@ public:
     void printDebug(std::ostream&, const std::string& indent="") const override;
     void addToPart(Metric&) const override;
     void addToSnapshot(Metric&, std::vector<Metric::UP> &) const override;
+    bool is_sum_metric() const override;
 
 private:
     friend struct MetricManagerTest;

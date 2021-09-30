@@ -3,19 +3,15 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,11 +37,9 @@ import static org.junit.Assert.assertTrue;
 public class DeploymentIssueReporterTest {
 
     private final static ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-            .environment(Environment.prod)
             .region("us-west-1")
             .build();
     private final static ApplicationPackage canaryPackage = new ApplicationPackageBuilder()
-            .environment(Environment.prod)
             .region("us-west-1")
             .upgradePolicy("canary")
             .build();
@@ -58,7 +52,7 @@ public class DeploymentIssueReporterTest {
     public void setup() {
         tester = new DeploymentTester();
         issues = new MockDeploymentIssues();
-        reporter = new DeploymentIssueReporter(tester.controller(), issues, Duration.ofDays(1), new JobControl(new MockCuratorDb()));
+        reporter = new DeploymentIssueReporter(tester.controller(), issues, Duration.ofDays(1));
     }
 
     @Test
@@ -150,11 +144,11 @@ public class DeploymentIssueReporterTest {
         Version version = Version.fromString("6.3");
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
-        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
+        assertEquals(version, tester.controller().readSystemVersion());
 
         app2.timeOutUpgrade(systemTest);
         tester.controllerTester().upgradeSystem(version);
-        assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
+        assertEquals(VespaVersion.Confidence.broken, tester.controller().readVersionStatus().systemVersion().get().confidence());
 
         assertFalse("We have no platform issues initially.", issues.platformIssue());
         reporter.maintain();
@@ -165,6 +159,10 @@ public class DeploymentIssueReporterTest {
         reporter.maintain();
         assertTrue("We get a platform issue when confidence is broken", issues.platformIssue());
         assertFalse("No deployment issue is filed for app2, which has a version upgrade failure.", issues.isOpenFor(app2.application().id()));
+
+        app2.runJob(systemTest);
+        tester.controllerTester().upgradeSystem(version);
+        assertEquals(VespaVersion.Confidence.low, tester.controller().readVersionStatus().systemVersion().get().confidence());
     }
 
 

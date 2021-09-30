@@ -26,7 +26,7 @@ public:
     class EncodingBitMap
     {
     public:
-        EncodingBitMap(unsigned bm=0) : _enc(bm) { }
+        EncodingBitMap(uint8_t bm=0) : _enc(bm) { }
         bool isFloat()        const { return _enc & Float; }
         bool isBase10Integer()        const { return _enc & Base10Integer; }
         bool isAscii7Bit()            const { return _enc & Ascii7Bit; }
@@ -35,7 +35,7 @@ public:
         void setFloat(bool v)               { if (v) _enc |= Float; else _enc &= ~Float; }
     private:
         enum { Ascii7Bit=0x01, Base10Integer=0x02, Float=0x04 };
-        unsigned _enc;
+        uint8_t _enc;
     };
     class FieldInfo {
     public:
@@ -53,12 +53,11 @@ public:
         uint32_t _hitCount;
         uint32_t _fieldLength;
     };
-    QueryTerm();
-    QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, const string & term, const string & index, SearchTerm type);
-    QueryTerm(const QueryTerm &);
-    QueryTerm & operator = (const QueryTerm &);
-    QueryTerm(QueryTerm &&) noexcept;
-    QueryTerm & operator = (QueryTerm &&) noexcept;
+    QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, const string & term, const string & index, Type type);
+    QueryTerm(const QueryTerm &) = delete;
+    QueryTerm & operator = (const QueryTerm &) = delete;
+    QueryTerm(QueryTerm &&) = delete;
+    QueryTerm & operator = (QueryTerm &&) = delete;
     ~QueryTerm();
     bool evaluate() const override;
     const HitList & evaluateHits(HitList & hl) const override;

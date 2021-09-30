@@ -19,12 +19,11 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestDispatch;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.jdisc.MbusRequest;
 import com.yahoo.messagebus.jdisc.MbusResponse;
-import com.yahoo.messagebus.routing.Route;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -47,12 +46,12 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
     private final MbusRequest request;
     private final DocumentMessage requestMsg;
     private final ResponseHandler responseHandler;
-    private volatile int cachedApproxSize;
     // When spawning off new documents inside document processor, we do not want
     // throttling since this can lead to live locks. This is because the
     // document being processed is a resource and is then grabbing more resources of
     // the same type without releasing its own resources.
     public final static String internalNoThrottledSource = "internalNoThrottledSource";
+    private final static String internalNoThrottledSourcePath = "/" + internalNoThrottledSource;
 
     public MbusRequestContext(MbusRequest request, ResponseHandler responseHandler,
                               ComponentRegistry<DocprocService> docprocServiceComponentRegistry,
@@ -76,10 +75,9 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
 
     @Override
     public void skip() {
-        if (deserialized.get()) {
-            throw new IllegalStateException("Can not skip processing after deserialization.");
-        }
-        dispatchRequest(requestMsg, request.getUri().getPath(), responseHandler);
+        if (deserialized.get())
+            throw new IllegalStateException("Can not skip processing after deserialization");
+        dispatchRequest(requestMsg, getUri().getPath(), responseHandler);
     }
 
     @Override
@@ -92,22 +90,23 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
                 }
             }
         }
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Forwarding " + messages.size() + " messages from " + processings.size() +
-                                    " processings.");
-        }
+        log.log(Level.FINE, () ->"Forwarding " + messages.size() + " messages from " + processings.size() + " processings.");
         if (messages.isEmpty()) {
             dispatchResponse(Response.Status.OK);
             return;
         }
         long inputSequenceId = requestMsg.getSequenceId();
         ResponseMerger responseHandler = new ResponseMerger(requestMsg, messages.size(), this);
+        int numMsgWithOriginalSequenceId = 0;
         for (Message message : messages) {
-            // See comment for internalNoThrottledSource.
-            dispatchRequest(message, (inputSequenceId == message.getSequenceId())
-                            ? getUri().getPath()
-                            : "/" + internalNoThrottledSource,
-                            responseHandler);
+            if (message.getSequenceId() == inputSequenceId) numMsgWithOriginalSequenceId++;
+        }
+        for (Message message : messages) {
+            String path = internalNoThrottledSourcePath;
+            if ((numMsgWithOriginalSequenceId == 1) && (message.getSequenceId() == inputSequenceId))
+                path = getUri().getPath();
+            // See comment for internalNoThrottledSource
+            dispatchRequest(message, path, responseHandler);
         }
     }
 
@@ -134,20 +133,6 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
         MbusResponse response = new MbusResponse(errorCode.getDiscStatus(), requestMsg.createReply());
         response.getReply().addError(new com.yahoo.messagebus.Error(errorCode.getDocumentProtocolStatus(), errorMsg));
         ResponseDispatch.newInstance(response).dispatch(this);
-    }
-
-    @Override
-    public int getApproxSize() {
-        if (cachedApproxSize > 0) {
-            return cachedApproxSize;
-        }
-        cachedApproxSize = requestMsg.getApproxSize();
-        return cachedApproxSize;
-    }
-
-    @Override
-    public int getPriority() {
-        return requestMsg.getPriority().getValue();
     }
 
     @Override
@@ -192,13 +177,15 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
         ResponseDispatch.newInstance(new MbusResponse(status, requestMsg.createReply())).dispatch(this);
     }
 
-    private void dispatchRequest(final Message msg, final String uriPath, final ResponseHandler handler) {
+    private void dispatchRequest(Message msg, String uriPath, ResponseHandler handler) {
         try {
             new RequestDispatch() {
 
                 @Override
                 protected Request newRequest() {
-                    return new MbusRequest(request, resolveUri(uriPath), msg);
+                    return new MbusRequest(request,
+                                           uriCache.computeIfAbsent(uriPath, __ -> URI.create("mbus://remotehost" + uriPath)),
+                                           msg);
                 }
 
                 @Override
@@ -212,23 +199,10 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
         }
     }
 
-    private static MessageFactory newMessageFactory(final DocumentMessage msg) {
-        if (msg == null) {
-            return null;
-        }
-        final Route route = msg.getRoute();
-        if (route == null || !route.hasHops()) {
-            return null;
-        }
-        return new MessageFactory(msg);
+    private static MessageFactory newMessageFactory(DocumentMessage message) {
+        if (message == null) return null;
+        if (message.getRoute() == null || ! message.getRoute().hasHops()) return null;
+        return new MessageFactory(message);
     }
 
-    private static URI resolveUri(String path) {
-        URI uri = uriCache.get(path);
-        if (uri == null) {
-            uri = URI.create("mbus://remotehost" + path);
-            uriCache.put(path, uri);
-        }
-        return uri;
-    }
 }

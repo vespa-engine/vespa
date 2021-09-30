@@ -6,6 +6,7 @@
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 using storage::spi::test::makeSpiBucket;
 using namespace ::testing;
@@ -40,7 +41,6 @@ TEST_F(DeactivateBucketsTest, buckets_in_database_deactivated_when_node_down_in_
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(bucket, "foo",
                         StorBucketDatabase::CREATE_IF_NONEXISTING));
-        entry->disk = 0;
         entry->info = serviceLayerInfo;
         entry.write();
     }

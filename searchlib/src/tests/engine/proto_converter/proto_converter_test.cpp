@@ -492,19 +492,6 @@ TEST_F(DocsumReplyTest, require_that_missing_root_slime_gives_empty_payload) {
 
 //-----------------------------------------------------------------------------
 
-struct MonitorRequestTest : ::testing::Test {
-    Converter::ProtoMonitorRequest proto;
-    MonitorRequest request;
-    void convert() { Converter::monitor_request_from_proto(proto, request); }
-};
-
-TEST_F(MonitorRequestTest, require_that_active_docs_are_always_requested) {
-    convert();
-    EXPECT_TRUE(request.reportActiveDocs);
-}
-
-//-----------------------------------------------------------------------------
-
 struct MonitorReplyTest : ::testing::Test {
     MonitorReply reply;
     Converter::ProtoMonitorReply proto;
@@ -533,6 +520,16 @@ TEST_F(MonitorReplyTest, require_that_distribution_key_is_converted) {
     reply.distribution_key = 7;
     convert();
     EXPECT_EQ(proto.distribution_key(), 7);
+}
+
+TEST_F(MonitorReplyTest, require_that_is_blocking_writes_is_converted) {
+    reply.is_blocking_writes = false;
+    convert();
+    EXPECT_FALSE(proto.is_blocking_writes());
+
+    reply.is_blocking_writes = true;
+    convert();
+    EXPECT_TRUE(proto.is_blocking_writes());
 }
 
 //-----------------------------------------------------------------------------

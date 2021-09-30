@@ -5,7 +5,7 @@
 #include <vespa/vespalib/btree/noaggregated.h>
 #include <vespa/vespalib/btree/minmaxaggregated.h>
 
-namespace search::btree::test {
+namespace vespalib::btree::test {
 
 template <typename ostream, typename Aggregated>
 void printAggregated(ostream &os, const Aggregated &aggr);
@@ -23,4 +23,4 @@ void printAggregated(ostream &os, const MinMaxAggregated &aggr)
     os << "[min=" << aggr.getMin() << ",max=" << aggr.getMax() << "]";
 }
 
-} // namespace search::btree::test
+} // namespace vespalib::btree::test

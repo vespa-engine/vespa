@@ -24,34 +24,32 @@ public class MetricSet {
     private final Map<String, Metric> metrics;
     private final Set<MetricSet> children;
 
-
-    public MetricSet(String id, Collection<Metric> metrics, Collection<MetricSet> children) {
-        Objects.requireNonNull(id, "Id cannot be null or empty.");
-
-        this.id = id;
-        this.metrics = toMapByName(metrics);
-        this.children = new LinkedHashSet<>(children);
-    }
-
     public MetricSet(String id, Collection<Metric> metrics) {
         this(id, metrics, Collections.emptySet());
     }
 
-    public static MetricSet emptyMetricSet() {
-        return new MetricSet("empty", Collections.emptySet());
+    public MetricSet(String id, Collection<Metric> metrics, Collection<MetricSet> children) {
+        this.id = Objects.requireNonNull(id, "Id cannot be null or empty.");
+
+        this.metrics = toMapByName(metrics);
+        this.children = new LinkedHashSet<>(children);
+    }
+
+    public static MetricSet empty() {
+        return new MetricSet("empty", Set.of());
     }
 
     public final String getId() { return id; }
 
     /**
      * Returns all metrics in this set, including all metrics in any contained metric sets.
-     * <br>
+     *
      * Joins this set's metrics with its child sets into a named flat map of metrics.
      * In the case of duplicate metrics, the metrics directly defined in this set
      * takes precedence with respect to output name, description and dimension value
      * (even if they are empty), while new dimensions from the children will be added.
      *
-     * @return All metrics contained in this set.
+     * @return all the metrics contained in this set
      */
     public final Map<String, Metric> getMetrics() {
         return unmodifiableMap(flatten(metrics, children));

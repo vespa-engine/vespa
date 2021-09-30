@@ -9,7 +9,7 @@ vespa_add_executable(searchcore_documentmetastore_test_app TEST
     searchcore_attribute
     searchcore_feedoperation
     searchcore_fconfig
-    gtest
+    GTest::GTest
 )
 vespa_add_test(NAME searchcore_documentmetastore_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/documentmetastore_test.sh
                DEPENDS searchcore_documentmetastore_test_app)

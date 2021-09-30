@@ -13,15 +13,10 @@ public:
 
     EmptySearchView();
 
-    /**
-     * Implements ISearchHandler
-     */
-    virtual std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & req) override;
+    std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & req) override;
 
-    virtual std::unique_ptr<SearchReply>
-    match(const ISearchHandler::SP &searchHandler,
-          const SearchRequest &req,
-          vespalib::ThreadBundle &threadBundle) const override;
+    std::unique_ptr<SearchReply>
+    match(const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const override;
 };
 
 } // namespace proton

@@ -3,7 +3,7 @@
 #include "errorcode.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
-using vespalib::make_string;
+using vespalib::make_string_short::fmt;
 
 namespace mbus {
 
@@ -13,9 +13,9 @@ Error::Error()
       _service()
 { }
 
-Error::~Error() {}
+Error::~Error() = default;
 
-Error::Error(uint32_t c, const string &m, const string &s)
+Error::Error(uint32_t c, vespalib::stringref m, vespalib::stringref s)
     : _code(c),
       _msg(m),
       _service(s)
@@ -26,9 +26,9 @@ Error::toString() const
 {
     string name(ErrorCode::getName(_code));
     if (name.empty()) {
-        name = make_string("%u", _code);
+        name = fmt("%u", _code);
     }
-    return make_string("[%s @ %s]: %s", name.c_str(), _service.empty() ? "localhost" : _service.c_str(), _msg.c_str());
+    return fmt("[%s @ %s]: %s", name.c_str(), _service.empty() ? "localhost" : _service.c_str(), _msg.c_str());
 }
 
 } // namespace mbus

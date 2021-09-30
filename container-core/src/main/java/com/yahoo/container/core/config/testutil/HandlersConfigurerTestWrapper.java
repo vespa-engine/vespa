@@ -9,19 +9,24 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.container.Container;
+import com.yahoo.container.core.config.HandlersConfigurerDi;
 import com.yahoo.container.di.CloudSubscriberFactory;
 import com.yahoo.container.di.ComponentDeconstructor;
-import com.yahoo.container.core.config.HandlersConfigurerDi;
+import com.yahoo.container.handler.threadpool.ContainerThreadPool;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
-import com.yahoo.osgi.MockOsgi;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Class for testing HandlersConfigurer.
@@ -33,15 +38,17 @@ import java.util.Set;
  *
 */
 public class HandlersConfigurerTestWrapper {
-    private ConfigSourceSet configSources =
+
+    private final ConfigSourceSet configSources =
             new ConfigSourceSet(this.getClass().getSimpleName() + ": " + new Random().nextLong());
-    private HandlersConfigurerDi configurer;
+    private final HandlersConfigurerDi configurer;
 
     // TODO: Remove once tests use ConfigSet rather than dir:
-    private final static String testFiles[] = {
+    private final static String[] testFiles = {
             "components.cfg",
             "handlers.cfg",
-            "bundles.cfg",
+            "platform-bundles.cfg",
+            "application-bundles.cfg",
             "string.cfg",
             "int.cfg",
             "renderers.cfg",
@@ -134,8 +141,19 @@ public class HandlersConfigurerTestWrapper {
             protected void configure() {
                 // Needed by e.g. SearchHandler
                 bind(Linguistics.class).to(SimpleLinguistics.class).in(Scopes.SINGLETON);
+                bind(Embedder.class).to(Embedder.FailingEmbedder.class).in(Scopes.SINGLETON);
+                bind(ContainerThreadPool.class).to(SimpleContainerThreadpool.class);
+                bind(Metric.class).to(MockMetric.class);
             }
         });
+    }
+
+    private static class SimpleContainerThreadpool implements ContainerThreadPool {
+
+        private final Executor executor = Executors.newCachedThreadPool();
+
+        @Override public Executor executor() { return executor; }
+
     }
 
 }

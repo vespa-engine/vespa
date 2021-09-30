@@ -68,6 +68,8 @@
 #include <cassert>
 
 
+namespace fast::testsuite {
+
 class TestSuiteError;
 
 class Suite
@@ -258,3 +260,7 @@ void Suite::Reset()
         m_tests[i]->Reset();
     }
 }
+
+}
+
+using fast::testsuite::Suite;

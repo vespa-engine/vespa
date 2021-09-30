@@ -1,93 +1,149 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.policy;
 
+import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.applicationmodel.ClusterId;
+import com.yahoo.vespa.applicationmodel.ServiceType;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.orchestrator.model.ClusterApi;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
+
+import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy.ENOUGH_SERVICES_UP_CONSTRAINT;
 
 public class HostedVespaClusterPolicy implements ClusterPolicy {
 
+    private final Zone zone;
+
+    public HostedVespaClusterPolicy(FlagSource flagSource, Zone zone) {
+        this.zone = zone;
+    }
+
     @Override
-    public void verifyGroupGoingDownIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException {
-        if (clusterApi.noServicesOutsideGroupIsDown()) {
-            return;
-        }
-
-        if (clusterApi.noServicesInGroupIsUp()) {
-            return;
-        }
-
-        int percentageOfServicesAllowedToBeDown = getConcurrentSuspensionLimit(clusterApi).asPercentage();
-        if (clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown() <= percentageOfServicesAllowedToBeDown) {
-            return;
-        }
-
-        throw new HostStateChangeDeniedException(
-                clusterApi.getNodeGroup(),
-                ENOUGH_SERVICES_UP_CONSTRAINT,
-                "Suspension percentage for service type " + clusterApi.serviceType()
-                        + " would increase from " + clusterApi.percentageOfServicesDown()
-                        + "% to " + clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown()
-                        + "%, over the limit of " + percentageOfServicesAllowedToBeDown + "%."
-                        + " These instances may be down: " + clusterApi.servicesDownAndNotInGroupDescription()
-                        + " and these hosts are allowed to be down: "
-                        + clusterApi.nodesAllowedToBeDownNotInGroupDescription());
+    public SuspensionReasons verifyGroupGoingDownIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException {
+        return verifyGroupGoingDownIsFine(clusterApi, false);
     }
 
     @Override
     public void verifyGroupGoingDownPermanentlyIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException {
-        // This policy is similar to verifyGroupGoingDownIsFine, except that services being down in the group
-        // is no excuse to allow suspension (like it is for verifyGroupGoingDownIsFine), since if we grant
-        // suspension in this case they will permanently be down/removed.
+        verifyGroupGoingDownIsFine(clusterApi, true);
+    }
 
+    private SuspensionReasons verifyGroupGoingDownIsFine(ClusterApi clusterApi, boolean permanent)
+            throws HostStateChangeDeniedException {
         if (clusterApi.noServicesOutsideGroupIsDown()) {
-            return;
+            return SuspensionReasons.nothingNoteworthy();
         }
 
         int percentageOfServicesAllowedToBeDown = getConcurrentSuspensionLimit(clusterApi).asPercentage();
         if (clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown() <= percentageOfServicesAllowedToBeDown) {
-            return;
+            return SuspensionReasons.nothingNoteworthy();
         }
 
-        throw new HostStateChangeDeniedException(
-                clusterApi.getNodeGroup(),
-                ENOUGH_SERVICES_UP_CONSTRAINT,
-                "Down percentage for service type " + clusterApi.serviceType()
-                        + " would increase to " + clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown()
-                        + "%, over the limit of " + percentageOfServicesAllowedToBeDown + "%."
-                        + " These instances may be down: " + clusterApi.servicesDownAndNotInGroupDescription()
-                        + " and these hosts are allowed to be down: "
-                        + clusterApi.nodesAllowedToBeDownNotInGroupDescription());
+        // Be a bit more cautious when removing nodes permanently
+        if (!permanent) {
+            // Disallow suspending a 2nd and downed config server to avoid losing ZK quorum.
+            if (!clusterApi.isConfigServerLike()) {
+                Optional<SuspensionReasons> suspensionReasons = clusterApi.allServicesDown();
+                if (suspensionReasons.isPresent()) {
+                    return suspensionReasons.get();
+                }
+            }
+        }
+
+        String message = percentageOfServicesAllowedToBeDown <= 0
+                ? clusterApi.percentageOfServicesDownOutsideGroup() + "% of the " + clusterApi.serviceDescription(true)
+                  + " are down or suspended already:" + clusterApi.downDescription()
+                : "The percentage of downed or suspended " + clusterApi.serviceDescription(true)
+                  + " would increase from " + clusterApi.percentageOfServicesDownOutsideGroup() + "% to "
+                  + clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown() + "% (limit is "
+                  + percentageOfServicesAllowedToBeDown + "%):" + clusterApi.downDescription();
+
+        throw new HostStateChangeDeniedException(clusterApi.getNodeGroup(), ENOUGH_SERVICES_UP_CONSTRAINT, message);
     }
 
     // Non-private for testing purposes
     ConcurrentSuspensionLimitForCluster getConcurrentSuspensionLimit(ClusterApi clusterApi) {
-        if (clusterApi.isStorageCluster()) {
+        // Possible service clusters on a node as of 2021-01-22:
+        //
+        //       CLUSTER ID           SERVICE TYPE                  HEALTH       ASSOCIATION
+        //    1  CCN-controllers      container-clustercontrollers  Slobrok      1, 3, or 6 in content cluster
+        //    2  CCN                  distributor                   Slobrok      content cluster
+        //    3  CCN                  storagenode                   Slobrok      content cluster
+        //    4  CCN                  searchnode                    Slobrok      content cluster
+        //    5  CCN                  transactionlogserver          not checked  content cluster
+        //    6  JCCN                 container                     Slobrok      jdisc container cluster
+        //    7  admin                slobrok                       not checked  1-3 in jdisc container cluster
+        //    8  metrics              metricsproxy-container        Slobrok      application
+        //    9  admin                logd                          not checked  application
+        //   10  admin                config-sentinel               not checked  application
+        //   11  admin                configproxy                   not checked  application
+        //   12  admin                logforwarder                  not checked  application
+        //   13  controller           controller                    state/v1     controllers
+        //   14  zone-config-servers  configserver                  state/v1     config servers
+        //   15  controller-host      hostadmin                     state/v1     controller hosts
+        //   16  configserver-host    hostadmin                     state/v1     config server hosts
+        //   17  tenant-host          hostadmin                     state/v1     tenant hosts
+        //   18  proxy-host           hostadmin                     state/v1     proxy hosts
+        //
+        // CCN refers to the content cluster's name, as specified in services.xml.
+        // JCCN refers to the jdisc container cluster's name, as specified in services.xml.
+        //
+        // For instance a content node will have 2-5 and 8-12 and possibly 1, while a combined
+        // cluster node may have all 1-12.
+        //
+        // The services on a node can be categorized into these main types, ref association column above:
+        //   A  content
+        //   B  container
+        //   C  tenant host
+        //   D  config server
+        //   E  config server host
+        //   F  controller
+        //   G  controller host
+        //   H  proxy (same as B)
+        //   I  proxy host
+
+        if (clusterApi.serviceType().equals(ServiceType.CLUSTER_CONTROLLER)) {
             return ConcurrentSuspensionLimitForCluster.ONE_NODE;
         }
 
-        if (VespaModelUtil.CLUSTER_CONTROLLER_SERVICE_TYPE.equals(clusterApi.serviceType())) {
-            // All nodes have all state and we need to be able to remove the half that are retired on cluster migration
-            return ConcurrentSuspensionLimitForCluster.FIFTY_PERCENT;
-        }
-
-        if (VespaModelUtil.METRICS_PROXY_SERVICE_TYPE.equals(clusterApi.serviceType())) {
+        if (Set.of(ServiceType.STORAGE, ServiceType.SEARCH, ServiceType.DISTRIBUTOR, ServiceType.TRANSACTION_LOG_SERVER)
+                .contains(clusterApi.serviceType())) {
+            // Delegate to the cluster controller
             return ConcurrentSuspensionLimitForCluster.ALL_NODES;
         }
 
+        if (clusterApi.serviceType().equals(ServiceType.CONTAINER)) {
+            return ConcurrentSuspensionLimitForCluster.TEN_PERCENT;
+        }
+
         if (VespaModelUtil.ADMIN_CLUSTER_ID.equals(clusterApi.clusterId())) {
-            if (VespaModelUtil.SLOBROK_SERVICE_TYPE.equals(clusterApi.serviceType())) {
+            if (ServiceType.SLOBROK.equals(clusterApi.serviceType())) {
                 return ConcurrentSuspensionLimitForCluster.ONE_NODE;
             }
 
             return ConcurrentSuspensionLimitForCluster.ALL_NODES;
+        } else if (ServiceType.METRICS_PROXY.equals(clusterApi.serviceType())) {
+            return ConcurrentSuspensionLimitForCluster.ALL_NODES;
         }
 
-        if (clusterApi.getApplication().applicationId().equals(VespaModelUtil.TENANT_HOST_APPLICATION_ID)) {
-            return ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT;
+        if (Set.of(ServiceType.CONFIG_SERVER, ServiceType.CONTROLLER).contains(clusterApi.serviceType())) {
+            return ConcurrentSuspensionLimitForCluster.ONE_NODE;
         }
 
+        if (clusterApi.serviceType().equals(ServiceType.HOST_ADMIN)) {
+            if (Set.of(ClusterId.CONFIG_SERVER_HOST, ClusterId.CONTROLLER_HOST).contains(clusterApi.clusterId())) {
+                return ConcurrentSuspensionLimitForCluster.ONE_NODE;
+            }
+
+            return zone.system().isCd()
+                    ? ConcurrentSuspensionLimitForCluster.FIFTY_PERCENT
+                    : ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT;
+        }
+
+        // The above should cover all cases, but if not we'll return a reasonable default:
         return ConcurrentSuspensionLimitForCluster.TEN_PERCENT;
     }
 }

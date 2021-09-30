@@ -15,7 +15,7 @@ namespace search::memoryindex {
  */
 class FeatureStore {
 public:
-    using DataStoreType = datastore::DataStoreT<datastore::AlignedEntryRefT<22, 2>>;
+    using DataStoreType = vespalib::datastore::DataStoreT<vespalib::datastore::AlignedEntryRefT<22, 2>>;
     using RefType = DataStoreType::RefType;
     using EncodeContext = bitcompression::EG2PosOccEncodeContext<true>;
     using DecodeContextCooked = bitcompression::EG2PosOccDecodeContextCooked<true>;
@@ -44,7 +44,7 @@ private:
 
     const Schema &_schema;
 
-    datastore::BufferType<uint8_t> _type;
+    vespalib::datastore::BufferType<uint8_t> _type;
     const uint32_t      _typeId;
 
     /**
@@ -63,7 +63,7 @@ private:
      * @param byteLen the byte length of the buffer
      * @return the entry ref for the added features
      */
-    datastore::EntryRef addFeatures(const uint8_t * src, uint64_t byteLen);
+    vespalib::datastore::EntryRef addFeatures(const uint8_t * src, uint64_t byteLen);
 
     /**
      * Adds the features currently in the underlying encode context to the data store.
@@ -72,7 +72,7 @@ private:
      * @param endOffset the end offset into the encode context
      * @return the entry ref and bit length of the features
      */
-    std::pair<datastore::EntryRef, uint64_t> addFeatures(uint64_t beginOffset, uint64_t endOffset);
+    std::pair<vespalib::datastore::EntryRef, uint64_t> addFeatures(uint64_t beginOffset, uint64_t endOffset);
 
     /**
      * Moves features to new location, as part of compaction.
@@ -81,7 +81,7 @@ private:
      * @param bitLen bit length of features to move
      * @return new reference to stored features
      */
-    datastore::EntryRef moveFeatures(datastore::EntryRef ref, uint64_t bitLen);
+    vespalib::datastore::EntryRef moveFeatures(vespalib::datastore::EntryRef ref, uint64_t bitLen);
 
 public:
 
@@ -104,7 +104,7 @@ public:
      * @return            pair with reference to stored features and
      *                    size of encoded features in bits
      */
-    std::pair<datastore::EntryRef, uint64_t> addFeatures(uint32_t packedIndex, const DocIdAndFeatures &features);
+    std::pair<vespalib::datastore::EntryRef, uint64_t> addFeatures(uint32_t packedIndex, const DocIdAndFeatures &features);
 
 
     /**
@@ -116,7 +116,7 @@ public:
      * @param ref         Reference to stored features
      * @param features    The features to be decoded
      */
-    void getFeatures(uint32_t packedIndex, datastore::EntryRef ref, DocIdAndFeatures &features);
+    void getFeatures(uint32_t packedIndex, vespalib::datastore::EntryRef ref, DocIdAndFeatures &features);
 
 
     /**
@@ -135,11 +135,11 @@ public:
      * @param ref      Reference to stored features
      * @param decoder  The feature decoder
      */
-    void setupForReadFeatures(datastore::EntryRef ref, DecodeContextCooked &decoder) const {
+    void setupForReadFeatures(vespalib::datastore::EntryRef ref, DecodeContextCooked &decoder) const {
         const uint8_t * bits = getBits(ref);
         decoder.setByteCompr(bits);
         uint32_t bufferId = RefType(ref).bufferId();
-        const datastore::BufferState &state = _store.getBufferState(bufferId);
+        const vespalib::datastore::BufferState &state = _store.getBufferState(bufferId);
         decoder.setEnd(
                 ((_store.getEntry<uint8_t>(RefType(state.size(), bufferId)) -
                   bits) + 7) / 8,
@@ -152,7 +152,7 @@ public:
      * @param ref      Reference to stored features
      * @param decoder  The feature decoder
      */
-    void setupForUnpackFeatures(datastore::EntryRef ref, DecodeContextCooked &decoder) const {
+    void setupForUnpackFeatures(vespalib::datastore::EntryRef ref, DecodeContextCooked &decoder) const {
         decoder.setByteCompr(getBits(ref));
     }
 
@@ -165,7 +165,7 @@ public:
      * @param ref         Reference to stored features
      * @return            size of features in bits
      */
-    size_t bitSize(uint32_t packedIndex, datastore::EntryRef ref);
+    size_t bitSize(uint32_t packedIndex, vespalib::datastore::EntryRef ref);
 
     /**
      * Get byte address of stored features
@@ -173,7 +173,7 @@ public:
      * @param ref Reference to stored features
      * @return    byte address of stored features
      */
-    const uint8_t *getBits(datastore::EntryRef ref) const {
+    const uint8_t *getBits(vespalib::datastore::EntryRef ref) const {
         RefType iRef(ref);
         return _store.getEntry<uint8_t>(iRef);
     }
@@ -185,7 +185,7 @@ public:
      * @param ref         Old reference to stored features
      * @return            New reference to stored features
      */
-    datastore::EntryRef moveFeatures(uint32_t packedIndex, datastore::EntryRef ref);
+    vespalib::datastore::EntryRef moveFeatures(uint32_t packedIndex, vespalib::datastore::EntryRef ref);
 
     const std::vector<PosOccFieldsParams> &getFieldsParams() const { return _fieldsParams; }
 
@@ -195,7 +195,7 @@ public:
     std::vector<uint32_t> startCompact() { return _store.startCompact(_typeId); }
     void finishCompact(const std::vector<uint32_t> & toHold) { _store.finishCompact(toHold); }
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
-    datastore::DataStoreBase::MemStats getMemStats() const { return _store.getMemStats(); }
+    vespalib::datastore::DataStoreBase::MemStats getMemStats() const { return _store.getMemStats(); }
 };
 
 }

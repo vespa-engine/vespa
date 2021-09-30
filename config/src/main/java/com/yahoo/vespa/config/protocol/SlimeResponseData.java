@@ -1,11 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
+import com.yahoo.vespa.config.PayloadChecksum;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.Request;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
-import com.yahoo.text.Utf8;
+import com.yahoo.slime.SlimeUtils;
+
+import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
+import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 
 /**
  * Contains response data for a slime response and methods for decoding the response data that
@@ -23,8 +27,9 @@ class SlimeResponseData {
     static final String RESPONSE_CLIENT_HOSTNAME = "clientHostname";
     static final String RESPONSE_TRACE = "trace";
     static final String RESPONSE_CONFIG_MD5 = "configMD5";
+    static final String RESPONSE_CONFIG_XXHASH64 = "configXxhash64";
     static final String RESPONSE_CONFIG_GENERATION = "generation";
-    static final String RESPONSE_INTERNAL_REDEPLOY = "internalRedeploy";
+    static final String RESPONSE_APPLY_ON_RESTART = "applyOnRestart";
     static final String RESPONSE_COMPRESSION_INFO = "compressionInfo";
 
     private final Request request;
@@ -37,7 +42,7 @@ class SlimeResponseData {
     private Slime getData() {
         if (request.returnValues().size() > 0) {
             if (data == null) {
-                data = new JsonDecoder().decode(new Slime(), Utf8.toBytes(request.returnValues().get(0).asString()));
+                data = SlimeUtils.jsonToSlime(request.returnValues().get(0).asString());
             }
             return data;
         } else {
@@ -59,17 +64,30 @@ class SlimeResponseData {
         return trace.valid() ? Trace.fromSlime(trace) : Trace.createDummy();
     }
 
-    String getResponseConfigMd5() {
-        Inspector inspector = getResponseField(RESPONSE_CONFIG_MD5);
-        return inspector.valid() ? inspector.asString() : "";
+    PayloadChecksum getResponseConfigMd5() {
+        Inspector md5Field = getResponseField(RESPONSE_CONFIG_MD5);
+        return md5Field.valid()
+                ? new PayloadChecksum(md5Field.asString(), MD5)
+                : PayloadChecksum.empty(MD5);
+    }
+
+    PayloadChecksum getResponseConfigXxhash64() {
+        Inspector xxhash64Field = getResponseField(RESPONSE_CONFIG_XXHASH64);
+        return xxhash64Field.valid()
+                ? new PayloadChecksum(xxhash64Field.asString(), XXHASH64)
+                : PayloadChecksum.empty(XXHASH64);
+    }
+
+    PayloadChecksums getResponseConfigChecksums() {
+        return PayloadChecksums.from(getResponseConfigMd5(), getResponseConfigXxhash64());
     }
 
     CompressionInfo getCompressionInfo() {
         return CompressionInfo.fromSlime(getResponseField(RESPONSE_COMPRESSION_INFO));
     }
 
-    boolean getResponseInternalRedeployment() {
-        Inspector inspector = getResponseField(RESPONSE_INTERNAL_REDEPLOY);
+    boolean getResponseApplyOnRestart() {
+        Inspector inspector = getResponseField(RESPONSE_APPLY_ON_RESTART);
         return inspector.valid() && inspector.asBool();
     }
 

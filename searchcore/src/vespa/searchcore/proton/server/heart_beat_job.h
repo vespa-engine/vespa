@@ -23,7 +23,8 @@ public:
                  const DocumentDBHeartBeatConfig &config);
 
     // Implements IMaintenanceJob
-    virtual bool run() override;
+    bool run() override;
+    void onStop() override { }
 };
 
 } // namespace proton

@@ -48,10 +48,13 @@ struct ObjectType : public ObjectPredicate
 struct ObjectCollect : public ObjectOperation
 {
     std::vector<Identifiable*> nodes;
+    ~ObjectCollect() override;
     void execute(Identifiable &obj) override {
         nodes.push_back(&obj);
     }
 };
+
+ObjectCollect::~ObjectCollect() = default;
 
 TEST_SETUP(Test);
 

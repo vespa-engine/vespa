@@ -1,26 +1,24 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model;
 
 import com.google.common.io.Files;
-import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.ApplicationMetaData;
-import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.model.application.provider.Bundle;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.path.Path;
 import com.yahoo.document.DataType;
-import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.io.IOUtils;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.DocumentOnlySearch;
+import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.search.SearchDefinition;
+import com.yahoo.vespa.model.search.NamedSchema;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,8 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -51,7 +46,7 @@ import static org.junit.Assert.fail;
 public class ApplicationDeployTest {
 
     private static final String TESTDIR = "src/test/cfg/application/";
-    private static final String TESTSDDIR = TESTDIR + "app1/searchdefinitions/";
+    private static final String TEST_SCHEMAS_DIR = TESTDIR + "app1/schemas/";
 
     @Rule
     public TemporaryFolder tmpFolder = new TemporaryFolder();
@@ -59,10 +54,10 @@ public class ApplicationDeployTest {
     @Test
     public void testVespaModel() throws SAXException, IOException {
         ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "app1");
-        VespaModel model = new VespaModel(tester.app());
-        List<SearchDefinition> searchDefinitions = tester.getSearchDefinitions();
-        assertEquals(searchDefinitions.size(), 5);
-        for (SearchDefinition searchDefinition : searchDefinitions) {
+        new VespaModel(tester.app());
+        List<NamedSchema> schemas = tester.getSchemas();
+        assertEquals(schemas.size(), 5);
+        for (NamedSchema searchDefinition : schemas) {
             Search s = searchDefinition.getSearch();
             switch (s.getName()) {
                 case "music":
@@ -72,21 +67,18 @@ public class ApplicationDeployTest {
                     break;
                 case "product":
                     assertTrue(s instanceof DocumentOnlySearch);
-                    assertEquals(s.getDocument().getField("title").getDataType(), DataType.STRING);
+                    assertEquals(DataType.STRING, s.getDocument().getField("title").getDataType());
                     break;
                 default:
                     fail();
             }
         }
-        File[] truth = new File[]{new File(TESTSDDIR + "laptop.sd"),
-                new File(TESTSDDIR + "music.sd"),
-                new File(TESTSDDIR + "pc.sd"),
-                new File(TESTSDDIR + "product.sd"),
-                new File(TESTSDDIR + "sock.sd")};
-        Arrays.sort(truth);
-        List<File> appSdFiles = tester.app().getSearchDefinitionFiles();
-        Collections.sort(appSdFiles);
-        assertEquals(appSdFiles, Arrays.asList(truth));
+        assertEquals(Set.of(new File(TEST_SCHEMAS_DIR + "laptop.sd"),
+                            new File(TEST_SCHEMAS_DIR + "music.sd"),
+                            new File(TEST_SCHEMAS_DIR + "pc.sd"),
+                            new File(TEST_SCHEMAS_DIR + "product.sd"),
+                            new File(TEST_SCHEMAS_DIR + "sock.sd")),
+                     new HashSet<>(tester.app().getSearchDefinitionFiles()));
 
         List<FilesApplicationPackage.Component> components = tester.app().getComponents();
         assertEquals(1, components.size());
@@ -103,7 +95,7 @@ public class ApplicationDeployTest {
 
         // Check that getFilename works
         ArrayList<String> sdFileNames = new ArrayList<>();
-        for (SearchDefinition sd : searchDefinitions)
+        for (NamedSchema sd : schemas)
             sdFileNames.add(sd.getFilename());
         Collections.sort(sdFileNames);
         assertEquals("laptop.sd", sdFileNames.get(0));
@@ -138,28 +130,6 @@ public class ApplicationDeployTest {
     }
 
     @Test
-    public void testSdFromDocprocBundle() throws IOException, SAXException {
-        String appDir = "src/test/cfg/application/app_sdbundles";
-        ApplicationPackageTester tester = ApplicationPackageTester.create(appDir);
-        VespaModel model = new VespaModel(tester.app());
-        DocumentmanagerConfig.Builder b = new DocumentmanagerConfig.Builder();
-        model.getConfig(b, VespaModel.ROOT_CONFIGID);
-        DocumentmanagerConfig dc = b.build();
-        String docMan=ConfigInstance.serialize(dc).toString();
-        int pFlags = Pattern.MULTILINE + Pattern.DOTALL;
-        Pattern base = Pattern.compile(".*name.*base\\.header.*", pFlags);
-        Pattern book = Pattern.compile(".*name.*book\\.header.*", pFlags);
-        Pattern music = Pattern.compile(".*name.*music\\.header.*", pFlags);
-        Pattern video = Pattern.compile(".*name.*video\\.header.*", pFlags);
-        Pattern muzak = Pattern.compile(".*name.*muzak\\.header.*", pFlags);
-        assertTrue(base.matcher(docMan).matches());
-        assertTrue(book.matcher(docMan).matches());
-        assertTrue(music.matcher(docMan).matches());
-        assertTrue(video.matcher(docMan).matches());
-        assertTrue(muzak.matcher(docMan).matches());
-    }
-
-    @Test
     public void include_dirs_are_included() {
         ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "include_dirs");
 
@@ -190,11 +160,11 @@ public class ApplicationDeployTest {
         File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "app1"), tmpDir);
         ApplicationPackageTester tester = ApplicationPackageTester.create(tmpDir.getAbsolutePath());
-        assertEquals(5, tester.getSearchDefinitions().size());
-        File sdDir = new File(tmpDir, "searchdefinitions");
+        assertEquals(5, tester.getSchemas().size());
+        File sdDir = new File(tmpDir, "schemas");
         File sd = new File(sdDir, "testfoo.sd");
         IOUtils.writeFile(sd, "search testfoo { document testfoo { field bar type string { } } }", false);
-        assertEquals(6, tester.getSearchDefinitions().size());
+        assertEquals(6, tester.getSchemas().size());
     }
 
     @Test
@@ -227,30 +197,22 @@ public class ApplicationDeployTest {
 
     @Test
     public void testThatAppWithInvalidParallelDeploymentFails() throws IOException {
+        String expectedMessage = "4:  <staging/>\n" +
+        "5:  <prod global-service-id=\"query\">\n" +
+        "6:    <parallel>\n" +
+        "7:      <instance id=\"hello\" />\n" +
+        "8:    </parallel>\n" +
+        "9:  </prod>\n" +
+        "10:</deployment>\n";
         File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "invalid_parallel_deployment_xml"), tmpDir);
         try {
             ApplicationPackageTester.create(tmpDir.getAbsolutePath());
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("XML error in deployment.xml: element \"instance\" not allowed here; expected the element end-tag or element \"delay\", \"region\", \"steps\" or \"test\" [7:30], input:\n", e.getMessage());
+            assertEquals("Invalid XML according to XML schema, error in deployment.xml: element \"instance\" not allowed here; expected the element end-tag or element \"delay\", \"region\", \"steps\" or \"test\" [7:30], input:\n" + expectedMessage,
+                         e.getMessage());
         }
-    }
-
-    @Test
-    public void testGetJars() throws IOException {
-        String jarName = "src/test/cfg/application/app_sdbundles/components/testbundle.jar";
-        JarFile jar = new JarFile(jarName);
-        Map<String, String> payloads = ApplicationPackage.getBundleSdFiles("", jar);
-        assertEquals(payloads.size(), 4);
-        assertTrue(payloads.get("base.sd").startsWith("search base"));
-        assertTrue(payloads.get("book.sd").startsWith("search book"));
-        assertTrue(payloads.get("music.sd").startsWith("search music"));
-        assertTrue(payloads.get("video.sd").startsWith("search video"));
-        assertTrue(payloads.get("base.sd").endsWith("}"));
-        assertTrue(payloads.get("book.sd").endsWith("}\n"));
-        assertTrue(payloads.get("music.sd").endsWith("}\n"));
-        assertTrue(payloads.get("video.sd").endsWith("}\n"));
     }
 
     @Test
@@ -300,6 +262,16 @@ public class ApplicationDeployTest {
 
     @Test
     public void testGetJarEntryName() {
+        JarEntry e = new JarEntry("/schemas/foo.sd");
+        assertEquals(ApplicationPackage.getFileName(e), "foo.sd");
+        e = new JarEntry("bar");
+        assertEquals(ApplicationPackage.getFileName(e), "bar");
+        e = new JarEntry("");
+        assertEquals(ApplicationPackage.getFileName(e), "");
+    }
+
+    @Test
+    public void testGetJarEntryNameForLegacyPath() {
         JarEntry e = new JarEntry("/searchdefinitions/foo.sd");
         assertEquals(ApplicationPackage.getFileName(e), "foo.sd");
         e = new JarEntry("bar");

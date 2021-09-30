@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/server/feedhandler.h>
-#include <vespa/searchcore/proton/server/feedstate.h>
-#include <vespa/searchcore/proton/server/ireplaypackethandler.h>
+#include "feedhandler.h"
+#include "feedstate.h"
+#include "packetwrapper.h"
+#include "ireplaypackethandler.h"
+#include <vespa/searchcore/proton/common/commit_time_tracker.h>
 
 namespace proton {
 
@@ -22,7 +24,7 @@ class InitState : public FeedState {
     vespalib::string _doc_type_name;
 
 public:
-    InitState(const vespalib::string &name)
+    InitState(const vespalib::string &name) noexcept
         : FeedState(INIT),
           _doc_type_name(name)
     {
@@ -32,7 +34,7 @@ public:
         throwExceptionInHandleOperation(_doc_type_name, *op);
     }
 
-    void receive(const PacketWrapper::SP &wrap, vespalib::Executor &) override {
+    void receive(const PacketWrapperSP &wrap, vespalib::Executor &) override {
         throwExceptionInReceive(_doc_type_name.c_str(), wrap->packet.range().from(),
                                 wrap->packet.range().to(), wrap->packet.size());
     }
@@ -52,13 +54,15 @@ public:
             IFeedView *& feed_view_ptr,
             bucketdb::IBucketDBHandler &bucketDBHandler,
             IReplayConfig &replay_config,
-            FeedConfigStore &config_store);
+            FeedConfigStore &config_store,
+            IIncSerialNum &inc_serial_num);
 
+    ~ReplayTransactionLogState() override;
     void handleOperation(FeedToken, FeedOperationUP op) override {
         throwExceptionInHandleOperation(_doc_type_name, *op);
     }
 
-    void receive(const PacketWrapper::SP &wrap, vespalib::Executor &executor) override;
+    void receive(const PacketWrapperSP &wrap, vespalib::Executor &executor) override;
 };
 
 
@@ -70,7 +74,7 @@ class NormalState : public FeedState {
     FeedHandler         &_handler;
 
 public:
-    NormalState(FeedHandler &handler)
+    NormalState(FeedHandler &handler) noexcept
         : FeedState(NORMAL),
           _handler(handler) {
     }
@@ -79,7 +83,7 @@ public:
         _handler.performOperation(std::move(token), std::move(op));
     }
 
-    void receive(const PacketWrapper::SP &wrap, vespalib::Executor &) override {
+    void receive(const PacketWrapperSP &wrap, vespalib::Executor &) override {
         throwExceptionInReceive(_handler.getDocTypeName().c_str(), wrap->packet.range().from(),
                                 wrap->packet.range().to(), wrap->packet.size());
     }

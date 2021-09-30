@@ -5,6 +5,7 @@
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchsummary/docsummary/getdocsumargs.h>
 #include <vespa/searchlib/common/featureset.h>
+#include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/vespalib/util/jsonwriter.h>
 
 namespace juniper {
@@ -15,7 +16,7 @@ namespace juniper {
 
 namespace search {
 class MatchingElements;
-class StructFieldMapper;
+class MatchingElementsFields;
 }
 namespace search::common { class Location; }
 namespace search::attribute {
@@ -34,8 +35,7 @@ class GetDocsumsStateCallback
 public:
     virtual void FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env) = 0;
     virtual void FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env) = 0;
-    virtual void ParseLocation(GetDocsumsState * state) = 0;
-    virtual std::unique_ptr<MatchingElements> fill_matching_elements(const StructFieldMapper &struct_field_mapper) = 0;
+    virtual std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields &matching_elems_fields) = 0;
     virtual ~GetDocsumsStateCallback(void) { }
     GetDocsumsStateCallback(const GetDocsumsStateCallback &) = delete;
     GetDocsumsStateCallback & operator = (const GetDocsumsStateCallback &) = delete;
@@ -48,8 +48,6 @@ protected:
  **/
 class GetDocsumsState
 {
-private:
-
 public:
     const search::attribute::IAttributeVector * getAttribute(size_t index) const { return _attributes[index]; }
 
@@ -72,19 +70,21 @@ public:
         juniper::Result      *_result; // juniper analyze result
     } _dynteaser;
 
-    search::RawBuf               _docSumFieldSpace;
+
     char                         _docSumFieldSpaceStore[2048];
+    search::RawBuf               _docSumFieldSpace;
     std::unique_ptr<search::attribute::IAttributeContext> _attrCtx;
     std::vector<const search::attribute::IAttributeVector *> _attributes;
     std::vector<std::unique_ptr<DocsumFieldWriterState>> _fieldWriterStates;
-    vespalib::JSONStringer        _jsonStringer;
 
     // used by AbsDistanceDFW
-    std::unique_ptr<search::common::Location> _parsedLocation;
+    std::vector<search::common::GeoLocationSpec> _parsedLocations;
+    void parse_locations();
 
     // used by SummaryFeaturesDFW
     FeatureSet::SP _summaryFeatures;
     bool           _summaryFeaturesCached;
+    bool           _omit_summary_features;
 
     // used by RankFeaturesDFW
     FeatureSet::SP _rankFeatures;
@@ -96,7 +96,12 @@ public:
     GetDocsumsState& operator=(const GetDocsumsState &) = delete;
     GetDocsumsState(GetDocsumsStateCallback &callback);
     ~GetDocsumsState();
-    const MatchingElements &get_matching_elements(const StructFieldMapper &struct_field_mapper);
+
+    const MatchingElements &get_matching_elements(const MatchingElementsFields &matching_elems_fields);
+    vespalib::JSONStringer & jsonStringer();
+private:
+    // Only used by rank/summary features, so make it lazy
+    std::unique_ptr<vespalib::JSONStringer>   _jsonStringer;
 };
 
 }

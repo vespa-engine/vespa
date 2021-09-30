@@ -30,13 +30,6 @@
                     <version>${project.version}</version>
                     <executions>
                         <execution>
-                            <id>generate-classpath-mappings</id>
-                            <phase>generate-test-sources</phase>
-                            <goals>
-                                <goal>generate-bundle-classpath-mappings</goal>
-                            </goals>
-                        </execution>
-                        <execution>
                             <id>package-test-bundles</id>
                             <!-- Must be done after generating classpath-mappings and copying it in the 'main' bundle. -->
                             <phase>test-compile</phase>
@@ -71,5 +64,6 @@
 
     <properties>
         <maven.javadoc.skip>true</maven.javadoc.skip>
+        <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
 </project>

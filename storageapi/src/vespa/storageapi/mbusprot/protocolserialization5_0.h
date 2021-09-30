@@ -2,17 +2,12 @@
 #pragma once
 
 #include "protocolserialization4_2.h"
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 namespace storage::mbusprot {
 
 class ProtocolSerialization5_0 : public ProtocolSerialization4_2 {
-private:
-    const documentapi::LoadTypeSet& _loadTypes;
-
 public:
-    ProtocolSerialization5_0(const std::shared_ptr<const document::DocumentTypeRepo>&,
-                             const documentapi::LoadTypeSet& loadTypes);
+    ProtocolSerialization5_0(const std::shared_ptr<const document::DocumentTypeRepo>&);
 
     document::Bucket getBucket(document::ByteBuffer& buf) const override;
     void putBucket(const document::Bucket& bucket, vespalib::GrowableByteBuffer& buf) const override;
@@ -73,9 +68,6 @@ public:
     SRep::UP onDecodeCreateVisitorReply(const SCmd& cmd, BBuf& buf) const override;
     void onDecodeCommand(BBuf& buf, api::StorageCommand& msg) const override;
     void onDecodeReply(BBuf&, api::StorageReply&) const override;
-
-protected:
-    const documentapi::LoadTypeSet& loadTypes() const noexcept { return _loadTypes; };
 };
 
 }

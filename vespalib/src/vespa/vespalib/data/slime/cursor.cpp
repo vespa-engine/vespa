@@ -2,8 +2,6 @@
 
 #include "cursor.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 } // namespace vespalib::slime
-} // namespace vespalib

@@ -6,8 +6,7 @@
 #include <stdint.h>
 #include <vespa/document/bucket/bucketspace.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 struct NodeMaintenanceStats
 {
@@ -17,12 +16,15 @@ struct NodeMaintenanceStats
     uint64_t copyingOut;
     uint64_t total;
 
-    NodeMaintenanceStats()
+    constexpr NodeMaintenanceStats() noexcept
         : movingOut(0), syncing(0), copyingIn(0), copyingOut(0), total(0)
     {}
 
-    NodeMaintenanceStats(uint64_t movingOut_, uint64_t syncing_, uint64_t copyingIn_, uint64_t copyingOut_, uint64_t total_)
-        : movingOut(movingOut_), syncing(syncing_), copyingIn(copyingIn_), copyingOut(copyingOut_), total(total_)
+    constexpr NodeMaintenanceStats(uint64_t movingOut_, uint64_t syncing_, uint64_t copyingIn_,
+                                   uint64_t copyingOut_, uint64_t total_) noexcept
+        : movingOut(movingOut_), syncing(syncing_),
+          copyingIn(copyingIn_), copyingOut(copyingOut_),
+          total(total_)
     {}
 
     bool operator==(const NodeMaintenanceStats& other) const noexcept {
@@ -35,6 +37,8 @@ struct NodeMaintenanceStats
     bool operator!=(const NodeMaintenanceStats& other) const noexcept {
         return !(*this == other);
     }
+
+    void merge(const NodeMaintenanceStats& rhs);
 };
 
 std::ostream& operator<<(std::ostream&, const NodeMaintenanceStats&);
@@ -46,30 +50,37 @@ public:
     using PerNodeStats = std::unordered_map<uint16_t, BucketSpacesStats>;
 
 private:
-    PerNodeStats _stats;
+    PerNodeStats _node_stats;
+    NodeMaintenanceStats _total_stats;
     static const NodeMaintenanceStats _emptyNodeMaintenanceStats;
 
 public:
     NodeMaintenanceStatsTracker();
     ~NodeMaintenanceStatsTracker();
+
     void incMovingOut(uint16_t node, document::BucketSpace bucketSpace) {
-        ++_stats[node][bucketSpace].movingOut;
+        ++_node_stats[node][bucketSpace].movingOut;
+        ++_total_stats.movingOut;
     }
 
     void incSyncing(uint16_t node, document::BucketSpace bucketSpace) {
-        ++_stats[node][bucketSpace].syncing;
+        ++_node_stats[node][bucketSpace].syncing;
+        ++_total_stats.syncing;
     }
 
     void incCopyingIn(uint16_t node, document::BucketSpace bucketSpace) {
-        ++_stats[node][bucketSpace].copyingIn;
+        ++_node_stats[node][bucketSpace].copyingIn;
+        ++_total_stats.copyingIn;
     }
 
     void incCopyingOut(uint16_t node, document::BucketSpace bucketSpace) {
-        ++_stats[node][bucketSpace].copyingOut;
+        ++_node_stats[node][bucketSpace].copyingOut;
+        ++_total_stats.copyingOut;
     }
 
     void incTotal(uint16_t node, document::BucketSpace bucketSpace) {
-        ++_stats[node][bucketSpace].total;
+        ++_node_stats[node][bucketSpace].total;
+        ++_total_stats.total;
     }
 
     /**
@@ -77,8 +88,8 @@ public:
      * if none have been recorded yet
      */
     const NodeMaintenanceStats& forNode(uint16_t node, document::BucketSpace bucketSpace) const {
-        auto nodeItr = _stats.find(node);
-        if (nodeItr != _stats.end()) {
+        auto nodeItr = _node_stats.find(node);
+        if (nodeItr != _node_stats.end()) {
             auto bucketSpaceItr = nodeItr->second.find(bucketSpace);
             if (bucketSpaceItr != nodeItr->second.end()) {
                 return bucketSpaceItr->second;
@@ -88,10 +99,20 @@ public:
     }
 
     const PerNodeStats& perNodeStats() const {
-        return _stats;
+        return _node_stats;
     }
+
+    // Note: the total statistics are across all replicas across all buckets across all bucket spaces.
+    // That means it's possible for a single bucket to count more than once, up to once per replica.
+    // So this should not be treated as a bucket-level statistic.
+    const NodeMaintenanceStats& total_replica_stats() const noexcept {
+        return _total_stats;
+    }
+
+    bool operator==(const NodeMaintenanceStatsTracker& rhs) const {
+        return _node_stats == rhs._node_stats;
+    }
+    void merge(const NodeMaintenanceStatsTracker& rhs);
 };
 
-} // distributor
-} // storage
-
+} // storage::distributor

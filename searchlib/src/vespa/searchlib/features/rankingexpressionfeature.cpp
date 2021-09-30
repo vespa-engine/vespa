@@ -5,8 +5,8 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/eval/param_usage.h>
+#include <vespa/eval/eval/fast_value.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.rankingexpression");
@@ -17,6 +17,7 @@ using vespalib::ConstArrayRef;
 using vespalib::eval::CompileCache;
 using vespalib::eval::CompiledFunction;
 using vespalib::eval::DoubleValue;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::Function;
 using vespalib::eval::InterpretedFunction;
 using vespalib::eval::LazyParams;
@@ -25,7 +26,6 @@ using vespalib::eval::PassParams;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::gbdt::FastForest;
-using vespalib::tensor::DefaultTensorEngine;
 
 namespace search::features {
 
@@ -244,22 +244,21 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     // Retrieve and concatenate whatever config is available.
     vespalib::string script = "";
     fef::Property property = env.getProperties().lookup(getName(), "rankingScript");
+    fef::Property expr_name = env.getProperties().lookup(getName(), "expressionName");
     if (property.size() > 0) {
         for (uint32_t i = 0; i < property.size(); ++i) {
             script.append(property.getAt(i));
         }
-        //LOG(debug, "Script from config: '%s'\n", script.c_str());
+    } else if (expr_name.size() == 1) {
+        script = env.getRankingExpression(expr_name.get());
     } else if (params.size() == 1) {
         script = params[0].getValue();
-        //LOG(debug, "Script from param: '%s'\n", script.c_str());
     } else {
-        LOG(error, "No expression given.");
-        return false;
+        return fail("No expression given.");
     }
     auto rank_function = Function::parse(script, rankingexpression::FeatureNameExtractor());
     if (rank_function->has_error()) {
-        LOG(error, "Failed to parse expression '%s': %s", script.c_str(), rank_function->get_error().c_str());
-        return false;
+        return fail("Failed to parse expression '%s': %s", script.c_str(), rank_function->get_error().c_str());
     }
     _intrinsic_expression = _expression_replacer->maybe_replace(*rank_function, env);
     if (_intrinsic_expression) {
@@ -268,16 +267,25 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
         return true;
     }
     bool do_compile = true;
+    bool dependency_error = false;
     std::vector<ValueType> input_types;
     for (size_t i = 0; i < rank_function->num_params(); ++i) {
-        const FeatureType &input = defineInput(rank_function->param_name(i), AcceptInput::ANY);
-        _input_is_object.push_back(char(input.is_object()));
-        if (input.is_object()) {
-            do_compile = false;
-            input_types.push_back(input.type());
+        if (auto maybe_input = defineInput(rank_function->param_name(i), AcceptInput::ANY)) {
+            const FeatureType &input = maybe_input.value();
+            _input_is_object.push_back(char(input.is_object()));
+            if (input.is_object()) {
+                do_compile = false;
+                input_types.push_back(input.type());
+            } else {
+                input_types.push_back(ValueType::double_type());
+            }
         } else {
-            input_types.push_back(ValueType::double_type());
+            dependency_error = true;
+            input_types.push_back(ValueType::error_type());
         }
+    }
+    if (dependency_error) {
+        return false;
     }
     NodeTypes node_types(*rank_function, input_types);
     if (!node_types.all_types_are_double()) {
@@ -285,8 +293,10 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     }
     ValueType root_type = node_types.get_type(rank_function->root());
     if (root_type.is_error()) {
-        LOG(error, "rank expression contains type errors: %s\n", script.c_str());
-        return false;
+        for (const auto &type_error: node_types.errors()) {
+            LOG(warning, "type error: %s", type_error.c_str());
+        }
+        return fail("rank expression contains type errors: %s", script.c_str());
     }
     auto compile_issues = CompiledFunction::detect_issues(*rank_function);
     auto interpret_issues = InterpretedFunction::detect_issues(*rank_function);
@@ -297,9 +307,8 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     }
     const auto &issues = do_compile ? compile_issues : interpret_issues;
     if (issues) {
-        LOG(error, "rank expression cannot be evaluated: %s\n%s",
-            script.c_str(), list_issues(issues.list).c_str());
-        return false;
+        return fail("rank expression cannot be evaluated: %s\n%s",
+                    script.c_str(), list_issues(issues.list).c_str());
     }
     // avoid costly compilation when only verifying setup
     if (env.getFeatureMotivation() != env.FeatureMotivation::VERIFY_SETUP) {
@@ -317,7 +326,8 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
                 }
             }
         } else {
-            _interpreted_function.reset(new InterpretedFunction(DefaultTensorEngine::ref(), *rank_function, node_types));
+            _interpreted_function.reset(new InterpretedFunction(FastValueBuilderFactory::get(),
+                                                                *rank_function, node_types));
         }
     }
     FeatureType output_type = do_compile

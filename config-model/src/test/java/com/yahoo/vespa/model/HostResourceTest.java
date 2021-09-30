@@ -1,25 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
 import org.junit.Test;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.config.provision.ClusterSpec.Type.admin;
 import static com.yahoo.config.provision.ClusterSpec.Type.container;
-import static com.yahoo.config.provision.ClusterSpec.Type.content;
 import static org.hamcrest.Matchers.endsWith;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
@@ -54,12 +50,15 @@ public class HostResourceTest {
     }
 
     private static ClusterSpec clusterSpec(ClusterSpec.Type type, String id) {
-        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(0), Version.fromString("6.42"), false);
+        return ClusterSpec.specification(type, ClusterSpec.Id.from(id)).group(ClusterSpec.Group.from(0)).vespaVersion("6.42").build();
     }
 
     private static HostResource hostResourceWithMemberships(ClusterMembership membership) {
         return new HostResource(Host.createHost(null, "hostname"),
-                                new HostSpec("hostname", Optional.of(membership)));
+                                new HostSpec("hostname",
+                                             NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
+                                             membership,
+                                             Optional.empty(), Optional.empty(), Optional.empty()));
     }
 
     private static int counter = 0;

@@ -8,7 +8,6 @@ namespace storage::spi::test {
 
 // Helper functions used by unit tests
 
-Bucket makeSpiBucket(document::BucketId bucketId, PartitionId partitionId);
 Bucket makeSpiBucket(document::BucketId bucketId);
 
 }

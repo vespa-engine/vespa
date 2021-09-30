@@ -1,12 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ApplicationSummary;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
@@ -14,12 +14,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 /**
@@ -29,27 +28,30 @@ import java.util.logging.Level;
  *
  * @author jonmv
  */
-public class ApplicationOwnershipConfirmer extends Maintainer {
+public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
 
     private final OwnershipIssues ownershipIssues;
     private final ApplicationController applications;
 
-    public ApplicationOwnershipConfirmer(Controller controller, Duration interval, JobControl jobControl, OwnershipIssues ownershipIssues) {
-        super(controller, interval, jobControl);
+    public ApplicationOwnershipConfirmer(Controller controller, Duration interval, OwnershipIssues ownershipIssues) {
+        super(controller, interval);
         this.ownershipIssues = ownershipIssues;
         this.applications = controller.applications();
     }
 
     @Override
-    protected void maintain() {
-        confirmApplicationOwnerships();
-        ensureConfirmationResponses();
-        updateConfirmedApplicationOwners();
+    protected double maintain() {
+        return ( confirmApplicationOwnerships() +
+                 ensureConfirmationResponses() +
+                 updateConfirmedApplicationOwners() )
+                / 3;
     }
 
     /** File an ownership issue with the owners of all applications we know about. */
-    private void confirmApplicationOwnerships() {
-        ApplicationList.from(controller().applications().asList())
+    private double confirmApplicationOwnerships() {
+        AtomicInteger attempts = new AtomicInteger(0);
+        AtomicInteger failures = new AtomicInteger(0);
+        applications()
                        .withProjectId()
                        .withProductionDeployment()
                        .asList()
@@ -57,78 +59,96 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                        .filter(application -> application.createdAt().isBefore(controller().clock().instant().minus(Duration.ofDays(90))))
                        .forEach(application -> {
                            try {
-                               Tenant tenant = tenantOf(application.id());
-                               tenant.contact().ifPresent(contact -> { // TODO jvenstad: Makes sense to require, and run this only in main?
-                                   ownershipIssues.confirmOwnership(application.ownershipIssueId(),
-                                                                    summaryOf(application.id()),
-                                                                    determineAssignee(tenant, application),
-                                                                    contact)
-                                                  .ifPresent(newIssueId -> store(newIssueId, application.id()));
-                               });
+                               attempts.incrementAndGet();
+                               // TODO jvenstad: Makes sense to require, and run this only in main?
+                               tenantOf(application.id()).contact().flatMap(contact -> {
+                                   return ownershipIssues.confirmOwnership(application.ownershipIssueId(),
+                                                                           summaryOf(application.id()),
+                                                                           determineAssignee(application),
+                                                                           contact);
+                               }).ifPresent(newIssueId -> store(newIssueId, application.id()));
                            }
                            catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
+                               failures.incrementAndGet();
                                log.log(Level.INFO, "Exception caught when attempting to file an issue for '" + application.id() + "': " + Exceptions.toMessageString(e));
                            }
                        });
-
+        return asSuccessFactor(attempts.get(), failures.get());
     }
 
     private ApplicationSummary summaryOf(TenantAndApplicationId application) {
         var app = applications.requireApplication(application);
-        var metrics = new HashMap<ZoneId, ApplicationSummary.Metric>();
-        for (Instance instance : app.instances().values())
+        var metrics = new HashMap<DeploymentId, ApplicationSummary.Metric>();
+        for (Instance instance : app.instances().values()) {
             for (var kv : instance.deployments().entrySet()) {
                 var zone = kv.getKey();
                 var deploymentMetrics = kv.getValue().metrics();
-                metrics.put(zone, new ApplicationSummary.Metric(deploymentMetrics.documentCount(),
-                                                                deploymentMetrics.queriesPerSecond(),
-                                                                deploymentMetrics.writesPerSecond()));
+                metrics.put(new DeploymentId(instance.id(), zone),
+                            new ApplicationSummary.Metric(deploymentMetrics.documentCount(),
+                                                          deploymentMetrics.queriesPerSecond(),
+                                                          deploymentMetrics.writesPerSecond()));
             }
+        }
         return new ApplicationSummary(app.id().defaultInstance(), app.activity().lastQueried(), app.activity().lastWritten(),
                                       app.latestVersion().flatMap(version -> version.buildTime()), metrics);
     }
 
     /** Escalate ownership issues which have not been closed before a defined amount of time has passed. */
-    private void ensureConfirmationResponses() {
-        for (Application application : controller().applications().asList())
+    private double ensureConfirmationResponses() {
+        AtomicInteger attempts = new AtomicInteger(0);
+        AtomicInteger failures = new AtomicInteger(0);
+        for (Application application : applications())
             application.ownershipIssueId().ifPresent(issueId -> {
                 try {
+                    attempts.incrementAndGet();
                     Tenant tenant = tenantOf(application.id());
-                    ownershipIssues.ensureResponse(issueId, tenant.type() == Tenant.Type.athenz ? tenant.contact() : Optional.empty());
+                    ownershipIssues.ensureResponse(issueId, tenant.contact());
                 }
                 catch (RuntimeException e) {
+                    failures.incrementAndGet();
                     log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
                 }
             });
+        return asSuccessFactor(attempts.get(), failures.get());
     }
 
-    private void updateConfirmedApplicationOwners() {
-        ApplicationList.from(controller().applications().asList())
-                       .withProjectId()
-                       .withProductionDeployment()
-                       .asList()
-                       .stream()
-                       .filter(application -> application.ownershipIssueId().isPresent())
-                       .forEach(application -> {
-                           IssueId ownershipIssueId = application.ownershipIssueId().get();
-                           ownershipIssues.getConfirmedOwner(ownershipIssueId).ifPresent(owner -> {
-                               controller().applications().lockApplicationIfPresent(application.id(), lockedApplication ->
-                                       controller().applications().store(lockedApplication.withOwner(owner)));
-                           });
-                       });
+    private double updateConfirmedApplicationOwners() {
+        AtomicInteger attempts = new AtomicInteger(0);
+        AtomicInteger failures = new AtomicInteger(0);
+        applications()
+                .withProjectId()
+                .withProductionDeployment()
+                .asList()
+                .stream()
+                .filter(application -> application.ownershipIssueId().isPresent())
+                .forEach(application -> {
+                    attempts.incrementAndGet();
+                    IssueId issueId = application.ownershipIssueId().get();
+                    try {
+                        ownershipIssues.getConfirmedOwner(issueId).ifPresent(owner -> {
+                            controller().applications().lockApplicationIfPresent(application.id(), lockedApplication ->
+                                    controller().applications().store(lockedApplication.withOwner(owner)));
+                        });
+                    }
+                    catch (RuntimeException e) {
+                        failures.incrementAndGet();
+                        log.log(Level.INFO, "Exception caught when attempting to find confirmed owner of issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
+                    }
+                });
+        return asSuccessFactor(attempts.get(), failures.get());
     }
 
-    private User determineAssignee(Tenant tenant, Application application) {
-        return application.owner().orElse(tenant instanceof UserTenant ? userFor(tenant) : null);
+    private ApplicationList applications() {
+        return ApplicationList.from(controller().applications().readable());
+    }
+
+    private User determineAssignee(Application application) {
+        return application.owner().orElse(null);
     }
 
     private Tenant tenantOf(TenantAndApplicationId applicationId) {
         return controller().tenants().get(applicationId.tenant())
                 .orElseThrow(() -> new IllegalStateException("No tenant found for application " + applicationId));
-    }
-
-    protected User userFor(Tenant tenant) {
-        return User.from(tenant.name().value().replaceFirst(Tenant.userPrefix, ""));
     }
 
     protected void store(IssueId issueId, TenantAndApplicationId applicationId) {

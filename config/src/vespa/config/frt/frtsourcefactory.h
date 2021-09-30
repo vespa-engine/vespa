@@ -14,7 +14,7 @@ namespace config {
 class FRTSourceFactory : public SourceFactory
 {
 public:
-    FRTSourceFactory(ConnectionFactory::UP connectionFactory, const TimingValues & timingValues, int protocolVersion, int traceLevel, const VespaVersion & vespaVersion, const CompressionType & compressionType);
+    FRTSourceFactory(ConnectionFactory::UP connectionFactory, const TimingValues & timingValues, int traceLevel, const VespaVersion & vespaVersion, const CompressionType & compressionType);
 
     /**
      * Create source handling config described by key.

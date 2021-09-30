@@ -10,7 +10,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 
 /**
- * @author <a href="mailto:mlidal@yahoo-inc.com">Mathias M Lidal</a>
+ * @author Mathias M Lidal
  */
 public class IndexStructureValidator extends Validator {
 
@@ -37,15 +37,14 @@ public class IndexStructureValidator extends Validator {
 
         @Override
         protected void doVisit(Expression exp) {
-            if (!(exp instanceof OutputExpression)) {
-                return;
-            }
+            if (!(exp instanceof OutputExpression)) return;
+
             String fieldName = ((OutputExpression)exp).getFieldName();
-            if (docType.getField(fieldName) != null) {
-                return;
-            }
+            if (docType.getField(fieldName) != null) return;
+
             throw new IllegalArgumentException("Indexing expression '" + this.exp + "' refers to field '" +
                                                fieldName + "' which does not exist in the index structure.");
         }
     }
+
 }

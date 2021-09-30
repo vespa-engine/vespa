@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.XML;
 import org.w3c.dom.*;
 
@@ -42,7 +42,7 @@ class PropertiesProcessor implements PreProcessor {
                 //System.out.println("Found " + node.getNodeName() + ", " + node.getTextContent());
                 final String propertyName = node.getNodeName();
                 if (properties.containsKey(propertyName)) {
-                    log.log(LogLevel.WARNING, "Duplicate definition for property '" + propertyName + "' detected");
+                    log.log(Level.WARNING, "Duplicate definition for property '" + propertyName + "' detected");
                 }
                 properties.put(propertyName, node.getTextContent());
             }

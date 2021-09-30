@@ -59,6 +59,9 @@ private:
     bool                     _softTimeoutEnabled;
     double                   _softTimeoutTailCost;
     double                   _softTimeoutFactor;
+    double                   _nearest_neighbor_brute_force_limit;
+    double                   _global_filter_lower_limit;
+    double                   _global_filter_upper_limit;
 
 
 public:
@@ -365,6 +368,14 @@ public:
     void setSoftTimeoutFactor(double v) { _softTimeoutFactor = v; }
     double getSoftTimeoutFactor() const { return _softTimeoutFactor; }
 
+    void set_nearest_neighbor_brute_force_limit(double v) { _nearest_neighbor_brute_force_limit = v; }
+    double get_nearest_neighbor_brute_force_limit() const { return _nearest_neighbor_brute_force_limit; }
+
+    void set_global_filter_lower_limit(double v) { _global_filter_lower_limit = v; }
+    double get_global_filter_lower_limit() const { return _global_filter_lower_limit; }
+    void set_global_filter_upper_limit(double v) { _global_filter_upper_limit = v; }
+    double get_global_filter_upper_limit() const { return _global_filter_upper_limit; }
+
     /**
      * This method may be used to indicate that certain features
      * should be dumped during a full feature dump.
@@ -397,10 +408,10 @@ public:
     // them to be ready to use. Also keep in mind that creating a rank
     // program is cheap while setting it up is more expensive.
 
-    RankProgram::UP create_first_phase_program() const { return RankProgram::UP(new RankProgram(_first_phase_resolver)); }
-    RankProgram::UP create_second_phase_program() const { return RankProgram::UP(new RankProgram(_second_phase_resolver)); }
-    RankProgram::UP create_summary_program() const { return RankProgram::UP(new RankProgram(_summary_resolver)); }
-    RankProgram::UP create_dump_program() const { return RankProgram::UP(new RankProgram(_dumpResolver)); }
+    RankProgram::UP create_first_phase_program() const { return std::make_unique<RankProgram>(_first_phase_resolver); }
+    RankProgram::UP create_second_phase_program() const { return std::make_unique<RankProgram>(_second_phase_resolver); }
+    RankProgram::UP create_summary_program() const { return std::make_unique<RankProgram>(_summary_resolver); }
+    RankProgram::UP create_dump_program() const { return std::make_unique<RankProgram>(_dumpResolver); }
 
     /**
      * Here you can do some preprocessing. State must be stored in the IObjectStore.

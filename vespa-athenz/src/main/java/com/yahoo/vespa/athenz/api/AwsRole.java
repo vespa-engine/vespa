@@ -28,6 +28,10 @@ public class AwsRole {
         return name;
     }
 
+    public static AwsRole from(AthenzIdentity identity) {
+        return new AwsRole(identity.getFullName());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

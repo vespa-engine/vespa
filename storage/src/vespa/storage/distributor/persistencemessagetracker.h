@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "distributor_stripe_component.h"
 #include "distributormetricsset.h"
-#include "distributorcomponent.h"
 #include "messagetracker.h"
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageapi/messageapi/bucketinfocommand.h>
@@ -12,8 +12,8 @@
 namespace storage::distributor {
 
 struct PersistenceMessageTracker {
-    virtual ~PersistenceMessageTracker() { }
-    typedef MessageTracker::ToSend ToSend;
+    virtual ~PersistenceMessageTracker() = default;
+    using ToSend = MessageTracker::ToSend;
 
     virtual void fail(MessageSender&, const api::ReturnCode&) = 0;
     virtual void queueMessageBatch(const std::vector<ToSend>&) = 0;
@@ -29,16 +29,17 @@ class PersistenceMessageTrackerImpl : public PersistenceMessageTracker,
                                       public MessageTracker
 {
 private:
-    typedef std::map<document::Bucket, std::vector<BucketCopy> > BucketInfoMap;
+    using BucketInfoMap = std::map<document::Bucket, std::vector<BucketCopy>>;
     BucketInfoMap _remapBucketInfo;
     BucketInfoMap _bucketInfo;
 
 public:
     PersistenceMessageTrackerImpl(PersistenceOperationMetricSet& metric,
                                   std::shared_ptr<api::BucketInfoReply> reply,
-                                  DistributorComponent&,
+                                  const DistributorNodeContext& node_ctx,
+                                  DistributorStripeOperationContext& op_ctx,
                                   api::Timestamp revertTimestamp = 0);
-    ~PersistenceMessageTrackerImpl();
+    ~PersistenceMessageTrackerImpl() override;
 
     void updateDB();
     void updateMetrics();
@@ -52,7 +53,7 @@ public:
     void updateFromReply(MessageSender& sender, api::BucketInfoReply& reply, uint16_t node) override;
     std::shared_ptr<api::BucketInfoReply>& getReply() override { return _reply; }
 
-    typedef std::pair<document::Bucket, uint16_t> BucketNodePair;
+    using BucketNodePair = std::pair<document::Bucket, uint16_t>;
 
     void revert(MessageSender& sender, const std::vector<BucketNodePair>& revertNodes);
 
@@ -65,32 +66,35 @@ public:
     void queueMessageBatch(const std::vector<MessageTracker::ToSend>& messages) override;
 
 private:
-    typedef std::vector<uint64_t> MessageBatch;
+    using MessageBatch = std::vector<uint64_t>;
     std::vector<MessageBatch> _messageBatches;
 
     PersistenceOperationMetricSet& _metric;
     std::shared_ptr<api::BucketInfoReply> _reply;
-    DistributorComponent& _manager;
+    DistributorStripeOperationContext& _op_ctx;
     api::Timestamp _revertTimestamp;
     std::vector<BucketNodePair> _revertNodes;
-    mbus::TraceNode _trace;
+    mbus::Trace _trace;
     framework::MilliSecTimer _requestTimer;
+    uint32_t _n_persistence_replies_total;
+    uint32_t _n_successful_persistence_replies;
     uint8_t _priority;
     bool _success;
 
     bool canSendReplyEarly() const;
     void addBucketInfoFromReply(uint16_t node, const api::BucketInfoReply& reply);
     void logSuccessfulReply(uint16_t node, const api::BucketInfoReply& reply) const;
-    bool hasSentReply() const { return _reply.get() == 0; }
+    bool hasSentReply() const noexcept { return !_reply; }
     bool shouldRevert() const;
+    bool has_majority_successful_replies() const noexcept;
+    bool has_minority_test_and_set_failure() const noexcept;
     void sendReply(MessageSender& sender);
-    void checkCopiesDeleted();
     void updateFailureResult(const api::BucketInfoReply& reply);
     void handleCreateBucketReply(api::BucketInfoReply& reply, uint16_t node);
     void handlePersistenceReply(api::BucketInfoReply& reply, uint16_t node);
 
     void queueCommand(std::shared_ptr<api::BucketCommand> msg, uint16_t target) override {
-        MessageTracker::queueCommand(msg, target);
+        MessageTracker::queueCommand(std::move(msg), target);
     }
     void flushQueue(MessageSender& s) override { MessageTracker::flushQueue(s); }
     uint16_t handleReply(api::BucketReply& r) override { return MessageTracker::handleReply(r); }

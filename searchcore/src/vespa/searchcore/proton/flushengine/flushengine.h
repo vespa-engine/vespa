@@ -12,6 +12,8 @@
 #include <mutex>
 #include <condition_variable>
 
+namespace search { class FlushToken; }
+
 namespace proton {
 
 namespace flushengine { class ITlsStatsFactory; }
@@ -48,7 +50,7 @@ private:
     typedef HandlerMap<IFlushHandler> FlushHandlerMap;
     bool                           _closed;
     const uint32_t                 _maxConcurrent;
-    const uint32_t                 _idleIntervalMS;
+    const vespalib::duration       _idleInterval;
     uint32_t                       _taskId;    
     FastOS_ThreadPool              _threadPool;
     IFlushStrategy::SP             _strategy;
@@ -63,9 +65,12 @@ private:
     std::condition_variable        _strategyCond;
     std::shared_ptr<flushengine::ITlsStatsFactory> _tlsStatsFactory;
     std::set<IFlushHandler::SP>    _pendingPrune;
+    std::shared_ptr<search::FlushToken> _normal_flush_token;
+    std::shared_ptr<search::FlushToken> _gc_flush_token;
 
     FlushContext::List getTargetList(bool includeFlushingTargets) const;
     std::pair<FlushContext::List,bool> getSortedTargetList();
+    std::shared_ptr<search::IFlushToken> get_flush_token(const FlushContext& ctx);
     FlushContext::SP initNextFlush(const FlushContext::List &lst);
     vespalib::string flushNextTarget(const vespalib::string & name);
     void flushAll(const FlushContext::List &lst);
@@ -74,7 +79,7 @@ private:
     uint32_t initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP &target);
     void flushDone(const FlushContext &ctx, uint32_t taskId);
     bool canFlushMore(const std::unique_lock<std::mutex> &guard) const;
-    bool wait(size_t minimumWaitTimeIfReady);
+    bool wait(vespalib::duration minimumWaitTimeIfReady, bool ignorePendingPrune);
     bool isFlushing(const std::lock_guard<std::mutex> &guard, const vespalib::string & name) const;
 
     friend class FlushTask;
@@ -97,7 +102,7 @@ public:
      * @param idleInterval The interval between when flushes are checked whne there are no one progressing.
      */
     FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStatsFactory,
-                IFlushStrategy::SP strategy, uint32_t numThreads, uint32_t idleIntervalMS);
+                IFlushStrategy::SP strategy, uint32_t numThreads, vespalib::duration idleInterval);
 
     /**
      * Destructor. Waits for all pending tasks to complete.
@@ -110,6 +115,11 @@ public:
      * @return executor stats
      **/
     vespalib::ThreadStackExecutor::Stats getExecutorStats() { return _executor.getStats(); }
+
+    /**
+     * Returns the underlying executor. Only used for state explorers.
+     */
+    const vespalib::SyncableThreadExecutor& get_executor() const { return _executor; }
 
     /**
      * Starts the scheduling thread of this manager.

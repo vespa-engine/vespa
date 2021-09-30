@@ -12,30 +12,9 @@
 
 using namespace mbus;
 
-class Test : public vespalib::TestApp {
-private:
-    void requireThatListenFailedIsExceptionSafe();
-    void requireThatShutdownOnSourceWithPendingIsSafe();
-    void requireThatShutdownOnIntermediateWithPendingIsSafe();
-
-public:
-    int Main() override {
-        TEST_INIT("shutdown_test");
-
-        requireThatListenFailedIsExceptionSafe();             TEST_FLUSH();
-        requireThatShutdownOnSourceWithPendingIsSafe();       TEST_FLUSH();
-        requireThatShutdownOnIntermediateWithPendingIsSafe(); TEST_FLUSH();
-
-        TEST_DONE();
-    }
-};
-
 static const duration TIMEOUT = 120s;
 
-TEST_APPHOOK(Test);
-
-void
-Test::requireThatListenFailedIsExceptionSafe()
+TEST("requireThatListenFailedIsExceptionSafe")
 {
     fnet::frt::StandaloneFRT orb;
     ASSERT_TRUE(orb.supervisor().Listen(0));
@@ -51,8 +30,7 @@ Test::requireThatListenFailedIsExceptionSafe()
     }
 }
 
-void
-Test::requireThatShutdownOnSourceWithPendingIsSafe()
+TEST("requireThatShutdownOnSourceWithPendingIsSafe")
 {
     Slobrok slobrok;
     TestServer dstServer(MessageBusParams()
@@ -87,8 +65,7 @@ Test::requireThatShutdownOnSourceWithPendingIsSafe()
     }
 }
 
-void
-Test::requireThatShutdownOnIntermediateWithPendingIsSafe()
+TEST("requireThatShutdownOnIntermediateWithPendingIsSafe")
 {
     Slobrok slobrok;
     TestServer dstServer(MessageBusParams()
@@ -114,7 +91,7 @@ Test::requireThatShutdownOnIntermediateWithPendingIsSafe()
     ASSERT_TRUE(srcServer.waitSlobrok("dst/session", 1));
 
     for (uint32_t i = 0; i < 10; ++i) {
-        Message::UP msg(new SimpleMessage("msg"));
+        Message::UP msg = std::make_unique<SimpleMessage>("msg");
         {
             TestServer itrServer(MessageBusParams()
                     .setRetryPolicy(std::make_shared<RetryTransientErrorsPolicy>())
@@ -141,3 +118,5 @@ Test::requireThatShutdownOnIntermediateWithPendingIsSafe()
         dstServer.mb.sync();
     }
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

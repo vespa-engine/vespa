@@ -3,7 +3,6 @@
 
 #include "pendingclusterstate.h"
 #include <vespa/storage/common/messagesender.h>
-#include <vespa/vespalib/util/sync.h>
 
 namespace storage {
 
@@ -11,12 +10,11 @@ class MessageGuard {
     std::vector<std::shared_ptr<api::StorageMessage> > messagesUp;
     std::vector<std::shared_ptr<api::StorageMessage> > messagesDown;
 
-    vespalib::LockGuard _lock;
+    std::unique_lock<std::mutex> _lock;
     ChainedMessageSender& _messageSender;
 
 public:
-    MessageGuard(const vespalib::Lock &lock,
-                 ChainedMessageSender& messageSender)
+    MessageGuard(std::mutex & lock, ChainedMessageSender& messageSender)
         : _lock(lock),
           _messageSender(messageSender) {}
 

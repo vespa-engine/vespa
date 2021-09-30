@@ -67,6 +67,10 @@ search book {
             attribute: tensor(x{})
         }
     }
+
+    import field ref.dummy as my_dummy {}
+    import field ref.foo as my_foo {}
+
     field sw1 type float {
     }
     field didinteger type array<int> {

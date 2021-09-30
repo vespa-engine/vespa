@@ -2,11 +2,11 @@
 
 #include <vespa/searchlib/docstore/logdatastore.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/vespalib/util/closure.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/fastos/app.h>
 #include <unistd.h>
 #include <random>
@@ -29,7 +29,7 @@ class BenchmarkDataStoreApp : public FastOS_Application
 void
 BenchmarkDataStoreApp::usage()
 {
-    printf("Usage: %s <direcory> <numreads> <numthreads> <objects per read> <normal,directio,mmap,mlock>\n", _argv[0]);
+    printf("Usage: %s <direcory> <numreads> <numthreads> <objects per read> <normal,directio,mmap>\n", _argv[0]);
     fflush(stdout);
 }
 
@@ -96,15 +96,15 @@ BenchmarkDataStoreApp::benchmark(const vespalib::string & dir, size_t numReads, 
         tuning._randRead.setWantMemoryMap();
     }
     search::index::DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(1, 128*1024);
+    vespalib::ThreadStackExecutor executor(1, 128_Ki);
     transactionlog::NoSyncProxy noTlSyncer;
     LogDataStore store(executor, dir, config, growStrategy, tuning,
                        fileHeaderContext,
                        noTlSyncer, NULL, true);
-    vespalib::ThreadStackExecutor bmPool(numThreads, 128*1024);
+    vespalib::ThreadStackExecutor bmPool(numThreads, 128_Ki);
     LOG(info, "Start read benchmark with %lu threads doing %lu reads in chunks of %lu reads. Totally %lu objects", numThreads, numReads, perChunk, numThreads * numReads * perChunk);
     for (size_t i(0); i < numThreads; i++) {
-        bmPool.execute(vespalib::makeTask(vespalib::makeClosure(this, &BenchmarkDataStoreApp::read, numReads, perChunk, static_cast<const IDataStore *>(&store))));
+        bmPool.execute(vespalib::makeLambdaTask([&]() { read(numReads, perChunk, static_cast<const IDataStore *>(&store)); }));
     }
     bmPool.sync();
     LOG(info, "Benchmark done.");

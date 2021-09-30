@@ -12,12 +12,14 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.service.health.StateV1HealthModel;
+import com.yahoo.vespa.service.model.ApplicationInstanceGenerator;
 import com.yahoo.vespa.service.model.ModelGenerator;
 import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 
@@ -32,7 +34,8 @@ import java.util.stream.Collectors;
  * @author freva
  */
 public abstract class InfraApplication implements InfraApplicationApi {
-    private static final TenantName TENANT_NAME = TenantName.from("hosted-vespa");
+
+    static final TenantName TENANT_NAME = TenantName.from("hosted-vespa");
 
     private final ApplicationId applicationId;
     private final Capacity capacity;
@@ -74,7 +77,7 @@ public abstract class InfraApplication implements InfraApplicationApi {
 
     @Override
     public ClusterSpec getClusterSpecWithVersion(Version version) {
-        return ClusterSpec.request(clusterSpecType, clusterSpecId, version, true);
+        return ClusterSpec.request(clusterSpecType, clusterSpecId).vespaVersion(version).build();
     }
 
     public ClusterSpec.Type getClusterSpecType() {
@@ -93,8 +96,8 @@ public abstract class InfraApplication implements InfraApplicationApi {
         return serviceType;
     }
 
-    public ApplicationInstanceId getApplicationInstanceId() {
-        return new ApplicationInstanceId(applicationId.application().value());
+    public ApplicationInstanceId getApplicationInstanceId(Zone zone) {
+        return ApplicationInstanceGenerator.toApplicationInstanceId(applicationId, zone);
     }
 
     public TenantId getTenantId() {

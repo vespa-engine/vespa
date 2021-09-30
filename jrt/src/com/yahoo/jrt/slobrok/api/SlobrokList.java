@@ -27,7 +27,6 @@ public class SlobrokList {
         }
     }
 
-
     public String nextSlobrokSpec() {
         checkUpdate();
         if (idx < slobroks.length) {
@@ -48,7 +47,7 @@ public class SlobrokList {
     public boolean contains(String slobrok) {
         checkUpdate();
         for (String s : slobroks) {
-            if (s == slobrok) return true;
+            if (s.equals(slobrok)) return true;
         }
         return false;
     }
@@ -90,4 +89,5 @@ public class SlobrokList {
             return Arrays.toString(slobroks);
         }
     }
+
 }

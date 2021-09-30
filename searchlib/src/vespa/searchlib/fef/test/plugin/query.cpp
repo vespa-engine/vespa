@@ -4,6 +4,7 @@
 #include <vespa/searchlib/features/valuefeature.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/stash.h>
 #include <sstream>
 
 namespace search::fef::test {
@@ -32,7 +33,7 @@ QueryBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stas
 {
     std::vector<feature_t> values;
     std::string val = queryEnv.getProperties().lookup(_key).get("0.0");
-    values.push_back(vespalib::locale::c::strtod(val.data(), NULL));
+    values.push_back(vespalib::locale::c::strtod(val.data(), nullptr));
     return stash.create<search::features::ValueExecutor>(values);
 }
 

@@ -2,6 +2,7 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.document.DocumentId;
+import com.yahoo.document.fieldset.AllFields;
 
 import java.util.Arrays;
 
@@ -10,16 +11,9 @@ import java.util.Arrays;
  */
 public class GetDocumentMessage extends DocumentMessage {
 
-    final static String DEFAULT_FIELD_SET = "[all]";
+    final static String DEFAULT_FIELD_SET = AllFields.NAME;
     private DocumentId documentId = null;
     private String fieldSet = DEFAULT_FIELD_SET;
-
-    /**
-     * Constructs a new message for deserialization.
-     */
-    GetDocumentMessage() {
-        // empty
-    }
 
     /**
      * Constructs a new document get message.

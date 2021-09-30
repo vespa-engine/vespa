@@ -5,6 +5,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
@@ -20,7 +21,7 @@ using search::index::DummyFileHeaderContext;
 namespace {
 template <typename T, size_t N> size_t arraysize(const T (&)[N]) { return N; }
 
-const uint32_t maxDocId = 4096;
+const uint32_t maxDocId = 4_Ki;
 struct DocSource { uint32_t docId; uint8_t source; };
 const DocSource docs[] = { {0,1}, {1, 0}, {2, 2}, {4, 3}, {8, 9}, {16, 178},
                            {32, 1}, {64, 2}, {128, 3}, {256,4}, {512, 2},

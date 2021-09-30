@@ -2,15 +2,15 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
 
 namespace vespalib {
 
 template <typename T>
 class VarHolder
 {
-    T     _v;
-    Lock  _lock;
+    T                   _v;
+    mutable std::mutex  _lock;
 public:
     VarHolder() : _v(), _lock() {}
     explicit VarHolder(const T &v) : _v(v), _lock() {}
@@ -21,7 +21,7 @@ public:
     void set(const T &v) {
         T old;
         {
-            vespalib::LockGuard guard(_lock);
+            std::lock_guard guard(_lock);
             old = _v;
             _v = v;
         }
@@ -30,7 +30,7 @@ public:
     void clear() { set(T()); }
 
     T get() const {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         return _v;
     }
 };

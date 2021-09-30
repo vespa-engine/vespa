@@ -2,8 +2,7 @@
 
 #include "ranking_constants.h"
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 RankingConstants::Constant::Constant(const vespalib::string &name_in,
                                      const vespalib::string &type_in,
@@ -55,6 +54,5 @@ RankingConstants::getConstant(const vespalib::string &name) const
     return nullptr;
 }
 
-}
 }
 

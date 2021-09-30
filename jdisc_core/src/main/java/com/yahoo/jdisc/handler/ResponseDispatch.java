@@ -161,7 +161,7 @@ public abstract class ResponseDispatch extends ForwardingListenableFuture<Boolea
      * @param content  The provider of the Response's ByteBuffer content.
      * @return The created ResponseDispatch.
      */
-    public static ResponseDispatch newInstance(final Response response, final Iterable<ByteBuffer> content) {
+    public static ResponseDispatch newInstance(Response response, Iterable<ByteBuffer> content) {
         return new ResponseDispatch() {
 
             @Override

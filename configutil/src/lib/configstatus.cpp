@@ -2,13 +2,13 @@
 
 #include "configstatus.h"
 #include "tags.h"
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vbench/http/http_result_handler.h>
 #include <vbench/http/server_spec.h>
 #include <vbench/http/http_client.h>
 #include <vespa/config/common/exceptions.h>
 #include <iostream>
+#include <cstdlib>
 
 using configdefinitions::tagsContain;
 
@@ -129,7 +129,7 @@ ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri uri)
 
     if (_cfg.get() == NULL) {
         std::cerr << "FATAL ERROR: failed to get model configuration." << std::endl;
-        exit(1);
+        std::_Exit(1);
     }
 }
 
@@ -164,7 +164,6 @@ ConfigStatus::action()
 
                     if (!upToDate) {
                         if (svc.type == "searchnode" ||
-                            svc.type == "topleveldispatch" ||
                             svc.type == "logd")
                         {
                             std::cerr << "[generation not up-to-date ignored]" << std::endl;

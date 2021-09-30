@@ -22,7 +22,7 @@ import ai.vespa.metricsproxy.service.VespaServicesConfig.Service;
 
 import java.io.IOException;
 
-import static ai.vespa.metricsproxy.core.VespaMetrics.VESPA_CONSUMER_ID;
+import static ai.vespa.metricsproxy.core.VespaMetrics.vespaMetricsConsumerId;
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.service.HttpMetricFetcher.STATE_PATH;
@@ -88,7 +88,7 @@ public class IntegrationTester implements  AutoCloseable {
 
     private ConsumersConfig consumersConfig() {
         return new ConsumersConfig.Builder()
-                .consumer(createConsumer(VESPA_CONSUMER_ID, "foo.count", "foo_count"))
+                .consumer(createConsumer(vespaMetricsConsumerId, "foo.count", "foo_count"))
                 .consumer(createConsumer(CUSTOM_CONSUMER_ID, "foo.count", "foo.count"))
                 .build();
     }

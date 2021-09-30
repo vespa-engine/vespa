@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.Request;
@@ -7,15 +7,17 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
+import org.junit.rules.Timeout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,13 +33,16 @@ import static org.junit.Assert.assertTrue;
 
 public class MasterElectionTest extends FleetControllerTest {
 
-    private static Logger log = Logger.getLogger(MasterElectionTest.class.getName());
+    private static final Logger log = Logger.getLogger(MasterElectionTest.class.getName());
 
     private Supervisor supervisor;
-    private List<FleetController> fleetControllers = new ArrayList<>();
+    private final List<FleetController> fleetControllers = new ArrayList<>();
 
     @Rule
     public TestRule cleanupZookeeperLogsOnSuccess = new CleanupZookeeperLogsOnSuccess();
+
+    @Rule
+    public Timeout globalTimeout = Timeout.seconds(120);
 
     private static int defaultZkSessionTimeoutInMillis() { return 30_000; }
 
@@ -56,7 +61,7 @@ public class MasterElectionTest extends FleetControllerTest {
         for (int i=0; i<count; ++i) {
             FleetControllerOptions nodeOptions = options.clone();
             nodeOptions.fleetControllerIndex = i;
-            fleetControllers.add(createFleetController(usingFakeTimer, nodeOptions, true, null));
+            fleetControllers.add(createFleetController(usingFakeTimer, nodeOptions, true, new StatusHandler.ContainerStatusPageServer()));
         }
     }
 
@@ -74,12 +79,12 @@ public class MasterElectionTest extends FleetControllerTest {
 
     private void waitForZookeeperDisconnected() throws TimeoutException {
         long maxTime = System.currentTimeMillis() + timeoutMS;
-        for(FleetController f : fleetControllers) {
-            while (true) {
-                if (!f.hasZookeeperConnection()) break;
+        for (FleetController f : fleetControllers) {
+            while (f.hasZookeeperConnection()) {
                 timer.advanceTime(1000);
-                try{ Thread.sleep(1); } catch (InterruptedException e) {}
-                if (System.currentTimeMillis() > maxTime) throw new TimeoutException("Failed to notice zookeeper down within timeout of " + timeoutMS + " ms");
+                try { Thread.sleep(1); } catch (InterruptedException e) { /* ignore */ }
+                if (System.currentTimeMillis() > maxTime)
+                    throw new TimeoutException("Failed to notice zookeeper down within timeout of " + timeoutMS + " ms");
             }
         }
         waitForCompleteCycles();
@@ -119,43 +124,44 @@ public class MasterElectionTest extends FleetControllerTest {
     @Ignore
     public void testMasterElection() throws Exception {
         startingTest("MasterElectionTest::testMasterElection");
-        log.log(LogLevel.INFO, "STARTING TEST: MasterElectionTest::testMasterElection()");
+        log.log(Level.INFO, "STARTING TEST: MasterElectionTest::testMasterElection()");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 1;
         setUpFleetController(5, false, options);
         waitForMaster(0);
-        log.log(LogLevel.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
+        log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
         fleetControllers.get(0).shutdown();
         waitForMaster(1);
-        log.log(LogLevel.INFO, "SHUTTING DOWN FLEET CONTROLLER 1");
+        log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 1");
         fleetControllers.get(1).shutdown();
         waitForMaster(2);
-        log.log(LogLevel.INFO, "SHUTTING DOWN FLEET CONTROLLER 2");
+        log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 2");
         fleetControllers.get(2).shutdown();
 
-            // Too few for there to be a master at this point
+        // Too few for there to be a master at this point
         for (int i=0; i<fleetControllers.size(); ++i) {
             if (fleetControllers.get(i).isRunning()) waitForCompleteCycle(i);
             assertFalse("Fleet controller " + i, fleetControllers.get(i).isMaster());
         }
 
-        log.log(LogLevel.INFO, "STARTING FLEET CONTROLLER 2");
-        fleetControllers.set(2, createFleetController(usingFakeTimer, fleetControllers.get(2).getOptions(), true, null));
+        StatusHandler.ContainerStatusPageServer statusPageServer = new StatusHandler.ContainerStatusPageServer();
+        log.log(Level.INFO, "STARTING FLEET CONTROLLER 2");
+        fleetControllers.set(2, createFleetController(usingFakeTimer, fleetControllers.get(2).getOptions(), true, statusPageServer));
         waitForMaster(2);
-        log.log(LogLevel.INFO, "STARTING FLEET CONTROLLER 0");
-        fleetControllers.set(0, createFleetController(usingFakeTimer, fleetControllers.get(0).getOptions(), true, null));
+        log.log(Level.INFO, "STARTING FLEET CONTROLLER 0");
+        fleetControllers.set(0, createFleetController(usingFakeTimer, fleetControllers.get(0).getOptions(), true, statusPageServer));
         waitForMaster(0);
-        log.log(LogLevel.INFO, "STARTING FLEET CONTROLLER 1");
-        fleetControllers.set(1, createFleetController(usingFakeTimer, fleetControllers.get(1).getOptions(), true, null));
+        log.log(Level.INFO, "STARTING FLEET CONTROLLER 1");
+        fleetControllers.set(1, createFleetController(usingFakeTimer, fleetControllers.get(1).getOptions(), true, statusPageServer));
         waitForMaster(0);
 
-        log.log(LogLevel.INFO, "SHUTTING DOWN FLEET CONTROLLER 4");
+        log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 4");
         fleetControllers.get(4).shutdown();
         waitForMaster(0);
-        log.log(LogLevel.INFO, "SHUTTING DOWN FLEET CONTROLLER 3");
+        log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 3");
         fleetControllers.get(3).shutdown();
         waitForMaster(0);
-        log.log(LogLevel.INFO, "SHUTTING DOWN FLEET CONTROLLER 2");
+        log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 2");
         fleetControllers.get(2).shutdown();
 
         // Too few for there to be a master at this point
@@ -166,20 +172,20 @@ public class MasterElectionTest extends FleetControllerTest {
     }
 
     private void waitForMaster(int master) {
-        log.log(LogLevel.INFO, "Entering waitForMaster");
+        log.log(Level.INFO, "Entering waitForMaster");
         boolean isOnlyMaster = false;
         for (int i=0; i < FleetControllerTest.timeoutMS; i+=100) {
             if (!fleetControllers.get(master).isMaster()) {
-                log.log(LogLevel.INFO, "Node " + master + " is not master yet, sleeping more");
+                log.log(Level.INFO, "Node " + master + " is not master yet, sleeping more");
                 timer.advanceTime(100);
                 waitForCompleteCycle(master);
             } else {
-                log.log(LogLevel.INFO, "Node " + master + " is master. Checking that noone else is master");
+                log.log(Level.INFO, "Node " + master + " is master. Checking that noone else is master");
                 isOnlyMaster = true;
                 for (int j=0; j<fleetControllers.size(); ++j) {
                     if (j != master && fleetControllers.get(j).isMaster()) {
                         isOnlyMaster = false;
-                        log.log(LogLevel.INFO, "Node " + j + " also says it is master.");
+                        log.log(Level.INFO, "Node " + j + " also says it is master.");
                     }
                 }
 
@@ -188,15 +194,15 @@ public class MasterElectionTest extends FleetControllerTest {
                 }
             }
                 // Have to wait to get zookeeper communication chance to happen.
-            try{ Thread.sleep(100); } catch (InterruptedException e) {}
+            try{ Thread.sleep(100); } catch (InterruptedException e) { /* ignore */ }
         }
 
         if (!isOnlyMaster) {
-            log.log(LogLevel.INFO, "Node " + master + " is not the only master");
+            log.log(Level.INFO, "Node " + master + " is not the only master");
             throw new IllegalStateException("Node " + master + " never got to be the only master.");
         }
 
-        log.log(LogLevel.INFO, "Leaving waitForMaster");
+        log.log(Level.INFO, "Leaving waitForMaster");
     }
 
     private static class StrictlyIncreasingVersionChecker {
@@ -226,24 +232,20 @@ public class MasterElectionTest extends FleetControllerTest {
         startingTest("MasterElectionTest::testClusterStateVersionIncreasesAcrossMasterElections");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 1;
-        setUpFleetController(5, false, options);
+        setUpFleetController(3, false, options);
         // Currently need to have content nodes present for the cluster controller to even bother
         // attempting to persisting its cluster state version to ZK.
         setUpVdsNodes(false, new DummyVdsNodeOptions());
         fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
         waitForStableSystem();
         waitForMaster(0);
-        Stream.of(0, 1, 2, 3, 4).forEach(this::waitForCompleteCycle);
+        Stream.of(0, 1, 2).forEach(this::waitForCompleteCycle);
         StrictlyIncreasingVersionChecker checker = StrictlyIncreasingVersionChecker.bootstrappedWith(
                 fleetControllers.get(0).getClusterState());
         fleetControllers.get(0).shutdown();
         waitForMaster(1);
-        Stream.of(1, 2, 3, 4).forEach(this::waitForCompleteCycle);
+        Stream.of(1, 2).forEach(this::waitForCompleteCycle);
         checker.updateAndVerify(fleetControllers.get(1).getClusterState());
-        fleetControllers.get(1).shutdown();
-        waitForMaster(2); // Still a quorum available
-        Stream.of(2, 3, 4).forEach(this::waitForCompleteCycle);
-        checker.updateAndVerify(fleetControllers.get(2).getClusterState());
     }
 
     @Test
@@ -264,9 +266,9 @@ public class MasterElectionTest extends FleetControllerTest {
         zooKeeperServer = ZooKeeperTestServer.createWithFixedPort(18342);
         timer.advanceTime(10 * 1000); // Wait long enough for fleetcontroller wanting to retry zookeeper connection
 
-        log.log(LogLevel.INFO, "WAITING FOR 0 TO BE MASTER");
+        log.log(Level.INFO, "WAITING FOR 0 TO BE MASTER");
         waitForMaster(0);
-        log.log(LogLevel.INFO, "SHUTTING DOWN");
+        log.log(Level.INFO, "SHUTTING DOWN");
     }
 
     @Test
@@ -275,31 +277,31 @@ public class MasterElectionTest extends FleetControllerTest {
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 100;
         options.zooKeeperServerAddress = "localhost";
-        setUpFleetController(5, false, options);
+        setUpFleetController(3, false, options);
         waitForMaster(0);
 
-        log.log(LogLevel.INFO, "STOPPING ZOOKEEPER SERVER AT " + zooKeeperServer.getAddress());
+        log.log(Level.INFO, "STOPPING ZOOKEEPER SERVER AT " + zooKeeperServer.getAddress());
         zooKeeperServer.shutdown(true);
         waitForCompleteCycles();
         timer.advanceTime(options.zooKeeperSessionTimeout);
         waitForZookeeperDisconnected();
         // Noone can be master if server is unavailable
-        log.log(LogLevel.INFO, "Checking master status");
+        log.log(Level.INFO, "Checking master status");
         for (int i=0; i<fleetControllers.size(); ++i) {
             assertFalse("Index " + i, fleetControllers.get(i).isMaster());
         }
 
         zooKeeperServer = new ZooKeeperTestServer();
-        log.log(LogLevel.INFO, "STARTED ZOOKEEPER SERVER AT " + zooKeeperServer.getAddress());
+        log.log(Level.INFO, "STARTED ZOOKEEPER SERVER AT " + zooKeeperServer.getAddress());
         for (FleetController fc : fleetControllers) {
             FleetControllerOptions myoptions = fc.getOptions();
             myoptions.zooKeeperServerAddress = zooKeeperServer.getAddress();
             fc.updateOptions(myoptions, 0);
-            log.log(LogLevel.INFO, "Should now have sent out new zookeeper server address " + myoptions.zooKeeperServerAddress + " to fleetcontroller " + myoptions.fleetControllerIndex);
+            log.log(Level.INFO, "Should now have sent out new zookeeper server address " + myoptions.zooKeeperServerAddress + " to fleetcontroller " + myoptions.fleetControllerIndex);
         }
         timer.advanceTime(10 * 1000); // Wait long enough for fleetcontroller wanting to retry zookeeper connection
         waitForMaster(0);
-        log.log(LogLevel.INFO, "SHUTTING DOWN");
+        log.log(Level.INFO, "SHUTTING DOWN");
     }
 
     /** Ignored for unknown reasons */
@@ -313,7 +315,7 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(0);
         timer.advanceTime(24 * 3600 * 1000); // A day
         waitForCompleteCycle(1);
-        log.log(LogLevel.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
+        log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
         fleetControllers.get(0).shutdown();
         waitForCompleteCycle(1);
         // 5 minutes is not long enough period to wait before letting this node be master.
@@ -329,15 +331,24 @@ public class MasterElectionTest extends FleetControllerTest {
         long endTime = System.currentTimeMillis() + timeoutMS;
         while (System.currentTimeMillis() < endTime) {
             boolean allOk = true;
-            for (int i=0; i<nodes.length; ++i) {
+            for (int node : nodes) {
                 Request req = new Request("getMaster");
-                connections.get(nodes[i]).invokeSync(req, FleetControllerTest.timeoutS);
-                if (req.isError()) { allOk = false; break; }
-                if (master != null && master != req.returnValues().get(0).asInt32()) { allOk = false; break; }
-                if (reason != null && !reason.equals(req.returnValues().get(1).asString())) { allOk = false; break; }
+                connections.get(node).invokeSync(req, FleetControllerTest.timeoutS);
+                if (req.isError()) {
+                    allOk = false;
+                    break;
+                }
+                if (master != null && master != req.returnValues().get(0).asInt32()) {
+                    allOk = false;
+                    break;
+                }
+                if (reason != null && ! reason.equals(req.returnValues().get(1).asString())) {
+                    allOk = false;
+                    break;
+                }
             }
             if (allOk) return;
-            try{ Thread.sleep(100); } catch (InterruptedException e) {}
+            try{ Thread.sleep(100); } catch (InterruptedException e) { /* ignore */ }
         }
         throw new IllegalStateException("Did not get master reason '" + reason
                 + "' within timeout of " + timeoutMS + " ms");
@@ -354,7 +365,7 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(0);
 
         supervisor = new Supervisor(new Transport());
-        List<Target> connections = new ArrayList<Target>();
+        List<Target> connections = new ArrayList<>();
         for (FleetController fleetController : fleetControllers) {
             int rpcPort = fleetController.getRpcPort();
             Target connection = supervisor.connect(new Spec("localhost", rpcPort));
@@ -381,7 +392,7 @@ public class MasterElectionTest extends FleetControllerTest {
             assertEquals(req.toString(), "All 3 nodes agree that 0 is current master.", req.returnValues().get(1).asString());
         }
 
-        log.log(LogLevel.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
+        log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
         fleetControllers.get(0).shutdown();
             // Wait until fc 1 & 2 votes for node 1
         waitForCompleteCycle(1);
@@ -439,7 +450,7 @@ public class MasterElectionTest extends FleetControllerTest {
             fleetControllers.get(i).updateOptions(nodeOptions, 2);
         }
         waitForMaster(0);
-        log.log(LogLevel.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
+        log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
         fleetControllers.get(0).shutdown();
         waitForMaster(1);
     }
@@ -529,7 +540,7 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(1);
         waitForCompleteCycle(1);
 
-        fleetControllers.set(0, createFleetController(usingFakeTimer, fleetControllers.get(0).getOptions(), true, null));
+        fleetControllers.set(0, createFleetController(usingFakeTimer, fleetControllers.get(0).getOptions(), true, new StatusHandler.ContainerStatusPageServer()));
         waitForMaster(0);
         waitForCompleteCycle(0);
 

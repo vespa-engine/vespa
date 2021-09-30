@@ -10,13 +10,14 @@ import java.util.List;
  * This class acts as a bridge between NetworkPortRequestor and HostPorts
  * for a single call to allocatePorts(), gathering the resulting port
  * allocations in a list of integers.
+ *
  * @author arnej
  */
 public class PortAllocBridge {
 
-    private HostPorts host;
-    private NetworkPortRequestor service;
-    private List<Integer> ports = new ArrayList<>();
+    private final HostPorts host;
+    private final NetworkPortRequestor service;
+    private final List<Integer> ports = new ArrayList<>();
 
     public PortAllocBridge(HostPorts host, NetworkPortRequestor service) {
         this.host = host;

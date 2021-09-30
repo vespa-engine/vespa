@@ -11,6 +11,7 @@
 
 #include <unistd.h>
 
+#include <vespa/vespalib/util/size_literals.h>
 #include "line-splitter.h"
 
 namespace config {
@@ -19,7 +20,7 @@ namespace sentinel {
 
 LineSplitter::LineSplitter(int fd)
     : _fd(fd),
-      _size(8192),
+      _size(8_Ki),
       _buffer(static_cast<char *>(malloc(_size))),
       _readPos(0),
       _writePos(0),

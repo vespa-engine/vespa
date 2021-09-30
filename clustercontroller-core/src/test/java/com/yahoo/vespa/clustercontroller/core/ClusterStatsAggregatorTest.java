@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.google.common.collect.Sets;
@@ -16,7 +16,7 @@ import static org.junit.Assert.assertTrue;
 public class ClusterStatsAggregatorTest {
 
     private static class Fixture {
-        private ClusterStatsAggregator aggregator;
+        private final ClusterStatsAggregator aggregator;
 
         Fixture(Set<Integer> distributorNodes,
                 Set<Integer> contentNodes) {

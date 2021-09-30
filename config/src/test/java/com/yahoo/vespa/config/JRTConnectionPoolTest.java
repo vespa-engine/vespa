@@ -1,14 +1,24 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for the JRTConnectionPool class.
@@ -19,17 +29,15 @@ import static org.junit.Assert.*;
 public class JRTConnectionPoolTest {
     private static final List<String> sources = new ArrayList<>((Arrays.asList("host0", "host1", "host2")));
 
-    /**
-     * Tests that hash-based selection through the list works.
-     */
     @Test
-    public void test_random_selection_of_sourceBasicHashBasedSelection() {
+    public void test_random_selection_of_source() {
         JRTConnectionPool sourcePool = new JRTConnectionPool(sources);
-        assertThat(sourcePool.toString(), is("Address: host0\nAddress: host1\nAddress: host2\n"));
+        assertEquals("host0,host1,host2",
+                     sourcePool.getSources().stream().map(JRTConnection::getAddress).collect(Collectors.joining(",")));
 
         Map<String, Integer> sourceOccurrences = new HashMap<>();
         for (int i = 0; i < 1000; i++) {
-            final String address = sourcePool.setNewCurrentConnection().getAddress();
+            String address = sourcePool.switchConnection().getAddress();
             if (sourceOccurrences.containsKey(address)) {
                 sourceOccurrences.put(address, sourceOccurrences.get(address) + 1);
             } else {
@@ -49,15 +57,12 @@ public class JRTConnectionPoolTest {
     public void testManySources() {
         Map<String, Integer> timesUsed = new LinkedHashMap<>();
 
-        List<String> twoSources = new ArrayList<>();
-
-        twoSources.add("host0");
-        twoSources.add("host1");
+        List<String> twoSources = List.of("host0", "host1");
         JRTConnectionPool sourcePool = new JRTConnectionPool(twoSources);
 
         int count = 1000;
         for (int i = 0; i < count; i++) {
-            String address = sourcePool.setNewCurrentConnection().getAddress();
+            String address = sourcePool.switchConnection().getAddress();
             if (timesUsed.containsKey(address)) {
                 int times = timesUsed.get(address);
                 timesUsed.put(address, times + 1);
@@ -66,14 +71,15 @@ public class JRTConnectionPoolTest {
             }
         }
         assertConnectionDistributionIsFair(timesUsed);
+        sourcePool.close();
     }
 
     // Tests that the number of times each connection is used is close to equal
     private void assertConnectionDistributionIsFair(Map<String, Integer> connectionsUsedPerHost) {
-        double devianceDueToRandomSourceSelection = 0.14;
+        double deviationDueToRandomSourceSelection = 0.15;
         final int size = 1000;
-        int minHostCount = (int) (size/2 * (1 - devianceDueToRandomSourceSelection));
-        int maxHostCount = (int) (size/2 * (1 + devianceDueToRandomSourceSelection));
+        int minHostCount = (int) (size/2 * (1 - deviationDueToRandomSourceSelection));
+        int maxHostCount = (int) (size/2 * (1 + deviationDueToRandomSourceSelection));
 
         for (Map.Entry<String, Integer> entry : connectionsUsedPerHost.entrySet()) {
             Integer timesUsed = entry.getValue();
@@ -87,10 +93,8 @@ public class JRTConnectionPoolTest {
      */
     @Test
     public void updateSources() {
-        List<String> twoSources = new ArrayList<>();
+        List<String> twoSources = List.of("host0", "host1");
 
-        twoSources.add("host0");
-        twoSources.add("host1");
         JRTConnectionPool sourcePool = new JRTConnectionPool(twoSources);
 
         ConfigSourceSet sourcesBefore = sourcePool.getSourceSet();
@@ -120,5 +124,44 @@ public class JRTConnectionPoolTest {
         assertThat(newSourceSet2.getSources().size(), is(1));
         assertThat(newSourceSet2, is(not(newSourceSet)));
         assertTrue(newSourceSet2.getSources().contains("host4"));
+
+        sourcePool.close();
     }
+
+    @Test
+    public void testFailingSources() {
+        List<String> sources = List.of("host0", "host1", "host2");
+        JRTConnectionPool connectionPool = new JRTConnectionPool(sources);
+
+        Connection firstConnection = connectionPool.getCurrent();
+
+        // Should change connection, not getting first connection as new
+        JRTConnection secondConnection = failAndGetNewConnection(connectionPool, firstConnection);
+        assertNotEquals(firstConnection, secondConnection);
+
+        // Should change connection, not getting second connection as new
+        JRTConnection thirdConnection = failAndGetNewConnection(connectionPool, secondConnection);
+        // Fail a few more times with old connection, as will happen when there are multiple subscribers
+        // Connection should not change
+        assertEquals(thirdConnection, failAndGetNewConnection(connectionPool, secondConnection));
+        assertEquals(thirdConnection, failAndGetNewConnection(connectionPool, secondConnection));
+        assertEquals(thirdConnection, failAndGetNewConnection(connectionPool, secondConnection));
+        assertNotEquals(secondConnection, thirdConnection);
+
+        // Should change connection, not getting third connection as new
+        JRTConnection currentConnection = failAndGetNewConnection(connectionPool, thirdConnection);
+        assertNotEquals(thirdConnection, currentConnection);
+
+        // Should change connection, not getting current connection as new
+        JRTConnection currentConnection2 = failAndGetNewConnection(connectionPool, currentConnection);
+        assertNotEquals(currentConnection, currentConnection2);
+
+        connectionPool.close();
+    }
+
+    private JRTConnection failAndGetNewConnection(JRTConnectionPool connectionPool, Connection failingConnection) {
+        connectionPool.setError(failingConnection, 123);
+        return connectionPool.getCurrent();
+    }
+
 }

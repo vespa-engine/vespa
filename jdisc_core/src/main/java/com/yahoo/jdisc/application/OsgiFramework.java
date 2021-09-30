@@ -113,4 +113,11 @@ public interface OsgiFramework {
      */
     void stop() throws BundleException;
 
+    /**
+     * Returns true if this is a Felix based framework and not e.g. a test framework.
+     */
+    default boolean isFelixFramework() {
+        return false;
+    }
+
 }

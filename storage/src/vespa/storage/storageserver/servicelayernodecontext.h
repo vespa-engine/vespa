@@ -8,10 +8,6 @@
  * This utility class sets up the default component register implementation.
  * It also sets up the clock and the threadpool, such that the most basic
  * features are available to the provider, before the service layer is set up.
- *
- * The service layer still provides the memory manager functionality though,
- * so you cannot retrieve the memory manager before the service layer has
- * started up. (Before getPartitionStates() have been called on provider)
  */
 
 #pragma once
@@ -29,8 +25,7 @@ struct ServiceLayerNodeContext : public StorageNodeContext {
      * You can provide your own clock implementation. Useful in testing where
      * you want to fake the clock.
      */
-    ServiceLayerNodeContext(
-            framework::Clock::UP clock = framework::Clock::UP(new RealClock));
+    ServiceLayerNodeContext(framework::Clock::UP clock, const ContentBucketDbOptions& db_opts);
 
     /**
      * Get the actual component register. Available as the actual type as the

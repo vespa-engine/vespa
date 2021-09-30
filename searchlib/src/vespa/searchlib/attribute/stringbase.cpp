@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "stringbase.h"
 #include "attributevector.hpp"
+#include "load_utils.h"
 #include "readerbase.h"
+#include "stringbase.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/searchlib/util/fileutil.hpp>
 #include <vespa/searchlib/query/query_term_ucs4.h>
+#include <vespa/searchlib/util/fileutil.hpp>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/array.hpp>
 
@@ -14,17 +15,58 @@ LOG_SETUP(".searchlib.attribute.stringbase");
 
 namespace search {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(StringAttribute, AttributeVector);
-
-using attribute::LoadedEnumAttribute;
-using attribute::LoadedEnumAttributeVector;
-
-AttributeVector::SearchContext::UP
-StringAttribute::getSearch(QueryTermSimple::UP term, const attribute::SearchContextParams & params) const
+StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased)
+    : _regex(),
+      _term(),
+      _termLen(),
+      _isPrefix(term.isPrefix()),
+      _isRegex(term.isRegex()),
+      _isCased(cased)
 {
-    (void) params;
-    return SearchContext::UP(new StringSearchContext(std::move(term), *this));
+    if (isRegex()) {
+        if (isCased()) {
+            _regex = vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::None);
+        } else {
+            _regex = vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::IgnoreCase);
+        }
+    } else if (isCased()) {
+        _term._char = term.getTerm();
+        _termLen = term.getTermLen();
+    } else {
+        term.term(_term._ucs4);
+    }
 }
+
+StringSearchHelper::~StringSearchHelper()
+{
+    if (isRegex()) {
+
+    }
+}
+
+bool
+StringSearchHelper::isMatch(const char *src) const {
+    if (__builtin_expect(isRegex(), false)) {
+        return getRegex().valid() ? getRegex().partial_match(std::string_view(src)) : false;
+    }
+    if (__builtin_expect(isCased(), false)) {
+        int res = strncmp(_term._char, src, _termLen);
+        return (res == 0) && (src[_termLen] == 0 || isPrefix());
+    }
+    vespalib::Utf8ReaderForZTS u8reader(src);
+    uint32_t j = 0;
+    uint32_t val;
+    for (;; ++j) {
+        val = u8reader.getChar();
+        val = vespalib::LowerCase::convert(val);
+        if (_term._ucs4[j] == 0 || _term._ucs4[j] != val) {
+            break;
+        }
+    }
+    return (_term._ucs4[j] == 0 && (val == 0 || isPrefix()));
+}
+
+IMPLEMENT_IDENTIFIABLE_ABSTRACT(StringAttribute, AttributeVector);
 
 class SortDataChar {
 public:
@@ -93,7 +135,8 @@ public:
     }
 };
 
-size_t StringAttribute::countZero(const char * bt, size_t sz)
+size_t
+StringAttribute::countZero(const char * bt, size_t sz)
 {
     size_t size(0);
     for(size_t i(0); i < sz; i++) {
@@ -104,7 +147,8 @@ size_t StringAttribute::countZero(const char * bt, size_t sz)
     return size;
 }
 
-void StringAttribute::generateOffsets(const char * bt, size_t sz, OffsetVector & offsets)
+void
+StringAttribute::generateOffsets(const char * bt, size_t sz, OffsetVector & offsets)
 {
     offsets.clear();
     uint32_t start(0);
@@ -130,25 +174,27 @@ StringAttribute::StringAttribute(const vespalib::string & name, const Config & c
 {
 }
 
-StringAttribute::~StringAttribute() {}
+StringAttribute::~StringAttribute() = default;
 
-uint32_t StringAttribute::get(DocId doc, WeightedInt * v, uint32_t sz) const
+uint32_t
+StringAttribute::get(DocId doc, WeightedInt * v, uint32_t sz) const
 {
     WeightedConstChar * s = new WeightedConstChar[sz];
     uint32_t n = static_cast<const AttributeVector *>(this)->get(doc, s, sz);
     for(uint32_t i(0),m(std::min(n,sz)); i<m; i++) {
-        v[i] = WeightedInt(strtoll(s[i].getValue(), NULL, 0), s[i].getWeight());
+        v[i] = WeightedInt(strtoll(s[i].getValue(), nullptr, 0), s[i].getWeight());
     }
     delete [] s;
     return n;
 }
 
-uint32_t StringAttribute::get(DocId doc, WeightedFloat * v, uint32_t sz) const
+uint32_t
+StringAttribute::get(DocId doc, WeightedFloat * v, uint32_t sz) const
 {
     WeightedConstChar * s = new WeightedConstChar[sz];
     uint32_t n = static_cast<const AttributeVector *>(this)->get(doc, s, sz);
     for(uint32_t i(0),m(std::min(n,sz)); i<m; i++) {
-        v[i] = WeightedFloat(vespalib::locale::c::strtod(s[i].getValue(), NULL), s[i].getWeight());
+        v[i] = WeightedFloat(vespalib::locale::c::strtod(s[i].getValue(), nullptr), s[i].getWeight());
     }
     delete [] s;
     return n;
@@ -156,32 +202,35 @@ uint32_t StringAttribute::get(DocId doc, WeightedFloat * v, uint32_t sz) const
 
 double
 StringAttribute::getFloat(DocId doc) const {
-    return vespalib::locale::c::strtod(get(doc), NULL);
+    return vespalib::locale::c::strtod(get(doc), nullptr);
 }
 
-uint32_t StringAttribute::get(DocId doc, double * v, uint32_t sz) const
+uint32_t
+StringAttribute::get(DocId doc, double * v, uint32_t sz) const
 {
     const char ** s = new const char *[sz];
     uint32_t n = static_cast<const AttributeVector *>(this)->get(doc, s, sz);
     for(uint32_t i(0),m(std::min(n,sz)); i<m; i++) {
-        v[i] = vespalib::locale::c::strtod(s[i], NULL);
+        v[i] = vespalib::locale::c::strtod(s[i], nullptr);
     }
     delete [] s;
     return n;
 }
 
-uint32_t StringAttribute::get(DocId doc, largeint_t * v, uint32_t sz) const
+uint32_t
+StringAttribute::get(DocId doc, largeint_t * v, uint32_t sz) const
 {
     const char ** s = new const char *[sz];
     uint32_t n = static_cast<const AttributeVector *>(this)->get(doc, s, sz);
     for(uint32_t i(0),m(std::min(n,sz)); i<m; i++) {
-        v[i] = strtoll(s[i], NULL, 0);
+        v[i] = strtoll(s[i], nullptr, 0);
     }
     delete [] s;
     return n;
 }
 
-long StringAttribute::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
+long
+StringAttribute::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
 {
     unsigned char *dst = static_cast<unsigned char *>(serTo);
     const char *value(get(doc));
@@ -198,7 +247,8 @@ long StringAttribute::onSerializeForAscendingSort(DocId doc, void * serTo, long 
     return buf.size();
 }
 
-long StringAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
+long
+StringAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
 {
     (void) bc;
     unsigned char *dst = static_cast<unsigned char *>(serTo);
@@ -222,42 +272,27 @@ long StringAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long
 StringAttribute::StringSearchContext::StringSearchContext(QueryTermSimple::UP qTerm,
                                                           const StringAttribute & toBeSearched) :
     SearchContext(toBeSearched),
-    _isPrefix(qTerm->isPrefix()),
-    _isRegex(qTerm->isRegex()),
-    _queryTerm(std::move(qTerm)),
-    _termUCS4(queryTerm()->getUCS4Term()),
-    _bufferLen(toBeSearched.getMaxValueCount()),
-    _buffer(nullptr),
-    _regex()
+    _queryTerm(static_cast<QueryTermUCS4 *>(qTerm.release())),
+    _helper(*_queryTerm, toBeSearched.getConfig().get_match() == Config::Match::CASED)
 {
-    if (isRegex()) {
-        try {
-            _regex = std::regex(_queryTerm->getTerm(), std::regex::icase);
-        } catch (std::regex_error &) {
-        }
-    }
 }
 
-StringAttribute::StringSearchContext::~StringSearchContext()
-{
-    if (_buffer != nullptr) {
-        delete [] _buffer;
-    }
-}
+StringAttribute::StringSearchContext::~StringSearchContext() = default;
 
 bool
 StringAttribute::StringSearchContext::valid() const
 {
-    return (_queryTerm.get() && (!_queryTerm->empty()));
+    return (_queryTerm && (!_queryTerm->empty()));
 }
 
 const QueryTermUCS4 *
 StringAttribute::StringSearchContext::queryTerm() const
 {
-    return static_cast<const QueryTermUCS4 *>(_queryTerm.get());
+    return _queryTerm.get();
 }
 
-uint32_t StringAttribute::clearDoc(DocId doc)
+uint32_t
+StringAttribute::clearDoc(DocId doc)
 {
     uint32_t removed(0);
     if (hasMultiValue() && (doc < getNumDocs())) {
@@ -268,50 +303,22 @@ uint32_t StringAttribute::clearDoc(DocId doc)
     return removed;
 }
 
-namespace {
-
-class DirectAccessor {
-public:
-    DirectAccessor() { }
-    const char * get(const char * v) const { return v; }
-};
-
-}
-
-int32_t
-StringAttribute::StringSearchContext::onFind(DocId docId, int32_t elemId, int32_t &weight) const
-{
-    WeightedConstChar * buffer = getBuffer();
-    uint32_t valueCount = attribute().get(docId, buffer, _bufferLen);
-
-    CollectWeight collector;
-    DirectAccessor accessor;
-    int32_t foundElem = findNextMatch(vespalib::ConstArrayRef<WeightedConstChar>(buffer, std::min(valueCount, _bufferLen)), elemId, accessor, collector);
-    weight = collector.getWeight();
-    return foundElem;
-}
-
-int32_t
-StringAttribute::StringSearchContext::onFind(DocId docId, int32_t elemId) const
-{
-    WeightedConstChar * buffer = getBuffer();
-    uint32_t valueCount = attribute().get(docId, buffer, _bufferLen);
-    for (uint32_t i = elemId, m = std::min(valueCount, _bufferLen); (i < m); i++) {
-        if (isMatch(buffer[i].getValue())) {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-bool StringAttribute::applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust)
+bool
+StringAttribute::applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust)
 {
     vespalib::string v = fv.getAsString();
     return AttributeVector::adjustWeight(_changes, doc, StringChangeData(v), wAdjust);
 }
 
-bool StringAttribute::apply(DocId, const ArithmeticValueUpdate & )
+bool
+StringAttribute::applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust)
+{
+    vespalib::string v = fv.getAsString();
+    return AttributeVector::adjustWeight(_changes, doc, StringChangeData(v), wAdjust);
+}
+
+bool
+StringAttribute::apply(DocId, const ArithmeticValueUpdate & )
 {
     return false;
 }
@@ -319,7 +326,7 @@ bool StringAttribute::apply(DocId, const ArithmeticValueUpdate & )
 bool
 StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
 {
-    fileutil::LoadedBuffer::UP udatBuffer(loadUDAT());
+    auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
 
     bool hasIdx(attrReader.hasIdx());
     size_t numDocs(0);
@@ -341,6 +348,7 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
     if (hasPostings()) {
         auto loader = this->getEnumStoreBase()->make_enumerated_postings_loader();
         loader.load_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        loader.build_enum_value_remapping();
         load_enumerated_data(attrReader, loader, numValues);
         if (numDocs > 0) {
             onAddDoc(numDocs - 1);
@@ -349,12 +357,14 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
     } else {
         auto loader = this->getEnumStoreBase()->make_enumerated_loader();
         loader.load_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        loader.build_enum_value_remapping();
         load_enumerated_data(attrReader, loader);
     }
     return true;
 }
 
-bool StringAttribute::onLoad()
+bool
+StringAttribute::onLoad(vespalib::Executor *)
 {
     ReaderBase attrReader(*this);
     bool ok(attrReader.getHasLoadData());
@@ -375,15 +385,18 @@ StringAttribute::onAddDoc(DocId )
     return false;
 }
 
-void StringAttribute::load_posting_lists(LoadedVector&)
+void
+StringAttribute::load_posting_lists(LoadedVector&)
 {
 }
 
-void StringAttribute::load_enum_store(LoadedVector&)
+void
+StringAttribute::load_enum_store(LoadedVector&)
 {
 }
 
-void StringAttribute::fillValues(LoadedVector & )
+void
+StringAttribute::fillValues(LoadedVector & )
 {
 }
 
@@ -410,5 +423,10 @@ StringAttribute::getChangeVectorMemoryUsage() const
 {
     return _changes.getMemoryUsage();
 }
+
+template bool AttributeVector::clearDoc(StringAttribute::ChangeVector& changes, DocId doc);
+template bool AttributeVector::update(StringAttribute::ChangeVector& changes, DocId doc, const StringChangeData& v);
+template bool AttributeVector::append(StringAttribute::ChangeVector& changes, DocId doc, const StringChangeData& v, int32_t w, bool doCount);
+template bool AttributeVector::remove(StringAttribute::ChangeVector& changes, DocId doc, const StringChangeData& v, int32_t w);
 
 }

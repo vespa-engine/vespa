@@ -1,24 +1,26 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInterruptedException;
 import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.ConfigSubscriber;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.CompressionType;
 import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
 import com.yahoo.vespa.config.protocol.Payload;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+
+import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.INFO;
 
 /**
  * A JRT config subscription uses one {@link JRTConfigRequester} to fetch config using Vespa RPC from a config source, typically proxy or server
@@ -28,7 +30,7 @@ import com.yahoo.vespa.config.protocol.Payload;
 public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubscription<T> {
 
     private JRTConfigRequester requester;
-    private TimingValues timingValues;
+    private final TimingValues timingValues;
 
     // Last time we got an OK JRT callback
     private Instant lastOK = Instant.MIN;
@@ -90,9 +92,9 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             // timed out, we know nothing new.
             return false;
         }
-        log.log(LogLevel.DEBUG, () -> "Polled queue and found config " + jrtReq);
+        log.log(FINE, () -> "Polled queue and found config " + jrtReq);
         if (jrtReq.hasUpdatedGeneration()) {
-            setInternalRedeploy(jrtReq.responseIsInternalRedeploy());
+            setApplyOnRestart(jrtReq.responseIsApplyOnRestart());
             if (jrtReq.hasUpdatedConfig()) {
                 setNewConfig(jrtReq);
             } else {
@@ -110,7 +112,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         } catch (IllegalArgumentException e) {
             badConfigE = e;
         }
-        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsInternalRedeploy(), configInstance);
+        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), configInstance, jrtReq.getNewChecksums());
         if (badConfigE != null) {
             throw new IllegalArgumentException("Bad config from jrt", badConfigE);
         }
@@ -128,7 +130,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         Payload payload = jrtRequest.getNewPayload();
         ConfigPayload configPayload = ConfigPayload.fromUtf8Array(payload.withCompression(CompressionType.UNCOMPRESSED).getData());
         T configInstance = configPayload.toInstance(configClass, jrtRequest.getConfigKey().getConfigId());
-        configInstance.setConfigMd5(jrtRequest.getNewConfigMd5());
+        configInstance.setConfigMd5(jrtRequest.getNewChecksums().getForType(MD5).asString()); // Note: Sets configmd5 in ConfigInstance
         return configInstance;
     }
 
@@ -156,7 +158,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     private JRTConfigRequester getRequester() {
         JRTConfigRequester requester = subscriber.requesters().get(sources);
         if (requester == null) {
-            requester = new JRTConfigRequester(new JRTConnectionPool(sources), timingValues);
+            requester = JRTConfigRequester.create(sources, timingValues);
             subscriber.requesters().put(sources, requester);
         }
         return requester;
@@ -192,7 +194,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
 
     @Override
     public void reload(long generation) {
-        log.log(LogLevel.DEBUG, "reload() is without effect on a JRTConfigSubscription.");
+        log.log(FINE, "reload() is without effect on a JRTConfigSubscription.");
     }
 
     void setLastCallBackOKTS(Instant lastCallBackOKTS) {
@@ -204,7 +206,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     static void printStatus(JRTClientConfigRequest request, String message) {
         final String name = request.getConfigKey().getName();
         if (name.equals("components") || name.equals("chains")) {
-            log.log(LogLevel.INFO, message + ":" + name + ":" + ", request=" + request);
+            log.log(INFO, message + ":" + name + ":" + ", request=" + request);
         }
     }
 }

@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import java.util.Optional;
-
 /**
  * A capacity request.
  *
@@ -11,41 +9,37 @@ import java.util.Optional;
  */
 public final class Capacity {
 
-    private final int nodeCount;
+    /** Resources should stay between these values, inclusive */
+    private final ClusterResources min, max;
 
     private final boolean required;
 
     private final boolean canFail;
 
-    private final Optional<NodeResources> nodeResources;
-
     private final NodeType type;
 
-    private Capacity(int nodeCount, Optional<NodeResources> nodeResources, boolean required, boolean canFail, NodeType type) {
-        this.nodeCount = nodeCount;
+    private Capacity(ClusterResources min, ClusterResources max, boolean required, boolean canFail, NodeType type) {
+        validate(min);
+        validate(max);
+        if (max.smallerThan(min))
+            throw new IllegalArgumentException("The max capacity must be larger than the min capacity, but got min " +
+                                               min + " and max " + max);
+        this.min = min;
+        this.max = max;
         this.required = required;
         this.canFail = canFail;
-        this.nodeResources = nodeResources;
         this.type = type;
     }
 
-    /** Returns the number of nodes requested */
-    public int nodeCount() { return nodeCount; }
-
-    /**
-     * The node flavor requested, or empty if no legacy flavor name has been used.
-     * This may be satisfied by the requested flavor or a suitable replacement.
-     *
-     * @deprecated use nodeResources instead
-     */
-    @Deprecated
-    public Optional<String> flavor() {
-        if (nodeResources().isEmpty()) return Optional.empty();
-        return nodeResources.map(n -> n.toString());
+    private static void validate(ClusterResources resources) {
+        if (resources.nodes() == 0 && resources.groups() == 0) return; // unspecified
+        if (resources.nodes() % resources.groups() != 0)
+            throw new IllegalArgumentException("The number of nodes (" + resources.nodes() +
+                                               ") must be divisible by the number of groups (" + resources.groups() + ")");
     }
 
-    /** Returns the resources requested for each node, or empty to leave this decision to provisioning */
-    public Optional<NodeResources> nodeResources() { return nodeResources; }
+    public ClusterResources minResources() { return min; }
+    public ClusterResources maxResources() { return max; }
 
     /** Returns whether the requested number of nodes must be met exactly for a request for this to succeed */
     public boolean isRequired() { return required; }
@@ -64,32 +58,41 @@ public final class Capacity {
      */
     public NodeType type() { return type; }
 
-    @Override
-    public String toString() {
-        return nodeCount + " nodes " + (nodeResources.isPresent() ? nodeResources.get() : "with default resources" );
+    public Capacity withGroups(int groups) {
+        return new Capacity(min.withGroups(groups), max.withGroups(groups), required, canFail, type);
     }
 
-    /** Creates this from a desired node count: The request may be satisfied with a smaller number of nodes. */
-    public static Capacity fromNodeCount(int capacity) {
-        return fromCount(capacity, Optional.empty(), false, true);
+    @Override
+    public String toString() {
+        return (required ? "required " : "") +
+               (min.equals(max) ? min : "between " + min + " and " + max);
     }
 
     /** Create a non-required, failable capacity request */
-    public static Capacity fromCount(int nodeCount, NodeResources resources) {
-        return fromCount(nodeCount, resources, false, true);
+    public static Capacity from(ClusterResources resources) {
+        return from(resources, resources);
     }
 
-    public static Capacity fromCount(int nodeCount, NodeResources resources, boolean required, boolean canFail) {
-        return new Capacity(nodeCount, Optional.of(resources), required, canFail, NodeType.tenant);
+    /** Create a non-required, failable capacity request */
+    public static Capacity from(ClusterResources min, ClusterResources max) {
+        return from(min, max, false, true);
     }
 
-    public static Capacity fromCount(int nodeCount, Optional<NodeResources> resources, boolean required, boolean canFail) {
-        return new Capacity(nodeCount, resources, required, canFail, NodeType.tenant);
+    public static Capacity from(ClusterResources resources, boolean required, boolean canFail) {
+        return from(resources, required, canFail, NodeType.tenant);
+    }
+
+    public static Capacity from(ClusterResources min, ClusterResources max, boolean required, boolean canFail) {
+        return new Capacity(min, max, required, canFail, NodeType.tenant);
     }
 
     /** Creates this from a node type */
     public static Capacity fromRequiredNodeType(NodeType type) {
-        return new Capacity(0,  Optional.empty(), true, false, type);
+        return from(new ClusterResources(0, 0, NodeResources.unspecified()), true, false, type);
+    }
+
+    private static Capacity from(ClusterResources resources, boolean required, boolean canFail, NodeType type) {
+        return new Capacity(resources, resources, required, canFail, type);
     }
 
 }

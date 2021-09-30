@@ -22,7 +22,7 @@ import java.util.Map;
 public class BackedOverridableQueryProfile extends OverridableQueryProfile implements Cloneable {
 
     /** The backing read only query profile, or null if this is not backed */
-    private QueryProfile backingProfile;
+    private final QueryProfile backingProfile;
 
     /**
      * Creates an overridable profile from the given backing profile. The backing profile will never be
@@ -31,7 +31,7 @@ public class BackedOverridableQueryProfile extends OverridableQueryProfile imple
      * @param backingProfile the backing profile, which is assumed read only, never null
      */
     public BackedOverridableQueryProfile(QueryProfile backingProfile) {
-        Validator.ensureNotNull("An overridable query profile must be backed by a real query profile",backingProfile);
+        Validator.ensureNotNull("An overridable query profile must be backed by a real query profile", backingProfile);
         setType(backingProfile.getType());
         this.backingProfile = backingProfile;
     }
@@ -49,7 +49,7 @@ public class BackedOverridableQueryProfile extends OverridableQueryProfile imple
     protected Object localLookup(String localName, DimensionBinding dimensionBinding) {
         Object valueInThis = super.localLookup(localName, dimensionBinding);
         if (valueInThis != null) return valueInThis;
-        return backingProfile.localLookup(localName, dimensionBinding);
+        return backingProfile.localLookup(localName, dimensionBinding.createFor(backingProfile.getDimensions()));
     }
 
     protected Boolean isLocalInstanceOverridable(String localName) {
@@ -88,23 +88,23 @@ public class BackedOverridableQueryProfile extends OverridableQueryProfile imple
     }
 
     @Override
-    protected void visitVariants(boolean allowContent,QueryProfileVisitor visitor,DimensionBinding dimensionBinding) {
+    protected void visitVariants(boolean allowContent, QueryProfileVisitor visitor, DimensionBinding dimensionBinding) {
         super.visitVariants(allowContent, visitor, dimensionBinding);
         if (visitor.isDone()) return;
-        backingProfile.visitVariants(allowContent, visitor, dimensionBinding);
+        backingProfile.visitVariants(allowContent, visitor, dimensionBinding.createFor(backingProfile.getDimensions()));
     }
 
     @Override
-    protected void visitInherited(boolean allowContent,QueryProfileVisitor visitor,DimensionBinding dimensionBinding, QueryProfile owner) {
-        super.visitInherited(allowContent,visitor,dimensionBinding, owner);
+    protected void visitInherited(boolean allowContent, QueryProfileVisitor visitor, DimensionBinding dimensionBinding, QueryProfile owner) {
+        super.visitInherited(allowContent, visitor, dimensionBinding, owner);
         if (visitor.isDone()) return;
-        backingProfile.visitInherited(allowContent,visitor,dimensionBinding,owner);
+        backingProfile.visitInherited(allowContent, visitor, dimensionBinding.createFor(backingProfile.getDimensions()), owner);
     }
 
     /** Returns a value from the content of this: The value in this, or the value from the backing if not set in this */
     protected Object getContent(String localKey) {
-        Object value=super.getContent(localKey);
-        if (value!=null) return value;
+        Object value = super.getContent(localKey);
+        if (value != null) return value;
         return backingProfile.getContent(localKey);
     }
 
@@ -113,19 +113,19 @@ public class BackedOverridableQueryProfile extends OverridableQueryProfile imple
      * All the values in this, and all values in the backing where an overriding value is not set in this
      */
     @Override
-    protected Map<String,Object> getContent() {
-        Map<String,Object> thisContent=super.getContent();
-        Map<String,Object> backingContent=backingProfile.getContent();
+    protected Map<String, Object> getContent() {
+        Map<String,Object> thisContent = super.getContent();
+        Map<String,Object> backingContent = backingProfile.getContent();
         if (thisContent.isEmpty()) return backingContent; // Shortcut
         if (backingContent.isEmpty()) return thisContent; // Shortcut
-        Map<String,Object> content=new HashMap<>(backingContent);
+        Map<String, Object> content = new HashMap<>(backingContent);
         content.putAll(thisContent);
         return content;
     }
 
     @Override
     public String toString() {
-        return "overridable wrapper of " + backingProfile.toString();
+        return "overridable wrapper of " + backingProfile;
     }
 
     @Override

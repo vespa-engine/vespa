@@ -25,22 +25,24 @@ import java.util.stream.Collectors;
 public class ZoneFilterMock implements ZoneList {
 
     private final List<ZoneApi> zones;
-    private final Map<ZoneApi, Set<RoutingMethod>> zoneRoutingMethods;
+    private final Map<ZoneApi, List<RoutingMethod>> zoneRoutingMethods;
+    private final Set<ZoneApi> reprovisionToUpgradeOs;
     private final boolean negate;
 
-    private ZoneFilterMock(List<ZoneApi> zones, Map<ZoneApi, Set<RoutingMethod>> zoneRoutingMethods, boolean negate) {
+    private ZoneFilterMock(List<ZoneApi> zones, Map<ZoneApi, List<RoutingMethod>> zoneRoutingMethods, Set<ZoneApi> reprovisionToUpgradeOs, boolean negate) {
         this.zones = zones;
         this.zoneRoutingMethods = zoneRoutingMethods;
+        this.reprovisionToUpgradeOs = reprovisionToUpgradeOs;
         this.negate = negate;
     }
 
-    public static ZoneFilter from(Collection<? extends ZoneApi> zones, Map<ZoneApi, Set<RoutingMethod>> routingMethods) {
-        return new ZoneFilterMock(List.copyOf(zones), Map.copyOf(routingMethods), false);
+    public static ZoneFilter from(Collection<? extends ZoneApi> zones, Map<ZoneApi, List<RoutingMethod>> routingMethods, Set<ZoneApi> reprovisionToUpgradeOs) {
+        return new ZoneFilterMock(List.copyOf(zones), Map.copyOf(routingMethods), reprovisionToUpgradeOs, false);
     }
 
     @Override
     public ZoneList not() {
-        return new ZoneFilterMock(zones, zoneRoutingMethods, ! negate);
+        return new ZoneFilterMock(zones, zoneRoutingMethods, reprovisionToUpgradeOs, ! negate);
     }
 
     @Override
@@ -60,12 +62,17 @@ public class ZoneFilterMock implements ZoneList {
 
     @Override
     public ZoneList routingMethod(RoutingMethod method) {
-        return filter(zone -> zoneRoutingMethods.getOrDefault(zone, Set.of()).contains(method));
+        return filter(zone -> zoneRoutingMethods.getOrDefault(zone, List.of()).contains(method));
     }
 
     @Override
     public ZoneList reachable() {
         return all();
+    }
+
+    @Override
+    public ZoneList reprovisionToUpgradeOs() {
+        return filter(reprovisionToUpgradeOs::contains);
     }
 
     @Override
@@ -100,7 +107,7 @@ public class ZoneFilterMock implements ZoneList {
                                 condition.negate().test(zone) :
                                 condition.test(zone))
                         .collect(Collectors.toList()),
-                zoneRoutingMethods, false);
+                zoneRoutingMethods, reprovisionToUpgradeOs, false);
     }
 
 }

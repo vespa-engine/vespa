@@ -9,25 +9,21 @@
       "cluster": "default",
       "tls": true,
       "url": "https://instance1.application1.tenant1.us-west-1.vespa.oath.cloud/",
-      "scope": "zone"
+      "scope": "zone",
+      "routingMethod": "exclusive",
+      "legacy": false
     },
     {
       "cluster": "default",
       "tls": true,
-      "url": "https://c0.instance1.application1.tenant1.global.vespa.oath.cloud/",
-      "scope": "global"
-    },
-    {
-      "cluster": "default",
-      "tls": true,
-      "url": "https://instance1--application1--tenant1.us-west-1.prod.vespa:43",
-      "scope": "zone"
+      "url": "https://instance1--application1--tenant1.us-west-1.vespa.oath.cloud:4443/",
+      "scope": "zone",
+      "routingMethod": "shared",
+      "legacy": false
     }
   ],
-  "serviceUrls": [
-    "https://instance1--application1--tenant1.us-west-1.prod.vespa:43"
-  ],
-  "nodes": "http://localhost:8080/zone/v2/prod/us-west-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.instance1",
+  "clusters":"http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/clusters",
+  "nodes": "http://localhost:8080/zone/v2/prod/us-west-1/nodes/v2/node/?recursive=true&application=tenant1.application1.instance1",
   "yamasUrl": "http://monitoring-system.test/?environment=prod&region=us-west-1&application=tenant1.application1.instance1",
   "version": "(ignore)",
   "revision": "1.0.1-commit1",
@@ -48,13 +44,8 @@
     "commit": "commit1"
   },
   "status": "complete",
+  "quota": "(ignore)",
   "activity": {},
-  "cost": {
-    "tco": 0,
-    "waste": 0,
-    "utilization": 0.0,
-    "cluster": {}
-  },
   "metrics": {
     "queriesPerSecond": 0.0,
     "writesPerSecond": 0.0,

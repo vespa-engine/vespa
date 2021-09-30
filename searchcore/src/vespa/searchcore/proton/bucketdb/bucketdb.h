@@ -31,7 +31,7 @@ private:
     void checkEmpty() const;
 public:
     BucketDB();
-    virtual ~BucketDB();
+    ~BucketDB();
 
     const BucketState & add(const GlobalId &gid,
                             const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize,
@@ -51,6 +51,7 @@ public:
     void cacheBucket(const BucketId &bucketId);
     void uncacheBucket();
     bool isCachedBucket(const BucketId &bucketId) const;
+    storage::spi::BucketInfo cachedGetBucketInfo(const BucketId &bucketId) const;
     BucketState cachedGet(const BucketId &bucketId) const;
     bool hasBucket(const BucketId &bucketId) const;
     void getBuckets(BucketId::List & buckets) const;

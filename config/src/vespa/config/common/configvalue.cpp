@@ -6,33 +6,33 @@
 
 namespace config {
 
-ConfigValue::ConfigValue(const std::vector<vespalib::string> & lines, const vespalib::string & md5sum)
+ConfigValue::ConfigValue(const std::vector<vespalib::string> & lines, const vespalib::string & xxhash)
     : _payload(),
       _lines(lines),
-      _md5sum(md5sum)
+      _xxhash64(xxhash)
 { }
 
 ConfigValue::ConfigValue()
     : _payload(),
       _lines(),
-      _md5sum()
+      _xxhash64()
 { }
 
-ConfigValue::ConfigValue(const PayloadPtr & payload, const vespalib::string & md5)
-    : _payload(payload),
+ConfigValue::ConfigValue(PayloadPtr payload, const vespalib::string & xxhash)
+    : _payload(std::move(payload)),
       _lines(),
-      _md5sum(md5)
+      _xxhash64(xxhash)
 { }
 
 ConfigValue::ConfigValue(const ConfigValue &) = default;
 ConfigValue & ConfigValue::operator = (const ConfigValue &) = default;
 
-ConfigValue::~ConfigValue() { }
+ConfigValue::~ConfigValue() = default;
 
 int
 ConfigValue::operator==(const ConfigValue & rhs) const
 {
-    return (_md5sum.compare(rhs._md5sum) == 0);
+    return (_xxhash64.compare(rhs._xxhash64) == 0);
 }
 
 int
@@ -57,8 +57,12 @@ ConfigValue::getLegacyFormat() const
 
 const vespalib::string
 ConfigValue::asJson() const {
-    const vespalib::slime::Inspector & payload(_payload->getSlimePayload());
-    return payload.toString();
+    if (_payload) {
+        const vespalib::slime::Inspector & payload(_payload->getSlimePayload());
+        return payload.toString();
+    } else {
+        return {};
+    }
 }
 
 void
@@ -74,7 +78,9 @@ ConfigValue::serializeV1(vespalib::slime::Cursor & cursor) const
 void
 ConfigValue::serializeV2(vespalib::slime::Cursor & cursor) const
 {
-    copySlimeObject(_payload->getSlimePayload(), cursor);
+    if (_payload) {
+        copySlimeObject(_payload->getSlimePayload(), cursor);
+    }
 }
 
 }

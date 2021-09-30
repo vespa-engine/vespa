@@ -57,8 +57,8 @@ public abstract class RuleBaseAbstractTestCase {
     }
 
     protected Query assertSemantics(String result, String input, int tracelevel, Query.Type queryType) {
-        Query query=new Query("?query=" + QueryTestCase.httpEncode(input) + "&tracelevel=0&tracelevel.rules=" + tracelevel +
-                             "&language=und&type=" + queryType.toString());
+        Query query = new Query("?query=" + QueryTestCase.httpEncode(input) + "&tracelevel=0&tracelevel.rules=" + tracelevel +
+                               "&language=und&type=" + queryType);
         return assertSemantics(result, query);
     }
 

@@ -5,9 +5,7 @@
 #include "searchiterator.h"
 #include <vespa/searchlib/common/bitvector.h>
 
-namespace search {
-
-namespace queryeval {
+namespace search::queryeval {
 
 /**
 * Helper methods for doing termwise evaluation.
@@ -131,5 +129,4 @@ TermwiseHelper::orIterators(BitVector & result, IT begin, IT end, uint32_t begin
     }
 }
 
-}
 }

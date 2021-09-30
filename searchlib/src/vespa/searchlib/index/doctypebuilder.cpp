@@ -10,56 +10,51 @@ using namespace document;
 namespace search::index {
 namespace {
 
-TensorDataType tensorDataType(vespalib::eval::ValueType::from_spec("tensor(x{}, y{})"));
-
-const DataType *convert(Schema::DataType type) {
+DataType::Type convert(Schema::DataType type) {
     switch (type) {
     case schema::DataType::BOOL:
     case schema::DataType::UINT2:
     case schema::DataType::UINT4:
     case schema::DataType::INT8:
-        return DataType::BYTE;
+        return DataType::T_BYTE;
     case schema::DataType::INT16:
-        return DataType::SHORT;
+        return DataType::T_SHORT;
     case schema::DataType::INT32:
-        return DataType::INT;
+        return DataType::T_INT;
     case schema::DataType::INT64:
-        return DataType::LONG;
+        return DataType::T_LONG;
     case schema::DataType::FLOAT:
-        return DataType::FLOAT;
+        return DataType::T_FLOAT;
     case schema::DataType::DOUBLE:
-        return DataType::DOUBLE;
+        return DataType::T_DOUBLE;
     case schema::DataType::STRING:
-        return DataType::STRING;
+        return DataType::T_STRING;
     case schema::DataType::RAW:
-        return DataType::RAW;
+        return DataType::T_RAW;
     case schema::DataType::BOOLEANTREE:
-        return DataType::PREDICATE;
+        return DataType::T_PREDICATE;
     case schema::DataType::TENSOR:
-        return &tensorDataType;
+        return DataType::T_TENSOR;
     default:
         break;
     }
     assert(!"Unknown datatype in schema");
-    return 0;
+    return DataType::MAX;
 }
 
 void
-insertStructType(document::DocumenttypesConfig::Documenttype & cfg,
-                 const StructDataType & structType)
+insertStructType(document::DocumenttypesConfig::Documenttype & cfg, const StructDataType & structType)
 {
     typedef document::DocumenttypesConfig DTC;
     DTC::Documenttype::Datatype::Sstruct cfgStruct;
     cfgStruct.name = structType.getName();
     Field::Set fieldSet = structType.getFieldSet();
-    for (Field::Set::const_iterator itr = fieldSet.begin();
-         itr != fieldSet.end(); ++itr)
-    {
-        DTC::Documenttype::Datatype::Sstruct::Field field;
-        field.name = (*itr)->getName();
-        field.datatype = (*itr)->getDataType().getId();
-        field.id = (*itr)->getId();
-        cfgStruct.field.push_back(field);
+    for (const Field * field : fieldSet) {
+        DTC::Documenttype::Datatype::Sstruct::Field sField;
+        sField.name = field->getName();
+        sField.datatype = field->getDataType().getId();
+        sField.id = field->getId();
+        cfgStruct.field.push_back(sField);
     }
     cfg.datatype.push_back(DTC::Documenttype::Datatype());
     cfg.datatype.back().sstruct = cfgStruct;
@@ -68,8 +63,7 @@ insertStructType(document::DocumenttypesConfig::Documenttype & cfg,
 
 using namespace document::config_builder;
 
-TypeOrId makeCollection(TypeOrId datatype,
-                        Schema::CollectionType collection_type) {
+TypeOrId makeCollection(TypeOrId datatype, Schema::CollectionType collection_type) {
     switch (collection_type) {
     case schema::CollectionType::ARRAY:
         return Array(datatype);
@@ -142,12 +136,12 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
         if (usf != usedFields.end()) {
             continue;   // taken as index field
         }
-        const DataType *primitiveType = convert(field.getDataType());
-        if (primitiveType->getId() == DataType::T_TENSOR) {
-            header_struct.addTensorField(field.getName(), dynamic_cast<const TensorDataType &>(*primitiveType).getTensorType().to_spec());
+        auto type_id = convert(field.getDataType());
+        if (type_id == DataType::T_TENSOR) {
+            header_struct.addTensorField(field.getName(), field.get_tensor_spec());
         } else {
             header_struct.addField(field.getName(), type_cache.getType(
-                        primitiveType->getId(), field.getCollectionType()));
+                    type_id, field.getCollectionType()));
         }
         usedFields.insert(field.getName());
     }
@@ -158,12 +152,12 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
         if (usf != usedFields.end()) {
             continue;   // taken as index field or attribute field
         }
-        const DataType *primitiveType(convert(field.getDataType()));
-        if (primitiveType->getId() == DataType::T_TENSOR) {
-            header_struct.addTensorField(field.getName(), dynamic_cast<const TensorDataType &>(*primitiveType).getTensorType().to_spec());
+        auto type_id  = convert(field.getDataType());
+        if (type_id == DataType::T_TENSOR) {
+            header_struct.addTensorField(field.getName(), field.get_tensor_spec());
         } else {
             header_struct.addField(field.getName(), type_cache.getType(
-                        primitiveType->getId(), field.getCollectionType()));
+                    type_id, field.getCollectionType()));
         }
         usedFields.insert(field.getName());
     }

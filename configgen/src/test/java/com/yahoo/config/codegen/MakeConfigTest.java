@@ -46,31 +46,31 @@ public class MakeConfigTest {
         System.setProperty("config.dumpTree", "true");
         System.setProperty("config.useFramework", "true");
         System.setProperty("config.dest", dest.getAbsolutePath());
-        System.setProperty("config.spec", "src/test/resources/allfeatures.def");
+        System.setProperty("config.spec", "src/test/resources/configgen.allfeatures.def");
         MakeConfigProperties p = new MakeConfigProperties();
         assertEquals(p.destDir.getAbsolutePath(), dest.getAbsolutePath());
         assertTrue(p.dumpTree);
         assertTrue(p.generateFrameworkCode);
-        assertEquals(p.specFiles.length, 1);
-        assertEquals(p.specFiles[0].getAbsolutePath(), new File("src/test/resources/allfeatures.def").getAbsolutePath());
+        assertEquals(p.specFiles.size(), 1);
+        assertEquals(p.specFiles.get(0).getAbsolutePath(), new File("src/test/resources/configgen.allfeatures.def").getAbsolutePath());
         
         System.setProperty("config.dumpTree", "false");
         System.setProperty("config.useFramework", "false");
         System.setProperty("config.dest", dest.getAbsolutePath());
-        System.setProperty("config.spec", "src/test/resources/allfeatures.def,src/test/resources/bar.foo.def");
+        System.setProperty("config.spec", "src/test/resources/configgen.allfeatures.def,src/test/resources/baz.bar.foo.def");
         p = new MakeConfigProperties();
         assertEquals(p.destDir.getAbsolutePath(), dest.getAbsolutePath());
         assertFalse(p.dumpTree);
         assertFalse(p.generateFrameworkCode);
-        assertEquals(p.specFiles.length, 2);
+        assertEquals(p.specFiles.size(), 2);
     }
 
     @Test
-    public void testMake() throws IOException, InterruptedException {
+    public void testMake() throws IOException {
         System.setProperty("config.dumpTree", "true");
         System.setProperty("config.useFramework", "true");
         System.setProperty("config.dest", dest.getAbsolutePath());
-        System.setProperty("config.spec", "src/test/resources/allfeatures.def");
+        System.setProperty("config.spec", "src/test/resources/configgen.allfeatures.def");
         MakeConfig.main(new String[]{});
     }
     

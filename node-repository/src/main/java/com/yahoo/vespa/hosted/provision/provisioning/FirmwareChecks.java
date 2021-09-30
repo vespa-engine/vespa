@@ -1,15 +1,13 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
+import com.yahoo.lang.CachedSupplier;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Keeps cached data about when to do a firmware check on the hosts managed by a node repository.
@@ -28,13 +26,12 @@ public class FirmwareChecks {
 
     private final CuratorDatabaseClient database;
     private final Clock clock;
-
-    private volatile Supplier<Optional<Instant>> checkAfter;
+    private final CachedSupplier<Optional<Instant>> checkAfter;
 
     public FirmwareChecks(CuratorDatabaseClient database, Clock clock) {
         this.database = database;
         this.clock = clock;
-        createCache();
+        this.checkAfter = new CachedSupplier<>(database::readFirmwareCheck, cacheExpiry);
     }
 
     /** Returns the instant after which a firmware check is required, or empty if none currently are. */
@@ -45,17 +42,13 @@ public class FirmwareChecks {
     /** Requests a firmware check for all hosts managed by this node repository. */
     public void request() {
         database.writeFirmwareCheck(Optional.of(clock.instant()));
-        createCache();
+        checkAfter.invalidate();
     }
 
     /** Clears any outstanding firmware checks for this node repository. */
     public void cancel() {
         database.writeFirmwareCheck(Optional.empty());
-        createCache();
-    }
-
-    private void createCache() {
-        checkAfter = Suppliers.memoizeWithExpiration(database::readFirmwareCheck, cacheExpiry.toMillis(), TimeUnit.MILLISECONDS);
+        checkAfter.invalidate();
     }
 
 }

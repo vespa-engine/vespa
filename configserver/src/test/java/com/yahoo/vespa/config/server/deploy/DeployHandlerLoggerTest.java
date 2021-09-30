@@ -3,10 +3,10 @@ package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
+import java.util.logging.Level;
+
 import com.yahoo.log.LogLevel;
-import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
-import com.yahoo.slime.Slime;
 
 import org.junit.Test;
 
@@ -31,20 +31,18 @@ public class DeployHandlerLoggerTest {
     }
 
     private void testLogging(boolean verbose, String expectedPattern) throws IOException {
-        Slime slime = new Slime();
-        Cursor array = slime.setArray();
-        DeployLogger logger = new DeployHandlerLogger(array, verbose, new ApplicationId.Builder()
-                                                      .tenant("testtenant").applicationName("testapp").build());
+        DeployHandlerLogger logger = DeployHandlerLogger.forApplication(
+                new ApplicationId.Builder().tenant("testtenant").applicationName("testapp").build(), verbose);
         logMessages(logger);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        new JsonFormat(true).encode(baos, slime);
+        new JsonFormat(true).encode(baos, logger.slime());
         assertTrue(Pattern.matches(expectedPattern, baos.toString()));
     }
 
     private void logMessages(DeployLogger logger) {
         logger.log(LogLevel.DEBUG, "foobar");
         logger.log(LogLevel.SPAM, "foobar");
-        logger.log(LogLevel.FINE, "baz");
-        logger.log(LogLevel.WARNING, "baz");
+        logger.log(Level.FINE, "baz");
+        logger.log(Level.WARNING, "baz");
     }
 }

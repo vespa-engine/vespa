@@ -12,7 +12,7 @@ thing we haven't done is to create a module structure friendly to newcomers - th
 simply organized in a flat structure of about 150 modules. 
 
 This document aims to provide a map from the
-[functional elements](https://docs.vespa.ai/documentation/overview.html)
+[functional elements](https://docs.vespa.ai/en/overview.html)
 of Vespa to the most important modules in the flat module structure in the
 [code base on GitHub](https://github.com/vespa-engine/vespa).
 
@@ -40,16 +40,12 @@ The stateless container is implemented in Java.
 jDisc core modules:
 
 - [jdisc_core](https://github.com/vespa-engine/vespa/tree/master/jdisc_core) - the core jDisc functionality
-- [jdisc_http_service](https://github.com/vespa-engine/vespa/tree/master/jdisc_http_service) - HTTP connector for jDisc, implemented using Jetty.
 
 jDisc container modules, layered on jDisc core:
 
 - [container-disc](https://github.com/vespa-engine/vespa/tree/master/container-disc) - integration between the jDisc container and jDisc core layers.
-- [container-core](https://github.com/vespa-engine/vespa/tree/master/container-core) - core jDisc container functionality: Metrics, OSGi integration for component bundles, etc.
+- [container-core](https://github.com/vespa-engine/vespa/tree/master/container-core) - core jDisc container functionality: Metrics, OSGi integration for component bundles, dependency injection, HTTP connector, etc.
 - [component](https://github.com/vespa-engine/vespa/tree/master/component) - the component model. Components (in Java) will implement or subclass a type for this module.
-- [chain](https://github.com/vespa-engine/vespa/tree/master/chain) - generic support for chaining components in a Chain of Responsibility structure, which is a pattern used repeatedly in higher level modules.
-- [container-di](https://github.com/vespa-engine/vespa/tree/master/container-di) - component dependency injection framework for the container, compatible with Guice annotations but an separate implementation which handles injection of config and injection of component collections.
-- [processing](https://github.com/vespa-engine/vespa/tree/master/processing) - generic, chainable request-response processing framework (Processors).
 
 Search container, layered on jDisc container:
 
@@ -59,7 +55,7 @@ Document operation modules:
 
 - [document](https://github.com/vespa-engine/vespa/tree/master/document) - the document model - documents, fields and document types, and operations on documents. Implemented in both Java and C++.
 - [messagebus](https://github.com/vespa-engine/vespa/tree/master/messagebus) - generic async, multi-hop message passing implemented in both Java and C++.
-- [jdisc_messagebus_service](https://github.com/vespa-engine/vespa/tree/master/jdisc_messagebus_service) - MessageBus connector for jDisc.
+- [container-messagebus](https://github.com/vespa-engine/vespa/tree/master/container-messagebus) - MessageBus connector for jDisc.
 - [documentapi](https://github.com/vespa-engine/vespa/tree/master/documentapi) - API for issuing document operations to Vespa over messagebus.
 - [docproc](https://github.com/vespa-engine/vespa/tree/master/docproc) - chainable document (operation) processors: Document operations issued over messagebus to Vespa will usually be routed through a container running a document processor chain.
 - [indexinglanguage](https://github.com/vespa-engine/vespa/tree/master/indexinglanguage) - implementation of the "indexing" language which is used to express the statements prefixed by "indexing:" in the search definition. 

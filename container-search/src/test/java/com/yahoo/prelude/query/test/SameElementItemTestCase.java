@@ -5,10 +5,14 @@ import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.SameElementItem;
+import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.TermItem;
+import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import org.junit.Test;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -79,7 +83,7 @@ public class SameElementItemTestCase {
     }
 
     @Test
-    public void requireAllChildrenAreTermItems() {
+    public void requireNoChildrenAreWordAlternatives() {
         try {
             SameElementItem s = new SameElementItem("structa");
             s.addItem(new AndItem());
@@ -88,6 +92,19 @@ public class SameElementItemTestCase {
         catch (IllegalArgumentException e) { // Success
             assertEquals("Child item (AND ) should be an instance of class com.yahoo.prelude.query.TermItem but is class com.yahoo.prelude.query.AndItem",
                          e.getMessage());
+        }
+    }
+
+    @Test
+    public void requireAllChildrenAreTermItems() {
+        try {
+            SameElementItem s = new SameElementItem("structa");
+            s.addItem(new WordAlternativesItem("test", true, new Substring("origin"), List.of(new WordAlternativesItem.Alternative("a", 0.3))));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) { // Success
+            assertEquals("Child item WORD_ALTERNATIVES test:[ a(0.3) ] should NOT be an instance of class com.yahoo.prelude.query.WordAlternativesItem but is class com.yahoo.prelude.query.WordAlternativesItem",
+                    e.getMessage());
         }
     }
 

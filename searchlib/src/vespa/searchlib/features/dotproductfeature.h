@@ -49,7 +49,7 @@ class VectorBase : public fef::Anything {
 public:
     typedef std::pair<DimensionVType, ComponentType> Element; // <dimension, component>
     typedef std::vector<Element>                    Vector;
-    typedef vespalib::hash_map<DimensionHType, ComponentType, vespalib::hash<DimensionHType>, HashMapComparator> HashMap;
+    typedef vespalib::hash_map<DimensionHType, ComponentType, vespalib::hash<DimensionHType>, HashMapComparator, vespalib::hashtable_base::and_modulator> HashMap;
 protected:
     VectorBase();
     Vector _vector;
@@ -181,8 +181,8 @@ public:
     using AT = multivalue::Value<BaseType>;
     using V  = std::vector<BaseType>;
 private:
-    vespalib::hwaccelrated::IAccelrated::UP _multiplier;
-    V                                       _queryVector;
+    const vespalib::hwaccelrated::IAccelrated   & _multiplier;
+    V                                             _queryVector;
     virtual size_t getAttributeValues(uint32_t docid, const AT * & count) = 0;
 public:
     DotProductExecutorBase(const V & queryVector);

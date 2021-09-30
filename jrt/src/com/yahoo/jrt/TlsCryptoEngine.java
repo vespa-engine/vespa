@@ -21,7 +21,8 @@ public class TlsCryptoEngine implements CryptoEngine {
 
     @Override
     public TlsCryptoSocket createClientCryptoSocket(SocketChannel channel, Spec spec)  {
-        SSLEngine sslEngine = tlsContext.createSslEngine();
+        String peerHost = spec.host() != null ? spec.host() : "localhost"; // Use localhost for wildcard address
+        SSLEngine sslEngine = tlsContext.createSslEngine(peerHost, spec.port());
         sslEngine.setUseClientMode(true);
         return new TlsCryptoSocket(channel, sslEngine);
     }

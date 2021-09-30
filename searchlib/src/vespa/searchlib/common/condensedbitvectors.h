@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/vespalib/util/arrayref.h>
 #include <set>
@@ -31,9 +30,6 @@ public:
     bool hasKey(Key key) const { return key < getKeyCapacity(); }
     void addKey(Key key) const;
     static CondensedBitVector::UP create(size_t size, vespalib::GenerationHolder &genHolder);
-private:
-    typedef vespalib::hash_map<Key, uint32_t> Key2Index;
-    Key2Index _keys;
 };
 
 }

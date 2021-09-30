@@ -120,32 +120,32 @@ SearchIterator *TERM(std::initializer_list<uint32_t> hits, bool strict) {
     return new MyTerm(hits, strict);
 }
 
-SearchIterator *ANDNOT(std::initializer_list<SearchIterator *> children, bool strict) {
-    return AndNotSearch::create(children, strict);
+SearchIterator::UP ANDNOT(ChildrenIterators children, bool strict) {
+    return AndNotSearch::create(std::move(children), strict);
 }
 
-SearchIterator *AND(std::initializer_list<SearchIterator *> children, bool strict) {
-    return AndSearch::create(children, strict);
+SearchIterator::UP AND(ChildrenIterators children, bool strict) {
+    return AndSearch::create(std::move(children), strict);
 }
 
-SearchIterator *ANDz(std::initializer_list<SearchIterator *> children, bool strict) {
-    return AndSearch::create(children, strict, no_unpack());
+SearchIterator::UP ANDz(ChildrenIterators children, bool strict) {
+    return AndSearch::create(std::move(children), strict, no_unpack());
 }
 
-SearchIterator *ANDs(std::initializer_list<SearchIterator *> children, bool strict) {
-    return AndSearch::create(children, strict, selective_unpack());
+SearchIterator::UP ANDs(ChildrenIterators children, bool strict) {
+    return AndSearch::create(std::move(children), strict, selective_unpack());
 }
 
-SearchIterator *OR(std::initializer_list<SearchIterator *> children, bool strict) {
-    return OrSearch::create(children, strict);
+SearchIterator::UP OR(ChildrenIterators children, bool strict) {
+    return OrSearch::create(std::move(children), strict);
 }
 
-SearchIterator *ORz(std::initializer_list<SearchIterator *> children, bool strict) {
-    return OrSearch::create(children, strict, no_unpack());
+SearchIterator::UP ORz(ChildrenIterators children, bool strict) {
+    return OrSearch::create(std::move(children), strict, no_unpack());
 }
 
-SearchIterator *ORs(std::initializer_list<SearchIterator *> children, bool strict) {
-    return OrSearch::create(children, strict, selective_unpack());
+SearchIterator::UP ORs(ChildrenIterators children, bool strict) {
+    return OrSearch::create(std::move(children), strict, selective_unpack());
 }
 
 //-----------------------------------------------------------------------------
@@ -156,22 +156,22 @@ std::unique_ptr<T> UP(T *t) { return std::unique_ptr<T>(t); }
 //-----------------------------------------------------------------------------
 
 SearchIterator::UP make_search(bool strict) {
-    return UP(AND({OR({TERM({2,7}, true),
-                       TERM({4,8}, true),
-                       TERM({5,6,9}, true)}, true),
-                   OR({TERM({1,4,7}, false),
-                       TERM({2,5,8}, true),
-                       TERM({3,6}, false)}, false),
-                   OR({TERM({1,2,3}, false),
-                       TERM({4,6}, false),
-                       TERM({8,9}, false)}, false)}, strict));
+    return AND({OR({ TERM({2,7}, true),
+                     TERM({4,8}, true),
+                     TERM({5,6,9}, true) }, true),
+                OR({ TERM({1,4,7}, false),
+                     TERM({2,5,8}, true),
+                     TERM({3,6}, false) }, false),
+                OR({ TERM({1,2,3}, false),
+                     TERM({4,6}, false),
+                     TERM({8,9}, false) }, false)}, strict);
 }
 
 SearchIterator::UP make_filter_search(bool strict) {
-    return UP(ANDNOT({TERM({1,2,3,4,5,6,7,8,9}, true),
-                      TERM({1,9}, false),
-                      TERM({3,7}, true),
-                      TERM({5}, false)}, strict));
+    return ANDNOT({ TERM({1,2,3,4,5,6,7,8,9}, true),
+                    TERM({1,9}, false),
+                    TERM({3,7}, true),
+                    TERM({5}, false) }, strict);
 }
 
 void add_if_inside(uint32_t docid, uint32_t begin, uint32_t end, std::vector<uint32_t> &expect) {
@@ -262,7 +262,7 @@ TEST("require that termwise filter search produces appropriate results") {
 }
 
 TEST("require that termwise ANDNOT with single term works") {
-    TEST_DO(verify({2,3,4}, *make_termwise(UP(ANDNOT({TERM({1,2,3,4,5}, true)}, true)), true), 2, 5));
+    TEST_DO(verify({2,3,4}, *make_termwise(ANDNOT({ TERM({1,2,3,4,5}, true) }, true), true), 2, 5));
 }
 
 TEST("require that pseudo term is rewindable") {
@@ -361,20 +361,20 @@ TEST("require that match data keeps track of the termwise limit") {
 //-----------------------------------------------------------------------------
 
 TEST("require that terwise test search string dump is detailed enough") {
-    EXPECT_EQUAL(make_termwise(UP(OR({TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true)}, true)), true)->asString(),
-                 make_termwise(UP(OR({TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true)}, true)), true)->asString());
+    EXPECT_EQUAL(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
+                 make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString());
 
-    EXPECT_NOT_EQUAL(make_termwise(UP(OR({TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true)}, true)), true)->asString(),
-                     make_termwise(UP(OR({TERM({1,2,3}, true), TERM({2,3}, false), TERM({3}, true)}, true)), true)->asString());
+    EXPECT_NOT_EQUAL(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
+                     make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, false), TERM({3}, true) }, true), true)->asString());
 
-    EXPECT_NOT_EQUAL(make_termwise(UP(OR({TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true)}, true)), true)->asString(),
-                     make_termwise(UP(OR({TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true)}, false)), true)->asString());
+    EXPECT_NOT_EQUAL(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
+                     make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, false), true)->asString());
 
-    EXPECT_NOT_EQUAL(make_termwise(UP(OR({TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true)}, true)), true)->asString(),
-                     make_termwise(UP(OR({TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true)}, true)), false)->asString());
+    EXPECT_NOT_EQUAL(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
+                     make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), false)->asString());
 
-    EXPECT_NOT_EQUAL(make_termwise(UP(OR({TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true)}, true)), true)->asString(),
-                     make_termwise(UP(OR({TERM({1,2,3}, true), TERM({3}, true), TERM({2,3}, true)}, true)), true)->asString());
+    EXPECT_NOT_EQUAL(make_termwise(OR({ TERM({1,2,3}, true), TERM({2,3}, true), TERM({3}, true) }, true), true)->asString(),
+                     make_termwise(OR({ TERM({1,2,3}, true), TERM({3}, true), TERM({2,3}, true) }, true), true)->asString());
 }
 
 //-----------------------------------------------------------------------------
@@ -389,7 +389,7 @@ TEST("require that basic termwise evaluation works") {
     my_or.addChild(UP(new MyBlueprint({2}, true, 2)));
     for (bool strict: {true, false}) {
         EXPECT_EQUAL(my_or.createSearch(*md, strict)->asString(),
-                     make_termwise(UP(OR({TERM({1}, strict), TERM({2}, strict)}, strict)), strict)->asString());
+                     make_termwise(OR({ TERM({1}, strict), TERM({2}, strict) }, strict), strict)->asString());
     }
 }
 
@@ -434,7 +434,9 @@ TEST("require that termwise evaluation can be multi-level, but not duplicated") 
     my_or.addChild(std::move(child));
     for (bool strict: {true, false}) {
         EXPECT_EQUAL(my_or.createSearch(*md, strict)->asString(),
-                     make_termwise(UP(OR({TERM({1}, strict), ORz({TERM({2}, strict), TERM({3}, strict)}, strict)}, strict)), strict)->asString());
+                     make_termwise(OR({ TERM({1}, strict),
+                                        ORz({ TERM({2}, strict), TERM({3}, strict) }, strict) },
+                                      strict), strict)->asString());
     }
 }
 
@@ -450,7 +452,7 @@ TEST("require that OR can be completely termwise") {
     my_or.addChild(UP(new MyBlueprint({2}, true, 2)));
     for (bool strict: {true, false}) {
         EXPECT_EQUAL(my_or.createSearch(*md, strict)->asString(),
-                     make_termwise(UP(OR({TERM({1}, strict), TERM({2}, strict)}, strict)), strict)->asString());
+                     make_termwise(OR({ TERM({1}, strict), TERM({2}, strict) }, strict), strict)->asString());
     }
 }
 
@@ -465,7 +467,8 @@ TEST("require that OR can be partially termwise") {
     my_or.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
         EXPECT_EQUAL(my_or.createSearch(*md, strict)->asString(),
-                     UP(ORs({make_termwise(UP(OR({TERM({1}, strict), TERM({3}, strict)}, strict)), strict).release(), TERM({2}, strict)}, strict))->asString());
+                     ORs({ make_termwise(OR({ TERM({1}, strict), TERM({3}, strict) }, strict), strict),
+                           TERM({2}, strict) }, strict)->asString());
     }
 }
 
@@ -480,7 +483,9 @@ TEST("require that OR puts termwise subquery at the right place") {
     my_or.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
         EXPECT_EQUAL(my_or.createSearch(*md, strict)->asString(),
-                     UP(ORs({TERM({1}, strict), make_termwise(UP(OR({TERM({2}, strict), TERM({3}, strict)}, strict)), strict).release()}, strict))->asString());
+                     ORs({ TERM({1}, strict),
+                           make_termwise(OR({ TERM({2}, strict), TERM({3}, strict) }, strict),
+                                         strict) }, strict)->asString());
     }
 }
 
@@ -496,7 +501,10 @@ TEST("require that OR can use termwise eval also when having non-termwise childr
     my_or.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
         EXPECT_EQUAL(my_or.createSearch(*md, strict)->asString(),
-                     UP(ORz({TERM({1}, strict), make_termwise(UP(OR({TERM({2}, strict), TERM({3}, strict)}, strict)), strict).release()}, strict))->asString());
+                     ORz({ TERM({1}, strict),
+                           make_termwise(OR({ TERM({2}, strict), TERM({3}, strict) }, strict),
+                                         strict)},
+                         strict)->asString());
     }
 }
 
@@ -512,7 +520,7 @@ TEST("require that AND can be completely termwise") {
     my_and.addChild(UP(new MyBlueprint({2}, true, 2)));
     for (bool strict: {true, false}) {
         EXPECT_EQUAL(my_and.createSearch(*md, strict)->asString(),
-                     make_termwise(UP(AND({TERM({1}, strict), TERM({2}, false)}, strict)), strict)->asString());
+                     make_termwise(AND({ TERM({1}, strict), TERM({2}, false) }, strict), strict)->asString());
     }
 }
 
@@ -527,7 +535,10 @@ TEST("require that AND can be partially termwise") {
     my_and.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
         EXPECT_EQUAL(my_and.createSearch(*md, strict)->asString(),
-                     UP(ANDs({make_termwise(UP(AND({TERM({1}, strict), TERM({3}, false)}, strict)), strict).release(), TERM({2}, false)}, strict))->asString());
+                     ANDs({ make_termwise(AND({ TERM({1}, strict), TERM({3}, false) },
+                                              strict),
+                                          strict),
+                            TERM({2}, false) }, strict)->asString());
     }
 }
 
@@ -542,7 +553,9 @@ TEST("require that AND puts termwise subquery at the right place") {
     my_and.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
         EXPECT_EQUAL(my_and.createSearch(*md, strict)->asString(),
-                     UP(ANDs({TERM({1}, strict), make_termwise(UP(AND({TERM({2}, false), TERM({3}, false)}, false)), false).release()}, strict))->asString());
+                     ANDs({ TERM({1}, strict),
+                            make_termwise(AND({ TERM({2}, false), TERM({3}, false) }, false),
+                                          false) }, strict)->asString());
     }
 }
 
@@ -558,7 +571,9 @@ TEST("require that AND can use termwise eval also when having non-termwise child
     my_and.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
         EXPECT_EQUAL(my_and.createSearch(*md, strict)->asString(),
-                     UP(ANDz({TERM({1}, strict), make_termwise(UP(AND({TERM({2}, false), TERM({3}, false)}, false)), false).release()}, strict))->asString());
+                     ANDz({ TERM({1}, strict),
+                            make_termwise(AND({ TERM({2}, false), TERM({3}, false) }, false),
+                                          false) }, strict)->asString());
     }
 }
 
@@ -573,7 +588,8 @@ TEST("require that ANDNOT can be completely termwise") {
     my_andnot.addChild(UP(new MyBlueprint({2}, true, 2)));
     for (bool strict: {true, false}) {
         EXPECT_EQUAL(my_andnot.createSearch(*md, strict)->asString(),
-                     make_termwise(UP(ANDNOT({TERM({1}, strict), TERM({2}, false)}, strict)), strict)->asString());
+                     make_termwise(ANDNOT({ TERM({1}, strict), TERM({2}, false) },
+                                          strict), strict)->asString());
     }
 }
 
@@ -586,7 +602,9 @@ TEST("require that ANDNOT can be partially termwise") {
     my_andnot.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
         EXPECT_EQUAL(my_andnot.createSearch(*md, strict)->asString(),
-                     UP(ANDNOT({TERM({1}, strict), make_termwise(UP(OR({TERM({2}, false), TERM({3}, false)}, false)), false).release()}, strict))->asString());
+                     ANDNOT({ TERM({1}, strict),
+                              make_termwise(OR({ TERM({2}, false), TERM({3}, false) }, false),
+                                            false) }, strict)->asString());
     }
 }
 
@@ -600,7 +618,9 @@ TEST("require that ANDNOT can be partially termwise with first child being termw
     my_andnot.addChild(UP(new MyBlueprint({3}, true, 3)));
     for (bool strict: {true, false}) {
         EXPECT_EQUAL(my_andnot.createSearch(*md, strict)->asString(),
-                     UP(ANDNOT({make_termwise(UP(ANDNOT({TERM({1}, strict), TERM({3}, false)}, strict)), strict).release(), TERM({2}, false)}, strict))->asString());
+                     ANDNOT({ make_termwise(ANDNOT({ TERM({1}, strict), TERM({3}, false) }, strict),
+                                            strict),
+                              TERM({2}, false) }, strict)->asString());
     }
 }
 
@@ -613,13 +633,13 @@ TEST("require that termwise blueprint helper calculates unpack info correctly") 
     my_or.addChild(UP(new MyBlueprint({3}, true, 3)));
     my_or.addChild(UP(new MyBlueprint({4}, true, 4))); // ranked
     my_or.addChild(UP(new MyBlueprint({5}, true, 5)));
-    MultiSearch::Children dummy_searches(5, nullptr);
+    MultiSearch::Children dummy_searches(5);
     UnpackInfo unpack; // non-termwise unpack info
     unpack.add(1);
     unpack.add(3);
-    TermwiseBlueprintHelper helper(my_or, dummy_searches, unpack);
-    EXPECT_EQUAL(helper.children.size(), 3u);
-    EXPECT_EQUAL(helper.termwise.size(), 2u);
+    TermwiseBlueprintHelper helper(my_or, std::move(dummy_searches), unpack);
+    EXPECT_EQUAL(helper.get_result().size(), 3u);
+    EXPECT_EQUAL(helper.get_termwise_children().size(), 2u);
     EXPECT_EQUAL(helper.first_termwise, 2u);
     EXPECT_TRUE(!helper.termwise_unpack.needUnpack(0));
     EXPECT_TRUE(helper.termwise_unpack.needUnpack(1));

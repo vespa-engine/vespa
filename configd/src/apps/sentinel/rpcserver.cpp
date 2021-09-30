@@ -3,16 +3,15 @@
 #include "rpcserver.h"
 
 #include <vespa/log/log.h>
-LOG_SETUP(".rpcserver");
+LOG_SETUP(".sentinel.rpcserver");
 
 namespace config::sentinel {
 
-RpcServer::RpcServer(int portNumber, CommandQueue &cmdQ)
+RpcServer::RpcServer(int portNumber, CommandQueue &cmdQ, ModelOwner &modelOwner)
     : _server(),
-      _rpcHooks(cmdQ),
+      _rpcHooks(cmdQ, _server.supervisor(), modelOwner),
       _port(portNumber)
 {
-    _rpcHooks.initRPC(&_server.supervisor());
     if (_server.supervisor().Listen(portNumber)) {
         LOG(config, "listening on port %d", portNumber);
     } else {

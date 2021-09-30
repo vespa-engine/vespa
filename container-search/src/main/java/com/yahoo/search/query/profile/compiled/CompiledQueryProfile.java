@@ -30,26 +30,26 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     private final QueryProfileType type;
 
     /** The values of this */
-    private final DimensionalMap<CompoundName, ValueWithSource> entries;
+    private final DimensionalMap<ValueWithSource> entries;
 
     /** Keys which have a type in this */
-    private final DimensionalMap<CompoundName, QueryProfileType> types;
+    private final DimensionalMap<QueryProfileType> types;
 
     /** Keys which are (typed or untyped) references to other query profiles in this. Used as a set. */
-    private final DimensionalMap<CompoundName, Object> references;
+    private final DimensionalMap<Object> references;
 
     /** Values which are not overridable in this. Used as a set. */
-    private final DimensionalMap<CompoundName, Object> unoverridables;
+    private final DimensionalMap<Object> unoverridables;
 
     /**
      * Creates a new query profile from an id.
      */
     public CompiledQueryProfile(ComponentId id,
                                 QueryProfileType type,
-                                DimensionalMap<CompoundName, ValueWithSource> entries,
-                                DimensionalMap<CompoundName, QueryProfileType> types,
-                                DimensionalMap<CompoundName, Object> references,
-                                DimensionalMap<CompoundName, Object> unoverridables,
+                                DimensionalMap<ValueWithSource> entries,
+                                DimensionalMap<QueryProfileType> types,
+                                DimensionalMap<Object> references,
+                                DimensionalMap<Object> unoverridables,
                                 CompiledQueryProfileRegistry registry) {
         super(id);
         this.registry = registry;
@@ -91,10 +91,10 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     }
 
     /** Returns the types reachable from this, or an empty map (never null) if none */
-    public DimensionalMap<CompoundName, QueryProfileType> getTypes() { return types; }
+    public DimensionalMap<QueryProfileType> getTypes() { return types; }
 
     /** Returns the references reachable from this, or an empty map (never null) if none */
-    public DimensionalMap<CompoundName, Object> getReferences() { return references; }
+    public DimensionalMap<Object> getReferences() { return references; }
 
     /**
      * Return all objects that start with the given prefix path using no context. Use "" to list all.
@@ -102,7 +102,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
      * For example, if {a.d =&gt; "a.d-value" ,a.e =&gt; "a.e-value", b.d =&gt; "b.d-value", then calling listValues("a")
      * will return {"d" =&gt; "a.d-value","e" =&gt; "a.e-value"}
      */
-    public final Map<String, Object> listValues(CompoundName prefix) {  return listValues(prefix, Collections.<String,String>emptyMap()); }
+    public final Map<String, Object> listValues(CompoundName prefix) {  return listValues(prefix, Collections.emptyMap()); }
     public final Map<String, Object> listValues(String prefix) { return listValues(new CompoundName(prefix)); }
 
     /**
@@ -134,7 +134,6 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     public Map<String, Object> listValues(CompoundName prefix, Map<String, String> context, Properties substitution) {
         Map<String, Object> values = new HashMap<>();
         for (Map.Entry<CompoundName, DimensionalValue<ValueWithSource>> entry : entries.entrySet()) {
-            if ( entry.getKey().size() <= prefix.size()) continue;
             if ( ! entry.getKey().hasPrefix(prefix)) continue;
 
             ValueWithSource valueWithSource = entry.getValue().get(context);
@@ -160,6 +159,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
 
             ValueWithSource valueWithSource = entry.getValue().get(context);
             if (valueWithSource == null) continue;
+            if (valueWithSource.value() == null) continue;
 
             valueWithSource = valueWithSource.withValue(substitute(valueWithSource.value(), context, substitution));
             CompoundName suffixName = entry.getKey().rest(prefix.size());
@@ -181,6 +181,11 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
         ValueWithSource value = entries.get(name, context);
         if (value == null) return null;
         return substitute(value.value(), context, substitution);
+    }
+
+    /** Returns all the entries from the profile **/
+    public final DimensionalMap<ValueWithSource> getEntries() {
+        return this.entries;
     }
 
     private Object substitute(Object value, Map<String, String> context, Properties substitution) {

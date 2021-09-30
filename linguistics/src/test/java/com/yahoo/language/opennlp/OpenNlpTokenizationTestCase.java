@@ -7,16 +7,23 @@ import com.yahoo.language.process.Token;
 import com.yahoo.language.process.Tokenizer;
 import org.junit.Test;
 
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test of tokenization, with stemming and accent removal
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
+ * @author matskin
  */
 public class OpenNlpTokenizationTestCase {
 
@@ -25,61 +32,54 @@ public class OpenNlpTokenizationTestCase {
     @Test
     public void testTokenizer() {
         assertTokenize("This is a test, 123",
-                       Arrays.asList("this", "is", "a", "test", "123"),
-                       Arrays.asList("This", " ", "is", " ", "a", " ", "test", ",", " ", "123"));
+                       List.of("this", "is", "a", "test", "123"),
+                       List.of("This", " ", "is", " ", "a", " ", "test", ",", " ", "123"));
     }
 
     @Test
     public void testUnderScoreTokenization() {
-        assertTokenize("ugcapi_1", Language.ENGLISH, StemMode.SHORTEST, true, Arrays.asList("ugcapi", "1"), null);
+        assertTokenize("ugcapi_1", Language.ENGLISH, StemMode.SHORTEST, true, List.of("ugcapi", "1"), null);
     }
 
     @Test
     public void testPhrasesWithPunctuation() {
         assertTokenize("PHY_101.html a space/time or space-time course", Language.ENGLISH, StemMode.NONE,
                        false,
-                       Arrays.asList("phy", "101", "html", "a", "space", "time", "or", "space", "time", "course"),
+                       List.of("phy", "101", "html", "a", "space", "time", "or", "space", "time", "course"),
                        null);
-        assertTokenize("PHY_101.", Language.ENGLISH, StemMode.NONE, false, Arrays.asList("phy", "101"), null);
-        assertTokenize("101.3", Language.ENGLISH, StemMode.NONE, false, Arrays.asList("101", "3"), null);
+        assertTokenize("PHY_101.", Language.ENGLISH, StemMode.NONE, false, List.of("phy", "101"), null);
+        assertTokenize("101.3", Language.ENGLISH, StemMode.NONE, false, List.of("101", "3"), null);
     }
 
     @Test
     public void testDoubleWidthTokenization() {
         // "sony"
         assertTokenize("\uFF53\uFF4F\uFF4E\uFF59", Language.ENGLISH, StemMode.NONE, false,
-                       Arrays.asList("sony"), null);
+                       List.of("sony"), null);
         assertTokenize("\uFF53\uFF4F\uFF4E\uFF59", Language.ENGLISH, StemMode.SHORTEST, false,
-                       Arrays.asList("sony"), null);
+                       List.of("sony"), null);
         // "SONY"
         assertTokenize("\uFF33\uFF2F\uFF2E\uFF39", Language.ENGLISH, StemMode.NONE, false,
-                       Arrays.asList("sony"), null);
+                       List.of("sony"), null);
         assertTokenize("\uFF33\uFF2F\uFF2E\uFF39", Language.ENGLISH, StemMode.SHORTEST, false,
-                       Arrays.asList("sony"), null);
+                       List.of("sony"), null);
         // "on"
         assertTokenize("\uFF4F\uFF4E", Language.ENGLISH, StemMode.NONE, false,
-                       Arrays.asList("on"), null);
+                       List.of("on"), null);
         assertTokenize("\uFF4F\uFF4E", Language.ENGLISH, StemMode.SHORTEST, false,
-                       Arrays.asList("on"), null);
+                       List.of("on"), null);
         // "ON"
         assertTokenize("\uFF2F\uFF2E", Language.ENGLISH, StemMode.NONE, false,
-                       Arrays.asList("on"), null);
+                       List.of("on"), null);
         assertTokenize("\uFF2F\uFF2E", Language.ENGLISH, StemMode.SHORTEST, false,
-                       Arrays.asList("on"), null);
+                       List.of("on"), null);
         assertTokenize("наименование", Language.RUSSIAN, StemMode.SHORTEST, false,
-                Arrays.asList("наименован"), null);
+                       List.of("наименован"), null);
     }
 
     @Test
     public void testLargeTextTokenization() {
-        StringBuilder sb = new StringBuilder();
-        String s = "teststring ";
-        for (int i = 0; i < 100000; i++) {
-            sb.append(s);
-        }
-
-        String input = sb.toString();
-
+        String input = "teststring ".repeat(100000);
         int numTokens = 0;
         List<Long> pos = new ArrayList<>();
         for (Token t : tokenizer.tokenize(input, Language.ENGLISH, StemMode.NONE, false)) {
@@ -95,11 +95,8 @@ public class OpenNlpTokenizationTestCase {
 
     @Test
     public void testLargeTokenGuard() {
-        StringBuilder str = new StringBuilder();
-        for (int i = 0; i < 128 * 256; i++) {
-            str.append("ab");
-        }
-        Iterator<Token> it = tokenizer.tokenize(str.toString(), Language.ENGLISH, StemMode.NONE, false).iterator();
+        String input = "ab".repeat(128 * 256);
+        Iterator<Token> it = tokenizer.tokenize(input, Language.ENGLISH, StemMode.NONE, false).iterator();
         assertTrue(it.hasNext());
         assertNotNull(it.next().getTokenString());
         assertFalse(it.hasNext());
@@ -136,8 +133,8 @@ public class OpenNlpTokenizationTestCase {
 
         int idx = 0;
         for (Token token : tokenizer.tokenize(input, Language.GERMAN, StemMode.SHORTEST, false)) {
-            assertThat("Token offset for token #" + idx, token.getOffset(), is(expOffset[idx]));
-            assertThat("Token len for token #" + idx, token.getOrig().length(), is(len[idx]));
+            assertEquals("Token offset for token #" + idx, expOffset[idx], token.getOffset());
+            assertEquals("Token len for token #" + idx, len[idx], token.getOrig().length());
             idx++;
         }
     }
@@ -195,15 +192,15 @@ public class OpenNlpTokenizationTestCase {
     }
 
     /**
-     * <p>Compare the results of running an input string through the tokenizer with an "index" truth, and an optional
-     * "orig" truth.</p>
+     * Compare the results of running an input string through the tokenizer with an "index" truth, and an optional
+     * "orig" truth.
      *
-     * @param input      The text to process, passed to tokenizer.
-     * @param language   The language tag, passed to tokenizer.
-     * @param stemMode   If stemMode != NONE, test will silently succeed if tokenizer does not do stemming.
-     * @param accentDrop Passed to the tokenizer.
-     * @param indexed    Compared to the "TokenString" result from the tokenizer.
-     * @param orig       Compared to the "Orig" result from the tokenizer.
+     * @param input      the text to process, passed to tokenizer
+     * @param language   the language tag, passed to tokenizer
+     * @param stemMode   if stemMode != NONE, test will silently succeed if tokenizer does not do stemming
+     * @param accentDrop passed to the tokenizer
+     * @param indexed    compared to the "TokenString" result from the tokenizer
+     * @param orig       compared to the "Orig" result from the tokenizer
      */
     private void assertTokenize(String input, Language language, StemMode stemMode, boolean accentDrop,
                                 List<String> indexed, List<String> orig) {
@@ -216,21 +213,21 @@ public class OpenNlpTokenizationTestCase {
                 for (int comp = 0; comp < token.getNumComponents(); comp++) {
                     Token t = token.getComponent(comp);
                     if (t.getType().isIndexable()) {
-                        assertThat("comp index: " + i, toLowerCase(t.getTokenString()), is(indexed.get(i++)));
+                        assertEquals("comp index: " + i, indexed.get(i++), toLowerCase(t.getTokenString()));
                     }
                 }
             } else {
                 if (token.getType().isIndexable()) {
-                    assertThat("exp index: " + i, toLowerCase(token.getTokenString()), is(indexed.get(i++)));
+                    assertEquals("exp index: " + i, indexed.get(i++), toLowerCase(token.getTokenString()));
                 }
             }
             if (orig != null) {
-                assertThat("orig index: " + j, token.getOrig(), is(orig.get(j++)));
+                assertEquals("orig index: " + j, token.getOrig(), orig.get(j++));
             }
         }
-        assertThat("indexed length", i, is(indexed.size()));
+        assertEquals("indexed length", indexed.size(), i);
         if (orig != null) {
-            assertThat("orig length", j, is(orig.size()));
+            assertEquals("orig length", orig.size(), j);
         }
     }
 

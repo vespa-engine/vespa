@@ -1,0 +1,25 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=documentapi.messagebus.protocol
+
+##
+## Super config for all policies in the document protocol, keyed by content cluster ids.
+## Note: ContentPolicy also uses the "distribution" config.
+##
+
+#
+# Config used by MessageTypeRouteSelectorPolicy
+#
+# Default route if no override is set for a type.
+cluster{}.defaultRoute string
+
+# The name of the route.
+cluster{}.route[].name string
+
+# The document protocol message type triggering this route.
+cluster{}.route[].messageType int
+
+#
+# Config used by DocumentRouteSelectorPolicy
+#
+# The document selector for this cluster route.
+cluster{}.selector string

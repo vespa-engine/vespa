@@ -31,9 +31,9 @@ class ConfiguratorFactory {
 private:
     config::ConfigUri _uri;
 public:
-    ConfiguratorFactory(const config::ConfigUri & uri);
+    explicit ConfiguratorFactory(const config::ConfigUri & uri);
     // Convenience. Might belong somewhere else
-    ConfiguratorFactory(const std::vector<std::string> & spec);
+    explicit ConfiguratorFactory(const std::vector<std::string> & spec);
 
     Configurator::UP create(Configurable &target) const;
 };

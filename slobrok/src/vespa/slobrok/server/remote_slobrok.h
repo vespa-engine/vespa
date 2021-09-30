@@ -2,16 +2,15 @@
 #pragma once
 
 #include "ok_state.h"
-#include "cmd.h"
 #include "i_rpc_server_manager.h"
 #include "managed_rpc_server.h"
+#include "service_map_mirror.h"
 #include <deque>
 
 namespace slobrok {
 
 //-----------------------------------------------------------------------------
 
-class RpcServerManager;
 class ExchangeManager;
 
 //-----------------------------------------------------------------------------
@@ -42,20 +41,18 @@ private:
     };
 
     ExchangeManager     &_exchanger;
-    RpcServerManager    &_rpcsrvmanager;
     FRT_Target          *_remote;
+    ServiceMapMirror     _serviceMapMirror;
     ManagedRpcServer     _rpcserver;
     Reconnecter          _reconnecter;
     int                  _failCnt;
 
-    FRT_RPCRequest      *_remAddPeerReq;
-    FRT_RPCRequest      *_remListReq;
-    FRT_RPCRequest      *_remAddReq;
-    FRT_RPCRequest      *_remRemReq;
+    std::unique_ptr<MapSubscription> _consensusSubscription;
 
-    std::deque<std::unique_ptr<NamedService>> _pending;
-    void pushMine();
-    void doPending();
+    FRT_RPCRequest      *_remAddPeerReq;
+    FRT_RPCRequest      *_remFetchReq;
+
+    void handleFetchResult();
 
 public:
     RemoteSlobrok(const RemoteSlobrok&) = delete;
@@ -66,10 +63,12 @@ public:
     void fail();
     bool isConnected() const { return (_remote != nullptr); }
     void tryConnect();
-    void healthCheck();
+    void maybeStartFetch();
     void invokeAsync(FRT_RPCRequest *req, double timeout, FRT_IRequestWait *rwaiter);
     const std::string & getName() const { return _rpcserver.getName(); }
     const std::string & getSpec() const { return _rpcserver.getSpec(); }
+    ServiceMapMirror &remoteMap() { return _serviceMapMirror; }
+    void shutdown();
 
     // interfaces implemented:
     void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) override;

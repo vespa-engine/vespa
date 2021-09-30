@@ -3,13 +3,14 @@
 #include "blueprint.h"
 #include "parametervalidator.h"
 #include <cassert>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.blueprint");
 
 namespace search::fef {
 
-const FeatureType &
+std::optional<FeatureType>
 Blueprint::defineInput(vespalib::stringref inName, AcceptInput accept)
 {
     assert(_dependency_handler != nullptr);
@@ -19,11 +20,23 @@ Blueprint::defineInput(vespalib::stringref inName, AcceptInput accept)
 void
 Blueprint::describeOutput(vespalib::stringref outName,
                           vespalib::stringref desc,
-                          const FeatureType &type)
+                          FeatureType type)
 {
     (void) desc;
     assert(_dependency_handler != nullptr);
-    _dependency_handler->define_output(outName, type);
+    _dependency_handler->define_output(outName, std::move(type));
+}
+
+bool
+Blueprint::fail(const char *format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+    vespalib::string msg = vespalib::make_string_va(format, ap);
+    va_end(ap);
+    assert(_dependency_handler != nullptr);
+    _dependency_handler->fail(msg);
+    return false;
 }
 
 Blueprint::Blueprint(vespalib::stringref baseName)
@@ -52,9 +65,8 @@ Blueprint::setup(const IIndexEnvironment &indexEnv,
     if (result.valid()) {
         return setup(indexEnv, result.getParameters());
     } else {
-        LOG(error, "The parameter list used for setting up rank feature %s is not valid: %s",
-            getBaseName().c_str(), result.getError().c_str());
-        return false;
+        return fail("The parameter list used for setting up rank feature %s is not valid: %s",
+                    getBaseName().c_str(), result.getError().c_str());
     }
 }
 
@@ -62,15 +74,16 @@ bool
 Blueprint::setup(const IIndexEnvironment &indexEnv, const ParameterList &params)
 {
     (void) indexEnv; (void) params;
-    LOG(error, "The setup function using a typed parameter list does not have a default implementation. "
-        "Make sure the setup function is implemented in the rank feature %s.", getBaseName().c_str());
-    return false;
+    return fail("The setup function using a typed parameter list does not have a default implementation. "
+                "Make sure the setup function is implemented in the rank feature %s.", getBaseName().c_str());
 }
 
 void
 Blueprint::prepareSharedState(const IQueryEnvironment & queryEnv, IObjectStore & objectStore) const {
     (void) queryEnv; (void) objectStore;
 }
+
+using IAttributeVectorWrapper = AnyWrapper<const attribute::IAttributeVector *>;
 
 const attribute::IAttributeVector *
 Blueprint::lookupAndStoreAttribute(const vespalib::string & key, vespalib::stringref attrName,
@@ -79,10 +92,10 @@ Blueprint::lookupAndStoreAttribute(const vespalib::string & key, vespalib::strin
     const Anything * obj = store.get(key);
     if (obj == nullptr) {
         const IAttributeVector * attribute = env.getAttributeContext().getAttribute(attrName);
-        store.add(key, std::make_unique<AnyWrapper<const IAttributeVector *>>(attribute));
+        store.add(key, std::make_unique<IAttributeVectorWrapper>(attribute));
         return attribute;
     }
-    return static_cast<const AnyWrapper<const IAttributeVector *> *>(obj)->getValue();
+    return IAttributeVectorWrapper::getValue(*obj);
 }
 
 const attribute::IAttributeVector *
@@ -90,7 +103,7 @@ Blueprint::lookupAttribute(const vespalib::string & key, vespalib::stringref att
 {
     const Anything * attributeArg = env.getObjectStore().get(key);
     const IAttributeVector * attribute = (attributeArg != nullptr)
-                                       ? static_cast<const AnyWrapper<const IAttributeVector *> *>(attributeArg)->getValue()
+                                       ? IAttributeVectorWrapper::getValue(*attributeArg)
                                        : nullptr;
     if (attribute == nullptr) {
         attribute = env.getAttributeContext().getAttribute(attrName);

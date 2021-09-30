@@ -82,4 +82,5 @@ public abstract class DocumentMessage extends Message {
     public Utf8String getProtocol() {
         return DocumentProtocol.NAME;
     }
+
 }

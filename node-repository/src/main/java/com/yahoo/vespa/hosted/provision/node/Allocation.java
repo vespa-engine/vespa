@@ -85,9 +85,9 @@ public class Allocation {
         return new Allocation(owner, clusterMembership, requestedResources, generation, removable, networkPorts);
     }
 
-    /** Returns a copy of this allocation where removable is set to true */
-    public Allocation removable() {
-        return new Allocation(owner, clusterMembership, requestedResources, restartGeneration, true, networkPorts);
+    /** Returns a copy of this allocation where removable is set to the given value */
+    public Allocation removable(boolean removable) {
+        return new Allocation(owner, clusterMembership, requestedResources, restartGeneration, removable, networkPorts);
     }
 
     public Allocation with(ClusterMembership newMembership) {

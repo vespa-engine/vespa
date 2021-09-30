@@ -79,6 +79,7 @@ public:
     uint32_t getVisitorCmdId() const { return _visitorCmdId; }
     document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     document::Bucket getBucket() const override;
+    document::BucketId super_bucket_id() const;
     const vespalib::string & getLibraryName() const { return _libName; }
     const vespalib::string & getInstanceId() const { return _instanceId; }
     const vespalib::string & getControlDestination() const { return _controlDestination; }
@@ -114,6 +115,7 @@ public:
  */
 class CreateVisitorReply : public StorageReply {
 private:
+    document::BucketId _super_bucket_id;
     document::BucketId _lastBucket;
     vdslib::VisitorStatistics _visitorStatistics;
 
@@ -124,6 +126,7 @@ public:
 
     void setLastBucket(const document::BucketId& lastBucket) { _lastBucket = lastBucket; }
 
+    const document::BucketId& super_bucket_id() const { return _super_bucket_id; }
     const document::BucketId& getLastBucket() const { return _lastBucket; }
 
     void setVisitorStatistics(const vdslib::VisitorStatistics& stats) { _visitorStatistics = stats; }
@@ -186,12 +189,12 @@ public:
         document::BucketId bucketId;
         Timestamp timestamp;
 
-        BucketTimestampPair() : bucketId(), timestamp(0) {}
-        BucketTimestampPair(const document::BucketId& bucket,
-                            const Timestamp& ts)
-            : bucketId(bucket), timestamp(ts) {}
+        BucketTimestampPair() noexcept : bucketId(), timestamp(0) {}
+        BucketTimestampPair(const document::BucketId& bucket, const Timestamp& ts) noexcept
+            : bucketId(bucket), timestamp(ts)
+        {}
 
-        bool operator==(const BucketTimestampPair& other) const {
+        bool operator==(const BucketTimestampPair& other) const noexcept {
             return (bucketId == other.bucketId && timestamp && other.timestamp);
         }
     };
@@ -203,20 +206,21 @@ private:
 
 public:
     VisitorInfoCommand();
-    ~VisitorInfoCommand();
+    ~VisitorInfoCommand() override;
 
-    void setErrorCode(const ReturnCode& code) { _error = code; }
+    void setErrorCode(ReturnCode && code) { _error = std::move(code); }
     void setCompleted() { _completed = true; }
-    void setBucketCompleted(const document::BucketId& id, Timestamp lastVisited)
-    {
+    void setBucketCompleted(const document::BucketId& id, Timestamp lastVisited) {
         _bucketsCompleted.push_back(BucketTimestampPair(id, lastVisited));
     }
-    void setBucketsCompleted(const std::vector<BucketTimestampPair>& bc)
-        { _bucketsCompleted = bc; }
+    void setBucketsCompleted(const std::vector<BucketTimestampPair>& bc) {
+        _bucketsCompleted = bc;
+    }
 
     const ReturnCode& getErrorCode() const { return _error; }
-    const std::vector<BucketTimestampPair>& getCompletedBucketsList() const
-        { return _bucketsCompleted; }
+    const std::vector<BucketTimestampPair>& getCompletedBucketsList() const {
+        return _bucketsCompleted;
+    }
     bool visitorCompleted() const { return _completed; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

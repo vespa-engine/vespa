@@ -87,20 +87,11 @@ private:
     size_t        _writeChunkSize;
     void WriteBufInternal(const void *buffer, size_t length);
 
-public:
-    using FailedHandler = void (*)(const char *op,
-                                   const char *file,
-                                   int error,
-                                   int64_t offset,
-                                   size_t len,
-                                   ssize_t rlen);
-
 protected:
     char         *_filename;
     unsigned int  _openFlags;
     bool          _directIOEnabled;
     bool          _syncWritesEnabled;
-    static FailedHandler _failedHandler;
 
 public:
     static void setDefaultFAdviseOptions(int options) { _defaultFAdviseOptions = options; }
@@ -120,14 +111,6 @@ public:
      * @return Boolean success/failure
      */
     static bool CleanupClass ();
-
-    /**
-     * Set the handler called on fatal file errors.
-     * @param failedHandler new handler routine.
-     */
-    static void SetFailedHandler(FailedHandler failedHandler) {
-        _failedHandler = failedHandler;
-    }
 
     /**
      * Copy a single file. Will overwrite destination if it already exists.
@@ -548,6 +531,24 @@ public:
                                  size_t buflen,
                                  size_t &padBefore,
                                  size_t &padAfter);
+
+    /**
+     * Allocate a buffer properly alligned with regards to direct io
+     * access restrictions.
+     * @param  byteSize          Number of bytes to be allocated
+     * @param  realPtr           Reference where the actual pointer returned
+     *                           from malloc will be saved.  Use free() with
+     *                           this pointer to deallocate the buffer.
+     *                           This value is always set.
+     * @return Alligned pointer value or nullptr if out of memory
+     */
+    static void *allocateGenericDirectIOBuffer(size_t byteSize, void *&realPtr);
+
+    /**
+     * Get maximum memory alignment for directio buffers.
+     * @return maximum memory alignment for directio buffers.
+     */
+    static size_t getMaxDirectIOMemAlign();
 
     /**
      * Allocate a buffer properly alligned with regards to direct io

@@ -7,6 +7,4 @@ vespa_add_library(document_predicate OBJECT
     predicate_slime_builder.cpp
     predicate_slime_visitor.cpp
     DEPENDS
-    AFTER
-    document_documentconfig
 )

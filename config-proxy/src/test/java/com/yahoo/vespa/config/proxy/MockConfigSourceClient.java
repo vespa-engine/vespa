@@ -16,6 +16,7 @@ import java.util.List;
 public class MockConfigSourceClient implements ConfigSourceClient{
     private final MockConfigSource configSource;
     private final MemoryCache memoryCache;
+    private final DelayedResponses delayedResponses = new DelayedResponses();
 
     MockConfigSourceClient(MockConfigSource configSource, MemoryCache memoryCache) {
         this.configSource = configSource;
@@ -53,7 +54,6 @@ public class MockConfigSourceClient implements ConfigSourceClient{
     }
 
     @Override
-    public void updateSubscribers(RawConfig config) {
+    public DelayedResponses delayedResponses() { return delayedResponses; }
 
-    }
 }

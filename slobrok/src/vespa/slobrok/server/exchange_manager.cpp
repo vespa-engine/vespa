@@ -1,32 +1,30 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "exchange_manager.h"
-#include "rpc_server_map.h"
 #include "sbenv.h"
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/vespalib/util/overload.h>
+#include <vespa/vespalib/util/visit_ranges.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".rpcserver");
+LOG_SETUP(".slobrok.server.exchange_manager");
 
 namespace slobrok {
 
 //-----------------------------------------------------------------------------
 
-ExchangeManager::ExchangeManager(SBEnv &env, RpcServerMap &rpcsrvmap)
+ExchangeManager::ExchangeManager(SBEnv &env)
     : _partners(),
-      _env(env),
-      _rpcsrvmanager(env._rpcsrvmanager),
-      _rpcsrvmap(rpcsrvmap)
+      _env(env)
 {
 }
 
 ExchangeManager::~ExchangeManager() = default;
 
 OkState
-ExchangeManager::addPartner(const std::string & name, const std::string & spec)
+ExchangeManager::addPartner(const std::string & spec)
 {
-    RemoteSlobrok *oldremote = lookupPartner(name);
-    if (oldremote != nullptr) {
+    if (RemoteSlobrok *oldremote = lookupPartner(spec)) {
         // already a partner, should be OK
         if (spec != oldremote->getSpec()) {
             return OkState(FRTE_RPC_METHOD_FAILED, "name already partner with different spec");
@@ -37,11 +35,9 @@ ExchangeManager::addPartner(const std::string & name, const std::string & spec)
         }
         return OkState();
     }
-
-    LOG_ASSERT(_partners.find(name) == _partners.end());
-    auto newPartner = std::make_unique<RemoteSlobrok>(name, spec, *this);
-    RemoteSlobrok & partner = *newPartner;
-    _partners.emplace(name, std::move(newPartner));
+    auto [ it, wasNew ] = _partners.emplace(spec, std::make_unique<RemoteSlobrok>(spec, spec, *this));
+    LOG_ASSERT(wasNew);
+    RemoteSlobrok & partner = *it->second;
     partner.tryConnect();
     return OkState();
 }
@@ -53,6 +49,7 @@ ExchangeManager::removePartner(const std::string & name)
     auto oldremote = std::move(_partners[name]);
     LOG_ASSERT(oldremote);
     _partners.erase(name);
+    oldremote->shutdown();
 }
 
 std::vector<std::string>
@@ -69,35 +66,13 @@ ExchangeManager::getPartnerList()
 void
 ExchangeManager::forwardRemove(const std::string & name, const std::string & spec)
 {
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, *this,
-                                           ScriptCommand::makeRemRemCmd(_env, name, spec));
+    WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, ServiceMapping{name, spec}, *this);
     for (const auto & entry : _partners) {
         package->addItem(entry.second.get());
     }
     package->expedite();
 }
 
-void
-ExchangeManager::doAdd(ScriptCommand rdc)
-{
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_DOADD, *this, std::move(rdc));
-
-    for (const auto & entry : _partners) {
-        package->addItem(entry.second.get());
-    }
-    package->expedite();
-}
-
-
-void
-ExchangeManager::wantAdd(ScriptCommand rdc)
-{
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_WANTADD, *this, std::move(rdc));
-    for (const auto & entry : _partners) {
-        package->addItem(entry.second.get());
-    }
-    package->expedite();
-}
 
 RemoteSlobrok *
 ExchangeManager::lookupPartner(const std::string & name) const {
@@ -105,12 +80,40 @@ ExchangeManager::lookupPartner(const std::string & name) const {
     return (found == _partners.end()) ? nullptr : found->second.get();
 }
 
+vespalib::string
+ExchangeManager::diffLists(const ServiceMappingList &lhs, const ServiceMappingList &rhs)
+{
+    using namespace vespalib;
+    vespalib::string result;
+    auto visitor = overload
+        {
+            [&result](visit_ranges_first, const auto &m) {
+                result.append("\nmissing: ").append(m.name).append("->").append(m.spec);
+            },
+            [&result](visit_ranges_second, const auto &m) {
+                result.append("\nextra: ").append(m.name).append("->").append(m.spec);
+            },
+            [](visit_ranges_both, const auto &, const auto &) {}
+        };
+    visit_ranges(visitor, lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+    return result;
+}
+
 void
 ExchangeManager::healthCheck()
 {
-    for (const auto & entry : _partners) {
-        RemoteSlobrok *partner = entry.second.get();
-        partner->healthCheck();
+    auto newWorldList = env().consensusMap().currentConsensus();
+    for (const auto & [ name, partner ] : _partners) {
+        partner->maybeStartFetch();
+        auto remoteList = partner->remoteMap().allMappings();
+        // 0 is expected (when remote is down)
+        if (remoteList.size() != 0) {
+            vespalib::string diff = diffLists(newWorldList, remoteList);
+            if (! diff.empty()) {
+                LOG(warning, "Diff from consensus map to peer slobrok mirror: %s",
+                    diff.c_str());
+            }
+        }
     }
     LOG(debug, "ExchangeManager::healthCheck for %ld partners", _partners.size());
 }
@@ -163,14 +166,12 @@ ExchangeManager::WorkPackage::WorkItem::~WorkItem()
 }
 
 
-ExchangeManager::WorkPackage::WorkPackage(op_type op,
-                                          ExchangeManager &exchanger,
-                                          ScriptCommand script)
+ExchangeManager::WorkPackage::WorkPackage(op_type op, const ServiceMapping &mapping, ExchangeManager &exchanger)
     : _work(),
       _doneCnt(0),
       _numDenied(0),
-      _script(std::move(script)),
       _exchanger(exchanger),
+      _mapping(mapping),
       _optype(op)
 {
 }
@@ -188,9 +189,9 @@ ExchangeManager::WorkPackage::doneItem(bool denied)
         (int)_doneCnt, (int)_work.size(), (int)_numDenied);
     if (_doneCnt == _work.size()) {
         if (_numDenied > 0) {
-            _script.doneHandler(OkState(_numDenied, "denied by remote"));
-        } else {
-            _script.doneHandler(OkState());
+            LOG(debug, "work package [%s->%s]: %zd/%zd denied by remote",
+                _mapping.name.c_str(), _mapping.spec.c_str(),
+                _numDenied, _doneCnt);
         }
         delete this;
     }
@@ -203,18 +204,12 @@ ExchangeManager::WorkPackage::addItem(RemoteSlobrok *partner)
     if (! partner->isConnected()) {
         return;
     }
-    const char *name_p = _script.name().c_str();
-    const char *spec_p = _script.spec().c_str();
+    const char *name_p = _mapping.name.c_str();
+    const char *spec_p = _mapping.spec.c_str();
 
     FRT_RPCRequest *r = _exchanger._env.getSupervisor()->AllocRPCRequest();
-    // XXX should recheck rpcsrvmap again
-    if (_optype == OP_REMOVE) {
-        r->SetMethodName("slobrok.internal.doRemove");
-    } else if (_optype == OP_WANTADD) {
-        r->SetMethodName("slobrok.internal.wantAdd");
-    } else if (_optype == OP_DOADD) {
-        r->SetMethodName("slobrok.internal.doAdd");
-    }
+    LOG_ASSERT(_optype == OP_REMOVE);
+    r->SetMethodName("slobrok.internal.doRemove");
     r->GetParams()->AddString(_exchanger._env.mySpec().c_str());
     r->GetParams()->AddString(name_p);
     r->GetParams()->AddString(spec_p);
@@ -232,7 +227,6 @@ ExchangeManager::WorkPackage::expedite()
     size_t sz = _work.size();
     if (sz == 0) {
         // no remotes need doing.
-        _script.doneHandler(OkState());
         delete this;
         return;
     }

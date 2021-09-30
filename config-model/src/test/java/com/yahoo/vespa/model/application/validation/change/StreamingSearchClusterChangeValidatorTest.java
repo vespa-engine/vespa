@@ -1,14 +1,16 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.content.utils.ApplicationPackageBuilder;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
 import com.yahoo.vespa.model.content.utils.DocType;
-import com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder;
+import com.yahoo.vespa.model.content.utils.SchemaBuilder;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -40,7 +42,7 @@ public class StreamingSearchClusterChangeValidatorTest {
         public static VespaModel createOneDocModel(String sdContent) {
             return new ApplicationPackageBuilder()
                     .addCluster(new ContentClusterBuilder().name("foo").docTypes(Arrays.asList(DocType.streaming("d1"))))
-                    .addSearchDefinition(new SearchDefinitionBuilder().name("d1").content(sdContent).build())
+                    .addSchemas(new SchemaBuilder().name("d1").content(sdContent).build())
                     .buildCreator().create();
         }
 
@@ -51,8 +53,8 @@ public class StreamingSearchClusterChangeValidatorTest {
         public static VespaModel createTwoDocModel(String d1Content, String d2Content) {
             return new ApplicationPackageBuilder()
                     .addCluster(new ContentClusterBuilder().name("foo").docTypes(Arrays.asList(DocType.streaming("d1"), DocType.streaming("d2"))))
-                    .addSearchDefinition(new SearchDefinitionBuilder().name("d1").content(d1Content).build())
-                    .addSearchDefinition(new SearchDefinitionBuilder().name("d2").content(d2Content).build())
+                    .addSchemas(new SchemaBuilder().name("d1").content(d1Content).build())
+                    .addSchemas(new SchemaBuilder().name("d2").content(d2Content).build())
                     .buildCreator().create();
         }
 
@@ -64,8 +66,8 @@ public class StreamingSearchClusterChangeValidatorTest {
             return new ApplicationPackageBuilder()
                     .addCluster(new ContentClusterBuilder().name("foo").docTypes(Arrays.asList(DocType.streaming("d1"))))
                     .addCluster(new ContentClusterBuilder().name("bar").docTypes(Arrays.asList(DocType.streaming("d2"))))
-                    .addSearchDefinition(new SearchDefinitionBuilder().name("d1").content(d1Content).build())
-                    .addSearchDefinition(new SearchDefinitionBuilder().name("d2").content(d2Content).build())
+                    .addSchemas(new SchemaBuilder().name("d1").content(d1Content).build())
+                    .addSchemas(new SchemaBuilder().name("d2").content(d2Content).build())
                     .buildCreator().create();
         }
 
@@ -162,18 +164,22 @@ public class StreamingSearchClusterChangeValidatorTest {
     }
 
     private static VespaConfigChangeAction createFieldTypeChangeRefeedAction(String docType, List<ServiceInfo> service) {
-        return ConfigChangeTestUtils.newRefeedAction("field-type-change",
-                ValidationOverrides.empty,
-                "Document type '" + docType + "': Field 'f1' changed: data type: 'string' -> 'int'",
-                service, docType, Instant.now());
+        return ConfigChangeTestUtils.newRefeedAction(ClusterSpec.Id.from("test"),
+                                                     ValidationId.fieldTypeChange,
+                                                     "Document type '" + docType + "': Field 'f1' changed: data type: 'string' -> 'int'",
+                                                     service, docType);
     }
 
     private static VespaConfigChangeAction createAddFastAccessRestartAction() {
-        return ConfigChangeTestUtils.newRestartAction("Document type 'd1': Field 'f1' changed: add fast-access attribute", FOO_SERVICE);
+        return ConfigChangeTestUtils.newRestartAction(ClusterSpec.Id.from("test"),
+                                                      "Document type 'd1': Field 'f1' changed: add fast-access attribute",
+                                                      FOO_SERVICE);
     }
 
     private static VespaConfigChangeAction createRemoveFastAccessRestartAction() {
-        return ConfigChangeTestUtils.newRestartAction("Document type 'd1': Field 'f1' changed: remove fast-access attribute", FOO_SERVICE);
+        return ConfigChangeTestUtils.newRestartAction(ClusterSpec.Id.from("test"),
+                                                      "Document type 'd1': Field 'f1' changed: remove fast-access attribute",
+                                                      FOO_SERVICE);
     }
 
 }

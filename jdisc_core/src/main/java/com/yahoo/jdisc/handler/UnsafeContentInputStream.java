@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Objects;
@@ -19,6 +20,8 @@ public class UnsafeContentInputStream extends InputStream {
 
     private final ReadableContentChannel content;
     private ByteBuffer buf = ByteBuffer.allocate(0);
+    private byte [] marked;
+    private int readSinceMarked;
 
     /**
      * <p>Constructs a new ContentInputStream that reads from the given {@link ReadableContentChannel}.</p>
@@ -37,7 +40,15 @@ public class UnsafeContentInputStream extends InputStream {
         if (buf == null) {
             return -1;
         }
-        return ((int)buf.get()) & 0xFF;
+        byte b = buf.get();
+        if (marked != null) {
+            if (readSinceMarked < marked.length) {
+                marked[readSinceMarked++] = b;
+            } else {
+                marked = null;
+            }
+        }
+        return ((int)b) & 0xFF;
     }
 
     @Override
@@ -78,5 +89,29 @@ public class UnsafeContentInputStream extends InputStream {
         while (content.read() != null) {
 
         }
+    }
+
+    @Override
+    public synchronized void mark(int readlimit) {
+        marked = new byte[readlimit];
+        readSinceMarked = 0;
+    }
+
+    @Override
+    public synchronized void reset() throws IOException {
+        if (marked == null) {
+            throw new IOException("mark has not been called, or too much has been read since marked.");
+        }
+        ByteBuffer newBuf = ByteBuffer.allocate(readSinceMarked + buf.remaining());
+        newBuf.put(marked, 0, readSinceMarked);
+        newBuf.put(buf);
+        newBuf.flip();
+        buf = newBuf;
+        marked = null;
+    }
+
+    @Override
+    public boolean markSupported() {
+        return true;
     }
 }

@@ -4,7 +4,6 @@
 #include "iretrypolicy.h"
 #include <vespa/messagebus/queue.h>
 #include <vespa/messagebus/reply.h>
-#include <vespa/vespalib/util/sync.h>
 #include <queue>
 #include <vector>
 

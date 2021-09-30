@@ -64,6 +64,8 @@ public abstract class InnerNode extends Node {
         if ( !(other instanceof InnerNode) || (other.getClass() != this.getClass()))
             return false;
 
+        /* This implementation requires getChildren() to return elements in order.
+         Hence we should make it final. Or make equals independent of order. */
         Collection<Object> children = getChildren().values();
         Collection<Object> otherChildren = ((InnerNode)other).getChildren().values();
 
@@ -86,8 +88,9 @@ public abstract class InnerNode extends Node {
         return res;
      }
 
+    // TODO Make final before Vespa 8 as correct order is required
     protected Map<String, Object> getChildren() {
-        HashMap<String, Object> ret = new LinkedHashMap<String, Object>();
+        HashMap<String, Object> ret = new LinkedHashMap<>();
         Field fields[] = getClass().getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);
@@ -108,10 +111,11 @@ public abstract class InnerNode extends Node {
     /**
      * Returns a flat map of this node's direct children, including all NodeVectors' elements.
      * Keys are the node name, including index for vector elements, e.g. 'arr[0]'.
+     * TODO Make final before Vespa 8 as correct order is required
      */
     @SuppressWarnings("unchecked")
     protected Map<String, Node> getChildrenWithVectorsFlattened() {
-        HashMap<String, Node> ret = new LinkedHashMap<String, Node>();
+        HashMap<String, Node> ret = new LinkedHashMap<>();
 
         Map<String, Object> children = getChildren();
         for (Map.Entry<String, Object> childEntry : children.entrySet()) {
@@ -151,7 +155,7 @@ public abstract class InnerNode extends Node {
       * @return map of leaf nodes
       */
      private static Map<String, LeafNode<?>> getAllDescendantLeafNodes(String parentName, InnerNode node) {
-         Map<String, LeafNode<?>> ret = new LinkedHashMap<String, LeafNode<?>>();
+         Map<String, LeafNode<?>> ret = new LinkedHashMap<>();
          String prefix = parentName.isEmpty() ? "" : parentName + ".";
          Map<String, Node> children = node.getChildrenWithVectorsFlattened();
          for (Map.Entry<String, Node> childEntry : children.entrySet()) {

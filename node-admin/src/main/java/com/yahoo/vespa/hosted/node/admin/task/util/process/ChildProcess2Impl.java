@@ -3,7 +3,7 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
 import com.yahoo.jdisc.Timer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -92,7 +92,7 @@ public class ChildProcess2Impl implements ChildProcess2 {
             if (commandLine.getOutputFile().isEmpty())
                 Files.delete(outputPath);
         } catch (Throwable t) {
-            logger.log(LogLevel.WARNING, "Failed to delete " + outputPath, t);
+            logger.log(Level.WARNING, "Failed to delete " + outputPath, t);
         }
     }
 

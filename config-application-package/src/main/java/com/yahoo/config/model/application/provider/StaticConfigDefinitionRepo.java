@@ -3,7 +3,7 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.util.ConfigUtils;
@@ -47,7 +47,7 @@ public class StaticConfigDefinitionRepo implements ConfigDefinitionRepo {
             ConfigDefinitionKey key = ConfigUtils.createConfigDefinitionKeyFromDefFile(def);
             addConfigDefinition(key, def);
         } catch (IOException e) {
-            log.log(LogLevel.WARNING, "Exception adding config definition " + def, e);
+            log.log(Level.WARNING, "Exception adding config definition " + def, e);
         }
     }
 

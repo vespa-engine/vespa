@@ -39,6 +39,8 @@ import java.util.Set;
  */
 public final class Attribute implements Cloneable, Serializable {
 
+    public enum DistanceMetric { EUCLIDEAN, ANGULAR, GEODEGREES, INNERPRODUCT, HAMMING }
+
     // Remember to change hashCode and equals when you add new fields
 
     private String name;
@@ -55,6 +57,7 @@ public final class Attribute implements Cloneable, Serializable {
     private boolean fastAccess = false;
     private boolean huge = false;
     private boolean mutable = false;
+    private boolean paged = false;
     private int arity = BooleanIndexDefinition.DEFAULT_ARITY;
     private long lowerBound = BooleanIndexDefinition.DEFAULT_LOWER_BOUND;
     private long upperBound = BooleanIndexDefinition.DEFAULT_UPPER_BOUND;
@@ -66,11 +69,18 @@ public final class Attribute implements Cloneable, Serializable {
     /** This is set if the type of this is REFERENCE */
     private final Optional<StructuredDataType> referenceDocumentType;
 
+    private Optional<DistanceMetric> distanceMetric = Optional.empty();
+
+    private Optional<HnswIndexParams> hnswIndexParams = Optional.empty();
+
     private boolean isPosition = false;
     private final Sorting sorting = new Sorting();
 
     /** The aliases for this attribute */
     private final Set<String> aliases = new LinkedHashSet<>();
+
+    private Dictionary dictionary = null;
+    private Case casing = Case.UNCASED;
 
     /**
      * True if this attribute should be returned during first pass of search.
@@ -96,7 +106,7 @@ public final class Attribute implements Cloneable, Serializable {
         private final String myName;  // different from what name() returns.
         private final String exportAttributeTypeName;
 
-        private Type(String name, String exportAttributeTypeName) {
+        Type(String name, String exportAttributeTypeName) {
             this.myName=name;
             this.exportAttributeTypeName = exportAttributeTypeName;
         }
@@ -118,7 +128,7 @@ public final class Attribute implements Cloneable, Serializable {
 
         private final String name;
 
-        private CollectionType(String name) {
+        CollectionType(String name) {
             this.name=name;
         }
 
@@ -178,24 +188,33 @@ public final class Attribute implements Cloneable, Serializable {
     /** Returns the prefetch value of this, null if the default is used. */
     public Boolean getPrefetchValue() { return prefetch; }
 
-    public boolean isRemoveIfZero()       { return removeIfZero; }
-    public boolean isCreateIfNonExistent(){ return createIfNonExistent; }
-    public boolean isEnabledBitVectors()  { return enableBitVectors; }
+    public boolean isRemoveIfZero()         { return removeIfZero; }
+    public boolean isCreateIfNonExistent()  { return createIfNonExistent; }
+    public boolean isEnabledBitVectors()    { return enableBitVectors; }
     public boolean isEnabledOnlyBitVector() { return enableOnlyBitVector; }
-    public boolean isFastSearch()         { return fastSearch; }
-    public boolean isFastAccess()         { return fastAccess; }
-    public boolean isHuge()               { return huge; }
-    public boolean isPosition()           { return isPosition; }
-    public boolean isMutable()            { return mutable; }
+    public boolean isFastSearch()           { return fastSearch; }
+    public boolean isFastAccess()           { return fastAccess; }
+    public boolean isHuge()                 { return huge; }
+    public boolean isPaged()                { return paged; }
+    public boolean isPosition()             { return isPosition; }
+    public boolean isMutable()              { return mutable; }
 
-    public int arity() { return arity; }
+    public int arity()       { return arity; }
     public long lowerBound() { return lowerBound; }
     public long upperBound() { return upperBound; }
     public double densePostingListThreshold() { return densePostingListThreshold; }
-    public Optional<TensorType> tensorType() { return tensorType; }
+    public Optional<TensorType> tensorType()  { return tensorType; }
     public Optional<StructuredDataType> referenceDocumentType() { return referenceDocumentType; }
 
+    public static final DistanceMetric DEFAULT_DISTANCE_METRIC = DistanceMetric.EUCLIDEAN;
+    public DistanceMetric distanceMetric() {
+        return distanceMetric.orElse(DEFAULT_DISTANCE_METRIC);
+    }
+    public Optional<HnswIndexParams> hnswIndexParams() { return hnswIndexParams; }
+
     public Sorting getSorting() { return sorting; }
+    public Dictionary getDictionary() { return dictionary; }
+    public Case getCase() { return casing; }
 
     public void setRemoveIfZero(boolean remove)                  { this.removeIfZero = remove; }
     public void setCreateIfNonExistent(boolean create)           { this.createIfNonExistent = create; }
@@ -209,6 +228,7 @@ public final class Attribute implements Cloneable, Serializable {
     public void setEnableOnlyBitVector(boolean enableOnlyBitVector) { this.enableOnlyBitVector = enableOnlyBitVector; }
     public void setFastSearch(boolean fastSearch)                { this.fastSearch = fastSearch; }
     public void setHuge(boolean huge)                            { this.huge = huge; }
+    public void setPaged(boolean paged)                  { this.paged = paged; }
     public void setFastAccess(boolean fastAccess)                { this.fastAccess = fastAccess; }
     public void setPosition(boolean position)                    { this.isPosition = position; }
     public void setMutable(boolean mutable)                      { this.mutable = mutable; }
@@ -217,6 +237,10 @@ public final class Attribute implements Cloneable, Serializable {
     public void setUpperBound(long upperBound)                   { this.upperBound = upperBound; }
     public void setDensePostingListThreshold(double threshold)   { this.densePostingListThreshold = threshold; }
     public void setTensorType(TensorType tensorType)             { this.tensorType = Optional.of(tensorType); }
+    public void setDistanceMetric(DistanceMetric metric)         { this.distanceMetric = Optional.of(metric); }
+    public void setHnswIndexParams(HnswIndexParams params)       { this.hnswIndexParams = Optional.of(params); }
+    public void setDictionary(Dictionary dictionary)             { this.dictionary = dictionary; }
+    public void setCase(Case casing)                             { this.casing = casing; }
 
     public String         getName()                     { return name; }
     public Type           getType()                     { return type; }
@@ -334,8 +358,9 @@ public final class Attribute implements Cloneable, Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(
-                name, type, collectionType, sorting, isPrefetch(), fastAccess, removeIfZero, createIfNonExistent,
-                isPosition, huge, enableBitVectors, enableOnlyBitVector, tensorType, referenceDocumentType);
+                name, type, collectionType, sorting, dictionary, isPrefetch(), fastAccess, removeIfZero,
+                createIfNonExistent, isPosition, huge, mutable, paged, enableBitVectors, enableOnlyBitVector,
+                tensorType, referenceDocumentType, distanceMetric, hnswIndexParams);
     }
 
     @Override
@@ -349,19 +374,23 @@ public final class Attribute implements Cloneable, Serializable {
 
     /** Returns whether these attributes describes the same entity, even if they have different names */
     public boolean isCompatible(Attribute other) {
-        if ( ! this.type.equals(other.type)) return false;
-        if ( ! this.collectionType.equals(other.collectionType)) return false;
+        if (! this.type.equals(other.type)) return false;
+        if (! this.collectionType.equals(other.collectionType)) return false;
         if (this.isPrefetch() != other.isPrefetch()) return false;
         if (this.removeIfZero != other.removeIfZero) return false;
         if (this.createIfNonExistent != other.createIfNonExistent) return false;
         if (this.enableBitVectors != other.enableBitVectors) return false;
         if (this.enableOnlyBitVector != other.enableOnlyBitVector) return false;
-        // if (this.noSearch != other.noSearch) return false; No backend consequences so compatible for now
         if (this.fastSearch != other.fastSearch) return false;
         if (this.huge != other.huge) return false;
-        if ( ! this.sorting.equals(other.sorting)) return false;
-        if (!this.tensorType.equals(other.tensorType)) return false;
-        if (!this.referenceDocumentType.equals(other.referenceDocumentType)) return false;
+        if (this.mutable != other.mutable) return false;
+        if (this.paged != other.paged) return false;
+        if (! this.sorting.equals(other.sorting)) return false;
+        if (! Objects.equals(dictionary, other.dictionary)) return false;
+        if (! Objects.equals(tensorType, other.tensorType)) return false;
+        if (! Objects.equals(referenceDocumentType, other.referenceDocumentType)) return false;
+        if (! Objects.equals(distanceMetric, other.distanceMetric)) return false;
+        if (! Objects.equals(hnswIndexParams, other.hnswIndexParams)) return false;
 
         return true;
     }

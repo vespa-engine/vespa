@@ -6,7 +6,6 @@
 using document::BucketId;
 using document::DocumentId;
 using storage::spi::Bucket;
-using storage::spi::PartitionId;
 using storage::spi::test::makeSpiBucket;
 
 namespace proton {

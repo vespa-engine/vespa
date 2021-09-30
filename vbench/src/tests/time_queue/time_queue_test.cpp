@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vbench/test/all.h>
-#include <vespa/vespalib/util/sync.h>
 
 using namespace vbench;
 
@@ -17,8 +16,8 @@ TEST_MT_FFF("time queue", 2, TimeQueue<int>(10.0, 5.0), vespalib::Gate(), vespal
     } else {
         double delay;
         std::vector<std::unique_ptr<int> > list;
-        EXPECT_TRUE(f2.await(20000));
-        EXPECT_FALSE(f3.await(20));
+        EXPECT_TRUE(f2.await(20s));
+        EXPECT_FALSE(f3.await(20ms));
         {
             f1.extract(1.5, list, delay);
             ASSERT_EQUAL(1u, list.size());
@@ -39,7 +38,7 @@ TEST_MT_FFF("time queue", 2, TimeQueue<int>(10.0, 5.0), vespalib::Gate(), vespal
             EXPECT_EQUAL(0u, list.size());
             EXPECT_EQUAL(5.0, delay);
         }
-        EXPECT_TRUE(f3.await(20000));
+        EXPECT_TRUE(f3.await(20s));
         {
             f1.extract(99.25, list, delay);
             EXPECT_EQUAL(0u, list.size());

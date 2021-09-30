@@ -9,7 +9,7 @@
 #include "minmaxaggrcalc.h"
 #include "btreeaggregator.h"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename KeyT,
           typename DataT,

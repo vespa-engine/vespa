@@ -8,10 +8,9 @@
 #include "sameelementmodifier.h"
 #include "unpacking_iterators_optimizer.h"
 #include <vespa/document/datatype/positiondatatype.h>
-#include <vespa/searchlib/common/location.h>
+#include <vespa/searchlib/common/geo_location_spec.h>
+#include <vespa/searchlib/common/geo_location_parser.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include <vespa/searchlib/query/tree/point.h>
-#include <vespa/searchlib/query/tree/rectangle.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 
 #include <vespa/log/log.h>
@@ -20,11 +19,13 @@ LOG_SETUP(".proton.matching.query");
 
 using document::PositionDataType;
 using search::SimpleQueryStackDumpIterator;
+using search::common::GeoLocation;
+using search::common::GeoLocationParser;
+using search::common::GeoLocationSpec;
 using search::fef::IIndexEnvironment;
 using search::fef::ITermData;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
-using search::fef::Location;
 using search::query::Node;
 using search::query::QueryTreeCreator;
 using search::query::Weight;
@@ -35,6 +36,7 @@ using search::queryeval::IntermediateBlueprint;
 using search::queryeval::Blueprint;
 using search::queryeval::IRequestContext;
 using search::queryeval::SearchIterator;
+using search::query::LocationTerm;
 using vespalib::string;
 using std::vector;
 
@@ -59,46 +61,85 @@ inject(Node::UP query, Node::UP to_inject) {
 }
 
 void
-addLocationNode(const string &location_str, Node::UP &query_tree, Location &fef_location) {
-    if (location_str.empty()) {
-        return;
+find_location_terms(Node *node, std::vector<LocationTerm *> & locations) {
+    if (node->isLocationTerm() ) {
+        locations.push_back(static_cast<LocationTerm *>(node));
+    } else if (node->isIntermediate()) {
+        auto parent = static_cast<const search::query::Intermediate *>(node);
+        for (Node * child : parent->getChildren()) {
+            find_location_terms(child, locations);
+        }
     }
-    string::size_type pos = location_str.find(':');
-    if (pos == string::npos) {
-        LOG(warning, "Location string lacks attribute vector specification. loc='%s'", location_str.c_str());
-        return;
+}
+
+std::vector<LocationTerm *>
+find_location_terms(Node *tree) {
+    std::vector<LocationTerm *> locations;
+    find_location_terms(tree, locations);
+    return locations;
+}
+
+GeoLocationSpec parse_location_string(string str) {
+    GeoLocationSpec empty;
+    if (str.empty()) {
+        return empty;
     }
-    const string view = PositionDataType::getZCurveFieldName(location_str.substr(0, pos));
-    const string loc = location_str.substr(pos + 1);
-
-    search::common::Location locationSpec;
-    if (!locationSpec.parse(loc)) {
-        LOG(warning, "Location parse error (location: '%s'): %s", location_str.c_str(), locationSpec.getParseError());
-        return;
+    GeoLocationParser parser;
+    if (parser.parseWithField(str)) {
+        auto attr_name = PositionDataType::getZCurveFieldName(parser.getFieldName());
+        return GeoLocationSpec{attr_name, parser.getGeoLocation()};
+    } else {
+        LOG(warning, "Location parse error (location: '%s'): %s", str.c_str(), parser.getParseError());
     }
+    return empty;
+}
 
-    int32_t id = -1;
-    Weight weight(100);
+GeoLocationSpec process_location_term(LocationTerm &pterm) {
+    auto old_view = pterm.getView();
+    auto new_view = PositionDataType::getZCurveFieldName(old_view);
+    pterm.setView(new_view);
+    const GeoLocation &loc = pterm.getTerm();
+    return GeoLocationSpec{new_view, loc};
+}
 
-    if (locationSpec.getRankOnDistance()) {
-        query_tree = inject(std::move(query_tree), std::make_unique<ProtonLocationTerm>(loc, view, id, weight));
-        fef_location.setAttribute(view);
-        fef_location.setXPosition(locationSpec.getX());
-        fef_location.setYPosition(locationSpec.getY());
-        fef_location.setXAspect(locationSpec.getXAspect());
-        fef_location.setValid(true);
-    } else if (locationSpec.getPruneOnDistance()) {
-        query_tree = inject(std::move(query_tree), std::make_unique<ProtonLocationTerm>(loc, view, id, weight));
+void exchange_location_nodes(const string &location_str,
+                             Node::UP &query_tree,
+                             std::vector<GeoLocationSpec> &fef_locations) __attribute__((noinline));
+
+void exchange_location_nodes(const string &location_str,
+                           Node::UP &query_tree,
+                           std::vector<GeoLocationSpec> &fef_locations)
+{
+    std::vector<GeoLocationSpec> locationSpecs;
+
+    auto parsed = parse_location_string(location_str);
+    if (parsed.location.valid()) {
+        locationSpecs.push_back(parsed);
+    }
+    for (LocationTerm * pterm : find_location_terms(query_tree.get())) {
+        auto spec = process_location_term(*pterm);
+        if (spec.location.valid()) {
+            locationSpecs.push_back(spec);
+        }
+    }
+    for (const GeoLocationSpec &spec : locationSpecs) {
+        if (spec.location.has_point) {
+            fef_locations.push_back(spec);
+        }
+    }
+    if (parsed.location.can_limit()) {
+        int32_t id = -1;
+        Weight weight(100);
+        query_tree = inject(std::move(query_tree),
+                            std::make_unique<ProtonLocationTerm>(parsed.location, parsed.field_name, id, weight));
     }
 }
 
 IntermediateBlueprint *
 asRankOrAndNot(Blueprint * blueprint) {
-    IntermediateBlueprint * rankOrAndNot = dynamic_cast<RankBlueprint*>(blueprint);
-    if (rankOrAndNot == nullptr) {
-        rankOrAndNot = dynamic_cast<AndNotBlueprint*>(blueprint);
-    }
-    return rankOrAndNot;
+    return ((blueprint->isAndNot() || blueprint->isRank()))
+        ? static_cast<IntermediateBlueprint *>(blueprint)
+        : nullptr;
 }
 
 IntermediateBlueprint *
@@ -127,7 +168,7 @@ Query::buildTree(vespalib::stringref stack, const string &location,
     if (_query_tree) {
         SameElementModifier prefixSameElementSubIndexes;
         _query_tree->accept(prefixSameElementSubIndexes);
-        addLocationNode(location, _query_tree, _location);
+        exchange_location_nodes(location, _query_tree, _locations);
         _query_tree = UnpackingIteratorsOptimizer::optimize(std::move(_query_tree),
                 bool(_whiteListBlueprint), split_unpacking_iterators, delay_unpacking_iterators);
         ResolveViewVisitor resolve_visitor(resolver, indexEnv);
@@ -146,10 +187,12 @@ Query::extractTerms(vector<const ITermData *> &terms)
 }
 
 void
-Query::extractLocations(vector<const Location *> &locations)
+Query::extractLocations(vector<const GeoLocationSpec *> &locations)
 {
     locations.clear();
-    locations.push_back(&_location);
+    for (const auto & loc : _locations) {
+        locations.push_back(&loc);
+    }
 }
 
 void
@@ -196,6 +239,36 @@ void
 Query::fetchPostings()
 {
     _blueprint->fetchPostings(search::queryeval::ExecuteInfo::create(true, 1.0));
+}
+
+void
+Query::handle_global_filters(uint32_t docid_limit, double global_filter_lower_limit, double global_filter_upper_limit)
+{
+    using search::queryeval::GlobalFilter;
+    double estimated_hit_ratio = _blueprint->getState().hit_ratio(docid_limit);
+    if ( ! _blueprint->getState().want_global_filter()) return;
+
+    LOG(debug, "docid_limit=%d, estimated_hit_ratio=%1.2f, global_filter_lower_limit=%1.2f, global_filter_upper_limit=%1.2f",
+        docid_limit, estimated_hit_ratio, global_filter_lower_limit, global_filter_upper_limit);
+    if (estimated_hit_ratio < global_filter_lower_limit) return;
+
+    if (estimated_hit_ratio <= global_filter_upper_limit) {
+        auto constraint = Blueprint::FilterConstraint::UPPER_BOUND;
+        bool strict = true;
+        auto filter_iterator = _blueprint->createFilterSearch(strict, constraint);
+        filter_iterator->initRange(1, docid_limit);
+        auto white_list = filter_iterator->get_hits(1);
+        auto global_filter = GlobalFilter::create(std::move(white_list));
+        _blueprint->set_global_filter(*global_filter);
+    } else {
+        auto no_filter = GlobalFilter::create();
+        _blueprint->set_global_filter(*no_filter);
+    }
+    // optimized order may change after accounting for global filter:
+    _blueprint = Blueprint::optimize(std::move(_blueprint));
+    LOG(debug, "blueprint after handle_global_filters:\n%s\n", _blueprint->asString().c_str());
+    // strictness may change if optimized order changed:
+    fetchPostings();
 }
 
 void

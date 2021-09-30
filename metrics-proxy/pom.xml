@@ -60,13 +60,13 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-core</artifactId>
+      <artifactId>container-apache-http-client-bundle</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-di</artifactId>
+      <artifactId>container-core</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -74,12 +74,6 @@
       <!-- Not directly used in this module, but needed to get Import-Packages for JDK packages it exports. -->
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jdisc_core</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>jdisc_http_service</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -97,19 +91,8 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>vespalog</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>yolean</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
       <scope>provided</scope>
     </dependency>
 
@@ -129,8 +112,8 @@
       <artifactId>simpleclient_common</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
+      <groupId>org.apache.velocity</groupId>
+      <artifactId>velocity</artifactId>
     </dependency>
 
     <!-- test scope -->

@@ -17,6 +17,8 @@ struct IMatchLoopCommunicator {
     using SortedHitSequence = search::queryeval::SortedHitSequence;
     using Hit = SortedHitSequence::Hit;
     using Hits = std::vector<Hit>;
+    using TaggedHit = std::pair<Hit,size_t>;
+    using TaggedHits = std::vector<TaggedHit>;
     struct Matches {
         size_t hits;
         size_t docs;
@@ -28,8 +30,8 @@ struct IMatchLoopCommunicator {
         }
     };
     virtual double estimate_match_frequency(const Matches &matches) = 0;
-    virtual Hits selectBest(SortedHitSequence sortedHits) = 0;
-    virtual RangePair rangeCover(const RangePair &ranges) = 0;
+    virtual TaggedHits get_second_phase_work(SortedHitSequence sortedHits, size_t thread_id) = 0;
+    virtual std::pair<Hits,RangePair> complete_second_phase(TaggedHits my_results, size_t thread_id) = 0;
     virtual ~IMatchLoopCommunicator() {}
 };
 

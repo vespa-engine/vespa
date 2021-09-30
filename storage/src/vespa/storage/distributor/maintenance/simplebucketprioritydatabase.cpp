@@ -6,9 +6,7 @@
 
 namespace storage::distributor {
 
-SimpleBucketPriorityDatabase::~SimpleBucketPriorityDatabase()
-{
-}
+SimpleBucketPriorityDatabase::~SimpleBucketPriorityDatabase() = default;
 
 void
 SimpleBucketPriorityDatabase::clearAllEntriesForBucket(const document::Bucket &bucket)
@@ -83,7 +81,7 @@ SimpleBucketPriorityDatabase::SimpleConstIteratorImpl::increment()
 {
     while (!atEnd()) {
         step();
-        if (!currentPriorityAtEnd()) {
+        if (atEnd() || !currentPriorityAtEnd()) {
             break;
         }
     }

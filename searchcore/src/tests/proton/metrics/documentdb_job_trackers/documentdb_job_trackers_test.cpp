@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/metrics/job_tracked_flush_target.h>
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("documentdb_job_trackers_test");

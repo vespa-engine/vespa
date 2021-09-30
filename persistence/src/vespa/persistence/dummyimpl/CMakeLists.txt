@@ -2,5 +2,6 @@
 vespa_add_library(persistence_dummyimpl OBJECT
     SOURCES
     dummypersistence.cpp
+    dummy_bucket_executor.cpp
     DEPENDS
 )

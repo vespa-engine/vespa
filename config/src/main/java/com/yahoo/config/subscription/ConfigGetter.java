@@ -50,7 +50,7 @@ public class ConfigGetter<T extends ConfigInstance> {
         try (ConfigSubscriber subscriber =
                      source == null ? new ConfigSubscriber() : new ConfigSubscriber(source)) {
             ConfigHandle<T> handle = subscriber.subscribe(clazz, configId);
-            subscriber.nextConfig();
+            subscriber.nextConfig(true);
             return handle.getConfig();
         }
     }

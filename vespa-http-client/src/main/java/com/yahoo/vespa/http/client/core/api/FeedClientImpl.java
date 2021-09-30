@@ -11,6 +11,7 @@ import com.yahoo.vespa.http.client.core.operationProcessor.OperationProcessor;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -23,25 +24,28 @@ import java.util.concurrent.TimeUnit;
  */
 public class FeedClientImpl implements FeedClient {
 
+    private final Clock clock;
     private final OperationProcessor operationProcessor;
     private final long closeTimeoutMs;
     private final long sleepTimeMs = 500;
 
     public FeedClientImpl(SessionParams sessionParams,
                           ResultCallback resultCallback,
-                          ScheduledThreadPoolExecutor timeoutExecutor) {
-        this.closeTimeoutMs = (10 + 3 * sessionParams.getConnectionParams().getMaxRetries()) * (
-                sessionParams.getFeedParams().getServerTimeout(TimeUnit.MILLISECONDS) +
-                sessionParams.getFeedParams().getClientTimeout(TimeUnit.MILLISECONDS));
+                          ScheduledThreadPoolExecutor timeoutExecutor,
+                          Clock clock) {
+        this.clock = clock;
+        this.closeTimeoutMs = (10 + 3 * sessionParams.getConnectionParams().getMaxRetries()) *
+                              (sessionParams.getFeedParams().getServerTimeout(TimeUnit.MILLISECONDS) +
+                               sessionParams.getFeedParams().getClientTimeout(TimeUnit.MILLISECONDS));
         this.operationProcessor = new OperationProcessor(
-                new IncompleteResultsThrottler(
-                        sessionParams.getThrottlerMinSize(),
-                        sessionParams.getClientQueueSize(),
-                        ()->System.currentTimeMillis(),
-                        new ThrottlePolicy()),
+                new IncompleteResultsThrottler(sessionParams.getThrottlerMinSize(),
+                                               sessionParams.getClientQueueSize(),
+                                               clock,
+                                               new ThrottlePolicy()),
                 resultCallback,
                 sessionParams,
-                timeoutExecutor);
+                timeoutExecutor,
+                clock);
     }
 
     @Override
@@ -50,7 +54,7 @@ public class FeedClientImpl implements FeedClient {
         charsetEncoder.onMalformedInput(CodingErrorAction.REPORT);
         charsetEncoder.onUnmappableCharacter(CodingErrorAction.REPORT);
 
-        Document document = new Document(documentId, operationId, documentData, context);
+        Document document = new Document(documentId, operationId, documentData, context, clock.instant());
         operationProcessor.sendDocument(document);
     }
 

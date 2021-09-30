@@ -20,13 +20,16 @@ vespa_add_library(searchcore_matching STATIC
     match_tools.cpp
     matcher.cpp
     matching_stats.cpp
+    onnx_models.cpp
     partial_result.cpp
     query.cpp
     queryenvironment.cpp
     querylimiter.cpp
     querynodes.cpp
     ranking_constants.cpp
+    ranking_expressions.cpp
     requestcontext.cpp
+    resolveviewvisitor.cpp
     result_processor.cpp
     same_element_builder.cpp
     sameelementmodifier.cpp

@@ -15,7 +15,6 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PrepareResponse {
     public TenantId tenant;
-    @JsonProperty("activate") public URI activationUri;
     public String message;
     public List<Log> log;
     public ConfigChangeActions configChangeActions;

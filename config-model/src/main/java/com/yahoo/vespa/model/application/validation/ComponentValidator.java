@@ -81,7 +81,7 @@ public class ComponentValidator extends Validator {
         }
 
         if (attributes.getValue("Bundle-Version").endsWith(".SNAPSHOT")) {
-            deployLogger.log(Level.WARNING, "Deploying snapshot bundle " + jarFile.getName() +
+            deployLogger.logApplicationPackage(Level.WARNING, "Deploying snapshot bundle " + jarFile.getName() +
                     ".\nTo use this bundle, you must include the qualifier 'SNAPSHOT' in  the version specification in services.xml.");
         }
     }

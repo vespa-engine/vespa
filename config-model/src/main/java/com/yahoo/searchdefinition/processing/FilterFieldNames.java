@@ -63,7 +63,7 @@ public class FilterFieldNames extends Processor {
                         filterFields.add(fieldName);
                     }
                 } else {
-                    deployLogger.log(Level.WARNING, "For rank profile '" + profile.getName() + "': Cannot apply rank filter setting to unexisting field '" + fieldName + "'");
+                    deployLogger.logApplicationPackage(Level.WARNING, "For rank profile '" + profile.getName() + "': Cannot apply rank filter setting to unexisting field '" + fieldName + "'");
                 }
             }
         }

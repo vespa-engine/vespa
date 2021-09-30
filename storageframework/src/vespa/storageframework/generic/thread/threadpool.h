@@ -27,12 +27,12 @@ namespace storage::framework {
  * thread.
  */
 class ThreadProperties {
- private:
+private:
     /**
      * Time this thread should maximum use to process before a tick is
      * registered. (Including wait time if wait time is not set)
      */
-    std::atomic_uint_least64_t _maxProcessTimeMs;
+    std::atomic<vespalib::duration> _maxProcessTime;
     /**
      * Time this thread will wait in a non-interrupted wait cycle.
      * Used in cases where a wait cycle is registered. As long as no other
@@ -40,54 +40,54 @@ class ThreadProperties {
      * wait time here. The deadlock detector should add a configurable
      * global time period before flagging deadlock anyways.
      */
-     std::atomic_uint_least64_t _waitTimeMs;
+    std::atomic<vespalib::duration> _waitTime;
     /**
      * Number of ticks to be done before a wait.
      */
     std::atomic_uint _ticksBeforeWait;
 
  public:
-    ThreadProperties(uint64_t waitTimeMs,
-                     uint64_t maxProcessTimeMs,
+    ThreadProperties(vespalib::duration waitTime,
+                     vespalib::duration maxProcessTime,
                      int ticksBeforeWait);
 
-    void setMaxProcessTime(uint64_t);
-    void setWaitTime(uint64_t);
+    void setMaxProcessTime(vespalib::duration);
+    void setWaitTime(vespalib::duration);
     void setTicksBeforeWait(int);
 
-    uint64_t getMaxProcessTime() const;
-    uint64_t getWaitTime() const;
+    vespalib::duration getMaxProcessTime() const;
+    vespalib::duration getWaitTime() const;
     int getTicksBeforeWait() const;
 
-    uint64_t getMaxCycleTime() const {
-      return std::max(_maxProcessTimeMs.load(std::memory_order_relaxed),
-                      _waitTimeMs.load(std::memory_order_relaxed));
+    vespalib::duration getMaxCycleTime() const {
+      return std::max(_maxProcessTime.load(std::memory_order_relaxed),
+                      _waitTime.load(std::memory_order_relaxed));
     }
 };
 
 /** Data kept on each thread due to the registerTick functinality. */
 struct ThreadTickData {
     CycleType _lastTickType;
-    uint64_t _lastTickMs;
-    uint64_t _maxProcessingTimeSeenMs;
-    uint64_t _maxWaitTimeSeenMs;
+    vespalib::steady_time _lastTick;
+    vespalib::duration _maxProcessingTimeSeen;
+    vespalib::duration _maxWaitTimeSeen;
 };
 
 /** Interface used to access data for the existing threads. */
 struct ThreadVisitor {
-    virtual ~ThreadVisitor() {}
+    virtual ~ThreadVisitor() = default;
     virtual void visitThread(const vespalib::string& id,
                              const ThreadProperties&,
                              const ThreadTickData&) = 0;
 };
 
 struct ThreadPool {
-    virtual ~ThreadPool() {}
+    virtual ~ThreadPool() = default;
 
     virtual Thread::UP startThread(Runnable&,
                                    vespalib::stringref id,
-                                   uint64_t waitTimeMs,
-                                   uint64_t maxProcessTime,
+                                   vespalib::duration waitTime,
+                                   vespalib::duration maxProcessTime,
                                    int ticksBeforeWait) = 0;
 
     virtual void visitThreads(ThreadVisitor&) const = 0;

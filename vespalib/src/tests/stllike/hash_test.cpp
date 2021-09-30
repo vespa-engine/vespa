@@ -4,8 +4,10 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
+#include <vespa/vespalib/stllike/allocator.h>
 #include <cstddef>
 #include <algorithm>
+#include <atomic>
 
 using namespace vespalib;
 using std::make_pair;
@@ -14,14 +16,14 @@ namespace {
     struct Foo {
         int i;
 
-        Foo() : i(0) {}
-        Foo(int i_) : i(i_) {}
+        Foo() noexcept : i(0) {}
+        Foo(int i_) noexcept : i(i_) {}
 
-        bool operator==(const Foo& f) const
+        bool operator==(const Foo& f) const noexcept
             { return (i == f.i); }
 
         struct hash {
-            size_t operator() (const Foo& f) const {
+            size_t operator() (const Foo& f) const noexcept {
                 return (f.i % 16);
             }
         };
@@ -32,7 +34,7 @@ namespace {
 TEST("test that hashValue gives expected response")
 {
     const char * s("abcdefghi");
-    EXPECT_EQUAL(7045194595191919248ul, vespalib::hashValue(s));
+    EXPECT_EQUAL(16203358805722239136ul, vespalib::hashValue(s));
     EXPECT_EQUAL(vespalib::hashValue(s), vespalib::hashValue(s, strlen(s)));
     EXPECT_NOT_EQUAL(vespalib::hashValue(s), vespalib::hashValue(s, strlen(s)-1));
 }
@@ -171,7 +173,7 @@ TEST("test hash map iterator stability")
 class Clever {
 public:
     Clever() : _counter(&_global) { (*_counter)++; }
-    Clever(volatile size_t * counter) :
+    Clever(std::atomic<size_t> * counter) :
         _counter(counter)
     {
         (*_counter)++;
@@ -196,15 +198,15 @@ public:
     ~Clever() { (*_counter)--; }
     static size_t getGlobal() { return _global; }
 private:
-    volatile size_t * _counter;
-    static size_t _global;
+    std::atomic<size_t> * _counter;
+    static std::atomic<size_t> _global;
 };
 
-size_t Clever::_global = 0;
+std::atomic<size_t> Clever::_global = 0;
 
 TEST("test hash map resizing")
 {
-    volatile size_t counter(0);
+    std::atomic<size_t> counter(0);
     {
         EXPECT_EQUAL(0ul, Clever::getGlobal());
         Clever c(&counter);
@@ -331,10 +333,10 @@ TEST("test hash map with simple key and value type")
 
 class S {
 public:
-    explicit S(uint64_t l=0) : _a(l&0xfffffffful), _b(l>>32) { }
+    explicit S(uint64_t l=0) noexcept : _a(l&0xfffffffful), _b(l>>32) { }
     uint32_t hash() const { return _a; }
     uint32_t a() const { return _a; }
-    friend bool operator == (const S & a, const S & b) { return a._a == b._a && a._b == b._b; }
+    friend bool operator == (const S & a, const S & b) noexcept { return a._a == b._a && a._b == b._b; }
 private:
     uint32_t _a, _b;
 };
@@ -345,7 +347,7 @@ struct myhash {
 };
 
 bool operator == (uint32_t a, const S & b) { return a == b.a(); }
-bool operator == (const S & a, uint32_t b) { return a.a() == b; }
+bool operator == (const S & a, uint32_t b) noexcept { return a.a() == b; }
 
 TEST("test hash set find")
 {
@@ -356,6 +358,9 @@ TEST("test hash set find")
     EXPECT_TRUE(*set.find(S(1)) == S(1));
     auto cit = set.find<uint32_t>(7);
     EXPECT_TRUE(*cit == S(7));
+
+    EXPECT_EQUAL(1u, set.count(S(7)));
+    EXPECT_EQUAL(0u, set.count(S(10007)));
 }
 
 TEST("test hash set range constructor")
@@ -548,6 +553,40 @@ TEST("test that begin and end are identical with empty hashtables") {
     EXPECT_TRUE(empty.begin() == empty.end());
     hash_set<int> empty_but_reserved(10);
     EXPECT_TRUE(empty_but_reserved.begin() == empty_but_reserved.end());
+}
+
+TEST("test that large_allocator works fine with std::vector") {
+    using V = std::vector<uint64_t, allocator_large<uint64_t>>;
+    V a;
+    a.push_back(1);
+    a.reserve(14);
+    for (size_t i(0); i < 400000; i++) {
+        a.push_back(i);
+    }
+    V b = std::move(a);
+    V c = b;
+    ASSERT_EQUAL(b.size(), c.size());
+}
+
+TEST("test that hash table clear does not resize hashtable") {
+    hash_set<int> a(100);
+    EXPECT_EQUAL(0u, a.size());
+    EXPECT_EQUAL(128u, a.capacity());
+    for (size_t i(0); i < 100; i++) {
+        a.insert(i);
+    }
+    EXPECT_EQUAL(100u, a.size());
+    EXPECT_EQUAL(128u, a.capacity());
+    a.clear();
+    EXPECT_EQUAL(0u, a.size());
+    EXPECT_EQUAL(128u, a.capacity());
+}
+
+TEST("test that hash nodes have expected sizes")
+{
+    EXPECT_EQUAL(8u, sizeof(hash_node<int8_t>));
+    EXPECT_EQUAL(8u, sizeof(hash_node<int32_t>));
+    EXPECT_EQUAL(16u, sizeof(hash_node<int64_t>));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

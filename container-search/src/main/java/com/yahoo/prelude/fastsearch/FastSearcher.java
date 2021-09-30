@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.logging.Level;
 
-import static com.yahoo.container.util.Util.quote;
-
 /**
  * The searcher which forwards queries to fdispatch nodes, using the fnet/fs4
  * network layer.
@@ -83,7 +81,7 @@ public class FastSearcher extends VespaBackEndSearcher {
 
     @Override
     public Result doSearch2(Query query, Execution execution) {
-        if (dispatcher.searchCluster().groupSize() == 1)
+        if (dispatcher.searchCluster().wantedGroupSize() == 1)
             forceSinglePassGrouping(query);
         try (SearchInvoker invoker = getSearchInvoker(query)) {
             Result result = invoker.search(query, execution);
@@ -160,7 +158,7 @@ public class FastSearcher extends VespaBackEndSearcher {
     }
 
     private static Optional<String> quotedSummaryClass(String summaryClass) {
-        return Optional.of(summaryClass == null ? "[null]" : quote(summaryClass));
+        return Optional.of(summaryClass == null ? "[null]" : "'" + summaryClass + "'");
     }
 
     public String toString() {

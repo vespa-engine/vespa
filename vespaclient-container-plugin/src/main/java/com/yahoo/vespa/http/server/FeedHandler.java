@@ -2,13 +2,17 @@
 package com.yahoo.vespa.http.server;
 
 import com.yahoo.collections.Tuple2;
-import com.yahoo.container.handler.ThreadpoolConfig;
+import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
+import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.Request;
+import com.yahoo.jdisc.Response;
+import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.http.client.core.Headers;
@@ -39,15 +43,15 @@ public class FeedHandler extends LoggingRequestHandler {
     private final DocumentApiMetrics metricsHelper;
 
     @Inject
-    public FeedHandler(LoggingRequestHandler.Context parentCtx,
+    public FeedHandler(ContainerThreadPool threadpool,
+                       Metric metric,
                        DocumentmanagerConfig documentManagerConfig,
                        SessionCache sessionCache,
-                       ThreadpoolConfig threadpoolConfig,
-                       MetricReceiver metricReceiver) throws Exception {
-        super(parentCtx);
+                       MetricReceiver metricReceiver) {
+        super(threadpool.executor(), metric);
         metricsHelper = new DocumentApiMetrics(metricReceiver, "vespa.http.server");
-        feedHandlerV3 = new FeedHandlerV3(parentCtx, documentManagerConfig, sessionCache, threadpoolConfig, metricsHelper);
-        feedReplyHandler = new FeedReplyReader(parentCtx.getMetric(), metricsHelper);
+        feedHandlerV3 = new FeedHandlerV3(threadpool.executor(), metric, documentManagerConfig, sessionCache, metricsHelper);
+        feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
     }
 
     private Tuple2<HttpResponse, Integer> checkProtocolVersion(HttpRequest request) {
@@ -110,6 +114,12 @@ public class FeedHandler extends LoggingRequestHandler {
             return protocolVersion.first;
         }
         return feedHandlerV3.handle(request);
+    }
+
+    @Override
+    protected void writeErrorResponseOnOverload(Request request, ResponseHandler responseHandler) {
+        int responseCode = request.headers().getFirst(Headers.SILENTUPGRADE) != null ? 299 : 429;
+        responseHandler.handleResponse(new Response(responseCode)).close(null);
     }
 
     private static Optional<String> findClientVersion(HttpRequest request) {

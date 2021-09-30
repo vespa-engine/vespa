@@ -4,7 +4,6 @@ package ai.vespa.rankingexpression.importer.operations;
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.Collections;
@@ -13,18 +12,9 @@ import java.util.Optional;
 
 public class Constant extends IntermediateOperation {
 
-    private final String modelName;
-
     public Constant(String modelName, String nodeName, OrderedTensorType type) {
         super(modelName, nodeName, Collections.emptyList());
-        this.modelName = modelName;
         this.type = type.rename(vespaName() + "_");
-    }
-
-    /** Constant names are prefixed by "modelName_" to avoid name conflicts between models */
-    @Override
-    public String vespaName() {
-        return modelName + "_" + vespaName(name);
     }
 
     @Override
@@ -61,7 +51,9 @@ public class Constant extends IntermediateOperation {
     public Constant withInputs(List<IntermediateOperation> inputs) {
         if ( ! inputs.isEmpty())
             throw new IllegalArgumentException("Constant cannot take inputs");
-        return new Constant(modelName(), name(), type);
+        Constant constant = new Constant(modelName(), name(), type);
+        constant.setConstantValueFunction(constantValueFunction);
+        return constant;
     }
 
     @Override

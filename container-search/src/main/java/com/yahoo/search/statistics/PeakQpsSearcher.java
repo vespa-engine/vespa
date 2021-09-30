@@ -137,8 +137,8 @@ public class PeakQpsSearcher extends Searcher {
             useMetaHit = false;
             propertyName = null;
         } else {
-            throw new IllegalArgumentException("Config definition out of sync with implementation." +
-                                               " No way to create output for method " + method + ".");
+            throw new IllegalStateException("Config definition out of sync with implementation." +
+                                            " No way to create output for method " + method + ".");
         }
     }
 

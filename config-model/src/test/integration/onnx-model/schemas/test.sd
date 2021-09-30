@@ -1,0 +1,126 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+search test {
+
+    document test {
+        field document_field type tensor(d0[2]) {
+            indexing: attribute
+        }
+    }
+
+    constant my_constant {
+        file: files/constant.json
+        type: tensor(d0[2])
+    }
+
+    onnx-model my_model {
+        file:  files/model.onnx
+        input  first_input: attribute(document_field)
+        input  "second/input:0": constant(my_constant)
+        input  "third_input": my_function
+        output "path/to/output:0": out
+    }
+
+    onnx-model another_model {
+        file:  files/model.onnx
+        input  first_input: attribute(document_field)
+        input  "second/input:0": constant(my_constant)
+        input  "third_input": another_function
+        output "path/to/output:2": out
+    }
+
+    onnx-model dynamic_model {
+        file:  files/dynamic_model.onnx
+        input  input: my_function
+        output output: my_output
+    }
+
+    onnx-model unbound_model {
+        file:  files/unbound_model.onnx
+        input  input: my_function
+        output output: my_output
+    }
+
+    rank-profile test_model_config {
+        function my_function() {
+            expression: tensor(d0[2])(1)
+        }
+        first-phase {
+            expression: onnx(my_model).out{d0:1}
+        }
+    }
+
+    rank-profile test_generated_model_config inherits test_model_config {
+        function first_input() {
+            expression: attribute(document_field)
+        }
+        function second_input() {
+            expression: constant(my_constant)
+        }
+        function third_input() {
+            expression: my_function()
+        }
+        first-phase {
+            expression: onnx("files/model.onnx", "path/to/output:1"){d0:1}
+        }
+    }
+
+    rank-profile test_summary_features {
+        function another_function() {
+            expression: tensor(d0[2])(2)
+        }
+        first-phase {
+            expression: 1
+        }
+        summary-features {
+            onnx(another_model).out
+            onnx("files/summary_model.onnx", "path/to/output:2")
+        }
+    }
+
+    rank-profile test_dynamic_model {
+        function my_function() {
+            expression: tensor(d0[1],d1[2])(d1)
+        }
+        first-phase {
+            expression: onnx(dynamic_model){d0:0,d1:1}
+        }
+    }
+
+    rank-profile test_dynamic_model_2 {
+        function my_function_2() {
+            expression: tensor(d0[1],d1[3])(d1)
+        }
+        function my_function() {
+            expression: my_function_2()
+        }
+        first-phase {
+            expression: onnx(dynamic_model){d0:0,d1:2}
+        }
+    }
+
+    rank-profile test_dynamic_model_with_transformer_tokens {
+        function my_function() {
+            expression: tokenTypeIds(10, attribute(document_field), attribute(document_field))
+        }
+        first-phase {
+            expression: onnx(dynamic_model){d0:0,d1:1}
+        }
+    }
+
+    rank-profile test_unbound_model {
+        function my_function() {
+            expression: tensor(d0[1],d1[2])(d1)
+        }
+        first-phase {
+            expression: onnx(unbound_model){d0:0,d1:1}
+        }
+    }
+
+    rank-profile test_transformed_dynamic_model inherits test_dynamic_model {
+        first-phase {
+            expression: max(onnx(dynamic_model){d1:0},d0)
+        }
+    }
+
+}

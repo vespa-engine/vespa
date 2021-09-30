@@ -3,9 +3,9 @@
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/rawfieldvalue.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/visiting/visitormanager.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
@@ -18,6 +18,7 @@
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -36,7 +37,8 @@ namespace storage {
 namespace {
 
 using msg_ptr_vector = std::vector<api::StorageMessage::SP>;
-
+vespalib::string _Storage("storage");
+api::StorageMessageAddress _Address(&_Storage, lib::NodeType::STORAGE, 0);
 }
 
 struct VisitorManagerTest : Test {
@@ -82,26 +84,20 @@ VisitorManagerTest::initializeTest()
     vdstestlib::DirConfig config(getStandardConfig(true));
     config.getConfig("stor-visitor").set("visitorthreads", "1");
 
-    _messageSessionFactory.reset(
-            new TestVisitorMessageSessionFactory(config.getConfigId()));
-    _node.reset(
-            new TestServiceLayerApp(config.getConfigId()));
+    _messageSessionFactory = std::make_unique<TestVisitorMessageSessionFactory>(config.getConfigId());
+    _node = std::make_unique<TestServiceLayerApp>(config.getConfigId());
     _node->setupDummyPersistence();
-    _node->getStateUpdater().setClusterState(
-            lib::ClusterState::CSP(
-                    new lib::ClusterState("storage:1 distributor:1")));
-    _top.reset(new DummyStorageLink());
-    _top->push_back(std::unique_ptr<StorageLink>(_manager
-            = new VisitorManager(
-                config.getConfigId(), _node->getComponentRegister(),
-                *_messageSessionFactory)));
-    _top->push_back(std::unique_ptr<StorageLink>(new FileStorManager(
-            config.getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
+    _node->getStateUpdater().setClusterState(std::make_shared<lib::ClusterState>("storage:1 distributor:1"));
+    _top = std::make_unique<DummyStorageLink>();
+    auto vm = std::make_unique<VisitorManager>(config.getConfigId(), _node->getComponentRegister(), *_messageSessionFactory);
+    _manager = vm.get();
+    _top->push_back(std::move(vm));
+    _top->push_back(std::make_unique<FileStorManager>(config.getConfigId(), _node->getPersistenceProvider(),
+                                                      _node->getComponentRegister(), *_node, _node->get_host_info()));
     _manager->setTimeBetweenTicks(10);
     _top->open();
 
     // Adding some documents so database isn't empty
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
     std::string content(
             "To be, or not to be: that is the question:\n"
             "Whether 'tis nobler in the mind to suffer\n"
@@ -152,7 +148,7 @@ VisitorManagerTest::initializeTest()
         document::BucketId bid(16, i);
 
         auto cmd = std::make_shared<api::CreateBucketCommand>(makeDocumentBucket(bid));
-        cmd->setAddress(address);
+        cmd->setAddress(_Address);
         cmd->setSourceIndex(0);
         _top->sendDown(cmd);
         _top->waitForMessages(1, 60);
@@ -161,14 +157,13 @@ VisitorManagerTest::initializeTest()
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(bid, "",
                     StorBucketDatabase::CREATE_IF_NONEXISTING));
-        entry->disk = 0;
         entry.write();
     }
     for (uint32_t i=0; i<docCount; ++i) {
         document::BucketId bid(16, i);
 
         auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), _documents[i], i+1);
-        cmd->setAddress(address);
+        cmd->setAddress(_Address);
         _top->sendDown(cmd);
         _top->waitForMessages(1, 60);
         const msg_ptr_vector replies = _top->getRepliesOnce();
@@ -183,13 +178,12 @@ void
 VisitorManagerTest::addSomeRemoves(bool removeAll)
 {
     framework::defaultimplementation::FakeClock clock;
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
     for (uint32_t i=0; i<docCount; i += (removeAll ? 1 : 4)) {
             // Add it to the database
         document::BucketId bid(16, i % 10);
         auto cmd = std::make_shared<api::RemoveCommand>(
                         makeDocumentBucket(bid), _documents[i]->getId(), clock.getTimeInMicros().getTime() + docCount + i + 1);
-        cmd->setAddress(address);
+        cmd->setAddress(_Address);
         _top->sendDown(cmd);
         _top->waitForMessages(1, 60);
         const msg_ptr_vector replies = _top->getRepliesOnce();
@@ -223,7 +217,7 @@ VisitorManagerTest::getSession(uint32_t n)
     framework::MilliSecTime endTime(clock.getTimeInMillis() + framework::MilliSecTime(30 * 1000));
     while (true) {
         {
-            vespalib::LockGuard lock(_messageSessionFactory->_accessLock);
+            std::lock_guard lock(_messageSessionFactory->_accessLock);
             if (sessions.size() > n) {
                 return *sessions[n];
             }
@@ -250,7 +244,7 @@ VisitorManagerTest::getMessagesAndReply(
         session.waitForMessages(i + 1);
         mbus::Reply::UP reply;
         {
-            vespalib::MonitorGuard guard(session.getMonitor());
+            std::lock_guard guard(session.getMonitor());
 
             if (priority) {
                 ASSERT_EQ(*priority, session.sentMessages[i]->getPriority());
@@ -271,8 +265,7 @@ VisitorManagerTest::getMessagesAndReply(
 
             reply = session.sentMessages[i]->createReply();
             reply->swapState(*session.sentMessages[i]);
-            reply->setMessage(
-                    mbus::Message::UP(session.sentMessages[i].release()));
+            reply->setMessage(std::move(session.sentMessages[i]));
 
             if (result != api::ReturnCode::OK) {
                 reply->addError(mbus::Error(result, "Generic error"));
@@ -347,10 +340,9 @@ int getTotalSerializedSize(const std::vector<document::Document::SP>& docs)
 
 TEST_F(VisitorManagerTest, normal_usage) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
-    cmd->setAddress(address);
+    cmd->setAddress(_Address);
     cmd->setControlDestination("foo/bar");
     _top->sendDown(cmd);
     std::vector<document::Document::SP > docs;
@@ -371,10 +363,9 @@ TEST_F(VisitorManagerTest, normal_usage) {
 
 TEST_F(VisitorManagerTest, resending) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
-    cmd->setAddress(address);
+    cmd->setAddress(_Address);
     cmd->setControlDestination("foo/bar");
     _top->sendDown(cmd);
     std::vector<document::Document::SP > docs;
@@ -418,11 +409,10 @@ TEST_F(VisitorManagerTest, resending) {
 TEST_F(VisitorManagerTest, visit_empty_bucket) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
     addSomeRemoves(true);
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
 
-    cmd->setAddress(address);
+    cmd->setAddress(_Address);
     _top->sendDown(cmd);
 
     // All data has been replied to, expecting to get a create visitor reply
@@ -431,12 +421,11 @@ TEST_F(VisitorManagerTest, visit_empty_bucket) {
 
 TEST_F(VisitorManagerTest, multi_bucket_visit) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
     for (uint32_t i=0; i<10; ++i) {
         cmd->addBucketToBeVisited(document::BucketId(16, i));
     }
-    cmd->setAddress(address);
+    cmd->setAddress(_Address);
     cmd->setDataDestination("fooclient.0");
     _top->sendDown(cmd);
     std::vector<document::Document::SP> docs;
@@ -453,10 +442,9 @@ TEST_F(VisitorManagerTest, multi_bucket_visit) {
 
 TEST_F(VisitorManagerTest, no_buckets) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
 
-    cmd->setAddress(address);
+    cmd->setAddress(_Address);
     _top->sendDown(cmd);
 
     // Should get one reply; a CreateVisitorReply with error since no
@@ -474,9 +462,8 @@ TEST_F(VisitorManagerTest, no_buckets) {
 TEST_F(VisitorManagerTest, visit_puts_and_removes) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
     addSomeRemoves();
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
-    cmd->setAddress(address);
+    cmd->setAddress(_Address);
     cmd->setVisitRemoves();
     for (uint32_t i=0; i<10; ++i) {
         cmd->addBucketToBeVisited(document::BucketId(16, i));
@@ -498,14 +485,13 @@ TEST_F(VisitorManagerTest, visit_puts_and_removes) {
 
 TEST_F(VisitorManagerTest, visit_with_timeframe_and_selection) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "testdoctype1.headerval < 2");
     cmd->setFromTime(3);
     cmd->setToTime(8);
     for (uint32_t i=0; i<10; ++i) {
         cmd->addBucketToBeVisited(document::BucketId(16, i));
     }
-    cmd->setAddress(address);
+    cmd->setAddress(_Address);
     _top->sendDown(cmd);
     std::vector<document::Document::SP> docs;
     std::vector<document::DocumentId> docIds;
@@ -527,7 +513,6 @@ TEST_F(VisitorManagerTest, visit_with_timeframe_and_selection) {
 
 TEST_F(VisitorManagerTest, visit_with_timeframe_and_bogus_selection) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis",
             "DocType(testdoctype1---///---) XXX BAD Field(headerval) < 2");
     cmd->setFromTime(3);
@@ -535,7 +520,7 @@ TEST_F(VisitorManagerTest, visit_with_timeframe_and_bogus_selection) {
     for (uint32_t i=0; i<10; ++i) {
         cmd->addBucketToBeVisited(document::BucketId(16, i));
     }
-    cmd->setAddress(address);
+    cmd->setAddress(_Address);
 
     _top->sendDown(cmd);
     _top->waitForMessages(1, 60);
@@ -568,11 +553,10 @@ TEST_F(VisitorManagerTest, visit_with_timeframe_and_bogus_selection) {
 TEST_F(VisitorManagerTest, visitor_callbacks) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
     std::ostringstream replydata;
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "TestVisitor", "testvis", "");
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
     cmd->addBucketToBeVisited(document::BucketId(16, 5));
-    cmd->setAddress(address);
+    cmd->setAddress(_Address);
     _top->sendDown(cmd);
 
     // Wait until we have started the visitor
@@ -582,7 +566,7 @@ TEST_F(VisitorManagerTest, visitor_callbacks) {
         session.waitForMessages(i + 1);
         mbus::Reply::UP reply;
         {
-            vespalib::MonitorGuard guard(session.getMonitor());
+            std::lock_guard guard(session.getMonitor());
 
             ASSERT_EQ(documentapi::DocumentProtocol::MESSAGE_MAPVISITOR, session.sentMessages[i]->getType());
 
@@ -593,7 +577,7 @@ TEST_F(VisitorManagerTest, visitor_callbacks) {
 
             reply = mapvisitormsg->createReply();
             reply->swapState(*session.sentMessages[i]);
-            reply->setMessage(mbus::Message::UP(session.sentMessages[i].release()));
+            reply->setMessage(std::move(session.sentMessages[i]));
         }
         session.reply(std::move(reply));
     }
@@ -609,7 +593,6 @@ TEST_F(VisitorManagerTest, visitor_callbacks) {
 
 TEST_F(VisitorManagerTest, visitor_cleanup) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
 
     // Start a bunch of invalid visitors
     for (uint32_t i=0; i<10; ++i) {
@@ -617,7 +600,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
         ost << "testvis" << i;
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "InvalidVisitor", ost.str(), "");
         cmd->addBucketToBeVisited(document::BucketId(16, 3));
-        cmd->setAddress(address);
+        cmd->setAddress(_Address);
         cmd->setQueueTimeout(0ms);
         _top->sendDown(cmd);
         _top->waitForMessages(i+1, 60);
@@ -629,7 +612,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
         ost << "testvis" << (i + 10);
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", ost.str(), "");
         cmd->addBucketToBeVisited(document::BucketId(16, 3));
-        cmd->setAddress(address);
+        cmd->setAddress(_Address);
         cmd->setQueueTimeout(0ms);
         _top->sendDown(cmd);
     }
@@ -698,7 +681,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
         ost << "testvis" << (i + 24);
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", ost.str(), "");
         cmd->addBucketToBeVisited(document::BucketId(16, 3));
-        cmd->setAddress(address);
+        cmd->setAddress(_Address);
         cmd->setQueueTimeout(0ms);
         _top->sendDown(cmd);
     }
@@ -725,12 +708,11 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
 
 TEST_F(VisitorManagerTest, abort_on_failed_visitor_info) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
 
     {
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
         cmd->addBucketToBeVisited(document::BucketId(16, 3));
-        cmd->setAddress(address);
+        cmd->setAddress(_Address);
         cmd->setQueueTimeout(0ms);
         _top->sendDown(cmd);
     }
@@ -759,13 +741,12 @@ TEST_F(VisitorManagerTest, abort_on_failed_visitor_info) {
 
 TEST_F(VisitorManagerTest, abort_on_field_path_error) {
     initializeTest();
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
 
     // Use bogus field path to force error to happen
     auto cmd = std::make_shared<api::CreateVisitorCommand>(
             makeBucketSpace(), "DumpVisitor", "testvis", "testdoctype1.headerval{bogus} == 1234");
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
-    cmd->setAddress(address);
+    cmd->setAddress(_Address);
     cmd->setQueueTimeout(0ms);
     _top->sendDown(cmd);
 
@@ -774,15 +755,14 @@ TEST_F(VisitorManagerTest, abort_on_field_path_error) {
 
 TEST_F(VisitorManagerTest, visitor_queue_timeout) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
     _manager->enforceQueueUsage();
 
     {
-        vespalib::MonitorGuard guard(_manager->getThread(0).getQueueMonitor());
+        std::lock_guard guard(_manager->getThread(0).getQueueMonitor());
 
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
         cmd->addBucketToBeVisited(document::BucketId(16, 3));
-        cmd->setAddress(address);
+        cmd->setAddress(_Address);
         cmd->setQueueTimeout(1ms);
         cmd->setTimeout(100 * 1000 * 1000ms);
         _top->sendDown(cmd);
@@ -803,11 +783,10 @@ TEST_F(VisitorManagerTest, visitor_queue_timeout) {
 
 TEST_F(VisitorManagerTest, visitor_processing_timeout) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
 
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
-    cmd->setAddress(address);
+    cmd->setAddress(_Address);
     cmd->setQueueTimeout(0ms);
     cmd->setTimeout(100ms);
     _top->sendDown(cmd);
@@ -829,10 +808,9 @@ api::StorageMessage::Id
 sendCreateVisitor(vespalib::duration timeout, DummyStorageLink& top, uint8_t priority = 127) {
     std::ostringstream ost;
     ost << "testvis" << ++nextVisitor;
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", ost.str(), "");
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
-    cmd->setAddress(address);
+    cmd->setAddress(_Address);
     cmd->setQueueTimeout(timeout);
     cmd->setPriority(priority);
     top.sendDown(cmd);

@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "constant_tensor_loader.h"
-#include <vespa/eval/eval/tensor.h>
-#include <vespa/eval/eval/tensor_engine.h>
 #include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/data/lz4_input_decoder.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <set>
 
 #include <vespa/log/log.h>
@@ -54,7 +54,7 @@ void decode_json(const vespalib::string &path, Slime &slime) {
         LOG(warning, "could not read file: %s", path.c_str());
     } else {
         if (ends_with(path, ".lz4")) {
-            size_t buffer_size = 64 * 1024;
+            size_t buffer_size = 64_Ki;
             Lz4InputDecoder lz4_decoder(file, buffer_size);
             decode_json(path, lz4_decoder, slime);
             if (lz4_decoder.failed()) {
@@ -82,7 +82,7 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
         vespalib::Memory content = file.get();
         vespalib::nbostream stream(content.data, content.size);
         try {
-            return std::make_unique<SimpleConstantValue>(_engine.decode(stream));
+            return std::make_unique<SimpleConstantValue>(decode_value(stream, _factory));
         } catch (std::exception &) {
             return std::make_unique<BadConstantValue>();
         }
@@ -104,7 +104,7 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
         spec.add(address, cells[i]["value"].asDouble());
     }
     try {
-        return std::make_unique<SimpleConstantValue>(_engine.from_spec(spec));
+        return std::make_unique<SimpleConstantValue>(value_from_spec(spec, _factory));
     } catch (std::exception &) {
         return std::make_unique<BadConstantValue>();
     }

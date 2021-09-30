@@ -44,7 +44,8 @@ public class AuthorizationResult {
         DENY_CERT_MISMATCH_ISSUER(AccessCheckStatus.DENY_CERT_MISMATCH_ISSUER),
         DENY_CERT_MISSING_SUBJECT(AccessCheckStatus.DENY_CERT_MISSING_SUBJECT),
         DENY_CERT_MISSING_DOMAIN(AccessCheckStatus.DENY_CERT_MISSING_DOMAIN),
-        DENY_CERT_MISSING_ROLE_NAME(AccessCheckStatus.DENY_CERT_MISSING_ROLE_NAME);
+        DENY_CERT_MISSING_ROLE_NAME(AccessCheckStatus.DENY_CERT_MISSING_ROLE_NAME),
+        DENY_CERT_HASH_MISMATCH(AccessCheckStatus.DENY_CERT_HASH_MISMATCH);
 
         private final AccessCheckStatus wrappedElement;
 

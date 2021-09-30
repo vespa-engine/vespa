@@ -9,21 +9,14 @@ import java.util.HashMap;
  * This class represents a possible rewrite of an original text. Reasons for rewrite may be due to possible
  * spelling errors in the text or to query expansion.
  *
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
 public class Modification extends HashMap<String,Object>{
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = -8522335044460396296L;
-
-
     public final static AnnotationClass MODIFICATION_CLASS = new AnnotationClass("modification");
 
-
-    private String text;
-    private Annotations annotations;
+    private final String text;
+    private final Annotations annotations;
 
     public Modification(String text) {
         this.text = text;

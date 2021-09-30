@@ -30,4 +30,5 @@ public class NullCryptoSocket implements CryptoSocket {
     @Override public int drain(ByteBuffer dst) throws IOException { return 0; }
     @Override public int write(ByteBuffer src) throws IOException { return channel.write(src); }
     @Override public FlushResult flush() throws IOException { return FlushResult.DONE; }
+    @Override public void dropEmptyBuffers() {}
 }

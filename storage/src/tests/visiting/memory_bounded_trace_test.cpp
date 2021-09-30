@@ -32,12 +32,12 @@ TEST(MemoryBoundedTraceTest, memory_used_is_accumulated_recursively_for_non_leaf
 TEST(MemoryBoundedTraceTest, trace_nodes_can_be_moved_and_implicitly_cleared) {
     MemoryBoundedTrace trace(100);
     EXPECT_TRUE(trace.add(mbus::TraceNode("hello world", epoch)));
-    mbus::TraceNode target;
+    mbus::Trace target;
     trace.moveTraceTo(target);
     EXPECT_EQ(1, target.getNumChildren());
     EXPECT_EQ(0, trace.getApproxMemoryUsed());
     
-    mbus::TraceNode emptinessCheck;
+    mbus::Trace emptinessCheck;
     trace.moveTraceTo(emptinessCheck);
     EXPECT_EQ(0, emptinessCheck.getNumChildren());
 }
@@ -52,7 +52,7 @@ TEST(MemoryBoundedTraceTest, trace_nodes_can_be_moved_and_implicitly_cleared) {
 TEST(MemoryBoundedTraceTest, moved_trace_tree_is_marked_as_strict) {
     MemoryBoundedTrace trace(100);
     EXPECT_TRUE(trace.add(mbus::TraceNode("hello world", epoch)));
-    mbus::TraceNode target;
+    mbus::Trace target;
     trace.moveTraceTo(target);
     EXPECT_EQ(1, target.getNumChildren());
     EXPECT_TRUE(target.getChild(0).isStrict());
@@ -69,7 +69,7 @@ TEST(MemoryBoundedTraceTest, can_not_add_more_nodes_when_memory_used_exceeds_upp
                                            "the freeway", epoch)));
     EXPECT_EQ(11, trace.getApproxMemoryUsed());
 
-    mbus::TraceNode target;
+    mbus::Trace target;
     trace.moveTraceTo(target);
     // Twice nested node (root -> added trace tree -> leaf with txt).
     EXPECT_EQ(1, target.getNumChildren());
@@ -82,7 +82,7 @@ TEST(MemoryBoundedTraceTest, moved_tree_includes_stats_node_when_nodes_omitted) 
     EXPECT_TRUE(trace.add(mbus::TraceNode("abcdef", epoch)));
     EXPECT_FALSE(trace.add(mbus::TraceNode("ghijkjlmn", epoch)));
 
-    mbus::TraceNode target;
+    mbus::Trace target;
     trace.moveTraceTo(target);
     EXPECT_EQ(1, target.getNumChildren());
     EXPECT_EQ(2, target.getChild(0).getNumChildren());

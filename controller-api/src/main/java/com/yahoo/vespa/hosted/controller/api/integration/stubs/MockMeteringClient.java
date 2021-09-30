@@ -24,6 +24,7 @@ public class MockMeteringClient implements MeteringClient {
 
     private Collection<ResourceSnapshot> resources = new ArrayList<>();
     private Optional<MeteringData> meteringData;
+    private boolean isRefreshed = false;
 
     @Override
     public void consume(Collection<ResourceSnapshot> resources){
@@ -43,6 +44,11 @@ public class MockMeteringClient implements MeteringClient {
         return new ArrayList<>(resources);
     }
 
+    @Override
+    public void refresh() {
+        isRefreshed = true;
+    }
+
     public Collection<ResourceSnapshot> consumedResources() {
         return this.resources;
     }
@@ -50,6 +56,9 @@ public class MockMeteringClient implements MeteringClient {
     public void setMeteringData(MeteringData meteringData) {
         this.meteringData = Optional.of(meteringData);
         this.resources = meteringData.getSnapshotHistory().entrySet().stream().map(Map.Entry::getValue).flatMap(List::stream).collect(Collectors.toList());
-        boolean a = false;
+    }
+
+    public boolean isRefreshed() {
+        return isRefreshed;
     }
 }

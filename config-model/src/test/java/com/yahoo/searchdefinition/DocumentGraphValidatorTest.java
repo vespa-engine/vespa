@@ -135,7 +135,7 @@ public class DocumentGraphValidatorTest {
     }
 
     private static Search createSearchWithName(String name, Search... parents) {
-        Search campaignSearch = new Search(name, null);
+        Search campaignSearch = new Search(name);
         SDDocumentType document = new SDDocumentType(name);
         campaignSearch.addDocument(document);
         document.setDocumentReferences(new DocumentReferences(Collections.emptyMap()));

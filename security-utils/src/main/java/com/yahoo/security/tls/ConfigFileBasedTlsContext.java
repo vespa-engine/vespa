@@ -12,14 +12,14 @@ import com.yahoo.security.tls.policy.AuthorizedPeers;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
-import javax.net.ssl.X509ExtendedTrustManager;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.ref.WeakReference;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -85,7 +85,7 @@ public class ConfigFileBasedTlsContext implements TlsContext {
     private static KeyStore loadTruststore(Path caCertificateFile) {
         try {
             return KeyStoreBuilder.withType(KeyStoreType.PKCS12)
-                    .withCertificateEntries("cert", X509CertificateUtils.certificateListFromPem(com.yahoo.vespa.jdk8compat.Files.readString(caCertificateFile)))
+                    .withCertificateEntries("cert", X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(caCertificateFile), StandardCharsets.UTF_8)))
                     .build();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -97,8 +97,8 @@ public class ConfigFileBasedTlsContext implements TlsContext {
             return KeyStoreBuilder.withType(KeyStoreType.PKCS12)
                     .withKeyEntry(
                             "default",
-                            KeyUtils.fromPemEncodedPrivateKey(com.yahoo.vespa.jdk8compat.Files.readString(privateKeyFile)),
-                            X509CertificateUtils.certificateListFromPem(com.yahoo.vespa.jdk8compat.Files.readString(certificatesFile)))
+                            KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyFile), StandardCharsets.UTF_8)),
+                            X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(certificatesFile), StandardCharsets.UTF_8)))
                     .build();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -110,16 +110,20 @@ public class ConfigFileBasedTlsContext implements TlsContext {
                                                              MutableX509TrustManager mutableTrustManager,
                                                              MutableX509KeyManager mutableKeyManager,
                                                              PeerAuthentication peerAuthentication) {
+
+        HostnameVerification hostnameVerification = options.isHostnameValidationDisabled() ? HostnameVerification.DISABLED : HostnameVerification.ENABLED;
+        PeerAuthorizerTrustManager authorizerTrustManager = options.getAuthorizedPeers()
+                .map(authorizedPeers -> new PeerAuthorizerTrustManager(authorizedPeers, mode, hostnameVerification, mutableTrustManager))
+                .orElseGet(() -> new PeerAuthorizerTrustManager(new AuthorizedPeers(Collections.emptySet()), AuthorizationMode.DISABLE, hostnameVerification, mutableTrustManager));
         SSLContext sslContext = new SslContextBuilder()
                 .withKeyManager(mutableKeyManager)
-                .withTrustManagerFactory(
-                        ignoredTruststore -> options.getAuthorizedPeers()
-                                .map(authorizedPeers -> (X509ExtendedTrustManager) new PeerAuthorizerTrustManager(authorizedPeers, mode, mutableTrustManager))
-                                .orElseGet(() -> new PeerAuthorizerTrustManager(new AuthorizedPeers(com.yahoo.vespa.jdk8compat.Set.of()), AuthorizationMode.DISABLE, mutableTrustManager)))
+                .withTrustManager(authorizerTrustManager)
                 .build();
         List<String> acceptedCiphers = options.getAcceptedCiphers();
         Set<String> ciphers = acceptedCiphers.isEmpty() ? TlsContext.ALLOWED_CIPHER_SUITES : new HashSet<>(acceptedCiphers);
-        return new DefaultTlsContext(sslContext, ciphers, peerAuthentication);
+        List<String> acceptedProtocols = options.getAcceptedProtocols();
+        Set<String> protocols = acceptedProtocols.isEmpty() ? TlsContext.ALLOWED_PROTOCOLS : new HashSet<>(acceptedProtocols);
+        return new DefaultTlsContext(sslContext, ciphers, protocols, peerAuthentication);
     }
 
     // Wrapped methods from TlsContext
@@ -140,14 +144,12 @@ public class ConfigFileBasedTlsContext implements TlsContext {
         }
     }
 
-    // Note: no reference to outer class (directly or indirectly) to ensure trust/key managers are eventually GCed once
-    // there are no more use of the outer class and the underlying SSLContext
     private static class CryptoMaterialReloader implements Runnable {
 
         final Path tlsOptionsConfigFile;
         final ScheduledExecutorService scheduler;
-        final WeakReference<MutableX509TrustManager> trustManager;
-        final WeakReference<MutableX509KeyManager> keyManager;
+        final MutableX509TrustManager trustManager;
+        final MutableX509KeyManager keyManager;
 
         CryptoMaterialReloader(Path tlsOptionsConfigFile,
                                ScheduledExecutorService scheduler,
@@ -155,25 +157,23 @@ public class ConfigFileBasedTlsContext implements TlsContext {
                                MutableX509KeyManager keyManager) {
             this.tlsOptionsConfigFile = tlsOptionsConfigFile;
             this.scheduler = scheduler;
-            this.trustManager = new WeakReference<>(trustManager);
-            this.keyManager = new WeakReference<>(keyManager);
+            this.trustManager = trustManager;
+            this.keyManager = keyManager;
         }
 
         @Override
         public void run() {
             try {
-                MutableX509TrustManager trustManager = this.trustManager.get();
-                MutableX509KeyManager keyManager = this.keyManager.get();
-                if (trustManager == null && keyManager == null) {
+                if (this.trustManager == null && this.keyManager == null) {
                     scheduler.shutdown();
                     return;
                 }
                 TransportSecurityOptions options = TransportSecurityOptions.fromJsonFile(tlsOptionsConfigFile);
-                if (trustManager != null) {
-                    reloadTrustManager(options, trustManager);
+                if (this.trustManager != null) {
+                    reloadTrustManager(options, this.trustManager);
                 }
-                if (keyManager != null) {
-                    reloadKeyManager(options, keyManager);
+                if (this.keyManager != null) {
+                    reloadKeyManager(options, this.keyManager);
                 }
             } catch (Throwable t) {
                 log.log(Level.SEVERE, String.format("Failed to reload crypto material (path='%s'): %s", tlsOptionsConfigFile, t.getMessage()), t);
@@ -181,7 +181,6 @@ public class ConfigFileBasedTlsContext implements TlsContext {
         }
     }
 
-    // Static class to ensure no reference to outer class is contained
     private static class ReloaderThreadFactory implements ThreadFactory {
         @Override
         public Thread newThread(Runnable r) {

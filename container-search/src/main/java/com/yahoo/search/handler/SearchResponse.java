@@ -49,9 +49,11 @@ public class SearchResponse {
     }
 
     public static Timing createTiming(Query query, Result result) {
-        return new Timing(result.getElapsedTime().firstFill(),
+        long summaryStartTime = result.getElapsedTime().firstFill();
+        long queryStartTime = result.getElapsedTime().first();
+        return new Timing(summaryStartTime,
                           0,
-                          result.getElapsedTime().first(),
+                          queryStartTime == Long.MAX_VALUE ? 0 : queryStartTime,
                           query.getTimeout());
     }
 

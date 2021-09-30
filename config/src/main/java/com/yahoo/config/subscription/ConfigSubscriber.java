@@ -5,7 +5,6 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.impl.ConfigSubscription;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.yolean.Exceptions;
@@ -14,8 +13,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+
 import java.util.logging.Logger;
 
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.SEVERE;
+import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -30,6 +33,7 @@ import static java.util.stream.Collectors.toList;
 public class ConfigSubscriber implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(ConfigSubscriber.class.getName());
+
     private State state = State.OPEN;
     protected final List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles = new CopyOnWriteArrayList<>();
     private final ConfigSource source;
@@ -39,8 +43,12 @@ public class ConfigSubscriber implements AutoCloseable {
     /** The last complete config generation received by this */
     private long generation = -1;
 
-    /** Whether the last generation received was due to a system-internal redeploy, not an application package change */
-    private boolean internalRedeploy = false;
+    /**
+     * Whether the last generation should only be applied on restart, not immediately.
+     * Once this is set it will not be unset, as no future generation should be applied
+     * once there is a generation which require restart.
+     */
+    private boolean applyOnRestart = false;
 
     /**
      * Reuse requesters for equal source sets, limit number if many subscriptions.
@@ -57,7 +65,7 @@ public class ConfigSubscriber implements AutoCloseable {
 
     /**
      * Constructs a new subscriber. The default Vespa network config source will be used, which is the address of
-     * a config proxy (part of vespa_base) running locally. It can also be changed by setting VESPA_CONFIG_SOURCES.
+     * a config proxy running locally. It can also be changed by setting VESPA_CONFIG_SOURCES.
      */
     public ConfigSubscriber() {
         this(JRTConfigRequester.defaultSourceSet);
@@ -147,11 +155,18 @@ public class ConfigSubscriber implements AutoCloseable {
      *
      * If the call times out (timeout 1000 ms), no handle will have the changed flag set. You should not configure anything then.
      *
+     * @param isInitializing true if this the config is needed to create the initial configuration for the caller,
+     *                       false if this is for reconfiguration
      * @return true if a config/reconfig of your system should happen
      * @throws ConfigInterruptedException if thread performing this call interrupted.
      */
+    public boolean nextConfig(boolean isInitializing) {
+        return nextConfig(TimingValues.defaultNextConfigTimeout, isInitializing);
+    }
+
+    @Deprecated // TODO: Remove on Vespa 8
     public boolean nextConfig() {
-        return nextConfig(TimingValues.defaultNextConfigTimeout);
+        return nextConfig(false);
     }
 
     /**
@@ -171,11 +186,18 @@ public class ConfigSubscriber implements AutoCloseable {
      * If the call times out, no handle will have the changed flag set. You should not configure anything then.
      *
      * @param timeoutMillis timeout in milliseconds
+     * @param isInitializing true if this the config is needed to create the initial configuration for the caller,
+     *                       false if this is for reconfiguration
      * @return true if a config/reconfig of your system should happen
      * @throws ConfigInterruptedException if thread performing this call interrupted.
      */
+    public boolean nextConfig(long timeoutMillis, boolean isInitializing) {
+        return acquireSnapshot(timeoutMillis, true, isInitializing);
+    }
+
+    @Deprecated // TODO: Remove on Vespa 8
     public boolean nextConfig(long timeoutMillis) {
-        return acquireSnapshot(timeoutMillis, true);
+        return nextConfig(timeoutMillis, false);
     }
 
     /**
@@ -195,11 +217,18 @@ public class ConfigSubscriber implements AutoCloseable {
      *
      * If the call times out (timeout 1000 ms), no handle will have the changed flag set. You should not configure anything then.
      *
+     * @param isInitializing true if this the next generation is needed to create the initial configuration for the caller,
+     *                       false if this is for reconfiguration
      * @return true if generations for all configs have been updated.
      * @throws ConfigInterruptedException if thread performing this call interrupted.
      */
+    public boolean nextGeneration(boolean isInitializing) {
+        return nextGeneration(TimingValues.defaultNextConfigTimeout, isInitializing);
+    }
+
+    @Deprecated // TODO: Remove on Vespa 8
     public boolean nextGeneration() {
-        return nextGeneration(TimingValues.defaultNextConfigTimeout);
+        return nextGeneration(false);
     }
 
     /**
@@ -219,11 +248,18 @@ public class ConfigSubscriber implements AutoCloseable {
      * If the call times out (timeout 1000 ms), no handle will have the changed flag set. You should not configure anything then.
      *
      * @param timeoutMillis timeout in milliseconds
+     * @param isInitializing true if this the next generation is needed to create the initial configuration for the caller,
+     *                       false if this is for reconfiguration
      * @return true if generations for all configs have been updated.
      * @throws ConfigInterruptedException if thread performing this call interrupted.
      */
+    public boolean nextGeneration(long timeoutMillis, boolean isInitializing) {
+        return acquireSnapshot(timeoutMillis, false, isInitializing);
+    }
+
+    @Deprecated // TODO: Remov4e on Vespa 8
     public boolean nextGeneration(long timeoutMillis) {
-        return acquireSnapshot(timeoutMillis, false);
+        return nextGeneration(timeoutMillis, false);
     }
 
     /**
@@ -232,12 +268,15 @@ public class ConfigSubscriber implements AutoCloseable {
      * @param timeoutInMillis timeout to wait in milliseconds
      * @param requireChange if set, at least one config have to change
      * @return true, if a new config generation has been found for all configs (additionally requires
-     *         that at lest one of them has changed if <code>requireChange</code> is true), false otherwise
+     *         that at lest one of them has changed if <code>requireChange</code> is true), and
+     *         the config should be applied at this time, false otherwise
      */
-    private boolean acquireSnapshot(long timeoutInMillis, boolean requireChange) {
+    private boolean acquireSnapshot(long timeoutInMillis, boolean requireChange, boolean isInitializing) {
+        boolean applyOnRestartOnly;
         synchronized (monitor) {
             if (state == State.CLOSED) return false;
             state = State.FROZEN;
+            applyOnRestartOnly = applyOnRestart;
         }
         long started = System.currentTimeMillis();
         long timeLeftMillis = timeoutInMillis;
@@ -248,7 +287,6 @@ public class ConfigSubscriber implements AutoCloseable {
             h.setChanged(false); // Reset this flag, if it was set, the user should have acted on it the last time this method returned true.
         }
         boolean reconfigDue;
-        boolean internalRedeployOnly = true;
         do {
             boolean allGenerationsChanged = true;
             boolean allGenerationsTheSame = true;
@@ -265,10 +303,18 @@ public class ConfigSubscriber implements AutoCloseable {
                 allGenerationsTheSame &= currentGen.equals(config.getGeneration());
                 allGenerationsChanged &= config.isGenerationChanged();
                 anyConfigChanged      |= config.isConfigChanged();
-                internalRedeployOnly  &= config.isInternalRedeploy();
+                applyOnRestartOnly    |= config.applyOnRestart();
                 timeLeftMillis = timeoutInMillis + started - System.currentTimeMillis();
             }
-            reconfigDue = (anyConfigChanged || !requireChange) && allGenerationsChanged && allGenerationsTheSame;
+            reconfigDue = (isInitializing || !applyOnRestartOnly) && (anyConfigChanged || !requireChange)
+                          && allGenerationsChanged && allGenerationsTheSame;
+
+            if (applyOnRestartOnly && ! isInitializing) { // disable any reconfig until restart
+                synchronized (monitor) {
+                    applyOnRestart = applyOnRestartOnly;
+                }
+            }
+
             if (!reconfigDue && timeLeftMillis > 0) {
                 sleep(timeLeftMillis);
             }
@@ -278,7 +324,6 @@ public class ConfigSubscriber implements AutoCloseable {
             // Also if appropriate update the changed flag on the handler, which clients use.
             markSubsChangedSeen(currentGen);
             synchronized (monitor) {
-                internalRedeploy = internalRedeployOnly;
                 generation = currentGen;
             }
         }
@@ -319,13 +364,14 @@ public class ConfigSubscriber implements AutoCloseable {
     @Override
     public void close() {
         synchronized (monitor) {
+            if (state == State.CLOSED) return;
             state = State.CLOSED;
         }
         for (ConfigHandle<? extends ConfigInstance> h : subscriptionHandles) {
             h.subscription().close();
         }
         closeRequesters();
-        log.log(LogLevel.DEBUG, "Config subscriber has been closed.");
+        log.log(FINE, () -> "Config subscriber has been closed.");
     }
 
     /**
@@ -419,21 +465,35 @@ public class ConfigSubscriber implements AutoCloseable {
      * @return The handle of the config
      * @see #startConfigThread(Runnable)
      */
-    public <T extends ConfigInstance> ConfigHandle<T> subscribe(final SingleSubscriber<T> singleSubscriber, Class<T> configClass, String configId) {
-        if (!subscriptionHandles.isEmpty())
-            throw new IllegalStateException("Can not start single-subscription because subscriptions were previously opened on this.");
-        final ConfigHandle<T> handle = subscribe(configClass, configId);
-        if (!nextConfig())
-            throw new ConfigurationRuntimeException("Initial config of " + configClass.getName() + " failed.");
+    public <T extends ConfigInstance> ConfigHandle<T> subscribe(SingleSubscriber<T> singleSubscriber, Class<T> configClass, String configId) {
+        if ( ! subscriptionHandles.isEmpty())
+            throw new IllegalStateException("Can not start single-subscription because subscriptions were previously opened on this");
+
+        ConfigHandle<T> handle = subscribe(configClass, configId);
+
+        if ( ! nextConfig())
+            throw new ConfigurationRuntimeException("Initial config of " + configClass.getName() + " failed");
+
         singleSubscriber.configure(handle.getConfig());
         startConfigThread(() -> {
                 while (!isClosed()) {
+                    boolean hasNewConfig = false;
+
                     try {
-                        if (nextConfig()) {
-                            if (handle.isChanged()) singleSubscriber.configure(handle.getConfig());
-                        }
-                    } catch (Exception e) {
-                        log.log(LogLevel.ERROR, "Exception from config system, continuing config thread: " + Exceptions.toMessageString(e));
+                        hasNewConfig = nextConfig();
+                    }
+                    catch (Exception e) {
+                        log.log(SEVERE, "Exception on receiving config. Ignoring this change.", e);
+                    }
+
+                    try {
+                        if (hasNewConfig)
+                            singleSubscriber.configure(handle.getConfig());
+                    }
+                    catch (Exception e) {
+                        log.warning("Exception on applying config " + configClass.getName() +
+                                    " for config id " + configId + ": Ignoring this change: " +
+                                    Exceptions.toMessageString(e));
                     }
                 }
             }
@@ -453,12 +513,6 @@ public class ConfigSubscriber implements AutoCloseable {
     }
 
     /**
-     * Whether the current config generation received by this was due to a system-internal redeploy,
-     * not an application package change
-     */
-    public boolean isInternalRedeploy() { synchronized (monitor) { return internalRedeploy; } }
-
-    /**
      * Convenience interface for clients who only subscribe to one config. Implement this, and pass it to {@link ConfigSubscriber#subscribe(SingleSubscriber, Class, String)}.
      *
      * @author vegardh
@@ -476,7 +530,7 @@ public class ConfigSubscriber implements AutoCloseable {
     protected void finalize() throws Throwable {
         try {
             if (!isClosed()) {
-                log.log(LogLevel.WARNING, stackTraceAtConstruction,
+                log.log(WARNING, stackTraceAtConstruction,
                         () -> String.format("%s: Closing subscription from finalizer() - close() has not been called (keys=%s)",
                                             super.toString(),
                                             subscriptionHandles.stream().map(handle -> handle.subscription().getKey().toString()).collect(toList())));

@@ -5,10 +5,11 @@ import com.yahoo.searchdefinition.document.NormalizeLevel;
 import com.yahoo.searchdefinition.document.SDField;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class NormalizingOperation implements FieldOperation {
-    private NormalizeLevel.Level level;
+
+    private final NormalizeLevel.Level level;
 
     public NormalizingOperation(String setting) {
         if ("none".equals(setting)) {
@@ -22,11 +23,12 @@ public class NormalizingOperation implements FieldOperation {
         } else if ("all".equals(setting)) {
             this.level = NormalizeLevel.Level.ACCENT;
         } else {
-            throw new IllegalArgumentException("invalid normalizing setting: "+setting);
+            throw new IllegalArgumentException("invalid normalizing setting: " + setting);
         }
     }
 
     public void apply(SDField field) {
         field.setNormalizing(new NormalizeLevel(level, true));
     }
+
 }

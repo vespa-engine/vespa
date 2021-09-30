@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include <atomic>
-#include <cassert>
 
 namespace vespalib {
 
@@ -16,8 +15,8 @@ namespace vespalib {
  **/
 class GenerationHandler {
 public:
-    typedef uint64_t generation_t;
-    typedef int64_t sgeneration_t;
+    using generation_t = uint64_t;
+    using sgeneration_t = int64_t ;
 
     /*
      * This must be type stable memory, and cannot be freed before the
@@ -34,50 +33,15 @@ public:
         generation_t _generation;
         GenerationHold *_next;	// next free element or next newer element.
 
-        GenerationHold(void)
-            : _refCount(1),
-              _generation(0),
-              _next(0)
-        { }
+        GenerationHold();
+        ~GenerationHold();
 
-        ~GenerationHold()
-        {
-            assert(getRefCount() == 0);
-        }
-
-        void setValid() {
-            assert(!valid(_refCount));
-            _refCount.fetch_sub(1);
-        }
-        bool setInvalid() {
-            uint32_t refs = _refCount;
-            assert(valid(refs));
-            if (refs != 0) {
-                return false;
-            }
-            return _refCount.compare_exchange_strong(refs, 1,
-                                                     std::memory_order_seq_cst);
-        }
-        void release() { _refCount.fetch_sub(2); }
-        GenerationHold *acquire() {
-            if (valid(_refCount.fetch_add(2))) {
-                return this;
-            } else {
-                release();
-                return nullptr;
-            }
-        }
-        static GenerationHold *copy(GenerationHold *self) {
-            if (self == nullptr) {
-                return nullptr;
-            } else {
-                uint32_t oldRefCount = self->_refCount.fetch_add(2);
-                (void) oldRefCount;
-                assert(valid(oldRefCount));
-                return self;
-            }
-        }
-        uint32_t getRefCount() const { return _refCount / 2; }
+        void setValid();
+        bool setInvalid();
+        void release();
+        GenerationHold *acquire();
+        static GenerationHold *copy(GenerationHold *self);
+        uint32_t getRefCount() const;
     };
 
     /**
@@ -101,26 +65,25 @@ public:
         Guard & operator=(const Guard & rhs);
         Guard & operator=(Guard &&rhs);
 
-        bool valid(void) const {
+        bool valid() const {
             return _hold != nullptr;
         }
         generation_t getGeneration() const { return _hold->_generation; }
     };
 
 private:
-    generation_t _generation;
-    generation_t _firstUsedGeneration;
-    GenerationHold *_last;	// Points to "current generation" entry
-    GenerationHold *_first;	// Points to "firstUsedGeneration" entry
-    GenerationHold *_free;	// List of free entries
-    uint32_t _numHolds;		// Number of allocated generation hold entries
+    generation_t    _generation;
+    generation_t    _firstUsedGeneration;
+    GenerationHold *_last;      // Points to "current generation" entry
+    GenerationHold *_first;     // Points to "firstUsedGeneration" entry
+    GenerationHold *_free;      // List of free entries
+    uint32_t        _numHolds;  // Number of allocated generation hold entries
 
 public:
     /**
      * Creates a new generation handler.
      **/
     GenerationHandler();
-
     ~GenerationHandler();
 
     /**
@@ -156,7 +119,7 @@ public:
         return _generation;
     }
 
-    generation_t getNextGeneration(void) const {
+    generation_t getNextGeneration() const {
         return _generation + 1;
     }
 
@@ -170,14 +133,14 @@ public:
      * Returns the number of readers holding a generation guard.
      * Should be called by the writer thread.
      */
-    uint64_t getGenerationRefCount(void) const;
+    uint64_t getGenerationRefCount() const;
 
     /**
      * Returns true if we still have readers.  False positives and
      * negatives are possible if readers come and go while writer
      * updates generations.
      */
-    bool hasReaders(void) const;
+    bool hasReaders() const;
 };
 
 }

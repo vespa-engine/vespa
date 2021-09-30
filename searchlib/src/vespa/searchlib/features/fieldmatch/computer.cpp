@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "computer.h"
+#include "computer_shared_state.h"
 #include <vespa/searchlib/features/utils.h>
+#include <vespa/searchlib/fef/phrase_splitter_query_env.h>
+#include <vespa/searchlib/fef/phrasesplitter.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/locale/c.h>
-#include <iostream>
 #include <set>
 
 #include <vespa/log/log.h>
@@ -13,64 +15,38 @@ LOG_SETUP(".features.fieldmatch.computer");
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
-namespace fieldmatch {
+namespace search::features::fieldmatch {
 
-
-Computer::Computer(const vespalib::string &propertyNamespace, const PhraseSplitter &splitter,
-                   const FieldInfo &fieldInfo, const Params &params) :
-    _splitter(splitter),
-    _fieldId(fieldInfo.id()),
-    _params(params),
-    _tracing(false),
-    _trace(),
-    _useCachedHits(true),
-    _queryTerms(),
-    _queryTermFieldMatch(),
-    _totalTermWeight(0),
-    _totalTermSignificance(0.0f),
-    _fieldLength(FieldPositionsIterator::UNKNOWN_LENGTH),
-    _currentMetrics(this),
-    _finalMetrics(this),
-    _simpleMetrics(params),
-    _segments(),
-    _alternativeSegmentationsTried(0),
-    _cachedHits()
+Computer::Computer(const ComputerSharedState& shared_state, const PhraseSplitter& splitter)
+    : _shared_state(shared_state),
+      _splitter(splitter),
+      _fieldId(_shared_state.get_field_id()),
+      _params(_shared_state.get_params()),
+      _useCachedHits(_shared_state.get_use_cached_hits()),
+      _queryTerms(_shared_state.get_query_terms()),
+      _queryTermFieldMatch(_queryTerms.size()),
+      _totalTermWeight(_shared_state.get_total_term_weight()),
+      _totalTermSignificance(_shared_state.get_total_term_significance()),
+      _fieldLength(FieldPositionsIterator::UNKNOWN_LENGTH),
+      _currentMetrics(this),
+      _finalMetrics(this),
+      _simpleMetrics(_shared_state.get_simple_metrics()),
+      _segments(),
+      _alternativeSegmentationsTried(0),
+      _cachedHits(_queryTerms.size())
 {
-    // Store term data for all terms searching in this field
-    for (uint32_t i = 0; i < splitter.getNumTerms(); ++i) {
-        QueryTerm qt = QueryTermFactory::create(splitter, i, true, true);
-        _totalTermWeight += qt.termData()->getWeight().percent();
-        _totalTermSignificance += qt.significance();
-        _simpleMetrics.addQueryTerm(qt.termData()->getWeight().percent());
-        const ITermFieldData *field = qt.termData()->lookupField(_fieldId);
-        if (field != 0) {
-            qt.fieldHandle(field->getHandle());
-            _queryTerms.push_back(qt);
-            _simpleMetrics.addSearchedTerm(qt.termData()->getWeight().percent());
-            _queryTermFieldMatch.push_back(NULL);
-            _cachedHits.push_back(BitVectorData());
-        }
+    for (const auto &qt : _queryTerms) {
+        // Record that we need normal term field match data
+        (void) qt.termData()->lookupField(_fieldId)->getHandle(MatchDataDetails::Normal);
     }
-
-    _totalTermWeight = atoi(splitter.getProperties().lookup(propertyNamespace, "totalTermWeight").
-                            get(vespalib::make_string("%d", _totalTermWeight)).c_str());
-    _totalTermSignificance = vespalib::locale::c::atof(splitter.getProperties().lookup(propertyNamespace, "totalTermSignificance").
-                                  get(vespalib::make_string("%f", _totalTermSignificance)).c_str());
-    if (splitter.getProperties().lookup(propertyNamespace, "totalTermWeight").found()) {
-        _simpleMetrics.setTotalWeightInQuery(_totalTermWeight);
-    }
-
-    // update current and final metrics after initialization
-    _currentMetrics = Metrics(this);
-    _finalMetrics = Metrics(this);
-
     // num query terms searching in this field + 1
+    _segments.reserve(getNumQueryTerms() + 1);
     for (uint32_t i = 0; i < (getNumQueryTerms() + 1); ++i) {
-        _segments.push_back(SegmentData(SegmentStart::SP(new SegmentStart(this, _currentMetrics))));
+        _segments.emplace_back(std::make_shared<SegmentStart>(this, _currentMetrics));
     }
 }
+
+Computer::~Computer() = default;
 
 void
 Computer::reset(uint32_t docId)
@@ -96,7 +72,7 @@ Computer::reset(uint32_t docId)
         const ITermData *td = _queryTerms[i].termData();
         const TermFieldMatchData *tfmd = _splitter.resolveTermField(_queryTerms[i].fieldHandle());
         if (tfmd->getDocId() != docId) { // only term match data if we have a hit
-            tfmd = NULL;
+            tfmd = nullptr;
         } else {
             FieldPositionsIterator it = tfmd->getIterator();
             uint32_t fieldLength = it.getFieldLength();
@@ -140,11 +116,11 @@ Computer::handleError(uint32_t fieldPos, uint32_t docId) const
     static int errcnt;
     if (errcnt < 1000) {
         errcnt++;
-        const FieldInfo * finfo = _splitter.getIndexEnvironment().getField(getFieldId());
+        const FieldInfo * finfo = _splitter.get_query_env().getIndexEnvironment().getField(getFieldId());
         LOG(debug, "Bad field position %u >= fieldLength %u for field '%s' document %u. "
                    "Document was probably refed during query (Ticket 7104969)",
                    fieldPos, _fieldLength,
-                   finfo != NULL ?  finfo->name().c_str() : "unknown field",
+                   finfo != nullptr ?  finfo->name().c_str() : "unknown field",
                    docId);
     }
 }
@@ -180,7 +156,7 @@ Computer::findClosestInFieldBySemanticDistance(int i, int previousJ, uint32_t st
     }
 
     const TermFieldMatchData *termFieldMatch = _queryTermFieldMatch[i];
-    if (termFieldMatch == NULL) {
+    if (termFieldMatch == nullptr) {
         return -1; // not matched
     }
 
@@ -249,27 +225,6 @@ Computer::fieldIndexToSemanticDistance(int j, uint32_t zeroJ) const
     }
 }
 
-Computer &
-Computer::trace(const vespalib::string &str)
-{
-    if (_tracing) {
-        _trace.push_back(str);
-        //LOG(info, "%s", str.c_str());
-    }
-    return *this;
-}
-
-vespalib::string
-Computer::getTrace() const
-{
-    vespalib::string ret = "";
-    for (std::vector<vespalib::string>::const_iterator it = _trace.begin();
-         it != _trace.end(); ++it) {
-        ret += *it;
-    }
-    return ret;
-}
-
 vespalib::string
 Computer::toString() const
 {
@@ -281,41 +236,13 @@ Computer::toString() const
 void
 Computer::exploreSegments()
 {
-    if (isTracing()) {
-        trace(vespalib::make_string("Calculating matches for %d query terms, %d field terms.",
-                                    getNumQueryTerms(), _fieldLength));
-    }
-
     _segments[0].segment->reset(_currentMetrics);
     _segments[0].valid = true;
     SegmentStart *segment = _segments[0].segment.get();
-    while (segment != NULL) {
-        if (isTracing()) {
-            trace(vespalib::make_string("Looking for segment from %s...",
-                                        segment->toString().c_str()));
-        }
-
+    while (segment != nullptr) {
         _currentMetrics = segment->getMetrics(); // take a copy of the segment returned from the current segment.
         bool found = findAlternativeSegmentFrom(segment);
-        if (found) {
-            if (isTracing()) {
-                vespalib::string segments = "[ ";
-                const std::vector<uint32_t> &lst = _currentMetrics.getSegmentStarts();
-                for (uint32_t i = 0; i < lst.size(); ++i) {
-                    segments += vespalib::make_string("%d", lst[i]);
-                    if (i < lst.size() - 1) {
-                        segments += ", ";
-                    }
-                }
-                segments += " ]";
-                trace(vespalib::make_string("...found segments: %s, score %f.",
-                                            segments.c_str(),
-                                            _currentMetrics.getSegmentationScore()));
-            }
-        } else {
-            if (isTracing()) {
-                trace("...no complete and improved segment existed.");
-            }
+        if (!found) {
             segment->setOpen(false);
         }
         segment = findOpenSegment(segment->getI());
@@ -373,7 +300,7 @@ Computer::findAlternativeSegmentFrom(SegmentStart *segment) {
         } else {
             semanticDistanceExplored = 0;
             // we have a match for this term but no position information
-            if (_queryTermFieldMatch[i] != NULL && !_cachedHits[i].valid) {
+            if (_queryTermFieldMatch[i] != nullptr && !_cachedHits[i].valid) {
                 _currentMetrics.onMatch(i);
             }
         }
@@ -403,9 +330,6 @@ Computer::inSegment(int i, int j, int previousJ, int previousI)
     }
     else {
         _currentMetrics.onInSegmentGap(i, j, previousJ);
-        if (isTracing()) {
-            trace(vespalib::make_string("      in segment gap: %d -> %d", i, j));
-        }
     }
 }
 
@@ -416,18 +340,12 @@ Computer::segmentStart(int i, int j, int previousJ)
     if (previousJ >= 0) {
         _currentMetrics.onPair(i, j, previousJ);
     }
-    if (isTracing()) {
-        trace(vespalib::make_string("    new segment at: %d -> %d", i, j));
-    }
     return true;
 }
 
 void
 Computer::segmentEnd(int i, int j)
 {
-    if (isTracing()) {
-        trace(vespalib::make_string("    segment ended at: %d -> %d", i, j));
-    }
     SegmentStart *startOfNext = _segments[i + 1].segment.get();
     if (!_segments[i + 1].valid) {
         startOfNext->reset(_currentMetrics, j, i + 1);
@@ -441,8 +359,8 @@ Computer::segmentEnd(int i, int j)
 SegmentStart *
 Computer::findOpenSegment(uint32_t startI) {
     for (uint32_t i = startI; i < _segments.size(); i++) {
-        SegmentStart *startPoint = _segments[i].valid ? _segments[i].segment.get() : NULL;
-        if (startPoint == NULL || !startPoint->isOpen()) {
+        SegmentStart *startPoint = _segments[i].valid ? _segments[i].segment.get() : nullptr;
+        if (startPoint == nullptr || !startPoint->isOpen()) {
             continue;
         }
         if (startPoint->getSemanticDistanceExplored() == 0) {
@@ -454,20 +372,20 @@ Computer::findOpenSegment(uint32_t startI) {
         _alternativeSegmentationsTried++;
         return startPoint;
     }
-    return NULL;
+    return nullptr;
 }
 
 SegmentStart *
 Computer::findLastStartPoint()
 {
     for (int i = _segments.size(); --i >= 0; ) {
-        SegmentStart *startPoint = _segments[i].valid ? _segments[i].segment.get() : NULL;
-        if (startPoint != NULL) {
+        SegmentStart *startPoint = _segments[i].valid ? _segments[i].segment.get() : nullptr;
+        if (startPoint != nullptr) {
             return startPoint;
         }
     }
     LOG(error, "findLastStartPoint() could not find any segment start. This should never happen!");
-    return NULL;
+    return nullptr;
 }
 
 void
@@ -478,7 +396,7 @@ Computer::setOccurrenceCounts(Metrics &metrics)
     std::set<uint32_t> firstOccs;
     for (uint32_t i = 0; i < _queryTermFieldMatch.size(); ++i) {
         const TermFieldMatchData *termFieldMatch = _queryTermFieldMatch[i];
-        if (termFieldMatch == NULL) {
+        if (termFieldMatch == nullptr) {
             continue; // not for this match
         }
         FieldPositionsIterator it = termFieldMatch->getIterator();
@@ -504,12 +422,10 @@ Computer::setOccurrenceCounts(Metrics &metrics)
     feature_t totalWeightedOccurrences = 0;
     feature_t totalSignificantOccurrences = 0;
 
-    for (std::vector<uint32_t>::iterator it = uniqueTerms.begin();
-         it != uniqueTerms.end(); ++it)
-    {
-        const QueryTerm &queryTerm = _queryTerms[*it];
+    for (uint32_t termIdx : uniqueTerms) {
+        const QueryTerm &queryTerm = _queryTerms[termIdx];
         const ITermData &termData = *queryTerm.termData();
-        const TermFieldMatchData &termFieldMatch = *_queryTermFieldMatch[*it];
+        const TermFieldMatchData &termFieldMatch = *_queryTermFieldMatch[termIdx];
 
         uint32_t termOccurrences = 0;
         FieldPositionsIterator pos = termFieldMatch.getIterator();
@@ -535,22 +451,16 @@ Computer::setOccurrenceCounts(Metrics &metrics)
     metrics.setWeightedAbsoluteOccurrence(weightedAbsoluteOccurrence / (totalWeight > 0 ? totalWeight : 1));
 
     feature_t weightedOccurrenceSum = 0;
-    for (std::vector<feature_t>::iterator it = weightedOccurrences.begin();
-         it != weightedOccurrences.end(); ++it)
-    {
-        weightedOccurrenceSum += totalWeightedOccurrences > 0.0f ? *it / totalWeightedOccurrences : 0.0f;
+    for (feature_t feature : weightedOccurrences) {
+        weightedOccurrenceSum += totalWeightedOccurrences > 0.0f ? feature / totalWeightedOccurrences : 0.0f;
     }
     metrics.setWeightedOccurrence(weightedOccurrenceSum);
 
     feature_t significantOccurrenceSum = 0;
-    for (std::vector<feature_t>::iterator it = significantOccurrences.begin();
-         it != significantOccurrences.end(); ++it)
-    {
-        significantOccurrenceSum += totalSignificantOccurrences > 0.0f ? *it / totalSignificantOccurrences : 0.0f;
+    for (feature_t feature : significantOccurrences) {
+        significantOccurrenceSum += totalSignificantOccurrences > 0.0f ? feature / totalSignificantOccurrences : 0.0f;
     }
     metrics.setSignificantOccurrence(significantOccurrenceSum);
 }
 
-} // fieldmatch
-} // features
-} // search
+}

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -132,7 +132,7 @@ void make_macro_wire(int n) {
             out_opt(ignore, ", true", ", false");
             out_opt(mt, ", threads", ", 1");
             out_list_n(", ", "fixture%d", "", n);
-            out(")\n");
+            out(") // NOLINT\n");
         }
     }
     fprintf(stdout, "\n// test macro variants for %d test fixtures END\n\n", n);

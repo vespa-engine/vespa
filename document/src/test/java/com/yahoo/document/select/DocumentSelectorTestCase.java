@@ -1,8 +1,28 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.select;
 
-import com.yahoo.document.*;
-import com.yahoo.document.datatypes.*;
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentGet;
+import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentOperation;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentRemove;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.Field;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.StructDataType;
+import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.FloatFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.Struct;
+import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.select.convert.SelectionExpressionConverter;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.TokenMgrException;
@@ -32,7 +52,7 @@ public class DocumentSelectorTestCase {
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 
-    private static DocumentTypeManager manager = new DocumentTypeManager();
+    private static final DocumentTypeManager manager = new DocumentTypeManager();
 
     @Before
     public void setUp() {
@@ -42,6 +62,7 @@ public class DocumentSelectorTestCase {
         type.addField("hfloat", DataType.FLOAT);
         type.addField("hstring", DataType.STRING);
         type.addField("content", DataType.STRING);
+        type.addField("truth", DataType.BOOL);
 
         StructDataType mystruct = new StructDataType("mystruct");
         mystruct.addField(new Field("key", DataType.INT));
@@ -67,6 +88,12 @@ public class DocumentSelectorTestCase {
         manager.registerDocumentType(new DocumentType("andornot"));
         manager.registerDocumentType(new DocumentType("idid"));
         manager.registerDocumentType(new DocumentType("usergroup"));
+        var userType = new DocumentType("user");
+        userType.addField("id", DataType.INT);
+        manager.registerDocumentType(userType);
+        var groupType = new DocumentType("group");
+        groupType.addField("iD", DataType.INT); // For checking case preservation
+        manager.registerDocumentType(groupType);
     }
 
     @Test
@@ -82,10 +109,12 @@ public class DocumentSelectorTestCase {
         assertParse("id.hash() > 0");
         assertParse("id.namespace.hash() > 0");
         assertParse("music.artist = \"*\"");
+        assertParse("music.artist = \"&\"");
         assertParse("music.artist.lowercase() = \"*\"");
         assertParse("music_.artist = \"*\"");
         assertParse("music_foo.artist = \"*\"");
         assertParse("music_foo_.artist = \"*\"");
+        assertParse("truth");
         assertParse("(4 + 3) > 0", "(4+3) > 0");
         assertParse("1 + 1 > 0", "1 +1 > 0");
         assertParse("1 + -1 > 0", "1 + -1 > 0");
@@ -130,6 +159,10 @@ public class DocumentSelectorTestCase {
         assertParse(null, "false or false_t or falsetype");
         assertParse(null, "true or and_t or andtype");
         assertParse(null, "true or or_t or ortype");
+        assertParse(null, "user or group");
+        assertParse(null, "user.foo or group.bar");
+        assertParse("user.id == id.user", "user.id == id.user");
+        assertParse("group.iD == id.user", "group.iD == id.user"); // Casing is preserved
     }
 
     @Test
@@ -339,6 +372,7 @@ public class DocumentSelectorTestCase {
         documents.add(createDocument("id:myspace:test:n=2345:mail2", 15, 1.0f, "bar", "baz"));
         documents.add(createDocument("id:myspace:test:g=mygroup:qux", 15, 1.0f, "quux", "corge"));
         documents.add(createDocument("id:myspace:test::missingint", null, 2.0f, null, "bar"));
+        documents.add(createDocument("id:myspace:test::ampersand", null, 2.0f, null, "&"));
 
         // Add some array/struct info to doc 1
         Struct sval = new Struct(documents.get(1).getDocument().getField("mystruct").getDataType());
@@ -483,6 +517,8 @@ public class DocumentSelectorTestCase {
         assertEquals(Result.FALSE, evaluate("test.hstring == test.content", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("test.hstring == test.content", documents.get(2)));
         assertEquals(Result.TRUE, evaluate("test.hint + 1 > 13", documents.get(1)));
+        assertEquals(Result.FALSE, evaluate("test.content = \"&\"", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.content = \"&\"", documents.get(7)));
         // Case where field is not present (i.e. null) is defined for (in)equality comparisons, but
         // not for other relations.
         DocumentPut doc1234 = documents.get(6);
@@ -704,6 +740,23 @@ public class DocumentSelectorTestCase {
     }
 
     @Test
+    public void using_non_commutative_comparison_operator_with_field_value_is_well_defined() throws ParseException {
+        var documents = createDocs();
+        // Doc 0 contains 24 in `hint` field.
+        assertEquals(Result.FALSE, evaluate("25 <= test.hint", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("24 <= test.hint", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("25 > test.hint", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("24 > test.hint", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("24 >= test.hint", documents.get(0)));
+
+        assertEquals(Result.FALSE, evaluate("test.hint <= 23", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.hint <= 24", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.hint > 23", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("test.hint > 24", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("test.hint >= 24", documents.get(0)));
+    }
+
+    @Test
     public void imported_field_references_are_treated_as_valid_field_with_missing_value() throws ParseException {
         var documents = createDocs();
         assertEquals(Result.TRUE, evaluate("test.my_imported_field == null", documents.get(0)));
@@ -857,7 +910,6 @@ public class DocumentSelectorTestCase {
         } catch (ParseException e) {
             fail("The expression '" + expressionString + "' should assertEquals ok.");
         } catch (RuntimeException e) {
-            System.err.println("Error was : " + e);
             assertTrue(e.getMessage().length() >= expectedError.length());
             assertEquals(expectedError, e.getMessage().substring(0, expectedError.length()));
         }

@@ -18,18 +18,17 @@ class MySearchHandler : public ISearchHandler {
     std::string _reply;
 public:
     MySearchHandler(size_t numHits = 0) :
-        _numHits(numHits), _name("my"), _reply("myreply") {}
-    virtual DocsumReply::UP getDocsums(const DocsumRequest &) override {
-        return DocsumReply::UP(new DocsumReply);
+        _numHits(numHits), _name("my"), _reply("myreply")
+    {}
+    DocsumReply::UP getDocsums(const DocsumRequest &) override {
+        return std::make_unique<DocsumReply>();
     }
 
-    virtual search::engine::SearchReply::UP match(
-            const ISearchHandler::SP &,
-            const search::engine::SearchRequest &,
-            vespalib::ThreadBundle &) const override {
-        SearchReply::UP retval(new SearchReply);
+    SearchReply::UP match(const SearchRequest &, vespalib::ThreadBundle &) const override
+    {
+        auto retval = std::make_unique<SearchReply>();
         for (size_t i = 0; i < _numHits; ++i) {
-            retval->hits.push_back(SearchReply::Hit());
+            retval->hits.emplace_back();
         }
         return retval;
     }
@@ -43,7 +42,7 @@ private:
 
 public:
     LocalSearchClient();
-    ~LocalSearchClient();
+    ~LocalSearchClient() override;
     void searchDone(SearchReply::UP reply) override {
         std::lock_guard<std::mutex> guard(_lock);
         _reply = std::move(reply);
@@ -62,8 +61,8 @@ public:
     }
 };
 
-LocalSearchClient::LocalSearchClient() {}
-LocalSearchClient::~LocalSearchClient() {}
+LocalSearchClient::LocalSearchClient() = default;
+LocalSearchClient::~LocalSearchClient() = default;
 
 TEST("requireThatSearchesExecute")
 {
@@ -71,23 +70,23 @@ TEST("requireThatSearchesExecute")
     MatchEngine engine(numMatcherThreads, 1, 7);
     engine.setNodeUp(true);
 
-    MySearchHandler::SP handler(new MySearchHandler);
+    auto handler = std::make_shared<MySearchHandler>();
     DocTypeName dtnvfoo("foo");
     engine.putSearchHandler(dtnvfoo, handler);
 
     LocalSearchClient client;
     SearchRequest::Source request(new SearchRequest());
     SearchReply::UP reply = engine.search(std::move(request), client);
-    EXPECT_TRUE(reply.get() == NULL);
+    EXPECT_FALSE(reply);
 
     reply = client.getReply(10000);
-    EXPECT_TRUE(reply.get() != NULL);
+    EXPECT_TRUE(reply);
 }
 
 bool
 assertSearchReply(MatchEngine & engine, const std::string & searchDocType, size_t expHits)
 {
-    SearchRequest *request = new SearchRequest();
+    auto *request = new SearchRequest();
     request->propertiesMap.lookupCreate(search::MapNames::MATCH).add("documentdb.searchdoctype", searchDocType);
     LocalSearchClient client;
     engine.search(SearchRequest::Source(request), client);
@@ -99,9 +98,9 @@ TEST("requireThatCorrectHandlerIsUsed")
 {
     MatchEngine engine(1, 1, 7);
     engine.setNodeUp(true);
-    ISearchHandler::SP h1(new MySearchHandler(2));
-    ISearchHandler::SP h2(new MySearchHandler(4));
-    ISearchHandler::SP h3(new MySearchHandler(6));
+    auto h1 = std::make_shared<MySearchHandler>(2);
+    auto h2 = std::make_shared<MySearchHandler>(4);
+    auto h3 = std::make_shared<MySearchHandler>(6);
     DocTypeName dtnvfoo("foo");
     DocTypeName dtnvbar("bar");
     DocTypeName dtnvbaz("baz");
@@ -120,13 +119,12 @@ struct ObserveBundleMatchHandler : MySearchHandler {
     mutable size_t bundleSize;
     ObserveBundleMatchHandler() : bundleSize(0) {}
 
-    virtual search::engine::SearchReply::UP match(
-            const ISearchHandler::SP &,
+    search::engine::SearchReply::UP match(
             const search::engine::SearchRequest &,
             vespalib::ThreadBundle &threadBundle) const override
     {
         bundleSize = threadBundle.size();
-        return SearchReply::UP(new SearchReply);
+        return std::make_unique<SearchReply>();
     }
 };
 
@@ -135,7 +133,7 @@ TEST("requireThatBundlesAreUsed")
     MatchEngine engine(15, 5, 7);
     engine.setNodeUp(true);
 
-    ObserveBundleMatchHandler::SP handler(new ObserveBundleMatchHandler());
+    auto handler = std::make_shared<ObserveBundleMatchHandler>();
     DocTypeName dtnvfoo("foo");
     engine.putSearchHandler(dtnvfoo, handler);
 
@@ -151,20 +149,20 @@ TEST("requireThatHandlersCanBeRemoved")
 {
     MatchEngine engine(1, 1, 7);
     engine.setNodeUp(true);
-    ISearchHandler::SP h(new MySearchHandler(1));
+    auto h = std::make_shared<MySearchHandler>(1);
     DocTypeName docType("foo");
     engine.putSearchHandler(docType, h);
 
     ISearchHandler::SP r = engine.getSearchHandler(docType);
-    EXPECT_TRUE(r.get() != NULL);
+    EXPECT_TRUE(r);
     EXPECT_TRUE(h.get() == r.get());
 
     r = engine.removeSearchHandler(docType);
-    EXPECT_TRUE(r.get() != NULL);
+    EXPECT_TRUE(r);
     EXPECT_TRUE(h.get() == r.get());
 
     r = engine.getSearchHandler(docType);
-    EXPECT_TRUE(r.get() == NULL);
+    EXPECT_FALSE(r);
 }
 
 TEST("requireThatEmptySearchReplyIsReturnedWhenEngineIsClosed")
@@ -175,7 +173,7 @@ TEST("requireThatEmptySearchReplyIsReturnedWhenEngineIsClosed")
     LocalSearchClient client;
     SearchRequest::Source request(new SearchRequest());
     SearchReply::UP reply = engine.search(std::move(request), client);
-    EXPECT_TRUE(reply.get() != NULL);
+    EXPECT_TRUE(reply );
     EXPECT_EQUAL(0u, reply->hits.size());
     EXPECT_EQUAL(7u, reply->getDistributionKey());
 }

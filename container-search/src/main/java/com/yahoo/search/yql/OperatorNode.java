@@ -13,9 +13,7 @@ import java.util.Map;
 
 /**
  * Represents a use of an operator against concrete arguments. The types of arguments depend on the operator.
- * <p>
  * The extension point of this scheme is the Operator rather than new types of Nodes.
- * <p>
  * Operators SHOULD take a fixed number of arguments -- wrap variable argument counts in Lists.
  */
 final class OperatorNode<T extends Operator> {
@@ -164,7 +162,7 @@ final class OperatorNode<T extends Operator> {
     }
 
     // we are aware only of types used in our logical operator trees -- OperatorNode, List, and constant values
-    private static final Function<Object, Object> COPY = new Function<Object, Object>() {
+    private static final Function<Object, Object> COPY = new Function<>() {
         @Override
         public Object apply(Object input) {
             if (input instanceof List) {

@@ -74,7 +74,7 @@ SummaryCompactTarget::getFlushedSerialNum() const
 }
 
 IFlushTarget::Task::UP
-SummaryCompactTarget::initFlush(SerialNum currentSerial)
+SummaryCompactTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>)
 {
     std::promise<Task::UP> promise;
     std::future<Task::UP> future = promise.get_future();

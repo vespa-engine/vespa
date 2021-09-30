@@ -5,9 +5,9 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <map>
 #include <vector>
+#include <memory>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * Class representing a set of configured ranking constants, with name, type and file path (where constant is stored).
@@ -42,5 +42,4 @@ public:
     size_t size() const { return _constants.size(); }
 };
 
-}
 }

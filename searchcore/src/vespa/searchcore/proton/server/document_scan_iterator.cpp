@@ -11,8 +11,7 @@ typedef IDocumentMetaStore::Iterator Iterator;
 
 DocumentScanIterator::DocumentScanIterator(const IDocumentMetaStore &metaStore)
     : _metaStore(metaStore),
-      _lastGid(),
-      _lastGidValid(false),
+      _lastLid(_metaStore.getCommittedDocIdLimit()),
       _itrValid(true)
 {
 }
@@ -24,27 +23,19 @@ DocumentScanIterator::valid() const
 }
 
 DocumentMetaData
-DocumentScanIterator::next(uint32_t compactLidLimit,
-                           uint32_t maxDocsToScan,
-                           bool retry)
+DocumentScanIterator::next(uint32_t compactLidLimit, bool retry)
 {
-    Iterator itr = (_lastGidValid ?
-            (retry ? _metaStore.lowerBound(_lastGid) : _metaStore.upperBound(_lastGid))
-                    : _metaStore.begin());
-    uint32_t i = 1; // We have already 'scanned' a document when creating the iterator
-    for (; i < maxDocsToScan && itr.valid() && itr.getKey() <= compactLidLimit; ++i, ++itr) {}
-    if (itr.valid()) {
-        uint32_t lid = itr.getKey();
-        const RawDocumentMetaData &metaData = _metaStore.getRawMetaData(lid);
-        _lastGid = metaData.getGid();
-        _lastGidValid = true;
-        if (lid > compactLidLimit) {
-            return DocumentMetaData(lid, metaData.getTimestamp(),
-                    metaData.getBucketId(), metaData.getGid());
-        }
-    } else {
-        _itrValid = false;
+    if (!retry) {
+        --_lastLid;
     }
+    for (; _lastLid > compactLidLimit; --_lastLid) {
+        if (_metaStore.validLid(_lastLid)) {
+            const RawDocumentMetaData &metaData = _metaStore.getRawMetaData(_lastLid);
+            return DocumentMetaData(_lastLid, metaData.getTimestamp(),
+                                    metaData.getBucketId(), metaData.getGid());
+        }
+    }
+    _itrValid = (_lastLid > compactLidLimit) ;
     return DocumentMetaData();
 }
 

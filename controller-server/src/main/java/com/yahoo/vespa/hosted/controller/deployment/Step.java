@@ -1,9 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.google.common.collect.ImmutableList;
-
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Steps that make up a deployment job. See {@link JobProfile} for preset profiles.
@@ -26,55 +30,72 @@ import java.util.List;
 public enum Step {
 
     /** Download test-jar and assemble and deploy tester application. */
-    deployTester,
+    deployTester(false),
 
     /** See that tester is done deploying, and is ready to serve. */
-    installTester(deployTester),
+    installTester(false, deployTester),
 
     /** Download and deploy the initial real application, for staging tests. */
-    deployInitialReal(deployTester),
+    deployInitialReal(false),
 
     /** See that the real application has had its nodes converge to the initial state. */
-    installInitialReal(deployInitialReal),
+    installInitialReal(false, deployInitialReal),
 
     /** Ask the tester to run its staging setup. */
-    startStagingSetup(installInitialReal, installTester),
+    startStagingSetup(false, installInitialReal, installTester),
 
     /** See that the staging setup is done. */
-    endStagingSetup(startStagingSetup),
+    endStagingSetup(false, startStagingSetup),
 
     /** Download and deploy real application, restarting services if required. */
-    deployReal(endStagingSetup, deployTester),
+    deployReal(false, endStagingSetup),
 
     /** See that real application has had its nodes converge to the wanted version and generation. */
-    installReal(deployReal),
+    installReal(false, deployReal),
 
     /** Ask the tester to run its tests. */
-    startTests(installReal, installTester),
+    startTests(false, installReal, installTester),
 
     /** See that the tests are done running. */
-    endTests(startTests),
+    endTests(false, startTests),
 
     /** Fetch and store Vespa logs from the log server cluster of the deployment -- used for test and dev deployments. */
-    copyVespaLogs(installReal, endTests),
+    copyVespaLogs(true, installReal, endTests),
 
     /** Delete the real application -- used for test deployments. */
-    deactivateReal(deployInitialReal, deployReal, endTests, copyVespaLogs),
+    deactivateReal(true, deployInitialReal, deployReal, endTests, copyVespaLogs),
 
     /** Deactivate the tester. */
-    deactivateTester(deployTester, endTests),
+    deactivateTester(true, deployTester, endTests),
 
     /** Report completion to the deployment orchestration machinery. */
-    report(deactivateReal, deactivateTester);
+    report(true, installReal, deactivateReal, deactivateTester);
 
 
+    private final boolean alwaysRun;
     private final List<Step> prerequisites;
 
-    Step(Step... prerequisites) {
-        this.prerequisites = ImmutableList.copyOf(prerequisites);
+    Step(boolean alwaysRun, Step... prerequisites) {
+        this.alwaysRun = alwaysRun;
+        this.prerequisites = List.of(prerequisites);
     }
 
-    /** Returns the prerequisite steps that must be successfully completed before this, assuming the job contains these steps. */
+    /** Returns whether this is a cleanup-step, and should always run, regardless of job outcome, when specified in a job. */
+    public boolean alwaysRun() { return alwaysRun; }
+
+    /** Returns all prerequisite steps for this, including transient ones, in a job profile containing the given steps. */
+    public List<Step> allPrerequisites(Collection<Step> among) {
+        return prerequisites.stream()
+                            .filter(among::contains)
+                            .flatMap(pre -> Stream.concat(Stream.of(pre),
+                                                          pre.allPrerequisites(among).stream()))
+                            .sorted()
+                            .distinct()
+                            .collect(toList());
+    }
+
+
+    /** Returns the direct prerequisite steps that must be completed before this, assuming the job contains these steps. */
     public List<Step> prerequisites() { return prerequisites; }
 
 

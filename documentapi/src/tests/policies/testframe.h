@@ -7,7 +7,6 @@
 #include <vespa/messagebus/network/inetwork.h>
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/slobrok.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 using documentapi::string;
 
@@ -15,7 +14,6 @@ class TestFrame : public mbus::IReplyHandler {
 private:
     string                            _identity;
     std::shared_ptr<mbus::Slobrok>    _slobrok;
-    documentapi::LoadTypeSet          _set;
     std::shared_ptr<mbus::INetwork>   _net;
     std::shared_ptr<mbus::MessageBus> _mbus;
     mbus::Message::UP                 _msg;

@@ -42,6 +42,8 @@ public class NodeReports {
         reports.put(reportId, jsonNode);
     }
 
+    public boolean hasReport(String reportId) { return reports.containsKey(reportId); }
+
     public <T> Optional<T> getReport(String reportId, Class<T> jacksonClass) {
         return Optional.ofNullable(reports.get(reportId)).map(r -> uncheck(() -> mapper.treeToValue(r, jacksonClass)));
     }
@@ -73,6 +75,17 @@ public class NodeReports {
 
     public Map<String, JsonNode> getRawMap() {
         return new TreeMap<>(reports);
+    }
+
+    /** Apply the override to this.  null value means removing report. */
+    public void updateFromRawMap(Map<String, JsonNode> override) {
+        override.forEach((reportId, jsonNode) -> {
+            if (jsonNode == null) {
+                reports.remove(reportId);
+            } else {
+                reports.put(reportId, jsonNode);
+            }
+        });
     }
 
     @Override

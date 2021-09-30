@@ -1,17 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "combiningfeedview.h"
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.combiningfeedview");
 
 using document::DocumentTypeRepo;
 using document::DocumentId;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
+using vespalib::Trinary;
 
 namespace proton {
 
@@ -28,16 +30,21 @@ getRepo(const std::vector<IFeedView::SP> &views)
     LOG_ABORT("should not be reached");
 }
 
-};
+const char *
+toStr(Trinary v) {
+    return (v == Trinary::True) ? "true" : ((v == Trinary::False) ? "false" : "undefined");
+}
+
+}
 
 CombiningFeedView::CombiningFeedView(const std::vector<IFeedView::SP> &views,
                                      document::BucketSpace bucketSpace,
-                                     const IBucketStateCalculator::SP &calc)
+                                     const std::shared_ptr<IBucketStateCalculator> &calc)
     : _repo(getRepo(views)),
       _views(views),
       _metaStores(),
       _calc(calc),
-      _clusterUp(calc.get() != NULL && calc->clusterUp()),
+      _clusterUp(calc && calc->clusterUp()),
       _forceReady(!_clusterUp || !hasNotReadyFeedView()),
       _bucketSpace(bucketSpace)
 {
@@ -45,21 +52,19 @@ CombiningFeedView::CombiningFeedView(const std::vector<IFeedView::SP> &views,
     for (const auto &view : views) {
         _metaStores.push_back(view->getDocumentMetaStorePtr());
     }
-    assert(getReadyFeedView() != NULL);
-    assert(getRemFeedView() != NULL);
+    assert(getReadyFeedView() != nullptr);
+    assert(getRemFeedView() != nullptr);
     if (hasNotReadyFeedView()) {
-        assert(getNotReadyFeedView() != NULL);
+        assert(getNotReadyFeedView() != nullptr);
     }
 }
 
-CombiningFeedView::~CombiningFeedView()
-{
-}
+CombiningFeedView::~CombiningFeedView() = default;
 
 const ISimpleDocumentMetaStore *
 CombiningFeedView::getDocumentMetaStorePtr() const
 {
-    return NULL;
+    return nullptr;
 }
 
 void
@@ -76,12 +81,11 @@ CombiningFeedView::findPrevDbdId(const document::GlobalId &gid,
         if (subDbId == skipSubDbId)
             continue;
         const documentmetastore::IStore *metaStore = _metaStores[subDbId];
-        if (metaStore == NULL)
+        if (metaStore == nullptr)
             continue;
-        documentmetastore::IStore::Result inspectRes(metaStore->inspectExisting(gid));
+        documentmetastore::IStore::Result inspectRes(const_cast<documentmetastore::IStore *>(metaStore)->inspectExisting(gid, op.get_prepare_serial_num()));
         if (inspectRes._found) {
-            op.setPrevDbDocumentId(DbDocumentId(subDbId,
-                                           inspectRes._lid));
+            op.setPrevDbDocumentId(DbDocumentId(subDbId, inspectRes._lid));
             op.setPrevMarkedAsRemoved(subDbId == getRemFeedViewId());
             op.setPrevTimestamp(inspectRes._timestamp);
             break;
@@ -101,7 +105,7 @@ CombiningFeedView::getDocumentTypeRepo() const
 void
 CombiningFeedView::preparePut(PutOperation &putOp)
 {
-    if (shouldBeReady(putOp.getBucketId())) {
+    if (shouldBeReady(putOp.getBucketId()) == Trinary::True) {
         getReadyFeedView()->preparePut(putOp);
     } else {
         getNotReadyFeedView()->preparePut(putOp);
@@ -151,9 +155,7 @@ CombiningFeedView::prepareRemove(RemoveOperation &rmOp)
 {
     getRemFeedView()->prepareRemove(rmOp);
     if (!rmOp.getPrevDbDocumentId().valid()) {
-        const DocumentId &docId = rmOp.getDocumentId();
-        const document::GlobalId &gid = docId.getGlobalId();
-        findPrevDbdId(gid, rmOp);
+        findPrevDbdId(rmOp.getGlobalId(), rmOp);
     }
 }
 
@@ -231,10 +233,10 @@ CombiningFeedView::sync()
 }
 
 void
-CombiningFeedView::forceCommit(search::SerialNum serialNum)
+CombiningFeedView::forceCommit(const CommitParam & param, DoneCallback onDone)
 {
     for (const auto &view : _views) {
-        view->forceCommit(serialNum);
+        view->forceCommit(param, onDone);
     }
 }
 
@@ -254,7 +256,7 @@ CombiningFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
 }
 
 void
-CombiningFeedView::setCalculator(const IBucketStateCalculator::SP &newCalc)
+CombiningFeedView::setCalculator(const std::shared_ptr<IBucketStateCalculator> &newCalc)
 {
     // Called by document db executor
     _calc = newCalc;
@@ -262,7 +264,7 @@ CombiningFeedView::setCalculator(const IBucketStateCalculator::SP &newCalc)
     _forceReady = !_clusterUp || !hasNotReadyFeedView();
 }
 
-bool
+Trinary
 CombiningFeedView::shouldBeReady(const document::BucketId &bucket) const
 {
     document::Bucket dbucket(_bucketSpace, bucket);
@@ -271,11 +273,10 @@ CombiningFeedView::shouldBeReady(const document::BucketId &bucket) const
         bucket.toString().c_str(),
         (_forceReady ? "true" : "false"),
         (_clusterUp ? "true" : "false"),
-        (_calc ? (_calc->shouldBeReady(dbucket) ? "true" : "false") : "null"));
-    const documentmetastore::IBucketHandler *readyMetaStore =
-        _metaStores[getReadyFeedViewId()];
+        (_calc ? toStr(_calc->shouldBeReady(dbucket)) : "null"));
+    const documentmetastore::IBucketHandler *readyMetaStore = _metaStores[getReadyFeedViewId()];
     bool isActive = readyMetaStore->getBucketDB().takeGuard()->isActiveBucket(bucket);
-    return _forceReady || isActive || _calc->shouldBeReady(dbucket);
+    return (_forceReady || isActive) ? Trinary::True : _calc->shouldBeReady(dbucket);
 }
 
 } // namespace proton

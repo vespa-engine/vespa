@@ -10,45 +10,52 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
+import com.yahoo.container.handler.threadpool.ContainerThreadPool;
+import com.yahoo.container.jdisc.AclMapping;
+import com.yahoo.container.jdisc.HttpMethodAclMapping;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.Request;
 import com.yahoo.language.Linguistics;
-import com.yahoo.log.LogLevel;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
-import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.parser.ParseException;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.CompoundName;
-import com.yahoo.search.query.ranking.SoftTimeout;
-import com.yahoo.search.searchchain.ExecutionFactory;
-import com.yahoo.slime.Inspector;
-import com.yahoo.slime.ObjectTraverser;
-import com.yahoo.slime.SlimeUtils;
-import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.query.context.QueryContext;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.search.query.properties.DefaultProperties;
+import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.searchchain.ExecutionFactory;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.statistics.ElapsedTime;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.ObjectTraverser;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.statistics.Callback;
 import com.yahoo.statistics.Handle;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.statistics.Value;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
+import com.yahoo.yolean.Exceptions;
+import com.yahoo.yolean.trace.TraceNode;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -69,6 +76,8 @@ import java.util.logging.Logger;
  */
 public class SearchHandler extends LoggingRequestHandler {
 
+    private static final Logger log = Logger.getLogger(SearchHandler.class.getName());
+
     private final AtomicInteger requestsInFlight = new AtomicInteger(0);
 
     // max number of threads for the executor for this handler
@@ -77,15 +86,15 @@ public class SearchHandler extends LoggingRequestHandler {
     private static final CompoundName DETAILED_TIMING_LOGGING = new CompoundName("trace.timingDetails");
     private static final CompoundName FORCE_TIMESTAMPS = new CompoundName("trace.timestamps");
 
-
     /** Event name for number of connections to the search subsystem */
     private static final String SEARCH_CONNECTIONS = "search_connections";
+    static final String RENDER_LATENCY_METRIC = "jdisc.render.latency";
+    static final String MIME_DIMENSION = "mime";
+    static final String RENDERER_DIMENSION = "renderer";
 
     private static final String JSON_CONTENT_TYPE = "application/json";
 
-    private static Logger log = Logger.getLogger(SearchHandler.class.getName());
-
-    private Value searchConnections;
+    private final Value searchConnections;
 
     public static final String defaultSearchChainName = "default";
     private static final String fallbackSearchChain = "vespa";
@@ -97,9 +106,14 @@ public class SearchHandler extends LoggingRequestHandler {
     
     private final String selfHostname = HostName.getLocalhost();
 
+    private final Embedder embedder;
+
     private final ExecutionFactory executionFactory;
 
     private final AtomicLong numRequestsLeftToTrace;
+
+    private final static RequestHandlerSpec REQUEST_HANDLER_SPEC = RequestHandlerSpec.builder()
+            .withAclMapping(SearchHandler.aclRequestMapper()).build();
 
     private final class MeanConnections implements Callback {
 
@@ -117,43 +131,101 @@ public class SearchHandler extends LoggingRequestHandler {
     @Inject
     public SearchHandler(Statistics statistics,
                          Metric metric,
+                         ContainerThreadPool threadpool,
+                         CompiledQueryProfileRegistry queryProfileRegistry,
+                         ContainerHttpConfig config,
+                         Embedder embedder,
+                         ExecutionFactory executionFactory) {
+        this(statistics, metric, threadpool.executor(), queryProfileRegistry, embedder, executionFactory,
+             config.numQueriesToTraceOnDebugAfterConstruction(),
+             config.hostResponseHeaderKey().equals("") ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()));
+    }
+
+    /**
+     * @deprecated Use the @Inject annotated constructor instead.
+     */
+    @Deprecated // Vespa 8
+    public SearchHandler(Statistics statistics,
+                         Metric metric,
+                         ContainerThreadPool threadpool,
+                         AccessLog ignored,
+                         CompiledQueryProfileRegistry queryProfileRegistry,
+                         ContainerHttpConfig config,
+                         ExecutionFactory executionFactory) {
+        this(statistics, metric, threadpool.executor(), ignored, queryProfileRegistry, config, executionFactory);
+    }
+
+    /**
+     * @deprecated Use the @Inject annotated constructor instead.
+     */
+    @Deprecated // Vespa 8
+    public SearchHandler(Statistics statistics,
+                         Metric metric,
                          Executor executor,
-                         AccessLog accessLog,
+                         AccessLog ignored,
+                         CompiledQueryProfileRegistry queryProfileRegistry,
+                         ContainerHttpConfig containerHttpConfig,
+                         ExecutionFactory executionFactory) {
+        this(statistics,
+             metric,
+             executor,
+             queryProfileRegistry,
+             Embedder.throwsOnUse,
+             executionFactory,
+             containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
+             containerHttpConfig.hostResponseHeaderKey().equals("") ?
+                     Optional.empty() : Optional.of(containerHttpConfig.hostResponseHeaderKey()));
+    }
+
+    /**
+     * @deprecated Use the @Inject annotated constructor instead.
+     */
+    @Deprecated // Vespa 8
+    public SearchHandler(Statistics statistics,
+                         Metric metric,
+                         Executor executor,
+                         AccessLog ignored,
                          QueryProfilesConfig queryProfileConfig,
                          ContainerHttpConfig containerHttpConfig,
                          ExecutionFactory executionFactory) {
         this(statistics,
              metric,
              executor,
-             accessLog,
              QueryProfileConfigurer.createFromConfig(queryProfileConfig).compile(),
+             Embedder.throwsOnUse,
              executionFactory,
              containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
              containerHttpConfig.hostResponseHeaderKey().equals("") ?
-             Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey()));
+                     Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey()));
     }
 
+    /**
+     * @deprecated Use the @Inject annotated constructor instead.
+     */
+    @Deprecated // Vespa 8
     public SearchHandler(Statistics statistics,
                          Metric metric,
                          Executor executor,
-                         AccessLog accessLog,
+                         AccessLog ignored,
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ExecutionFactory executionFactory,
                          Optional<String> hostResponseHeaderKey) {
-        this(statistics, metric, executor, accessLog, queryProfileRegistry, executionFactory, 0, hostResponseHeaderKey);
+        this(statistics, metric, executor, queryProfileRegistry, Embedder.throwsOnUse,
+             executionFactory, 0, hostResponseHeaderKey);
     }
 
     private SearchHandler(Statistics statistics,
                          Metric metric,
                          Executor executor,
-                         AccessLog accessLog,
                          CompiledQueryProfileRegistry queryProfileRegistry,
+                         Embedder embedder,
                          ExecutionFactory executionFactory,
                          long numQueriesToTraceOnDebugAfterStartup,
                          Optional<String> hostResponseHeaderKey) {
-        super(executor, accessLog, metric, true);
-        log.log(LogLevel.DEBUG, "SearchHandler.init " + System.identityHashCode(this));
+        super(executor, metric, true);
+        log.log(Level.FINE, () -> "SearchHandler.init " + System.identityHashCode(this));
         this.queryProfileRegistry = queryProfileRegistry;
+        this.embedder = embedder;
         this.executionFactory = executionFactory;
 
         this.maxThreads = examineExecutor(executor);
@@ -192,6 +264,8 @@ public class SearchHandler extends LoggingRequestHandler {
              new ExecutionFactory(chainsConfig, indexInfo, clusters, searchers, specialtokens, linguistics, renderers));
     }
 
+    Metric metric() { return metric; }
+
     private static int examineExecutor(Executor executor) {
         if (executor instanceof ThreadPoolExecutor) {
             return ((ThreadPoolExecutor) executor).getMaximumPoolSize();
@@ -205,10 +279,8 @@ public class SearchHandler extends LoggingRequestHandler {
         try {
             try {
                 return handleBody(request);
-            } catch (QueryException e) {
-                return (e.getCause() instanceof IllegalArgumentException)
-                        ? invalidParameterResponse(request, e)
-                        : illegalQueryResponse(request, e);
+            } catch (IllegalInputException e) {
+                return illegalQueryResponse(request, e);
             } catch (RuntimeException e) { // Make sure we generate a valid response even on unexpected errors
                 log.log(Level.WARNING, "Failed handling " + request, e);
                 return internalServerErrorResponse(request, e);
@@ -217,6 +289,9 @@ public class SearchHandler extends LoggingRequestHandler {
             requestsInFlight.decrementAndGet();
         }
     }
+
+    @Override
+    public Optional<Request.RequestType> getRequestType() { return Optional.of(Request.RequestType.READ); }
 
     private int getHttpResponseStatus(com.yahoo.container.jdisc.HttpRequest httpRequest, Result result) {
         boolean benchmarkOutput = VespaHeaders.benchmarkOutput(httpRequest);
@@ -234,13 +309,9 @@ public class SearchHandler extends LoggingRequestHandler {
     private HttpResponse errorResponse(HttpRequest request, ErrorMessage errorMessage) {
         Query query = new Query();
         Result result = new Result(query, errorMessage);
-        Renderer renderer = getRendererCopy(ComponentSpecification.fromString(request.getProperty("format")));
+        Renderer<Result> renderer = getRendererCopy(ComponentSpecification.fromString(request.getProperty("format")));
 
         return new HttpSearchResponse(getHttpResponseStatus(request, result), result, query, renderer);
-    }
-
-    private HttpResponse invalidParameterResponse(HttpRequest request, RuntimeException e) {
-        return errorResponse(request, ErrorMessage.createInvalidQueryParameter(Exceptions.toMessageString(e)));
     }
 
     private HttpResponse illegalQueryResponse(HttpRequest request, RuntimeException e) {
@@ -251,7 +322,6 @@ public class SearchHandler extends LoggingRequestHandler {
         return errorResponse(request, ErrorMessage.createInternalServerError(Exceptions.toMessageString(e)));
     }
 
-
     private HttpSearchResponse handleBody(HttpRequest request) {
         Map<String, String> requestMap = requestMapFromRequest(request);
 
@@ -259,7 +329,11 @@ public class SearchHandler extends LoggingRequestHandler {
         String queryProfileName = requestMap.getOrDefault("queryProfile", null);
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
 
-        Query query = new Query(request, requestMap, queryProfile);
+        Query query = new Query.Builder().setRequest(request)
+                                         .setRequestMap(requestMap)
+                                         .setQueryProfile(queryProfile)
+                                         .setEmbedder(embedder)
+                                         .build();
 
         boolean benchmarking = VespaHeaders.benchmarkOutput(request);
         boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarking, request.getJDiscRequest().headers());
@@ -294,20 +368,32 @@ public class SearchHandler extends LoggingRequestHandler {
         }
 
         // Transform result to response
-        Renderer renderer = toRendererCopy(query.getPresentation().getRenderer());
+        Renderer<Result> renderer = toRendererCopy(query.getPresentation().getRenderer());
         HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result),
                                                              result, query, renderer,
-                                                             log.isLoggable(Level.FINE)
-                                                                     ? query.getContext(false).getTrace().traceNode()
-                                                                     : null);
-        if (hostResponseHeaderKey.isPresent())
-            response.headers().add(hostResponseHeaderKey.get(), selfHostname);
+                                                             extractTraceNode(query),
+                                                             metric);
+        response.setRequestType(Request.RequestType.READ);
+        hostResponseHeaderKey.ifPresent(key -> response.headers().add(key, selfHostname));
 
         if (benchmarking)
             VespaHeaders.benchmarkOutput(response.headers(), benchmarkCoverage, response.getTiming(),
                                          response.getHitCounts(), getErrors(result), response.getCoverage());
 
         return response;
+    }
+
+    private static TraceNode extractTraceNode(Query query) {
+        if (log.isLoggable(Level.FINE)) {
+            QueryContext queryContext = query.getContext(false);
+            if (queryContext != null) {
+                Execution.Trace trace = queryContext.getTrace();
+                if (trace != null) {
+                    return trace.traceNode();
+                }
+            }
+        }
+        return null;
     }
 
     private static int getErrors(Result result) {
@@ -404,7 +490,7 @@ public class SearchHandler extends LoggingRequestHandler {
         if (searchConnections != null) {
             connectionStatistics();
         } else {
-            log.log(LogLevel.WARNING,
+            log.log(Level.WARNING,
                     "searchConnections is a null reference, probably a known race condition during startup.",
                     new IllegalStateException("searchConnections reference is null."));
         }
@@ -413,21 +499,17 @@ public class SearchHandler extends LoggingRequestHandler {
         } catch (ParseException e) {
             ErrorMessage error = ErrorMessage.createIllegalQuery("Could not parse query [" + request + "]: "
                                                                  + Exceptions.toMessageString(e));
-            log.log(LogLevel.DEBUG, error::getDetailedMessage);
+            log.log(Level.FINE, error::getDetailedMessage);
+            return new Result(query, error);
+        } catch (IllegalInputException e) {
+            ErrorMessage error = ErrorMessage.createBadRequest("Invalid request [" + request + "]: "
+                                                               + Exceptions.toMessageString(e));
+            log.log(Level.FINE, error::getDetailedMessage);
             return new Result(query, error);
         } catch (IllegalArgumentException e) {
-            if ("Comparison method violates its general contract!".equals(e.getMessage())) {
-                // This is an error in application components or Vespa code
-                log(request, query, e);
-                return new Result(query, ErrorMessage.createUnspecifiedError("Failed searching: " +
-                                                                             Exceptions.toMessageString(e), e));
-            }
-            else {
-                ErrorMessage error = ErrorMessage.createBadRequest("Invalid search request [" + request + "]: "
-                                                                   + Exceptions.toMessageString(e));
-                log.log(LogLevel.DEBUG, error::getDetailedMessage);
-                return new Result(query, error);
-            }
+            log(request, query, e);
+            return new Result(query, ErrorMessage.createUnspecifiedError("Failed: " +
+                                                                         Exceptions.toMessageString(e), e));
         } catch (LinkageError | StackOverflowError e) {
             // LinkageError should have been an Exception in an OSGi world - typical bundle dependency issue problem
             // StackOverflowError is recoverable
@@ -437,7 +519,7 @@ public class SearchHandler extends LoggingRequestHandler {
             return new Result(query, error);
         } catch (Exception e) {
             log(request, query, e);
-            return new Result(query, ErrorMessage.createUnspecifiedError("Failed searching: " +
+            return new Result(query, ErrorMessage.createUnspecifiedError("Failed: " +
                                                                          Exceptions.toMessageString(e), e));
         }
     }
@@ -448,8 +530,8 @@ public class SearchHandler extends LoggingRequestHandler {
         if (maxThreads > 3) {
             // cast to long to avoid overflows if maxThreads is at no
             // log value (maxint)
-            final long maxThreadsAsLong = maxThreads;
-            final long connectionsAsLong = connections;
+            long maxThreadsAsLong = maxThreads;
+            long connectionsAsLong = connections;
             // only log when exactly crossing the limit to avoid
             // spamming the log
             if (connectionsAsLong < maxThreadsAsLong * 9L / 10L) {
@@ -472,10 +554,10 @@ public class SearchHandler extends LoggingRequestHandler {
     private void log(String request, Query query, Throwable e) {
         // Attempted workaround for missing stack traces
         if (e.getStackTrace().length == 0) {
-            log.log(LogLevel.ERROR, "Failed executing " + query.toDetailString() +
-                                    " [" + request + "], received exception with no context", e);
+            log.log(Level.SEVERE, "Failed executing " + query.toDetailString() +
+                                  " [" + request + "], received exception with no context", e);
         } else {
-            log.log(LogLevel.ERROR, "Failed executing " + query.toDetailString() + " [" + request + "]", e);
+            log.log(Level.SEVERE, "Failed executing " + query.toDetailString() + " [" + request + "]", e);
         }
     }
 
@@ -491,12 +573,13 @@ public class SearchHandler extends LoggingRequestHandler {
 
         if (query.getHits() > maxHits) {
             return new Result(query, ErrorMessage.createIllegalQuery(query.getHits() +
-                              " hits requested, configured limit: " + maxHits + "."));
+                              " hits requested, configured limit: " + maxHits +
+                              ". See https://docs.vespa.ai/en/reference/query-api-reference.html#native-execution-parameters"));
 
         } else if (query.getOffset() > maxOffset) {
-            return new Result(query,
-                    ErrorMessage.createIllegalQuery("Offset of " + query.getOffset() +
-                                                    " requested, configured limit: " + maxOffset + "."));
+            return new Result(query, ErrorMessage.createIllegalQuery("Offset of " + query.getOffset() +
+                              " requested, configured limit: " + maxOffset +
+                              ". See https://docs.vespa.ai/en/reference/query-api-reference.html#native-execution-parameters"));
         }
         return null;
     }
@@ -541,11 +624,12 @@ public class SearchHandler extends LoggingRequestHandler {
 
         Inspector inspector;
         try {
-            byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
+            // Use an 4k buffer, that should be plenty for most json requests to pass in a single chunk
+            byte[] byteArray = IOUtils.readBytes(request.getData(), 4096);
             inspector = SlimeUtils.jsonToSlime(byteArray).get();
             if (inspector.field("error_message").valid()) {
-                throw new QueryException("Illegal query: " + inspector.field("error_message").asString() + " at: '" +
-                                         new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
+                throw new IllegalInputException("Illegal query: " + inspector.field("error_message").asString() + " at: '" +
+                                                new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
             }
 
         } catch (IOException e) {
@@ -558,9 +642,9 @@ public class SearchHandler extends LoggingRequestHandler {
         requestMap.putAll(request.propertyMap());
 
         if (requestMap.containsKey("yql") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) )
-            throw new QueryException("Illegal query: Query contains both yql and select parameter");
+            throw new IllegalInputException("Illegal query: Query contains both yql and select parameter");
         if (requestMap.containsKey("query") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) )
-            throw new QueryException("Illegal query: Query contains both query and select parameter");
+            throw new IllegalInputException("Illegal query: Query contains both query and select parameter");
 
         return requestMap;
     }
@@ -594,6 +678,17 @@ public class SearchHandler extends LoggingRequestHandler {
             }
 
         });
+    }
+
+    @Override
+    public RequestHandlerSpec requestHandlerSpec() {
+        return REQUEST_HANDLER_SPEC;
+    }
+
+    private static AclMapping aclRequestMapper() {
+        return HttpMethodAclMapping.standard()
+                .override(com.yahoo.jdisc.http.HttpRequest.Method.POST, AclMapping.Action.READ)
+                .build();
     }
 
 }

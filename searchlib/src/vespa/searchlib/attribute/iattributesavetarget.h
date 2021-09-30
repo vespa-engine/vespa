@@ -37,6 +37,19 @@ public:
     virtual IAttributeFileWriter &weightWriter() = 0;
     virtual IAttributeFileWriter &udatWriter() = 0;
 
+    /**
+     * Setups a custom file writer with the given file suffix and description in the file header.
+     * Returns false if the file writer cannot be setup or if it already exists, true otherwise.
+     */
+    virtual bool setup_writer(const vespalib::string& file_suffix,
+                              const vespalib::string& desc) = 0;
+
+    /**
+     * Returns the file writer with the given file suffix.
+     * Throws vespalib::IllegalArgumentException if the file writer does not exists.
+     */
+    virtual IAttributeFileWriter& get_writer(const vespalib::string& file_suffix) = 0;
+
     virtual ~IAttributeSaveTarget();
 };
 

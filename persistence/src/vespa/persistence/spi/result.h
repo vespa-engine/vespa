@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "partitionstate.h"
 #include "bucketinfo.h"
 #include "bucket.h"
 #include "docentry.h"
@@ -156,13 +155,20 @@ public:
      */
     GetResult(ErrorType error, const vespalib::string& errorMessage)
         : Result(error, errorMessage),
-          _timestamp(0) { }
+          _timestamp(0),
+          _is_tombstone(false)
+    {
+    }
 
     /**
      * Constructor to use when we didn't find the document in question.
      */
     GetResult()
-        : _timestamp(0) { }
+        : _timestamp(0),
+          _doc(),
+          _is_tombstone(false)
+    {
+    }
 
     /**
      * Constructor to use when we found the document asked for.
@@ -172,12 +178,26 @@ public:
      */
     GetResult(DocumentUP doc, Timestamp timestamp);
 
-    ~GetResult();
+    static GetResult make_for_tombstone(Timestamp removed_at_ts) {
+        return GetResult(removed_at_ts, true);
+    }
 
-    Timestamp getTimestamp() const { return _timestamp; }
+    static GetResult make_for_metadata_only(Timestamp removed_at_ts) {
+        return GetResult(removed_at_ts, false);
+    }
 
-    bool hasDocument() const {
-        return _doc.get() != NULL;
+    ~GetResult() override;
+
+    [[nodiscard]] Timestamp getTimestamp() const {
+        return _timestamp;
+    }
+
+    [[nodiscard]] bool hasDocument() const {
+        return (_doc.get() != nullptr);
+    }
+
+    [[nodiscard]] bool is_tombstone() const noexcept {
+        return _is_tombstone;
     }
 
     const Document& getDocument() const {
@@ -193,8 +213,12 @@ public:
     }
 
 private:
+    // Explicitly creates a metadata only GetResult with no document, optionally a tombstone (remove entry).
+    GetResult(Timestamp removed_at_ts, bool is_tombstone);
+
     Timestamp  _timestamp;
     DocumentSP _doc;
+    bool       _is_tombstone;
 };
 
 class BucketIdListResult : public Result {
@@ -287,28 +311,6 @@ public:
 private:
     bool _completed;
     std::vector<DocEntry::UP> _entries;
-};
-
-class PartitionStateListResult : public Result
-{
-public:
-    /**
-     * Constructor to use for a result where an error has been detected.
-     */
-    PartitionStateListResult(ErrorType error, const vespalib::string& msg)
-        : Result(error, msg),
-          _list(0)
-    { }
-
-    /**
-     * Constructor to use when the operation was successful.
-     */
-    PartitionStateListResult(PartitionStateList list) : _list(list) { }
-
-    const PartitionStateList & getList() const { return _list; }
-
-private:
-    PartitionStateList _list;
 };
 
 }

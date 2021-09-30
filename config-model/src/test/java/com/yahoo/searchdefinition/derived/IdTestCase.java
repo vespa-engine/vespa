@@ -23,7 +23,7 @@ public class IdTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testExplicitUpperCaseIdField() {
-        Search search = new Search("test", null);
+        Search search = new Search("test");
         SDDocumentType document = new SDDocumentType("test");
         search.addDocument(document);
         SDField uri = new SDField("URI", DataType.URI);

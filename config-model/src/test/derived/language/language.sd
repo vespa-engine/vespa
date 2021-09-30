@@ -1,0 +1,20 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+schema language {
+    document language {
+        field language type string {
+            indexing: summary | index |set_language
+        }
+        field title type string {
+            indexing: summary | index
+        }
+    }
+    field titlenone type string {
+        indexing: input title | index
+        stemming: none
+    }
+    field titlebest type string {
+        indexing: input title | index
+        stemming: best
+    }
+
+}

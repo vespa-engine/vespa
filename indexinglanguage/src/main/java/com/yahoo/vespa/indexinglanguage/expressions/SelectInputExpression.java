@@ -3,7 +3,6 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
@@ -30,29 +29,29 @@ public final class SelectInputExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getValue();
         for (Pair<String, Expression> entry : cases) {
-            FieldValue val = ctx.getInputValue(entry.getFirst());
+            FieldValue val = context.getInputValue(entry.getFirst());
             if (val != null) {
-                ctx.setValue(val).execute(entry.getSecond());
+                context.setValue(val).execute(entry.getSecond());
                 break;
             }
         }
-        ctx.setValue(input);
+        context.setValue(input);
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+        DataType input = context.getValueType();
         for (Pair<String, Expression> entry : cases) {
             DataType val = context.getInputType(this, entry.getFirst());
             if (val == null) {
                 throw new VerificationException(this, "Field '" + entry.getFirst() + "' not found.");
             }
-            context.setValue(val).execute(entry.getSecond());
+            context.setValueType(val).execute(entry.getSecond());
         }
-        context.setValue(input);
+        context.setValueType(input);
     }
 
     @Override

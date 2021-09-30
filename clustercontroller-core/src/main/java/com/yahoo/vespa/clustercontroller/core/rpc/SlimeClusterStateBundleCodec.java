@@ -3,7 +3,11 @@ package com.yahoo.vespa.clustercontroller.core.rpc;
 
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
-import com.yahoo.slime.*;
+import com.yahoo.slime.BinaryFormat;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.ObjectTraverser;
+import com.yahoo.slime.Slime;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vespa.clustercontroller.core.AnnotatedClusterState;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
@@ -40,8 +44,14 @@ public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec, En
         stateBundle.getDerivedBucketSpaceStates().entrySet()
                 .forEach(entry -> spaces.setString(entry.getKey(), entry.getValue().toString()));
 
-        byte[] serialized = BinaryFormat.encode(slime);
-        Compressor.Compression compression = compressor.compress(serialized);
+        // Only bother to encode feed block state if cluster is actually blocked
+        if (stateBundle.getFeedBlock().map(fb -> fb.blockFeedInCluster()).orElse(false)) {
+            Cursor feedBlock = root.setObject("feed-block");
+            feedBlock.setBool("block-feed-in-cluster", true);
+            feedBlock.setString("description", stateBundle.getFeedBlock().get().getDescription());
+        }
+
+        Compressor.Compression compression = BinaryFormat.encode_and_compress(slime, compressor);
         return EncodedClusterStateBundle.fromCompressionBuffer(compression);
     }
 
@@ -60,7 +70,14 @@ public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec, En
         }));
         boolean deferredActivation = root.field("deferred-activation").asBool(); // defaults to false if not present
 
-        return ClusterStateBundle.of(AnnotatedClusterState.withoutAnnotations(baseline), derivedStates, deferredActivation);
+        ClusterStateBundle.FeedBlock feedBlock = null;
+        Inspector fb = root.field("feed-block");
+        if (fb.valid() && fb.field("block-feed-in-cluster").asBool()) {
+            feedBlock = ClusterStateBundle.FeedBlock.blockedWithDescription(fb.field("description").asString());
+        }
+
+        return ClusterStateBundle.of(AnnotatedClusterState.withoutAnnotations(baseline), derivedStates,
+                                     feedBlock, deferredActivation);
     }
 
     // Technically the Slime enveloping could be its own class that is bundle codec independent, but

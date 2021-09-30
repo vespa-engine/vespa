@@ -15,13 +15,13 @@ void
 DummyServiceLayerProcess::shutdown()
 {
     ServiceLayerProcess::shutdown();
-    _provider.reset(0);
+    _provider.reset();
 }
 
 void
 DummyServiceLayerProcess::setupProvider()
 {
-    _provider.reset(new spi::dummy::DummyPersistence(getTypeRepo()));
+    _provider = std::make_unique<spi::dummy::DummyPersistence>(getTypeRepo());
 }
 
 } // storage

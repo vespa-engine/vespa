@@ -3,7 +3,7 @@
 #pragma once
 
 #include "iattributesavetarget.h"
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/arrayref.h>
 
 namespace search::multivalueattributesaver {

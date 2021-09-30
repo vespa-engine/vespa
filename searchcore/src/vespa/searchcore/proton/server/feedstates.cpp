@@ -8,26 +8,24 @@
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
-#include <vespa/vespalib/util/closuretask.h>
-
+#include <vespa/vespalib/util/idestructorcallback.h>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.feedstates");
 
 using search::transactionlog::Packet;
-using search::transactionlog::RPC;
+using search::transactionlog::client::RPC;
 using search::SerialNum;
 using vespalib::Executor;
-using vespalib::makeClosure;
-using vespalib::makeTask;
+using vespalib::makeLambdaTask;
 using vespalib::make_string;
 using proton::bucketdb::IBucketDBHandler;
 
 namespace proton {
 
 namespace {
-typedef vespalib::Closure1<const Packet::Entry &>::UP EntryHandler;
 
 const search::SerialNum REPLAY_PROGRESS_INTERVAL = 50000;
 
@@ -46,38 +44,29 @@ handleProgress(TlsReplayProgress &progress, SerialNum currentSerial)
     }
 }
 
-void
-handlePacket(PacketWrapper::SP wrap, EntryHandler entryHandler)
-{
-    vespalib::nbostream_longlivedbuf handle(wrap->packet.getHandle().data(), wrap->packet.getHandle().size());
-    while (handle.size() > 0) {
-        Packet::Entry entry;
-        entry.deserialize(handle);
-        entryHandler->call(entry);
-        if (wrap->progress != nullptr) {
-            handleProgress(*wrap->progress, entry.serial());
-        }
-    }
-    wrap->result = RPC::OK;
-    wrap->gate.countDown();
-}
-
 class TransactionLogReplayPacketHandler : public IReplayPacketHandler {
     IFeedView *& _feed_view_ptr;  // Pointer can be changed in executor thread.
     IBucketDBHandler &_bucketDBHandler;
     IReplayConfig &_replay_config;
     FeedConfigStore &_config_store;
+    IIncSerialNum   &_inc_serial_num;
+    CommitTimeTracker _commitTimeTracker;
 
 public:
     TransactionLogReplayPacketHandler(IFeedView *& feed_view_ptr,
                                       IBucketDBHandler &bucketDBHandler,
                                       IReplayConfig &replay_config,
-                                      FeedConfigStore &config_store)
+                                      FeedConfigStore &config_store,
+                                      IIncSerialNum &inc_serial_num)
         : _feed_view_ptr(feed_view_ptr),
           _bucketDBHandler(bucketDBHandler),
           _replay_config(replay_config),
-          _config_store(config_store) {
-    }
+          _config_store(config_store),
+          _inc_serial_num(inc_serial_num),
+          _commitTimeTracker(5ms)
+    { }
+
+    ~TransactionLogReplayPacketHandler() override = default;
 
     void replay(const PutOperation &op) override {
         _feed_view_ptr->handlePut(FeedToken(), op);
@@ -108,7 +97,7 @@ public:
         _feed_view_ptr->handlePruneRemovedDocuments(op);
     }
     void replay(const MoveOperation &op) override {
-        _feed_view_ptr->handleMove(op, search::IDestructorCallback::SP());
+        _feed_view_ptr->handleMove(op, vespalib::IDestructorCallback::SP());
     }
     void replay(const CreateBucketOperation &) override {
     }
@@ -121,16 +110,58 @@ public:
     const document::DocumentTypeRepo &getDeserializeRepo() override {
         return *_feed_view_ptr->getDocumentTypeRepo();
     }
+    void check_serial_num(search::SerialNum serial_num) override {
+        auto exp_serial_num = _inc_serial_num.inc_serial_num();
+        if (exp_serial_num != serial_num) {
+            LOG(warning, "Expected replay serial number %" PRIu64 ", got serial number %" PRIu64, exp_serial_num, serial_num);
+            assert(exp_serial_num == serial_num);
+        }
+    }
+    void optionalCommit(search::SerialNum serialNum) override {
+        if (_commitTimeTracker.needCommit()) {
+            _feed_view_ptr->forceCommit(serialNum);
+        }
+    }
 };
 
-void startDispatch(IReplayPacketHandler *packet_handler, const Packet::Entry &entry) {
-    // Called by handlePacket() in executor thread.
-    LOG(spam,
-        "replay packet entry: entrySerial(%" PRIu64 "), entryType(%u)",
-        entry.serial(), entry.type());
+class PacketDispatcher {
+public:
+    PacketDispatcher(IReplayPacketHandler *packet_handler)
+        : _packet_handler(packet_handler)
+    {}
 
-    ReplayPacketDispatcher dispatcher(*packet_handler);
+    void handlePacket(PacketWrapper & wrap);
+private:
+    void handleEntry(const Packet::Entry &entry);
+    IReplayPacketHandler *_packet_handler;
+};
+
+void
+PacketDispatcher::handlePacket(PacketWrapper & wrap)
+{
+    vespalib::nbostream_longlivedbuf handle(wrap.packet.getHandle().data(), wrap.packet.getHandle().size());
+    while ( !handle.empty() ) {
+        Packet::Entry entry;
+        entry.deserialize(handle);
+        handleEntry(entry);
+        if (wrap.progress != nullptr) {
+            handleProgress(*wrap.progress, entry.serial());
+        }
+    }
+    wrap.result = RPC::OK;
+    wrap.gate.countDown();
+}
+
+void
+PacketDispatcher::handleEntry(const Packet::Entry &entry) {
+    // Called by handlePacket() in executor thread.
+    LOG(spam, "replay packet entry: entrySerial(%" PRIu64 "), entryType(%u)", entry.serial(), entry.type());
+
+    auto entry_serial_num = entry.serial();
+    _packet_handler->check_serial_num(entry_serial_num);
+    ReplayPacketDispatcher dispatcher(*_packet_handler);
     dispatcher.replayEntry(entry);
+    _packet_handler->optionalCommit(entry_serial_num);
 }
 
 }  // namespace
@@ -140,17 +171,21 @@ ReplayTransactionLogState::ReplayTransactionLogState(
         IFeedView *& feed_view_ptr,
         IBucketDBHandler &bucketDBHandler,
         IReplayConfig &replay_config,
-        FeedConfigStore &config_store)
+        FeedConfigStore &config_store,
+        IIncSerialNum& inc_serial_num)
     : FeedState(REPLAY_TRANSACTION_LOG),
       _doc_type_name(name),
-      _packet_handler(new TransactionLogReplayPacketHandler(
-                      feed_view_ptr, bucketDBHandler,
-                      replay_config, config_store)) {
-}
+      _packet_handler(std::make_unique<TransactionLogReplayPacketHandler>(feed_view_ptr, bucketDBHandler, replay_config, config_store, inc_serial_num))
+{ }
 
-void ReplayTransactionLogState::receive(const PacketWrapper::SP &wrap, Executor &executor) {
-    EntryHandler closure = makeClosure(&startDispatch, _packet_handler.get());
-    executor.execute(makeTask(makeClosure(&handlePacket, wrap, std::move(closure))));
+ReplayTransactionLogState::~ReplayTransactionLogState() = default;
+
+void
+ReplayTransactionLogState::receive(const PacketWrapper::SP &wrap, Executor &executor) {
+    executor.execute(makeLambdaTask([this, wrap = wrap] () {
+        PacketDispatcher dispatcher(_packet_handler.get());
+        dispatcher.handlePacket(*wrap);
+    }));
 }
 
 }  // namespace proton

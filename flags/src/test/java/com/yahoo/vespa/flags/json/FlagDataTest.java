@@ -64,6 +64,12 @@ public class FlagDataTest {
                 .with(FetchVector.Dimension.HOSTNAME, "host1")
                 .with(FetchVector.Dimension.APPLICATION_ID, "app3"));
 
+        // Verify unsetting a dimension with null works.
+        verify(Optional.of("true"), vector
+                .with(FetchVector.Dimension.HOSTNAME, "host1")
+                .with(FetchVector.Dimension.APPLICATION_ID, "app3")
+                .with(FetchVector.Dimension.APPLICATION_ID, null));
+
         // No rules apply if zone is overridden to an unknown zone
         verify(Optional.empty(), vector.with(FetchVector.Dimension.ZONE_ID, "unknown zone"));
     }

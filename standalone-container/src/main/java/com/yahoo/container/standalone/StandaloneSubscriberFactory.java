@@ -20,6 +20,7 @@ import java.util.Set;
  * @author ollivir
  */
 public class StandaloneSubscriberFactory implements SubscriberFactory {
+
     private final VespaModel root;
 
     public StandaloneSubscriberFactory(VespaModel root) {
@@ -34,9 +35,6 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
         StandaloneSubscriber(Set<ConfigKey<ConfigInstance>> configKeys) {
             this.configKeys = configKeys;
         }
-
-        @Override
-        public boolean internalRedeploy() { return false; }
 
         @Override
         public boolean configChanged() {
@@ -60,7 +58,7 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
         }
 
         @Override
-        public long waitNextGeneration() {
+        public long waitNextGeneration(boolean isInitializing) {
             generation++;
 
             if (generation != 0) {

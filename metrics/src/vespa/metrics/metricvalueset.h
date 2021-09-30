@@ -76,12 +76,6 @@ public:
      */
     bool setValues(const ValueClass& values);
 
-    /**
-     * Retrieve and reset in a single operation, to minimize chance of
-     * alteration in the process.
-     */
-    ValueClass getValuesAndReset();
-
     void reset() {
         setFlag(RESET);
     }
@@ -104,9 +98,6 @@ public:
     void removeFlag(uint32_t flags) {
         _flags.store(_flags.load(std::memory_order_relaxed) & ~flags,
                      std::memory_order_relaxed);
-    }
-    uint32_t getFlags() const {
-        return _flags.load(std::memory_order_relaxed);
     }
 };
 

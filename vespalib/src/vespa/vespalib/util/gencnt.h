@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <atomic>
 
 namespace vespalib {
 
@@ -16,27 +17,27 @@ namespace vespalib {
 class GenCnt
 {
 private:
-    uint32_t _val;
+    std::atomic<uint32_t> _val;
 public:
 
     /**
      * @brief Create a generation counter with value 0
      **/
-    GenCnt() : _val(0) {}
+    GenCnt() noexcept : _val(0) {}
 
     /**
      * @brief Create a generation counter with the given value
      *
      * @param val initial value
      **/
-    GenCnt(uint32_t val) : _val(val) {}
+    GenCnt(uint32_t val) noexcept : _val(val) {}
 
-    GenCnt(const GenCnt &rhs) = default;
+    GenCnt(const GenCnt &rhs) noexcept : _val(rhs.getAsInt()) {}
 
     /**
      * @brief empty destructor
      **/
-    ~GenCnt() {}
+    ~GenCnt() = default;
 
     /**
      * @brief Increase the generation count held by this object
@@ -95,7 +96,7 @@ public:
      *
      * @return generation counter
      **/
-    uint32_t getAsInt() const { return _val; }
+    uint32_t getAsInt() const { return _val.load(std::memory_order_relaxed); }
 
     /**
      * @brief Set the generation counter from an integer

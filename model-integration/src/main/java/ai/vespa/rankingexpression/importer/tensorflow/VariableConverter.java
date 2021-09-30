@@ -37,7 +37,7 @@ class VariableConverter {
         if ( args.length != 3) {
             System.out.println("Converts a TensorFlow variable into Vespa tensor document field value JSON:");
             System.out.println("A JSON map containing a 'cells' array, see");
-            System.out.println("http://docs.vespa.ai/documentation/reference/document-json-put-format.html#tensor)");
+            System.out.println("https://docs.vespa.ai/en/reference/document-json-format.html#tensor");
             System.out.println("");
             System.out.println("Arguments: modelDirectory tensorFlowVariableName orderedTypeSpec");
             System.out.println(" - modelDirectory: The directory of the TensorFlow SavedModel");

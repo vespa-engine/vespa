@@ -1,6 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fnet/fnet.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fnet/transport_thread.h>
+#include <vespa/fnet/connection.h>
+#include <vespa/fnet/signalshutdown.h>
+#include <vespa/fnet/packet.h>
+#include <vespa/fnet/iserveradapter.h>
+#include <vespa/fnet/ipacketstreamer.h>
+#include <vespa/fnet/channel.h>
+#include <vespa/fnet/connector.h>
 #include <vespa/fastos/app.h>
 
 #include <vespa/log/log.h>
@@ -140,7 +148,7 @@ private:
 
 public:
     Proxy() : _transport() {}
-    ~Proxy() { }
+    ~Proxy() override { }
     bool GetPacketInfo(FNET_DataBuffer *src, uint32_t *plen, uint32_t *pcode, uint32_t *chid, bool *) override;
     FNET_Packet *Decode(FNET_DataBuffer *src, uint32_t plen, uint32_t pcode, FNET_Context) override;
     void Encode(FNET_Packet *packet, uint32_t chid, FNET_DataBuffer *dst) override;

@@ -19,7 +19,6 @@ import java.util.*;
  * @author bratseth
  * @author Steinar Knutsen
  */
-@SuppressWarnings("deprecation")
 public abstract class AbstractParser implements CustomParser {
 
     /** The current submodes of this parser */
@@ -48,7 +47,7 @@ public abstract class AbstractParser implements CustomParser {
      * of these may be active at the same time. SubModes are activated or
      * deactivated by specifying special indexes in the query.
      */
-    final class Submodes {
+    static final class Submodes {
 
         /**
          * Url mode allows "_" and "-" as word characters. Default is false
@@ -326,6 +325,7 @@ public abstract class AbstractParser implements CustomParser {
      *
      * @param indexName the index name which preceeded this token, or null if none
      * @param token the token to segment
+     * @param quoted whether this segment is within quoted text
      * @return the resulting item
      */
     // TODO: The segmenting stuff is a mess now, this will fix it:
@@ -341,7 +341,7 @@ public abstract class AbstractParser implements CustomParser {
     // This can be solved by making the segment method language independent by
     // always producing a query item containing the token text and resolve it to a WordItem or
     // SegmentItem after parsing and language detection.
-    protected Item segment(String indexName, Token token) {
+    protected Item segment(String indexName, Token token, boolean quoted) {
         String normalizedToken = normalize(token.toString());
 
         if (token.isSpecial()) {
@@ -361,12 +361,13 @@ public abstract class AbstractParser implements CustomParser {
         if (segments.size() == 0) {
             return null;
         }
+
         if (segments.size() == 1) {
             return new WordItem(segments.get(0), "", true, token.substring);
         }
 
         CompositeItem composite;
-        if (indexFacts.getIndex(indexName).getPhraseSegmenting()) {
+        if (indexFacts.getIndex(indexName).getPhraseSegmenting() || quoted) {
             composite = new PhraseSegmentItem(token.toString(), normalizedToken, true, false, token.substring);
         }
         else {

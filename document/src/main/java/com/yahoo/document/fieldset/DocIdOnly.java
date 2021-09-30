@@ -2,13 +2,10 @@
 package com.yahoo.document.fieldset;
 
 /**
- * Created with IntelliJ IDEA.
- * User: thomasg
- * Date: 4/25/12
- * Time: 3:21 PM
- * To change this template use File | Settings | File Templates.
+ * @author Thomas Gundersen
  */
 public class DocIdOnly implements FieldSet {
+    public static final String NAME = "[id]";
     @Override
     public boolean contains(FieldSet o) {
         return (o instanceof DocIdOnly || o instanceof NoFields);

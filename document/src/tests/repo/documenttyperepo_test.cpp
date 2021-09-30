@@ -392,10 +392,6 @@ TEST("requireThatDocumentsCanUseOtherDocumentTypes") {
     EXPECT_TRUE(dynamic_cast<const DocumentType *>(&type));
 }
 
-void storeId(set<int> *s, const DocumentType &type) {
-    s->insert(type.getId());
-}
-
 TEST("requireThatDocumentTypesCanBeIterated") {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(doc_type_id, type_name,
@@ -405,7 +401,8 @@ TEST("requireThatDocumentTypesCanBeIterated") {
     DocumentTypeRepo repo(builder.config());
 
     set<int> ids;
-    repo.forEachDocumentType(*makeClosure(storeId, &ids));
+    repo.forEachDocumentType(*DocumentTypeRepo::makeLambda(
+            [&ids](const DocumentType &type) { ids.insert(type.getId()); }));
 
     EXPECT_EQUAL(3u, ids.size());
     ASSERT_TRUE(ids.count(DataType::T_DOCUMENT));
@@ -436,8 +433,7 @@ TEST("requireThatBuildFromConfigWorks") {
 TEST("requireThatStructsCanBeRecursive") {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(doc_type_id, type_name,
-                     Struct(header_name).setId(header_id).addField(field_name,
-                             header_id),
+                     Struct(header_name).setId(header_id).addField(field_name, header_id),
                      Struct(body_name));
     DocumentTypeRepo repo(builder.config());
 

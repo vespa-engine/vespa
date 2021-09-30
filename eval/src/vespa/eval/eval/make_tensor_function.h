@@ -6,12 +6,12 @@ namespace vespalib { class Stash; }
 
 namespace vespalib::eval {
 
-struct TensorEngine;
+struct ValueBuilderFactory;
 class NodeTypes;
 struct TensorFunction;
 
 namespace nodes { struct Node; }
 
-const TensorFunction &make_tensor_function(const TensorEngine &engine, const nodes::Node &root, const NodeTypes &types, Stash &stash);
+const TensorFunction &make_tensor_function(const ValueBuilderFactory &factory, const nodes::Node &root, const NodeTypes &types, Stash &stash);
 
 } // namespace vespalib::eval

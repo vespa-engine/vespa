@@ -5,20 +5,21 @@
 #include "i_resource_write_filter.h"
 #include "persistence_handler_map.h"
 #include "ipersistencehandler.h"
-#include <vespa/document/bucket/bucketspace.h>
+#include "resource_usage_tracker.h"
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
-#include <vespa/searchcore/proton/common/handlermap.hpp>
+#include <vespa/persistence/spi/bucketexecutor.h>
 #include <mutex>
 #include <shared_mutex>
-#include <unordered_map>
 
 namespace proton {
 
 class IPersistenceEngineOwner;
+class IDiskMemUsageNotifier;
 
-class PersistenceEngine : public storage::spi::AbstractPersistenceProvider {
+class PersistenceEngine : public storage::spi::AbstractPersistenceProvider,
+                          public storage::spi::BucketExecutor {
 private:
-    using PersistenceHandlerSequence = vespalib::Sequence<IPersistenceHandler *>;
+    using PersistenceHandlerSequence = PersistenceHandlerMap::PersistenceHandlerSequence;
     using HandlerSnapshot = PersistenceHandlerMap::HandlerSnapshot;
     using DocumentUpdate = document::DocumentUpdate;
     using Bucket = storage::spi::Bucket;
@@ -30,29 +31,28 @@ private:
     using CreateIteratorResult = storage::spi::CreateIteratorResult;
     using GetResult = storage::spi::GetResult;
     using IncludedVersions = storage::spi::IncludedVersions;
+    using IResourceUsageListener = storage::spi::IResourceUsageListener;
     using IterateResult = storage::spi::IterateResult;
     using IteratorId = storage::spi::IteratorId;
-    using MaintenanceLevel = storage::spi::MaintenanceLevel;
-    using PartitionId = storage::spi::PartitionId;
-    using PartitionStateListResult = storage::spi::PartitionStateListResult;
     using RemoveResult = storage::spi::RemoveResult;
     using Result = storage::spi::Result;
     using Selection = storage::spi::Selection;
     using Timestamp = storage::spi::Timestamp;
     using TimestampList = storage::spi::TimestampList;
     using UpdateResult = storage::spi::UpdateResult;
+    using OperationComplete = storage::spi::OperationComplete;
+    using BucketExecutor = storage::spi::BucketExecutor;
+    using BucketTask = storage::spi::BucketTask;
 
     struct IteratorEntry {
-        PersistenceHandlerSequence::UP handler_sequence;
+        PersistenceHandlerSequence  handler_sequence;
         DocumentIterator it;
         bool in_use;
-        std::vector<BucketGuard::UP> bucket_guards;
-        IteratorEntry(storage::spi::ReadConsistency readConsistency, const Bucket &b, const document::FieldSet& f,
+        IteratorEntry(storage::spi::ReadConsistency readConsistency, const Bucket &b, FieldSetSP f,
                       const Selection &s, IncludedVersions v, ssize_t defaultSerializedSize, bool ignoreMaxBytes)
             : handler_sequence(),
-              it(b, f, s, v, defaultSerializedSize, ignoreMaxBytes, readConsistency),
-              in_use(false),
-              bucket_guards() {}
+              it(b, std::move(f), s, v, defaultSerializedSize, ignoreMaxBytes, readConsistency),
+              in_use(false) {}
     };
     struct BucketSpaceHash {
         std::size_t operator() (const document::BucketSpace &bucketSpace) const { return bucketSpace.getId(); }
@@ -73,40 +73,44 @@ private:
     const IResourceWriteFilter             &_writeFilter;
     std::unordered_map<BucketSpace, ClusterState::SP, BucketSpace::hash> _clusterStates;
     mutable ExtraModifiedBuckets            _extraModifiedBuckets;
-    mutable std::shared_timed_mutex         _rwMutex;
+    mutable std::shared_mutex               _rwMutex;
+    std::shared_ptr<ResourceUsageTracker>   _resource_usage_tracker;
+    std::weak_ptr<BucketExecutor>           _bucket_executor;
 
-    IPersistenceHandler::SP getHandler(document::BucketSpace bucketSpace, const DocTypeName &docType) const;
-    HandlerSnapshot::UP getHandlerSnapshot() const;
-    HandlerSnapshot::UP getHandlerSnapshot(document::BucketSpace bucketSpace) const;
+    using ReadGuard = std::shared_lock<std::shared_mutex>;
+    using WriteGuard = std::unique_lock<std::shared_mutex>;
+
+    IPersistenceHandler * getHandler(const ReadGuard & guard, document::BucketSpace bucketSpace, const DocTypeName &docType) const;
+    HandlerSnapshot getHandlerSnapshot(const WriteGuard & guard) const;
+    HandlerSnapshot getHandlerSnapshot(const ReadGuard & guard, document::BucketSpace bucketSpace) const;
+    HandlerSnapshot getHandlerSnapshot(const WriteGuard & guard, document::BucketSpace bucketSpace) const;
 
     void saveClusterState(BucketSpace bucketSpace, const ClusterState &calc);
     ClusterState::SP savedClusterState(BucketSpace bucketSpace) const;
+    std::shared_ptr<BucketExecutor> get_bucket_executor() noexcept { return _bucket_executor.lock(); }
 
 public:
     typedef std::unique_ptr<PersistenceEngine> UP;
 
-    PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter,
+    PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter, IDiskMemUsageNotifier &disk_mem_usage_notifier,
                       ssize_t defaultSerializedSize, bool ignoreMaxBytes);
     ~PersistenceEngine() override;
 
-    IPersistenceHandler::SP putHandler(document::BucketSpace bucketSpace, const DocTypeName &docType,
-                                       const IPersistenceHandler::SP &handler);
-    IPersistenceHandler::SP removeHandler(document::BucketSpace bucketSpace, const DocTypeName &docType);
+    IPersistenceHandler::SP putHandler(const WriteGuard &, document::BucketSpace bucketSpace, const DocTypeName &docType, const IPersistenceHandler::SP &handler);
+    IPersistenceHandler::SP removeHandler(const WriteGuard &, document::BucketSpace bucketSpace, const DocTypeName &docType);
 
     // Implements PersistenceProvider
     Result initialize() override;
-    PartitionStateListResult getPartitionStates() const override;
-    BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const override;
+    BucketIdListResult listBuckets(BucketSpace bucketSpace) const override;
     Result setClusterState(BucketSpace bucketSpace, const ClusterState& calc) override;
     Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
-    Result put(const Bucket&, Timestamp, const std::shared_ptr<document::Document>&, Context&) override;
-    RemoveResult remove(const Bucket&, Timestamp, const document::DocumentId&, Context&) override;
-    UpdateResult update(const Bucket&, Timestamp,
-                        const std::shared_ptr<document::DocumentUpdate>&, Context&) override;
+    void putAsync(const Bucket &, Timestamp, storage::spi::DocumentSP, Context &context, OperationComplete::UP) override;
+    void removeAsync(const Bucket&, Timestamp, const document::DocumentId&, Context&, OperationComplete::UP) override;
+    void updateAsync(const Bucket&, Timestamp, storage::spi::DocumentUpdateSP, Context&, OperationComplete::UP) override;
     GetResult get(const Bucket&, const document::FieldSet&, const document::DocumentId&, Context&) const override;
-    CreateIteratorResult createIterator(const Bucket&, const document::FieldSet&, const Selection&,
-                                        IncludedVersions, Context&) override;
+    CreateIteratorResult
+    createIterator(const Bucket &bucket, FieldSetSP, const Selection &, IncludedVersions, Context &context) override;
     IterateResult iterate(IteratorId, uint64_t maxByteSize, Context&) const override;
     Result destroyIterator(IteratorId, Context&) override;
 
@@ -115,14 +119,15 @@ public:
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
     Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
     Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
-
-    Result maintain(const Bucket&, MaintenanceLevel) override;
-
+    std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(IResourceUsageListener& listener) override;
+    std::unique_ptr<vespalib::IDestructorCallback> register_executor(std::shared_ptr<BucketExecutor>) override;
     void destroyIterators();
     void propagateSavedClusterState(BucketSpace bucketSpace, IPersistenceHandler &handler);
     void grabExtraModifiedBuckets(BucketSpace bucketSpace, IPersistenceHandler &handler);
-    void populateInitialBucketDB(BucketSpace bucketSpace, IPersistenceHandler &targetHandler);
-    std::unique_lock<std::shared_timed_mutex> getWLock() const;
+    void populateInitialBucketDB(const WriteGuard & guard, BucketSpace bucketSpace, IPersistenceHandler &targetHandler);
+    WriteGuard getWLock() const;
+    ResourceUsageTracker &get_resource_usage_tracker() noexcept { return *_resource_usage_tracker; }
+    void execute(const Bucket &bucket, std::unique_ptr<BucketTask> task) override;
 };
 
 }

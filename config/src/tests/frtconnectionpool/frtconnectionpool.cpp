@@ -169,14 +169,12 @@ void Test::testSetErrorAllHashBased() {
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(spec, timingValues);
     FRTConnection* firstSource = sourcePool.getNextHashBased();
-    std::vector<FRTConnection*> readySources;
-    sourcePool.getReadySources(readySources);
+    auto readySources = sourcePool.getReadySources();
     for (int i = 0; i < (int)readySources.size(); i++) {
         readySources[i]->setError(FRTE_RPC_CONNECTION);
     }
-    std::vector<FRTConnection*> tmpSources;
-    EXPECT_EQUAL((int)sourcePool.getReadySources(tmpSources).size(), 0);
-    EXPECT_EQUAL((int)sourcePool.getSuspendedSources(tmpSources).size(), 3);
+    EXPECT_EQUAL(sourcePool.getReadySources().size(), 0u);
+    EXPECT_EQUAL(sourcePool.getSuspendedSources().size(), 3u);
 
     // should get the same source now, since all are suspended
     EXPECT_EQUAL(firstSource->getAddress(), sourcePool.getNextHashBased()->getAddress());
@@ -188,8 +186,8 @@ void Test::testSetErrorAllHashBased() {
         }
     }
 
-    EXPECT_EQUAL((int)sourcePool.getReadySources(tmpSources).size(), 2);
-    EXPECT_EQUAL((int)sourcePool.getSuspendedSources(tmpSources).size(), 1);
+    EXPECT_EQUAL(sourcePool.getReadySources().size(), 2u);
+    EXPECT_EQUAL(sourcePool.getSuspendedSources().size(), 1u);
 
     // should not get the same source now, since original source is
     // suspended, while the rest are OK

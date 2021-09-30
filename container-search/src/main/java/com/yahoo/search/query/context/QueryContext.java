@@ -38,10 +38,10 @@ public class QueryContext implements Cloneable {
         owner.getModel().getExecution().trace().trace(message,traceLevel);
     }
     /**
-     * Adds a key-value which will be logged to the access log for this query (by doing toString() on the value
+     * Adds a key-value which will be logged to the access log for this query (by doing toString() on the value).
      * Multiple values may be set to the same key. A value cannot be removed once set.
      */
-    public void logValue(String key,Object value) {
+    public void logValue(String key, Object value) {
         owner.getModel().getExecution().trace().logValue(key, value.toString());
     }
 

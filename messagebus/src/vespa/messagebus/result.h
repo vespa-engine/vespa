@@ -3,9 +3,11 @@
 #pragma once
 
 #include "error.h"
-#include "message.h"
+#include <memory>
 
 namespace mbus {
+
+class Message;
 
 /**
  * A Result object is used as return value when trying to send a
@@ -24,23 +26,9 @@ class Result
 private:
     bool        _accepted;
     Error       _error;
-    Message::UP _msg;
+    std::unique_ptr<Message> _msg;
 
 public:
-    /**
-     * This inner class is used to implement destructive copy for
-     * return values.
-     **/
-    class Handover {
-        friend class Result;
-        bool      _accepted;
-        Error     _error;
-        Message  *_msg;
-        Handover(bool a, const Error &e, Message *m);
-        Handover(const Handover &); // not implemented
-        Handover &operator=(const Handover &); // not implemented
-    };
-
     /**
      * Create a Result indicating that messagebus has accepted the
      * Message.
@@ -54,23 +42,11 @@ public:
      * @param err the reason for not accepting the Message
      * @param msg the message that did not get accepted
      **/
-    Result(const Error &err, Message::UP msg);
+    Result(const Error &err, std::unique_ptr<Message> msg);
 
-    /**
-     * Move constructor
-     *
-     * @param rhs the original object
-     **/
-    Result(Result &&rhs);
 
-    /**
-     * Construct a new Result from an internal Handover object that
-     * has destructed the original Result.
-     *
-     * @param rhs handover object
-     **/
-    Result(const Handover &rhs);
-
+    Result(Result &&rhs) = default;
+    Result &operator=(Result &&rhs) = default;
     ~Result();
 
     /**
@@ -78,14 +54,14 @@ public:
      *
      * @return true if the Message was accepted
      **/
-    bool isAccepted() const;
+    bool isAccepted() const { return _accepted; }
 
     /**
      * Obtain the error causing the message not to be accepted.
      *
      * @return error
      **/
-    const Error &getError() const;
+    const Error &getError() const { return _error; }
 
     /**
      * If the message was not accepted, this method may be used to get
@@ -95,28 +71,7 @@ public:
      *
      * @return the Message that was not accepted
      **/
-    Message::UP getMessage();
-
-    /**
-     * Perform an implicit typecast to support destructive copy of
-     * return values.
-     **/
-    operator Handover();
-
-    /**
-     * Moving assignment operator
-     *
-     * @param rhs the original object
-     **/
-    Result &operator=(Result &&rhs);
-
-    /**
-     * Assign a Result from an internal Handover object that has
-     * destructed the original Result.
-     *
-     * @param rhs handover object
-     **/
-    Result &operator=(const Handover &rhs);
+    std::unique_ptr<Message> getMessage() { return std::move(_msg); }
 };
 
 } // namespace mbus

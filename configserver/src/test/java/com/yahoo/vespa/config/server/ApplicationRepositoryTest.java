@@ -1,57 +1,82 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
+import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.SimpletypesConfig;
 import com.yahoo.config.application.api.ApplicationMetaData;
+import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Deployment;
+import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.path.Path;
 import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.GetConfigRequest;
+import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.protocol.ConfigResponse;
+import com.yahoo.vespa.config.protocol.DefContent;
+import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
-import com.yahoo.vespa.config.server.http.InternalServerException;
-import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
+import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.session.SilentDeployLogger;
+import com.yahoo.vespa.config.server.session.Session;
+import com.yahoo.vespa.config.server.session.SessionRepository;
+import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
+import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.model.VespaModelFactory;
+import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Clock;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.stream.IntStream;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -64,51 +89,120 @@ public class ApplicationRepositoryTest {
     private final static File testAppJdiscOnly = new File("src/test/apps/app-jdisc-only");
     private final static File testAppJdiscOnlyRestart = new File("src/test/apps/app-jdisc-only-restart");
     private final static File testAppLogServerWithContainer = new File("src/test/apps/app-logserver-with-container");
+    private final static File app1 = new File("src/test/apps/cs1");
+    private final static File app2 = new File("src/test/apps/cs2");
 
     private final static TenantName tenant1 = TenantName.from("test1");
     private final static TenantName tenant2 = TenantName.from("test2");
     private final static TenantName tenant3 = TenantName.from("test3");
-    private final static Clock clock = Clock.systemUTC();
+    private final static ManualClock clock = new ManualClock(Instant.now());
 
     private ApplicationRepository applicationRepository;
     private TenantRepository tenantRepository;
-    private SessionHandlerTest.MockProvisioner  provisioner;
+    private MockProvisioner provisioner;
     private OrchestratorMock orchestrator;
     private TimeoutBudget timeoutBudget;
+    private Curator curator;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
+    @Rule
+    public ExpectedException exceptionRule = ExpectedException.none();
+
     @Before
-    public void setup() {
-        Curator curator = new MockCurator();
-        tenantRepository = new TenantRepository(new TestComponentRegistry.Builder()
-                                                                .curator(curator)
-                                                                .build());
+    public void setup() throws IOException {
+        curator = new MockCurator();
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
+        tenantRepository = new TestTenantRepository.Builder()
+                .withClock(clock)
+                .withConfigserverConfig(configserverConfig)
+                .withCurator(curator)
+                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
+                .withFlagSource(flagSource)
+                .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
         tenantRepository.addTenant(tenant3);
         orchestrator = new OrchestratorMock();
-        provisioner = new SessionHandlerTest.MockProvisioner();
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          provisioner,
-                                                          orchestrator,
-                                                          clock);
+        provisioner = new MockProvisioner();
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(provisioner)
+                .withConfigserverConfig(configserverConfig)
+                .withOrchestrator(orchestrator)
+                .withLogRetriever(new MockLogRetriever())
+                .withClock(clock)
+                .build();
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
     }
 
     @Test
-    public void prepareAndActivate() throws IOException {
-        PrepareResult result = prepareAndActivateApp(testApp);
+    public void prepareAndActivate() {
+        PrepareResult result = prepareAndActivate(testApp);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
+        assertTrue(result.configChangeActions().getReindexActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+
+        Tenant tenant = applicationRepository.getTenant(applicationId());
+        Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
+        session.getAllocatedHosts();
     }
 
     @Test
-    public void prepareAndActivateWithRestart() throws IOException {
-        prepareAndActivateApp(testAppJdiscOnly);
-        PrepareResult result = prepareAndActivateApp(testAppJdiscOnlyRestart);
+    public void prepareAndActivateWithTenantMetaData() {
+        Instant startTime = clock.instant();
+        Duration duration = Duration.ofHours(1);
+        clock.advance(duration);
+        Instant deployTime = clock.instant();
+        PrepareResult result = prepareAndActivate(testApp);
+        assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
+        assertTrue(result.configChangeActions().getReindexActions().isEmpty());
+        assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+
+        Tenant tenant = applicationRepository.getTenant(applicationId());
+
+        assertEquals(startTime.toEpochMilli(),
+                     applicationRepository.getTenantMetaData(tenant).createdTimestamp().toEpochMilli());
+        assertEquals(deployTime.toEpochMilli(),
+                     applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp().toEpochMilli());
+
+        // Creating a new tenant will have metadata with timestamp equal to current time
+        clock.advance(duration);
+        Instant createTenantTime = clock.instant();
+        Tenant fooTenant = tenantRepository.addTenant(TenantName.from("foo"));
+        assertEquals(createTenantTime.toEpochMilli(),
+                     applicationRepository.getTenantMetaData(fooTenant).createdTimestamp().toEpochMilli());
+        assertEquals(createTenantTime.toEpochMilli(),
+                     applicationRepository.getTenantMetaData(fooTenant).lastDeployTimestamp().toEpochMilli());
+    }
+
+    @Test
+    public void prepareAndActivateWithRestart() {
+        prepareAndActivate(testAppJdiscOnly);
+        PrepareResult result = prepareAndActivate(testAppJdiscOnlyRestart);
+        assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
+        assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+        assertEquals(HostFilter.hostname("mytesthost2"), provisioner.lastRestartFilter());
+    }
+
+    @Test
+    public void prepareAndActivateWithRestartWithoutProvisioner() {
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withOrchestrator(orchestrator)
+                .withProvisioner(null)
+                .build();
+
+        prepareAndActivate(testAppJdiscOnly);
+        PrepareResult result = prepareAndActivate(testAppJdiscOnlyRestart);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertFalse(result.configChangeActions().getRestartActions().isEmpty());
     }
@@ -121,12 +215,24 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
+    public void redeploy() {
+        PrepareResult result = deployApp(testApp);
+
+        long firstSessionId = result.sessionId();
+
+        PrepareResult result2 = deployApp(testApp);
+        long secondSessionId = result2.sessionId();
+        assertNotEquals(firstSessionId, secondSessionId);
+
+        Tenant tenant = applicationRepository.getTenant(applicationId());
+        Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
+        assertEquals(firstSessionId, session.getMetaData().getPreviousActiveGeneration());
+    }
+
+    @Test
     public void createFromActiveSession() {
         PrepareResult result = deployApp(testApp);
-        long sessionId = applicationRepository.createSessionFromExisting(applicationId(),
-                                                                         new SilentDeployLogger(),
-                                                                         false,
-                                                                         timeoutBudget);
+        long sessionId = applicationRepository.createSessionFromExisting(applicationId(), false, timeoutBudget);
         long originalSessionId = result.sessionId();
         ApplicationMetaData originalApplicationMetaData = getApplicationMetaData(applicationId(), originalSessionId);
         ApplicationMetaData applicationMetaData = getApplicationMetaData(applicationId(), sessionId);
@@ -148,7 +254,6 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void getLogs() {
-        applicationRepository = createApplicationRepository();
         deployApp(testAppLogServerWithContainer);
         HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.empty(), "");
         assertEquals(200, response.getStatus());
@@ -156,66 +261,51 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void getLogsForHostname() {
-        applicationRepository = createApplicationRepository();
         ApplicationId applicationId = ApplicationId.from("hosted-vespa", "tenant-host", "default");
         deployApp(testAppLogServerWithContainer, new PrepareParams.Builder().applicationId(applicationId).build());
         HttpResponse response = applicationRepository.getLogs(applicationId, Optional.of("localhost"), "");
         assertEquals(200, response.getStatus());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void refuseToGetLogsFromHostnameNotInApplication() {
-        applicationRepository = createApplicationRepository();
-        deployApp(testAppLogServerWithContainer);
-        HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.of("host123.fake.yahoo.com"), "");
-        assertEquals(200, response.getStatus());
-    }
-
-    @Test
-    public void deleteUnusedTenants() {
-        // Set clock to epoch plus hour, as mock curator will always return epoch as creation time
-        Instant now = ManualClock.at("1970-01-01T01:00:00");
-
-        // 3 tenants exist, tenant1 and tenant2 has applications deployed:
-        deployApp(testApp);
-        deployApp(testApp, new PrepareParams.Builder().applicationId(applicationId(tenant2)).build());
-
-        // Should not be deleted, not old enough
-        Duration ttlForUnusedTenant = Duration.ofHours(1);
-        assertTrue(applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, now).isEmpty());
-        // Should be deleted
-        ttlForUnusedTenant = Duration.ofMillis(1);
-        assertEquals(tenant3, applicationRepository.deleteUnusedTenants(ttlForUnusedTenant, now).iterator().next());
-
-        // Delete app used by tenant1, tenant2 still has an application
-        applicationRepository.delete(applicationId());
-        Set<TenantName> tenantsDeleted = applicationRepository.deleteUnusedTenants(Duration.ofMillis(1), now);
-        assertTrue(tenantsDeleted.contains(tenant1));
-        assertFalse(tenantsDeleted.contains(tenant2));
-    }
-
     @Test
     public void deleteUnusedFileReferences() throws IOException {
         File fileReferencesDir = temporaryFolder.newFolder();
+        Duration keepFileReferences = Duration.ofHours(48);
 
-        // Add file reference that is not in use and should be deleted (older than 14 days)
-        File filereferenceDir = createFilereferenceOnDisk(new File(fileReferencesDir, "foo"), Instant.now().minus(Duration.ofDays(15)));
-        // Add file reference that is not in use, but should not be deleted (not older than 14 days)
-        File filereferenceDir2 = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"), Instant.now());
+        // Add file reference that is not in use and should be deleted (older than 'keepFileReferences')
 
-        tenantRepository.addTenant(tenant1);
-        Provisioner provisioner = new SessionHandlerTest.MockProvisioner();
-        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, orchestrator, clock);
-        timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
+        Instant now = Instant.now();
+        File filereferenceDirOldest = createFilereferenceOnDisk(new File(fileReferencesDir, "foo"),
+                                                                now.minus(keepFileReferences.plus(Duration.ofHours(2))));
+
+        // Add file references that are not in use and some of them should be deleted (all are older than 'keepFileReferences')
+        IntStream.range(0, 6)
+                 .forEach(i -> createFilereferenceOnDisk(new File(fileReferencesDir, "bar" + i),
+                                                         now.minus(keepFileReferences.plus(Duration.ofHours(1).minus(Duration.ofMinutes(i))))));
+
+        // Add file reference that is not in use, but should not be deleted (newer than 'keepFileReferences')
+        File filereferenceDirNewest = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"), now);
+
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(provisioner)
+                .withOrchestrator(orchestrator)
+                .withClock(clock)
+                .build();
 
         // TODO: Deploy an app with a bundle or file that will be a file reference, too much missing in test setup to get this working now
         PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
         deployApp(new File("src/test/apps/app"), prepareParams);
 
-        Set<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, Duration.ofHours(48));
-        assertEquals(Collections.singleton("foo"), toBeDeleted);
-        assertFalse(filereferenceDir.exists());
-        assertTrue(filereferenceDir2.exists());
+        List<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir,
+                                                                                                keepFileReferences,
+                                                                                                5);
+        Collections.sort(toBeDeleted);
+        assertEquals(List.of("bar0", "foo"), toBeDeleted);
+        // bar0 and foo are the only ones that will be deleted (keeps 5 newest no matter how old they are)
+        assertFalse(filereferenceDirOldest.exists());
+        assertFalse(new File(fileReferencesDir, "bar0").exists());
+        assertTrue(filereferenceDirNewest.exists());
     }
 
     private File createFilereferenceOnDisk(File filereferenceDir, Instant lastModifiedTime) {
@@ -228,24 +318,32 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void delete() {
+        Tenant tenant = applicationRepository.getTenant(applicationId());
+        SessionRepository sessionRepository = tenant.getSessionRepository();
         {
             PrepareResult result = deployApp(testApp);
             long sessionId = result.sessionId();
-            Tenant tenant = tenantRepository.getTenant(applicationId().tenant());
-            LocalSession applicationData = tenant.getLocalSessionRepo().getSession(sessionId);
+            Session applicationData = sessionRepository.getLocalSession(sessionId);
             assertNotNull(applicationData);
             assertNotNull(applicationData.getApplicationId());
-            assertNotNull(tenant.getRemoteSessionRepo().getSession(sessionId));
+            assertNotNull(sessionRepository.getLocalSession(sessionId));
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
+            Path sessionNode = sessionRepository.getSessionPath(sessionId);
+            assertTrue(curator.exists(sessionNode));
+            TenantFileSystemDirs tenantFileSystemDirs = tenant.getApplicationRepo().getTenantFileSystemDirs();
+            File sessionFile = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
+            assertTrue(sessionFile.exists());
 
-            // Delete app and verify that it has been deleted from repos and provisioner
+            // Delete app and verify that it has been deleted from repos and provisioner and no application set exists
             assertTrue(applicationRepository.delete(applicationId()));
             assertNull(applicationRepository.getActiveSession(applicationId()));
-            assertNull(tenant.getLocalSessionRepo().getSession(sessionId));
-            assertNull(tenant.getRemoteSessionRepo().getSession(sessionId));
-            assertTrue(provisioner.removed);
-            assertEquals(tenant.getName(), provisioner.lastApplicationId.tenant());
-            assertEquals(applicationId(), provisioner.lastApplicationId);
+            assertEquals(Optional.empty(), sessionRepository.getRemoteSession(sessionId).applicationSet());
+            assertTrue(provisioner.removed());
+            assertEquals(tenant.getName(), provisioner.lastApplicationId().tenant());
+            assertEquals(applicationId(), provisioner.lastApplicationId());
+            assertTrue(curator.exists(sessionNode));
+            assertEquals(Session.Status.DELETE.name(), Utf8.toString(curator.getData(sessionNode.append("sessionState")).get()));
+            assertTrue(sessionFile.exists());
 
             assertFalse(applicationRepository.delete(applicationId()));
         }
@@ -258,47 +356,66 @@ public class ApplicationRepositoryTest {
             // Deploy another app (with id fooId)
             ApplicationId fooId = applicationId(tenant2);
             PrepareParams prepareParams2 = new PrepareParams.Builder().applicationId(fooId).build();
-            deployApp(testApp, prepareParams2);
+            deployApp(testAppJdiscOnly, prepareParams2);
             assertNotNull(applicationRepository.getActiveSession(fooId));
 
             // Delete app with id fooId, should not affect original app
             assertTrue(applicationRepository.delete(fooId));
-            assertEquals(fooId, provisioner.lastApplicationId);
+            assertEquals(fooId, provisioner.lastApplicationId());
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
 
             assertTrue(applicationRepository.delete(applicationId()));
         }
 
+        // If delete fails, a retry should work if the failure is transient and zookeeper state should be constistent
         {
-            PrepareResult prepareResult = deployApp(testApp);
+            PrepareResult result = deployApp(testApp);
+            long sessionId = result.sessionId();
+            assertNotNull(sessionRepository.getRemoteSession(sessionId));
+            assertNotNull(applicationRepository.getActiveSession(applicationId()));
+            assertEquals(sessionId, applicationRepository.getActiveSession(applicationId()).getSessionId());
+            assertNotNull(applicationRepository.getApplication(applicationId()));
+
+            provisioner.failureOnRemove(true);
             try {
-                applicationRepository.delete(applicationId(), Duration.ZERO);
-                fail("Should have gotten an exception");
-            } catch (InternalServerException e) {
-                assertEquals("test1.testapp was not deleted (waited PT0S), session " + prepareResult.sessionId(), e.getMessage());
+                applicationRepository.delete(applicationId());
+                fail("Should fail with RuntimeException");
+            } catch (RuntimeException e) {
+                // ignore
             }
+            assertNotNull(sessionRepository.getRemoteSession(sessionId));
+            assertNotNull(applicationRepository.getActiveSession(applicationId()));
+            assertEquals(sessionId, applicationRepository.getActiveSession(applicationId()).getSessionId());
 
-            // No active session or remote session (deleted in step above), but an exception was thrown above
-            // A new delete should cleanup and be successful
-            LocalSession activeSession = applicationRepository.getActiveSession(applicationId());
-            assertNull(activeSession);
-            Tenant tenant = tenantRepository.getTenant(applicationId().tenant());
-            assertNull(tenant.getRemoteSessionRepo().getSession(prepareResult.sessionId()));
-
+            // Delete should work when there is no failure anymore
+            provisioner.failureOnRemove(false);
             assertTrue(applicationRepository.delete(applicationId()));
+
+            // Session should be in state DELETE
+            Path sessionNode = sessionRepository.getSessionPath(sessionId);
+            assertEquals(Session.Status.DELETE.name(), Utf8.toString(curator.getData(sessionNode.append("sessionState")).get()));
+            assertNotNull(sessionRepository.getRemoteSession(sessionId)); // session still exists
+            assertNull(applicationRepository.getActiveSession(applicationId())); // but it is not active
+            try {
+                applicationRepository.getApplication(applicationId());
+                fail("Should fail with NotFoundException, application should not exist");
+            } catch (NotFoundException e) {
+                // ignore
+            }
         }
     }
 
     @Test
-    public void testDeletingInactiveSessions() {
-        ManualClock clock = new ManualClock(Instant.now());
+    public void testDeletingInactiveSessions() throws IOException {
+        File serverdb = temporaryFolder.newFolder("serverdb");
         ConfigserverConfig configserverConfig =
                 new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                               .configServerDBDir(Files.createTempDir().getAbsolutePath())
-                                               .configDefinitionsDir(Files.createTempDir().getAbsolutePath())
+                                               .configServerDBDir(serverdb.getAbsolutePath())
+                                               .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
+                                               .fileReferencesDir(temporaryFolder.newFolder("filedistribution").getAbsolutePath())
                                                .sessionLifetime(60));
-        DeployTester tester = new DeployTester(configserverConfig, clock);
-        tester.deployApp("src/test/apps/app", clock.instant()); // session 2 (numbering starts at 2)
+        DeployTester tester = new DeployTester.Builder().configserverConfig(configserverConfig).clock(clock).build();
+        tester.deployApp("src/test/apps/app"); // session 2 (numbering starts at 2)
 
         clock.advance(Duration.ofSeconds(10));
         Optional<Deployment> deployment2 = tester.redeployFromLocalActive();
@@ -312,35 +429,79 @@ public class ApplicationRepositoryTest {
         assertTrue(deployment3.isPresent());
         deployment3.get().prepare();  // session 4 (not activated)
 
-        LocalSession deployment3session = ((com.yahoo.vespa.config.server.deploy.Deployment) deployment3.get()).session();
-        assertNotEquals(activeSessionId, deployment3session);
+        Session deployment3session = ((com.yahoo.vespa.config.server.deploy.Deployment) deployment3.get()).session();
+        assertNotEquals(activeSessionId, deployment3session.getSessionId());
         // No change to active session id
         assertEquals(activeSessionId, tester.tenant().getApplicationRepo().requireActiveSessionOf(tester.applicationId()));
-        assertEquals(3, tester.tenant().getLocalSessionRepo().listSessions().size());
+        SessionRepository sessionRepository = tester.tenant().getSessionRepository();
+        assertEquals(3, sessionRepository.getLocalSessions().size());
 
         clock.advance(Duration.ofHours(1)); // longer than session lifetime
 
         // All sessions except 3 should be removed after the call to deleteExpiredLocalSessions
         tester.applicationRepository().deleteExpiredLocalSessions();
-        Collection<LocalSession> sessions = tester.tenant().getLocalSessionRepo().listSessions();
+        Collection<LocalSession> sessions = sessionRepository.getLocalSessions();
         assertEquals(1, sessions.size());
-        assertEquals(3, new ArrayList<>(sessions).get(0).getSessionId());
+        ArrayList<LocalSession> localSessions = new ArrayList<>(sessions);
+        LocalSession localSession = localSessions.get(0);
+        assertEquals(3, localSession.getSessionId());
 
-        // There should be no expired remote sessions in the common case
-        assertEquals(0, applicationRepository.deleteExpiredRemoteSessions(Duration.ofSeconds(0)));
+        // All sessions except 3 should be removed after the call to deleteExpiredRemoteSessions
+        assertEquals(2, tester.applicationRepository().deleteExpiredRemoteSessions(clock, Duration.ofSeconds(0)));
+        ArrayList<Long> remoteSessions = new ArrayList<>(sessionRepository.getRemoteSessionsFromZooKeeper());
+        Session remoteSession = sessionRepository.getRemoteSession(remoteSessions.get(0));
+        assertEquals(3, remoteSession.getSessionId());
+
+        // Deploy, but do not activate
+        Optional<com.yahoo.config.provision.Deployment> deployment4 = tester.redeployFromLocalActive();
+        assertTrue(deployment4.isPresent());
+        deployment4.get().prepare();  // session 5 (not activated)
+
+        assertEquals(2, sessionRepository.getLocalSessions().size());
+        sessionRepository.deleteLocalSession(localSession);
+        assertEquals(1, sessionRepository.getLocalSessions().size());
+
+        // Create a local session without any data in zookeeper (corner case seen in production occasionally)
+        // and check that expiring local sessions still work
+        int sessionId = 6;
+        TenantName tenantName = tester.tenant().getName();
+        Files.createDirectory(new TenantFileSystemDirs(serverdb, tenantName).getUserApplicationDir(sessionId).toPath());
+        LocalSession localSession2 = new LocalSession(tenant1,
+                                                      sessionId,
+                                                      FilesApplicationPackage.fromFile(testApp),
+                                                      new SessionZooKeeperClient(curator,
+                                                                                 tenantName,
+                                                                                 sessionId,
+                                                                                 ConfigUtils.getCanonicalHostName()));
+        sessionRepository.addLocalSession(localSession2);
+        assertEquals(2, sessionRepository.getLocalSessions().size());
+
+        // Create a session, set status to UNKNOWN, we don't want to expire those (creation time is then EPOCH,
+        // so will be candidate for expiry)
+        Session session = sessionRepository.createRemoteSession(7);
+        sessionRepository.createSetStatusTransaction(session, Session.Status.UNKNOWN);
+
+        sessionRepository.addLocalSession(localSession2);
+        assertEquals(2, sessionRepository.getLocalSessions().size());
+
+        // Check that trying to expire local session when there exists a local session with no zookeeper data works
+        tester.applicationRepository().deleteExpiredLocalSessions();
+        assertEquals(2, sessionRepository.getLocalSessions().size());
+
+        // Check that trying to expire when there are no active sessions works
+        tester.applicationRepository().deleteExpiredLocalSessions();
     }
 
     @Test
     public void testMetrics() {
         MockMetric actual = new MockMetric();
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          provisioner,
-                                                          orchestrator,
-                                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                                                          new MockLogRetriever(),
-                                                          new ManualClock(),
-                                                          new MockTesterClient(),
-                                                          actual);
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(provisioner)
+                .withOrchestrator(orchestrator)
+                .withMetric(actual)
+                .withClock(new ManualClock())
+                .build();
         deployApp(testAppLogServerWithContainer);
         Map<String, ?> context = Map.of("applicationId", "test1.testapp.default",
                                         "tenantName", "test1",
@@ -352,23 +513,206 @@ public class ApplicationRepositoryTest {
         assertEquals(expected.values, actual.values);
     }
 
-    private ApplicationRepository createApplicationRepository() {
-        return new ApplicationRepository(tenantRepository,
-                                         provisioner,
-                                         orchestrator,
-                                         new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                                         new MockLogRetriever(),
-                                         clock,
-                                         new MockTesterClient(),
-                                         new NullMetric());
+    @Test
+    public void require_that_provision_info_can_be_read() {
+        prepareAndActivate(testAppJdiscOnly);
+
+        Tenant tenant = applicationRepository.getTenant(applicationId());
+        Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
+
+        List<NetworkPorts.Allocation> list = new ArrayList<>();
+        list.add(new NetworkPorts.Allocation(8080, "container", "container/container.0", "http"));
+        list.add(new NetworkPorts.Allocation(19070, "configserver", "admin/configservers/configserver.0", "rpc"));
+        list.add(new NetworkPorts.Allocation(19071, "configserver", "admin/configservers/configserver.0", "http"));
+        list.add(new NetworkPorts.Allocation(19080, "logserver", "admin/logserver", "rpc"));
+        list.add(new NetworkPorts.Allocation(19081, "logserver", "admin/logserver", "unused/1"));
+        list.add(new NetworkPorts.Allocation(19082, "logserver", "admin/logserver", "unused/2"));
+        list.add(new NetworkPorts.Allocation(19083, "logserver", "admin/logserver", "unused/3"));
+        list.add(new NetworkPorts.Allocation(19089, "logd", "hosts/mytesthost2/logd", "http"));
+        list.add(new NetworkPorts.Allocation(19090, "configproxy", "hosts/mytesthost2/configproxy", "rpc"));
+        list.add(new NetworkPorts.Allocation(19092, "metricsproxy-container", "admin/metrics/mytesthost2", "http"));
+        list.add(new NetworkPorts.Allocation(19093, "metricsproxy-container", "admin/metrics/mytesthost2", "http/1"));
+        list.add(new NetworkPorts.Allocation(19094, "metricsproxy-container", "admin/metrics/mytesthost2", "rpc/admin"));
+        list.add(new NetworkPorts.Allocation(19095, "metricsproxy-container", "admin/metrics/mytesthost2", "rpc/metrics"));
+        list.add(new NetworkPorts.Allocation(19097, "config-sentinel", "hosts/mytesthost2/sentinel", "rpc"));
+        list.add(new NetworkPorts.Allocation(19098, "config-sentinel", "hosts/mytesthost2/sentinel", "http"));
+        list.add(new NetworkPorts.Allocation(19099, "slobrok", "admin/slobrok.0", "rpc"));
+        list.add(new NetworkPorts.Allocation(19100, "container", "container/container.0", "http/1"));
+        list.add(new NetworkPorts.Allocation(19101, "container", "container/container.0", "messaging"));
+        list.add(new NetworkPorts.Allocation(19102, "container", "container/container.0", "rpc/admin"));
+        list.add(new NetworkPorts.Allocation(19103, "slobrok", "admin/slobrok.0", "http"));
+
+        AllocatedHosts info = session.getAllocatedHosts();
+        assertNotNull(info);
+        assertThat(info.getHosts().size(), is(1));
+        assertTrue(info.getHosts().contains(new HostSpec("mytesthost2",
+                                                         Collections.emptyList(),
+                                                         Optional.empty())));
+        Optional<NetworkPorts> portsCopy = info.getHosts().iterator().next().networkPorts();
+        assertTrue(portsCopy.isPresent());
+        assertThat(portsCopy.get().allocations(), is(list));
     }
 
-    private PrepareResult prepareAndActivateApp(File application) throws IOException {
-        FilesApplicationPackage appDir = FilesApplicationPackage.fromFile(application);
-        ApplicationId applicationId = applicationId();
-        long sessionId = applicationRepository.createSession(applicationId, timeoutBudget, appDir.getAppDir());
-        return applicationRepository.prepareAndActivate(tenantRepository.getTenant(applicationId.tenant()),
-                                                        sessionId, prepareParams(), false, Instant.now());
+    @Test
+    public void testActivationOfUnpreparedSession() {
+        // Needed so we can test that the original active session is still active after a failed activation
+        PrepareResult result = deployApp(testApp);
+        long firstSession = result.sessionId();
+
+        TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
+        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage(containsString("tenant:test1 Session 3 is not prepared"));
+        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
+
+        Session activeSession = applicationRepository.getActiveSession(applicationId());
+        assertEquals(firstSession, activeSession.getSessionId());
+        assertEquals(Session.Status.ACTIVATE, activeSession.getStatus());
+    }
+
+    @Test
+    public void testActivationTimesOut() {
+        // Needed so we can test that the original active session is still active after a failed activation
+        PrepareResult result = deployApp(testAppJdiscOnly);
+        long firstSession = result.sessionId();
+
+        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
+        applicationRepository.prepare(sessionId, prepareParams());
+        exceptionRule.expect(RuntimeException.class);
+        exceptionRule.expectMessage(containsString("Timeout exceeded when trying to activate 'test1.testapp'"));
+        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)), false);
+
+        Session activeSession = applicationRepository.getActiveSession(applicationId());
+        assertEquals(firstSession, activeSession.getSessionId());
+        assertEquals(Session.Status.ACTIVATE, activeSession.getStatus());
+    }
+
+    @Test
+    public void testActivationOfSessionCreatedFromNoLongerActiveSessionFails() {
+        TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
+
+        PrepareResult result1 = deployApp(testAppJdiscOnly);
+        result1.sessionId();
+
+        long sessionId2 = applicationRepository.createSessionFromExisting(applicationId(), false, timeoutBudget);
+        // Deploy and activate another session
+        PrepareResult result2 = deployApp(testAppJdiscOnly);
+        result2.sessionId();
+
+        applicationRepository.prepare(sessionId2, prepareParams());
+        exceptionRule.expect(ActivationConflictException.class);
+        exceptionRule.expectMessage(containsString("app:test1.testapp.default Cannot activate session 3 because the currently active session (4) has changed since session 3 was created (was 2 at creation time)"));
+        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId2, timeoutBudget, false);
+    }
+
+    @Test
+    public void testPrepareAndActivateAlreadyActivatedSession() {
+        PrepareResult result = deployApp(testAppJdiscOnly);
+        long sessionId = result.sessionId();
+
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage(containsString("Session is active: 2"));
+        applicationRepository.prepare(sessionId, prepareParams());
+
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage(containsString("app:test1.testapp.default Session 2 is already active"));
+        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
+    }
+
+    @Test
+    public void testThatPreviousSessionIsDeactivated() {
+        deployApp(testAppJdiscOnly);
+        Session firstSession = applicationRepository.getActiveSession(applicationId());
+
+        deployApp(testAppJdiscOnly);
+
+        assertEquals(Session.Status.DEACTIVATE, firstSession.getStatus());
+    }
+
+    @Test
+    public void testResolveForAppId() {
+        Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
+        applicationRepository.deploy(app1, new PrepareParams.Builder()
+                .applicationId(applicationId())
+                .vespaVersion(vespaVersion)
+                .build());
+
+        RequestHandler requestHandler = getRequestHandler(applicationId());
+        SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+        assertEquals(1337 , config.intval());
+    }
+
+    @Test
+    public void testResolveConfigForMultipleApps() {
+        Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
+        applicationRepository.deploy(app1, new PrepareParams.Builder()
+                .applicationId(applicationId())
+                .vespaVersion(vespaVersion)
+                .build());
+
+        ApplicationId appId2 = new ApplicationId.Builder()
+                .tenant(tenant1)
+                .applicationName("myapp2")
+                .instanceName("default")
+                .build();
+        applicationRepository.deploy(app2, new PrepareParams.Builder()
+                .applicationId(appId2)
+                .vespaVersion(vespaVersion)
+                .build());
+
+        RequestHandler requestHandler = getRequestHandler(applicationId());
+        SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+        assertEquals(1337, config.intval());
+
+        RequestHandler requestHandler2 = getRequestHandler(appId2);
+        SimpletypesConfig config2 = resolve(SimpletypesConfig.class, requestHandler2, appId2, vespaVersion);
+        assertEquals(1330, config2.intval());
+
+        assertTrue(requestHandler.hasApplication(applicationId(), Optional.of(vespaVersion)));
+        assertNull(requestHandler.resolveApplicationId("doesnotexist"));
+        assertThat(requestHandler.resolveApplicationId("mytesthost"), Is.is(new ApplicationId.Builder()
+                                                                                  .tenant(tenant1)
+                                                                                  .applicationName("testapp").build())); // Host set in application package.
+    }
+
+    @Test
+    public void testResolveMultipleVersions() {
+        Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
+        applicationRepository.deploy(app1, new PrepareParams.Builder()
+                .applicationId(applicationId())
+                .vespaVersion(vespaVersion)
+                .build());
+
+        RequestHandler requestHandler = getRequestHandler(applicationId());
+        SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+        assertEquals(1337, config.intval());
+
+        // TODO: Revisit this test, I cannot see that we create a model for version 3.2.1
+        config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), new Version(3, 2, 1));
+        assertThat(config.intval(), Is.is(1337));
+    }
+
+    @Test
+    public void testResolveForDeletedApp() {
+        Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
+        applicationRepository.deploy(app1, new PrepareParams.Builder()
+                .applicationId(applicationId())
+                .vespaVersion(vespaVersion)
+                .build());
+
+        RequestHandler requestHandler = getRequestHandler(applicationId());
+        SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+        assertEquals(1337 , config.intval());
+
+        applicationRepository.delete(applicationId());
+
+        exceptionRule.expect(com.yahoo.vespa.config.server.NotFoundException.class);
+        exceptionRule.expectMessage(containsString("No such application id: test1.testapp"));
+        resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+    }
+
+    private PrepareResult prepareAndActivate(File application) {
+        return applicationRepository.deploy(application, prepareParams());
     }
 
     private PrepareResult deployApp(File applicationPackage) {
@@ -384,7 +728,7 @@ public class ApplicationRepositoryTest {
     }
 
     private ApplicationId applicationId() {
-        return ApplicationId.from(tenant1, ApplicationName.from("testapp"), InstanceName.defaultName());
+        return applicationId(tenant1);
     }
 
     private ApplicationId applicationId(TenantName tenantName) {
@@ -393,9 +737,8 @@ public class ApplicationRepositoryTest {
 
     private ApplicationMetaData getApplicationMetaData(ApplicationId applicationId, long sessionId) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
-        return applicationRepository.getMetadataFromSession(tenant, sessionId);
+        return applicationRepository.getMetadataFromLocalSession(tenant, sessionId);
     }
-
 
     /** Stores all added or set values for each metric and context. */
     static class MockMetric implements Metric {
@@ -418,7 +761,6 @@ public class ApplicationRepositoryTest {
             return new Context(properties);
         }
 
-
         private static class Context implements Metric.Context {
 
             private final Map<String, ?> point;
@@ -429,6 +771,54 @@ public class ApplicationRepositoryTest {
 
         }
 
+    }
+
+    private <T extends ConfigInstance> T resolve(Class<T> clazz,
+                                                 RequestHandler applications,
+                                                 ApplicationId appId,
+                                                 Version vespaVersion) {
+        String configId = "";
+        ConfigResponse response = getConfigResponse(clazz, applications, appId, vespaVersion, configId);
+        return ConfigPayload.fromUtf8Array(response.getPayload()).toInstance(clazz, configId);
+    }
+
+    private <T extends ConfigInstance> ConfigResponse getConfigResponse(Class<T> clazz,
+                                                                        RequestHandler applications,
+                                                                        ApplicationId appId,
+                                                                        Version vespaVersion,
+                                                                        String configId) {
+        return applications.resolveConfig(appId, new GetConfigRequest() {
+            @Override
+            public ConfigKey<T> getConfigKey() {
+                return new ConfigKey<>(clazz, configId);
+            }
+
+            @Override
+            public DefContent getDefContent() {
+                return DefContent.fromClass(clazz);
+            }
+
+            @Override
+            public Optional<VespaVersion> getVespaVersion() {
+                return Optional.of(VespaVersion.fromString(vespaVersion.toFullString()));
+            }
+
+            @Override
+            public boolean noCache() {
+                return false;
+            }
+
+            @Override
+            public String getRequestDefMd5() { return ""; }
+
+            @Override
+            public PayloadChecksums configPayloadChecksums() { return PayloadChecksums.empty(); }
+
+        }, Optional.empty());
+    }
+
+    private RequestHandler getRequestHandler(ApplicationId applicationId) {
+        return tenantRepository.getTenant(applicationId.tenant()).getRequestHandler();
     }
 
 }

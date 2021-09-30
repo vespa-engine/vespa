@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+# BEGIN environment bootstrap section
+# Do not edit between here and END as this section should stay identical in all scripts
+
+findpath () {
+    myname=${0}
+    mypath=${myname%/*}
+    myname=${myname##*/}
+    empty_if_start_slash=${mypath%%/*}
+    if [ "${empty_if_start_slash}" ]; then
+        mypath=$(pwd)/${mypath}
+    fi
+    if [ "$mypath" ] && [ -d "$mypath" ]; then
+        return
+    fi
+    mypath=$(pwd)
+    if [ -f "${mypath}/${myname}" ]; then
+        return
+    fi
+    echo "FATAL: Could not figure out the path where $myname lives from $0"
+    exit 1
+}
+
+COMMON_ENV=libexec/vespa/common-env.sh
+
+source_common_env () {
+    if [ "$VESPA_HOME" ] && [ -d "$VESPA_HOME" ]; then
+        export VESPA_HOME
+        common_env=$VESPA_HOME/$COMMON_ENV
+        if [ -f "$common_env" ]; then
+            . $common_env
+            return
+        fi
+    fi
+    return 1
+}
+
+findroot () {
+    source_common_env && return
+    if [ "$VESPA_HOME" ]; then
+        echo "FATAL: bad VESPA_HOME value '$VESPA_HOME'"
+        exit 1
+    fi
+    if [ "$ROOT" ] && [ -d "$ROOT" ]; then
+        VESPA_HOME="$ROOT"
+        source_common_env && return
+    fi
+    findpath
+    while [ "$mypath" ]; do
+        VESPA_HOME=${mypath}
+        source_common_env && return
+        mypath=${mypath%/*}
+    done
+    echo "FATAL: missing VESPA_HOME environment variable"
+    echo "Could not locate $COMMON_ENV anywhere"
+    exit 1
+}
+
+findhost () {
+    if [ "${VESPA_HOSTNAME}" = "" ]; then
+        VESPA_HOSTNAME=$(vespa-detect-hostname || hostname -f || hostname || echo "localhost") || exit 1
+    fi
+    validate="${VESPA_HOME}/bin/vespa-validate-hostname"
+    if [ -f "$validate" ]; then
+        "$validate" "${VESPA_HOSTNAME}" || exit 1
+    fi
+    export VESPA_HOSTNAME
+}
+
+findroot
+findhost
+
+# END environment bootstrap section
+
+set -euo pipefail
+
+if (( $# != 1 )); then
+  echo "Usage: $0 <service-name-or-config-id>" >&2
+  exit 1
+fi
+
+readonly service=$1
+readonly pid_file="$VESPA_HOME/var/run/$service.pid"
+if [ -f "$pid_file" ]; then
+  parent_pid=$(cat "$pid_file")
+  pid=$(pgrep --parent $parent_pid)
+else
+  status=$(vespa-sentinel-cmd list 2>/dev/null | grep --perl-regexp "($service state=|id=\"$service\")")
+  if [ -z "${status}" ]; then
+    echo "No service with name or config id '${service}'" >&2
+    exit 1
+  fi
+  pid=$(echo ${status} | cut -d " "  -f 4 | cut -d "=" -f 2)
+  if ! [[ "${pid}" =~ ^[0-9]+$ ]]; then
+    echo "Could not find valid pid for '${service}' (pid='${pid}')" >&2
+    exit 1
+  fi
+fi
+if [ -z "$(ps -p ${pid} -o pid=)" ]; then
+  echo "Could not find process for '${pid}'" >&2
+  exit 1
+fi
+echo $pid

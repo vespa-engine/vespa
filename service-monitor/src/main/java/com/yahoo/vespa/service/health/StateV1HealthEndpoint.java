@@ -43,7 +43,7 @@ class StateV1HealthEndpoint implements HealthEndpoint {
 
     @Override
     public HealthMonitor startMonitoring() {
-        StateV1HealthUpdater updater = new StateV1HealthUpdater(url, requestTimeout, connectionKeepAlive);
+        var updater = new StateV1HealthUpdater(url, requestTimeout, connectionKeepAlive);
         return new StateV1HealthMonitor(updater, executor, delay);
     }
 

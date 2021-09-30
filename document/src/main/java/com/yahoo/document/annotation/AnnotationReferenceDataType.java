@@ -7,15 +7,16 @@ import com.yahoo.document.datatypes.FieldValue;
 /**
  * A data type describing a field value having a reference to an annotation of a given type.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class AnnotationReferenceDataType extends DataType {
+
     private AnnotationType aType;
 
     /**
      * Creates an AnnotationReferenceDataType with a generated id.
      *
-     * @param aType the annotation type that AnnotationRefs shall refer to.
+     * @param aType the annotation type that AnnotationRefs shall refer to
      */
     public AnnotationReferenceDataType(AnnotationType aType) {
         super("annotationreference<" + ((aType == null) ? "" : aType.getName()) + ">", 0);
@@ -25,7 +26,7 @@ public class AnnotationReferenceDataType extends DataType {
     /**
      * Creates an AnnotationReferenceDataType with a given id.
      *
-     * @param aType the annotation type that AnnotationRefs shall refer to.
+     * @param aType the annotation type that AnnotationRefs shall refer to
      * @param id    the id to use
      */
     public AnnotationReferenceDataType(AnnotationType aType, int id) {
@@ -34,7 +35,7 @@ public class AnnotationReferenceDataType extends DataType {
     }
 
     /**
-     * Creates an AnnotationReferenceDataType.&nbsp;WARNING! Do not use!
+     * Creates an AnnotationReferenceDataType. WARNING! Do not use!
      */
     protected AnnotationReferenceDataType() {
         super("annotationreference<>", 0);
@@ -77,11 +78,12 @@ public class AnnotationReferenceDataType extends DataType {
     }
 
     /**
-     * Sets the annotation type that this AnnotationReferenceDataType points to.&nbsp;WARNING! Do not use.
+     * Sets the annotation type that this AnnotationReferenceDataType points to. WARNING! Do not use.
      * @param type the annotation type of this AnnotationReferenceDataType.
      */
     protected void setAnnotationType(AnnotationType type) {
         this.aType = type;
         setId(createId());
     }
+
 }

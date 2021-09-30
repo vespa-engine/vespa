@@ -100,7 +100,7 @@ void diversify_2(const DictRange &range_in, const PostingStore &posting, Diversi
     using KeyDataType = typename PostingStore::KeyDataType;
     while (range.has_next() && (result.size() < filter.getMaxTotal())) {
         typename DictRange::Next dict_entry(range);
-        posting.foreach_frozen(datastore::EntryRef(dict_entry.get().getData()),
+        posting.foreach_frozen(vespalib::datastore::EntryRef(dict_entry.get().getData()),
                                [&](uint32_t key, const DataType &data)
                                { recorder.push_back(KeyDataType(key, data)); });
         if (fragments.back() < result.size()) {
@@ -120,6 +120,24 @@ void diversify(bool forward, const DictItr &lower, const DictItr &upper, const P
         diversify_2(ForwardRange<DictItr>(lower, upper), posting, *filter, array, fragments);
     } else {
         diversify_2(ReverseRange<DictItr>(lower, upper), posting, *filter, array, fragments);
+    }
+}
+
+template <typename PostingStore, typename Result>
+void diversify_single(vespalib::datastore::EntryRef posting_idx, const PostingStore &posting, size_t wanted_hits,
+               const IAttributeVector &diversity_attr, size_t max_per_group,
+               size_t cutoff_max_groups, bool cutoff_strict,
+               Result &result, std::vector<size_t> &fragments)
+{
+    auto filter = DiversityFilter::create(diversity_attr, wanted_hits, max_per_group, cutoff_max_groups, cutoff_strict);
+    DiversityRecorder<Result> recorder(*filter, result);
+    using DataType = typename PostingStore::DataType;
+    using KeyDataType = typename PostingStore::KeyDataType;
+    posting.foreach_frozen(posting_idx,
+                           [&](uint32_t key, const DataType &data)
+                           { recorder.push_back(KeyDataType(key, data)); });
+    if (fragments.back() < result.size()) {
+        fragments.push_back(result.size());
     }
 }
 

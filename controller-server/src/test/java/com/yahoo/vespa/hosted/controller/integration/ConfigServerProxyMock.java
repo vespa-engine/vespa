@@ -20,10 +20,10 @@ public class ConfigServerProxyMock extends AbstractComponent implements ConfigSe
     private volatile String requestBody = null;
 
     @Override
-    public HttpResponse handle(ProxyRequest proxyRequest) {
-        lastReceived = proxyRequest;
+    public HttpResponse handle(ProxyRequest request) {
+        lastReceived = request;
         // Copy request body as the input stream is drained once the request completes
-        requestBody = asString(proxyRequest.getData());
+        requestBody = asString(request.getData());
         return new StringResponse("ok");
     }
 

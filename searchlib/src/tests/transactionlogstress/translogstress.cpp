@@ -3,12 +3,11 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
-#include <stdexcept>
 #include <sstream>
 #include <thread>
 
@@ -19,8 +18,6 @@ LOG_SETUP("translogstress");
 
 using vespalib::nbostream;
 using search::Runnable;
-using vespalib::Monitor;
-using vespalib::MonitorGuard;
 using std::shared_ptr;
 using vespalib::make_string;
 using vespalib::ConstBufferRef;
@@ -28,8 +25,10 @@ using search::index::DummyFileHeaderContext;
 
 namespace search::transactionlog {
 
-using ClientSession = TransLogClient::Session;
-using Visitor = TransLogClient::Visitor;
+using ClientSession = client::Session;
+using client::Visitor;
+using client::TransLogClient;
+using client::RPC;
 
 //-----------------------------------------------------------------------------
 // BufferGenerator
@@ -37,7 +36,7 @@ using Visitor = TransLogClient::Visitor;
 class BufferGenerator
 {
 private:
-    Rand48 _rnd;
+    vespalib::Rand48 _rnd;
     uint32_t _minStrLen;
     uint32_t _maxStrLen;
 
@@ -71,7 +70,7 @@ BufferGenerator::getRandomBuffer()
 class EntryGenerator
 {
 private:
-    Rand48 _rnd;
+    vespalib::Rand48 _rnd;
     long _baseSeed;
     BufferGenerator _bufferGenerator;
     const std::vector<nbostream> * _buffers;
@@ -93,7 +92,7 @@ public:
     };
     SerialNum getRandomSerialNum(SerialNum begin, SerialNum end);
     Packet::Entry getRandomEntry(SerialNum num);
-    Rand48 & getRnd() { return _rnd; }
+    vespalib::Rand48 & getRnd() { return _rnd; }
     void setBuffers(const std::vector<nbostream> & buffers) {
         _buffers = &buffers;
     }
@@ -115,7 +114,7 @@ Packet::Entry
 EntryGenerator::getRandomEntry(SerialNum num)
 {
     _rnd.srand48(_baseSeed + num);
-    if (_buffers != NULL) {
+    if (_buffers != nullptr) {
         size_t i = _rnd.lrand48() % _buffers->size();
         const nbostream& buffer = (*_buffers)[i];
         return Packet::Entry(num, 1024, ConstBufferRef(buffer.data(), buffer.size()));
@@ -208,7 +207,7 @@ private:
 public:
     FeederThread(const std::string & tlsSpec, const std::string & domain,
                  const EntryGenerator & generator, uint32_t feedRate, size_t packetSize);
-    ~FeederThread();
+    ~FeederThread() override;
     void doRun() override;
     SerialNumRange getRange() const { return SerialNumRange(1, _lastCommited); }
 };
@@ -223,7 +222,6 @@ FeederThread::~FeederThread() = default;
 void
 FeederThread::commitPacket()
 {
-    _packet.close();
     const vespalib::nbostream& stream = _packet.getHandle();
     if (!_session->commit(ConstBufferRef(stream.data(), stream.size()))) {
         throw std::runtime_error(vespalib::make_string
@@ -238,15 +236,16 @@ FeederThread::commitPacket()
 bool
 FeederThread::addEntry(const Packet::Entry & e)
 {
-    //LOG(info, "FeederThread: add %s", EntryPrinter::toStr(e).c_str());
-    return _packet.add(e);
+    if (_packet.sizeBytes() > 0xf000) return false;
+    _packet.add(e);
+    return true;
 }
 
 void
 FeederThread::doRun()
 {
     _session = _client.open(_domain);
-    if (_session.get() == NULL) {
+    if ( ! _session) {
         throw std::runtime_error(vespalib::make_string("FeederThread: Could not open session to %s", _tlsSpec.c_str()));
     }
 
@@ -288,7 +287,7 @@ FeederThread::doRun()
 //-----------------------------------------------------------------------------
 // Agent
 //-----------------------------------------------------------------------------
-class Agent : public ClientSession::Callback
+class Agent : public client::Callback
 {
 protected:
     std::string _tlsSpec;
@@ -302,12 +301,13 @@ protected:
 public:
     Agent(const std::string & tlsSpec, const std::string & domain,
           const EntryGenerator & generator, const std::string & name, uint32_t id, bool validate) :
-        ClientSession::Callback(),
+        client::Callback(),
         _tlsSpec(tlsSpec), _domain(domain), _client(tlsSpec),
-        _generator(generator), _name(name), _id(id), _validate(validate) {}
-    virtual ~Agent() {}
-    virtual RPC::Result receive(const Packet & packet) override = 0;
-    virtual void eof() override {}
+        _generator(generator), _name(name), _id(id), _validate(validate)
+    {}
+    ~Agent() override {}
+    RPC::Result receive(const Packet & packet) override = 0;
+    void eof() override {}
     virtual void failed() {}
 };
 
@@ -326,10 +326,10 @@ private:
     SerialNum _to;
     SerialNum _next;
     State _state;
-    Monitor _monitor;
+    std::mutex _monitor;
 
     void setState(State newState) {
-        MonitorGuard guard(_monitor);
+        std::lock_guard guard(_monitor);
         //LOG(info, "VisitorAgent[%u]: setState(%s)", _id, newState == IDLE ? "idle" :
         //    (newState == RUNNING ? "running" : "finished"));
         _state = newState;
@@ -341,23 +341,23 @@ public:
                  const EntryGenerator & generator, uint32_t id, bool validate) :
         Agent(tlsSpec, domain, generator, "VisitorAgent", id, validate),
         _visitor(), _from(0), _to(0), _next(0), _state(IDLE) {}
-    virtual ~VisitorAgent() {}
+    ~VisitorAgent() override = default;
     void start(SerialNum from, SerialNum to);
     void setIdle();
     bool idle() {
-        MonitorGuard guard(_monitor);
+        std::lock_guard guard(_monitor);
         return _state == IDLE;
     }
     bool running() {
-        MonitorGuard guard(_monitor);
+        std::lock_guard guard(_monitor);
         return _state == RUNNING;
     }
     bool finished() {
-        MonitorGuard guard(_monitor);
+        std::lock_guard guard(_monitor);
         return _state == FINISHED;
     }
     std::string getState() {
-        MonitorGuard guard(_monitor);
+        std::lock_guard guard(_monitor);
         if (_state == IDLE) {
             return std::string("idle");
         } else if (_state == FINISHED) {
@@ -514,7 +514,7 @@ void
 ControllerThread::doRun()
 {
     _session = _client.open(_domain);
-    if (_session.get() == NULL) {
+    if ( ! _session) {
         throw std::runtime_error(vespalib::make_string("ControllerThread: Could not open session to %s", _tlsSpec.c_str()));
     }
 
@@ -642,7 +642,7 @@ TransLogStress::Main()
     vespalib::duration sleepTime = 4s;
 
     int idx = 1;
-    char opt;
+    int opt;
     const char * arg;
     bool optError = false;
     while ((opt = GetOpt("d:p:t:f:s:v:c:e:g:i:a:b:h", arg, idx)) != -1) {
@@ -699,7 +699,7 @@ TransLogStress::Main()
 
     // start transaction log server
     DummyFileHeaderContext fileHeaderContext;
-    TransLogServer tls("server", 17897, ".", fileHeaderContext, _cfg.domainPartSize);
+    TransLogServer tls("server", 17897, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(_cfg.domainPartSize));
     TransLogClient client(tlsSpec);
     client.create(domain);
 

@@ -5,6 +5,7 @@
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
+#include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -69,10 +70,12 @@ void
 DiskTermBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
 {
     (void) execInfo;
-    _hasEquivParent = areAnyParentsEquiv(getParent());
-    _bitVector = _diskIndex.readBitVector(*_lookupRes);
-    if (!_useBitVector || !_bitVector) {
-        _postingHandle = _diskIndex.readPostingList(*_lookupRes);
+    if (!_fetchPostingsDone) {
+        _hasEquivParent = areAnyParentsEquiv(getParent());
+        _bitVector = _diskIndex.readBitVector(*_lookupRes);
+        if (!_useBitVector || !_bitVector) {
+            _postingHandle = _diskIndex.readPostingList(*_lookupRes);
+        }
     }
     _fetchPostingsDone = true;
 }
@@ -96,4 +99,17 @@ DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda, bool 
     return search;
 }
 
+SearchIterator::UP
+DiskTermBlueprint::createFilterSearch(bool strict, FilterConstraint) const
+{
+    auto wrapper = std::make_unique<queryeval::FilterWrapper>(getState().numFields());
+    auto & tfmda = wrapper->tfmda();
+    if (_bitVector) {
+        wrapper->wrap(BitVectorIterator::create(_bitVector.get(), *tfmda[0], strict));
+    } else {
+        wrapper->wrap(_postingHandle->createIterator(_lookupRes->counts, tfmda, _useBitVector));
+    }
+    return wrapper;
 }
+
+} // namespace

@@ -8,7 +8,8 @@ import com.yahoo.document.DataType;
  */
 public interface FieldTypeAdapter {
 
-    public DataType getInputType(Expression exp, String fieldName);
+    DataType getInputType(Expression exp, String fieldName);
 
-    public void tryOutputType(Expression exp, String fieldName, DataType valueType);
+    void tryOutputType(Expression exp, String fieldName, DataType valueType);
+
 }

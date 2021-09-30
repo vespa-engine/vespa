@@ -2,30 +2,17 @@
 package com.yahoo.vespa.model.container.search;
 
 import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.container.xml.BundleMapper;
-import com.yahoo.vespa.model.search.IndexedSearchCluster;
+import com.yahoo.vespa.model.container.PlatformBundles;
 
-public class RpcResourcePoolComponent extends Component<RpcResourcePoolComponent, ComponentModel>
-        implements DispatchConfig.Producer {
-    private final IndexedSearchCluster indexedSearchCluster;
+public class RpcResourcePoolComponent extends Component<RpcResourcePoolComponent, ComponentModel> {
 
-    public RpcResourcePoolComponent(IndexedSearchCluster indexedSearchCluster) {
-        super(toComponentModel(indexedSearchCluster));
-        this.indexedSearchCluster = indexedSearchCluster;
+    public RpcResourcePoolComponent(String clusterName) {
+        super(toComponentModel(clusterName));
     }
 
-    @Override
-    public void getConfig(DispatchConfig.Builder builder) {
-        indexedSearchCluster.getConfig(builder);
-    }
-
-    private static ComponentModel toComponentModel(IndexedSearchCluster indexedSearchCluster) {
-        String componentId = "rpcresourcepool." + indexedSearchCluster.getClusterName(); // used by Dispatcher
-        return new ComponentModel(componentId,
-                "com.yahoo.search.dispatch.rpc.RpcResourcePool",
-                BundleMapper.searchAndDocprocBundle,
-                null);
+    private static ComponentModel toComponentModel(String clusterName) {
+        String componentId = "rpcresourcepool." + clusterName;
+        return new ComponentModel(componentId, com.yahoo.search.dispatch.rpc.RpcResourcePool.class.getName(), PlatformBundles.searchAndDocprocBundle);
     }
 }

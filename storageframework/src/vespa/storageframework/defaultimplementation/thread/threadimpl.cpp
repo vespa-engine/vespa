@@ -12,20 +12,20 @@ namespace storage::framework::defaultimplementation {
 ThreadImpl::ThreadImpl(ThreadPoolImpl& pool,
                        Runnable& runnable,
                        vespalib::stringref id,
-                       uint64_t waitTimeMs,
-                       uint64_t maxProcessTimeMs,
+                       vespalib::duration waitTime,
+                       vespalib::duration maxProcessTime,
                        int ticksBeforeWait)
     : Thread(id),
       _pool(pool),
       _runnable(runnable),
-      _properties(waitTimeMs, maxProcessTimeMs, ticksBeforeWait),
+      _properties(waitTime, maxProcessTime, ticksBeforeWait),
       _tickData(),
       _tickDataPtr(0),
       _interrupted(false),
       _joined(false),
       _thread(*this)
 {
-    _tickData[_tickDataPtr]._lastTickMs = pool.getClock().getTimeInMillis().getTime();
+    _tickData[_tickDataPtr]._lastTick = pool.getClock().getMonotonicTime();
     _thread.start(_pool.getThreadPool());
 }
 
@@ -69,30 +69,29 @@ ThreadImpl::join()
 }
 
 void
-ThreadImpl::registerTick(CycleType cycleType, MilliSecTime time)
+ThreadImpl::registerTick(CycleType cycleType, vespalib::steady_time now)
 {
-    if (!time.isSet()) time = _pool.getClock().getTimeInMillis();
+    if (now.time_since_epoch() == vespalib::duration::zero()) now = _pool.getClock().getMonotonicTime();
     ThreadTickData data(getTickData());
-    uint64_t previousTickMs = data._lastTickMs;
-    uint64_t nowMs = time.getTime();
-    data._lastTickMs = nowMs;
+    vespalib::steady_clock::time_point previousTick = data._lastTick;
+    data._lastTick = now;
     data._lastTickType = cycleType;
     setTickData(data);
 
-    if (data._lastTickMs == 0) { return; }
+    if (data._lastTick.time_since_epoch() == vespalib::duration::zero()) { return; }
 
-    if (previousTickMs > nowMs) {
+    if (previousTick > now) {
         LOGBP(warning, "Thread is registering tick at time %" PRIu64 ", but "
                        "last time it registered a tick, the time was %" PRIu64
                        ". Assuming clock has been adjusted backwards",
-	      nowMs, previousTickMs);
+	      vespalib::count_ms(now.time_since_epoch()), vespalib::count_ms(previousTick.time_since_epoch()));
         return;
     }
-    uint64_t cycleTimeMs = nowMs - previousTickMs;
+    vespalib::duration cycleTime = now - previousTick;
     if (cycleType == WAIT_CYCLE) {
-        data._maxWaitTimeSeenMs = std::max(data._maxWaitTimeSeenMs, cycleTimeMs);
+        data._maxWaitTimeSeen = std::max(data._maxWaitTimeSeen, cycleTime);
     } else {
-        data._maxProcessingTimeSeenMs = std::max(data._maxProcessingTimeSeenMs, cycleTimeMs);
+        data._maxProcessingTimeSeen = std::max(data._maxProcessingTimeSeen, cycleTime);
     }
 }
 
@@ -111,11 +110,11 @@ ThreadImpl::setTickData(const ThreadTickData& tickData)
 }
 
 void
-ThreadImpl::updateParameters(uint64_t waitTimeMs,
-			     uint64_t maxProcessTimeMs,
-			     int ticksBeforeWait) {
-  _properties.setWaitTime(waitTimeMs);
-  _properties.setMaxProcessTime(maxProcessTimeMs);
+ThreadImpl::updateParameters(vespalib::duration waitTime,
+                             vespalib::duration maxProcessTime,
+                             int ticksBeforeWait) {
+  _properties.setWaitTime(waitTime);
+  _properties.setMaxProcessTime(maxProcessTime);
   _properties.setTicksBeforeWait(ticksBeforeWait);
 }
 
@@ -125,21 +124,20 @@ ThreadImpl::AtomicThreadTickData::loadRelaxed() const noexcept
     ThreadTickData result;
     constexpr auto relaxed = std::memory_order_relaxed;
     result._lastTickType = _lastTickType.load(relaxed);
-    result._lastTickMs = _lastTickMs.load(relaxed);
-    result._maxProcessingTimeSeenMs = _maxProcessingTimeSeenMs.load(relaxed);
-    result._maxWaitTimeSeenMs = _maxWaitTimeSeenMs.load(relaxed);
+    result._lastTick = _lastTick.load(relaxed);
+    result._maxProcessingTimeSeen = _maxProcessingTimeSeen.load(relaxed);
+    result._maxWaitTimeSeen = _maxWaitTimeSeen.load(relaxed);
     return result;
 }
 
 void
-ThreadImpl::AtomicThreadTickData::storeRelaxed(
-        const ThreadTickData& newState) noexcept
+ThreadImpl::AtomicThreadTickData::storeRelaxed(const ThreadTickData& newState) noexcept
 {
     constexpr auto relaxed = std::memory_order_relaxed;
     _lastTickType.store(newState._lastTickType, relaxed);
-    _lastTickMs.store(newState._lastTickMs, relaxed);
-    _maxProcessingTimeSeenMs.store(newState._maxProcessingTimeSeenMs, relaxed);
-    _maxWaitTimeSeenMs.store(newState._maxWaitTimeSeenMs, relaxed);
+    _lastTick.store(newState._lastTick, relaxed);
+    _maxProcessingTimeSeen.store(newState._maxProcessingTimeSeen, relaxed);
+    _maxWaitTimeSeen.store(newState._maxWaitTimeSeen, relaxed);
 }
 
 }

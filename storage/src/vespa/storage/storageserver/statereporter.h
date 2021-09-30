@@ -13,7 +13,6 @@
 #include "applicationgenerationfetcher.h"
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
-#include <vespa/metrics/metrics.h>
 #include <vespa/metrics/state_api_adapter.h>
 #include <vespa/vespalib/net/metrics_producer.h>
 #include <vespa/vespalib/net/state_api.h>

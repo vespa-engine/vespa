@@ -173,7 +173,7 @@ SessionManager::SessionManager(uint32_t maxSize)
       _search_map(std::make_unique<SearchSessionCache>()) {
 }
 
-SessionManager::~SessionManager() { }
+SessionManager::~SessionManager() = default;
 
 void SessionManager::insert(search::grouping::GroupingSession::UP session) {
     _grouping_cache->insert(std::move(session));

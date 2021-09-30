@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "andpolicy.h"
-#include <vespa/messagebus/error.h>
-#include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 
@@ -18,10 +15,7 @@ ANDPolicy::ANDPolicy(const string &param)
     }
 }
 
-ANDPolicy::~ANDPolicy()
-{
-    // empty
-}
+ANDPolicy::~ANDPolicy() = default;
 
 void
 ANDPolicy::select(mbus::RoutingContext &context)
@@ -29,11 +23,9 @@ ANDPolicy::select(mbus::RoutingContext &context)
     if (_hops.empty()) {
         context.addChildren(context.getAllRecipients());
     } else {
-        for (std::vector<mbus::Hop>::iterator it = _hops.begin();
-             it != _hops.end(); ++it)
-        {
+        for (auto & hop : _hops) {
             mbus::Route route = context.getRoute();
-            route.setHop(0, *it);
+            route.setHop(0, hop);
             context.addChild(route);
         }
     }

@@ -4,7 +4,8 @@
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcorespi/index/fusionrunner.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
@@ -79,6 +80,7 @@ class Test : public vespalib::TestApp {
     void requireThatFusionCanRunOnMultipleDiskIndexes();
     void requireThatOldFusionIndexCanBePartOfNewFusion();
     void requireThatSelectorsCanBeRebased();
+    void requireThatFusionCanBeStopped();
 
 public:
     Test()
@@ -110,6 +112,7 @@ Test::Main()
     TEST_CALL(requireThatFusionCanRunOnMultipleDiskIndexes());
     TEST_CALL(requireThatOldFusionIndexCanBePartOfNewFusion());
     TEST_CALL(requireThatSelectorsCanBeRebased());
+    TEST_CALL(requireThatFusionCanBeStopped());
 
     TEST_DONE();
 }
@@ -153,7 +156,7 @@ void addDocument(DocBuilder & doc_builder, MemoryIndex &index, ISourceSelector &
                  uint8_t index_id, uint32_t docid, const string &word) {
     Document::UP doc = buildDocument(doc_builder, docid, word);
     index.insertDocument(docid, *doc);
-    index.commit(std::shared_ptr<search::IDestructorCallback>());
+    index.commit(std::shared_ptr<vespalib::IDestructorCallback>());
     selector.setSource(docid, index_id);
 }
 
@@ -252,13 +255,13 @@ void Test::checkResults(uint32_t fusion_id, const uint32_t *ids, size_t size) {
 }
 
 void Test::requireThatNoDiskIndexesGiveId0() {
-    uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops);
+    uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops, std::make_shared<search::FlushToken>());
     EXPECT_EQUAL(0u, fusion_id);
 }
 
 void Test::requireThatOneDiskIndexCausesCopy() {
     createIndex(base_dir, disk_id[0]);
-    uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops);
+    uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops, std::make_shared<search::FlushToken>());
     EXPECT_EQUAL(disk_id[0], fusion_id);
     set<uint32_t> fusion_ids = readFusionIds(base_dir);
     ASSERT_TRUE(!fusion_ids.empty());
@@ -271,7 +274,7 @@ void Test::requireThatOneDiskIndexCausesCopy() {
 void Test::requireThatTwoDiskIndexesCauseFusion() {
     createIndex(base_dir, disk_id[0]);
     createIndex(base_dir, disk_id[1]);
-    uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops);
+    uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops, std::make_shared<search::FlushToken>());
     EXPECT_EQUAL(disk_id[1], fusion_id);
     set<uint32_t> fusion_ids = readFusionIds(base_dir);
     ASSERT_TRUE(!fusion_ids.empty());
@@ -286,7 +289,7 @@ void Test::requireThatFusionCanRunOnMultipleDiskIndexes() {
     createIndex(base_dir, disk_id[1]);
     createIndex(base_dir, disk_id[2]);
     createIndex(base_dir, disk_id[3]);
-    uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops);
+    uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops, std::make_shared<search::FlushToken>());
     EXPECT_EQUAL(disk_id[3], fusion_id);
     set<uint32_t> fusion_ids = readFusionIds(base_dir);
     ASSERT_TRUE(!fusion_ids.empty());
@@ -299,7 +302,7 @@ void Test::requireThatFusionCanRunOnMultipleDiskIndexes() {
 void Test::requireThatOldFusionIndexCanBePartOfNewFusion() {
     createIndex(base_dir, disk_id[0], true);
     createIndex(base_dir, disk_id[1]);
-    uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops);
+    uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops, std::make_shared<search::FlushToken>());
     EXPECT_EQUAL(disk_id[1], fusion_id);
     set<uint32_t> fusion_ids = readFusionIds(base_dir);
     ASSERT_TRUE(!fusion_ids.empty());
@@ -313,14 +316,25 @@ void Test::requireThatOldFusionIndexCanBePartOfNewFusion() {
 void Test::requireThatSelectorsCanBeRebased() {
     createIndex(base_dir, disk_id[0]);
     createIndex(base_dir, disk_id[1]);
-    uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops);
+    uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops, std::make_shared<search::FlushToken>());
 
     _fusion_spec.flush_ids.clear();
     _fusion_spec.last_fusion_id = fusion_id;
     createIndex(base_dir, disk_id[2]);
-    fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops);
+    fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops, std::make_shared<search::FlushToken>());
 
     checkResults(fusion_id, disk_id, 3);
+}
+
+void
+Test::requireThatFusionCanBeStopped()
+{
+    createIndex(base_dir, disk_id[0]);
+    createIndex(base_dir, disk_id[1]);
+    auto flush_token = std::make_shared<search::FlushToken>();
+    flush_token->request_stop();
+    uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops, flush_token);
+    EXPECT_EQUAL(0u, fusion_id);
 }
 
 }  // namespace

@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
 import static com.yahoo.security.SubjectAlternativeName.Type.IP_ADDRESS;
+import static com.yahoo.security.SubjectAlternativeName.Type.UNIFORM_RESOURCE_IDENTIFIER;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -59,6 +60,7 @@ public class PeerAuthorizer {
             case CN:
                 return cn != null && requiredCredential.pattern().matches(cn);
             case SAN_DNS:
+            case SAN_URI:
                 return sans.stream()
                         .anyMatch(san -> requiredCredential.pattern().matches(san));
             default:
@@ -73,7 +75,7 @@ public class PeerAuthorizer {
 
     private static List<String> getSubjectAlternativeNames(X509Certificate peerCertificate) {
         return X509CertificateUtils.getSubjectAlternativeNames(peerCertificate).stream()
-                .filter(san -> san.getType() == DNS_NAME || san.getType() == IP_ADDRESS)
+                .filter(san -> san.getType() == DNS_NAME || san.getType() == IP_ADDRESS || san.getType() == UNIFORM_RESOURCE_IDENTIFIER)
                 .map(SubjectAlternativeName::getValue)
                 .collect(toList());
     }

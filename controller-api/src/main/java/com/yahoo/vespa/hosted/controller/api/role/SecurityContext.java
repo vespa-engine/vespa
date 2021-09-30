@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.role;
 
 import java.security.Principal;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
 
@@ -14,10 +15,16 @@ public class SecurityContext {
 
     private final Principal principal;
     private final Set<Role> roles;
+    private final Instant issuedAt;
 
-    public SecurityContext(Principal principal, Set<Role> roles) {
+    public SecurityContext(Principal principal, Set<Role> roles, Instant issuedAt) {
         this.principal = Objects.requireNonNull(principal);
         this.roles = Set.copyOf(roles);
+        this.issuedAt = Objects.requireNonNull(issuedAt);
+    }
+
+    public SecurityContext(Principal principal, Set<Role> roles) {
+        this(principal, roles, Instant.EPOCH);
     }
 
     public Principal principal() {
@@ -28,18 +35,23 @@ public class SecurityContext {
         return roles;
     }
 
+    public Instant issuedAt() {
+        return issuedAt;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SecurityContext that = (SecurityContext) o;
         return Objects.equals(principal, that.principal) &&
-               Objects.equals(roles, that.roles);
+               Objects.equals(roles, that.roles) &&
+               Objects.equals(issuedAt, that.issuedAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(principal, roles);
+        return Objects.hash(principal, roles, issuedAt);
     }
 
     @Override
@@ -47,6 +59,7 @@ public class SecurityContext {
         return "SecurityContext{" +
                "principal=" + principal +
                ", roles=" + roles +
+               ", issuedAt=" + issuedAt +
                '}';
     }
 

@@ -1,7 +1,15 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.api;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
+
+import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Represents an Athenz Access Token
@@ -13,8 +21,11 @@ public class AthenzAccessToken {
     public static final String HTTP_HEADER_NAME = "Authorization";
 
     private static final String BEARER_TOKEN_PREFIX = "Bearer ";
+    private static final String SCOPE_CLAIM = "scp";
+    private static final String AUDIENCE_CLAIM = "aud";
 
     private final String value;
+    private volatile DecodedJWT jwt;
 
     public AthenzAccessToken(String value) {
         this.value = stripBearerTokenPrefix(value);
@@ -33,6 +44,25 @@ public class AthenzAccessToken {
 
     public String value() { return value; }
     public String valueWithBearerPrefix() { return BEARER_TOKEN_PREFIX + value; }
+    public Instant getExpiryTime () {
+        return jwt().getExpiresAt().toInstant();
+    }
+    public AthenzIdentity getAthenzIdentity() { return AthenzIdentities.from(jwt().getClaim("client_id").asString()); }
+    public List<AthenzRole> roles() {
+        String domain = Optional.ofNullable(jwt().getClaim(AUDIENCE_CLAIM).asString()).orElse("");
+        return Optional.ofNullable(jwt().getClaim(SCOPE_CLAIM).asList(String.class)).orElse(List.of()).stream()
+                .map(role -> new AthenzRole(domain, role))
+                .collect(Collectors.toList());
+    }
+
+    private DecodedJWT jwt() {
+        if (jwt == null) {
+            // Decoding a token is expensive and involves construction of at least one Jackson ObjectMapper instance
+            // TODO Cache encoder/decoder as static field in AthenzAccessToken
+            jwt = JWT.decode(this.value);
+        }
+        return jwt;
+    }
 
     @Override public String toString() { return "AthenzAccessToken{value='" + value + "'}"; }
 

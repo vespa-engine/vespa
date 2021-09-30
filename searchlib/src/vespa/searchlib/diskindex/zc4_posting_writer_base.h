@@ -24,7 +24,7 @@ public:
         uint32_t _field_length;
         uint32_t _num_occs;
         uint32_t _features_size;
-        DocIdAndFeatureSize(uint32_t doc_id, uint32_t field_length, uint32_t num_occs, uint32_t features_size)
+        DocIdAndFeatureSize(uint32_t doc_id, uint32_t field_length, uint32_t num_occs, uint32_t features_size) noexcept
             : _doc_id(doc_id),
               _field_length(field_length),
               _num_occs(num_occs),

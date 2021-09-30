@@ -1,14 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.document.StructDataType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.document.Field;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,12 +16,12 @@ import java.util.stream.Collectors;
  * Validates the changes between a current and next document type used in a document database.
  *
  * @author toregge
- * @since 2014-11-25
  */
 public class DocumentTypeChangeValidator {
 
-    private NewDocumentType currentDocType;
-    private NewDocumentType nextDocType;
+    private final ClusterSpec.Id id;
+    private final NewDocumentType currentDocType;
+    private final NewDocumentType nextDocType;
 
     private static abstract class FieldChange {
 
@@ -127,22 +127,24 @@ public class DocumentTypeChangeValidator {
         }
     }
 
-    public DocumentTypeChangeValidator(NewDocumentType currentDocType,
+    public DocumentTypeChangeValidator(ClusterSpec.Id id,
+                                       NewDocumentType currentDocType,
                                        NewDocumentType nextDocType) {
+        this.id = id;
         this.currentDocType = currentDocType;
         this.nextDocType = nextDocType;
     }
 
-    public List<VespaConfigChangeAction> validate(ValidationOverrides overrides, Instant now) {
+    public List<VespaConfigChangeAction> validate() {
         return currentDocType.getAllFields().stream().
                 map(field -> createFieldChange(field, nextDocType)).
                 filter(fieldChange -> fieldChange.valid() && fieldChange.changedType()).
-                map(fieldChange -> VespaRefeedAction.of("field-type-change",
-                                                        overrides,
+                map(fieldChange -> VespaRefeedAction.of(id,
+                                                        ValidationId.fieldTypeChange,
                                                         new ChangeMessageBuilder(fieldChange.fieldName()).
                                                                                  addChange("data type", fieldChange.currentTypeName(),
-                                                                                 fieldChange.nextTypeName()).build(), 
-                                                        now)).
+                                                                                 fieldChange.nextTypeName()).build()
+                )).
                 collect(Collectors.toList());
     }
 

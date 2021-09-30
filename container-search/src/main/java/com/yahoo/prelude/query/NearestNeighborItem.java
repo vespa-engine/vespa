@@ -2,8 +2,8 @@
 
 package com.yahoo.prelude.query;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.compress.IntegerCompressor;
+import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
 
@@ -16,12 +16,14 @@ import java.nio.ByteBuffer;
  *
  * @author arnej
  */
-@Beta
 public class NearestNeighborItem extends SimpleTaggableItem {
 
     private int targetNumHits = 0;
+    private int hnswExploreAdditionalHits = 0;
+    private double distanceThreshold = Double.POSITIVE_INFINITY;
+    private boolean approximate = true;
     private String field;
-    private String queryTensorName;
+    private final String queryTensorName;
 
     public NearestNeighborItem(String fieldName, String queryTensorName) {
         this.field = fieldName;
@@ -34,11 +36,29 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     /** Returns the field name */
     public String getIndexName() { return field; }
 
+    /** Returns the distance threshold for nearest-neighbor hits */
+    public double getDistanceThreshold () { return this.distanceThreshold ; }
+
+    /** Returns the number of extra hits to explore in HNSW algorithm */
+    public int getHnswExploreAdditionalHits() { return hnswExploreAdditionalHits; }
+
+    /** Returns whether approximation is allowed */
+    public boolean getAllowApproximate() { return approximate; }
+
     /** Returns the name of the query tensor */
     public String getQueryTensorName() { return queryTensorName; }
 
     /** Set the K number of hits to produce */
     public void setTargetNumHits(int target) { this.targetNumHits = target; }
+
+    /** Set the distance threshold for nearest-neighbor hits */
+    public void setDistanceThreshold(double threshold) { this.distanceThreshold = threshold; }
+
+    /** Set the number of extra hits to explore in HNSW algorithm */
+    public void setHnswExploreAdditionalHits(int num) { this.hnswExploreAdditionalHits = num; }
+
+    /** Set whether approximation is allowed */
+    public void setAllowApproximate(boolean value) { this.approximate = value; }
 
     @Override
     public void setIndexName(String index) { this.field = index; }
@@ -57,7 +77,11 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         super.encodeThis(buffer);
         putString(field, buffer);
         putString(queryTensorName, buffer);
+        int approxNum = (approximate ? 1 : 0);
         IntegerCompressor.putCompressedPositiveNumber(targetNumHits, buffer);
+        IntegerCompressor.putCompressedPositiveNumber(approxNum, buffer);
+        IntegerCompressor.putCompressedPositiveNumber(hnswExploreAdditionalHits, buffer);
+        buffer.putDouble(distanceThreshold);
         return 1;  // number of encoded stack dump items
     }
 
@@ -65,6 +89,21 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     protected void appendBodyString(StringBuilder buffer) {
         buffer.append("{field=").append(field);
         buffer.append(",queryTensorName=").append(queryTensorName);
-        buffer.append(",targetNumHits=").append(targetNumHits).append("}");
+        buffer.append(",hnsw.exploreAdditionalHits=").append(hnswExploreAdditionalHits);
+        buffer.append(",distanceThreshold=").append(distanceThreshold);
+        buffer.append(",approximate=").append(approximate);
+        buffer.append(",targetHits=").append(targetNumHits).append("}");
     }
+
+    @Override
+    public void disclose(Discloser discloser) {
+        super.disclose(discloser);
+        discloser.addProperty("field", field);
+        discloser.addProperty("queryTensorName", queryTensorName);
+        discloser.addProperty("hnsw.exploreAdditionalHits", hnswExploreAdditionalHits);
+        discloser.addProperty("distanceThreshold", distanceThreshold);
+        discloser.addProperty("approximate", approximate);
+        discloser.addProperty("targetHits", targetNumHits);
+    }
+
 }

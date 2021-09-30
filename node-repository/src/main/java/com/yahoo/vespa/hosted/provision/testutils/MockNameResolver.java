@@ -5,7 +5,6 @@ import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -34,8 +33,8 @@ public class MockNameResolver implements NameResolver {
     public MockNameResolver addRecord(String hostname, String... ipAddress) {
         Objects.requireNonNull(hostname, "hostname must be non-null");
         Arrays.stream(ipAddress).forEach(ip -> Objects.requireNonNull(ip, "ipAddress must be non-null"));
-        records.putIfAbsent(hostname, new HashSet<>());
-        records.get(hostname).addAll(Arrays.asList(ipAddress));
+        records.computeIfAbsent(hostname, (k) -> new HashSet<>())
+               .addAll(Arrays.asList(ipAddress));
         return this;
     }
 
@@ -51,7 +50,7 @@ public class MockNameResolver implements NameResolver {
 
     /**
      * When true, only records added with {@link MockNameResolver#addReverseRecord(String, String)} are considered by
-     * {@link MockNameResolver#getHostname(String)}. Otherwise the latter returns the IP address by reversing the lookup
+     * {@link MockNameResolver#resolveHostname(String)}. Otherwise the latter returns the IP address by reversing the lookup
      * implicitly.
      */
     public MockNameResolver explicitReverseRecords() {
@@ -60,20 +59,25 @@ public class MockNameResolver implements NameResolver {
     }
 
     @Override
-    public Set<String> getAllByNameOrThrow(String hostname) {
-        if (records.containsKey(hostname)) {
-            return records.get(hostname);
+    public Set<String> resolveAll(String name) {
+        if (records.containsKey(name)) {
+            return records.get(name);
         }
         if (mockAnyLookup) {
-            Set<String> ipAddresses = Collections.singleton(randomIpAddress());
-            records.put(hostname, ipAddresses);
+            Set<String> ipAddresses = Set.of(randomIpAddress());
+            records.put(name, ipAddresses);
             return ipAddresses;
         }
-        throw new RuntimeException(new UnknownHostException("Could not resolve: " + hostname));
+        throw new RuntimeException(new UnknownHostException("Could not resolve: " + name));
     }
 
     @Override
-    public Optional<String> getHostname(String ipAddress) {
+    public Set<String> resolve(String name, RecordType first, RecordType... rest) {
+        return resolveAll(name);
+    }
+
+    @Override
+    public Optional<String> resolveHostname(String ipAddress) {
         if (!explicitReverseRecords) {
             return records.entrySet().stream()
                           .filter(kv -> kv.getValue().contains(ipAddress))

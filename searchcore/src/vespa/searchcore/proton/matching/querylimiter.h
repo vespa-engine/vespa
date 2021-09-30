@@ -37,7 +37,7 @@ private:
     void releaseToken();
     std::mutex              _lock;
     std::condition_variable _cond;
-    volatile int _activeThreads;
+    int _activeThreads;
 
     // These are updated asynchronously at reconfig.
     volatile int      _maxThreads;

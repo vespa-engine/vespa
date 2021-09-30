@@ -10,7 +10,9 @@ import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
@@ -131,7 +133,12 @@ public class ModelsEvaluatorTest {
                                                        RankProfilesConfig.class).getConfig("");
         RankingConstantsConfig constantsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-constants.cfg").toFile()),
                                                                     RankingConstantsConfig.class).getConfig("");
-        return new ModelsEvaluator(config, constantsConfig, MockFileAcquirer.returnFile(null));
+        RankingExpressionsConfig expressionsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-expressions.cfg").toFile()),
+                                                                        RankingExpressionsConfig.class).getConfig("");
+        OnnxModelsConfig onnxModelsConfig = new ConfigGetter<>(new FileSource(configDir.append("onnx-models.cfg").toFile()),
+                                                               OnnxModelsConfig.class).getConfig("");
+        return new ModelsEvaluator(new RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"), MockFileAcquirer.returnFile(null)),
+                config, constantsConfig, expressionsConfig, onnxModelsConfig);
     }
 
 }

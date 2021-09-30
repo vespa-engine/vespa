@@ -10,7 +10,6 @@ import com.yahoo.vdslib.state.State;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -26,7 +25,7 @@ public class ClusterStateGenerator {
 
     static class Params {
         public ContentCluster cluster;
-        public Map<NodeType, Integer> transitionTimes;
+        public Map<NodeType, Integer> transitionTimes = buildTransitionTimeMap(0, 0);
         public long currentTimeInMillis = 0;
         public int maxPrematureCrashes = 0;
         public int minStorageNodesUp = 1;
@@ -40,7 +39,6 @@ public class ClusterStateGenerator {
         public int maxInitProgressTimeMs = 5000;
 
         Params() {
-            this.transitionTimes = buildTransitionTimeMap(0, 0);
         }
 
         // FIXME de-dupe
@@ -269,16 +267,38 @@ public class ClusterStateGenerator {
         final GroupAvailabilityCalculator calc = new GroupAvailabilityCalculator.Builder()
                 .withMinNodeRatioPerGroup(params.minNodeRatioPerGroup)
                 .withDistribution(params.cluster.getDistribution())
+                .withNodesSafelySetToMaintenance(params.cluster.nodesSafelySetTo(State.MAINTENANCE))
                 .build();
-        final Set<Integer> nodesToTakeDown = calc.nodesThatShouldBeDown(workingState);
+        GroupAvailabilityCalculator.Result result = calc.calculate(workingState);
 
-        for (Integer idx : nodesToTakeDown) {
-            final Node node = storageNode(idx);
-            final NodeState newState = new NodeState(NodeType.STORAGE, State.DOWN);
-            newState.setDescription("group node availability below configured threshold");
-            workingState.setNodeState(node, newState);
-            nodeStateReasons.put(node, NodeStateReason.GROUP_IS_DOWN);
+        for (int index : result.nodesThatShouldBeMaintained()) {
+            setNewNodeState(index, NodeType.STORAGE, State.MAINTENANCE,
+                    "too many safe maintenance nodes in group", NodeStateReason.GROUP_IN_MAINTENANCE,
+                    workingState, nodeStateReasons);
+
+            setNewNodeState(index, NodeType.DISTRIBUTOR, State.DOWN,
+                    "too many safe maintenance nodes in group", NodeStateReason.GROUP_IN_MAINTENANCE,
+                    workingState, nodeStateReasons);
         }
+
+        for (int index : result.nodesThatShouldBeDown()) {
+            setNewNodeState(index, NodeType.STORAGE, State.DOWN,
+                    "group node availability below configured threshold", NodeStateReason.GROUP_IS_DOWN,
+                    workingState, nodeStateReasons);
+        }
+    }
+
+    private static void setNewNodeState(int index,
+                                        NodeType nodeType,
+                                        State newState,
+                                        String description,
+                                        NodeStateReason nodeStateReason,
+                                        ClusterState workingState,
+                                        Map<Node, NodeStateReason> nodeStateReasons) {
+        final Node node = new Node(nodeType, index);
+        final NodeState newNodeState = new NodeState(nodeType, newState).setDescription(description);
+        workingState.setNodeState(node, newNodeState);
+        nodeStateReasons.put(node, nodeStateReason);
     }
 
     private static Node storageNode(int index) {

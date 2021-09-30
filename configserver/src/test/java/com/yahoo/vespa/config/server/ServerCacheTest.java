@@ -22,22 +22,22 @@ import static org.junit.Assert.assertTrue;
 public class ServerCacheTest {
     private ServerCache cache;
 
-    private static String defMd5 = "595f44fec1e92a71d3e9e77456ba80d1";
-    private static String defMd5_2 = "a2f8edfc965802bf6d44826f9da7e2b0";
-    private static String configMd5 = "mymd5";
-    private static String configMd5_2 = "mymd5_2";
-    private static ConfigDefinition def = new ConfigDefinition("mypayload", new String[0]);
+    private static final String defMd5 = "595f44fec1e92a71d3e9e77456ba80d1";
+    private static final String defMd5_2 = "a2f8edfc965802bf6d44826f9da7e2b0";
+    private static final String configMd5 = "mymd5";
+    private static final String configMd5_2 = "mymd5_2";
+    private static final ConfigDefinition def = new ConfigDefinition("mypayload", new String[0]);
 
-    private static ConfigDefinitionKey fooBarDefKey = new ConfigDefinitionKey("foo", "bar");
-    private static ConfigDefinitionKey fooBazDefKey = new ConfigDefinitionKey("foo", "baz");
-    private static ConfigDefinitionKey fooBimDefKey = new ConfigDefinitionKey("foo", "bim");
+    private static final ConfigDefinitionKey fooBarDefKey = new ConfigDefinitionKey("foo", "bar");
+    private static final ConfigDefinitionKey fooBazDefKey = new ConfigDefinitionKey("foo", "baz");
+    private static final ConfigDefinitionKey fooBimDefKey = new ConfigDefinitionKey("foo", "bim");
 
-    private static ConfigKey<?> fooConfigKey = new ConfigKey<>("foo", "id", "bar");
-    private static ConfigKey<?> bazConfigKey = new ConfigKey<>("foo", "id2", "bar");
+    private static final ConfigKey<?> fooConfigKey = new ConfigKey<>("foo", "id", "bar");
+    private static final ConfigKey<?> bazConfigKey = new ConfigKey<>("foo", "id2", "bar");
 
-    private ConfigCacheKey fooBarCacheKey = new ConfigCacheKey(fooConfigKey, defMd5);
-    private ConfigCacheKey bazQuuxCacheKey = new ConfigCacheKey(bazConfigKey, defMd5);
-    private ConfigCacheKey fooBarCacheKeyDifferentMd5 = new ConfigCacheKey(fooConfigKey, defMd5_2);
+    private final ConfigCacheKey fooBarCacheKey = new ConfigCacheKey(fooConfigKey, defMd5);
+    private final ConfigCacheKey bazQuuxCacheKey = new ConfigCacheKey(bazConfigKey, defMd5);
+    private final ConfigCacheKey fooBarCacheKeyDifferentMd5 = new ConfigCacheKey(fooConfigKey, defMd5_2);
 
     @Before
     public void setup() {
@@ -48,9 +48,9 @@ public class ServerCacheTest {
 
         cache = new ServerCache(new TestConfigDefinitionRepo(), userConfigDefinitionRepo);
 
-        cache.put(fooBarCacheKey, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5), configMd5);
-        cache.put(bazQuuxCacheKey, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5), configMd5);
-        cache.put(fooBarCacheKeyDifferentMd5, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5_2), configMd5_2);
+        cache.computeIfAbsent(fooBarCacheKey, (ConfigCacheKey key) -> SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5));
+        cache.computeIfAbsent(bazQuuxCacheKey, (ConfigCacheKey key) -> SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5));
+        cache.computeIfAbsent(fooBarCacheKeyDifferentMd5, (ConfigCacheKey key) -> SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5_2));
     }
 
     @Test

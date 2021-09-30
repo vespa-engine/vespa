@@ -1,16 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
-import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
 import java.util.Arrays;
@@ -23,14 +22,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
-
 /**
  * Model with two services, one that does not have a state port
  *
  * @author hakonhall
  */
 public class MockModel implements Model {
+
     private final Collection<HostInfo> hosts;
 
     static MockModel createContainer(String hostname, int statePort) {
@@ -45,22 +43,6 @@ public class MockModel implements Model {
         return new HostInfo(hostname, Arrays.asList(container, serviceNoStatePort));
     }
 
-    // TODO: Move to caller
-    static MockModel createClusterController(String hostname, int statePort) {
-        ServiceInfo container = createServiceInfo(
-                hostname,
-                "foo", // name
-                CLUSTERCONTROLLER_CONTAINER.serviceName,
-                ClusterSpec.Type.container,
-                statePort,
-                "state http external query");
-        ServiceInfo serviceNoStatePort = createServiceInfo(hostname, "storagenode", "storagenode",
-                ClusterSpec.Type.content, 1234, "rpc");
-        HostInfo hostInfo = new HostInfo(hostname, Arrays.asList(container, serviceNoStatePort));
-
-        return new MockModel(Collections.singleton(hostInfo));
-    }
-
     static MockModel createConfigProxies(List<String> hostnames, int rpcPort) {
         Set<HostInfo> hostInfos = new HashSet<>();
         hostnames.forEach(hostname -> {
@@ -71,7 +53,7 @@ public class MockModel implements Model {
         return new MockModel(hostInfos);
     }
 
-    static private ServiceInfo createServiceInfo(
+    static ServiceInfo createServiceInfo(
             String hostname,
             String name,
             String type,
@@ -90,7 +72,7 @@ public class MockModel implements Model {
     }
 
     @Override
-    public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef) {
+    public ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition targetDef) {
         throw new UnsupportedOperationException();
     }
 
@@ -110,15 +92,11 @@ public class MockModel implements Model {
     }
 
     @Override
-    public void distributeFiles(FileDistribution fileDistribution) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Set<FileReference> fileReferences() { return new HashSet<>(); }
 
     @Override
     public AllocatedHosts allocatedHosts() {
         throw new UnsupportedOperationException();
     }
+
 }

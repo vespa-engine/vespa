@@ -2,6 +2,11 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.derived.SummaryClass;
 import com.yahoo.searchdefinition.document.Attribute;
@@ -15,10 +20,10 @@ import com.yahoo.searchdefinition.document.TemporaryImportedFields;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
+import com.yahoo.vespa.model.AbstractService;
 
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -27,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.stream.Stream;
 
 /**
@@ -42,9 +47,8 @@ import java.util.stream.Stream;
 // Ensure that after the processing step, all implicit instances of the above types are explicitly represented
 public class Search implements ImmutableSearch {
 
-    private static final Logger log = Logger.getLogger(Search.class.getName());
     private static final String SD_DOC_FIELD_NAME = "sddocname";
-    private static final List<String> RESERVED_NAMES = Arrays.asList(
+    private static final List<String> RESERVED_NAMES = List.of(
             "index", "index_url", "summary", "attribute", "select_input", "host", SummaryClass.DOCUMENT_ID_FIELD,
             "position", "split_foreach", "tokenize", "if", "else", "switch", "case", SD_DOC_FIELD_NAME, "relevancy");
 
@@ -59,7 +63,9 @@ public class Search implements ImmutableSearch {
     private String name;
 
     /** True if this doesn't define a search, just a document type */
-    private boolean documentsOnly = false;
+    private final boolean documentsOnly;
+
+    private boolean rawAsBase64 = false;
 
     /** The stemming setting of this search definition. Default is BEST. */
     private Stemming stemming = Stemming.BEST;
@@ -76,31 +82,49 @@ public class Search implements ImmutableSearch {
     /** The explicitly defined summaries of this search definition. _Must_ preserve order. */
     private final Map<String, DocumentSummary> summaries = new LinkedHashMap<>();
 
+    /** External rank expression files of this */
+    private final LargeRankExpressions largeRankExpressions;
+
     /** Ranking constants of this */
-    private final RankingConstants rankingConstants = new RankingConstants();
+    private final RankingConstants rankingConstants;
+
+    /** Onnx models of this */
+    private final OnnxModels onnxModels;
 
     private Optional<TemporaryImportedFields> temporaryImportedFields = Optional.of(new TemporaryImportedFields());
     private Optional<ImportedFields> importedFields = Optional.empty();
 
     private final ApplicationPackage applicationPackage;
+    private final DeployLogger deployLogger;
+    private final ModelContext.Properties properties;
 
-    /**
-     * Creates a search definition which just holds a set of documents which should not (here, directly) be searchable
-     */
-    protected Search() {
-        applicationPackage = null;
-        documentsOnly = true;
+    /** Testing only */
+    public Search(String name) {
+        this(name, null, null, new BaseDeployLogger(), new TestProperties());
     }
-
     /**
      * Creates a proper search definition
      *
      * @param name of the the searchdefinition
      * @param applicationPackage the application containing this
      */
-    public Search(String name, ApplicationPackage applicationPackage) {
-        this.applicationPackage = applicationPackage;
+    public Search(String name, ApplicationPackage applicationPackage, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties) {
+        this(applicationPackage, fileRegistry, deployLogger, properties, false);
         this.name = name;
+    }
+
+    protected Search(ApplicationPackage applicationPackage, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties) {
+        this(applicationPackage, fileRegistry, deployLogger, properties, true);
+    }
+
+    private Search(ApplicationPackage applicationPackage, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties, boolean documentsOnly) {
+        this.applicationPackage = applicationPackage;
+        this.deployLogger = deployLogger;
+        this.properties = properties;
+        this.documentsOnly = documentsOnly;
+        largeRankExpressions = new LargeRankExpressions(fileRegistry);
+        rankingConstants = new RankingConstants(fileRegistry);
+        onnxModels = new OnnxModels(fileRegistry);
     }
 
     protected void setName(String name) {
@@ -120,6 +144,16 @@ public class Search implements ImmutableSearch {
     public boolean isDocumentsOnly() {
         return documentsOnly;
     }
+
+    /**
+     * Returns true if 'raw' fields shall be presented as base64 in summary
+     * Note that tis is temporary and will disappear on Vespa 8 as it will become default, and only option.
+     *
+     * @return true if raw shall be encoded as base64 in summary
+     */
+    public boolean isRawAsBase64() { return rawAsBase64; }
+
+    public void enableRawAsBase64() { rawAsBase64 = true; }
 
     /**
      * Sets the stemming default of fields. Default is ALL
@@ -157,7 +191,19 @@ public class Search implements ImmutableSearch {
     }
 
     @Override
+    public LargeRankExpressions rankExpressionFiles() { return largeRankExpressions; }
+
+    @Override
     public RankingConstants rankingConstants() { return rankingConstants; }
+
+    @Override
+    public OnnxModels onnxModels() { return onnxModels; }
+
+    public void sendTo(Collection<? extends AbstractService> services) {
+        rankingConstants.sendTo(services);
+        largeRankExpressions.sendTo(services);
+        onnxModels.sendTo(services);
+    }
 
     public Optional<TemporaryImportedFields> temporaryImportedFields() {
         return temporaryImportedFields;
@@ -228,6 +274,7 @@ public class Search implements ImmutableSearch {
     /**
      * @return The document in this search.
      */
+    @Override
     public SDDocumentType getDocument() {
         return docType;
     }
@@ -257,6 +304,12 @@ public class Search implements ImmutableSearch {
 
     @Override
     public ApplicationPackage applicationPackage() { return applicationPackage; }
+
+    @Override
+    public DeployLogger getDeployLogger() { return deployLogger; }
+
+    @Override
+    public ModelContext.Properties getDeployProperties() { return properties; }
 
     /**
      * Returns a field defined in this search definition or one if its documents. Fields in this search definition takes
@@ -288,11 +341,11 @@ public class Search implements ImmutableSearch {
     /**
      * Adds an extra field of this search definition not contained in a document
      *
-     * @param field to add to the searchdefinitions list of external fields.
+     * @param field to add to the schemas list of external fields
      */
     public void addExtraField(SDField field) {
         if (fields.containsKey(field.getName())) {
-            log.warning("Duplicate field " + field.getName() + " in search definition " + getName());
+            deployLogger.logApplicationPackage(Level.WARNING, "Duplicate field " + field.getName() + " in search definition " + getName());
         } else {
             field.setIsExtraField(true);
             fields.put(field.getName(), field);
@@ -383,7 +436,7 @@ public class Search implements ImmutableSearch {
      * Consolidates a set of index settings for the same index into one
      *
      * @param indices The list of indexes to consolidate.
-     * @return The consolidated index
+     * @return the consolidated index
      */
     private Index consolidateIndices(List<Index> indices) {
         Index first = indices.get(0);
@@ -394,6 +447,9 @@ public class Search implements ImmutableSearch {
             if (current.isPrefix()) {
                 consolidated.setPrefix(true);
             }
+            if (current.useInterleavedFeatures()) {
+                consolidated.setInterleavedFeatures(true);
+            }
 
             if (consolidated.getRankType() == null) {
                 consolidated.setRankType(current.getRankType());
@@ -401,7 +457,7 @@ public class Search implements ImmutableSearch {
                 if (current.getRankType() != null &&
                     !consolidated.getRankType().equals(current.getRankType()))
                 {
-                    log.warning("Conflicting rank type settings for " +
+                    deployLogger.logApplicationPackage(Level.WARNING, "Conflicting rank type settings for " +
                                 first.getName() + " in " + this + ", using " +
                                 consolidated.getRankType());
                 }

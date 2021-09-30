@@ -16,6 +16,7 @@ import static com.yahoo.search.yql.YqlParser.DOT_PRODUCT;
 import static com.yahoo.search.yql.YqlParser.END_ANCHOR;
 import static com.yahoo.search.yql.YqlParser.EQUIV;
 import static com.yahoo.search.yql.YqlParser.FILTER;
+import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
 import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
 import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
 import static com.yahoo.search.yql.YqlParser.LABEL;
@@ -72,6 +73,7 @@ import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.GeoLocationItem;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
@@ -140,7 +142,7 @@ public class VespaSerializer {
                     escape(((WordItem) current).getIndexedString(), destination).append('"');
                 } else {
                     throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName()
-                                    + " in segment AND expressions not implemented, please report this as a bug.");
+                                                       + " in segment AND expressions not implemented, please report this as a bug.");
                 }
             }
         }
@@ -641,7 +643,7 @@ public class VespaSerializer {
                     WordAlternativesSerializer.serialize(destination, (WordAlternativesItem) current, false);
                 } else {
                     throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName() +
-                                                      " in phrases not implemented, please report this as a bug.");
+                                                       " in phrases not implemented, please report this as a bug.");
                 }
             }
             destination.append(')');
@@ -689,6 +691,26 @@ public class VespaSerializer {
 
     }
 
+    private static class GeoLocationSerializer extends Serializer<GeoLocationItem> {
+        @Override
+        void onExit(StringBuilder destination, GeoLocationItem item) { }
+        @Override
+        boolean serialize(StringBuilder destination, GeoLocationItem item) {
+            String annotations = leafAnnotations(item);
+            if (annotations.length() > 0) {
+                destination.append("([{").append(annotations).append("}]");
+            }
+            destination.append(GEO_LOCATION).append('(');
+            destination.append(item.getIndexName()).append(", ");
+            var loc = item.getLocation();
+            destination.append(loc.degNS()).append(", ");
+            destination.append(loc.degEW()).append(", ");
+            destination.append('"').append(loc.degRadius()).append(" deg").append('"');
+            destination.append(')');
+            return false;
+        }
+    }
+
     private static class NearestNeighborSerializer extends Serializer<NearestNeighborItem> {
 
         @Override
@@ -701,7 +723,24 @@ public class VespaSerializer {
             destination.append(leafAnnotations(item));
             comma(destination, initLen);
             int targetNumHits = item.getTargetNumHits();
-            destination.append("\"targetNumHits\": ").append(targetNumHits);
+            annotationKey(destination, YqlParser.TARGET_NUM_HITS).append(targetNumHits);
+            double distanceThreshold = item.getDistanceThreshold();
+            if (distanceThreshold < Double.POSITIVE_INFINITY) {
+                comma(destination, initLen);
+                String key = YqlParser.DISTANCE_THRESHOLD;
+                annotationKey(destination, key).append(distanceThreshold);
+            }
+            int explore = item.getHnswExploreAdditionalHits();
+            if (explore != 0) {
+                comma(destination, initLen);
+                String key = YqlParser.HNSW_EXPLORE_ADDITIONAL_HITS;
+                annotationKey(destination, key).append(explore);
+            }
+            boolean allow_approx = item.getAllowApproximate();
+            if (! allow_approx) {
+                comma(destination, initLen);
+                annotationKey(destination, "approximate").append(allow_approx);
+            }
             destination.append("}]");
             destination.append(NEAREST_NEIGHBOR).append('(');
             destination.append(item.getIndexName()).append(", ");
@@ -911,12 +950,13 @@ public class VespaSerializer {
 
     }
 
+    @SuppressWarnings("deprecation")
     private static class WeakAndSerializer extends Serializer<WeakAndItem> {
 
         @Override
         void onExit(StringBuilder destination, WeakAndItem item) {
             destination.append(')');
-            if (needsAnnotationBlock((WeakAndItem) item)) {
+            if (needsAnnotationBlock(item)) {
                 destination.append(')');
             }
         }
@@ -1125,7 +1165,7 @@ public class VespaSerializer {
             Serializer doIt = dispatch.get(item.getClass());
 
             if (doIt == null) {
-                throw new IllegalArgumentException(item.getClass() + " not supported for YQL+ marshalling.");
+                throw new IllegalArgumentException(item.getClass() + " not supported for YQL marshalling.");
             }
 
             if (state.peekFirst() != null && state.peekFirst().subItems > 0) {
@@ -1152,6 +1192,7 @@ public class VespaSerializer {
         dispatchBuilder.put(EquivItem.class, new EquivSerializer());
         dispatchBuilder.put(ExactStringItem.class, new WordSerializer());
         dispatchBuilder.put(IntItem.class, new NumberSerializer());
+        dispatchBuilder.put(GeoLocationItem.class, new GeoLocationSerializer());
         dispatchBuilder.put(BoolItem.class, new BoolSerializer());
         dispatchBuilder.put(MarkerWordItem.class, new WordSerializer()); // gotcha
         dispatchBuilder.put(NearItem.class, new NearSerializer());
@@ -1345,6 +1386,11 @@ public class VespaSerializer {
         else {
             return false;
         }
+    }
+
+    private static StringBuilder annotationKey(StringBuilder annotation, String val) {
+        annotation.append("\"").append(val).append("\": ");
+        return annotation;
     }
 
     private static void comma(StringBuilder annotation, int initLen) {

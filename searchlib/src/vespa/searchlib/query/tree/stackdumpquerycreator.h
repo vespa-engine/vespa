@@ -6,8 +6,10 @@
 #include "querybuilder.h"
 #include "term.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include <vespa/searchlib/parsequery/simplequerystack.h>
+#include <vespa/searchlib/common/geo_location_parser.h>
 #include <vespa/vespalib/objects/hexdump.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <charconv>
 
 namespace search::query {
 
@@ -28,10 +30,10 @@ public:
         while (!builder.hasError() && queryStack.next()) {
             Term *t = createQueryTerm(queryStack, builder, pureTermView);
             if (!builder.hasError() && t) {
-                if (queryStack.getFlags() & ParseItem::IFLAG_NORANK) {
+                if (queryStack.hasNoRankFlag()) {
                     t->setRanked(false);
                 }
-                if (queryStack.getFlags() & ParseItem::IFLAG_NOPOSITIONDATA) {
+                if (queryStack.hasNoPositionDataFlag()) {
                     t->setPositionData(false);
                 }
             }
@@ -45,15 +47,33 @@ public:
         return builder.build();
     }
 
-private: 
-    static Term * createQueryTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilder<NodeTypes> & builder, vespalib::stringref & pureTermView) {
+private:
+    static void populateMultiTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilderBase & builder, MultiTerm & mt) {
+        uint32_t added(0);
+        for (added = 0; (added < mt.getNumTerms()) && queryStack.next(); added++) {
+            ParseItem::ItemType type = queryStack.getType();
+            switch (type) {
+                case ParseItem::ITEM_PURE_WEIGHTED_LONG:
+                    mt.addTerm(queryStack.getIntergerTerm(), queryStack.GetWeight());
+                    break;
+                case ParseItem::ITEM_PURE_WEIGHTED_STRING:
+                    mt.addTerm(queryStack.getTerm(), queryStack.GetWeight());
+                    break;
+                default:
+                    builder.reportError(vespalib::make_string("Got unexpected node %d for multiterm node at child term %d", type, added));
+                    return;
+            }
+        }
+        if (added < mt.getNumTerms()) {
+            builder.reportError(vespalib::make_string("Too few nodes(%d) for multiterm(%d)", added, mt.getNumTerms()));
+        }
+    }
+    static Term *
+    createQueryTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilder<NodeTypes> & builder, vespalib::stringref & pureTermView) {
         uint32_t arity = queryStack.getArity();
-        uint32_t arg1 = queryStack.getArg1();
-        double arg2 = queryStack.getArg2();
-        double arg3 = queryStack.getArg3();
         ParseItem::ItemType type = queryStack.getType();
         Node::UP node;
-        Term *t = 0;
+        Term *t = nullptr;
         if (type == ParseItem::ITEM_AND) {
             builder.addAnd(arity);
         } else if (type == ParseItem::ITEM_RANK) {
@@ -68,16 +88,19 @@ private:
             pureTermView = view;
         } else if (type == ParseItem::ITEM_WEAK_AND) {
             vespalib::stringref view = queryStack.getIndexName();
-            builder.addWeakAnd(arity, arg1, view);
+            uint32_t targetNumHits = queryStack.getTargetNumHits();
+            builder.addWeakAnd(arity, targetNumHits, view);
             pureTermView = view;
         } else if (type == ParseItem::ITEM_EQUIV) {
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
             builder.addEquiv(arity, id, weight);
         } else if (type == ParseItem::ITEM_NEAR) {
-            builder.addNear(arity, arg1);
+            uint32_t nearDistance = queryStack.getNearDistance();
+            builder.addNear(arity, nearDistance);
         } else if (type == ParseItem::ITEM_ONEAR) {
-            builder.addONear(arity, arg1);
+            uint32_t nearDistance = queryStack.getNearDistance();
+            builder.addONear(arity, nearDistance);
         } else if (type == ParseItem::ITEM_PHRASE) {
             vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
@@ -92,29 +115,43 @@ private:
             vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            t = &builder.addWeightedSetTerm(arity, view, id, weight);
+           auto & ws = builder.addWeightedSetTerm(arity, view, id, weight);
             pureTermView = vespalib::stringref();
+            populateMultiTerm(queryStack, builder, ws);
+            t = &ws;
         } else if (type == ParseItem::ITEM_DOT_PRODUCT) {
             vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            t = &builder.addDotProduct(arity, view, id, weight);
+            auto & dotProduct = builder.addDotProduct(arity, view, id, weight);
             pureTermView = vespalib::stringref();
+            populateMultiTerm(queryStack, builder, dotProduct);
+            t = &dotProduct;
         } else if (type == ParseItem::ITEM_WAND) {
             vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            t = &builder.addWandTerm(arity, view, id, weight, arg1, arg2, arg3);
+            uint32_t targetNumHits = queryStack.getTargetNumHits();
+            double scoreThreshold = queryStack.getScoreThreshold();
+            double thresholdBoostFactor = queryStack.getThresholdBoostFactor();
+            auto & wand = builder.addWandTerm(arity, view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
             pureTermView = vespalib::stringref();
+            populateMultiTerm(queryStack, builder, wand);
+            t = & wand;
         } else if (type == ParseItem::ITEM_NOT) {
             builder.addAndNot(arity);
         } else if (type == ParseItem::ITEM_NEAREST_NEIGHBOR) {
             vespalib::stringref query_tensor_name = queryStack.getTerm();
             vespalib::stringref field_name = queryStack.getIndexName();
-            uint32_t target_num_hits = queryStack.getArg1();
+            uint32_t target_num_hits = queryStack.getTargetNumHits();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            builder.add_nearest_neighbor_term(query_tensor_name, field_name, id, weight, target_num_hits);
+            bool allow_approximate = queryStack.getAllowApproximate();
+            uint32_t explore_additional_hits = queryStack.getExploreAdditionalHits();
+            double distance_threshold = queryStack.getDistanceThreshold();
+            builder.add_nearest_neighbor_term(query_tensor_name, field_name, id, weight,
+                                              target_num_hits, allow_approximate, explore_additional_hits,
+                                              distance_threshold);
         } else {
             vespalib::stringref term = queryStack.getTerm();
             vespalib::stringref view = queryStack.getIndexName();
@@ -126,7 +163,9 @@ private:
             } else if (type == ParseItem::ITEM_PURE_WEIGHTED_STRING) {
                 t = &builder.addStringTerm(term, pureTermView, id, weight);
             } else if (type == ParseItem::ITEM_PURE_WEIGHTED_LONG) {
-                t = &builder.addNumberTerm(term, pureTermView, id, weight);
+                char buf[24];
+                auto res = std::to_chars(buf, buf + sizeof(buf), queryStack.getIntergerTerm(), 10);
+                t = &builder.addNumberTerm(vespalib::stringref(buf, res.ptr - buf), pureTermView, id, weight);
             } else if (type == ParseItem::ITEM_PREFIXTERM) {
                 t = &builder.addPrefixTerm(term, view, id, weight);
             } else if (type == ParseItem::ITEM_SUBSTRINGTERM) {
@@ -135,13 +174,17 @@ private:
                 t = &builder.addStringTerm(term, view, id, weight);
             } else if (type == ParseItem::ITEM_SUFFIXTERM) {
                 t = &builder.addSuffixTerm(term, view, id, weight);
+            } else if (type == ParseItem::ITEM_GEO_LOCATION_TERM) {
+                search::common::GeoLocationParser parser;
+                if (! parser.parseNoField(term)) {
+                    LOG(warning, "invalid geo location term '%s'", term.data());
+                }
+                Location loc(parser.getGeoLocation());
+                t = &builder.addLocationTerm(loc, view, id, weight);
             } else if (type == ParseItem::ITEM_NUMTERM) {
                 if (term[0] == '[' || term[0] == '<' || term[0] == '>') {
                     Range range(term);
                     t = &builder.addRangeTerm(range, view, id, weight);
-                } else if (term[0] == '(') {
-                    Location loc(term);
-                    t = &builder.addLocationTerm(loc, view, id, weight);
                 } else {
                     t = &builder.addNumberTerm(term, view, id, weight);
                 }

@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/searchlib/attribute/address_space_usage.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/address_space_usage.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_compaction_test");
@@ -127,6 +127,12 @@ Config compactAddressSpaceAttributeConfig(bool enableAddressSpaceCompact)
 
 }
 
+double
+calc_alloc_waste(const AttributeStatus& status)
+{
+    return ((double)(status.getAllocated() - status.getUsed())) / status.getAllocated();
+}
+
 class Fixture {
 public:
     AttributePtr _v;
@@ -142,12 +148,13 @@ public:
     AttributeStatus getStatus() { _v->commit(true); return _v->getStatus(); }
     AttributeStatus getStatus(const vespalib::string &prefix) {
         AttributeStatus status(getStatus());
-        LOG(info, "status %s: used=%" PRIu64 ", dead=%" PRIu64 ", onHold=%" PRIu64,
-            prefix.c_str(), status.getUsed(), status.getDead(), status.getOnHold());
+        LOG(info, "status %s: allocated=%" PRIu64 ", used=%" PRIu64 ", dead=%" PRIu64 ", onHold=%" PRIu64 ", waste=%f",
+            prefix.c_str(), status.getAllocated(), status.getUsed(), status.getDead(), status.getOnHold(),
+            calc_alloc_waste(status));
         return status;
     }
     const Config &getConfig() const { return _v->getConfig(); }
-    AddressSpace getMultiValueAddressSpaceUsage() const {return _v->getAddressSpaceUsage().multiValueUsage(); }
+    AddressSpace getMultiValueAddressSpaceUsage() const {return _v->getAddressSpaceUsage().multi_value_usage(); }
     AddressSpace getMultiValueAddressSpaceUsage(const vespalib::string &prefix) {
         AddressSpace usage(getMultiValueAddressSpaceUsage());
         LOG(info, "address space usage %s: used=%zu, dead=%zu, limit=%zu, usage=%12.8f",
@@ -166,6 +173,23 @@ TEST_F("Test that compaction of integer array attribute reduces memory usage", F
     f.clean(range1);
     AttributeStatus afterStatus = f.getStatus("after");
     EXPECT_LESS(afterStatus.getUsed(), beforeStatus.getUsed());
+}
+
+TEST_F("Allocated memory is not accumulated in an array attribute when moving between value classes when compaction is active",
+       Fixture({BasicType::INT64, CollectionType::ARRAY}))
+{
+    DocIdRange range = f.addDocs(1000);
+    for (uint32_t i = 0; i < 50; ++i) {
+        uint32_t values = 10 + i;
+        // When moving all documents from one value class to the next,
+        // all elements in the buffers of the previous value class are marked dead.
+        // Those buffers will eventually be compacted. By taking the dead elements into account when
+        // calculating how large the resulting compacted buffer should be,
+        // we don't accumulate allocated memory as part of that process.
+        f.populate(range, values);
+        auto status = f.getStatus(vespalib::make_string("values=%u", values));
+        EXPECT_LESS(calc_alloc_waste(status), 0.68);
+    }
 }
 
 void
@@ -213,8 +237,7 @@ TEST_F("Compaction limits address space usage (dead) when free lists are NOT use
 {
     populate_and_hammer(f, true);
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
-    // DEAD_ARRAYS_SLACK in multi value mapping is is 64k
-    EXPECT_GREATER(65536u, afterSpace.dead());
+    EXPECT_GREATER(search::CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK, afterSpace.dead());
 }
 
 TEST_F("Compaction is not executed when free lists are used",
@@ -225,6 +248,25 @@ TEST_F("Compaction is not executed when free lists are used",
     // Only 1000 dead arrays (due to new values for docids) as free lists are used.
     // 1 reserved array accounted as dead
     EXPECT_EQUAL(1001u, afterSpace.dead());
+}
+
+TEST_F("Compaction is peformed when compaction strategy is changed to enable compaction",
+       Fixture(compactAddressSpaceAttributeConfig(false)))
+{
+    populate_and_hammer(f, true);
+    AddressSpace after1 = f.getMultiValueAddressSpaceUsage("after1");
+    // 100 * 1000 dead arrays due to new values for docids
+    // 1 reserved array accounted as dead
+    EXPECT_EQUAL(100001u, after1.dead());
+    f._v->update_config(compactAddressSpaceAttributeConfig(true));
+    auto old_dead = after1.dead();
+    AddressSpace after2 = f.getMultiValueAddressSpaceUsage("after2");
+    while (after2.dead() < old_dead) {
+        old_dead = after2.dead();
+        f._v->commit(); // new commit might trigger further compaction
+        after2 = f.getMultiValueAddressSpaceUsage("after2");
+    }
+    EXPECT_GREATER(search::CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK, after2.dead());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

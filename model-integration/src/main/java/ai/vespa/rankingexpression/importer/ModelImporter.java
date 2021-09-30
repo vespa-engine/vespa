@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer;
 
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
@@ -15,9 +16,11 @@ import com.yahoo.text.ExpressionFormatter;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,8 +53,10 @@ public abstract class ModelImporter implements MlModelImporter {
      * Takes an IntermediateGraph and converts it to a ImportedModel containing
      * the actual Vespa ranking expressions.
      */
-    protected static ImportedModel convertIntermediateGraphToModel(IntermediateGraph graph, String modelSource) {
-        ImportedModel model = new ImportedModel(graph.name(), modelSource);
+    protected static ImportedModel convertIntermediateGraphToModel(IntermediateGraph graph,
+                                                                   String modelSource,
+                                                                   ImportedMlModel.ModelType modelType) {
+        ImportedModel model = new ImportedModel(graph.name(), modelSource, modelType);
         log.log(Level.FINER, () -> "Intermediate graph created from '" + modelSource + "':\n" +
                                    ExpressionFormatter.inTwoColumnMode(70, 50).format(graph.toFullString()));
 
@@ -72,7 +77,7 @@ public abstract class ModelImporter implements MlModelImporter {
                 signature.input(input.getKey(), input.getValue());
             }
             for (Map.Entry<String, String> output : graph.outputs(signatureName).entrySet()) {
-                signature.output(output.getKey(), output.getValue());
+                signature.output(IntermediateOperation.vespaName(output.getKey()), output.getValue());
             }
         }
     }
@@ -108,6 +113,9 @@ public abstract class ModelImporter implements MlModelImporter {
     }
 
     private static Optional<TensorFunction> importExpression(IntermediateOperation operation, ImportedModel model) {
+        if (model.expressions().containsKey(operation.name())) {
+            return operation.function();
+        }
         if (operation.type().isEmpty()) {
             return Optional.empty();
         }
@@ -206,18 +214,22 @@ public abstract class ModelImporter implements MlModelImporter {
     private static void reportWarnings(IntermediateGraph graph, ImportedModel model) {
         for (ImportedModel.Signature signature : model.signatures().values()) {
             for (String outputName : signature.outputs().values()) {
-                reportWarnings(graph.get(outputName), model);
+                reportWarnings(graph.get(outputName), model, new HashSet<>());
             }
         }
     }
 
-    private static void reportWarnings(IntermediateOperation operation, ImportedModel model) {
+    private static void reportWarnings(IntermediateOperation operation, ImportedModel model, Set<String> processed) {
+        if (processed.contains(operation.name())) {
+            return;
+        }
         for (String warning : operation.warnings()) {
             // If we want to report warnings, that code goes here
         }
         for (IntermediateOperation input : operation.inputs()) {
-            reportWarnings(input, model);
+            reportWarnings(input, model, processed);
         }
+        processed.add(operation.name());
     }
 
     /**

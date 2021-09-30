@@ -4,8 +4,9 @@
 
 #include "tensor_store.h"
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/eval/typed_cells.h>
 
-namespace vespalib { namespace tensor { class MutableDenseTensorView; }}
+namespace vespalib::eval { struct Value; }
 
 namespace search::tensor {
 
@@ -16,27 +17,31 @@ namespace search::tensor {
 class DenseTensorStore : public TensorStore
 {
 public:
-    using RefType = datastore::EntryRefT<22>;
-    using DataStoreType = datastore::DataStoreT<RefType>;
+    using RefType = vespalib::datastore::EntryRefT<22>;
+    using DataStoreType = vespalib::datastore::DataStoreT<RefType>;
     using ValueType = vespalib::eval::ValueType;
 
     struct TensorSizeCalc
     {
         size_t   _numCells; // product of dimension sizes
-        uint32_t _cellSize; // size of a cell (e.g. double => 8, float => 4)
+        vespalib::eval::CellType _cell_type;
 
         TensorSizeCalc(const ValueType &type);
-        size_t bufSize() const { return (_numCells * _cellSize); }
+        size_t bufSize() const {
+            return vespalib::eval::CellTypeUtils::mem_size(_cell_type, _numCells);
+        }
         size_t alignedSize() const;
     };
 
-    class BufferType : public datastore::BufferType<char>
+    class BufferType : public vespalib::datastore::BufferType<char>
     {
-        using CleanContext = datastore::BufferType<char>::CleanContext;
+        using CleanContext = vespalib::datastore::BufferType<char>::CleanContext;
+        std::unique_ptr<vespalib::alloc::MemoryAllocator> _allocator;
     public:
-        BufferType(const TensorSizeCalc &tensorSizeCalc);
+        BufferType(const TensorSizeCalc &tensorSizeCalc, std::unique_ptr<vespalib::alloc::MemoryAllocator> allocator);
         ~BufferType() override;
-        void cleanHold(void *buffer, size_t offset, size_t numElems, CleanContext cleanCtx) override;
+        void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) override;
+        const vespalib::alloc::MemoryAllocator* get_memory_allocator() const override;
     };
 private:
     DataStoreType _concreteStore;
@@ -52,20 +57,19 @@ private:
     setDenseTensor(const TensorType &tensor);
 
 public:
-    DenseTensorStore(const ValueType &type);
+    DenseTensorStore(const ValueType &type, std::unique_ptr<vespalib::alloc::MemoryAllocator> allocator);
     ~DenseTensorStore() override;
 
     const ValueType &type() const { return _type; }
     size_t getNumCells() const { return _tensorSizeCalc._numCells; }
-    uint32_t getCellSize() const { return _tensorSizeCalc._cellSize; }
     size_t getBufSize() const { return _tensorSizeCalc.bufSize(); }
     const void *getRawBuffer(RefType ref) const;
-    datastore::Handle<char> allocRawBuffer();
+    vespalib::datastore::Handle<char> allocRawBuffer();
     void holdTensor(EntryRef ref) override;
     EntryRef move(EntryRef ref) override;
-    std::unique_ptr<Tensor> getTensor(EntryRef ref) const;
-    void getTensor(EntryRef ref, vespalib::tensor::MutableDenseTensorView &tensor) const;
-    EntryRef setTensor(const Tensor &tensor);
+    std::unique_ptr<vespalib::eval::Value> getTensor(EntryRef ref) const;
+    vespalib::eval::TypedCells get_typed_cells(EntryRef ref) const;
+    EntryRef setTensor(const vespalib::eval::Value &tensor);
     // The following method is meant to be used only for unit tests.
     uint32_t getArraySize() const { return _bufferType.getArraySize(); }
 };

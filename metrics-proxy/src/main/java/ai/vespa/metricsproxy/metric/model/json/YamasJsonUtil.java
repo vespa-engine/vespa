@@ -3,6 +3,7 @@ package ai.vespa.metricsproxy.metric.model.json;
 
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.metric.model.ServiceId;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,8 +17,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
-import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
+import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
 import static com.yahoo.stream.CustomCollectors.toLinkedMap;
 import static java.util.Collections.emptyList;
 import static java.util.logging.Level.WARNING;
@@ -34,7 +34,7 @@ public class YamasJsonUtil {
         if (jsonModel.application == null)
             throw new IllegalArgumentException("Service id cannot be null");
 
-        return new MetricsPacket.Builder(toServiceId(jsonModel.application))
+        return new MetricsPacket.Builder(ServiceId.toServiceId(jsonModel.application))
                 .statusCode(jsonModel.status_code)
                 .statusMessage(jsonModel.status_msg)
                 .timestamp(jsonModel.timestamp)
@@ -108,9 +108,13 @@ public class YamasJsonUtil {
 
         if (packet.dimensions().isEmpty()) model.dimensions = null;
         else {
-            model.dimensions = packet.dimensions().entrySet().stream().collect(
-                    toLinkedMap(id2dim -> id2dim.getKey().id,
-                                Map.Entry::getValue));
+            model.dimensions = packet.dimensions().entrySet()
+                    .stream()
+                    .filter(entry -> entry.getKey() != null && entry.getValue() != null)
+                    .collect(toLinkedMap(
+                            id2dim -> id2dim.getKey().id,
+                            Map.Entry::getValue)
+                    );
         }
 
         YamasJsonModel.YamasJsonNamespace namespaces = toYamasJsonNamespaces(packet.consumers());
@@ -123,7 +127,7 @@ public class YamasJsonUtil {
     private static YamasJsonModel.YamasJsonNamespace toYamasJsonNamespaces(Collection<ConsumerId> consumers) {
         YamasJsonModel.YamasJsonNamespace namespaces =  new YamasJsonModel.YamasJsonNamespace();
         namespaces.namespaces = consumers.stream()
-                .filter(consumerId -> consumerId != DEFAULT_PUBLIC_CONSUMER_ID)
+                .filter(consumerId -> consumerId != defaultMetricsConsumerId)
                 .map(consumer -> consumer.id)
                 .collect(Collectors.toList());
         return namespaces;

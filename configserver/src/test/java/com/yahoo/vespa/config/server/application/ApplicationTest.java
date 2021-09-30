@@ -11,6 +11,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.Request;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -57,7 +58,7 @@ public class ApplicationTest {
                                               ApplicationName.from("foobar"), InstanceName.defaultName());
         ServerCache cache = new ServerCache();
         Version vespaVersion = new Version(1, 2, 3);
-        Application app = new Application(new ModelStub(), cache, 1337L, false, vespaVersion, MetricUpdater.createTestUpdater(), appId);
+        Application app = new Application(new ModelStub(), cache, 1337L, vespaVersion, MetricUpdater.createTestUpdater(), appId);
         assertThat(app.getApplicationGeneration(), is(1337L));
         assertNotNull(app.getModel());
         assertThat(app.getCache(), is(cache));
@@ -76,7 +77,7 @@ public class ApplicationTest {
         ServerCache cache = createCacheAndAddContent();
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(testApp));
         ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("foo").build();
-        handler = new Application(model, cache, 1L, false, new Version(1, 2, 3),
+        handler = new Application(model, cache, 1L, new Version(1, 2, 3),
                                   new MetricUpdater(Metrics.createTestMetrics(), Metrics.createDimensions(applicationId)), applicationId);
     }
 
@@ -105,7 +106,7 @@ public class ApplicationTest {
 
     @Test(expected = UnknownConfigDefinitionException.class)
     public void require_that_def_file_must_exist() {
-        handler.resolveConfig(createRequest("unknown", "namespace", "a", emptySchema));
+        handler.resolveConfig(createRequest("unknown", "namespace", emptySchema));
     }
 
     @Test
@@ -116,8 +117,9 @@ public class ApplicationTest {
     @Test
     public void require_that_build_config_can_be_resolved() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME, ModelConfig.CONFIG_DEF_NAMESPACE,
-                                                                   ModelConfig.CONFIG_DEF_MD5, ModelConfig.CONFIG_DEF_SCHEMA))
+        handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME,
+                                            ModelConfig.CONFIG_DEF_NAMESPACE,
+                                            ModelConfig.CONFIG_DEF_SCHEMA))
                 .serialize(baos, CompressionType.UNCOMPRESSED);
         assertTrue(baos.toString().startsWith("{\"vespaVersion\":\"1.0.0\",\"hosts\":[{\"name\":\"mytesthost\""));
     }
@@ -126,38 +128,41 @@ public class ApplicationTest {
     public void require_that_non_existent_fields_in_schema_is_skipped() throws IOException {
         // Ask for config without schema and check that we get correct default value back
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        handler.resolveConfig(createSimpleConfigRequest()).serialize(baos, CompressionType.UNCOMPRESSED);;
+        handler.resolveConfig(createSimpleConfigRequest()).serialize(baos, CompressionType.UNCOMPRESSED);
         assertEquals("{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}", baos.toString(StandardCharsets.UTF_8));
         // Ask for config with wrong schema
         String[] schema = new String[1];
         schema[0] = "boolval bool default=true"; // changed to be true, original is false
         baos = new ByteArrayOutputStream();
-        handler.resolveConfig(createRequest(SimpletypesConfig.CONFIG_DEF_NAME, SimpletypesConfig.CONFIG_DEF_NAMESPACE, "", schema))
+        handler.resolveConfig(createRequest(SimpletypesConfig.CONFIG_DEF_NAME, SimpletypesConfig.CONFIG_DEF_NAMESPACE, schema))
                                         .serialize(baos, CompressionType.UNCOMPRESSED);
         assertEquals("{\"boolval\":true,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}", baos.toString(Utf8.getCharset()));
     }
 
     @Test
     public void require_that_configs_are_cached() {
-        ConfigResponse response = handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME, ModelConfig.CONFIG_DEF_NAMESPACE, ModelConfig.CONFIG_DEF_MD5, ModelConfig.CONFIG_DEF_SCHEMA));
+        ConfigResponse response = handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME, ModelConfig.CONFIG_DEF_NAMESPACE, ModelConfig.CONFIG_DEF_SCHEMA));
         assertNotNull(response);
-        ConfigResponse cached_response = handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME, ModelConfig.CONFIG_DEF_NAMESPACE, ModelConfig.CONFIG_DEF_MD5, ModelConfig.CONFIG_DEF_SCHEMA));
+        ConfigResponse cached_response = handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME, ModelConfig.CONFIG_DEF_NAMESPACE, ModelConfig.CONFIG_DEF_SCHEMA));
         assertNotNull(cached_response);
         assertTrue(response == cached_response);
     }
 
-    private static GetConfigRequest createRequest(String name, String namespace, String defMd5, String[] schema) {
-        Request request = JRTClientConfigRequestV3.
-                createWithParams(new ConfigKey<>(name, "admin/model", namespace, defMd5, null), DefContent.fromArray(schema),
-                                 "fromHost", "", 0, 100, Trace.createDummy(), CompressionType.UNCOMPRESSED,
-                                 Optional.empty()).getRequest();
+    private static GetConfigRequest createRequest(String name, String namespace, String[] schema) {
+        Request request =
+                JRTClientConfigRequestV3.createWithParams(new ConfigKey<>(name, "admin/model", namespace, null),
+                                                          DefContent.fromArray(schema), "fromHost",
+                                                          PayloadChecksums.empty(), 0, 100,
+                                                          Trace.createDummy(), CompressionType.UNCOMPRESSED,
+                                                          Optional.empty())
+                                        .getRequest();
         return JRTServerConfigRequestV3.createFromRequest(request);
     }
 
     private static GetConfigRequest createSimpleConfigRequest() {
         return createRequest(SimpletypesConfig.CONFIG_DEF_NAME,
                              SimpletypesConfig.CONFIG_DEF_NAMESPACE,
-                             SimpletypesConfig.CONFIG_DEF_MD5,
                              ApplicationTest.emptySchema);
     }
+
 }

@@ -2,27 +2,21 @@
 #pragma once
 
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/buffer.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace search::transactionlog {
 
 /// This represents a type of the entry. Fx update,remove
-typedef uint32_t Type;
-/// A channel represents one data stream.
-
-class RPC
-{
-public:
-enum Result { OK, FULL, ERROR };
-};
+using Type = uint32_t;
 
 class SerialNumRange
 {
 public:
     SerialNumRange() : _from(0), _to(0) { }
-    SerialNumRange(SerialNum f) : _from(f), _to(f ? f-1 : f) { }
+    explicit SerialNumRange(SerialNum f) : _from(f), _to(f ? f-1 : f) { }
     SerialNumRange(SerialNum f, SerialNum t) : _from(f), _to(t) { }
     bool operator == (const SerialNumRange & b) const { return cmp(b) == 0; }
     bool operator <  (const SerialNumRange & b) const { return cmp(b) < 0; }
@@ -54,7 +48,12 @@ public:
     {
     public:
         Entry() : _unique(0), _type(0), _valid(false), _data() { }
-        Entry(SerialNum u, Type t, const vespalib::ConstBufferRef & d);
+        Entry(SerialNum u, Type t, const vespalib::ConstBufferRef & d)
+            : _unique(u),
+              _type(t),
+              _valid(true),
+              _data(d)
+        { }
         SerialNum            serial() const { return _unique; }
         Type                   type() const { return _type; }
         bool                  valid() const { return _valid; }
@@ -69,21 +68,19 @@ public:
         vespalib::ConstBufferRef _data;
     };
 public:
-    Packet(size_t m=0xf000) : _count(0), _range(), _limit(m), _buf(m) { }
+    explicit Packet(size_t reserved) : _count(0), _range(), _buf(reserved) { }
     Packet(const void * buf, size_t sz);
-    bool add(const Entry & data);
-    void close() { }
+    void add(const Entry & data);
     void clear() { _buf.clear(); _count = 0; _range.from(0); _range.to(0); }
     const SerialNumRange & range() const { return _range; }
     const vespalib::nbostream & getHandle() const { return _buf; }
     size_t                  size() const { return _count; }
     bool                   empty() const { return _count == 0; }
     size_t             sizeBytes() const { return _buf.size(); }
-    bool merge(const Packet & packet);
+    void merge(const Packet & packet);
 private:
     size_t                            _count;
     SerialNumRange                    _range;
-    size_t                            _limit;
     vespalib::nbostream_longlivedbuf  _buf;
 };
 
@@ -91,9 +88,59 @@ int makeDirectory(const char * dir);
 
 class Writer {
 public:
-    using DoneCallback = std::shared_ptr<IDestructorCallback>;
-    virtual ~Writer() { }
-    virtual void commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done) = 0;
+    using DoneCallback = std::shared_ptr<vespalib::IDestructorCallback>;
+    using DoneCallbacksList = std::vector<DoneCallback>;
+    using CommitPayload = std::shared_ptr<DoneCallbacksList>;
+    class CommitResult {
+    public:
+        CommitResult();
+        CommitResult(CommitPayload callBacks);
+        CommitResult(CommitResult &&) noexcept = default;
+        CommitResult & operator = (CommitResult &&) noexcept = default;
+        CommitResult(const CommitResult &) = delete;
+        CommitResult & operator = (const CommitResult &) = delete;
+        ~CommitResult();
+        size_t getNumOperations() const { return _callBacks->size(); }
+    private:
+        CommitPayload _callBacks;
+    };
+    virtual ~Writer() = default;
+    virtual void append(const Packet & packet, DoneCallback done) = 0;
+    [[nodiscard]] virtual CommitResult startCommit(DoneCallback onDone) = 0;
+};
+
+class WriterFactory {
+public:
+    virtual ~WriterFactory() = default;
+    virtual std::shared_ptr<Writer> getWriter(const vespalib::string & domainName) const = 0;
+};
+
+class Destination {
+public:
+    virtual ~Destination() = default;
+    virtual bool send(int32_t id, const vespalib::string & domain, const Packet & packet) = 0;
+    virtual bool sendDone(int32_t id, const vespalib::string & domain) = 0;
+    virtual bool connected() const = 0;
+    virtual bool ok() const = 0;
+};
+
+class CommitChunk {
+public:
+    CommitChunk(size_t reserveBytes, size_t reserveCount);
+    CommitChunk(size_t reserveBytes, Writer::CommitPayload postponed);
+    ~CommitChunk();
+    bool empty() const { return _callBacks->empty(); }
+    void add(const Packet & packet, Writer::DoneCallback onDone);
+    size_t sizeBytes() const { return _data.sizeBytes(); }
+    const Packet & getPacket() const { return _data; }
+    size_t getNumCallBacks() const { return _callBacks->size(); }
+    Writer::CommitResult createCommitResult() const;
+    void setCommitDoneCallback(Writer::DoneCallback onDone) { _onCommitDone = std::move(onDone); }
+    Writer::CommitPayload stealCallbacks() { return std::move(_callBacks); }
+private:
+    Packet                 _data;
+    Writer::CommitPayload  _callBacks;
+    Writer::DoneCallback   _onCommitDone;
 };
 
 }

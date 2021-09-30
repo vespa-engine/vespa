@@ -2,6 +2,7 @@
 #include "filereader.h"
 #include <iostream>
 #include <unistd.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 int GetOpt (int argc, char *argv[], const char *optionsString,
             const char* &optionArgument,
@@ -18,7 +19,7 @@ int GetOpt (int argc, char *argv[], const char *optionsString,
 FileReader::FileReader()
     : _backing(),
       _file(&std::cin),
-      _bufsize(1024*1024),
+      _bufsize(1_Mi),
       _buf(_bufsize),
       _lastReadPos(0),
       _nextReadPos(0),

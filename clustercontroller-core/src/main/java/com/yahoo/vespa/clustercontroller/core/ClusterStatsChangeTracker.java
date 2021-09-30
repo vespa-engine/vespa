@@ -1,10 +1,9 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.document.FixedBucketSpaces;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -32,8 +31,8 @@ public class ClusterStatsChangeTracker {
 
     public void syncAggregatedStats() {
         prevMayHaveMergesPending = new HashMap<>();
-        for (Iterator<ContentNodeStats> itr = aggregatedStats.getStats().iterator(); itr.hasNext(); ) {
-            int nodeIndex = itr.next().getNodeIndex();
+        for (ContentNodeStats contentNodeStats : aggregatedStats.getStats()) {
+            int nodeIndex = contentNodeStats.getNodeIndex();
             prevMayHaveMergesPending.put(nodeIndex, mayHaveMergesPendingInGlobalSpace(nodeIndex));
         }
     }
@@ -48,8 +47,8 @@ public class ClusterStatsChangeTracker {
         if (!aggregatedStats.hasUpdatesFromAllDistributors()) {
             return false;
         }
-        for (Iterator<ContentNodeStats> itr = aggregatedStats.getStats().iterator(); itr.hasNext(); ) {
-            int nodeIndex = itr.next().getNodeIndex();
+        for (ContentNodeStats contentNodeStats : aggregatedStats.getStats()) {
+            int nodeIndex = contentNodeStats.getNodeIndex();
             boolean currValue = mayHaveMergesPendingInGlobalSpace(nodeIndex);
             Boolean prevValue = prevMayHaveMergesPendingInGlobalSpace(nodeIndex);
             if (prevValue != null) {

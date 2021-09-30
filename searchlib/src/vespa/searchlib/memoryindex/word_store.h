@@ -9,20 +9,20 @@ namespace search::memoryindex {
 
 class WordStore {
 public:
-    using DataStoreType = datastore::DataStoreT<datastore::AlignedEntryRefT<22, 2>>;
+    using DataStoreType = vespalib::datastore::DataStoreT<vespalib::datastore::AlignedEntryRefT<22, 2>>;
     using RefType = DataStoreType::RefType;
 
 private:
     DataStoreType           _store;
     uint32_t                _numWords;
-    datastore::BufferType<char> _type;
+    vespalib::datastore::BufferType<char> _type;
     const uint32_t          _typeId;
 
 public:
     WordStore();
     ~WordStore();
-    datastore::EntryRef addWord(const vespalib::stringref word);
-    const char *getWord(datastore::EntryRef ref) const {
+    vespalib::datastore::EntryRef addWord(const vespalib::stringref word);
+    const char *getWord(vespalib::datastore::EntryRef ref) const {
         RefType internalRef(ref);
         return _store.getEntry<char>(internalRef);
     }

@@ -3,8 +3,8 @@
 
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/array.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vector>
+#include <mutex>
 
 namespace vespalib {
 
@@ -24,7 +24,7 @@ public:
     private:
         void   * _data;
     };
-    MemoryDataStore(alloc::Alloc && initialAlloc=alloc::Alloc::alloc(256), Lock * lock=nullptr);
+    MemoryDataStore(alloc::Alloc && initialAlloc=alloc::Alloc::alloc(256), std::mutex * lock=nullptr);
     MemoryDataStore(const MemoryDataStore &) = delete;
     MemoryDataStore & operator = (const MemoryDataStore &) = delete;
     ~MemoryDataStore();
@@ -41,7 +41,7 @@ public:
 private:
     std::vector<alloc::Alloc> _buffers;
     size_t _writePos;
-    Lock * _lock;
+    std::mutex * _lock;
 };
 
 class VariableSizeVector
@@ -99,7 +99,7 @@ public:
     };
     VariableSizeVector(const VariableSizeVector &) = delete;
     VariableSizeVector & operator = (const VariableSizeVector &) = delete;
-    VariableSizeVector(size_t initialSize=256);
+    VariableSizeVector(size_t initialCount, size_t initialBufferSize);
     ~VariableSizeVector();
     iterator begin() { return iterator(_vector, 0); }
     iterator end() { return iterator(_vector, size()); }

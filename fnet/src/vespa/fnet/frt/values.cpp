@@ -3,6 +3,8 @@
 #include "values.h"
 #include <vespa/fnet/databuffer.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/data/databuffer.h>
 #include <cassert>
 
 static_assert(sizeof(uint8_t) == 1, "uint8_t must be 1 byte.");
@@ -81,7 +83,7 @@ FRT_Values::FRT_Values(Stash &stash)
       _stash(stash)
 { }
 
-FRT_Values::~FRT_Values() { }
+FRT_Values::~FRT_Values() = default;
 
 LocalBlob::LocalBlob(const char *data, uint32_t len) :
         _data(Alloc::alloc(len)),
@@ -294,8 +296,14 @@ FRT_Values::AddSharedData(FRT_ISharedBlob *blob) {
 }
 
 void
-FRT_Values::AddData(vespalib::alloc::Alloc buf, uint32_t len) {
+FRT_Values::AddData(vespalib::alloc::Alloc && buf, uint32_t len) {
     AddSharedData(&_stash.create<LocalBlob>(std::move(buf), len));
+}
+
+void
+FRT_Values::AddData(vespalib::DataBuffer && buf) {
+    const auto len = buf.getDataLen();
+    AddSharedData(&_stash.create<LocalBlob>(std::move(buf).stealBuffer(), len));
 }
 
 void

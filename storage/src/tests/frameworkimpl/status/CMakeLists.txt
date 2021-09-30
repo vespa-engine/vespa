@@ -3,11 +3,12 @@
 vespa_add_executable(storage_status_gtest_runner_app TEST
     SOURCES
     gtest_runner.cpp
+    htmltabletest.cpp
     statustest.cpp
     DEPENDS
     storage
     storage_testcommon
-    gtest
+    GTest::GTest
 )
 
 vespa_add_test(

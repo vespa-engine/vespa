@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <fstream>
 #include <atomic>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".dirconfig");

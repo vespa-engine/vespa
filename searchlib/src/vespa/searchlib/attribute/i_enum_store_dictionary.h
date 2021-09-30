@@ -11,42 +11,48 @@ namespace search {
 
 class BufferWriter;
 
-using EnumTreeTraits = btree::BTreeTraits<16, 16, 10, true>;
+using EnumTreeTraits = vespalib::btree::BTreeTraits<16, 16, 10, true>;
 
-using EnumTree = btree::BTree<IEnumStore::Index, btree::BTreeNoLeafData,
-                              btree::NoAggregated,
-                              const datastore::EntryComparatorWrapper,
+using EnumTree = vespalib::btree::BTree<IEnumStore::Index, vespalib::btree::BTreeNoLeafData,
+                              vespalib::btree::NoAggregated,
+                              const vespalib::datastore::EntryComparatorWrapper,
                               EnumTreeTraits>;
 
-using EnumPostingTree = btree::BTree<IEnumStore::Index, uint32_t,
-                                     btree::NoAggregated,
-                                     const datastore::EntryComparatorWrapper,
+using EnumPostingTree = vespalib::btree::BTree<IEnumStore::Index, uint32_t,
+                                     vespalib::btree::NoAggregated,
+                                     const vespalib::datastore::EntryComparatorWrapper,
                                      EnumTreeTraits>;
 
 /**
  * Interface for the dictionary used by an enum store.
  */
-class IEnumStoreDictionary : public datastore::IUniqueStoreDictionary {
+class IEnumStoreDictionary : public vespalib::datastore::IUniqueStoreDictionary {
 public:
+    using EntryRef = vespalib::datastore::EntryRef;
+    using EntryComparator = vespalib::datastore::EntryComparator;
     using EnumVector = IEnumStore::EnumVector;
     using Index = IEnumStore::Index;
-    using IndexSet = IEnumStore::IndexSet;
+    using IndexList = IEnumStore::IndexList;
     using IndexVector = IEnumStore::IndexVector;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
 public:
     virtual ~IEnumStoreDictionary() = default;
 
-    virtual void set_ref_counts(const EnumVector& hist) = 0;
-    virtual void free_unused_values(const datastore::EntryComparator& cmp) = 0;
-    virtual void free_unused_values(const IndexSet& to_remove,
-                                    const datastore::EntryComparator& cmp) = 0;
-    virtual bool find_index(const datastore::EntryComparator& cmp, Index& idx) const = 0;
-    virtual bool find_frozen_index(const datastore::EntryComparator& cmp, Index& idx) const = 0;
+    virtual void free_unused_values(const EntryComparator& cmp) = 0;
+    virtual void free_unused_values(const IndexList& to_remove, const EntryComparator& cmp) = 0;
+    virtual bool find_index(const EntryComparator& cmp, Index& idx) const = 0;
+    virtual bool find_frozen_index(const EntryComparator& cmp, Index& idx) const = 0;
     virtual std::vector<attribute::IAttributeVector::EnumHandle>
-    find_matching_enums(const datastore::EntryComparator& cmp) const = 0;
+    find_matching_enums(const EntryComparator& cmp) const = 0;
 
-    virtual EnumPostingTree& get_posting_dictionary() = 0;
+    virtual EntryRef get_frozen_root() const = 0;
+    virtual std::pair<Index, EntryRef> find_posting_list(const EntryComparator& cmp, EntryRef root) const = 0;
+    virtual void collect_folded(Index idx, EntryRef root, const std::function<void(EntryRef)>& callback) const = 0;
+    virtual Index remap_index(Index idx) = 0;
+    virtual void clear_all_posting_lists(std::function<void(EntryRef)> clearer) = 0;
+    virtual void update_posting_list(Index idx, const EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater) = 0;
+    virtual bool normalize_posting_lists(std::function<EntryRef(EntryRef)> normalize) = 0;
     virtual const EnumPostingTree& get_posting_dictionary() const = 0;
 };
 

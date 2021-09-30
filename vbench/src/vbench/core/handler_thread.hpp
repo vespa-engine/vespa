@@ -7,9 +7,9 @@ void
 HandlerThread<T>::run()
 {
     for (;;) {
-        vespalib::MonitorGuard guard(_monitor);
+        std::unique_lock guard(_lock);
         while (!_done && _queue.empty()) {
-            guard.wait();
+            _cond.wait(guard);
         }
         if (_done && _queue.empty()) {
             return;
@@ -24,7 +24,8 @@ HandlerThread<T>::run()
 
 template <typename T>
 HandlerThread<T>::HandlerThread(Handler<T> &next)
-    : _monitor(),
+    : _lock(),
+      _cond(),
       _queue(),
       _next(next),
       _thread(*this),
@@ -44,10 +45,10 @@ template <typename T>
 void
 HandlerThread<T>::handle(std::unique_ptr<T> obj)
 {
-    vespalib::MonitorGuard guard(_monitor);
+    std::unique_lock guard(_lock);
     if (!_done) {
         if (_queue.empty()) {
-            guard.signal();
+            _cond.notify_one();
         }
         _queue.push(std::move(obj));
     }
@@ -58,9 +59,9 @@ void
 HandlerThread<T>::join()
 {
     {
-        vespalib::MonitorGuard guard(_monitor);
+        std::lock_guard guard(_lock);
         _done = true;
-        guard.signal();
+        _cond.notify_one();
     }
     _thread.join();
 }

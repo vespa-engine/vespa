@@ -2,7 +2,7 @@
 package com.yahoo.language.process;
 
 /**
- * <p>Exception class indicating that a fatal error occured during linguistic processing.</p>
+ * Exception class indicating that a fatal error occured during linguistic processing.
  *
  * @author Simon Thoresen Hult
  */
@@ -15,4 +15,5 @@ public class ProcessingException extends RuntimeException {
     public ProcessingException(String message, Throwable cause) {
         super(message, cause);
     }
+
 }

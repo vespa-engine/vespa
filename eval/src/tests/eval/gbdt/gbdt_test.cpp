@@ -7,7 +7,7 @@
 #include <vespa/eval/eval/llvm/deinline_forest.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
+#include <vespa/eval/eval/simple_value.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include "model.cpp"
 
@@ -26,7 +26,8 @@ bool is_little_endian() {
 }
 
 double eval_double(const Function &function, const std::vector<double> &params) {
-    InterpretedFunction ifun(SimpleTensorEngine::ref(), function, NodeTypes());
+    NodeTypes node_types(function, std::vector<ValueType>(params.size(), ValueType::double_type()));
+    InterpretedFunction ifun(SimpleValueBuilderFactory::get(), function, node_types);
     InterpretedFunction::Context ctx(ifun);
     SimpleParams fun_params(params);
     return ifun.eval(ctx, fun_params).as_double();

@@ -157,10 +157,7 @@ public final class Service implements Comparable<Service> {
         if (!serviceType.equals(other.serviceType)) {
             return false;
         }
-        if (statePort != other.statePort) {
-            return false;
-        }
-        return true;
+        return statePort == other.statePort;
     }
 
 }

@@ -1,22 +1,18 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.api;
 
-import com.yahoo.security.KeyUtils;
-
 import java.io.InputStream;
 import java.net.URI;
 import java.security.DigestInputStream;
-import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
 import java.util.concurrent.Callable;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+/**
+ * @author jonmv
+ */
 public class Signatures {
 
     /** Returns the SHA-256 hash of the content in the implied input stream. */

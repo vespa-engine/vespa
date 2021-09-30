@@ -84,7 +84,8 @@ writeFusionSelector(const IndexDiskLayout &diskLayout, uint32_t fusion_id,
 uint32_t
 FusionRunner::fuse(const FusionSpec &fusion_spec,
                    SerialNum lastSerialNum,
-                   IIndexMaintainerOperations &operations)
+                   IIndexMaintainerOperations &operations,
+                   std::shared_ptr<search::IFlushToken> flush_token)
 {
     const vector<uint32_t> &ids = fusion_spec.flush_ids;
     if (ids.empty()) {
@@ -113,7 +114,7 @@ FusionRunner::fuse(const FusionSpec &fusion_spec,
     SelectorArray selector_array;
     readSelectorArray(selector_name, selector_array, id_map, fusion_spec.last_fusion_id, fusion_id);
 
-    if (!operations.runFusion(_schema, fusion_dir, sources, selector_array, lastSerialNum)) {
+    if (!operations.runFusion(_schema, fusion_dir, sources, selector_array, lastSerialNum, flush_token)) {
         return 0;
     }
 

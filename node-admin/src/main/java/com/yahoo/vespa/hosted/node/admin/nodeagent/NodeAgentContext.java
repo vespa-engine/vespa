@@ -1,17 +1,20 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerNetworkMode;
 
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.util.Optional;
 
 public interface NodeAgentContext extends TaskContext {
 
@@ -35,21 +38,32 @@ public interface NodeAgentContext extends TaskContext {
 
     AthenzIdentity identity();
 
-    DockerNetworking dockerNetworking();
+    ContainerNetworkMode networkMode();
 
     ZoneApi zone();
 
     String vespaUser();
 
+    String vespaGroup();
+
     String vespaUserOnHost();
 
+    default boolean isDisabled(NodeAgentTask task) {
+        return false;
+    };
+
     /**
-     * The vcpu value in NodeSpec is multiplied by the speedup factor per cpu core compared to a historical baseline
-     * for a particular cpu generation of the host (see flavors.def cpuSpeedup).
+     * The vcpu value in NodeSpec is the number of vcpus required by the node on a fixed historical
+     * baseline machine.  However the current host has a faster per-vcpu performance by a scale factor
+     * (see flavors.def cpuSpeedup), and therefore do not need to set aside the full number of vcpus
+     * to run the node.  This method returns that reduced number of vcpus.
      *
-     * @return node vcpu without the cpu speedup factor.
+     * @return the vcpus required by the node on this host.
      */
-    double unscaledVcpu();
+    double vcpuOnThisHost();
+
+    /** The file system used by the NodeAgentContext. All paths must have the same provider. */
+    FileSystem fileSystem();
 
     /**
      * This method is the inverse of {@link #pathInNodeFromPathOnHost(Path)}}
@@ -59,8 +73,9 @@ public interface NodeAgentContext extends TaskContext {
      */
     Path pathOnHostFromPathInNode(Path pathInNode);
 
-    /** @see #pathOnHostFromPathInNode(Path) */
-    Path pathOnHostFromPathInNode(String pathInNode);
+    default Path pathOnHostFromPathInNode(String pathInNode) {
+        return pathOnHostFromPathInNode(fileSystem().getPath(pathInNode));
+    }
 
     /**
      * This method is the inverse of {@link #pathOnHostFromPathInNode(Path)}
@@ -70,9 +85,9 @@ public interface NodeAgentContext extends TaskContext {
      */
     Path pathInNodeFromPathOnHost(Path pathOnHost);
 
-    /** @see #pathOnHostFromPathInNode(Path) */
-    Path pathInNodeFromPathOnHost(String pathOnHost);
-
+    default Path pathInNodeFromPathOnHost(String pathOnHost) {
+        return pathInNodeFromPathOnHost(fileSystem().getPath(pathOnHost));
+    }
 
     /**
      * @param relativePath relative path under Vespa home in container
@@ -80,6 +95,9 @@ public interface NodeAgentContext extends TaskContext {
      */
     Path pathInNodeUnderVespaHome(Path relativePath);
 
-    /** @see #pathInNodeUnderVespaHome(Path) */
-    Path pathInNodeUnderVespaHome(String relativePath);
+    default Path pathInNodeUnderVespaHome(String relativePath) {
+        return pathInNodeUnderVespaHome(fileSystem().getPath(relativePath));
+    }
+
+    Optional<ApplicationId> hostExclusiveTo();
 }

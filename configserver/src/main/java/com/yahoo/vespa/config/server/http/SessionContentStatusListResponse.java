@@ -2,13 +2,11 @@
 package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.config.application.api.ApplicationFile;
-import com.yahoo.log.LogLevel;
-import com.yahoo.slime.Cursor;
-import com.yahoo.slime.JsonFormat;
-import com.yahoo.slime.Slime;
+import java.util.logging.Level;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import com.yahoo.restapi.SlimeJsonResponse;
+import com.yahoo.slime.Cursor;
+
 import java.util.*;
 
 /**
@@ -16,27 +14,19 @@ import java.util.*;
  *
  * @author hmusum
  */
-class SessionContentStatusListResponse extends SessionResponse {
+class SessionContentStatusListResponse extends SlimeJsonResponse {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger("SessionContentStatusListResponse");
 
-    private final Slime slime = new Slime();
-
     public SessionContentStatusListResponse(String urlBase, List<ApplicationFile> files) {
-        super();
         Cursor array = slime.setArray();
         for (ApplicationFile f : files) {
             Cursor element = array.addObject();
             element.setString("status", f.getMetaData().getStatus());
             element.setString("md5", f.getMetaData().getMd5());
             element.setString("name", urlBase + f.getPath());
-            log.log(LogLevel.DEBUG, "Adding file " + urlBase + f.getPath());
+            log.log(Level.FINE, () -> "Adding file " + urlBase + f.getPath());
         }
-    }
-
-    @Override
-    public void render(OutputStream outputStream) throws IOException {
-        new JsonFormat(true).encode(outputStream, slime);
     }
 
 }

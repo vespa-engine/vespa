@@ -8,12 +8,12 @@
 #include <vespa/searchlib/queryeval/same_element_search.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
-#include <vespa/searchlib/attribute/elementiterator.h>
+#include <vespa/searchlib/attribute/searchcontextelementiterator.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 
 using namespace search::fef;
 using namespace search::queryeval;
-using search::attribute::ElementIterator;
+using search::attribute::SearchContextElementIterator;
 
 void verify_elements(SameElementSearch &se, uint32_t docid, const std::initializer_list<uint32_t> list) {
     std::vector<uint32_t> expect(list);
@@ -99,11 +99,11 @@ TEST("require that strict iterator seeks to next hit") {
     auto search = bp->createSearch(*md, true);
     search->initRange(1, 1000);
     EXPECT_LESS(search->getDocId(), 1u);
-    EXPECT_TRUE(!search->seek(1));
+    EXPECT_FALSE(search->seek(1));
     EXPECT_EQUAL(search->getDocId(), 7u);
     EXPECT_TRUE(search->seek(9));
     EXPECT_EQUAL(search->getDocId(), 9u);
-    EXPECT_TRUE(!search->seek(10));
+    EXPECT_FALSE(search->seek(10));
     EXPECT_TRUE(search->isAtEnd());
 }
 
@@ -134,8 +134,8 @@ TEST("require that attribute iterators are wrapped for element unpacking") {
     SameElementSearch *se = dynamic_cast<SameElementSearch*>(search.get());
     ASSERT_TRUE(se != nullptr);
     ASSERT_EQUAL(se->children().size(), 2u);
-    EXPECT_TRUE(dynamic_cast<ElementIterator*>(se->children()[0].get()) != nullptr);
-    EXPECT_TRUE(dynamic_cast<ElementIterator*>(se->children()[1].get()) != nullptr);   
+    EXPECT_TRUE(dynamic_cast<SearchContextElementIterator*>(se->children()[0].get()) != nullptr);
+    EXPECT_TRUE(dynamic_cast<SearchContextElementIterator*>(se->children()[1].get()) != nullptr);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

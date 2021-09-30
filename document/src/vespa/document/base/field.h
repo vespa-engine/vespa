@@ -11,34 +11,58 @@
  */
 #pragma once
 
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/document/fieldset/fieldset.h>
-#include <vespa/vespalib/objects/identifiable.h>
-#include <vespa/vespalib/objects/fieldbase.h>
-#include <set>
+#include <vector>
 
 namespace document {
 
 class FieldValue;
 class DataType;
 
-class Field final : public vespalib::FieldBase,
-                    public vespalib::Identifiable,
-                    public FieldSet
+class Field final : public FieldSet
 {
+    vespalib::string _name;
     const DataType *_dataType;
-    int  _fieldId;
-    bool _isHeaderField;
+    int             _fieldId;
 public:
-    typedef std::shared_ptr<const Field> CSP;
-    typedef std::shared_ptr<Field> SP;
+    using CSP = std::shared_ptr<const Field>;
+    using SP = std::shared_ptr<Field>;
+    using CPtr = const Field *;
 
-    struct FieldPtrComparator {
-        bool operator()(const Field* f1, const Field* f2) const {
+    struct FieldPtrLess {
+        bool operator()(CPtr f1, CPtr f2) const {
             return (*f1 < *f2);
         }
     };
 
-    using Set = std::set<const Field*, FieldPtrComparator>;
+    struct FieldPtrEqual {
+        bool operator()(CPtr f1, CPtr f2) const {
+            return (*f1 == *f2);
+        }
+    };
+
+    class Set {
+    public:
+        class Builder {
+        public:
+            Builder & reserve(size_t sz) { _vector.reserve(sz); return *this; }
+            Builder & add(CPtr field) { _vector.push_back(field); return *this; }
+            Set build() { return Set(std::move(_vector)); }
+        private:
+            std::vector<CPtr> _vector;
+        };
+        bool contains(const Field & field) const;
+        bool contains(const Set & field) const;
+        size_t size() const { return _fields.size(); }
+        bool empty() const { return _fields.empty(); }
+        const CPtr * begin() const { return &_fields[0]; }
+        const CPtr * end() const { return begin() + _fields.size(); }
+        static Set emptySet() { return Builder().build(); }
+    private:
+        explicit Set(std::vector<CPtr> fields);
+        std::vector<CPtr> _fields;
+    };
 
     /**
      * Creates a completely specified field instance.
@@ -48,8 +72,7 @@ public:
      * @param type The datatype of the field.
      * @param headerField Whether or not this is a "header" field.
      */
-    Field(vespalib::stringref name, int fieldId,
-          const DataType &type, bool headerField);
+    Field(vespalib::stringref name, int fieldId, const DataType &type);
 
     Field();
 
@@ -61,26 +84,25 @@ public:
      * @param dataType The datatype of the field.
      * @param headerField Whether or not this is a "header" field.
      */
-    Field(vespalib::stringref name, const DataType &dataType, bool headerField);
+    Field(vespalib::stringref name, const DataType &dataType);
 
-    Field* clone() const override { return new Field(*this); }
     std::unique_ptr<FieldValue> createValue() const;
 
     // Note that only id is checked for equality.
-    bool operator==(const Field & other) const { return (_fieldId == other._fieldId); }
-    bool operator!=(const Field & other) const { return (_fieldId != other._fieldId); }
-    bool operator<(const Field & other) const { return (getName() < other.getName()); }
+    bool operator==(const Field & other) const noexcept { return (_fieldId == other._fieldId); }
+    bool operator!=(const Field & other) const noexcept { return (_fieldId != other._fieldId); }
+    bool operator<(const Field & other) const noexcept { return (_name < other._name); }
 
     const DataType &getDataType() const { return *_dataType; }
 
-    int getId() const { return _fieldId; }
-    bool isHeaderField() const { return _isHeaderField; }
+    int getId() const noexcept { return _fieldId; }
+    const vespalib::string & getName() const { return _name; }
 
     vespalib::string toString(bool verbose=false) const;
     bool contains(const FieldSet& fields) const override;
-    Type getType() const override { return FIELD; }
+    Type getType() const override { return Type::FIELD; }
     bool valid() const { return _fieldId != 0; }
-    uint32_t hash() const { return getId(); }
+    uint32_t hash() const noexcept { return getId(); }
 private:
     int calculateIdV7();
 

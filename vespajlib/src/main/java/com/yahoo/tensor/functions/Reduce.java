@@ -6,10 +6,12 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,7 +29,7 @@ import java.util.Set;
  */
 public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
-    public enum Aggregator { avg, count, prod, sum, max, min; }
+    public enum Aggregator { avg, count, max, median, min, prod, sum ; }
 
     private final TensorFunction<NAMETYPE> argument;
     private final List<String> dimensions;
@@ -53,22 +55,13 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
      * @throws IllegalArgumentException if any of the tensor dimensions are not present in the input tensor
      */
     public Reduce(TensorFunction<NAMETYPE> argument, Aggregator aggregator, List<String> dimensions) {
-        Objects.requireNonNull(argument, "The argument tensor cannot be null");
-        Objects.requireNonNull(aggregator, "The aggregator cannot be null");
-        Objects.requireNonNull(dimensions, "The dimensions cannot be null");
-        this.argument = argument;
-        this.aggregator = aggregator;
+        this.argument = Objects.requireNonNull(argument, "The argument tensor cannot be null");
+        this.aggregator  = Objects.requireNonNull(aggregator, "The aggregator cannot be null");
         this.dimensions = ImmutableList.copyOf(dimensions);
     }
 
     public static TensorType outputType(TensorType inputType, List<String> reduceDimensions) {
-        TensorType.Builder b = new TensorType.Builder(inputType.valueType());
-        if (reduceDimensions.isEmpty()) return b.build(); // means reduce all
-        for (TensorType.Dimension dimension : inputType.dimensions()) {
-            if ( ! reduceDimensions.contains(dimension.name()))
-                b.dimension(dimension);
-        }
-        return b.build();
+        return TypeResolver.reduce(inputType, reduceDimensions);
     }
 
     public TensorFunction<NAMETYPE> argument() { return argument; }
@@ -106,16 +99,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
     @Override
     public TensorType type(TypeContext<NAMETYPE> context) {
-        return type(argument.type(context), dimensions);
-    }
-
-    private static TensorType type(TensorType argumentType, List<String> dimensions) {
-        TensorType.Builder builder = new TensorType.Builder(argumentType.valueType());
-        if (dimensions.isEmpty()) return builder.build(); // means reduce all
-        for (TensorType.Dimension dimension : argumentType.dimensions())
-            if ( ! dimensions.contains(dimension.name())) // keep
-                builder.dimension(dimension);
-        return builder.build();
+        return outputType(argument.type(context), dimensions);
     }
 
     @Override
@@ -130,12 +114,14 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
         // Special case: Reduce all
         if (dimensions.isEmpty() || dimensions.size() == argument.type().dimensions().size())
-            if (argument.type().dimensions().size() == 1 && argument instanceof IndexedTensor)
+            if (argument.isEmpty())
+                return Tensor.from(0.0);
+            else if (argument.type().dimensions().size() == 1 && argument instanceof IndexedTensor)
                 return reduceIndexedVector((IndexedTensor)argument, aggregator);
             else
                 return reduceAllGeneral(argument, aggregator);
 
-        TensorType reducedType = type(argument.type(), dimensions);
+        TensorType reducedType = outputType(argument.type(), dimensions);
 
         // Reduce cells
         Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>();
@@ -186,10 +172,11 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
             switch (aggregator) {
                 case avg : return new AvgAggregator();
                 case count : return new CountAggregator();
+                case max : return new MaxAggregator();
+                case median : return new MedianAggregator();
+                case min : return new MinAggregator();
                 case prod : return new ProdAggregator();
                 case sum : return new SumAggregator();
-                case max : return new MaxAggregator();
-                case min : return new MinAggregator();
                 default: throw new UnsupportedOperationException("Aggregator " + aggregator + " is not implemented");
             }
 
@@ -249,6 +236,82 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         }
     }
 
+    private static class MaxAggregator extends ValueAggregator {
+
+        private double maxValue = Double.NEGATIVE_INFINITY;
+
+        @Override
+        public void aggregate(double value) {
+            if (value > maxValue)
+                maxValue = value;
+        }
+
+        @Override
+        public double aggregatedValue() {
+            return maxValue;
+        }
+
+        @Override
+        public void reset() {
+            maxValue = Double.NEGATIVE_INFINITY;
+        }
+    }
+
+    private static class MedianAggregator extends ValueAggregator {
+
+        /** If any NaN is added, the result should be NaN */
+        private boolean isNaN = false;
+
+        private List<Double> values = new ArrayList<>();
+
+        @Override
+        public void aggregate(double value) {
+            if ( Double.isNaN(value))
+                isNaN = true;
+            if ( ! isNaN)
+                values.add(value);
+        }
+
+        @Override
+        public double aggregatedValue() {
+            if (isNaN || values.isEmpty()) return Double.NaN;
+            Collections.sort(values);
+            if (values.size() % 2 == 0) // even: average the two middle values
+                return ( values.get(values.size() / 2 - 1) + values.get(values.size() / 2) ) / 2;
+            else
+                return values.get((values.size() - 1)/ 2);
+        }
+
+        @Override
+        public void reset() {
+            isNaN = false;
+            values = new ArrayList<>();
+        }
+
+    }
+
+    private static class MinAggregator extends ValueAggregator {
+
+        private double minValue = Double.POSITIVE_INFINITY;
+
+        @Override
+        public void aggregate(double value) {
+            if (value < minValue)
+                minValue = value;
+        }
+
+        @Override
+        public double aggregatedValue() {
+            return minValue;
+        }
+
+        @Override
+        public void reset() {
+            minValue = Double.POSITIVE_INFINITY;
+        }
+
+    }
+
     private static class ProdAggregator extends ValueAggregator {
 
         private double valueProd = 1.0;
@@ -287,49 +350,6 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         public void reset() {
             valueSum = 0.0;
         }
-    }
-
-    private static class MaxAggregator extends ValueAggregator {
-
-        private double maxValue = Double.MIN_VALUE;
-
-        @Override
-        public void aggregate(double value) {
-            if (value > maxValue)
-                maxValue = value;
-        }
-
-        @Override
-        public double aggregatedValue() {
-            return maxValue;
-        }
-
-        @Override
-        public void reset() {
-            maxValue = Double.MIN_VALUE;
-        }
-    }
-
-    private static class MinAggregator extends ValueAggregator {
-
-        private double minValue = Double.MAX_VALUE;
-
-        @Override
-        public void aggregate(double value) {
-            if (value < minValue)
-                minValue = value;
-        }
-
-        @Override
-        public double aggregatedValue() {
-            return minValue;
-        }
-
-        @Override
-        public void reset() {
-            minValue = Double.MAX_VALUE;
-        }
-
     }
 
 }

@@ -3,21 +3,17 @@
 #include "interpreted_function.h"
 #include "node_visitor.h"
 #include "node_traverser.h"
-#include "check_type.h"
-#include "tensor_spec.h"
-#include "operation.h"
 #include "tensor_nodes.h"
-#include "tensor_engine.h"
+#include "make_tensor_function.h"
+#include "optimize_tensor_function.h"
+#include "compile_tensor_function.h"
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
+#include <vespa/eval/eval/llvm/addr_to_symbol.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <set>
 
-#include "make_tensor_function.h"
-#include "compile_tensor_function.h"
-
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 namespace {
 
@@ -34,19 +30,22 @@ const Function *get_lambda(const nodes::Node &node) {
     return nullptr;
 }
 
+void my_nop(InterpretedFunction::State &, uint64_t) {}
+
 } // namespace vespalib::<unnamed>
 
 
-InterpretedFunction::State::State(const TensorEngine &engine_in)
-    : engine(engine_in),
+InterpretedFunction::State::State(const ValueBuilderFactory &factory_in)
+    : factory(factory_in),
       params(nullptr),
       stash(),
       stack(),
-      program_offset(0)
+      program_offset(0),
+      if_cnt(0)
 {
 }
 
-InterpretedFunction::State::~State() {}
+InterpretedFunction::State::~State() = default;
 
 void
 InterpretedFunction::State::init(const LazyParams &params_in) {
@@ -58,31 +57,44 @@ InterpretedFunction::State::init(const LazyParams &params_in) {
 }
 
 InterpretedFunction::Context::Context(const InterpretedFunction &ifun)
-    : _state(ifun._tensor_engine)
+    : _state(ifun._factory)
 {
 }
 
-InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const TensorFunction &function)
+vespalib::string
+InterpretedFunction::Instruction::resolve_symbol() const
+{
+    if (function == nullptr) {
+        return "<inject_param>";
+    }
+    return addr_to_symbol((const void *)function);
+}
+
+InterpretedFunction::Instruction
+InterpretedFunction::Instruction::nop()
+{
+    return Instruction(my_nop);
+}
+
+InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function, CTFMetaData *meta)
     : _program(),
       _stash(),
-      _num_params(0),
-      _tensor_engine(engine)
+      _factory(factory)
 {
-    _program = compile_tensor_function(function, _stash);
+    _program = compile_tensor_function(factory, function, _stash, meta);
 }
 
-InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, size_t num_params_in, const NodeTypes &types)
+InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, const nodes::Node &root, const NodeTypes &types)
     : _program(),
       _stash(),
-      _num_params(num_params_in),
-      _tensor_engine(engine)
+      _factory(factory)
 {
-    const TensorFunction &plain_fun = make_tensor_function(engine, root, types, _stash);
-    const TensorFunction &optimized = engine.optimize(plain_fun, _stash);
-    _program = compile_tensor_function(optimized, _stash);
+    const TensorFunction &plain_fun = make_tensor_function(factory, root, types, _stash);
+    const TensorFunction &optimized = optimize_tensor_function(factory, plain_fun, _stash);
+    _program = compile_tensor_function(factory, optimized, _stash, nullptr);
 }
 
-InterpretedFunction::~InterpretedFunction() {}
+InterpretedFunction::~InterpretedFunction() = default;
 
 const Value &
 InterpretedFunction::eval(Context &ctx, const LazyParams &params) const
@@ -123,5 +135,21 @@ InterpretedFunction::detect_issues(const Function &function)
     return Function::Issues(std::move(checker.issues));
 }
 
-} // namespace vespalib::eval
-} // namespace vespalib
+InterpretedFunction::EvalSingle::EvalSingle(const ValueBuilderFactory &factory, Instruction op, const LazyParams &params)
+    : _state(factory),
+      _op(op)
+{
+    _state.params = &params;
+}
+
+const Value &
+InterpretedFunction::EvalSingle::eval(const std::vector<Value::CREF> &stack)
+{
+    _state.stash.clear();
+    _state.stack = stack;
+    _op.perform(_state);
+    assert(_state.stack.size() == 1);
+    return _state.stack.back();
+}
+
+}

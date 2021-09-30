@@ -2,12 +2,14 @@
 package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
+import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.VespaVersion;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.xml.sax.InputSource;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 
@@ -47,15 +49,15 @@ public class SchemaValidatorTest {
     @Test
     public void testXMLParse() throws IOException {
         SchemaValidator validator = createValidator();
-        validator.validate(new InputSource(new StringReader(okServices)), "services.xml");
+        validator.validate(new StringReader(okServices));
     }
 
     @Test
     public void testXMLParseError() throws IOException {
         SchemaValidator validator = createValidator();
         expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage(expectedErrorMessage("services.xml"));
-        validator.validate(new InputSource(new StringReader(invalidServices)), "services.xml");
+        expectedException.expectMessage(expectedErrorMessage("input"));
+        validator.validate(new StringReader(invalidServices));
     }
 
     @Test
@@ -72,12 +74,20 @@ public class SchemaValidatorTest {
         validator.validate(new StringReader(invalidServices));
     }
 
+    @Test
+    public void testXMLParseErrorFromFile() throws IOException {
+        SchemaValidator validator = createValidator();
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage(expectedErrorMessage("services.xml"));
+        validator.validate(new File("src/test/cfg/application/invalid-services-syntax/services.xml"));
+    }
+
     private SchemaValidator createValidator() {
         return new SchemaValidators(new Version(VespaVersion.major)).servicesXmlValidator();
     }
 
     private String expectedErrorMessage(String input) {
-        return "XML error in " + input + ": The element type \"config\" must be terminated by the matching end-tag \"</config>\". [7:5], input:\n" +
+        return "Invalid XML according to XML schema, error in " + input + ": The element type \"config\" must be terminated by the matching end-tag \"</config>\". [7:5], input:\n" +
                 "4:    <basicStruct>\n" +
                 "5:      <stringVal>default</stringVal>\n" +
                 "6:    </basicStruct>\n" +

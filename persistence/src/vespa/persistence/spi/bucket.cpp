@@ -4,8 +4,7 @@
 #include <ostream>
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 vespalib::string
 Bucket::toString() const {
@@ -21,7 +20,6 @@ operator<<(vespalib::asciistream& os, const Bucket& bucket)
               << vespalib::hex << vespalib::setw(sizeof(document::BucketId::Type)*2) << vespalib::setfill('0')
               << bucket.getBucketId().getId()
               << vespalib::dec
-              << ", partition " << bucket.getPartition()
               << ")";
 }
 
@@ -30,5 +28,4 @@ operator<<(std::ostream& os, const Bucket& bucket) {
     return os << bucket.toString();
 }
 
-} // spi
-} // storage
+}

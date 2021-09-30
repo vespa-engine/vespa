@@ -5,7 +5,8 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.log.LogLevel;
+import com.yahoo.text.Text;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -17,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.time.Clock;
@@ -32,7 +32,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
@@ -70,7 +72,7 @@ public class DeploymentTrigger {
 
     public void notifyOfSubmission(TenantAndApplicationId id, ApplicationVersion version, long projectId) {
         if (applications().getApplication(id).isEmpty()) {
-            log.log(LogLevel.WARNING, "Ignoring submission from project '" + projectId +
+            log.log(Level.WARNING, "Ignoring submission from project '" + projectId +
                                       "': Unknown application '" + id + "'");
             return;
         }
@@ -103,9 +105,6 @@ public class DeploymentTrigger {
                                                        instance = instance.withChange(instance.change().with(outstanding.application().get()));
                                                        return instance.withChange(remainingChange(instance, status));
                                                    });
-                    for (Run run : jobs.active(application.get().id().instance(instanceName)))
-                        if ( ! run.id().type().environment().isManuallyDeployed())
-                            jobs.abort(run.id());
                 }
             }
             applications().store(application);
@@ -118,7 +117,7 @@ public class DeploymentTrigger {
      */
     public void notifyOfCompletion(ApplicationId id) {
         if (applications().getInstance(id).isEmpty()) {
-            log.log(LogLevel.WARNING, "Ignoring completion of job of unknown application '" + id + "'");
+            log.log(Level.WARNING, "Ignoring completion of job of unknown application '" + id + "'");
             return;
         }
 
@@ -154,14 +153,9 @@ public class DeploymentTrigger {
                                  .parallel().map(Supplier::get).reduce(0L, Long::sum);
     }
 
-    /**
-     * Attempts to trigger the given job for the given application and returns the outcome.
-     *
-     * If the build service can not find the given job, or claims it is illegal to trigger it,
-     * the project id is removed from the application owning the job, to prevent further trigger attempts.
-     */
+    /** Attempts to trigger the given job. */
     public void trigger(Job job) {
-        log.log(LogLevel.DEBUG, "Triggering " + job);
+        log.log(Level.FINE, () -> "Triggering " + job);
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(job.applicationId()), application -> {
             jobs.start(job.applicationId(), job.jobType, job.versions);
             applications().store(application.with(job.applicationId().instance(), instance ->
@@ -169,21 +163,75 @@ public class DeploymentTrigger {
         });
     }
 
+    /** Force triggering of a job for given instance, with same versions as last run. */
+    public JobId reTrigger(ApplicationId applicationId, JobType jobType) {
+        Application application = applications().requireApplication(TenantAndApplicationId.from(applicationId));
+        Instance instance = application.require(applicationId.instance());
+        JobId job = new JobId(instance.id(), jobType);
+        JobStatus jobStatus = jobs.jobStatus(new JobId(applicationId, jobType));
+        Versions versions = jobStatus.lastTriggered()
+                                     .orElseThrow(() -> new IllegalArgumentException(job + " has never been triggered"))
+                                     .versions();
+        trigger(deploymentJob(instance, versions, jobType, jobStatus, clock.instant()));
+        return job;
+    }
+
     /** Force triggering of a job for given instance. */
     public List<JobId> forceTrigger(ApplicationId applicationId, JobType jobType, String user, boolean requireTests) {
         Application application = applications().requireApplication(TenantAndApplicationId.from(applicationId));
         Instance instance = application.require(applicationId.instance());
-        DeploymentStatus status = jobs.deploymentStatus(application);
         JobId job = new JobId(instance.id(), jobType);
-        Versions versions = Versions.from(instance.change(), application, status.deploymentFor(job), controller.systemVersion());
-        String reason = "Job triggered manually by " + user;
+        if (job.type().environment().isManuallyDeployed())
+            return forceTriggerManualJob(job);
+
+        DeploymentStatus status = jobs.deploymentStatus(application);
+        Versions versions = Versions.from(instance.change(), application, status.deploymentFor(job), controller.readSystemVersion());
         Map<JobId, List<Versions>> jobs = status.testJobs(Map.of(job, versions));
         if (jobs.isEmpty() || ! requireTests)
             jobs = Map.of(job, List.of(versions));
         jobs.forEach((jobId, versionsList) -> {
-            trigger(deploymentJob(instance, versionsList.get(0), jobId.type(), status.jobs().get(jobId).get(), reason, clock.instant()));
+            trigger(deploymentJob(instance, versionsList.get(0), jobId.type(), status.jobs().get(jobId).get(), clock.instant()));
         });
         return List.copyOf(jobs.keySet());
+    }
+
+    private List<JobId> forceTriggerManualJob(JobId job) {
+        Run last = jobs.last(job).orElseThrow(() -> new IllegalArgumentException(job + " has never been run"));
+        Versions target = new Versions(controller.readSystemVersion(),
+                                       last.versions().targetApplication(),
+                                       Optional.of(last.versions().targetPlatform()),
+                                       Optional.of(last.versions().targetApplication()));
+        jobs.start(job.application(), job.type(), target, true);
+        return List.of(job);
+    }
+
+    /** Retrigger job. If the job is already running, it will be canceled, and retrigger enqueued. */
+    public Optional<JobId> reTriggerOrAddToQueue(DeploymentId deployment) {
+        JobType jobType = JobType.from(controller.system(), deployment.zoneId())
+                .orElseThrow(() -> new IllegalArgumentException(Text.format("No job to trigger for (system/zone): %s/%s", controller.system().value(), deployment.zoneId().value())));
+        Optional<Run> existingRun = controller.jobController().active(deployment.applicationId()).stream()
+                .filter(run -> run.id().type().equals(jobType))
+                .findFirst();
+
+        if (existingRun.isPresent()) {
+            Run run = existingRun.get();
+            try (Lock lock = controller.curator().lockDeploymentRetriggerQueue()) {
+                List<RetriggerEntry> retriggerEntries = controller.curator().readRetriggerEntries();
+                List<RetriggerEntry> newList = new ArrayList<>(retriggerEntries);
+                RetriggerEntry requiredEntry = new RetriggerEntry(new JobId(deployment.applicationId(), jobType), run.id().number() + 1);
+                if(newList.stream().noneMatch(entry -> entry.jobId().equals(requiredEntry.jobId()) && entry.requiredRun()>=requiredEntry.requiredRun())) {
+                    newList.add(requiredEntry);
+                }
+                newList = newList.stream()
+                        .filter(entry -> !(entry.jobId().equals(requiredEntry.jobId()) && entry.requiredRun() < requiredEntry.requiredRun()))
+                        .collect(toList());
+                controller.curator().writeRetriggerEntries(newList);
+            }
+            controller.jobController().abort(run.id());
+            return Optional.empty();
+        } else {
+            return Optional.of(reTrigger(deployment.applicationId(), jobType));
+        }
     }
 
     /** Prevents jobs of the given type from starting, until the given time. */
@@ -244,15 +292,11 @@ public class DeploymentTrigger {
         return controller.applications();
     }
 
-    private Optional<Deployment> deploymentFor(Instance instance, JobType jobType) {
-        return Optional.ofNullable(instance.deployments().get(jobType.zone(controller.system())));
-    }
-
     // ---------- Ready job computation ----------
 
     /** Returns the set of all jobs which have changes to propagate from the upstream steps. */
     private List<Job> computeReadyJobs() {
-        return jobs.deploymentStatuses(ApplicationList.from(applications().asList())
+        return jobs.deploymentStatuses(ApplicationList.from(applications().readable())
                                                       .withProjectId() // Need to keep this, as we have applications with deployment spec that shouldn't be orchestrated.
                                                       .withDeploymentSpec())
                    .withChanges()
@@ -262,104 +306,47 @@ public class DeploymentTrigger {
                    .collect(toList());
     }
 
-    /**
-     * Finds the next step to trigger for the given application, if any, and returns these as a list.
-     */
+    /** Finds the next step to trigger for the given application, if any, and returns these as a list. */
     private List<Job> computeReadyJobs(DeploymentStatus status) {
         List<Job> jobs = new ArrayList<>();
         status.jobsToRun().forEach((job, versionsList) -> {
-                for (Versions versions : versionsList)
-                    status.jobSteps().get(job).readyAt(status.application().require(job.application().instance()).change())
-                          .filter(readyAt -> ! clock.instant().isBefore(readyAt))
-                          .filter(__ -> ! status.jobs().get(job).get().isRunning())
-                          .filter(__ -> ! (job.type().isProduction() && isSuspendedInAnotherZone(status.application(), job)))
-                          .ifPresent(readyAt -> {
-                              jobs.add(deploymentJob(status.application().require(job.application().instance()),
-                                                     versions,
-                                                     job.type(),
-                                                     status.instanceJobs(job.application().instance()).get(job.type()),
-                                                     "unknown reason",
-                                                     readyAt));
-                          });
+            for (Versions versions : versionsList)
+                status.jobSteps().get(job).readyAt(status.application().require(job.application().instance()).change())
+                      .filter(readyAt -> ! clock.instant().isBefore(readyAt))
+                      .filter(__ -> ! (job.type().isProduction() && isUnhealthyInAnotherZone(status.application(), job)))
+                      .filter(__ -> abortIfRunning(versionsList, status.jobs().get(job).get())) // Abort and trigger this later if running with outdated parameters.
+                      .ifPresent(readyAt -> {
+                          jobs.add(deploymentJob(status.application().require(job.application().instance()),
+                                                 versions,
+                                                 job.type(),
+                                                 status.instanceJobs(job.application().instance()).get(job.type()),
+                                                 readyAt));
+                      });
         });
         return Collections.unmodifiableList(jobs);
     }
 
-    /** Returns whether given job should be triggered */
-    private boolean isSuspendedInAnotherZone(Application application, JobId job) {
+    /** Returns whether the application is healthy in all other production zones. */
+    private boolean isUnhealthyInAnotherZone(Application application, JobId job) {
         for (Deployment deployment : application.require(job.application().instance()).productionDeployments().values()) {
             if (   ! deployment.zone().equals(job.type().zone(controller.system()))
-                &&   controller.applications().isSuspended(new DeploymentId(job.application(), deployment.zone())))
+                && ! controller.applications().isHealthy(new DeploymentId(job.application(), deployment.zone())))
                 return true;
         }
         return false;
     }
 
-    /** Returns whether the given job can trigger at the given instant */
-    public boolean triggerAt(Instant instant, JobType job, JobStatus jobStatus, Versions versions, Instance instance, DeploymentSpec deploymentSpec) {
-        if (instance.jobPause(job).map(until -> until.isAfter(clock.instant())).orElse(false)) return false;
-        if (jobStatus.lastTriggered().isEmpty()) return true;
-        if (jobStatus.isSuccess()) return true; // Success
-        if (jobStatus.lastCompleted().isEmpty()) return true; // Never completed
-        if (jobStatus.firstFailing().isEmpty()) return true; // Should not happen as firstFailing should be set for an unsuccessful job
-        if ( ! versions.targetsMatch(jobStatus.lastCompleted().get().versions())) return true; // Always trigger as targets have changed
-        if (deploymentSpec.requireInstance(instance.name()).upgradePolicy() == DeploymentSpec.UpgradePolicy.canary) return true; // Don't throttle canaries
+    /** Returns whether the job is not running, and also aborts it if it's running with outdated versions. */
+    private boolean abortIfRunning(List<Versions> versionsList, JobStatus status) {
+        if ( ! status.isRunning())
+            return true;
 
-        Instant firstFailing = jobStatus.firstFailing().get().end().get();
-        Instant lastCompleted = jobStatus.lastCompleted().get().end().get();
+        Run last = status.lastTriggered().get();
+        if (versionsList.stream().noneMatch(versions ->    versions.targetsMatch(last.versions())
+                                                        && versions.sourcesMatchIfPresent(last.versions())))
+            controller.jobController().abort(last.id());
 
-        // Retry all errors immediately for 1 minute
-        if (firstFailing.isAfter(instant.minus(Duration.ofMinutes(1)))) return true;
-
-        // Retry out of capacity errors in test environments every minute
-        if (job.environment().isTest() && jobStatus.isOutOfCapacity()) {
-            return lastCompleted.isBefore(instant.minus(Duration.ofMinutes(1)));
-        }
-
-        // Retry other errors
-        if (firstFailing.isAfter(instant.minus(Duration.ofHours(1)))) { // If we failed within the last hour ...
-            return lastCompleted.isBefore(instant.minus(Duration.ofMinutes(10))); // ... retry every 10 minutes
-        }
-        return lastCompleted.isBefore(instant.minus(Duration.ofHours(2))); // Retry at most every 2 hours
-    }
-
-    // ---------- Completion logic ----------
-
-    /**
-     * Returns whether the given change is complete for the given application for the given job.
-     *
-     * Any job is complete if the given change is already successful on that job.
-     * A production job is also considered complete if its current change is strictly dominated by what
-     * is already deployed in its zone, i.e., no parts of the change are upgrades, and the full current
-     * change for the application downgrades the deployment, which is an acknowledgement that the deployed
-     * version is broken somehow, such that the job may be locked in failure until a new version is released.
-     *
-     * Additionally, if the application is pinned to a Vespa version, and the given change has a (this) platform,
-     * the deployment for the job must be on the pinned version.
-     */
-    public boolean isComplete(Change change, Change fullChange, Instance instance, JobType jobType,
-                              JobStatus status) {
-        Optional<Deployment> existingDeployment = deploymentFor(instance, jobType);
-        if (     change.isPinned()
-            &&   change.platform().isPresent()
-            && ! existingDeployment.map(Deployment::version).equals(change.platform()))
-            return false;
-
-        return status.lastSuccess()
-                     .map(run ->    change.platform().map(run.versions().targetPlatform()::equals).orElse(true)
-                                 && change.application().map(run.versions().targetApplication()::equals).orElse(true))
-                     .orElse(false)
-               ||    jobType.isProduction()
-                  && existingDeployment.map(deployment -> ! isUpgrade(change, deployment) && isDowngrade(fullChange, deployment))
-                                          .orElse(false);
-    }
-
-    private static boolean isUpgrade(Change change, Deployment deployment) {
-        return change.upgrades(deployment.version()) || change.upgrades(deployment.applicationVersion());
-    }
-
-    private static boolean isDowngrade(Change change, Deployment deployment) {
-        return change.downgrades(deployment.version()) || change.downgrades(deployment.applicationVersion());
+        return false;
     }
 
     // ---------- Change management o_O ----------
@@ -367,6 +354,8 @@ public class DeploymentTrigger {
     private boolean acceptNewApplicationVersion(DeploymentStatus status, InstanceName instance) {
         if (status.application().require(instance).change().application().isPresent()) return true; // Replacing a previous application change is ok.
         if (status.hasFailures()) return true; // Allow changes to fix upgrade problems.
+        if (status.application().deploymentSpec().instance(instance) // Leading upgrade allows app change to join in.
+                  .map(spec -> spec.upgradeRollout() == DeploymentSpec.UpgradeRollout.leading).orElse(false)) return true;
         return status.application().require(instance).change().platform().isEmpty();
     }
 
@@ -381,7 +370,7 @@ public class DeploymentTrigger {
 
     // ---------- Version and job helpers ----------
 
-    private Job deploymentJob(Instance instance, Versions versions, JobType jobType, JobStatus jobStatus, String reason, Instant availableSince) {
+    private Job deploymentJob(Instance instance, Versions versions, JobType jobType, JobStatus jobStatus, Instant availableSince) {
         return new Job(instance, versions, jobType, availableSince, jobStatus.isOutOfCapacity(), instance.change().application().isPresent());
     }
 
@@ -415,11 +404,12 @@ public class DeploymentTrigger {
 
         @Override
         public String toString() {
-            return jobType + " for " + instanceId + " on (" + versions.targetPlatform() + ", " +
-                   versions.targetApplication().id() + "), ready since " + availableSince;
+            return jobType + " for " + instanceId +
+                   " on (" + versions.targetPlatform() + versions.sourcePlatform().map(version -> " <-- " + version).orElse("") +
+                   ", " + versions.targetApplication().id()  + versions.sourceApplication().map(version -> " <-- " + version.id()).orElse("") +
+                   "), ready since " + availableSince;
         }
 
     }
 
 }
-

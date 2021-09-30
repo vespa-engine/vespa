@@ -5,7 +5,7 @@
     "deployReal": [
       {
         "at": 1000,
-        "type": "info",
+        "type": "warning",
         "message": "Failed to deploy application: ERROR!"
       }
     ]

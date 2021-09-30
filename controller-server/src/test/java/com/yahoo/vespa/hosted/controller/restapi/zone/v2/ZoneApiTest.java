@@ -8,7 +8,6 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -56,12 +55,12 @@ public class ZoneApiTest extends ControllerContainerTest {
         tester.assertResponse(authenticatedRequest("http://localhost:8080/zone/v2/prod/us-north-1"),
                                                 "ok");
 
-        assertLastRequest(ZoneId.from("prod", "us-north-1"), 2, "GET");
+        assertLastRequest(ZoneId.from("prod", "us-north-1"), 1, "GET");
 
         // GET /zone/v2/nodes/v2/node/?recursive=true
         tester.assertResponse(authenticatedRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/node/?recursive=true"),
                                                 "ok");
-        assertLastRequest(ZoneId.from("prod", "us-north-1"), 2, "GET");
+        assertLastRequest(ZoneId.from("prod", "us-north-1"), 1, "GET");
 
         // POST /zone/v2/dev/us-north-2/nodes/v2/command/restart?hostname=node1
         tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/dev/aws-us-north-2/nodes/v2/command/restart?hostname=node1",
@@ -71,12 +70,12 @@ public class ZoneApiTest extends ControllerContainerTest {
         // PUT /zone/v2/prod/us-north-1/nodes/v2/state/dirty/node1
         tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/state/dirty/node1",
                                                             "", Method.PUT), "ok");
-        assertLastRequest(ZoneId.from("prod", "us-north-1"), 2, "PUT");
+        assertLastRequest(ZoneId.from("prod", "us-north-1"), 1, "PUT");
 
         // DELETE /zone/v2/prod/us-north-1/nodes/v2/node/node1
         tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/node/node1",
                                                             "", Method.DELETE), "ok");
-        assertLastRequest(ZoneId.from("prod", "us-north-1"), 2, "DELETE");
+        assertLastRequest(ZoneId.from("prod", "us-north-1"), 1, "DELETE");
 
         // PATCH /zone/v2/prod/us-north-1/nodes/v2/node/node1
         tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/dev/aws-us-north-2/nodes/v2/node/node1",

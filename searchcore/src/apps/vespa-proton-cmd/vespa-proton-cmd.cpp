@@ -3,13 +3,16 @@
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config/common/configsystem.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/fastos/app.h>
 #include <sys/time.h>
 #include <thread>
+#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-proton-cmd");
@@ -27,10 +30,12 @@ private:
     FRT_RPCRequest *_req;
 
 public:
-    App() : _frt(),
-            _target(nullptr),
-            _req(nullptr) {}
-    virtual ~App()
+    App()
+        : _frt(),
+          _target(nullptr),
+          _req(nullptr)
+    {}
+    ~App() override
     {
         assert(!_frt);
         assert(_target == nullptr);
@@ -113,7 +118,7 @@ public:
         std::string rtcPattern3 = "*/search/*/realtimecontroller";
 
         try {
-            slobrok::ConfiguratorFactory sbcfg("admin/slobrok.0");
+            slobrok::ConfiguratorFactory sbcfg("client");
             slobrok::api::MirrorAPI sbmirror(_frt->supervisor(), sbcfg);
             for (int timeout = 1; timeout < 20; timeout++) {
                 if (!sbmirror.ready()) {
@@ -123,7 +128,7 @@ public:
             if (!sbmirror.ready()) {
                 fprintf(stderr,
                         "ERROR: no data from service location broker\n");
-                exit(1);
+                std::_Exit(1);
             }
             slobrok::api::MirrorAPI::SpecList specs = sbmirror.lookup(rtcPattern);
             slobrok::api::MirrorAPI::SpecList specs2 = sbmirror.lookup(rtcPattern2);
@@ -140,7 +145,7 @@ public:
             scanSpecs(specs3, me, service, spec, found);
             if (found > 1) {
                 fprintf(stderr, "found more than one local RTC, you must use --id=<name>\n");
-                exit(1);
+                std::_Exit(1);
             }
             if (found < 1) {
                 fprintf(stderr, "found no local RTC, you must use --id=<name> (list follows):\n");
@@ -148,12 +153,15 @@ public:
                     printf("RTC name %s with connection spec %s\n",
                            specs[j].first.c_str(), specs[j].second.c_str());
                 }
-                exit(1);
+                std::_Exit(1);
             }
             return spec;
         } catch (config::InvalidConfigException& e) {
             fprintf(stderr, "ERROR: failed to get service location broker configuration\n");
-            exit(1);
+            std::_Exit(1);
+        } catch (vespalib::IllegalStateException& e) {
+            fprintf(stderr, "ERROR: empty or invalid service location broker configuration: %s\n", e.what());
+            std::_Exit(2);
         }
         return "";
     }
@@ -162,7 +170,7 @@ public:
         std::string rtcPattern = "search/cluster.*/c*/r*/realtimecontroller";
 
         try {
-            slobrok::ConfiguratorFactory sbcfg("admin/slobrok.0");
+            slobrok::ConfiguratorFactory sbcfg("client");
             slobrok::api::MirrorAPI sbmirror(_frt->supervisor(), sbcfg);
             for (int timeout = 1; timeout < 20; timeout++) {
                 if (!sbmirror.ready()) {
@@ -322,7 +330,7 @@ public:
             }
         } else if (strcmp(_argv[2], "prepareRestart") == 0) {
             _req->SetMethodName("proton.prepareRestart");
-            invokeRPC(false, 86400.0);
+            invokeRPC(false, 600.0);
             invoked = true;
             if (! _req->IsError()) {
                 printf("OK: prepareRestart enabled\n");

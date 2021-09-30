@@ -6,8 +6,7 @@
 #include "counter_aggregator.h"
 #include "gauge_aggregator.h"
 
-namespace vespalib {
-namespace metrics {
+namespace vespalib::metrics {
 
 class DimensionBinding {
 private:
@@ -17,7 +16,7 @@ public:
     const vespalib::string &dimensionName() const { return _dimensionName; }
     const vespalib::string &labelValue() const { return _labelValue; }
     DimensionBinding(const vespalib::string &a,
-                     const vespalib::string &v)
+                     const vespalib::string &v) noexcept
         : _dimensionName(a), _labelValue(v)
     {}
     ~DimensionBinding() {}
@@ -105,5 +104,4 @@ public:
     void add(const GaugeSnapshot &entry)   { _gauges.push_back(entry); }
 };
 
-} // namespace vespalib::metrics
-} // namespace vespalib
+}

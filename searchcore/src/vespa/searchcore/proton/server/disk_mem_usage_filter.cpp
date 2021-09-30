@@ -154,12 +154,14 @@ DiskMemUsageFilter::getDiskUsedRatio(const Guard &guard) const
 DiskMemUsageFilter::DiskMemUsageFilter(const HwInfo &hwInfo)
     : _lock(),
       _hwInfo(hwInfo),
+      _acceptWrite(true),
       _memoryStats(),
       _diskUsedSizeBytes(),
+      _transient_memory_usage(0u),
       _config(),
       _state(),
-      _acceptWrite(true),
       _dmstate(),
+      _disk_mem_usage_metrics(),
       _listeners()
 { }
 
@@ -179,6 +181,14 @@ DiskMemUsageFilter::setDiskUsedSize(uint64_t diskUsedSizeBytes)
     Guard guard(_lock);
     _diskUsedSizeBytes = diskUsedSizeBytes;
     recalcState(guard);
+}
+
+void
+DiskMemUsageFilter::set_transient_resource_usage(size_t transient_memory_usage, size_t transient_disk_usage)
+{
+    Guard guard(_lock);
+    _transient_memory_usage = transient_memory_usage;
+    _transient_disk_usage = transient_disk_usage;
 }
 
 void
@@ -203,6 +213,34 @@ DiskMemUsageFilter::getDiskUsedSize() const
     return _diskUsedSizeBytes;
 }
 
+size_t
+DiskMemUsageFilter::get_transient_memory_usage() const
+{
+    Guard guard(_lock);
+    return _transient_memory_usage;
+}
+
+double
+DiskMemUsageFilter::get_relative_transient_memory_usage() const
+{
+    Guard guard(_lock);
+    return  static_cast<double>(_transient_memory_usage) / _hwInfo.memory().sizeBytes();
+}
+
+size_t
+DiskMemUsageFilter::get_transient_disk_usage() const
+{
+    Guard guard(_lock);
+    return _transient_disk_usage;
+}
+
+double
+DiskMemUsageFilter::get_relative_transient_disk_usage() const
+{
+    Guard guard(_lock);
+    return  static_cast<double>(_transient_disk_usage) / _hwInfo.disk().sizeBytes();
+}
+
 DiskMemUsageFilter::Config
 DiskMemUsageFilter::getConfig() const
 {
@@ -217,6 +255,15 @@ DiskMemUsageFilter::usageState() const
     return _dmstate;
 }
 
+DiskMemUsageMetrics
+DiskMemUsageFilter::get_metrics() const
+{
+    Guard guard(_lock);
+    DiskMemUsageMetrics result(_disk_mem_usage_metrics);
+    _disk_mem_usage_metrics = DiskMemUsageMetrics(_dmstate);
+    return result;
+}
+
 bool
 DiskMemUsageFilter::acceptWriteOperation() const
 {
@@ -229,7 +276,6 @@ DiskMemUsageFilter::getAcceptState() const
     Guard guard(_lock);
     return _state;
 }
-
 
 void
 DiskMemUsageFilter::addDiskMemUsageListener(IDiskMemUsageListener *listener)
@@ -252,14 +298,14 @@ DiskMemUsageFilter::removeDiskMemUsageListener(IDiskMemUsageListener *listener)
 }
 
 void
-DiskMemUsageFilter::notifyDiskMemUsage(const Guard &guard,
-                                       DiskMemUsageState state)
+DiskMemUsageFilter::notifyDiskMemUsage(const Guard &guard, DiskMemUsageState state)
 {
     (void) guard;
     if (_dmstate == state) {
         return;
     }
     _dmstate = state;
+    _disk_mem_usage_metrics.merge(state);
     for (const auto &listener : _listeners) {
         listener->notifyDiskMemUsage(_dmstate);
     }

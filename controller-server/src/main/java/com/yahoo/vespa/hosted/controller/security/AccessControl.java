@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -22,11 +23,12 @@ public interface AccessControl {
      * Sets up access control based on the given credentials, and returns a tenant, based on the given specification.
      *
      * @param tenantSpec specification for the tenant to create
+     * @param createdAt instant when the tenant was created
      * @param credentials the credentials for the entity requesting the creation
      * @param existing list of existing tenants, to check for conflicts
      * @return the created tenant, for keeping
      */
-    Tenant createTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing);
+    Tenant createTenant(TenantSpec tenantSpec, Instant createdAt, Credentials credentials, List<Tenant> existing);
 
     /**
      * Modifies access control based on the given credentials, and returns a modified tenant, based on the given specification.

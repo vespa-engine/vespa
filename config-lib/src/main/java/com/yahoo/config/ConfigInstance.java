@@ -17,6 +17,7 @@ public abstract class ConfigInstance extends InnerNode {
 
         /**
          * Dispatches a getConfig() call if this instance's producer is of the right type
+         *
          * @param producer a config producer
          * @return true if this instance's producer was the correct type, and hence a getConfig call was dispatched
          */
@@ -25,6 +26,11 @@ public abstract class ConfigInstance extends InnerNode {
         String getDefName();
         String getDefNamespace();
         String getDefMd5();
+
+        /** Returns true if this instance should be applied on restart, false if it should be applied immediately */
+        default boolean getApplyOnRestart() { return false; }
+
+        default void setApplyOnRestart(boolean applyOnRestart) { throw new java.lang.UnsupportedOperationException(); }
 
     }
 

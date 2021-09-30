@@ -21,17 +21,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jdisc_core</artifactId>
       <version>${project.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.jvnet.hudson</groupId>
-            <artifactId>annotation-indexer</artifactId>
-          </exclusion>
-        </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>jdisc_http_service</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
@@ -71,6 +60,16 @@
     <dependency>
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.main</artifactId>
+    </dependency>
+
+    <!-- Dependencies used by container-core -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jdk8</artifactId>
     </dependency>
   </dependencies>
   <build>

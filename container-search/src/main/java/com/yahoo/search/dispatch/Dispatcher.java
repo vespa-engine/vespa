@@ -4,6 +4,7 @@ package com.yahoo.search.dispatch;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
+import com.yahoo.compress.Compressor;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A dispatcher communicates with search nodes to perform queries and fill hits.
@@ -48,6 +50,7 @@ public class Dispatcher extends AbstractComponent {
     public static final String DISPATCH = "dispatch";
     private static final String INTERNAL = "internal";
     private static final String PROTOBUF = "protobuf";
+    private static final String TOP_K_PROBABILITY = "topKProbability";
 
     private static final String INTERNAL_METRIC = "dispatch_internal";
 
@@ -56,9 +59,12 @@ public class Dispatcher extends AbstractComponent {
     /** If enabled, search queries will use protobuf rpc */
     public static final CompoundName dispatchProtobuf = CompoundName.fromComponents(DISPATCH, PROTOBUF);
 
+    /** If set will control computation of how many hits will be fetched from each partition.*/
+    public static final CompoundName topKProbability = CompoundName.fromComponents(DISPATCH, TOP_K_PROBABILITY);
+
     /** A model of the search cluster this dispatches to */
     private final SearchCluster searchCluster;
-    private final ClusterMonitor clusterMonitor;
+    private final ClusterMonitor<Node> clusterMonitor;
 
     private final LoadBalancer loadBalancer;
 
@@ -77,6 +83,7 @@ public class Dispatcher extends AbstractComponent {
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(INTERNAL, FieldType.booleanType));
         argumentType.addField(new FieldDescription(PROTOBUF, FieldType.booleanType));
+        argumentType.addField(new FieldDescription(TOP_K_PROBABILITY, FieldType.doubleType));
         argumentType.freeze();
     }
 
@@ -99,7 +106,7 @@ public class Dispatcher extends AbstractComponent {
     }
 
     /* Protected for simple mocking in tests. Beware that searchCluster is shutdown on in deconstruct() */
-    protected Dispatcher(ClusterMonitor clusterMonitor,
+    protected Dispatcher(ClusterMonitor<Node> clusterMonitor,
                          SearchCluster searchCluster,
                          DispatchConfig dispatchConfig,
                          InvokerFactory invokerFactory,
@@ -116,19 +123,28 @@ public class Dispatcher extends AbstractComponent {
         this.metricContext = metric.createContext(null);
         this.maxHitsPerNode = dispatchConfig.maxHitsPerNode();
         searchCluster.addMonitoring(clusterMonitor);
+        Thread warmup = new Thread(() -> warmup(dispatchConfig.warmuptime()));
+        warmup.start();
         try {
             while ( ! searchCluster.hasInformationAboutAllNodes()) {
                 Thread.sleep(1);
             }
+            warmup.join();
         } catch (InterruptedException e) {}
 
-        /*
-         * No we have information from all nodes and a ping iteration has completed.
-         * Instead of waiting until next ping interval to update coverage and group state,
-         * we should compute the state ourselves, so that when the dispatcher is ready the state
-         * of its groups are also known.
-         */
+        // Now we have information from all nodes and a ping iteration has completed.
+        // Instead of waiting until next ping interval to update coverage and group state,
+        // we should compute the state ourselves, so that when the dispatcher is ready the state
+        // of its groups are also known.
         searchCluster.pingIterationCompleted();
+    }
+
+    /**
+     * Will run important code in order to trigger JIT compilation and avoid cold start issues.
+     * Currently warms up lz4 compression code.
+     */
+    private static long warmup(double seconds) {
+        return new Compressor().warmup(seconds);
     }
 
     /** Returns the search cluster this dispatches to */
@@ -138,7 +154,7 @@ public class Dispatcher extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        /* The clustermonitor must be shutdown first as it uses the invokerfactory through the searchCluster. */
+        // The clustermonitor must be shutdown first as it uses the invokerfactory through the searchCluster.
         clusterMonitor.shutdown();
         invokerFactory.release();
     }
@@ -168,8 +184,8 @@ public class Dispatcher extends AbstractComponent {
             if (nodes.isEmpty()) return Optional.empty();
 
             query.trace(false, 2, "Dispatching with search path ", searchPath);
-            return invokerFactory.createSearchInvoker(searcher, query,
-                                                      OptionalInt.empty(),
+            return invokerFactory.createSearchInvoker(searcher,
+                                                      query,
                                                       nodes,
                                                       true,
                                                       maxHitsPerNode);
@@ -185,8 +201,7 @@ public class Dispatcher extends AbstractComponent {
             query.trace(false, 2, "Dispatching to ", node);
             return invokerFactory.createSearchInvoker(searcher,
                                                       query,
-                                                      OptionalInt.empty(),
-                                                      Arrays.asList(node),
+                                                      List.of(node),
                                                       true,
                                                       maxHitsPerNode)
                                  .orElseThrow(() -> new IllegalStateException("Could not dispatch directly to " + node));
@@ -195,7 +210,7 @@ public class Dispatcher extends AbstractComponent {
         int covered = searchCluster.groupsWithSufficientCoverage();
         int groups = searchCluster.orderedGroups().size();
         int max = Integer.min(Integer.min(covered + 1, groups), MAX_GROUP_SELECTION_ATTEMPTS);
-        Set<Integer> rejected = null;
+        Set<Integer> rejected = rejectGroupBlockingFeed(searchCluster.orderedGroups());
         for (int i = 0; i < max; i++) {
             Optional<Group> groupInCluster = loadBalancer.takeGroup(rejected);
             if (groupInCluster.isEmpty()) break; // No groups available
@@ -204,7 +219,6 @@ public class Dispatcher extends AbstractComponent {
             boolean acceptIncompleteCoverage = (i == max - 1);
             Optional<SearchInvoker> invoker = invokerFactory.createSearchInvoker(searcher,
                                                                                  query,
-                                                                                 OptionalInt.of(group.id()),
                                                                                  group.nodes(),
                                                                                  acceptIncompleteCoverage,
                                                                                  maxHitsPerNode);
@@ -222,6 +236,23 @@ public class Dispatcher extends AbstractComponent {
             }
         }
         throw new IllegalStateException("No suitable groups to dispatch query. Rejected: " + rejected);
+    }
+
+    /**
+     * We want to avoid groups blocking feed because their data may be out of date.
+     * If there is a single group blocking feed, we want to reject it.
+     * If multiple groups are blocking feed we should use them anyway as we may not have remaining
+     * capacity otherwise. Same if there are no other groups.
+     *
+     * @return a modifiable set containing the single group to reject, or null otherwise
+     */
+    private Set<Integer> rejectGroupBlockingFeed(List<Group> groups) {
+        if (groups.size() == 1) return null;
+        List<Group> groupsRejectingFeed = groups.stream().filter(Group::isBlockingWrites).collect(Collectors.toList());
+        if (groupsRejectingFeed.size() != 1) return null;
+        Set<Integer> rejected = new HashSet<>();
+        rejected.add(groupsRejectingFeed.get(0).id());
+        return rejected;
     }
 
 }

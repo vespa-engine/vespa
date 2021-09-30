@@ -5,29 +5,16 @@
 #include "threadexecutor.h"
 #include "eventbarrier.hpp"
 #include "arrayqueue.hpp"
-#include "sync.h"
 #include "gate.h"
 #include "runnable.h"
-#include <memory>
 #include <vector>
 #include <functional>
-#include "executor_stats.h"
 
 class FastOS_ThreadPool;
 
 namespace vespalib {
 
 namespace thread { struct ThreadInit; }
-
-// Convenience macro used to create a function that can be used as an
-// init function when creating an executor to inject a frame with the
-// given name into the stack of all worker threads.
-
-#define VESPA_THREAD_STACK_TAG(name)         \
-    int name(::vespalib::Runnable &worker) { \
-        worker.run();                        \
-        return 1;                            \
-    }
 
 /**
  * An executor service that executes tasks in multiple threads.
@@ -36,13 +23,7 @@ class ThreadStackExecutorBase : public SyncableThreadExecutor,
                                 public Runnable
 {
 public:
-    /**
-     * Internal stats that we want to observe externally. Note that
-     * all stats are reset each time they are observed.
-     **/
-    using Stats = ExecutorStats;
-
-    using init_fun_t = std::function<int(Runnable&)>;
+    using unique_lock = std::unique_lock<std::mutex>;
 
 private:
 
@@ -64,13 +45,14 @@ private:
     };
 
     struct Worker {
-        Monitor    monitor;
+        std::mutex              lock;
+        std::condition_variable cond;
         uint32_t   pre_guard;
         bool       idle;
         uint32_t   post_guard;
         TaggedTask task;
-        Worker() : monitor(), pre_guard(0xaaaaaaaa), idle(true), post_guard(0x55555555), task() {}
-        void verify(bool expect_idle) {
+        Worker() : lock(), cond(), pre_guard(0xaaaaaaaa), idle(true), post_guard(0x55555555), task() {}
+        void verify(bool expect_idle) const {
             (void) expect_idle;
             assert(pre_guard == 0xaaaaaaaa);
             assert(post_guard == 0x55555555);
@@ -86,16 +68,18 @@ private:
 
     struct BlockedThread {
         const uint32_t wait_task_count;
-        Monitor monitor;
+        mutable std::mutex lock;
+        mutable std::condition_variable cond;
         bool blocked;
         BlockedThread(uint32_t wait_task_count_in)
-            : wait_task_count(wait_task_count_in), monitor(), blocked(true) {}
+            : wait_task_count(wait_task_count_in), lock(), cond(), blocked(true) {}
         void wait() const;
         void unblock();
     };
 
     std::unique_ptr<FastOS_ThreadPool>   _pool;
-    Monitor                              _monitor;
+    mutable std::mutex                   _lock;
+    std::condition_variable              _cond;
     Stats                                _stats;
     Gate                                 _executorCompletion;
     ArrayQueue<TaggedTask>               _tasks;
@@ -108,8 +92,8 @@ private:
     std::unique_ptr<thread::ThreadInit>  _thread_init;
     static thread_local ThreadStackExecutorBase *_master;
 
-    void block_thread(const LockGuard &, BlockedThread &blocked_thread);
-    void unblock_threads(const MonitorGuard &);
+    void block_thread(const unique_lock &, BlockedThread &blocked_thread);
+    void unblock_threads(const unique_lock &);
 
     /**
      * Assign the given task to the given idle worker. This will wake
@@ -138,14 +122,14 @@ protected:
      * This will tell if a task will be accepted or not.
      * An implementation might decide to block.
      */
-    virtual bool acceptNewTask(MonitorGuard & monitor) = 0;
+    virtual bool acceptNewTask(unique_lock & guard, std::condition_variable & cond) = 0;
 
     /**
      * If blocking implementation, this might wake up any waiters.
      *
      * @param monitor to use for signaling.
      */
-    virtual void wakeup(MonitorGuard & monitor) = 0;
+    virtual void wakeup(unique_lock & guard, std::condition_variable & cond) = 0;
 
     /**
      *  Will tell you if the executor has been closed for new tasks.
@@ -204,14 +188,8 @@ public:
      **/
     size_t num_idle_workers() const;
 
-    /**
-     * Observe and reset stats for this object.
-     *
-     * @return stats
-     **/
-    Stats getStats();
+    Stats getStats() override;
 
-    // inherited from Executor
     Task::UP execute(Task::UP task) override;
 
     /**
@@ -232,6 +210,10 @@ public:
     void wait_for_task_count(uint32_t task_count);
 
     size_t getNumThreads() const override;
+    void setTaskLimit(uint32_t taskLimit) override;
+    uint32_t getTaskLimit() const override;
+
+    void wakeup() override;
 
     /**
      * Shut down this executor. This will make this executor reject
@@ -239,7 +221,7 @@ public:
      *
      * @return this object; for chaining
      **/
-    ThreadStackExecutorBase &shutdown();
+    ThreadStackExecutorBase &shutdown() override;
 
     /**
      * Will invoke shutdown then sync.

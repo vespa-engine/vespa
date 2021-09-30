@@ -25,6 +25,7 @@ import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -157,6 +158,11 @@ public class TensorFunctionNode extends CompositeNode {
         }
 
         @Override
+        public Optional<TensorFunction<Reference>> asTensorFunction() {
+            return Optional.of(new ExpressionTensorFunction(expression));
+        }
+
+        @Override
         public String toString() {
             return toString(ExpressionToStringContext.empty);
         }
@@ -227,6 +233,11 @@ public class TensorFunctionNode extends CompositeNode {
         @Override
         public TensorType type(TypeContext<Reference> context) {
             return expression.type(context);
+        }
+
+        @Override
+        public Optional<ScalarFunction<Reference>> asScalarFunction() {
+            return Optional.of(new ExpressionScalarFunction(expression));
         }
 
         @Override
@@ -333,10 +344,16 @@ public class TensorFunctionNode extends CompositeNode {
         /** Returns a new context with the bindings replaced by the given bindings */
         @Override
         public ExpressionToStringContext withBindings(Map<String, String> bindings) {
-            return new ExpressionToStringContext(new SerializationContext(wrappedSerializationContext.functions().values(), bindings),
-                                                 wrappedToStringContext, path, parent);
+            SerializationContext serializationContext = new SerializationContext(functions(), bindings, serializedFunctions());
+            return new ExpressionToStringContext(serializationContext, wrappedToStringContext, path, parent);
         }
 
+        /** Returns a fresh context without bindings */
+        @Override
+        public SerializationContext withoutBindings() {
+            SerializationContext serializationContext = new SerializationContext(functions(), null, serializedFunctions());
+            return new ExpressionToStringContext(serializationContext, null, path, parent);
+        }
     }
 
     /** Turns an EvaluationContext into a Context */

@@ -4,11 +4,33 @@
 #include "utils.h"
 #include "valuefeature.h"
 #include <vespa/searchlib/fef/fieldinfo.h>
+#include <vespa/vespalib/util/stash.h>
+
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
+
+namespace {
+
+/**
+ * Implements the executor for the matches feature for index and
+ * attribute fields.
+ */
+class MatchesExecutor : public fef::FeatureExecutor {
+private:
+    std::vector<fef::TermFieldHandle> _handles;
+    const fef::MatchData *_md;
+
+    void handle_bind_match_data(const fef::MatchData &md) override;
+
+public:
+    MatchesExecutor(uint32_t fieldId,
+                    const fef::IQueryEnvironment &env,
+                    uint32_t begin, uint32_t end);
+
+    void execute(uint32_t docId) override;
+};
 
 MatchesExecutor::MatchesExecutor(uint32_t fieldId,
                                  const search::fef::IQueryEnvironment &env,
@@ -26,8 +48,7 @@ MatchesExecutor::MatchesExecutor(uint32_t fieldId,
 }
 
 void
-MatchesExecutor::execute(uint32_t docId)
-{
+MatchesExecutor::execute(uint32_t docId) {
     size_t output = 0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
@@ -40,14 +61,15 @@ MatchesExecutor::execute(uint32_t docId)
 }
 
 void
-MatchesExecutor::handle_bind_match_data(const MatchData &md)
-{
+MatchesExecutor::handle_bind_match_data(const MatchData &md) {
     _md = &md;
+}
+
 }
 
 MatchesBlueprint::MatchesBlueprint() :
     Blueprint("matches"),
-    _field(NULL),
+    _field(nullptr),
     _termIdx(std::numeric_limits<uint32_t>::max())
 {
 }
@@ -73,14 +95,14 @@ MatchesBlueprint::setup(const IIndexEnvironment &,
 Blueprint::UP
 MatchesBlueprint::createInstance() const
 {
-    return Blueprint::UP(new MatchesBlueprint());
+    return std::make_unique<MatchesBlueprint>();
 }
 
 FeatureExecutor &
 MatchesBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const
 {
     if (_field == 0) {
-        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
+        return stash.create<SingleZeroValueExecutor>();
     }
     if (_termIdx != std::numeric_limits<uint32_t>::max()) {
         return stash.create<MatchesExecutor>(_field->id(), queryEnv, _termIdx, _termIdx + 1);
@@ -89,5 +111,4 @@ MatchesBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib::S
     }
 }
 
-} // namespace features
-} // namespace search
+}

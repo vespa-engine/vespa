@@ -10,11 +10,13 @@
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/document/fieldset/fieldsets.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.api.mbusprot.serialization.4_2");
 
 using document::BucketSpace;
+using document::AllFields;
 
 namespace storage::mbusprot {
 
@@ -29,7 +31,7 @@ void ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::GetCommand& msg) 
     buf.putString(msg.getDocumentId().toString());
     putBucket(msg.getBucket(), buf);
     buf.putLong(msg.getBeforeTimestamp());
-    buf.putBoolean(msg.getFieldSet() == "[header]");
+    buf.putBoolean(false);
     onEncodeCommand(buf, msg);
 }
 
@@ -39,8 +41,9 @@ ProtocolSerialization4_2::onDecodeGetCommand(BBuf& buf) const
     document::DocumentId did(SH::getString(buf));
     document::Bucket bucket = getBucket(buf);
     api::Timestamp beforeTimestamp(SH::getLong(buf));
-    bool headerOnly(SH::getBoolean(buf));
-    auto msg = std::make_unique<api::GetCommand>(bucket, did, headerOnly ? "[header]" : "[all]", beforeTimestamp);
+    bool headerOnly(SH::getBoolean(buf)); // Ignored header only flag
+    (void) headerOnly;
+    auto msg = std::make_unique<api::GetCommand>(bucket, did, AllFields::NAME, beforeTimestamp);
     onDecodeCommand(buf, *msg);
     return msg;
 }
@@ -190,7 +193,7 @@ void ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::ApplyBucketDiffCo
         buf.putShort(nodes[i].index);
         buf.putBoolean(nodes[i].sourceOnly);
     }
-    buf.putInt(msg.getMaxBufferSize());
+    buf.putInt(0x400000);
     const std::vector<api::ApplyBucketDiffCommand::Entry>& entries(msg.getDiff());
     buf.putInt(entries.size());
     for (uint32_t i=0; i<entries.size(); ++i) {
@@ -217,12 +220,12 @@ ProtocolSerialization4_2::onDecodeApplyBucketDiffCommand(BBuf& buf) const
         bool sourceOnly = SH::getBoolean(buf);
         nodes.push_back(Node(index, sourceOnly));
     }
-    uint32_t maxBufferSize(SH::getInt(buf));
-    auto msg = std::make_unique<api::ApplyBucketDiffCommand>(bucket, nodes, maxBufferSize);
+    (void) SH::getInt(buf); // Unused field
+    auto msg = std::make_unique<api::ApplyBucketDiffCommand>(bucket, nodes);
     std::vector<api::ApplyBucketDiffCommand::Entry>& entries(msg->getDiff());
     uint32_t entryCount = SH::getInt(buf);
     if (entryCount > buf.getRemaining()) {
-            // Trigger out of bounds exception rather than out of memory error
+        // Trigger out of bounds exception rather than out of memory error
         buf.incPos(entryCount);
     }
     entries.resize(entryCount);
@@ -371,7 +374,7 @@ ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::CreateVisitorCommand& 
     }
 
     buf.putBoolean(msg.visitRemoves());
-    buf.putBoolean(msg.getFieldSet() == "[header]");
+    buf.putBoolean(false);
     buf.putBoolean(msg.visitInconsistentBuckets());
     buf.putInt(vespalib::count_ms(msg.getQueueTimeout()));
     msg.getParameters().serialize(buf);
@@ -409,7 +412,7 @@ ProtocolSerialization4_2::onDecodeCreateVisitorCommand(BBuf& buf) const
         msg->setVisitRemoves();
     }
     if (SH::getBoolean(buf)) {
-        msg->setFieldSet("[header]");
+        msg->setFieldSet(AllFields::NAME);
     }
     if (SH::getBoolean(buf)) {
         msg->setVisitInconsistentBuckets();
@@ -483,6 +486,24 @@ ProtocolSerialization4_2::onDecodeRemoveLocationReply(const SCmd& cmd, BBuf& buf
     auto msg = std::make_unique<api::RemoveLocationReply>(static_cast<const api::RemoveLocationCommand&>(cmd));
     onDecodeBucketInfoReply(buf, *msg);
     return msg;
+}
+
+void ProtocolSerialization4_2::onEncode(GBBuf&, const api::StatBucketCommand&) const {
+    throw vespalib::IllegalStateException("StatBucketCommand not expected for legacy protocol version", VESPA_STRLOC);
+}
+
+api::StorageCommand::UP
+ProtocolSerialization4_2::onDecodeStatBucketCommand(BBuf&) const {
+    throw vespalib::IllegalStateException("StatBucketCommand not expected for legacy protocol version", VESPA_STRLOC);
+}
+
+void ProtocolSerialization4_2::onEncode(GBBuf&, const api::StatBucketReply&) const {
+    throw vespalib::IllegalStateException("StatBucketReply not expected for legacy protocol version", VESPA_STRLOC);
+}
+
+api::StorageReply::UP
+ProtocolSerialization4_2::onDecodeStatBucketReply(const SCmd&, BBuf&) const {
+    throw vespalib::IllegalStateException("StatBucketReply not expected for legacy protocol version", VESPA_STRLOC);
 }
 
 // Utility functions for serialization

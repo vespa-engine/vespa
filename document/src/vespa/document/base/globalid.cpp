@@ -39,39 +39,6 @@ getHexVal(char c)
 
 namespace document {
 
-bool
-GlobalId::BucketOrderCmp::operator()(const GlobalId &lhs, const GlobalId &rhs) const
-{
-    const unsigned char * __restrict__ a = lhs._gid._buffer;
-    const unsigned char * __restrict__ b = rhs._gid._buffer;
-    int diff;
-    if ((diff = compare(a[0], b[0])) != 0) {
-        return diff < 0;
-    }
-    if ((diff = compare(a[1], b[1])) != 0) {
-        return diff < 0;
-    }
-    if ((diff = compare(a[2], b[2])) != 0) {
-        return diff < 0;
-    }
-    if ((diff = compare(a[3], b[3])) != 0) {
-        return diff < 0;
-    }
-    if ((diff = compare(a[8], b[8])) != 0) {
-        return diff < 0;
-    }
-    if ((diff = compare(a[9], b[9])) != 0) {
-        return diff < 0;
-    }
-    if ((diff = compare(a[10], b[10])) != 0) {
-        return diff < 0;
-    }
-    if ((diff = compare(a[11], b[11])) != 0) {
-        return diff < 0;
-    }
-    return lhs < rhs;
-}
-
 vespalib::string GlobalId::toString() const {
     vespalib::asciistream out;
     out << "gid(0x" << vespalib::hex;

@@ -114,7 +114,7 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
               const PayLoadFiller & payload, duration timeRemaining)
 {
     auto ctx = std::make_unique<SendContext>(recipient, timeRemaining);
-    RPCServiceAddress &address = static_cast<RPCServiceAddress&>(recipient.getServiceAddress());
+    auto &address = static_cast<RPCServiceAddress&>(recipient.getServiceAddress());
     const Message &msg = recipient.getMessage();
     Route route = recipient.getRoute();
     Hop hop = route.removeHop(0);
@@ -178,7 +178,7 @@ RPCSend::doRequestDone(FRT_RPCRequest *req) {
         }
     } else {
         FRT_Values &ret = *req->GetReturn();
-        reply = createReply(ret, serviceName, error, trace.getRoot());
+        reply = createReply(ret, serviceName, error, trace);
     }
     if (trace.shouldTrace(TraceLevel::SEND_RECEIVE)) {
         trace.trace(TraceLevel::SEND_RECEIVE,

@@ -4,24 +4,25 @@
 
 namespace search::aggregation {
 
-using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT_NS2(search, aggregation, Hit, vespalib::Identifiable);
 
-static FieldBase _G_rankField("rank");
+namespace {
+    const vespalib::string _G_rankField("rank");
+}
 
 Serializer &
 Hit::onSerialize(Serializer &os) const
 {
-    return os.put(_G_rankField, _rank);
+    return os.put(_rank);
 }
 
 Deserializer &
 Hit::onDeserialize(Deserializer &is)
 {
-    return is.get(_G_rankField, _rank);
+    return is.get(_rank);
 }
 
 int
@@ -34,7 +35,7 @@ Hit::onCmp(const Identifiable &b) const
 void
 Hit::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
-    visit(visitor, _G_rankField.getName(), _rank);
+    visit(visitor, _G_rankField, _rank);
 }
 
 }

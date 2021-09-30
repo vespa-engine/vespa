@@ -35,6 +35,7 @@ vespalib::string name_of(map_fun_t fun) {
     if (fun == operation::Relu::f) return "relu";
     if (fun == operation::Sigmoid::f) return "sigmoid";
     if (fun == operation::Elu::f) return "elu";
+    if (fun == operation::Erf::f) return "erf";
     return "[other map function]";
 }
 
@@ -58,6 +59,8 @@ vespalib::string name_of(join_fun_t fun) {
     if (fun == operation::Ldexp::f) return "ldexp";
     if (fun == operation::Min::f) return "min";
     if (fun == operation::Max::f) return "max";
+    if (fun == operation::Bit::f) return "bit";
+    if (fun == operation::Hamming::f) return "hamming";
     return "[other join function]";
 }
 

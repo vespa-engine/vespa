@@ -1,12 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.yolean.system;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 // import sun.misc.Signal;
 // import sun.misc.SignalHandler;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CatchSignals {
     /**

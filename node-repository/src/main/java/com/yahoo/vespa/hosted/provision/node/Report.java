@@ -17,12 +17,20 @@ import java.util.Arrays;
  * @author hakonhall
  */
 public class Report {
+
     /** The time the report was created, in milliseconds since Epoch. */
     public static final String CREATED_FIELD = "createdMillis";
+
     /** The type of the report. */
     public static final String TYPE_FIELD = "type";
+
     /** The description of the report. */
     public static final String DESCRIPTION_FIELD = "description";
+
+    /** Known report IDs */
+    // TODO(mpolden): Remove together with HostEncrypter
+    public static final String WANT_TO_ENCRYPT_ID = "wantToEncrypt";
+    public static final String DISK_ENCRYPTED_ID = "diskEncrypted";
 
     private final String reportId;
     private final Type type;

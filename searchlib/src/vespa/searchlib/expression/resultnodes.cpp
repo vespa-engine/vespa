@@ -148,8 +148,8 @@ int PositiveInfinityResultNode::onCmp(const Identifiable & b) const
     return 1;
 }
 
-int64_t StringResultNode::onGetInteger(size_t index) const { (void) index; return strtoll(_value.c_str(), NULL, 0); }
-double  StringResultNode::onGetFloat(size_t index)   const { (void) index; return vespalib::locale::c::strtod(_value.c_str(), NULL); }
+int64_t StringResultNode::onGetInteger(size_t index) const { (void) index; return strtoll(_value.c_str(), nullptr, 0); }
+double  StringResultNode::onGetFloat(size_t index)   const { (void) index; return vespalib::locale::c::strtod(_value.c_str(), nullptr); }
 Serializer &
 StringResultNode::onSerialize(Serializer & os) const
 {
@@ -366,7 +366,7 @@ Serializer & RawResultNode::onSerialize(Serializer & os) const
 
 ResultSerializer & RawResultNode::onSerializeResult(ResultSerializer & os) const
 {
-    return os.putResult(getClass(), *this);
+    return os.putResult(*this);
 }
 
 int RawResultNode::onCmp(const Identifiable & b) const
@@ -402,7 +402,7 @@ RawResultNode::onDeserialize(Deserializer & is)
 ResultDeserializer &
 RawResultNode::onDeserializeResult(ResultDeserializer & is)
 {
-    return is.getResult(getClass(), *this);
+    return is.getResult(*this);
 }
 
 void

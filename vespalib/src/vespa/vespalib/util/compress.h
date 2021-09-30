@@ -42,7 +42,7 @@ public:
         const uint8_t * src = static_cast<const uint8_t *>(srcv);
         const uint8_t c = src[0];
         size_t numbytes;
-        if (c & 0x40) {
+        if (__builtin_expect(c & 0x40, false)) {
            if (c & 0x20) {
                n = ((c & 0x1f) << 24) + (src[1] << 16) + (src[2] << 8) + src[3];
                numbytes = 4;

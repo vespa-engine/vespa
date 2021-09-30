@@ -20,7 +20,7 @@ import java.io.*;
 public class DefParserTest {
 
     private static final String TEST_DIR = "target/test-classes/";
-    private static final String DEF_NAME = TEST_DIR + "allfeatures.def";
+    private static final String DEF_NAME = TEST_DIR + "configgen.allfeatures.def";
 
     @Test
     public void testTraverseTree() throws IOException {
@@ -61,7 +61,7 @@ public class DefParserTest {
 
     @Test
     public void testFileWithNamespaceInFilename() throws IOException {
-        File defFile = new File(TEST_DIR + "bar.foo.def");
+        File defFile = new File(TEST_DIR + "baz.bar.foo.def");
         CNode root = new DefParser("test", new FileReader(defFile)).getTree();
         assertThat(root.defMd5, is("31a0f9bda0e5ff929762a29569575a7e"));
     }
@@ -86,15 +86,16 @@ public class DefParserTest {
         assertLineFails(line, "Could not create sting a");
     }
 
+    // Note: Version is not used anymore, so will always be empty
     @Test
     public void testValidVersions() {
         try {
-            testExpectedVersion("version=8", "8");
-            testExpectedVersion("version=8-1", "8-1");
-            testExpectedVersion("version =8", "8");
-            testExpectedVersion("version = 8", "8");
-            testExpectedVersion("version = 8 ", "8");
-            testExpectedVersion("version =\t8", "8");
+            testExpectedVersion("version=8", "");
+            testExpectedVersion("version=8-1", "");
+            testExpectedVersion("version =8", "");
+            testExpectedVersion("version = 8", "");
+            testExpectedVersion("version = 8 ", "");
+            testExpectedVersion("version =\t8", "");
         } catch (Exception e) {
             e.printStackTrace();
             fail();

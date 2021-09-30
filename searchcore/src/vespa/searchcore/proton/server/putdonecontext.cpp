@@ -9,17 +9,12 @@ using document::Document;
 
 namespace proton {
 
-PutDoneContext::PutDoneContext(FeedToken token, IGidToLidChangeHandler &gidToLidChangeHandler,
-                               std::shared_ptr<const Document> doc,
-                               const document::GlobalId &gid, uint32_t lid,
-                               search::SerialNum serialNum, bool enableNotifyPut)
+PutDoneContext::PutDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted,
+                               std::shared_ptr<const Document> doc, uint32_t lid)
     : OperationDoneContext(std::move(token)),
+      _uncommitted(std::move(uncommitted)),
       _lid(lid),
       _docIdLimit(nullptr),
-      _gidToLidChangeHandler(gidToLidChangeHandler),
-      _gid(gid),
-      _serialNum(serialNum),
-      _enableNotifyPut(enableNotifyPut),
       _doc(std::move(doc))
 {
 }
@@ -28,9 +23,6 @@ PutDoneContext::~PutDoneContext()
 {
     if (_docIdLimit != nullptr) {
         _docIdLimit->bumpUpLimit(_lid + 1);
-    }
-    if (_enableNotifyPut) {
-        _gidToLidChangeHandler.notifyPutDone(_gid, _lid, _serialNum);
     }
 }
 

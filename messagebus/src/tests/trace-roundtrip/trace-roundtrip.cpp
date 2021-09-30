@@ -120,6 +120,6 @@ Test::Main()
                   .addChild("Server reply")
                   .addChild("Proxy reply")
                   .addChild("Client reply");
-    EXPECT_TRUE(reply->getTrace().getRoot().encode() == t.encode());
+    EXPECT_TRUE(reply->getTrace().encode() == t.encode());
     TEST_DONE();
 }

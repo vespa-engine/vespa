@@ -89,8 +89,10 @@ public class QueryRewriteTestCase {
     
     @Test
     public void testRestrictRank() {
-        assertRewritten("sddocname:per&filter=abc", "espen", "|abc");
+        assertRewritten("sddocname:per&filter=abc", "espen", "NULL");
         assertRewritten("sddocname:per&filter=abc", "per", "RANK sddocname:per |abc");
+        assertRewritten("sddocname:per RANK bar", "per", "RANK sddocname:per bar");
+        assertRewritten("sddocname:per RANK bar", "espen", "NULL");
     }
 
     private static Query query(String queryString, String restrict) {

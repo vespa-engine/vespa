@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -6,6 +6,7 @@ import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,10 +33,10 @@ public class LogFileDb {
     private static OutputStream metaFile() throws java.io.IOException {
         String fn = getDefaults().underVespaHome(DBDIR + "logfiles." + dayStamp());
         File dir = new File(fn).getParentFile();
-        if (!dir.exists()) {
-            if (!dir.mkdirs()) {
-                System.err.println("Failed creating logfiledb directory '" + dir.getPath() + "'.");
-            }
+        try {
+            Files.createDirectories(dir.toPath());
+        } catch (IOException e) {
+            System.err.println("Failed creating logfiledb directory '" + dir.getPath() + "': " + e.getMessage());
         }
         Path path = Paths.get(fn);
         return Files.newOutputStream(path, CREATE, APPEND);

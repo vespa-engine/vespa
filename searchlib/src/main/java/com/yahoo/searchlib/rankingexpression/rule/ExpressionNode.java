@@ -30,7 +30,10 @@ public abstract class ExpressionNode implements Serializable {
 
     @Override
     public final String toString() {
-        return toString(new StringBuilder(), new SerializationContext(), null, null).toString();
+        return toString(new SerializationContext()).toString();
+    }
+    public final StringBuilder toString(SerializationContext context) {
+        return toString(new StringBuilder(), context, null, null);
     }
 
     /**

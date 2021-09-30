@@ -32,7 +32,7 @@ removeClusterStateChangedHandler(IClusterStateChangedHandler *handler)
 
 void
 ClusterStateHandler::
-notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc)
+notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc)
 {
     for (auto &handler : _handlers) {
         handler->notifyClusterStateChanged(newCalc);

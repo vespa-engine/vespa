@@ -249,7 +249,7 @@ public class BindingSetTestCase {
         handlers.put(new UriPattern("http://*/config/v1/*/"), foo1);
         handlers.put(new UriPattern("http://*/config/v1/*/*"), foo2);
         handlers.put(new UriPattern("http://*/config/v1/*/*/"), foo3);
-        handlers.put(new UriPattern("http://*/application/v2/tenant/"), foo4);
+        handlers.put(new UriPattern("http://*/application/v2/tenant*"), foo4);
         handlers.put(new UriPattern("http://*/application/v2/tenant/*"), foo5);
         handlers.put(new UriPattern("http://*/application/v2/tenant/*/session"), foo6);
         handlers.put(new UriPattern("http://*/application/v2/tenant/*/session/*/prepared"), foo7);
@@ -276,7 +276,7 @@ public class BindingSetTestCase {
         assertSame(foo3, bindings.resolve(URI.create("http://abcxyz.yahoo.com:19071" +
                 "/config/v1/cloud.config.log.logd/admin/")));
         assertSame(foo4, bindings.resolve(URI.create("http://abcxyz.yahoo.com:19071" +
-                "/application/v2/tenant/")));
+                "/application/v2/tenant")));
         assertSame(foo5, bindings.resolve(URI.create("http://abcxyz.yahoo.com:19071" +
                 "/application/v2/tenant/b")));
         assertSame(foo6, bindings.resolve(URI.create("http://abcxyz.yahoo.com:19071" +

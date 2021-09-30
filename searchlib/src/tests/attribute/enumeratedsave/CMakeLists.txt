@@ -5,4 +5,4 @@ vespa_add_executable(searchlib_enumeratedsave_test_app TEST
     DEPENDS
     searchlib
 )
-vespa_add_test(NAME searchlib_enumeratedsave_test_app COMMAND searchlib_enumeratedsave_test_app)
+vespa_add_test(NAME searchlib_enumeratedsave_test_app COMMAND searchlib_enumeratedsave_test_app COST 100)

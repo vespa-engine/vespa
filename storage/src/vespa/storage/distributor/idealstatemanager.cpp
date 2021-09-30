@@ -2,7 +2,7 @@
 
 #include "idealstatemanager.h"
 #include "statecheckers.h"
-#include "distributor.h"
+#include "top_level_distributor.h"
 #include "idealstatemetricsset.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/storage/storageserver/storagemetricsset.h>
@@ -21,29 +21,19 @@ using document::BucketSpace;
 using storage::lib::Node;
 using storage::lib::NodeType;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 IdealStateManager::IdealStateManager(
-        Distributor& owner,
-        DistributorBucketSpaceRepo& bucketSpaceRepo,
-        DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
-        DistributorComponentRegister& compReg,
-        bool manageActiveBucketCopies)
-    : HtmlStatusReporter("idealstateman", "Ideal state manager"),
-      _metrics(new IdealStateMetricSet),
-      _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Ideal state manager"),
-      _bucketSpaceRepo(bucketSpaceRepo),
+        const DistributorNodeContext& node_ctx,
+        DistributorStripeOperationContext& op_ctx,
+        IdealStateMetricSet& metrics)
+    : _metrics(metrics),
+      _node_ctx(node_ctx),
+      _op_ctx(op_ctx),
       _has_logged_phantom_replica_warning(false)
 {
-    _distributorComponent.registerStatusPage(*this);
-    _distributorComponent.registerMetric(*_metrics);
-
-    if (manageActiveBucketCopies) {
-        LOG(debug, "Adding BucketStateStateChecker to state checkers");
-        _stateCheckers.push_back(
-                StateChecker::SP(new BucketStateStateChecker()));
-    }
+    LOG(debug, "Adding BucketStateStateChecker to state checkers");
+    _stateCheckers.push_back(StateChecker::SP(new BucketStateStateChecker()));
 
     _splitBucketStateChecker = new SplitBucketStateChecker();
     _stateCheckers.push_back(StateChecker::SP(_splitBucketStateChecker));
@@ -67,9 +57,9 @@ IdealStateManager::print(std::ostream& out, bool verbose,
 bool
 IdealStateManager::iAmUp() const
 {
-    Node node(NodeType::DISTRIBUTOR, _distributorComponent.getIndex());
+    Node node(NodeType::DISTRIBUTOR, node_context().node_index());
     // Assume that derived cluster states agree on distributor node being up
-    const auto &state = *_distributorComponent.getClusterStateBundle().getBaselineClusterState();
+    const auto &state = *operation_context().cluster_state_bundle().getBaselineClusterState();
     const lib::State &nodeState = state.getNodeState(node).getState();
     const lib::State &clusterState = state.getClusterState();
 
@@ -127,7 +117,7 @@ IdealStateManager::runStateCheckers(StateChecker::Context& c) const
     // We go through _all_ active state checkers so that statistics can be
     // collected across all checkers, not just the ones that are highest pri.
     for (uint32_t i = 0; i < _stateCheckers.size(); i++) {
-        if (!_distributorComponent.getDistributor().getConfig().stateCheckerIsActive(
+        if (!operation_context().distributor_config().stateCheckerIsActive(
                 _stateCheckers[i]->getName()))
         {
             LOG(spam, "Skipping state checker %s",
@@ -169,8 +159,8 @@ IdealStateManager::generateHighestPriority(
         const document::Bucket &bucket,
         NodeMaintenanceStatsTracker& statsTracker) const
 {
-    auto &distributorBucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    StateChecker::Context c(_distributorComponent, distributorBucketSpace, statsTracker, bucket);
+    auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket.getBucketSpace());
+    StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
     fillParentAndChildBuckets(c);
     fillSiblingBucket(c);
 
@@ -206,8 +196,8 @@ IdealStateManager::generateInterceptingSplit(BucketSpace bucketSpace,
 {
     NodeMaintenanceStatsTracker statsTracker;
     document::Bucket bucket(bucketSpace, e.getBucketId());
-    auto &distributorBucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    StateChecker::Context c(_distributorComponent, distributorBucketSpace, statsTracker, bucket);
+    auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket.getBucketSpace());
+    StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
     if (e.valid()) {
         c.entry = e;
 
@@ -241,8 +231,8 @@ std::vector<MaintenanceOperation::SP>
 IdealStateManager::generateAll(const document::Bucket &bucket,
                                NodeMaintenanceStatsTracker& statsTracker) const
 {
-    auto &distributorBucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    StateChecker::Context c(_distributorComponent, distributorBucketSpace, statsTracker, bucket);
+    auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket.getBucketSpace());
+    StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
     fillParentAndChildBuckets(c);
     fillSiblingBucket(c);
     BucketDatabase::Entry* e(getEntryForPrimaryBucket(c));
@@ -292,21 +282,19 @@ IdealStateManager::getBucketStatus(
 }
 
 void IdealStateManager::dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const {
-    out << "<h2>" << document::FixedBucketSpaces::to_string(bucket_space) << " - " << bucket_space << "</h2>\n";
-
     StatusBucketVisitor proc(*this, bucket_space, out);
-    auto &distributorBucketSpace(_bucketSpaceRepo.get(bucket_space));
+    auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket_space);
     distributorBucketSpace.getBucketDatabase().forEach(proc);
 }
 
 void IdealStateManager::getBucketStatus(std::ostream& out) const {
     LOG(debug, "Dumping bucket database valid at cluster state version %u",
-        _distributorComponent.getDistributor().getClusterStateBundle().getVersion());
+        operation_context().cluster_state_bundle().getVersion());
 
-    for (auto& space : _bucketSpaceRepo) {
+    for (auto& space : _op_ctx.bucket_space_repo()) {
+        out << "<h2>" << document::FixedBucketSpaces::to_string(space.first) << " - " << space.first << "</h2>\n";
         dump_bucket_space_db_status(space.first, out);
     }
 }
 
-} // distributor
-} // storage
+} // storage::distributor

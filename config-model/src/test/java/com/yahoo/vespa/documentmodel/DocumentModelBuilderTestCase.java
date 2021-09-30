@@ -4,7 +4,7 @@ package com.yahoo.vespa.documentmodel;
 import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
+import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
@@ -13,7 +13,7 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class DocumentModelBuilderTestCase extends SearchDefinitionTestCase {
+public class DocumentModelBuilderTestCase extends SchemaTestCase {
 
     @Test
     public void testDocumentManagerSimple()  throws IOException, ParseException {
@@ -49,9 +49,9 @@ public class DocumentModelBuilderTestCase extends SearchDefinitionTestCase {
     @Test
     public void testMultipleInheritanceArray() throws IOException, ParseException {
         SearchBuilder search = new SearchBuilder();
-        search.importFile("src/test/cfg/search/data/travel/searchdefinitions/TTData.sd");
-        search.importFile("src/test/cfg/search/data/travel/searchdefinitions/TTEdge.sd");
-        search.importFile("src/test/cfg/search/data/travel/searchdefinitions/TTPOI.sd");
+        search.importFile("src/test/cfg/search/data/travel/schemas/TTData.sd");
+        search.importFile("src/test/cfg/search/data/travel/schemas/TTEdge.sd");
+        search.importFile("src/test/cfg/search/data/travel/schemas/TTPOI.sd");
         search.build();
     }
 

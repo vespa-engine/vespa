@@ -63,14 +63,13 @@ public abstract class AbstractResource implements SharedResource {
             activeReferences.add(referenceStack);
             state = currentStateDebugWithLock();
         }
-        log.log(Level.WARNING,
-                getClass().getName() + "@" + System.identityHashCode(this) + ".refer(): state={ " + state + " }",
-                referenceStack);
+        log.log(Level.FINE, referenceStack, () ->
+                getClass().getName() + "@" + System.identityHashCode(this) + ".refer(): state={ " + state + " }");
         return new DebugResourceReference(this, referenceStack);
     }
 
     @Override
-    public void release() {
+    public final void release() {
         initialCreationReference.close();
     }
 
@@ -87,9 +86,8 @@ public abstract class AbstractResource implements SharedResource {
             }
             doDestroy = activeReferences.isEmpty();
         }
-        log.log(Level.WARNING,
-                getClass().getName() + "@" + System.identityHashCode(this) + " release: state={ " + state + " }",
-                releaseStack);
+        log.log(Level.FINE, releaseStack,
+                () ->getClass().getName() + "@" + System.identityHashCode(this) + " release: state={ " + state + " }");
         if (doDestroy) {
             destroy();
         }

@@ -32,6 +32,7 @@ import com.yahoo.searchdefinition.document.*;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 import com.yahoo.searchdefinition.document.annotation.TemporaryAnnotationReferenceDataType;
 import com.yahoo.searchdefinition.RankingConstant;
+import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.DocumentsOnlyRankProfile;
@@ -54,8 +55,10 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.query.ranking.Diversity;
 import java.util.Map;
@@ -74,19 +77,11 @@ public class SDParser {
 
     private DocumentTypeManager docMan = null;
     private ApplicationPackage app;
+    private FileRegistry fileRegistry;
     private DeployLogger deployLogger;
+    private ModelContext.Properties properties;
     private RankProfileRegistry rankProfileRegistry;
     private boolean documentsOnly;
-
-    /** For testing only */
-    public SDParser(String input, DeployLogger deployLogger) {
-        this(new SimpleCharStream(input), deployLogger);
-    }
-
-    /** For testing only */
-    public SDParser(SimpleCharStream stream, DeployLogger deployLogger) {
-        this(stream, deployLogger, MockApplicationPackage.createEmpty(), new RankProfileRegistry(), false);
-    }
 
     /**
      * Creates a parser
@@ -94,12 +89,16 @@ public class SDParser {
      * @param documentsOnly true to only parse the document aspect of a search definition (e.g skip rank profiles)
      */
     public SDParser(SimpleCharStream stream,
+                    FileRegistry fileRegistry,
                     DeployLogger deployLogger,
+                    ModelContext.Properties properties,
                     ApplicationPackage applicationPackage,
                     RankProfileRegistry rankProfileRegistry,
                     boolean documentsOnly) {
         this(stream);
+        this.fileRegistry = fileRegistry;
         this.deployLogger = deployLogger;
+        this.properties = properties;
         this.app = applicationPackage;
         this.rankProfileRegistry = rankProfileRegistry;
         this.documentsOnly = documentsOnly;
@@ -113,7 +112,7 @@ public class SDParser {
      */
     @SuppressWarnings("deprecation")
     private IndexingOperation newIndexingOperation(boolean multiline) throws ParseException {
-        return newIndexingOperation(multiline, new SimpleLinguistics());
+        return newIndexingOperation(multiline, new SimpleLinguistics(), Embedder.throwsOnUse);
     }
 
     /**
@@ -122,13 +121,13 @@ public class SDParser {
      * @param multiline Whether or not to allow multi-line expressions.
      * @param linguistics What to use for tokenizing.
      */
-    private IndexingOperation newIndexingOperation(boolean multiline, Linguistics linguistics) throws ParseException {
+    private IndexingOperation newIndexingOperation(boolean multiline, Linguistics linguistics, Embedder embedder) throws ParseException {
         SimpleCharStream input = (SimpleCharStream)token_source.input_stream;
         if (token.next != null) {
             input.backup(token.next.image.length());
         }
         try {
-            return IndexingOperation.fromStream(input, multiline, linguistics);
+            return IndexingOperation.fromStream(input, multiline, linguistics, embedder);
         } finally {
             token.next = null;
             jj_ntk = -1;
@@ -197,6 +196,7 @@ TOKEN :
   < NL: "\n" >
 | < ANNOTATION: "annotation" >
 | < ANNOTATIONREFERENCE: "annotationreference" >
+| < SCHEMA: "schema" >
 | < SEARCH: "search" >
 | < DIVERSITY: "diversity" >
 | < MIN_GROUPS: "min-groups" >
@@ -230,9 +230,12 @@ TOKEN :
 | < SUBSTRING: "substring" >
 | < SUFFIX: "suffix" >
 | < CONSTANT: "constant">
+| < ONNXMODEL: "onnx-model">
+| < MODEL: "model" >
 | < RANKPROFILE: "rank-profile" >
 | < RANKDEGRADATIONFREQ: "rank-degradation-frequency" >
 | < RANKDEGRADATION: "rank-degradation" >
+| < RAW_AS_BASE64_IN_SUMMARY: "raw-as-base64-in-summary" >
 | < RPBINSIZE: "doc-frequency" >
 | < RPBINLOW:  "min-fullrank-docs">
 | < RPPOSBINSIZE: "occurrences-per-doc" >
@@ -248,6 +251,7 @@ TOKEN :
 | < PROPERTIES: "properties" >
 | < ATTRIBUTE: "attribute" >
 | < SORTING: "sorting" >
+| < DICTIONARY: "dictionary" >
 | < ASCENDING: "ascending" >
 | < DESCENDING: "descending" >
 | < UCA: "uca" >
@@ -263,6 +267,10 @@ TOKEN :
 | < IDENTICAL: "identical" >
 | < STEMMING: "stemming" >
 | < NORMALIZING: "normalizing" >
+| < HASH: "hash" >
+| < BTREE: "btree" >
+| < CASED: "cased" >
+| < UNCASED: "uncased" >
 | < BOLDING: "bolding" >
 | < BODY: "body" >
 | < HEADER: "header" >
@@ -288,6 +296,7 @@ TOKEN :
 | < TO: "to" >
 | < DIRECT: "direct" >
 | < FROMDISK: "from-disk" >
+| < OMITSUMMARYFEATURES: "omit-summary-features" >
 | < ALWAYS: "always" >
 | < ONDEMAND: "on-demand" >
 | < NEVER: "never" >
@@ -295,6 +304,7 @@ TOKEN :
 | < ENABLEONLYBITVECTOR: "enable-only-bit-vector" >
 | < FASTACCESS: "fast-access" >
 | < MUTABLE: "mutable" >
+| < PAGED: "paged" >
 | < FASTSEARCH: "fast-search" >
 | < HUGE: "huge" >
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])+ ")" >
@@ -332,8 +342,14 @@ TOKEN :
 | < UPPERBOUND: "upper-bound" >
 | < DENSEPOSTINGLISTTHRESHOLD: "dense-posting-list-threshold" >
 | < ENABLE_BM25: "enable-bm25" >
+| < HNSW: "hnsw" >
+| < MAXLINKSPERNODE: "max-links-per-node" >
+| < DISTANCEMETRIC: "distance-metric" >
+| < NEIGHBORSTOEXPLOREATINSERT: "neighbors-to-explore-at-insert" >
+| < MULTITHREADEDINDEXING: "multi-threaded-indexing" >
 | < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < SUMMARYFEATURES_ML_INHERITS: "summary-features inherits " (<IDENTIFIER>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < RANKFEATURES_SL: "rank-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < RANKFEATURES_ML: "rank-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* ("\n")? >
@@ -372,6 +388,8 @@ TOKEN :
 | < LESSTHAN: "<" >
 | < GREATERTHAN: ">" >
 | < VARIABLE: "$" <IDENTIFIER> >
+| < ONNX_INPUT_SL: "input" (" ")* (<IDENTIFIER>|<QUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* ("\n")? >
+| < ONNX_OUTPUT_SL: "output" (" ")* (<IDENTIFIER>|<QUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* ("\n")? >
 }
 
 // Declare a special skip token for comments.
@@ -400,40 +418,42 @@ Search search(DocumentTypeManager docMan, String dir) :
     Search search;
 }
 {
-    (<NL>)* (search = rootSearch(dir) | search = rootDocument(dir))
+    (<NL>)* (search = rootSchema(dir) | search = rootDocument(dir))
     { return search; }
 }
 
 /**
- * This rule consumes a proper search block. This and rootDocument() are the only rules that should ever consume
+ * This rule consumes a proper schema block. This and rootDocument() are the only rules that should ever consume
  * trailing newline tokens.
  *
- * @param dir The directory containing the file being parsed.
- * @return The search definition object.
+ * @param dir the directory containing the file being parsed.
+ * @return the schema definition object.
  */
-Search rootSearch(String dir) :
+Search rootSchema(String dir) :
 {
     String name;
     Search search;
 }
 {
-    ( <SEARCH> name = identifier() { search = new Search(name, app);
-                                     rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry));
-                                     rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry));}
-      lbrace() (rootSearchItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
+    ( ( <SCHEMA> | <SEARCH> ) name = identifier() {
+        search = new Search(name, app, fileRegistry,deployLogger, properties);
+        rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry, search.rankingConstants()));
+        rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry, search.rankingConstants()));}
+      lbrace() (rootSchemaItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
     { return search; }
 }
 
 /**
- * Consumes an element of a search block. This and rootSearch() are the only rules that should ever consume
+ * Consumes an element of a schema block. This and rootSearch() are the only rules that should ever consume
  * trailing newline tokens.
  *
  * @param search The search object to modify.
  * @return Null.
  */
-Object rootSearchItem(Search search) : { }
+Object rootSchemaItem(Search search) : { }
 {
     ( document(search)
+      | rawAsBase64(search)
       | documentSummary(search)
       | field(null, search)
       | index(search, null)
@@ -444,19 +464,20 @@ Object rootSearchItem(Search search) : { }
       | structOutside(search)
       | annotationOutside(search)
       | fieldSet(search)
-      | importField(search) )
+      | importField(search)
+      | onnxModel(search) )
     { return null; }
 }
 
 /**
- * Consumes a search definition that contains only documents to be used for inheritance, etc.
+ * Consumes a schema definition that contains only documents to be used for inheritance, etc.
  *
- * @param dir The directory containing the file being parsed.
- * @return The search definition object.
+ * @param dir the directory containing the file being parsed.
+ * @return the schema definition object.
  */
 Search rootDocument(String dir) :
 {
-    Search search = new DocumentOnlySearch();
+    Search search = new DocumentOnlySearch(app, fileRegistry, deployLogger, properties);
 }
 {
     ( (rootDocumentItem(search) (<NL>)*)*<EOF> )
@@ -478,7 +499,7 @@ Object rootDocumentItem(Search search) : { }
 /**
  * Consumes a use-document statement. This currently does nothing.
  *
- * @param search The search object to modify.
+ * @param search the search object to modify.
  */
 void useDocument(Search search) : { }
 {
@@ -488,7 +509,7 @@ void useDocument(Search search) : { }
 /**
  * Consumes a document element. The name defaults to the search's name, but may be set.
  *
- * @param search The search object to add content to.
+ * @param search the search object to add content to.
  */
 void document(Search search) :
 {
@@ -507,7 +528,7 @@ void document(Search search) :
 /**
  * Consumes a document element, explicitly named
  *
- * @param search The search object to add content to.
+ * @param search the search object to add content to.
  */
 void namedDocument(Search search) :
 {
@@ -543,6 +564,12 @@ Object documentBody(SDDocumentType document, Search search) :
     { return null; }
 }
 
+void rawAsBase64(Search search) :
+{}
+{
+    <RAW_AS_BASE64_IN_SUMMARY> { search.enableRawAsBase64(); }
+}
+
 /**
  * Consumes a document head block.
  *
@@ -571,7 +598,7 @@ void bodycfg(SDDocumentType document) : { }
  */
 void compression(SDDocumentType document, String name) :
 {
-    deployLogger.log(Level.WARNING, "'compression' for a document is deprecated and ignored");
+    deployLogger.logApplicationPackage(Level.WARNING, "'compression' for a document is deprecated and ignored");
     CompressionConfig cfg = new CompressionConfig(CompressionType.LZ4);
 }
 {
@@ -579,9 +606,6 @@ void compression(SDDocumentType document, String name) :
     {
         if (name == null || name.equals("header")) {
             document.getDocumentType().contentStruct().setCompressionConfig(cfg);
-        }
-        if (name == null || name.equals("body")) {
-            document.getDocumentType().getBodyType().setCompressionConfig(cfg);
         }
     }
 }
@@ -862,7 +886,7 @@ DataType dataType() :
         }
 
         if (isArrayOldStyle) {
-            deployLogger.log(Level.WARNING, "Data type syntax '" + typeName + "[]' is deprecated, use 'array<" + typeName + ">' instead.");
+            deployLogger.logApplicationPackage(Level.WARNING, "Data type syntax '" + typeName + "[]' is deprecated, use 'array<" + typeName + ">' instead.");
             type = DataType.getArray(type);
         }
         if ("tag".equalsIgnoreCase(typeName) && type instanceof WeightedSetDataType) ((WeightedSetDataType)type).setTag(true);
@@ -977,6 +1001,7 @@ String fieldBody(SDField field, Search search, SDDocumentType document) : { }
       attribute(field) |
       body(field) |
       bolding(field) |
+      dictionary(field) |
       fieldStemming(field) |
       header(field) |
       id(field, document) |
@@ -1207,15 +1232,17 @@ Object sortingSetting(SortingOperation sorting, String attributeName) :
  */
 Object attributeSetting(FieldOperationContainer field, AttributeOperation attribute, String attributeName) :
 {
+    String str;
 }
 {
     (
-        <HUGE>                { attribute.setHuge(true); }
-      | <FASTSEARCH>          { attribute.setFastSearch(true); }
-      | <FASTACCESS>          { attribute.setFastAccess(true); }
-      | <MUTABLE>             { attribute.setMutable(true); }
-      | <ENABLEBITVECTORS>    { attribute.setEnableBitVectors(true); }
-      | <ENABLEONLYBITVECTOR> { attribute.setEnableOnlyBitVector(true); }
+        <HUGE>                 { attribute.setHuge(true); }
+      | <FASTSEARCH>           { attribute.setFastSearch(true); }
+      | <FASTACCESS>           { attribute.setFastAccess(true); }
+      | <MUTABLE>              { attribute.setMutable(true); }
+      | <PAGED>                { attribute.setPaged(true); }
+      | <ENABLEBITVECTORS>     { attribute.setEnableBitVectors(true); }
+      | <ENABLEONLYBITVECTOR>  { attribute.setEnableOnlyBitVector(true); }
       | sorting(field, attributeName)
       | <ALIAS> { String alias; String aliasedName=attributeName; } [aliasedName = identifier()] <COLON> alias = identifierWithDash() {
           attribute.setDoAlias(true);
@@ -1223,6 +1250,7 @@ Object attributeSetting(FieldOperationContainer field, AttributeOperation attrib
           attribute.setAliasedName(aliasedName);
       }
       | attributeTensorType(attribute)
+      | <DISTANCEMETRIC> <COLON> str = identifierWithDash() { attribute.setDistanceMetric(str); }
     )
     { return null; }
 }
@@ -1241,7 +1269,7 @@ Object attributeTensorType(AttributeOperation attribute) :
     tensorType = tensorType("For attribute field '" + attribute.getName() + "'")
     {
         // TODO: Remove on Vespa 8
-        deployLogger.log(Level.WARNING, "In field '" + attribute.getName() + "': Specifying tensor type on the attribute is deprecated and has no effect.");
+        deployLogger.logApplicationPackage(Level.WARNING, "In field '" + attribute.getName() + "': Specifying tensor type on the attribute is deprecated and has no effect.");
     }
     { return null; }
 }
@@ -1508,6 +1536,35 @@ void bolding(FieldOperationContainer field) :
 }
 
 /**
+ * This rule consumes a dictionary statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void dictionary(FieldOperationContainer field) :
+{
+}
+{
+    <DICTIONARY>
+    ( (<COLON> dictionarySetting(field))
+    | (lbrace() (dictionarySetting(field) (<NL>)*)* <RBRACE>))
+    {
+    }
+}
+
+void dictionarySetting(FieldOperationContainer field) :
+{
+    Dictionary.Type type;
+}
+{
+    (   <HASH>            { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.HASH)); }
+      | <BTREE>           { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.BTREE)); }
+      | <CASED>           { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.CASED)); }
+      | <UNCASED>           { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.UNCASED)); })
+    {
+    }
+}
+
+/**
  * This rule consumes a body statement of a field element.
  *
  * @param field The field to modify.
@@ -1516,7 +1573,7 @@ void body(SDField field) : { }
 {
     <BODY>
     {
-        deployLogger.log(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
+        deployLogger.logApplicationPackage(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
     }
 }
 
@@ -1529,7 +1586,7 @@ void header(SDField field) : { }
 {
     <HEADER>
     {
-        deployLogger.log(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
+        deployLogger.logApplicationPackage(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
     }
 }
 
@@ -1580,19 +1637,21 @@ Object matchItem(FieldOperationContainer field) : { }
 
 Object matchType(FieldOperationContainer container) :
 {
-    MatchOperation field = new MatchOperation();
+    MatchOperation matchOp = new MatchOperation();
 }
 {
-    (   <MTOKEN>    { field.setMatchingType(Matching.Type.TEXT); } // Deprecated synonym to TEXT
-      | <TEXT>      { field.setMatchingType(Matching.Type.TEXT); }
-      | <WORD>      { field.setMatchingType(Matching.Type.WORD); }
-      | <EXACT>     { field.setMatchingType(Matching.Type.EXACT); }
-      | <GRAM>      { field.setMatchingType(Matching.Type.GRAM); }
-      | <PREFIX>    { field.setMatchingAlgorithm(Matching.Algorithm.PREFIX); }
-      | <SUBSTRING> { field.setMatchingAlgorithm(Matching.Algorithm.SUBSTRING); }
-      | <SUFFIX>    { field.setMatchingAlgorithm(Matching.Algorithm.SUFFIX); } )
+    (   <MTOKEN>    { matchOp.setMatchingType(Matching.Type.TEXT); } // Deprecated synonym to TEXT
+      | <TEXT>      { matchOp.setMatchingType(Matching.Type.TEXT); }
+      | <WORD>      { matchOp.setMatchingType(Matching.Type.WORD); }
+      | <EXACT>     { matchOp.setMatchingType(Matching.Type.EXACT); }
+      | <GRAM>      { matchOp.setMatchingType(Matching.Type.GRAM); }
+      | <CASED>     { matchOp.setCase(Case.CASED); }
+      | <UNCASED>   { matchOp.setCase(Case.UNCASED); }
+      | <PREFIX>    { matchOp.setMatchingAlgorithm(Matching.Algorithm.PREFIX); }
+      | <SUBSTRING> { matchOp.setMatchingAlgorithm(Matching.Algorithm.SUBSTRING); }
+      | <SUFFIX>    { matchOp.setMatchingAlgorithm(Matching.Algorithm.SUFFIX); } )
     {
-        container.addOperation(field);
+        container.addOperation(matchOp);
         return null;
     }
 }
@@ -1717,6 +1776,7 @@ Object documentSummary(Search search) :
       lbrace()
          (
            <FROMDISK> { summary.setFromDisk(true); } |
+           <OMITSUMMARYFEATURES> { summary.setOmitSummaryFeatures(true); } |
            documentSummaryItem(summary) |
            <NL>
          )*
@@ -1811,8 +1871,87 @@ Object indexBody(IndexOperation index) :
       | <UPPERBOUND> <COLON> num = consumeLong()                       { index.setUpperBound(num); }
       | <DENSEPOSTINGLISTTHRESHOLD> <COLON> threshold = consumeFloat() { index.setDensePostingListThreshold(threshold); }
       | <ENABLE_BM25>                                                  { index.setEnableBm25(true); }
+      | hnswIndex(index)                                               { }
     )
     { return null; }
+}
+
+void hnswIndex(IndexOperation index) :
+{
+    HnswIndexParams.Builder params = new HnswIndexParams.Builder();
+}
+{
+    ( LOOKAHEAD(<HNSW> lbrace())
+      <HNSW> ( (lbrace() (hnswIndexBody(params) (<NL>)*)* <RBRACE>) ) |
+      <HNSW> )
+    {
+        index.setHnswIndexParams(params);
+    }
+}
+
+void hnswIndexBody(HnswIndexParams.Builder params) :
+{
+    int num;
+    boolean bool;
+}
+{
+    ( <MAXLINKSPERNODE> <COLON> num = integer() { params.setMaxLinksPerNode(num); }
+      | <NEIGHBORSTOEXPLOREATINSERT> <COLON> num = integer() { params.setNeighborsToExploreAtInsert(num); }
+      | <MULTITHREADEDINDEXING> <COLON> bool = bool() { params.setMultiThreadedIndexing(bool); } )
+}
+
+/**
+ * Consumes a onnx-model block of a search element.
+ *
+ * @param search The search object to add content to.
+ */
+void onnxModel(Search search) :
+{
+    String name;
+    OnnxModel onnxModel;
+}
+{
+    ( <ONNXMODEL> name = identifier()
+        {
+            onnxModel = new OnnxModel(name);
+        }
+      lbrace() (onnxModelItem(onnxModel) (<NL>)*)+ <RBRACE> )
+    {
+        if (documentsOnly) return;
+        search.onnxModels().add(onnxModel);
+    }
+}
+
+/**
+ * This rule consumes an onnx-model block.
+ *
+ * @param onnxModel The onnxModel to modify.
+ * @return Null.
+ */
+Object onnxModelItem(OnnxModel onnxModel) :
+{
+    String path = null;
+}
+{
+    (
+        (<FILE> <COLON> path = filePath() { } (<NL>)*) { onnxModel.setFileName(path); } |
+        (<URI> <COLON> path = uriPath() { } (<NL>)*) { onnxModel.setUri(path); } |
+        (<ONNX_INPUT_SL>) {
+            String name = token.image.substring(5, token.image.lastIndexOf(":")).trim();
+            if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
+            String source = token.image.substring(token.image.lastIndexOf(":") + 1).trim();
+            onnxModel.addInputNameMapping(name, source);
+        } |
+        (<ONNX_OUTPUT_SL>) {
+            String name = token.image.substring(6, token.image.lastIndexOf(":")).trim();
+            if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
+            String as = token.image.substring(token.image.lastIndexOf(":") + 1).trim();
+            onnxModel.addOutputNameMapping(name, as);
+        }
+    )
+    {
+        return null;
+    }
 }
 
 /**
@@ -1886,15 +2025,15 @@ void rankProfile(Search search) :
     RankProfile profile;
 }
 {
-    ( <RANKPROFILE> name = identifierWithDash()
+    ( ( <MODEL> | <RANKPROFILE> ) name = identifierWithDash()
         {
             if (documentsOnly) {
-                profile = new DocumentsOnlyRankProfile(name, search, rankProfileRegistry);
+                profile = new DocumentsOnlyRankProfile(name, search, rankProfileRegistry, search.rankingConstants());
             }
             else if ("default".equals(name)) {
                 profile = rankProfileRegistry.get(search, "default");
             } else {
-                profile = new RankProfile(name, search, rankProfileRegistry);
+                profile = new RankProfile(name, search, rankProfileRegistry, search.rankingConstants());
             }
         }
       [inheritsRankProfile(profile)]
@@ -2113,23 +2252,26 @@ Object secondPhaseItem(RankProfile profile) :
 Object summaryFeatures(RankProfile profile) :
 {
     String features;
+    String inherited = null;
 }
 {
     ( <SUMMARYFEATURES_SL> { features = token.image.substring(token.image.indexOf(":") + 1).trim(); } |
       <SUMMARYFEATURES_ML> { features = token.image.substring(token.image.indexOf("{") + 1,
-                                                              token.image.lastIndexOf("}")).trim(); } )
+                                                              token.image.lastIndexOf("}")).trim(); } |
+      <SUMMARYFEATURES_ML_INHERITS> {
+          int inheritsIndex = token.image.indexOf("inherits ");
+          String rest = token.image.substring(inheritsIndex + "inherits ".length());
+          profile.setInheritedSummaryFeatures(rest.substring(0, rest.indexOf(" ")).trim());
+          features = token.image.substring(token.image.indexOf("{") + 1, token.image.lastIndexOf("}")).trim();
+      }
+    )
     {
         profile.addSummaryFeatures(getFeatureList(features));
         return null;
     }
 }
 
-/**
- * This rule consumes a rank-features block of a rank profile.
- *
- * @param profile The rank profile to modify.
- * @return Null.
- */
+/** Consumes a rank-features block of a rank profile */
 Object rankFeatures(RankProfile profile) :
 {
     String features;
@@ -2301,7 +2443,7 @@ void rankDegradationBinSize() :
 }
 {
     <RPBINSIZE> <COLON> freq = consumeFloat()
-    { deployLogger.log(Level.WARNING, "Specifying 'doc-frequency' in 'rank-degradation' is deprecated and has no effect."); }
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'doc-frequency' in 'rank-degradation' is deprecated and has no effect."); }
 }
 
 
@@ -2314,7 +2456,7 @@ void rankDegradationBinLow() :
 }
 {
     <RPBINLOW> <COLON> n = integer()
-    { deployLogger.log(Level.WARNING, "Specifying 'min-fullrank-docs' in 'rank-degradation' is deprecated and has no effect."); }
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'min-fullrank-docs' in 'rank-degradation' is deprecated and has no effect."); }
 }
 
 
@@ -2327,7 +2469,7 @@ void rankDegradationPosbinSize() :
 }
 {
     <RPPOSBINSIZE> <COLON> avgOcc = consumeFloat()
-    { deployLogger.log(Level.WARNING, "Specifying 'occurrences-per-doc' in 'rank-degradation' is deprecated and has no effect."); }
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'occurrences-per-doc' in 'rank-degradation' is deprecated and has no effect."); }
 }
 
 
@@ -2355,7 +2497,7 @@ Object rankDegradation(RankProfile profile) :
 }
 {
     ( <RANKDEGRADATIONFREQ> <COLON> freq = consumeFloat()
-    { deployLogger.log(Level.WARNING, "Specifying 'rank-degradation-frequency' in 'rank-profile' is deprecated and has no effect."); }
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'rank-degradation-frequency' in 'rank-profile' is deprecated and has no effect."); }
       | <RANKDEGRADATION> lbrace() ( rankDegradationItem() (<NL>)*)+ <RBRACE>
     )
     {
@@ -2497,10 +2639,10 @@ String identifierWithDash() :
 }
 
 /**
- * This rule consumes an identifier. This must be kept in sync with all word tokens that should be parseable as
+ * Consumes an identifier. This must be kept in sync with all word tokens that should be parseable as
  * identifiers.
  *
- * @return The identifier string.
+ * @return the identifier string
  */
 String identifier() : { }
 {
@@ -2515,6 +2657,8 @@ String identifier() : { }
       | <ATTRIBUTE>
       | <BODY>
       | <BOLDING>
+      | <BTREE>
+      | <CASED>
       | <COMPRESSION>
       | <COMPRESSIONLEVEL>
       | <COMPRESSIONTHRESHOLD>
@@ -2522,6 +2666,7 @@ String identifier() : { }
       | <CREATEIFNONEXISTENT>
       | <DENSEPOSTINGLISTTHRESHOLD>
       | <DESCENDING>
+      | <DICTIONARY>
       | <DIRECT>
       | <DOCUMENT>
       | <DOCUMENTSUMMARY>
@@ -2543,6 +2688,7 @@ String identifier() : { }
       | <FULL>
       | <FUNCTION>
       | <GRAM>
+      | <HASH>
       | <HEADER>
       | <HUGE>
       | <ID>
@@ -2583,6 +2729,7 @@ String identifier() : { }
       | <QUATERNARY>
       | <QUERYCOMMAND>
       | <RANK>
+      | <MODEL>
       | <RANKPROFILE>
       | <RANKPROPERTIES>
       | <RANKSCOREDROPLIMIT>
@@ -2591,11 +2738,13 @@ String identifier() : { }
       | <REFERENCE>
       | <REMOVEIFZERO>
       | <RERANKCOUNT>
+      | <SCHEMA>
       | <SEARCH>
       | <SECONDARY>
       | <SECONDPHASE>
       | <SORTING>
       | <SOURCE>
+      | <PAGED>
       | <SSCONTEXTUAL>
       | <SSOVERRIDE>
       | <SSTITLE>
@@ -2616,6 +2765,7 @@ String identifier() : { }
       | <TRUE>
       | <TYPE>
       | <UCA>
+      | <UNCASED>
       | <URI>
       | <UPPERBOUND>
       | <USEDOCUMENT>
@@ -2630,7 +2780,7 @@ String identifier() : { }
 }
 
 /**
- * This rule consumes a string token and returns the token image.
+ * Consumes a string token and returns the token image.
  *
  * @return The consumed token image.
  */
@@ -2640,7 +2790,7 @@ String string() : { }
 }
 
 /**
- * This rule consumes a quoted string token and returns the token image minus the quotes. This does not perform
+ * Consumes a quoted string token and returns the token image minus the quotes. This does not perform
  * unescaping of the content, it simply removes the first and last character of the image. However, the token itself can
  * contain anything but a double quote.
  *

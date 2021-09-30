@@ -7,7 +7,6 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/clock/clock.h>
-#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vespalib/util/xmlserializable.h>
 #include "outdated_nodes_map.h"
@@ -16,12 +15,13 @@
 
 namespace storage::distributor {
 
+class BucketSpaceStateMap;
 class DistributorMessageSender;
 class PendingBucketSpaceDbTransition;
-class DistributorBucketSpaceRepo;
+class StripeAccessGuard;
 
 /**
- * Class used by BucketDBUpdater to track request bucket info
+ * Class used by TopLevelBucketDBUpdater to track request bucket info
  * messages sent to the storage nodes.
  */
 class PendingClusterState : public vespalib::XmlSerializable {
@@ -45,14 +45,14 @@ public:
             const framework::Clock& clock,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
-            DistributorBucketSpaceRepo& bucketSpaceRepo,
+            const BucketSpaceStateMap& bucket_space_states,
             const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
             const OutdatedNodesMap &outdatedNodesMap,
             api::Timestamp creationTimestamp)
     {
         // Naked new due to private constructor
         return std::unique_ptr<PendingClusterState>(new PendingClusterState(
-                clock, clusterInfo, sender, bucketSpaceRepo,
+                clock, clusterInfo, sender, bucket_space_states,
                 newStateCmd, outdatedNodesMap, creationTimestamp));
     }
 
@@ -64,12 +64,12 @@ public:
             const framework::Clock& clock,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
-            DistributorBucketSpaceRepo& bucketSpaceRepo,
+            const BucketSpaceStateMap& bucket_space_states,
             api::Timestamp creationTimestamp)
     {
         // Naked new due to private constructor
         return std::unique_ptr<PendingClusterState>(new PendingClusterState(
-                clock, clusterInfo, sender, bucketSpaceRepo, creationTimestamp));
+                clock, clusterInfo, sender, bucket_space_states, creationTimestamp));
     }
 
     PendingClusterState(const PendingClusterState &) = delete;
@@ -146,7 +146,8 @@ public:
     /**
      * Merges all the results with the corresponding bucket databases.
      */
-    void mergeIntoBucketDatabases();
+    void merge_into_bucket_databases(StripeAccessGuard& guard);
+
     // Get pending transition for a specific bucket space. Only used by unit test.
     PendingBucketSpaceDbTransition &getPendingBucketSpaceDbTransition(document::BucketSpace bucketSpace);
 
@@ -155,15 +156,19 @@ public:
     std::string requestNodesToString() const;
 
 private:
+    // With 100ms resend timeout, this requires a particular node to have failed
+    // for _at least_ threshold/10 seconds before a log warning is emitted.
+    constexpr static size_t RequestFailureWarningEdgeTriggerThreshold = 200;
+
     /**
      * Creates a pending cluster state that represents
-     * a set system state command from the fleet controller.
+     * a set system state command from the cluster controller.
      */
     PendingClusterState(
             const framework::Clock&,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
-            DistributorBucketSpaceRepo& bucketSpaceRepo,
+            const BucketSpaceStateMap& bucket_space_states,
             const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
             const OutdatedNodesMap &outdatedNodesMap,
             api::Timestamp creationTimestamp);
@@ -176,7 +181,7 @@ private:
             const framework::Clock&,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
-            DistributorBucketSpaceRepo& bucketSpaceRepo,
+            const BucketSpaceStateMap& bucket_space_states,
             api::Timestamp creationTimestamp);
 
     struct BucketSpaceAndNode {
@@ -205,12 +210,9 @@ private:
     bool iAmDown() const;
 
     bool storageNodeUpInNewState(document::BucketSpace bucketSpace, uint16_t node) const;
-    std::string getNewClusterStateBundleString() const {
-        return _newClusterStateBundle.getBaselineClusterState()->toString();
-    }
-    std::string getPrevClusterStateBundleString() const {
-        return _prevClusterStateBundle.getBaselineClusterState()->toString();
-    }
+    std::string getNewClusterStateBundleString() const;
+    std::string getPrevClusterStateBundleString() const;
+    void update_reply_failure_statistics(const api::ReturnCode& result, const BucketSpaceAndNode& source);
 
     std::shared_ptr<api::SetSystemStateCommand> _cmd;
 
@@ -226,7 +228,7 @@ private:
     api::Timestamp _creationTimestamp;
 
     DistributorMessageSender& _sender;
-    DistributorBucketSpaceRepo& _bucketSpaceRepo;
+    const BucketSpaceStateMap& _bucket_space_states;
     uint32_t _clusterStateVersion;
     bool _isVersionedTransition;
     bool _bucketOwnershipTransfer;

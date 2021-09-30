@@ -5,7 +5,7 @@
 #include "btreenode.h"
 #include <algorithm>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 namespace {
 

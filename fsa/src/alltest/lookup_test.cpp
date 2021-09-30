@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 
   if(argc!=2){
     std::cerr << "usage: lookup_test fsafile <input >output" << std::endl;
-    exit(1);
+    return 1;
   }
 
   FSA f(argv[1]);

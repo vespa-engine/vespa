@@ -2,11 +2,9 @@
 
 #include "imported_tensor_attribute_vector.h"
 #include "imported_tensor_attribute_vector_read_guard.h"
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/value.h>
 
 namespace search::tensor {
-
-using vespalib::tensor::Tensor;
 
 ImportedTensorAttributeVector::ImportedTensorAttributeVector(vespalib::stringref name,
                                                              std::shared_ptr<ReferenceAttribute> reference_attribute,

@@ -5,8 +5,8 @@
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/messagebus/network/rpcnetwork.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
-
 #include <vespa/vespalib/util/host_name.h>
+#include <thread>
 
 using slobrok::api::IMirrorAPI;
 

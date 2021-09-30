@@ -7,7 +7,6 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -45,10 +44,6 @@ public class AthenzClientFactoryMock extends AbstractComponent implements Athenz
     @Override
     public ZtsClient createZtsClient() {
         return new ZtsClientMock(athenz);
-    }
-
-    private static void log(String format, Object... args) {
-        log.log(Level.INFO, String.format(format, args));
     }
 
 }

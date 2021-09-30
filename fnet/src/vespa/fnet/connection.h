@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "config.h"
 #include "iocomponent.h"
 #include "databuffer.h"
 #include "context.h"
@@ -10,6 +11,7 @@
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/crypto_socket.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <atomic>
 
 class FNET_IPacketStreamer;
@@ -59,21 +61,22 @@ public:
     };
 
     enum {
-        FNET_READ_SIZE  = 32768,
+        FNET_READ_SIZE  = 16_Ki,
         FNET_READ_REDO  = 10,
-        FNET_WRITE_SIZE = 32768,
+        FNET_WRITE_SIZE = 16_Ki,
         FNET_WRITE_REDO = 10
     };
 
 private:
     struct Flags {
-        Flags() :
+        Flags(const FNET_Config &cfg) :
             _gotheader(false),
             _inCallback(false),
             _callbackWait(false),
             _discarding(false),
             _framed(false),
-            _handshake_work_pending(false)
+            _handshake_work_pending(false),
+            _drop_empty_buffers(cfg._drop_empty_buffers)
         { }
         bool _gotheader;
         bool _inCallback;
@@ -81,6 +84,7 @@ private:
         bool _discarding;
         bool _framed;
         bool _handshake_work_pending;
+        bool _drop_empty_buffers;
     };
     struct ResolveHandler : public vespalib::AsyncResolver::ResultHandler {
         FNET_Connection *connection;

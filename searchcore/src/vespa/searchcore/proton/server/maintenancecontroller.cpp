@@ -5,16 +5,16 @@
 #include "document_db_maintenance_config.h"
 #include "i_blockable_maintenance_job.h"
 #include <vespa/searchcorespi/index/i_thread_service.h>
-#include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/scheduledexecutor.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.maintenancecontroller");
 
 using document::BucketId;
 using vespalib::Executor;
-using vespalib::makeClosure;
-using vespalib::makeTask;
+using vespalib::makeLambdaTask;
 
 namespace proton {
 
@@ -26,36 +26,39 @@ private:
     MaintenanceJobRunner *_job;
 public:
     JobWrapperTask(MaintenanceJobRunner *job) : _job(job) {}
-    virtual void run() override { _job->run(); }
+    void run() override { _job->run(); }
 };
+
+bool
+isRunningOrRunnable(const MaintenanceJobRunner & job, const Executor * master) {
+    return (&job.getExecutor() == master)
+           ? job.isRunning()
+           : job.isRunnable();
+}
 
 }
 
 MaintenanceController::MaintenanceController(IThreadService &masterThread,
-                                             vespalib::SyncableThreadExecutor & defaultExecutor,
+                                             vespalib::Executor & defaultExecutor,
+                                             MonitoredRefCount & refCount,
                                              const DocTypeName &docTypeName)
-    : IBucketFreezeListener(),
-      _masterThread(masterThread),
+    : _masterThread(masterThread),
       _defaultExecutor(defaultExecutor),
+      _refCount(refCount),
       _readySubDB(),
       _remSubDB(),
       _notReadySubDB(),
       _periodicTimer(),
       _config(),
-      _frozenBuckets(masterThread),
-      _started(false),
-      _stopping(false),
+      _state(State::INITIALIZING),
       _docTypeName(docTypeName),
       _jobs(),
       _jobsLock()
-{
-    _frozenBuckets.addListener(this); // forward freeze/thaw to bmc
-}
+{ }
 
 MaintenanceController::~MaintenanceController()
 {
     kill();
-    _frozenBuckets.removeListener(this);
 }
 
 void
@@ -80,37 +83,42 @@ MaintenanceController::registerJob(Executor & executor, IMaintenanceJob::UP job)
     _jobs.push_back(std::make_shared<MaintenanceJobRunner>(executor, std::move(job)));
 }
 
-
 void
 MaintenanceController::killJobs()
 {
-    // Called by master write thread during start/reconfig
-    // Called by other thread during stop
+    if (_state == State::STARTED) {
+        _state = State::PAUSED;
+    }
+    // Called by master write thread
+    assert(_masterThread.isCurrentThread());
     LOG(debug, "killJobs(): threadId=%zu", (size_t)FastOS_Thread::GetCurrentThreadId());
     _periodicTimer.reset();
     // No need to take _jobsLock as modification of _jobs also happens in master write thread.
     for (auto &job : _jobs) {
         job->stop(); // Make sure no more tasks are added to the executor
     }
-    _defaultExecutor.sync();
-    _defaultExecutor.sync();
-    if (_masterThread.isCurrentThread()) {
-        JobList tmpJobs = _jobs;
-        {
-            Guard guard(_jobsLock);
-            _jobs.clear();
+    for (auto &job : _jobs) {
+        while (isRunningOrRunnable(*job, &_masterThread)) {
+            std::this_thread::sleep_for(1ms);
         }
-        // Hold jobs until existing tasks have been drained
-        _masterThread.execute(makeTask(makeClosure(this, &MaintenanceController::performHoldJobs, tmpJobs)));
-    } else {
-        // Wait for all tasks to be finished.
-        // NOTE: We must sync 2 times as a task currently being executed can add a new
-        // task to the executor as it might not see the new value of the stopped flag.
-        _masterThread.sync();
-        _masterThread.sync();
-        // Clear jobs in master write thread, to avoid races
-        _masterThread.execute(makeTask(makeClosure(this, &MaintenanceController::performClearJobs)));
-        _masterThread.sync();
+    }
+    JobList tmpJobs = _jobs;
+    {
+        Guard guard(_jobsLock);
+        _jobs.clear();
+    }
+    // Hold jobs until existing tasks have been drained
+    _masterThread.execute(makeLambdaTask([this, jobs=std::move(tmpJobs)]() {
+        performHoldJobs(std::move(jobs));
+    }));
+}
+
+void
+MaintenanceController::updateMetrics(DocumentDBTaggedMetrics & metrics)
+{
+    Guard guard(_jobsLock);
+    for (auto &job : _jobs) {
+        job->getJob().updateMetrics(metrics); // Make sure no more tasks are added to the executor
     }
 }
 
@@ -123,21 +131,12 @@ MaintenanceController::performHoldJobs(JobList jobs)
 }
 
 void
-MaintenanceController::performClearJobs()
-{
-    // Called by master write thread
-    LOG(debug, "performClearJobs(): threadId=%zu", (size_t)FastOS_Thread::GetCurrentThreadId());
-    Guard guard(_jobsLock);
-    _jobs.clear();
-}
-
-
-void
 MaintenanceController::stop()
 {
     assert(!_masterThread.isCurrentThread());
-    _stopping = true;
-    killJobs();
+    _masterThread.execute(makeLambdaTask([this]() { _state = State::STOPPING; killJobs(); }));
+    _masterThread.sync();  // Wait for killJobs()
+    _masterThread.sync();  // Wait for already scheduled maintenance jobs and performHoldJobs
 }
 
 void
@@ -153,9 +152,9 @@ void
 MaintenanceController::start(const DocumentDBMaintenanceConfig::SP &config)
 {
     // Called by master write thread
-    assert(!_started);
+    assert(_state == State::INITIALIZING);
     _config = config;
-    _started = true;
+    _state = State::STARTED;
     restart();
 }
 
@@ -164,7 +163,7 @@ void
 MaintenanceController::restart()
 {
     // Called by master write thread
-    if (!_started || _stopping || !_readySubDB.valid()) {
+    if (!getStarted() || getStopping() || !_readySubDB.valid()) {
         return;
     }
     _periodicTimer = std::make_unique<vespalib::ScheduledExecutor>();
@@ -226,24 +225,9 @@ MaintenanceController::syncSubDBs(const MaintenanceDocumentSubDB &readySubDB,
     _readySubDB = readySubDB;
     _remSubDB = remSubDB;
     _notReadySubDB = notReadySubDB;
-    if (!oldValid && _started) {
+    if (!oldValid && getStarted()) {
         restart();
     }
 }
-
-
-void
-MaintenanceController::notifyThawedBucket(const BucketId &bucket)
-{
-    (void) bucket;
-    // No need to take _jobsLock as modification of _jobs also happens in master write thread.
-    for (const auto &jw : _jobs) {
-        IBlockableMaintenanceJob *job = jw->getJob().asBlockable();
-        if (job && job->isBlocked()) {
-            job->unBlock(IBlockableMaintenanceJob::BlockedReason::FROZEN_BUCKET);
-        }
-    }
-}
-
 
 } // namespace proton

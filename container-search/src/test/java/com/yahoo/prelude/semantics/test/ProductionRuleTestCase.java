@@ -50,7 +50,7 @@ public class ProductionRuleTestCase {
         RuleEvaluation e = new Evaluation(query).freshRuleEvaluation();
         assertTrue(rule.matches(e));
         rule.produce(e);
-        assertEquals("brand:sony", query.getModel().getQueryTree().getRoot().toString());
+        assertEquals("AND brand:sony", query.getModel().getQueryTree().getRoot().toString());
     }
 
 }

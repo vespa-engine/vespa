@@ -5,10 +5,10 @@
 #include "compiled_function.h"
 #include <vespa/vespalib/util/executor.h>
 #include <condition_variable>
+#include <atomic>
 #include <mutex>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 /**
  * A compilation cache used to reduce application configuration cost
@@ -22,16 +22,22 @@ class CompileCache
 {
 private:
     using Key = vespalib::string;
-    struct Value {
-        size_t num_refs;
+    struct Result {
+        using SP = std::shared_ptr<Result>;
         std::atomic<const CompiledFunction *> cf;
+        std::mutex lock;
         std::condition_variable cond;
         CompiledFunction::UP compiled_function;
+        Result() noexcept : cf(nullptr), lock(), cond(), compiled_function(nullptr) {}
+    };
+    struct Value {
+        size_t num_refs;
+        Result::SP result;
         struct ctor_tag {};
-        Value(ctor_tag) : num_refs(1), cf(nullptr), cond(), compiled_function() {}
+        Value(ctor_tag) : num_refs(1), result(std::make_shared<Result>()) {}
         const CompiledFunction &wait_for_result();
         const CompiledFunction &get() {
-            const CompiledFunction *ptr = cf.load(std::memory_order_acquire);
+            const CompiledFunction *ptr = result->cf.load(std::memory_order_acquire);
             if (ptr == nullptr) {
                 return wait_for_result();
             }
@@ -42,10 +48,10 @@ private:
     static std::mutex _lock;
     static Map _cached;
     static uint64_t _executor_tag;
-    static std::vector<std::pair<uint64_t,Executor*>> _executor_stack;
+    static std::vector<std::pair<uint64_t,std::shared_ptr<Executor>>> _executor_stack;
 
     static void release(Map::iterator entry);
-    static uint64_t attach_executor(Executor &executor);
+    static uint64_t attach_executor(std::shared_ptr<Executor> executor);
     static void detach_executor(uint64_t tag);
 
 public:
@@ -53,7 +59,6 @@ public:
     {
     private:
         friend class CompileCache;
-        friend class CompileTask;
         struct ctor_tag {};
         CompileCache::Map::iterator _entry;
     public:
@@ -78,13 +83,15 @@ public:
         ExecutorBinding &operator=(ExecutorBinding &&) = delete;
         ExecutorBinding &operator=(const ExecutorBinding &) = delete;
         using UP = std::unique_ptr<ExecutorBinding>;
-        explicit ExecutorBinding(Executor &executor, ctor_tag) : _tag(attach_executor(executor)) {}
+        explicit ExecutorBinding(std::shared_ptr<Executor> executor, ctor_tag)
+            : _tag(attach_executor(std::move(executor))) {}
         ~ExecutorBinding() { detach_executor(_tag); }
     };
 
     static Token::UP compile(const Function &function, PassParams pass_params);
-    static ExecutorBinding::UP bind(Executor &executor) {
-        return std::make_unique<ExecutorBinding>(executor, ExecutorBinding::ctor_tag());
+    static void wait_pending();
+    static ExecutorBinding::UP bind(std::shared_ptr<Executor> executor) {
+        return std::make_unique<ExecutorBinding>(std::move(executor), ExecutorBinding::ctor_tag());
     }
     static size_t num_cached();
     static size_t num_bound();
@@ -95,12 +102,11 @@ private:
     struct CompileTask : public Executor::Task {
         std::shared_ptr<Function const> function;
         PassParams pass_params;
-        Token::UP token;
-        CompileTask(const Function &function_in, PassParams pass_params_in, Token::UP token_in)
-            : function(function_in.shared_from_this()), pass_params(pass_params_in), token(std::move(token_in)) {}
+        Result::SP result;
+        CompileTask(const Function &function_in, PassParams pass_params_in, Result::SP result_in)
+            : function(function_in.shared_from_this()), pass_params(pass_params_in), result(std::move(result_in)) {}
         void run() override;
     };
 };
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

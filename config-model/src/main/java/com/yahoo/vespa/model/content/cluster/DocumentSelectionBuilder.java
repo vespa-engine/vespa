@@ -69,12 +69,10 @@ public class DocumentSelectionBuilder {
             String globalSelection = elem.stringAttribute("selection");
             if (globalSelection != null) {
                 validateSelectionExpression(globalSelection, null);
-                StringBuilder global = new StringBuilder();
-                global.append('(').append(globalSelection).append(") AND (")
-                        .append(sb.toString()).append(')');
-                return global.toString();
+                return "(" + globalSelection + ") AND (" + sb + ")";
             }
         }
         return sb.toString();
     }
+
 }

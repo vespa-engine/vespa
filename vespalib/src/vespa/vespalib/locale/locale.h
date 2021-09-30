@@ -3,6 +3,9 @@
 #pragma once
 
 #include <clocale>
+#ifndef __linux__
+#include <xlocale.h>
+#endif
 
 namespace vespalib::locale {
 

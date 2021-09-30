@@ -7,8 +7,7 @@
 #include <vespa/searchlib/expression/resultvector.h>
 
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class UcaFunctionNode : public UnaryFunctionNode
 {
@@ -16,7 +15,7 @@ public:
     DECLARE_EXPRESSIONNODE(UcaFunctionNode);
     DECLARE_NBO_SERIALIZE;
     UcaFunctionNode();
-    ~UcaFunctionNode();
+    ~UcaFunctionNode() override;
     UcaFunctionNode(ExpressionNode::UP arg, const vespalib::string & locale, const vespalib::string & strength);
     UcaFunctionNode(const UcaFunctionNode & rhs);
     UcaFunctionNode & operator = (const UcaFunctionNode & rhs);
@@ -26,7 +25,7 @@ private:
     class Handler {
     public:
         Handler(const UcaFunctionNode & uca);
-        virtual ~Handler() { }
+        virtual ~Handler() = default;
         virtual void handle(const ResultNode & arg) = 0;
     protected:
         void handleOne(const ResultNode & arg, RawResultNode & result) const;
@@ -56,5 +55,3 @@ private:
 };
 
 }
-}
-

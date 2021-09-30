@@ -128,8 +128,7 @@ public class FieldFiller extends Searcher {
 
         Set<String> summaryFields = result.getQuery().getPresentation().getSummaryFields();
 
-        if (summaryFields.isEmpty() || 
-            summaryClass == null || 
+        if (summaryFields.isEmpty() || summaryClass == null ||
             result.getQuery().properties().getBoolean(FIELD_FILLER_DISABLE)) {
             return;
         }

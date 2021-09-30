@@ -22,9 +22,13 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
@@ -33,17 +37,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author mgimle
  */
 public class CapacityCheckerTester {
+
     public static final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
+    private static final ApplicationId tenantHostApp = ApplicationId.from("hosted-vespa", "tenant-host", "default");
 
     // Components with state
     public final ManualClock clock = new ManualClock();
@@ -53,12 +63,21 @@ public class CapacityCheckerTester {
     CapacityCheckerTester() {
         Curator curator = new MockCurator();
         NodeFlavors f = new NodeFlavors(new FlavorConfigBuilder().build());
-        nodeRepository = new NodeRepository(f, curator, clock, zone, new MockNameResolver().mockAnyLookup(),
-                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
+        nodeRepository = new NodeRepository(f,
+                                            new EmptyProvisionServiceProvider(),
+                                            curator,
+                                            clock,
+                                            zone,
+                                            new MockNameResolver().mockAnyLookup(),
+                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                            new InMemoryFlagSource(),
+                                            new MemoryMetricsDb(clock),
+                                            true,
+                                            0, 1000);
     }
 
     private void updateCapacityChecker() {
-        this.capacityChecker = new CapacityChecker(this.nodeRepository);
+        this.capacityChecker = new CapacityChecker(nodeRepository.nodes().list());
     }
 
     List<NodeModel> createDistinctChildren(int amount, List<NodeResources> childResources) {
@@ -102,10 +121,10 @@ public class CapacityCheckerTester {
         return distinctChildren;
     }
 
-    List<Node> createHostsWithChildren(int childrenPerHost, List<NodeModel> distinctChildren, int amount, NodeResources excessCapacity, int excessIps) {
-        List<Node> hosts = new ArrayList<>();
+    Map<ApplicationId, List<Node>> createHostsWithChildren(int childrenPerHost, List<NodeModel> distinctChildren, int hostCount, NodeResources excessCapacity, int excessIps) {
+        Map<ApplicationId, List<Node>> hosts = new HashMap<>();
         int j = 0;
-        for (int i = 0; i < amount; i++) {
+        for (int i = 0; i < hostCount; i++) {
             String parentRoot = ".not.a.real.hostname.yahoo.com";
             String parentName = "parent" + i;
             String hostname = parentName + parentRoot;
@@ -121,8 +140,9 @@ public class CapacityCheckerTester {
                 childModel.parentHostname = Optional.of(hostname);
 
                 Node childNode = createNodeFromModel(childModel);
-                childResources.add(childNode.flavor().resources());
-                hosts.add(childNode);
+                childResources.add(childNode.resources());
+                hosts.computeIfAbsent(childNode.allocation().get().owner(), (ignored) -> new ArrayList<>())
+                     .add(childNode);
             }
 
             final int hostindex = i;
@@ -130,12 +150,11 @@ public class CapacityCheckerTester {
                     .mapToObj(n -> String.format("%04X::%04X", hostindex, n))
                     .collect(Collectors.toSet());
 
-            NodeResources nr = containingNodeResources(childResources,
-                    excessCapacity);
-            Node node = nodeRepository.createNode(hostname, hostname,
-                                                  new IP.Config(Set.of("::"), availableIps), Optional.empty(),
-                                                  new Flavor(nr), Optional.empty(), NodeType.host);
-            hosts.add(node);
+            NodeResources nr = containingNodeResources(childResources, excessCapacity);
+            Node node = Node.create(hostname, new IP.Config(Set.of("::"), availableIps), hostname,
+                    new Flavor(nr), NodeType.host).build();
+            hosts.computeIfAbsent(tenantHostApp, (ignored) -> new ArrayList<>())
+                 .add(node);
         }
         return hosts;
     }
@@ -147,13 +166,12 @@ public class CapacityCheckerTester {
             String parentName = "parent" + i;
             String hostname = parentName + parentRoot;
 
-            final int hostid = i;
-            Set<String> availableIps = IntStream.range(0, ips)
-                    .mapToObj(n -> String.format("%04X::%04X", hostid, n))
+            final int hostId = i;
+            Set<String> availableIps = IntStream.range(2000, 2000 + ips)
+                    .mapToObj(n -> String.format("%04X::%04X", hostId, n))
                     .collect(Collectors.toSet());
-            Node node = nodeRepository.createNode(hostname, hostname,
-                                                  new IP.Config(Set.of("::"), availableIps), Optional.empty(),
-                                                  new Flavor(capacity), Optional.empty(), NodeType.host);
+            Node node = Node.create(hostname, new IP.Config(Set.of("::" + (1000 + hostId)), availableIps), hostname,
+                    new Flavor(capacity), NodeType.host).build();
             hosts.add(node);
         }
         return hosts;
@@ -167,20 +185,21 @@ public class CapacityCheckerTester {
 
         );
         createNodes(childrenPerHost, numDistinctChildren, childResources,
-                numHosts, hostExcessCapacity, hostExcessIps,
-                numEmptyHosts, emptyHostExcessCapacity, emptyHostExcessIps);
+                    numHosts, hostExcessCapacity, hostExcessIps,
+                    numEmptyHosts, emptyHostExcessCapacity, emptyHostExcessIps);
     }
     void createNodes(int childrenPerHost, int numDistinctChildren, List<NodeResources> childResources,
                      int numHosts, NodeResources hostExcessCapacity, int hostExcessIps,
                      int numEmptyHosts, NodeResources emptyHostExcessCapacity, int emptyHostExcessIps) {
-        cleanRepository();
         List<NodeModel> possibleChildren = createDistinctChildren(numDistinctChildren, childResources);
+        Map<ApplicationId, List<Node>> hostsWithChildren = createHostsWithChildren(childrenPerHost, possibleChildren, numHosts, hostExcessCapacity, hostExcessIps);
+        nodeRepository.nodes().addNodes(hostsWithChildren.getOrDefault(tenantHostApp, List.of()), Agent.system);
+        hostsWithChildren.forEach((applicationId, nodes) -> {
+            if (applicationId.equals(tenantHostApp)) return;
+            nodeRepository.database().addNodesInState(nodes, Node.State.active, Agent.system);
+        });
+        nodeRepository.nodes().addNodes(createEmptyHosts(numHosts, numEmptyHosts, emptyHostExcessCapacity, emptyHostExcessIps), Agent.system);
 
-        List<Node> nodes = new ArrayList<>();
-        nodes.addAll(createHostsWithChildren(childrenPerHost, possibleChildren, numHosts, hostExcessCapacity, hostExcessIps));
-        nodes.addAll(createEmptyHosts(numHosts, numEmptyHosts, emptyHostExcessCapacity, emptyHostExcessIps));
-
-        nodeRepository.addNodes(nodes);
         updateCapacityChecker();
     }
 
@@ -209,7 +228,7 @@ public class CapacityCheckerTester {
                 return m;
             }
             public String toString() {
-                return String.format("%s/%s/%s/%d%s", clustertype, clusterid, group, index, retired ? "/retired" : "");
+                return String.format("%s/%s/%s/%d%s%s", clustertype, clusterid, group, index, retired ? "/retired" : "", clustertype.isContent() ? "/stateful" : "");
             }
         }
         static class OwnerModel {
@@ -252,50 +271,56 @@ public class CapacityCheckerTester {
         if (nodeModel.membership != null && nodeModel.owner != null) {
             membership = ClusterMembership.from(
                     nodeModel.membership.toString(),
-                    Version.fromString(nodeModel.wantedVespaVersion));
+                    Version.fromString(nodeModel.wantedVespaVersion),
+                    Optional.empty());
             owner = ApplicationId.from(nodeModel.owner.tenant, nodeModel.owner.application, nodeModel.owner.instance);
         }
 
-        NodeResources.DiskSpeed diskSpeed;
-        NodeResources nr = new NodeResources(nodeModel.minCpuCores, nodeModel.minMainMemoryAvailableGb,
-                nodeModel.minDiskAvailableGb, nodeModel.bandwidth * 1000,
-                nodeModel.fastDisk ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow);
+        NodeResources nr = new NodeResources(nodeModel.minCpuCores,
+                                             nodeModel.minMainMemoryAvailableGb,
+                                             nodeModel.minDiskAvailableGb,
+                                             nodeModel.bandwidth * 1000,
+                                             nodeModel.fastDisk ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow);
         Flavor f = new Flavor(nr);
 
-        Node node = nodeRepository.createNode(nodeModel.id, nodeModel.hostname,
-                                              new IP.Config(nodeModel.ipAddresses, nodeModel.additionalIpAddresses),
-                                              nodeModel.parentHostname, f, Optional.empty(), nodeModel.type);
+        Node.Builder builder = Node.create(nodeModel.id, nodeModel.hostname, f, nodeModel.state, nodeModel.type)
+                .ipConfig(new IP.Config(nodeModel.ipAddresses, nodeModel.additionalIpAddresses));
+        nodeModel.parentHostname.ifPresent(builder::parentHostname);
+        Node node = builder.build();
 
         if (membership != null) {
-            return node.allocate(owner, membership, node.flavor().resources(), Instant.now());
+            return node.allocate(owner, membership, node.resources(), Instant.now());
         } else {
             return node;
         }
     }
 
-    public void restoreNodeRepositoryFromJsonFile(Path path) throws IOException {
+    public void populateNodeRepositoryFromJsonFile(Path path) throws IOException {
         byte[] jsonData = Files.readAllBytes(path);
         ObjectMapper om = new ObjectMapper();
 
         NodeRepositoryModel repositoryModel = om.readValue(jsonData, NodeRepositoryModel.class);
-        List<NodeModel> nmods = repositoryModel.nodes;
+        List<NodeModel> nodeModels = repositoryModel.nodes;
 
-        List<Node> nodes = new ArrayList<>();
-        for (var nmod : nmods) {
-            if (nmod.type != NodeType.host && nmod.type != NodeType.tenant) continue;
 
-            nodes.add(createNodeFromModel(nmod));
+        List<Node> hosts = new ArrayList<>();
+        Map<ApplicationId, List<Node>> nodes = new HashMap<>();
+        for (var model : nodeModels) {
+            Node node = createNodeFromModel(model);
+            assertTrue("Node is allocated", node.allocation().isPresent());
+            if (model.type == NodeType.host) {
+                hosts.add(node);
+            } else if (model.type == NodeType.tenant) {
+                nodes.computeIfAbsent(node.allocation().get().owner(), (k) -> new ArrayList<>())
+                     .add(node);
+            }
         }
 
-        nodeRepository.addNodes(nodes);
+        nodeRepository.database().addNodesInState(hosts, Node.State.active, Agent.system);
+        nodes.forEach((application, applicationNodes) -> {
+            nodeRepository.database().addNodesInState(applicationNodes, Node.State.active, Agent.system);
+        });
         updateCapacityChecker();
     }
 
-    void cleanRepository() {
-        nodeRepository.getNodes(NodeType.host).forEach(n -> nodeRepository.removeRecursively(n, true));
-        nodeRepository.getNodes().forEach(n -> nodeRepository.removeRecursively(n, true));
-        if (nodeRepository.getNodes().size() != 0) {
-            throw new IllegalStateException("Cleaning repository didn't remove all nodes! [" + nodeRepository.getNodes().size() + "]");
-        }
-    }
 }

@@ -6,7 +6,7 @@
 #include <vespa/messagebus/ireplyhandler.h>
 #include <vespa/messagebus/message.h>
 #include <vespa/messagebus/reply.h>
-#include <vespa/vespalib/util/sync.h>
+#include <condition_variable>
 
 namespace mbus {
 
@@ -14,15 +14,13 @@ class Receptor : public IMessageHandler,
                  public IReplyHandler
 {
 private:
-    vespalib::Monitor _mon;
-    Message::UP       _msg;
-    Reply::UP         _reply;
-
-    Receptor(const Receptor &);
-    Receptor &operator=(const Receptor &);
+    std::mutex              _mon;
+    std::condition_variable _cond;
+    Message::UP             _msg;
+    Reply::UP               _reply;
 public:
     Receptor();
-    ~Receptor();
+    ~Receptor() override;
     void handleMessage(Message::UP msg) override;
     void handleReply(Reply::UP reply) override;
     Message::UP getMessage(duration maxWait = 120s);

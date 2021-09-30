@@ -10,6 +10,7 @@
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <thread>
 
 using namespace mbus;
 

@@ -27,7 +27,7 @@ public class SecretStoreValidatorTest {
     private static String servicesXml() {
         return joinLines("<services version='1.0'>",
                          "  <container id='default' version='1.0'>",
-                         "    <secret-store>",
+                         "    <secret-store type='oath-ckms'>",
                          "      <group name='group1' environment='prod'/>",
                          "    </secret-store>",
                          "  </container>",

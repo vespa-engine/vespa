@@ -8,9 +8,7 @@
 #include <cmath>
 #include <cstdlib>
 
-namespace search {
-namespace features {
-namespace fieldmatch {
+namespace search::features::fieldmatch {
 
 Metrics::Metrics(const Computer *source) :
     _source(source),
@@ -337,7 +335,4 @@ Metrics::toString() const
     return vespalib::make_string("Metrics(match %f)", getMatch());
 }
 
-
-} // fieldmatch
-} // features
-} // search
+}

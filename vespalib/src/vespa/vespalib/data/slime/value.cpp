@@ -9,8 +9,7 @@
 #include <vespa/vespalib/data/simple_buffer.h>
 #include "json_format.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 bool
 Value::valid() const {
@@ -131,16 +130,16 @@ Value::setData(Memory name, ExternalMemory::UP data) { return setLeaf(name, Exte
 
 // nop defaults for array/objects
 Cursor &
-Value::addArray() { return *NixValue::invalid(); }
+Value::addArray(size_t) { return *NixValue::invalid(); }
 Cursor &
 Value::addObject() { return *NixValue::invalid(); }
 
 Cursor &
-Value::setArray(Symbol) { return *NixValue::invalid(); }
+Value::setArray(Symbol, size_t) { return *NixValue::invalid(); }
 Cursor &
 Value::setObject(Symbol) { return *NixValue::invalid(); }
 Cursor &
-Value::setArray(Memory) { return *NixValue::invalid(); }
+Value::setArray(Memory, size_t) { return *NixValue::invalid(); }
 Cursor &
 Value::setObject(Memory) { return *NixValue::invalid(); }
 
@@ -148,4 +147,3 @@ Symbol
 Value::resolve(Memory) { return Symbol(); }
 
 } // namespace vespalib::slime
-} // namespace vespalib

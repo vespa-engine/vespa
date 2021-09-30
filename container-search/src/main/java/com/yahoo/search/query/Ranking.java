@@ -39,6 +39,7 @@ public class Ranking implements Cloneable {
     public static final String LIST_FEATURES = "listFeatures";
     public static final String FRESHNESS = "freshness";
     public static final String QUERYCACHE = "queryCache";
+    public static final String RERANKCOUNT = "rerankCount";
     public static final String MATCH_PHASE = "matchPhase";
     public static final String DIVERSITY = "diversity";
     public static final String SOFTTIMEOUT = "softtimeout";
@@ -55,7 +56,8 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(SORTING, "string", "sorting sortspec"));
         argumentType.addField(new FieldDescription(LIST_FEATURES, "string", RANKFEATURES.toString()));
         argumentType.addField(new FieldDescription(FRESHNESS, "string", "datetime"));
-        argumentType.addField(new FieldDescription(QUERYCACHE, "string"));
+        argumentType.addField(new FieldDescription(QUERYCACHE, "boolean"));
+        argumentType.addField(new FieldDescription(RERANKCOUNT, "integer"));
         argumentType.addField(new FieldDescription(MATCH_PHASE,  new QueryProfileFieldType(MatchPhase.getArgumentType()), "matchPhase"));
         argumentType.addField(new FieldDescription(DIVERSITY, new QueryProfileFieldType(Diversity.getArgumentType())));
         argumentType.addField(new FieldDescription(SOFTTIMEOUT, new QueryProfileFieldType(SoftTimeout.getArgumentType())));
@@ -67,7 +69,7 @@ public class Ranking implements Cloneable {
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
 
-    private Query parent;
+    private final Query parent;
 
     /** The location of the query is used for distance ranking */
     private Location location = null;
@@ -84,6 +86,8 @@ public class Ranking implements Cloneable {
     private Freshness freshness;
 
     private boolean queryCache = false;
+
+    private Integer rerankCount = null;
 
     private RankProperties rankProperties = new RankProperties();
 
@@ -139,6 +143,15 @@ public class Ranking implements Cloneable {
     public void setQueryCache(boolean queryCache) { this.queryCache = queryCache; }
 
     public boolean getQueryCache() { return queryCache; }
+
+    /**
+     * Sets the number of hits for which the second-phase function will be evaluated.
+     * When set, this overrides the setting in the rank profile.
+     */
+    public void setRerankCount(int rerankCount) { this.rerankCount = rerankCount; }
+
+    /** Returns the rerank-count that will be used, or null if not set */
+    public Integer getRerankCount() { return rerankCount; }
 
     /** Returns the location of this query, or null if none */
     public Location getLocation() { return location; }
@@ -258,6 +271,8 @@ public class Ranking implements Cloneable {
         matching.prepare(rankProperties);
         softTimeout.prepare(rankProperties);
         prepareNow(freshness);
+        if (rerankCount != null)
+            rankProperties.put("vespa.hitcollector.heapsize", rerankCount);
     }
 
     private void prepareNow(Freshness freshness) {

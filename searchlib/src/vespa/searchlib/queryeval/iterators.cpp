@@ -11,4 +11,6 @@ RankedSearchIteratorBase(const fef::TermFieldMatchDataArray &matchData)
       _needUnpack(1)
 { }
 
+RankedSearchIteratorBase::~RankedSearchIteratorBase() = default;
+
 }

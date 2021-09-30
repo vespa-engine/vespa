@@ -12,18 +12,16 @@ TlsCryptoEngine::TlsCryptoEngine(net::tls::TransportSecurityOptions tls_opts, ne
 }
 
 std::unique_ptr<TlsCryptoSocket>
-TlsCryptoEngine::create_tls_client_crypto_socket(SocketHandle socket, const SocketSpec &)
+TlsCryptoEngine::create_tls_client_crypto_socket(SocketHandle socket, const SocketSpec &peer_spec)
 {
-    auto mode = net::tls::CryptoCodec::Mode::Client;
-    auto codec = net::tls::CryptoCodec::create_default_codec(_tls_ctx, SocketAddress::peer_address(socket.get()), mode);
+    auto codec = net::tls::CryptoCodec::create_default_client_codec(_tls_ctx, peer_spec, SocketAddress::peer_address(socket.get()));
     return std::make_unique<net::tls::CryptoCodecAdapter>(std::move(socket), std::move(codec));
 }
 
 std::unique_ptr<TlsCryptoSocket>
 TlsCryptoEngine::create_tls_server_crypto_socket(SocketHandle socket)
 {
-    auto mode = net::tls::CryptoCodec::Mode::Server;
-    auto codec = net::tls::CryptoCodec::create_default_codec(_tls_ctx, SocketAddress::peer_address(socket.get()), mode);
+    auto codec = net::tls::CryptoCodec::create_default_server_codec(_tls_ctx, SocketAddress::peer_address(socket.get()));
     return std::make_unique<net::tls::CryptoCodecAdapter>(std::move(socket), std::move(codec));
 }
 

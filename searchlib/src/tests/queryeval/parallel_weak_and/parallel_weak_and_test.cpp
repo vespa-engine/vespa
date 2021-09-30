@@ -89,14 +89,17 @@ struct WandTestSpec : public WandSpec
     WandTestSpec(uint32_t scoresToTrack, uint32_t scoresAdjustFrequency = 1,
                  score_t scoreThreshold = 0, double thresholdBoostFactor = 1);
     ~WandTestSpec();
-    SearchIterator *create() {
+    SearchIterator::UP create() {
         MatchData::UP childrenMatchData = createMatchData();
         MatchData *tmp = childrenMatchData.get();
-        return new TrackedSearch("PWAND", getHistory(), ParallelWeakAndSearch::create(getTerms(tmp),
-                        matchParams,
-                        RankParams(rootMatchData,
-                                   std::move(childrenMatchData)),
-                        true));
+        return SearchIterator::UP(
+                new TrackedSearch("PWAND", getHistory(),
+                                  ParallelWeakAndSearch::create(
+                                          getTerms(tmp),
+                                          matchParams,
+                                          RankParams(rootMatchData,
+                                                     std::move(childrenMatchData)),
+                                          true)));
     }
 };
 
@@ -155,11 +158,10 @@ struct WandBlueprintSpec
     Node::UP createNode(uint32_t scoresToTrack = 100,
                         score_t scoreThreshold = 0,
                         double thresholdBoostFactor = 1) const {
-        SimpleWandTerm *node = new SimpleWandTerm("view", 0, Weight(0),
+        SimpleWandTerm *node = new SimpleWandTerm(tokens.size(), "view", 0, Weight(0),
                                                   scoresToTrack, scoreThreshold, thresholdBoostFactor);
         for (size_t i = 0; i < tokens.size(); ++i) {
-            node->append(Node::UP(new SimpleStringTerm(tokens[i].first, "view", 0,
-                                                       Weight(tokens[i].second))));
+            node->addTerm(tokens[i].first, Weight(tokens[i].second));
         }
         return Node::UP(node);
     }
@@ -671,7 +673,7 @@ private:
         MatchParams match_params(_dummy_heap, _dummy_heap.getMinScore(), 1.0, 1);
         std::vector<IDocumentWeightAttribute::LookupResult> dict_entries;
         for (size_t i = 0; i < _num_children; ++i) {
-            dict_entries.push_back(_helper.dwa().lookup(vespalib::make_string("%zu", i).c_str()));
+            dict_entries.push_back(_helper.dwa().lookup(vespalib::make_string("%zu", i).c_str(), _helper.dwa().get_dictionary_snapshot()));
         }
         return create_wand(_use_dwa, _tfmd, match_params, _weights, dict_entries, _helper.dwa(), strict);
     }

@@ -8,6 +8,7 @@
 #include <vespa/vespalib/data/output.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <functional>
 
 namespace vespalib::eval::test {
@@ -36,6 +37,22 @@ public:
     WritableMemory reserve(size_t bytes) override;
     Output &commit(size_t bytes) override;
 };
+
+/**
+ * Read one line at a time from an input
+ **/
+class LineReader {
+private:
+    Input &_input;
+public:
+    LineReader(Input &input) : _input(input) {}
+    bool read_line(vespalib::string &line);
+};
+
+/**
+ * Skip whitespaces from the input and return true if eof was reached.
+ **/
+bool look_for_eof(Input &input);
 
 /**
  * Write a slime structure as compact json with a trailing newline.

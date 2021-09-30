@@ -14,7 +14,7 @@ Dispatcher<T>::Dispatcher(Handler<T> &fallback)
 }
 
 template <typename T>
-Dispatcher<T>::~Dispatcher() {}
+Dispatcher<T>::~Dispatcher() = default;
 
 template <typename T>
 bool
@@ -25,7 +25,7 @@ Dispatcher<T>::waitForThreads(size_t threads, size_t pollCnt) const
             vespalib::Thread::sleep(20);
         }
         {
-            vespalib::LockGuard guard(_lock);
+            std::lock_guard guard(_lock);
             if (_threads.size() >= threads) {
                 return true;
             }
@@ -40,7 +40,7 @@ Dispatcher<T>::close()
 {
     std::vector<ThreadState*> threads;
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         std::swap(_threads, threads);
         _closed = true;
     }
@@ -53,7 +53,7 @@ template <typename T>
 void
 Dispatcher<T>::handle(std::unique_ptr<T> obj)
 {
-    vespalib::LockGuard guard(_lock);
+    std::unique_lock guard(_lock);
     if (!_threads.empty()) {
         ThreadState *state = _threads.back();
         _threads.pop_back();
@@ -75,7 +75,7 @@ Dispatcher<T>::provide()
 {
     ThreadState state;
     {
-        vespalib::LockGuard guard(_lock);
+        std::unique_lock guard(_lock);
         if (!_closed) {
             _threads.push_back(&state);
             guard.unlock();

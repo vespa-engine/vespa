@@ -12,12 +12,6 @@ public class Identity extends IntermediateOperation {
         super(modelName, nodeName, inputs);
     }
 
-    /** Constant names are prefixed by "modelName_" to avoid name conflicts between models */
-    @Override
-    public String vespaName() {
-        return modelName + "_" + super.vespaName();
-    }
-
     @Override
     protected OrderedTensorType lazyGetType() {
         if (!allInputTypesPresent(1))

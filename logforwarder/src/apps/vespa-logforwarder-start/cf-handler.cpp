@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "cf-handler.h"
+#include <cstdlib>
 #include <dirent.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -46,10 +47,11 @@ bool fixDir(const vespalib::string &path) {
 }
 
 vespalib::string
-cfFilePath(const vespalib::string &parent) {
+cfFilePath(const vespalib::string &parent, const vespalib::string &filename) {
     vespalib::string path = parent + "/etc/system/local";
     fixDir(path);
-    path += "/deploymentclient.conf";
+    path += "/";
+    path += filename;
     return path;
 }
 
@@ -61,7 +63,7 @@ CfHandler::doConfigure()
     std::unique_ptr<LogforwarderConfig> cfg(_handle->getConfig());
     const LogforwarderConfig& config(*cfg);
 
-    vespalib::string path = cfFilePath(config.splunkHome);
+    vespalib::string path = cfFilePath(config.splunkHome, "deploymentclient.conf");
     vespalib::string tmpPath = path + ".new";
     FILE *fp = fopen(tmpPath.c_str(), "w");
     if (fp == NULL) return;
@@ -76,6 +78,24 @@ CfHandler::doConfigure()
     fclose(fp);
     rename(tmpPath.c_str(), path.c_str());
 
+    if (getenv("VESPA_HOSTNAME") != NULL &&
+        getenv("VESPA_TENANT") != NULL &&
+        getenv("VESPA_APPLICATION")!= NULL &&
+        getenv("VESPA_INSTANCE") != NULL &&
+        getenv("VESPA_ENVIRONMENT") != NULL &&
+        getenv("VESPA_REGION") != NULL)
+        {
+        path = cfFilePath(config.splunkHome, "inputs.conf");
+        tmpPath = path + ".new";
+        fp = fopen(tmpPath.c_str(), "w");
+        if (fp != NULL) {
+            fprintf(fp, "[default]\n");
+            fprintf(fp, "host = %s\n", getenv("VESPA_HOSTNAME"));
+            fprintf(fp, "_meta = vespa_tenant::%s vespa_app::%s.%s vespa_zone::%s.%s\n", getenv("VESPA_TENANT"), getenv("VESPA_APPLICATION"), getenv("VESPA_INSTANCE"), getenv("VESPA_ENVIRONMENT"), getenv("VESPA_REGION"));
+            fclose(fp);
+            rename(tmpPath.c_str(), path.c_str());
+        }
+    }
     if (config.clientName.size() == 0 ||
         config.deploymentServer.size() == 0)
     {
@@ -103,12 +123,12 @@ CfHandler::start(const char *configId)
         subscribe(configId, CONFIG_TIMEOUT_MS);
     } catch (config::ConfigTimeoutException & ex) {
         LOG(warning, "Timout getting config, please check your setup. Will exit and restart: %s", ex.getMessage().c_str());
-        exit(EXIT_FAILURE);
+        std::_Exit(EXIT_FAILURE);
     } catch (config::InvalidConfigException& ex) {
         LOG(error, "Fatal: Invalid configuration, please check your setup: %s", ex.getMessage().c_str());
-        exit(EXIT_FAILURE);
+        std::_Exit(EXIT_FAILURE);
     } catch (config::ConfigRuntimeException& ex) {
         LOG(error, "Fatal: Could not get config, please check your setup: %s", ex.getMessage().c_str());
-        exit(EXIT_FAILURE);
+        std::_Exit(EXIT_FAILURE);
     }
 }

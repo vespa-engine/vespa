@@ -2,6 +2,7 @@
 
 #include "bucketprocessor.h"
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
 #include <stdexcept>
@@ -40,18 +41,18 @@ void
 BucketProcessor::iterateAll(spi::PersistenceProvider& provider,
                             const spi::Bucket& bucket,
                             const std::string& documentSelection,
+                            std::shared_ptr<document::FieldSet> field_set,
                             EntryProcessor& processor,
                             spi::IncludedVersions versions,
                             spi::Context& context)
 {
-    spi::Selection sel
-        = spi::Selection(spi::DocumentSelection(documentSelection));
+    spi::Selection sel = spi::Selection(spi::DocumentSelection(documentSelection));
     spi::CreateIteratorResult createIterResult(provider.createIterator(
-                                                       bucket,
-                                                       document::HeaderFields(),
-                                                       sel,
-                                                       versions,
-                                                       context));
+            bucket,
+            std::move(field_set),
+            sel,
+            versions,
+            context));
 
     if (createIterResult.getErrorCode() != spi::Result::ErrorType::NONE) {
         vespalib::asciistream ss;
@@ -64,8 +65,7 @@ BucketProcessor::iterateAll(spi::PersistenceProvider& provider,
     IteratorGuard iteratorGuard(provider, iteratorId, context);
 
     while (true) {
-        spi::IterateResult result(
-                provider.iterate(iteratorId, UINT64_MAX, context));
+        spi::IterateResult result(provider.iterate(iteratorId, UINT64_MAX, context));
         if (result.getErrorCode() != spi::Result::ErrorType::NONE) {
             vespalib::asciistream ss;
             ss << "Failed: " << result.getErrorMessage();

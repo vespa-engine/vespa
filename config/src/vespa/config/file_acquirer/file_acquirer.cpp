@@ -5,6 +5,7 @@
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/transport.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
@@ -13,7 +14,7 @@ LOG_SETUP(".config.file_acquirer");
 namespace config {
 
 RpcFileAcquirer::RpcFileAcquirer(const vespalib::string &spec)
-    : _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+    : _threadPool(std::make_unique<FastOS_ThreadPool>(60_Ki)),
       _transport(std::make_unique<FNET_Transport>()),
       _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
       _spec(spec)

@@ -119,6 +119,14 @@ public class VespaSerializerTestCase {
     }
 
     @Test
+    public void testGeoLocation() {
+        parseAndConfirm("geoLocation(workplace, 63.418417, 10.433033, \"0.5 deg\")");
+        parseAndConfirm("geoLocation(headquarters, 37.41638, -122.024683, \"180.0 deg\")");
+        parseAndConfirm("geoLocation(home, -17.0, 42.0, \"0.0 deg\")");
+        parseAndConfirm("geoLocation(workplace, -12.0, -34.0, \"-1.0 deg\")");
+    }
+
+    @Test
     public void testNear() {
         parseAndConfirm("title contains near(\"a\", \"b\")");
         parseAndConfirm("title contains ([{\"distance\": 50}]near(\"a\", \"b\"))");
@@ -128,6 +136,10 @@ public class VespaSerializerTestCase {
     public void testNearestNeighbor() {
         parseAndConfirm("[{\"label\": \"foo\", \"targetNumHits\": 1000}]nearestNeighbor(semantic_embedding, my_property)");
         parseAndConfirm("[{\"targetNumHits\": 42}]nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("[{\"targetNumHits\": 1, \"hnsw.exploreAdditionalHits\": 76}]nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("[{\"targetNumHits\": 2, \"approximate\": false}]nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("[{\"targetNumHits\": 3, \"hnsw.exploreAdditionalHits\": 67, \"approximate\": false}]nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("[{\"targetNumHits\": 4, \"distanceThreshold\": 100100.25}]nearestNeighbor(semantic_embedding, my_property)");
     }
 
     @Test
@@ -242,9 +254,13 @@ public class VespaSerializerTestCase {
         andSegment.addItem(new WordItem("a", "indexNamePlaceholder"));
         andSegment.addItem(new WordItem("b", "indexNamePlaceholder"));
         andSegment.setLabel("labeled");
-        andSegment.lock();
         String q = VespaSerializer.serialize(andSegment);
         assertEquals("indexNamePlaceholder contains ([{\"origin\": {\"original\": \"abc\", \"offset\": 0, \"length\": 3}, \"andSegmenting\": true}]phrase(\"a\", \"b\"))", q);
+
+        andSegment.setIndexName("someIndexName");
+        andSegment.lock();
+        q = VespaSerializer.serialize(andSegment);
+        assertEquals("someIndexName contains ([{\"origin\": {\"original\": \"abc\", \"offset\": 0, \"length\": 3}, \"andSegmenting\": true}]phrase(\"a\", \"b\"))", q);
     }
 
     @Test

@@ -31,6 +31,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+enum class SelectorDispatchResult {WAKEUP_CALLED, NO_WAKEUP};
 
 template <typename Context>
 class Selector
@@ -55,11 +56,13 @@ public:
     void poll(int timeout_ms) { _events.extract(_epoll, timeout_ms); }
     size_t num_events() const { return _events.size(); }
     template <typename Handler>
-    void dispatch(Handler &handler) {
+    SelectorDispatchResult dispatch(Handler &handler) {
+        SelectorDispatchResult result = SelectorDispatchResult::NO_WAKEUP;
         for (const auto &evt: _events) {
             if (evt.data.ptr == nullptr) {
                 _wakeup_pipe.read_tokens();
                 handler.handle_wakeup();
+                result = SelectorDispatchResult::WAKEUP_CALLED;
             } else {
                 Context &ctx = *((Context *)(evt.data.ptr));
                 bool read = ((evt.events & (EPOLLIN  | EPOLLERR | EPOLLHUP)) != 0);
@@ -67,6 +70,7 @@ public:
                 handler.handle_event(ctx, read, write);
             }
         }
+        return result;
     }
 };
 

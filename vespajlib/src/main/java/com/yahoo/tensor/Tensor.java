@@ -4,6 +4,7 @@ package com.yahoo.tensor;
 import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.functions.Argmax;
 import com.yahoo.tensor.functions.Argmin;
+import com.yahoo.tensor.functions.CellCast;
 import com.yahoo.tensor.functions.Concat;
 import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.Diag;
@@ -35,6 +36,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.yahoo.text.Ascii7BitMatcher.charsAndNumbers;
+import static com.yahoo.tensor.functions.ScalarFunctions.Hamming;
 
 /**
  * A multidimensional array which can be used in computations.
@@ -66,8 +68,11 @@ public interface Tensor {
     /** Returns the number of cells in this */
     long size();
 
-    /** Returns the value of a cell, or NaN if this cell does not exist/have no value */
+    /** Returns the value of a cell, or 0.0 if this cell does not exist */
     double get(TensorAddress address);
+
+    /** Returns true if this cell exists */
+    boolean has(TensorAddress address);
 
     /**
      * Returns the cell of this in some undefined order.
@@ -92,7 +97,7 @@ public interface Tensor {
      */
     default double asDouble() {
         if (type().dimensions().size() > 0)
-            throw new IllegalStateException("This tensor is not dimensionless. Dimensions: " + type().dimensions().size());
+            throw new IllegalStateException("Require a dimensionless tensor but has " + type());
         if (size() == 0) return Double.NaN;
         return valueIterator().next();
     }
@@ -179,6 +184,10 @@ public interface Tensor {
         return new Generate<>(type, valueSupplier).evaluate();
     }
 
+    default Tensor cellCast(TensorType.Value valueType) {
+        return new CellCast<>(new ConstantTensor<>(this), valueType).evaluate();
+    }
+
     // ----------------- Composite tensor functions which have a defined primitive mapping
 
     default Tensor l1Normalize(String dimension) {
@@ -232,6 +241,8 @@ public interface Tensor {
     default Tensor equal(Tensor argument) { return join(argument, (a, b) -> ( a == b ? 1.0 : 0.0)); }
     default Tensor notEqual(Tensor argument) { return join(argument, (a, b) -> ( a != b ? 1.0 : 0.0)); }
     default Tensor approxEqual(Tensor argument) { return join(argument, (a, b) -> ( approxEquals(a,b) ? 1.0 : 0.0)); }
+    default Tensor bit(Tensor argument) { return join(argument, (a,b) -> ((int)b < 8 && (int)b >= 0 && ((int)a & (1 << (int)b)) != 0) ? 1.0 : 0.0); }
+    default Tensor hamming(Tensor argument) { return join(argument, (a,b) -> Hamming.hamming(a,b)); }
 
     default Tensor avg() { return avg(Collections.emptyList()); }
     default Tensor avg(String dimension) { return avg(Collections.singletonList(dimension)); }
@@ -242,6 +253,9 @@ public interface Tensor {
     default Tensor max() { return max(Collections.emptyList()); }
     default Tensor max(String dimension) { return max(Collections.singletonList(dimension)); }
     default Tensor max(List<String> dimensions) { return reduce(Reduce.Aggregator.max, dimensions); }
+    default Tensor median() { return median(Collections.emptyList()); }
+    default Tensor median(String dimension) { return median(Collections.singletonList(dimension)); }
+    default Tensor median(List<String> dimensions) { return reduce(Reduce.Aggregator.median, dimensions); }
     default Tensor min() { return min(Collections.emptyList()); }
     default Tensor min(String dimension) { return min(Collections.singletonList(dimension)); }
     default Tensor min(List<String> dimensions) { return reduce(Reduce.Aggregator.min, dimensions); }
@@ -294,7 +308,7 @@ public interface Tensor {
 
     /**
      * Returns this tensor on the
-     * <a href="https://docs.vespa.ai/documentation/reference/tensor.html#tensor-literal-form">tensor literal form</a>
+     * <a href="https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form">tensor literal form</a>
      * with type included.
      */
     @Override
@@ -302,7 +316,7 @@ public interface Tensor {
 
     /**
      * Call this from toString in implementations to return this tensor on the
-     * <a href="https://docs.vespa.ai/documentation/reference/tensor.html#tensor-literal-form">tensor literal form</a>.
+     * <a href="https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form">tensor literal form</a>.
      * (toString cannot be a default method because default methods cannot override super methods).
      *
      * @param tensor the tensor to return the standard string format of
@@ -351,12 +365,14 @@ public interface Tensor {
             Cell aCell = aIterator.next();
             double aValue = aCell.getValue();
             double bValue = b.get(aCell.getKey());
-            if (!approxEquals(aValue, bValue, 1e-5)) return false;
+            if (!approxEquals(aValue, bValue, 1e-4)) return false;
         }
         return true;
     }
 
     static boolean approxEquals(double x, double y, double tolerance) {
+        if (x == y) return true;
+        if (Double.isNaN(x) && Double.isNaN(y)) return true;
         return Math.abs(x-y) < tolerance;
     }
 
@@ -374,7 +390,7 @@ public interface Tensor {
 
     /**
      * Returns a tensor instance containing the given data on the
-     * <a href="https://docs.vespa.ai/documentation/reference/tensor.html#tensor-literal-form">tensor literal form</a>.
+     * <a href="https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form">tensor literal form</a>.
      *
      * @param type the type of the tensor to return
      * @param tensorString the tensor on the standard tensor string format
@@ -385,7 +401,7 @@ public interface Tensor {
 
     /**
      * Returns a tensor instance containing the given data on the
-     * <a href="https://docs.vespa.ai/documentation/reference/tensor.html#tensor-literal-form">tensor literal form</a>.
+     * <a href="https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form">tensor literal form</a>.
      *
      * @param tensorType the type of the tensor to return, as a string on the tensor type format, given in
      *        {@link TensorType#fromSpec}
@@ -397,7 +413,7 @@ public interface Tensor {
 
     /**
      * Returns a tensor instance containing the given data on the
-     * <a href="https://docs.vespa.ai/documentation/reference/tensor.html#tensor-literal-form">tensor literal form</a>.
+     * <a href="https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form">tensor literal form</a>.
      */
     static Tensor from(String tensorString) {
         return TensorParser.tensorFrom(tensorString, Optional.empty());
@@ -468,6 +484,11 @@ public interface Tensor {
     }
 
     interface Builder {
+
+        /** Creates a suitable builder for the given type spec */
+        static Builder of(String typeSpec) {
+            return of(TensorType.fromSpec(typeSpec));
+        }
 
         /** Creates a suitable builder for the given type */
         static Builder of(TensorType type) {

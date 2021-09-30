@@ -24,8 +24,6 @@ public class Flavor {
     /** The hardware resources of this flavor */
     private final NodeResources resources;
 
-    private final double minCpuCores;
-
     private final Optional<FlavorOverrides> flavorOverrides;
 
     /** Creates a *host* flavor from configuration */
@@ -40,29 +38,31 @@ public class Flavor {
              Optional.empty(),
              Type.valueOf(flavorConfig.environment()),
              true,
-             flavorConfig.cost(),
-             flavorConfig.minCpuCores());
+             flavorConfig.cost());
     }
 
     /** Creates a *node* flavor from a node resources spec */
     public Flavor(NodeResources resources) {
-        this(resources.toString(), resources, Optional.empty(), Type.DOCKER_CONTAINER, false, 0, resources.vcpu());
+        this(resources.toString(), resources, Optional.empty(), Type.DOCKER_CONTAINER, false, 0);
     }
 
-    private Flavor(String name,
-                   NodeResources resources,
-                   Optional<FlavorOverrides> flavorOverrides,
-                   Type type,
-                   boolean configured,
-                   int cost,
-                   double minCpuCores) {
+    /** Creates a *host* flavor for testing */
+    public Flavor(String name, NodeResources resources) {
+        this(name, resources, Optional.empty(), Flavor.Type.VIRTUAL_MACHINE, true, 0);
+    }
+
+    public Flavor(String name,
+                  NodeResources resources,
+                  Optional<FlavorOverrides> flavorOverrides,
+                  Type type,
+                  boolean configured,
+                  int cost) {
         this.name = Objects.requireNonNull(name, "Name cannot be null");
         this.resources = Objects.requireNonNull(resources, "Resources cannot be null");
         this.flavorOverrides = Objects.requireNonNull(flavorOverrides, "Flavor overrides cannot be null");
         this.type = Objects.requireNonNull(type, "Type cannot be null");
         this.configured = configured;
         this.cost = cost;
-        this.minCpuCores = minCpuCores;
     }
 
     public Flavor with(FlavorOverrides flavorOverrides) {
@@ -70,7 +70,7 @@ public class Flavor {
             throw new IllegalArgumentException("Cannot override non-configured flavor");
 
         NodeResources newResources = resources.withDiskGb(flavorOverrides.diskGb().orElseGet(resources::diskGb));
-        return new Flavor(name, newResources, Optional.of(flavorOverrides), type, true, cost, minCpuCores);
+        return new Flavor(name, newResources, Optional.of(flavorOverrides), type, true, cost);
     }
 
     public Flavor with(NodeResources resources) {
@@ -102,20 +102,7 @@ public class Flavor {
 
     public NodeResources resources() { return resources; }
 
-    public Optional<FlavorOverrides> flavorOverrides() {
-        return flavorOverrides;
-    }
-
-    public double getMinMainMemoryAvailableGb() { return resources.memoryGb(); }
-
-    public double getMinDiskAvailableGb() { return resources.diskGb(); }
-
-    public boolean hasFastDisk() { return resources.diskSpeed() == NodeResources.DiskSpeed.fast; }
-
-    public double getBandwidthGbps() { return resources.bandwidthGbps(); }
-
-    /** Returns the number of cores available in this flavor, not scaled for speed. */
-    public double getMinCpuCores() { return minCpuCores; }
+    public Optional<FlavorOverrides> flavorOverrides() { return flavorOverrides; }
 
     public Type getType() { return type; }
     

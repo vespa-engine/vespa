@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/util/slaveproc.h>
+#include <vespa/vespalib/util/child_process.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -20,7 +20,7 @@ std::string readFile(const std::string &filename) {
 
 std::string runCommand(const std::string &cmd) {
     std::string out;
-    ASSERT_TRUE(SlaveProc::run(cmd.c_str(), out));
+    ASSERT_TRUE(ChildProcess::run(cmd.c_str(), out));
     return out;
 }
 

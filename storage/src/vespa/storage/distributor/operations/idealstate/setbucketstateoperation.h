@@ -9,13 +9,13 @@ namespace storage::distributor {
 class SetBucketStateOperation : public IdealStateOperation
 {
 public:
-    SetBucketStateOperation(const std::string& clusterName,
+    SetBucketStateOperation(const ClusterContext& cluster_ctx,
                             const BucketAndNodes& nodes,
                             const std::vector<uint16_t>& wantedActiveNodes);
-    ~SetBucketStateOperation();
+    ~SetBucketStateOperation() override;
 
-    void onStart(DistributorMessageSender&) override;
-    void onReceive(DistributorMessageSender&, const std::shared_ptr<api::StorageReply>&) override;
+    void onStart(DistributorStripeMessageSender&) override;
+    void onReceive(DistributorStripeMessageSender&, const std::shared_ptr<api::StorageReply>&) override;
     const char* getName() const override { return "setbucketstate"; }
     Type getType() const override { return SET_BUCKET_STATE; }
 protected:
@@ -24,8 +24,8 @@ protected:
 
 private:
     void enqueueSetBucketStateCommand(uint16_t node, bool active);
-    void activateNode(DistributorMessageSender& sender);
-    void deactivateNodes(DistributorMessageSender& sender);
+    void activateNode(DistributorStripeMessageSender& sender);
+    void deactivateNodes(DistributorStripeMessageSender& sender);
     bool shouldBeActive(uint16_t node) const;
 };
 

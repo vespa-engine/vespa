@@ -15,22 +15,29 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
-import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
+import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntry;
+import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntrySerializer;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
+import com.yahoo.vespa.hosted.controller.notification.Notification;
+import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.routing.ZoneRoutingPolicy;
+import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
-import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
+import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
@@ -38,11 +45,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -86,8 +92,11 @@ public class CuratorDb {
     private static final Path routingPoliciesRoot = root.append("routingPolicies");
     private static final Path zoneRoutingPoliciesRoot = root.append("zoneRoutingPolicies");
     private static final Path endpointCertificateRoot = root.append("applicationCertificates");
+    private static final Path archiveBucketsRoot = root.append("archiveBuckets");
+    private static final Path changeRequestsRoot = root.append("changeRequests");
+    private static final Path notificationsRoot = root.append("notifications");
+    private static final Path supportAccessRoot = root.append("supportAccess");
 
-    private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
     private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer(nodeVersionSerializer);
     private final ControllerVersionSerializer controllerVersionSerializer = new ControllerVersionSerializer();
@@ -96,6 +105,7 @@ public class CuratorDb {
     private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
+    private final OsVersionTargetSerializer osVersionTargetSerializer = new OsVersionTargetSerializer(osVersionSerializer);
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer, nodeVersionSerializer);
     private final RoutingPolicySerializer routingPolicySerializer = new RoutingPolicySerializer();
     private final ZoneRoutingPolicySerializer zoneRoutingPolicySerializer = new ZoneRoutingPolicySerializer(routingPolicySerializer);
@@ -105,14 +115,12 @@ public class CuratorDb {
     private final Curator curator;
     private final Duration tryLockTimeout;
 
-    // For each job id (path), store the ZK node version and its deserialised data — update when version changes. 
-    private final Map<Path, Pair<Integer, NavigableMap<RunId, Run>>> cachedHistoricRuns = new ConcurrentHashMap<>();
+    // For each application id (path), store the ZK node version and its deserialised data - update when version changes.
+    // This will grow to keep all applications in memory, but this should be OK
+    private final Map<Path, Pair<Integer, Application>> cachedApplications = new ConcurrentHashMap<>();
 
-    /**
-     * All keys, to allow reentrancy.
-     * This will grow forever, but this should be too slow to be a problem.
-     */
-    private final ConcurrentHashMap<Path, Lock> locks = new ConcurrentHashMap<>();
+    // For each job id (path), store the ZK node version and its deserialised data - update when version changes.
+    private final Map<Path, Pair<Integer, NavigableMap<RunId, Run>>> cachedHistoricRuns = new ConcurrentHashMap<>();
 
     @Inject
     public CuratorDb(Curator curator) {
@@ -124,39 +132,30 @@ public class CuratorDb {
         this.tryLockTimeout = tryLockTimeout;
     }
 
-    /** Returns all hosts configured to be part of this ZooKeeper cluster */
-    public List<HostName> cluster() {
+    /** Returns all hostnames configured to be part of this ZooKeeper cluster */
+    public List<String> cluster() {
         return Arrays.stream(curator.zooKeeperEnsembleConnectionSpec().split(","))
                      .filter(hostAndPort -> !hostAndPort.isEmpty())
                      .map(hostAndPort -> hostAndPort.split(":")[0])
-                     .map(HostName::from)
-                     .collect(Collectors.toList());
+                     .collect(Collectors.toUnmodifiableList());
     }
 
     // -------------- Locks ---------------------------------------------------
 
-    /** Creates a reentrant lock */
-    private Lock lock(Path path, Duration timeout) {
-        curator.create(path);
-        Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), curator));
-        lock.acquire(timeout);
-        return lock;
-    }
-
     public Lock lock(TenantName name) {
-        return lock(lockPath(name), defaultLockTimeout.multipliedBy(2));
+        return curator.lock(lockPath(name), defaultLockTimeout.multipliedBy(2));
     }
 
     public Lock lock(TenantAndApplicationId id) {
-        return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
+        return curator.lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
     }
 
     public Lock lockForDeployment(ApplicationId id, ZoneId zone) {
-        return lock(lockPath(id, zone), deployLockTimeout);
+        return curator.lock(lockPath(id, zone), deployLockTimeout);
     }
 
     public Lock lock(ApplicationId id, JobType type) {
-        return lock(lockPath(id, type), defaultLockTimeout);
+        return curator.lock(lockPath(id, type), defaultLockTimeout);
     }
 
     public Lock lock(ApplicationId id, JobType type, Step step) throws TimeoutException {
@@ -164,44 +163,68 @@ public class CuratorDb {
     }
 
     public Lock lockRotations() {
-        return lock(lockRoot.append("rotations"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("rotations"), defaultLockTimeout);
     }
 
     public Lock lockConfidenceOverrides() {
-        return lock(lockRoot.append("confidenceOverrides"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("confidenceOverrides"), defaultLockTimeout);
     }
 
-    public Lock lockInactiveJobs() {
-        return lock(lockRoot.append("inactiveJobsLock"), defaultLockTimeout);
-    }
-
-    public Lock lockMaintenanceJob(String jobName) throws TimeoutException {
-        return tryLock(lockRoot.append("maintenanceJobLocks").append(jobName));
+    public Lock lockMaintenanceJob(String jobName) {
+        try {
+            return tryLock(lockRoot.append("maintenanceJobLocks").append(jobName));
+        } catch (TimeoutException e) {
+            throw new UncheckedTimeoutException(e);
+        }
     }
 
     @SuppressWarnings("unused") // Called by internal code
     public Lock lockProvisionState(String provisionStateId) {
-        return lock(lockPath(provisionStateId), Duration.ofSeconds(1));
+        return curator.lock(lockPath(provisionStateId), Duration.ofSeconds(1));
     }
 
     public Lock lockOsVersions() {
-        return lock(lockRoot.append("osTargetVersion"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("osTargetVersion"), defaultLockTimeout);
     }
 
     public Lock lockOsVersionStatus() {
-        return lock(lockRoot.append("osVersionStatus"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("osVersionStatus"), defaultLockTimeout);
     }
 
     public Lock lockRoutingPolicies() {
-        return lock(lockRoot.append("routingPolicies"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("routingPolicies"), defaultLockTimeout);
     }
 
     public Lock lockAuditLog() {
-        return lock(lockRoot.append("auditLog"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("auditLog"), defaultLockTimeout);
     }
 
     public Lock lockNameServiceQueue() {
-        return lock(lockRoot.append("nameServiceQueue"), defaultLockTimeout);
+        return curator.lock(lockRoot.append("nameServiceQueue"), defaultLockTimeout);
+    }
+
+    public Lock lockMeteringRefreshTime() throws TimeoutException {
+        return tryLock(lockRoot.append("meteringRefreshTime"));
+    }
+
+    public Lock lockArchiveBuckets(ZoneId zoneId) {
+        return curator.lock(lockRoot.append("archiveBuckets").append(zoneId.value()), defaultLockTimeout);
+    }
+
+    public Lock lockChangeRequests() {
+        return curator.lock(lockRoot.append("changeRequests"), defaultLockTimeout);
+    }
+
+    public Lock lockNotifications(TenantName tenantName) {
+        return curator.lock(lockRoot.append("notifications").append(tenantName.value()), defaultLockTimeout);
+    }
+
+    public Lock lockSupportAccess(DeploymentId deploymentId) {
+        return curator.lock(lockRoot.append("supportAccess").append(deploymentId.dottedString()), defaultLockTimeout);
+    }
+
+    public Lock lockDeploymentRetriggerQueue() {
+        return curator.lock(lockRoot.append("deploymentRetriggerQueue"), defaultLockTimeout);
     }
 
     // -------------- Helpers ------------------------------------------
@@ -212,7 +235,7 @@ public class CuratorDb {
      */
     private Lock tryLock(Path path) throws TimeoutException {
         try {
-            return lock(path, tryLockTimeout);
+            return curator.lock(path, tryLockTimeout);
         }
         catch (UncheckedTimeoutException e) {
             throw new TimeoutException(e.getMessage());
@@ -236,21 +259,6 @@ public class CuratorDb {
     }
 
     // -------------- Deployment orchestration --------------------------------
-
-    public Set<String> readInactiveJobs() {
-        try {
-            return readSlime(inactiveJobsPath()).map(stringSetSerializer::fromSlime).orElseGet(HashSet::new);
-        }
-        catch (RuntimeException e) {
-            log.log(Level.WARNING, "Error reading inactive jobs, deleting inactive state");
-            writeInactiveJobs(Collections.emptySet());
-            return new HashSet<>();
-        }
-    }
-
-    public void writeInactiveJobs(Set<String> inactiveJobs) {
-        curator.set(inactiveJobsPath(), stringSetSerializer.toJson(inactiveJobs));
-    }
 
     public double readUpgradesPerMinute() {
         return read(upgradesPerMinutePath(), ByteBuffer::wrap).map(ByteBuffer::getDouble).orElse(0.125);
@@ -300,12 +308,12 @@ public class CuratorDb {
 
     // Infrastructure upgrades
 
-    public void writeOsVersions(Set<OsVersion> versions) {
-        curator.set(osTargetVersionPath(), asJson(osVersionSerializer.toSlime(versions)));
+    public void writeOsVersionTargets(Set<OsVersionTarget> versions) {
+        curator.set(osVersionTargetsPath(), asJson(osVersionTargetSerializer.toSlime(versions)));
     }
 
-    public Set<OsVersion> readOsVersions() {
-        return readSlime(osTargetVersionPath()).map(osVersionSerializer::fromSlime).orElseGet(Collections::emptySet);
+    public Set<OsVersionTarget> readOsVersionTargets() {
+        return readSlime(osVersionTargetsPath()).map(osVersionTargetSerializer::fromSlime).orElseGet(Collections::emptySet);
     }
 
     public void writeOsVersionStatus(OsVersionStatus status) {
@@ -323,7 +331,7 @@ public class CuratorDb {
     }
 
     public Optional<Tenant> readTenant(TenantName name) {
-        return readSlime(tenantPath(name)).map(tenantSerializer::tenantFrom);
+        return readSlime(tenantPath(name)).map(bytes -> tenantSerializer.tenantFrom(bytes));
     }
 
     public List<Tenant> readTenants() {
@@ -350,29 +358,45 @@ public class CuratorDb {
     }
 
     public Optional<Application> readApplication(TenantAndApplicationId application) {
-        return read(applicationPath(application), applicationSerializer::fromSlime);
+        Path path = applicationPath(application);
+        return curator.getStat(path)
+                      .map(stat -> cachedApplications.compute(path, (__, old) ->
+                              old != null && old.getFirst() == stat.getVersion()
+                              ? old
+                              : new Pair<>(stat.getVersion(), read(path, applicationSerializer::fromSlime).get())).getSecond());
     }
 
-    public List<Application> readApplications() {
-        return readApplications(ignored -> true);
+    public List<Application> readApplications(boolean canFail) {
+        return readApplications(ignored -> true, canFail);
     }
 
     public List<Application> readApplications(TenantName name) {
-        return readApplications(application -> application.tenant().equals(name));
+        return readApplications(application -> application.tenant().equals(name), false);
     }
 
-    private List<Application> readApplications(Predicate<TenantAndApplicationId> applicationFilter) {
-        return readApplicationIds().stream()
-                                   .filter(applicationFilter)
-                                   .sorted()
-                                   .map(this::readApplication)
-                                   .flatMap(Optional::stream)
-                                   .collect(Collectors.toUnmodifiableList());
+    private List<Application> readApplications(Predicate<TenantAndApplicationId> applicationFilter, boolean canFail) {
+        var applicationIds = readApplicationIds();
+        var applications = new ArrayList<Application>(applicationIds.size());
+        for (var id : applicationIds) {
+            if (!applicationFilter.test(id)) continue;
+            try {
+                readApplication(id).ifPresent(applications::add);
+            } catch (Exception e) {
+                if (canFail) {
+                    log.log(Level.SEVERE, "Failed to read application '" + id + "', this must be fixed through " +
+                                            "manual intervention", e);
+                } else {
+                    throw e;
+                }
+            }
+        }
+        return Collections.unmodifiableList(applications);
     }
 
     public List<TenantAndApplicationId> readApplicationIds() {
         return curator.getChildren(applicationRoot).stream()
                       .map(TenantAndApplicationId::fromSerialized)
+                      .sorted()
                       .collect(toUnmodifiableList());
     }
 
@@ -520,9 +544,12 @@ public class CuratorDb {
         curator.set(endpointCertificatePath(applicationId), asJson(EndpointCertificateMetadataSerializer.toSlime(endpointCertificateMetadata)));
     }
 
+    public void deleteEndpointCertificateMetadata(ApplicationId applicationId) {
+        curator.delete(endpointCertificatePath(applicationId));
+    }
+
     public Optional<EndpointCertificateMetadata> readEndpointCertificateMetadata(ApplicationId applicationId) {
-        Optional<String> zkData = curator.getData(endpointCertificatePath(applicationId)).map(String::new);
-        return zkData.map(EndpointCertificateMetadataSerializer::fromJsonOrTlsSecretsKeysString);
+        return curator.getData(endpointCertificatePath(applicationId)).map(String::new).map(EndpointCertificateMetadataSerializer::fromJsonString);
     }
 
     public Map<ApplicationId, EndpointCertificateMetadata> readAllEndpointCertificateMetadata() {
@@ -534,6 +561,94 @@ public class CuratorDb {
             allEndpointCertificateMetadata.put(applicationId, endpointCertificateMetadata.orElseThrow());
         }
         return allEndpointCertificateMetadata;
+    }
+
+    // -------------- Metering view refresh times ----------------------------
+
+    public void writeMeteringRefreshTime(long timestamp) {
+        curator.set(meteringRefreshPath(), Long.toString(timestamp).getBytes());
+    }
+
+    public long readMeteringRefreshTime() {
+        return curator.getData(meteringRefreshPath())
+                      .map(String::new).map(Long::parseLong)
+                      .orElse(0L);
+    }
+
+    // -------------- Archive buckets -----------------------------------------
+
+    public Set<ArchiveBucket> readArchiveBuckets(ZoneId zoneId) {
+        return curator.getData(archiveBucketsPath(zoneId)).map(String::new).map(ArchiveBucketsSerializer::fromJsonString)
+                .orElse(Set.of());
+    }
+
+    public void writeArchiveBuckets(ZoneId zoneid, Set<ArchiveBucket> archiveBuckets) {
+        curator.set(archiveBucketsPath(zoneid), asJson(ArchiveBucketsSerializer.toSlime(archiveBuckets)));
+    }
+
+    // -------------- VCMRs ---------------------------------------------------
+
+    public Optional<VespaChangeRequest> readChangeRequest(String changeRequestId) {
+        return readSlime(changeRequestPath(changeRequestId)).map(ChangeRequestSerializer::fromSlime);
+    }
+
+    public List<VespaChangeRequest> readChangeRequests() {
+        return curator.getChildren(changeRequestsRoot)
+                .stream()
+                .map(this::readChangeRequest)
+                .flatMap(Optional::stream)
+                .collect(Collectors.toList());
+    }
+
+    public void writeChangeRequest(VespaChangeRequest changeRequest) {
+        curator.set(changeRequestPath(changeRequest.getId()), asJson(ChangeRequestSerializer.toSlime(changeRequest)));
+    }
+
+    public void deleteChangeRequest(VespaChangeRequest changeRequest) {
+        curator.delete(changeRequestPath(changeRequest.getId()));
+    }
+
+    // -------------- Notifications -------------------------------------------
+
+    public List<Notification> readNotifications(TenantName tenantName) {
+        return readSlime(notificationsPath(tenantName))
+                .map(slime -> NotificationsSerializer.fromSlime(tenantName, slime)).orElseGet(List::of);
+    }
+
+
+    public List<TenantName> listNotifications() {
+        return curator.getChildren(notificationsRoot).stream()
+                .map(TenantName::from)
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    public void writeNotifications(TenantName tenantName, List<Notification> notifications) {
+        curator.set(notificationsPath(tenantName), asJson(NotificationsSerializer.toSlime(notifications)));
+    }
+
+    public void deleteNotifications(TenantName tenantName) {
+        curator.delete(notificationsPath(tenantName));
+    }
+
+    // -------------- Endpoint Support Access ---------------------------------
+
+    public SupportAccess readSupportAccess(DeploymentId deploymentId) {
+        return readSlime(supportAccessPath(deploymentId)).map(SupportAccessSerializer::fromSlime).orElse(SupportAccess.DISALLOWED_NO_HISTORY);
+    }
+
+    /** Take lock before reading before writing */
+    public void writeSupportAccess(DeploymentId deploymentId, SupportAccess supportAccess) {
+        curator.set(supportAccessPath(deploymentId), asJson(SupportAccessSerializer.toSlime(supportAccess)));
+    }
+
+    // -------------- Job Retrigger entries -----------------------------------
+
+    public List<RetriggerEntry> readRetriggerEntries() {
+        return readSlime(deploymentRetriggerPath()).map(RetriggerEntrySerializer::fromSlime).orElse(List.of());
+    }
+
+    public void writeRetriggerEntries(List<RetriggerEntry> retriggerEntries) {
+        curator.set(deploymentRetriggerPath(), asJson(RetriggerEntrySerializer.toSlime(retriggerEntries)));
     }
 
     // -------------- Paths ---------------------------------------------------
@@ -575,10 +690,6 @@ public class CuratorDb {
                 .append(provisionId);
     }
 
-    private static Path inactiveJobsPath() {
-        return root.append("inactiveJobs");
-    }
-
     private static Path upgradesPerMinutePath() {
         return root.append("upgrader").append("upgradesPerMinute");
     }
@@ -591,7 +702,7 @@ public class CuratorDb {
         return root.append("upgrader").append("confidenceOverrides");
     }
 
-    private static Path osTargetVersionPath() {
+    private static Path osVersionTargetsPath() {
         return root.append("osUpgrader").append("targetVersion");
     }
 
@@ -655,6 +766,30 @@ public class CuratorDb {
 
     private static Path endpointCertificatePath(ApplicationId id) {
         return endpointCertificateRoot.append(id.serializedForm());
+    }
+
+    private static Path meteringRefreshPath() {
+        return root.append("meteringRefreshTime");
+    }
+
+    private static Path archiveBucketsPath(ZoneId zoneId) {
+        return archiveBucketsRoot.append(zoneId.value());
+    }
+
+    private static Path changeRequestPath(String id) {
+        return changeRequestsRoot.append(id);
+    }
+
+    private static Path notificationsPath(TenantName tenantName) {
+        return notificationsRoot.append(tenantName.value());
+    }
+
+    private static Path supportAccessPath(DeploymentId deploymentId) {
+        return supportAccessRoot.append(deploymentId.dottedString());
+    }
+
+    private static Path deploymentRetriggerPath() {
+        return root.append("deploymentRetriggerQueue");
     }
 
 }

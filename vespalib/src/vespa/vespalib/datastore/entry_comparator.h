@@ -4,7 +4,7 @@
 
 #include "entryref.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Less-than comparator for two entries based on entry refs.
@@ -19,7 +19,9 @@ public:
     /**
      * Returns true if the value represented by lhs ref is less than the value represented by rhs ref.
      */
-    virtual bool operator()(const EntryRef lhs, const EntryRef rhs) const = 0;
+    virtual bool less(const EntryRef lhs, const EntryRef rhs) const = 0;
+    virtual bool equal(const EntryRef lhs, const EntryRef rhs) const = 0;
+    virtual size_t hash(const EntryRef rhs) const = 0;
 };
 
 }

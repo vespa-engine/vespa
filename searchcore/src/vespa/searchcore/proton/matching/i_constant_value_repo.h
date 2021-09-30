@@ -4,8 +4,7 @@
 
 #include <vespa/eval/eval/value_cache/constant_value.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * Interface for retrieving a named constant rank value to be used by features in the rank framework.
@@ -16,5 +15,4 @@ struct IConstantValueRepo {
     virtual ~IConstantValueRepo() {}
 };
 
-}
 }

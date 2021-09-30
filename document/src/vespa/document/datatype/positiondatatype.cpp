@@ -10,9 +10,6 @@ const vespalib::string ZCURVE("_zcurve");
 
 }
 
-StructDataType::UP PositionDataType::_instance;
-vespalib::Lock     PositionDataType::_lock;
-
 const vespalib::string PositionDataType::STRUCT_NAME("position");
 const vespalib::string PositionDataType::FIELD_X("x");
 const vespalib::string PositionDataType::FIELD_Y("y");
@@ -20,22 +17,17 @@ const vespalib::string PositionDataType::FIELD_Y("y");
 StructDataType::UP
 PositionDataType::createInstance()
 {
-    StructDataType::UP type(new StructDataType(PositionDataType::STRUCT_NAME));
-    type->addField(Field(PositionDataType::FIELD_X, *DataType::INT, true));
-    type->addField(Field(PositionDataType::FIELD_Y, *DataType::INT, true));
+    auto type = std::make_unique<StructDataType>(PositionDataType::STRUCT_NAME);
+    type->addField(Field(PositionDataType::FIELD_X, *DataType::INT));
+    type->addField(Field(PositionDataType::FIELD_Y, *DataType::INT));
     return type;
 }
 
 const StructDataType &
 PositionDataType::getInstance()
 {
-    if (_instance.get() == NULL) {
-        vespalib::LockGuard guard(_lock);
-        if (_instance.get() == NULL) {
-            _instance = createInstance();
-        }
-    }
-    return *_instance;
+    static StructDataType::UP instance = createInstance();
+    return *instance;
 }
 
 vespalib::string

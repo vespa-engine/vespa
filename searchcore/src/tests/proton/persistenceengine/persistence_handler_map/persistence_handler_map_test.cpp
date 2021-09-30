@@ -15,8 +15,8 @@ using HandlerSnapshot = PersistenceHandlerMap::HandlerSnapshot;
 struct DummyPersistenceHandler : public IPersistenceHandler {
     using SP = std::shared_ptr<DummyPersistenceHandler>;
     void initialize() override {}
-    void handlePut(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, const document::Document::SP &) override {}
-    void handleUpdate(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, const document::DocumentUpdate::SP &) override {}
+    void handlePut(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, DocumentSP) override {}
+    void handleUpdate(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, DocumentUpdateSP) override {}
     void handleRemove(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, const document::DocumentId &) override {}
     void handleListBuckets(IBucketIdListResultHandler &) override {}
     void handleSetClusterState(const storage::spi::ClusterState &, IGenericResultHandler &) override {}
@@ -29,7 +29,6 @@ struct DummyPersistenceHandler : public IPersistenceHandler {
     void handleJoin(FeedToken, const storage::spi::Bucket &, const storage::spi::Bucket &, const storage::spi::Bucket &) override {}
 
     RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency) override { return RetrieversSP(); }
-    BucketGuard::UP lockBucket(const storage::spi::Bucket &) override { return BucketGuard::UP(); }
     void handleListActiveBuckets(IBucketIdListResultHandler &) override {}
     void handlePopulateActiveBuckets(document::BucketId::List &, IGenericResultHandler &) override {}
 };
@@ -46,23 +45,31 @@ DummyPersistenceHandler::SP handler_c(std::make_shared<DummyPersistenceHandler>(
 DummyPersistenceHandler::SP handler_a_new(std::make_shared<DummyPersistenceHandler>());
 
 
+
+void
+assertHandler(const IPersistenceHandler::SP & lhs, const IPersistenceHandler * rhs)
+{
+    EXPECT_EQUAL(lhs.get(), rhs);
+}
+
 void
 assertHandler(const IPersistenceHandler::SP &lhs, const IPersistenceHandler::SP &rhs)
 {
     EXPECT_EQUAL(lhs.get(), rhs.get());
 }
 
+template <typename T>
 void
-assertNullHandler(const IPersistenceHandler::SP &handler)
+assertNullHandler(const T & handler)
 {
-    EXPECT_TRUE(handler.get() == nullptr);
+    EXPECT_TRUE(! handler);
 }
 
 void
-assertSnapshot(const std::vector<IPersistenceHandler::SP> &exp, const HandlerSnapshot::UP &snapshot)
+assertSnapshot(const std::vector<IPersistenceHandler::SP> &exp, HandlerSnapshot snapshot)
 {
-    EXPECT_EQUAL(exp.size(), snapshot->size());
-    auto &sequence = snapshot->handlers();
+    EXPECT_EQUAL(exp.size(), snapshot.size());
+    auto &sequence = snapshot.handlers();
     for (size_t i = 0; i < exp.size() && sequence.valid(); ++i, sequence.next()) {
         EXPECT_EQUAL(exp[i].get(), sequence.get());
     }

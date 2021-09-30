@@ -1,6 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "initrange.h"
+#ifdef ENABLE_GTEST_MIGRATION
+#include <vespa/vespalib/gtest/gtest.h>
+#define ASSERT_EQUAL ASSERT_EQ
+#define EXPECT_EQUAL EXPECT_EQ
+#else
 #include <vespa/vespalib/testkit/test_kit.h>
+#endif
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/truesearch.h>
 #include <algorithm>

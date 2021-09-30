@@ -17,14 +17,14 @@ namespace proton {
 DocumentDBJobTrackers::DocumentDBJobTrackers()
     : _lock(),
       _now(std::chrono::steady_clock::now()),
-      _attributeFlush(new JobTracker(_now, _lock)),
-      _memoryIndexFlush(new JobTracker(_now, _lock)),
-      _diskIndexFusion(new JobTracker(_now, _lock)),
-      _documentStoreFlush(new JobTracker(_now, _lock)),
-      _documentStoreCompact(new JobTracker(_now, _lock)),
-      _bucketMove(new JobTracker(_now, _lock)),
-      _lidSpaceCompact(new JobTracker(_now, _lock)),
-      _removedDocumentsPrune(new JobTracker(_now, _lock))
+      _attributeFlush(std::make_shared<JobTracker>(_now, _lock)),
+      _memoryIndexFlush(std::make_shared<JobTracker>(_now, _lock)),
+      _diskIndexFusion(std::make_shared<JobTracker>(_now, _lock)),
+      _documentStoreFlush(std::make_shared<JobTracker>(_now, _lock)),
+      _documentStoreCompact(std::make_shared<JobTracker>(_now, _lock)),
+      _bucketMove(std::make_shared<JobTracker>(_now, _lock)),
+      _lidSpaceCompact(std::make_shared<JobTracker>(_now, _lock)),
+      _removedDocumentsPrune(std::make_shared<JobTracker>(_now, _lock))
 {
 }
 
@@ -36,7 +36,7 @@ IFlushTarget::SP
 trackFlushTarget(const IJobTracker::SP &tracker,
                  const IFlushTarget::SP &target)
 {
-    return IFlushTarget::SP(new JobTrackedFlushTarget(tracker, target));
+    return std::make_shared<JobTrackedFlushTarget>(tracker, target);
 }
 
 }

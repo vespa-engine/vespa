@@ -40,10 +40,10 @@ public class Resolution {
      *         been resolved in this
      */
     public int getResolution(Choice choice) {
-        if (choice.alternatives().size()==1) return 0;
+        if (choice.alternatives().size() == 1) return 0;
         if (choice.isEmpty()) throw new IllegalArgumentException("Cannot return a resolution of empty " + choice);
-        Integer resolution=choiceResolutions.get(choice);
-        if (resolution==null) throw new IllegalArgumentException(this + " has no resolution of " + choice);
+        Integer resolution = choiceResolutions.get(choice);
+        if (resolution == null) throw new IllegalArgumentException(this + " has no resolution of " + choice);
         return resolution;
     }
 

@@ -25,7 +25,7 @@ import java.util.Map;
  * A SpanTree holds a root node of a tree of SpanNodes, and a List of Annotations pointing to these nodes
  * or each other.&nbsp;It also has a name.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  * @see com.yahoo.document.annotation.SpanNode
  * @see com.yahoo.document.annotation.Annotation
  */
@@ -39,8 +39,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
     /**
      * WARNING!&nbsp;Only to be used by deserializers!&nbsp;Creates an empty SpanTree instance.
      */
-    public SpanTree() {
-    }
+    public SpanTree() { }
 
     /**
      * Creates a new SpanTree with a given root node.
@@ -227,18 +226,12 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
         root.setParent(this);
     }
 
-    /**
-     * Returns the name of this span tree.
-     * @return the name of this span tree.
-     */
+    /** Returns the name of this span tree. */
     public String getName() {
         return name;
     }
 
-    /**
-     * Returns the root node of this span tree.
-     * @return the root node of this span tree.
-     */
+    /** Returns the root node of this span tree. */
     public SpanNode getRoot() {
         return root;
     }

@@ -2,11 +2,11 @@
 
 #include "subqueries_feature.h"
 #include "utils.h"
+#include <vespa/vespalib/util/stash.h>
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 SubqueriesExecutor::SubqueriesExecutor(const IQueryEnvironment &env,
                                        uint32_t fieldId)
@@ -59,5 +59,4 @@ SubqueriesBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib:
     return stash.create<SubqueriesExecutor>(queryEnv, _field->id());
 }
 
-} // namespace features
-} // namespace search
+}

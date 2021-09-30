@@ -54,12 +54,24 @@
       <artifactId>container-search-gui</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!-- Because these are provided in jdisc_http_service and just preinstalled: -->
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>vespajlib</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <!-- Because these are provided in container-core and just preinstalled: -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jdisc_jetty</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.aries.spifly</groupId>
+          <artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
        <groupId>org.hamcrest</groupId>
@@ -71,12 +83,6 @@
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa.container-test-jars</groupId>
-      <artifactId>jersey-resources</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
 
     <!-- All dependencies that should be visible in test classpath, but not compile classpath,
          for user projects must be added in compile scope here.
@@ -84,6 +90,11 @@
     <dependency>
       <groupId>com.ibm.icu</groupId>
       <artifactId>icu4j</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.airlift</groupId>
+      <artifactId>aircompressor</artifactId>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.optimaize.languagedetector</groupId>
@@ -119,6 +130,10 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-math3</artifactId>
     </dependency>
 
     <dependency>
@@ -162,28 +177,10 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy</id>
-            <phase>process-test-resources</phase>
-            <goals>
-              <goal>copy</goal>
-            </goals>
-            <configuration>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>com.yahoo.vespa.container-test-jars</groupId>
-                  <artifactId>jersey-resources</artifactId>
-                  <version>${project.version}</version>
-                  <type>jar</type>
-                  <outputDirectory>target/test-jars</outputDirectory>
-                  <destFileName>jersey-resources.jar</destFileName>
-                </artifactItem>
-              </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <forkCount>2</forkCount>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>com.yahoo.vespa</groupId>

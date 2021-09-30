@@ -4,7 +4,8 @@
 #include "proton.h"
 #include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
-#include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
 
@@ -16,18 +17,9 @@ using vespalib::compression::CompressionConfig;
 
 namespace {
 
-struct Pair {
-    string key;
-    string value;
-    Pair(const string &k, const string &v)
-        : key(k),
-          value(v)
-    {
-    }
-    ~Pair();
-};
+using Pair = std::pair<string, string>;
 
-Pair::~Pair() = default;
+VESPA_THREAD_STACK_TAG(proton_rpc_executor)
 
 }
 
@@ -48,8 +40,9 @@ RPCHooksBase::checkState(std::unique_ptr<StateArg> arg)
             LOG(debug, "Will reschedule");
             FRT_RPCRequest * req = arg->_req;
             Session & session = *arg->_session;
-            Executor::Task::UP failedTask = _executor.execute(makeTask(
-                    makeClosure(this, &RPCHooksBase::checkState, std::move(arg))));
+            Executor::Task::UP failedTask = _executor.execute(makeLambdaTask([this, arg=std::move(arg)]() mutable {
+                checkState(std::move(arg));
+            }));
             if (failedTask) {
                 reportState(session, req);
                 req->Return();
@@ -79,13 +72,15 @@ RPCHooksBase::reportState(Session & session, FRT_RPCRequest * req)
         res.emplace_back("onlineState", "onlineSoon");
     }
     if (session.getGen() < 0) {
-        if (delayedConfigsChanged)
+        if (delayedConfigsChanged) {
             res.emplace_back("delayedConfigs", delayedConfigs);
+        }
         res.emplace_back("onlineDocs", make_string("%" PRId64, numDocs));
         session.setGen(0);
     } else if (changed) {
-        if (delayedConfigsChanged)
+        if (delayedConfigsChanged) {
             res.emplace_back("delayedConfigs", delayedConfigs);
+        }
         res.emplace_back("onlineDocs", make_string("%" PRId64, numDocs));
         session.setGen(session.getGen() + 1);
     }
@@ -98,12 +93,12 @@ RPCHooksBase::reportState(Session & session, FRT_RPCRequest * req)
     FRT_StringValue *k = ret.AddStringArray(res.size());
     FRT_StringValue *v = ret.AddStringArray(res.size());
     for (uint32_t i = 0; i < res.size(); ++i) {
-        ret.SetString(&k[i], res[i].key.c_str());
-        ret.SetString(&v[i], res[i].value.c_str());
+        ret.SetString(&k[i], res[i].first.c_str());
+        ret.SetString(&v[i], res[i].second.c_str());
     }
     LOG(debug, "gen=%" PRId64, session.getGen());
     for (const auto & r : res) {
-        LOG(debug, "key=%s, value=%s", r.key.c_str(), r.value.c_str());
+        LOG(debug, "key=%s, value=%s", r.first.c_str(), r.second.c_str());
     }
     ret.AddInt32(session.getGen());
 }
@@ -182,11 +177,14 @@ RPCHooksBase::initRPC()
     
 }
 
-RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const vespalib::string &ident)
+RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const vespalib::string &ident,
+                             uint32_t transportThreads, uint32_t executorThreads)
     : proton(parent),
-      slobrok_config(config::ConfigUri("admin/slobrok.0")),
+      slobrok_config(config::ConfigUri("client")),
       identity(ident),
-      rtcPort(port)
+      rtcPort(port),
+      numTranportThreads(transportThreads),
+      numDocsumRpcThreads(executorThreads)
 { }
 
 RPCHooksBase::Params::~Params() = default;
@@ -194,16 +192,16 @@ RPCHooksBase::Params::~Params() = default;
 RPCHooksBase::RPCHooksBase(Params &params)
     : _proton(params.proton),
       _docsumByRPC(std::make_unique<DocsumByRPC>(_proton.getDocsumBySlime())),
-      _transport(std::make_unique<FNET_Transport>(2)),
+      _transport(std::make_unique<FNET_Transport>(params.numTranportThreads)),
       _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
       _proto_rpc_adapter(std::make_unique<ProtoRpcAdapter>(
                       _proton.get_search_server(),
                       _proton.get_docsum_server(),
                       _proton.get_monitor_server(), *_orb)),
-      _regAPI(*_orb, params.slobrok_config),
+      _regAPI(*_orb, slobrok::ConfiguratorFactory(params.slobrok_config)),
       _stateLock(),
       _stateCond(),
-      _executor(48, 128 * 1024)
+      _executor(params.numDocsumRpcThreads, 128_Ki, proton_rpc_executor)
 { }
 
 void
@@ -238,9 +236,8 @@ RPCHooksBase::close()
 }
 
 void
-RPCHooksBase::letProtonDo(Closure::UP closure)
+RPCHooksBase::letProtonDo(Executor::Task::UP task)
 {
-    Executor::Task::UP task = makeTask(std::move(closure));
     _proton.getExecutor().execute(std::move(task));
 }
 
@@ -285,8 +282,10 @@ RPCHooksBase::rpc_GetState(FRT_RPCRequest *req)
         reportState(*sharedSession, req);
     } else {
         steady_time dueTime(steady_clock::now() + std::chrono::milliseconds(timeoutMS));
-        auto stateArg = std::make_unique<StateArg>(sharedSession, req, dueTime);
-        if (_executor.execute(makeTask(makeClosure(this, &RPCHooksBase::checkState, std::move(stateArg))))) {
+        auto failed = _executor.execute(makeLambdaTask([this, arg=std::make_unique<StateArg>(sharedSession, req, dueTime)]() mutable {
+            checkState(std::move(arg));
+        }));
+        if (failed) {
             reportState(*sharedSession, req);
             req->Return();
         } else {
@@ -300,7 +299,7 @@ RPCHooksBase::rpc_GetProtonStatus(FRT_RPCRequest *req)
 {
     LOG(debug, "RPCHooksBase::rpc_GetProtonStatus started");
     req->Detach();
-    _executor.execute(makeTask(makeClosure(this, &RPCHooksBase::getProtonStatus, req)));
+    _executor.execute(makeLambdaTask([this, req]() { getProtonStatus(req); }));
 }
 
 void
@@ -351,7 +350,7 @@ RPCHooksBase::rpc_getIncrementalState(FRT_RPCRequest *req)
     } else {
         steady_time dueTime(steady_clock::now() + std::chrono::milliseconds(timeoutMS));
         auto stateArg = std::make_unique<StateArg>(sharedSession, req, dueTime);
-        if (_executor.execute(makeTask(makeClosure(this, &RPCHooksBase::checkState, std::move(stateArg))))) {
+        if (_executor.execute(makeLambdaTask([this, arg=std::move(stateArg)]() mutable { checkState(std::move(arg)); }))) {
             reportState(*sharedSession, req);
             req->Return();
         } else {
@@ -380,7 +379,7 @@ RPCHooksBase::rpc_triggerFlush(FRT_RPCRequest *req)
 {
     LOG(info, "RPCHooksBase::rpc_triggerFlush started");
     req->Detach();
-    letProtonDo(makeClosure(this, &RPCHooksBase::triggerFlush, req));
+    letProtonDo(makeLambdaTask([this, req]() { triggerFlush(req); }));
 }
 
 void
@@ -388,7 +387,7 @@ RPCHooksBase::rpc_prepareRestart(FRT_RPCRequest *req)
 {
     LOG(info, "RPCHooksBase::rpc_prepareRestart started");
     req->Detach();
-    letProtonDo(makeClosure(this, &RPCHooksBase::prepareRestart, req));
+    letProtonDo(makeLambdaTask([this, req]() { prepareRestart(req); }));
 }
 
 void
@@ -396,7 +395,7 @@ RPCHooksBase::rpc_getDocSums(FRT_RPCRequest *req)
 {
     LOG(debug, "proton.getDocsums()");
     req->Detach();
-    _executor.execute(makeTask(makeClosure(this, &RPCHooksBase::getDocsums, req)));
+    _executor.execute(makeLambdaTask([this, req]() { getDocsums(req); }));
 }
 
 void
@@ -414,7 +413,6 @@ RPCHooksBase::getSession(FRT_RPCRequest *req)
     auto *sessionspp = static_cast<Session::SP *>(vctx);
     return *sessionspp;
 }
-
 
 void
 RPCHooksBase::initSession(FRT_RPCRequest *req)

@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "sync.h"
 #include "gate.h"
 #include "runnable.h"
 #include "active.h"
@@ -26,23 +25,22 @@ private:
         vespalib::Gate  started;
         bool            cancel;
 
-        Proxy(Thread &parent, Runnable &target)
-            : thread(parent), runnable(target),
-              start(), started(), cancel(false) { }
-        ~Proxy();
+        Proxy(Thread &parent, Runnable &target);
+        ~Proxy() override;
 
         void Run(FastOS_ThreadInterface *thisThread, void *arguments) override;
     };
 
-    Proxy             _proxy;
-    FastOS_ThreadPool _pool;
-    vespalib::Monitor _monitor;
-    bool              _stopped;
-    bool              _woken;
+    Proxy                   _proxy;
+    FastOS_ThreadPool       _pool;
+    std::mutex              _lock;
+    std::condition_variable _cond;
+    bool                    _stopped;
+    bool                    _woken;
 
 public:
     Thread(Runnable &runnable);
-    ~Thread();
+    ~Thread() override;
     void start() override;
     Thread &stop() override;
     void join() override;

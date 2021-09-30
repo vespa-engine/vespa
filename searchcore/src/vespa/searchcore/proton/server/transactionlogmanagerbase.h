@@ -2,11 +2,17 @@
 
 #pragma once
 
-#include <vespa/searchlib/transactionlog/translogclient.h>
+#include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/time.h>
 #include <mutex>
 #include <condition_variable>
 
+namespace search::transactionlog::client {
+    class TransLogClient;
+    class Session;
+    class Visitor;
+    class Callback;
+}
 namespace proton {
 
 /**
@@ -14,10 +20,13 @@ namespace proton {
  **/
 class TransactionLogManagerBase {
 protected:
-    using TransLogClient = search::transactionlog::TransLogClient;
+    using TransLogClient = search::transactionlog::client::TransLogClient;
+    using Session = search::transactionlog::client::Session;
+    using Visitor = search::transactionlog::client::Visitor;
+    using Callback = search::transactionlog::client::Callback;
 private:
-    TransLogClient                  _tlc;
-    TransLogClient::Session::UP     _tlcSession;
+    std::unique_ptr<TransLogClient> _tlc;
+    std::unique_ptr<Session>        _tlcSession;
     vespalib::string                _domainName;
     mutable std::mutex              _replayLock;
     mutable std::condition_variable _replayCond;
@@ -26,7 +35,7 @@ private:
     vespalib::Timer                 _replayStopWatch;
 
 protected:
-    typedef search::SerialNum SerialNum;
+    using SerialNum = search::SerialNum;
 
     struct StatusResult {
         SerialNum serialBegin;
@@ -55,17 +64,17 @@ public:
 
     void changeReplayDone();
     void close();
-    TransLogClient::Visitor::UP createTlcVisitor(TransLogClient::Session::Callback &callback);
+    std::unique_ptr<Visitor> createTlcVisitor(Callback &callback);
 
     void waitForReplayDone() const;
 
-    TransLogClient &getClient() { return _tlc; }
-    TransLogClient::Session *getSession() { return _tlcSession.get(); }
+    TransLogClient &getClient() { return *_tlc; }
+    Session *getSession() { return _tlcSession.get(); }
     const vespalib::string &getDomainName() const { return _domainName; }
     bool getReplayDone() const;
     bool isDoingReplay() const;
     void logReplayComplete() const;
-    const vespalib::string &getRpcTarget() const { return _tlc.getRPCTarget(); }
+    const vespalib::string &getRpcTarget() const;
 };
 
 } // namespace proton

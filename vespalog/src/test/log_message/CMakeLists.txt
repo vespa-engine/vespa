@@ -4,6 +4,6 @@ vespa_add_executable(vespalog_log_message_test_app TEST
     log_message_test.cpp
     DEPENDS
     vespalog
-    gtest
+    GTest::GTest
 )
 vespa_add_test(NAME vespalog_log_message_test_app COMMAND vespalog_log_message_test_app)

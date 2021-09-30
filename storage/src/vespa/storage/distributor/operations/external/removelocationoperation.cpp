@@ -6,6 +6,8 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/vdslib/state/clusterstate.h>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.removelocation");
@@ -16,36 +18,36 @@ using namespace storage;
 using document::BucketSpace;
 
 RemoveLocationOperation::RemoveLocationOperation(
-        DistributorComponent& manager,
+        const DistributorNodeContext& node_ctx,
+        DistributorStripeOperationContext& op_ctx,
+        const DocumentSelectionParser& parser,
         DistributorBucketSpace &bucketSpace,
-        const std::shared_ptr<api::RemoveLocationCommand> & msg,
+        std::shared_ptr<api::RemoveLocationCommand> msg,
         PersistenceOperationMetricSet& metric)
     : Operation(),
       _trackerInstance(metric,
-               std::shared_ptr<api::BucketInfoReply>(new api::RemoveLocationReply(*msg)),
-               manager,
+               std::make_shared<api::RemoveLocationReply>(*msg),
+               node_ctx,
+               op_ctx,
                0),
       _tracker(_trackerInstance),
-      _msg(msg),
-      _manager(manager),
+      _msg(std::move(msg)),
+      _node_ctx(node_ctx),
+      _parser(parser),
       _bucketSpace(bucketSpace)
 {}
 
-RemoveLocationOperation::~RemoveLocationOperation() {}
+RemoveLocationOperation::~RemoveLocationOperation() = default;
 
 int
 RemoveLocationOperation::getBucketId(
-        DistributorComponent& manager,
+        const DistributorNodeContext& node_ctx,
+        const DocumentSelectionParser& parser,
         const api::RemoveLocationCommand& cmd, document::BucketId& bid)
 {
-        std::shared_ptr<const document::DocumentTypeRepo> repo =
-            manager.getTypeRepo();
-        document::select::Parser parser(
-                *repo, manager.getBucketIdFactory());
-
-    document::BucketSelector bucketSel(manager.getBucketIdFactory());
+    document::BucketSelector bucketSel(node_ctx.bucket_id_factory());
     std::unique_ptr<document::BucketSelector::BucketVector> exprResult
-        = bucketSel.select(*parser.parse(cmd.getDocumentSelection()));
+        = bucketSel.select(*parser.parse_selection(cmd.getDocumentSelection()));
 
     if (!exprResult.get()) {
         return 0;
@@ -58,10 +60,10 @@ RemoveLocationOperation::getBucketId(
 }
 
 void
-RemoveLocationOperation::onStart(DistributorMessageSender& sender)
+RemoveLocationOperation::onStart(DistributorStripeMessageSender& sender)
 {
     document::BucketId bid;
-    int count = getBucketId(_manager, *_msg, bid);
+    int count = getBucketId(_node_ctx, _parser, *_msg, bid);
 
     if (count != 1) {
         _tracker.fail(sender,
@@ -106,14 +108,14 @@ RemoveLocationOperation::onStart(DistributorMessageSender& sender)
 
 void
 RemoveLocationOperation::onReceive(
-        DistributorMessageSender& sender,
+        DistributorStripeMessageSender& sender,
         const std::shared_ptr<api::StorageReply> & msg)
 {
     _tracker.receiveReply(sender, static_cast<api::BucketInfoReply&>(*msg));
 }
 
 void
-RemoveLocationOperation::onClose(DistributorMessageSender& sender)
+RemoveLocationOperation::onClose(DistributorStripeMessageSender& sender)
 {
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED,
                                           "Process is shutting down"));

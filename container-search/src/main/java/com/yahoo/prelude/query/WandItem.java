@@ -5,6 +5,7 @@ import com.yahoo.compress.IntegerCompressor;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 /**
  * A weighted set query item to be evaluated as a Wand with dot product scoring.
@@ -17,7 +18,7 @@ import java.nio.ByteBuffer;
  */
 public class WandItem extends WeightedSetItem {
 
-    private int targetNumHits;
+    private final int targetNumHits;
     private double scoreThreshold = 0;
     private double thresholdBoostFactor = 1;
 
@@ -29,6 +30,18 @@ public class WandItem extends WeightedSetItem {
      */
     public WandItem(String fieldName, int targetNumHits) {
         super(fieldName);
+        this.targetNumHits = targetNumHits;
+    }
+
+    /**
+     * Creates an empty WandItem.
+     *
+     * @param fieldName the name of the weighted set field to search with this WandItem.
+     * @param targetNumHits the target for minimum number of hits to produce by the backend search operator handling this WandItem.
+     * @param tokens the tokens to search for
+     */
+    public WandItem(String fieldName, int targetNumHits, Map<Object, Integer> tokens) {
+        super(fieldName, tokens);
         this.targetNumHits = targetNumHits;
     }
 
@@ -86,13 +99,10 @@ public class WandItem extends WeightedSetItem {
     protected void appendHeadingString(StringBuilder buffer) {
         buffer.append(getName());
         buffer.append("(");
-        buffer.append(targetNumHits);
-        buffer.append(",");
-        buffer.append(scoreThreshold);
-        buffer.append(",");
+        buffer.append(targetNumHits).append(",");
+        buffer.append(scoreThreshold).append(",");
         buffer.append(thresholdBoostFactor);
-        buffer.append(")");
-        buffer.append(" ");
+        buffer.append(") ");
     }
 
     @Override

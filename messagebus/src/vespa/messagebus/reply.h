@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "error.h"
 #include "routable.h"
 #include <vector>
 
 namespace mbus {
 
 class Message;
+class Error;
 
 /**
  * A reply is a response to a message that has been sent throught the
@@ -43,7 +43,7 @@ public:
     ~Reply() override;
 
     void swapState(Routable &rhs) override;
-    bool isReply() const override;
+    bool isReply() const override { return true; }
 
     /**
      * Add an Error to this Reply
@@ -72,14 +72,14 @@ public:
      * @param i The index of the error to return.
      * @return The error at the given index.
      */
-    const Error &getError(uint32_t i) const { return _errors[i]; }
+    const Error &getError(uint32_t i) const;
 
     /**
      * Returns the number of errors that this reply contains.
      *
      * @return The number of replies.
      */
-    uint32_t getNumErrors() const { return _errors.size(); }
+    uint32_t getNumErrors() const;
 
     /**
      * Attach a Message to this Reply. If a Reply contains errors, messagebus

@@ -4,30 +4,27 @@ package com.yahoo.prelude.fastsearch;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.data.access.slime.SlimeAdapter;
+import com.yahoo.prelude.hitfield.JSONString;
 import com.yahoo.prelude.hitfield.RawData;
 import com.yahoo.prelude.hitfield.XMLString;
-import com.yahoo.prelude.hitfield.JSONString;
 import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Hit;
-import com.yahoo.search.result.NanNumber;
 import com.yahoo.search.result.StructuredData;
+import com.yahoo.slime.BinaryFormat;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Slime;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.serialization.TypedBinaryFormat;
+import org.junit.Test;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import com.yahoo.slime.BinaryFormat;
-import com.yahoo.slime.Cursor;
-import com.yahoo.slime.Inspector;
-import com.yahoo.slime.Slime;
-import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.serialization.TypedBinaryFormat;
-import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -102,7 +99,7 @@ public class SlimeSummaryTestCase {
         if (hit.getField("jsonstring_field") instanceof JSONString) {
             JSONString jstr = (JSONString) hit.getField("jsonstring_field");
             assertEquals("{\"foo\":1,\"bar\":2}", jstr.getContent());
-            assertNotNull(jstr.getParsedJSON());
+            assertNotNull(getParsedJSON(jstr));
 
             com.yahoo.data.access.Inspector value = jstr.inspect();
             assertEquals(1L, value.field("foo").asLong());
@@ -125,6 +122,8 @@ public class SlimeSummaryTestCase {
         assertEquals(tensor1, featureData.getTensor("rankingExpression(tensor1_feature)"));
         assertEquals(tensor2, featureData.getTensor("tensor2_feature"));
     }
+
+    @SuppressWarnings("removal") private static Object getParsedJSON(JSONString jstr) { return jstr.getParsedJSON(); }
 
     @Test
     public void testFieldAccessAPI() {

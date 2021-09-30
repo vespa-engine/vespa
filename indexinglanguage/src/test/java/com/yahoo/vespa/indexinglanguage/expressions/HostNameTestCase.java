@@ -43,4 +43,5 @@ public class HostNameTestCase {
         assertEquals(HostNameExpression.normalizeHostName(getDefaults().vespaHostname()),
                      ((StringFieldValue)val).getString());
     }
+
 }

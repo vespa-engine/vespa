@@ -13,14 +13,13 @@ namespace proton {
 class BucketDBExplorer : public vespalib::StateExplorer
 {
 private:
-    BucketDBOwner::Guard _bucketDb;
+    bucketdb::Guard _bucketDb;
 
 public:
-    BucketDBExplorer(BucketDBOwner::Guard bucketDb);
-    ~BucketDBExplorer();
+    BucketDBExplorer(bucketdb::Guard bucketDb);
+    ~BucketDBExplorer() override;
 
-    // Implements vespalib::StateExplorer
-    virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
 };
 
 } // namespace proton

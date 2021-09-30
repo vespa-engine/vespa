@@ -44,14 +44,14 @@ public:
         return _bucket.toString();
     }
 
-    void onClose(DistributorMessageSender&) override {}
+    void onClose(DistributorStripeMessageSender&) override {}
     const char* getName() const override { return "MockOperation"; }
     const std::string& getDetailedReason() const override {
         return _reason;
     }
-    void onStart(DistributorMessageSender&) override {}
-    void onReceive(DistributorMessageSender&, const std::shared_ptr<api::StorageReply>&) override {}
-    bool isBlocked(const PendingMessageTracker&) const override {
+    void onStart(DistributorStripeMessageSender&) override {}
+    void onReceive(DistributorStripeMessageSender&, const std::shared_ptr<api::StorageReply>&) override {}
+    bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const override {
         return _shouldBlock;
     }
     void setShouldBlock(bool shouldBlock) {
@@ -64,7 +64,7 @@ class MockMaintenanceOperationGenerator
 {
 public:
     MaintenanceOperation::SP generate(const document::Bucket&bucket) const override {
-        return MaintenanceOperation::SP(new MockOperation(bucket));
+        return std::make_shared<MockOperation>(bucket);
     }
 
     std::vector<MaintenanceOperation::SP> generateAll(
@@ -73,7 +73,7 @@ public:
     {
         (void) tracker;
         std::vector<MaintenanceOperation::SP> ret;
-        ret.push_back(MaintenanceOperation::SP(new MockOperation(bucket)));
+        ret.emplace_back(std::make_shared<MockOperation>(bucket));
         return ret;
     }
 

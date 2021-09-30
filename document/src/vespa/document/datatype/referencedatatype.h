@@ -26,6 +26,7 @@ public:
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainingFieldName) const override;
 
     bool operator==(const DataType &type) const override;
+    bool operator==(const ReferenceDataType& type) const { return operator==(static_cast<const DataType&>(type)); }
 };
 
 } // document

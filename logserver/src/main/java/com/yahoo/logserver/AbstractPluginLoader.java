@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.plugin.Plugin;
 import com.yahoo.plugin.SystemPropertyConfig;
 
@@ -24,7 +24,7 @@ public abstract class AbstractPluginLoader implements PluginLoader {
         try {
             plugin = pluginClass.getDeclaredConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            log.log(LogLevel.ERROR, pluginClass.getName() + ": load failed: " + e);
+            log.log(Level.SEVERE, pluginClass.getName() + ": load failed: " + e);
             throw new RuntimeException(e);
         }
 
@@ -34,15 +34,15 @@ public abstract class AbstractPluginLoader implements PluginLoader {
         String enable = config.get("enable", "true");
 
         if (! enable.equals("true")) {
-            log.log(LogLevel.INFO, pname + ": plugin disabled by config");
+            log.log(Level.INFO, pname + ": plugin disabled by config");
             return;
         }
 
         try {
             plugin.initPlugin(config);
-            log.log(LogLevel.DEBUG, pname + ": plugin loaded");
+            log.log(Level.FINE, pname + ": plugin loaded");
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, pname + ": init failed", e);
+            log.log(Level.SEVERE, pname + ": init failed", e);
         }
     }
 }

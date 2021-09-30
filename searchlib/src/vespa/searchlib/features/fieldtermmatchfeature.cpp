@@ -8,9 +8,10 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/stash.h>
 
-namespace search {
-namespace features {
+
+namespace search::features {
 
 FieldTermMatchExecutor::FieldTermMatchExecutor(const search::fef::IQueryEnvironment &env,
                                                uint32_t fieldId, uint32_t termId) :
@@ -122,7 +123,7 @@ FieldTermMatchBlueprint::setup(const search::fef::IIndexEnvironment &env,
 search::fef::Blueprint::UP
 FieldTermMatchBlueprint::createInstance() const
 {
-    return search::fef::Blueprint::UP(new FieldTermMatchBlueprint());
+    return std::make_unique<FieldTermMatchBlueprint>();
 }
 
 search::fef::FeatureExecutor &
@@ -131,4 +132,4 @@ FieldTermMatchBlueprint::createExecutor(const search::fef::IQueryEnvironment &en
     return stash.create<FieldTermMatchExecutor>(env, _fieldId, _termId);
 }
 
-}}
+}

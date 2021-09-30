@@ -18,9 +18,14 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeStream;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.text.Text;
+import com.yahoo.vespa.configserver.flags.FlagsDb;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.IntFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
-import com.yahoo.vespa.hosted.controller.api.integration.ApplicationIdSnapshot;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
@@ -31,9 +36,11 @@ import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.security.PublicKey;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,22 +64,25 @@ import java.util.stream.Collectors;
 public class UserApiHandler extends LoggingRequestHandler {
 
     private final static Logger log = Logger.getLogger(UserApiHandler.class.getName());
-    private static final String optionalPrefix = "/api";
 
     private final UserManagement users;
     private final Controller controller;
+    private final FlagsDb flagsDb;
+    private final IntFlag maxTrialTenants;
 
     @Inject
-    public UserApiHandler(Context parentCtx, UserManagement users, Controller controller) {
+    public UserApiHandler(Context parentCtx, UserManagement users, Controller controller, FlagSource flagSource, FlagsDb flagsDb) {
         super(parentCtx);
         this.users = users;
         this.controller = controller;
+        this.flagsDb = flagsDb;
+        this.maxTrialTenants = PermanentFlags.MAX_TRIAL_TENANTS.bindTo(flagSource);
     }
 
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
-            Path path = new Path(request.getUri(), optionalPrefix);
+            Path path = new Path(request.getUri());
             switch (request.getMethod()) {
                 case GET: return handleGET(path, request);
                 case POST: return handlePOST(path, request);
@@ -95,7 +105,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         if (path.matches("/user/v1/tenant/{tenant}")) return listTenantRoleMembers(path.get("tenant"));
         if (path.matches("/user/v1/tenant/{tenant}/application/{application}")) return listApplicationRoleMembers(path.get("tenant"), path.get("application"));
 
-        return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
+        return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
     }
 
@@ -103,7 +113,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         if (path.matches("/user/v1/tenant/{tenant}")) return addTenantRoleMember(path.get("tenant"), request);
         if (path.matches("/user/v1/tenant/{tenant}/application/{application}")) return addApplicationRoleMember(path.get("tenant"), path.get("application"), request);
 
-        return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
+        return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
     }
 
@@ -111,7 +121,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         if (path.matches("/user/v1/tenant/{tenant}")) return removeTenantRoleMember(path.get("tenant"), request);
         if (path.matches("/user/v1/tenant/{tenant}/application/{application}")) return removeApplicationRoleMember(path.get("tenant"), path.get("application"), request);
 
-        return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
+        return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
     }
 
@@ -121,21 +131,33 @@ public class UserApiHandler extends LoggingRequestHandler {
         return response;
     }
 
+    private static final Set<RoleDefinition> hostedOperators = Set.of(
+            RoleDefinition.hostedOperator,
+            RoleDefinition.hostedSupporter,
+            RoleDefinition.hostedAccountant);
+
     private HttpResponse userMetadata(HttpRequest request) {
-        User user = getAttribute(request, User.ATTRIBUTE_NAME, User.class);
+        User user;
+        if (request.getJDiscRequest().context().get(User.ATTRIBUTE_NAME) instanceof User) {
+            user = getAttribute(request, User.ATTRIBUTE_NAME, User.class);
+        } else {
+            // Remove this after June 2021 (once all security filters are setting this)
+            @SuppressWarnings("unchecked")
+            Map<String, String> attr = (Map<String, String>) getAttribute(request, User.ATTRIBUTE_NAME, Map.class);
+            user = new User(attr.get("email"), attr.get("name"), attr.get("nickname"), attr.get("picture"));
+        }
+
         Set<Role> roles = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class).roles();
 
-        ApplicationIdSnapshot snapshot = controller.applicationIdSnapshot();
         Map<TenantName, List<TenantRole>> tenantRolesByTenantName = roles.stream()
                 .flatMap(role -> filterTenantRoles(role).stream())
                 .distinct()
                 .sorted(Comparator.comparing(Role::definition).reversed())
                 .collect(Collectors.groupingBy(TenantRole::tenant, Collectors.toList()));
 
-        // List of operator roles, currently only one available, but possible to extend
+        // List of operator roles as defined in `hostedOperators` above
         List<Role> operatorRoles = roles.stream()
-                .filter(role -> role.definition().equals(RoleDefinition.hostedOperator) ||
-                        role.definition().equals(RoleDefinition.hostedSupporter))
+                .filter(role -> hostedOperators.contains(role.definition()))
                 .sorted(Comparator.comparing(Role::definition))
                 .collect(Collectors.toList());
 
@@ -143,6 +165,8 @@ public class UserApiHandler extends LoggingRequestHandler {
         Cursor root = slime.setObject();
 
         root.setBool("isPublic", controller.system().isPublic());
+        root.setBool("isCd", controller.system().isCd());
+        root.setBool("hasTrialCapacity", hasTrialCapacity());
 
         toSlime(root.setObject("user"), user);
 
@@ -156,23 +180,14 @@ public class UserApiHandler extends LoggingRequestHandler {
                     Cursor tenantRolesObject = tenantObject.setArray("roles");
                     tenantRolesByTenantName.getOrDefault(tenant, List.of())
                             .forEach(role -> tenantRolesObject.addString(role.definition().name()));
-
-                    Cursor tenantApplicationsObject = tenantObject.setObject("applications");
-                    snapshot.applications(tenant).stream()
-                            .sorted()
-                            .forEach(application -> {
-                                Cursor applicationObject = tenantApplicationsObject.setObject(application.value());
-                                Cursor applicationInstancesObject = applicationObject.setArray("instances");
-                                snapshot.instances(tenant, application).stream()
-                                        .sorted()
-                                        .forEach(instance -> applicationInstancesObject.addString(instance.value()));
-                            });
                 });
 
         if (!operatorRoles.isEmpty()) {
             Cursor operator = root.setArray("operator");
             operatorRoles.forEach(role -> operator.addString(role.definition().name()));
         }
+
+        UserFlagsSerializer.toSlime(root, flagsDb.getAllFlagData(), tenantRolesByTenantName.keySet(), !operatorRoles.isEmpty(), user.email());
 
         return new SlimeJsonResponse(slime);
     }
@@ -226,11 +241,16 @@ public class UserApiHandler extends LoggingRequestHandler {
         });
     }
 
-    private void toSlime(Cursor userObject, User user) {
+    private static void toSlime(Cursor userObject, User user) {
         if (user.name() != null) userObject.setString("name", user.name());
         userObject.setString("email", user.email());
         if (user.nickname() != null) userObject.setString("nickname", user.nickname());
         if (user.picture() != null) userObject.setString("picture", user.picture());
+        userObject.setBool("verified", user.isVerified());
+        if (!user.lastLogin().equals(User.NO_DATE))
+            userObject.setString("lastLogin", user.lastLogin().format(DateTimeFormatter.ISO_DATE));
+        if (user.loginCount() > -1)
+            userObject.setLong("loginCount", user.loginCount());
     }
 
     private HttpResponse addTenantRoleMember(String tenantName, HttpRequest request) {
@@ -337,24 +357,24 @@ public class UserApiHandler extends LoggingRequestHandler {
         return new MessageResponse(user + " is no longer a member of " + role);
     }
 
+    private boolean hasTrialCapacity() {
+        if (! controller.system().isPublic()) return true;
+        var existing = controller.tenants().asList().stream().map(Tenant::name).collect(Collectors.toList());
+        var trialTenants = controller.serviceRegistry().billingController().tenantsWithPlan(existing, PlanId.from("trial"));
+        return maxTrialTenants.value() < 0 || trialTenants.size() < maxTrialTenants.value();
+    }
+
     private static Inspector bodyInspector(HttpRequest request) {
         return Exceptions.uncheck(() -> SlimeUtils.jsonToSlime(IOUtils.readBytes(request.getData(), 1 << 10)).get());
     }
 
-    private <Type> Type require(String name, Function<Inspector, Type> mapper, Inspector object) {
+    private static <Type> Type require(String name, Function<Inspector, Type> mapper, Inspector object) {
         if ( ! object.field(name).valid()) throw new IllegalArgumentException("Missing field '" + name + "'.");
         return mapper.apply(object.field(name));
     }
 
     private static String valueOf(Role role) {
         switch (role.definition()) {
-            case tenantOwner:           return "tenantOwner";
-            case tenantAdmin:           return "tenantAdmin";
-            case tenantOperator:        return "tenantOperator";
-            case applicationAdmin:      return "applicationAdmin";
-            case applicationOperator:   return "applicationOperator";
-            case applicationDeveloper:  return "applicationDeveloper";
-            case applicationReader:     return "applicationReader";
             case administrator:         return "administrator";
             case developer:             return "developer";
             case reader:                return "reader";

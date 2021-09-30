@@ -46,14 +46,11 @@ public class JuniperSearcher extends Searcher {
 
     private static final String ELLIPSIS = "...";
 
-    // The name of the field containing document type
-    private static final String MAGIC_FIELD = Hit.SDDOCNAME_FIELD;
-
     public static final String JUNIPER_TAG_REPLACING = "JuniperTagReplacing";
 
-    private String boldOpenTag;
-    private String boldCloseTag;
-    private String separatorTag;
+    private final String boldOpenTag;
+    private final String boldCloseTag;
+    private final String separatorTag;
 
     @Inject
     public JuniperSearcher(ComponentId id, QrSearchersConfig config) {
@@ -80,13 +77,13 @@ public class JuniperSearcher extends Searcher {
         int worstCase = result.getHitCount();
         List<Hit> hits = new ArrayList<>(worstCase);
         for (Iterator<Hit> i = result.hits().deepIterator(); i.hasNext();) {
-            Hit sniffHit = i.next();
-            if ( ! (sniffHit instanceof FastHit)) continue;
+            Hit hit = i.next();
+            if ( ! (hit instanceof FastHit)) continue;
 
-            FastHit hit = (FastHit) sniffHit;
-            if (hit.isFilled(summaryClass)) continue;
+            FastHit fastHit = (FastHit)hit;
+            if (fastHit.isFilled(summaryClass)) continue;
 
-            hits.add(hit);
+            hits.add(fastHit);
         }
         execution.fill(result, summaryClass);
         highlight(result.getQuery().getPresentation().getBolding(), hits.iterator(), summaryClass,
@@ -102,7 +99,7 @@ public class JuniperSearcher extends Searcher {
             FastHit fastHit = (FastHit) hit;
             if (summaryClass != null &&  ! fastHit.isFilled(summaryClass)) continue;
 
-            Object searchDefinitionField = fastHit.getField(MAGIC_FIELD);
+            Object searchDefinitionField = fastHit.getField(Hit.SDDOCNAME_FIELD);
             if (searchDefinitionField == null) continue;
 
             for (Index index : indexFacts.getIndexes(searchDefinitionField.toString())) {

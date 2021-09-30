@@ -34,8 +34,8 @@ public:
 
     ~MergeOperation();
 
-    void onStart(DistributorMessageSender& sender) override;
-    void onReceive(DistributorMessageSender& sender, const api::StorageReply::SP&) override;
+    void onStart(DistributorStripeMessageSender& sender) override;
+    void onReceive(DistributorStripeMessageSender& sender, const api::StorageReply::SP&) override;
     const char* getName() const override { return "merge"; };
     std::string getStatus() const override;
     Type getType() const override { return MERGE_BUCKET; }
@@ -47,7 +47,7 @@ public:
             std::vector<MergeMetaData>&);
 
     bool shouldBlockThisOperation(uint32_t messageType, uint8_t pri) const override;
-    bool isBlocked(const PendingMessageTracker& pendingMessages) const override;
+    bool isBlocked(const DistributorStripeOperationContext& ctx, const OperationSequencer&) const override;
 private:
     static void addIdealNodes(
             const std::vector<uint16_t>& idealNodes,
@@ -60,7 +60,8 @@ private:
             std::vector<MergeMetaData>& result);
 
     void deleteSourceOnlyNodes(const BucketDatabase::Entry& currentState,
-                               DistributorMessageSender& sender);
+                               DistributorStripeMessageSender& sender);
+    bool is_global_bucket_merge() const noexcept;
 };
 
 }

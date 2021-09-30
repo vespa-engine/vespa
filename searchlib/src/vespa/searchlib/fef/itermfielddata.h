@@ -16,27 +16,28 @@ namespace search::fef {
  **/
 class ITermFieldData
 {
-protected:
-    virtual ~ITermFieldData() {}
-
 public:
+    ITermFieldData(uint32_t fieldId)
+        : _fieldId(fieldId),
+          _matching_doc_count(0),
+          _total_doc_count(1)
+    { }
     /**
      * Obtain the global field id.
      *
      * @return field id
      **/
-    virtual uint32_t getFieldId() const = 0;
-
+    uint32_t getFieldId() const { return _fieldId; }
 
     /**
      * Returns the number of documents matching this term.
      */
-    virtual uint32_t get_matching_doc_count() const = 0;
+    uint32_t get_matching_doc_count() const { return _matching_doc_count; }
 
     /**
      * Returns the total number of documents in the corpus.
      */
-    virtual uint32_t get_total_doc_count() const = 0;
+    uint32_t get_total_doc_count() const { return _total_doc_count; }
 
     /**
      * Obtain the document frequency. This is a value between 0 and 1
@@ -46,6 +47,15 @@ public:
     **/
     double getDocFreq() const {
         return (double)get_matching_doc_count() / (double)get_total_doc_count();
+    }
+
+    /**
+     * Sets the document frequency.
+     **/
+    ITermFieldData &setDocFreq(uint32_t matching_doc_count, uint32_t total_doc_count) {
+        _matching_doc_count = matching_doc_count;
+        _total_doc_count = total_doc_count;
+        return *this;
     }
 
     /**
@@ -65,6 +75,12 @@ public:
      * @return match handle (or IllegalHandle)
      **/
     virtual TermFieldHandle getHandle(MatchDataDetails requested_details) const = 0;
+protected:
+    virtual ~ITermFieldData() {}
+private:
+    uint32_t    _fieldId;
+    uint32_t    _matching_doc_count;
+    uint32_t    _total_doc_count;
 };
 
 }

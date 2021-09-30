@@ -35,11 +35,12 @@ public class SearchErrorInvoker extends SearchInvoker {
     }
 
     @Override
-    protected void sendSearchRequest(Query query) throws IOException {
+    protected Object sendSearchRequest(Query query, Object context) throws IOException {
         this.query = query;
-        if(monitor != null) {
+        if (monitor != null) {
             monitor.responseAvailable(this);
         }
+        return context;
     }
 
     @Override
@@ -60,4 +61,5 @@ public class SearchErrorInvoker extends SearchInvoker {
     protected void setMonitor(ResponseMonitor<SearchInvoker> monitor) {
         this.monitor = monitor;
     }
+
 }

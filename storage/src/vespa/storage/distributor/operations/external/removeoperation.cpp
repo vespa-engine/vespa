@@ -2,6 +2,7 @@
 #include "removeoperation.h"
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation.external.remove");
@@ -11,31 +12,32 @@ using namespace storage::distributor;
 using namespace storage;
 using document::BucketSpace;
 
-RemoveOperation::RemoveOperation(DistributorComponent& manager,
+RemoveOperation::RemoveOperation(const DistributorNodeContext& node_ctx,
+                                 DistributorStripeOperationContext& op_ctx,
                                  DistributorBucketSpace &bucketSpace,
-                                 const std::shared_ptr<api::RemoveCommand> & msg,
+                                 std::shared_ptr<api::RemoveCommand> msg,
                                  PersistenceOperationMetricSet& metric,
                                  SequencingHandle sequencingHandle)
     : SequencedOperation(std::move(sequencingHandle)),
       _trackerInstance(metric,
-               std::shared_ptr<api::BucketInfoReply>(new api::RemoveReply(*msg)),
-               manager, msg->getTimestamp()),
+               std::make_shared<api::RemoveReply>(*msg),
+               node_ctx, op_ctx, msg->getTimestamp()),
       _tracker(_trackerInstance),
-      _msg(msg),
-      _manager(manager),
+      _msg(std::move(msg)),
+      _node_ctx(node_ctx),
       _bucketSpace(bucketSpace)
 {
 }
 
-RemoveOperation::~RemoveOperation() {}
+RemoveOperation::~RemoveOperation() = default;
 
 void
-RemoveOperation::onStart(DistributorMessageSender& sender)
+RemoveOperation::onStart(DistributorStripeMessageSender& sender)
 {
     LOG(spam, "Started remove on document %s", _msg->getDocumentId().toString().c_str());
 
     document::BucketId bucketId(
-            _manager.getBucketIdFactory().getBucketId(
+            _node_ctx.bucket_id_factory().getBucketId(
                     _msg->getDocumentId()));
 
     std::vector<BucketDatabase::Entry> entries;
@@ -43,22 +45,19 @@ RemoveOperation::onStart(DistributorMessageSender& sender)
 
     bool sent = false;
 
-    for (uint32_t j = 0; j < entries.size(); j++) {
-        const BucketDatabase::Entry& e = entries[j];
+    for (const BucketDatabase::Entry& e : entries) {
         std::vector<MessageTracker::ToSend> messages;
-
+        messages.reserve(e->getNodeCount());
         for (uint32_t i = 0; i < e->getNodeCount(); i++) {
-            std::shared_ptr<api::RemoveCommand> command(new api::RemoveCommand(
-                                                                  document::Bucket(_msg->getBucket().getBucketSpace(), e.getBucketId()),
-                                                                  _msg->getDocumentId(),
-                                                                  _msg->getTimestamp()));
+            auto command = std::make_shared<api::RemoveCommand>(document::Bucket(_msg->getBucket().getBucketSpace(), e.getBucketId()),
+                                                                _msg->getDocumentId(),
+                                                                _msg->getTimestamp());
 
             copyMessageSettings(*_msg, *command);
             command->getTrace().setLevel(_msg->getTrace().getLevel());
             command->setCondition(_msg->getCondition());
 
-            messages.push_back(
-                    MessageTracker::ToSend(command, e->getNodeRef(i).getNode()));
+            messages.emplace_back(std::move(command), e->getNodeRef(i).getNode());
             sent = true;
         }
 
@@ -80,7 +79,7 @@ RemoveOperation::onStart(DistributorMessageSender& sender)
 
 
 void
-RemoveOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
+RemoveOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
 {
     api::RemoveReply& reply(static_cast<api::RemoveReply&>(*msg));
 
@@ -97,7 +96,7 @@ RemoveOperation::onReceive(DistributorMessageSender& sender, const std::shared_p
 }
 
 void
-RemoveOperation::onClose(DistributorMessageSender& sender)
+RemoveOperation::onClose(DistributorStripeMessageSender& sender)
 {
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
 }

@@ -31,8 +31,7 @@ import com.yahoo.processing.response.DataList;
  * wrapper of the knowhow needed to render the Response from processing.
  *
  * @author bratseth
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @since 5.1.12
+ * @author Steinar Knutsen
  */
 public class ProcessingResponse extends AsyncHttpResponse {
 
@@ -44,7 +43,6 @@ public class ProcessingResponse extends AsyncHttpResponse {
     /** True if the return status has been set explicitly and should not be further changed */
     private boolean explicitStatusSet = false;
 
-    @SuppressWarnings("unchecked")
     public ProcessingResponse(int status, com.yahoo.processing.Request processingRequest,
                               com.yahoo.processing.Response processingResponse,
                               Renderer renderer,

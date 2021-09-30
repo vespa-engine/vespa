@@ -4,6 +4,7 @@ package com.yahoo.tensor.functions;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -31,7 +32,9 @@ public class Map<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE
         this.mapper = mapper;
     }
 
-    public static TensorType outputType(TensorType inputType) { return inputType; }
+    public static TensorType outputType(TensorType inputType) {
+        return TypeResolver.map(inputType);
+    }
 
     public TensorFunction<NAMETYPE> argument() { return argument; }
     public DoubleUnaryOperator mapper() { return mapper; }
@@ -53,14 +56,14 @@ public class Map<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE
 
     @Override
     public TensorType type(TypeContext<NAMETYPE> context) {
-        return argument.type(context);
+        return outputType(argument.type(context));
     }
 
     @Override
     public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
-        Tensor argument = argument().evaluate(context);
-        Tensor.Builder builder = Tensor.Builder.of(argument.type());
-        for (Iterator<Tensor.Cell> i = argument.cellIterator(); i.hasNext(); ) {
+        Tensor input = argument().evaluate(context);
+        Tensor.Builder builder = Tensor.Builder.of(outputType(input.type()));
+        for (Iterator<Tensor.Cell> i = input.cellIterator(); i.hasNext(); ) {
             java.util.Map.Entry<TensorAddress, Double> cell = i.next();
             builder.cell(cell.getKey(), mapper.applyAsDouble(cell.getValue()));
         }

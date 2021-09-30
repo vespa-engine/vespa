@@ -1,14 +1,30 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "common.h"
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fastos/file.h>
+#include <stdexcept>
 
 namespace search::transactionlog {
 
 using vespalib::nbostream;
 using vespalib::nbostream_longlivedbuf;
+using vespalib::make_string_short::fmt;
+using std::runtime_error;
 
-int makeDirectory(const char * dir)
+namespace {
+
+void throwRangeError(SerialNum prev, SerialNum next) __attribute__((noinline));
+
+void
+throwRangeError(SerialNum prev, SerialNum next) {
+    throw runtime_error(fmt("The new serialnum %" PRIu64 " is not higher than the old one %" PRIu64 "", next, prev));
+}
+
+}
+
+int
+makeDirectory(const char * dir)
 {
     int retval(-1);
 
@@ -22,7 +38,8 @@ int makeDirectory(const char * dir)
     return retval;
 }
 
-int64_t SerialNumRange::cmp(const SerialNumRange & b) const
+int64_t
+SerialNumRange::cmp(const SerialNumRange & b) const
 {
     int64_t diff(0);
     if ( ! (contains(b) || b.contains(*this)) ) {
@@ -34,7 +51,6 @@ int64_t SerialNumRange::cmp(const SerialNumRange & b) const
 Packet::Packet(const void * buf, size_t sz) :
      _count(0),
      _range(),
-     _limit(sz),
      _buf(static_cast<const char *>(buf), sz)
 {
     nbostream_longlivedbuf os(_buf.data(), sz);
@@ -49,18 +65,22 @@ Packet::Packet(const void * buf, size_t sz) :
     }
 }
 
-bool Packet::merge(const Packet & packet)
+void
+Packet::merge(const Packet & packet)
 {
-    bool retval(_range.to() < packet._range.from());
-    if (retval) {
-        _count += packet._count;
-        _range.to(packet._range.to());
-        _buf.write(packet.getHandle().data(), packet.getHandle().size());
+    if (_range.to() >= packet.range().from()) {
+        throwRangeError(_range.to(), packet.range().from());
     }
-    return retval;
+    if (_buf.empty()) {
+        _range.from(packet.range().from());
+    }
+    _count += packet._count;
+    _range.to(packet._range.to());
+    _buf.write(packet.getHandle().data(), packet.getHandle().size());
 }
 
-nbostream & Packet::Entry::deserialize(nbostream & os)
+nbostream &
+Packet::Entry::deserialize(nbostream & os)
 {
     _valid = false;
     int32_t len(0);
@@ -71,34 +91,62 @@ nbostream & Packet::Entry::deserialize(nbostream & os)
     return os;
 }
 
-nbostream & Packet::Entry::serialize(nbostream & os) const
+nbostream &
+Packet::Entry::serialize(nbostream & os) const
 {
     os << _unique << _type << static_cast<uint32_t>(_data.size());
     os.write(_data.c_str(), _data.size());
     return os;
 }
 
-Packet::Entry::Entry(SerialNum u, Type t, const vespalib::ConstBufferRef & d) :
-    _unique(u),
-    _type(t),
-    _valid(true),
-    _data(d)
+void
+Packet::add(const Packet::Entry & e)
+{
+    if (_range.to() >= e.serial()) {
+        throwRangeError(_range.to(), e.serial());
+    }
+
+    if (_buf.empty()) {
+        _range.from(e.serial());
+    }
+    e.serialize(_buf);
+    _count++;
+    _range.to(e.serial());
+}
+
+Writer::CommitResult::CommitResult()
+    : _callBacks()
+{}
+Writer::CommitResult::CommitResult( CommitPayload commitPayLoad)
+    : _callBacks(std::move(commitPayLoad))
+{}
+
+Writer::CommitResult::~CommitResult() = default;
+
+CommitChunk::CommitChunk(size_t reserveBytes, size_t reserveCount)
+    : _data(reserveBytes),
+      _callBacks(std::make_shared<Writer::DoneCallbacksList>())
+{
+    _callBacks->reserve(reserveCount);
+}
+
+CommitChunk::CommitChunk(size_t reserveBytes, Writer::CommitPayload postponed)
+    : _data(reserveBytes),
+      _callBacks(std::move(postponed))
 {
 }
 
+CommitChunk::~CommitChunk() = default;
 
-bool Packet::add(const Packet::Entry & e)
-{
-    bool retval((_buf.size() < _limit) && (_range.to() < e.serial()));
-    if (retval) {
-        if (_buf.empty()) {
-            _range.from(e.serial());
-        }
-        e.serialize(_buf);
-        _count++;
-        _range.to(e.serial());
-    }
-    return retval;
+void
+CommitChunk::add(const Packet &packet, Writer::DoneCallback onDone) {
+    _data.merge(packet);
+    _callBacks->emplace_back(std::move(onDone));
+}
+
+Writer::CommitResult
+CommitChunk::createCommitResult() const {
+    return Writer::CommitResult(_callBacks);
 }
 
 }

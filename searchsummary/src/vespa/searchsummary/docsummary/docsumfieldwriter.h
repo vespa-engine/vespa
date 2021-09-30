@@ -84,14 +84,5 @@ public:
                      vespalib::slime::Inserter &target) override;
 };
 
-//--------------------------------------------------------------------------
-
-class AttributeDFWFactory
-{
-private:
-    AttributeDFWFactory();
-public:
-    static IDocsumFieldWriter *create(IAttributeManager & vecMan, const char *vecName);
-};
 
 }

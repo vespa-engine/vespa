@@ -5,68 +5,65 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.node.filter.NodeTypeFilter;
+import com.yahoo.vespa.hosted.provision.provisioning.InfraDeployerImpl;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
+import com.yahoo.vespa.hosted.provision.testutils.MockDuperModel;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
-import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.vespa.service.duper.ConfigServerApplication;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author bratseth
  */
 public class RetiredExpirerTest {
 
+    private final NodeResources hostResources = new NodeResources(64, 128, 2000, 10);
     private final NodeResources nodeResources = new NodeResources(2, 8, 50, 1);
 
-    private Curator curator = new MockCurator();
-    private final ManualClock clock = new ManualClock();
-    private final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
-    private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-    private final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
-            new MockNameResolver().mockAnyLookup(),
-            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
-    private final NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
+    private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
+    private final ManualClock clock = tester.clock();
+    private final NodeRepository nodeRepository = tester.nodeRepository();
+    private final NodeRepositoryProvisioner provisioner = tester.provisioner();
     private final Orchestrator orchestrator = mock(Orchestrator.class);
 
     private static final Duration RETIRED_EXPIRATION = Duration.ofHours(12);
@@ -79,82 +76,55 @@ public class RetiredExpirerTest {
 
     @Test
     public void ensure_retired_nodes_time_out() {
-        createReadyNodes(7, nodeResources, nodeRepository);
-        createHostNodes(4, nodeRepository, nodeFlavors);
+        tester.makeReadyNodes(7, nodeResources);
+        tester.makeReadyHosts(4, hostResources);
 
         ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
 
         // Allocate content cluster of sizes 7 -> 2 -> 3:
         // Should end up with 3 nodes in the cluster (one previously retired), and 4 retired
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         int wantedNodes;
-        activate(applicationId, cluster, wantedNodes=7, 1, provisioner);
-        activate(applicationId, cluster, wantedNodes=2, 1, provisioner);
-        activate(applicationId, cluster, wantedNodes=3, 1, provisioner);
-        assertEquals(7, nodeRepository.getNodes(applicationId, Node.State.active).size());
-        assertEquals(0, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
+        activate(applicationId, cluster, wantedNodes=7, 1);
+        activate(applicationId, cluster, wantedNodes=2, 1);
+        activate(applicationId, cluster, wantedNodes=3, 1);
+        assertEquals(7, nodeRepository.nodes().list(Node.State.active).owner(applicationId).size());
+        assertEquals(0, nodeRepository.nodes().list(Node.State.inactive).owner(applicationId).size());
 
         // Cause inactivation of retired nodes
         clock.advance(Duration.ofHours(30)); // Retire period spent
         MockDeployer deployer =
             new MockDeployer(provisioner,
                              clock,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(wantedNodes, nodeResources), 1)));
+                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId,
+                                                                                                         cluster,
+                                                                                                         Capacity.from(new ClusterResources(wantedNodes, 1, nodeResources)))));
         createRetiredExpirer(deployer).run();
-        assertEquals(3, nodeRepository.getNodes(applicationId, Node.State.active).size());
-        assertEquals(4, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
+        assertEquals(3, nodeRepository.nodes().list(Node.State.active).owner(applicationId).size());
+        assertEquals(4, nodeRepository.nodes().list(Node.State.inactive).owner(applicationId).size());
         assertEquals(1, deployer.redeployments);
 
         // inactivated nodes are not retired
-        for (Node node : nodeRepository.getNodes(applicationId, Node.State.inactive))
-            assertFalse(node.allocation().get().membership().retired());
-    }
-
-    @Test
-    public void ensure_retired_groups_time_out() {
-        createReadyNodes(8, nodeResources, nodeRepository);
-        createHostNodes(4, nodeRepository, nodeFlavors);
-
-        ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
-
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
-        activate(applicationId, cluster, 8, 8, provisioner);
-        activate(applicationId, cluster, 2, 2, provisioner);
-        assertEquals(8, nodeRepository.getNodes(applicationId, Node.State.active).size());
-        assertEquals(0, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
-
-        // Cause inactivation of retired nodes
-        clock.advance(Duration.ofHours(30)); // Retire period spent
-        MockDeployer deployer =
-            new MockDeployer(provisioner,
-                             clock,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(2, nodeResources), 1)));
-        createRetiredExpirer(deployer).run();
-        assertEquals(2, nodeRepository.getNodes(applicationId, Node.State.active).size());
-        assertEquals(6, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
-        assertEquals(1, deployer.redeployments);
-
-        // inactivated nodes are not retired
-        for (Node node : nodeRepository.getNodes(applicationId, Node.State.inactive))
+        for (Node node : nodeRepository.nodes().list(Node.State.inactive).owner(applicationId))
             assertFalse(node.allocation().get().membership().retired());
     }
 
     @Test
     public void ensure_early_inactivation() throws OrchestrationException {
-        createReadyNodes(7, nodeResources, nodeRepository);
-        createHostNodes(4, nodeRepository, nodeFlavors);
+        tester.makeReadyNodes(7, nodeResources);
+        tester.makeReadyHosts(4, hostResources);
 
         ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
 
         // Allocate content cluster of sizes 7 -> 2 -> 3:
         // Should end up with 3 nodes in the cluster (one previously retired), and 4 retired
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         int wantedNodes;
-        activate(applicationId, cluster, wantedNodes=7, 1, provisioner);
-        activate(applicationId, cluster, wantedNodes=2, 1, provisioner);
-        activate(applicationId, cluster, wantedNodes=3, 1, provisioner);
-        assertEquals(7, nodeRepository.getNodes(applicationId, Node.State.active).size());
-        assertEquals(0, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
+        activate(applicationId, cluster, wantedNodes=7, 1);
+        activate(applicationId, cluster, wantedNodes=2, 1);
+        activate(applicationId, cluster, wantedNodes=3, 1);
+        assertEquals(7, nodeRepository.nodes().list(Node.State.active).owner(applicationId).size());
+        assertEquals(0, nodeRepository.nodes().list(Node.State.inactive).owner(applicationId).size());
 
         // Cause inactivation of retired nodes
         MockDeployer deployer =
@@ -162,7 +132,9 @@ public class RetiredExpirerTest {
                                  clock,
                                  Collections.singletonMap(
                                      applicationId,
-                                     new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromCount(wantedNodes, nodeResources), 1)));
+                                     new MockDeployer.ApplicationContext(applicationId,
+                                                                         cluster,
+                                                                         Capacity.from(new ClusterResources(wantedNodes, 1, nodeResources)))));
 
         // Allow the 1st and 3rd retired nodes permission to inactivate
         doNothing()
@@ -173,70 +145,135 @@ public class RetiredExpirerTest {
 
         RetiredExpirer retiredExpirer = createRetiredExpirer(deployer);
         retiredExpirer.run();
-        assertEquals(5, nodeRepository.getNodes(applicationId, Node.State.active).size());
-        assertEquals(2, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
+        assertEquals(5, nodeRepository.nodes().list(Node.State.active).owner(applicationId).size());
+        assertEquals(2, nodeRepository.nodes().list(Node.State.inactive).owner(applicationId).size());
         assertEquals(1, deployer.redeployments);
         verify(orchestrator, times(4)).acquirePermissionToRemove(any());
 
         // Running it again has no effect
         retiredExpirer.run();
-        assertEquals(5, nodeRepository.getNodes(applicationId, Node.State.active).size());
-        assertEquals(2, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
+        assertEquals(5, nodeRepository.nodes().list(Node.State.active).owner(applicationId).size());
+        assertEquals(2, nodeRepository.nodes().list(Node.State.inactive).owner(applicationId).size());
         assertEquals(1, deployer.redeployments);
         verify(orchestrator, times(6)).acquirePermissionToRemove(any());
 
         clock.advance(RETIRED_EXPIRATION.plusMinutes(1));
         retiredExpirer.run();
-        assertEquals(3, nodeRepository.getNodes(applicationId, Node.State.active).size());
-        assertEquals(4, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
+        assertEquals(3, nodeRepository.nodes().list(Node.State.active).owner(applicationId).size());
+        assertEquals(4, nodeRepository.nodes().list(Node.State.inactive).owner(applicationId).size());
         assertEquals(2, deployer.redeployments);
         verify(orchestrator, times(6)).acquirePermissionToRemove(any());
 
         // inactivated nodes are not retired
-        for (Node node : nodeRepository.getNodes(applicationId, Node.State.inactive))
+        for (Node node : nodeRepository.nodes().list(Node.State.inactive).owner(applicationId))
             assertFalse(node.allocation().get().membership().retired());
     }
 
-    private void activate(ApplicationId applicationId, ClusterSpec cluster, int nodes, int groups, NodeRepositoryProvisioner provisioner) {
-        List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, Capacity.fromCount(nodes, nodeResources), groups, null);
-        NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-        provisioner.activate(transaction, applicationId, hosts);
-        transaction.commit();
+    @Test
+    public void config_server_reprovisioning() throws OrchestrationException {
+        NodeList configServers = tester.makeConfigServers(3, "default", Version.emptyVersion);
+        var cfg1 = new HostName("cfg1");
+        assertEquals(Set.of(cfg1.s(), "cfg2", "cfg3"), configServers.hostnames());
+
+        var configServerApplication = new ConfigServerApplication();
+        var duperModel = new MockDuperModel().support(configServerApplication);
+        InfraDeployerImpl infraDeployer = new InfraDeployerImpl(tester.nodeRepository(), tester.provisioner(), duperModel);
+
+        var deployer = mock(Deployer.class);
+        when(deployer.deployFromLocalActive(eq(configServerApplication.getApplicationId())))
+                .thenAnswer(invocation -> infraDeployer.getDeployment(configServerApplication.getApplicationId()));
+
+        // Set wantToRetire on all 3 config servers
+        List<Node> wantToRetireNodes = tester.nodeRepository().nodes()
+                .retire(NodeTypeFilter.from(NodeType.config), Agent.operator, Instant.now());
+        assertEquals(3, wantToRetireNodes.size());
+
+        // Redeploy to retire all 3 config servers
+        infraDeployer.activateAllSupportedInfraApplications(true);
+        List<Node> retiredNodes = tester.nodeRepository().nodes().list().retired().asList();
+        assertEquals(3, retiredNodes.size());
+
+        // The Orchestrator will allow only 1 to be removed, say cfg1
+        Node retiredNode = tester.nodeRepository().nodes().node(cfg1.s()).orElseThrow();
+        doThrow(new OrchestrationException("denied")).when(orchestrator).acquirePermissionToRemove(any());
+        doNothing().when(orchestrator).acquirePermissionToRemove(eq(new HostName(retiredNode.hostname())));
+
+        // RetiredExpirer should remove cfg1 from application
+        RetiredExpirer retiredExpirer = createRetiredExpirer(deployer);
+        retiredExpirer.run();
+        var activeConfigServerHostnames = new HashSet<>(Set.of("cfg1", "cfg2", "cfg3"));
+        assertTrue(activeConfigServerHostnames.contains(retiredNode.hostname()));
+        activeConfigServerHostnames.remove(retiredNode.hostname());
+        assertEquals(activeConfigServerHostnames, configServerHostnames(duperModel));
+        assertEquals(1, tester.nodeRepository().nodes().list(Node.State.inactive).nodeType(NodeType.config).size());
+        assertEquals(2, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.config).size());
+
+        // no changes while 1 cfg is inactive
+        retiredExpirer.run();
+        assertEquals(activeConfigServerHostnames, configServerHostnames(duperModel));
+        assertEquals(1, tester.nodeRepository().nodes().list(Node.State.inactive).nodeType(NodeType.config).size());
+        assertEquals(2, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.config).size());
+
+        // The node will eventually expire from inactive, and be removed by DynamicProvisioningMaintainer
+        // (depending on its host), and these events should not affect the 2 active config servers.
+        nodeRepository.nodes().deallocate(retiredNode, Agent.InactiveExpirer, "expired");
+        retiredNode = tester.nodeRepository().nodes().list(Node.State.parked).nodeType(NodeType.config).asList().get(0);
+        nodeRepository.nodes().removeRecursively(retiredNode, true);
+        infraDeployer.activateAllSupportedInfraApplications(true);
+        retiredExpirer.run();
+        assertEquals(activeConfigServerHostnames, configServerHostnames(duperModel));
+        assertEquals(2, tester.nodeRepository().nodes().list().nodeType(NodeType.config).size());
+        assertEquals(2, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.config).size());
+
+        // Provision and ready new config server
+        MockNameResolver nameResolver = (MockNameResolver)tester.nodeRepository().nameResolver();
+        String ipv4 = "127.0.1.4";
+        nameResolver.addRecord(retiredNode.hostname(), ipv4);
+        Node node = Node.create(retiredNode.hostname(), new IP.Config(Set.of(ipv4), Set.of()), retiredNode.hostname(),
+                    tester.asFlavor("default", NodeType.config), NodeType.config).build();
+        var nodes = List.of(node);
+        nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
+        nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
+        nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
+
+        // no changes while replacement config server is ready
+        retiredExpirer.run();
+        assertEquals(activeConfigServerHostnames, configServerHostnames(duperModel));
+        assertEquals(1, tester.nodeRepository().nodes().list(Node.State.ready).nodeType(NodeType.config).size());
+        assertEquals(2, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.config).size());
+
+        // Activate replacement config server
+        infraDeployer.activateAllSupportedInfraApplications(true);
+        assertEquals(3, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.config).size());
+
+        // There are now 2 retired config servers left
+        retiredExpirer.run();
+        assertEquals(3, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.config).size());
+        Set<String> retiredHostnames = tester.nodeRepository()
+                                             .nodes().list()
+                                             .matching(n -> n.allocation().map(allocation -> allocation.membership().retired()).orElse(false))
+                                             .hostnames();
+        assertEquals(Set.of("cfg2", "cfg3"), retiredHostnames);
     }
 
-    private void createReadyNodes(int count, NodeResources nodeResources, NodeRepository nodeRepository) {
-        createReadyNodes(count, new Flavor(nodeResources), nodeRepository);
+    private Set<String> configServerHostnames(MockDuperModel duperModel) {
+        return duperModel.hostnamesOf(new ConfigServerApplication().getApplicationId()).stream()
+                .map(com.yahoo.config.provision.HostName::value)
+                .collect(Collectors.toSet());
     }
 
-    private void createReadyNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
-        createReadyNodes(count, nodeFlavors.getFlavorOrThrow("default"), nodeRepository);
-    }
-
-    private void createReadyNodes(int count, Flavor flavor, NodeRepository nodeRepository) {
-        List<Node> nodes = new ArrayList<>(count);
-        for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("node" + i, "node" + i, Optional.empty(), flavor, NodeType.tenant));
-        nodes = nodeRepository.addNodes(nodes);
-        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
-        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
-    }
-
-    private void createHostNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
-        List<Node> nodes = new ArrayList<>(count);
-        for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("parent" + i, "parent" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
-        nodes = nodeRepository.addNodes(nodes);
-        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
-        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
+    private void activate(ApplicationId applicationId, ClusterSpec cluster, int nodes, int groups) {
+        Capacity capacity = Capacity.from(new ClusterResources(nodes, groups, nodeResources));
+        tester.activate(applicationId, tester.prepare(applicationId, cluster, capacity));
     }
 
     private RetiredExpirer createRetiredExpirer(Deployer deployer) {
-        return new RetiredExpirer(
-                nodeRepository,
-                orchestrator,
-                deployer,
-                clock,
-                Duration.ofDays(30), /* Maintenance interval, use large value so it never runs by itself */
-                RETIRED_EXPIRATION);
+        return new RetiredExpirer(nodeRepository,
+                                  orchestrator,
+                                  deployer,
+                                  new TestMetric(),
+                                  Duration.ofDays(30), /* Maintenance interval, use large value so it never runs by itself */
+                                  RETIRED_EXPIRATION);
     }
+
 }

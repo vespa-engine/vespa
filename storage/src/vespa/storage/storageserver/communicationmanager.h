@@ -12,7 +12,7 @@
 
 #include "communicationmanagermetrics.h"
 #include "documentapiconverter.h"
-#include "message_enqueuer.h"
+#include "message_dispatcher.h"
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/config/config-stor-communicationmanager.h>
@@ -37,49 +37,24 @@ namespace mbus {
 }
 namespace storage {
 
+namespace rpc {
+class ClusterControllerApiRpcService;
+class MessageCodecProvider;
+class SharedRpcResources;
+class StorageApiRpcService;
+}
+
 struct BucketResolver;
-class VisitorMbusSession;
 class Visitor;
 class VisitorThread;
-class FNetListener;
 class RPCRequestWrapper;
-
-class Queue {
-private:
-    using QueueType = std::queue<std::shared_ptr<api::StorageMessage>>;
-    QueueType _queue;
-    vespalib::Monitor _queueMonitor;
-
-public:
-    Queue();
-    ~Queue();
-
-    /**
-     * Returns the next event from the event queue
-     * @param   msg             The next event
-     * @param   timeout         Millisecs to wait if the queue is empty
-     * (0 = don't wait, -1 = forever)
-     * @return  true or false if the queue was empty.
-     */
-    bool getNext(std::shared_ptr<api::StorageMessage>& msg, int timeout);
-
-    /**
-     * Enqueue msg in FIFO order.
-     */
-    void enqueue(std::shared_ptr<api::StorageMessage> msg);
-
-    /** Signal queue monitor. */
-    void signal();
-
-    size_t size() const;
-};
 
 class StorageTransportContext : public api::TransportContext {
 public:
-    StorageTransportContext(std::unique_ptr<documentapi::DocumentMessage> msg);
-    StorageTransportContext(std::unique_ptr<mbusprot::StorageCommand> msg);
-    StorageTransportContext(std::unique_ptr<RPCRequestWrapper> request);
-    ~StorageTransportContext();
+    explicit StorageTransportContext(std::unique_ptr<documentapi::DocumentMessage> msg);
+    explicit StorageTransportContext(std::unique_ptr<mbusprot::StorageCommand> msg);
+    explicit StorageTransportContext(std::unique_ptr<RPCRequestWrapper> request);
+    ~StorageTransportContext() override;
 
     std::unique_ptr<documentapi::DocumentMessage> _docAPIMsg;
     std::unique_ptr<mbusprot::StorageCommand>     _storageProtocolMsg;
@@ -93,7 +68,7 @@ class CommunicationManager final
       public mbus::IMessageHandler,
       public mbus::IReplyHandler,
       private framework::MetricUpdateHook,
-      public MessageEnqueuer
+      public MessageDispatcher
 {
 private:
     CommunicationManager(const CommunicationManager&);
@@ -102,7 +77,10 @@ private:
     StorageComponent _component;
     CommunicationManagerMetrics _metrics;
 
-    std::unique_ptr<FNetListener> _listener;
+    std::unique_ptr<rpc::SharedRpcResources> _shared_rpc_resources;
+    std::unique_ptr<rpc::StorageApiRpcService> _storage_api_rpc_service;
+    std::unique_ptr<rpc::ClusterControllerApiRpcService> _cc_rpc_service;
+    std::unique_ptr<rpc::MessageCodecProvider> _message_codec_provider;
     Queue _eventQueue;
     // XXX: Should perhaps use a configsubscriber and poll from StorageComponent ?
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
@@ -116,7 +94,7 @@ private:
 
     void process(const std::shared_ptr<api::StorageMessage>& msg);
 
-    using CommunicationManagerConfig= vespa::config::content::core::StorCommunicationmanagerConfig;
+    using CommunicationManagerConfig = vespa::config::content::core::StorCommunicationmanagerConfig;
     using BucketspacesConfig = vespa::config::content::core::BucketspacesConfig;
 
     void configureMessageBusLimits(const CommunicationManagerConfig& cfg);
@@ -125,25 +103,25 @@ private:
     void fail_with_unresolvable_bucket_space(std::unique_ptr<documentapi::DocumentMessage> msg,
                                              const vespalib::string& error_message);
 
-    void serializeNodeState(const api::GetNodeStateReply& gns, std::ostream& os, bool includeDescription,
-                            bool includeDiskDescription, bool useOldFormat) const;
+    void serializeNodeState(const api::GetNodeStateReply& gns, std::ostream& os, bool includeDescription) const;
 
     static const uint64_t FORWARDED_MESSAGE = 0;
 
     std::unique_ptr<mbus::RPCMessageBus> _mbus;
     std::unique_ptr<mbus::DestinationSession> _messageBusSession;
     std::unique_ptr<mbus::SourceSession> _sourceSession;
-    uint32_t _count;
 
-    vespalib::Lock _messageBusSentLock;
+    std::mutex _messageBusSentLock;
     std::map<api::StorageMessage::Id, std::shared_ptr<api::StorageCommand> > _messageBusSent;
 
-    config::ConfigUri _configUri;
-    std::atomic<bool> _closed;
-    DocumentApiConverter _docApiConverter;
+    config::ConfigUri     _configUri;
+    std::atomic<bool>     _closed;
+    DocumentApiConverter  _docApiConverter;
     framework::Thread::UP _thread;
+    std::atomic<bool>     _skip_thread;
 
     void updateMetrics(const MetricLockGuard &) override;
+    void enqueue_or_process(std::shared_ptr<api::StorageMessage> msg);
 
     // Test needs access to configure() for live reconfig testing.
     friend struct CommunicationManagerTest;
@@ -151,10 +129,13 @@ private:
 public:
     CommunicationManager(StorageComponentRegister& compReg,
                          const config::ConfigUri & configUri);
-    ~CommunicationManager();
+    ~CommunicationManager() override;
 
-    void enqueue(std::shared_ptr<api::StorageMessage> msg) override;
-    mbus::RPCMessageBus& getMessageBus() { assert(_mbus.get()); return *_mbus; }
+    // MessageDispatcher overrides
+    void dispatch_sync(std::shared_ptr<api::StorageMessage> msg) override;
+    void dispatch_async(std::shared_ptr<api::StorageMessage> msg) override;
+
+    mbus::RPCMessageBus& getMessageBus() { return *_mbus; }
     const PriorityConverter& getPriorityConverter() const { return _docApiConverter.getPriorityConverter(); }
 
     /**

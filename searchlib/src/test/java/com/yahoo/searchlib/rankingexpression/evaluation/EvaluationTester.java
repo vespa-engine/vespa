@@ -75,7 +75,7 @@ public class EvaluationTester {
             RankingExpression expression = new RankingExpression(expressionString);
             if ( ! explanation.isEmpty())
                 explanation = explanation + ": ";
-            assertEquals(explanation + expression.toString(), value, expression.evaluate(context));
+            assertEquals(explanation + expression, value, expression.evaluate(context));
             return expression;
         }
         catch (ParseException e) {

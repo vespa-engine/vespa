@@ -18,6 +18,7 @@ struct CountUsage : NodeTraverser {
     double p;
     std::vector<double> result;
     CountUsage(size_t num_params) : p(1.0), result(num_params, 0.0) {}
+    ~CountUsage() override;
     bool open(const Node &node) override {
         if (auto if_node = as<If>(node)) {
             double my_p = p;
@@ -38,11 +39,14 @@ struct CountUsage : NodeTraverser {
     }
 };
 
+CountUsage::~CountUsage() = default;
+
 //-----------------------------------------------------------------------------
 
 struct CheckUsage : NodeTraverser {
     std::vector<double> result;
     CheckUsage(size_t num_params) : result(num_params, 0.0) {}
+    ~CheckUsage() override;
     void merge(const std::vector<double> &true_result,
                const std::vector<double> &false_result,
                double p_true)
@@ -71,6 +75,8 @@ struct CheckUsage : NodeTraverser {
         }
     }
 };
+
+CheckUsage::~CheckUsage() = default;
 
 //-----------------------------------------------------------------------------
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/flushengine/iflushhandler.h>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
 
 namespace proton {
 
@@ -12,10 +13,11 @@ class FlushHandlerProxy : public IFlushHandler
 {
 private:
     std::shared_ptr<DocumentDB> _documentDB;
+    RetainGuard _retainGuard;
 public:
     FlushHandlerProxy(const std::shared_ptr<DocumentDB> &documentDB);
 
-    virtual ~FlushHandlerProxy();
+    ~FlushHandlerProxy() override;
 
     /**
      * Implements IFlushHandler.

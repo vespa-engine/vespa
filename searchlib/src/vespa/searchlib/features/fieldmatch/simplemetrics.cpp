@@ -3,9 +3,7 @@
 #include "simplemetrics.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace search {
-namespace features {
-namespace fieldmatch {
+namespace search::features::fieldmatch {
 
 SimpleMetrics::SimpleMetrics(const Params & params) :
     _params(params),
@@ -30,7 +28,4 @@ vespalib::string SimpleMetrics::toString() const
     return ss.str();
 }
 
-
-} // fieldmatch
-} // features
-} // search
+}

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vector>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/bitcompression/compression.h>
@@ -12,9 +12,7 @@
 #include <vespa/searchlib/diskindex/fieldreader.h>
 #include <vespa/searchlib/diskindex/fieldwriter.h>
 
-namespace search {
-
-namespace fakedata {
+namespace search::fakedata {
 
 
 /**
@@ -156,16 +154,16 @@ public:
 
     void
     fakeup(search::BitVector &bitmap,
-           search::Rand48 &rnd,
+           vespalib::Rand48 &rnd,
            DocWordFeatureList &postings,
            DocWordPosFeatureList &wordPosFeatures);
 
     void
-    fakeupTemps(search::Rand48 &rnd,
+    fakeupTemps(vespalib::Rand48 &rnd,
                 uint32_t docIdLimit,
                 uint32_t tempWordDocs);
 
-    void setupRandomizer(search::Rand48 &rnd);
+    void setupRandomizer(vespalib::Rand48 &rnd);
 
     const DocWordFeature &
     getDocWordFeature(const Randomizer &r) const
@@ -220,7 +218,7 @@ public:
              uint32_t wordDocs,
              uint32_t tempWordDocs,
              const std::string &name,
-             search::Rand48 &rnd,
+             vespalib::Rand48 &rnd,
              const PosOccFieldsParams &fieldsParams,
              uint32_t packedIndex);
 
@@ -230,7 +228,7 @@ public:
              const std::string &name,
              const FakeWord &otherWord,
              size_t overlapDocs,
-             search::Rand48 &rnd,
+             vespalib::Rand48 &rnd,
              const PosOccFieldsParams &fieldsParams,
              uint32_t packedIndex);
 
@@ -275,7 +273,4 @@ public:
     void addDocIdBias(uint32_t docIdBias);
 };
 
-} // namespace fakedata
-
-} // namespace search
-
+}

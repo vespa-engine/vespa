@@ -5,6 +5,6 @@ vespa_add_executable(searchcore_matching_handle_recorder_test_app TEST
     handle_recorder_test.cpp
     DEPENDS
     searchcore_matching
-    gtest
+    GTest::GTest
 )
 vespa_add_test(NAME searchcore_matching_handle_recorder_test_app COMMAND searchcore_matching_handle_recorder_test_app)

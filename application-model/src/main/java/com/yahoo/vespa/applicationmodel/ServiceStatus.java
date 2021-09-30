@@ -7,5 +7,10 @@ package com.yahoo.vespa.applicationmodel;
 public enum ServiceStatus {
     UP,
     DOWN,
-    NOT_CHECKED;
+
+    /** The status has not yet been probed or has expired.  A status of UP or DOWN is expected shortly. */
+    UNKNOWN,
+
+    /** The service is not monitored for health, and will never get any other status than NOT_CHECKED. */
+    NOT_CHECKED
 }

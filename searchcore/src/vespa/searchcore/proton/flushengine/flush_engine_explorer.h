@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "flushengine.h"
 #include <vespa/vespalib/net/state_explorer.h>
 
 namespace proton {
+
+class FlushEngine;
 
 /**
  * Class used to explore the state of a flush engine and its flush targets.

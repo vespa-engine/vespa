@@ -8,6 +8,7 @@ import java.util.List;
  * @author mortent
  */
 public interface SecretStore {
+
     /** Returns the secret for this key */
     String getSecret(String key);
 
@@ -18,4 +19,5 @@ public interface SecretStore {
     default List<Integer> listSecretVersions(String key) {
         throw new UnsupportedOperationException("Secret store does not support listing versions");
     }
+
 }

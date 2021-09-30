@@ -8,11 +8,19 @@ vespa_add_library(searchlib_test
     mock_attribute_context.cpp
     mock_attribute_manager.cpp
     searchiteratorverifier.cpp
-    statefile.cpp
-    statestring.cpp
     $<TARGET_OBJECTS:searchlib_test_fakedata>
     $<TARGET_OBJECTS:searchlib_searchlib_test_diskindex>
+    $<TARGET_OBJECTS:searchlib_test_gtest_migration>
     DEPENDS
     searchlib
     searchlib_searchlib_test_memoryindex
+    GTest::GTest
 )
+
+vespa_add_library(searchlib_test_gtest_migration OBJECT
+    SOURCES
+    initrange.cpp
+    searchiteratorverifier.cpp
+)
+
+target_compile_definitions(searchlib_test_gtest_migration PRIVATE ENABLE_GTEST_MIGRATION)

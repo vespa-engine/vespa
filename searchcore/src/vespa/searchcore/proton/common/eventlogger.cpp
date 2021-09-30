@@ -10,6 +10,7 @@ LOG_SETUP(".proton.common.eventlogger");
 using search::util::LogUtil;
 using vespalib::JSONStringer;
 using vespalib::make_string;
+using vespalib::count_ms;
 
 namespace {
 
@@ -32,12 +33,12 @@ doTransactionLogReplayStart(const string &domainName, SerialNum first, SerialNum
 }
 
 void
-doTransactionLogReplayComplete(const string &domainName, int64_t elapsedTimeMs, const string &eventName)
+doTransactionLogReplayComplete(const string &domainName, vespalib::duration elapsedTime, const string &eventName)
 {
     JSONStringer jstr;
     jstr.beginObject();
     jstr.appendKey("domain").appendString(domainName);
-    jstr.appendKey("time.elapsed.ms").appendInt64(elapsedTimeMs);
+    jstr.appendKey("time.elapsed.ms").appendInt64(count_ms(elapsedTime));
     jstr.endObject();
     EV_STATE(eventName.c_str(), jstr.toString().data());
 }
@@ -71,9 +72,9 @@ EventLogger::transactionLogReplayProgress(const string &domainName, float progre
 }
 
 void
-EventLogger::transactionLogReplayComplete(const string &domainName, int64_t elapsedTimeMs)
+EventLogger::transactionLogReplayComplete(const string &domainName, vespalib::duration elapsedTime)
 {
-    doTransactionLogReplayComplete(domainName, elapsedTimeMs, "transactionlog.replay.complete");
+    doTransactionLogReplayComplete(domainName, elapsedTime, "transactionlog.replay.complete");
 }
 
 void
@@ -109,13 +110,13 @@ EventLogger::flushStart(const string &name, int64_t beforeMemory, int64_t afterM
 }
 
 void
-EventLogger::flushComplete(const string &name, int64_t elapsedTimeMs, SerialNum flushed,
+EventLogger::flushComplete(const string &name, vespalib::duration elapsedTime, SerialNum flushed,
                            const string &outputPath, size_t outputPathElems)
 {
     JSONStringer jstr;
     jstr.beginObject();
     jstr.appendKey("name").appendString(name);
-    jstr.appendKey("time.elapsed.ms").appendInt64(elapsedTimeMs);
+    jstr.appendKey("time.elapsed.ms").appendInt64(count_ms(elapsedTime));
     jstr.appendKey("serialnum")
             .beginObject()
             .appendKey("flushed").appendInt64(flushed)
@@ -237,13 +238,13 @@ EventLogger::reprocessDocumentsProgress(const string &subDb, double progress, do
     
 
 void
-EventLogger::reprocessDocumentsComplete(const string &subDb, double visitCost, int64_t elapsedTimeMs)
+EventLogger::reprocessDocumentsComplete(const string &subDb, double visitCost, vespalib::duration elapsedTime)
 {
     JSONStringer jstr;
     jstr.beginObject();
     jstr.appendKey("documentsubdb").appendString(subDb);
     jstr.appendKey("visitcost").appendDouble(visitCost);
-    jstr.appendKey("time.elapsed.ms").appendInt64(elapsedTimeMs);
+    jstr.appendKey("time.elapsed.ms").appendInt64(count_ms(elapsedTime));
     jstr.endObject();
     EV_STATE("reprocess.documents.complete", jstr.toString().data());
 }
@@ -261,13 +262,13 @@ EventLogger::loadAttributeStart(const vespalib::string &subDbName, const vespali
 
 void
 EventLogger::loadAttributeComplete(const vespalib::string &subDbName,
-                                   const vespalib::string &attrName, int64_t elapsedTimeMs)
+                                   const vespalib::string &attrName, vespalib::duration elapsedTime)
 {
     JSONStringer jstr;
     jstr.beginObject();
     jstr.appendKey("documentsubdb").appendString(subDbName);
     jstr.appendKey("name").appendString(attrName);
-    jstr.appendKey("time.elapsed.ms").appendInt64(elapsedTimeMs);
+    jstr.appendKey("time.elapsed.ms").appendInt64(count_ms(elapsedTime));
     jstr.endObject();
     EV_STATE("load.attribute.complete", jstr.toString().data());
 }
@@ -285,12 +286,12 @@ loadComponentStart(const vespalib::string &subDbName, const vespalib::string &co
 }
 
 void
-loadComponentComplete(const vespalib::string &subDbName, const vespalib::string &componentName, int64_t elapsedTimeMs)
+loadComponentComplete(const vespalib::string &subDbName, const vespalib::string &componentName, vespalib::duration elapsedTime)
 {
     JSONStringer jstr;
     jstr.beginObject();
     jstr.appendKey("documentsubdb").appendString(subDbName);
-    jstr.appendKey("time.elapsed.ms").appendInt64(elapsedTimeMs);
+    jstr.appendKey("time.elapsed.ms").appendInt64(count_ms(elapsedTime));
     jstr.endObject();
     EV_STATE(make_string("load.%s.complete", componentName.c_str()).c_str(), jstr.toString().data());
 }
@@ -304,9 +305,9 @@ EventLogger::loadDocumentMetaStoreStart(const vespalib::string &subDbName)
 }
 
 void
-EventLogger::loadDocumentMetaStoreComplete(const vespalib::string &subDbName, int64_t elapsedTimeMs)
+EventLogger::loadDocumentMetaStoreComplete(const vespalib::string &subDbName, vespalib::duration elapsedTime)
 {
-    loadComponentComplete(subDbName, "documentmetastore", elapsedTimeMs);
+    loadComponentComplete(subDbName, "documentmetastore", elapsedTime);
 }
 
 void
@@ -316,9 +317,9 @@ EventLogger::loadDocumentStoreStart(const vespalib::string &subDbName)
 }
 
 void
-EventLogger::loadDocumentStoreComplete(const vespalib::string &subDbName, int64_t elapsedTimeMs)
+EventLogger::loadDocumentStoreComplete(const vespalib::string &subDbName, vespalib::duration elapsedTime)
 {
-    loadComponentComplete(subDbName, "documentstore", elapsedTimeMs);
+    loadComponentComplete(subDbName, "documentstore", elapsedTime);
 }
 
 void

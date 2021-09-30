@@ -57,9 +57,9 @@ public:
     void resetAsked() { _asked.clear(); }
 
     // Implements IBucketStateCalculator
-    bool shouldBeReady(const document::Bucket &bucket) const override {
+    vespalib::Trinary shouldBeReady(const document::Bucket &bucket) const override {
         _asked.push_back(bucket.getBucketId());
-        return _ready.count(bucket.getBucketId()) == 1;
+        return (_ready.count(bucket.getBucketId()) == 1) ? vespalib::Trinary::True : vespalib::Trinary::False;
     }
 
     bool clusterUp() const override { return _clusterUp; }

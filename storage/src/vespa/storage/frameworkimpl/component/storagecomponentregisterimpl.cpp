@@ -2,9 +2,9 @@
 
 #include "storagecomponentregisterimpl.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".storage.component.register");
 
 namespace storage {
@@ -16,8 +16,6 @@ StorageComponentRegisterImpl::StorageComponentRegisterImpl()
       _nodeType(nullptr),
       _index(0xffff),
       _docTypeRepo(),
-      _loadTypes(new documentapi::LoadTypeSet),
-      _priorityConfig(),
       _bucketIdFactory(),
       _distribution(),
       _nodeStateUpdater(nullptr),
@@ -25,12 +23,12 @@ StorageComponentRegisterImpl::StorageComponentRegisterImpl()
 {
 }
 
-StorageComponentRegisterImpl::~StorageComponentRegisterImpl() { }
+StorageComponentRegisterImpl::~StorageComponentRegisterImpl() = default;
 
 void
 StorageComponentRegisterImpl::registerStorageComponent(StorageComponent& smc)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     _components.push_back(&smc);
     assert(_nodeType != nullptr);
     smc.setNodeInfo(_clusterName, *_nodeType, _index);
@@ -38,8 +36,6 @@ StorageComponentRegisterImpl::registerStorageComponent(StorageComponent& smc)
         smc.setNodeStateUpdater(*_nodeStateUpdater);
     }
     smc.setDocumentTypeRepo(_docTypeRepo);
-    smc.setLoadTypes(_loadTypes);
-    smc.setPriorityConfig(_priorityConfig);
     smc.setBucketIdFactory(_bucketIdFactory);
     smc.setDistribution(_distribution);
 }
@@ -49,7 +45,7 @@ StorageComponentRegisterImpl::setNodeInfo(vespalib::stringref clusterName,
                                           const lib::NodeType& nodeType,
                                           uint16_t index)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     if (_nodeType != nullptr) {
         LOG(warning, "Node info already set. May be valid in tests, but is a "
                      "bug in production. Node info should not be updated live");
@@ -62,7 +58,7 @@ StorageComponentRegisterImpl::setNodeInfo(vespalib::stringref clusterName,
 void
 StorageComponentRegisterImpl::setNodeStateUpdater(NodeStateUpdater& updater)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     if (_nodeStateUpdater != 0) {
         throw vespalib::IllegalStateException(
                 "Node state updater already set. Should never be altered live.",
@@ -77,7 +73,7 @@ StorageComponentRegisterImpl::setNodeStateUpdater(NodeStateUpdater& updater)
 void
 StorageComponentRegisterImpl::setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> repo)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     _docTypeRepo = repo;
     for (auto& component : _components) {
         component->setDocumentTypeRepo(repo);
@@ -85,29 +81,9 @@ StorageComponentRegisterImpl::setDocumentTypeRepo(std::shared_ptr<const document
 }
 
 void
-StorageComponentRegisterImpl::setLoadTypes(documentapi::LoadTypeSet::SP loadTypes)
-{
-    vespalib::LockGuard lock(_componentLock);
-    _loadTypes = loadTypes;
-    for (auto& component : _components) {
-        component->setLoadTypes(loadTypes);
-    }
-}
-
-void
-StorageComponentRegisterImpl::setPriorityConfig(const PriorityConfig& config)
-{
-    vespalib::LockGuard lock(_componentLock);
-    _priorityConfig = config;
-    for (auto& component : _components) {
-        component->setPriorityConfig(config);
-    }
-}
-
-void
 StorageComponentRegisterImpl::setBucketIdFactory(const document::BucketIdFactory& factory)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     _bucketIdFactory = factory;
     for (auto& component : _components) {
         component->setBucketIdFactory(factory);
@@ -115,9 +91,9 @@ StorageComponentRegisterImpl::setBucketIdFactory(const document::BucketIdFactory
 }
 
 void
-StorageComponentRegisterImpl::setDistribution(lib::Distribution::SP distribution)
+StorageComponentRegisterImpl::setDistribution(std::shared_ptr<lib::Distribution> distribution)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     _distribution = distribution;
     for (auto& component : _components) {
         component->setDistribution(distribution);
@@ -127,7 +103,7 @@ StorageComponentRegisterImpl::setDistribution(lib::Distribution::SP distribution
 void
 StorageComponentRegisterImpl::setBucketSpacesConfig(const BucketspacesConfig& config)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     _bucketSpacesConfig = config;
 }
 

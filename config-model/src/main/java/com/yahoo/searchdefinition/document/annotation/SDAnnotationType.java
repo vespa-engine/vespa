@@ -5,9 +5,10 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.document.annotation.AnnotationType;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class SDAnnotationType extends AnnotationType {
+
     private SDDocumentType sdDocType;
     private String inherits;
 
@@ -32,4 +33,5 @@ public class SDAnnotationType extends AnnotationType {
     public void inherit(String inherits) {
         this.inherits = inherits;
     }
+
 }

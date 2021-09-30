@@ -14,6 +14,7 @@
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/searchcore/proton/server/reconfig_params.h>
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 
 namespace proton::test {
 
@@ -28,10 +29,11 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     IIndexWriter::SP         _indexWriter;
     vespalib::ThreadStackExecutor _sharedExecutor;
     std::unique_ptr<ExecutorThreadingService> _writeService;
+    PendingLidTracker        _pendingLidTracker;
 
-    DummyDocumentSubDb(std::shared_ptr<BucketDBOwner> bucketDB, uint32_t subDbId)
+    DummyDocumentSubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB, uint32_t subDbId)
         : _subDbId(subDbId),
-          _metaStoreCtx(bucketDB),
+          _metaStoreCtx(std::move(bucketDB)),
           _summaryManager(),
           _indexManager(),
           _summaryAdapter(),
@@ -40,7 +42,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
           _writeService(std::make_unique<ExecutorThreadingService>(_sharedExecutor, 1))
     {
     }
-    ~DummyDocumentSubDb() {}
+    ~DummyDocumentSubDb() override { }
     void close() override { }
     uint32_t getSubDbId() const override { return _subDbId; }
     vespalib::string getName() const override { return "dummysubdb"; }
@@ -64,6 +66,11 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     proton::IAttributeManager::SP getAttributeManager() const override {
         return proton::IAttributeManager::SP();
     }
+
+    void validateDocStore(FeedHandler &, SerialNum ) const override {
+
+    }
+
     const IIndexManager::SP &getIndexManager() const override { return _indexManager; }
     const ISummaryAdapter::SP &getSummaryAdapter() const override { return _summaryAdapter; }
     const IIndexWriter::SP &getIndexWriter() const override { return _indexWriter; }
@@ -91,6 +98,11 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override {
         return std::shared_ptr<IDocumentDBReference>();
     }
+
+    PendingLidTrackerBase &getUncommittedLidsTracker() override {
+        return _pendingLidTracker;
+    }
+
     void tearDownReferences(IDocumentDBReferenceResolver &) override { }
 };
 

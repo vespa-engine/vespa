@@ -11,7 +11,7 @@ import java.lang.reflect.Method;
  *
  * @author bratseth
  */
-public class AbstractComponent implements Component {
+public class AbstractComponent implements Component, Deconstructable {
 
     private static final MethodCache deconstructMethods = new MethodCache("deconstruct");
 
@@ -20,7 +20,7 @@ public class AbstractComponent implements Component {
 
     // We must store the class name, as this.getClass() will yield an exception when a bundled component's
     // bundle has been uninstalled.
-    private String className = getClass().getName();
+    private final String className = getClass().getName();
     protected final boolean isDeconstructable;
 
     /**
@@ -124,10 +124,12 @@ public class AbstractComponent implements Component {
      * <p>
      * All other calls to this component is completed before this method is called.
      * It will only be called once. It should block while doing cleanup tasks and return when
-     * this class is ready for garbage collection.
+     * this class is ready for garbage collection. This method is called in reverse dependency order,
+     * so a component will be deconstructed after any other components it is injected into.
      * <p>
      * This default implementation does nothing.
      */
+    @Override
     public void deconstruct() { }
 
     /**

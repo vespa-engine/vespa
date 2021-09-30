@@ -21,6 +21,7 @@ LOG_SETUP("blueprint_test");
 using namespace search::queryeval;
 using namespace search::fef;
 using namespace search::query;
+using search::BitVector;
 
 struct WeightOrder {
     bool operator()(const wand::Term &t1, const wand::Term &t2) const {
@@ -42,6 +43,10 @@ struct RememberExecuteInfo : public MyLeaf {
 Blueprint::UP ap(Blueprint *b) { return Blueprint::UP(b); }
 Blueprint::UP ap(Blueprint &b) { return Blueprint::UP(&b); }
 
+bool got_global_filter(Blueprint &b) {
+    return (static_cast<MyLeaf &>(b)).got_global_filter();
+}
+
 TEST("test AndNot Blueprint") {
     AndNotBlueprint b;
     { // combine
@@ -62,6 +67,14 @@ TEST("test AndNot Blueprint") {
         AndNotBlueprint a;
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQUAL(0u, a.exposeFields().size());
+        EXPECT_EQUAL(false, a.getState().want_global_filter());
+        a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
+        EXPECT_EQUAL(true, a.getState().want_global_filter());
+        auto empty_global_filter = GlobalFilter::create();
+        EXPECT_FALSE(empty_global_filter->has_filter());
+        a.set_global_filter(*empty_global_filter);
+        EXPECT_EQUAL(false, got_global_filter(a.getChild(0)));
+        EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));
     }
     {
         std::vector<Blueprint *> children;
@@ -130,6 +143,13 @@ TEST("test And Blueprint") {
         AndBlueprint a;
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQUAL(0u, a.exposeFields().size());
+        EXPECT_EQUAL(false, a.getState().want_global_filter());
+        a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
+        EXPECT_EQUAL(true, a.getState().want_global_filter());
+        auto empty_global_filter = GlobalFilter::create();
+        a.set_global_filter(*empty_global_filter);
+        EXPECT_EQUAL(false, got_global_filter(a.getChild(0)));
+        EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));
     }
     {
         std::vector<Blueprint *> children;
@@ -202,6 +222,14 @@ TEST("test Or Blueprint") {
         EXPECT_EQUAL(2u, a->getState().numFields());
         o.addChild(ap(MyLeafSpec(0, true).create()));
         EXPECT_EQUAL(0u, a->getState().numFields());
+
+        EXPECT_EQUAL(false, o.getState().want_global_filter());
+        o.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
+        EXPECT_EQUAL(true, o.getState().want_global_filter());
+        auto empty_global_filter = GlobalFilter::create();
+        o.set_global_filter(*empty_global_filter);
+        EXPECT_EQUAL(false, got_global_filter(o.getChild(0)));
+        EXPECT_EQUAL(true,  got_global_filter(o.getChild(o.childCnt() - 1)));
     }
     {
         std::vector<Blueprint *> children;
@@ -349,6 +377,14 @@ TEST("test Rank Blueprint") {
         RankBlueprint a;
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQUAL(0u, a.exposeFields().size());
+
+        EXPECT_EQUAL(false, a.getState().want_global_filter());
+        a.addChild(ap(MyLeafSpec(20).addField(1, 1).want_global_filter().create()));
+        EXPECT_EQUAL(true, a.getState().want_global_filter());
+        auto empty_global_filter = GlobalFilter::create();
+        a.set_global_filter(*empty_global_filter);
+        EXPECT_EQUAL(false, got_global_filter(a.getChild(0)));
+        EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));
     }
     {
         std::vector<Blueprint *> children;
@@ -1255,7 +1291,7 @@ TEST("require that children does not optimize when parents refuse them to") {
     }
 }
 
-TEST("require_that_unpack_optimization_is_overruled_by_equiv") {
+TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
     FieldSpecBaseList fields;
     fields.add(FieldSpecBase(1, 1));
     fields.add(FieldSpecBase(2, 2));
@@ -1286,7 +1322,7 @@ TEST("require_that_unpack_optimization_is_overruled_by_equiv") {
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
         const MultiSearch & e = dynamic_cast<const MultiSearch &>(*search);
-        EXPECT_EQUAL("search::queryeval::OrLikeSearch<true, search::queryeval::(anonymous namespace)::FullUnpack>",
+        EXPECT_EQUAL("search::queryeval::OrLikeSearch<true, search::queryeval::(anonymous namespace)::SelectiveUnpack>",
                      e.getChildren()[0]->getClassName());
     }
 
@@ -1296,7 +1332,7 @@ TEST("require_that_unpack_optimization_is_overruled_by_equiv") {
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
         const MultiSearch & e = dynamic_cast<const MultiSearch &>(*search);
-        EXPECT_EQUAL("search::queryeval::OrLikeSearch<true, search::queryeval::(anonymous namespace)::FullUnpack>",
+        EXPECT_EQUAL("search::queryeval::OrLikeSearch<true, search::queryeval::NoUnpack>",
                      e.getChildren()[0]->getClassName());
     }
 }

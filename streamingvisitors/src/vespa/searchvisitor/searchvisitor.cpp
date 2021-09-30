@@ -14,6 +14,7 @@
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fnet/databuffer.h>
 #include "matching_elements_filler.h"
 
@@ -70,44 +71,41 @@ createMultiValueAttribute(const vespalib::string & name, const document::FieldVa
     }
     LOG(debug, "Create %s attribute '%s' with data type '%s' (%s)",
         arrayType ? "array" : "weighted set", name.c_str(), ndt->getName().c_str(), fv.getClass().name());
-    AttributeVector::SP attr;
     if (ndt->getId() == DataType::T_BYTE ||
         ndt->getId() == DataType::T_INT ||
         ndt->getId() == DataType::T_LONG)
     {
-        attr.reset(arrayType ? static_cast<AttributeVector *>(new search::MultiIntegerExtAttribute(name))
-                             : static_cast<AttributeVector *>(new search::WeightedSetIntegerExtAttribute(name)));
+        return arrayType ? std::make_shared<search::MultiIntegerExtAttribute>(name)
+                         : std::make_shared<search::WeightedSetIntegerExtAttribute>(name);
     } else if (ndt->getId() == DataType::T_DOUBLE ||
                ndt->getId() == DataType::T_FLOAT)
     {
-        attr.reset(arrayType ? static_cast<AttributeVector *>(new search::MultiFloatExtAttribute(name))
-                             : static_cast<AttributeVector *>(new search::WeightedSetFloatExtAttribute(name)));
+        return arrayType ? std::make_shared<search::MultiFloatExtAttribute>(name)
+                         : std::make_shared<search::WeightedSetFloatExtAttribute>(name);
     } else if (ndt->getId() == DataType::T_STRING) {
-        attr.reset(arrayType ? static_cast<AttributeVector *>(new search::MultiStringExtAttribute(name))
-                             : static_cast<AttributeVector *>(new search::WeightedSetStringExtAttribute(name)));
+        return arrayType ? std::make_shared<search::MultiStringExtAttribute>(name)
+                         : std::make_shared<search::WeightedSetStringExtAttribute>(name);
     } else {
         LOG(debug, "Can not make an multivalue attribute out of %s with data type '%s' (%s)",
             name.c_str(), ndt->getName().c_str(), fv.getClass().name());
     }
-    return attr;
+    return AttributeVector::SP();
 }
 
 AttributeVector::SP
 createAttribute(const vespalib::string & name, const document::FieldValue & fv)
 {
     LOG(debug, "Create single value attribute '%s' with value type '%s'", name.c_str(), fv.getClass().name());
-    AttributeVector::SP attr;
-
     if (fv.inherits(document::ByteFieldValue::classId) || fv.inherits(document::IntFieldValue::classId) || fv.inherits(document::LongFieldValue::classId)) {
-        attr.reset(new search::SingleIntegerExtAttribute(name));
+        return std::make_shared<search::SingleIntegerExtAttribute>(name);
     } else if (fv.inherits(document::DoubleFieldValue::classId) || fv.inherits(document::FloatFieldValue::classId)) {
-        attr.reset(new search::SingleFloatExtAttribute(name));
+        return std::make_shared<search::SingleFloatExtAttribute>(name);
     } else if (fv.inherits(document::StringFieldValue::classId)) {
-        attr.reset(new search::SingleStringExtAttribute(name));
+        return std::make_shared<search::SingleStringExtAttribute>(name);
     } else {
         LOG(debug, "Can not make an attribute out of %s of type '%s'.", name.c_str(), fv.getClass().name());
     }
-    return attr;
+    return AttributeVector::SP();
 }
 
 SearchVisitor::SummaryGenerator::SummaryGenerator() :
@@ -116,11 +114,11 @@ SearchVisitor::SummaryGenerator::SummaryGenerator() :
     _docsumState(_callback),
     _docsumFilter(),
     _docsumWriter(nullptr),
-    _rawBuf(4096)
+    _rawBuf(4_Ki)
 {
 }
 
-SearchVisitor::SummaryGenerator::~SummaryGenerator() { }
+SearchVisitor::SummaryGenerator::~SummaryGenerator() = default;
 
 
 vespalib::ConstBufferRef
@@ -137,7 +135,7 @@ SearchVisitor::SummaryGenerator::fillSummary(AttributeVector::DocId lid, const H
 
 void SearchVisitor::HitsResultPreparator::execute(vespalib::Identifiable & obj)
 {
-    HitsAggregationResult & hitsAggr(static_cast<HitsAggregationResult &>(obj));
+    auto & hitsAggr(static_cast<HitsAggregationResult &>(obj));
     hitsAggr.setSummaryGenerator(_summaryGenerator);
     _numHitsAggregators++;
 }
@@ -154,7 +152,7 @@ SearchVisitor::GroupingEntry::GroupingEntry(Grouping * grouping) :
 {
 }
 
-SearchVisitor::GroupingEntry::~GroupingEntry() { }
+SearchVisitor::GroupingEntry::~GroupingEntry() = default;
 
 void SearchVisitor::GroupingEntry::aggregate(const document::Document & doc, search::HitRank rank)
 {
@@ -175,14 +173,14 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
                              VisitorEnvironment& vEnv,
                              const Parameters& params) :
     Visitor(component),
-    _env(static_cast<SearchEnvironment &>(vEnv)),
+    _env(dynamic_cast<SearchEnvironment &>(vEnv)),
     _params(params),
     _vsmAdapter(nullptr),
     _docSearchedCount(0),
     _hitCount(0),
     _hitsRejectedCount(0),
     _query(),
-    _queryResult(new documentapi::QueryResultMessage()),
+    _queryResult(std::make_unique<documentapi::QueryResultMessage>()),
     _fieldSearcherMap(),
     _docTypeMapping(),
     _fieldSearchSpecMap(),
@@ -194,10 +192,10 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
     _groupingList(),
     _attributeFields(),
     _sortList(),
-    _searchBuffer(new vsm::SearcherBuf()),
+    _searchBuffer(std::make_shared<vsm::SearcherBuf>()),
     _tmpSortBuffer(256),
-    _documentIdAttributeBacking(new search::SingleStringExtAttribute("[docid]") ),
-    _rankAttributeBacking(new search::SingleFloatExtAttribute("[rank]") ),
+    _documentIdAttributeBacking(std::make_shared<search::SingleStringExtAttribute>("[docid]") ),
+    _rankAttributeBacking(std::make_shared<search::SingleFloatExtAttribute>("[rank]") ),
     _documentIdAttribute(dynamic_cast<search::SingleStringExtAttribute &>(*_documentIdAttributeBacking)),
     _rankAttribute(dynamic_cast<search::SingleFloatExtAttribute &>(*_rankAttributeBacking)),
     _shouldFillRankAttribute(false),
@@ -240,9 +238,9 @@ void SearchVisitor::init(const Parameters & params)
         LOG(debug, "QFLAG_DUMP_FEATURES: %s", _rankController.getDumpFeatures() ? "true" : "false");
     }
 
-    if (params.lookup("rankproperties", valueRef) && valueRef.size() > 0) {
+    if (params.lookup("rankproperties", valueRef) && ! valueRef.empty()) {
         LOG(spam, "Received rank properties of %zd bytes", valueRef.size());
-        uint32_t len = static_cast<uint32_t>(valueRef.size());
+        uint32_t len = valueRef.size();
         char * data = const_cast<char *>(valueRef.data());
         FNET_DataBuffer src(data, len);
         uint32_t cnt = src.ReadInt32();
@@ -265,11 +263,6 @@ void SearchVisitor::init(const Parameters & params)
         }
     } else {
         LOG(debug, "No rank properties received");
-    }
-
-    if (params.lookup("rankprofile", valueRef)) {
-        vespalib::string tmp(valueRef.data(), valueRef.size());
-        _summaryGenerator.getDocsumState()._args.SetRankProfile(tmp);
     }
 
     vespalib::string location;
@@ -301,7 +294,7 @@ void SearchVisitor::init(const Parameters & params)
 
             int stackCount = 0;
             if (params.get("querystackcount", stackCount)) {
-                _summaryGenerator.getDocsumState()._args.SetStackDump(stackCount, queryBlob.size(), (const char*)queryBlob.data());
+                _summaryGenerator.getDocsumState()._args.SetStackDump(queryBlob.size(), (const char*)queryBlob.data());
             } else {
                 LOG(warning, "Request without query stack count");
             }
@@ -360,7 +353,7 @@ SearchVisitorFactory::SearchVisitorFactory(const config::ConfigUri & configUri)
 VisitorEnvironment::UP
 SearchVisitorFactory::makeVisitorEnvironment(StorageComponent&)
 {
-    return VisitorEnvironment::UP(new SearchEnvironment(_configUri));
+    return std::make_unique<SearchEnvironment>(_configUri);
 }
 
 storage::Visitor*
@@ -403,7 +396,7 @@ SearchVisitor::PositionInserter::PositionInserter(AttributeVector & attribute, A
 {
 }
 
-SearchVisitor::PositionInserter::~PositionInserter() {}
+SearchVisitor::PositionInserter::~PositionInserter() = default;
 
 void
 SearchVisitor::PositionInserter::onPrimitive(uint32_t, const Content & c)
@@ -414,7 +407,7 @@ SearchVisitor::PositionInserter::onPrimitive(uint32_t, const Content & c)
 void
 SearchVisitor::PositionInserter::onStructStart(const Content & c)
 {
-    const document::StructuredFieldValue & value = static_cast<const document::StructuredFieldValue &>(c.getValue());
+    const auto & value = static_cast<const document::StructuredFieldValue &>(c.getValue());
     LOG(debug, "PositionInserter: Adding value '%s'(%d) to attribute '%s' for docid '%d'",
         value.toString().c_str(), c.getWeight(), _attribute.getName().c_str(), _docId);
 
@@ -445,7 +438,7 @@ SearchVisitor::RankController::processHintedAttributes(const IndexEnvironment & 
                 AttributeGuard::UP attr(attrMan.getAttribute(name));
                 if (attr->valid()) {
                     LOG(debug, "Add attribute '%s' with field id '%u' to the list of needed attributes", name.c_str(), fid);
-                    attributeFields.push_back(AttrInfo(fid, std::move(attr)));
+                    attributeFields.emplace_back(fid, std::move(attr));
                 } else {
                     LOG(warning, "Cannot locate attribute '%s' in the attribute manager. "
                         "Ignore access hint about this attribute", name.c_str());
@@ -470,7 +463,7 @@ SearchVisitor::RankController::RankController() :
 {
 }
 
-SearchVisitor::RankController::~RankController() {}
+SearchVisitor::RankController::~RankController() = default;
 
 void
 SearchVisitor::RankController::setupRankProcessors(Query & query,
@@ -485,7 +478,7 @@ SearchVisitor::RankController::setupRankProcessors(Query & query,
     const IndexEnvironment & indexEnv = _rankManagerSnapshot->getIndexEnvironment(_rankProfile);
     processHintedAttributes(indexEnv, true, attrMan, attributeFields);
 
-    _rankProcessor.reset(new RankProcessor(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, &attrMan));
+    _rankProcessor = std::make_unique<RankProcessor>(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, &attrMan);
     LOG(debug, "Initialize rank processor");
     _rankProcessor->initForRanking(wantedHitCount);
 
@@ -493,7 +486,7 @@ SearchVisitor::RankController::setupRankProcessors(Query & query,
         // register attribute vectors needed for dumping
         processHintedAttributes(indexEnv, false, attrMan, attributeFields);
 
-        _dumpProcessor.reset(new RankProcessor(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, &attrMan));
+        _dumpProcessor = std::make_unique<RankProcessor>(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, &attrMan);
         LOG(debug, "Initialize dump processor");
         _dumpProcessor->initForDumping(wantedHitCount);
     }
@@ -620,14 +613,14 @@ SearchVisitor::registerAdditionalFields(const std::vector<vsm::DocsumTools::Fiel
         for (size_t j = 0; j < inputNames.size(); ++j) {
             fieldList.push_back(inputNames[j]);
             if (PositionDataType::isZCurveFieldName(inputNames[j])) {
-                fieldList.push_back(PositionDataType::cutZCurveFieldName(inputNames[j]));
+                fieldList.emplace_back(PositionDataType::cutZCurveFieldName(inputNames[j]));
             }
         }
     }
     // fields used during sorting
-    fieldList.push_back("[docid]");
-    fieldList.push_back("[rank]");
-    fieldList.push_back("documentid");
+    fieldList.emplace_back("[docid]");
+    fieldList.emplace_back("[rank]");
+    fieldList.emplace_back("documentid");
 }
 
 void
@@ -680,15 +673,15 @@ SearchVisitor::setupScratchDocument(const StringFieldIdTMap & fieldsInQuery)
     }
     // Init based on default document type and mapping from field name to field id
     _docTypeMapping.init(_fieldSearchSpecMap.documentTypeMap().begin()->first,
-                         _fieldsUnion, *_component.getTypeRepo());
+                         _fieldsUnion, *_component.getTypeRepo()->documentTypeRepo);
     _docTypeMapping.prepareBaseDoc(_fieldPathMap);
 }
 
 void
 SearchVisitor::setupDocsumObjects()
 {
-    std::unique_ptr<DocsumFilter> docsumFilter(new DocsumFilter(_vsmAdapter->getDocsumTools(),
-                                                                _rankController.getRankProcessor()->getHitCollector()));
+    auto docsumFilter = std::make_unique<DocsumFilter>(_vsmAdapter->getDocsumTools(),
+                                                       _rankController.getRankProcessor()->getHitCollector());
     docsumFilter->init(_fieldSearchSpecMap.nameIdMap(), *_fieldPathMap);
     docsumFilter->setSnippetModifiers(_snippetModifierManager.getModifiers());
     _summaryGenerator.setFilter(std::move(docsumFilter));
@@ -710,7 +703,7 @@ SearchVisitor::setupDocsumObjects()
                            }
                         }
                         if (index == _attributeFields.size()) {
-                            _attributeFields.push_back(AttrInfo(fid, std::move(attr)));
+                            _attributeFields.emplace_back(fid, std::move(attr));
                         }
                    } else {
                        LOG(warning, "Attribute '%s' is not valid", name.c_str());
@@ -764,7 +757,7 @@ void SearchVisitor::setupAttributeVector(const FieldPath &fieldPath) {
         attr = createAttribute(attrName, fv);
     }
 
-    if (attr.get()) {
+    if (attr) {
         LOG(debug, "Adding attribute '%s' for field '%s' with data type '%s' (%s)",
             attr->getName().c_str(), attrName.c_str(), fv.getDataType()->getName().c_str(), fv.getClass().name());
         if ( ! _attrMan.add(attr) ) {
@@ -796,7 +789,7 @@ SearchVisitor::setupAttributeVectorsForSorting(const search::common::SortSpec & 
                             }
                         }
                         if (index == _attributeFields.size()) {
-                            _attributeFields.push_back(AttrInfo(fid, std::move(attr), sInfo._ascending, sInfo._converter.get()));
+                            _attributeFields.emplace_back(fid, std::move(attr), sInfo._ascending, sInfo._converter.get());
                         }
                         _sortList.push_back(index);
                     } else {
@@ -822,7 +815,7 @@ SearchVisitor::setupGrouping(const std::vector<char> & groupingBlob)
     uint32_t numGroupings(0);
     is >> numGroupings;
     for(size_t i(0); i < numGroupings; i++) {
-        std::unique_ptr<Grouping> ag(new Grouping());
+        auto ag = std::make_unique<Grouping>();
         ag->deserialize(is);
         GroupingList::value_type groupingPtr(ag.release());
         Grouping & grouping = *groupingPtr;
@@ -849,8 +842,8 @@ SearchVisitor::setupGrouping(const std::vector<char> & groupingBlob)
 class SingleDocumentStore : public vsm::IDocSumCache
 {
 public:
-    SingleDocumentStore(const StorageDocument & doc) : _doc(doc) { }
-    virtual const vsm::Document & getDocSum(const search::DocumentIdT & docId) const override {
+    explicit SingleDocumentStore(const StorageDocument & doc) : _doc(doc) { }
+    const vsm::Document & getDocSum(const search::DocumentIdT & docId) const override {
         (void) docId;
         return _doc;
     }
@@ -889,7 +882,7 @@ SearchVisitor::handleDocuments(const document::BucketId&,
     const document::DocumentType* defaultDocType = _docTypeMapping.getDefaultDocumentType();
     assert(defaultDocType);
     for (const auto & entry : entries) {
-        StorageDocument::UP document(new StorageDocument(entry->releaseDocument(), _fieldPathMap, highestFieldNo));
+        auto document = std::make_unique<StorageDocument>(entry->releaseDocument(), _fieldPathMap, highestFieldNo);
 
         try {
             if (defaultDocType != nullptr
@@ -1001,7 +994,7 @@ SearchVisitor::fillAttributeVectors(const vespalib::string & documentId, const S
             fieldId = _fieldsUnion.find(org)->second;
         }
         const StorageDocument::SubDocument & subDoc = document.getComplexField(fieldId);
-        AttributeVector & attrV = const_cast<AttributeVector & >(*finfoGuard);
+        auto & attrV = const_cast<AttributeVector & >(*finfoGuard);
         AttributeVector::DocId docId(0);
         attrV.addDoc(docId);
         if (subDoc.getFieldValue() != nullptr) {

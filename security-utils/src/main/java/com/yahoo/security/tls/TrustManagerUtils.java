@@ -29,7 +29,7 @@ public class TrustManagerUtils {
                     .filter(manager -> manager instanceof X509ExtendedTrustManager)
                     .map(X509ExtendedTrustManager.class::cast)
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("No X509ExtendedTrustManager in " + com.yahoo.vespa.jdk8compat.List.of(trustManagers)));
+                    .orElseThrow(() -> new RuntimeException("No X509ExtendedTrustManager in " + Arrays.asList(trustManagers)));
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
         }

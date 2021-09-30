@@ -10,14 +10,14 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/visitor.h>
+#include <vespa/storageapi/message/stat.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 namespace storage::mbusprot {
 
-ProtocolSerialization7::ProtocolSerialization7(std::shared_ptr<const document::DocumentTypeRepo> repo,
-                                               const documentapi::LoadTypeSet& load_types)
+ProtocolSerialization7::ProtocolSerialization7(std::shared_ptr<const document::DocumentTypeRepo> repo)
     : ProtocolSerialization(),
-      _repo(std::move(repo)),
-      _load_types(load_types)
+      _repo(std::move(repo))
 {
 }
 
@@ -112,7 +112,6 @@ void write_request_header(vespalib::GrowableByteBuffer& buf, const api::StorageC
     hdr.set_message_id(cmd.getMsgId());
     hdr.set_priority(cmd.getPriority());
     hdr.set_source_index(cmd.getSourceIndex());
-    hdr.set_loadtype_id(cmd.getLoadType().getId());
 
     uint8_t dest[128]; // Only primitive fields, should be plenty large enough.
     auto encoded_size = static_cast<uint32_t>(hdr.ByteSizeLong());
@@ -231,12 +230,10 @@ class RequestDecoder {
     protobuf::RequestHeader         _hdr;
     ::google::protobuf::Arena       _arena;
     ProtobufType*                   _proto_obj;
-    const documentapi::LoadTypeSet& _load_types;
 public:
-    RequestDecoder(document::ByteBuffer& in_buf, const documentapi::LoadTypeSet& load_types)
+    RequestDecoder(document::ByteBuffer& in_buf)
         : _arena(),
-          _proto_obj(::google::protobuf::Arena::Create<ProtobufType>(&_arena)),
-          _load_types(load_types)
+          _proto_obj(::google::protobuf::Arena::Create<ProtobufType>(&_arena))
     {
         decode_request_header(in_buf, _hdr);
         assert(in_buf.getRemaining() <= INT_MAX);
@@ -252,7 +249,6 @@ public:
         dest.forceMsgId(_hdr.message_id());
         dest.setPriority(static_cast<uint8_t>(_hdr.priority()));
         dest.setSourceIndex(static_cast<uint16_t>(_hdr.source_index()));
-        dest.setLoadType(_load_types[_hdr.loadtype_id()]);
     }
 
     ProtobufType& request() noexcept { return *_proto_obj; }
@@ -308,7 +304,7 @@ void encode_response(vespalib::GrowableByteBuffer& out_buf, const api::StorageRe
 template <typename ProtobufType, typename Func>
 std::unique_ptr<api::StorageCommand>
 ProtocolSerialization7::decode_request(document::ByteBuffer& in_buf, Func&& f) const {
-    RequestDecoder<ProtobufType> dec(in_buf, _load_types);
+    RequestDecoder<ProtobufType> dec(in_buf);
     const auto& req = dec.request();
     auto cmd = f(req);
     dec.transfer_meta_information_to(*cmd);
@@ -567,7 +563,17 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::GetReply& msg) cons
         if (msg.getDocument()) {
             set_document(*res.mutable_document(), *msg.getDocument());
         }
-        res.set_last_modified_timestamp(msg.getLastModifiedTimestamp());
+        if (!msg.is_tombstone()) {
+            res.set_last_modified_timestamp(msg.getLastModifiedTimestamp());
+        } else {
+            // This field will be ignored by older versions, making the behavior as if
+            // a timestamp of zero was returned for tombstones, as it the legacy behavior.
+            res.set_tombstone_timestamp(msg.getLastModifiedTimestamp());
+            // Will not be encoded onto the wire, but we include it here to hammer down the
+            // point that it's intentional to have the last modified time appear as a not
+            // found document for older versions.
+            res.set_last_modified_timestamp(0);
+        }
     });
 }
 
@@ -585,8 +591,12 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeGetReply(const SCmd& cmd, 
     return decode_bucket_info_response<protobuf::GetResponse>(buf, [&](auto& res) {
         try {
             auto document = get_document(res.document(), type_repo());
+            const bool is_tombstone = (res.tombstone_timestamp() != 0);
+            const auto effective_timestamp = (is_tombstone ? res.tombstone_timestamp()
+                                                           : res.last_modified_timestamp());
             return std::make_unique<api::GetReply>(static_cast<const api::GetCommand&>(cmd),
-                                                   std::move(document), res.last_modified_timestamp());
+                                                   std::move(document), effective_timestamp,
+                                                   false, is_tombstone);
         } catch (std::exception& e) {
             auto reply = std::make_unique<api::GetReply>(static_cast<const api::GetCommand&>(cmd),
                                                          std::shared_ptr<document::Document>(), 0u);
@@ -643,7 +653,9 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RemoveLocationComma
 }
 
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RemoveLocationReply& msg) const {
-    encode_bucket_info_response<protobuf::RemoveLocationResponse>(buf, msg, no_op_encode);
+    encode_bucket_info_response<protobuf::RemoveLocationResponse>(buf, msg, [&](auto& res) {
+        res.mutable_stats()->set_documents_removed(msg.documents_removed());
+    });
 }
 
 api::StorageCommand::UP ProtocolSerialization7::onDecodeRemoveLocationCommand(BBuf& buf) const {
@@ -653,8 +665,11 @@ api::StorageCommand::UP ProtocolSerialization7::onDecodeRemoveLocationCommand(BB
 }
 
 api::StorageReply::UP ProtocolSerialization7::onDecodeRemoveLocationReply(const SCmd& cmd, BBuf& buf) const {
-    return decode_bucket_info_response<protobuf::RemoveLocationResponse>(buf, [&]([[maybe_unused]] auto& res) {
-        return std::make_unique<api::RemoveLocationReply>(static_cast<const api::RemoveLocationCommand&>(cmd));
+    return decode_bucket_info_response<protobuf::RemoveLocationResponse>(buf, [&](auto& res) {
+        uint32_t documents_removed = (res.has_stats() ? res.stats().documents_removed() : 0u);
+        return std::make_unique<api::RemoveLocationReply>(
+                static_cast<const api::RemoveLocationCommand&>(cmd),
+                documents_removed);
     });
 }
 
@@ -924,7 +939,7 @@ void fill_proto_apply_diff_vector(::google::protobuf::RepeatedPtrField<protobuf:
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::ApplyBucketDiffCommand& msg) const {
     encode_bucket_request<protobuf::ApplyBucketDiffRequest>(buf, msg, [&](auto& req) {
         set_merge_nodes(*req.mutable_nodes(), msg.getNodes());
-        req.set_max_buffer_size(msg.getMaxBufferSize());
+        req.set_max_buffer_size(0x400000); // Unused, GC soon.
         fill_proto_apply_diff_vector(*req.mutable_entries(), msg.getDiff());
     });
 }
@@ -938,7 +953,7 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::ApplyBucketDiffRepl
 api::StorageCommand::UP ProtocolSerialization7::onDecodeApplyBucketDiffCommand(BBuf& buf) const {
     return decode_bucket_request<protobuf::ApplyBucketDiffRequest>(buf, [&](auto& req, auto& bucket) {
         auto nodes = get_merge_nodes(req.nodes());
-        auto cmd = std::make_unique<api::ApplyBucketDiffCommand>(bucket, std::move(nodes), req.max_buffer_size());
+        auto cmd = std::make_unique<api::ApplyBucketDiffCommand>(bucket, std::move(nodes));
         fill_api_apply_diff_vector(cmd->getDiff(), req.entries());
         return cmd;
     });
@@ -1291,6 +1306,34 @@ api::StorageCommand::UP ProtocolSerialization7::onDecodeDestroyVisitorCommand(BB
 api::StorageReply::UP ProtocolSerialization7::onDecodeDestroyVisitorReply(const SCmd& cmd, BBuf& buf) const {
     return decode_response<protobuf::DestroyVisitorResponse>(buf, [&]([[maybe_unused]] auto& res) {
         return std::make_unique<api::DestroyVisitorReply>(static_cast<const api::DestroyVisitorCommand&>(cmd));
+    });
+}
+
+// -----------------------------------------------------------------
+// StatBucket
+// -----------------------------------------------------------------
+
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::StatBucketCommand& msg) const {
+    encode_bucket_request<protobuf::StatBucketRequest>(buf, msg, [&](auto& req) {
+        req.set_document_selection(msg.getDocumentSelection().data(), msg.getDocumentSelection().size());
+    });
+}
+
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::StatBucketReply& msg) const {
+    encode_bucket_response<protobuf::StatBucketResponse>(buf, msg, [&](auto& res) {
+        res.set_results(msg.getResults().data(), msg.getResults().size());
+    });
+}
+
+api::StorageCommand::UP ProtocolSerialization7::onDecodeStatBucketCommand(BBuf& buf) const {
+    return decode_bucket_request<protobuf::StatBucketRequest>(buf, [&](auto& req, auto& bucket) {
+        return std::make_unique<api::StatBucketCommand>(bucket, req.document_selection());
+    });
+}
+
+api::StorageReply::UP ProtocolSerialization7::onDecodeStatBucketReply(const SCmd& cmd, BBuf& buf) const {
+    return decode_bucket_response<protobuf::StatBucketResponse>(buf, [&](auto& res) {
+        return std::make_unique<api::StatBucketReply>(static_cast<const api::StatBucketCommand&>(cmd), res.results());
     });
 }
 

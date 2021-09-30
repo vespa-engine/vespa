@@ -24,9 +24,9 @@ public class BucketResolver {
      * Pushes the given expression onto this bucket resolver. Once all buckets have been pushed using this method, call
      * {@link #resolve(GroupingExpression)} to retrieve to combined grouping expression.
      *
-     * @param val The expression to push.
-     * @param inclusive Whether or not the value is inclusive or not.
-     * @throws IllegalArgumentException Thrown if the expression is incompatible.
+     * @param val the expression to push
+     * @param inclusive whether or not the value is inclusive or not
+     * @throws IllegalArgumentException thrown if the expression is incompatible
      */
     public BucketResolver push(ConstantValue<?> val, boolean inclusive) {
         if (prev == null) {

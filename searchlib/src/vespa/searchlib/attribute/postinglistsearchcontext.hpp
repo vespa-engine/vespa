@@ -20,13 +20,12 @@ namespace search::attribute {
 
 template <typename DataT>
 PostingListSearchContextT<DataT>::
-PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
-                          const PostingList &postingList, const IEnumStore &esb,
-                          uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &searchContext)
-    : PostingListSearchContext(dictionary, docIdLimit, numValues, hasWeight, esb, minBvDocFreq, useBitVector, searchContext),
+PostingListSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
+                          const PostingList &postingList, uint32_t minBvDocFreq,
+                          bool useBitVector, const ISearchContext &searchContext)
+    : PostingListSearchContext(dictionary, docIdLimit, numValues, hasWeight, minBvDocFreq, useBitVector, searchContext),
       _postingList(postingList),
-      _merger(docIdLimit),
-      _fetchPostingsDone(false)
+      _merger(docIdLimit)
 {
 }
 
@@ -54,7 +53,7 @@ PostingListSearchContextT<DataT>::lookupSingle()
                     auto frozenView = _postingList.getTreeEntry(_pidx)->getFrozenView(_postingList.getAllocator());
                     _frozenRoot = frozenView.getRoot();
                     if (!_frozenRoot.valid()) {
-                        _pidx = datastore::EntryRef();
+                        _pidx = vespalib::datastore::EntryRef();
                     }
                 } else {
                     _gbv = bv; 
@@ -64,7 +63,7 @@ PostingListSearchContextT<DataT>::lookupSingle()
             auto frozenView = _postingList.getTreeEntry(_pidx)->getFrozenView(_postingList.getAllocator());
             _frozenRoot = frozenView.getRoot();
             if (!_frozenRoot.valid()) {
-                _pidx = datastore::EntryRef();
+                _pidx = vespalib::datastore::EntryRef();
             }
         }
     }
@@ -92,7 +91,7 @@ PostingListSearchContextT<DataT>::fillArray()
     for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
         if (useThis(it)) {
             _merger.addToArray(PostingListTraverser<PostingList>(_postingList,
-                                                                 datastore::EntryRef(it.getData())));
+                                                                 vespalib::datastore::EntryRef(it.getData())));
         }
     }
     _merger.merge();
@@ -106,7 +105,7 @@ PostingListSearchContextT<DataT>::fillBitVector()
     for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
         if (useThis(it)) {
             _merger.addToBitVector(PostingListTraverser<PostingList>(_postingList,
-                                                                     datastore::EntryRef(it.getData())));
+                                                                     vespalib::datastore::EntryRef(it.getData())));
         }
     }
 }
@@ -116,22 +115,18 @@ template <typename DataT>
 void
 PostingListSearchContextT<DataT>::fetchPostings(const queryeval::ExecuteInfo & execInfo)
 {
-    if (_fetchPostingsDone) return;
-
-    _fetchPostingsDone = true;
-
-    if (_uniqueValues < 2u) return;
-
-    if (execInfo.isStrict() && !fallbackToFiltering()) {
-        size_t sum(countHits());
-        if (sum < _docIdLimit / 64) {
-            _merger.reserveArray(_uniqueValues, sum);
-            fillArray();
-        } else {
-            _merger.allocBitVector();
-            fillBitVector();
+    if (!_merger.merge_done() && _uniqueValues >= 2u) {
+        if (execInfo.isStrict() && !fallbackToFiltering()) {
+            size_t sum(countHits());
+            if (sum < _docIdLimit / 64) {
+                _merger.reserveArray(_uniqueValues, sum);
+                fillArray();
+            } else {
+                _merger.allocBitVector();
+                fillBitVector();
+            }
+            _merger.merge();
         }
-        _merger.merge();
     }
 }
 
@@ -141,12 +136,17 @@ void
 PostingListSearchContextT<DataT>::diversify(bool forward, size_t wanted_hits, const IAttributeVector &diversity_attr,
                                             size_t max_per_group, size_t cutoff_groups, bool cutoff_strict)
 {
-    assert(!_fetchPostingsDone);
-    _fetchPostingsDone = true;
-    _merger.reserveArray(128, wanted_hits);
-    diversity::diversify(forward, _lowerDictItr, _upperDictItr, _postingList, wanted_hits, diversity_attr,
-                         max_per_group, cutoff_groups, cutoff_strict, _merger.getWritableArray(), _merger.getWritableStartPos());
-    _merger.merge();
+    if (!_merger.merge_done()) {
+        _merger.reserveArray(128, wanted_hits);
+        if (_uniqueValues == 1u && !_lowerDictItr.valid() && _pidx.valid()) {
+            diversity::diversify_single(_pidx, _postingList, wanted_hits, diversity_attr,
+                                        max_per_group, cutoff_groups, cutoff_strict, _merger.getWritableArray(), _merger.getWritableStartPos());
+        } else {
+            diversity::diversify(forward, _lowerDictItr, _upperDictItr, _postingList, wanted_hits, diversity_attr,
+                                 max_per_group, cutoff_groups, cutoff_strict, _merger.getWritableArray(), _merger.getWritableStartPos());
+        }
+        _merger.merge();
+    }
 }
 
 
@@ -155,7 +155,6 @@ SearchIterator::UP
 PostingListSearchContextT<DataT>::
 createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
 {
-    assert(_fetchPostingsDone);
     if (_uniqueValues == 0u) {
         return std::make_unique<EmptySearch>();
     }
@@ -288,10 +287,10 @@ PostingListSearchContextT<DataT>::applyRangeLimit(int rangeLimit)
 
 template <typename DataT>
 PostingListFoldedSearchContextT<DataT>::
-PostingListFoldedSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
-                                bool hasWeight, const PostingList &postingList, const IEnumStore &esb,
-                                uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &searchContext)
-    : Parent(dictionary, docIdLimit, numValues, hasWeight, postingList, esb, minBvDocFreq, useBitVector, searchContext)
+PostingListFoldedSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
+                                bool hasWeight, const PostingList &postingList, uint32_t minBvDocFreq,
+                                bool useBitVector, const ISearchContext &searchContext)
+    : Parent(dictionary, docIdLimit, numValues, hasWeight, postingList, minBvDocFreq, useBitVector, searchContext)
 {
 }
 

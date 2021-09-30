@@ -71,7 +71,6 @@ public class DuperModelManagerTest {
         verify(duperModel, times(0)).add(any());
         manager.infraApplicationActivated(id, proxyHostHosts);
         verify(duperModel, times(1)).add(any());
-        when(duperModel.contains(id)).thenReturn(true);
 
         verify(duperModel, times(0)).remove(any());
         manager.infraApplicationRemoved(id);
@@ -98,7 +97,6 @@ public class DuperModelManagerTest {
         List<HostName> hostnames1 = Stream.of("node11", "node12").map(HostName::from).collect(Collectors.toList());
         manager.infraApplicationActivated(firstId, hostnames1);
         verify(duperModel, times(1)).add(any());
-        when(duperModel.contains(firstId)).thenReturn(true);
 
         // Adding the second config server like application will be ignored
         List<HostName> hostnames2 = Stream.of("node21", "node22").map(HostName::from).collect(Collectors.toList());

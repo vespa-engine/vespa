@@ -361,8 +361,7 @@ LLParser::makeMessage(const char *tmf, const char *hsf, const char *pdf,
         if ((c == '\\' && src[0] == 't')
             || (c >= 32 && c < '\\')
             || (c > '\\' && c < 128)
-            || c == 0
-            || c > 160)
+            || c == 0)
 	{
             *dst++ = static_cast<char>(c);
         } else {

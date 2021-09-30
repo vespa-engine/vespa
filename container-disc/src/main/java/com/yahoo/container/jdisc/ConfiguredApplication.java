@@ -1,10 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.yahoo.cloud.config.SlobroksConfig;
+import com.yahoo.component.Vtag;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.ConfigInstance;
@@ -18,7 +20,6 @@ import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.container.jdisc.component.Deconstructor;
-import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.container.jdisc.metric.DisableGuiceMetric;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.application.Application;
@@ -37,11 +38,11 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
-import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogSetup;
 import com.yahoo.messagebus.network.rpc.SlobrokConfigSubscriber;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.Collections;
@@ -54,6 +55,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -64,29 +66,23 @@ import static com.yahoo.collections.CollectionUtil.first;
  */
 public final class ConfiguredApplication implements Application {
 
-    public static final class ApplicationContext {
-
-        final JdiscBindingsConfig discBindingsConfig;
-
-        public ApplicationContext(com.yahoo.container.jdisc.JdiscBindingsConfig discBindingsConfig) {
-            this.discBindingsConfig = discBindingsConfig;
-        }
-    }
-
     private static final Logger log = Logger.getLogger(ConfiguredApplication.class.getName());
     private static final Set<ClientProvider> startedClients = Collections.newSetFromMap(new WeakHashMap<>());
+    static final String SANITIZE_FILENAME = "[/,;]";
 
     private static final Set<ServerProvider> startedServers = Collections.newSetFromMap(new IdentityHashMap<>());
     private final SubscriberFactory subscriberFactory;
+    private final Metric metric;
     private final ContainerActivator activator;
     private final String configId;
     private final OsgiFramework osgiFramework;
     private final com.yahoo.jdisc.Timer timerSingleton;
+    private final AtomicBoolean dumpHeapOnShutdownTimeout = new AtomicBoolean(false);
+    private final AtomicDouble shudownTimeoutS = new AtomicDouble(50.0);
     // Subscriber that is used when this is not a standalone-container. Subscribes
     // to config to make sure that container will be registered in slobrok (by {@link com.yahoo.jrt.slobrok.api.Register})
     // if slobrok config changes (typically slobroks moving to other nodes)
     private final Optional<SlobrokConfigSubscriber> slobrokConfigSubscriber;
-    private final SessionCache sessionCache;
 
     //TODO: FilterChainRepository should instead always be set up in the model.
     private final FilterChainRepository defaultFilterChainRepository =
@@ -96,7 +92,6 @@ public final class ConfiguredApplication implements Application {
                                       new ComponentRegistry<>(),
                                       new ComponentRegistry<>());
     private final OsgiFramework restrictedOsgiFramework;
-    private volatile int applicationSerialNo = 0;
     private HandlersConfigurerDi configurer;
     private ScheduledThreadPoolExecutor shutdownDeadlineExecutor;
     private Thread reconfigurerThread;
@@ -109,7 +104,7 @@ public final class ConfiguredApplication implements Application {
 
     static {
         LogSetup.initVespaLogging("Container");
-        log.log(LogLevel.INFO, "Starting container");
+        log.log(Level.INFO, "Starting jdisc" + (Vtag.currentVersion.isEmpty() ? "" : " at version " + Vtag.currentVersion));
     }
 
     /**
@@ -126,24 +121,24 @@ public final class ConfiguredApplication implements Application {
     public ConfiguredApplication(ContainerActivator activator,
                                  OsgiFramework osgiFramework,
                                  com.yahoo.jdisc.Timer timer,
-                                 SubscriberFactory subscriberFactory) {
+                                 SubscriberFactory subscriberFactory,
+                                 Metric metric) {
         this.activator = activator;
         this.osgiFramework = osgiFramework;
         this.timerSingleton = timer;
         this.subscriberFactory = subscriberFactory;
+        this.metric = metric;
         this.configId = System.getProperty("config.id");
         this.slobrokConfigSubscriber = (subscriberFactory instanceof CloudSubscriberFactory)
                 ? Optional.of(new SlobrokConfigSubscriber(configId))
                 : Optional.empty();
-        this.sessionCache = new SessionCache(configId);
         this.restrictedOsgiFramework = new DisableOsgiFramework(new RestrictedBundleContext(osgiFramework.bundleContext()));
     }
 
     @Override
     public void start() {
-        qrConfig = getConfig(QrConfig.class);
-        slobrokRegistrator = registerInSlobrok(qrConfig);
-
+        qrConfig = getConfig(QrConfig.class, true);
+        reconfigure(qrConfig);
         hackToInitializeServer(qrConfig);
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
@@ -153,17 +148,18 @@ public final class ConfiguredApplication implements Application {
         portWatcher = new Thread(this::watchPortChange);
         portWatcher.setDaemon(true);
         portWatcher.start();
+        slobrokRegistrator = registerInSlobrok(qrConfig); // marks this as up
     }
 
     /**
-     * The container has no RPC methods, but we still need an RPC sever
-     * to register in Slobrok to enable orchestration
+     * The container has no RPC methods, but we still need an RPC server
+     * to register in Slobrok to enable orchestration.
      */
     private Register registerInSlobrok(QrConfig qrConfig) {
         if ( ! qrConfig.rpc().enabled()) return null;
 
         // 1. Set up RPC server
-        supervisor = new Supervisor(new Transport());
+        supervisor = new Supervisor(new Transport("slobrok")).setDropEmptyBuffers(true);
         Spec listenSpec = new Spec(qrConfig.rpc().port());
         try {
             acceptor = supervisor.listen(listenSpec);
@@ -177,7 +173,7 @@ public final class ConfiguredApplication implements Application {
         Spec mySpec = new Spec(HostName.getLocalhost(), acceptor.port());
         slobrokRegistrator = new Register(supervisor, slobrokList, mySpec);
         slobrokRegistrator.registerName(qrConfig.rpc().slobrokId());
-        log.log(LogLevel.INFO, "Registered name '" + qrConfig.rpc().slobrokId() +
+        log.log(Level.INFO, "Registered name '" + qrConfig.rpc().slobrokId() +
                                "' at " + mySpec + " with: " + slobrokList);
         return slobrokRegistrator;
     }
@@ -190,7 +186,7 @@ public final class ConfiguredApplication implements Application {
             slobrokList = slobrokConfigSubscriber.get().getSlobroks();
         } else {
             slobrokList = new SlobrokList();
-            SlobroksConfig slobrokConfig = getConfig(SlobroksConfig.class);
+            SlobroksConfig slobrokConfig = getConfig(SlobroksConfig.class, true);
             slobrokList.setup(slobrokConfig.slobrok().stream().map(SlobroksConfig.Slobrok::connectionspec).toArray(String[]::new));
         }
         return slobrokList;
@@ -210,16 +206,15 @@ public final class ConfiguredApplication implements Application {
             Container.get().setupFileAcquirer(config.filedistributor());
             Container.get().setupUrlDownloader();
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Caught exception when initializing server. Exiting.", e);
+            log.log(Level.SEVERE, "Caught exception when initializing server. Exiting.", e);
             Runtime.getRuntime().halt(1);
         }
     }
 
-    private <T extends ConfigInstance> T getConfig(Class<T> configClass) {
-        Subscriber subscriber = subscriberFactory.getSubscriber(
-                Collections.singleton(new ConfigKey<>(configClass, configId)));
+    private <T extends ConfigInstance> T getConfig(Class<T> configClass, boolean isInitializing) {
+        Subscriber subscriber = subscriberFactory.getSubscriber(Collections.singleton(new ConfigKey<>(configClass, configId)));
         try {
-            subscriber.waitNextGeneration();
+            subscriber.waitNextGeneration(isInitializing);
             return configClass.cast(first(subscriber.config().values()));
         } finally {
             subscriber.close();
@@ -230,8 +225,9 @@ public final class ConfiguredApplication implements Application {
         Subscriber subscriber = subscriberFactory.getSubscriber(Collections.singleton(new ConfigKey<>(QrConfig.class, configId)));
         try {
             while (true) {
-                subscriber.waitNextGeneration();
+                subscriber.waitNextGeneration(false);
                 QrConfig newConfig = QrConfig.class.cast(first(subscriber.config().values()));
+                reconfigure(qrConfig);
                 if (qrConfig.rpc().port() != newConfig.rpc().port()) {
                     com.yahoo.protect.Process.logAndDie(
                             "Rpc port config has changed from " +
@@ -245,6 +241,11 @@ public final class ConfiguredApplication implements Application {
         }
     }
 
+    void reconfigure(QrConfig qrConfig) {
+        dumpHeapOnShutdownTimeout.set(qrConfig.shutdown().dumpHeapOnTimeout());
+        shudownTimeoutS.set(qrConfig.shutdown().timeout());
+    }
+
     private void initializeAndActivateContainer(ContainerBuilder builder) {
         addHandlerBindings(builder, Container.get().getRequestHandlerRegistry(),
                            configurer.getComponent(ApplicationContext.class).discBindingsConfig);
@@ -256,7 +257,8 @@ public final class ConfiguredApplication implements Application {
         startAndStopServers();
 
         log.info("Switching to the latest deployed set of configurations and components. " +
-                 "Application switch number: " + (applicationSerialNo++));
+                 "Application config generation: " + configurer.generation());
+        metric.set("application_generation", configurer.generation(), metric.createContext(Map.of()));
     }
 
     private ContainerBuilder createBuilderWithGuiceBindings() {
@@ -272,22 +274,35 @@ public final class ConfiguredApplication implements Application {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
 
                     // Block until new config arrives, and it should be applied
-                    configurer.getNewComponentGraph(builder.guiceModules().activate(), qrConfig.restartOnDeploy());
+                    configurer.getNewComponentGraph(builder.guiceModules().activate(), false);
                     initializeAndActivateContainer(builder);
                 } catch (ConfigInterruptedException e) {
                     break;
                 } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
+                    tryReportFailedComponentGraphConstructionMetric(configurer, e);
                     log.log(Level.SEVERE,
                             "Reconfiguration failed, your application package must be fixed, unless this is a " +
                             "JNI reload issue: " + Exceptions.toMessageString(e), e);
                 } catch (Error e) {
-                    com.yahoo.protect.Process.logAndDie("java.lang.Error on reconfiguration: We are probably in " + 
+                    com.yahoo.protect.Process.logAndDie("java.lang.Error on reconfiguration: We are probably in " +
                                                         "a bad state and will terminate", e);
                 }
             }
             log.fine("Shutting down HandlersConfigurerDi");
         });
         reconfigurerThread.start();
+    }
+
+    private static void tryReportFailedComponentGraphConstructionMetric(HandlersConfigurerDi configurer, Throwable error) {
+        try {
+            // We need the Metric instance from previous component graph to report metric values
+            // Metric may not be available if this is the initial component graph (since metric wiring is done through the config model)
+            Metric metric = configurer.getComponent(Metric.class);
+            Metric.Context metricContext = metric.createContext(Map.of("exception", error.getClass().getSimpleName()));
+            metric.add("jdisc.application.failed_component_graphs", 1L, metricContext);
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Failed to report metric for failed component graph: " + e.getMessage(), e);
+        }
     }
 
     private static void installServerProviders(ContainerBuilder builder) {
@@ -330,7 +345,7 @@ public final class ConfiguredApplication implements Application {
         return new HandlersConfigurerDi(subscriberFactory,
                                         Container.get(),
                                         configId,
-                                        new Deconstructor(true),
+                                        new Deconstructor(Deconstructor.Mode.RECONFIG),
                                         discInjector,
                                         osgiFramework);
     }
@@ -344,7 +359,6 @@ public final class ConfiguredApplication implements Application {
                 bind(OsgiFramework.class).toInstance(restrictedOsgiFramework);
                 bind(com.yahoo.jdisc.Timer.class).toInstance(timerSingleton);
                 bind(FilterChainRepository.class).toInstance(defaultFilterChainRepository);
-                bind(SessionCache.class).toInstance(sessionCache); // Needed by e.g. FeedHandler
             }
         });
     }
@@ -362,7 +376,7 @@ public final class ConfiguredApplication implements Application {
         }
 
         log.info("Stop: Shutting container down");
-        configurer.shutdown(new Deconstructor(false));
+        configurer.shutdown(new Deconstructor(Deconstructor.Mode.SHUTDOWN));
         slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
         Container.get().shutdown();
 
@@ -394,14 +408,26 @@ public final class ConfiguredApplication implements Application {
         }
     }
 
+    static String santizeFileName(String s) {
+        return s.trim()
+                .replace('\\', '.')
+                .replaceAll(SANITIZE_FILENAME, ".");
+    }
+
     // Workaround for ApplicationLoader.stop not being able to shutdown
     private void startShutdownDeadlineExecutor() {
         shutdownDeadlineExecutor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("Shutdown deadline timer"));
         shutdownDeadlineExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
-        long delayMillis = 50 * 1000;
-        shutdownDeadlineExecutor.schedule(() -> com.yahoo.protect.Process.logAndDie(
-                "Timed out waiting for application shutdown. Please check that all your request handlers " +
-                        "drain their request content channels.", true), delayMillis, TimeUnit.MILLISECONDS);
+        long delayMillis = (long)(shudownTimeoutS.get() * 1000.0);
+        shutdownDeadlineExecutor.schedule(() -> {
+            if (dumpHeapOnShutdownTimeout.get()) {
+                String heapDumpName = Defaults.getDefaults().underVespaHome("var/crash/java_pid.") + santizeFileName(configId) + "." + ProcessHandle.current().pid() + ".hprof";
+                com.yahoo.protect.Process.dumpHeap(heapDumpName, true);
+            }
+            com.yahoo.protect.Process.logAndDie(
+                    "Timed out waiting for application shutdown. Please check that all your request handlers " +
+                            "drain their request content channels.", true);
+        }, delayMillis, TimeUnit.MILLISECONDS);
     }
 
     private static void addHandlerBindings(ContainerBuilder builder,
@@ -424,6 +450,15 @@ public final class ConfiguredApplication implements Application {
                                 RequestHandler target) {
         for (String uri : uriPatterns) {
             bindings.bind(uri, target);
+        }
+    }
+
+    public static final class ApplicationContext {
+
+        final JdiscBindingsConfig discBindingsConfig;
+
+        public ApplicationContext(com.yahoo.container.jdisc.JdiscBindingsConfig discBindingsConfig) {
+            this.discBindingsConfig = discBindingsConfig;
         }
     }
 

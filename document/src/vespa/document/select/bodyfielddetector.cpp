@@ -18,11 +18,7 @@ BodyFieldDetector::detectFieldType(const FieldValueNode *expr, const DocumentTyp
         FieldPath path;
         type.buildFieldPath(path, expr->getFieldName());
         if ( ! path.empty() ) {
-            if (path[0].getFieldRef().isHeaderField()) {
-                foundHeaderField = true;
-            } else {
-                foundBodyField = true;
-            }
+            foundHeaderField = true;
         }
     } catch (FieldNotFoundException &) {
     }
@@ -32,7 +28,9 @@ BodyFieldDetector::detectFieldType(const FieldValueNode *expr, const DocumentTyp
 void
 BodyFieldDetector::visitFieldValueNode(const FieldValueNode& expr)
 {
-    _repo.forEachDocumentType(*makeClosure(this, &BodyFieldDetector::detectFieldType, &expr));
+    _repo.forEachDocumentType(*DocumentTypeRepo::makeLambda([&](const DocumentType &type) {
+        detectFieldType(&expr, type);
+    }));
 }
 
 

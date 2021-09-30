@@ -1,0 +1,20 @@
+application/xml             xml
+application/java-archive    jar
+application/javascript      js
+application/json            json
+
+text/html                   html
+text/css                    css
+
+font/collection             ttc
+font/otf                    otf
+font/ttf                    ttf
+font/woff                   woff
+font/woff2                  woff2
+
+image/x-icon                ico
+image/gif                   gif
+image/jpeg                  jpg jpeg
+image/png                   png
+image/svg+xml               svg
+image/tiff                  tiff tif

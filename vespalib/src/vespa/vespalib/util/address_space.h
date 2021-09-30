@@ -18,6 +18,7 @@ private:
     size_t _limit;
 
 public:
+    AddressSpace();
     AddressSpace(size_t used_, size_t dead_, size_t limit_);
     size_t used() const { return _used; }
     size_t dead() const { return _dead; }
@@ -35,4 +36,4 @@ public:
 
 std::ostream &operator << (std::ostream &out, const AddressSpace &rhs);
 
-} // namespace search
+}

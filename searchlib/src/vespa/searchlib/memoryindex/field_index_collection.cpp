@@ -13,11 +13,6 @@
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/stringfmt.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.memoryindex.field_index_collection");
-
 
 namespace search {
 
@@ -44,9 +39,7 @@ FieldIndexCollection::FieldIndexCollection(const Schema& schema, const IFieldLen
     }
 }
 
-FieldIndexCollection::~FieldIndexCollection()
-{
-}
+FieldIndexCollection::~FieldIndexCollection() = default;
 
 void
 FieldIndexCollection::dump(search::index::IndexBuilder &indexBuilder)

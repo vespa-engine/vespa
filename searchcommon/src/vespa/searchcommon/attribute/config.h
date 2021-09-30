@@ -4,19 +4,32 @@
 
 #include "basictype.h"
 #include "collectiontype.h"
+#include "hnsw_index_params.h"
 #include "predicate_params.h"
-#include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchcommon/common/compaction_strategy.h>
+#include <vespa/searchcommon/common/growstrategy.h>
+#include <vespa/searchcommon/common/dictionary_config.h>
 #include <vespa/eval/eval/value_type.h>
+#include <cassert>
+#include <optional>
 
 namespace search::attribute {
 
-class Config
-{
+/**
+ * Configuration for an attribute vector.
+ *
+ * Used to determine which implementation to instantiate.
+ */
+class Config {
 public:
-    Config();
-    Config(BasicType bt, CollectionType ct = CollectionType::SINGLE,
-           bool fastSearch_ = false, bool huge_ = false);
+    enum class Match { CASED, UNCASED };
+    Config() noexcept;
+    Config(BasicType bt) noexcept : Config(bt, CollectionType::SINGLE) { }
+    Config(BasicType bt, CollectionType ct) noexcept : Config(bt, ct, false) { }
+    Config(BasicType bt, CollectionType ct, bool fastSearch_) noexcept
+        : Config(bt, ct, fastSearch_, false)
+    {}
+    Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_) noexcept;
     Config(const Config &);
     Config & operator = (const Config &);
     Config(Config &&) noexcept;
@@ -27,8 +40,11 @@ public:
     CollectionType collectionType()       const { return _type; }
     bool fastSearch()                     const { return _fastSearch; }
     bool huge()                           const { return _huge; }
+    bool paged()                          const { return _paged; }
     const PredicateParams &predicateParams() const { return _predicateParams; }
-    vespalib::eval::ValueType tensorType() const { return _tensorType; }
+    const vespalib::eval::ValueType & tensorType() const { return _tensorType; }
+    DistanceMetric distance_metric() const { return _distance_metric; }
+    const std::optional<HnswIndexParams>& hnsw_index_params() const { return _hnsw_index_params; }
 
     /**
      * Check if attribute posting list can consist of a bitvector in
@@ -53,11 +69,26 @@ public:
 
     const GrowStrategy & getGrowStrategy() const { return _growStrategy; }
     const CompactionStrategy &getCompactionStrategy() const { return _compactionStrategy; }
+    const DictionaryConfig & get_dictionary_config() const { return _dictionary; }
+    Match get_match() const { return _match; }
     Config & setHuge(bool v)                         { _huge = v; return *this;}
     Config & setFastSearch(bool v)                   { _fastSearch = v; return *this; }
     Config & setPredicateParams(const PredicateParams &v) { _predicateParams = v; return *this; }
     Config & setTensorType(const vespalib::eval::ValueType &tensorType_in) {
         _tensorType = tensorType_in;
+        return *this;
+    }
+    Config& set_distance_metric(DistanceMetric value) {
+        _distance_metric = value;
+        return *this;
+    }
+    Config& set_hnsw_index_params(const HnswIndexParams& params) {
+        assert(_distance_metric == params.distance_metric());
+        _hnsw_index_params = params;
+        return *this;
+    }
+    Config& clear_hnsw_index_params() {
+        _hnsw_index_params.reset();
         return *this;
     }
 
@@ -85,11 +116,16 @@ public:
      * Hide weight information when searching in attributes.
      */
     Config & setIsFilter(bool isFilter) { _isFilter = isFilter; return *this; }
-
     Config & setMutable(bool isMutable) { _mutable = isMutable; return *this; }
+    Config & setPaged(bool paged_in) { _paged = paged_in; return *this; }
     Config & setFastAccess(bool v) { _fastAccess = v; return *this; }
     Config & setGrowStrategy(const GrowStrategy &gs) { _growStrategy = gs; return *this; }
-    Config &setCompactionStrategy(const CompactionStrategy &compactionStrategy) { _compactionStrategy = compactionStrategy; return *this; }
+    Config & setCompactionStrategy(const CompactionStrategy &compactionStrategy) {
+        _compactionStrategy = compactionStrategy;
+        return *this;
+    }
+    Config & set_dictionary_config(const DictionaryConfig & cfg) { _dictionary = cfg; return *this; }
+    Config & set_match(Match match) { _match = match; return *this; }
     bool operator!=(const Config &b) const { return !(operator==(b)); }
     bool operator==(const Config &b) const;
 
@@ -103,10 +139,15 @@ private:
     bool           _isFilter;
     bool           _fastAccess;
     bool           _mutable;
-    GrowStrategy   _growStrategy;
-    CompactionStrategy _compactionStrategy;
-    PredicateParams    _predicateParams;
-    vespalib::eval::ValueType _tensorType;
+    bool           _paged;
+    Match                          _match;
+    DictionaryConfig               _dictionary;
+    GrowStrategy                   _growStrategy;
+    CompactionStrategy             _compactionStrategy;
+    PredicateParams                _predicateParams;
+    vespalib::eval::ValueType      _tensorType;
+    DistanceMetric                 _distance_metric;
+    std::optional<HnswIndexParams> _hnsw_index_params;
 };
 
 }

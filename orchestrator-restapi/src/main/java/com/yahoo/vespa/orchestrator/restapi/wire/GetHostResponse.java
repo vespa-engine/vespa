@@ -18,6 +18,7 @@ public class GetHostResponse {
 
     public static final String FIELD_NAME_HOSTNAME = "hostname";
     public static final String FIELD_NAME_STATE = "state";
+    public static final String FIELD_NAME_SUSPENDED_SINCE = "suspendedSince";
     public static final String FIELD_NAME_APPLICATION_URL = "applicationUrl";
     public static final String FIELD_NAME_SERVICES = "services";
 
@@ -25,15 +26,18 @@ public class GetHostResponse {
     private final String state;
     private final String applicationUrl;
     private final List<HostService> services;
+    private final String suspendedSince;
 
     @JsonCreator
     public GetHostResponse(
             @JsonProperty(FIELD_NAME_HOSTNAME) String hostname,
             @JsonProperty(FIELD_NAME_STATE) String state,
+            @JsonProperty(FIELD_NAME_SUSPENDED_SINCE) String suspendedSince,
             @JsonProperty(FIELD_NAME_APPLICATION_URL) String applicationUrl,
             @JsonProperty(FIELD_NAME_SERVICES) List<HostService> services) {
         this.hostname = hostname;
         this.state = state;
+        this.suspendedSince = suspendedSince;
         this.applicationUrl = applicationUrl;
         this.services = services;
     }
@@ -46,6 +50,11 @@ public class GetHostResponse {
     @JsonProperty(FIELD_NAME_STATE)
     public String state() {
         return state;
+    }
+
+    @JsonProperty(FIELD_NAME_SUSPENDED_SINCE)
+    public String suspendedSince() {
+        return suspendedSince;
     }
 
     @JsonProperty(FIELD_NAME_APPLICATION_URL)
@@ -65,12 +74,13 @@ public class GetHostResponse {
         GetHostResponse that = (GetHostResponse) o;
         return Objects.equals(hostname, that.hostname) &&
                 Objects.equals(state, that.state) &&
+                Objects.equals(suspendedSince, that.suspendedSince) &&
                 Objects.equals(applicationUrl, that.applicationUrl) &&
                 Objects.equals(services, that.services);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(hostname, state, applicationUrl, services);
+        return Objects.hash(hostname, state, suspendedSince, applicationUrl, services);
     }
 }

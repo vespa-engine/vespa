@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
-import com.yahoo.vespa.hosted.dockerapi.metrics.Counter;
-import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
-import com.yahoo.vespa.hosted.dockerapi.metrics.Gauge;
-import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
+import com.yahoo.vespa.hosted.node.admin.container.metrics.Counter;
+import com.yahoo.vespa.hosted.node.admin.container.metrics.Dimensions;
+import com.yahoo.vespa.hosted.node.admin.container.metrics.Gauge;
+import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextManager;
@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Administers a host (for now only docker hosts) and its nodes (docker containers nodes).
@@ -78,7 +79,7 @@ public class NodeAdminImpl implements NodeAdmin {
     @Override
     public void refreshContainersToRun(Set<NodeAgentContext> nodeAgentContexts) {
         Map<String, NodeAgentContext> nodeAgentContextsByHostname = nodeAgentContexts.stream()
-                .collect(Collectors.toMap(nac -> nac.hostname().value(), Function.identity()));
+                .collect(Collectors.toMap(NodeAdminImpl::nodeAgentId, Function.identity()));
 
         // Stop and remove NodeAgents that should no longer be running
         diff(nodeAgentWithSchedulerByHostname.keySet(), nodeAgentContextsByHostname.keySet())
@@ -131,7 +132,7 @@ public class NodeAdminImpl implements NodeAdmin {
         }
 
         // Use filter with count instead of allMatch() because allMatch() will short circuit on first non-match
-        boolean allNodeAgentsConverged = nodeAgentWithSchedulerByHostname.values().parallelStream()
+        boolean allNodeAgentsConverged = parallelStreamOfNodeAgentWithScheduler()
                 .filter(nodeAgentScheduler -> !nodeAgentScheduler.setFrozen(wantFrozen, freezeTimeout))
                 .count() == 0;
 
@@ -157,12 +158,9 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     @Override
-    public void stopNodeAgentServices(List<String> hostnames) {
+    public void stopNodeAgentServices() {
         // Each container may spend 1-1:30 minutes stopping
-        hostnames.parallelStream()
-                 .filter(nodeAgentWithSchedulerByHostname::containsKey)
-                 .map(nodeAgentWithSchedulerByHostname::get)
-                 .forEach(NodeAgentWithScheduler::stopForHostSuspension);
+        parallelStreamOfNodeAgentWithScheduler().forEach(NodeAgentWithScheduler::stopForHostSuspension);
     }
 
     @Override
@@ -173,7 +171,18 @@ public class NodeAdminImpl implements NodeAdmin {
     @Override
     public void stop() {
         // Stop all node-agents in parallel, will block until the last NodeAgent is stopped
-        nodeAgentWithSchedulerByHostname.values().parallelStream().forEach(NodeAgentWithScheduler::stopForRemoval);
+        parallelStreamOfNodeAgentWithScheduler().forEach(NodeAgentWithScheduler::stopForRemoval);
+    }
+
+    /**
+     * Returns a parallel stream of NodeAgentWithScheduler.
+     *
+     * <p>Why not just call nodeAgentWithSchedulerByHostname.values().parallelStream()? Experiments
+     * with Java 11 have shown that with 10 nodes and forEach(), there are a maximum of 3 concurrent
+     * threads. With HashMap it produces 5.  With List it produces 10 concurrent threads.</p>
+     */
+    private Stream<NodeAgentWithScheduler> parallelStreamOfNodeAgentWithScheduler() {
+        return List.copyOf(nodeAgentWithSchedulerByHostname.values()).parallelStream();
     }
 
     // Set-difference. Returns minuend minus subtrahend.
@@ -212,5 +221,15 @@ public class NodeAdminImpl implements NodeAdmin {
         NodeAgentContextManager contextManager = new NodeAgentContextManager(clock, context);
         NodeAgent nodeAgent = nodeAgentFactory.create(contextManager, context);
         return new NodeAgentWithScheduler(nodeAgent, contextManager);
+    }
+
+    private static String nodeAgentId(NodeAgentContext nac) {
+        // NodeAgentImpl has some internal state that should not be reused when the same hostname is re-allocated
+        // to a different application/cluster, solve this by including reservation timestamp in the key.
+        return nac.hostname().value() + "-" + nac.node().events().stream()
+                .filter(event -> "reserved".equals(event.type()))
+                .findFirst()
+                .map(event -> Long.toString(event.at().toEpochMilli()))
+                .orElse("");
     }
 }

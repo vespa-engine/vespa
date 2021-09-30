@@ -7,14 +7,14 @@ namespace=vespa.config.search
 # for that group to be included in queries
 minActivedocsPercentage double default=97.0
 
-# Minimum coverage for allowing a group to be considered for serving
+# Not used. TODO: Remove on Vespa 8
 minGroupCoverage double default=100
 
-# Maximum number of nodes allowed to be down for group to be considered for serving
+# Not used. TODO: Remove on Vespa 8
 maxNodesDownPerGroup int default=0
 
 # Distribution policy for group selection
-distributionPolicy enum { ROUNDROBIN, ADAPTIVE } default=ROUNDROBIN
+distributionPolicy enum { ROUNDROBIN, ADAPTIVE } default=ADAPTIVE
 
 ## Maximum number of hits that will be requested from a single node
 ## in this dataset. If not set, there is no limit. Using this option
@@ -22,6 +22,15 @@ distributionPolicy enum { ROUNDROBIN, ADAPTIVE } default=ROUNDROBIN
 ## fan-out, but it will also result in incorrect and incomplete results;
 ## don't use it if you don't (really) mean it.
 maxHitsPerNode int default=2147483647
+
+## Probability for getting the K best hits (topK).
+## A value of 1.0 will ask all N partitions for K hits.
+## Any value between <0, 1> will use a Student T with 30 degrees freedom and compute a value Q that
+## will give you the globally K best hits according to this formula with the desired probability.
+## q = k/n + qT (p',30) x √(k × (1/n) × (1 − 1/n))
+## With a probability of 0.999 and K=200 and N=10 will give a Q of 38, meaning that you only need to fetch 19% compared to
+## a setting of 1.0. This is a significant optimisation with with very little loss in presicion.
+topKProbability double default=0.9999
 
 # Is multi-level dispatch configured for this cluster
 # Deprecated, will go away soon, NOOP
@@ -47,6 +56,9 @@ numJrtTransportThreads int default=8
 
 # Number of JRT connections per backend node
 numJrtConnectionsPerNode int default=8
+
+# Number of seconds to spend warming up code to prevent JIT cold start issues.
+warmuptime double default=0.1
 
 # The unique key of a search node
 node[].key int

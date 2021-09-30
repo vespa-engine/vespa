@@ -9,6 +9,7 @@
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <map>
 
 #include <vespa/log/log.h>
@@ -98,7 +99,7 @@ struct Fixture {
     SimpleIndex<MyData>::VectorIterator getVectorPostingList(uint64_t k) {
         return *_index.getVectorPostingList(k);
     }
-    SimpleIndex<MyData>::BTreeIterator getBTreePostingList(datastore::EntryRef ref) {
+    SimpleIndex<MyData>::BTreeIterator getBTreePostingList(vespalib::datastore::EntryRef ref) {
         return _index.getBTreePostingList(ref);
     }
     void commit() {
@@ -112,7 +113,7 @@ TEST_F("require that SimpleIndex can insert and remove a value.", Fixture) {
     f.commit();
     auto it = f.lookup(key);
     ASSERT_TRUE(it.valid());
-    datastore::EntryRef ref = it.getData();
+    vespalib::datastore::EntryRef ref = it.getData();
     auto posting_it = f.getBTreePostingList(ref);
     ASSERT_TRUE(posting_it.valid());
     EXPECT_EQUAL(doc_id, posting_it.getKey());
@@ -137,7 +138,7 @@ TEST_F("require that SimpleIndex can insert and remove many values.", Fixture) {
     f.commit();
     auto it = f.lookup(key);
     ASSERT_TRUE(it.valid());
-    datastore::EntryRef ref = it.getData();
+    vespalib::datastore::EntryRef ref = it.getData();
     auto posting_it = f.getBTreePostingList(ref);
     for (size_t id = 1; id < 100; ++id) {
         ASSERT_TRUE(posting_it.valid());
@@ -181,7 +182,7 @@ TEST_FF("require that SimpleIndex can be serialized and deserialized.", Fixture,
 
     auto it = f2.lookup(key);
     ASSERT_TRUE(it.valid());
-    datastore::EntryRef ref = it.getData();
+    vespalib::datastore::EntryRef ref = it.getData();
     auto posting_it = f1.getBTreePostingList(ref);
     for (uint32_t id = 1; id < 100; ++id) {
         ASSERT_TRUE(posting_it.valid());
@@ -202,7 +203,7 @@ TEST_F("require that SimpleIndex can update by inserting the same key twice.", F
 
     auto it = f.lookup(key);
     ASSERT_TRUE(it.valid());
-    datastore::EntryRef ref = it.getData();
+    vespalib::datastore::EntryRef ref = it.getData();
     auto posting_it = f.getBTreePostingList(ref);
     ASSERT_TRUE(posting_it.valid());
     EXPECT_EQUAL(doc_id, posting_it.getKey());

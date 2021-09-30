@@ -1,8 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distributorprocess.h"
-#include <vespa/storage/common/storagelink.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/storage/common/bucket_stripe_utils.h>
+#include <vespa/storage/common/i_storage_chain_builder.h>
+#include <vespa/storage/common/storagelink.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".process.distributor");
@@ -11,8 +14,12 @@ namespace storage {
 
 DistributorProcess::DistributorProcess(const config::ConfigUri & configUri)
     : Process(configUri),
-      _activeFlag(DistributorNode::NO_NEED_FOR_ACTIVE_STATES),
-      _use_btree_database(false)
+      _context(),
+      _num_distributor_stripes(0), // TODO STRIPE: change default when legacy single stripe mode is removed
+      _node(),
+      _distributorConfigHandler(),
+      _visitDispatcherConfigHandler(),
+      _storage_chain_builder()
 {
 }
 
@@ -27,20 +34,35 @@ DistributorProcess::shutdown()
     _node.reset();
 }
 
+namespace {
+
+uint32_t
+adjusted_num_distributor_stripes(int32_t cfg_n_stripes)
+{
+    if (cfg_n_stripes <= 0) {
+        uint32_t cpu_cores = std::thread::hardware_concurrency();
+        return storage::tune_num_stripes_based_on_cpu_cores(cpu_cores);
+    } else {
+        uint32_t adjusted_n_stripes = storage::adjusted_num_stripes(cfg_n_stripes);
+        if (adjusted_n_stripes != static_cast<uint32_t>(cfg_n_stripes)) {
+            LOG(warning, "Configured number of distributor stripes (%d) is not valid. Adjusting to a valid value (%u)",
+                cfg_n_stripes, adjusted_n_stripes);
+        }
+        return adjusted_n_stripes;
+    }
+}
+
+}
+
 void
 DistributorProcess::setupConfig(milliseconds subscribeTimeout)
 {
-    using vespa::config::content::core::StorServerConfig;
     using vespa::config::content::core::StorDistributormanagerConfig;
     using vespa::config::content::core::StorVisitordispatcherConfig;
 
-    auto stor_config = config::ConfigGetter<StorServerConfig>::getConfig(
+    auto distr_cfg = config::ConfigGetter<StorDistributormanagerConfig>::getConfig(
             _configUri.getConfigId(), _configUri.getContext(), subscribeTimeout);
-    if (stor_config->persistenceProvider.type != StorServerConfig::PersistenceProvider::Type::STORAGE) {
-        _activeFlag = DistributorNode::NEED_ACTIVE_BUCKET_STATES_SET;
-    }
-    auto dist_config = config::ConfigGetter<StorDistributormanagerConfig>::getConfig(_configUri.getConfigId(), _configUri.getContext(), subscribeTimeout);
-    _use_btree_database = dist_config->useBtreeDatabase;
+    _num_distributor_stripes = adjusted_num_distributor_stripes(distr_cfg->numDistributorStripes);
     _distributorConfigHandler = _configSubscriber.subscribe<StorDistributormanagerConfig>(_configUri.getConfigId(), subscribeTimeout);
     _visitDispatcherConfigHandler = _configSubscriber.subscribe<StorVisitordispatcherConfig>(_configUri.getConfigId(), subscribeTimeout);
     Process::setupConfig(subscribeTimeout);
@@ -76,9 +98,15 @@ DistributorProcess::configUpdated()
 void
 DistributorProcess::createNode()
 {
-    _node.reset(new DistributorNode(_configUri, _context, *this, _activeFlag, _use_btree_database, StorageLink::UP()));
+    _node = std::make_unique<DistributorNode>(_configUri, _context, *this, _num_distributor_stripes, StorageLink::UP(), std::move(_storage_chain_builder));
     _node->handleConfigChange(*_distributorConfigHandler->getConfig());
     _node->handleConfigChange(*_visitDispatcherConfigHandler->getConfig());
+}
+
+void
+DistributorProcess::set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder)
+{
+    _storage_chain_builder = std::move(builder);
 }
 
 } // storage

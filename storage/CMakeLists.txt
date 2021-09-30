@@ -18,13 +18,11 @@ vespa_define_module(
     storageframework
 
     EXTERNAL_DEPENDS
-    Judy
     ${VESPA_GLIBC_RT_LIB}
 
     LIBS
     src/vespa/storage
     src/vespa/storage/bucketdb
-    src/vespa/storage/bucketmover
     src/vespa/storage/common
     src/vespa/storage/common/hostreporter
     src/vespa/storage/config
@@ -40,6 +38,7 @@ vespa_define_module(
     src/vespa/storage/persistence
     src/vespa/storage/persistence/filestorage
     src/vespa/storage/storageserver
+    src/vespa/storage/storageserver/rpc
     src/vespa/storage/storageutil
     src/vespa/storage/tools
     src/vespa/storage/visiting
@@ -47,12 +46,12 @@ vespa_define_module(
     TEST_DEPENDS
     messagebus_messagebus-test
     vdstestlib
+    TEST_EXTERNAL_DEPENDS
     ${VESPA_ATOMIC_LIB}
 
     TESTS
     src/tests
     src/tests/bucketdb
-    src/tests/bucketmover
     src/tests/common
     src/tests/common/hostreporter
     src/tests/distributor
@@ -61,5 +60,6 @@ vespa_define_module(
     src/tests/persistence/common
     src/tests/persistence/filestorage
     src/tests/storageserver
+    src/tests/storageserver/rpc
     src/tests/visiting
 )

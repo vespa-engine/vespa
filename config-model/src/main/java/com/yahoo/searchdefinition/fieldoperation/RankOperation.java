@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.fieldoperation;
 import com.yahoo.searchdefinition.document.SDField;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class RankOperation implements FieldOperation {
 
@@ -32,4 +32,5 @@ public class RankOperation implements FieldOperation {
             field.getRanking().setNormal(normal);
         }
     }
+
 }

@@ -51,4 +51,14 @@ public class MockTesterClient extends TesterClient {
         };
     }
 
+    @Override
+    public HttpResponse getReport(String testerHostname, int port) {
+        return new HttpResponse(200) {
+            @Override
+            public void render(OutputStream outputStream) throws IOException {
+                outputStream.write("report".getBytes(StandardCharsets.UTF_8));
+            }
+        };
+    }
+
 }

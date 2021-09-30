@@ -12,10 +12,15 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
+import net.jpountz.lz4.LZ4FrameInputStream;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
@@ -48,11 +53,14 @@ public class RankProfilesConfigImporter {
      * Returns a map of the models contained in this config, indexed on name.
      * The map is modifiable and owned by the caller.
      */
-    public Map<String, Model> importFrom(RankProfilesConfig config, RankingConstantsConfig constantsConfig) {
+    public Map<String, Model> importFrom(RankProfilesConfig config,
+                                         RankingConstantsConfig constantsConfig,
+                                         RankingExpressionsConfig expressionsConfig,
+                                         OnnxModelsConfig onnxModelsConfig) {
         try {
             Map<String, Model> models = new HashMap<>();
             for (RankProfilesConfig.Rankprofile profile : config.rankprofile()) {
-                Model model = importProfile(profile, constantsConfig);
+                Model model = importProfile(profile, constantsConfig, expressionsConfig, onnxModelsConfig);
                 models.put(model.name(), model);
             }
             return models;
@@ -62,10 +70,22 @@ public class RankProfilesConfigImporter {
         }
     }
 
-    private Model importProfile(RankProfilesConfig.Rankprofile profile, RankingConstantsConfig constantsConfig)
+    @Deprecated
+    public Map<String, Model> importFrom(RankProfilesConfig config,
+                                         RankingConstantsConfig constantsConfig,
+                                         OnnxModelsConfig onnxModelsConfig) {
+        return importFrom(config, constantsConfig, new RankingExpressionsConfig.Builder().build(), onnxModelsConfig);
+    }
+
+    private Model importProfile(RankProfilesConfig.Rankprofile profile,
+                                RankingConstantsConfig constantsConfig,
+                                RankingExpressionsConfig expressionsConfig,
+                                OnnxModelsConfig onnxModelsConfig)
             throws ParseException {
 
+        List<OnnxModel> onnxModels = readOnnxModelsConfig(onnxModelsConfig);
         List<Constant> constants = readLargeConstants(constantsConfig);
+        Map<String, RankingExpression> largeExpressions = readLargeExpressions(expressionsConfig);
 
         Map<FunctionReference, ExpressionFunction> functions = new LinkedHashMap<>();
         Map<FunctionReference, ExpressionFunction> referencedFunctions = new LinkedHashMap<>();
@@ -74,9 +94,21 @@ public class RankProfilesConfigImporter {
         ExpressionFunction secondPhase = null;
         for (RankProfilesConfig.Rankprofile.Fef.Property property : profile.fef().property()) {
             Optional<FunctionReference> reference = FunctionReference.fromSerial(property.name());
+            Optional<FunctionReference> externalReference = FunctionReference.fromExternalSerial(property.name());
             Optional<Pair<FunctionReference, String>> argumentType = FunctionReference.fromTypeArgumentSerial(property.name());
             Optional<FunctionReference> returnType = FunctionReference.fromReturnTypeSerial(property.name());
-            if ( reference.isPresent()) {
+            if (externalReference.isPresent()) {
+                RankingExpression expression = largeExpressions.get(property.value());
+                ExpressionFunction function = new ExpressionFunction(externalReference.get().functionName(),
+                        Collections.emptyList(),
+                        expression);
+
+                if (externalReference.get().isFree()) // make available in model under configured name
+                    functions.put(externalReference.get(), function);
+                // Make all functions, bound or not, available under the name they are referenced by in expressions
+                referencedFunctions.put(externalReference.get(), function);
+            }
+            else if (reference.isPresent()) {
                 RankingExpression expression = new RankingExpression(reference.get().functionName(), property.value());
                 ExpressionFunction function = new ExpressionFunction(reference.get().functionName(),
                                                                      Collections.emptyList(),
@@ -122,7 +154,7 @@ public class RankProfilesConfigImporter {
         constants.addAll(smallConstantsInfo.asConstants());
 
         try {
-            return new Model(profile.name(), functions, referencedFunctions, constants);
+            return new Model(profile.name(), functions, referencedFunctions, constants, onnxModels);
         }
         catch (RuntimeException e) {
             throw new IllegalArgumentException("Could not load model '" + profile.name() + "'", e);
@@ -136,6 +168,26 @@ public class RankProfilesConfigImporter {
         return null;
     }
 
+    private List<OnnxModel> readOnnxModelsConfig(OnnxModelsConfig onnxModelsConfig) {
+        List<OnnxModel> onnxModels = new ArrayList<>();
+        if (onnxModelsConfig != null) {
+            for (OnnxModelsConfig.Model onnxModelConfig : onnxModelsConfig.model()) {
+                onnxModels.add(readOnnxModelConfig(onnxModelConfig));
+            }
+        }
+        return onnxModels;
+    }
+
+    private OnnxModel readOnnxModelConfig(OnnxModelsConfig.Model onnxModelConfig) {
+        try {
+            String name = onnxModelConfig.name();
+            File file = fileAcquirer.waitFor(onnxModelConfig.fileref(), 7, TimeUnit.DAYS);
+            return new OnnxModel(name, file);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Gave up waiting for ONNX model " + onnxModelConfig.name());
+        }
+    }
+
     private List<Constant> readLargeConstants(RankingConstantsConfig constantsConfig) {
         List<Constant> constants = new ArrayList<>();
 
@@ -146,6 +198,34 @@ public class RankProfilesConfigImporter {
                                                           constantConfig.fileref())));
         }
         return constants;
+    }
+
+    private Map<String, RankingExpression> readLargeExpressions(RankingExpressionsConfig expressionsConfig) throws ParseException {
+        Map<String, RankingExpression> expressions = new HashMap<>();
+
+        for (RankingExpressionsConfig.Expression expression : expressionsConfig.expression()) {
+            expressions.put(expression.name(), readExpressionFromFile(expression.name(), expression.fileref()));
+        }
+        return expressions;
+    }
+
+    protected final String readExpressionFromFile(File file) throws IOException {
+        return (file.getName().endsWith(".lz4"))
+            ? Utf8.toString(IOUtils.readBytes(new LZ4FrameInputStream(new FileInputStream(file)), 65536))
+            : Utf8.toString(IOUtils.readFileBytes(file));
+    }
+
+    protected RankingExpression readExpressionFromFile(String name, FileReference fileReference) throws ParseException {
+        try {
+            File file = fileAcquirer.waitFor(fileReference, 7, TimeUnit.DAYS);
+            return new RankingExpression(name, readExpressionFromFile(file));
+        }
+        catch (InterruptedException e) {
+            throw new IllegalStateException("Gave up waiting for expression " + name);
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     protected Tensor readTensorFromFile(String name, TensorType type, FileReference fileReference) {
@@ -173,8 +253,8 @@ public class RankProfilesConfigImporter {
         private static final Pattern valuePattern = Pattern.compile("constant\\(([a-zA-Z0-9_.]+)\\)\\.value");
         private static final Pattern  typePattern = Pattern.compile("constant\\(([a-zA-Z0-9_.]+)\\)\\.type");
 
-        private Map<String, TensorType> types = new HashMap<>();
-        private Map<String, String> values = new HashMap<>();
+        private final Map<String, TensorType> types = new HashMap<>();
+        private final Map<String, String> values = new HashMap<>();
 
         void addIfSmallConstantInfo(String key, String value) {
             tryValue(key, value);

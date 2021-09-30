@@ -4,7 +4,10 @@ package com.yahoo.jdisc;
 import com.google.inject.ImplementedBy;
 import com.yahoo.jdisc.core.SystemTimer;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 /**
  * <p>This class provides access to the current time in milliseconds, as viewed by the {@link Container}. Inject an
@@ -29,11 +32,33 @@ public interface Timer {
      */
     long currentTimeMillis();
 
-    /**
-     * Convenience method for getting an java.util.Instance from currentTimeMillis().
-     */
+    /** Convenience method for getting an java.util.Instance from currentTimeMillis(). */
     default Instant currentTime() {
         return Instant.ofEpochMilli(currentTimeMillis());
+    }
+
+    /** Return a UTC Clock backed by this timer. */
+    default Clock toUtcClock() {
+        return new ClockAdapter(this, ZoneOffset.UTC);
+    }
+
+    /** Create a Timer backed by the given Clock. */
+    static Timer fromClock(Clock clock) {
+        return clock::millis;
+    }
+
+    class ClockAdapter extends Clock {
+        private final Timer timer;
+        private final ZoneId zoneId;
+
+        private ClockAdapter(Timer timer, ZoneId zoneId) {
+            this.timer = timer;
+            this.zoneId = zoneId;
+        }
+
+        @Override public ZoneId getZone() { return zoneId; }
+        @Override public Clock withZone(ZoneId zone) { return new ClockAdapter(timer, zoneId); }
+        @Override public Instant instant() { return timer.currentTime(); }
     }
 
 }

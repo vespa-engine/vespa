@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,9 +33,9 @@ import static org.junit.Assert.assertEquals;
  */
 public class FlagsHandlerTest {
     private static final UnboundBooleanFlag FLAG1 = Flags.defineFeatureFlag(
-            "id1", false, "desc1", "mod1");
+            "id1", false, List.of("joe"), "2010-01-01", "2030-01-01", "desc1", "mod1");
     private static final UnboundBooleanFlag FLAG2 = Flags.defineFeatureFlag(
-            "id2", true, "desc2", "mod2",
+            "id2", true, List.of("joe"), "2010-01-01", "2030-01-01", "desc2", "mod2",
             FetchVector.Dimension.HOSTNAME, FetchVector.Dimension.APPLICATION_ID);
 
     private static final String FLAGS_V1_URL = "https://foo.com:4443/flags/v1";
@@ -57,12 +58,12 @@ public class FlagsHandlerTest {
     public void testDefined() {
         try (Flags.Replacer replacer = Flags.clearFlagsForTesting()) {
             fixUnusedWarning(replacer);
-            Flags.defineFeatureFlag("id", false, "desc", "mod", FetchVector.Dimension.HOSTNAME);
+            Flags.defineFeatureFlag("id", false, List.of("joe"), "2010-01-01", "2030-01-01", "desc", "mod", FetchVector.Dimension.HOSTNAME);
             verifySuccessfulRequest(Method.GET, "/defined", "",
-                    "{\"id\":{\"description\":\"desc\",\"modification-effect\":\"mod\",\"dimensions\":[\"hostname\"]}}");
+                    "{\"id\":{\"description\":\"desc\",\"modification-effect\":\"mod\",\"owners\":[\"joe\"],\"createdAt\":\"2010-01-01T00:00:00Z\",\"expiresAt\":\"2030-01-01T00:00:00Z\",\"dimensions\":[\"hostname\"]}}");
 
             verifySuccessfulRequest(Method.GET, "/defined/id", "",
-                    "{\"description\":\"desc\",\"modification-effect\":\"mod\",\"dimensions\":[\"hostname\"]}");
+                    "{\"description\":\"desc\",\"modification-effect\":\"mod\",\"owners\":[\"joe\"],\"createdAt\":\"2010-01-01T00:00:00Z\",\"expiresAt\":\"2030-01-01T00:00:00Z\",\"dimensions\":[\"hostname\"]}");
         }
     }
 

@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <iterator>
 #include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/util/traits.h>
+#include <algorithm>
+#include <iterator>
 
 namespace vespalib {
 
@@ -50,7 +52,7 @@ namespace vespalib {
 class hashtable_base
 {
 public:
-    typedef unsigned int next_t;
+    using next_t = uint32_t;
     /**
      * This is a standard modulator that does modulo/hashTableSize.
      * Hashtable size is selected from a a set of prime numbers.
@@ -79,8 +81,10 @@ public:
     private:
         next_t _mask;
     };
-    static size_t getModuloStl(size_t newSize);
-    static size_t getModuloSimple(size_t newSize);
+    static size_t getModuloStl(size_t size);
+    static size_t getModuloSimple(size_t size) {
+        return std::max(size_t(8), roundUp2inN(size));
+    }
 protected:
     struct DefaultMoveHandler
     {
@@ -98,29 +102,80 @@ class hash_node {
 public:
     using next_t=hashtable_base::next_t;
     enum {npos=-1u, invalid=-2u};
-    hash_node() : _next(invalid) {}
+    hash_node()
+        : _next(invalid)
+    {}
     hash_node(const V & node, next_t next=npos)
-        : _next(next), _node(node) {}
-    hash_node(V &&node, next_t next=npos)
-        : _next(next), _node(std::move(node)) {}
-    hash_node(hash_node &&) noexcept = default;
-    hash_node &operator=(hash_node &&) noexcept = default;
-    hash_node(const hash_node &) = default;             // These will not be created
-    hash_node &operator=(const hash_node &) = default;  // if V is non-copyable.
-    bool operator == (const hash_node & rhs) const {
-        return (_next == rhs._next) && (_node == rhs._node);
+        : _next(next)
+    {
+        new (_node) V(node);
     }
-    V & getValue()             { return _node; }
-    const V & getValue() const { return _node; }
+    hash_node(V &&node, next_t next=npos)
+        : _next(next)
+    {
+        new (_node) V(std::move(node));
+    }
+    hash_node(hash_node && rhs) noexcept
+        : _next(rhs._next)
+    {
+        if (rhs.valid()) {
+            new (_node) V(std::move(rhs.getValue()));
+        }
+    }
+    hash_node &operator=(hash_node && rhs) noexcept {
+        destruct();
+        if (rhs.valid()) {
+            new (_node) V(std::move(rhs.getValue()));
+            _next = rhs._next;
+        } else {
+            _next = invalid;
+        }
+        return *this;
+    }
+    hash_node(const hash_node & rhs)
+        : _next(rhs._next)
+    {
+        if (rhs.valid()) {
+            new (_node) V(rhs.getValue());
+        }
+    }
+    hash_node &operator=(const hash_node & rhs) {
+        destruct();
+        if (rhs.valid()) {
+            new (_node) V(rhs.getValue());
+            _next = rhs._next;
+        } else {
+            _next = invalid;
+        }
+        return *this;
+    }
+    ~hash_node() {
+        destruct();
+    }
+    bool operator == (const hash_node & rhs) const {
+        return (_next == rhs._next) && (!valid() || (getValue() == rhs.getValue()));
+    }
+    V & getValue()             { return *reinterpret_cast<V *>(_node); }
+    const V & getValue() const { return *reinterpret_cast<const V *>(_node); }
     next_t getNext()     const { return _next; }
     void setNext(next_t next)  { _next = next; }
-    void invalidate()          { _next = invalid; _node = V(); }
+    void invalidate()          {
+        destruct();
+        _next = invalid;
+    }
     void terminate()           { _next = npos; }
     bool valid()         const { return _next != invalid; }
     bool hasNext()       const { return valid() && (_next != npos); }
 private:
+    void destruct() {
+        if constexpr (!can_skip_destruction<V>::value) {
+            if (valid()) {
+                getValue().~V();
+            }
+        }
+    }
+    alignas(V) char    _node[sizeof(V)];
     next_t  _next;
-    V       _node;
 };
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator = hashtable_base::prime_modulator>
@@ -129,7 +184,7 @@ class hashtable : public hashtable_base
 private:
     using Node=hash_node<Value>;
 protected:
-    typedef vespalib::Array<Node> NodeStore;
+    using NodeStore = vespalib::Array<Node>;
     virtual void move(NodeStore && oldStore);
 public:
     class const_iterator;
@@ -246,6 +301,9 @@ public:
     insert_result insert(V && node) {
         return insertInternal(std::forward<V>(node));
     }
+    // This will insert unconditionally, without checking presence, and might cause duplicates.
+    // Use at you own risk.
+    void force_insert(Value && value);
     
     /// This gives faster iteration than can be achieved by the iterators.
     template <typename Func>
@@ -274,10 +332,10 @@ public:
     size_t getMemoryUsed() const;
 
 protected:
-    /// These two methods are only for the ones that know what they are doing.
-    /// valid input here are stuff returned from iterator.getInternalIndex.
     template <typename V>
     insert_result insertInternal(V && node);
+    /// These two methods are only for the ones that know what they are doing.
+    /// valid input here are stuff returned from iterator.getInternalIndex.
     Value & getByInternalIndex(size_t index)             { return _nodes[index].getValue(); }
     const Value & getByInternalIndex(size_t index) const { return _nodes[index].getValue(); }
     template <typename MoveHandler>

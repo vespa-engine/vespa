@@ -199,7 +199,7 @@ public:
 };
 
 
-using InnerAttributePostingListIterator = attribute::PostingListTraits<btree::BTreeNoLeafData>::const_iterator;
+using InnerAttributePostingListIterator = attribute::PostingListTraits<vespalib::btree::BTreeNoLeafData>::const_iterator;
 
 using WeightedInnerAttributePostingListIterator = attribute::PostingListTraits<int32_t>::const_iterator;
 

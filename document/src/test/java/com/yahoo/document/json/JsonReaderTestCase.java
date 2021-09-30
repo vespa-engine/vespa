@@ -31,7 +31,6 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
-import com.yahoo.document.json.document.DocumentParser;
 import com.yahoo.document.json.readers.DocumentParseInfo;
 import com.yahoo.document.json.readers.VespaJsonDocumentReader;
 import com.yahoo.document.serialization.DocumentSerializer;
@@ -79,13 +78,10 @@ import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_DIVIDE;
 import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_INCREMENT;
 import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_MULTIPLY;
 import static com.yahoo.test.json.JsonTestHelper.inputJson;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -168,10 +164,16 @@ public class JsonReaderTestCase {
                                  new TensorDataType(new TensorType.Builder().mapped("x").mapped("y").build())));
             x.addField(new Field("dense_tensor",
                     new TensorDataType(new TensorType.Builder().indexed("x", 2).indexed("y", 3).build())));
+            x.addField(new Field("dense_int8_tensor",
+                    new TensorDataType(TensorType.fromSpec("tensor<int8>(x[2],y[3])"))));
             x.addField(new Field("dense_unbound_tensor",
                     new TensorDataType(new TensorType.Builder().indexed("x").indexed("y").build())));
             x.addField(new Field("mixed_tensor",
                     new TensorDataType(new TensorType.Builder().mapped("x").indexed("y", 3).build())));
+            x.addField(new Field("mixed_bfloat16_tensor",
+                    new TensorDataType(TensorType.fromSpec("tensor<bfloat16>(x{},y[3])"))));
+            x.addField(new Field("mixed_tensor_adv",
+                    new TensorDataType(new TensorType.Builder().mapped("x").mapped("y").mapped("z").indexed("a", 3).build())));
             types.registerDocumentType(x);
         }
         {
@@ -217,7 +219,7 @@ public class JsonReaderTestCase {
                 "    'nalle': 'bamse'",
                 "  }",
                 "}"));
-        DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentParser.SupportedOperation.PUT,
+        DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentOperationType.PUT,
                                                              "id:unittest:smoke::doc1");
         smokeTestDoc(put.getDocument());
     }
@@ -228,7 +230,7 @@ public class JsonReaderTestCase {
                 "  'fields': {",
                 "    'something': {",
                 "      'assign': 'orOther' }}}"));
-        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, "id:unittest:smoke::whee");
+        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentOperationType.UPDATE, "id:unittest:smoke::whee");
         FieldUpdate f = doc.getFieldUpdate("something");
         assertEquals(1, f.size());
         assertTrue(f.getValueUpdate(0) instanceof AssignValueUpdate);
@@ -240,7 +242,7 @@ public class JsonReaderTestCase {
                 "  'fields': {",
                 "    'int1': {",
                 "      'assign': null }}}"));
-        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, "id:unittest:smoke::whee");
+        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentOperationType.UPDATE, "id:unittest:smoke::whee");
         FieldUpdate f = doc.getFieldUpdate("int1");
         assertEquals(1, f.size());
         assertTrue(f.getValueUpdate(0) instanceof ClearValueUpdate);
@@ -797,8 +799,8 @@ public class JsonReaderTestCase {
         d = r.next();
         DocumentUpdate update = (DocumentUpdate) d;
         checkSimpleArrayAdd(update);
-        assertThat(update.getCreateIfNonExistent(), is(true));
-        assertThat(update.getCondition().getSelection(), is("bla"));
+        assertTrue(update.getCreateIfNonExistent());
+        assertEquals("bla", update.getCondition().getSelection());
 
         d = r.next();
         DocumentRemove remove = (DocumentRemove) d;
@@ -833,8 +835,8 @@ public class JsonReaderTestCase {
         for (int x = 0; x < documentsCreated; x++) {
             DocumentUpdate update = (DocumentUpdate) r.next();
             checkSimpleArrayAdd(update);
-            assertThat(update.getCreateIfNonExistent(), is(true));
-            assertThat(update.getCondition().getSelection(), is("bla"));
+            assertTrue(update.getCreateIfNonExistent());
+            assertEquals("bla", update.getCondition().getSelection());
 
         }
 
@@ -1219,8 +1221,8 @@ public class JsonReaderTestCase {
                 "    'tensorfield': null",
                 "  }",
                 "}"));
-        DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentParser.SupportedOperation.PUT,
-                "id:unittest:testnull::doc1");
+        DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentOperationType.PUT,
+                                                             "id:unittest:testnull::doc1");
         Document doc = put.getDocument();
         assertFieldValueNull(doc, "intfield");
         assertFieldValueNull(doc, "stringfield");
@@ -1237,7 +1239,7 @@ public class JsonReaderTestCase {
                 "    'arrayfield': [ null ]",
                 "  }",
                 "}"));
-        r.readSingleDocument(DocumentParser.SupportedOperation.PUT, "id:unittest:testnull::doc1");
+        r.readSingleDocument(DocumentOperationType.PUT, "id:unittest:testnull::doc1");
         fail();
     }
 
@@ -1277,6 +1279,22 @@ public class JsonReaderTestCase {
     public void testParsingOfTensorWithEmptyCells() {
         assertSparseTensorField("tensor(x{},y{}):{}",
                                 createPutWithSparseTensor(inputJson("{ 'cells': [] }")));
+    }
+
+    @Test
+    public void testDisallowedDenseTensorShortFormWithoutValues() {
+        assertCreatePutFails(inputJson("{ 'values': [] }"), "dense_tensor",
+                "The 'values' array does not contain any values");
+        assertCreatePutFails(inputJson("{ 'values': '' }"), "dense_tensor",
+                "The 'values' string does not contain any values");
+    }
+
+    @Test
+    public void testDisallowedMixedTensorShortFormWithoutValues() {
+        assertCreatePutFails(inputJson("{\"blocks\":{ \"a\": [] } }"),
+                "mixed_tensor", "Expected 3 values, but got 0");
+        assertCreatePutFails(inputJson("{\"blocks\":[ {\"address\":{\"x\":\"a\"}, \"values\": [] } ] }"),
+                "mixed_tensor", "Expected 3 values, but got 0");
     }
 
     @Test
@@ -1323,6 +1341,41 @@ public class JsonReaderTestCase {
                                                                         "  'values': [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]",
                                                                         "}"), "dense_tensor"), "dense_tensor");
         assertTrue(tensor instanceof IndexedTensor); // this matters for performance
+    }
+
+    @Test
+    public void testParsingOfDenseTensorHexFormat() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor<int8>(x[2],y[3])"));
+        builder.cell().label("x", 0).label("y", 0).value(2.0);
+        builder.cell().label("x", 0).label("y", 1).value(3.0);
+        builder.cell().label("x", 0).label("y", 2).value(4.0);
+        builder.cell().label("x", 1).label("y", 0).value(5.0);
+        builder.cell().label("x", 1).label("y", 1).value(6.0);
+        builder.cell().label("x", 1).label("y", 2).value(7.0);
+        Tensor expected = builder.build();
+        Tensor tensor = assertTensorField(expected,
+                                          createPutWithTensor(inputJson("{",
+                                                                        "  'values': \"020304050607\"",
+                                                                        "}"), "dense_int8_tensor"), "dense_int8_tensor");
+        assertTrue(tensor instanceof IndexedTensor); // this matters for performance
+    }
+
+    @Test
+    public void testParsingOfMixedTensorHexFormat() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor<bfloat16>(x{},y[3])"));
+        builder.cell().label("x", "foo").label("y", 0).value(2.0);
+        builder.cell().label("x", "foo").label("y", 1).value(3.0);
+        builder.cell().label("x", "foo").label("y", 2).value(4.0);
+        builder.cell().label("x", "bar").label("y", 0).value(5.0);
+        builder.cell().label("x", "bar").label("y", 1).value(6.0);
+        builder.cell().label("x", "bar").label("y", 2).value(7.0);
+        Tensor expected = builder.build();
+        String mixedJson = "{\"blocks\":[" +
+                           "{\"address\":{\"x\":\"foo\"},\"values\":\"400040404080\"}," +
+                           "{\"address\":{\"x\":\"bar\"},\"values\":\"40A040C040E0\"}" +
+                           "]}";
+        var put = createPutWithTensor(inputJson(mixedJson), "mixed_bfloat16_tensor");
+        Tensor tensor = assertTensorField(expected, put, "mixed_bfloat16_tensor");
     }
 
     @Test
@@ -1468,7 +1521,7 @@ public class JsonReaderTestCase {
                                                        "  'fields': {",
                                                        "    'something': {",
                                                        "      'modify': {} }}}"));
-            reader.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, "id:unittest:smoke::doc1");
+            reader.readSingleDocument(DocumentOperationType.UPDATE, "id:unittest:smoke::doc1");
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
@@ -1689,6 +1742,24 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void tensor_remove_update_on_sparse_tensor_with_not_fully_specified_address() {
+        assertTensorRemoveUpdate("{{y:b}:1.0,{y:d}:1.0}", "sparse_tensor",
+                inputJson("{",
+                        "  'addresses': [",
+                        "    { 'y': 'b' },",
+                        "    { 'y': 'd' } ]}"));
+    }
+
+    @Test
+    public void tensor_remove_update_on_mixed_tensor_with_not_fully_specified_address() {
+        assertTensorRemoveUpdate("{{x:1,z:a}:1.0,{x:2,z:b}:1.0}", "mixed_tensor_adv",
+                inputJson("{",
+                        "  'addresses': [",
+                        "    { 'x': '1', 'z': 'a' },",
+                        "    { 'x': '2', 'z': 'b' } ]}"));
+    }
+
+    @Test
     public void tensor_remove_update_on_mixed_tensor_with_dense_addresses_throws() {
         illegalTensorRemoveUpdate("Error in 'mixed_tensor': Indexed dimension address 'y' should not be specified in remove update",
                                   "mixed_tensor",
@@ -1707,12 +1778,19 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void tensor_remove_update_on_not_fully_specified_cell_throws() {
-        illegalTensorRemoveUpdate("Error in 'sparse_tensor': Missing a label for dimension y for tensor(x{},y{})",
-                                  "sparse_tensor",
-                                  "{",
-                                  "  'addresses': [",
-                                  "    { 'x': 'a' } ]}");
+    public void tensor_remove_update_with_stray_dimension_throws() {
+        illegalTensorRemoveUpdate("Error in 'sparse_tensor': tensor(x{},y{}) does not contain dimension 'foo'",
+                "sparse_tensor",
+                "{",
+                "  'addresses': [",
+                "    { 'x': 'a', 'foo': 'b' } ]}");
+
+        illegalTensorRemoveUpdate("Error in 'sparse_tensor': tensor(x{}) does not contain dimension 'foo'",
+                "sparse_tensor",
+                "{",
+                "  'addresses': [",
+                "    { 'x': 'c' },",
+                "    { 'x': 'a', 'foo': 'b' } ]}");
     }
 
     @Test
@@ -1780,7 +1858,7 @@ public class JsonReaderTestCase {
     @Test
     public void requireThatUnknownDocTypeThrowsIllegalArgumentException() {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage(containsString("Document type walrus does not exist"));
+        exception.expectMessage("Document type walrus does not exist");
 
         final String jsonData = inputJson(
                 "[",
@@ -1962,9 +2040,18 @@ public class JsonReaderTestCase {
     // NOTE: Do not call this method multiple times from a test method as it's using the ExpectedException rule
     private void assertParserErrorMatches(String expectedError, String... json) {
         exception.expect(JsonReaderException.class);
-        exception.expectMessage(containsString(expectedError));
+        exception.expectMessage(expectedError);
         String jsonData = inputJson(json);
         new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
+    }
+
+    private void assertCreatePutFails(String tensor, String name, String msg) {
+        try {
+            createPutWithTensor(inputJson(tensor), name);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains(msg));
+        }
     }
 
 }

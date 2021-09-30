@@ -2,12 +2,14 @@
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.InstanceList;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 
@@ -20,21 +22,21 @@ import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
  * @author bratseth
  */
 public class VespaVersion implements Comparable<VespaVersion> {
-    
+
+    private final Version version;
     private final String releaseCommit;
     private final Instant committedAt;
     private final boolean isControllerVersion;
     private final boolean isSystemVersion;
     private final boolean isReleased;
-    private final DeploymentStatistics statistics;
-    private final NodeVersions nodeVersions;
+    private final List<NodeVersion> nodeVersions;
     private final Confidence confidence;
 
-    public VespaVersion(DeploymentStatistics statistics, String releaseCommit, Instant committedAt,
+    public VespaVersion(Version version, String releaseCommit, Instant committedAt,
                         boolean isControllerVersion, boolean isSystemVersion, boolean isReleased,
-                        NodeVersions nodeVersions,
+                        List<NodeVersion> nodeVersions,
                         Confidence confidence) {
-        this.statistics = statistics;
+        this.version = version;
         this.releaseCommit = releaseCommit;
         this.committedAt = committedAt;
         this.isControllerVersion = isControllerVersion;
@@ -45,13 +47,13 @@ public class VespaVersion implements Comparable<VespaVersion> {
     }
 
     public static Confidence confidenceFrom(DeploymentStatistics statistics, Controller controller) {
-        InstanceList all = InstanceList.from(controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList())))
-                                       .withProductionDeployment();
-        // 'production on this': All deployment jobs upgrading to this version have completed without failure
-        InstanceList productionOnThis = all.matching(statistics.production()::contains)
-                                                   .not().failingUpgrade()
-                                                   .not().upgradingTo(statistics.version());
-        InstanceList failingOnThis = all.matching(statistics.failing()::contains);
+        InstanceList all = InstanceList.from(controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList())
+                                                                                                          .withProductionDeployment()));
+        // 'production on this': All production deployment jobs upgrading to this version have completed without failure
+        InstanceList productionOnThis = all.matching(instance -> statistics.productionSuccesses().stream().anyMatch(run -> run.id().application().equals(instance)))
+                                           .not().failingUpgrade()
+                                           .not().upgradingTo(statistics.version());
+        InstanceList failingOnThis = all.matching(instance -> statistics.failingUpgrades().stream().anyMatch(run -> run.id().application().equals(instance)));
 
         // 'broken' if any Canary fails
         if  ( ! failingOnThis.with(UpgradePolicy.canary).isEmpty())
@@ -62,19 +64,19 @@ public class VespaVersion implements Comparable<VespaVersion> {
             return Confidence.broken;
 
         // 'low' unless all canary applications are upgraded
-        if (productionOnThis.with(UpgradePolicy.canary).size() < all.with(UpgradePolicy.canary).size())
+        if (productionOnThis.with(UpgradePolicy.canary).size() < all.withProductionDeployment().with(UpgradePolicy.canary).size())
             return Confidence.low;
 
         // 'high' if 90% of all default upgrade applications upgraded
         if (productionOnThis.with(UpgradePolicy.defaultPolicy).size() >=
-            all.with(UpgradePolicy.defaultPolicy).size() * 0.9)
+            all.withProductionDeployment().with(UpgradePolicy.defaultPolicy).size() * 0.9)
             return Confidence.high;
 
         return Confidence.normal;
     }
 
     /** Returns the version number of this Vespa version */
-    public Version versionNumber() { return statistics.version(); }
+    public Version versionNumber() { return version; }
 
     /** Returns the sha of the release tag commit for this version in git */
     public String releaseCommit() { return releaseCommit; }
@@ -82,9 +84,6 @@ public class VespaVersion implements Comparable<VespaVersion> {
     /** Returns the time of the release commit */
     public Instant committedAt() { return committedAt; }
     
-    /** Statistics about deployment of this version */
-    public DeploymentStatistics statistics() { return statistics; }
-
     /** Returns whether this is the current version of controllers in this system (the lowest version across all
      * controllers) */
     public boolean isControllerVersion() {
@@ -106,7 +105,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
     public boolean isReleased() { return isReleased; }
 
     /** Returns the versions of nodes allocated to system applications (across all zones) */
-    public NodeVersions nodeVersions() {
+    public List<NodeVersion> nodeVersions() {
         return nodeVersions;
     }
 
@@ -149,14 +148,15 @@ public class VespaVersion implements Comparable<VespaVersion> {
         }
 
         /** Returns true if this can be changed to target at given instant */
-        public boolean canChangeTo(Confidence target, Instant instant) {
+        public boolean canChangeTo(Confidence target, SystemName system, Instant instant) {
             if (this.equalOrHigherThan(normal)) return true; // Confidence can always change from >= normal
             if (!target.equalOrHigherThan(normal)) return true; // Confidence can always change to < normal
 
             var hourOfDay = instant.atZone(ZoneOffset.UTC).getHour();
             var dayOfWeek = instant.atZone(ZoneOffset.UTC).getDayOfWeek();
-            // Confidence can only be raised between 05:00:00 and 11:59:59 UTC, and not during weekends or Friday.
-            return    hourOfDay >= 5 && hourOfDay <= 11
+            var hourEnd = system == SystemName.Public ? 13 : 11;
+            // Confidence can only be raised between 05:00:00 and 11:59:59Z (13:59:59Z for public), and not during weekends or Friday.
+            return    hourOfDay >= 5 && hourOfDay <= hourEnd
                    && dayOfWeek.getValue() < 5;
         }
 

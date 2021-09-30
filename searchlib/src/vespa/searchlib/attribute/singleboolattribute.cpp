@@ -1,13 +1,16 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "singleboolattribute.h"
 #include "attributevector.hpp"
-#include "primitivereader.h"
 #include "iattributesavetarget.h"
 #include "ipostinglistsearchcontext.h"
+#include "primitivereader.h"
+#include "singleboolattribute.h"
+#include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
-#include <vespa/searchlib/common/bitvectoriterator.h>
+#include <vespa/searchlib/util/file_settings.h>
+#include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace search {
 
@@ -57,7 +60,7 @@ SingleBoolAttribute::onCommit() {
     if ( ! _changes.empty()) {
         // apply updates
         ValueModifier valueGuard(getValueModifier());
-        for (const auto & change : _changes) {
+        for (const auto & change : _changes.getInsertOrder()) {
             if (change._type == ChangeBase::UPDATE) {
                 std::atomic_thread_fence(std::memory_order_release);
                 setBit(change._doc, change._data != 0);
@@ -176,7 +179,7 @@ SingleBoolAttribute::getSearch(std::unique_ptr<QueryTermSimple> term, const attr
 }
 
 bool
-SingleBoolAttribute::onLoad()
+SingleBoolAttribute::onLoad(vespalib::Executor *)
 {
     PrimitiveReader<uint32_t> attrReader(*this);
     bool ok(attrReader.hasData());
@@ -243,7 +246,7 @@ SingleBoolAttribute::onShrinkLidSpace()
 uint64_t
 SingleBoolAttribute::getEstimatedSaveByteSize() const
 {
-    constexpr uint64_t headerSize = 4096 + sizeof(uint32_t);
+    constexpr uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT + sizeof(uint32_t);
     return headerSize + _bv.sizeBytes();
 }
 

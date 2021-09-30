@@ -33,11 +33,15 @@ public:
         uint32_t             docId;
         std::vector<Element> elements;
         feature_t rawScore;
-        Document(uint32_t id) : docId(id), elements(), rawScore(0) {}
+        uint32_t field_length;
+        uint32_t num_occs;
+        Document(uint32_t id) : docId(id), elements(), rawScore(0), field_length(0), num_occs(0) {}
         bool operator==(const Document &rhs) const {
             return (docId == rhs.docId &&
                     elements == rhs.elements &&
-                    rawScore == rhs.rawScore);
+                    rawScore == rhs.rawScore &&
+                    field_length == rhs.field_length &&
+                    num_occs == rhs.num_occs);
         }
     };
 
@@ -92,6 +96,16 @@ public:
 
     FakeResult &minMax(int32_t minWeight, int32_t maxWeight) {
         _minMaxPostingInfo.reset(new MinMaxPostingInfo(minWeight, maxWeight));
+        return *this;
+    }
+
+    FakeResult &field_length(uint32_t field_length_) {
+        _documents.back().field_length = field_length_;
+        return *this;
+    }
+
+    FakeResult &num_occs(uint32_t num_occs_) {
+        _documents.back().num_occs = num_occs_;
         return *this;
     }
 

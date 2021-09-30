@@ -18,7 +18,7 @@ public:
     using PostingListEntryType = memoryindex::FieldIndex<false>::PostingListEntryType;
     using NodeAllocator = Tree::NodeAllocatorType;
     using FeatureStore = memoryindex::FeatureStore;
-    using EntryRef = datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     using Schema = index::Schema;
     using PosOccFieldsParams = bitcompression::PosOccFieldsParams;
 

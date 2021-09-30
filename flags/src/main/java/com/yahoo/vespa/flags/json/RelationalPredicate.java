@@ -23,7 +23,7 @@ public class RelationalPredicate {
 
         for (var operator : operatorsByDecendingLength) {
             if (predicateString.startsWith(operator.toText())) {
-                String suffix = predicateString.substring(operator.toText().length());
+                String suffix = predicateString.substring(operator.toText().length()).trim();
                 return new RelationalPredicate(predicateString, operator, suffix);
             }
         }

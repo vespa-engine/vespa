@@ -1,11 +1,14 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <memory>
 #include <cstdint>
 
+namespace storage::lib {
+    class Distribution;
+    class ClusterState;
+}
+namespace document { class BucketId; }
 namespace storage::distributor {
 
 /**
@@ -29,7 +32,7 @@ public:
                                    std::shared_ptr<const lib::ClusterState> default_active_cluster_state,
                                    std::shared_ptr<const lib::ClusterState> pending_cluster_state,
                                    std::shared_ptr<const lib::Distribution> distribution,
-                                   uint16_t this_node_index);
+                                   uint16_t this_node_index) noexcept;
     ~BucketSpaceDistributionContext();
 
     static std::shared_ptr<BucketSpaceDistributionContext> make_state_transition(

@@ -2,7 +2,8 @@
   "com.yahoo.component.AbstractComponent": {
     "superClass": "java.lang.Object",
     "interfaces": [
-      "com.yahoo.component.Component"
+      "com.yahoo.component.Component",
+      "com.yahoo.component.Deconstructable"
     ],
     "attributes": [
       "public"
@@ -105,6 +106,19 @@
     ],
     "fields": []
   },
+  "com.yahoo.component.Deconstructable": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void deconstruct()"
+    ],
+    "fields": []
+  },
   "com.yahoo.component.Version": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -129,6 +143,7 @@
       "public int getMicro()",
       "public java.lang.String getQualifier()",
       "public java.lang.String toString()",
+      "public com.yahoo.text.Utf8Array toUtf8()",
       "public int hashCode()",
       "public boolean isEmpty()",
       "public boolean equals(java.lang.Object)",
@@ -331,6 +346,21 @@
       "public com.yahoo.component.provider.ListenableFreezableClass clone()",
       "public bridge synthetic com.yahoo.component.provider.FreezableClass clone()",
       "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.di.componentgraph.Provider": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.component.Deconstructable"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract java.lang.Object get()"
     ],
     "fields": []
   }

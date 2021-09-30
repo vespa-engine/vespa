@@ -7,9 +7,7 @@
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/net/tls/impl/openssl_tls_context_impl.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-
-#include <chrono>
-
+#include <vespa/vespalib/testkit/time_bomb.h>
 #include <openssl/ssl.h>
 
 using namespace vespalib;

@@ -10,7 +10,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.IfNode;
-import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -23,7 +23,7 @@ import static org.junit.Assert.fail;
  */
 public class EvaluationTestCase {
 
-    private double tolerance = 0.000001;
+    private final double tolerance = 0.000001;
 
     @Test
     public void testEvaluation() {
@@ -195,14 +195,16 @@ public class EvaluationTestCase {
                                "reduce(tensor0, avg, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {}:4 }",
                                "reduce(tensor0, count, x, y)", "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
+        tester.assertEvaluates("{ {}:7 }",
+                               "reduce(tensor0, max, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
+        tester.assertEvaluates("{ {}:4 }",
+                               "reduce(tensor0, median, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
+        tester.assertEvaluates("{ {}:1 }",
+                               "reduce(tensor0, min, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {}:105 }",
                                "reduce(tensor0, prod, x, y)",  "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {}:16 }",
                                "reduce(tensor0, sum, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
-        tester.assertEvaluates("{ {}:7 }",
-                               "reduce(tensor0, max, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
-        tester.assertEvaluates("{ {}:1 }",
-                               "reduce(tensor0, min, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         // -- reduce 2 by specifying no arguments
         tester.assertEvaluates("{ {}:4 }",
                                "reduce(tensor0, avg)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
@@ -224,15 +226,20 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {}:-5   }", "sum(tensor0)", "-5.0");
         tester.assertEvaluates("{ {}:12.5 }", "sum(tensor0)", "{ {d1:0}:5.5, {d1:1}:7.0 }");
         tester.assertEvaluates("{ {}: 0   }", "sum(tensor0)", "{ {d1:0}:5.0, {d1:1}:7.0, {d1:2}:-12.0}");
+        tester.assertEvaluates("{ {}: 8.0   }", "avg(tensor0)", "{ {d1:0}:5.0, {d1:1}:7.0, {d1:2}:12.0}");
+        tester.assertEvaluates("{ {}: 5.0   }", "median(tensor0)", "{ {d1:0}:5.0, {d1:1}:7.0, {d1:2}:-12.0}");
         tester.assertEvaluates("{ {y:0}:4, {y:1}:12.0 }",
                                "sum(tensor0, x)", "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {x:0}:6, {x:1}:10.0 }",
                                "sum(tensor0, y)", "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {}:16 }",
                                "sum(tensor0, x, y)", "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
+        tester.assertEvaluates("{ {}: -1 }", "reduce(tensor0, max)", "tensor(x[2]):[-2,-1]");
 
         // tensor join
         tester.assertEvaluates("{ {x:0,y:0}:15, {x:1,y:0}:35 }", "join(tensor0, tensor1, f(x,y) (x*y))", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:6, {x:1,y:0}:14 }", "join(tensor0, tensor1, f(x,y) (x+x))", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0}:2, {x:1}:-3 }", "join(tensor0, tensor1, f(x,y) (y-x))", "{ {x:0}:3, {x:1}:7 }", "{ {x:0}:5, {x:1}:4 }");
         // -- join composites
         tester.assertEvaluates("{ }", "tensor0 * tensor0", "{}");
         tester.assertEvaluates("{{x:0,y:0,z:0}:0.0}", "( tensor0 * tensor1 ) * ( tensor2 * tensor1 )",
@@ -281,6 +288,8 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {h:0}:1.5, {h:1}:1.5 }", "0.5 + tensor0", "{ {h:0}:1.0,{h:1}:1.0 }");
         tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:0 }",
                                "atan2(tensor0, tensor1)", "{ {x:0}:0, {x:1}:0 }", "{ {y:0}:1 }");
+        tester.assertEvaluates("{ {x:0,y:0}:2, {x:1,y:0}:7 }",
+                               "hamming(tensor0, tensor1)", "{ {x:0}:97, {x:1}:-1 }", "{ {y:0}:1 }");
         tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:1 }",
                                "tensor0 > tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
         tester.assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0 }",
@@ -335,6 +344,12 @@ public class EvaluationTestCase {
         tester.assertEvaluates("3.0", "tensor0{bar}", true, "{ {x:foo}:1, {x:bar}:3 }");
         tester.assertEvaluates("3.3", "tensor0[2]", "tensor(values[4]):[1.1, 2.2, 3.3, 4.4]]");
 
+        // concat
+        tester.assertEvaluates("tensor(x[5]):[0, 1, 2, 3, 4]",
+                               "concat(tensor0, tensor1, x)",
+                               "tensor(x[2]):[0, 1]",
+                               "tensor(x[3]):[2, 3, 4])");
+
         // composite functions
         tester.assertEvaluates("{ {x:0}:0.25, {x:1}:0.75 }", "l1_normalize(tensor0, x)", "{ {x:0}:1, {x:1}:3 }");
         tester.assertEvaluates("{ {x:0}:0.31622776601683794, {x:1}:0.9486832980505138 }", "l2_normalize(tensor0, x)", "{ {x:0}:1, {x:1}:3 }");
@@ -387,6 +402,181 @@ public class EvaluationTestCase {
         tester.assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{}):{ {x:1}:1 }");
         tester.assertEvaluates("tensor(x{},y{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{},y{}):{ {x:1,y:0}:1, {x:2,y:1}:1 }");
 
+    }
+
+    @Test
+    public void testBitExtraction() {
+        EvaluationTester tester = new EvaluationTester();
+        tester.assertEvaluates(1.0, "bit(-43,7)");
+        tester.assertEvaluates(1.0, "bit(-43,6)");
+        tester.assertEvaluates(0.0, "bit(-43,5)");
+        tester.assertEvaluates(1.0, "bit(-43,4)");
+        tester.assertEvaluates(0.0, "bit(-43,3)");
+        tester.assertEvaluates(1.0, "bit(-43,2)");
+        tester.assertEvaluates(0.0, "bit(-43,1)");
+        tester.assertEvaluates(1.0, "bit(-43,0)");
+        tester.assertEvaluates(
+                "tensor<int8>(x[40]):[1,1,0,1,0,1,0,1, 0,0,0,0,0,0,0,0, 0,1,0,1,0,1,0,1, 0,1,1,1,1,1,1,1, 1,0,0,0,0,0,0,0]",
+                "tensor<int8>(x[40])(bit(tensor0{y:x / 8}, 7 - x % 8))",
+                "tensor<int8>(y[5]):[-43,0,85,127,-128]"
+        );
+    }
+
+    @Test
+    public void testCellTypeCasting() {
+        EvaluationTester tester = new EvaluationTester();
+
+        tester.assertEvaluates("tensor<float>(x[3]):[1.0, 2.0, 3.0]",
+                               "cell_cast(tensor0, float)",
+                               "tensor<double>(x[3]):[1, 2, 3]");
+        tester.assertEvaluates("tensor<float>(x[2]):[1.0, 2.0]",
+                               "cell_cast(tensor(x[2]):[tensor0{x:1}, tensor0{x:2}], float)",
+                               "tensor<double>(x{}):{1:1, 2:2, 3:3}");
+        tester.assertEvaluates("tensor<float>(x[2]):[3,8]",
+                               "cell_cast(tensor0 * tensor1, float)",
+                               "tensor<float>(x[2]):[1,2]",
+                               "tensor<double>(x[2]):[3,4]");
+    }
+
+    @Test
+    public void testMixedTensorType() throws ParseException {
+        String expected = "tensor(x[1],y{},z[2]):{{x:0,y:a,z:0}:4.0,{x:0,y:a,z:1}:5.0,{x:0,y:b,z:0}:7.0,{x:0,y:b,z:1}:8.0}";
+        String a = "tensor(x[1],y{}):{ {x:0,y:a}:1, {x:0,y:b}:2 }";
+        String b = "tensor(y{},z[2]):{ {y:a,z:0}:3, {y:a,z:1}:4, {y:b,z:0}:5, {y:b,z:1}:6 }";
+        String expression = "a + b";
+
+        MapContext context = new MapContext();
+        context.put("a", new TensorValue(Tensor.from(a)));
+        context.put("b", new TensorValue(Tensor.from(b)));
+
+        Tensor expectedResult = Tensor.from(expected);
+        Tensor result = new RankingExpression(expression).evaluate(context).asTensor();
+        assertEquals(expectedResult, result);
+        assertEquals(expectedResult.type(), result.type());
+    }
+
+    @Test
+    public void testTile() {
+        EvaluationTester tester = new EvaluationTester();
+
+        tester.assertEvaluates("tensor(d0[2],d1[4]):[1,2,1,2,3,4,3,4]",
+                "tensor(d0[2],d1[4])(tensor0{input0:(d0 % 2), input1:(d1 % 2) } )",
+                "tensor(input0[2],input1[2]):[1, 2, 3, 4]",
+                "tensor(repeats0[2]):[1,2]");
+
+        tester.assertEvaluates("tensor(d0[6],d1[2]):[1,2,3,4,1,2,3,4,1,2,3,4]",
+                "tensor(d0[6],d1[2])(tensor0{input0:(d0 % 2), input1:(d1 % 2) } )",
+                "tensor(input0[2],input1[2]):[1, 2, 3, 4]",
+                "tensor(repeats0[2]):[3,1]");
+    }
+
+    @Test
+    public void testReshape() {
+        EvaluationTester tester = new EvaluationTester();
+
+        tester.assertEvaluates("tensor(d0[4]):[1,2,3,4]",
+                "tensor(d0[4])(tensor0{a0:(d0 / 2), a1:(d0 % 2)})",
+                "tensor(a0[2],a1[2]):[1,2,3,4]",
+                "tensor(d0[1]):[4]");
+
+        tester.assertEvaluates("tensor(d0[2],d1[2]):[1,2,3,4]",
+                "tensor(d0[2],d1[2])(tensor0{a0:(d0), a1:(d1)})",
+                "tensor(a0[2],a1[2]):[1,2,3,4]",
+                "tensor(d0[2]):[2,2]");
+
+        tester.assertEvaluates("tensor(d0[2],d1[1],d2[2]):[1,2,3,4]",
+                "tensor(d0[2],d1[1],d2[2])(tensor0{a0:(d0), a1:(d2)})",
+                "tensor(a0[2],a1[2]):[1,2,3,4]",
+                "tensor(d0[3]):[2,1,2]");
+
+        tester.assertEvaluates("tensor(d0[3],d1[2]):[1,2,3,4,5,6]",
+                "tensor(d0[3],d1[2])(tensor0{a0:0, a1:((d0 * 2 + d1) / 3), a2:((d0 * 2 + d1) % 3) })",
+                "tensor(a0[1],a1[2],a2[3]):[1,2,3,4,5,6]",
+                "tensor(d0[2]):[3,2]");
+
+        tester.assertEvaluates("tensor(d0[3],d1[2],d2[1],d3[1]):[1,2,3,4,5,6]",
+                "tensor(d0[3],d1[2],d2[1],d3[1])(tensor0{a0:0, a1:((d0 * 2 + d1) / 3), a2:((d0 * 2 + d1) % 3) })",
+                "tensor(a0[1],a1[2],a2[3]):[1,2,3,4,5,6]",
+                "tensor(d0[4]):[3,2,-1,1]");
+
+    }
+
+    @Test
+    public void testMatmul() {
+        EvaluationTester tester = new EvaluationTester();
+
+        tester.assertEvaluates("tensor():{91}",
+                "reduce(join(tensor0, tensor1, f(x,y)(x*y)), sum, d0)",
+                "tensor(d0[6]):[1,2,3,4,5,6]",
+                "tensor(d0[6]):[1,2,3,4,5,6]");
+
+        tester.assertEvaluates("tensor(d1[2]):[22, 28]",
+                "reduce(join(tensor0, tensor1, f(x,y)(x*y)), sum, d0)",
+                "tensor(d0[3]):[1,2,3]",
+                "tensor(d0[3],d1[2]):[1,2,3,4,5,6]");
+
+        tester.assertEvaluates("tensor(d1[2]):[22, 28]",
+                "reduce(join(tensor0, tensor1, f(x,y)(x*y)), sum, d0)",
+                "tensor(d0[3],d1[2]):[1,2,3,4,5,6]",
+                "tensor(d0[3]):[1,2,3]");
+
+        tester.assertEvaluates("tensor(d0[2],d2[2]):[22,28,49,64]",
+                "reduce(join(tensor0, tensor1, f(x,y)(x*y)), sum, d1)",
+                "tensor(d0[2],d1[3]):[1,2,3,4,5,6]",
+                "tensor(d1[3],d2[2]):[1,2,3,4,5,6]");
+
+        tester.assertEvaluates("tensor(d0[1],d1[2],d3[2]):[22,28,49,64]",
+                "reduce(join(tensor0, tensor1, f(x,y)(x*y)), sum, d2)",
+                "tensor(d0[1],d1[2],d2[3]):[1,2,3,4,5,6]",
+                "tensor(d2[3],d3[2]):[1,2,3,4,5,6]");
+
+        tester.assertEvaluates("tensor(d0[1],d1[2],d3[2]):[22,28,49,64]",
+                "reduce(join(tensor0, tensor1, f(x,y)(x*y)), sum, d2)",
+                "tensor(d1[2],d2[3]):[1,2,3,4,5,6]",
+                "tensor(d0[1],d2[3],d3[2]):[1,2,3,4,5,6]");
+
+        tester.assertEvaluates("tensor(d0[2],d1[2],d3[2]):[22,28,49,64,58,64,139,154]",
+                "reduce(join(tensor0{d0:0}, tensor1, f(x,y)(x*y)), sum, d2)",  // notice peek
+                "tensor(d0[1],d1[2],d2[3]):[1,2,3,4,5,6]",
+                "tensor(d0[2],d2[3],d3[2]):[1,2,3,4,5,6,7,8,9,10,11,12]");
+
+        tester.assertEvaluates("tensor(d0[2],d1[2],d2[2],d4[2]):[22,28,49,64,58,64,139,154,76,100,103,136,220,244,301,334]",
+                "reduce(join(tensor0{d1:0}, tensor1{d0:0}, f(x,y)(x*y)), sum, d3)",  // notice peeks
+                "tensor(d0[2],d1[1],d2[2],d3[3]):[1,2,3,4,5,6,7,8,9,10,11,12]",
+                "tensor(d0[1],d1[2],d3[3],d4[2]):[1,2,3,4,5,6,7,8,9,10,11,12]");
+
+        tester.assertEvaluates("tensor(d0[1],d1[4],d2[2],d4[2]):[22,28,49,64,220,244,301,334,634,676,769,820,1264,1324,1453,1522]",
+                "reduce(join(tensor0, tensor1, f(x,y)(x*y)), sum, d3)",
+                "tensor(d0[1],d1[4],d2[2],d3[3]):[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]",
+                "tensor(d0[1],d1[4],d3[3],d4[2]):[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]");
+    }
+
+    @Test
+    public void testSplit() {
+        EvaluationTester tester = new EvaluationTester();
+
+        tester.assertEvaluates("tensor(d0[3]):[1,2,3]",
+                "tensor(d0[3])(tensor0{input0:(d0)} )",
+                "tensor(input0[6]):[1,2,3,4,5,6]");
+        tester.assertEvaluates("tensor(d0[3]):[4,5,6]",
+                "tensor(d0[3])(tensor0{input0:(d0+3)} )",
+                "tensor(input0[6]):[1,2,3,4,5,6]");
+        tester.assertEvaluates("tensor(d0[4]):[3,4,5,6]",
+                "tensor(d0[4])(tensor0{input0:(d0+2)} )",
+                "tensor(input0[6]):[1,2,3,4,5,6]");
+        tester.assertEvaluates("tensor(d0[2]):[3,4]",
+                "tensor(d0[2])(tensor0{input0:(d0+2)} )",
+                "tensor(input0[6]):[1,2,3,4,5,6]");
+        tester.assertEvaluates("tensor(d0[2]):[5,6]",
+                "tensor(d0[2])(tensor0{input0:(d0+4)} )",
+                "tensor(input0[6]):[1,2,3,4,5,6]");
+
+        tester.assertEvaluates("tensor(d0[1],d1[3]):[1,2,3]",
+                "tensor(d0[1],d1[3])(tensor0{input0:(d0), input1:(d1)} )",
+                "tensor(input0[2],input1[3]):[[1,2,3],[4,5,6]]");
+        tester.assertEvaluates("tensor(d0[1],d1[3]):[4,5,6]",
+                "tensor(d0[1],d1[3])(tensor0{input0:(d0+1), input1:(d1)} )",
+                "tensor(input0[2],input1[3]):[[1,2,3],[4,5,6]]");
     }
 
     @Test

@@ -10,7 +10,6 @@
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/data/slime/inject.h>
 #include <vespa/vespalib/data/slime/cursor.h>
-#include <vespa/eval/eval/tensor_engine.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>
@@ -32,13 +31,13 @@ struct TimedMatchLoopCommunicator : IMatchLoopCommunicator {
     double estimate_match_frequency(const Matches &matches) override {
         return communicator.estimate_match_frequency(matches);
     }
-    Hits selectBest(SortedHitSequence sortedHits) override {
-        auto result = communicator.selectBest(sortedHits);
+    TaggedHits get_second_phase_work(SortedHitSequence sortedHits, size_t thread_id) override {
+        auto result = communicator.get_second_phase_work(sortedHits, thread_id);
         timer = vespalib::Timer();
         return result;
     }
-    RangePair rangeCover(const RangePair &ranges) override {
-        RangePair result = communicator.rangeCover(ranges);
+    std::pair<Hits,RangePair> complete_second_phase(TaggedHits my_results, size_t thread_id) override {
+        auto result = communicator.complete_second_phase(std::move(my_results), thread_id);
         elapsed = timer.elapsed();
         return result;
     }

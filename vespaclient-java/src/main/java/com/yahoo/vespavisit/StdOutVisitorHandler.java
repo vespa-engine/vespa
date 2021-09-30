@@ -13,7 +13,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentListEntry;
 import com.yahoo.documentapi.messagebus.protocol.DocumentListMessage;
 import com.yahoo.documentapi.messagebus.protocol.EmptyBucketsMessage;
 import com.yahoo.documentapi.messagebus.protocol.MapVisitorMessage;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.Message;
 
 import java.io.IOException;
@@ -244,7 +244,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
                 buckets.append(" ");
                 buckets.append(bid.toString());
             }
-            log.log(LogLevel.INFO, "Got EmptyBuckets: " + buckets);
+            log.log(Level.INFO, "Got EmptyBuckets: " + buckets);
         }
 
         @Override

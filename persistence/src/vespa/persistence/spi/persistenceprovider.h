@@ -4,18 +4,18 @@
 #include "bucket.h"
 #include "bucketinfo.h"
 #include "context.h"
-#include "docentry.h"
-#include "documentselection.h"
-#include "partitionstate.h"
 #include "result.h"
 #include "selection.h"
 #include "clusterstate.h"
+#include "operationcomplete.h"
 
-namespace document {
-    class FieldSet;
-}
+namespace document { class FieldSet; }
+namespace vespalib { class IDestructorCallback; }
 
 namespace storage::spi {
+
+class IResourceUsageListener;
+struct BucketExecutor;
 
 /**
  * This interface is the basis for a persistence provider in Vespa.  A
@@ -27,11 +27,6 @@ namespace storage::spi {
  * groups a set of documents. The persistence provider can choose freely
  * how to implement a bucket, but it needs to be able to access a bucket as
  * a unit. The placement of these units is controlled by the distributors.
- * <p/>
- * A persistence provider may support multiple "partitions". One example of
- * a partition is a physical disk, but the exact meaning of "partitions"
- * is left to the provider. It must be able to report to the service layer
- * though.
  * <p/>
  * All operations return a Result object. The base Result class only
  * encapsulates potential errors, which can be <i>transient</i>,
@@ -57,8 +52,8 @@ namespace storage::spi {
  */
 struct PersistenceProvider
 {
-    typedef std::unique_ptr<PersistenceProvider> UP;
     using BucketSpace = document::BucketSpace;
+    using FieldSetSP = std::shared_ptr<document::FieldSet>;
 
     virtual ~PersistenceProvider();
 
@@ -74,17 +69,9 @@ struct PersistenceProvider
     virtual Result initialize() = 0;
 
     /**
-     * Returns a list of the partitions available, and which are up and down.
-     * Currently called once on startup. Partitions are not allowed to change
-     * runtime.
+     * Return list of buckets that provider has stored.
      */
-    virtual PartitionStateListResult getPartitionStates() const = 0;
-
-    /**
-     * Return list of buckets that provider has stored on the given partition.
-     * Typically called once per partition on startup.
-     */
-    virtual BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const = 0;
+    virtual BucketIdListResult listBuckets(BucketSpace bucketSpace) const = 0;
 
     /**
      * Updates the persistence provider with the last cluster state.
@@ -110,8 +97,11 @@ struct PersistenceProvider
 
     /**
      * Store the given document at the given microsecond time.
+     * An implementation must always implement atleast put or putAsync.
+     * If not an eternal recursion will occur.
      */
-    virtual Result put(const Bucket&, Timestamp, const DocumentSP&, Context&) = 0;
+    virtual Result put(const Bucket&, Timestamp, DocumentSP, Context&);
+    virtual void putAsync(const Bucket &, Timestamp , DocumentSP , Context &, OperationComplete::UP );
 
     /**
      * This remove function assumes that there exist something to be removed.
@@ -166,10 +156,15 @@ struct PersistenceProvider
      * For such a provider, iterating with removes and all versions should
      * semantically be the same thing and yield the same results.
      *
+     * An implementation must always implement atleast remove or removeAsync.
+     * If not an eternal recursion will occur.
+     *
      * @param timestamp The timestamp for the new bucket entry.
      * @param id The ID to remove
      */
-    virtual RemoveResult remove(const Bucket&, Timestamp timestamp, const DocumentId& id, Context&) = 0;
+    virtual RemoveResult remove(const Bucket&, Timestamp timestamp, const DocumentId& id, Context&);
+    virtual void removeAsync(const Bucket&, Timestamp timestamp, const DocumentId& id, Context&, OperationComplete::UP);
+
     /**
      * @see remove()
      * <p/>
@@ -180,11 +175,14 @@ struct PersistenceProvider
      * resend removes. It is legal to still store a remove entry, but note that
      * you will then be prone to user patterns mentioned above to fill up your
      * buckets.
+     * An implementation must always implement atleast removeIfFound or removeIfFoundAsync.
+     * If not an eternal recursion will occur.
      * <p/>
      * @param timestamp The timestamp for the new bucket entry.
      * @param id The ID to remove
      */
-    virtual RemoveResult removeIfFound(const Bucket&, Timestamp timestamp, const DocumentId& id, Context&) = 0;
+    virtual RemoveResult removeIfFound(const Bucket&, Timestamp timestamp, const DocumentId& id, Context&);
+    virtual void removeIfFoundAsync(const Bucket&, Timestamp timestamp, const DocumentId& id, Context&, OperationComplete::UP);
 
     /**
      * Remove any trace of the entry with the given timestamp. (Be it a document
@@ -197,35 +195,14 @@ struct PersistenceProvider
 
     /**
      * Partially modifies a document referenced by the document update.
+     * An implementation must always implement atleast update or updateAsync.
+     * If not an eternal recursion will occur.
      *
      * @param timestamp The timestamp to use for the new update entry.
      * @param update The document update to apply to the stored document.
      */
-    virtual UpdateResult update(const Bucket&, Timestamp timestamp, const DocumentUpdateSP& update, Context&) = 0;
-
-    /**
-     * The service layer may choose to batch certain commands. This means that
-     * the service layer will lock the bucket only once, then perform several
-     * commands, and finally get the bucket info from the bucket, and then
-     * flush it.  This can be used to improve performance by caching the
-     * modifications, and persisting them to disk only when flush is called.
-     * The service layer guarantees that after one of these operations, flush()
-     * is called, regardless of whether the operation succeeded or not, before
-     * another bucket is processed in the same worker thead. The following
-     * operations can be batched and have the guarantees
-     * above:
-     * - put
-     * - get
-     * - remove (all versions)
-     * - update
-     * - revert
-     * - join
-     * <p/>
-     * A provider may of course choose to not sync to disk at flush time either,
-     * but then data may be more prone to being lost on node issues, and the
-     * provider must figure out when to flush its cache itself.
-     */
-    virtual Result flush(const Bucket&, Context&) = 0;
+    virtual UpdateResult update(const Bucket&, Timestamp timestamp, DocumentUpdateSP update, Context&);
+    virtual void updateAsync(const Bucket&, Timestamp timestamp, DocumentUpdateSP update, Context&, OperationComplete::UP);
 
     /**
      * Retrieves the latest version of the document specified by the
@@ -269,12 +246,9 @@ struct PersistenceProvider
      *   error. Identifier must be non-zero, as zero is used internally to
      *   signify an invalid iterator ID.
      */
-    virtual CreateIteratorResult createIterator(
-            const Bucket&,
-            const document::FieldSet& fieldSet,
-            const Selection& selection, //TODO: Make AST
-            IncludedVersions versions,
-            Context&) = 0;
+    virtual CreateIteratorResult
+    createIterator(const Bucket &bucket, FieldSetSP fieldSet, const Selection &selection,
+                   IncludedVersions versions, Context &context) = 0;
 
     /**
      * Iterate over a bucket's document space using a valid iterator id
@@ -381,15 +355,6 @@ struct PersistenceProvider
     virtual BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const = 0;
 
     /**
-     * Allows the provider to do periodic maintenance and verification.
-     *
-     * @param level The level of maintenance to do. LOW maintenance is
-     * scheduled more often than HIGH maintenance, allowing costly operations
-     * to be run less.
-     */
-    virtual Result maintain(const Bucket&, MaintenanceLevel level) = 0;
-
-    /**
      * Splits the source bucket into the two target buckets.
      * After the split, all documents belonging to target1 should be
      * in that bucket, and all documents belonging to target2 should be
@@ -412,12 +377,17 @@ struct PersistenceProvider
      */
     virtual Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) = 0;
 
-    /**
-     * Moves a bucket from one partition to another.
-     *
-     * @param target The partition to move to. (From partition is in bucket)
+    /*
+     * Register a listener for updates to resource usage.
+     * The listener is deregistered when the returned object is destroyed.
      */
-    virtual Result move(const Bucket&, PartitionId target, Context&) = 0;
+    [[nodiscard]] virtual std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(IResourceUsageListener& listener) = 0;
+
+    /**
+     * Provides an execute interface that can be used by the provider to execute tasks while bucket guarantees are upheld.
+     * When the returned object goes out of scope the executor is deregistered.
+     */
+    [[nodiscard]] virtual std::unique_ptr<vespalib::IDestructorCallback> register_executor(std::shared_ptr<BucketExecutor> executor) = 0;
 };
 
 }

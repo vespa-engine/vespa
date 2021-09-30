@@ -2,13 +2,11 @@
 
 #include "proximityfeature.h"
 #include "utils.h"
-#include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/itermdata.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/stash.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 ProximityConfig::ProximityConfig() :
     fieldId(search::fef::IllegalHandle),
@@ -139,7 +137,7 @@ ProximityBlueprint::setup(const search::fef::IIndexEnvironment &env,
 search::fef::Blueprint::UP
 ProximityBlueprint::createInstance() const
 {
-    return search::fef::Blueprint::UP(new ProximityBlueprint());
+    return std::make_unique<ProximityBlueprint>();
 }
 
 search::fef::FeatureExecutor &
@@ -148,4 +146,4 @@ ProximityBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, ve
     return stash.create<ProximityExecutor>(env, _config);
 }
 
-}}
+}

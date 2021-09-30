@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/programoptions.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/util/runnable_pair.h>
 #include <vbench/vbench/vbench.h>
@@ -46,8 +45,8 @@ int run(const std::string &cfg_name) {
     vespalib::RunnablePair runBoth(vbench, notify);
     vespalib::Thread thread(runBoth);
     thread.start();
-    while (!SIG::INT.check() && !SIG::TERM.check() && !done.await(1000)) {}
-    if (!done.await(0)) {
+    while (!SIG::INT.check() && !SIG::TERM.check() && !done.await(1s)) {}
+    if (!done.await(vespalib::duration::zero())) {
         vbench.abort();
         done.await();
     }

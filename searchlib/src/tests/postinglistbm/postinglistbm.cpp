@@ -10,7 +10,8 @@
 #include <vespa/searchlib/test/fakedata/fakeword.h>
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 
@@ -42,7 +43,7 @@ private:
     bool _unpack;
 
 public:
-    search::Rand48 _rnd;
+    vespalib::Rand48 _rnd;
 
 public:
     PostingListBM();
@@ -109,7 +110,7 @@ int
 PostingListBM::Main()
 {
     int argi;
-    char c;
+    int c;
     const char *optArg;
 
     argi = 1;
@@ -232,7 +233,7 @@ main(int argc, char **argv)
 {
     postinglistbm::PostingListBM app;
 
-    setvbuf(stdout, nullptr, _IOLBF, 32768);
+    setvbuf(stdout, nullptr, _IOLBF, 32_Ki);
     app._rnd.srand48(32);
     return app.Entry(argc, argv);
 }

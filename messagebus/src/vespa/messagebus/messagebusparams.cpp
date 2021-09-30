@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "messagebus.h"
 #include <vespa/messagebus/routing/retrytransienterrorspolicy.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace mbus {
 
@@ -8,7 +9,7 @@ MessageBusParams::MessageBusParams() :
     _protocols(),
     _retryPolicy(new RetryTransientErrorsPolicy()),
     _maxPendingCount(1024),
-    _maxPendingSize(128 * 1024 * 1024)
+    _maxPendingSize(128_Mi)
 { }
 
 MessageBusParams::~MessageBusParams() {}

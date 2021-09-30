@@ -20,8 +20,7 @@ public abstract class AsynchronousRenderer <RESPONSE extends Response> extends R
      * Exposes JDisc wiring to ensure asynchronous cleanup.
      *
      * @param channel the channel to the client receiving the response
-     * @param completionHandler the JDisc completion handler which will be invoked at the end
-     *        of the rendering
+     * @param completionHandler the JDisc completion handler which will be invoked at the end of the rendering
      * @throws IllegalStateException if attempted invoked more than once
      */
     public abstract void setNetworkWiring(ContentChannel channel, CompletionHandler completionHandler);

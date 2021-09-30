@@ -8,8 +8,11 @@ import com.yahoo.document.select.rule.ExpressionNode;
  * @author baldersheim
  */
 public class SelectionParser extends Parser {
+
     private ExpressionNode node;
+
     public ExpressionNode getNode() { return node; }
+
     public boolean parse(CharSequence s) {
         boolean retval = false;
         IdSpecParser id = new IdSpecParser();
@@ -40,4 +43,5 @@ public class SelectionParser extends Parser {
 
         return retval;
     }
+
 }

@@ -142,8 +142,17 @@ template<typename AddendMetric>
 void
 SumMetric<AddendMetric>::addToPart(Metric& m) const
 {
-    std::pair<std::vector<Metric::UP>, Metric::UP> sum(generateSum());
-    sum.second->addToPart(m);
+    if (!m.is_sum_metric()) {
+        std::pair<std::vector<Metric::UP>, Metric::UP> sum(generateSum());
+        sum.second->addToPart(m);
+    }
+}
+
+template<typename AddendMetric>
+bool
+SumMetric<AddendMetric>::is_sum_metric() const
+{
+    return true;
 }
 
 template<typename AddendMetric>
@@ -248,15 +257,6 @@ SumMetric<AddendMetric>::getDoubleValue(stringref id) const
     std::pair<std::vector<Metric::UP>, Metric::UP> sum(generateSum());
     if (sum.second.get() == 0) return 0.0;
     return sum.second->getDoubleValue(id);
-}
-
-template<typename AddendMetric>
-bool
-SumMetric<AddendMetric>::logEvent(const String & fullName) const
-{
-    std::pair<std::vector<Metric::UP>, Metric::UP> sum(generateSum());
-    if (sum.second.get() == 0) return false;
-    return sum.second->logEvent(fullName);
 }
 
 template<typename AddendMetric>

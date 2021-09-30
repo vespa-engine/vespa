@@ -53,10 +53,11 @@ public class SiaUtils {
     }
 
     public static Path getCaCertificatesFile() {
-        // The contents of this is the same as /opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem installed
-        // by the yahoo_certificates_bundle RPM package, except the latter also contains a textual description
-        // (decoded) of the certificates.
-        return DEFAULT_SIA_DIRECTORY.resolve("certs").resolve("ca.cert.pem");
+        return getCaCertificatesFile(DEFAULT_SIA_DIRECTORY);
+    }
+
+    public static Path getCaCertificatesFile(Path root) {
+        return root.resolve("certs").resolve("ca.cert.pem");
     }
 
     public static Optional<PrivateKey> readPrivateKeyFile(AthenzIdentity service) {

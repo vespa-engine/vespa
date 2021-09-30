@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <iomanip>
-#include <tests/common/dummystoragelink.h>
-#include <vespa/storage/distributor/distributor.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <tests/distributor/distributortestutil.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/operations/external/removeoperation.h>
+#include <vespa/storageapi/message/persistence.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
@@ -14,7 +14,7 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-struct RemoveOperationTest : Test, DistributorTestUtil {
+struct RemoveOperationTest : Test, DistributorStripeTestUtil {
     document::DocumentId docId;
     document::BucketId bucketId;
     std::unique_ptr<RemoveOperation> op;
@@ -23,8 +23,8 @@ struct RemoveOperationTest : Test, DistributorTestUtil {
         createLinks();
 
         docId = document::DocumentId("id:test:test::uri");
-        bucketId = getExternalOperationHandler().getBucketId(docId);
-        enableDistributorClusterState("distributor:1 storage:4");
+        bucketId = operation_context().make_split_bit_constrained_bucket_id(docId);
+        enable_cluster_state("distributor:1 storage:4");
     };
 
     void TearDown() override {
@@ -35,11 +35,11 @@ struct RemoveOperationTest : Test, DistributorTestUtil {
         auto msg = std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(0)), dId, 100);
 
         op = std::make_unique<RemoveOperation>(
-                getExternalOperationHandler(),
+                node_context(),
+                operation_context(),
                 getDistributorBucketSpace(),
                 msg,
-                getDistributor().getMetrics().
-                removes[msg->getLoadType()]);
+                metrics().removes);
 
         op->start(_sender, framework::MilliSecTime(0));
     }
@@ -144,7 +144,7 @@ TEST_F(RemoveOperationTest, multiple_copies) {
 }
 
 TEST_F(RemoveOperationTest, can_send_remove_when_all_replica_nodes_retired) {
-    enableDistributorClusterState("distributor:1 storage:1 .0.s:r");
+    enable_cluster_state("distributor:1 storage:1 .0.s:r");
     addNodesToBucketDB(bucketId, "0=123");
     sendRemove();
 

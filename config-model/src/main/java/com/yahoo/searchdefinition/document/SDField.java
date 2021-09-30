@@ -7,12 +7,15 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.fieldoperation.FieldOperation;
 import com.yahoo.searchdefinition.fieldoperation.FieldOperationContainer;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.indexinglanguage.ExpressionSearcher;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
@@ -56,7 +59,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     private RankType rankType = RankType.DEFAULT;
 
     /** Rank settings in a "rank" block for the field. */
-    private Ranking ranking = new Ranking();
+    private final Ranking ranking = new Ranking();
 
     /**
      * The literal boost of this field. This boost is added to a rank score
@@ -65,60 +68,65 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * to be specified in other rank profiles, while negative values
      * turns the capability off.
      */
-    private int literalBoost=-1;
+    private int literalBoost = -1;
 
     /** 
      * The weight of this field. This is a percentage,
      * so 100 is default to provide the identity transform. 
      */
-    private int weight=100;
+    private int weight = 100;
 
     /**
      * Indicates what kind of matching should be done on this field
      */
     private Matching matching = new Matching();
 
+    private Dictionary dictionary = null;
+
     /** Attribute settings, or null if there are none */
-    private Map<String, Attribute> attributes = new TreeMap<>();
+    private final Map<String, Attribute> attributes = new TreeMap<>();
 
     /**
      * The stemming setting of this field, or null to use the default.
      * Default is determined by the owning search definition.
      */
-    private Stemming stemming=null;
+    private Stemming stemming = null;
 
     /** How content of this field should be accent normalized etc. */
     private NormalizeLevel normalizing = new NormalizeLevel();
 
     /** Extra query commands of this field */
-    private List<String> queryCommands=new java.util.ArrayList<>(0);
+    private final List<String> queryCommands = new java.util.ArrayList<>(0);
 
     /** Summary fields defined in this field */
-    private Map<String, SummaryField> summaryFields = new java.util.LinkedHashMap<>(0);
+    private final Map<String, SummaryField> summaryFields = new java.util.LinkedHashMap<>(0);
 
     /** The explicitly index settings on this field */
-    private Map<String, Index> indices = new java.util.LinkedHashMap<>();
+    private final Map<String, Index> indices = new java.util.LinkedHashMap<>();
 
     private boolean idOverride = false;
 
     /** Struct fields defined in this field */
-    private Map<String,SDField> structFields = new java.util.LinkedHashMap<>(0);
+    private final Map<String,SDField> structFields = new java.util.LinkedHashMap<>(0);
 
     /** The document that this field was declared in, or null*/
     private SDDocumentType ownerDocType = null;
 
     /** The aliases declared for this field. May pertain to indexes or attributes */
-    private Map<String, String> aliasToName = new HashMap<>();
+    private final Map<String, String> aliasToName = new HashMap<>();
 
     /** Pending operations that must be applied after parsing, due to use of not-yet-defined structs. */
-    private List<FieldOperation> pendingOperations = new LinkedList<>();
+    private final List<FieldOperation> pendingOperations = new LinkedList<>();
 
     private boolean isExtraField = false;
 
+    private boolean wasConfiguredToDoAttributing = false;
+
     /**
-     * Creates a new field. This method is only used to create reserved fields
-     * @param name The name of the field
-     * @param dataType The datatype of the field
+     * Creates a new field. This method is only used to create reserved fields.
+     *
+     * @param name the name of the field
+     * @param dataType the datatype of the field
     */
     protected SDField(SDDocumentType repo, String name, int id, DataType dataType, boolean populate) {
         super(name, id, dataType);
@@ -129,69 +137,62 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         this(repo, name, id, dataType, true);
     }
 
-    /**
-       Creates a new field.
-
-       @param name The name of the field
-       @param dataType The datatype of the field
-    */
+    /** Creates a new field */
     public SDField(SDDocumentType repo, String name, DataType dataType, boolean populate) {
-        super(name,dataType);
+        super(name, dataType);
         populate(populate, repo, name, dataType);
     }
 
-    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType) {
-        populate(populate,repo, name, dataType, null, 0);
-    }
-
-    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType, Matching fieldMatching,  int recursion) {
-        if (populate || (dataType instanceof MapDataType)) {
-            populateWithStructFields(repo, name, dataType, recursion);
-            populateWithStructMatching(repo, name, dataType, fieldMatching);
-        }
-    }
-
-
-    /**
-     * Creates a new field.
-     *
-     * @param name The name of the field
-     * @param dataType The datatype of the field
-     * @param owner the owning document (used to check for id collisions)
-     */
+    /** Creates a new field */
     protected SDField(SDDocumentType repo, String name, DataType dataType, SDDocumentType owner, boolean populate) {
         super(name, dataType, owner == null ? null : owner.getDocumentType());
-        this.ownerDocType=owner;
+        this.ownerDocType = owner;
         populate(populate, repo, name, dataType);
     }
 
     /**
-     * Creates a new field.
+     * Creates a new field
      *
-     * @param name The name of the field
-     * @param dataType The datatype of the field
-     * @param owner The owning document (used to check for id collisions)
-     * @param fieldMatching The matching object to set for the field
+     * @param name the name of the field
+     * @param dataType the datatype of the field
+     * @param owner the owning document (used to check for id collisions)
+     * @param fieldMatching the matching object to set for the field
      */
     protected SDField(SDDocumentType repo, String name, DataType dataType, SDDocumentType owner,
                       Matching fieldMatching, boolean populate, int recursion) {
         super(name, dataType, owner == null ? null : owner.getDocumentType());
-        this.ownerDocType=owner;
+        this.ownerDocType = owner;
         if (fieldMatching != null)
             this.setMatching(fieldMatching);
         populate(populate, repo, name, dataType, fieldMatching, recursion);
     }
 
-    /**
-     *
-     * @param name The name of the field
-     * @param dataType The datatype of the field
-     */
     public SDField(SDDocumentType repo,  String name, DataType dataType) {
         this(repo, name,dataType, true);
     }
     public SDField(String name, DataType dataType) {
         this(null, name,dataType);
+    }
+
+    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType) {
+        populate(populate, repo, name, dataType, null, 0);
+    }
+
+    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType, Matching fieldMatching,  int recursion) {
+        if (dataType instanceof TensorDataType) {
+            TensorType type = ((TensorDataType)dataType).getTensorType();
+            if (type.dimensions().stream().anyMatch(d -> d.isIndexed() && d.size().isEmpty()))
+                throw new IllegalArgumentException("Illegal type in field " + name + " type " + type +
+                                                   ": Dense tensor dimensions must have a size");
+            addQueryCommand("type " + type);
+        }
+        else {
+            addQueryCommand("type " + dataType.getName());
+        }
+        if (populate || (dataType instanceof MapDataType)) {
+            populateWithStructFields(repo, name, dataType, recursion);
+            populateWithStructMatching(repo, name, dataType, fieldMatching);
+        }
     }
 
     public void setIsExtraField(boolean isExtra) {
@@ -269,23 +270,18 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
 
     public void populateWithStructFields(SDDocumentType sdoc, String name, DataType dataType, int recursion) {
         DataType dt = getFirstStructOrMapRecursive();
-        if (dt == null) {
-            return;
-        }
+        if (dt == null) return;
+
         if (dataType instanceof MapDataType) {
             MapDataType mdt = (MapDataType) dataType;
-
             SDField keyField = new SDField(sdoc, name.concat(".key"), mdt.getKeyType(),
                                            getOwnerDocType(), new Matching(), true, recursion + 1);
             structFields.put("key", keyField);
-
             SDField valueField = new SDField(sdoc, name.concat(".value"), mdt.getValueType(),
                                              getOwnerDocType(), new Matching(), true, recursion + 1);
             structFields.put("value", valueField);
         } else {
-            if (recursion >= 10) {
-                return;
-            }
+            if (recursion >= 10) return;
             if (dataType instanceof CollectionDataType) {
                 dataType = ((CollectionDataType)dataType).getNestedType();
             }
@@ -306,9 +302,8 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     public void populateWithStructMatching(SDDocumentType sdoc, String name, DataType dataType,
                                            Matching superFieldMatching) {
         DataType dt = getFirstStructOrMapRecursive();
-        if (dt == null) {
-            return;
-        }
+        if (dt == null) return;
+
         if (dataType instanceof MapDataType) {
             MapDataType mdt = (MapDataType) dataType;
 
@@ -424,14 +419,19 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         return (dt != null);
     }
 
-    /** Parse an indexing expression which will use the simple linguistics implementatino suitable for testing */
-    public void parseIndexingScript(String script) {
-        parseIndexingScript(script, new SimpleLinguistics());
+    @Override
+    public boolean wasConfiguredToDoAttributing() {
+        return wasConfiguredToDoAttributing;
     }
 
-    public void parseIndexingScript(String script, Linguistics linguistics) {
+    /** Parse an indexing expression which will use the simple linguistics implementatino suitable for testing */
+    public void parseIndexingScript(String script) {
+        parseIndexingScript(script, new SimpleLinguistics(), Embedder.throwsOnUse);
+    }
+
+    public void parseIndexingScript(String script, Linguistics linguistics, Embedder embedder) {
         try {
-            ScriptParserContext config = new ScriptParserContext(linguistics);
+            ScriptParserContext config = new ScriptParserContext(linguistics, embedder);
             config.setInputStream(new IndexingInput(script));
             setIndexingScript(ScriptExpression.newInstance(config));
         } catch (ParseException e) {
@@ -447,6 +447,9 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         indexingScript = exp;
         if (indexingScript.isEmpty()) {
             return; // TODO: This causes empty expressions not to be propagate to struct fields!! BAD BAD BAD!!
+        }
+        if (!wasConfiguredToDoAttributing()) {
+            wasConfiguredToDoAttributing = doesAttributing();
         }
         if (!usesStructOrMap()) {
             new ExpressionVisitor() {
@@ -473,19 +476,17 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     }
 
     @Override
-    public ScriptExpression getIndexingScript() {
-        return indexingScript;
-    }
+    public ScriptExpression getIndexingScript() { return indexingScript; }
 
     @SuppressWarnings("deprecation")
     @Override
     public void setDataType(DataType type) {
         if (type.equals(DataType.URI)) { // Different defaults, naturally
             normalizing.inferLowercase();
-            stemming=Stemming.NONE;
+            stemming = Stemming.NONE;
         }
         this.dataType = type;
-        if (!idOverride) {
+        if ( ! idOverride) {
             this.fieldId = calculateIdV7(null);
         }
     }
@@ -535,10 +536,21 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     public void setMatching(Matching matching) { this.matching=matching; }
 
     /**
+     * Returns Dictionary settings.
+     */
+    public Dictionary getDictionary() { return dictionary; }
+    public Dictionary getOrSetDictionary() {
+        if (dictionary == null) {
+            dictionary = new Dictionary();
+        }
+        return dictionary;
+    }
+
+    /**
      * Set the matching type for this field and all subfields.
      */
     // TODO: When this is not the same as getMatching().setthis we have a potential for inconsistency. Find the right
-    //       Matching object for struct fields as lookup time instead.
+    //       Matching object for struct fields at lookup time instead.
     public void setMatchingType(Matching.Type type) {
         this.getMatching().setType(type);
         for (SDField structField : getStructFields()) {
@@ -547,10 +559,21 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     }
 
     /**
+     * Set the matching type for this field and all subfields.
+     */
+    // TODO: When this is not the same as getMatching().setthis we have a potential for inconsistency. Find the right
+    //       Matching object for struct fields at lookup time instead.
+    public void setMatchingCase(Case casing) {
+        this.getMatching().setCase(casing);
+        for (SDField structField : getStructFields()) {
+            structField.setMatchingCase(casing);
+        }
+    }
+    /**
      * Set matching algorithm for this field and all subfields.
      */
     // TODO: When this is not the same as getMatching().setthis we have a potential for inconsistency. Find the right
-    //       Matching object for struct fields as lookup time instead.
+    //       Matching object for struct fields at lookup time instead.
     public void setMatchingAlgorithm(Matching.Algorithm algorithm) {
         this.getMatching().setAlgorithm(algorithm);
         for (SDField structField : getStructFields()) {
@@ -650,7 +673,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      */
     @Override
     public Stemming getStemming(Search search) {
-        if (stemming!=null)
+        if (stemming != null)
             return stemming;
         else
             return search.getStemming();
@@ -665,7 +688,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * Sets how this field should be stemmed, or set to null to use the default.
      */
     public void setStemming(Stemming stemming) {
-        this.stemming=stemming;
+        this.stemming = stemming;
     }
 
     /** Returns an unmodifiable map of the summary fields defined in this */
@@ -749,20 +772,11 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         return queryCommands.contains(name);
     }
 
-    /**
-     * A list of query commands
-     *
-     * @return a list of strings with query commands.
-     */
+    /** Returns a list of query commands */
     @Override
-    public List<String> getQueryCommands() {
-        return queryCommands;
-    }
+    public List<String> getQueryCommands() { return queryCommands; }
 
-    /**
-     * The document that this field was declared in, or null
-     *
-     */
+    /** Returns the document that this field was declared in, or null */
     private SDDocumentType getOwnerDocType() {
         return ownerDocType;
     }

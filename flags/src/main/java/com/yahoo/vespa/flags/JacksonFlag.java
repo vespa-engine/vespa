@@ -12,6 +12,11 @@ public class JacksonFlag<T> extends FlagImpl<T, JacksonFlag<T>> {
         super(id, defaultValue, vector, serializer, source, JacksonFlag::new);
     }
 
+    @Override
+    public JacksonFlag<T> self() {
+        return this;
+    }
+
     public T value() {
         return boxedValue();
     }

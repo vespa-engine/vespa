@@ -6,13 +6,11 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/storage/distributor/maintenance/maintenancepriority.h>
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 class PrioritizedBucket {
 public:
-    typedef MaintenancePriority::Priority Priority;
+    using Priority = MaintenancePriority::Priority;
 
     static const PrioritizedBucket INVALID;
 
@@ -40,7 +38,7 @@ public:
     std::string toString() const {
         return vespalib::make_string("PrioritizedBucket(%s, pri %s)",
                                      _bucket.toString().c_str(),
-                                     MaintenancePriority::toString(_priority).c_str());
+                                     MaintenancePriority::toString(_priority));
     }
 
     bool operator==(const PrioritizedBucket& other) const {
@@ -68,6 +66,3 @@ std::ostream&
 operator<<(std::ostream& os, const PrioritizedBucket& bucket);
 
 }
-
-}
-

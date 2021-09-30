@@ -239,7 +239,7 @@ public class ProxyDocument extends Document implements DocumentOperationWrapper 
     @Override
     @SuppressWarnings("deprecation")
     public Struct getBody() {
-        return doc.getBody();
+        return null;
     }
 
     @Override

@@ -1,0 +1,10 @@
+{
+  "tenant": "tenant1",
+  "type": "ATHENS",
+  "athensDomain": "domain2",
+  "property": "property1",
+  "applications": [],
+  "metaData": {
+    "createdAtMillis": "(ignore)"
+  }
+}

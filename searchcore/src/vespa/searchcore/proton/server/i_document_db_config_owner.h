@@ -4,6 +4,8 @@
 
 #include <memory>
 
+namespace document { class BucketSpace; }
+
 namespace proton {
 
 class DocumentDBConfig;
@@ -15,6 +17,7 @@ class IDocumentDBConfigOwner
 {
 public:
     virtual ~IDocumentDBConfigOwner() { }
+    virtual document::BucketSpace getBucketSpace() const = 0;
     virtual void reconfigure(const std::shared_ptr<DocumentDBConfig> & config) = 0;
 };
 

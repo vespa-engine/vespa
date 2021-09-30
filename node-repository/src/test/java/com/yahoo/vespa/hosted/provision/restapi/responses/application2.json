@@ -1,0 +1,90 @@
+{
+  "url": "http://localhost:8080/nodes/v2/applications/tenant2.application2.instance2",
+  "id": "tenant2.application2.instance2",
+  "clusters": {
+    "id2": {
+      "type": "content",
+      "min": {
+        "nodes": 2,
+        "groups": 1,
+        "resources": {
+          "vcpu": 2.0,
+          "memoryGb": 8.0,
+          "diskGb": 50.0,
+          "bandwidthGbps": 1.0,
+          "diskSpeed": "fast",
+          "storageType": "any"
+        }
+      },
+      "max": {
+        "nodes": 2,
+        "groups": 1,
+        "resources": {
+          "vcpu": 2.0,
+          "memoryGb": 8.0,
+          "diskGb": 50.0,
+          "bandwidthGbps": 1.0,
+          "diskSpeed": "fast",
+          "storageType": "any"
+        }
+      },
+      "current": {
+        "nodes": 2,
+        "groups": 1,
+        "resources": {
+          "vcpu": 2.0,
+          "memoryGb": 8.0,
+          "diskGb": 50.0,
+          "bandwidthGbps": 1.0,
+          "diskSpeed": "fast",
+          "storageType": "local"
+        }
+      },
+      "utilization" : {
+        "cpu" : 0.0,
+        "idealCpu": 0.2664285714285714,
+        "currentCpu": 0.0,
+        "memory" : 0.0,
+        "idealMemory": 0.65,
+        "currentMemory": 0.0,
+        "disk" : 0.0,
+        "idealDisk": 0.6,
+        "currentDisk": 0.0
+      },
+      "scalingEvents" : [
+        {
+          "from": {
+            "nodes": 0,
+            "groups": 0,
+            "resources": {
+              "vcpu" : 0.0,
+              "memoryGb": 0.0,
+              "diskGb": 0.0,
+              "bandwidthGbps": 0.0,
+              "diskSpeed": "fast",
+              "storageType": "any"
+            }
+          },
+          "to": {
+            "nodes": 2,
+            "groups": 1,
+            "resources" : {
+              "vcpu": 2.0,
+              "memoryGb": 8.0,
+              "diskGb": 50.0,
+              "bandwidthGbps": 1.0,
+              "diskSpeed": "fast",
+              "storageType": "local"
+            }
+          },
+          "at" : 123
+        }
+      ],
+      "autoscalingStatusCode": "unavailable",
+      "autoscalingStatus" : "",
+      "scalingDuration": 43200000,
+      "maxQueryGrowthRate": 0.1,
+      "currentQueryFractionOfMax": 0.5
+    }
+  }
+}

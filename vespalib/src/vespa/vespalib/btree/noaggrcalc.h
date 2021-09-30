@@ -4,20 +4,20 @@
 
 #include "noaggregated.h"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 class NoAggrCalc
 {
 public:
-    NoAggrCalc()
-    {
-    }
+    constexpr NoAggrCalc() = default;
 
-    static bool
+    constexpr static bool
     hasAggregated()
     {
         return false;
     }
+
+    constexpr static bool aggregate_over_values() { return true; }
 
     template <typename DataT>
     static inline int32_t

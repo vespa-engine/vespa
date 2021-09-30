@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import java.util.Arrays;
+
 /**
  * Environments in hosted Vespa.
  *
@@ -37,6 +39,11 @@ public enum Environment {
 
     /** Returns the prod environment. This is useful for non-hosted properties where we just need any consistent value */
     public static Environment defaultEnvironment() { return prod; }
+
+    /** Returns whether this is one of the given environments */
+    public boolean isAnyOf(Environment ... environments) {
+        return Arrays.stream(environments).anyMatch(e -> e == this);
+    }
 
     /** Returns the environment name from the string value returned by value() */
     public static Environment from(String value) {

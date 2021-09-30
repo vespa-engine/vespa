@@ -2,7 +2,6 @@
 
 #include "bucketmanager.h"
 #include "minimumusedbitstracker.h"
-#include "lockablemap.hpp"
 #include <iomanip>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/nodestateupdater.h>
@@ -22,6 +21,7 @@
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <chrono>
+#include <thread>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".storage.bucketdb.manager");
@@ -33,7 +33,7 @@ namespace storage {
 
 BucketManager::BucketManager(const config::ConfigUri & configUri,
                              ServiceLayerComponentRegister& compReg)
-    : StorageLinkQueued("Bucket manager", compReg),
+    : StorageLink("Bucket manager"),
       framework::StatusReporter("bucketdb", "Bucket database"),
       _configUri(configUri),
       _workerLock(),
@@ -50,7 +50,6 @@ BucketManager::BucketManager(const config::ConfigUri & configUri,
       _metrics(std::make_shared<BucketManagerMetrics>(_component.getBucketSpaceRepo())),
       _simulated_processing_delay(0)
 {
-    _metrics->setDisks(_component.getDiskCount());
     _component.registerStatusPage(*this);
     _component.registerMetric(*_metrics);
     _component.registerMetricUpdateHook(*this, framework::SecondTime(300));
@@ -82,10 +81,9 @@ void BucketManager::onClose()
 {
     // Stop internal thread such that we don't send any more messages down.
     if (_thread) {
-        _thread->interruptAndJoin(_workerLock, _workerCond);
+        _thread->interruptAndJoin(_workerCond);
         _thread.reset();
     }
-    StorageLinkQueued::onClose();
 }
 
 void
@@ -116,12 +114,12 @@ namespace {
             : _state(*distribution, systemState),
               _result(result),
               _factory(factory),
-              _storageDistribution(distribution)
+              _storageDistribution(std::move(distribution))
         {
         }
 
         StorBucketDatabase::Decision operator()(uint64_t bucketId,
-                                                StorBucketDatabase::Entry& data)
+                                                const StorBucketDatabase::Entry& data)
         {
             document::BucketId b(document::BucketId::keyToBucketId(bucketId));
             try{
@@ -155,7 +153,7 @@ namespace {
                       .getDistributionConfigHash().c_str(),
                       _state.getClusterState().toString().c_str());
             }
-            return StorBucketDatabase::CONTINUE;
+            return StorBucketDatabase::Decision::CONTINUE;
         }
 
     };
@@ -168,54 +166,46 @@ namespace {
             uint64_t active;
             uint64_t ready;
 
-            Count() : docs(0), bytes(0), buckets(0), active(0), ready(0) {}
+            Count() noexcept : docs(0), bytes(0), buckets(0), active(0), ready(0) {}
         };
 
-        uint16_t diskCount;
-        std::vector<Count> disk;
+        Count    count;
         uint32_t lowestUsedBit;
 
-        MetricsUpdater(uint16_t diskCnt)
-            : diskCount(diskCnt), disk(diskCnt), lowestUsedBit(58) {}
+        MetricsUpdater() noexcept
+            : count(), lowestUsedBit(58) {}
 
-        StorBucketDatabase::Decision operator()(
-                document::BucketId::Type bucketId,
-                StorBucketDatabase::Entry& data)
+        void operator()(document::BucketId::Type bucketId,
+                        const StorBucketDatabase::Entry& data) noexcept
         {
             document::BucketId bucket(
                     document::BucketId::keyToBucketId(bucketId));
 
             if (data.valid()) {
-                assert(data.disk < diskCount);
-                ++disk[data.disk].buckets;
+                ++count.buckets;
                 if (data.getBucketInfo().isActive()) {
-                    ++disk[data.disk].active;
+                    ++count.active;
                 }
                 if (data.getBucketInfo().isReady()) {
-                    ++disk[data.disk].ready;
+                    ++count.ready;
                 }
-                disk[data.disk].docs += data.getBucketInfo().getDocumentCount();
-                disk[data.disk].bytes += data.getBucketInfo().getTotalDocumentSize();
+                count.docs += data.getBucketInfo().getDocumentCount();
+                count.bytes += data.getBucketInfo().getTotalDocumentSize();
 
                 if (bucket.getUsedBits() < lowestUsedBit) {
                     lowestUsedBit = bucket.getUsedBits();
                 }
             }
-
-            return StorBucketDatabase::CONTINUE;
         };
 
-        void add(const MetricsUpdater& rhs) {
-            assert(diskCount == rhs.diskCount);
-            for (uint16_t i = 0; i < diskCount; i++) {
-                auto& d = disk[i];
-                auto& s = rhs.disk[i];
-                d.buckets += s.buckets;
-                d.docs    += s.docs;
-                d.bytes   += s.bytes;
-                d.ready   += s.ready;
-                d.active  += s.active;
-            }
+        void add(const MetricsUpdater& rhs) noexcept {
+            auto& d = count;
+            auto& s = rhs.count;
+            d.buckets += s.buckets;
+            d.docs    += s.docs;
+            d.bytes   += s.bytes;
+            d.ready   += s.ready;
+            d.active  += s.active;
         }
     };
 
@@ -236,43 +226,48 @@ BucketManager::updateMetrics(bool updateDocCount)
         updateDocCount ? "" : ", minusedbits only",
         _doneInitialized ? "" : ", server is not done initializing");
 
-    uint16_t diskCount = _component.getDiskCount();
-    assert(diskCount >= 1);
     if (!updateDocCount || _doneInitialized) {
-        MetricsUpdater total(diskCount);
+        MetricsUpdater total;
         for (auto& space : _component.getBucketSpaceRepo()) {
-            MetricsUpdater m(diskCount);
-            space.second->bucketDatabase().chunkedAll(m, "BucketManager::updateMetrics");
+            MetricsUpdater m;
+            auto guard = space.second->bucketDatabase().acquire_read_guard();
+            guard->for_each(std::ref(m));
             total.add(m);
             if (updateDocCount) {
                 auto bm = _metrics->bucket_spaces.find(space.first);
                 assert(bm != _metrics->bucket_spaces.end());
-                // No system with multiple bucket spaces has more than 1 "disk"
-                // TODO remove disk concept entirely as it's a VDS relic
-                bm->second->buckets_total.set(m.disk[0].buckets);
-                bm->second->docs.set(m.disk[0].docs);
-                bm->second->bytes.set(m.disk[0].bytes);
-                bm->second->active_buckets.set(m.disk[0].active);
-                bm->second->ready_buckets.set(m.disk[0].ready);
+                bm->second->buckets_total.set(m.count.buckets);
+                bm->second->docs.set(m.count.docs);
+                bm->second->bytes.set(m.count.bytes);
+                bm->second->active_buckets.set(m.count.active);
+                bm->second->ready_buckets.set(m.count.ready);
             }
         }
         if (updateDocCount) {
-            for (uint16_t i = 0; i< diskCount; i++) {
-                _metrics->disks[i]->buckets.addValue(total.disk[i].buckets);
-                _metrics->disks[i]->docs.addValue(total.disk[i].docs);
-                _metrics->disks[i]->bytes.addValue(total.disk[i].bytes);
-                _metrics->disks[i]->active.addValue(total.disk[i].active);
-                _metrics->disks[i]->ready.addValue(total.disk[i].ready);
-            }
+            auto & dest = *_metrics->disk;
+            const auto & src = total.count;
+            dest.buckets.addValue(src.buckets);
+            dest.docs.addValue(src.docs);
+            dest.bytes.addValue(src.bytes);
+            dest.active.addValue(src.active);
+            dest.ready.addValue(src.ready);
         }
+    }
+    update_bucket_db_memory_usage_metrics();
+}
+
+void BucketManager::update_bucket_db_memory_usage_metrics() {
+    for (auto& space : _component.getBucketSpaceRepo()) {
+        auto bm = _metrics->bucket_spaces.find(space.first);
+        bm->second->bucket_db_metrics.memory_usage.update(
+                space.second->bucketDatabase().detailed_memory_usage());
     }
 }
 
 void BucketManager::updateMinUsedBits()
 {
-    MetricsUpdater m(_component.getDiskCount());
-    _component.getBucketSpaceRepo().forEachBucketChunked(
-            m, "BucketManager::updateMetrics");
+    MetricsUpdater m;
+    _component.getBucketSpaceRepo().for_each_bucket(std::ref(m));
     // When going through to get sizes, we also record min bits
     MinimumUsedBitsTracker& bitTracker(_component.getMinUsedBitsTracker());
     if (bitTracker.getMinUsedBits() != m.lowestUsedBit) {
@@ -338,11 +333,9 @@ namespace {
     class BucketDBDumper {
         vespalib::XmlOutputStream& _xos;
     public:
-        BucketDBDumper(vespalib::XmlOutputStream& xos) : _xos(xos) {}
+        explicit BucketDBDumper(vespalib::XmlOutputStream& xos) : _xos(xos) {}
 
-        StorBucketDatabase::Decision operator()(
-                uint64_t bucketId, StorBucketDatabase::Entry& info)
-        {
+        void operator()(uint64_t bucketId, const StorBucketDatabase::Entry& info) {
             using namespace vespalib::xml;
             document::BucketId bucket(
                     document::BucketId::keyToBucketId(bucketId));
@@ -354,9 +347,7 @@ namespace {
             _xos << XmlTag("bucket")
                  << XmlAttribute("id", ost.str());
             info.getBucketInfo().printXml(_xos);
-            _xos << XmlAttribute("disk", info.disk);
             _xos << XmlEndTag();
-            return StorBucketDatabase::CONTINUE;
         };
     };
 }
@@ -378,8 +369,8 @@ BucketManager::reportStatus(std::ostream& out,
             xmlReporter << XmlTag("bucket-space")
                         << XmlAttribute("name", document::FixedBucketSpaces::to_string(space.first));
             BucketDBDumper dumper(xmlReporter.getStream());
-            _component.getBucketSpaceRepo().get(space.first).bucketDatabase().chunkedAll(
-                    dumper, "BucketManager::reportStatus");
+            auto guard = _component.getBucketSpaceRepo().get(space.first).bucketDatabase().acquire_read_guard();
+            guard->for_each(std::ref(dumper));
             xmlReporter << XmlEndTag();
         }
         xmlReporter << XmlEndTag();
@@ -399,7 +390,7 @@ BucketManager::dump(std::ostream& out) const
 {
     vespalib::XmlOutputStream xos(out);
     BucketDBDumper dumper(xos);
-    _component.getBucketSpaceRepo().forEachBucketChunked(dumper, "BucketManager::dump");
+    _component.getBucketSpaceRepo().for_each_bucket(std::ref(dumper));
 }
 
 
@@ -412,14 +403,7 @@ void BucketManager::onOpen()
 
 void BucketManager::startWorkerThread()
 {
-    framework::MilliSecTime maxProcessingTime(30 * 1000);
-    framework::MilliSecTime waitTime(1000);
-    _thread = _component.startThread(*this, maxProcessingTime, waitTime);
-}
-
-void BucketManager::onFlush(bool downwards)
-{
-    StorageLinkQueued::onFlush(downwards);
+    _thread = _component.startThread(*this, 30s, 1s);
 }
 
 // --------- Commands --------- //
@@ -427,7 +411,7 @@ void BucketManager::onFlush(bool downwards)
 bool BucketManager::onRequestBucketInfo(
             const std::shared_ptr<api::RequestBucketInfoCommand>& cmd)
 {
-    LOG(debug, "Got request bucket info command");
+    LOG(debug, "Got request bucket info command %s", cmd->toString().c_str());
     if (cmd->getBuckets().size() == 0 && cmd->hasSystemState()) {
 
         std::lock_guard<std::mutex> guard(_workerLock);
@@ -471,7 +455,7 @@ bool BucketManager::onRequestBucketInfo(
             entry._bucketId.toString().c_str(),
             entry._info.toString().c_str());
     }
-    dispatchUp(reply);
+    sendUp(reply);
     // Remaining replies dispatched by queueGuard upon function exit.
     return true;
 }
@@ -527,7 +511,7 @@ BucketManager::leaveQueueProtectedSection(ScopedQueueDispatchGuard& queueGuard)
     --_requestsCurrentlyProcessing;
     if (_requestsCurrentlyProcessing == 0) {
         for (auto& qr : _queuedReplies) {
-            dispatchUp(qr);
+            sendUp(qr);
         }
         _queuedReplies.clear();
         _conflictingBuckets.clear();
@@ -558,9 +542,10 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
 
     const auto our_hash = distribution->getNodeGraph().getDistributionConfigHash();
 
-    LOG(debug, "Processing %zu queued request bucket info commands. "
+    LOG(debug, "Processing %zu queued request bucket info commands for bucket space %s. "
         "Using cluster state '%s' and distribution hash '%s'",
         reqs.size(),
+        bucketSpace.toString().c_str(),
         clusterState->toString().c_str(),
         our_hash.c_str());
 
@@ -571,7 +556,15 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
         const auto their_hash = (*it)->getDistributionHash();
 
         std::ostringstream error;
-        if ((*it)->getSystemState().getVersion() > _lastClusterStateSeen) {
+        if (clusterState->getVersion() != _lastClusterStateSeen) {
+            // Calling onSetSystemState() on _this_ component and actually switching over
+            // to another cluster state version does not happen atomically. Detect and
+            // gracefully deal with the case where we're not internally in sync.
+            error << "Inconsistent internal cluster state on node during transition; "
+                  << "failing request from distributor " << (*it)->getDistributor()
+                  << " so it can be retried. Node version is " << clusterState->getVersion()
+                  << ", but last version seen by the bucket manager is " << _lastClusterStateSeen;
+        } else if ((*it)->getSystemState().getVersion() > _lastClusterStateSeen) {
             error << "Ignoring bucket info request for cluster state version "
                   << (*it)->getSystemState().getVersion() << " as newest "
                   << "version we know of is " << _lastClusterStateSeen;
@@ -618,7 +611,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
         LOG(debug, "Rejecting request from distributor %u: %s",
             (*it)->getDistributor(),
             error.str().c_str());
-        dispatchUp(reply);
+        sendUp(reply);
     }
 
     if (requests.empty()) {
@@ -655,12 +648,12 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
     if (LOG_WOULD_LOG(spam)) {
         DistributorInfoGatherer<true> builder(
                 *clusterState, result, idFac, distribution);
-        _component.getBucketDatabase(bucketSpace).chunkedAll(builder,
+        _component.getBucketDatabase(bucketSpace).for_each_chunked(std::ref(builder),
                         "BucketManager::processRequestBucketInfoCommands-1");
     } else {
         DistributorInfoGatherer<false> builder(
                 *clusterState, result, idFac, distribution);
-        _component.getBucketDatabase(bucketSpace).chunkedAll(builder,
+        _component.getBucketDatabase(bucketSpace).for_each_chunked(std::ref(builder),
                         "BucketManager::processRequestBucketInfoCommands-2");
     }
     _metrics->fullBucketInfoLatency.addValue(
@@ -669,7 +662,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
         auto reply(std::make_shared<api::RequestBucketInfoReply>(
                 *nodeAndCmd.second));
         reply->getBucketInfo().swap(result[nodeAndCmd.first]);
-        dispatchUp(reply);
+        sendUp(reply);
     }
 
     reqs.clear();
@@ -689,7 +682,7 @@ bool
 BucketManager::onUp(const std::shared_ptr<api::StorageMessage>& msg)
 {
     if (!StorageLink::onUp(msg)) {
-        dispatchUp(msg);
+        sendUp(msg);
     }
     return true;
 }

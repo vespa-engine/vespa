@@ -1,5 +1,5 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
-
 
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -10,8 +10,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.groupingBy;
-
+/**
+ * @author jonmv
+ */
 public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> {
 
     private final long wantedConfigGeneration;
@@ -23,7 +24,7 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
 
     public static NodeList of(List<Node> nodes, List<Node> parents, ServiceConvergence services) {
         var servicesByHostName = services.services().stream()
-                                         .collect(groupingBy(service -> service.host()));
+                                         .collect(Collectors.groupingBy(service -> service.host()));
         var parentsByHostName = parents.stream()
                                        .collect(Collectors.toMap(node -> node.hostname(), node -> node));
         return new NodeList(nodes.stream()
@@ -86,6 +87,12 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
         return matching(NodeWithServices::needsNewConfig);
     }
 
+    /** The nodes that are retiring. */
+    public NodeList retiring() {
+        return matching(node -> node.node().retired());
+    }
+
+
     /** Returns a summary of the convergence status of the nodes in this list. */
     public ConvergenceSummary summary() {
         NodeList allowedDown = expectedDown();
@@ -100,7 +107,8 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
                                       needsRestart().size(),
                                       allowedDown.needsRestart().size(),
                                       asList().stream().mapToLong(node -> node.services().size()).sum(),
-                                      asList().stream().mapToLong(node -> node.services().stream().filter(service -> wantedConfigGeneration > service.currentGeneration()).count()).sum());
+                                      asList().stream().mapToLong(node -> node.services().stream().filter(service -> wantedConfigGeneration > service.currentGeneration()).count()).sum(),
+                                      retiring().size());
     }
 
 }

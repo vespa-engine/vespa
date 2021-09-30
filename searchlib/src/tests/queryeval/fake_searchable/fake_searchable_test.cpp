@@ -156,9 +156,9 @@ TEST_F(FakeSearchableTest, require_that_weigheted_set_search_works) {
     source.addResult("fieldfoo", "friend3",
                      FakeResult().doc(5));
 
-    SimpleWeightedSetTerm weightedSet("fieldfoo", 1, w);
-    weightedSet.append(Node::UP(new SimpleStringTerm("friend1", "fieldfoo", 2, Weight(1))));
-    weightedSet.append(Node::UP(new SimpleStringTerm("friend2", "fieldfoo", 3, Weight(2))));
+    SimpleWeightedSetTerm weightedSet(2, "fieldfoo", 1, w);
+    weightedSet.addTerm("friend1", Weight(1));
+    weightedSet.addTerm("friend2", Weight(2));
 
     FieldSpecList fields;
     fields.add(FieldSpec("fieldfoo", 1, 1));

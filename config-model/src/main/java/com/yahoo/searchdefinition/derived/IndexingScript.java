@@ -15,6 +15,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.PassthroughExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.SetLanguageExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ZCurveExpression;
 
@@ -24,6 +25,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * An indexing language script derived from a search definition. An indexing script contains a set of indexing
@@ -35,30 +37,49 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
 
     private final List<String> docFields = new ArrayList<>();
     private final List<Expression> expressions = new ArrayList<>();
+    private List<ImmutableSDField> fieldsSettingLanguage;
 
     public IndexingScript(Search search) {
         derive(search);
     }
 
     @Override
+    protected void derive(Search search) {
+        fieldsSettingLanguage = fieldsSettingLanguage(search);
+        if (fieldsSettingLanguage.size() == 1) // Assume this language should be used for all fields
+            addExpression(fieldsSettingLanguage.get(0).getIndexingScript());
+        super.derive(search);
+    }
+
+    @Override
     protected void derive(ImmutableSDField field, Search search) {
-        if (field.isImportedField()) {
-            return;
-        }
-        if (field.hasFullIndexingDocprocRights()) {
+        if (field.isImportedField()) return;
+
+        if (field.hasFullIndexingDocprocRights())
             docFields.add(field.getName());
-        }
+
         if (field.usesStructOrMap() &&
-            !field.getDataType().equals(PositionDataType.INSTANCE) &&
-            !field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE)))
-        {
+            ! field.getDataType().equals(PositionDataType.INSTANCE) &&
+            ! field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE))) {
             return; // unsupported
         }
-        ScriptExpression script = field.getIndexingScript();
-        if (!script.isEmpty()) {
-            expressions.add(new StatementExpression(new ClearStateExpression(),
-                                                    new GuardExpression(script)));
-        }
+
+        if (fieldsSettingLanguage.size() == 1 && fieldsSettingLanguage.get(0).equals(field))
+            return; // Already added
+
+        addExpression(field.getIndexingScript());
+    }
+
+    private void addExpression(ScriptExpression expression) {
+        if ( expression.isEmpty()) return;
+        expressions.add(new StatementExpression(new ClearStateExpression(), new GuardExpression(expression)));
+    }
+
+    private List<ImmutableSDField> fieldsSettingLanguage(Search search) {
+        return search.allFieldsList().stream()
+                                     .filter(field -> ! field.isImportedField())
+                                     .filter(field -> field.containsExpression(SetLanguageExpression.class))
+                                     .collect(Collectors.toList());
     }
 
     public Iterable<Expression> expressions() {
@@ -81,20 +102,19 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
 
     private void addContentInOrder(IlscriptsConfig.Ilscript.Builder ilscriptBuilder) {
         ArrayList<Expression> later = new ArrayList<>();
-        Set<String> touchedFields = new HashSet<String>();
-        for (Expression exp : expressions) {
+        Set<String> touchedFields = new HashSet<>();
+        for (Expression expression : expressions) {
+            if (modifiesSelf(expression) && ! setsLanguage(expression))
+                later.add(expression);
+            else
+                ilscriptBuilder.content(expression.toString());
+
             FieldScanVisitor fieldFetcher = new FieldScanVisitor();
-            if (modifiesSelf(exp)) {
-                later.add(exp);
-            } else {
-                ilscriptBuilder.content(exp.toString());
-            }
-            fieldFetcher.visit(exp);
+            fieldFetcher.visit(expression);
             touchedFields.addAll(fieldFetcher.touchedFields());
         }
-        for (Expression exp : later) {
+        for (Expression exp : later)
             ilscriptBuilder.content(exp.toString());
-        }
         generateSyntheticStatementsForUntouchedFields(ilscriptBuilder, touchedFields);
     }
 
@@ -110,13 +130,20 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
         }
     }
 
-    private boolean modifiesSelf(Expression exp) {
-        MyExpVisitor visitor = new MyExpVisitor();
-        visitor.visit(exp);
+    private boolean setsLanguage(Expression expression) {
+        SetsLanguageVisitor visitor = new SetsLanguageVisitor();
+        visitor.visit(expression);
+        return visitor.setsLanguage;
+    }
+
+    private boolean modifiesSelf(Expression expression) {
+        ModifiesSelfVisitor visitor = new ModifiesSelfVisitor();
+        visitor.visit(expression);
         return visitor.modifiesSelf();
     }
 
-    private class MyExpVisitor extends ExpressionVisitor {
+    private static class ModifiesSelfVisitor extends ExpressionVisitor {
+
         private String inputField = null;
         private String outputField = null;
 
@@ -124,9 +151,8 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
 
         @Override
         protected void doVisit(Expression expression) {
-            if (modifiesSelf()) {
-                return;
-            }
+            if (modifiesSelf()) return;
+
             if (expression instanceof InputExpression) {
                 inputField = ((InputExpression) expression).getFieldName();
             }
@@ -134,6 +160,18 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
                 outputField = ((OutputExpression) expression).getFieldName();
             }
         }
+    }
+
+    private static class SetsLanguageVisitor extends ExpressionVisitor {
+
+        boolean setsLanguage = false;
+
+        @Override
+        protected void doVisit(Expression expression) {
+            if (expression instanceof SetLanguageExpression)
+                setsLanguage = true;
+        }
+
     }
 
     private static class FieldScanVisitor extends ExpressionVisitor {

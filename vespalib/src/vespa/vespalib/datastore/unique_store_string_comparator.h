@@ -5,7 +5,7 @@
 #include "entry_comparator.h"
 #include "unique_store_string_allocator.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Compare two strings based on entry refs.
@@ -38,16 +38,32 @@ protected:
     }
 
 public:
+    UniqueStoreStringComparator(const DataStoreType &store)
+        : _store(store),
+          _fallback_value(nullptr)
+    {
+    }
+
     UniqueStoreStringComparator(const DataStoreType &store, const char *fallback_value)
         : _store(store),
           _fallback_value(fallback_value)
     {
     }
 
-    bool operator()(const EntryRef lhs, const EntryRef rhs) const override {
+    bool less(const EntryRef lhs, const EntryRef rhs) const override {
         const char *lhs_value = get(lhs);
         const char *rhs_value = get(rhs);
         return (strcmp(lhs_value, rhs_value) < 0);
+    }
+    bool equal(const EntryRef lhs, const EntryRef rhs) const override {
+        const char *lhs_value = get(lhs);
+        const char *rhs_value = get(rhs);
+        return (strcmp(lhs_value, rhs_value) == 0);
+    }
+    size_t hash(const EntryRef rhs) const override {
+        const char *rhs_value = get(rhs);
+        vespalib::hash<const char *> hasher;
+        return hasher(rhs_value);
     }
 };
 

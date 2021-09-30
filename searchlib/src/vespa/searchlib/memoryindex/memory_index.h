@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/vespalib/stllike/hash_set.h>
@@ -14,7 +14,7 @@ namespace search::index {
     class IndexBuilder;
 }
 
-namespace search { class ISequencedTaskExecutor; }
+namespace vespalib { class ISequencedTaskExecutor; }
 
 namespace document { class Document; }
 
@@ -40,6 +40,7 @@ class FieldIndexCollection;
  */
 class MemoryIndex : public queryeval::Searchable {
 private:
+    using ISequencedTaskExecutor = vespalib::ISequencedTaskExecutor;
     index::Schema     _schema;
     ISequencedTaskExecutor &_invertThreads;
     ISequencedTaskExecutor &_pushThreads;
@@ -47,21 +48,20 @@ private:
     std::unique_ptr<DocumentInverter>  _inverter0;
     std::unique_ptr<DocumentInverter>  _inverter1;
     DocumentInverter                  *_inverter;
-    bool              _frozen;
-    uint32_t          _maxDocId;
-    uint32_t          _numDocs;
-    vespalib::Lock    _lock;
-    std::vector<bool> _hiddenFields;
-    index::Schema::SP _prunedSchema;
+    bool                _frozen;
+    uint32_t            _maxDocId;
+    uint32_t            _numDocs;
+    mutable std::mutex  _lock;
+    std::vector<bool>   _hiddenFields;
+    index::Schema::SP   _prunedSchema;
     vespalib::hash_set<uint32_t> _indexedDocs; // documents in memory index
-    const uint64_t    _staticMemoryFootprint;
+    const uint64_t      _staticMemoryFootprint;
 
     MemoryIndex(const MemoryIndex &) = delete;
     MemoryIndex(MemoryIndex &&) = delete;
     MemoryIndex &operator=(const MemoryIndex &) = delete;
     MemoryIndex &operator=(MemoryIndex &&) = delete;
 
-    void removeDocumentHelper(uint32_t docId, const document::Document &doc);
     void updateMaxDocId(uint32_t docId) {
         if (docId > _maxDocId) {
             _maxDocId = docId;
@@ -124,7 +124,7 @@ public:
      *
      * Callers can call pushThreads.sync() to wait for push completion.
      */
-    void commit(const std::shared_ptr<IDestructorCallback> &onWriteDone);
+    void commit(const std::shared_ptr<vespalib::IDestructorCallback> &onWriteDone);
 
     /**
      * Freeze this index.

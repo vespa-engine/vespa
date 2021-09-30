@@ -1,9 +1,0 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-# Configuration for the routing config provider
-
-# TODO Remove once YCA filter is removed
-
-namespace=cloud.config
-
-# disabled by default, automatically enabled for hosted vespa
-enabled bool default=false

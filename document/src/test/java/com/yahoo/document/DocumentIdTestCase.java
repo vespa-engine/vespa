@@ -2,6 +2,7 @@
 package com.yahoo.document;
 
 import com.yahoo.document.idstring.IdIdString;
+import com.yahoo.document.idstring.IdString;
 import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.Before;
 import org.junit.Rule;
@@ -16,10 +17,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.regex.Pattern;
 import java.util.Arrays;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -227,7 +226,7 @@ public class DocumentIdTestCase {
             new DocumentId(strId);
             fail("Expected an IllegalArgumentException to be thrown");
         } catch (IllegalArgumentException ex) {
-            assertThat(ex.getMessage(), containsString(exceptionMsg));
+            assertTrue(ex.getMessage().contains(exceptionMsg));
         }
     }
 
@@ -254,8 +253,24 @@ public class DocumentIdTestCase {
             DocumentId.createFromSerialized(strId);
             fail("Expected an IllegalArgumentException to be thrown");
         } catch (IllegalArgumentException ex) {
-            assertThat(ex.getMessage(), containsString("illegal zero byte code point"));
+            assertTrue(ex.getMessage().contains("illegal zero byte code point"));
         }
+    }
+
+    @Test
+    public void testTooLongDocId() {
+        StringBuilder sb = new StringBuilder("id:ns:type::");
+        for(int i=0; i < 0x10000; i++) {
+            sb.append('x');
+        }
+        try {
+            new DocumentId(sb.toString());
+            fail("Expected an IllegalArgumentException to be thrown");
+        } catch (IllegalArgumentException ex) {
+            assertTrue(ex.getMessage().contains("However if you have already fed a document earlier on and want to remove it, " +
+                    "you can do so by calling new DocumentId(IdString.createIdStringLessStrict()) that will bypass this restriction."));
+        }
+        assertEquals(65548, new DocumentId(IdString.createIdStringLessStrict(sb.toString())).toString().length());
     }
 
 }

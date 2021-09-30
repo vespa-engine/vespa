@@ -68,9 +68,9 @@ public class DeploymentSpec {
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
     private void validateTotalDelay(List<Step> steps) {
         long totalDelaySeconds = steps.stream().mapToLong(step -> (step.delay().getSeconds())).sum();
-        if (totalDelaySeconds > Duration.ofHours(24).getSeconds())
+        if (totalDelaySeconds > Duration.ofHours(48).getSeconds())
             throw new IllegalArgumentException("The total delay specified is " + Duration.ofSeconds(totalDelaySeconds) +
-                                               " but max 24 hours is allowed");
+                                               " but max 48 hours is allowed");
     }
 
     /** Throws an IllegalArgumentException if any instance has a looser upgrade policy than the previous */
@@ -254,13 +254,10 @@ public class DeploymentSpec {
             return concerns(environment, Optional.empty());
         }
 
-        /** Returns whether this step specifies the given environment, and, optionally, region. */
-        // TODO jonmv: Remove when 7.147 is the oldest version.
-        public boolean deploysTo(Environment environment, Optional<RegionName> region) {
-            return concerns(environment, region);
-        }
-
-        /** Returns whether this step specifies the given environment, and, optionally, region. */
+        /**
+         * Returns whether this step specifies the given environment, and, optionally,
+         * if this step specifies a region, whether this is also the given region.
+         */
         public abstract boolean concerns(Environment environment, Optional<RegionName> region);
 
         /** Returns the zones deployed to in this step. */
@@ -348,7 +345,7 @@ public class DeploymentSpec {
         @Override
         public boolean concerns(Environment environment, Optional<RegionName> region) {
             if (environment != this.environment) return false;
-            if (region.isPresent() && ! region.equals(this.region)) return false;
+            if (region.isPresent() && this.region.isPresent() && ! region.equals(this.region)) return false;
             return true;
         }
 
@@ -512,6 +509,18 @@ public class DeploymentSpec {
         /** Will upgrade after most default applications upgraded successfully */
         conservative
     }
+
+
+    /** Determines when application changes deploy, when there is already an ongoing platform upgrade. */
+    public enum UpgradeRollout {
+        /** Separate: Application changes wait for upgrade to complete, unless upgrade fails. */
+        separate,
+        /** Leading: Application changes are allowed to start and catch up to the platform upgrade. */
+        leading
+        // /** Simultaneous: Application changes deploy independently of platform upgrades. */
+        // simultaneous
+    }
+
 
     /** A blocking of changes in a given time window */
     public static class ChangeBlocker {

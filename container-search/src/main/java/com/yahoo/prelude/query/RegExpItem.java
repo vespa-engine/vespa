@@ -7,9 +7,10 @@ import java.util.regex.Pattern;
 /**
  * Match a field with the contained regular expression.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class RegExpItem extends TermItem {
+
     private String expression;
     private Pattern regexp;
 

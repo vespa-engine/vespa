@@ -9,7 +9,7 @@ import com.google.common.collect.ImmutableList;
 /**
  * Model a single cluster of services in the Vespa model.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class Cluster implements Comparable<Cluster> {
 
@@ -63,10 +63,7 @@ public final class Cluster implements Comparable<Cluster> {
         if (!name.equals(other.name)) {
             return false;
         }
-        if (!type.equals(other.type)) {
-            return false;
-        }
-        return true;
+        return type.equals(other.type);
     }
 
     @Override

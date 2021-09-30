@@ -53,7 +53,7 @@ public class CorsResponseFilterTest {
     @Test
     public void any_request_origin_yields_allow_origin_header_in_response_when_wildcard_is_allowed() {
         Map<String, String> headers = doFilterRequest(newResponseFilter("*"), "http://any.origin");
-        assertEquals("*", headers.get(ALLOW_ORIGIN_HEADER));
+        assertEquals("http://any.origin", headers.get(ALLOW_ORIGIN_HEADER));
     }
 
     private static Map<String, String> doFilterRequest(SecurityResponseFilter filter, String originUrl) {

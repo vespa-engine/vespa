@@ -19,6 +19,7 @@ public class ApplicationId extends NonDefaultIdentifier {
     public static void validate(String id) {
         if ( ! strictPattern.matcher(id).matches())
             throwInvalidId(id, strictPatternExplanation);
+        new ApplicationId(id); // validate
     }
 
 }

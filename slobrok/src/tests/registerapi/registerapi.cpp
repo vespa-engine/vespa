@@ -6,8 +6,10 @@
 #include <vespa/slobrok/sbregister.h>
 #include <vespa/slobrok/server/slobrokserver.h>
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/transport.h>
 #include <sstream>
 #include <algorithm>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("registerapi_test");
@@ -216,5 +218,6 @@ Test::Main()
                        .add("F/y/w", myspec.c_str())));
 
     mock.stop();
+    server.shutdown();
     TEST_DONE();
 }

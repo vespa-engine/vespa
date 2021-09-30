@@ -14,7 +14,7 @@ import java.util.List;
 public class ApplicationPackageBuilder {
 
     private List<ContentClusterBuilder> contentClusters = new ArrayList<>();
-    private List<String> searchDefinitions = new ArrayList<>();
+    private List<String> schemas = new ArrayList<>();
 
     public ApplicationPackageBuilder() {
     }
@@ -24,13 +24,13 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
-    public ApplicationPackageBuilder addSearchDefinition(String searchDefinition) {
-        searchDefinitions.add(searchDefinition);
+    public ApplicationPackageBuilder addSchemas(String schemas) {
+        this.schemas.add(schemas);
         return this;
     }
 
     public VespaModelCreatorWithMockPkg buildCreator() {
-        return new VespaModelCreatorWithMockPkg(null, getServices(), searchDefinitions);
+        return new VespaModelCreatorWithMockPkg(null, getServices(), schemas);
     }
 
     private String getServices() {

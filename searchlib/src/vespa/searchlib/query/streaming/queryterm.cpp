@@ -40,22 +40,6 @@ static CharInfo _G_charTable;
 
 namespace search::streaming {
 
-QueryTerm::QueryTerm() :
-    QueryTermUCS4(),
-    _index(),
-    _encoding(),
-    _result(),
-    _hitList(),
-    _weight(100),
-    _uniqueId(0),
-    _fieldInfo()
-{ }
-
-QueryTerm::QueryTerm(const QueryTerm &) = default;
-QueryTerm & QueryTerm::operator = (const QueryTerm &) = default;
-QueryTerm::QueryTerm(QueryTerm &&) noexcept = default;
-QueryTerm & QueryTerm::operator = (QueryTerm &&) noexcept = default;
-
 QueryTerm::~QueryTerm() = default;
 
 void
@@ -70,7 +54,7 @@ QueryTerm::visitMembers(vespalib::ObjectVisitor & visitor) const
     visit(visitor, "uniqueid", _uniqueId);
 }
 
-QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, const string & termS, const string & indexS, SearchTerm type) :
+QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, const string & termS, const string & indexS, Type type) :
     QueryTermUCS4(termS, type),
     _index(indexS),
     _encoding(0x01),

@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorBucketmoverConfig;
+import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -32,13 +33,12 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
         @Override
         protected StorageNode doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             ModelElement e = new ModelElement(producerSpec);
-            return new StorageNode((StorageCluster)ancestor, e.doubleAttribute("capacity"), e.integerAttribute("distribution-key"), false);
+            return new StorageNode(deployState.getProperties(), (StorageCluster)ancestor, e.doubleAttribute("capacity"), e.integerAttribute("distribution-key"), false);
         }
     }
 
-    StorageNode(StorageCluster cluster, Double capacity, int distributionKey, boolean retired) {
-        super(cluster,
-              cluster.getClusterName(),
+    StorageNode(ModelContext.Properties properties, StorageCluster cluster, Double capacity, int distributionKey, boolean retired) {
+        super(properties.featureFlags(), cluster, cluster.getClusterName(),
               rootFolder + cluster.getClusterName() + "/storage/" + distributionKey,
               distributionKey);
         this.retired = retired;
@@ -86,11 +86,16 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
 
     @Override
     public void getConfig(StorFilestorConfig.Builder builder) {
-        if (getHostResource() != null && getHostResource().getFlavor().isPresent()) {
-            Flavor nodeFlavor = getHostResource().getFlavor().get();
-            builder.num_threads(Math.max(4, (int)nodeFlavor.getMinCpuCores()));
+        if (getHostResource() != null && ! getHostResource().realResources().isUnspecified()) {
+            builder.num_threads(Math.max(4, (int)getHostResource().realResources().vcpu()));
         }
         cluster.getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(StorCommunicationmanagerConfig.Builder builder) {
+        super.getConfig(builder);
+        builder.mbus.dispatch_on_encode(false);
     }
 
 }

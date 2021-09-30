@@ -1,12 +1,16 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.jrt.Target;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.distribution.Group;
-import com.yahoo.vdslib.state.*;
+import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 
@@ -25,11 +29,11 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     public static Logger log = Logger.getLogger(NodeInfo.class.getName());
 
     private final ContentCluster cluster;
-    private Node node;
+    private final Node node;
     private String rpcAddress;
     /** If set to a timestamp, we haven't seen this node in slobrok since then. If not set, it is currently in slobrok. */
     private Long lastSeenInSlobrok;
-    private List<Pair<GetNodeStateRequest, Long>> pendingNodeStateRequests = new LinkedList<>();
+    private final List<Pair<GetNodeStateRequest, Long>> pendingNodeStateRequests = new LinkedList<>();
     private NodeState reportedState;
     private NodeState wantedState;
 
@@ -54,8 +58,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     private Target connection;
     /** We cache last connection we did request info on, as we want to report appropriate error for node regardless of whether other commands have created new connection. */
     public Target lastRequestInfoConnection;
-    /** Sets the version we assumed we were when opening this connection. (Needed in case we need to do some sort of handshaking to decrease version. */
-    private int connectionVersion;
     /**
      * Counts the number of attempts we have tried since last time we had
      * contact with the node. (Used to retry fast early)
@@ -78,7 +80,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     private int version;
 
     // Mapping of cluster state version -> cluster state bundle instance
-    private TreeMap<Integer, ClusterStateBundle> clusterStateVersionBundleSent = new TreeMap<>();
+    private final TreeMap<Integer, ClusterStateBundle> clusterStateVersionBundleSent = new TreeMap<>();
     private ClusterStateBundle clusterStateVersionBundleAcknowledged;
 
     private int clusterStateVersionActivationSent = -1;
@@ -116,7 +118,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         this.connectionAttemptCount = 0;
         this.timeOfFirstFailingConnectionAttempt = 0;
         this.version = getLatestVersion();
-        this.connectionVersion = getLatestVersion();
         this.configuredRetired = configuredRetired;
         this.recentlyObservedUnstableDuringInit = false;
         this.rpcAddress = rpcAddress;
@@ -134,7 +135,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         this.lastSeenInSlobrok = null;
         this.nextAttemptTime = 0;
         this.version = getLatestVersion();
-        this.connectionVersion = getLatestVersion();
     }
 
     public long getWentDownWithStartTime() { return wentDownWithStartTime; }
@@ -167,7 +167,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         }
         if (prematureCrashCount != count) {
             prematureCrashCount = count;
-            log.log(LogLevel.DEBUG, "Premature crash count on " + toString() + " set to " + count);
+            log.log(Level.FINE, () -> "Premature crash count on " + toString() + " set to " + count);
         }
     }
     public int getPrematureCrashCount() { return prematureCrashCount; }
@@ -309,17 +309,17 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         if (state.getState().oneOf("dsm") && !reportedState.getState().oneOf("dsm")) {
             wentDownWithStartTime = reportedState.getStartTimestamp();
             wentDownAtClusterState = getNewestSystemStateSent();
-            log.log(LogLevel.DEBUG, "Setting going down timestamp of node " + node + " to " + wentDownWithStartTime);
+            log.log(Level.FINE, () -> "Setting going down timestamp of node " + node + " to " + wentDownWithStartTime);
         }
         if (state.getState().equals(State.DOWN) && !reportedState.getState().oneOf("d")) {
             downStableStateTime = time;
-            log.log(LogLevel.DEBUG, "Down stable state on " + toString() + " altered to " + time);
+            log.log(Level.FINE, () -> "Down stable state on " + toString() + " altered to " + time);
             if (reportedState.getState() == State.INITIALIZING) {
                 recentlyObservedUnstableDuringInit = true;
             }
         } else if (state.getState().equals(State.UP) && !reportedState.getState().oneOf("u")) {
             upStableStateTime = time;
-            log.log(LogLevel.DEBUG, "Up stable state on " + toString() + " altered to " + time);
+            log.log(Level.FINE, () -> "Up stable state on " + toString() + " altered to " + time);
         }
         if (!state.getState().validReportedNodeState(node.getType())) {
             throw new IllegalStateException("Trying to set illegal reported node state: " + state);
@@ -342,19 +342,19 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
             } else {
                 nextAttemptTime = time + 5000;
             }
-            log.log(LogLevel.SPAM, "Failed to get state from node " + toString() + ", scheduling next attempt in " + (nextAttemptTime - time) + " ms.");
+            log.log(Level.FINEST, () -> "Failed to get state from node " + toString() + ", scheduling next attempt in " + (nextAttemptTime - time) + " ms.");
         } else {
             connectionAttemptCount = 0;
             timeOfFirstFailingConnectionAttempt = 0;
             reportedState = state;
             if (version == 0 || state.getState().equals(State.STOPPING)) {
                 nextAttemptTime = time + cluster.getPollingFrequency();
-                log.log(LogLevel.SPAM, "Scheduling next attempt to get state from " + toString() + " in " + (nextAttemptTime - time) + " ms (polling freq).");
+                log.log(Level.FINEST, () -> "Scheduling next attempt to get state from " + toString() + " in " + (nextAttemptTime - time) + " ms (polling freq).");
             } else {
                 nextAttemptTime = time;
             }
         }
-        log.log(LogLevel.SPAM, "Set reported state of node " + this + " to " + reportedState + ". Next connection attempt is at " + nextAttemptTime);
+        log.log(Level.FINEST, () -> "Set reported state of node " + this + " to " + reportedState + ". Next connection attempt is at " + nextAttemptTime);
     }
 
     /** Sets the wanted state. The wanted state is taken as UP if a null argument is given */
@@ -374,7 +374,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
             }
         }
         wantedState = newWanted;
-        log.log(LogLevel.SPAM, "Set wanted state of node " + this + " to " + wantedState + ".");
+        log.log(Level.FINEST, () -> "Set wanted state of node " + this + " to " + wantedState + ".");
     }
 
     public long getTimeForNextStateRequestAttempt() {
@@ -388,16 +388,16 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
                 downgradeToRpcVersion(RPCCommunicator.LEGACY_SET_SYSTEM_STATE2_RPC_VERSION, methodName, timer);
                 return true;
             } else if (timer.getCurrentTimeInMillis() - 2000 < adjustedVersionTime) {
-                log.log(LogLevel.DEBUG, () -> "Node " + toString() + " does not support " + methodName + " call. Version already downgraded, so ignoring it.");
+                log.log(Level.FINE, () -> "Node " + toString() + " does not support " + methodName + " call. Version already downgraded, so ignoring it.");
                 return true;
             }
         }
-        log.log(LogLevel.WARNING, "Node " + toString() + " does not support " + methodName + " which it should.");
+        log.log(Level.WARNING, "Node " + toString() + " does not support " + methodName + " which it should.");
         return false;
     }
 
     private void downgradeToRpcVersion(int newVersion, String methodName, Timer timer) {
-        log.log(LogLevel.DEBUG, () -> String.format("Node %s does not support %s call. Downgrading to version %d.",
+        log.log(Level.FINE, () -> String.format("Node %s does not support %s call. Downgrading to version %d.",
                 toString(), methodName, newVersion));
         version = newVersion;
         nextAttemptTime = 0;
@@ -410,7 +410,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     public Target setConnection(Target t) {
         this.connection = t;
-        this.connectionVersion = getLatestVersion();
         return t;
     }
 
@@ -453,7 +452,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
                 && (wentDownAtClusterState == null || wentDownAtClusterState.getVersion() < stateBundle.getVersion())
                 && !stateBundle.getBaselineClusterState().getNodeState(node).getState().oneOf("dsm"))
             {
-                log.log(LogLevel.DEBUG, () -> String.format("Clearing going down timestamp of node %s after " +
+                log.log(Level.FINE, () -> String.format("Clearing going down timestamp of node %s after " +
                         "receiving ack of cluster state bundle %s", node, stateBundle));
                 wentDownWithStartTime = 0;
             }

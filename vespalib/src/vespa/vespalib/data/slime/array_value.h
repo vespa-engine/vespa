@@ -5,18 +5,15 @@
 #include "value.h"
 #include "nix_value.h"
 #include "value_factory.h"
-#include "symbol_table.h"
 #include <vector>
-#include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * Class representing a collection of ordered values that can be
  * looked up by index.
  **/
-class ArrayValue : public Value
+class ArrayValue final : public Value
 {
 private:
     SymbolTable         &_symbolTable;
@@ -31,9 +28,10 @@ protected:
     }
 
 public:
-    ArrayValue(SymbolTable &table, Stash & stash) : _symbolTable(table), _stash(stash), _values() {}
+    ArrayValue(SymbolTable &table, Stash & stash);
     ArrayValue(const ArrayValue &) = delete;
     ArrayValue &operator=(const ArrayValue &) = delete;
+    void reserve(size_t sz) { _values.reserve(sz); }
 
     Type type() const override { return ARRAY::instance; }
     size_t children() const override { return _values.size(); }
@@ -47,13 +45,11 @@ public:
         return *NixValue::invalid();
     }
 
-    Cursor &addArray() override;
+    Cursor &addArray(size_t reserve) override;
     Cursor &addObject() override;
     Symbol resolve(Memory symbol_name) override;
 
-    ~ArrayValue() { }
+    ~ArrayValue() override;
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

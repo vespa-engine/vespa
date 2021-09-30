@@ -6,6 +6,7 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/stllike/allocator.h>
 #include "bitvectoridxfile.h"
 
 namespace search::diskindex {
@@ -49,7 +50,7 @@ public:
 class BitVectorCandidate
 {
 private:
-    std::vector<uint32_t> _array;
+    std::vector<uint32_t, vespalib::allocator_large<uint32_t>> _array;
     uint64_t _numDocs;
     uint32_t _bitVectorLimit;
     BitVector::UP _bv;

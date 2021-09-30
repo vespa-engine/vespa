@@ -7,6 +7,10 @@
 
 namespace search::test {
 
+#ifdef ENABLE_GTEST_MIGRATION
+#define InitRangeVerifier InitRangeVerifierForGTest
+#endif
+
 class InitRangeVerifier {
 public:
     typedef queryeval::SearchIterator SearchIterator;
@@ -25,6 +29,7 @@ public:
     void verify(SearchIterator & iterator) const;
     /// Convenience that takes ownership of the pointer.
     void verify(SearchIterator * iterator) const;
+    void verify(SearchIterator::UP iterator) const { verify(*iterator); }
 private:
     void verify(SearchIterator & iterator, bool strict) const;
     void verify(SearchIterator & iterator, const Ranges & ranges, bool strict) const;

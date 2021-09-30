@@ -3,6 +3,7 @@ package com.yahoo.jdisc;
 
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.handler.DelegatedRequestHandler;
 import com.yahoo.jdisc.handler.NullContent;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
@@ -16,7 +17,7 @@ import java.util.logging.Logger;
 /**
 * @author bakksjo
 */
-class ProxyRequestHandler implements RequestHandler {
+class ProxyRequestHandler implements DelegatedRequestHandler {
 
     private static final CompletionHandler IGNORED_COMPLETION = new IgnoredCompletion();
     private static final Logger log = Logger.getLogger(ProxyRequestHandler.class.getName());
@@ -69,6 +70,11 @@ class ProxyRequestHandler implements RequestHandler {
     @Override
     public String toString() {
         return delegate.toString();
+    }
+
+    @Override
+    public RequestHandler getDelegate() {
+        return delegate;
     }
 
     private static class ProxyResponseHandler implements ResponseHandler {

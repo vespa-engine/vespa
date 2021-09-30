@@ -5,6 +5,7 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.config.subscription.ConfigSubscriber;
+import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 
 /**
  * <p>This is the starting point of the <b>document api</b>. This api provides
@@ -27,9 +28,9 @@ import com.yahoo.config.subscription.ConfigSubscriber;
  * <p>This class is the factory for creating the four session types mentioned above.</p>
  *
  * <p>There may be multiple implementations of the document api classes. If
- * default configuration is sufficient, use the {@link #createDefault} method to
- * return a running document access. Note that there are running threads within
- * an access object, so you must shut it down when done.</p>
+ * default configuration is sufficient, simply inject a {@code DocumentAccess} to
+ * obtain a running document access. If you instead create a concrete implementation, note that
+ * there are running threads within an access object, so you must shut it down when done.</p>
  *
  * <p>An implementation of the Document Api may support just a subset of the
  * access types defined in this interface. For example, some document
@@ -55,10 +56,29 @@ public abstract class DocumentAccess {
      * while attempting to create such an object, this method will throw an
      * exception.
      *
+     * @deprecated DocumentAccess may be injected in containers — otherwise use {@link #createForNonContainer()}.
+     *
      * @return a running document access object with all default configuration
      */
+    @Deprecated(since = "7")
     public static DocumentAccess createDefault() {
-        return new com.yahoo.documentapi.messagebus.MessageBusDocumentAccess();
+        return new MessageBusDocumentAccess();
+    }
+
+
+    /**
+     * This is a convenience method to return a document access object when running
+     * outside of a Vespa application container, with all default parameter values.
+     * The client that calls this method is also responsible for shutting the object
+     * down when done. If an error occurred while attempting to create such an object,
+     * this method will throw an exception.
+     * This document access requires new config subscriptions to be set up, which should
+     * be avoided in application containers, but is suitable for, e.g., CLIs.
+     *
+     * @return a running document access object with all default configuration
+     */
+    public static DocumentAccess createForNonContainer() {
+        return new MessageBusDocumentAccess();
     }
 
     /**
@@ -67,12 +87,11 @@ public abstract class DocumentAccess {
      * @param params the parameters to use for setup
      */
     protected DocumentAccess(DocumentAccessParams params) {
-        super();
         if (params.documentmanagerConfig().isPresent()) { // our config has been injected into the creator
             documentTypeManager = new DocumentTypeManager(params.documentmanagerConfig().get());
             documentTypeConfigSubscriber = null;
         }
-        else { // fallback to old style subscription
+        else { // fallback to old style subscription — this should be avoided
             documentTypeManager = new DocumentTypeManager();
             documentTypeConfigSubscriber = DocumentTypeManagerConfigurer.configure(documentTypeManager, params.getDocumentManagerConfigId());
         }

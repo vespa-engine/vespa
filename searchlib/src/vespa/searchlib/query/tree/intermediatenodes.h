@@ -122,36 +122,4 @@ private:
     bool _expensive;
 };
 
-class WeightedSetTerm : public QueryNodeMixin<WeightedSetTerm, Intermediate>, public Term {
-public:
-    WeightedSetTerm(const vespalib::string &view, int32_t id, Weight weight)
-        : Term(view, id, weight) {}
-    virtual ~WeightedSetTerm() = 0;
-};
-
-class DotProduct : public QueryNodeMixin<DotProduct, Intermediate>, public Term {
-public:
-    DotProduct(const vespalib::string &view, int32_t id, Weight weight)
-        : Term(view, id, weight) {}
-    virtual ~DotProduct() = 0;
-};
-
-class WandTerm : public QueryNodeMixin<WandTerm, Intermediate>, public Term {
-private:
-    uint32_t _targetNumHits;
-    int64_t  _scoreThreshold;
-    double   _thresholdBoostFactor;
-public:
-    WandTerm(const vespalib::string &view, int32_t id, Weight weight,
-             uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor)
-        : Term(view, id, weight),
-          _targetNumHits(targetNumHits),
-          _scoreThreshold(scoreThreshold),
-          _thresholdBoostFactor(thresholdBoostFactor) {}
-    virtual ~WandTerm() = 0;
-    uint32_t getTargetNumHits() const { return _targetNumHits; }
-    int64_t getScoreThreshold() const { return _scoreThreshold; }
-    double getThresholdBoostFactor() const { return _thresholdBoostFactor; }
-};
-
 }

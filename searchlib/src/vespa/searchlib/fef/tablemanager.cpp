@@ -2,36 +2,29 @@
 
 #include "tablemanager.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
-TableManager::TableManager() :
-    _factories(),
-    _cache(),
-    _lock()
-{
-}
+TableManager::TableManager() = default;
 
-TableManager::~TableManager() {}
+TableManager::~TableManager() = default;
 
 const Table *
 TableManager::getTable(const vespalib::string & name) const
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     TableCache::const_iterator itr = _cache.find(name);
     if (itr != _cache.end()) {
         return itr->second.get();
     }
     for (size_t i = 0; i < _factories.size(); ++i) {
         Table::SP table = _factories[i]->createTable(name);
-        if (table.get() != NULL) {
+        if (table) {
             _cache.insert(std::make_pair(name, table));
             return table.get();
         }
     }
-    _cache.insert(std::make_pair(name, Table::SP(NULL)));
-    return NULL;
+    _cache.insert(std::make_pair(name, Table::SP()));
+    return nullptr;
 }
 
-} // namespace fef
-} // namespace search
+}

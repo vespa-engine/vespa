@@ -1,4 +1,9 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+set(STAGING_VESPALIB_DIRECTIO_TESTDIR src/tests/directio)
+set(STAGING_VESPALIB_PROCESS_MEMORY_STATS_TESTDIR src/tests/util/process_memory_stats)
+endif()
+
 vespa_define_module(
     DEPENDS
     fastos
@@ -12,13 +17,12 @@ vespa_define_module(
     src/tests/bits
     src/tests/clock
     src/tests/crc
-    src/tests/directio
+    ${STAGING_VESPALIB_DIRECTIO_TESTDIR}
     src/tests/encoding/base64
     src/tests/fileheader
     src/tests/floatingpointtype
     src/tests/growablebytebuffer
     src/tests/json
-    src/tests/librarypool
     src/tests/memorydatastore
     src/tests/metrics
     src/tests/objectdump
@@ -30,8 +34,10 @@ vespa_define_module(
     src/tests/shutdownguard
     src/tests/state_server
     src/tests/stllike
+    src/tests/sequencedtaskexecutor
+    src/tests/singleexecutor
     src/tests/timer
-    src/tests/util/process_memory_stats
+    ${STAGING_VESPALIB_PROCESS_MEMORY_STATS_TESTDIR}
     src/tests/xmlserializable
 
     LIBS

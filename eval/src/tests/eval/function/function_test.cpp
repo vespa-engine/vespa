@@ -3,12 +3,15 @@
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/operator_nodes.h>
 #include <vespa/eval/eval/node_traverser.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <set>
 #include <vespa/eval/eval/test/eval_spec.h>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/check_type.h>
 
 using namespace vespalib::eval;
 using namespace vespalib::eval::nodes;
+using vespalib::eval::test::GenSpec;
 
 std::vector<vespalib::string> params({"x", "y", "z", "w"});
 
@@ -351,7 +354,7 @@ TEST("require that Not child can be accessed") {
     const Node &root = f->root();
     EXPECT_TRUE(!root.is_leaf());
     ASSERT_EQUAL(1u, root.num_children());
-    EXPECT_EQUAL(1.0, root.get_child(0).get_const_value());
+    EXPECT_EQUAL(1.0, root.get_child(0).get_const_double_value());
 }
 
 TEST("require that If children can be accessed") {
@@ -359,9 +362,9 @@ TEST("require that If children can be accessed") {
     const Node &root = f->root();
     EXPECT_TRUE(!root.is_leaf());
     ASSERT_EQUAL(3u, root.num_children());
-    EXPECT_EQUAL(1.0, root.get_child(0).get_const_value());
-    EXPECT_EQUAL(2.0, root.get_child(1).get_const_value());
-    EXPECT_EQUAL(3.0, root.get_child(2).get_const_value());
+    EXPECT_EQUAL(1.0, root.get_child(0).get_const_double_value());
+    EXPECT_EQUAL(2.0, root.get_child(1).get_const_double_value());
+    EXPECT_EQUAL(3.0, root.get_child(2).get_const_double_value());
 }
 
 TEST("require that Operator children can be accessed") {
@@ -369,8 +372,8 @@ TEST("require that Operator children can be accessed") {
     const Node &root = f->root();
     EXPECT_TRUE(!root.is_leaf());
     ASSERT_EQUAL(2u, root.num_children());
-    EXPECT_EQUAL(1.0, root.get_child(0).get_const_value());
-    EXPECT_EQUAL(2.0, root.get_child(1).get_const_value());
+    EXPECT_EQUAL(1.0, root.get_child(0).get_const_double_value());
+    EXPECT_EQUAL(2.0, root.get_child(1).get_const_double_value());
 }
 
 TEST("require that Call children can be accessed") {
@@ -378,8 +381,8 @@ TEST("require that Call children can be accessed") {
     const Node &root = f->root();
     EXPECT_TRUE(!root.is_leaf());
     ASSERT_EQUAL(2u, root.num_children());
-    EXPECT_EQUAL(1.0, root.get_child(0).get_const_value());
-    EXPECT_EQUAL(2.0, root.get_child(1).get_const_value());
+    EXPECT_EQUAL(1.0, root.get_child(0).get_const_double_value());
+    EXPECT_EQUAL(2.0, root.get_child(1).get_const_double_value());
 }
 
 struct MyNodeHandler : public NodeHandler {
@@ -418,6 +421,7 @@ struct MyTraverser : public NodeTraverser {
     std::vector<std::pair<bool, const nodes::Node &> > history;
     explicit MyTraverser(size_t open_true_cnt_in)
         : open_true_cnt(open_true_cnt_in), history() {}
+    ~MyTraverser() override;
     virtual bool open(const nodes::Node &node) override {
         history.emplace_back(true, node);
         if (open_true_cnt == 0) {
@@ -447,6 +451,8 @@ struct MyTraverser : public NodeTraverser {
         ++offset;
     }
 };
+
+MyTraverser::~MyTraverser() = default;
 
 size_t verify_traversal(size_t open_true_cnt, const vespalib::string &expression) {
     auto function = Function::parse(expression);
@@ -495,7 +501,7 @@ TEST("require that node types can be checked") {
 
 TEST("require that parameter is param, but not const") {
     EXPECT_TRUE(Function::parse("x")->root().is_param());
-    EXPECT_TRUE(!Function::parse("x")->root().is_const());
+    EXPECT_TRUE(!Function::parse("x")->root().is_const_double());
 }
 
 TEST("require that inverted parameter is not param") {
@@ -503,43 +509,43 @@ TEST("require that inverted parameter is not param") {
 }
 
 TEST("require that number is const, but not param") {
-    EXPECT_TRUE(Function::parse("123")->root().is_const());
+    EXPECT_TRUE(Function::parse("123")->root().is_const_double());
     EXPECT_TRUE(!Function::parse("123")->root().is_param());
 }
 
 TEST("require that string is const") {
-    EXPECT_TRUE(Function::parse("\"x\"")->root().is_const());
+    EXPECT_TRUE(Function::parse("\"x\"")->root().is_const_double());
 }
 
 TEST("require that neg is const if sub-expression is const") {
-    EXPECT_TRUE(Function::parse("-123")->root().is_const());
-    EXPECT_TRUE(!Function::parse("-x")->root().is_const());
+    EXPECT_TRUE(Function::parse("-123")->root().is_const_double());
+    EXPECT_TRUE(!Function::parse("-x")->root().is_const_double());
 }
 
 TEST("require that not is const if sub-expression is const") {
-    EXPECT_TRUE(Function::parse("!1")->root().is_const());
-    EXPECT_TRUE(!Function::parse("!x")->root().is_const());
+    EXPECT_TRUE(Function::parse("!1")->root().is_const_double());
+    EXPECT_TRUE(!Function::parse("!x")->root().is_const_double());
 }
 
 TEST("require that operators are cost if both children are const") {
-    EXPECT_TRUE(!Function::parse("x+y")->root().is_const());
-    EXPECT_TRUE(!Function::parse("1+y")->root().is_const());
-    EXPECT_TRUE(!Function::parse("x+2")->root().is_const());
-    EXPECT_TRUE(Function::parse("1+2")->root().is_const());
+    EXPECT_TRUE(!Function::parse("x+y")->root().is_const_double());
+    EXPECT_TRUE(!Function::parse("1+y")->root().is_const_double());
+    EXPECT_TRUE(!Function::parse("x+2")->root().is_const_double());
+    EXPECT_TRUE(Function::parse("1+2")->root().is_const_double());
 }
 
 TEST("require that set membership is never tagged as const (NB: avoids jit recursion)") {
-    EXPECT_TRUE(!Function::parse("x in [x,y,z]")->root().is_const());
-    EXPECT_TRUE(!Function::parse("1 in [x,y,z]")->root().is_const());
-    EXPECT_TRUE(!Function::parse("1 in [1,y,z]")->root().is_const());
-    EXPECT_TRUE(!Function::parse("1 in [1,2,3]")->root().is_const());
+    EXPECT_TRUE(!Function::parse("x in [x,y,z]")->root().is_const_double());
+    EXPECT_TRUE(!Function::parse("1 in [x,y,z]")->root().is_const_double());
+    EXPECT_TRUE(!Function::parse("1 in [1,y,z]")->root().is_const_double());
+    EXPECT_TRUE(!Function::parse("1 in [1,2,3]")->root().is_const_double());
 }
 
 TEST("require that calls are cost if all parameters are const") {
-    EXPECT_TRUE(!Function::parse("max(x,y)")->root().is_const());
-    EXPECT_TRUE(!Function::parse("max(1,y)")->root().is_const());
-    EXPECT_TRUE(!Function::parse("max(x,2)")->root().is_const());
-    EXPECT_TRUE(Function::parse("max(1,2)")->root().is_const());
+    EXPECT_TRUE(!Function::parse("max(x,y)")->root().is_const_double());
+    EXPECT_TRUE(!Function::parse("max(1,y)")->root().is_const_double());
+    EXPECT_TRUE(!Function::parse("max(x,2)")->root().is_const_double());
+    EXPECT_TRUE(Function::parse("max(1,2)")->root().is_const_double());
 }
 
 //-----------------------------------------------------------------------------
@@ -813,8 +819,8 @@ TEST("require that tensor rename dimension lists must have equal size") {
 //-----------------------------------------------------------------------------
 
 TEST("require that tensor lambda can be parsed") {
-    EXPECT_EQUAL("tensor(x[3]):{{x:0}:0,{x:1}:1,{x:2}:2}", Function::parse({}, "tensor(x[3])(x)")->dump());
-    EXPECT_EQUAL("tensor(x[2],y[2]):{{x:0,y:0}:(0==0),{x:0,y:1}:(0==1),{x:1,y:0}:(1==0),{x:1,y:1}:(1==1)}",
+    EXPECT_EQUAL("tensor(x[3])(x)", Function::parse({}, "tensor(x[3])(x)")->dump());
+    EXPECT_EQUAL("tensor(x[2],y[2])(x==y)",
                  Function::parse({}, " tensor ( x [ 2 ] , y [ 2 ] ) ( x == y ) ")->dump());
 }
 
@@ -825,7 +831,7 @@ TEST("require that tensor lambda requires appropriate tensor type") {
 }
 
 TEST("require that tensor lambda can use non-dimension symbols") {
-    EXPECT_EQUAL("tensor(x[2]):{{x:0}:(0==a),{x:1}:(1==a)}",
+    EXPECT_EQUAL("tensor(x[2])(x==a)",
                  Function::parse({"a"}, "tensor(x[2])(x==a)")->dump());
 }
 
@@ -977,9 +983,9 @@ TEST("require that tensor peek can contain expressions") {
 }
 
 TEST("require that trivial tensor peek number expressions are converted to verbatim labels") {
-    TEST_DO(verify_parse("t{x:(5.7)}", "f(t)(t{x:\"6\"})"));
+    TEST_DO(verify_parse("t{x:(5.7)}", "f(t)(t{x:\"5\"})"));
     TEST_DO(verify_parse("t{x:(5.3)}", "f(t)(t{x:\"5\"})"));
-    TEST_DO(verify_parse("t{x:(-5.7)}", "f(t)(t{x:\"-6\"})"));
+    TEST_DO(verify_parse("t{x:(-5.7)}", "f(t)(t{x:\"-5\"})"));
     TEST_DO(verify_parse("t{x:(-5.3)}", "f(t)(t{x:\"-5\"})"));
 }
 
@@ -1002,11 +1008,8 @@ TEST("require that tensor peek empty label is not allowed") {
 //-----------------------------------------------------------------------------
 
 TEST("require that nested tensor lambda using tensor peek can be parsed") {
-    vespalib::string expect("tensor(x[2]):{{x:0}:tensor(y[2]):{{y:0}:((0+0)+a),{y:1}:((0+1)+a)}{y:\"0\"},"
-                            "{x:1}:tensor(y[2]):{{y:0}:((1+0)+a),{y:1}:((1+1)+a)}{y:\"1\"}}");
+    vespalib::string expect("tensor(x[2])(tensor(y[2])((x+y)+a){y:(x)})");
     EXPECT_EQUAL(Function::parse(expect)->dump(), expect);
-    auto fun = Function::parse("tensor(x[2])(tensor(y[2])(x+y+a){y:(x)})");
-    EXPECT_EQUAL(fun->dump(), expect);
 }
 
 //-----------------------------------------------------------------------------
@@ -1014,6 +1017,17 @@ TEST("require that nested tensor lambda using tensor peek can be parsed") {
 TEST("require that tensor concat can be parsed") {
     EXPECT_EQUAL("concat(a,b,d)", Function::parse({"a", "b"}, "concat(a,b,d)")->dump());
     EXPECT_EQUAL("concat(a,b,d)", Function::parse({"a", "b"}, " concat ( a , b , d ) ")->dump());
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require that tensor cell cast can be parsed") {
+    EXPECT_EQUAL("cell_cast(a,float)", Function::parse({"a"}, "cell_cast(a,float)")->dump());
+    EXPECT_EQUAL("cell_cast(a,double)", Function::parse({"a"}, " cell_cast ( a , double ) ")->dump());
+}
+
+TEST("require that tensor cell cast must have valid cell type") {
+    TEST_DO(verify_error("cell_cast(x,int7)", "[cell_cast(x,int7]...[unknown cell type: 'int7']...[)]"));
 }
 
 //-----------------------------------------------------------------------------
@@ -1044,6 +1058,44 @@ TEST_FF("require that all conformance test expressions can be parsed",
     f2.each_case(f1);
     EXPECT_TRUE(!f1.failed);
     EXPECT_GREATER(f1.seen_cnt, 42u);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require that constant double value can be (pre-)calculated") {
+    auto expect = GenSpec(42).gen();
+    auto f = Function::parse("21+21");
+    ASSERT_TRUE(!f->has_error());
+    const Node &root = f->root();
+    auto value = root.get_const_value();
+    ASSERT_TRUE(value);
+    EXPECT_EQUAL(spec_from_value(*value), expect);
+}
+
+TEST("require that constant tensor value can be (pre-)calculated") {
+    auto expect = GenSpec().idx("x", 10).gen();
+    auto f = Function::parse("concat(tensor(x[4])(x+1),tensor(x[6])(x+5),x)");
+    ASSERT_TRUE(!f->has_error());
+    const Node &root = f->root();
+    auto value = root.get_const_value();
+    ASSERT_TRUE(value);
+    EXPECT_EQUAL(spec_from_value(*value), expect);
+}
+
+TEST("require that non-const value cannot be (pre-)calculated") {
+    auto f = Function::parse("a+b");
+    ASSERT_TRUE(!f->has_error());
+    const Node &root = f->root();
+    auto value = root.get_const_value();
+    EXPECT_TRUE(value.get() == nullptr);
+}
+
+TEST("require that parse error does not produce a const value") {
+    auto f = Function::parse("this is a parse error");
+    EXPECT_TRUE(f->has_error());
+    const Node &root = f->root();
+    auto value = root.get_const_value();
+    EXPECT_TRUE(value.get() == nullptr);
 }
 
 //-----------------------------------------------------------------------------

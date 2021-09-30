@@ -1,0 +1,130 @@
+[
+  {
+    "name": "README.md",
+    "path": "vespa-cloud/README.md",
+    "sha": "6405553e7184306476d1e13001aa19558f925158",
+    "size": 3129,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/README.md?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/vespa-cloud/README.md",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/6405553e7184306476d1e13001aa19558f925158",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/vespa-cloud/README.md",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/README.md?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/6405553e7184306476d1e13001aa19558f925158",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/vespa-cloud/README.md"
+    }
+  },
+  {
+    "name": "album-recommendation-docproc",
+    "path": "vespa-cloud/album-recommendation-docproc",
+    "sha": "e77b300ad64b1c553d066c7840cbb8f555df91cd",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/album-recommendation-docproc?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud/album-recommendation-docproc",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/e77b300ad64b1c553d066c7840cbb8f555df91cd",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/album-recommendation-docproc?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/e77b300ad64b1c553d066c7840cbb8f555df91cd",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud/album-recommendation-docproc"
+    }
+  },
+  {
+    "name": "album-recommendation-prod",
+    "path": "vespa-cloud/album-recommendation-prod",
+    "sha": "0944ec03009e38ff1c12be835ca6a0600e6aee93",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/album-recommendation-prod?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud/album-recommendation-prod",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/0944ec03009e38ff1c12be835ca6a0600e6aee93",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/album-recommendation-prod?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/0944ec03009e38ff1c12be835ca6a0600e6aee93",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud/album-recommendation-prod"
+    }
+  },
+  {
+    "name": "album-recommendation-searcher",
+    "path": "vespa-cloud/album-recommendation-searcher",
+    "sha": "fd1027d9cd51a2aac9f2220047b5a748ef75d2c1",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/album-recommendation-searcher?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud/album-recommendation-searcher",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/fd1027d9cd51a2aac9f2220047b5a748ef75d2c1",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/album-recommendation-searcher?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/fd1027d9cd51a2aac9f2220047b5a748ef75d2c1",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud/album-recommendation-searcher"
+    }
+  },
+  {
+    "name": "album-recommendation",
+    "path": "vespa-cloud/album-recommendation",
+    "sha": "fdb9ffd4dff104a8a603d5ce0ead1bed180f8b80",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/album-recommendation?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud/album-recommendation",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/fdb9ffd4dff104a8a603d5ce0ead1bed180f8b80",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/album-recommendation?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/fdb9ffd4dff104a8a603d5ce0ead1bed180f8b80",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud/album-recommendation"
+    }
+  },
+  {
+    "name": "cord-19-search",
+    "path": "vespa-cloud/cord-19-search",
+    "sha": "29a28e0e0455d2bcd5c7bcdcd3c8759455f6bc71",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/cord-19-search?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud/cord-19-search",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/29a28e0e0455d2bcd5c7bcdcd3c8759455f6bc71",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/cord-19-search?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/29a28e0e0455d2bcd5c7bcdcd3c8759455f6bc71",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud/cord-19-search"
+    }
+  },
+  {
+    "name": "joins",
+    "path": "vespa-cloud/joins",
+    "sha": "1f3272bfa1c4dd6cb9d26b662bf48de3c05aef04",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/joins?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud/joins",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/1f3272bfa1c4dd6cb9d26b662bf48de3c05aef04",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/joins?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/1f3272bfa1c4dd6cb9d26b662bf48de3c05aef04",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud/joins"
+    }
+  },
+  {
+    "name": "vespa-documentation-search",
+    "path": "vespa-cloud/vespa-documentation-search",
+    "sha": "9c46d6eb0eef9ce95688d96ef603a5143c3c46c0",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/vespa-documentation-search?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud/vespa-documentation-search",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/9c46d6eb0eef9ce95688d96ef603a5143c3c46c0",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud/vespa-documentation-search?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/9c46d6eb0eef9ce95688d96ef603a5143c3c46c0",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud/vespa-documentation-search"
+    }
+  }
+]

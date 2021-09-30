@@ -18,7 +18,7 @@ struct LeafSpec
     int32_t         weight;
     int32_t         maxWeight;
     FakeResult      result;
-    SearchIterator *search;
+    SearchIterator::UP search;
     LeafSpec(const std::string &n, int32_t w = 100)
         : name(n),
           weight(w),
@@ -26,31 +26,36 @@ struct LeafSpec
           result(),
           search()
     {}
+    LeafSpec(LeafSpec && other) = default;
     ~LeafSpec() {}
-    LeafSpec &doc(uint32_t docid) {
+    LeafSpec && doc(uint32_t docid) && {
         result.doc(docid);
-        return *this;
+        return std::move(*this);
     }
-    LeafSpec &doc(uint32_t docid, int32_t w) {
+    LeafSpec && doc(uint32_t docid, int32_t w) && {
         result.doc(docid);
         result.weight(w);
         result.pos(0);
         maxWeight = std::max(maxWeight, w);
-        return *this;
+        return std::move(*this);
     }
-    LeafSpec &itr(SearchIterator *si) {
-        search = si;
-        return *this;
+    LeafSpec && itr(SearchIterator::UP si) && {
+        search = std::move(si);
+        return std::move(*this);
     }
-    SearchIterator *create(SearchHistory &hist, fef::TermFieldMatchData *tfmd) const {
-        if (search != nullptr) {
-            return new TrackedSearch(name, hist, search);
+    LeafSpec && itr(SearchIterator *si) && {
+        search.reset(si);
+        return std::move(*this);
+    }
+    SearchIterator::UP create(SearchHistory &hist, fef::TermFieldMatchData *tfmd) {
+        if (search) {
+            return SearchIterator::UP(new TrackedSearch(name, hist, std::move(search)));
         } else if (tfmd != nullptr) {
-            return new TrackedSearch(name, hist, result, *tfmd,
-                                     MinMaxPostingInfo(0, maxWeight));
+            return SearchIterator::UP(new TrackedSearch(name, hist, result, *tfmd,
+                                                        MinMaxPostingInfo(0, maxWeight)));
         }
-        return new TrackedSearch(name, hist, result,
-                                 MinMaxPostingInfo(0, maxWeight));
+        return SearchIterator::UP(new TrackedSearch(name, hist, result,
+                                                    MinMaxPostingInfo(0, maxWeight)));
     }
 };
 

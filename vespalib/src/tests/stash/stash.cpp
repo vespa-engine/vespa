@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/traits.h>
 
@@ -99,7 +100,7 @@ TEST("require that base types have expected size") {
     EXPECT_EQUAL(8u, char_ptr_size());
     EXPECT_EQUAL(16u, chunk_header_size());
     EXPECT_EQUAL(16u, dtor_hook_size());
-    EXPECT_EQUAL(16u, free_hook_size());
+    EXPECT_EQUAL(24u, free_hook_size());
     EXPECT_EQUAL(24u, array_dtor_hook_size());
 }
 
@@ -171,7 +172,7 @@ TEST("require that large object creation and destruction works") {
         Stash stash;
         stash.create<Large>(destructed);
         EXPECT_EQUAL(0u, stash.count_used());
-        EXPECT_GREATER(sizeof(Large), 1024u);
+        EXPECT_GREATER(sizeof(Large), 1_Ki);
         EXPECT_FALSE(destructed);
     }
     EXPECT_TRUE(destructed);
@@ -193,7 +194,7 @@ TEST("require that large objects can skip destruction") {
         Stash stash;
         stash.create<Large_NoDelete>(destructed);
         EXPECT_EQUAL(0u, stash.count_used());
-        EXPECT_GREATER(sizeof(Large_NoDelete), 1024u);
+        EXPECT_GREATER(sizeof(Large_NoDelete), 1_Ki);
     }
     EXPECT_FALSE(destructed);
 }
@@ -245,7 +246,7 @@ TEST("require that multiple chunks can be used by the stash") {
 
 TEST("require that default chunk size is 4096") {
     Stash stash;
-    EXPECT_EQUAL(4096u, stash.get_chunk_size());
+    EXPECT_EQUAL(4_Ki, stash.get_chunk_size());
 }
 
 TEST("require that the chunk size can be adjusted") {
@@ -253,9 +254,9 @@ TEST("require that the chunk size can be adjusted") {
     EXPECT_EQUAL(64000u, stash.get_chunk_size());
 }
 
-TEST("require that minimal chunk size is 4096") {
-    Stash stash(128);
-    EXPECT_EQUAL(4096u, stash.get_chunk_size());
+TEST("require that minimal chunk size is 128") {
+    Stash stash(50);
+    EXPECT_EQUAL(128u, stash.get_chunk_size());
 }
 
 TEST("require that a stash can be moved by construction") {
@@ -447,6 +448,27 @@ TEST("require that mark/revert works as expected") {
     EXPECT_EQUAL(destruct_small, 100u);
     EXPECT_EQUAL(destruct_large, 2u);
     EXPECT_EQUAL(stash.count_used(), 0u);
+}
+
+void check_array(ArrayRef<float> arr, size_t expect_size) {
+    EXPECT_EQUAL(arr.size(), expect_size);
+    for (size_t i = 0; i < arr.size(); ++i) {
+        arr[i] = float(i);
+    }
+    for (size_t i = 0; i < arr.size(); ++i) {
+        EXPECT_EQUAL(arr[i], float(i));
+    }
+}
+
+TEST("require that uninitialized arrays can be created") {
+    Stash stash(4_Ki);
+    EXPECT_EQUAL(0u, stash.count_used());
+    ArrayRef<float> small_arr = stash.create_uninitialized_array<float>(64);
+    TEST_DO(check_array(small_arr, 64));
+    EXPECT_EQUAL(sum({chunk_header_size(), sizeof(float) * 64}), stash.count_used());
+    ArrayRef<float> big_arr = stash.create_uninitialized_array<float>(2500);
+    TEST_DO(check_array(big_arr, 2500));
+    EXPECT_EQUAL(sum({chunk_header_size(), sizeof(float) * 64}), stash.count_used());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

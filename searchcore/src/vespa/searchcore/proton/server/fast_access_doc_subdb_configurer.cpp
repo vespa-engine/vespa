@@ -15,23 +15,21 @@ namespace proton {
 using ARIConfig = AttributeReprocessingInitializer::Config;
 
 void
-FastAccessDocSubDBConfigurer::reconfigureFeedView(const FastAccessFeedView::SP &curr,
-                                                  const Schema::SP &schema,
-                                                  const std::shared_ptr<const DocumentTypeRepo> &repo,
-                                                  const IAttributeWriter::SP &writer)
+FastAccessDocSubDBConfigurer::reconfigureFeedView(FastAccessFeedView & curr,
+                                                  Schema::SP schema,
+                                                  std::shared_ptr<const DocumentTypeRepo> repo,
+                                                  IAttributeWriter::SP writer)
 {
-    _feedView.set(FastAccessFeedView::SP(new FastAccessFeedView(
-            StoreOnlyFeedView::Context(curr->getSummaryAdapter(),
-                    schema,
-                    curr->getDocumentMetaStore(),
-                    curr->getGidToLidChangeHandler(),
-                    repo,
-                    curr->getWriteService(),
-                    curr->getLidReuseDelayer(),
-                    curr->getCommitTimeTracker()),
-            curr->getPersistentParams(),
-            FastAccessFeedView::Context(writer,
-                    curr->getDocIdLimit()))));
+    _feedView.set(std::make_shared<FastAccessFeedView>(
+            StoreOnlyFeedView::Context(curr.getSummaryAdapter(),
+                                       std::move(schema),
+                                       curr.getDocumentMetaStore(),
+                                       std::move(repo),
+                                       curr.getUncommittedLidTracker(),
+                                       curr.getGidToLidChangeHandler(),
+                                       curr.getWriteService()),
+            curr.getPersistentParams(),
+            FastAccessFeedView::Context(std::move(writer),curr.getDocIdLimit())));
 }
 
 FastAccessDocSubDBConfigurer::FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,
@@ -43,9 +41,7 @@ FastAccessDocSubDBConfigurer::FastAccessDocSubDBConfigurer(FeedViewVarHolder &fe
 {
 }
 
-FastAccessDocSubDBConfigurer::~FastAccessDocSubDBConfigurer()
-{
-}
+FastAccessDocSubDBConfigurer::~FastAccessDocSubDBConfigurer() = default;
 
 IReprocessingInitializer::UP
 FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
@@ -53,9 +49,8 @@ FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           const AttributeCollectionSpec &attrSpec)
 {
     FastAccessFeedView::SP oldView = _feedView.get();
-    IAttributeWriter::SP writer =
-            _factory->create(oldView->getAttributeWriter(), attrSpec);
-    reconfigureFeedView(oldView, newConfig.getSchemaSP(), newConfig.getDocumentTypeRepoSP(), writer);
+    IAttributeWriter::SP writer = _factory->create(oldView->getAttributeWriter(), attrSpec);
+    reconfigureFeedView(*oldView, newConfig.getSchemaSP(), newConfig.getDocumentTypeRepoSP(), writer);
 
     const document::DocumentType *newDocType = newConfig.getDocumentType();
     const document::DocumentType *oldDocType = oldConfig.getDocumentType();

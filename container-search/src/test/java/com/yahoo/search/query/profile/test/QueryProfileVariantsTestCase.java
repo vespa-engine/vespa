@@ -10,10 +10,10 @@ import com.yahoo.search.query.profile.BackedOverridableQueryProfile;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.search.query.profile.QueryProfileVariant;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.ValueWithSource;
-import com.yahoo.yolean.trace.TraceNode;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -72,6 +73,87 @@ public class QueryProfileVariantsTestCase {
         assertGet("a.1.*.5","a", new String[] {"x1","y?","z5"}, profile, cprofile);
         assertGet("a.1.5.*","a", new String[] {"x1","y5","z5"}, profile, cprofile); // Left dimension gets precedence
         assertGet("a.2.*.*","a", new String[] {"x2","y?","z?"}, profile, cprofile);
+    }
+
+    @Test
+    public void testReferenceInVariant() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfile test = new QueryProfile("test");
+        test.setDimensions(new String[] { "d1" });
+        registry.register(test);
+
+        QueryProfile references = new QueryProfile("referenced");
+        references.setDimensions(new String[] { "d1" });
+        registry.register(references);
+
+        QueryProfile other = new QueryProfile("other");
+        other.setDimensions(new String[] { "d1" });
+        registry.register(other);
+
+        test.set( "a", references,  new String[] { "d1v"}, registry);
+        test.set( "a.b", "test-value",  new String[] { "d1v"}, registry);
+        other.set( "a", references,  new String[] { "d1v"}, registry);
+        other.set("a.b", "other-value", new String[] { "d1v"}, registry);
+
+        assertEquals("test-value", test.get("a.b", new String[] { "d1v"}));
+        assertEquals("other-value", other.get("a.b", new String[] { "d1v"}));
+        assertNull(references.get("b", new String[] { "d1v"}));
+
+        var cRegistry = registry.compile();
+        assertEquals("test-value",
+                     cRegistry.getComponent("test").get("a.b", Map.of("d1", "d1v")));
+    }
+
+    /**
+     * Tests referencing a variant which modifies the dimension set,
+     * and also setting a value within that variants subspace.
+     */
+    @Test
+    public void testVariantReference() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+
+        QueryProfile parent = new QueryProfile("parent");
+        parent.set("b", 48, registry);
+        registry.register(parent);
+
+        QueryProfile referenced = new QueryProfile("referenced");
+        referenced.addInherited(parent);
+        referenced.setDimensions(new String[] {"d2", "d3"});
+        registry.register(referenced);
+
+        QueryProfile base = new QueryProfile("base");
+        base.setDimensions(new String[]{"d1", "d2", "d3"});
+        base.set("a", referenced, new String[] {null, null, "d3-val"}, registry);
+        assertEquals("Variant dimensions are not overridden by the referenced dimensions",
+                     "[d1, d2, d3]",
+                     ((QueryProfile)base.getVariants().getVariants().get(0).values().get("a")).getDimensions().toString());
+        base.set("a.b", 1, new String[] {null, null, "d3-val"}, registry);
+        QueryProfileVariant aVariants = base.getVariants().getVariants().get(0);
+        assertEquals("Variant dimensions are not overridden by the referenced dimensions",
+                     "[d1, d2, d3]",
+                     ((QueryProfile)base.getVariants().getVariants().get(0).values().get("a")).getDimensions().toString());
+    }
+
+    @Test
+    public void testReference() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfile test = new QueryProfile("test");
+        registry.register(test);
+
+        QueryProfile references = new QueryProfile("referenced");
+        registry.register(references);
+
+        QueryProfile other = new QueryProfile("other");
+        registry.register(other);
+
+        test.set( "a", references, registry);
+        test.set( "a.b", "test-value", registry);
+        other.set( "a", references, registry);
+        other.set("a.b", "other-value", registry);
+
+        assertEquals("test-value", test.get("a.b"));
+        assertEquals("other-value", other.get("a.b"));
+        assertNull(references.get("b"));
     }
 
     @Test

@@ -11,7 +11,7 @@ import static org.junit.Assert.fail;
  *
  * @author bratseth
  */
-public class IncorrectSummaryTypesTestCase extends SearchDefinitionTestCase {
+public class IncorrectSummaryTypesTestCase extends SchemaTestCase {
     @Test
     public void testImportingIncorrect() throws ParseException {
         try {

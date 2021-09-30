@@ -2,10 +2,11 @@
 #include "externpolicy.h"
 #include <boost/tokenizer.hpp>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/messagebus/emptyreply.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/slobrok/sbmirror.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".externpolicy");
@@ -46,18 +47,19 @@ ExternPolicy::ExternPolicy(const string &param) :
     // Activate supervisor and register mirror.
     MirrorAPI::StringList spec;
     string lst = param.substr(0, pos);
-    Tokenizer tokens(lst, Separator(","));
+    std::string stdlst(lst);
+    Tokenizer tokens(stdlst, Separator(","));
     for (Tokenizer::iterator it = tokens.begin(); it != tokens.end(); ++it) {
         spec.push_back(*it);
     }
 
-    if (spec.size() == 0) {
+    if (spec.empty()) {
         _error = vespalib::make_string("Extern policy needs at least one slobrok: Slobrok list '%s' resolved to no slobroks", lst.c_str());
         return;
     }
 
     slobrok::ConfiguratorFactory config(spec);
-    _mirror.reset(new MirrorAPI(*_orb, config));
+    _mirror = std::make_unique<MirrorAPI>(*_orb, config);
     _started = _transport->Start(_threadPool.get());
     if (!_started) {
         _error = "Failed to start FNET supervisor.";
@@ -117,7 +119,7 @@ ExternPolicy::merge(mbus::RoutingContext &ctx)
 mbus::Hop
 ExternPolicy::getRecipient()
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     update();
     if (_recipients.empty()) {
         return mbus::Hop();

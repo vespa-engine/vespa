@@ -10,43 +10,58 @@ import java.util.List;
  */
 public enum NodeType {
 
-    /** A node to be assigned to a tenant to run application workloads */
+    /** Node assignable to a tenant to run application workloads */
     tenant("Tenant node"),
 
-    /** A host of a set of (Docker) tenant nodes */
-    host("Tenant docker host", tenant),
+    /** Host of a tenant nodes */
+    host("Tenant host", tenant),
 
-    /** Nodes running the shared proxy layer */
+    /** Node serving the shared proxy layer */
     proxy("Proxy node"),
 
-    /** A host of a (Docker) proxy node */
-    proxyhost("Proxy docker host", proxy),
+    /** Host of a proxy node */
+    proxyhost("Proxy host", proxy),
 
-    /** A config server */
-    config("Config server"),
+    /** Config server node */
+    config("Config server node"),
 
-    /** A host of a (Docker) config server node */
-    confighost("Config docker host", config),
+    /** Host of a config server node */
+    confighost("Config server host", config),
 
-    /** A controller */
-    controller("Controller"),
+    /** Controller node */
+    controller("Controller node"),
 
-    /** A host of a (Docker) controller node */
+    /** Host of a controller node */
     controllerhost("Controller host", controller),
 
-    /** A host of multiple nodes, only used in {@link SystemName#dev} */
+    /** Host capable of running multiple node types, only used in {@link SystemName#dev} */
     devhost("Dev host", config, controller, tenant);
 
-    private final List<NodeType> childNodeTypes;
     private final String description;
+    private final List<NodeType> childNodeTypes;
 
     NodeType(String description, NodeType... childNodeTypes) {
         this.childNodeTypes = List.of(childNodeTypes);
         this.description = description;
     }
 
-    public boolean isDockerHost() {
+    public boolean isHost() {
         return !childNodeTypes.isEmpty();
+    }
+
+    /** either config server or controller */
+    public boolean isConfigServerLike() {
+        return this == config || this == controller;
+    }
+
+    /** either config server host or controller host */
+    public boolean isConfigServerHostLike() {
+        return this == confighost || this == controllerhost;
+    }
+
+    /** Returns whether this supports host sharing */
+    public boolean isSharable() {
+        return this == NodeType.host;
     }
 
     public String description() {
@@ -66,16 +81,26 @@ public enum NodeType {
      * @throws IllegalStateException if this type is not a host
      */
     public List<NodeType> childNodeTypes() {
-        if (! isDockerHost())
+        if (! isHost())
             throw new IllegalStateException(this + " has no children");
         return childNodeTypes;
     }
 
-    /**
-     * @param type Child {@link NodeType}
-     * @return true if the {@link NodeType} can run on this host, false otherwise.
-     */
+    /** Returns whether given node type can run on this */
     public boolean canRun(NodeType type) {
         return childNodeTypes.contains(type);
     }
+
+    /** Returns the host type of this */
+    public NodeType hostType() {
+        if (isHost()) return this;
+        for (NodeType nodeType : values()) {
+            // Ignore host types that support multiple node types
+            if (nodeType.childNodeTypes.size() == 1 && nodeType.canRun(this)) {
+                return nodeType;
+            }
+        }
+        throw new IllegalArgumentException("No host of " + this + " exists");
+    }
+
 }

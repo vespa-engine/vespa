@@ -10,8 +10,7 @@
 #include "name_collection.h"
 #include "point_map_collection.h"
 
-namespace vespalib {
-namespace metrics {
+namespace vespalib::metrics {
 
 /**
  * Simple repo class
@@ -42,6 +41,4 @@ public:
     static NameRepo instance;
 };
 
-} // namespace vespalib::metrics
-} // namespace vespalib
-
+}

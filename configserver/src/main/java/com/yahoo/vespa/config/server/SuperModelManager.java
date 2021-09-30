@@ -9,7 +9,6 @@ import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.GenerationCounter;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -20,12 +19,17 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Provides a SuperModel - a model of all application instances,  and makes it stays
  * up to date as applications are added, redeployed, and removed.
  */
 public class SuperModelManager implements SuperModelProvider {
+    private static final Logger logger = Logger.getLogger(SuperModelManager.class.getName());
+
     private final Zone zone;
 
     private final Object monitor = new Object();
@@ -38,13 +42,16 @@ public class SuperModelManager implements SuperModelProvider {
     private final long masterGeneration; // ConfigserverConfig's generation
     private final GenerationCounter generationCounter;
 
+    // The initial set of applications to be deployed on bootstrap.
+    private final Optional<Set<ApplicationId>> bootstrapApplicationSet = Optional.empty();
+
     @Inject
     public SuperModelManager(ConfigserverConfig configserverConfig,
-                             NodeFlavors nodeFlavors,
+                             Zone zone,
                              GenerationCounter generationCounter,
                              FlagSource flagSource) {
         this.flagSource = flagSource;
-        this.zone = new Zone(configserverConfig, nodeFlavors);
+        this.zone = zone;
         this.generationCounter = generationCounter;
         this.masterGeneration = configserverConfig.masterGeneration();
         makeNewSuperModelConfigProvider(new SuperModel());
@@ -75,11 +82,11 @@ public class SuperModelManager implements SuperModelProvider {
             listeners.add(listener);
             SuperModel superModel = superModelConfigProvider.getSuperModel();
             superModel.getAllApplicationInfos().forEach(application -> listener.applicationActivated(superModel, application));
-        }
-    }
 
-    public Zone getZone() {
-        return zone;
+            if (superModel.isComplete()) {
+                listener.notifyOfCompleteness(superModel);
+            }
+        }
     }
 
     public void configActivated(ApplicationSet applicationSet) {
@@ -89,26 +96,35 @@ public class SuperModelManager implements SuperModelProvider {
                     .getForVersionOrLatest(Optional.empty(), Instant.now())
                     .toApplicationInfo();
 
-            SuperModel newSuperModel = this.superModelConfigProvider
-                    .getSuperModel()
+            SuperModel newSuperModel = superModelConfigProvider.getSuperModel()
                     .cloneAndSetApplication(applicationInfo);
+
             generationCounter.increment();
             makeNewSuperModelConfigProvider(newSuperModel);
-            listeners.stream().forEach(listener ->
-                    listener.applicationActivated(newSuperModel, applicationInfo));
+            listeners.forEach(listener -> listener.applicationActivated(newSuperModel, applicationInfo));
         }
     }
 
     public void applicationRemoved(ApplicationId applicationId) {
         synchronized (monitor) {
+            bootstrapApplicationSet.ifPresent(set -> set.remove(applicationId));
+
             SuperModel newSuperModel = this.superModelConfigProvider
                     .getSuperModel()
                     .cloneAndRemoveApplication(applicationId);
             generationCounter.increment();
             makeNewSuperModelConfigProvider(newSuperModel);
-            listeners.stream().forEach(listener ->
-                    listener.applicationRemoved(newSuperModel, applicationId));
+            listeners.forEach(listener -> listener.applicationRemoved(newSuperModel, applicationId));
         }
+    }
+
+    public void markAsComplete() {
+        // Invoked on component graph bootstrap (even before ConfigServerBootstrap),
+        // there is no need to bump generation counter.
+        logger.log(Level.INFO, "Super model is complete");
+        SuperModel newSuperModel = getSuperModel().cloneAsComplete();
+        superModelConfigProvider = new SuperModelConfigProvider(newSuperModel, zone, flagSource);
+        listeners.forEach(listener -> listener.notifyOfCompleteness(newSuperModel));
     }
 
     private void makeNewSuperModelConfigProvider(SuperModel newSuperModel) {

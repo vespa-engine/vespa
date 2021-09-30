@@ -3,23 +3,19 @@
 #pragma once
 
 #include "protocolserialization.h"
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 /**
  * Protocol serialization version that uses Protocol Buffers for all its binary
  * encoding and decoding.
  */
-class ProtocolSerialization7 : public ProtocolSerialization {
+class ProtocolSerialization7 final : public ProtocolSerialization {
     const std::shared_ptr<const document::DocumentTypeRepo> _repo;
-    const documentapi::LoadTypeSet& _load_types;
 public:
-    ProtocolSerialization7(std::shared_ptr<const document::DocumentTypeRepo> repo,
-                           const documentapi::LoadTypeSet& load_types);
+    explicit ProtocolSerialization7(std::shared_ptr<const document::DocumentTypeRepo> repo);
 
-    const document::DocumentTypeRepo& type_repo() const { return *_repo; }
+    const document::DocumentTypeRepo& type_repo() const noexcept { return *_repo; }
 
     // Put
     void onEncode(GBBuf&, const api::PutCommand&) const override;
@@ -129,6 +125,12 @@ public:
     SCmd::UP onDecodeRemoveLocationCommand(BBuf&) const override;
     SRep::UP onDecodeRemoveLocationReply(const SCmd&, BBuf&) const override;
 
+    // StatBucket
+    void onEncode(GBBuf&, const api::StatBucketCommand&) const override;
+    void onEncode(GBBuf&, const api::StatBucketReply&) const override;
+    SCmd::UP onDecodeStatBucketCommand(BBuf&) const override;
+    SRep::UP onDecodeStatBucketReply(const SCmd&, BBuf&) const override;
+
 private:
     template <typename ProtobufType, typename Func>
     std::unique_ptr<api::StorageCommand> decode_request(document::ByteBuffer& in_buf, Func&& f) const;
@@ -142,5 +144,4 @@ private:
     std::unique_ptr<api::StorageReply> decode_bucket_info_response(document::ByteBuffer& in_buf, Func&& f) const;
 };
 
-}
 }

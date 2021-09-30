@@ -6,7 +6,7 @@ namespace storage {
 namespace distributor {
 
 OperationMetricSet::OperationMetricSet(const std::string& name, metrics::Metric::Tags tags, const std::string& description, MetricSet* owner)
-    : MetricSet(name, tags, description, owner),
+    : MetricSet(name, std::move(tags), description, owner),
       pending("pending",
               {{"logdefault"},{"yamasdefault"}},
               "The number of operations pending", this),
@@ -16,14 +16,25 @@ OperationMetricSet::OperationMetricSet(const std::string& name, metrics::Metric:
       failed("done_failed",
              {{"logdefault"},{"yamasdefault"}},
              "The number of operations that failed", this)
-{ }
+{}
 
-OperationMetricSet::~OperationMetricSet() { }
+OperationMetricSet::~OperationMetricSet() = default;
+
+GcMetricSet::GcMetricSet(const std::string& name, metrics::Metric::Tags tags, const std::string& description, MetricSet* owner)
+        : OperationMetricSet(name, std::move(tags), description, owner),
+          documents_removed("documents_removed",
+                           {{"logdefault"},{"yamasdefault"}},
+                           "Number of documents removed by GC operations", this)
+{}
+
+GcMetricSet::~GcMetricSet() = default;
 
 void
 IdealStateMetricSet::createOperationMetrics() {
     typedef IdealStateOperation ISO;
     operations.resize(ISO::OPERATION_COUNT);
+    // Note: naked new is used instead of make_shared due to the latter not being
+    // able to properly transitively deduce the types for the tag initializer lists.
     operations[ISO::DELETE_BUCKET] = std::shared_ptr<OperationMetricSet>(
             new OperationMetricSet("delete_bucket",
                                    {{"logdefault"},{"yamasdefault"}},
@@ -45,9 +56,9 @@ IdealStateMetricSet::createOperationMetrics() {
                                    {{"logdefault"},{"yamasdefault"}},
                                    "Operations to set active/ready state for bucket copies", this));
     operations[ISO::GARBAGE_COLLECTION] = std::shared_ptr<OperationMetricSet>(
-            new OperationMetricSet("garbage_collection",
-                                   {{"logdefault"},{"yamasdefault"}},
-                                   "Operations to garbage collect data from buckets", this));
+            new GcMetricSet("garbage_collection",
+                            {{"logdefault"},{"yamasdefault"}},
+                            "Operations to garbage collect data from buckets", this));
 }
 
 IdealStateMetricSet::IdealStateMetricSet()
@@ -75,13 +86,27 @@ IdealStateMetricSet::IdealStateMetricSet()
             {{"logdefault"},{"yamasdefault"}},
             "The number of buckets that we are rechecking for "
             "ideal state operations", this),
-      startOperationsLatency("start_operations_latency", {}, "Time used in startOperations()", this),
+      buckets_replicas_moving_out("bucket_replicas_moving_out",
+            {{"logdefault"},{"yamasdefault"}},
+            "Bucket replicas that should be moved out, e.g. retirement case or node "
+            "added to cluster that has higher ideal state priority.", this),
+      buckets_replicas_copying_in("bucket_replicas_copying_in",
+            {{"logdefault"},{"yamasdefault"}},
+            "Bucket replicas that should be copied in, e.g. node does not have a "
+            "replica for a bucket that it is in ideal state for", this),
+      buckets_replicas_copying_out("bucket_replicas_copying_out",
+            {{"logdefault"},{"yamasdefault"}},
+            "Bucket replicas that should be copied out, e.g. node is in ideal state "
+            "but might have to provide data other nodes in a merge", this),
+      buckets_replicas_syncing("bucket_replicas_syncing",
+            {{"logdefault"},{"yamasdefault"}},
+            "Bucket replicas that need syncing due to mismatching metadata", this),
       nodesPerMerge("nodes_per_merge", {}, "The number of nodes involved in a single merge operation.", this)
 {
     createOperationMetrics();
 }
 
-IdealStateMetricSet::~IdealStateMetricSet() { }
+IdealStateMetricSet::~IdealStateMetricSet() = default;
 
 void IdealStateMetricSet::setPendingOperations(const std::vector<uint64_t>& newMetrics) {
     for (uint32_t i = 0; i < IdealStateOperation::OPERATION_COUNT; i++) {

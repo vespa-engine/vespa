@@ -98,7 +98,7 @@ struct ProtonTermBase : public Base,
 };
 
 template <typename Base>
-struct ProtonTerm : public ProtonTermBase<Base> {
+struct ProtonTerm final : public ProtonTermBase<Base> {
     using ProtonTermBase<Base>::ProtonTermBase;
     ~ProtonTerm();
 };
@@ -116,8 +116,7 @@ typedef search::query::SimpleWeakAnd     ProtonWeakAnd;
 typedef search::query::SimpleSameElement ProtonSameElement;
 
 
-struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv>
-{
+struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv> {
     search::fef::MatchDataLayout children_mdl;
     using ProtonTermBase::ProtonTermBase;
 };

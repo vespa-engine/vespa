@@ -4,6 +4,7 @@
 #include "valuefeature.h"
 #include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -30,8 +31,7 @@ buildFeatureName(const vespalib::string & baseName, const search::features::Fiel
 
 }
 
-namespace search {
-namespace features {
+namespace search::features {
 
 FieldWrapper::FieldWrapper(const IIndexEnvironment & env,
                            const ParameterList & fields,
@@ -93,7 +93,7 @@ NativeRankBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
 Blueprint::UP
 NativeRankBlueprint::createInstance() const
 {
-    return Blueprint::UP(new NativeRankBlueprint());
+    return std::make_unique<NativeRankBlueprint>();
 }
 
 bool
@@ -157,7 +157,7 @@ NativeRankBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &
     if (_params.proximityWeight + _params.fieldMatchWeight + _params.attributeMatchWeight > 0) {
         return stash.create<NativeRankExecutor>(_params);
     } else {
-        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
+        return stash.create<SingleZeroValueExecutor>();
     }
 }
 
@@ -168,6 +168,4 @@ NativeRankBlueprint::useTableNormalization(const search::fef::IIndexEnvironment 
     return (!(norm.found() && (norm.get() == vespalib::string("false"))));
 }
 
-
-} // namespace features
-} // namespace search
+}

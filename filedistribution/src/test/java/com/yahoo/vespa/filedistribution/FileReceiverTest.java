@@ -21,7 +21,6 @@ import java.nio.file.Files;
 
 public class FileReceiverTest {
     private File root;
-    private File tempDir;
     private final XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
 
     @Rule
@@ -30,7 +29,6 @@ public class FileReceiverTest {
     @Before
     public void setup() throws IOException {
         root = temporaryFolder.newFolder("root");
-        tempDir = temporaryFolder.newFolder("tmp");
     }
 
     @Test
@@ -59,8 +57,9 @@ public class FileReceiverTest {
         writerB.write("2");
         writerB.close();
 
-        byte[] data = CompressedFileReference.compress(dirWithFiles);
-        transferCompressedData(new FileReference("ref"), "a", data);
+        File tempFile = temporaryFolder.newFile();
+        File file = CompressedFileReference.compress(dirWithFiles, tempFile);
+        transferCompressedData(new FileReference("ref"), "a", IOUtils.readFileBytes(file));
         File downloadDir = new File(root, "ref");
         assertEquals("1", IOUtils.readFile(new File(downloadDir, "a")));
         assertEquals("2", IOUtils.readFile(new File(downloadDir, "b")));
@@ -69,7 +68,7 @@ public class FileReceiverTest {
     private void transferPartsAndAssert(FileReference ref, String fileName, String all, int numParts) throws IOException {
         byte [] allContent = Utf8.toBytes(all);
 
-        FileReceiver.Session session = new FileReceiver.Session(root, tempDir, 1, ref,
+        FileReceiver.Session session = new FileReceiver.Session(root, 1, ref,
                 FileReferenceData.Type.file, fileName, allContent.length);
         int partSize = (allContent.length+(numParts-1))/numParts;
         ByteBuffer bb = ByteBuffer.wrap(allContent);
@@ -90,7 +89,7 @@ public class FileReceiverTest {
 
     private void transferCompressedData(FileReference ref, String fileName, byte[] data) {
         FileReceiver.Session session =
-                new FileReceiver.Session(root, tempDir, 1, ref, FileReferenceData.Type.compressed, fileName, data.length);
+                new FileReceiver.Session(root, 1, ref, FileReferenceData.Type.compressed, fileName, data.length);
         session.addPart(0, data);
         session.close(hasher.hash(ByteBuffer.wrap(data), 0));
     }

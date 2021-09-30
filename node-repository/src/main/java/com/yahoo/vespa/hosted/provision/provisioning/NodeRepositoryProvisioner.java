@@ -1,23 +1,33 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.google.inject.Inject;
+import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.log.LogLevel;
-import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
+import com.yahoo.vespa.hosted.provision.autoscale.AllocationOptimizer;
+import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
+import com.yahoo.vespa.hosted.provision.autoscale.Limits;
+import com.yahoo.vespa.hosted.provision.autoscale.ResourceTarget;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
@@ -39,118 +49,165 @@ import java.util.logging.Logger;
 public class NodeRepositoryProvisioner implements Provisioner {
 
     private static final Logger log = Logger.getLogger(NodeRepositoryProvisioner.class.getName());
-    private static final int SPARE_CAPACITY_PROD = 0;
-    private static final int SPARE_CAPACITY_NONPROD = 0;
 
     private final NodeRepository nodeRepository;
+    private final AllocationOptimizer allocationOptimizer;
     private final CapacityPolicies capacityPolicies;
     private final Zone zone;
     private final Preparer preparer;
     private final Activator activator;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
-
-    int getSpareCapacityProd() {
-        return SPARE_CAPACITY_PROD;
-    }
+    private final NodeResourceLimits nodeResourceLimits;
 
     @Inject
-    public NodeRepositoryProvisioner(NodeRepository nodeRepository, Zone zone,
+    public NodeRepositoryProvisioner(NodeRepository nodeRepository,
+                                     Zone zone,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
-        this.capacityPolicies = new CapacityPolicies(zone);
+        this.allocationOptimizer = new AllocationOptimizer(nodeRepository);
+        this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.zone = zone;
-        this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService().map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
+        this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService(nodeRepository)
+                                                               .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
+        this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.preparer = new Preparer(nodeRepository,
-                                     zone.environment() == Environment.prod ? SPARE_CAPACITY_PROD : SPARE_CAPACITY_NONPROD,
                                      provisionServiceProvider.getHostProvisioner(),
-                                     provisionServiceProvider.getHostResourcesCalculator(),
-                                     flagSource,
                                      loadBalancerProvisioner);
         this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
     }
+
 
     /**
      * Returns a list of nodes in the prepared or active state, matching the given constraints.
      * The nodes are ordered by increasing index number.
      */
     @Override
-    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requestedCapacity, 
-                                  int wantedGroups, ProvisionLogger logger) {
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requested,
+                                  ProvisionLogger logger) {
+        log.log(Level.FINE, () -> "Received deploy prepare request for " + requested +
+                                  " for application " + application + ", cluster " + cluster);
+
         if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
-        if (requestedCapacity.nodeCount() > 0 && requestedCapacity.nodeCount() % wantedGroups != 0)
-            throw new IllegalArgumentException("Requested " + requestedCapacity.nodeCount() + " nodes in " + wantedGroups + " groups, " +
-                                               "which doesn't allow the nodes to be divided evenly into groups");
 
-        log.log(zone.system().isCd() ? Level.INFO : LogLevel.DEBUG,
-                () -> "Received deploy prepare request for " + requestedCapacity + " in " +
-                      wantedGroups + " groups for application " + application + ", cluster " + cluster);
+        nodeResourceLimits.ensureWithinAdvertisedLimits("Min", requested.minResources().nodeResources(), cluster);
+        nodeResourceLimits.ensureWithinAdvertisedLimits("Max", requested.maxResources().nodeResources(), cluster);
 
-        int effectiveGroups;
-        NodeSpec requestedNodes;
-        Optional<NodeResources> resources = requestedCapacity.nodeResources();
-        if ( requestedCapacity.type() == NodeType.tenant) {
-            int nodeCount = capacityPolicies.decideSize(requestedCapacity, cluster.type(), application);
-            if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.nodeCount())
-                logger.log(Level.INFO, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
-                                       ", downscaling to " + nodeCount + " nodes in " + zone.environment());
-            resources = Optional.of(capacityPolicies.decideNodeResources(requestedCapacity, cluster));
-            boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
-            effectiveGroups = Math.min(wantedGroups, nodeCount); // cannot have more groups than nodes
-            requestedNodes = NodeSpec.from(nodeCount, resources.get(), exclusive, requestedCapacity.canFail());
-
-            if ( ! hasQuota(application, nodeCount))
-                throw new IllegalArgumentException(requestedCapacity + " requested for " + cluster +
-                                                   (requestedCapacity.nodeCount() != nodeCount ? " resolved to " + nodeCount + " nodes" : "") +
-                                                   " exceeds your quota. Resolve this at https://cloud.vespa.ai/quota");
+        int groups;
+        NodeResources resources;
+        NodeSpec nodeSpec;
+        if (requested.type() == NodeType.tenant) {
+            ClusterResources target = decideTargetResources(application, cluster, requested);
+            int nodeCount = capacityPolicies.decideSize(target.nodes(), requested, cluster, application);
+            groups = Math.min(target.groups(), nodeCount); // cannot have more groups than nodes
+            resources = capacityPolicies.decideNodeResources(target.nodeResources(), requested, cluster);
+            boolean exclusive = capacityPolicies.decideExclusivity(requested, cluster.isExclusive());
+            nodeSpec = NodeSpec.from(nodeCount, resources, exclusive, requested.canFail());
+            logIfDownscaled(target.nodes(), nodeCount, cluster, logger);
         }
         else {
-            requestedNodes = NodeSpec.from(requestedCapacity.type());
-            effectiveGroups = 1; // type request with multiple groups is not supported
+            groups = 1; // type request with multiple groups is not supported
+            resources = requested.minResources().nodeResources();
+            nodeSpec = NodeSpec.from(requested.type());
         }
-
-        return asSortedHosts(preparer.prepare(application, cluster, requestedNodes, effectiveGroups), resources);
+        return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups), resources);
     }
 
     @Override
-    public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
+    public void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction) {
         validate(hosts);
-        activator.activate(application, hosts, transaction);
+        activator.activate(hosts, context.generation(), transaction);
     }
 
     @Override
     public void restart(ApplicationId application, HostFilter filter) {
-        nodeRepository.restart(ApplicationFilter.from(application, NodeHostFilter.from(filter)));
+        nodeRepository.nodes().restartActive(ApplicationFilter.from(application).and(NodeHostFilter.from(filter)));
     }
 
     @Override
-    public void remove(NestedTransaction transaction, ApplicationId application) {
-        nodeRepository.deactivate(application, transaction);
-        loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.deactivate(application, transaction));
+    public void remove(ApplicationTransaction transaction) {
+        nodeRepository.remove(transaction);
+        loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.deactivate(transaction));
     }
 
-    private boolean hasQuota(ApplicationId application, int requestedNodes) {
-        if ( ! this.zone.system().isPublic()) return true; // no quota management
-
-        if (application.tenant().value().hashCode() == 3857)        return requestedNodes <= 60;
-        if (application.tenant().value().hashCode() == -1271827001) return requestedNodes <= 75;
-        return requestedNodes <= 5;
+    @Override
+    public ProvisionLock lock(ApplicationId application) {
+        return new ProvisionLock(application, nodeRepository.nodes().lock(application));
     }
 
-    private List<HostSpec> asSortedHosts(List<Node> nodes, Optional<NodeResources> requestedResources) {
+    /**
+     * Returns the target cluster resources, a value between the min and max in the requested capacity,
+     * and updates the application store with the received min and max.
+     */
+    private ClusterResources decideTargetResources(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity requested) {
+        try (Mutex lock = nodeRepository.nodes().lock(applicationId)) {
+            var application = nodeRepository.applications().get(applicationId).orElse(Application.empty(applicationId))
+                              .withCluster(clusterSpec.id(), clusterSpec.isExclusive(), requested.minResources(), requested.maxResources());
+            nodeRepository.applications().put(application, lock);
+            var cluster = application.cluster(clusterSpec.id()).get();
+            return cluster.targetResources().orElseGet(() -> currentResources(application, clusterSpec, cluster, requested));
+        }
+    }
+
+    /** Returns the current resources of this cluster, or requested min if none */
+    private ClusterResources currentResources(Application application,
+                                              ClusterSpec clusterSpec,
+                                              Cluster cluster,
+                                              Capacity requested) {
+        NodeList nodes = nodeRepository.nodes().list(Node.State.active).owner(application.id())
+                                       .cluster(clusterSpec.id())
+                                       .not().retired()
+                                       .not().removable();
+        boolean firstDeployment = nodes.isEmpty();
+        AllocatableClusterResources currentResources =
+                firstDeployment // start at min, preserve current resources otherwise
+                ? new AllocatableClusterResources(requested.minResources(), clusterSpec, nodeRepository)
+                : new AllocatableClusterResources(nodes.asList(), nodeRepository);
+        var clusterModel = new ClusterModel(application, cluster, clusterSpec, nodes, nodeRepository.metricsDb(), nodeRepository.clock());
+        return within(Limits.of(requested), currentResources, firstDeployment, clusterModel);
+    }
+
+    /** Make the minimal adjustments needed to the current resources to stay within the limits */
+    private ClusterResources within(Limits limits,
+                                    AllocatableClusterResources current,
+                                    boolean firstDeployment,
+                                    ClusterModel clusterModel) {
+        if (limits.min().equals(limits.max())) return limits.min();
+
+        // Don't change current deployments that are still legal
+        var currentAsAdvertised = current.advertisedResources();
+        if (! firstDeployment && currentAsAdvertised.isWithin(limits.min(), limits.max())) return currentAsAdvertised;
+
+        // Otherwise, find an allocation that preserves the current resources as well as possible
+        return allocationOptimizer.findBestAllocation(ResourceTarget.preserve(current),
+                                                      current,
+                                                      clusterModel,
+                                                      limits)
+                                  .orElseThrow(() -> newNoAllocationPossible(current.clusterSpec(), limits))
+                                  .advertisedResources();
+    }
+
+    private void logIfDownscaled(int targetNodes, int actualNodes, ClusterSpec cluster, ProvisionLogger logger) {
+        if (zone.environment().isManuallyDeployed() && actualNodes < targetNodes)
+            logger.log(Level.INFO, "Requested " + targetNodes + " nodes for " + cluster +
+                                   ", downscaling to " + actualNodes + " nodes in " + zone.environment());
+    }
+
+    private List<HostSpec> asSortedHosts(List<Node> nodes, NodeResources requestedResources) {
         nodes.sort(Comparator.comparingInt(node -> node.allocation().get().membership().index()));
         List<HostSpec> hosts = new ArrayList<>(nodes.size());
         for (Node node : nodes) {
-            log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " - " + node.flavor());
+            log.log(Level.FINE, () -> "Prepared node " + node.hostname() + " - " + node.flavor());
             Allocation nodeAllocation = node.allocation().orElseThrow(IllegalStateException::new);
             hosts.add(new HostSpec(node.hostname(),
-                                   List.of(),
-                                   Optional.of(node.flavor()),
-                                   Optional.of(nodeAllocation.membership()),
+                                   nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository),
+                                   node.flavor().resources(),
+                                   requestedResources,
+                                   nodeAllocation.membership(),
                                    node.status().vespaVersion(),
                                    nodeAllocation.networkPorts(),
-                                   requestedResources));
+                                   node.status().containerImage()));
             if (nodeAllocation.networkPorts().isPresent()) {
-                log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " has port allocations");
+                log.log(Level.FINE, () -> "Prepared node " + node.hostname() + " has port allocations");
             }
         }
         return hosts;
@@ -163,6 +220,39 @@ public class NodeRepositoryProvisioner implements Provisioner {
             if (host.membership().get().cluster().group().isEmpty())
                 throw new IllegalArgumentException("Hosts must be assigned a group when activating, but got " + host);
         }
+    }
+
+    private IllegalArgumentException newNoAllocationPossible(ClusterSpec spec, Limits limits) {
+        StringBuilder message = new StringBuilder("No allocation possible within ").append(limits);
+
+        boolean exclusiveHosts = spec.isExclusive() || nodeRepository.zone().getCloud().dynamicProvisioning();
+        if (exclusiveHosts)
+            message.append(". Nearest allowed node resources: ").append(findNearestNodeResources(limits));
+
+        return new IllegalArgumentException(message.toString());
+    }
+
+    private NodeResources findNearestNodeResources(Limits limits) {
+        NodeResources nearestMin = nearestFlavorResources(limits.min().nodeResources());
+        NodeResources nearestMax = nearestFlavorResources(limits.max().nodeResources());
+        if (limits.min().nodeResources().distanceTo(nearestMin) < limits.max().nodeResources().distanceTo(nearestMax))
+            return nearestMin;
+        else
+            return nearestMax;
+    }
+
+    /** Returns the advertised flavor resources which are nearest to the given resources */
+    private NodeResources nearestFlavorResources(NodeResources requestedResources) {
+        NodeResources nearestHostResources = nodeRepository.flavors().getFlavors().stream()
+                                                           .map(flavor -> nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor))
+                                                           .filter(resources -> resources.diskSpeed().compatibleWith(requestedResources.diskSpeed()))
+                                                           .filter(resources -> resources.storageType().compatibleWith(requestedResources.storageType()))
+                                                           .min(Comparator.comparingDouble(resources -> resources.distanceTo(requestedResources)))
+                                                           .orElseThrow()
+                                                           .withBandwidthGbps(requestedResources.bandwidthGbps());
+        if ( nearestHostResources.storageType() == NodeResources.StorageType.remote)
+            nearestHostResources = nearestHostResources.withDiskGb(requestedResources.diskGb());
+        return nearestHostResources;
     }
 
 }

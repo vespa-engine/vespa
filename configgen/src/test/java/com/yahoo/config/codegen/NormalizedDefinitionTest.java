@@ -53,7 +53,7 @@ public class NormalizedDefinitionTest {
     public void testNormalizingFromFile() throws IOException {
         FileReader fileReader = null;
         try {
-            fileReader = new FileReader("src/test/resources/allfeatures.def");
+            fileReader = new FileReader("src/test/resources/configgen.allfeatures.def");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }

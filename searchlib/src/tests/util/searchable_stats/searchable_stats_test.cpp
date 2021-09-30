@@ -1,41 +1,49 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/searchlib/util/searchable_stats.h>
+#include <vespa/vespalib/gtest/gtest.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("searchable_stats_test");
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/util/searchable_stats.h>
 
 using namespace search;
 
-class Test : public vespalib::TestApp {
-public:
-    int Main() override;
-};
-
-int
-Test::Main()
+TEST(SearchableStatsTest, merge_also_tracks_max_size_on_disk_for_component)
 {
-    TEST_INIT("searchable_stats_test");
+    SearchableStats stats;
+    EXPECT_EQ(0u, stats.memoryUsage().allocatedBytes());
+    EXPECT_EQ(0u, stats.docsInMemory());
+    EXPECT_EQ(0u, stats.sizeOnDisk());
+    EXPECT_EQ(0u, stats.max_component_size_on_disk());
     {
-        SearchableStats stats;
-        EXPECT_EQUAL(0u, stats.memoryUsage().allocatedBytes());
-        EXPECT_EQUAL(0u, stats.docsInMemory());
-        EXPECT_EQUAL(0u, stats.sizeOnDisk());
-        {
-            SearchableStats rhs;
-            EXPECT_EQUAL(&rhs.memoryUsage(vespalib::MemoryUsage(100,0,0,0)), &rhs);
-            EXPECT_EQUAL(&rhs.docsInMemory(10), &rhs);
-            EXPECT_EQUAL(&rhs.sizeOnDisk(1000), &rhs);
-            EXPECT_EQUAL(&stats.add(rhs), &stats);
-        }
-        EXPECT_EQUAL(100u, stats.memoryUsage().allocatedBytes());
-        EXPECT_EQUAL(10u, stats.docsInMemory());
-        EXPECT_EQUAL(1000u, stats.sizeOnDisk());
-        EXPECT_EQUAL(&stats.add(SearchableStats().memoryUsage(vespalib::MemoryUsage(100,0,0,0)).docsInMemory(10).sizeOnDisk(1000)), &stats);
-        EXPECT_EQUAL(200u, stats.memoryUsage().allocatedBytes());
-        EXPECT_EQUAL(20u, stats.docsInMemory());
-        EXPECT_EQUAL(2000u, stats.sizeOnDisk());
+        SearchableStats rhs;
+        EXPECT_EQ(&rhs.memoryUsage(vespalib::MemoryUsage(100,0,0,0)), &rhs);
+        EXPECT_EQ(&rhs.docsInMemory(10), &rhs);
+        EXPECT_EQ(&rhs.sizeOnDisk(1000), &rhs);
+        EXPECT_EQ(1000u, rhs.max_component_size_on_disk());
+        EXPECT_EQ(&stats.merge(rhs), &stats);
     }
-    TEST_DONE();
+    EXPECT_EQ(100u, stats.memoryUsage().allocatedBytes());
+    EXPECT_EQ(10u, stats.docsInMemory());
+    EXPECT_EQ(1000u, stats.sizeOnDisk());
+    EXPECT_EQ(1000u, stats.max_component_size_on_disk());
+
+    stats.merge(SearchableStats()
+                        .memoryUsage(vespalib::MemoryUsage(150,0,0,0))
+                        .docsInMemory(15)
+                        .sizeOnDisk(1500));
+    EXPECT_EQ(250u, stats.memoryUsage().allocatedBytes());
+    EXPECT_EQ(25u, stats.docsInMemory());
+    EXPECT_EQ(2500u, stats.sizeOnDisk());
+    EXPECT_EQ(1500u, stats.max_component_size_on_disk());
+
+    stats.merge(SearchableStats()
+                        .memoryUsage(vespalib::MemoryUsage(120,0,0,0))
+                        .docsInMemory(12)
+                        .sizeOnDisk(1200));
+    EXPECT_EQ(370u, stats.memoryUsage().allocatedBytes());
+    EXPECT_EQ(37u, stats.docsInMemory());
+    EXPECT_EQ(3700u, stats.sizeOnDisk());
+    EXPECT_EQ(1500u, stats.max_component_size_on_disk());
 }
 
-TEST_APPHOOK(Test);
+GTEST_MAIN_RUN_ALL_TESTS()

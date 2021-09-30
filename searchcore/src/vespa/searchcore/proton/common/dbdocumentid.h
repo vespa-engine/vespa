@@ -15,9 +15,12 @@ private:
     uint32_t            _subDbId; // sub document db id
     search::DocumentIdT _lid;     // local document id
 public:
-    DbDocumentId();
-    DbDocumentId(search::DocumentIdT lid);
-    DbDocumentId(uint32_t subDbId, search::DocumentIdT lid);
+    DbDocumentId() noexcept: DbDocumentId(0) {}
+    DbDocumentId(search::DocumentIdT lid) noexcept : DbDocumentId(0, lid) {}
+    DbDocumentId(uint32_t subDbId, search::DocumentIdT lid) noexcept
+        : _subDbId(subDbId),
+          _lid(lid)
+    { }
     uint32_t getSubDbId() const { return _subDbId; }
     search::DocumentIdT getLid() const { return _lid; }
     bool valid() const { return _lid != 0; }

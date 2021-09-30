@@ -3,51 +3,39 @@
 #include "tensor_attribute.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
-#include <vespa/eval/eval/simple_tensor.h>
-#include <vespa/eval/tensor/dense/typed_dense_tensor_builder.h>
-#include <vespa/eval/tensor/sparse/sparse_tensor.h>
-#include <vespa/eval/tensor/wrapped_simple_tensor.h>
+#include <vespa/searchlib/attribute/address_space_components.h>
+#include <vespa/searchlib/util/state_explorer_utils.h>
+#include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/vespalib/util/shared_string_repo.h>
+#include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value.h>
 
-using vespalib::eval::SimpleTensor;
-using vespalib::eval::ValueType;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::TypedDenseTensorBuilder;
-using vespalib::tensor::dispatch_0;
-using vespalib::tensor::SparseTensor;
-using vespalib::tensor::WrappedSimpleTensor;
 using document::TensorDataType;
+using document::TensorUpdate;
 using document::WrongTensorTypeException;
+using search::AddressSpaceComponents;
+using search::StateExplorerUtils;
+using vespalib::eval::FastValueBuilderFactory;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::Value;
+using vespalib::eval::ValueType;
 
-namespace search {
-
-namespace tensor {
+namespace search::tensor {
 
 namespace {
 
 constexpr uint32_t TENSOR_ATTRIBUTE_VERSION = 0;
 
-// minimum dead bytes in tensor attribute before consider compaction
-constexpr size_t DEAD_SLACK = 0x10000u;
-
-struct CallMakeEmptyTensor {
-    template <typename CT>
-    static Tensor::UP call(const ValueType &type) {
-        TypedDenseTensorBuilder<CT> builder(type);
-        return builder.build();
-    }
-};
-
-Tensor::UP
+Value::UP
 createEmptyTensor(const ValueType &type)
 {
-    if (type.is_sparse()) {
-        return std::make_unique<SparseTensor>(type, SparseTensor::Cells());
-    } else if (type.is_dense()) {
-        return dispatch_0<CallMakeEmptyTensor>(type.cell_type(), type);
-    } else {
-        return std::make_unique<WrappedSimpleTensor>(std::make_unique<SimpleTensor>(type, SimpleTensor::Cells()));
-    }
+    const auto &factory = FastValueBuilderFactory::get();
+    TensorSpec empty_spec(type.to_spec());
+    return vespalib::eval::value_from_spec(empty_spec, factory);
 }
 
 vespalib::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const ValueType &tensorType)
@@ -66,11 +54,12 @@ TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, Te
                  cfg.getGrowStrategy().getDocsGrowDelta(),
                  getGenerationHolder()),
       _tensorStore(tensorStore),
+      _is_dense(cfg.tensorType().is_dense()),
       _emptyTensor(createEmptyTensor(cfg.tensorType())),
-      _compactGeneration(0)
+      _compactGeneration(0),
+      _cached_tensor_store_memory_usage()
 {
 }
-
 
 TensorAttribute::~TensorAttribute() = default;
 
@@ -93,7 +82,6 @@ TensorAttribute::clearDoc(DocId docId)
     return 0u;
 }
 
-
 void
 TensorAttribute::onCommit()
 {
@@ -101,23 +89,18 @@ TensorAttribute::onCommit()
     incGeneration();
     if (getFirstUsedGeneration() > _compactGeneration) {
         // No data held from previous compact operation
-        Status &status = getStatus();
-        size_t used = status.getUsed();
-        size_t dead = status.getDead();
-        if ((dead >= DEAD_SLACK) && (dead * 5 > used)) {
+        size_t used = _cached_tensor_store_memory_usage.usedBytes();
+        size_t dead = _cached_tensor_store_memory_usage.deadBytes();
+        if (getConfig().getCompactionStrategy().should_compact_memory(used, dead)) {
             compactWorst();
         }
     }
 }
 
-
 void
 TensorAttribute::onUpdateStat()
 {
-    // update statistics
-    vespalib::MemoryUsage total = _refVector.getMemoryUsage();
-    total.merge(_tensorStore.getMemoryUsage());
-    total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    vespalib::MemoryUsage total = update_stat();
     this->updateStatistics(_refVector.size(),
                            _refVector.size(),
                            total.allocatedBytes(),
@@ -125,7 +108,6 @@ TensorAttribute::onUpdateStat()
                            total.deadBytes(),
                            total.allocatedBytesOnHold());
 }
-
 
 void
 TensorAttribute::removeOldGenerations(generation_t firstUsed)
@@ -140,7 +122,6 @@ TensorAttribute::onGenerationChange(generation_t generation)
     getGenerationHolder().transferHoldLists(generation - 1);
     _tensorStore.transferHoldLists(generation - 1);
 }
-
 
 bool
 TensorAttribute::addDoc(DocId &docId)
@@ -159,7 +140,7 @@ TensorAttribute::addDoc(DocId &docId)
 }
 
 void
-TensorAttribute::checkTensorType(const Tensor &tensor)
+TensorAttribute::checkTensorType(const vespalib::eval::Value &tensor)
 {
     const ValueType &fieldTensorType = getConfig().tensorType();
     const ValueType &tensorType = tensor.type();
@@ -183,16 +164,75 @@ TensorAttribute::setTensorRef(DocId docId, EntryRef ref)
     }
 }
 
-Tensor::UP
-TensorAttribute::getEmptyTensor() const
+vespalib::MemoryUsage
+TensorAttribute::update_stat()
 {
-    return _emptyTensor->clone();
+    vespalib::MemoryUsage result = _refVector.getMemoryUsage();
+    _cached_tensor_store_memory_usage = _tensorStore.getMemoryUsage();
+    result.merge(_cached_tensor_store_memory_usage);
+    result.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    return result;
 }
 
-vespalib::eval::ValueType
+vespalib::MemoryUsage
+TensorAttribute::memory_usage() const
+{
+    vespalib::MemoryUsage result = _refVector.getMemoryUsage();
+    result.merge(_tensorStore.getMemoryUsage());
+    result.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    return result;
+}
+
+void
+TensorAttribute::populate_state(vespalib::slime::Cursor& object) const
+{
+    object.setLong("compact_generation", _compactGeneration);
+    StateExplorerUtils::memory_usage_to_slime(_refVector.getMemoryUsage(),
+                                              object.setObject("ref_vector").setObject("memory_usage"));
+    StateExplorerUtils::memory_usage_to_slime(_tensorStore.getMemoryUsage(),
+                                              object.setObject("tensor_store").setObject("memory_usage"));
+}
+
+void
+TensorAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
+{
+    usage.set(AddressSpaceComponents::tensor_store, _tensorStore.get_address_space_usage());
+    if (!_is_dense) {
+        auto stats = vespalib::SharedStringRepo::stats();
+        usage.set(AddressSpaceComponents::shared_string_repo,
+                  vespalib::AddressSpace(stats.max_part_usage, 0, stats.part_limit()));
+    }
+}
+
+vespalib::eval::Value::UP
+TensorAttribute::getEmptyTensor() const
+{
+    return FastValueBuilderFactory::get().copy(*_emptyTensor);
+}
+
+vespalib::eval::TypedCells
+TensorAttribute::extract_cells_ref(uint32_t /*docid*/) const
+{
+    notImplemented();
+}
+
+const vespalib::eval::Value&
+TensorAttribute::get_tensor_ref(uint32_t /*docid*/) const
+{
+    notImplemented();
+}
+
+const vespalib::eval::ValueType &
 TensorAttribute::getTensorType() const
 {
     return getConfig().tensorType();
+}
+
+void
+TensorAttribute::get_state(const vespalib::slime::Inserter& inserter) const
+{
+    auto& object = inserter.insertObject();
+    populate_state(object);
 }
 
 void
@@ -209,7 +249,6 @@ TensorAttribute::clearDocs(DocId lidLow, DocId lidLimit)
     }
 }
 
-
 void
 TensorAttribute::onShrinkLidSpace()
 {
@@ -220,13 +259,11 @@ TensorAttribute::onShrinkLidSpace()
     setNumDocs(committedDocIdLimit);
 }
 
-
 uint32_t
 TensorAttribute::getVersion() const
 {
     return TENSOR_ATTRIBUTE_VERSION;
 }
-
 
 TensorAttribute::RefCopyVector
 TensorAttribute::getRefCopy() const
@@ -236,8 +273,43 @@ TensorAttribute::getRefCopy() const
     return RefCopyVector(&_refVector[0], &_refVector[0] + size);
 }
 
+void
+TensorAttribute::update_tensor(DocId docId,
+                               const document::TensorUpdate &update,
+                               bool create_empty_if_non_existing)
+{
+    const vespalib::eval::Value * old_v = nullptr;
+    auto old_tensor = getTensor(docId);
+    if (old_tensor) {
+        old_v = old_tensor.get();
+    } else if (create_empty_if_non_existing) {
+        old_v = _emptyTensor.get();
+    } else {
+        return;
+    }
+    auto new_value = update.apply_to(*old_v, FastValueBuilderFactory::get());
+    if (new_value) {
+        setTensor(docId, *new_value);
+    }
+}
+
+std::unique_ptr<PrepareResult>
+TensorAttribute::prepare_set_tensor(DocId docid, const vespalib::eval::Value& tensor) const
+{
+    (void) docid;
+    (void) tensor;
+    return std::unique_ptr<PrepareResult>();
+}
+
+void
+TensorAttribute::complete_set_tensor(DocId docid, const vespalib::eval::Value& tensor,
+                                     std::unique_ptr<PrepareResult> prepare_result)
+{
+    (void) docid;
+    (void) tensor;
+    (void) prepare_result;
+}
+
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(TensorAttribute, AttributeVector);
 
-}  // namespace search::tensor
-
-}  // namespace search
+}

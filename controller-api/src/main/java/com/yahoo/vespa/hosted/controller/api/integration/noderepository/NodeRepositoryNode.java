@@ -1,15 +1,24 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.noderepository;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * The wire format of a node retrieved from the node repository.
+ *
+ * All fields in this are nullable.
+ *
+ * @author bjorncs
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class NodeRepositoryNode {
@@ -19,13 +28,15 @@ public class NodeRepositoryNode {
     @JsonProperty("id")
     private String id;
     @JsonProperty("state")
-    private NodeState state;
+    private String state;
     @JsonProperty("hostname")
     private String hostname;
     @JsonProperty("ipAddresses")
     private Set<String> ipAddresses;
     @JsonProperty("additionalIpAddresses")
     private Set<String> additionalIpAddresses;
+    @JsonProperty("additionalHostnames")
+    private List<String> additionalHostnames;
     @JsonProperty("openStackId")
     private String openStackId;
     @JsonProperty("flavor")
@@ -61,9 +72,9 @@ public class NodeRepositoryNode {
     @JsonProperty("failCount")
     private Integer failCount;
     @JsonProperty("environment")
-    private NodeEnvironment environment;
+    private String environment;
     @JsonProperty("type")
-    private NodeType type;
+    private String type;
     @JsonProperty("wantedDockerImage")
     private String wantedDockerImage;
     @JsonProperty("currentDockerImage")
@@ -74,12 +85,14 @@ public class NodeRepositoryNode {
     private Boolean wantToRetire;
     @JsonProperty("wantToDeprovision")
     private Boolean wantToDeprovision;
+    @JsonProperty("wantToRebuild")
+    private Boolean wantToRebuild;
     @JsonProperty("cost")
     private Integer cost;
     @JsonProperty("history")
-    private NodeHistory[] history;
-    @JsonProperty("allowedToBeDown")
-    private Boolean allowedToBeDown;
+    private List<NodeHistory> history;
+    @JsonProperty("orchestratorStatus")
+    private String orchestratorStatus;
     @JsonProperty("suspendedSinceMillis")
     private Long suspendedSinceMillis;
     @JsonProperty("reports")
@@ -88,6 +101,10 @@ public class NodeRepositoryNode {
     private String modelName;
     @JsonProperty("reservedTo")
     private String reservedTo;
+    @JsonProperty("exclusiveTo")
+    private String exclusiveTo;
+    @JsonProperty("switchHostname")
+    private String switchHostname;
 
     public String getUrl() {
         return url;
@@ -105,11 +122,11 @@ public class NodeRepositoryNode {
         this.id = id;
     }
 
-    public NodeState getState() {
+    public String getState() {
         return state;
     }
 
-    public void setState(NodeState state) {
+    public void setState(String state) {
         this.state = state;
     }
 
@@ -135,6 +152,14 @@ public class NodeRepositoryNode {
 
     public void setAdditionalIpAddresses(Set<String> additionalIpAddresses) {
         this.additionalIpAddresses = additionalIpAddresses;
+    }
+
+    public List<String> getAdditionalHostnames() {
+        return additionalHostnames;
+    }
+
+    public void setAdditionalHostnames(List<String> additionalHostnames) {
+        this.additionalHostnames = additionalHostnames;
     }
 
     public String getOpenStackId() {
@@ -241,19 +266,19 @@ public class NodeRepositoryNode {
         this.failCount = failCount;
     }
 
-    public NodeEnvironment getEnvironment() {
+    public String getEnvironment() {
         return environment;
     }
 
-    public void setEnvironment(NodeEnvironment environment) {
+    public void setEnvironment(String environment) {
         this.environment = environment;
     }
 
-    public NodeType getType() {
+    public String getType() {
         return type;
     }
 
-    public void setType(NodeType type) {
+    public void setType(String type) {
         this.type = type;
     }
 
@@ -287,12 +312,20 @@ public class NodeRepositoryNode {
 
     public Boolean getWantToDeprovision() { return wantToDeprovision; }
 
+    public Boolean getWantToRebuild() {
+        return wantToRebuild;
+    }
+
     public void setWantToRetire(Boolean wantToRetire) {
         this.wantToRetire = wantToRetire;
     }
 
     public void setWantToDeprovision(Boolean wantToDeprovision) {
         this.wantToDeprovision = wantToDeprovision;
+    }
+
+    public void setWantToRebuild(Boolean wantToRebuild) {
+        this.wantToRebuild = wantToRebuild;
     }
 
     public Integer getCost() {
@@ -303,16 +336,16 @@ public class NodeRepositoryNode {
         this.cost = cost;
     }
 
-    public NodeHistory[] getHistory() {
+    public List<NodeHistory> getHistory() {
         return history;
     }
 
-    public void setHistory(NodeHistory[] history) {
+    public void setHistory(List<NodeHistory> history) {
         this.history = history;
     }
 
-    public Boolean getAllowedToBeDown() {
-        return allowedToBeDown;
+    public String getOrchestratorStatus() {
+        return orchestratorStatus;
     }
 
     public Long suspendedSinceMillis() {
@@ -355,9 +388,13 @@ public class NodeRepositoryNode {
         this.wantedFirmwareCheck = wantedFirmwareCheck;
     }
 
+    @JsonIgnore
     public Map<String, JsonNode> getReports() {
-        return reports;
+        return reports == null ? Map.of() : reports;
     }
+
+    @JsonGetter("reports")
+    public Map<String, JsonNode> getReportsOrNull() { return reports; }
 
     public void setReports(Map<String, JsonNode> reports) {
         this.reports = reports;
@@ -375,6 +412,31 @@ public class NodeRepositoryNode {
 
     public void setReservedTo(String reservedTo) { this.reservedTo = reservedTo; }
 
+    public String getExclusiveTo() { return exclusiveTo; }
+
+    public void setExclusiveTo(String exclusiveTo) { this.exclusiveTo = exclusiveTo; }
+
+    public String getSwitchHostname() {
+        return switchHostname;
+    }
+
+    public void setSwitchHostname(String switchHostname) {
+        this.switchHostname = switchHostname;
+    }
+
+
+    // --- Helper methods for code that (wrongly) consume this directly
+
+    public boolean hasType(NodeType type) {
+        return type.name().equals(getType());
+    }
+
+    public boolean hasState(NodeState state) {
+        return state.name().equals(getState());
+    }
+
+    // --- end
+
     @Override
     public String toString() {
         return "NodeRepositoryNode{" +
@@ -384,6 +446,7 @@ public class NodeRepositoryNode {
                ", hostname='" + hostname + '\'' +
                ", ipAddresses=" + ipAddresses +
                ", additionalIpAddresses=" + additionalIpAddresses +
+               ", additionalHostnames=" + additionalHostnames +
                ", openStackId='" + openStackId + '\'' +
                ", flavor='" + flavor + '\'' +
                ", resources=" + resources +
@@ -398,6 +461,8 @@ public class NodeRepositoryNode {
                ", wantedVespaVersion='" + wantedVespaVersion + '\'' +
                ", currentOsVersion='" + currentOsVersion + '\'' +
                ", wantedOsVersion='" + wantedOsVersion + '\'' +
+               ", currentFirmwareCheck=" + currentFirmwareCheck +
+               ", wantedFirmwareCheck=" + wantedFirmwareCheck +
                ", failCount=" + failCount +
                ", environment=" + environment +
                ", type=" + type +
@@ -406,12 +471,17 @@ public class NodeRepositoryNode {
                ", parentHostname='" + parentHostname + '\'' +
                ", wantToRetire=" + wantToRetire +
                ", wantToDeprovision=" + wantToDeprovision +
+               ", wantToRebuild=" + wantToRebuild +
                ", cost=" + cost +
-               ", history=" + Arrays.toString(history) +
-               ", allowedToBeDown=" + allowedToBeDown +
+               ", history=" + history +
+               ", orchestratorStatus='" + orchestratorStatus + '\'' +
+               ", suspendedSinceMillis=" + suspendedSinceMillis +
                ", reports=" + reports +
-               ", modelName=" + modelName +
-               ", reservedTo=" + reservedTo +
+               ", modelName='" + modelName + '\'' +
+               ", reservedTo='" + reservedTo + '\'' +
+               ", exclusiveTo='" + exclusiveTo + '\'' +
+               ", switchHostname='" + switchHostname + '\'' +
                '}';
     }
+
 }

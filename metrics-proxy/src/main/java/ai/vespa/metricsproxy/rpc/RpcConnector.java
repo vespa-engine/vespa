@@ -11,7 +11,7 @@ import com.yahoo.jrt.Transport;
 
 import java.util.logging.Logger;
 
-import static com.yahoo.log.LogLevel.DEBUG;
+import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
 /**
@@ -23,14 +23,15 @@ import static java.util.logging.Level.INFO;
 public class RpcConnector extends AbstractComponent {
     private static final Logger log = Logger.getLogger(RpcConnector.class.getName());
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor;
     private final Acceptor acceptor;
 
     public RpcConnector(RpcConnectorConfig config) {
+        supervisor = new Supervisor(new Transport("rpc-" + config.port())).setDropEmptyBuffers(true);
         Spec spec = new Spec(config.port());
         try {
             acceptor = supervisor.listen(spec);
-            log.log(DEBUG, "Listening on " + spec.host() + ":" + acceptor.port());
+            log.log(FINE, () -> "Listening on " + spec.host() + ":" + acceptor.port());
         } catch (ListenFailedException e) {
             stop();
             log.log(INFO, "Failed listening at " + spec.host() + ":" + spec.port());
@@ -51,8 +52,10 @@ public class RpcConnector extends AbstractComponent {
     }
 
     public void stop() {
-        acceptor.shutdown().join();
-        supervisor.transport().shutdown().join();
+        if (acceptor != null)
+            acceptor.shutdown().join();
+        if (supervisor != null)
+            supervisor.transport().shutdown().join();
     }
 
     @Override

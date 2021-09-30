@@ -12,8 +12,8 @@ PageDict4MemRandReader::PageDict4MemRandReader(uint32_t chunkSize, uint64_t numW
            wb._ssHeaderLen, wb._ssFileBitSize,
            wb._spHeaderLen, wb._spFileBitSize,
            wb._pHeaderLen, wb._pFileBitSize),
-      _spData(static_cast<const char *>(_buffers._rcspd._comprBuf)),
-      _pData(static_cast<const char *>(_buffers._rcpd._comprBuf)),
+      _spData(reinterpret_cast<const char *>(_buffers._rcspd.getComprBuf())),
+      _pData(reinterpret_cast<const char *>(_buffers._rcpd.getComprBuf())),
       _pageSize(search::bitcompression::PageDict4PageParams::getPageByteSize())
 {
     _ssr.setup(_decoders.ssd);

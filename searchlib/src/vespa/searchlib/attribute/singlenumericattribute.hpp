@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "singlenumericattribute.h"
+#include "attributeiterators.hpp"
 #include "attributevector.hpp"
-#include "singlenumericattributesaver.h"
 #include "load_utils.h"
 #include "primitivereader.h"
-#include "attributeiterators.hpp"
+#include "singlenumericattribute.h"
+#include "singlenumericattributesaver.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 
@@ -37,7 +37,7 @@ SingleValueNumericAttribute<B>::onCommit()
     {
         // apply updates
         typename B::ValueModifier valueGuard(this->getValueModifier());
-        for (const auto & change : this->_changes) {
+        for (const auto & change : this->_changes.getInsertOrder()) {
             if (change._type == ChangeBase::UPDATE) {
                 std::atomic_thread_fence(std::memory_order_release);
                 _data[change._doc] = change._data;
@@ -114,19 +114,19 @@ SingleValueNumericAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
     this->setCommittedDocIdLimit(numDocs);
     _data.unsafe_reserve(numDocs);
 
-    fileutil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
+    auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
     assert((udatBuffer->size() % sizeof(T)) == 0);
     vespalib::ConstArrayRef<T> map(reinterpret_cast<const T *>(udatBuffer->buffer()),
                                    udatBuffer->size() / sizeof(T));
     attribute::loadFromEnumeratedSingleValue(_data, getGenerationHolder(), attrReader,
-                                             map, attribute::NoSaveLoadedEnum());
+                                             map, vespalib::ConstArrayRef<uint32_t>(), attribute::NoSaveLoadedEnum());
     return true;
 }
 
 
 template <typename B>
 bool
-SingleValueNumericAttribute<B>::onLoad()
+SingleValueNumericAttribute<B>::onLoad(vespalib::Executor *)
 {
     PrimitiveReader<T> attrReader(*this);
     bool ok(attrReader.getHasLoadData());

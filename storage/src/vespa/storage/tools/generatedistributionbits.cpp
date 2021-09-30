@@ -4,7 +4,6 @@
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/storage/bucketdb/judyarray.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <iomanip>
 #include <iostream>
@@ -128,7 +127,7 @@ int main(int argc, char** argv) {
         std::cerr << e.getMessage() << "\n\n";
         o.writeSyntaxPage(std::cerr);
         std::cerr << "\n";
-        exit(1);
+        return 1;
     }
     o.finalize();
     if (o.printHtml) { std::cout << "<b>"; }

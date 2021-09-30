@@ -37,7 +37,7 @@ public:
         vespalib::steady_time doom;
         SearchSessionInfo(const vespalib::string &id_in,
                           vespalib::steady_time created_in,
-                          vespalib::steady_time doom_in)
+                          vespalib::steady_time doom_in) noexcept
             : id(id_in), created(created_in), doom(doom_in) {}
     };
 

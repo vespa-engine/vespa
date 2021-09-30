@@ -3,8 +3,10 @@
 #pragma once
 
 #include "i_unique_store_dictionary.h"
+#include "i_unique_store_dictionary_read_snapshot.h"
+#include <vespa/vespalib/stllike/allocator.h>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 class DataStoreBase;
 
@@ -18,17 +20,18 @@ template <typename RefT>
 class UniqueStoreEnumerator {
 public:
     using RefType = RefT;
-    using EnumValues = std::vector<std::vector<uint32_t>>;
 
 private:
-    IUniqueStoreDictionary::ReadSnapshot::UP _dict_snapshot;
+    using UInt32Vector = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
+    using EnumValues = std::vector<UInt32Vector>;
+    std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> _dict_snapshot;
     const DataStoreBase &_store;
     EnumValues _enumValues;
     uint32_t _next_enum_val;
 
     void allocate_enum_values();
 public:
-    UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, const DataStoreBase &store);
+    UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, const DataStoreBase &store, bool sort_unique_values);
     ~UniqueStoreEnumerator();
     void enumerateValue(EntryRef ref);
     void enumerateValues();

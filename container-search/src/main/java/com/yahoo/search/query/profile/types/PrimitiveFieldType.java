@@ -2,7 +2,6 @@
 package com.yahoo.search.query.profile.types;
 
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -37,7 +36,7 @@ public class PrimitiveFieldType extends FieldType {
     }
 
     @Override
-    public Object convertFrom(Object object, CompiledQueryProfileRegistry registry) {
+    public Object convertFrom(Object object, ConversionContext context) {
         return convertFrom(object, (QueryProfileRegistry)null);
     }
 

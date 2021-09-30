@@ -5,7 +5,6 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
@@ -22,8 +21,8 @@ TEST(DocumentTypeTest, testSetGet)
 {
   DocumentType docType("doctypetestdoc", 0);
 
-  docType.addField(Field("stringattr", 3, *DataType::STRING, true));
-  docType.addField(Field("nalle", 0, *DataType::INT, false));
+  docType.addField(Field("stringattr", 3, *DataType::STRING));
+  docType.addField(Field("nalle", 0, *DataType::INT));
 
   const Field& fetch1 = docType.getField("stringattr");
   const Field& fetch2 = docType.getField("stringattr");
@@ -42,17 +41,11 @@ TEST(DocumentTypeTest, testSetGet)
 
 void
 categorizeFields(const Field::Set& fields,
-                 std::vector<const Field*>& headers,
-                 std::vector<const Field*>& bodies)
+                 std::vector<const Field*>& headers)
 {
-    for (Field::Set::const_iterator it(fields.begin()), e(fields.end());
-         it != e; ++it)
+    for (const Field * field : fields)
     {
-        if ((*it)->isHeaderField()) {
-            headers.push_back(*it);
-        } else {
-            bodies.push_back(*it);
-        }
+        headers.push_back(field);
     }
 }
 
@@ -81,18 +74,15 @@ TEST(DocumentTypeTest, testHeaderContent)
     Field::Set fields = type->getFieldsType().getFieldSet();
 
     std::vector<const Field*> headers;
-    std::vector<const Field*> bodies;
-    categorizeFields(fields, headers, bodies);
+    categorizeFields(fields, headers);
 
-    EXPECT_TRUE(headers.size() == 4);
+    EXPECT_TRUE(headers.size() == 6);
     EXPECT_TRUE(headers[0]->getName() == "field1");
     EXPECT_TRUE(headers[1]->getName() == "field2");
-    EXPECT_TRUE(headers[2]->getName() == "field4");
-    EXPECT_TRUE(headers[3]->getName() == "fieldarray1");
-
-    EXPECT_TRUE(bodies.size() == 2);
-    EXPECT_TRUE(bodies[0]->getName() == "field3");
-    EXPECT_TRUE(bodies[1]->getName() == "field5");
+    EXPECT_TRUE(headers[2]->getName() == "field3");
+    EXPECT_TRUE(headers[3]->getName() == "field4");
+    EXPECT_TRUE(headers[4]->getName() == "field5");
+    EXPECT_TRUE(headers[5]->getName() == "fieldarray1");
 }
 
 TEST(DocumentTypeTest, testMultipleInheritance)
@@ -142,8 +132,8 @@ bool containsField(const DocumentType::FieldSet &fieldSet, const vespalib::strin
 TEST(DocumentTypeTest, testFieldSetCanContainFieldsNotInDocType)
 {
     DocumentType docType("test1");
-    docType.addField(Field("stringattr", 3, *DataType::STRING, false));
-    docType.addField(Field("nalle", 0, *DataType::INT, false));
+    docType.addField(Field("stringattr", 3, *DataType::STRING));
+    docType.addField(Field("nalle", 0, *DataType::INT));
     {
         DocumentType::FieldSet::Fields tmp;
         tmp.insert("nalle");
@@ -160,13 +150,13 @@ TEST(DocumentTypeTest, testInheritance)
 {
         // Inheritance of conflicting but equal datatype ok
     DocumentType docType("test1");
-    docType.addField(Field("stringattr", 3, *DataType::STRING, false));
-    docType.addField(Field("nalle", 0, *DataType::INT, false));
+    docType.addField(Field("stringattr", 3, *DataType::STRING));
+    docType.addField(Field("nalle", 0, *DataType::INT));
 
     DocumentType docType2("test2");
-    docType2.addField(Field("stringattr", 3, *DataType::STRING, false));
-    docType2.addField(Field("tmp", 5, *DataType::STRING, false));
-    docType2.addField(Field("tall", 10, *DataType::INT, false));
+    docType2.addField(Field("stringattr", 3, *DataType::STRING));
+    docType2.addField(Field("tmp", 5, *DataType::STRING));
+    docType2.addField(Field("tall", 10, *DataType::INT));
 
     docType.inherit(docType2);
     EXPECT_TRUE(docType.hasField("stringattr"));
@@ -175,8 +165,8 @@ TEST(DocumentTypeTest, testInheritance)
     EXPECT_TRUE(docType.hasField("tall"));
 
     DocumentType docType3("test3");
-    docType3.addField(Field("stringattr", 3, *DataType::RAW, false));
-    docType3.addField(Field("tall", 10, *DataType::INT, false));
+    docType3.addField(Field("stringattr", 3, *DataType::RAW));
+    docType3.addField(Field("tall", 10, *DataType::INT));
 
     try{
         docType2.inherit(docType3);
@@ -206,7 +196,7 @@ TEST(DocumentTypeTest, testInheritance)
     }
 
     DocumentType docType5("test5");
-    docType5.addField(Field("stringattr", 20, *DataType::RAW, false));
+    docType5.addField(Field("stringattr", 20, *DataType::RAW));
 
     try{
         docType4.inherit(docType5);

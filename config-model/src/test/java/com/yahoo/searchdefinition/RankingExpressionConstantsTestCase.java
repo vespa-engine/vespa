@@ -2,6 +2,8 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.yolean.Exceptions;
@@ -17,7 +19,7 @@ import static org.junit.Assert.*;
 /**
  * @author bratseth
  */
-public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase {
+public class RankingExpressionConstantsTestCase extends SchemaTestCase {
 
     @Test
     public void testConstants() throws ParseException {
@@ -77,11 +79,13 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         assertEquals("16.6", child2.getFirstPhaseRanking().getRoot().toString());
         assertEquals("foo: 14.0", child2.getFunctions().get("foo").function().getBody().toString());
         List<Pair<String, String>> rankProperties = new RawRankProfile(child2,
-                                                                       queryProfileRegistry,
-                                                                       new ImportedMlModels(),
-                                                                       new AttributeFields(s)).configProperties();
-        assertEquals("(rankingExpression(foo).rankingScript,14.0)", rankProperties.get(0).toString());
-        assertEquals("(rankingExpression(firstphase).rankingScript,16.6)", rankProperties.get(2).toString());
+                new LargeRankExpressions(new MockFileRegistry()),
+                queryProfileRegistry,
+                new ImportedMlModels(),
+                new AttributeFields(s),
+                new TestProperties()).configProperties();
+        assertEquals("(rankingExpression(foo).rankingScript, 14.0)", rankProperties.get(0).toString());
+        assertEquals("(rankingExpression(firstphase).rankingScript, 16.6)", rankProperties.get(2).toString());
     }
 
     @Test

@@ -30,7 +30,7 @@ public:
     FixedSourceSelector(queryeval::Source defaultSource,
                         const vespalib::string & attrBaseFileName,
                         uint32_t initialNumDocs = 0);
-    ~FixedSourceSelector();
+    ~FixedSourceSelector() override;
 
     FixedSourceSelector::UP cloneAndSubtract(const vespalib::string & attrBaseFileName, uint32_t diff);
     static FixedSourceSelector::UP load(const vespalib::string & baseFileName, uint32_t currentId);

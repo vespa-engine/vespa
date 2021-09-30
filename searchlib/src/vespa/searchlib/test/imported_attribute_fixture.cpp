@@ -2,6 +2,7 @@
 
 #include "imported_attribute_fixture.h"
 #include "mock_gid_to_lid_mapping.h"
+#include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <future>
 
@@ -55,7 +56,7 @@ GlobalId dummy_gid(uint32_t doc_index) {
 }
 
 std::unique_ptr<QueryTermSimple> word_term(vespalib::stringref term) {
-    return std::make_unique<QueryTermSimple>(term, QueryTermSimple::WORD);
+    return std::make_unique<QueryTermUCS4>(term, QueryTermSimple::Type::WORD);
 }
 
 

@@ -18,8 +18,6 @@ public class RefeedActionsFormatter {
     public String format() {
         StringBuilder builder = new StringBuilder();
         for (RefeedActions.Entry entry : actions.getEntries()) {
-            if (entry.allowed())
-                builder.append("(allowed) ");
             builder.append(entry.name() + ": Consider removing data and re-feed document type '" + entry.getDocumentType() +
                            "' in cluster '" + entry.getClusterName() + "' because:\n");
             int counter = 1;

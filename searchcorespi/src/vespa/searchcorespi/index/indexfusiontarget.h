@@ -17,18 +17,18 @@ private:
 
 public:
     IndexFusionTarget(IndexMaintainer &indexMaintainer);
-    ~IndexFusionTarget();
+    ~IndexFusionTarget() override;
 
     // Implements IFlushTarget
-    virtual MemoryGain getApproxMemoryGain() const override;
-    virtual   DiskGain   getApproxDiskGain() const override;
-    virtual  SerialNum getFlushedSerialNum() const override;
-    virtual       Time    getLastFlushTime() const override;
-    virtual bool           needUrgentFlush() const override;
+    MemoryGain getApproxMemoryGain() const override;
+    DiskGain   getApproxDiskGain() const override;
+    SerialNum getFlushedSerialNum() const override;
+    Time    getLastFlushTime() const override;
+    bool           needUrgentFlush() const override;
 
-    virtual Task::UP initFlush(SerialNum currentSerial) override;
-    virtual FlushStats getLastFlushStats() const override { return _lastStats; }
-    virtual uint64_t getApproxBytesToWriteToDisk() const override;
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    FlushStats getLastFlushStats() const override { return _lastStats; }
+    uint64_t getApproxBytesToWriteToDisk() const override;
 };
 
 }

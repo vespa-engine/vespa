@@ -1,8 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.model;
 
 import com.yahoo.cloud.config.LbServicesConfig;
-import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.SuperModel;
@@ -50,19 +49,6 @@ public class SuperModelConfigProvider implements LbServicesConfig.Producer  {
     @Override
     public void getConfig(LbServicesConfig.Builder builder) {
         lbProd.getConfig(builder);
-    }
-
-    public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, 
-                                                                    ApplicationId applicationId,
-                                                                    String configId) {
-        Map<ApplicationId, ApplicationInfo> models = superModel.getModels();
-        if (!models.containsKey(applicationId)) {
-            throw new IllegalArgumentException("Application " + applicationId + " not found");
-        }
-        ApplicationInfo application = models.get(applicationId);
-        ConfigKey<CONFIGTYPE> key = new ConfigKey<>(configClass, configId);
-        ConfigPayload payload = application.getModel().getConfig(key, null);
-        return payload.toInstance(configClass, configId);
     }
 
 }

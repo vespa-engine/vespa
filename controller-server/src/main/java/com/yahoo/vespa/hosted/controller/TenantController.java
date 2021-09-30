@@ -2,15 +2,20 @@
 package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
+import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.security.TenantSpec;
+import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
+import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -19,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -37,10 +43,11 @@ public class TenantController {
     private final CuratorDb curator;
     private final AccessControl accessControl;
 
-    public TenantController(Controller controller, CuratorDb curator, AccessControl accessControl) {
+    public TenantController(Controller controller, CuratorDb curator, AccessControl accessControl, FlagSource flagSource) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.curator = Objects.requireNonNull(curator, "curator must be non-null");
         this.accessControl = accessControl;
+
 
         // Update serialization format of all tenants
         Once.after(Duration.ofMinutes(1), () -> {
@@ -50,22 +57,22 @@ public class TenantController {
                 lockIfPresent(name, LockedTenant.class, this::store);
                 count++;
             }
-            log.log(Level.INFO, String.format("Wrote %d tenants in %s", count,
+            log.log(Level.INFO, Text.format("Wrote %d tenants in %s", count,
                                               Duration.between(start, controller.clock().instant())));
         });
     }
 
-    /** Returns a list of all known tenants sorted by name */
+    /** Returns a list of all known, non-deleted tenants sorted by name */
     public List<Tenant> asList() {
-        return curator.readTenants().stream()
-                      .sorted(Comparator.comparing(Tenant::name))
-                      .collect(Collectors.toList());
+        return asList(false);
     }
 
-    // TODO jonmv: Remove.
-    /** Returns the list of tenants accessible to the given user. */
-    public List<Tenant> asList(Credentials credentials) {
-        return ((AthenzFacade) accessControl).accessibleTenants(asList(), credentials);
+    /** Returns a list of all known tenants sorted by name */
+    public List<Tenant> asList(boolean includeDeleted) {
+        return curator.readTenants().stream()
+                .filter(tenant -> tenant.type() != Tenant.Type.deleted || includeDeleted)
+                .sorted(Comparator.comparing(Tenant::name))
+                .collect(Collectors.toList());
     }
 
     /** Locks a tenant for modification and applies the given action. */
@@ -89,30 +96,41 @@ public class TenantController {
         return get(name).orElseThrow(() -> new IllegalArgumentException("No such tenant '" + name + "'."));
     }
 
+    /** Returns the tenant with the given name, and ensures the type */
+    public <T extends Tenant> T require(TenantName name, Class<T> tenantType) {
+        return get(name)
+                .map(t -> {
+                    try { return tenantType.cast(t); } catch (ClassCastException e) {
+                        throw new IllegalArgumentException("Tenant '" + name + "' was of type '" + t.getClass().getSimpleName() + "' and not '" + tenantType.getSimpleName() + "'");
+                    }
+                })
+                .orElseThrow(() -> new IllegalArgumentException("No such tenant '" + name + "'."));
+    }
+
     /** Replace and store any previous version of given tenant */
     public void store(LockedTenant tenant) {
         curator.writeTenant(tenant.get());
     }
 
-    /** Create an user tenant with given username */
-    public void createUser(UserTenant tenant) {
-        try (Lock lock = lock(tenant.name())) {
-            requireNonExistent(tenant.name());
-            curator.writeTenant(tenant);
-        }
-    }
-
     /** Create a tenant, provided the given credentials are valid. */
     public void create(TenantSpec tenantSpec, Credentials credentials) {
         try (Lock lock = lock(tenantSpec.tenant())) {
+            TenantId.validate(tenantSpec.tenant().value());
             requireNonExistent(tenantSpec.tenant());
-            curator.writeTenant(accessControl.createTenant(tenantSpec, credentials, asList()));
+            curator.writeTenant(accessControl.createTenant(tenantSpec, controller.clock().instant(), credentials, asList()));
+
+            // We should create tenant roles here but it takes too long - assuming the TenantRoleMaintainer will do it Soon™
         }
     }
 
     /** Find tenant by name */
     public Optional<Tenant> get(TenantName name) {
-        return curator.readTenant(name);
+        return get(name, false);
+    }
+
+    public Optional<Tenant> get(TenantName name, boolean includeDeleted) {
+        return curator.readTenant(name)
+                .filter(tenant -> tenant.type() != Tenant.Type.deleted || includeDeleted);
     }
 
     /** Find tenant by name */
@@ -128,29 +146,45 @@ public class TenantController {
         }
     }
 
-    /** Deletes the given tenant. */
-    public void delete(TenantName tenant, Credentials credentials) {
-        try (Lock lock = lock(tenant)) {
-            require(tenant);
-            if ( ! controller.applications().asList(tenant).isEmpty())
-                throw new IllegalArgumentException("Could not delete tenant '" + tenant.value()
-                                                   + "': This tenant has active applications");
+    /**
+     * Update last login times for the given tenant at the given user levers with the given instant, but only if the
+     * new instant is later
+     */
+    public void updateLastLogin(TenantName tenantName, List<LastLoginInfo.UserLevel> userLevels, Instant loggedInAt) {
+        try (Lock lock = lock(tenantName)) {
+            Tenant tenant = require(tenantName);
+            LastLoginInfo loginInfo = tenant.lastLoginInfo();
+            for (LastLoginInfo.UserLevel userLevel : userLevels)
+                loginInfo = loginInfo.withLastLoginIfLater(userLevel, loggedInAt);
 
-            curator.removeTenant(tenant);
-            accessControl.deleteTenant(tenant, credentials);
+            if (tenant.lastLoginInfo().equals(loginInfo)) return; // no change
+            curator.writeTenant(LockedTenant.of(tenant, lock).with(loginInfo).get());
         }
     }
 
-    /** Deletes the given user tenant. */
-    public void deleteUser(UserTenant tenant) {
-        try (Lock lock = lock(tenant.name())) {
-            curator.removeTenant(tenant.name());
+    /** Deletes the given tenant. */
+    public void delete(TenantName tenant, Supplier<Credentials> credentials, boolean forget) {
+        try (Lock lock = lock(tenant)) {
+            Tenant oldTenant = get(tenant, true)
+                    .orElseThrow(() -> new NotExistsException("Could not delete tenant '" + tenant + "': Tenant not found"));
+
+            if (oldTenant.type() != Tenant.Type.deleted) {
+                if (!controller.applications().asList(tenant).isEmpty())
+                    throw new IllegalArgumentException("Could not delete tenant '" + tenant.value()
+                            + "': This tenant has active applications");
+
+                accessControl.deleteTenant(tenant, credentials.get());
+                controller.notificationsDb().removeNotifications(NotificationSource.from(tenant));
+            }
+
+            if (forget) curator.removeTenant(tenant);
+            else curator.writeTenant(new DeletedTenant(tenant, oldTenant.createdAt(), controller.clock().instant()));
         }
     }
 
     private void requireNonExistent(TenantName name) {
-        if (   "hosted-vespa".equals(name.value())
-            || get(name).isPresent()
+        if (SystemApplication.TENANT.equals(name)
+            || get(name, true).isPresent()
             // Underscores are allowed in existing tenant names, but tenants with - and _ cannot co-exist. E.g.
             // my-tenant cannot be created if my_tenant exists.
             || get(name.value().replace('-', '_')).isPresent()) {

@@ -6,33 +6,31 @@
 #include "nix_value.h"
 #include "symbol.h"
 #include "symbol_lookup.h"
-#include "symbol_table.h"
 #include "value_factory.h"
 #include "symbol_inserter.h"
 #include <vespa/vespalib/stllike/vector_map.h>
-#include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib { class Stash; }
+namespace vespalib::slime {
 
 /**
  * Class representing a collection of unordered values that can be
  * looked up by symbol.
  **/
-class ObjectValue : public Value
+class ObjectValue final : public Value
 {
 private:
     struct hasher {
         size_t operator () (const Symbol & s) const { return s.getValue(); }
     };
-    typedef vector_map<Symbol, Value*> SymbolValueMap;
+    using SymbolValueMap = vector_map<Symbol, Value*>;
     SymbolTable    &_symbolTable;
     Stash          &_stash;
     SymbolValueMap  _fields;
 
     Cursor &setIfUnset(SymbolInserter &symbol, const ValueFactory &input) {
         Value *&pos = _fields[symbol.insert()];
-        if (pos != 0) {
+        if (pos != nullptr) {
             return *NixValue::invalid();
         }
         pos = input.create(_stash);
@@ -40,7 +38,7 @@ private:
     }
 
     Value *lookup(const SymbolLookup &symbol) const {
-        SymbolValueMap::const_iterator pos = _fields.find(symbol.lookup());
+        auto pos = _fields.find(symbol.lookup());
         if (pos == _fields.end()) {
             return NixValue::invalid();
         }
@@ -74,16 +72,14 @@ public:
     Cursor &operator[](Symbol sym) const override;
     Cursor &operator[](Memory name) const override;
 
-    Cursor &setArray(Symbol sym) override;
+    Cursor &setArray(Symbol sym, size_t reserve) override;
     Cursor &setObject(Symbol sym) override;
 
-    Cursor &setArray(Memory name) override;
+    Cursor &setArray(Memory name, size_t reserve) override;
     Cursor &setObject(Memory name) override;
     Symbol resolve(Memory symbol_name) override;
 
-    ~ObjectValue() { }
+    ~ObjectValue() override = default;
 };
 
-} // namespace vespalib::slime
-} // namespace vespalib
-
+}

@@ -20,8 +20,13 @@ private:
     uint32_t          _maxInputBufferSize;
     uint32_t          _maxOutputBufferSize;
     uint32_t          _numThreads;
+    uint32_t          _numNetworkThreads;
+    uint32_t          _numRpcTargets;
+    bool              _tcpNoDelay;
     bool              _dispatchOnEncode;
     bool              _dispatchOnDecode;
+    bool              _skip_request_thread;
+    bool              _skip_reply_thread;
     double            _connectionExpireSecs;
     CompressionConfig _compressionConfig;
 
@@ -29,6 +34,26 @@ public:
     RPCNetworkParams();
     RPCNetworkParams(config::ConfigUri configUri);
     ~RPCNetworkParams();
+
+    /**
+     * Sets number of threads for the network.
+     *
+     * @param numNetworkThreads number of threads for the network
+     * @return This, to allow chaining.
+     */
+     RPCNetworkParams &setNumNetworkThreads(uint32_t numNetworkThreads) {
+         _numNetworkThreads = numNetworkThreads;
+         return *this;
+     }
+
+    uint32_t getNumNetworkThreads() const { return _numNetworkThreads; }
+
+    RPCNetworkParams &setNumRpcTargets(uint32_t numRpcTargets) {
+        _numRpcTargets = numRpcTargets;
+        return *this;
+    }
+
+    uint32_t getNumRpcTargets() const { return _numRpcTargets; }
 
     /**
      * Returns the identity to use for the network.
@@ -70,10 +95,6 @@ public:
     }
 
     /**
-     *
-     */
-
-    /**
      * Returns the port to listen to.
      *
      * @return The port.
@@ -105,6 +126,13 @@ public:
     }
 
     uint32_t getNumThreads() const { return _numThreads; }
+
+    RPCNetworkParams &setTcpNoDelay(bool tcpNoDelay) {
+        _tcpNoDelay = tcpNoDelay;
+        return *this;
+    }
+
+    bool getTcpNoDelay() const { return _tcpNoDelay; }
 
     /**
      * Returns the number of seconds before an idle network connection expires.
@@ -182,14 +210,28 @@ public:
         return *this;
     }
 
-    uint32_t getDispatchOnDecode() const { return _dispatchOnDecode; }
+    bool getDispatchOnDecode() const { return _dispatchOnDecode; }
 
     RPCNetworkParams &setDispatchOnEncode(bool dispatchOnEncode) {
         _dispatchOnEncode = dispatchOnEncode;
         return *this;
     }
 
-    uint32_t getDispatchOnEncode() const { return _dispatchOnEncode; }
+    bool getDispatchOnEncode() const { return _dispatchOnEncode; }
+
+    RPCNetworkParams &setSkipRequestThread(bool skip_request_thread) {
+        _skip_request_thread = skip_request_thread;
+        return *this;
+    }
+
+    bool getSkipRequestThread() const { return _skip_request_thread; }
+
+    RPCNetworkParams &setSkipReplyThread(bool skip_reply_thread) {
+        _skip_reply_thread = skip_reply_thread;
+        return *this;
+    }
+
+    bool getSkipReplyThread() const { return _skip_reply_thread; }
 };
 
 }

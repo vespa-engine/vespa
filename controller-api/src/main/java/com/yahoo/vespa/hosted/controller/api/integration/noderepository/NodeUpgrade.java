@@ -22,12 +22,16 @@ public class NodeUpgrade {
     @JsonProperty("force")
     private final boolean force;
 
+    @JsonProperty("upgradeBudget")
+    private final String upgradeBudget;
+
     @JsonCreator
     public NodeUpgrade(@JsonProperty("version") String version, @JsonProperty("osVersion") String osVersion,
-                       @JsonProperty("force") boolean force) {
+                       @JsonProperty("force") boolean force, @JsonProperty("upgradeBudget") String upgradeBudget) {
         this.version = version;
         this.osVersion = osVersion;
         this.force = force;
+        this.upgradeBudget = upgradeBudget;
     }
 
     public String getVersion() {
@@ -40,6 +44,10 @@ public class NodeUpgrade {
 
     public boolean isForce() {
         return force;
+    }
+
+    public String getUpgradeBudget() {
+        return upgradeBudget;
     }
 
 }

@@ -23,13 +23,16 @@ public class DomTuningDispatchBuilder {
             return builder.build();
         }
         builder.setMaxHitsPerPartition(dispatchElement.childAsInteger("max-hits-per-partition"));
+        builder.setTopKProbability(dispatchElement.childAsDouble("top-k-probability"));
         builder.setDispatchPolicy(dispatchElement.childAsString("dispatch-policy"));
-        builder.setMinGroupCoverage(dispatchElement.childAsDouble("min-group-coverage"));
         builder.setMinActiveDocsCoverage(dispatchElement.childAsDouble("min-active-docs-coverage"));
 
+        if (dispatchElement.child("min-group-coverage") != null)
+            logger.logApplicationPackage(Level.WARNING, "Attribute 'min-group-coverage' is deprecated and ignored: " +
+                                                        "Use min-active-docs-coverage instead.");
         if (dispatchElement.child("use-local-node") != null)
-            logger.log(Level.WARNING, "Attribute 'use-local-node' is deprecated and ignored: " +
-                                      "The local node will automatically be preferred when appropriate.");
+            logger.logApplicationPackage(Level.WARNING, "Attribute 'use-local-node' is deprecated and ignored: " +
+                                                        "The local node will automatically be preferred when appropriate.");
         return builder.build();
     }
 

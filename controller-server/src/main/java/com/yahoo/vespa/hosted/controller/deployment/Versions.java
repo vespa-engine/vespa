@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -58,9 +59,9 @@ public class Versions {
 
     /** Returns whether source versions are present and match those of the given job other versions. */
     public boolean sourcesMatchIfPresent(Versions versions) {
-        return ( ! sourcePlatform.filter(version -> ! version.equals(targetPlatform)).isPresent() ||
+        return (sourcePlatform.map(targetPlatform::equals).orElse(true) ||
                 sourcePlatform.equals(versions.sourcePlatform())) &&
-               ( ! sourceApplication.filter(version -> ! version.equals(targetApplication)).isPresent() ||
+               (sourceApplication.map(targetApplication::equals).orElse(true) ||
                 sourceApplication.equals(versions.sourceApplication()));
     }
 
@@ -87,7 +88,7 @@ public class Versions {
 
     @Override
     public String toString() {
-        return String.format("platform %s%s, application %s%s",
+        return Text.format("platform %s%s, application %s%s",
                              sourcePlatform.filter(source -> !source.equals(targetPlatform))
                                            .map(source -> source + " -> ").orElse(""),
                              targetPlatform,
@@ -136,7 +137,7 @@ public class Versions {
     }
 
     private static <T extends Comparable<T>> Optional<T> max(Optional<T> o1, Optional<T> o2) {
-        return ! o1.isPresent() ? o2 : ! o2.isPresent() ? o1 : o1.get().compareTo(o2.get()) >= 0 ? o1 : o2;
+        return o1.isEmpty() ? o2 : o2.isEmpty() ? o1 : o1.get().compareTo(o2.get()) >= 0 ? o1 : o2;
     }
 
 }

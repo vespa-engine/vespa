@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc.security;
 
 import com.yahoo.cloud.config.SentinelConfig;
@@ -11,13 +11,11 @@ import com.yahoo.config.provision.security.NodeIdentifierException;
 import com.yahoo.config.provision.security.NodeIdentity;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.SecurityContext;
-import com.yahoo.log.LogLevel;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.rpc.RequestHandlerProvider;
 
@@ -29,10 +27,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.server.rpc.security.AuthorizationException.*;
-
+import static com.yahoo.vespa.config.server.rpc.security.AuthorizationException.Type;
+import static com.yahoo.yolean.Exceptions.throwUnchecked;
 
 /**
  * A {@link RpcAuthorizer} that perform access control for configserver RPC methods when TLS and multi-tenant mode are enabled.
@@ -44,22 +43,22 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
     private static final Logger log = Logger.getLogger(MultiTenantRpcAuthorizer.class.getName());
 
     private final NodeIdentifier nodeIdentifier;
-    private final HostRegistry<TenantName> hostRegistry;
+    private final HostRegistry hostRegistry;
     private final RequestHandlerProvider handlerProvider;
     private final Executor executor;
 
     public MultiTenantRpcAuthorizer(NodeIdentifier nodeIdentifier,
-                                    HostRegistries hostRegistries,
+                                    HostRegistry hostRegistry,
                                     RequestHandlerProvider handlerProvider,
                                     int threadPoolSize) {
         this(nodeIdentifier,
-             hostRegistries.getTenantHostRegistry(),
+             hostRegistry,
              handlerProvider,
              Executors.newFixedThreadPool(threadPoolSize, new DaemonThreadFactory("multi-tenant-rpc-authorizer-")));
     }
 
     MultiTenantRpcAuthorizer(NodeIdentifier nodeIdentifier,
-                             HostRegistry<TenantName> hostRegistry,
+                             HostRegistry hostRegistry,
                              RequestHandlerProvider handlerProvider,
                              Executor executor) {
         this.nodeIdentifier = nodeIdentifier;
@@ -84,7 +83,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                     try {
                         getPeerIdentity(request)
                                 .ifPresent(peerIdentity -> authorizer.accept(request, peerIdentity));
-                        log.log(LogLevel.DEBUG, () -> String.format("Authorization succeeded for request '%s' from '%s'",
+                        log.log(Level.FINE, () -> String.format("Authorization succeeded for request '%s' from '%s'",
                                                                    request.methodName(), request.target().toString()));
                     } catch (Throwable t) {
                         handleAuthorizationFailure(request, t);
@@ -107,14 +106,14 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                     return; // global config access ok
                 } else {
                     String hostname = configRequest.getClientHostName();
-                    Optional<TenantName> tenantName = Optional.ofNullable(hostRegistry.getKeyForHost(hostname));
-                    if (tenantName.isEmpty()) {
+                    ApplicationId applicationId = hostRegistry.getKeyForHost(hostname);
+                    if (applicationId == null) {
                         if (isConfigKeyForSentinelConfig(configKey)) {
                             return; // config processor will return empty sentinel config for unknown nodes
                         }
                         throw new AuthorizationException(Type.SILENT, String.format("Host '%s' not found in host registry for [%s]", hostname, configKey));
                     }
-                    RequestHandler tenantHandler = getTenantHandler(tenantName.get());
+                    RequestHandler tenantHandler = getTenantHandler(applicationId.tenant());
                     ApplicationId resolvedApplication = tenantHandler.resolveApplicationId(hostname);
                     ApplicationId peerOwner = applicationId(peerIdentity);
                     if (peerOwner.equals(resolvedApplication)) {
@@ -156,13 +155,13 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
         boolean isAuthorizationException = throwable instanceof AuthorizationException;
         String errorMessage = String.format("For request '%s' from '%s': %s", request.methodName(), request.target().toString(), throwable.getMessage());
         if (!isAuthorizationException || ((AuthorizationException) throwable).type() != Type.SILENT) {
-            log.log(LogLevel.INFO, errorMessage);
+            log.log(Level.INFO, errorMessage);
         }
-        log.log(LogLevel.DEBUG, throwable, throwable::getMessage);
+        log.log(Level.FINE, throwable, throwable::getMessage);
         JrtErrorCode error = isAuthorizationException ? JrtErrorCode.UNAUTHORIZED : JrtErrorCode.AUTHORIZATION_FAILED;
         request.setError(error.code, errorMessage);
         request.returnRequest();
-        throwUnchecked(throwable); // rethrow exception to ensure that subsequent completion stages are not executed (don't execute implementation of rpc method).
+        throw throwUnchecked(throwable); // rethrow exception to ensure that subsequent completion stages are not executed (don't execute implementation of rpc method).
     }
 
     // TODO Make peer identity mandatory once TLS mixed mode is removed
@@ -180,10 +179,10 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
         }
         try {
             NodeIdentity identity = nodeIdentifier.identifyNode(certChain);
-            log.log(LogLevel.DEBUG, () -> String.format("Client '%s' identified as %s", request.target().toString(), identity.toString()));
+            log.log(Level.FINE, () -> String.format("Client '%s' identified as %s", request.target().toString(), identity.toString()));
             return Optional.of(identity);
         } catch (NodeIdentifierException e) {
-            throw new AuthorizationException("Failed to identity peer: " + e.getMessage(), e);
+            throw new AuthorizationException("Failed to identify peer: " + e.getMessage(), e);
         }
     }
 
@@ -204,11 +203,6 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
     private RequestHandler getTenantHandler(TenantName tenantName) {
         return handlerProvider.getRequestHandler(tenantName)
                 .orElseThrow(() -> new AuthorizationException(String.format("No handler exists for tenant '%s'", tenantName.value())));
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T extends Throwable> void throwUnchecked(Throwable t) throws T {
-        throw (T)t;
     }
 
     private enum JrtErrorCode {

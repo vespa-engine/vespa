@@ -2,6 +2,7 @@
 
 #include "modifiedbucketchecker.h"
 #include "filestormanager.h"
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/config/common/exceptions.h>
 #include <algorithm>
 
@@ -60,20 +61,20 @@ ModifiedBucketChecker::ModifiedBucketChecker(
 
     std::ostringstream threadName;
     threadName << "Modified bucket checker " << static_cast<void*>(this);
-    _component.reset(new ServiceLayerComponent(compReg, threadName.str()));
+    _component = std::make_unique<ServiceLayerComponent>(compReg, threadName.str());
     _bucketSpaces = std::make_unique<CyclicBucketSpaceIterator>(_component->getBucketSpaceRepo().getBucketSpaces());
 }
 
 ModifiedBucketChecker::~ModifiedBucketChecker()
 {
-    assert(!_thread.get());
+    assert(!_thread);
 }
 
 void
 ModifiedBucketChecker::configure(
     std::unique_ptr<vespa::config::content::core::StorServerConfig> newConfig)
 {
-    vespalib::LockGuard lock(_stateLock);
+    std::lock_guard lock(_stateLock);
     if (newConfig->bucketRecheckingChunkSize < 1) {
         throw config::InvalidConfigException(
                 "Cannot have bucket rechecking chunk size of less than 1");
@@ -85,10 +86,8 @@ ModifiedBucketChecker::configure(
 void
 ModifiedBucketChecker::onOpen()
 {
-    framework::MilliSecTime maxProcessingTime(60 * 1000);
-    framework::MilliSecTime waitTime(1000);
     if (!_singleThreadMode) {
-        _thread = _component->startThread(*this, maxProcessingTime, waitTime);
+        _thread = _component->startThread(*this, 60s, 1s);
     }
 }
 
@@ -98,17 +97,14 @@ ModifiedBucketChecker::onClose()
     if (_singleThreadMode) {
         return;
     }
-    assert(_thread.get() != 0);
+    assert(_thread);
     LOG(debug, "Interrupting modified bucket checker thread");
     _thread->interrupt();
-    {
-        vespalib::MonitorGuard guard(_monitor);
-        guard.signal();
-    }
+    _cond.notify_one();
     LOG(debug, "Joining modified bucket checker thread");
     _thread->join();
     LOG(debug, "Modified bucket checker thread joined");
-    _thread.reset(0);
+    _thread.reset();
 }
 
 void
@@ -121,27 +117,24 @@ ModifiedBucketChecker::run(framework::ThreadHandle& thread)
 
         bool ok = tick();
 
-        vespalib::MonitorGuard guard(_monitor);
+        std::unique_lock guard(_monitor);
         if (ok) {
-            guard.wait(50);
+            _cond.wait_for(guard, 50ms);
         } else {
-            guard.wait(100);
+            _cond.wait_for(guard, 100ms);
         }
     }
 }
 
 bool
-ModifiedBucketChecker::onInternalReply(
-        const std::shared_ptr<api::InternalReply>& r)
+ModifiedBucketChecker::onInternalReply(const std::shared_ptr<api::InternalReply>& r)
 {
     if (r->getType() == RecheckBucketInfoReply::ID) {
-        vespalib::LockGuard guard(_stateLock);
+        std::lock_guard guard(_stateLock);
         assert(_pendingRequests > 0);
         --_pendingRequests;
         if (_pendingRequests == 0 && moreChunksRemaining()) {
-            vespalib::MonitorGuard mg(_monitor);
-            // Safe: monitor never taken alongside lock anywhere else.
-            mg.signal(); // Immediately signal start of new chunk
+            _cond.notify_one();
         }
         return true;
     }
@@ -158,7 +151,7 @@ ModifiedBucketChecker::requestModifiedBucketsFromProvider(document::BucketSpace 
         return false;
     }
     {
-        vespalib::LockGuard guard(_stateLock);
+        std::lock_guard guard(_stateLock);
         _rechecksNotStarted.reset(bucketSpace, result.getList());
     }
     return true;
@@ -202,7 +195,7 @@ ModifiedBucketChecker::tick()
     // we want getModifiedBuckets() to called outside the lock.
     bool shouldRequestFromProvider = false;
     {
-        vespalib::LockGuard guard(_stateLock);
+        std::lock_guard guard(_stateLock);
         if (!currentChunkFinished()) {
             return true;
         }
@@ -216,7 +209,7 @@ ModifiedBucketChecker::tick()
 
     std::vector<RecheckBucketInfoCommand::SP> commandsToSend;
     {
-        vespalib::LockGuard guard(_stateLock);
+        std::lock_guard guard(_stateLock);
         if (moreChunksRemaining()) {
             nextRecheckChunk(commandsToSend);
         } 

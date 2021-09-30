@@ -16,7 +16,9 @@ import java.util.TreeMap;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -35,6 +37,7 @@ public class HostInfoTest {
         HostInfo hostInfo = HostInfo.createHostInfo("{}");
         assertThat(hostInfo.getVtag().getVersionOrNull(), is(nullValue()));
         assertThat(hostInfo.getDistributor().getStorageNodes().size(), is(0));
+        assertThat(hostInfo.getContentNode().getResourceUsage().size(), is(0));
         assertThat(hostInfo.getMetrics().getMetrics().size(), is(0));
         assertThat(hostInfo.getClusterStateVersionOrNull(), is(nullValue()));
     }
@@ -67,6 +70,13 @@ public class HostInfoTest {
                         .getValueAt("vds.datastored.bucket_space.buckets_total", Map.of("bucketSpace", "global"))
                         .map(Metrics.Value::getLast),
                 equalTo(Optional.of(0L)));
+
+        var resourceUsage = hostInfo.getContentNode().getResourceUsage();
+        assertEquals(resourceUsage.size(), 2);
+        assertEquals(Optional.ofNullable(resourceUsage.get("memory")).map(ResourceUsage::getUsage).orElse(0.0), 0.85, 0.00001);
+        assertEquals(Optional.ofNullable(resourceUsage.get("disk")).map(ResourceUsage::getUsage).orElse(0.0), 0.6, 0.00001);
+        assertEquals(Optional.ofNullable(resourceUsage.get("disk")).map(ResourceUsage::getName).orElse("missing"), "a cool disk");
+        assertNull(resourceUsage.get("flux-capacitor"));
     }
 
     @Test

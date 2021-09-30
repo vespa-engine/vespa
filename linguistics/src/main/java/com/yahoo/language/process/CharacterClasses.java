@@ -17,7 +17,7 @@ public class CharacterClasses {
         if (Character.isDigit(c) &&  ! isLatin(c)) return true; // Not considering these digits, so treat them as letters
         // if (c == '_') return true;
 
-        // Ticket 3864695, some CJK punctuation YST defined as word characters
+        // Some CJK punctuation defined as word characters
         if (c == '\u3008' || c == '\u3009' || c == '\u300a' || c == '\u300b' ||
             c == '\u300c' || c == '\u300d' || c == '\u300e' ||
             c == '\u300f' || c == '\u3010' || c == '\u3011') {
@@ -52,4 +52,5 @@ public class CharacterClasses {
     public boolean isLetterOrDigit(int c) {
         return isLetter(c) || isDigit(c);
     }
+
 }

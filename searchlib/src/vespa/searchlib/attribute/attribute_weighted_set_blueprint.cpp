@@ -7,8 +7,11 @@
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 #include <vespa/vespalib/objects/visit.h>
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/searchlib/queryeval/filter_wrapper.h>
+#include <vespa/searchlib/queryeval/orsearch.h>
+
 
 namespace search {
 
@@ -36,12 +39,13 @@ public:
 class UseStringEnum : public UseAttr
 {
 public:
+    using TokenT = uint32_t;
     UseStringEnum(const IAttributeVector & attr)
         : UseAttr(attr) {}
     auto mapToken(const ISearchContext &context) const {
         return attribute().findFoldedEnums(context.queryTerm()->getTerm());
     }
-    int64_t getToken(uint32_t docId) const {
+    TokenT getToken(uint32_t docId) const {
         return attribute().getEnum(docId);
     }
 };
@@ -51,6 +55,7 @@ public:
 class UseInteger : public UseAttr
 {
 public:
+    using TokenT = uint64_t;
     UseInteger(const IAttributeVector & attr) : UseAttr(attr) {}
     std::vector<int64_t> mapToken(const ISearchContext &context) const {
         std::vector<int64_t> result;
@@ -60,7 +65,7 @@ public:
         }
         return result;
     }
-    int64_t getToken(uint32_t docId) const {
+    TokenT getToken(uint32_t docId) const {
         return attribute().getInt(docId);
     }
 };
@@ -71,8 +76,9 @@ template <typename T>
 class AttributeFilter final : public queryeval::SearchIterator
 {
 private:
-    typedef vespalib::hash_map<int64_t, int32_t> Map;
-    typedef fef::TermFieldMatchData TFMD;
+    using Key = typename T::TokenT;
+    using Map = vespalib::hash_map<Key, int32_t, vespalib::hash<Key>, std::equal_to<Key>, vespalib::hashtable_base::and_modulator>;
+    using TFMD = fef::TermFieldMatchData;
 
     TFMD    &_tfmd;
     T        _attr;
@@ -93,12 +99,12 @@ public:
         }
     }
     void and_hits_into(BitVector & result,uint32_t begin_id) override {
-        Map::iterator end = _map.end();
+        typename Map::iterator end = _map.end();
         result.foreach_truebit([&, end](uint32_t key) { if ( _map.find(_attr.getToken(key)) == end) { result.clearBit(key); }}, begin_id);
     }
 
     void doSeek(uint32_t docId) override {
-        Map::const_iterator pos = _map.find(_attr.getToken(docId));
+        typename Map::const_iterator pos = _map.find(_attr.getToken(docId));
         if (pos != _map.end()) {
             _weight = pos->second;
             setDocId(docId);
@@ -158,6 +164,7 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
         auto child_tfmd = match_data->resolveTermField(handle);
         std::vector<queryeval::SearchIterator*> children(_contexts.size());
         for (size_t i = 0; i < _contexts.size(); ++i) {
+            // TODO: pass ownership with unique_ptr
             children[i] = _contexts[i]->createIterator(child_tfmd, true).release();
         }
         return queryeval::SearchIterator::UP(queryeval::WeightedSetTermSearch::create(children, tfmd, _weights, std::move(match_data)));
@@ -175,6 +182,21 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
             return std::make_unique<AttributeFilter<UseInteger>>(tfmd, _attr, _weights, _contexts);
         }
     }
+}
+
+queryeval::SearchIterator::UP
+AttributeWeightedSetBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    (void) constraint;
+    std::vector<std::unique_ptr<queryeval::SearchIterator>> children;
+    children.reserve(_contexts.size());
+    for (auto& context : _contexts) {
+        auto wrapper = std::make_unique<search::queryeval::FilterWrapper>(1);
+        wrapper->wrap(context->createIterator(wrapper->tfmda()[0], strict));
+        children.emplace_back(std::move(wrapper));
+    }
+    search::queryeval::UnpackInfo unpack_info;
+    return search::queryeval::OrSearch::create(std::move(children), strict, unpack_info);
 }
 
 void

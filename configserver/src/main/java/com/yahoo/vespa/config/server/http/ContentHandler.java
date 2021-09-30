@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 
@@ -102,6 +103,6 @@ public class ContentHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString("prepared", request.getUrlBase("/prepared"));
-        return new SessionResponse(slime, root);
+        return new SlimeJsonResponse(slime);
     }
 }

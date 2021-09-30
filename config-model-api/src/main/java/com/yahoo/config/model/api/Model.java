@@ -2,13 +2,14 @@
 package com.yahoo.config.model.api;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Set;
 import java.util.Collection;
 
@@ -23,41 +24,27 @@ public interface Model {
     /**
      * Resolves config for a given key and config definition
      *
-     * @param configKey    The key to resolve
-     * @param configDefinition    The config definition to use for the schema
+     * @param configKey the key to resolve
+     * @param configDefinition the config definition to use for the schema
      */
-    ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition configDefinition);
+    ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition configDefinition);
 
-    /**
-     * Produces a set of the valid config keys for this model.
-     */
+    /** Produces a set of the valid config keys for this model. */
     Set<ConfigKey<?>> allConfigsProduced();
 
-    /**
-     * Returns information about all hosts used in this model.
-     */
+    /** Returns information about all hosts used in this model. */
     Collection<HostInfo> getHosts();
 
-    /**
-     * Returns all the config ids available for this model.
-     */
+    /** Returns all the config ids available for this model. */
     Set<String> allConfigIds();
 
-    /**
-     * Asks the {@link Model} instance to distribute files using provided filedistribution instance.
-     * @param fileDistribution {@link com.yahoo.config.model.api.FileDistribution} instance that can be called to distribute files.
-     */
-    void distributeFiles(FileDistribution fileDistribution);
-
-    /**
-     * The set of files that should be distributed to the hosts in this model.
-     */
+    /** The set of files that should be distributed to the hosts in this model. */
     Set<FileReference> fileReferences();
 
     /**
      * Gets the allocated hosts for this model.
      * 
-     * @return {@link AllocatedHosts} instance, if available.
+     * @return {@link AllocatedHosts} instance, if available
      */
     AllocatedHosts allocatedHosts();
 
@@ -80,9 +67,16 @@ public interface Model {
      */
     default boolean skipOldConfigModels(Instant now) { return false; }
 
-    /**
-     * Returns the version of this model
-     */
-    default Version version() { return Version.emptyVersion; };
-    
+    /** Returns the version of this model. */
+    default Version version() { return Version.emptyVersion; }
+
+    /** Returns the provisioned hosts of this. */
+    default Provisioned provisioned() { return new Provisioned(); }
+
+    /** Returns the set of document types in each content cluster. */
+    default Map<String, Set<String>> documentTypesByCluster() { return Map.of(); }
+
+    /** Returns the set of document types in each cluster, that have an index for one of more fields. */
+    default Map<String, Set<String>> indexedDocumentTypesByCluster() { return Map.of(); }
+
 }

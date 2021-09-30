@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=cloud.config
 
 # Ports
@@ -28,6 +28,7 @@ numDelayedResponseThreads int default=1
 serverId string default="localhost"
 hostedVespa bool default=false
 numParallelTenantLoaders int default=4
+numRedeploymentThreads int default=4
 
 # Configserver app
 applicationDirectory string default="conf/configserver-app"
@@ -51,19 +52,17 @@ ztsUrl string default=""
 
 # Maintainers
 maintainerIntervalMinutes int default=30
-# TODO: Default set to a high value (1 year) => maintainer will not run, change when maintainer verified out in prod
-tenantsMaintainerIntervalMinutes int default=525600
-keepUnusedFileReferencesHours int default=24
+keepUnusedFileReferencesMinutes int default=300
 
 # Bootstrapping
 # How long bootstrapping can take before giving up (in seconds)
 maxDurationOfBootstrap long default=7200
-# How long to sleep before redeploying again if it fails (in seconds)
-sleepTimeWhenRedeployingFails long default=30
+# Initial time for how long to sleep before redeploying again if it fails (in seconds)
+# Code uses backoff, so wait time will increase for every iteration
+sleepTimeWhenRedeployingFails long default=15
 
-# Features (to be overridden in configserver-config.xml if needed)
-buildMinimalSetOfConfigModels bool default=true
-throwIfBootstrappingTenantRepoFails bool default=true
+# Unused, remove in Vespa 8
 throwIfActiveSessionCannotBeLoaded bool default=true
+
 canReturnEmptySentinelConfig bool default=false
 serverNodeType enum {config, controller} default=config

@@ -252,7 +252,10 @@ public final class WeightedSet<K extends FieldValue> extends CollectionFieldValu
      */
     public boolean equals(Object o) {
         if (!(o instanceof WeightedSet)) return false;
-        return (super.equals(o) && map.equals(((WeightedSet<K>)o).map));
+        WeightedSet w = (WeightedSet) o;
+        if (size() != w.size()) return false;
+        if ( ! super.equals(o)) return false;
+        return map.equals(((WeightedSet)o).map);
     }
 
     /**
@@ -314,12 +317,12 @@ public final class WeightedSet<K extends FieldValue> extends CollectionFieldValu
      *
      */
     class WeightedSetWrapper extends MapFieldValue<K, IntegerFieldValue> {
-        Map<Object, Integer> map = new HashMap<Object, Integer>();
-        private DataType keyTypeVespa = getDataType().getKeyType();
-        private DataType valTypeVespa = DataType.INT;
+        private final Map<Object, Integer> map;
+        private final DataType keyTypeVespa;
 
         public WeightedSetWrapper(Map map, MapDataType dt) {
             super(dt);
+            keyTypeVespa = getDataType().getKeyType();
             this.map=map;
         }
 
@@ -335,7 +338,11 @@ public final class WeightedSet<K extends FieldValue> extends CollectionFieldValu
 
         private IntegerFieldValue wrapValue(Object o) {
             if (o==null) return null;
-            return (IntegerFieldValue)valTypeVespa.createFieldValue(o);
+            if (o instanceof IntegerFieldValue) return (IntegerFieldValue) o;
+            if (o instanceof Integer) return new IntegerFieldValue((Integer) o);
+            IntegerFieldValue value = new IntegerFieldValue();
+            value.assign(o);
+            return value;
         }
 
         @Override

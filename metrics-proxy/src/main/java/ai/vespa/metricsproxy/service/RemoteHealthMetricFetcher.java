@@ -2,9 +2,12 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.HealthMetric;
-import com.yahoo.log.LogLevel;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.InputStream;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -15,6 +18,7 @@ import java.util.logging.Logger;
  * @author Jo Kristian Bergum
  */
 public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
     private final static Logger log = Logger.getLogger(RemoteHealthMetricFetcher.class.getPackage().getName());
 
     private final static String HEALTH_PATH = STATE_PATH + "health";
@@ -27,44 +31,41 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
      * Connect to remote service over http and fetch metrics
      */
     public HealthMetric getHealth(int fetchCount) {
-        String data = "{}";
-        try {
-            data = getJson();
-        } catch (IOException e) {
+        try (InputStream stream = getJson()) {
+            return createHealthMetrics(stream, fetchCount);
+        } catch (IOException | InterruptedException | ExecutionException e) {
             logMessageNoResponse(errMsgNoResponse(e), fetchCount);
+            return HealthMetric.getUnknown("Failed fetching metrics for service: " + service.getMonitoringName());
         }
-        return createHealthMetrics(data, fetchCount);
     }
 
     /**
      * Connect to remote service over http and fetch metrics
      */
-    private HealthMetric createHealthMetrics(String data, int fetchCount) {
-        HealthMetric healthMetric = HealthMetric.getDown("Failed fetching status page for service");
+    private HealthMetric createHealthMetrics(InputStream data, int fetchCount) throws IOException {
         try {
-            healthMetric = parse(data);
+            return parse(data);
         } catch (Exception e) {
             handleException(e, data, fetchCount);
+            while (data.read() != -1) {}
+            return HealthMetric.getDown("Failed fetching status page for service");
         }
-        return healthMetric;
     }
 
-    private HealthMetric parse(String data) {
-        if (data == null || data.isEmpty()) {
-            return HealthMetric.getUnknown("Empty response from status page");
-        }
+
+    private HealthMetric parse(InputStream data) {
         try {
-            JSONObject o = new JSONObject(data);
-            JSONObject status = o.getJSONObject("status");
-            String code = status.getString("code");
+            JsonNode o = jsonMapper.readTree(data);
+            JsonNode status = o.get("status");
+            String code = status.get("code").asText();
             String message = "";
             if (status.has("message")) {
-                message = status.getString("message");
+                message = status.get("message").textValue();
             }
             return HealthMetric.get(code, message);
 
-        } catch (JSONException e) {
-            log.log(LogLevel.DEBUG, "Failed to parse json response from metrics page:" + e + ":" + data);
+        } catch (IOException e) {
+            log.log(Level.FINE, () -> "Failed to parse json response from metrics page:" + e + ":" + data);
             return HealthMetric.getUnknown("Not able to parse json from status page");
         }
     }

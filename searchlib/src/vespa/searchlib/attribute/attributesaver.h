@@ -2,11 +2,10 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/generationhandler.h>
 #include "attribute_header.h"
+#include <vespa/vespalib/util/generationhandler.h>
 
-namespace search
-{
+namespace search {
 
 class IAttributeSaveTarget;
 

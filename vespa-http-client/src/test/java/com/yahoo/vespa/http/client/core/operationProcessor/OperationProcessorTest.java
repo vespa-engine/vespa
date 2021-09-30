@@ -10,6 +10,7 @@ import com.yahoo.vespa.http.client.core.Document;
 import com.yahoo.vespa.http.client.core.EndpointResult;
 import org.junit.Test;
 
+import java.time.Clock;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
@@ -32,10 +33,10 @@ import static org.mockito.Mockito.when;
 public class OperationProcessorTest {
 
     final Queue<Result> queue = new ArrayDeque<>();
-    final Document doc1 = new Document("id:a:type::b", null, "data doc 1", null);
-    final Document doc1b = new Document("id:a:type::b", null, "data doc 1b", null);
-    final Document doc2 = new Document("id:a:type::b2", null, "data doc 2", null);
-    final Document doc3 = new Document("id:a:type::b3", null, "data doc 3", null);
+    final Document doc1 = new Document("id:a:type::b", null, "data doc 1", null, Clock.systemUTC().instant());
+    final Document doc1b = new Document("id:a:type::b", null, "data doc 1b", null, Clock.systemUTC().instant());
+    final Document doc2 = new Document("id:a:type::b2", null, "data doc 2", null, Clock.systemUTC().instant());
+    final Document doc3 = new Document("id:a:type::b3", null, "data doc 3", null, Clock.systemUTC().instant());
 
     @Test
     public void testBasic() {
@@ -49,7 +50,7 @@ public class OperationProcessorTest {
         OperationProcessor q = new OperationProcessor(
                 new IncompleteResultsThrottler(1000, 1000, null, null),
                 (docId, documentResult) -> queue.add(documentResult),
-                sessionParams, null);
+                sessionParams, null, Clock.systemUTC());
 
 
         q.resultReceived(new EndpointResult("foo", new Result.Detail(null)), 0);
@@ -127,7 +128,7 @@ public class OperationProcessorTest {
         OperationProcessor operationProcessor = new OperationProcessor(
                 new IncompleteResultsThrottler(1000, 1000, null, null),
                 (docId, documentResult) -> queue.add(documentResult),
-                sessionParams, null);
+                sessionParams, null, Clock.systemUTC());
 
         operationProcessor.sendDocument(doc1);
         operationProcessor.sendDocument(doc1b);
@@ -165,7 +166,7 @@ public class OperationProcessorTest {
         OperationProcessor operationProcessor = new OperationProcessor(
                 new IncompleteResultsThrottler(1000, 1000, null, null),
                 (docId, documentResult) -> queue.add(documentResult),
-                sessionParams, null);
+                sessionParams, null, Clock.systemUTC());
 
         operationProcessor.sendDocument(doc1);
         operationProcessor.sendDocument(doc1b);
@@ -198,11 +199,11 @@ public class OperationProcessorTest {
         OperationProcessor operationProcessor = new OperationProcessor(
                 new IncompleteResultsThrottler(1000, 1000, null, null),
                 (docId, documentResult) -> queue.add(documentResult),
-                sessionParams, null);
+                sessionParams, null, Clock.systemUTC());
 
         Queue<Document> documentQueue = new ArrayDeque<>();
         for (int x = 0; x < 100; x++) {
-            Document document = new Document("id:a:type::b", null, String.valueOf(x), null);
+            Document document = new Document("id:a:type::b", null, String.valueOf(x), null, Clock.systemUTC().instant());
             operationProcessor.sendDocument(document);
             documentQueue.add(document);
         }
@@ -233,7 +234,7 @@ public class OperationProcessorTest {
         OperationProcessor operationProcessor = new OperationProcessor(
                 new IncompleteResultsThrottler(1000, 1000, null, null),
                 (docId, documentResult) -> queue.add(documentResult),
-                sessionParams, null);
+                sessionParams, null, Clock.systemUTC());
 
         operationProcessor.sendDocument(doc1);
         operationProcessor.sendDocument(doc1b); // Blocked
@@ -273,7 +274,7 @@ public class OperationProcessorTest {
         OperationProcessor q = new OperationProcessor(
                 new IncompleteResultsThrottler(1000, 1000, null, null),
                 (docId, documentResult) -> queue.add(documentResult),
-                sessionParams, null);
+                sessionParams, null, Clock.systemUTC());
 
         q.sendDocument(doc1);
         assertEquals(0, queue.size());
@@ -299,7 +300,7 @@ public class OperationProcessorTest {
         OperationProcessor q = new OperationProcessor(
                 new IncompleteResultsThrottler(1000, 1000, null, null),
                 (docId, documentResult) -> queue.add(documentResult),
-                sessionParams, null);
+                sessionParams, null, Clock.systemUTC());
 
         q.sendDocument(doc1);
         assertEquals(0, queue.size());
@@ -358,7 +359,7 @@ public class OperationProcessorTest {
         OperationProcessor operationProcessor = new OperationProcessor(
                 new IncompleteResultsThrottler(1, 1, null, null),
                 (docId, documentResult) -> {},
-                sessionParams, null);
+                sessionParams, null, Clock.systemUTC());
 
         operationProcessor.sendDocument(doc1);
 
@@ -397,7 +398,7 @@ public class OperationProcessorTest {
                 (docId, documentResult) -> {
                     countDownLatch.countDown();
                 },
-                sessionParams, executor);
+                sessionParams, executor, Clock.systemUTC());
 
         // Will fail due to bogus host name, but will be retried.
         operationProcessor.sendDocument(doc1);
@@ -425,7 +426,7 @@ public class OperationProcessorTest {
                     (docId, documentResult) -> {
                         countDownLatch.countDown();
                     },
-                    sessionParams, executor);
+                    sessionParams, executor, Clock.systemUTC());
 
             fail("Expected exception");
         }

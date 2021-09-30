@@ -186,6 +186,7 @@ public class QueryRewrite {
                     } else if ((item instanceof AndItem) || (item instanceof NearItem)) {
                         return Recall.RECALLS_NOTHING;
                     } else if (item instanceof RankItem) {
+                        if (i == 0) return Recall.RECALLS_NOTHING;
                         item.removeItem(i);
                     } else {
                         throw new UnsupportedOperationException(item.getClass().getName());

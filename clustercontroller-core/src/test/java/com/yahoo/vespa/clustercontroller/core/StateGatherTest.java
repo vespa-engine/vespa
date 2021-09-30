@@ -1,7 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import org.junit.Test;
 
 import java.util.concurrent.TimeoutException;
@@ -25,7 +25,7 @@ public class StateGatherTest extends FleetControllerTest {
 
     @Test
     public void testAlwaysHavePendingGetNodeStateRequestTowardsNodes() throws Exception {
-        Logger.getLogger(NodeStateGatherer.class.getName()).setLevel(LogLevel.SPAM);
+        Logger.getLogger(NodeStateGatherer.class.getName()).setLevel(Level.FINEST);
         startingTest("StateGatherTest::testOverlappingGetNodeStateRequests");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.nodeStateRequestTimeoutMS = 10 * 60 * 1000;
@@ -65,7 +65,7 @@ public class StateGatherTest extends FleetControllerTest {
                     throw new TimeoutException("Did not get to have one timed out within timeout of " + timeoutMS + " ms"
                             + ", " + getGetNodeStateReplyCounts(dnode) + ", " + getGetNodeStateReplyCounts(snode));
                 }
-                try{ timer.wait(1); } catch (InterruptedException e) {}
+                try{ timer.wait(1); } catch (InterruptedException e) { /* ignore */ }
             }
         }
     }
@@ -74,7 +74,7 @@ public class StateGatherTest extends FleetControllerTest {
         long timeout = System.currentTimeMillis() + timeoutMS;
         while (dnode.getPendingNodeStateCount() != 1 || snode.getPendingNodeStateCount() != 1) {
             if (System.currentTimeMillis() > timeout) throw new TimeoutException("Did not get to have one pending within timeout of " + timeoutMS + " ms");
-            try{ Thread.sleep(1); } catch (InterruptedException e) {}
+            try{ Thread.sleep(1); } catch (InterruptedException e) { /* ignore */ }
         }
     }
 

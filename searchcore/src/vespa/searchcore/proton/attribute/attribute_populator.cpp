@@ -2,13 +2,16 @@
 
 #include "attribute_populator.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
+#include <vespa/searchlib/common/flush_token.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/gate.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attribute_populator");
 
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 
 namespace proton {
 
@@ -18,8 +21,8 @@ class PopulateDoneContext : public IDestructorCallback
 {
     std::shared_ptr<document::Document> _doc;
 public:
-    PopulateDoneContext(const std::shared_ptr<document::Document> &doc)
-        : _doc(doc)
+    PopulateDoneContext(std::shared_ptr<document::Document> doc) noexcept
+        : _doc(std::move(doc))
     {
     }
     ~PopulateDoneContext() override = default;
@@ -40,6 +43,7 @@ AttributePopulator::getNames() const
     std::vector<search::AttributeGuard> attrs;
     _writer.getAttributeManager()->getAttributeList(attrs);
     std::vector<vespalib::string> names;
+    names.reserve(attrs.size());
     for (const search::AttributeGuard &attr : attrs) {
         names.push_back(_subDbName + ".attribute." + attr->getName());
     }
@@ -64,8 +68,7 @@ AttributePopulator::AttributePopulator(const proton::IAttributeManager::SP &mgr,
 AttributePopulator::~AttributePopulator()
 {
     if (LOG_WOULD_LOG(event)) {
-        EventLogger::populateAttributeComplete(getNames(),
-                _currSerialNum - _initSerialNum);
+        EventLogger::populateAttributeComplete(getNames(),_currSerialNum - _initSerialNum);
     }
 }
 
@@ -73,8 +76,10 @@ void
 AttributePopulator::handleExisting(uint32_t lid, const std::shared_ptr<document::Document> &doc)
 {
     search::SerialNum serialNum(nextSerialNum());
-    auto populateDoneContext = std::make_shared<PopulateDoneContext>(doc);
-    _writer.put(serialNum, *doc, lid, true, populateDoneContext);
+    _writer.put(serialNum, *doc, lid, std::make_shared<PopulateDoneContext>(doc));
+    vespalib::Gate gate;
+    _writer.forceCommit(serialNum, std::make_shared<vespalib::GateCallback>(gate));
+    gate.await();
 }
 
 void
@@ -84,7 +89,7 @@ AttributePopulator::done()
     auto flushTargets = mgr->getFlushTargets();
     for (const auto &flushTarget : flushTargets) {
         assert(flushTarget->getFlushedSerialNum() < _configSerialNum);
-        auto task = flushTarget->initFlush(_configSerialNum);
+        auto task = flushTarget->initFlush(_configSerialNum, std::make_shared<search::FlushToken>());
         // shrink target only return task if able to shrink.
         if (task) {
             task->run();

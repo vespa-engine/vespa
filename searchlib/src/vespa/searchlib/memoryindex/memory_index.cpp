@@ -5,7 +5,7 @@
 #include "memory_index.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
@@ -18,7 +18,6 @@ LOG_SETUP(".searchlib.memoryindex.memory_index");
 
 using document::ArrayFieldValue;
 using document::WeightedSetFieldValue;
-using vespalib::LockGuard;
 
 namespace search {
 
@@ -44,6 +43,7 @@ using queryeval::EmptyBlueprint;
 using queryeval::FieldSpec;
 using queryeval::IRequestContext;
 using queryeval::Searchable;
+using vespalib::ISequencedTaskExecutor;
 
 }
 
@@ -107,7 +107,7 @@ MemoryIndex::removeDocument(uint32_t docId)
 }
 
 void
-MemoryIndex::commit(const std::shared_ptr<IDestructorCallback> &onWriteDone)
+MemoryIndex::commit(const std::shared_ptr<vespalib::IDestructorCallback> &onWriteDone)
 {
     _invertThreads.sync(); // drain inverting into this inverter
     _pushThreads.sync(); // drain use of other inverter
@@ -214,7 +214,7 @@ MemoryIndex::getNumWords() const {
 void
 MemoryIndex::pruneRemovedFields(const Schema &schema)
 {
-    LockGuard lock(_lock);
+    std::lock_guard lock(_lock);
     if (_prunedSchema.get() == nullptr) {
         auto newSchema = Schema::intersect(_schema, schema);
         if (_schema == *newSchema) {
@@ -240,7 +240,7 @@ MemoryIndex::pruneRemovedFields(const Schema &schema)
 Schema::SP
 MemoryIndex::getPrunedSchema() const
 {
-    LockGuard lock(_lock);
+    std::lock_guard lock(_lock);
     return _prunedSchema;
 }
 

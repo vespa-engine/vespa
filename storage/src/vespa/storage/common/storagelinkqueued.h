@@ -128,8 +128,6 @@ private:
     };
 
     framework::ComponentRegister& _compReg;
-    std::unique_ptr<framework::Thread> _replyThread;
-    std::unique_ptr<framework::Thread> _commandThread;
     ReplyDispatcher    _replyDispatcher;
     CommandDispatcher  _commandDispatcher;
     uint16_t _closeState;

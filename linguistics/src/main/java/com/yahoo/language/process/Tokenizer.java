@@ -23,16 +23,11 @@ public interface Tokenizer {
     Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents);
 
     /**
-     * Return a replacement for an input token string.
-     * This accepts strings returned by Token.getTokenString
-     * and returns a replacement which will be used as the index token.
-     * The input token string is returned if there is no replacement.
-     * <p>
-     * This default implementation always returns the input token string.
+     * Not used.
      *
-     * @param tokenString the token string of the term to lookup a replacement for
-     * @return the replacement, if any, or the argument token string if not
+     * @deprecated replacements are already applied in tokens returned by tokenize
      */
+    @Deprecated // Remove on Vespa 8
     default String getReplacementTerm(String tokenString) { return tokenString; }
 
 }

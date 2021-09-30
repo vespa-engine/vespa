@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <iostream>
 
@@ -28,7 +29,7 @@ Test::testBasic()
     EXPECT_EQUAL(256u, a.getBufSize());
     EXPECT_EQUAL(a.getFreeLen(), a.getBufSize());
     a.ensureFree(1000);
-    EXPECT_EQUAL(1024u, a.getBufSize());
+    EXPECT_EQUAL(1_Ki, a.getBufSize());
     EXPECT_EQUAL(a.getFreeLen(), a.getBufSize());
     EXPECT_EQUAL(0u, a.getDeadLen());
     EXPECT_EQUAL(0u, a.getDataLen());

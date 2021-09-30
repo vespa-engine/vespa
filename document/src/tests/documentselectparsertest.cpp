@@ -18,6 +18,7 @@
 #include <vespa/document/select/compare.h>
 #include <vespa/document/select/operator.h>
 #include <vespa/document/select/parse_utils.h>
+#include <vespa/document/select/parser_limits.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <limits>
 #include <gtest/gtest.h>
@@ -33,9 +34,11 @@ protected:
     std::vector<Document::SP > _doc;
     std::vector<DocumentUpdate::SP > _update;
 
+    ~DocumentSelectParserTest();
+
     Document::SP createDoc(
-            const std::string& doctype, const std::string& id, uint32_t hint,
-            double hfloat, const std::string& hstr, const std::string& cstr,
+            vespalib::stringref doctype, vespalib::stringref id, uint32_t hint,
+            double hfloat, vespalib::stringref hstr, vespalib::stringref cstr,
             uint64_t hlong = 0);
 
     DocumentUpdate::SP createUpdate(
@@ -64,6 +67,7 @@ protected:
     void testDocumentUpdates4();
 };
 
+DocumentSelectParserTest::~DocumentSelectParserTest() = default;
 
 namespace {
     std::shared_ptr<const DocumentTypeRepo> _repo;
@@ -72,6 +76,12 @@ namespace {
 void DocumentSelectParserTest::SetUp()
 {
     DocumenttypesConfigBuilderHelper builder(TestDocRepo::getDefaultConfig());
+    builder.document(1234567, "with_imported",
+                     Struct("with_imported.header"),
+                     Struct("with_imported.body"))
+                     .imported_field("my_imported_field");
+    // Additional document types with names that are (or include) identifiers
+    // that lex to specific tokens.
     builder.document(535424777, "notandor",
                      Struct("notandor.header"), Struct("notandor.body"));
     builder.document(1348665801, "ornotand",
@@ -83,18 +93,20 @@ void DocumentSelectParserTest::SetUp()
     builder.document(-1673092522, "usergroup",
                      Struct("usergroup.header"),
                      Struct("usergroup.body"));
-    builder.document(1234567, "with_imported",
-                     Struct("with_imported.header"),
-                     Struct("with_imported.body"))
-                     .imported_field("my_imported_field");
+    builder.document(875463456, "user",
+                     Struct("user.header").addField("id", DataType::T_INT),
+                     Struct("user.body"));
+    builder.document(567463442, "group",
+                     Struct("group.header").addField("iD", DataType::T_INT),
+                     Struct("group.body"));
     _repo = std::make_unique<DocumentTypeRepo>(builder.config());
 
     _parser = std::make_unique<select::Parser>(*_repo, _bucketIdFactory);
 }
 
 Document::SP DocumentSelectParserTest::createDoc(
-        const std::string& doctype, const std::string& id, uint32_t hint,
-        double hfloat, const std::string& hstr, const std::string& cstr,
+        vespalib::stringref doctype, vespalib::stringref id, uint32_t hint,
+        double hfloat, vespalib::stringref hstr, vespalib::stringref cstr,
         uint64_t hlong)
 {
     const DocumentType* type = _repo->getDocumentType(doctype);
@@ -105,8 +117,8 @@ Document::SP DocumentSelectParserTest::createDoc(
         doc->setValue(doc->getField("headerlongval"), LongFieldValue(hlong));
     }
     doc->setValue(doc->getField("hfloatval"), FloatFieldValue(hfloat));
-    doc->setValue(doc->getField("hstringval"), StringFieldValue(hstr.c_str()));
-    doc->setValue(doc->getField("content"), StringFieldValue(cstr.c_str()));
+    doc->setValue(doc->getField("hstringval"), StringFieldValue(hstr));
+    doc->setValue(doc->getField("content"), StringFieldValue(cstr));
     return doc;
 }
 
@@ -438,6 +450,8 @@ TEST_F(DocumentSelectParserTest, testParseTerminals)
     verifyParse("andornot");
     verifyParse("idid");
     verifyParse("usergroup");
+    verifyParse("user");
+    verifyParse("group");
 }
 
 TEST_F(DocumentSelectParserTest, testParseBranches)
@@ -459,6 +473,7 @@ TEST_F(DocumentSelectParserTest, testParseBranches)
     verifyParse("not andornot");
     verifyParse("idid or not usergroup");
     verifyParse("not(andornot or idid)", "not (andornot or idid)");
+    verifyParse("not user or not group");
 }
 
 template <typename ContainsType>
@@ -551,6 +566,22 @@ TEST_F(DocumentSelectParserTest, operators_0)
     PARSE("30 = 30", *_doc[0], True);
 }
 
+TEST_F(DocumentSelectParserTest, using_non_commutative_comparison_operator_with_field_value_is_well_defined) {
+    auto doc = createDoc("testdoctype1", "id:foo:testdoctype1::bar", 24, 0.0, "foo", "bar", 0);
+    // Document's `headerval` field has value of 24.
+    PARSE("25 <= testdoctype1.headerval", *doc, False);
+    PARSE("24 <= testdoctype1.headerval", *doc, True);
+    PARSE("25 > testdoctype1.headerval", *doc, True);
+    PARSE("24 > testdoctype1.headerval", *doc, False);
+    PARSE("24 >= testdoctype1.headerval", *doc, True);
+
+    PARSE("testdoctype1.headerval <= 23", *doc, False);
+    PARSE("testdoctype1.headerval <= 24", *doc, True);
+    PARSE("testdoctype1.headerval > 23", *doc, True);
+    PARSE("testdoctype1.headerval > 24", *doc, False);
+    PARSE("testdoctype1.headerval >= 24", *doc, True);
+}
+
 TEST_F(DocumentSelectParserTest, regex_matching_does_not_bind_anchors_to_newlines) {
     createDocs();
 
@@ -558,6 +589,21 @@ TEST_F(DocumentSelectParserTest, regex_matching_does_not_bind_anchors_to_newline
     PARSE("\"a\\r\\nb\\r\\nc\" =~ \"^b$\"", *_doc[0], False);
     // Same applies to implicit regex created from glob expression
     PARSE("\"a\\nb\\nc\" = \"b\"", *_doc[0], False);
+}
+
+// With a recursive backtracking regex implementation like that found in (at the time of
+// writing) GCC's std::regex implementation, certain expressions on a sufficiently large
+// input will cause a stack overflow and send the whole thing spiraling into a flaming
+// vortex of doom. See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=86164 for context.
+//
+// Since crashing the process based on user input is considered bad karma for all the
+// obvious reasons, test that the underlying regex engine is not susceptible to such
+// crashes.
+TEST_F(DocumentSelectParserTest, regex_matching_is_not_susceptible_to_catastrophic_backtracking) {
+    std::string long_string(1024*50, 'A'); // -> hstringval field
+    auto doc = createDoc("testdoctype1", "id:foo:testdoctype1::bar", 24, 0.0, long_string, "bar", 0);
+    // This _will_ crash std::regex on GCC 8.3. Don't try this at home. Unless you want to.
+    PARSE(R"(testdoctype1.hstringval =~ ".*")", *doc, True);
 }
 
 TEST_F(DocumentSelectParserTest, operators_1)
@@ -708,9 +754,9 @@ TEST_F(DocumentSelectParserTest, operators_5)
     PARSE("\"foo\".hash() == 123", *_doc[0], False);
     PARSEI("(234).hash() == 123", *_doc[0], False);
     PARSE("now() > 1311862500", *_doc[8], True);
-    PARSE("now() < 1611862500", *_doc[8], True);
+    PARSE("now() < 1911862500", *_doc[8], True);
     PARSE("now() < 1311862500", *_doc[8], False);
-    PARSE("now() > 1611862500", *_doc[8], False);
+    PARSE("now() > 1911862500", *_doc[8], False);
 
     // Arithmetics
     PARSEI("id.specific.hash() % 10 = 8", *_doc[0], True);
@@ -958,7 +1004,7 @@ TEST_F(DocumentSelectParserTest, testBodyFieldDetection)
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        EXPECT_TRUE(!detector.foundBodyField);
+        EXPECT_FALSE(detector.foundBodyField);
         EXPECT_TRUE(detector.foundHeaderField);
     }
 
@@ -967,7 +1013,7 @@ TEST_F(DocumentSelectParserTest, testBodyFieldDetection)
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        EXPECT_TRUE(!detector.foundBodyField);
+        EXPECT_FALSE(detector.foundBodyField);
         EXPECT_TRUE(detector.foundHeaderField);
     }
 
@@ -976,7 +1022,7 @@ TEST_F(DocumentSelectParserTest, testBodyFieldDetection)
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        EXPECT_TRUE(!detector.foundBodyField);
+        EXPECT_FALSE(detector.foundBodyField);
         EXPECT_TRUE(detector.foundHeaderField);
     }
 
@@ -985,7 +1031,7 @@ TEST_F(DocumentSelectParserTest, testBodyFieldDetection)
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        EXPECT_TRUE(detector.foundBodyField);
+        EXPECT_FALSE(detector.foundBodyField);
     }
 
     {
@@ -996,7 +1042,7 @@ TEST_F(DocumentSelectParserTest, testBodyFieldDetection)
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        EXPECT_TRUE(!detector.foundBodyField);
+        EXPECT_FALSE(detector.foundBodyField);
     }
 
 }
@@ -1186,10 +1232,26 @@ TEST_F(DocumentSelectParserTest, testDocumentIdsInRemoves)
     PARSE("testdoctype1 and testdoctype1.headerval == 0", DocumentId("id:ns:testdoctype1::1"), Invalid);
 }
 
+namespace {
+
+#if defined(__cpp_char8_t)
+const char *
+char_from_u8(const char8_t * p) {
+    return reinterpret_cast<const char *>(p);
+}
+#else
+const char *
+char_from_u8(const char * p) {
+    return p;
+}
+#endif
+
+}
+
 TEST_F(DocumentSelectParserTest, testUtf8)
 {
     createDocs();
-    std::string utf8name(u8"H\u00e5kon");
+    vespalib::string utf8name = char_from_u8(u8"H\u00e5kon");
     EXPECT_EQ(size_t(6), utf8name.size());
 
     /// \todo TODO (was warning):  UTF8 test for glob/regex support in selection language disabled. Known not to work
@@ -1216,17 +1278,17 @@ TEST_F(DocumentSelectParserTest, testThatSimpleFieldValuesHaveCorrectFieldName)
 
 TEST_F(DocumentSelectParserTest, testThatComplexFieldValuesHaveCorrectFieldNames)
 {
-    EXPECT_EQ(
-        vespalib::string("headerval"),
-        parseFieldValue("testdoctype1.headerval{test}")->getRealFieldName());
+    EXPECT_EQ(vespalib::string("headerval"),
+              parseFieldValue("testdoctype1.headerval{test}")->getRealFieldName());
 
-    EXPECT_EQ(
-        vespalib::string("headerval"),
-        parseFieldValue("testdoctype1.headerval[42]")->getRealFieldName());
+    EXPECT_EQ(vespalib::string("headerval"),
+              parseFieldValue("testdoctype1.headerval[42]")->getRealFieldName());
 
-    EXPECT_EQ(
-        vespalib::string("headerval"),
-        parseFieldValue("testdoctype1.headerval.meow.meow{test}")->getRealFieldName());
+    EXPECT_EQ(vespalib::string("headerval"),
+              parseFieldValue("testdoctype1.headerval.meow.meow{test}")->getRealFieldName());
+
+    EXPECT_EQ(vespalib::string("headerval"),
+              parseFieldValue("testdoctype1.headerval .meow.meow{test}")->getRealFieldName());
 }
 
 namespace {
@@ -1405,6 +1467,17 @@ TEST_F(DocumentSelectParserTest, test_ambiguous_field_spec_expression_is_handled
                          parse_to_tree("(testdoctype1.foo) AND (testdoctype1.bar)"));
 }
 
+TEST_F(DocumentSelectParserTest, special_tokens_are_allowed_as_freestanding_identifier_names) {
+    createDocs();
+    EXPECT_EQ("(NOT (DOCTYPE user))", parse_to_tree("not user"));
+    EXPECT_EQ("(== (ID id.user) (FIELD user user))", parse_to_tree("id.user == user.user"));
+    EXPECT_EQ("(NOT (DOCTYPE group))", parse_to_tree("not group"));
+    EXPECT_EQ("(== (ID id.group) (FIELD group group))", parse_to_tree("id.group == group.group"));
+    EXPECT_EQ("(== (FIELD user id) (ID id.user))", parse_to_tree("user.id == id.user"));
+    // Case is preserved for special ID field
+    EXPECT_EQ("(== (FIELD group iD) (ID id.user))", parse_to_tree("group.iD == id.user"));
+}
+
 TEST_F(DocumentSelectParserTest, test_can_build_field_value_from_field_expr_node)
 {
     using select::FieldExprNode;
@@ -1570,6 +1643,66 @@ TEST_F(DocumentSelectParserTest, redundant_glob_wildcards_are_collapsed_into_min
     EXPECT_EQ(GlobOperator::convertToRegex("**foo***bar**"), "foo.*bar");
     EXPECT_EQ(GlobOperator::convertToRegex("*?*"), ".");
     EXPECT_EQ(GlobOperator::convertToRegex("*?*?*?*"), "..*..*."); // Don't try this at home, kids!
+}
+
+TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_field_exprs) {
+    createDocs();
+    std::string expr = "testdoctype1";
+    for (size_t i = 0; i < 50000; ++i) {
+        expr += ".foo";
+    }
+    expr += ".hash() != 0";
+    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested (max 1024 levels)");
+}
+
+TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_arithmetic_exprs) {
+    createDocs();
+    std::string expr = "1";
+    for (size_t i = 0; i < 50000; ++i) {
+        expr += "+1";
+    }
+    expr += " != 0";
+    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested (max 1024 levels)");
+}
+
+TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_binary_logical_exprs) {
+    createDocs();
+    // Also throw in some comparisons to ensure they carry over the max depth.
+    std::string expr = "1 == 2";
+    std::string cmp_subexpr = "3 != 4";
+    for (size_t i = 0; i < 10000; ++i) {
+        expr += (i % 2 == 0 ? " and " : " or ") + cmp_subexpr;
+    }
+    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested (max 1024 levels)");
+}
+
+TEST_F(DocumentSelectParserTest, recursion_depth_is_bounded_for_unary_logical_exprs) {
+    createDocs();
+    std::string expr;
+    for (size_t i = 0; i < 10000; ++i) {
+        expr += "not ";
+    }
+    expr += "true";
+    verifyFailedParse(expr, "ParsingFailedException: expression is too deeply nested (max 1024 levels)");
+}
+
+TEST_F(DocumentSelectParserTest, selection_has_upper_limit_on_input_size) {
+    createDocs();
+    std::string expr = ("testdoctype1.a_biii"
+                        + std::string(select::ParserLimits::MaxSelectionByteSize, 'i')
+                        + "iiig_identifier");
+    verifyFailedParse(expr, "ParsingFailedException: expression is too large to be "
+                            "parsed (max 1048576 bytes, got 1048610)");
+}
+
+TEST_F(DocumentSelectParserTest, lexing_does_not_have_superlinear_time_complexity) {
+    createDocs();
+    std::string expr = ("testdoctype1.hstringval == 'a_biii"
+                        + std::string(select::ParserLimits::MaxSelectionByteSize - 100, 'i')
+                        + "iiig string'");
+    // If the lexer is not compiled with the appropriate options, this will take a long time.
+    // A really, really long time.
+    PARSE(expr, *_doc[0], False);
 }
 
 } // document

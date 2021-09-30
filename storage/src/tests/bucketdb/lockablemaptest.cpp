@@ -1,53 +1,76 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/document_runnable.h>
-#include <vespa/storage/bucketdb/judymultimap.h>
-#include <vespa/storage/bucketdb/judymultimap.hpp>
-#include <vespa/storage/bucketdb/lockablemap.hpp>
+#include <vespa/storage/bucketdb/btree_lockable_map.hpp>
+#include <vespa/storage/bucketdb/striped_btree_lockable_map.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <boost/operators.hpp>
+#include <gmock/gmock.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".lockable_map_test");
 
 // FIXME these old tests may have the least obvious semantics and worst naming in the entire storage module
+// FIXME the non-bucket ID based tests only "accidentally" work with the striped DB implementation
+// since they just all happen to look like zero-buckets with count-bits above the minimum threshold.
 
 using namespace ::testing;
+using document::BucketId;
 
 namespace storage {
 
 namespace {
-    struct A : public boost::operators<A> {
-        int _val1;
-        int _val2;
-        int _val3;
 
-        A() : _val1(0), _val2(0), _val3(0) {}
-        A(int val1, int val2, int val3)
-            : _val1(val1), _val2(val2), _val3(val3) {}
+struct A {
+    int _val1;
+    int _val2;
+    int _val3;
 
-        static bool mayContain(const A&) { return true; }
+    A() : _val1(0), _val2(0), _val3(0) {}
+    A(int val1, int val2, int val3)
+        : _val1(val1), _val2(val2), _val3(val3) {}
 
-        bool operator==(const A& a) const {
-            return (_val1 == a._val1 && _val2 == a._val2 && _val3 == a._val3);
-        }
-        bool operator<(const A& a) const {
-            if (_val1 != a._val1) return (_val1 < a._val1);
-            if (_val2 != a._val2) return (_val2 < a._val2);
-            return (_val3 < a._val3);
-        }
-    };
+    static bool mayContain(const A&) { return true; }
+    // Make this type smell more like a proper bucket DB value type.
+    constexpr bool verifyLegal() const noexcept { return true; }
+    constexpr bool valid() const noexcept { return true; }
 
-    std::ostream& operator<<(std::ostream& out, const A& a) {
-        return out << "A(" << a._val1 << ", " << a._val2 << ", " << a._val3 << ")";
+    bool operator==(const A& a) const noexcept {
+        return (_val1 == a._val1 && _val2 == a._val2 && _val3 == a._val3);
     }
+    bool operator!=(const A& a) const noexcept {
+        return !(*this == a);
+    }
+    bool operator<(const A& a) const noexcept {
+        if (_val1 != a._val1) return (_val1 < a._val1);
+        if (_val2 != a._val2) return (_val2 < a._val2);
+        return (_val3 < a._val3);
+    }
+};
 
-    typedef LockableMap<JudyMultiMap<A> > Map;
+std::ostream& operator<<(std::ostream& out, const A& a) {
+    return out << "A(" << a._val1 << ", " << a._val2 << ", " << a._val3 << ")";
 }
 
-TEST(LockableMapTest, simple_usage) {
+}
+
+template <typename MapT>
+struct LockableMapTest : ::testing::Test {
+    using Map = MapT;
+};
+
+using MapTypes = ::testing::Types<bucketdb::BTreeLockableMap<A>, bucketdb::StripedBTreeLockableMap<A>>;
+VESPA_GTEST_TYPED_TEST_SUITE(LockableMapTest, MapTypes);
+
+// Disable warnings emitted by gtest generated files when using typed tests
+#pragma GCC diagnostic push
+#ifndef __clang__
+#pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
+
+TYPED_TEST(LockableMapTest, simple_usage) {
     // Tests insert, erase, size, empty, operator[]
-    Map map;
+    TypeParam map;
     // Do some insertions
     EXPECT_TRUE(map.empty());
     bool preExisted;
@@ -57,11 +80,11 @@ TEST(LockableMapTest, simple_usage) {
     EXPECT_EQ(false, preExisted);
     map.insert(14, A(42, 0, 0), "foo", preExisted);
     EXPECT_EQ(false, preExisted);
-    EXPECT_EQ((Map::size_type) 3, map.size()) << map.toString();
+    EXPECT_EQ(map.size(), 3);
 
     map.insert(11, A(4, 7, 0), "foo", preExisted);
     EXPECT_EQ(true, preExisted);
-    EXPECT_EQ((Map::size_type) 3, map.size());
+    EXPECT_EQ(map.size(), 3);
     EXPECT_FALSE(map.empty());
 
     // Access some elements
@@ -71,206 +94,256 @@ TEST(LockableMapTest, simple_usage) {
 
     // Do removes
     EXPECT_EQ(map.erase(12, "foo"), 0);
-    EXPECT_EQ((Map::size_type) 3, map.size());
+    EXPECT_EQ(map.size(), 3);
 
     EXPECT_EQ(map.erase(14, "foo"), 1);
-    EXPECT_EQ((Map::size_type) 2, map.size());
+    EXPECT_EQ(map.size(), 2);
 
     EXPECT_EQ(map.erase(11, "foo"), 1);
     EXPECT_EQ(map.erase(16, "foo"), 1);
-    EXPECT_EQ((Map::size_type) 0, map.size());
+    EXPECT_EQ(map.size(), 0);
     EXPECT_TRUE(map.empty());
 }
 
-TEST(LockableMapTest, comparison) {
-    Map map1;
-    Map map2;
-    bool preExisted;
-
-    // Check empty state is correct
-    EXPECT_EQ(map1, map2);
-    EXPECT_FALSE(map1 < map2);
-    EXPECT_FALSE(map1 != map2);
-
-    // Check that different lengths are ok
-    map1.insert(4, A(1, 2, 3), "foo", preExisted);
-    EXPECT_FALSE(map1 == map2);
-    EXPECT_FALSE(map1 < map2);
-    EXPECT_LT(map2, map1);
-    EXPECT_NE(map1, map2);
-
-    // Check that equal elements are ok
-    map2.insert(4, A(1, 2, 3), "foo", preExisted);
-    EXPECT_EQ(map1, map2);
-    EXPECT_FALSE(map1 < map2);
-    EXPECT_FALSE(map1 != map2);
-
-    // Check that non-equal values are ok
-    map1.insert(6, A(1, 2, 6), "foo", preExisted);
-    map2.insert(6, A(1, 2, 3), "foo", preExisted);
-    EXPECT_FALSE(map1 == map2);
-    EXPECT_FALSE(map1 < map2);
-    EXPECT_LT(map2, map1);
-    EXPECT_NE(map1, map2);
-
-    // Check that non-equal keys are ok
-    map1.erase(6, "foo");
-    map1.insert(7, A(1, 2, 3), "foo", preExisted);
-    EXPECT_FALSE(map1 == map2);
-    EXPECT_FALSE(map1 < map2);
-    EXPECT_LT(map2, map1);
-    EXPECT_NE(map1, map2);
-}
-
 namespace {
-    struct NonConstProcessor {
-        Map::Decision operator()(int key, A& a) {
-            (void) key;
-            ++a._val2;
-            return Map::UPDATE;
-        }
-    };
-    struct EntryProcessor {
-        mutable uint32_t count;
-        mutable std::vector<std::string> log;
-        mutable std::vector<Map::Decision> behaviour;
 
-        EntryProcessor();
-        EntryProcessor(const std::vector<Map::Decision>& decisions);
-        ~EntryProcessor();
+template <typename Map>
+struct NonConstProcessor {
+    typename Map::Decision operator() (int key, A& a) const noexcept {
+        (void) key;
+        ++a._val2;
+        return Map::UPDATE;
+    }
+};
 
-        Map::Decision operator()(uint64_t key, A& a) const {
-            std::ostringstream ost;
-            ost << key << " - " << a;
-            log.push_back(ost.str());
-            Map::Decision d = Map::CONTINUE;
-            if (behaviour.size() > count) {
-                d = behaviour[count++];
-            }
-            if (d == Map::UPDATE) {
-                ++a._val3;
-            }
-            return d;
-        }
+template <typename Map>
+struct EntryProcessor {
+    mutable uint32_t count;
+    mutable std::vector<std::string> log;
+    mutable std::vector<typename Map::Decision> behaviour;
 
-        std::string toString() {
-            std::ostringstream ost;
-            for (uint32_t i=0; i<log.size(); ++i) {
-                ost << log[i] << "\n";
-            }
-            return ost.str();
+    EntryProcessor();
+    explicit EntryProcessor(const std::vector<typename Map::Decision>& decisions);
+    ~EntryProcessor();
+
+    typename Map::Decision operator()(uint64_t key, A& a) const {
+        std::ostringstream ost;
+        ost << key << " - " << a;
+        log.push_back(ost.str());
+        typename Map::Decision d = Map::CONTINUE;
+        if (behaviour.size() > count) {
+            d = behaviour[count++];
         }
-    };
+        if (d == Map::UPDATE) {
+            ++a._val3;
+        }
+        return d;
+    }
+
+    std::string toString() {
+        std::ostringstream ost;
+        for (uint32_t i=0; i<log.size(); ++i) {
+            ost << log[i] << "\n";
+        }
+        return ost.str();
+    }
+};
+
+template <typename Map>
+EntryProcessor<Map>::EntryProcessor()
+    : count(0), log(), behaviour() {}
+
+template <typename Map>
+EntryProcessor<Map>::EntryProcessor(const std::vector<typename Map::Decision>& decisions)
+    : count(0), log(), behaviour(decisions) {}
+
+template <typename Map>
+EntryProcessor<Map>::~EntryProcessor() = default;
+
+template <typename Map>
+struct ConstProcessor {
+    mutable uint32_t count;
+    mutable std::vector<std::string> log;
+    mutable std::vector<typename Map::Decision> behaviour;
+
+    ConstProcessor();
+    explicit ConstProcessor(std::vector<typename Map::Decision> decisions);
+    ~ConstProcessor();
+
+    typename Map::Decision operator()(uint64_t key, const A& a) const {
+        std::ostringstream ost;
+        ost << key << " - " << a;
+        log.push_back(ost.str());
+        auto d = Map::Decision::CONTINUE;
+        if (behaviour.size() > count) {
+            d = behaviour[count++];
+        }
+        return d;
+    }
+
+    std::string toString() {
+        std::ostringstream ost;
+        for (const auto& entry : log) {
+            ost << entry << "\n";
+        }
+        return ost.str();
+    }
+};
+
+template <typename Map>
+ConstProcessor<Map>::ConstProcessor()
+    : count(0), log(), behaviour() {}
+
+template <typename Map>
+ConstProcessor<Map>::ConstProcessor(std::vector<typename Map::Decision> decisions)
+    : count(0), log(), behaviour(std::move(decisions)) {}
+
+template <typename Map>
+ConstProcessor<Map>::~ConstProcessor() = default;
+
 }
 
-EntryProcessor::EntryProcessor() : count(0), log(), behaviour() {}
-EntryProcessor::EntryProcessor(const std::vector<Map::Decision>& decisions)
-        : count(0), log(), behaviour(decisions) {}
-EntryProcessor::~EntryProcessor() = default;
-
-TEST(LockableMapTest, iterating) {
-    Map map;
+TYPED_TEST(LockableMapTest, iterating) {
+    TypeParam map;
     bool preExisted;
     map.insert(16, A(1, 2, 3), "foo", preExisted);
     map.insert(11, A(4, 6, 0), "foo", preExisted);
     map.insert(14, A(42, 0, 0), "foo", preExisted);
-        // Test that we can use functor with non-const function
+    // Test that we can use functor with non-const function
     {
-        NonConstProcessor ncproc;
-        map.each(ncproc, "foo"); // Locking both for each element
+        NonConstProcessor<TypeParam> ncproc;
+        map.for_each_mutable_unordered(std::ref(ncproc), "foo"); // First round of mutating functor for `all`
         EXPECT_EQ(A(4, 7, 0), *map.get(11, "foo"));
         EXPECT_EQ(A(42,1, 0), *map.get(14, "foo"));
         EXPECT_EQ(A(1, 3, 3), *map.get(16, "foo"));
-        map.all(ncproc, "foo"); // And for all
+        map.for_each_mutable_unordered(std::ref(ncproc), "foo"); // Once more, with feeling.
         EXPECT_EQ(A(4, 8, 0), *map.get(11, "foo"));
         EXPECT_EQ(A(42,2, 0), *map.get(14, "foo"));
         EXPECT_EQ(A(1, 4, 3), *map.get(16, "foo"));
     }
-        // Test that we can use const functors directly..
-    map.each(EntryProcessor(), "foo");
 
-        // Test iterator bounds
     {
-        EntryProcessor proc;
-        map.each(proc, "foo", 11, 16);
+        ConstProcessor<TypeParam> cproc;
+        map.for_each(std::ref(cproc), "foo");
         std::string expected("11 - A(4, 8, 0)\n"
                              "14 - A(42, 2, 0)\n"
                              "16 - A(1, 4, 3)\n");
-        EXPECT_EQ(expected, proc.toString());
-
-        EntryProcessor proc2;
-        map.each(proc2, "foo", 12, 15);
-        expected = "14 - A(42, 2, 0)\n";
-        EXPECT_EQ(expected, proc2.toString());
+        EXPECT_EQ(expected, cproc.toString());
     }
-        // Test that we can abort iterating
+    // Test that we can use const functors directly..
+    map.for_each(ConstProcessor<TypeParam>(), "foo");
+
+    // Test that we can abort iterating
     {
-        std::vector<Map::Decision> decisions;
-        decisions.push_back(Map::CONTINUE);
-        decisions.push_back(Map::ABORT);
-        EntryProcessor proc(decisions);
-        map.each(proc, "foo");
+        std::vector<typename TypeParam::Decision> decisions;
+        decisions.push_back(TypeParam::CONTINUE);
+        decisions.push_back(TypeParam::ABORT);
+        EntryProcessor<TypeParam> proc(decisions);
+        map.for_each_mutable_unordered(std::ref(proc), "foo");
         std::string expected("11 - A(4, 8, 0)\n"
                              "14 - A(42, 2, 0)\n");
         EXPECT_EQ(expected, proc.toString());
     }
-        // Test that we can remove during iteration
+    // Test that we can remove during iteration
     {
-        std::vector<Map::Decision> decisions;
-        decisions.push_back(Map::CONTINUE);
-        decisions.push_back(Map::REMOVE);
-        EntryProcessor proc(decisions);
-        map.each(proc, "foo");
+        std::vector<typename TypeParam::Decision> decisions;
+        decisions.push_back(TypeParam::CONTINUE);
+        decisions.push_back(TypeParam::REMOVE); // TODO consider removing; not used
+        EntryProcessor<TypeParam> proc(decisions);
+        map.for_each_mutable_unordered(std::ref(proc), "foo");
         std::string expected("11 - A(4, 8, 0)\n"
                              "14 - A(42, 2, 0)\n"
                              "16 - A(1, 4, 3)\n");
         EXPECT_EQ(expected, proc.toString());
-        EXPECT_EQ((Map::size_type) 2, map.size()) << map.toString();
+        EXPECT_EQ(2u, map.size());
         EXPECT_EQ(A(4, 8, 0), *map.get(11, "foo"));
         EXPECT_EQ(A(1, 4, 3), *map.get(16, "foo"));
-        Map::WrappedEntry entry = map.get(14, "foo");
+        auto entry = map.get(14, "foo");
         EXPECT_FALSE(entry.exist());
     }
 }
 
-TEST(LockableMapTest, chunked_iteration_is_transparent_across_chunk_sizes) {
-    Map map;
+TYPED_TEST(LockableMapTest, explicit_iterator_is_key_ordered) {
+    TypeParam map;
     bool preExisted;
-    map.insert(16, A(1, 2, 3), "foo", preExisted);
-    map.insert(11, A(4, 6, 0), "foo", preExisted);
-    map.insert(14, A(42, 0, 0), "foo", preExisted);
-    NonConstProcessor ncproc; // Increments 2nd value in all entries.
-    // chunkedAll with chunk size of 1
-    map.chunkedAll(ncproc, "foo", 1);
-    EXPECT_EQ(A(4, 7, 0), *map.get(11, "foo"));
-    EXPECT_EQ(A(42, 1, 0), *map.get(14, "foo"));
-    EXPECT_EQ(A(1, 3, 3), *map.get(16, "foo"));
-    // chunkedAll with chunk size larger than db size
-    map.chunkedAll(ncproc, "foo", 100);
-    EXPECT_EQ(A(4, 8, 0), *map.get(11, "foo"));
-    EXPECT_EQ(A(42, 2, 0), *map.get(14, "foo"));
-    EXPECT_EQ(A(1, 4, 3), *map.get(16, "foo"));
+    map.insert(16, A(16, 0, 0), "foo", preExisted);
+    map.insert(18, A(18, 0, 0), "foo", preExisted);
+    map.insert(11, A(11, 0, 0), "foo", preExisted);
+    map.insert(14, A(14, 0, 0), "foo", preExisted);
+    map.insert(20, A(20, 0, 0), "foo", preExisted);
+
+    std::string expected("11 - A(11, 0, 0)\n"
+                         "14 - A(14, 0, 0)\n"
+                         "16 - A(16, 0, 0)\n"
+                         "18 - A(18, 0, 0)\n"
+                         "20 - A(20, 0, 0)\n");
+    ConstProcessor<TypeParam> cproc;
+
+    auto guard = map.acquire_read_guard();
+    for (auto iter = guard->create_iterator(); iter->valid(); iter->next()) {
+        cproc(iter->key(), iter->value());
+    }
+    EXPECT_EQ(expected, cproc.toString());
 }
 
-TEST(LockableMapTest, can_abort_during_chunked_iteration) {
-    Map map;
+TYPED_TEST(LockableMapTest, chunked_iteration_is_transparent_across_chunk_sizes) {
+    TypeParam map;
+    bool preExisted;
+    map.insert(16, A(1, 2, 3), "foo", preExisted);
+    map.insert(11, A(4, 6, 0), "foo", preExisted);
+    map.insert(14, A(42, 0, 0), "foo", preExisted);
+    std::string expected("11 - A(4, 6, 0)\n"
+                         "14 - A(42, 0, 0)\n"
+                         "16 - A(1, 2, 3)\n");
+    {
+        ConstProcessor<TypeParam> cproc;
+        // for_each_chunked with chunk size of 1
+        map.for_each_chunked(std::ref(cproc), "foo", 1us, 1);
+        EXPECT_EQ(expected, cproc.toString());
+    }
+    {
+        ConstProcessor<TypeParam> cproc;
+        // for_each_chunked with chunk size larger than db size
+        map.for_each_chunked(std::ref(cproc), "foo", 1us, 100);
+        EXPECT_EQ(expected, cproc.toString());
+    }
+}
+
+TYPED_TEST(LockableMapTest, can_abort_during_chunked_iteration) {
+    TypeParam map;
     bool preExisted;
     map.insert(16, A(1, 2, 3), "foo", preExisted);
     map.insert(11, A(4, 6, 0), "foo", preExisted);
     map.insert(14, A(42, 0, 0), "foo", preExisted);
 
-    std::vector<Map::Decision> decisions;
-    decisions.push_back(Map::CONTINUE);
-    decisions.push_back(Map::ABORT);
-    EntryProcessor proc(decisions);
-    map.chunkedAll(proc, "foo", 100);
+    std::vector<typename TypeParam::Decision> decisions;
+    decisions.push_back(TypeParam::CONTINUE);
+    decisions.push_back(TypeParam::ABORT);
+    ConstProcessor<TypeParam> proc(std::move(decisions));
+    map.for_each_chunked(std::ref(proc), "foo", 1us, 100);
     std::string expected("11 - A(4, 6, 0)\n"
-            "14 - A(42, 0, 0)\n");
+                         "14 - A(42, 0, 0)\n");
     EXPECT_EQ(expected, proc.toString());
 }
 
-TEST(LockableMapTest, find_buckets_simple) {
-    Map map;
+TYPED_TEST(LockableMapTest, can_iterate_via_read_guard) {
+    TypeParam map;
+    bool pre_existed;
+    map.insert(16, A(1, 2, 3), "foo", pre_existed);
+    map.insert(11, A(4, 6, 0), "foo", pre_existed);
+    map.insert(14, A(42, 0, 0), "foo", pre_existed);
+    std::string expected("11 - A(4, 6, 0)\n"
+                         "14 - A(42, 0, 0)\n"
+                         "16 - A(1, 2, 3)\n");
+
+    ConstProcessor<TypeParam> cproc;
+    auto guard = map.acquire_read_guard();
+    guard->for_each(std::ref(cproc));
+    EXPECT_EQ(expected, cproc.toString());
+}
+
+TYPED_TEST(LockableMapTest, find_buckets_simple) {
+    TypeParam map;
 
     document::BucketId id1(17, 0x0ffff);
     id1 = id1.stripUnused();
@@ -293,8 +366,8 @@ TEST(LockableMapTest, find_buckets_simple) {
     EXPECT_EQ(A(3,4,5), *results[id3]);
 }
 
-TEST(LockableMapTest, find_buckets) {
-    Map map;
+TYPED_TEST(LockableMapTest, find_buckets) {
+    TypeParam map;
 
     document::BucketId id1(16, 0x0ffff);
     document::BucketId id2(17, 0x0ffff);
@@ -317,8 +390,8 @@ TEST(LockableMapTest, find_buckets) {
     EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]);
 }
 
-TEST(LockableMapTest, find_buckets_2) { // ticket 3121525
-    Map map;
+TYPED_TEST(LockableMapTest, find_buckets_2) { // ticket 3121525
+    TypeParam map;
 
     document::BucketId id1(16, 0x0ffff);
     document::BucketId id2(17, 0x0ffff);
@@ -341,8 +414,8 @@ TEST(LockableMapTest, find_buckets_2) { // ticket 3121525
     EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]);
 }
 
-TEST(LockableMapTest, find_buckets_3) { // ticket 3121525
-    Map map;
+TYPED_TEST(LockableMapTest, find_buckets_3) { // ticket 3121525
+    TypeParam map;
 
     document::BucketId id1(16, 0x0ffff);
     document::BucketId id2(17, 0x0ffff);
@@ -359,8 +432,8 @@ TEST(LockableMapTest, find_buckets_3) { // ticket 3121525
     EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]);
 }
 
-TEST(LockableMapTest, find_buckets_4) { // ticket 3121525
-    Map map;
+TYPED_TEST(LockableMapTest, find_buckets_4) { // ticket 3121525
+    TypeParam map;
 
     document::BucketId id1(16, 0x0ffff);
     document::BucketId id2(17, 0x0ffff);
@@ -379,8 +452,8 @@ TEST(LockableMapTest, find_buckets_4) { // ticket 3121525
     EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]);
 }
 
-TEST(LockableMapTest, find_buckets_5) { // ticket 3121525
-    Map map;
+TYPED_TEST(LockableMapTest, find_buckets_5) { // ticket 3121525
+    TypeParam map;
 
     document::BucketId id1(16, 0x0ffff);
     document::BucketId id2(17, 0x0ffff);
@@ -399,8 +472,8 @@ TEST(LockableMapTest, find_buckets_5) { // ticket 3121525
     EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]);
 }
 
-TEST(LockableMapTest, find_no_buckets) {
-    Map map;
+TYPED_TEST(LockableMapTest, find_no_buckets) {
+    TypeParam map;
 
     document::BucketId id(16, 0x0ffff);
     auto results = map.getAll(id, "foo");
@@ -408,8 +481,8 @@ TEST(LockableMapTest, find_no_buckets) {
     EXPECT_EQ(0, results.size());
 }
 
-TEST(LockableMapTest, find_all) {
-    Map map;
+TYPED_TEST(LockableMapTest, find_all) {
+    TypeParam map;
 
     document::BucketId id1(16, 0x0aaaa); // contains id2-id7
     document::BucketId id2(17, 0x0aaaa); // contains id3-id4
@@ -448,10 +521,22 @@ TEST(LockableMapTest, find_all) {
     EXPECT_EQ(1, results.size());
 
     EXPECT_EQ(A(9,10,11), *results[id9.stripUnused()]); // sub bucket
+
+    // Make sure we clear any existing bucket locks before we continue, or test will deadlock
+    // if running with legacy (non-snapshot capable) DB implementation.
+    results.clear();
+    // Results should be equal when using read guard
+    auto guard = map.acquire_read_guard();
+
+    auto guard_results = guard->find_parents_self_and_children(BucketId(17, 0x1aaaa));
+    EXPECT_THAT(guard_results, ElementsAre(A(1,2,3), A(5,6,7), A(6,7,8), A(7,8,9)));
+
+    guard_results = guard->find_parents_self_and_children(BucketId(16, 0xffff));
+    EXPECT_THAT(guard_results, ElementsAre(A(9,10,11)));
 }
 
-TEST(LockableMapTest, find_all_2) { // Ticket 3121525
-    Map map;
+TYPED_TEST(LockableMapTest, find_all_2) { // Ticket 3121525
+    TypeParam map;
 
     document::BucketId id1(17, 0x00001);
     document::BucketId id2(17, 0x10001);
@@ -469,8 +554,8 @@ TEST(LockableMapTest, find_all_2) { // Ticket 3121525
     EXPECT_EQ(A(2,3,4), *results[id2.stripUnused()]); // sub bucket
 }
 
-TEST(LockableMapTest, find_all_unused_bit_is_set) { // ticket 2938896
-    Map map;
+TYPED_TEST(LockableMapTest, find_all_unused_bit_is_set) { // ticket 2938896
+    TypeParam map;
 
     document::BucketId id1(24, 0x000dc7089);
     document::BucketId id2(33, 0x0053c7089);
@@ -493,8 +578,8 @@ TEST(LockableMapTest, find_all_unused_bit_is_set) { // ticket 2938896
     EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
 }
 
-TEST(LockableMapTest, find_all_inconsistently_split) { // Ticket 2938896
-    Map map;
+TYPED_TEST(LockableMapTest, find_all_inconsistently_split) { // Ticket 2938896
+    TypeParam map;
 
     document::BucketId id1(16, 0x00001); // contains id2-id3
     document::BucketId id2(17, 0x00001);
@@ -515,8 +600,8 @@ TEST(LockableMapTest, find_all_inconsistently_split) { // Ticket 2938896
     EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
 }
 
-TEST(LockableMapTest, find_all_inconsistently_split_2) { // ticket 3121525
-    Map map;
+TYPED_TEST(LockableMapTest, find_all_inconsistently_split_2) { // ticket 3121525
+    TypeParam map;
 
     document::BucketId id1(17, 0x10000);
     document::BucketId id2(27, 0x007228034); // contains id3
@@ -538,8 +623,8 @@ TEST(LockableMapTest, find_all_inconsistently_split_2) { // ticket 3121525
     EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]); // most specific match (super bucket)
 }
 
-TEST(LockableMapTest, find_all_inconsistently_split_3) { // ticket 3121525
-    Map map;
+TYPED_TEST(LockableMapTest, find_all_inconsistently_split_3) { // ticket 3121525
+    TypeParam map;
 
     document::BucketId id1(16, 0x0ffff); // contains id2
     document::BucketId id2(17, 0x0ffff);
@@ -556,8 +641,8 @@ TEST(LockableMapTest, find_all_inconsistently_split_3) { // ticket 3121525
     EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]); // super bucket
 }
 
-TEST(LockableMapTest, find_all_inconsistently_split_4) { // ticket 3121525
-    Map map;
+TYPED_TEST(LockableMapTest, find_all_inconsistently_split_4) { // ticket 3121525
+    TypeParam map;
 
     document::BucketId id1(16, 0x0ffff); // contains id2-id3
     document::BucketId id2(17, 0x0ffff);
@@ -577,8 +662,8 @@ TEST(LockableMapTest, find_all_inconsistently_split_4) { // ticket 3121525
     EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
 }
 
-TEST(LockableMapTest, find_all_inconsistently_split_5) { // ticket 3121525
-    Map map;
+TYPED_TEST(LockableMapTest, find_all_inconsistently_split_5) { // ticket 3121525
+    TypeParam map;
 
     document::BucketId id1(16, 0x0ffff); // contains id2-id3
     document::BucketId id2(17, 0x0ffff);
@@ -598,8 +683,8 @@ TEST(LockableMapTest, find_all_inconsistently_split_5) { // ticket 3121525
     EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
 }
 
-TEST(LockableMapTest, find_all_inconsistently_split_6) {
-    Map map;
+TYPED_TEST(LockableMapTest, find_all_inconsistently_split_6) {
+    TypeParam map;
 
     document::BucketId id1(16, 0x0ffff); // contains id2-id3
     document::BucketId id2(18, 0x1ffff);
@@ -619,19 +704,19 @@ TEST(LockableMapTest, find_all_inconsistently_split_6) {
     EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
 }
 
-TEST(LockableMapTest, find_all_inconsistent_below_16_bits) {
-    Map map;
+TYPED_TEST(LockableMapTest, find_all_inconsistent_below_16_bits) {
+    TypeParam map;
 
-    document::BucketId id1(1, 0x1); // contains id2-id3
-    document::BucketId id2(3, 0x1);
-    document::BucketId id3(4, 0xD);
+    document::BucketId id1(8,  0b0000'0000'0001); // contains id2-id3
+    document::BucketId id2(10, 0b0011'0000'0001);
+    document::BucketId id3(11, 0b0101'0000'0001);
 
     bool preExisted;
     map.insert(id1.stripUnused().toKey(), A(1,2,3), "foo", preExisted);
     map.insert(id2.stripUnused().toKey(), A(2,3,4), "foo", preExisted);
     map.insert(id3.stripUnused().toKey(), A(3,4,5), "foo", preExisted);
 
-    document::BucketId id(3, 0x5);
+    document::BucketId id(10, 0b0001'0000'0001);
 
     auto results = map.getAll(id, "foo");
 
@@ -641,173 +726,64 @@ TEST(LockableMapTest, find_all_inconsistent_below_16_bits) {
     EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
 }
 
-TEST(LockableMapTest, create) {
-    Map map;
-    {
-        document::BucketId id1(58, 0x43d6c878000004d2ull);
-
-        auto entries = map.getContained(id1, "foo");
-
-        EXPECT_EQ(0, entries.size());
-
-        Map::WrappedEntry entry = map.createAppropriateBucket(36, "", id1);
-        EXPECT_EQ(document::BucketId(36,0x8000004d2ull), entry.getBucketId());
-    }
-    {
-        document::BucketId id1(58, 0x423bf1e0000004d2ull);
-
-        auto entries = map.getContained(id1, "foo");
-        EXPECT_EQ(0, entries.size());
-
-        Map::WrappedEntry entry = map.createAppropriateBucket(36, "", id1);
-        EXPECT_EQ(document::BucketId(36,0x0000004d2ull), entry.getBucketId());
-    }
-
-    EXPECT_EQ(2, map.size());
-}
-
-TEST(LockableMapTest, create_2) {
-    Map map;
-    {
-        document::BucketId id1(58, 0xeaf77782000004d2);
-        Map::WrappedEntry entry(
-                map.get(id1.stripUnused().toKey(), "foo", true));
-    }
-    {
-        document::BucketId id1(58, 0x00000000000004d2);
-        auto entries = map.getContained(id1, "foo");
-
-        EXPECT_EQ(0, entries.size());
-
-        Map::WrappedEntry entry = map.createAppropriateBucket(16, "", id1);
-
-        EXPECT_EQ(document::BucketId(34, 0x0000004d2ull), entry.getBucketId());
-    }
-
-    EXPECT_EQ(2, map.size());
-}
-
-TEST(LockableMapTest, create_3) {
-    Map map;
-    {
-        document::BucketId id1(58, 0xeaf77780000004d2);
-        Map::WrappedEntry entry(
-                map.get(id1.stripUnused().toKey(), "foo", true));
-    }
-    {
-        document::BucketId id1(58, 0xeaf77782000004d2);
-        Map::WrappedEntry entry(
-                map.get(id1.stripUnused().toKey(), "foo", true));
-    }
-    {
-        document::BucketId id1(58, 0x00000000000004d2);
-        auto entries = map.getContained(id1, "foo");
-
-        EXPECT_EQ(0, entries.size());
-
-        Map::WrappedEntry entry = map.createAppropriateBucket(16, "", id1);
-        EXPECT_EQ(document::BucketId(40, 0x0000004d2ull), entry.getBucketId());
-    }
-}
-
-TEST(LockableMapTest, create_4) {
-    Map map;
-    {
-        document::BucketId id1(16, 0x00000000000004d1);
-        Map::WrappedEntry entry(
-                map.get(id1.stripUnused().toKey(), "foo", true));
-    }
-    {
-        document::BucketId id1(40, 0x00000000000004d2);
-        Map::WrappedEntry entry(
-                map.get(id1.stripUnused().toKey(), "foo", true));
-    }
-    {
-        document::BucketId id1(58, 0x00000000010004d2);
-        Map::WrappedEntry entry = map.createAppropriateBucket(16, "", id1);
-
-        EXPECT_EQ(document::BucketId(25, 0x0010004d2ull), entry.getBucketId());
-    }
-}
-
-TEST(LockableMapTest, create_5) {
-    Map map;
-    {
-        document::BucketId id1(0x8c000000000004d2);
-        Map::WrappedEntry entry(
-                map.get(id1.stripUnused().toKey(), "foo", true));
-    }
-
-    {
-        document::BucketId id1(0xeb54b3ac000004d2);
-        Map::WrappedEntry entry(
-                map.get(id1.stripUnused().toKey(), "foo", true));
-    }
-
-    {
-        document::BucketId id1(0x88000002000004d2);
-        Map::WrappedEntry entry(
-                map.get(id1.stripUnused().toKey(), "foo", true));
-    }
-    {
-        document::BucketId id1(0x84000001000004d2);
-        Map::WrappedEntry entry(
-                map.get(id1.stripUnused().toKey(), "foo", true));
-    }
-    {
-        document::BucketId id1(0xe9944a44000004d2);
-        Map::WrappedEntry entry = map.createAppropriateBucket(16, "", id1);
-        EXPECT_EQ(document::BucketId(0x90000004000004d2), entry.getBucketId());
-    }
-}
-
-TEST(LockableMapTest, create_6) {
-    Map map;
-    {
-        document::BucketId id1(58, 0xeaf77780000004d2);
-        Map::WrappedEntry entry(
-                map.get(id1.stripUnused().toKey(), "foo", true));
-    }
-    {
-        document::BucketId id1(40, 0x00000000000004d1);
-
-        Map::WrappedEntry entry(
-                map.get(id1.stripUnused().toKey(), "foo", true));
-    }
-    {
-        document::BucketId id1(58, 0x00000000010004d2);
-        Map::WrappedEntry entry = map.createAppropriateBucket(16, "", id1);
-        EXPECT_EQ(document::BucketId(25, 0x0010004d2ull), entry.getBucketId());
-    }
-}
-
-TEST(LockableMapTest, create_empty) {
-    Map map;
-    {
-        document::BucketId id1(58, 0x00000000010004d2);
-        Map::WrappedEntry entry = map.createAppropriateBucket(16, "", id1);
-        EXPECT_EQ(document::BucketId(16, 0x0000004d2ull), entry.getBucketId());
-    }
-}
-
-TEST(LockableMapTest, is_consistent) {
-    Map map;
+TYPED_TEST(LockableMapTest, is_consistent) {
+    TypeParam map;
     document::BucketId id1(16, 0x00001); // contains id2-id3
     document::BucketId id2(17, 0x00001);
 
     bool preExisted;
     map.insert(id1.stripUnused().toKey(), A(1,2,3), "foo", preExisted);
     {
-        Map::WrappedEntry entry(
-                map.get(id1.stripUnused().toKey(), "foo", true));
+        auto entry = map.get(id1.stripUnused().toKey(), "foo", true);
         EXPECT_TRUE(map.isConsistent(entry));
     }
     map.insert(id2.stripUnused().toKey(), A(1,2,3), "foo", preExisted);
     {
-        Map::WrappedEntry entry(
-                map.get(id1.stripUnused().toKey(), "foo", true));
+        auto entry = map.get(id1.stripUnused().toKey(), "foo", true);
         EXPECT_FALSE(map.isConsistent(entry));
     }
+}
+
+TYPED_TEST(LockableMapTest, get_without_auto_create_does_not_implicitly_lock_bucket) {
+    TypeParam map;
+    BucketId id(16, 0x00001);
+
+    auto entry = map.get(id.toKey(), "foo", false);
+    EXPECT_FALSE(entry.exist());
+    EXPECT_FALSE(entry.preExisted());
+    EXPECT_FALSE(entry.locked());
+}
+
+TYPED_TEST(LockableMapTest, get_with_auto_create_returns_default_constructed_entry_if_missing) {
+    TypeParam map;
+    BucketId id(16, 0x00001);
+
+    auto entry = map.get(id.toKey(), "foo", true);
+    EXPECT_TRUE(entry.exist());
+    EXPECT_FALSE(entry.preExisted());
+    EXPECT_TRUE(entry.locked());
+    EXPECT_EQ(*entry, A());
+    *entry = A(1, 2, 3);
+    entry.write(); // Implicit unlock (!)
+
+    // Should now exist
+    entry = map.get(id.toKey(), "foo", true);
+    EXPECT_TRUE(entry.exist());
+    EXPECT_TRUE(entry.preExisted());
+    EXPECT_TRUE(entry.locked());
+    EXPECT_EQ(*entry, A(1, 2, 3));
+}
+
+TYPED_TEST(LockableMapTest, entry_changes_not_visible_if_write_not_invoked_on_guard) {
+    TypeParam map;
+    BucketId id(16, 0x00001);
+    auto entry = map.get(id.toKey(), "foo", true);
+    *entry = A(1, 2, 3);
+    // No write() call on guard
+    entry.unlock();
+
+    entry = map.get(id.toKey(), "foo", true);
+    EXPECT_EQ(*entry, A());
 }
 
 } // storage

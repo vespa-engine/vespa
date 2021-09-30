@@ -5,18 +5,20 @@
 #include "rpcsendv2.h"
 #include "rpctargetpool.h"
 #include "rpcnetworkparams.h"
-#include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/iprotocol.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/routing/routingnode.h>
-#include <vespa/slobrok/sbregister.h>
-#include <vespa/slobrok/sbmirror.h>
-#include <vespa/vespalib/component/vtag.h>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/errorcode.h>
+#include <vespa/messagebus/iprotocol.h>
+#include <vespa/messagebus/routing/routingnode.h>
+#include <vespa/slobrok/sbmirror.h>
+#include <vespa/slobrok/sbregister.h>
+#include <vespa/vespalib/component/vtag.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/fastos/thread.h>
 #include <thread>
 
@@ -25,6 +27,8 @@ LOG_SETUP(".rpcnetwork");
 
 using vespalib::make_string;
 using namespace std::chrono_literals;
+
+namespace mbus {
 
 namespace {
 
@@ -45,7 +49,9 @@ public:
         _gate() {
         ScheduleNow();
     }
-    ~SyncTask() override = default;
+    ~SyncTask() override {
+        Kill();
+    }
 
     void await() {
         _gate.await();
@@ -56,9 +62,33 @@ public:
     }
 };
 
-} // namespace <unnamed>
+struct TargetPoolTask : public FNET_Task {
+    RPCTargetPool &_pool;
 
-namespace mbus {
+    TargetPoolTask(FNET_Scheduler &scheduler, RPCTargetPool &pool)
+        : FNET_Task(&scheduler),
+        _pool(pool)
+    {
+        ScheduleNow();
+    }
+    ~TargetPoolTask() override {
+        Kill();
+    }
+    void PerformTask() override {
+        _pool.flushTargets(false);
+        Schedule(1.0);
+    }
+};
+
+TransportConfig
+toFNETConfig(const RPCNetworkParams & params) {
+    return TransportConfig(params.getNumNetworkThreads())
+              .maxInputBufferSize(params.getMaxInputBufferSize())
+              .maxOutputBufferSize(params.getMaxOutputBufferSize())
+              .tcpNoDelay(params.getTcpNoDelay());
+}
+
+}
 
 RPCNetwork::SendContext::SendContext(RPCNetwork &net, const Message &msg,
                                      const std::vector<RoutingNode*> &recipients)
@@ -76,7 +106,7 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
 {
     bool shouldSend = false;
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         if (version == nullptr) {
             _hasError = true;
         } else if (*version < _version) {
@@ -92,35 +122,21 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
     }
 }
 
-RPCNetwork::TargetPoolTask::TargetPoolTask(FNET_Scheduler &scheduler, RPCTargetPool &pool)
-    : FNET_Task(&scheduler),
-      _pool(pool)
-{
-    ScheduleNow();
-}
-
-void
-RPCNetwork::TargetPoolTask::PerformTask()
-{
-    _pool.flushTargets(false);
-    Schedule(1.0);
-}
-
 RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _owner(nullptr),
     _ident(params.getIdentity()),
-    _threadPool(std::make_unique<FastOS_ThreadPool>(128000, 0)),
-    _transport(std::make_unique<FNET_Transport>()),
+    _threadPool(std::make_unique<FastOS_ThreadPool>(128_Ki, 0)),
+    _transport(std::make_unique<FNET_Transport>(toFNETConfig(params))),
     _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
     _scheduler(*_transport->GetScheduler()),
-    _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs())),
-    _targetPoolTask(_scheduler, *_targetPool),
-    _servicePool(std::make_unique<RPCServicePool>(*this, 4096)),
     _slobrokCfgFactory(std::make_unique<slobrok::ConfiguratorFactory>(params.getSlobrokConfig())),
     _mirror(std::make_unique<slobrok::api::MirrorAPI>(*_orb, *_slobrokCfgFactory)),
     _regAPI(std::make_unique<slobrok::api::RegisterAPI>(*_orb, *_slobrokCfgFactory)),
     _requestedPort(params.getListenPort()),
-    _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 65536)),
+    _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs(), params.getNumRpcTargets())),
+    _targetPoolTask(std::make_unique<TargetPoolTask>(_scheduler, *_targetPool)),
+    _servicePool(std::make_unique<RPCServicePool>(*_mirror, 4_Ki)),
+    _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 64_Ki)),
     _sendV1(std::make_unique<RPCSendV1>()),
     _sendV2(std::make_unique<RPCSendV2>()),
     _sendAdapters(),
@@ -128,8 +144,6 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _allowDispatchForEncode(params.getDispatchOnEncode()),
     _allowDispatchForDecode(params.getDispatchOnDecode())
 {
-    _transport->SetMaxInputBufferSize(params.getMaxInputBufferSize());
-    _transport->SetMaxOutputBufferSize(params.getMaxOutputBufferSize());
 }
 
 RPCNetwork::~RPCNetwork()
@@ -269,6 +283,9 @@ RPCNetwork::unregisterSession(const string &session)
     if (_ident.getServicePrefix().empty()) {
         return;
     }
+    if (getPort() <= 0) {
+        return;
+    }
     string name = _ident.getServicePrefix();
     name += "/";
     name += session;
@@ -306,8 +323,8 @@ RPCNetwork::resolveServiceAddress(RoutingNode &recipient, const string &serviceN
                      make_string("Failed to connect to service '%s' from host '%s'.",
                                  serviceName.c_str(), getIdentity().getHostname().c_str()));
     }
-    ret->setTarget(target); // free by freeServiceAddress()
-    recipient.setServiceAddress(IServiceAddress::UP(ret.release()));
+    ret->setTarget(std::move(target)); // free by freeServiceAddress()
+    recipient.setServiceAddress(std::move(ret));
     return Error();
 }
 

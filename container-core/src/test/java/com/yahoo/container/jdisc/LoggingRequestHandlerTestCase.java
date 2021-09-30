@@ -1,51 +1,40 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
 import com.google.inject.Key;
+import com.yahoo.container.handler.Coverage;
+import com.yahoo.container.handler.Timing;
 import com.yahoo.container.logging.HitCounts;
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.ResourceReference;
-import com.yahoo.jdisc.handler.RequestHandler;
-import com.yahoo.jdisc.service.CurrentContainer;
-import java.net.URI;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.yahoo.component.ComponentId;
-import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.container.handler.Coverage;
-import com.yahoo.container.handler.Timing;
-import com.yahoo.container.logging.AccessLog;
-import com.yahoo.container.logging.AccessLogEntry;
-import com.yahoo.container.logging.AccessLogInterface;
-import com.yahoo.jdisc.handler.BufferedContentChannel;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
+import com.yahoo.jdisc.service.CurrentContainer;
+import org.junit.After;
+import org.junit.Before;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static org.junit.Assert.fail;
 
 /**
  * Test contracts in LoggingRequestHandler.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class LoggingRequestHandlerTestCase {
 
-    StartTimePusher accessLogging;
     AccessLogTestHandler handler;
     ExecutorService executor;
 
@@ -110,8 +99,8 @@ public class LoggingRequestHandlerTestCase {
 
     static final class AccessLogTestHandler extends LoggingRequestHandler {
 
-        public AccessLogTestHandler(Executor executor, AccessLog accessLog) {
-            super(executor, accessLog);
+        public AccessLogTestHandler(Executor executor) {
+            super(executor);
         }
 
         @Override
@@ -121,51 +110,17 @@ public class LoggingRequestHandlerTestCase {
 
     }
 
-    static final class StartTimePusher implements AccessLogInterface {
-
-        public final ArrayBlockingQueue<Long> starts = new ArrayBlockingQueue<>(1);
-
-        @Override
-        public void log(final AccessLogEntry accessLogEntry) {
-            starts.offer(Long.valueOf(accessLogEntry.getTimeStampMillis()));
-        }
-    }
-
     @Before
     public void setUp() throws Exception {
-        accessLogging = new StartTimePusher();
-        ComponentRegistry<AccessLogInterface> implementers = new ComponentRegistry<>();
-        implementers.register(new ComponentId("nalle"), accessLogging);
-        implementers.freeze();
         executor = Executors.newCachedThreadPool();
-        handler = new AccessLogTestHandler(executor, new AccessLog(implementers));
+        handler = new AccessLogTestHandler(executor);
     }
 
     @After
     public void tearDown() throws Exception {
-        accessLogging = null;
         handler = null;
         executor.shutdown();
         executor = null;
-    }
-
-    @Test
-    public final void checkStartIsNotZeroWithoutTimingInstance() throws InterruptedException {
-        Long startTime;
-
-        MockResponseHandler responseHandler = new MockResponseHandler();
-        com.yahoo.jdisc.http.HttpRequest request = createRequest();
-        BufferedContentChannel requestContent = new BufferedContentChannel();
-        requestContent.close(null);
-        handler.handleRequest(request, requestContent, responseHandler);
-        startTime = accessLogging.starts.poll(5, TimeUnit.MINUTES);
-        if (startTime == null) {
-            // test timed out, ignoring
-        } else {
-            assertFalse(
-                    "Start time was 0,  that should never happen after the first millisecond of 1970.",
-                    startTime.longValue() == 0L);
-        }
     }
 
     public static com.yahoo.jdisc.http.HttpRequest createRequest() {

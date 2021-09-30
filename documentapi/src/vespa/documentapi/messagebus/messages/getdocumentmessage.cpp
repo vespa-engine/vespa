@@ -3,20 +3,21 @@
 #include "getdocumentmessage.h"
 #include "getdocumentreply.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
+#include <vespa/document/fieldset/fieldsets.h>
 
 namespace documentapi {
 
 GetDocumentMessage::GetDocumentMessage() :
     DocumentMessage(),
     _documentId(),
-    _fieldSet("[all]")
+    _fieldSet(document::AllFields::NAME)
 {}
 
-GetDocumentMessage::GetDocumentMessage(const document::DocumentId &documentId, int flags) :
+GetDocumentMessage::GetDocumentMessage(const document::DocumentId &documentId) :
     DocumentMessage(),
-    _documentId(documentId)
+    _documentId(documentId),
+    _fieldSet(document::AllFields::NAME)
 {
-    setFlags(flags);
 }
 
 GetDocumentMessage::GetDocumentMessage(const document::DocumentId &documentId,
@@ -27,13 +28,12 @@ GetDocumentMessage::GetDocumentMessage(const document::DocumentId &documentId,
 {
 }
 
-GetDocumentMessage::~GetDocumentMessage() {
-}
+GetDocumentMessage::~GetDocumentMessage() = default;
 
 DocumentReply::UP
 GetDocumentMessage::doCreateReply() const
 {
-    return DocumentReply::UP(new GetDocumentReply());
+    return std::make_unique<GetDocumentReply>();
 }
 
 uint32_t

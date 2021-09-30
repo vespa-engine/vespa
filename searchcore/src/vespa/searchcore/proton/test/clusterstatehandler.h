@@ -6,11 +6,7 @@
 #include <vespa/searchcore/proton/server/iclusterstatechangedhandler.h>
 #include <set>
 
-namespace proton
-{
-
-namespace test
-{
+namespace proton::test {
 
 /**
  * Test cluster state handler that forwards cluster state change
@@ -21,21 +17,12 @@ class ClusterStateHandler : public IClusterStateChangedNotifier
     std::set<IClusterStateChangedHandler *> _handlers;
 public:
     ClusterStateHandler();
+    ~ClusterStateHandler() override;
 
-    virtual
-    ~ClusterStateHandler();
-
-    virtual void
-    addClusterStateChangedHandler(IClusterStateChangedHandler *handler) override;
-
-    virtual void
-    removeClusterStateChangedHandler(IClusterStateChangedHandler *handler) override;
-
-    void
-    notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc);
+    void addClusterStateChangedHandler(IClusterStateChangedHandler *handler) override;
+    void removeClusterStateChangedHandler(IClusterStateChangedHandler *handler) override;
+    void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc);
 };
 
 
-} // namespace test
-
-} // namespace proton
+}

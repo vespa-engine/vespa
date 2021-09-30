@@ -3,6 +3,7 @@
 #include "documentsummary.h"
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/util/filekit.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/error.h>
 
 #include <vespa/log/log.h>
@@ -17,7 +18,7 @@ bool
 DocumentSummary::readDocIdLimit(const vespalib::string &dir, uint32_t &count)
 {
     char numbuf[20];
-    Fast_BufferedFile qcntfile(4096);
+    Fast_BufferedFile qcntfile(4_Ki);
     unsigned int qcnt;
     vespalib::string qcntname;
     const char *p;

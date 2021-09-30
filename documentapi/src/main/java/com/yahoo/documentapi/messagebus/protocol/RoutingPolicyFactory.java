@@ -14,7 +14,7 @@ public interface RoutingPolicyFactory {
     /**
      * This method creates and returns a routing policy that corresponds to the implementing class, using the given
      * parameter string. There is only ever one instance of a routing policy for a given name and parameter combination,
-     * and because of this the policies must be state-less beyond what can be derived from the parameter string. Because
+     * and because of this the policies must be stateless beyond what can be derived from the parameter string. Because
      * there is only a single thread running route resolution within message bus, it is not necessary to make policies
      * thread-safe. For more information see {@link RoutingPolicy}.
      *
@@ -24,11 +24,6 @@ public interface RoutingPolicyFactory {
      * @param param The parameter to use when creating the policy.
      * @return The created routing policy.
      */
-    public DocumentProtocolRoutingPolicy createPolicy(String param);
+    DocumentProtocolRoutingPolicy createPolicy(String param);
 
-    /**
-     * Destroys this factory and frees up any resources it has held. Making further calls on a destroyed
-     * factory causes a runtime exception.
-     */
-    public void destroy();
 }

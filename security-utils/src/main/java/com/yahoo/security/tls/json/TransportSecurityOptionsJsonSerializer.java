@@ -8,7 +8,6 @@ import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.CredentialFiel
 import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.Files;
 import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.RequiredCredential;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
-import com.yahoo.security.tls.policy.HostGlobPattern;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
 import com.yahoo.security.tls.policy.Role;
@@ -77,6 +76,15 @@ public class TransportSecurityOptionsJsonSerializer {
             }
             builder.withAcceptedCiphers(entity.acceptedCiphers);
         }
+        if (entity.acceptedProtocols != null) {
+            if (entity.acceptedProtocols.isEmpty()) {
+                throw new IllegalArgumentException("'accepted-protocols' cannot be empty");
+            }
+            builder.withAcceptedProtocols(entity.acceptedProtocols);
+        }
+        if (entity.isHostnameValidationDisabled != null) {
+            builder.withHostnameValidationDisabled(entity.isHostnameValidationDisabled);
+        }
         return builder.build();
     }
 
@@ -93,7 +101,7 @@ public class TransportSecurityOptionsJsonSerializer {
         if (authorizedPeer.requiredCredentials == null) {
             throw missingFieldException("required-credentials");
         }
-        return new PeerPolicy(authorizedPeer.name, toRoles(authorizedPeer.roles), toRequestPeerCredentials(authorizedPeer.requiredCredentials));
+        return new PeerPolicy(authorizedPeer.name, authorizedPeer.description, toRoles(authorizedPeer.roles), toRequestPeerCredentials(authorizedPeer.requiredCredentials));
     }
 
     private static Set<Role> toRoles(List<String> roles) {
@@ -116,13 +124,14 @@ public class TransportSecurityOptionsJsonSerializer {
         if (requiredCredential.matchExpression == null) {
             throw missingFieldException("must-match");
         }
-        return new RequiredPeerCredential(toField(requiredCredential.field), new HostGlobPattern(requiredCredential.matchExpression));
+        return RequiredPeerCredential.of(toField(requiredCredential.field), requiredCredential.matchExpression);
     }
 
     private static RequiredPeerCredential.Field toField(CredentialField field) {
         switch (field) {
             case CN: return RequiredPeerCredential.Field.CN;
             case SAN_DNS: return RequiredPeerCredential.Field.SAN_DNS;
+            case SAN_URI: return RequiredPeerCredential.Field.SAN_URI;
             default: throw new IllegalArgumentException("Invalid field type: " + field);
         }
     }
@@ -141,6 +150,7 @@ public class TransportSecurityOptionsJsonSerializer {
                             AuthorizedPeer authorizedPeer = new AuthorizedPeer();
                             authorizedPeer.name = peerPolicy.policyName();
                             authorizedPeer.requiredCredentials = new ArrayList<>();
+                            authorizedPeer.description = peerPolicy.description().orElse(null);
                             for (RequiredPeerCredential requiredPeerCredential : peerPolicy.requiredCredentials()) {
                                 RequiredCredential requiredCredential = new RequiredCredential();
                                 requiredCredential.field = toField(requiredPeerCredential.field());
@@ -158,6 +168,12 @@ public class TransportSecurityOptionsJsonSerializer {
         if (!options.getAcceptedCiphers().isEmpty()) {
             entity.acceptedCiphers = options.getAcceptedCiphers();
         }
+        if (!options.getAcceptedProtocols().isEmpty()) {
+            entity.acceptedProtocols = options.getAcceptedProtocols();
+        }
+        if (options.isHostnameValidationDisabled()) {
+            entity.isHostnameValidationDisabled = true;
+        }
         return entity;
     }
 
@@ -165,6 +181,7 @@ public class TransportSecurityOptionsJsonSerializer {
         switch (field) {
             case CN: return CredentialField.CN;
             case SAN_DNS: return CredentialField.SAN_DNS;
+            case SAN_URI: return CredentialField.SAN_URI;
             default: throw new IllegalArgumentException("Invalid field type: " + field);
         }
     }

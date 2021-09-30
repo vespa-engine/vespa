@@ -6,6 +6,8 @@
 #include <vespa/vespalib/util/time.h>
 #include <vector>
 
+namespace search { class IFlushToken; }
+
 namespace searchcorespi {
 
 /**
@@ -45,8 +47,8 @@ public:
     template<typename T>
     class Gain {
     public:
-        Gain() : _before(0), _after(0) { }
-        Gain(T before, T after) : _before(before), _after(after) { }
+        Gain() noexcept : _before(0), _after(0) { }
+        Gain(T before, T after) noexcept : _before(before), _after(after) { }
         T getBefore() const { return _before; }
         T  getAfter() const { return _after; }
         T gain() const { return _before - _after; }
@@ -74,7 +76,7 @@ public:
      *
      * @param name The handler-wide unique name of this target.
      */
-    IFlushTarget(const vespalib::string &name)
+    IFlushTarget(const vespalib::string &name) noexcept
         : _name(name),
           _type(Type::OTHER),
           _component(Component::OTHER)
@@ -89,7 +91,7 @@ public:
      */
     IFlushTarget(const vespalib::string &name,
                  const Type &type,
-                 const Component &component)
+                 const Component &component) noexcept
         : _name(name),
           _type(type),
           _component(component)
@@ -98,7 +100,7 @@ public:
     /**
      * Virtual destructor required for inheritance.
      */
-    virtual ~IFlushTarget() { }
+    virtual ~IFlushTarget() = default;
 
     /**
      * Returns the handler-wide unique name of this target.
@@ -137,6 +139,11 @@ public:
     virtual uint64_t getApproxBytesToWriteToDisk() const = 0;
 
     /**
+     * Return cost of replaying a feed operation relative to cost of reading a feed operation from tls.
+     */
+    virtual double get_replay_operation_cost() const { return 0.0; }
+
+    /**
      * Returns the last serial number for the transaction applied to
      * target before it was flushed to disk.  The transaction log can
      * not be pruned beyond this.
@@ -153,7 +160,7 @@ public:
     virtual Time getLastFlushTime() const = 0;
 
     /**
-     * Return if the traget itself is in bad need for a flush.
+     * Return if the target itself is in bad need for a flush.
      *
      * @return true if an urgent flush is needed
      */
@@ -167,7 +174,7 @@ public:
      * @param currentSerial The current transaction serial number.
      * @return The task used to complete the flush.
      */
-    virtual Task::UP initFlush(SerialNum currentSerial) = 0;
+    virtual Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) = 0;
 
     /**
      * Returns the stats for the last completed flush operation

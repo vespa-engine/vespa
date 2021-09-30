@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/buffer.h>
+#include <vespa/vespalib/util/bfloat16.h>
 #include "nbo.h"
 
 namespace vespalib {
@@ -17,10 +18,10 @@ namespace vespalib {
  */
 class nbostream
 {
- public:
+public:
     using Buffer = Array<char>;
     using Alloc = alloc::Alloc;
-    enum State { ok=0, eof=0x01};
+    enum State { ok=0, eof=0x01, oob=0x02};
     nbostream(size_t initialSize=1024);
 protected:
     nbostream(const void * buf, size_t sz, bool longLivedBuffer);
@@ -38,6 +39,8 @@ public:
     nbostream & operator >> (double & v)   { double n; read8(&n); v = nbo::n2h(n); return *this; }
     nbostream & operator << (float v)      { float n(nbo::n2h(v)); write4(&n); return *this; }
     nbostream & operator >> (float & v)    { float n; read4(&n); v = nbo::n2h(n); return *this; }
+    nbostream & operator << (BFloat16 v)   { uint16_t n(nbo::n2h(v.get_bits())); write2(&n); return *this; }
+    nbostream & operator >> (BFloat16 & v) { uint16_t n; read2(&n); v.assign_bits(nbo::n2h(n)); return *this; }
     nbostream & operator << (int64_t v)    { int64_t n(nbo::n2h(v)); write8(&n); return *this; }
     nbostream & operator >> (int64_t & v)  { int64_t n; read8(&n); v = nbo::n2h(n); return *this; }
     nbostream & operator << (uint64_t v)   { uint64_t n(nbo::n2h(v)); write8(&n); return *this; }
@@ -145,6 +148,7 @@ public:
     const char * peek() const { return &_rbuf[_rp]; }
     size_t rp() const { return _rp; }
     nbostream & rp(size_t pos) { if (pos > _wp) fail(eof); _rp = pos; return *this; }
+    nbostream & wp(size_t pos) { if (pos > _wbuf.size()) fail(oob); _wp = pos; return *this; }
     size_t wp() const { return _wp; }
     State state() const { return _state; }
     bool good() const { return _state == ok; }
@@ -169,6 +173,8 @@ public:
     }
     void swap(Buffer & buf);
     void swap(nbostream & os);
+    /** extract the underlying Array<char>; nbostream will be empty afterwards. */
+    Buffer extract_buffer() { Buffer rv; swap(rv); return rv; }
     /**
      * This flag can be used to tell that a buffer will live at least as long as
      * any objects it will be the backing for. In those cases there is no need for

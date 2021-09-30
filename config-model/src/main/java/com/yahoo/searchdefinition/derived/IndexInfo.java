@@ -1,16 +1,30 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.document.*;
+import com.yahoo.document.CollectionDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Field;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.NumericDataType;
+import com.yahoo.document.PositionDataType;
+import com.yahoo.document.PrimitiveDataType;
+import com.yahoo.document.StructuredDataType;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Search;
-import com.yahoo.searchdefinition.document.*;
+import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
+import com.yahoo.searchdefinition.document.Case;
+import com.yahoo.searchdefinition.document.FieldSet;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.searchdefinition.document.Matching;
+import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.searchdefinition.processing.ExactMatch;
 import com.yahoo.searchdefinition.processing.NGramMatch;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.search.config.IndexInfoConfig;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -34,11 +48,13 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     private static final String CMD_PLAIN_TOKENS = "plain-tokens";
     private static final String CMD_MULTIVALUE = "multivalue";
     private static final String CMD_FAST_SEARCH = "fast-search";
+    private static final String CMD_PREDICATE = "predicate";
     private static final String CMD_PREDICATE_BOUNDS = "predicate-bounds";
     private static final String CMD_NUMERICAL = "numerical";
-    private Set<IndexCommand> commands = new java.util.LinkedHashSet<>();
-    private Map<String, String> aliases = new java.util.LinkedHashMap<>();
-    private Map<String, FieldSet> fieldSets;
+    private static final String CMD_PHRASE_SEGMENTING = "phrase-segmenting";
+    private final Set<IndexCommand> commands = new java.util.LinkedHashSet<>();
+    private final Map<String, String> aliases = new java.util.LinkedHashMap<>();
+    private final Map<String, FieldSet> fieldSets;
     private Search search;
 
     public IndexInfo(Search search) {
@@ -90,6 +106,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
     protected void derive(ImmutableSDField field, Search search, boolean inPosition) {
         if (field.getDataType().equals(DataType.PREDICATE)) {
+            addIndexCommand(field, CMD_PREDICATE);
             Index index = field.getIndex(field.getName());
             if (index != null) {
                 BooleanIndexDefinition options = index.getBooleanIndexDefiniton();
@@ -120,7 +137,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
         addIndexCommand(field, CMD_INDEX); // List the indices
 
-        if (field.doesIndexing() || field.doesLowerCasing()) {
+        if (needLowerCase(field)) {
             addIndexCommand(field, CMD_LOWERCASE);
         }
 
@@ -149,7 +166,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             addUriIndexCommands(field);
         }
 
-        if (field.getDataType() instanceof NumericDataType) {
+        if (field.getDataType().getPrimitiveType() instanceof NumericDataType) {
             addIndexCommand(field, CMD_NUMERICAL);
         }
 
@@ -158,6 +175,30 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             addIndexCommand(field, command);
         }
 
+    }
+
+    private static boolean isAnyChildString(DataType dataType) {
+        PrimitiveDataType primitive = dataType.getPrimitiveType();
+        if (primitive == PrimitiveDataType.STRING) return true;
+        if (primitive != null) return false;
+        if (dataType instanceof StructuredDataType) {
+            StructuredDataType structured = (StructuredDataType) dataType;
+            for (Field field : structured.getFields()) {
+                if (isAnyChildString(field.getDataType())) return true;
+            }
+        } else if (dataType instanceof MapDataType) {
+            MapDataType mapType = (MapDataType) dataType;
+            return isAnyChildString(mapType.getKeyType()) || isAnyChildString(mapType.getValueType());
+        }
+        return false;
+    }
+
+    private static boolean needLowerCase(ImmutableSDField field) {
+        return field.doesIndexing()
+                || field.doesLowerCasing()
+                || ((field.doesAttributing() || (field.getAttribute() != null))
+                    && isAnyChildString(field.getDataType())
+                    && field.getMatching().getCase().equals(Case.UNCASED));
     }
 
     static String stemCmd(ImmutableSDField field, Search search) {
@@ -293,6 +334,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         boolean anyLowerCasing = false;
         boolean anyStemming = false;
         boolean anyNormalizing = false;
+        String phraseSegmentingCommand = null;
         String stemmingCommand = null;
         Matching fieldSetMatching = fieldSet.getMatching(); // null if no explicit matching
         // First a pass over the fields to read some params to decide field settings implicitly:
@@ -303,7 +345,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             if (field.doesAttributing()) {
                 anyAttributing = true;
             }
-            if (field.doesIndexing() || field.doesLowerCasing()) {
+            if (needLowerCase(field)) {
                 anyLowerCasing = true;
             }
             if (stemming(field)) {
@@ -313,8 +355,13 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             if (field.getNormalizing().doRemoveAccents()) {
                 anyNormalizing = true;
             }
-            if (fieldSetMatching == null && field.getMatching().getType() != Matching.defaultType)
+            if (fieldSetMatching == null && field.getMatching().getType() != Matching.defaultType) {
                 fieldSetMatching = field.getMatching();
+            }
+            Optional<String> explicitPhraseSegmentingCommand = field.getQueryCommands().stream().filter(c -> c.startsWith(CMD_PHRASE_SEGMENTING)).findFirst();
+            if (explicitPhraseSegmentingCommand.isPresent()) {
+                phraseSegmentingCommand = explicitPhraseSegmentingCommand.get();
+            }
         }
         if (anyIndexing && anyAttributing && fieldSet.getMatching() == null) {
             // We have both attributes and indexes and no explicit match setting ->
@@ -357,6 +404,11 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
                             new IndexInfoConfig.Indexinfo.Command.Builder()
                                 .indexname(fieldSet.getName())
                                 .command(CMD_NORMALIZE));
+                if (phraseSegmentingCommand != null)
+                    iiB.command(
+                            new IndexInfoConfig.Indexinfo.Command.Builder()
+                                    .indexname(fieldSet.getName())
+                                    .command(phraseSegmentingCommand));
             }
         } else {
             // Assume only attribute fields
@@ -392,9 +444,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             } else if (fieldSetMatching.getType().equals(Matching.Type.TEXT)) {
                 
             }
-            
         }
-       
     }
 
     private boolean hasMultiValueField(FieldSet fieldSet) {

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "operationdonecontext.h"
+#include <vespa/searchcore/proton/common/ipendinglidtracker.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/serialnum.h>
 
@@ -11,7 +12,6 @@ namespace document { class Document; }
 namespace proton {
 
 class DocIdLimit;
-class IGidToLidChangeHandler;
 
 /**
  * Context class for document put operations that acks operation when
@@ -22,22 +22,17 @@ class IGidToLidChangeHandler;
  */
 class PutDoneContext : public OperationDoneContext
 {
-    uint32_t _lid;
-    DocIdLimit *_docIdLimit;
-    IGidToLidChangeHandler &_gidToLidChangeHandler;
-    document::GlobalId _gid;
-    search::SerialNum _serialNum;
-    bool _enableNotifyPut;
+    IPendingLidTracker::Token _uncommitted;
+    uint32_t                  _lid;
+    DocIdLimit               *_docIdLimit;
     std::shared_ptr<const document::Document> _doc;
 
 public:
-    PutDoneContext(FeedToken token, IGidToLidChangeHandler &gidToLidChangeHandler,
-                   std::shared_ptr<const document::Document> doc,
-                   const document::GlobalId &gid, uint32_t lid, search::SerialNum serialNum, bool enableNotifyPut);
+    PutDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted,
+                   std::shared_ptr<const document::Document> doc, uint32_t lid);
     ~PutDoneContext() override;
 
     void registerPutLid(DocIdLimit *docIdLimit) { _docIdLimit = docIdLimit; }
 };
-
 
 }  // namespace proton

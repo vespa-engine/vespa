@@ -2,6 +2,9 @@
 package com.yahoo.vespa.model.search.test;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -90,7 +93,7 @@ public class DocumentDatabaseTestCase {
     private void assertSingleSD(String mode) {
         final List<String> sds = Arrays.asList("type1");
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, mode),
-                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+                ApplicationPackageUtils.generateSchemas(sds)).create();
         IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster)model.getSearchClusters().get(0);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         assertEquals(1, indexedSearchCluster.getDocumentDbs().size());
@@ -106,46 +109,66 @@ public class DocumentDatabaseTestCase {
     }
 
     private VespaModel createModel(List<DocType> nameAndModes, String xmlTuning) {
+        return createModel(nameAndModes, xmlTuning, null);
+    }
+    private VespaModel createModel(List<DocType> nameAndModes, String xmlTuning, DeployState.Builder builder) {
         List<String> sds = new ArrayList<>(nameAndModes.size());
         for (DocType nameAndMode : nameAndModes) {
             sds.add(nameAndMode.getType());
         }
-        return new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServicesXml(nameAndModes, xmlTuning),
-                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+        var creator = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServicesXml(nameAndModes, xmlTuning),
+                ApplicationPackageUtils.generateSchemas(sds));
+        return builder != null ? creator.create(builder) : creator.create();
     }
 
     @Test
     public void requireThatConcurrencyIsReflectedCorrectlyForDefault() {
-        verifyConcurrency("index", "", 0.40, 0.40);
-        verifyConcurrency("streaming", "", 0.8, 0.0);
-        verifyConcurrency("store-only", "", 0.8, 0.0);
+        verifyConcurrency("index", "", 0.50, 0.50);
+        verifyConcurrency("streaming", "", 1.0, 0.0);
+        verifyConcurrency("store-only", "", 1.0, 0.0);
+    }
+    @Test
+    public void requireThatFeatureFlagConcurrencyIsReflectedCorrectlyForDefault() {
+        verifyConcurrency("index", "", 0.30, 0.30, 0.3);
+        verifyConcurrency("streaming", "", 0.6, 0.0, 0.3);
+        verifyConcurrency("store-only", "", 0.8, 0.0, 0.4);
     }
     @Test
     public void requireThatMixedModeConcurrencyIsReflectedCorrectlyForDefault() {
-        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), "", 0.8, Arrays.asList(0.40, 0.0));
+        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), "", 1.0, Arrays.asList(0.50, 0.0));
     }
     @Test
     public void requireThatMixedModeConcurrencyIsReflected() {
         String feedTuning = "<feeding>" +
                 "  <concurrency>0.7</concurrency>" +
                 "</feeding>\n";
-        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), feedTuning, 0.7, Arrays.asList(0.35, 0.0));
+        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), feedTuning, 0.7, Arrays.asList(0.7, 0.0));
     }
     @Test
     public void requireThatConcurrencyIsReflected() {
         String feedTuning = "<feeding>" +
                             "  <concurrency>0.7</concurrency>" +
                             "</feeding>\n";
-        verifyConcurrency("index", feedTuning, 0.35, 0.35);
+        verifyConcurrency("index", feedTuning, 0.7, 0.7);
         verifyConcurrency("streaming", feedTuning, 0.7, 0.0);
         verifyConcurrency("store-only", feedTuning, 0.7, 0.0);
     }
+    private void verifyConcurrency(String mode, String xmlTuning, double global, double local, double featureFlagConcurrency) {
+        verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, global, Arrays.asList(local), featureFlagConcurrency);
+    }
     private void verifyConcurrency(String mode, String xmlTuning, double global, double local) {
-        verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, global, Arrays.asList(local));
+        verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, global, Arrays.asList(local), null);
     }
     private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double global, List<Double> local) {
+        verifyConcurrency(nameAndModes, xmlTuning, global, local, null);
+    }
+    private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double global, List<Double> local, Double featureFlagConcurrency) {
         assertEquals(nameAndModes.size(), local.size());
-        VespaModel model = createModel(nameAndModes, xmlTuning);
+        TestProperties properties = new TestProperties();
+        if (featureFlagConcurrency != null) {
+            properties.setFeedConcurrency(featureFlagConcurrency);
+        }
+        VespaModel model = createModel(nameAndModes, xmlTuning, new DeployState.Builder().properties(properties));
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         ProtonConfig proton = getProtonCfg(contentSearchCluster);
         assertEquals(global, proton.feeding().concurrency(), SMALL);
@@ -211,10 +234,10 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void requireThatWeCanHaveMultipleSearchDefinitions() {
-        final List<String> sds = Arrays.asList("type1", "type2", "type3");
+    public void testMultipleSchemas() {
+        List<String> sds = List.of("type1", "type2", "type3");
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, "index"),
-                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+                                                            ApplicationPackageUtils.generateSchemas(sds)).create();
         IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster)model.getSearchClusters().get(0);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         String type1Id = "test/search/cluster.test/type1";
@@ -264,7 +287,7 @@ public class DocumentDatabaseTestCase {
     public void requireThatRelevantConfigIsAvailableForClusterSearcher() {
         final List<String> sds = Arrays.asList("type1", "type2");
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, "index"),
-                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+                ApplicationPackageUtils.generateSchemas(sds)).create();
         String searcherId = "container/searchchains/chain/test/component/com.yahoo.prelude.cluster.ClusterSearcher";
 
         { // documentdb-info config
@@ -325,7 +348,7 @@ public class DocumentDatabaseTestCase {
     private void assertDocumentDBConfigAvailableForStreaming(String mode) {
         final List<String> sds = Arrays.asList("type");
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts,  createVespaServices(sds, mode),
-                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+                ApplicationPackageUtils.generateSchemas(sds)).create();
 
         DocumentdbInfoConfig dcfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test.type");
         assertEquals(1, dcfg.documentdb().size());
@@ -343,7 +366,7 @@ public class DocumentDatabaseTestCase {
                                                          List<String> documentDBConfigIds,
                                                          Map<String, List<String>> expectedAttributesMap) {
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts,  createVespaServices(sds, mode),
-                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+                ApplicationPackageUtils.generateSchemas(sds)).create();
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
 
         ProtonConfig proton = getProtonCfg(contentSearchCluster);

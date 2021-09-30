@@ -1,19 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/queryeval/multibitvectoriterator.h>
-#include <vespa/searchlib/queryeval/andsearch.h>
-#include <vespa/searchlib/queryeval/andnotsearch.h>
-#include <vespa/searchlib/queryeval/sourceblendersearch.h>
-#include <vespa/searchlib/queryeval/orsearch.h>
+#include "multibitvectoriterator.h"
+#include "andsearch.h"
+#include "andnotsearch.h"
+#include "sourceblendersearch.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
-#include <vespa/searchlib/attribute/attributeiterators.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/util/optimized.h>
+#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
 namespace search::queryeval {
 
 using vespalib::Trinary;
+using vespalib::hwaccelrated::IAccelrated;
 
 namespace {
 
@@ -21,7 +20,16 @@ template<typename Update>
 class MultiBitVectorIterator : public MultiBitVectorIteratorBase
 {
 public:
-    MultiBitVectorIterator(const Children & children) : MultiBitVectorIteratorBase(children) { }
+    explicit MultiBitVectorIterator(Children children)
+        : MultiBitVectorIteratorBase(std::move(children)),
+          _update(),
+          _accel(IAccelrated::getAccelerator()),
+          _lastWords()
+    {
+        static_assert(sizeof(_lastWords) == 64, "Lastwords should have 64 byte size");
+        static_assert(NumWordsInBatch == 8, "Batch size should be 8 words.");
+        memset(_lastWords, 0, sizeof(_lastWords));
+    }
 protected:
     void updateLastValue(uint32_t docId);
     void strictSeek(uint32_t docId);
@@ -29,33 +37,56 @@ private:
     void doSeek(uint32_t docId) override;
     Trinary is_strict() const override { return Trinary::False; }
     bool acceptExtraFilter() const override { return Update::isAnd(); }
-    Update                  _update;
+    Update              _update;
+    const IAccelrated & _accel;
+    alignas(64) Word    _lastWords[8];
+    static constexpr size_t NumWordsInBatch = sizeof(_lastWords) / sizeof(Word);
 };
 
 template<typename Update>
 class MultiBitVectorIteratorStrict : public MultiBitVectorIterator<Update>
 {
 public:
-    MultiBitVectorIteratorStrict(const MultiSearch::Children & children) : MultiBitVectorIterator<Update>(children) { }
+    explicit MultiBitVectorIteratorStrict(MultiSearch::Children  children)
+        : MultiBitVectorIterator<Update>(std::move(children))
+    { }
 private:
     void doSeek(uint32_t docId) override { this->strictSeek(docId); }
     Trinary is_strict() const override { return Trinary::True; }
+};
+
+struct And {
+    using Word = BitWord::Word;
+    void operator () (const IAccelrated & accel, size_t offset, const std::vector<std::pair<const void *, bool>> & src, void *dest) {
+        accel.and64(offset, src, dest);
+    }
+    static bool isAnd() { return true; }
+};
+
+struct Or {
+    using Word = BitWord::Word;
+    void operator () (const IAccelrated & accel, size_t offset, const std::vector<std::pair<const void *, bool>> & src, void *dest) {
+        accel.or64(offset, src, dest);
+    }
+    static bool isAnd() { return false; }
 };
 
 template<typename Update>
 void MultiBitVectorIterator<Update>::updateLastValue(uint32_t docId)
 {
     if (docId >= _lastMaxDocIdLimit) {
-        if (__builtin_expect(docId < _numDocs, true)) {
-            const uint32_t index(wordNum(docId));
-            _lastValue = _bvs[0][index];
-            for(uint32_t i(1); i < _bvs.size(); i++) {
-                _lastValue = _update(_lastValue, _bvs[i][index]);
-            }
-            _lastMaxDocIdLimit = (index + 1) * WordLen;
-        } else {
+        if (__builtin_expect(docId >= _numDocs, false)) {
             setAtEnd();
+            return;
         }
+        const uint32_t index(wordNum(docId));
+        if (docId >= _lastMaxDocIdLimitRequireFetch) {
+            uint32_t baseIndex = index & ~(NumWordsInBatch - 1);
+            _update(_accel, baseIndex*sizeof(Word), _bvs, _lastWords);
+            _lastMaxDocIdLimitRequireFetch = (baseIndex + NumWordsInBatch) * WordLen;
+        }
+        _lastValue = _lastWords[index % NumWordsInBatch];
+        _lastMaxDocIdLimit = (index + 1) * WordLen;
     }
 }
 
@@ -75,7 +106,7 @@ template<typename Update>
 void
 MultiBitVectorIterator<Update>::strictSeek(uint32_t docId)
 {
-    for (updateLastValue(docId), _lastValue=_lastValue & checkTab(docId);
+    for (updateLastValue(docId), _lastValue = _lastValue & checkTab(docId);
          (_lastValue == 0) && __builtin_expect(! isAtEnd(), true);
          updateLastValue(_lastMaxDocIdLimit));
     if (__builtin_expect(!isAtEnd(), true)) {
@@ -88,21 +119,6 @@ MultiBitVectorIterator<Update>::strictSeek(uint32_t docId)
     }
 }
 
-struct And {
-    typedef BitWord::Word Word;
-    Word operator () (const Word a, const Word b) {
-        return a & b;
-    }
-    static bool isAnd() { return true; }
-};
-
-struct Or {
-    typedef BitWord::Word Word;
-    Word operator () (const Word a, const Word b) {
-        return a | b;
-    }
-    static bool isAnd() { return false; }
-};
 
 typedef MultiBitVectorIterator<And> AndBVIterator;
 typedef MultiBitVectorIteratorStrict<And> AndBVIteratorStrict;
@@ -112,7 +128,7 @@ typedef MultiBitVectorIteratorStrict<Or> OrBVIteratorStrict;
 bool hasAtLeast2Bitvectors(const MultiSearch::Children & children)
 {
     size_t count(0);
-    for (const SearchIterator * search : children) {
+    for (const auto & search : children) {
         if (search->isBitVector()) {
             count++;
         }
@@ -133,17 +149,18 @@ bool canOptimize(const MultiSearch & s) {
 
 }
 
-MultiBitVectorIteratorBase::MultiBitVectorIteratorBase(const Children & children) :
-    MultiSearch(children),
+MultiBitVectorIteratorBase::MultiBitVectorIteratorBase(Children children) :
+    MultiSearch(std::move(children)),
     _numDocs(std::numeric_limits<unsigned int>::max()),
-    _lastValue(0),
     _lastMaxDocIdLimit(0),
+    _lastMaxDocIdLimitRequireFetch(0),
+    _lastValue(0),
     _bvs()
 {
-    _bvs.reserve(children.size());
-    for (size_t i(0); i < children.size(); i++) {
-        const auto * bv = static_cast<const BitVectorIterator *>(children[i]);
-        _bvs.emplace_back(reinterpret_cast<const Word *>(bv->getBitValues()), bv->isInverted());
+    _bvs.reserve(getChildren().size());
+    for (const auto & child : getChildren()) {
+        const auto * bv = static_cast<const BitVectorIterator *>(child.get());
+        _bvs.emplace_back(bv->getBitValues(), bv->isInverted());
         _numDocs = std::min(_numDocs, bv->getDocIdLimit());
     }
 }
@@ -155,6 +172,7 @@ MultiBitVectorIteratorBase::initRange(uint32_t beginId, uint32_t endId)
 {
     MultiSearch::initRange(beginId, endId);
     _lastMaxDocIdLimit = 0;
+    _lastMaxDocIdLimitRequireFetch = 0;
 }
 
 SearchIterator::UP
@@ -163,9 +181,10 @@ MultiBitVectorIteratorBase::andWith(UP filter, uint32_t estimate)
     (void) estimate;
     if (filter->isBitVector() && acceptExtraFilter()) {
         const auto & bv = static_cast<const BitVectorIterator &>(*filter);
-        _bvs.emplace_back(reinterpret_cast<const Word *>(bv.getBitValues()), bv.isInverted());
+        _bvs.emplace_back(bv.getBitValues(), bv.isInverted());
         insert(getChildren().size(), std::move(filter));
         _lastMaxDocIdLimit = 0;  // force reload
+        _lastMaxDocIdLimitRequireFetch = 0;
     }
     return filter;
 }
@@ -177,7 +196,9 @@ MultiBitVectorIteratorBase::doUnpack(uint32_t docid)
         MultiSearch::doUnpack(docid);
     } else {
         auto &children = getChildren();
-        _unpackInfo.each([&children,docid](size_t i){children[i]->doUnpack(docid);}, children.size());
+        _unpackInfo.each([&children,docid](size_t i) {
+                static_cast<BitVectorIterator *>(children[i].get())->unpack(docid);
+            }, children.size());
     }
 }
 
@@ -216,7 +237,7 @@ MultiBitVectorIteratorBase::optimizeMultiSearch(SearchIterator::UP parentIt)
                 if ( ! strict && (bit->is_strict() == Trinary::True)) {
                     strict = true;
                 }
-                stolen.push_back(bit.release());
+                stolen.push_back(std::move(bit));
             } else {
                 it++;
             }
@@ -224,21 +245,21 @@ MultiBitVectorIteratorBase::optimizeMultiSearch(SearchIterator::UP parentIt)
         SearchIterator::UP next;
         if (parent.isAnd()) {
             if (strict) {
-                next = std::make_unique<AndBVIteratorStrict>(stolen);
+                next = std::make_unique<AndBVIteratorStrict>(std::move(stolen));
             } else {
-                next = std::make_unique<AndBVIterator>(stolen);
+                next = std::make_unique<AndBVIterator>(std::move(stolen));
             }
         } else if (parent.isOr()) {
             if (strict) {
-                next = std::make_unique<OrBVIteratorStrict>(stolen);
+                next = std::make_unique<OrBVIteratorStrict>(std::move(stolen));
             } else {
-                next = std::make_unique<OrBVIterator>(stolen);
+                next = std::make_unique<OrBVIterator>(std::move(stolen));
             }
         } else if (parent.isAndNot()) {
             if (strict) {
-                next = std::make_unique<OrBVIteratorStrict>(stolen);
+                next = std::make_unique<OrBVIteratorStrict>(std::move(stolen));
             } else {
-                next = std::make_unique<OrBVIterator>(stolen);
+                next = std::make_unique<OrBVIterator>(std::move(stolen));
             }
         }
         auto & nextM(static_cast<MultiBitVectorIteratorBase &>(*next));
@@ -252,8 +273,8 @@ MultiBitVectorIteratorBase::optimizeMultiSearch(SearchIterator::UP parentIt)
         }
     }
     auto & toOptimize(const_cast<MultiSearch::Children &>(parent.getChildren()));
-    for (SearchIterator * & search : toOptimize) {
-        search = optimize(MultiSearch::UP(search)).release();
+    for (auto & search : toOptimize) {
+        search = optimize(std::move(search));
     }
 
     return parentIt;

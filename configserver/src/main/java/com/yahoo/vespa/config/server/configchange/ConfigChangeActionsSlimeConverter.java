@@ -10,7 +10,6 @@ import java.util.Set;
  * Class used to convert a ConfigChangeActions instance to Slime.
  *
  * @author geirst
- * @since 5.44
  */
 public class ConfigChangeActionsSlimeConverter {
     private final ConfigChangeActions actions;
@@ -23,6 +22,7 @@ public class ConfigChangeActionsSlimeConverter {
         Cursor actionsCursor = root.setObject("configChangeActions");
         restartActionsToSlime(actionsCursor);
         refeedActionsToSlime(actionsCursor);
+        reindexActionsToSlime(actionsCursor);
     }
 
     private void restartActionsToSlime(Cursor actionsCursor) {
@@ -42,7 +42,18 @@ public class ConfigChangeActionsSlimeConverter {
         for (RefeedActions.Entry entry : actions.getRefeedActions().getEntries()) {
             Cursor entryCursor = refeedCursor.addObject();
             entryCursor.setString("name", entry.name());
-            entryCursor.setBool("allowed", entry.allowed());
+            entryCursor.setString("documentType", entry.getDocumentType());
+            entryCursor.setString("clusterName", entry.getClusterName());
+            messagesToSlime(entryCursor, entry.getMessages());
+            servicesToSlime(entryCursor, entry.getServices());
+        }
+    }
+
+    private void reindexActionsToSlime(Cursor actionsCursor) {
+        Cursor refeedCursor = actionsCursor.setArray("reindex");
+        for (ReindexActions.Entry entry : actions.getReindexActions().getEntries()) {
+            Cursor entryCursor = refeedCursor.addObject();
+            entryCursor.setString("name", entry.name());
             entryCursor.setString("documentType", entry.getDocumentType());
             entryCursor.setString("clusterName", entry.getClusterName());
             messagesToSlime(entryCursor, entry.getMessages());

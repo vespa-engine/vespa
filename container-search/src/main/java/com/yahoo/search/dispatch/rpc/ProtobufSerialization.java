@@ -101,7 +101,7 @@ public class ProtobufSerialization {
             mergeToSearchRequestFromSorting(ranking.getSorting(), builder);
         }
         if (ranking.getLocation() != null) {
-            builder.setGeoLocation(ranking.getLocation().toString());
+            builder.setGeoLocation(ranking.getLocation().backendString());
         }
 
         var featureMap = ranking.getFeatures().asMap();
@@ -144,7 +144,7 @@ public class ProtobufSerialization {
         builder.setRankProfile(ranking.getProfile());
 
         if (ranking.getLocation() != null) {
-            builder.setGeoLocation(ranking.getLocation().toString());
+            builder.setGeoLocation(ranking.getLocation().backendString());
         }
         if (includeQueryData) {
             mergeQueryDataToDocsumRequest(query, builder);
@@ -196,7 +196,7 @@ public class ProtobufSerialization {
         result.getResult().setTotalHitCount(protobuf.getTotalHitCount());
         result.getResult().setCoverage(convertToCoverage(protobuf));
 
-        var haveGrouping = protobuf.getGroupingBlob() != null && !protobuf.getGroupingBlob().isEmpty();
+        var haveGrouping = ! protobuf.getGroupingBlob().isEmpty();
         if (haveGrouping) {
             BufferSerializer buf = new BufferSerializer(new GrowableByteBuffer(protobuf.getGroupingBlob().asReadOnlyByteBuffer()));
             int cnt = buf.getInt(null);
@@ -214,12 +214,12 @@ public class ProtobufSerialization {
         for (var replyHit : protobuf.getHitsList()) {
             LeanHit hit = (replyHit.getSortData().isEmpty())
                     ? new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getRelevance())
-                    : new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getSortData().toByteArray());
+                    : new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getRelevance(), replyHit.getSortData().toByteArray());
             result.getLeanHits().add(hit);
         }
 
         var slimeTrace = protobuf.getSlimeTrace();
-        if (slimeTrace != null && !slimeTrace.isEmpty()) {
+        if ( ! slimeTrace.isEmpty()) {
             var traces = new Value.ArrayValue();
             traces.add(new SlimeAdapter(BinaryFormat.decode(slimeTrace.toByteArray()).get()));
             query.trace(traces, query.getTraceLevel());

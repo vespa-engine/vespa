@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -76,10 +77,7 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     }
 
     private TensorType type(TensorType type) {
-        TensorType.Builder builder = new TensorType.Builder(type.valueType());
-        for (TensorType.Dimension dimension : type.dimensions())
-            builder.dimension(dimension.withName(fromToMap.getOrDefault(dimension.name(), dimension.name())));
-        return builder.build();
+        return TypeResolver.rename(type, fromDimensions, toDimensions);
     }
 
     @Override

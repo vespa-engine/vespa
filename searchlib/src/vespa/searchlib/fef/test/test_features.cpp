@@ -3,6 +3,8 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include "test_features.h"
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/stash.h>
+
 
 using vespalib::eval::DoubleValue;
 using vespalib::eval::ValueType;

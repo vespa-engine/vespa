@@ -7,6 +7,4 @@ vespa_add_library(storage_distributormaintenance OBJECT
     simplebucketprioritydatabase.cpp
     simplemaintenancescanner.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )

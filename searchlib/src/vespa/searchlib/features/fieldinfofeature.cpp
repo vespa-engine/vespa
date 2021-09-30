@@ -7,12 +7,11 @@
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/fieldtype.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
-#include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/handle.h>
+#include <vespa/vespalib/util/stash.h>
 #include <sstream>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 IndexFieldInfoExecutor::IndexFieldInfoExecutor(feature_t type, feature_t isFilter,
                                                [[maybe_unused]] uint32_t field, uint32_t fieldHandle)
@@ -238,5 +237,4 @@ FieldInfoBlueprint::createExecutor(const fef::IQueryEnvironment &queryEnv, vespa
     return stash.create<ValueExecutor>(values);
 }
 
-} // namespace features
-} // namespace search
+}

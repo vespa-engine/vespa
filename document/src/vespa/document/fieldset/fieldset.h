@@ -15,19 +15,18 @@ class Document;
 class FieldSet
 {
 public:
-    enum Type {
+    enum class Type {
         FIELD,
         SET,
         ALL,
         NONE,
-        HEADER, // Special collection used by VDS
-        BODY,   // Special collection used by VDS
         DOCID
     };
 
-    typedef std::unique_ptr<FieldSet> UP;
+    using SP = std::shared_ptr<FieldSet>;
+    using UP = std::unique_ptr<FieldSet>;
 
-    virtual ~FieldSet() {};
+    virtual ~FieldSet() = default;
 
     /**
      * @return Return true if all the fields in "fields" are contained in
@@ -41,11 +40,6 @@ public:
     virtual Type getType() const = 0;
 
     /**
-     * @return Returns a copy of this object.
-     */
-    virtual FieldSet* clone() const = 0;
-
-    /**
      * Copy all fields from src into dest that are contained within the
      * given field set. If any copied field pre-exists in dest, it will
      * be overwritten.
@@ -54,9 +48,7 @@ public:
      * needs to only contain fields matching a given field set and can
      * readily be modified in-place.
      */
-    static void copyFields(Document& dest,
-                           const Document& src,
-                           const FieldSet& fields);
+    static void copyFields(Document& dest, const Document& src, const FieldSet& fields);
 
     /**
      * Creates a copy of document src containing only the fields given by
@@ -64,16 +56,13 @@ public:
      * See comment for copyFields() for performance notes.
      * @return The new, (partially) copied document instance.
      */
-    static std::unique_ptr<Document> createDocumentSubsetCopy(
-            const Document& src,
-            const FieldSet& fields);
+    static std::unique_ptr<Document> createDocumentSubsetCopy(const Document& src, const FieldSet& fields);
 
     /**
      * Strip all fields _except_ the ones that are contained within the
      * fieldsToKeep fieldset. Modifies original document in-place.
      */
-    static void stripFields(Document& doc,
-                            const FieldSet& fieldsToKeep);
+    static void stripFields(Document& doc, const FieldSet& fieldsToKeep);
 };
 
 }

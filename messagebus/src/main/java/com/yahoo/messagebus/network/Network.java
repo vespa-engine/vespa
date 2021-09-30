@@ -9,22 +9,22 @@ import java.util.List;
 
 /**
  * This interface separates the low-level network implementation from the rest of messagebus. The methods defined in
- * this interface is intended to be invoked by MessageBus and not by the application.
+ * this interface are intended to be invoked by MessageBus and not by the application.
  *
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author havardpe
  */
 public interface Network {
 
     /**
      * Waits for at most the given number of seconds for all dependencies to become ready.
      *
-     * @param seconds The timeout.
-     * @return True if ready.
+     * @param seconds the timeout
+     * @return true if ready
      */
     boolean waitUntilReady(double seconds);
 
     /**
-     * Attach the network layer to the given owner
+     * Attach the network layer to the given owner.
      *
      * @param owner owner of the network
      */
@@ -49,8 +49,8 @@ public interface Network {
      * resolved, this method tags the node with an error. If this method succeeds, you need to invoke {@link
      * #freeServiceAddress(RoutingNode)} once you are done with the service address.
      *
-     * @param recipient The node whose service address to allocate.
-     * @return True if a service address was allocated.
+     * @param recipient the node whose service address to allocate
+     * @return true if a service address was allocated
      */
     boolean allocServiceAddress(RoutingNode recipient);
 
@@ -58,15 +58,15 @@ public interface Network {
      * Frees the service address from the given routing node. This allows the network layer to track and close
      * connections as required.
      *
-     * @param recipient The node whose service address to free.
+     * @param recipient the node whose service address to free
      */
     void freeServiceAddress(RoutingNode recipient);
 
     /**
      * Send a message to the given recipients. A {@link RoutingNode} contains all the necessary context for sending.
      *
-     * @param msg        The message to send.
-     * @param recipients A list of routing leaf nodes resolved for the message.
+     * @param msg        the message to send
+     * @param recipients a list of routing leaf nodes resolved for the message
      */
     void send(Message msg, List<RoutingNode> recipients);
 
@@ -78,24 +78,16 @@ public interface Network {
      */
     void sync();
 
-    /**
-     * Shuts down the network. This is a blocking call that waits for all scheduled tasks to complete.
-     */
+    /** Shuts down the network. This is a blocking call that waits for all scheduled tasks to complete. */
     void shutdown();
 
     /**
-     * Returns a string that represents the connection specs of this network. It is in not a complete address since it
-     * know nothing of the sessions that run on it.
-     *
-     * @return The connection string.
+     * Returns a string that represents the connection specs of this network.
+     * It is in not a complete address since it know nothing of the sessions that run on it.
      */
     String getConnectionSpec();
 
-    /**
-     * Returns a reference to a name server mirror.
-     *
-     * @return The mirror object.
-     */
+    /** Returns a reference to a name server mirror. */
     IMirror getMirror();
 
 }

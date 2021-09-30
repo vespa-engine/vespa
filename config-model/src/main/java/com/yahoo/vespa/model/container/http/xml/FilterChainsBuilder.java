@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.http.xml;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ChainsBuilder;
@@ -27,8 +26,9 @@ public class FilterChainsBuilder extends DomChainsBuilder<Filter, Chain<Filter>,
             Collections.singleton(ComponentType.filter);
 
     private static final Map<String, Class<? extends DomChainBuilderBase<? extends Filter, ? extends Chain<Filter>>>> chainType2BuilderClass =
-            ImmutableMap.of("request-chain", FilterChainBuilder.class,
-                            "response-chain", FilterChainBuilder.class);
+            Map.of(
+                    HttpBuilder.REQUEST_CHAIN_TAG_NAME, FilterChainBuilder.class,
+                    HttpBuilder.RESPONSE_CHAIN_TAG_NAME, FilterChainBuilder.class);
 
     public FilterChainsBuilder() {
         super(null, allowedComponentTypes, null);

@@ -64,7 +64,28 @@ public:
      * given bucket.
      */
     struct BucketOrderCmp {
-        bool operator()(const GlobalId &lhs, const GlobalId &rhs) const;
+        bool operator()(const GlobalId &lhs, const GlobalId &rhs) const {
+            const uint32_t * __restrict__ a = lhs._gid._nums;
+            const uint32_t * __restrict__ b = rhs._gid._nums;
+            if (a[0] != b[0]) {
+                return bitswap(a[0]) < bitswap(b[0]);
+            }
+            if (a[2] != b[2]) {
+                return bitswap(a[2]) < bitswap(b[2]);
+            }
+            return __builtin_bswap32(a[1]) < __builtin_bswap32(b[1]);
+        }
+        static uint32_t bitswap(uint32_t value) {
+            value = ((value & 0x55555555) << 1) | ((value & 0xaaaaaaaa) >> 1);
+            value = ((value & 0x33333333) << 2) | ((value & 0xcccccccc) >> 2);
+            value = ((value & 0x0f0f0f0f) << 4) | ((value & 0xf0f0f0f0) >> 4);
+            return __builtin_bswap32(value);
+        }
+        // Return most significant 32 bits of gid key
+        static uint32_t gid_key32(const GlobalId &gid) {
+            return bitswap(gid._gid._nums[0]);
+        }
+
         //These 2 compare methods are exposed only for testing
         static int compareRaw(unsigned char a, unsigned char b) {
             return a - b;
@@ -77,7 +98,7 @@ public:
     /**
      * Constructs a new global id with all 0 bits.
      */
-    GlobalId() { set("\0\0\0\0\0\0\0\0\0\0\0\0"); }
+    GlobalId() noexcept { set("\0\0\0\0\0\0\0\0\0\0\0\0"); }
 
 
 
@@ -87,9 +108,9 @@ public:
      *
      * @param gid The address to the data to copy.
      */
-    explicit GlobalId(const void *gid) { set(gid); }
+    explicit GlobalId(const void *gid) noexcept { set(gid); }
 
-    GlobalId(const GlobalId &rhs) = default;
+    GlobalId(const GlobalId &rhs) noexcept = default;
 
     /**
      * Implements the assignment operator.
@@ -97,7 +118,7 @@ public:
      * @param other The global id whose value to copy to this.
      * @return This.
      */
-    GlobalId& operator=(const GlobalId& other) { memcpy(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)); return *this; }
+    GlobalId& operator=(const GlobalId& other) noexcept { memcpy(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)); return *this; }
 
     /**
      * Implements the equality operator.
@@ -105,7 +126,7 @@ public:
      * @param other The global id to compare to.
      * @return True if this equals the other, false otherwise.
      */
-    bool operator==(const GlobalId& other) const { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) == 0); }
+    bool operator==(const GlobalId& other) const noexcept { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) == 0); }
 
     /**
      * Implements the inequality operator.
@@ -113,7 +134,7 @@ public:
      * @param other The global id to compare to.
      * @return True if this does NOT equal the other, false otherwise.
      */
-    bool operator!=(const GlobalId& other) const { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) != 0); }
+    bool operator!=(const GlobalId& other) const noexcept { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) != 0); }
 
     /**
      * Implements the less-than operator. If you intend to map global ids in such a way that they can
@@ -123,14 +144,14 @@ public:
      * @param other The global id to compare to.
      * @return True if comparing the bits of this to the other yields a negative result.
      */
-    bool operator<(const GlobalId& other) const { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) < 0); }
+    bool operator<(const GlobalId& other) const noexcept { return (memcmp(_gid._buffer, other._gid._buffer, sizeof(_gid._buffer)) < 0); }
 
     /**
      * Copies the first LENGTH bytes from the given address into the internal byte array.
      *
      * @param id The bytes to set.
      */
-    void set(const void *id) { memcpy(_gid._buffer, id, sizeof(_gid._buffer)); }
+    void set(const void *id) noexcept { memcpy(_gid._buffer, id, sizeof(_gid._buffer)); }
 
     /**
      * Returns the raw byte array that constitutes this global id.

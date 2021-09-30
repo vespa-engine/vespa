@@ -3,10 +3,10 @@
 #pragma once
 
 #include "i_gid_to_lid_change_handler.h"
+#include "pending_gid_to_lid_change.h"
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vector>
 #include <mutex>
-#include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/document/base/globalid.h>
 
 namespace searchcorespi { namespace index { struct IThreadService; } }
 
@@ -41,28 +41,30 @@ class GidToLidChangeHandler : public std::enable_shared_from_this<GidToLidChange
     };
 
     std::mutex _lock;
-    Listeners _listeners;
-    bool _closed;
+    Listeners  _listeners;
+    bool       _closed;
     vespalib::hash_map<GlobalId, PendingRemoveEntry, GlobalId::hash> _pendingRemove;
+    std::vector<PendingGidToLidChange> _pending_changes;
 
-    void notifyPutDone(GlobalId gid, uint32_t lid);
-    void notifyRemove(GlobalId gid);
+    void notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid);
+    void notifyRemove(IDestructorCallbackSP context, GlobalId gid);
 public:
     GidToLidChangeHandler();
-    virtual ~GidToLidChangeHandler();
+    ~GidToLidChangeHandler() override;
 
-    virtual void notifyPutDone(GlobalId gid, uint32_t lid, SerialNum serialNum) override;
-    virtual void notifyRemove(GlobalId gid, SerialNum serialNum) override;
-    virtual void notifyRemoveDone(GlobalId gid, SerialNum serialNum) override;
+    void notifyPut(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serial_num) override;
+    void notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serialNum);
+    void notifyRemove(IDestructorCallbackSP context, GlobalId gid, SerialNum serialNum) override;
+    void notifyRemoveDone(GlobalId gid, SerialNum serialNum);
+    std::unique_ptr<IPendingGidToLidChanges> grab_pending_changes() override;
 
     /**
      * Close handler, further notifications are blocked.
      */
     void close();
 
-    virtual void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override;
-    virtual void removeListeners(const vespalib::string &docTypeName,
-                                 const std::set<vespalib::string> &keepNames) override;
+    void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override;
+    void removeListeners(const vespalib::string &docTypeName, const std::set<vespalib::string> &keepNames) override;
 };
 
 } // namespace proton

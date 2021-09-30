@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "onnx_models.h"
+#include "ranking_expressions.h"
 #include "i_constant_value_repo.h"
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
@@ -25,6 +27,10 @@ private:
     std::vector<search::fef::FieldInfo> _fields;
     mutable FeatureMotivation           _motivation;
     const IConstantValueRepo           &_constantValueRepo;
+    RankingExpressions                  _rankingExpressions;
+    OnnxModels                          _onnxModels;
+    uint32_t                            _distributionKey;
+
 
     /**
      * Extract field information from the given schema and populate
@@ -38,13 +44,19 @@ public:
      * Sets up this index environment based on the given schema and
      * properties.
      *
+     * @param distributionKey the distribution key for this node.
      * @param schema the index schema
      * @param props config
      * @param constantValueRepo repo used to access constant values for ranking
+     * @param rankingExpressions processed config about ranking expressions
+     * @param onnxModels processed config about onnx models
      **/
-    IndexEnvironment(const search::index::Schema &schema,
+    IndexEnvironment(uint32_t distributionKey,
+                     const search::index::Schema &schema,
                      const search::fef::Properties &props,
-                     const IConstantValueRepo &constantValueRepo);
+                     const IConstantValueRepo &constantValueRepo,
+                     RankingExpressions rankingExpressions,
+                     OnnxModels onnxModels);
 
     const search::fef::Properties &getProperties() const override;
     uint32_t getNumFields() const override;
@@ -55,11 +67,14 @@ public:
     void hintFeatureMotivation(FeatureMotivation motivation) const override;
     void hintFieldAccess(uint32_t fieldId) const override;
     void hintAttributeAccess(const string &name) const override;
+    uint32_t getDistributionKey() const override { return _distributionKey; }
 
     vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override {
         return _constantValueRepo.getConstant(name);
     }
+    vespalib::string getRankingExpression(const vespalib::string &name) const override;
 
+    const search::fef::OnnxModel *getOnnxModel(const vespalib::string &name) const override;
     ~IndexEnvironment() override;
 };
 

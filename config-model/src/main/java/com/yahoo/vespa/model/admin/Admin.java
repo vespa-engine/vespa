@@ -1,6 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
@@ -9,12 +10,14 @@ import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.ConfigProxy;
 import com.yahoo.vespa.model.ConfigSentinel;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Logd;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster;
@@ -23,7 +26,6 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProvider;
-import com.yahoo.vespa.model.filedistribution.FileDistributor;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -31,7 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.vespa.model.admin.monitoring.MetricSet.emptyMetricSet;
+import static com.yahoo.vespa.model.admin.monitoring.MetricSet.empty;
 
 /**
  * This is the admin pseudo-plugin of the Vespa model, responsible for
@@ -39,7 +41,7 @@ import static com.yahoo.vespa.model.admin.monitoring.MetricSet.emptyMetricSet;
  *
  * @author gjoranv
  */
-public class Admin extends AbstractConfigProducer implements Serializable {
+public class Admin extends AbstractConfigProducer<Admin> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -49,7 +51,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
     private final Metrics metrics;
     private MetricsProxyContainerCluster metricsProxyCluster;
-    private MetricSet additionalDefaultMetrics = emptyMetricSet();
+    private MetricSet additionalDefaultMetrics = empty();
 
     private final List<Slobrok> slobroks = new ArrayList<>();
     private Configserver defaultConfigserver;
@@ -58,11 +60,13 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     private Logserver logserver;
 
     private LogForwarder.Config logForwarderConfig = null;
+    private boolean logForwarderIncludeAdmin = false;
 
-    private ApplicationType applicationType = ApplicationType.DEFAULT;
+    private final ApplicationType applicationType;
 
-    public void setLogForwarderConfig(LogForwarder.Config cfg) {
+    public void setLogForwarderConfig(LogForwarder.Config cfg, boolean includeAdmin) {
         this.logForwarderConfig = cfg;
+        this.logForwarderIncludeAdmin = includeAdmin;
     }
 
     /**
@@ -75,21 +79,22 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     private Optional<LogserverContainerCluster> logServerContainerCluster = Optional.empty();
 
     private ZooKeepersConfigProvider zooKeepersConfigProvider;
-    private FileDistributionConfigProducer fileDistribution;
+    private final FileDistributionConfigProducer fileDistribution;
     private final boolean multitenant;
 
-    public Admin(AbstractConfigProducer parent,
+    public Admin(AbstractConfigProducer<?> parent,
                  Monitoring monitoring,
                  Metrics metrics,
                  boolean multitenant,
-                 FileDistributionConfigProducer fileDistributionConfigProducer,
-                 boolean isHostedVespa) {
+                 boolean isHostedVespa,
+                 ApplicationType applicationType) {
         super(parent, "admin");
         this.isHostedVespa = isHostedVespa;
         this.monitoring = monitoring;
         this.metrics = metrics;
         this.multitenant = multitenant;
-        this.fileDistribution = fileDistributionConfigProducer;
+        this.fileDistribution = new FileDistributionConfigProducer(parent);
+        this.applicationType = applicationType;
     }
 
     public Configserver getConfigserver() { return defaultConfigserver; }
@@ -105,6 +110,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         return metricsProxyCluster;
     }
 
+    /** Used by model amenders */
     public void setAdditionalDefaultMetrics(MetricSet additionalDefaultMetrics) {
         if (additionalDefaultMetrics == null) return;
         this.additionalDefaultMetrics = additionalDefaultMetrics;
@@ -141,9 +147,30 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
     public ClusterControllerContainerCluster getClusterControllers() { return clusterControllers; }
 
-    public void setClusterControllers(ClusterControllerContainerCluster clusterControllers) {
-        if (multitenant) throw new RuntimeException("Should not use admin cluster controller in a multitenant environment");
+    public void setClusterControllers(ClusterControllerContainerCluster clusterControllers, DeployState deployState) {
         this.clusterControllers = clusterControllers;
+        if (isHostedVespa) {
+            // Prefer to put Slobroks on the admin cluster running cluster controllers to avoid unnecessary
+            // movement of the slobroks when there are changes to the content cluster nodes
+            removeSlobroks();
+            addSlobroks(createSlobroksOn(clusterControllers, deployState));
+        }
+    }
+
+    private void removeSlobroks() {
+        slobroks.forEach(Slobrok::remove);
+        slobroks.clear();
+    }
+
+    private List<Slobrok> createSlobroksOn(ClusterControllerContainerCluster clusterControllers, DeployState deployState) {
+        List<Slobrok> slobroks = new ArrayList<>();
+        for (ClusterControllerContainer clusterController : clusterControllers.getContainers()) {
+            Slobrok slobrok = new Slobrok(this, clusterController.index(), deployState.featureFlags());
+            slobrok.setHostResource(clusterController.getHostResource());
+            slobroks.add(slobrok);
+            slobrok.initService(deployState.getDeployLogger());
+        }
+        return slobroks;
     }
 
     public Optional<LogserverContainerCluster> getLogServerContainerCluster() { return logServerContainerCluster; }
@@ -186,27 +213,15 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         return fileDistribution;
     }
 
-    public List<HostResource> getClusterControllerHosts() {
-        List<HostResource> hosts = new ArrayList<>();
-        if (multitenant) {
-            if (logserver != null)
-                hosts.add(logserver.getHostResource());
-        } else {
-            for (Configserver configserver : getConfigservers()) {
-                hosts.add(configserver.getHostResource());
-            }
-        }
-        return hosts;
-    }
-
     /**
      * Adds services to all hosts in the system.
      */
     public void addPerHostServices(List<HostResource> hosts, DeployState deployState) {
         if (slobroks.isEmpty()) // TODO: Move to caller
-            slobroks.addAll(createDefaultSlobrokSetup(deployState.getDeployLogger()));
+            slobroks.addAll(createDefaultSlobrokSetup(deployState));
 
-        addMetricsProxyCluster(hosts, deployState);
+        if (! deployState.isHosted() || ! deployState.getProperties().applicationId().instance().isTester())
+            addMetricsProxyCluster(hosts, deployState);
 
         for (HostResource host : hosts) {
             if (!host.getHost().runsConfigServer()) {
@@ -221,24 +236,38 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         for (var host : hosts) {
             // Send hostname to be used in configId (instead of index), as the sorting of hosts seems to be unstable
             // between config changes, even when the set of hosts is unchanged.
-            var container = new MetricsProxyContainer(metricsProxyCluster, host.getHostname(), index, deployState.isHosted());
+            var container = new MetricsProxyContainer(metricsProxyCluster, host, index, deployState);
             addAndInitializeService(deployState.getDeployLogger(), host, container);
             metricsProxyCluster.addContainer(container);
         }
     }
 
     private void addCommonServices(HostResource host, DeployState deployState) {
-        addConfigSentinel(deployState.getDeployLogger(), host, deployState.getProperties().applicationId(), deployState.zone());
+        addConfigSentinel(deployState.getDeployLogger(), host, deployState.getProperties().applicationId(), deployState.zone(),
+                          deployState.featureFlags());
         addLogd(deployState.getDeployLogger(), host);
         addConfigProxy(deployState.getDeployLogger(), host);
         addFileDistribution(host);
         if (logForwarderConfig != null) {
-            addLogForwarder(deployState.getDeployLogger(), host);
+            boolean actuallyAdd = true;
+            var membership = host.spec().membership();
+            if (membership.isPresent()) {
+                var clustertype = membership.get().cluster().type();
+                // XXX should skip only if this.isHostedVespa is true?
+                if (clustertype == ClusterSpec.Type.admin) {
+                    actuallyAdd = logForwarderIncludeAdmin;
+                }
+            }
+            if (actuallyAdd) {
+                addLogForwarder(deployState.getDeployLogger(), host);
+            }
         }
     }
 
-    private void addConfigSentinel(DeployLogger deployLogger, HostResource host, ApplicationId applicationId, Zone zone) {
-        ConfigSentinel configSentinel = new ConfigSentinel(host.getHost(), applicationId, zone);
+    private void addConfigSentinel(DeployLogger deployLogger, HostResource host,
+                                   ApplicationId applicationId, Zone zone, ModelContext.FeatureFlags featureFlags)
+    {
+        ConfigSentinel configSentinel = new ConfigSentinel(host.getHost(), applicationId, zone, featureFlags);
         addAndInitializeService(deployLogger, host, configSentinel);
         host.getHost().setConfigSentinel(configSentinel);
     }
@@ -261,26 +290,17 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     }
 
     private void addFileDistribution(HostResource host) {
-        FileDistributor fileDistributor = fileDistribution.getFileDistributor();
-        HostResource hostResource = hostSystem().getHostByHostname(fileDistributor.fileSourceHost());
-        if (hostResource == null && ! multitenant)
-            throw new IllegalArgumentException("Could not find " + host + " in the application's " + hostSystem());
-
-        FileDistributionConfigProvider configProvider =
-                new FileDistributionConfigProvider(fileDistribution,
-                                                   fileDistributor,
-                                                   host == hostResource,
-                                                   host.getHost());
+        FileDistributionConfigProvider configProvider = new FileDistributionConfigProvider(fileDistribution, host.getHost());
         fileDistribution.addFileDistributionConfigProducer(host.getHost(), configProvider);
     }
 
     // If not configured by user: Use default setup: max 3 slobroks, 1 on the default configserver host
-    private List<Slobrok> createDefaultSlobrokSetup(DeployLogger deployLogger) {
+    private List<Slobrok> createDefaultSlobrokSetup(DeployState deployState) {
         List<HostResource> hosts = hostSystem().getHosts();
         List<Slobrok> slobs = new ArrayList<>();
         if (logserver != null) {
-            Slobrok slobrok = new Slobrok(this, 0);
-            addAndInitializeService(deployLogger, logserver.getHostResource(), slobrok);
+            Slobrok slobrok = new Slobrok(this, 0, deployState.featureFlags());
+            addAndInitializeService(deployState.getDeployLogger(), logserver.getHostResource(), slobrok);
             slobs.add(slobrok);
         }
 
@@ -288,8 +308,8 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         while ((n < hosts.size()) && (slobs.size() < 3)) {
             HostResource host = hosts.get(n);
             if ((logserver== null || host != logserver.getHostResource()) && ! host.getHost().runsConfigServer()) {
-                Slobrok newSlobrok = new Slobrok(this, slobs.size());
-                addAndInitializeService(deployLogger, host, newSlobrok);
+                Slobrok newSlobrok = new Slobrok(this, slobs.size(), deployState.featureFlags());
+                addAndInitializeService(deployState.getDeployLogger(), host, newSlobrok);
                 slobs.add(newSlobrok);
             }
             n++;
@@ -304,10 +324,6 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
     public boolean multitenant() {
         return multitenant;
-    }
-
-    public void setApplicationType(ApplicationType applicationType) {
-        this.applicationType = applicationType;
     }
 
     public ApplicationType getApplicationType() { return applicationType; }

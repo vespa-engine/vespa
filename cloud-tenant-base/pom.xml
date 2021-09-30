@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>cloud-tenant-base</artifactId>
+    <name>Vespa Cloud tenant base</name>
+    <version>7-SNAPSHOT</version>
+    <description>Parent POM for all Vespa Cloud applications.</description>
+    <url>https://github.com/vespa-engine</url>
+    <packaging>pom</packaging>
+
+    <parent>
+        <artifactId>hosted-tenant-base</artifactId>
+        <groupId>com.yahoo.vespa</groupId>
+        <version>7-SNAPSHOT</version>
+        <relativePath>../hosted-tenant-base/pom.xml</relativePath>
+    </parent>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Vespa</name>
+            <url>https://github.com/vespa-engine</url>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git@github.com:vespa-engine/vespa.git</connection>
+        <developerConnection>scm:git:git@github.com:vespa-engine/vespa.git</developerConnection>
+        <url>git@github.com:vespa-engine/vespa.git</url>
+    </scm>
+
+    <properties>
+        <endpoint>https://api.vespa-external.aws.oath.cloud:4443</endpoint>
+        <extraTestBundleScopeOverrides>
+            com.yahoo.vespa:cloud-tenant-cd:provided
+        </extraTestBundleScopeOverrides>
+    </properties>
+
+
+    <dependencies>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>cloud-tenant-cd</artifactId>
+            <version>${vespaversion}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>

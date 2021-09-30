@@ -1,15 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visitormetricsset.h"
-#include <vespa/metrics/loadmetric.hpp>
-#include <vespa/metrics/summetric.hpp>
 
 namespace storage {
 
 using metrics::MetricSet;
 
 VisitorMetricSet::VisitorMetricSet(MetricSet* owner)
-    : PersistenceOperationMetricSet("visitor", owner),
+    : PersistenceOperationMetricSet("visitor.sum", owner),
       buckets_per_visitor("buckets_per_visitor", {},
                           "The number of sub buckets visited as part of a "
                           "single client visitor command", this),
@@ -22,7 +20,7 @@ VisitorMetricSet::VisitorMetricSet(MetricSet* owner)
 {
 }
 
-VisitorMetricSet::~VisitorMetricSet() { }
+VisitorMetricSet::~VisitorMetricSet() = default;
 
 MetricSet *
 VisitorMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
@@ -35,6 +33,3 @@ VisitorMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
 }
 
 }
-
-template class metrics::LoadMetric<storage::VisitorMetricSet>;
-template class metrics::SumMetric<storage::VisitorMetricSet>;

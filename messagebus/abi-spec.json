@@ -64,9 +64,23 @@
     ],
     "fields": []
   },
+  "com.yahoo.messagebus.Connectable": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void connect()"
+    ],
+    "fields": []
+  },
   "com.yahoo.messagebus.DestinationSession": {
     "superClass": "java.lang.Object",
     "interfaces": [
+      "com.yahoo.messagebus.Connectable",
       "com.yahoo.messagebus.MessageHandler"
     ],
     "attributes": [
@@ -81,7 +95,8 @@
       "public com.yahoo.messagebus.MessageHandler getMessageHandler()",
       "public java.lang.String getConnectionSpec()",
       "public java.lang.String getName()",
-      "public void handleMessage(com.yahoo.messagebus.Message)"
+      "public void handleMessage(com.yahoo.messagebus.Message)",
+      "public void connect()"
     ],
     "fields": []
   },
@@ -120,6 +135,7 @@
       "public void processReply(com.yahoo.messagebus.Reply)",
       "public com.yahoo.messagebus.DynamicThrottlePolicy setEfficiencyThreshold(double)",
       "public com.yahoo.messagebus.DynamicThrottlePolicy setWindowSizeIncrement(double)",
+      "public com.yahoo.messagebus.DynamicThrottlePolicy setWindowSizeDecrementFactor(double)",
       "public com.yahoo.messagebus.DynamicThrottlePolicy setWindowSizeBackOff(double)",
       "public com.yahoo.messagebus.DynamicThrottlePolicy setResizeRate(double)",
       "public com.yahoo.messagebus.DynamicThrottlePolicy setWeight(double)",
@@ -212,7 +228,8 @@
     "superClass": "java.lang.Object",
     "interfaces": [
       "com.yahoo.messagebus.MessageHandler",
-      "com.yahoo.messagebus.ReplyHandler"
+      "com.yahoo.messagebus.ReplyHandler",
+      "com.yahoo.messagebus.Connectable"
     ],
     "attributes": [
       "public",
@@ -227,7 +244,8 @@
       "public java.lang.String getConnectionSpec()",
       "public java.lang.String getName()",
       "public void handleMessage(com.yahoo.messagebus.Message)",
-      "public void handleReply(com.yahoo.messagebus.Reply)"
+      "public void handleReply(com.yahoo.messagebus.Reply)",
+      "public void connect()"
     ],
     "fields": []
   },
@@ -310,6 +328,7 @@
       "public void register(com.yahoo.messagebus.MessageBus$SendBlockedMessages)",
       "public void <init>(com.yahoo.messagebus.network.Network, java.util.List)",
       "public void <init>(com.yahoo.messagebus.network.Network, com.yahoo.messagebus.MessageBusParams)",
+      "public void <init>(com.yahoo.messagebus.network.NetworkMultiplexer, com.yahoo.messagebus.MessageBusParams)",
       "public boolean destroy()",
       "public void sync()",
       "public com.yahoo.messagebus.SourceSession createSourceSession(com.yahoo.messagebus.ReplyHandler)",
@@ -317,15 +336,17 @@
       "public com.yahoo.messagebus.SourceSession createSourceSession(com.yahoo.messagebus.SourceSessionParams)",
       "public com.yahoo.messagebus.IntermediateSession createIntermediateSession(java.lang.String, boolean, com.yahoo.messagebus.MessageHandler, com.yahoo.messagebus.ReplyHandler)",
       "public synchronized com.yahoo.messagebus.IntermediateSession createIntermediateSession(com.yahoo.messagebus.IntermediateSessionParams)",
+      "public synchronized com.yahoo.messagebus.IntermediateSession createDetachedIntermediateSession(com.yahoo.messagebus.IntermediateSessionParams)",
       "public com.yahoo.messagebus.DestinationSession createDestinationSession(java.lang.String, boolean, com.yahoo.messagebus.MessageHandler)",
       "public synchronized com.yahoo.messagebus.DestinationSession createDestinationSession(com.yahoo.messagebus.DestinationSessionParams)",
+      "public synchronized com.yahoo.messagebus.DestinationSession createDetachedDestinationSession(com.yahoo.messagebus.DestinationSessionParams)",
+      "public void connect(java.lang.String, boolean)",
       "public synchronized void unregisterSession(java.lang.String, boolean)",
       "public void handleMessage(com.yahoo.messagebus.Message)",
       "public void handleReply(com.yahoo.messagebus.Reply)",
       "public void deliverMessage(com.yahoo.messagebus.Message, java.lang.String)",
       "public void putProtocol(com.yahoo.messagebus.Protocol)",
       "public com.yahoo.messagebus.Protocol getProtocol(com.yahoo.text.Utf8Array)",
-      "public com.yahoo.messagebus.Protocol getProtocol(com.yahoo.text.Utf8String)",
       "public void deliverReply(com.yahoo.messagebus.Reply, com.yahoo.messagebus.ReplyHandler)",
       "public void setupRouting(com.yahoo.messagebus.routing.RoutingSpec)",
       "public com.yahoo.messagebus.routing.Resender getResender()",
@@ -361,7 +382,9 @@
       "public int getMaxPendingCount()",
       "public com.yahoo.messagebus.MessageBusParams setMaxPendingCount(int)",
       "public int getMaxPendingSize()",
-      "public com.yahoo.messagebus.MessageBusParams setMaxPendingSize(int)"
+      "public com.yahoo.messagebus.MessageBusParams setMaxPendingSize(int)",
+      "public com.yahoo.messagebus.MessagebusConfig getMessageBusConfig()",
+      "public com.yahoo.messagebus.MessageBusParams setMessageBusConfig(com.yahoo.messagebus.MessagebusConfig)"
     ],
     "fields": []
   },
@@ -395,6 +418,8 @@
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
       "public final java.lang.String getDefNamespace()",
+      "public final boolean getApplyOnRestart()",
+      "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.messagebus.MessagebusConfig build()"
     ],
     "fields": [
@@ -642,6 +667,7 @@
       "public"
     ],
     "methods": [
+      "public void <init>(com.yahoo.messagebus.MessageBusParams, com.yahoo.messagebus.network.rpc.RPCNetworkParams)",
       "public void <init>(com.yahoo.messagebus.MessageBusParams, com.yahoo.messagebus.network.rpc.RPCNetworkParams, java.lang.String)",
       "public void <init>(java.util.List, com.yahoo.messagebus.network.rpc.RPCNetworkParams, java.lang.String)",
       "public void <init>(com.yahoo.messagebus.Protocol, java.lang.String)",

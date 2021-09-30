@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespavisit;
 
+import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.*;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
@@ -83,7 +84,7 @@ public class VdsVisitTestCase {
         assertNotNull(params);
         assertEquals(654321, allParams.getFullTimeout());
         assertEquals(654321, params.getTimeoutMs());
-        assertEquals("[id]", params.getFieldSet());
+        assertEquals(DocIdOnly.NAME, params.getFieldSet());
     }
 
     @Test
@@ -98,7 +99,7 @@ public class VdsVisitTestCase {
 
         VisitorParameters params = allParams.getVisitorParameters();
         assertNotNull(params);
-        assertEquals("[id]", params.getFieldSet());
+        assertEquals(DocIdOnly.NAME, params.getFieldSet());
         assertTrue(allParams.isPrintIdsOnly());
     }
 
@@ -227,30 +228,32 @@ public class VdsVisitTestCase {
     @Test
     public void testAutoSelectClusterRoute() throws Exception {
         List<ClusterDef> clusterDefs = new ArrayList<>();
-        clusterDefs.add(new ClusterDef("storage", "content/cluster.foo/storage"));
+        clusterDefs.add(new ClusterDef("storage"));
         ClusterList clusterList = new ClusterList(clusterDefs);
 
         String route = VdsVisit.resolveClusterRoute(clusterList, null);
-        assertEquals("[Storage:cluster=storage;clusterconfigid=content/cluster.foo/storage]", route);
+        assertEquals("[Content:cluster=storage]", route);
     }
 
     @Test
     public void testBadClusterName() throws Exception {
         List<ClusterDef> clusterDefs = new ArrayList<>();
-        clusterDefs.add(new ClusterDef("storage", "content/cluster.foo/storage"));
+        clusterDefs.add(new ClusterDef("storage"));
         ClusterList clusterList = new ClusterList(clusterDefs);
         try {
             VdsVisit.resolveClusterRoute(clusterList, "borkbork");
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("Your vespa cluster contains the content clusters storage, not borkbork."));
+            assertEquals("Your vespa cluster contains the content clusters 'storage', not 'borkbork'. " +
+                         "Please select a valid vespa cluster.",
+                         e.getMessage());
         }
     }
 
     @Test
     public void testRequireClusterOptionIfMultipleClusters() {
         List<ClusterDef> clusterDefs = new ArrayList<>();
-        clusterDefs.add(new ClusterDef("storage", "content/cluster.foo/storage"));
-        clusterDefs.add(new ClusterDef("storage2", "content/cluster.bar/storage"));
+        clusterDefs.add(new ClusterDef("storage"));
+        clusterDefs.add(new ClusterDef("storage2"));
         ClusterList clusterList = new ClusterList(clusterDefs);
         try {
             VdsVisit.resolveClusterRoute(clusterList, null);
@@ -262,12 +265,12 @@ public class VdsVisitTestCase {
     @Test
     public void testExplicitClusterOptionWithMultipleClusters() {
         List<ClusterDef> clusterDefs = new ArrayList<>();
-        clusterDefs.add(new ClusterDef("storage", "content/cluster.foo/storage"));
-        clusterDefs.add(new ClusterDef("storage2", "content/cluster.bar/storage"));
+        clusterDefs.add(new ClusterDef("storage"));
+        clusterDefs.add(new ClusterDef("storage2"));
         ClusterList clusterList = new ClusterList(clusterDefs);
 
         String route = VdsVisit.resolveClusterRoute(clusterList, "storage2");
-        assertEquals("[Storage:cluster=storage2;clusterconfigid=content/cluster.bar/storage]", route);
+        assertEquals("[Content:cluster=storage2]", route);
     }
 
     @Test
@@ -293,7 +296,7 @@ public class VdsVisitTestCase {
         VisitorParameters params = allParams.getVisitorParameters();
         assertNotNull(params);
         assertEquals("foo", allParams.getStatisticsParts());
-        assertEquals("[id]", params.getFieldSet());
+        assertEquals(DocIdOnly.NAME, params.getFieldSet());
         assertEquals("CountVisitor", params.getVisitorLibrary());
     }
 

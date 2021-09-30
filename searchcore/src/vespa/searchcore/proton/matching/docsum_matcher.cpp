@@ -3,14 +3,14 @@
 #include "docsum_matcher.h"
 #include "match_tools.h"
 #include "search_session.h"
-#include <vespa/eval/eval/tensor.h>
-#include <vespa/eval/eval/tensor_engine.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/searchlib/queryeval/same_element_search.h>
+#include <vespa/searchlib/queryeval/matching_elements_search.h>
 #include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/searchlib/fef/rank_program.h>
 
@@ -19,12 +19,13 @@ LOG_SETUP(".proton.matching.docsum_matcher");
 
 using search::FeatureSet;
 using search::MatchingElements;
-using search::StructFieldMapper;
+using search::MatchingElementsFields;
 using search::fef::FeatureResolver;
 using search::fef::RankProgram;
 using search::queryeval::AndNotBlueprint;
 using search::queryeval::Blueprint;
 using search::queryeval::IntermediateBlueprint;
+using search::queryeval::MatchingElementsSearch;
 using search::queryeval::SameElementBlueprint;
 using search::queryeval::SearchIterator;
 
@@ -69,9 +70,9 @@ get_feature_set(const MatchToolsFactory &mtf,
             for (uint32_t j = 0; j < featureNames.size(); ++j) {
                 if (resolver.is_object(j)) {
                     auto obj = resolver.resolve(j).as_object(docId);
-                    if (const auto *tensor = obj.get().as_tensor()) {
+                    if (! obj.get().type().is_double()) {
                         vespalib::nbostream buf;
-                        tensor->engine().encode(*tensor, buf);
+                        encode_value(obj.get(), buf);
                         f[j].set_data(vespalib::Memory(buf.peek(), buf.size()));
                     } else {
                         f[j].set_double(obj.get().as_double());
@@ -100,13 +101,20 @@ void find_matching_elements(const std::vector<uint32_t> &docs, const SameElement
     for (uint32_t i = 0; i < docs.size(); ++i) {
         search->find_matching_elements(docs[i], matches);
         if (!matches.empty()) {
-            result.add_matching_elements(docs[i], same_element.struct_field_name(), matches);
+            result.add_matching_elements(docs[i], same_element.field_name(), matches);
             matches.clear();
         }
     }
 }
 
-void find_matching_elements(const std::vector<uint32_t> &docs, const vespalib::string &struct_field_name, const AttrSearchCtx &attr_ctx, MatchingElements &result) {
+void find_matching_elements(const std::vector<uint32_t> &docs, MatchingElementsSearch &search, MatchingElements &result) {
+    search.initRange(docs.front(), docs.back() + 1);
+    for (uint32_t i = 0; i < docs.size(); ++i) {
+        search.find_matching_elements(docs[i], result);
+    }
+}
+
+void find_matching_elements(const std::vector<uint32_t> &docs, const vespalib::string &field_name, const AttrSearchCtx &attr_ctx, MatchingElements &result) {
     int32_t weight = 0;
     std::vector<uint32_t> matches;
     for (uint32_t i = 0; i < docs.size(); ++i) {
@@ -114,26 +122,30 @@ void find_matching_elements(const std::vector<uint32_t> &docs, const vespalib::s
             matches.push_back(id);
         }
         if (!matches.empty()) {
-            result.add_matching_elements(docs[i], struct_field_name, matches);
+            result.add_matching_elements(docs[i], field_name, matches);
             matches.clear();
         }
     }
 }
 
-void find_matching_elements(const StructFieldMapper &mapper, const std::vector<uint32_t> &docs, const Blueprint &bp, MatchingElements &result) {
+void find_matching_elements(const MatchingElementsFields &fields, const std::vector<uint32_t> &docs, const Blueprint &bp, MatchingElements &result) {
     if (auto same_element = as<SameElementBlueprint>(bp)) {
-        if (mapper.is_struct_field(same_element->struct_field_name())) {
+        if (fields.has_field(same_element->field_name())) {
             find_matching_elements(docs, *same_element, result);
         }
+    } else if (auto matching_elements_search = bp.create_matching_elements_search(fields)) {
+        find_matching_elements(docs, *matching_elements_search, result);
     } else if (const AttrSearchCtx *attr_ctx = bp.get_attribute_search_context()) {
-        if (mapper.is_struct_subfield(attr_ctx->attributeName())) {
-            find_matching_elements(docs, mapper.get_struct_field(attr_ctx->attributeName()), *attr_ctx, result);
+        if (fields.has_struct_field(attr_ctx->attributeName())) {
+            find_matching_elements(docs, fields.get_enclosing_field(attr_ctx->attributeName()), *attr_ctx, result);
+        } else if (fields.has_field(attr_ctx->attributeName())) {
+            find_matching_elements(docs, attr_ctx->attributeName(), *attr_ctx, result);
         }
     } else if (auto and_not = as<AndNotBlueprint>(bp)) {
-        find_matching_elements(mapper, docs, and_not->getChild(0), result);
+        find_matching_elements(fields, docs, and_not->getChild(0), result);
     } else if (auto intermediate = as<IntermediateBlueprint>(bp)) {
         for (size_t i = 0; i < intermediate->childCnt(); ++i) {
-            find_matching_elements(mapper, docs, intermediate->getChild(i), result);
+            find_matching_elements(fields, docs, intermediate->getChild(i), result);
         }
     }
 }
@@ -189,12 +201,12 @@ DocsumMatcher::get_rank_features() const
 }
 
 MatchingElements::UP
-DocsumMatcher::get_matching_elements(const StructFieldMapper &field_mapper) const
+DocsumMatcher::get_matching_elements(const MatchingElementsFields &fields) const
 {
     auto result = std::make_unique<MatchingElements>();
-    if (_mtf && !field_mapper.empty()) {
+    if (_mtf && !fields.empty()) {
         if (const Blueprint *root = _mtf->query().peekRoot()) {
-            find_matching_elements(field_mapper, _docs, *root, *result);
+            find_matching_elements(fields, _docs, *root, *result);
         }
     }
     return result;

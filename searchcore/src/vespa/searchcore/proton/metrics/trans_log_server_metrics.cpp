@@ -17,7 +17,7 @@ TransLogServerMetrics::DomainMetrics::DomainMetrics(metrics::MetricSet *parent,
 {
 }
 
-TransLogServerMetrics::DomainMetrics::~DomainMetrics() {}
+TransLogServerMetrics::DomainMetrics::~DomainMetrics() = default;
 
 void
 TransLogServerMetrics::DomainMetrics::update(const DomainInfo &stats)
@@ -33,7 +33,7 @@ TransLogServerMetrics::considerAddDomains(const DomainStats &stats)
     for (const auto &elem : stats) {
         const vespalib::string &documentType = elem.first;
         if (_domainMetrics.find(documentType) == _domainMetrics.end()) {
-            _domainMetrics[documentType] = DomainMetrics::UP(new DomainMetrics(_parent, documentType));
+            _domainMetrics[documentType] = std::make_unique<DomainMetrics>(_parent, documentType);
         }
     }
 }
@@ -66,7 +66,7 @@ TransLogServerMetrics::TransLogServerMetrics(metrics::MetricSet *parent)
 {
 }
 
-TransLogServerMetrics::~TransLogServerMetrics() { }
+TransLogServerMetrics::~TransLogServerMetrics() = default;
 
 void
 TransLogServerMetrics::update(const DomainStats &stats)

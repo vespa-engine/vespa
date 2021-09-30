@@ -64,9 +64,9 @@ public class PhraseMatcher {
      * @throws IllegalArgumentException if FSA is null
      */
     public PhraseMatcher(FSA phraseAutomatonFSA,boolean ignorePluralForm) {
-        if(phraseAutomatonFSA==null) throw new IllegalArgumentException("FSA is null");
-        this.ignorePluralForm=ignorePluralForm;
-        phraseFSA=phraseAutomatonFSA;
+        if (phraseAutomatonFSA == null) throw new NullPointerException("FSA is null");
+        this.ignorePluralForm = ignorePluralForm;
+        phraseFSA = phraseAutomatonFSA;
     }
 
     public boolean isEmpty() { return phraseFSA == null; }

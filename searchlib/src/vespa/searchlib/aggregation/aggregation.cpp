@@ -30,8 +30,6 @@ createAndEnsureWanted(const ResultNode & result) {
 
 } // namespace search::aggregation::<unnamed>
 
-
-using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
 
@@ -93,7 +91,7 @@ AggregationResult::Configure::execute(vespalib::Identifiable &obj)
 AggregationResult &
 AggregationResult::setExpression(ExpressionNode::UP expr)
 {
-    _expressionTree.reset(new ExpressionTree(std::move(expr)));
+    _expressionTree = std::make_shared<ExpressionTree>(std::move(expr));
     prepare(&_expressionTree->getResult(), false);
     return *this;
 }
@@ -334,19 +332,17 @@ XorAggregationResult::onReset()
     _xor = 0;
 }
 
-static FieldBase _G_tagField("tag");
-
 Serializer &
 AggregationResult::onSerialize(Serializer & os) const
 {
-    return (os << *_expressionTree).put(_G_tagField, _tag);
+    return (os << *_expressionTree).put(_tag);
 }
 
 Deserializer &
 AggregationResult::onDeserialize(Deserializer & is)
 {
     _expressionTree = std::make_shared<ExpressionTree>();
-    return (is >> *_expressionTree).get(_G_tagField, _tag);
+    return (is >> *_expressionTree).get(_tag);
 }
 
 void
@@ -453,22 +449,18 @@ MaxAggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "max", _max);
 }
 
-namespace {
-    FieldBase _G_countField("count");
-}
-
 Serializer &
 AverageAggregationResult::onSerialize(Serializer & os) const
 {
     AggregationResult::onSerialize(os);
-    return os.put(_G_countField, _count) << _sum;
+    return os.put(_count) << _sum;
 }
 
 Deserializer &
 AverageAggregationResult::onDeserialize(Deserializer & is)
 {
     AggregationResult::onDeserialize(is);
-    return is.get(_G_countField, _count) >> _sum;
+    return is.get(_count) >> _sum;
 }
 
 void

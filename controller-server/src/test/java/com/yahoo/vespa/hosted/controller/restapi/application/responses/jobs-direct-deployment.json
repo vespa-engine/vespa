@@ -1,7 +1,3 @@
 {
-  "devJobs": {},
-  "deployments": [],
-  "lastVersions": {},
-  "deploying": {},
-  "jobs": {}
+  "deployment": []
 }

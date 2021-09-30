@@ -2,12 +2,9 @@
 
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using document::DocumentTypeRepo;
@@ -66,8 +63,7 @@ void Test::testMessage() {
     EXPECT_TRUE(upd1.getType() == DocumentProtocol::MESSAGE_UPDATEDOCUMENT);
     EXPECT_TRUE(upd1.getProtocol() == "document");
 
-    LoadTypeSet set;
-    DocumentProtocol protocol(set, _repo);
+    DocumentProtocol protocol(_repo);
 
     Blob blob = protocol.encode(vespalib::Version(6,221), upd1);
     EXPECT_TRUE(blob.size() > 0);
@@ -89,8 +85,7 @@ void Test::testMessage() {
 }
 
 void Test::testProtocol() {
-    LoadTypeSet set;
-    DocumentProtocol protocol(set, _repo);
+    DocumentProtocol protocol(_repo);
     EXPECT_TRUE(protocol.getName() == "document");
 
     IRoutingPolicy::UP policy = protocol.createPolicy(string("DocumentRouteSelector"), string("file:documentrouteselectorpolicy.cfg"));

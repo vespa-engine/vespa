@@ -13,13 +13,6 @@ import com.yahoo.messagebus.routing.RoutingNode;
 public interface RPCSendAdapter {
 
     /**
-     * Attaches this adapter to the given network.
-     *
-     * @param net The network to attach to.
-     */
-    void attach(RPCNetwork net);
-
-    /**
      * Performs the actual sending to the given recipient.
      *
      * @param recipient     The recipient to send to.

@@ -7,23 +7,6 @@
 namespace search::features {
 
 /**
- * Implements the executor for the matchCount feature for index and
- * attribute fields.
- */
-class MatchCountExecutor : public fef::FeatureExecutor
-{
-private:
-    std::vector<fef::TermFieldHandle> _handles;
-    const fef::MatchData             *_md;
-
-    void handle_bind_match_data(const fef::MatchData &md) override;
-
-public:
-    MatchCountExecutor(uint32_t fieldId, const fef::IQueryEnvironment &env);
-    void execute(uint32_t docId) override;
-};
-
-/**
  * Implements the blueprint for the matchCount executor.
  *
  * matchCount(name)

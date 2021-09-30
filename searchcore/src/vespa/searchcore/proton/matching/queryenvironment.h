@@ -4,7 +4,6 @@
 
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/searchlib/fef/location.h>
 
 namespace search::index { class IFieldLengthInspector; }
 
@@ -19,7 +18,7 @@ private:
     const search::fef::IIndexEnvironment       &_indexEnv;
     const search::attribute::IAttributeContext &_attrContext;
     search::fef::Properties                     _properties;
-    std::vector<const search::fef::Location *>  _locations;
+    GeoLocationSpecPtrs                         _locations;
     std::vector<const search::fef::ITermData *> _terms;
     const search::index::IFieldLengthInspector &_field_length_inspector;
 
@@ -56,7 +55,7 @@ public:
      *
      * @return modifiable list of location data pointers
      **/
-    std::vector<const search::fef::Location *> &locations() {
+    GeoLocationSpecPtrs &locations() {
         return _locations;
     }
 
@@ -70,7 +69,9 @@ public:
     const search::fef::ITermData *getTerm(uint32_t idx) const override;
 
     // inherited from search::fef::IQueryEnvironment
-    const search::fef::Location & getLocation() const override;
+    GeoLocationSpecPtrs getAllLocations() const override {
+        return _locations;
+    }
 
     // inherited from search::fef::IQueryEnvironment
     const search::attribute::IAttributeContext & getAttributeContext() const override;

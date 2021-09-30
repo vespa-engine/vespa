@@ -5,7 +5,19 @@ import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.ReferenceDataType;
-import com.yahoo.document.datatypes.*;
+import com.yahoo.document.datatypes.BoolFieldValue;
+import com.yahoo.document.datatypes.ByteFieldValue;
+import com.yahoo.document.datatypes.DoubleFieldValue;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.Float16FieldValue;
+import com.yahoo.document.datatypes.FloatFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.PredicateFieldValue;
+import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.Struct;
+import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 
 /**
@@ -32,6 +44,7 @@ public class SummaryClassField {
         DOUBLE("double"),
         STRING("string"),
         DATA("data"),
+        RAW("raw"),
         LONGSTRING("longstring"),
         LONGDATA("longdata"),
         XMLSTRING("xmlstring"),
@@ -39,7 +52,7 @@ public class SummaryClassField {
         JSONSTRING("jsonstring"),
         TENSOR("tensor");
 
-        private String name;
+        private final String name;
 
         Type(String name) {
             this.name = name;
@@ -55,9 +68,9 @@ public class SummaryClassField {
         }
     }
 
-    public SummaryClassField(String name, DataType type, SummaryTransform transform) {
+    public SummaryClassField(String name, DataType type, SummaryTransform transform, boolean rawAsBase64) {
         this.name = name;
-        this.type = convertDataType(type, transform);
+        this.type = convertDataType(type, transform, rawAsBase64);
     }
 
     public String getName() { return name; }
@@ -65,7 +78,7 @@ public class SummaryClassField {
     public Type getType() { return type; }
 
     /** Converts to the right summary field type from a field datatype and a transform*/
-    public static Type convertDataType(DataType fieldType, SummaryTransform transform) {
+    public static Type convertDataType(DataType fieldType, SummaryTransform transform, boolean rawAsBase64) {
         FieldValue fval = fieldType.createFieldValue();
         if (fval instanceof StringFieldValue) {
             if (transform != null && transform.equals(SummaryTransform.RANKFEATURES)) {
@@ -90,7 +103,7 @@ public class SummaryClassField {
         } else if (fval instanceof ByteFieldValue) {
             return Type.BYTE;
         } else if (fval instanceof Raw) {
-            return Type.DATA;
+            return rawAsBase64 ? Type.RAW : Type.DATA;
         } else if (fval instanceof Struct) {
             return Type.JSONSTRING;
         } else if (fval instanceof PredicateFieldValue) {

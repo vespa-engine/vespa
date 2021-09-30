@@ -8,7 +8,6 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
-import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.Result;
@@ -28,9 +27,8 @@ import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static com.yahoo.messagebus.ErrorCode.SEND_QUEUE_FULL;
 
 /**
  * An instance of this class handles all requests from one client using VespaHttpClient.
@@ -53,12 +51,10 @@ class ClientFeederV3 {
     private final Metric metric;
     private Instant prevOpsPerSecTime = Instant.now();
     private double operationsForOpsPerSec = 0d;
-
     private final Object monitor = new Object();
     private final StreamReaderV3 streamReaderV3;
     private final AtomicInteger ongoingRequests = new AtomicInteger(0);
-    private String hostName;
-    private AtomicInteger threadsAvailableForFeeding;
+    private final String hostName;
 
     ClientFeederV3(
             ReferencedResource<SharedSourceSession> sourceSession,
@@ -66,13 +62,11 @@ class ClientFeederV3 {
             DocumentTypeManager docTypeManager,
             String clientId,
             Metric metric,
-            ReplyHandler feedReplyHandler,
-            AtomicInteger threadsAvailableForFeeding) {
+            ReplyHandler feedReplyHandler) {
         this.sourceSession = sourceSession;
         this.clientId = clientId;
         this.feedReplyHandler = feedReplyHandler;
         this.metric = metric;
-        this.threadsAvailableForFeeding = threadsAvailableForFeeding;
         this.streamReaderV3 = new StreamReaderV3(feedReaderFactory, docTypeManager);
         this.hostName = HostName.getLocalhost();
     }
@@ -105,36 +99,13 @@ class ClientFeederV3 {
     }
 
     public HttpResponse handleRequest(HttpRequest request) throws IOException {
-        threadsAvailableForFeeding.decrementAndGet();
         ongoingRequests.incrementAndGet();
         try {
             FeederSettings feederSettings = new FeederSettings(request);
-            /*
-             * The gateway handle overload from clients in different ways.
-             *
-             * If the backend is overloaded, but not the gateway, it will fill the backend, messagebus throttler
-             * will start to block new documents and finally all threadsAvailableForFeeding will be blocking.
-             * However, as more threads are added, the gateway will not block on messagebus but return
-             * transitive errors on the documents that can not be processed. These errors will cause the client(s) to
-             * back off a bit.
-             *
-             * However, we can also have the case that the gateway becomes the bottleneck (e.g. CPU). In this case
-             * we need to stop processing of new messages as early as possible and reject the request. This
-             * will cause the client(s) to back off for a while. We want some slack before we enter this mode.
-             * If we can simply transitively fail each document, it is nicer. Therefor we allow some threads to be
-             * busy processing requests with transitive errors before entering this mode. Since we already
-             * have flooded the backend, have several threads hanging and waiting for capacity, the number should
-             * not be very large. Too much slack can lead to too many threads handling feed and impacting query traffic.
-             * We try 10 for now. This should only kick in with very massive feeding to few gateway nodes.
-             */
-            if (feederSettings.denyIfBusy && threadsAvailableForFeeding.get() < -10) {
-                return new ErrorHttpResponse(getOverloadReturnCode(request), "Gateway overloaded");
-            }
-
             InputStream inputStream = StreamReaderV3.unzipStreamIfNeeded(request);
             BlockingQueue<OperationStatus> replies = new LinkedBlockingQueue<>();
             try {
-                feed(feederSettings, inputStream, replies, threadsAvailableForFeeding);
+                feed(feederSettings, inputStream, replies);
                 synchronized (monitor) {
                     // Handshake requests do not have DATA_FORMAT, we do not want to give responses to
                     // handshakes as it won't be processed by the client.
@@ -143,138 +114,101 @@ class ClientFeederV3 {
                     }
                 }
             } catch (InterruptedException e) {
+                log.log(Level.FINE, e, () -> "Feed handler was interrupted: " + e.getMessage());
                 // NOP, just terminate
             } catch (Throwable e) {
-                log.log(LogLevel.WARNING, "Unhandled exception while feeding: " + Exceptions.toMessageString(e), e);
+                log.log(Level.WARNING, "Unhandled exception while feeding: " + Exceptions.toMessageString(e), e);
             } finally {
-                replies.add(createOperationStatus("-", "-", ErrorCode.END_OF_FEED, false, null));
+                replies.add(createOperationStatus("-", "-", ErrorCode.END_OF_FEED, null));
             }
             return new FeedResponse(200, replies, 3, clientId, outstandingOperations.get(), hostName);
         } finally {
             ongoingRequests.decrementAndGet();
-            threadsAvailableForFeeding.incrementAndGet();
         }
     }
 
-    private int getOverloadReturnCode(HttpRequest request) {
-        if (request.getHeader(Headers.SILENTUPGRADE) != null ) {
-            return 299;
-        }
-        return 429;
-    }
-
-    private Optional<DocumentOperationMessageV3> pullMessageFromRequest(
-            FeederSettings settings, InputStream requestInputStream, BlockingQueue<OperationStatus> repliesFromOldMessages) {
+    private Optional<DocumentOperationMessageV3> pullMessageFromRequest(FeederSettings settings,
+                                                                        InputStream requestInputStream,
+                                                                        BlockingQueue<OperationStatus> repliesFromOldMessages) {
         while (true) {
             Optional<String> operationId;
             try {
                 operationId = streamReaderV3.getNextOperationId(requestInputStream);
+                if (operationId.isEmpty()) return Optional.empty();
             } catch (IOException ioe) {
-                if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, Exceptions.toMessageString(ioe), ioe);
-                }
-                return Optional.empty();
-            }
-            if (! operationId.isPresent()) {
+                log.log(Level.FINE, () -> Exceptions.toMessageString(ioe));
                 return Optional.empty();
             }
 
-            DocumentOperationMessageV3 message;
             try {
-                message = getNextMessage(operationId.get(), requestInputStream, settings);
+                DocumentOperationMessageV3 message = getNextMessage(operationId.get(), requestInputStream, settings);
+                if (message != null)
+                    setRoute(message, settings);
+                return Optional.ofNullable(message);
             } catch (Exception e) {
-                if (log.isLoggable(LogLevel.WARNING)) {
-                    log.log(LogLevel.WARNING, Exceptions.toMessageString(e));
-                }
+                log.log(Level.WARNING, () -> Exceptions.toMessageString(e));
                 metric.add(MetricNames.PARSE_ERROR, 1, null);
 
-                repliesFromOldMessages.add(new OperationStatus(
-                        Exceptions.toMessageString(e), operationId.get(), ErrorCode.ERROR, false, ""));
-
-                continue;
+                repliesFromOldMessages.add(new OperationStatus(Exceptions.toMessageString(e),
+                                                               operationId.get(),
+                                                               ErrorCode.ERROR,
+                                                               false,
+                                                               ""));
             }
-            if (message != null)
-                setRoute(message, settings);
-            return Optional.ofNullable(message);
         }
     }
 
-    private Result sendMessage(FeederSettings settings,
-                               DocumentOperationMessageV3 msg,
-                               AtomicInteger threadsAvailableForFeeding) throws InterruptedException {
-        Result result = null;
-        while (result == null || result.getError().getCode() == SEND_QUEUE_FULL) {
-            msg.getMessage().pushHandler(feedReplyHandler);
-
-            if (settings.denyIfBusy && threadsAvailableForFeeding.get() < 1) {
-                return sourceSession.getResource().sendMessage(msg.getMessage());
-            } else {
-                result = sourceSession.getResource().sendMessageBlocking(msg.getMessage());
-            }
-            if (result.isAccepted()) {
-                return result;
-            }
-            Thread.sleep(100);
-        }
-        return result;
+    private Result sendMessage(DocumentOperationMessageV3 msg) throws InterruptedException {
+        msg.getMessage().pushHandler(feedReplyHandler);
+        return sourceSession.getResource().sendMessageBlocking(msg.getMessage());
     }
 
     private void feed(FeederSettings settings,
                       InputStream requestInputStream,
-                      BlockingQueue<OperationStatus> repliesFromOldMessages,
-                      AtomicInteger threadsAvailableForFeeding) throws InterruptedException {
+                      BlockingQueue<OperationStatus> repliesFromOldMessages) throws InterruptedException {
         while (true) {
-            Optional<DocumentOperationMessageV3> msg = pullMessageFromRequest(settings, requestInputStream, repliesFromOldMessages);
+            Optional<DocumentOperationMessageV3> message = pullMessageFromRequest(settings,
+                                                                                  requestInputStream,
+                                                                                  repliesFromOldMessages);
 
-            if (! msg.isPresent()) {
-                break;
-            }
-            setMessageParameters(msg.get(), settings);
+            if (message.isEmpty()) break;
+            setMessageParameters(message.get(), settings);
 
             Result result;
             try {
-                result = sendMessage(settings, msg.get(), threadsAvailableForFeeding);
+                result = sendMessage(message.get());
 
             } catch  (RuntimeException e) {
-                repliesFromOldMessages.add(createOperationStatus(msg.get().getOperationId(),
+                repliesFromOldMessages.add(createOperationStatus(message.get().getOperationId(),
                                                                  Exceptions.toMessageString(e),
                                                                  ErrorCode.ERROR,
-                                                                 false,
-                                                                 msg.get().getMessage()));
+                                                                 message.get().getMessage()));
                 continue;
             }
 
             if (result.isAccepted()) {
                 outstandingOperations.incrementAndGet();
                 updateOpsPerSec();
-                log(LogLevel.DEBUG, "Sent message successfully, document id: ", msg.get().getOperationId());
+                log(Level.FINE, "Sent message successfully, document id: ", message.get().getOperationId());
             } else if (!result.getError().isFatal()) {
-                repliesFromOldMessages.add(createOperationStatus(msg.get().getOperationId(),
+                repliesFromOldMessages.add(createOperationStatus(message.get().getOperationId(),
                                                                  result.getError().getMessage(),
                                                                  ErrorCode.TRANSIENT_ERROR,
-                                                                 false,
-                                                                 msg.get().getMessage()));
-                continue;
+                        message.get().getMessage()));
             } else {
-                // should probably not happen, but everybody knows stuff that
-                // shouldn't happen, happens all the time
-                boolean isConditionNotMet = result.getError().getCode() == DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED;
-                repliesFromOldMessages.add(createOperationStatus(msg.get().getOperationId(),
+                repliesFromOldMessages.add(createOperationStatus(message.get().getOperationId(),
                                                                  result.getError().getMessage(),
                                                                  ErrorCode.ERROR,
-                                                                 isConditionNotMet,
-                                                                 msg.get().getMessage()));
-                continue;
+                        message.get().getMessage()));
             }
         }
     }
 
-    private OperationStatus createOperationStatus(String id, String message,
-                                                  ErrorCode code, boolean isConditionNotMet, Message msg) {
+    private OperationStatus createOperationStatus(String id, String message, ErrorCode code, Message msg) {
         String traceMessage = msg != null && msg.getTrace() != null &&  msg.getTrace().getLevel() > 0
                 ? msg.getTrace().toString()
                 : "";
-        return new OperationStatus(message, id, code, isConditionNotMet, traceMessage);
+        return new OperationStatus(message, id, code, false, traceMessage);
     }
 
     // protected for mocking
@@ -298,7 +232,7 @@ class ClientFeederV3 {
             return null;
         }
         metric.add(MetricNames.NUM_OPERATIONS, 1, null /*metricContext*/);
-        log(LogLevel.DEBUG, "Successfully deserialized document id: ", message.getOperationId());
+        log(Level.FINE, "Successfully deserialized document id: ", message.getOperationId());
         return message;
     }
 
@@ -326,18 +260,12 @@ class ClientFeederV3 {
         }
     }
 
-    protected final void log(LogLevel level, Object... msgParts) {
-        StringBuilder s;
+    protected final void log(Level level, Object... msgParts) {
+        if (!log.isLoggable(level)) return;
 
-        if (!log.isLoggable(level)) {
-            return;
-        }
-
-        s = new StringBuilder();
-        for (Object part : msgParts) {
+        StringBuilder s = new StringBuilder();
+        for (Object part : msgParts)
             s.append(part.toString());
-        }
-
         log.log(level, s.toString());
     }
 
@@ -355,5 +283,4 @@ class ClientFeederV3 {
             }
         }
     }
-
 }

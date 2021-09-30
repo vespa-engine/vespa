@@ -3,12 +3,21 @@
 #include "tensor_function.h"
 #include "value.h"
 #include "operation.h"
-#include "tensor.h"
-#include "tensor_engine.h"
-#include "simple_tensor_engine.h"
 #include "visit_stuff.h"
 #include "string_stuff.h"
+#include "value_type_spec.h"
+#include <vespa/eval/instruction/generic_cell_cast.h>
+#include <vespa/eval/instruction/generic_concat.h>
+#include <vespa/eval/instruction/generic_create.h>
+#include <vespa/eval/instruction/generic_join.h>
+#include <vespa/eval/instruction/generic_lambda.h>
+#include <vespa/eval/instruction/generic_map.h>
+#include <vespa/eval/instruction/generic_merge.h>
+#include <vespa/eval/instruction/generic_peek.h>
+#include <vespa/eval/instruction/generic_reduce.h>
+#include <vespa/eval/instruction/generic_rename.h>
 #include <vespa/vespalib/objects/objectdumper.h>
+#include <vespa/vespalib/objects/visit.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.eval.tensor_function");
@@ -51,149 +60,13 @@ using Instruction = InterpretedFunction::Instruction;
 
 //-----------------------------------------------------------------------------
 
-template <typename T, typename IN>
-uint64_t wrap_param(const IN &value_in) {
-    const T &value = value_in;
-    return (uint64_t)&value;
-}
-
-template <typename T>
-const T &unwrap_param(uint64_t param) { return *((const T *)param); }
-
-//-----------------------------------------------------------------------------
-
-uint64_t to_param(map_fun_t value) { return (uint64_t)value; }
-uint64_t to_param(join_fun_t value) { return (uint64_t)value; }
-map_fun_t to_map_fun(uint64_t param) { return (map_fun_t)param; }
-join_fun_t to_join_fun(uint64_t param) { return (join_fun_t)param; }
-
-//-----------------------------------------------------------------------------
-
 void op_load_const(State &state, uint64_t param) {
     state.stack.push_back(unwrap_param<Value>(param));
 }
 
 //-----------------------------------------------------------------------------
 
-void op_double_map(State &state, uint64_t param) {
-    state.pop_push(state.stash.create<DoubleValue>(to_map_fun(param)(state.peek(0).as_double())));
-}
-
-void op_double_mul(State &state, uint64_t) {
-    state.pop_pop_push(state.stash.create<DoubleValue>(state.peek(1).as_double() * state.peek(0).as_double()));
-}
-
-void op_double_add(State &state, uint64_t) {
-    state.pop_pop_push(state.stash.create<DoubleValue>(state.peek(1).as_double() + state.peek(0).as_double()));
-}
-
-void op_double_join(State &state, uint64_t param) {
-    state.pop_pop_push(state.stash.create<DoubleValue>(to_join_fun(param)(state.peek(1).as_double(), state.peek(0).as_double())));
-}
-
-//-----------------------------------------------------------------------------
-
-void op_tensor_map(State &state, uint64_t param) {
-    state.pop_push(state.engine.map(state.peek(0), to_map_fun(param), state.stash));
-}
-
-void op_tensor_join(State &state, uint64_t param) {
-    state.pop_pop_push(state.engine.join(state.peek(1), state.peek(0), to_join_fun(param), state.stash));
-}
-
-void op_tensor_merge(State &state, uint64_t param) {
-    state.pop_pop_push(state.engine.merge(state.peek(1), state.peek(0), to_join_fun(param), state.stash));
-}
-
-using ReduceParams = std::pair<Aggr,std::vector<vespalib::string>>;
-void op_tensor_reduce(State &state, uint64_t param) {
-    const ReduceParams &params = unwrap_param<ReduceParams>(param);
-    state.pop_push(state.engine.reduce(state.peek(0), params.first, params.second, state.stash));
-}
-
-using RenameParams = std::pair<std::vector<vespalib::string>,std::vector<vespalib::string>>;
-void op_tensor_rename(State &state, uint64_t param) {
-    const RenameParams &params = unwrap_param<RenameParams>(param);
-    state.pop_push(state.engine.rename(state.peek(0), params.first, params.second, state.stash));
-}
-
-void op_tensor_concat(State &state, uint64_t param) {
-    const vespalib::string &dimension = unwrap_param<vespalib::string>(param);
-    state.pop_pop_push(state.engine.concat(state.peek(1), state.peek(0), dimension, state.stash));
-}
-
-void op_tensor_create(State &state, uint64_t param) {
-    const Create &self = unwrap_param<Create>(param);
-    TensorSpec spec(self.result_type().to_spec());
-    size_t i = 0;
-    for (auto pos = self.spec().rbegin(); pos != self.spec().rend(); ++pos) {
-        spec.add(pos->first, state.peek(i++).as_double());
-    }
-    const Value &result = *state.stash.create<Value::UP>(state.engine.from_spec(spec));
-    state.pop_n_push(i, result);
-}
-
-const Value &extract_single_value(const TensorSpec &spec, const TensorSpec::Address &addr, State &state) {
-    auto pos = spec.cells().find(addr);
-    if (pos == spec.cells().end()) {
-        return state.stash.create<DoubleValue>(0.0);
-    }
-    return state.stash.create<DoubleValue>(pos->second);
-}
-
-const Value &extract_tensor_subspace(const ValueType &my_type, const TensorSpec &spec, const TensorSpec::Address &addr, State &state) {
-    TensorSpec my_spec(my_type.to_spec());
-    for (const auto &cell: spec.cells()) {
-        bool keep = true;
-        TensorSpec::Address my_addr;
-        for (const auto &binding: cell.first) {
-            auto pos = addr.find(binding.first);
-            if (pos == addr.end()) {
-                my_addr.emplace(binding.first, binding.second);
-            } else {
-                if (!(pos->second == binding.second)) {
-                    keep = false;
-                }
-            }
-        }
-        if (keep) {
-            my_spec.add(my_addr, cell.second);
-        }
-    }
-    return *state.stash.create<Value::UP>(state.engine.from_spec(my_spec));
-}
-
-void op_tensor_peek(State &state, uint64_t param) {
-    const Peek &self = unwrap_param<Peek>(param);
-    TensorSpec::Address addr;
-    size_t child_cnt = 0;
-    for (auto pos = self.spec().rbegin(); pos != self.spec().rend(); ++pos) {
-        std::visit(vespalib::overload
-                   {
-                       [&](const TensorSpec::Label &label) {
-                           addr.emplace(pos->first, label);
-                       },
-                       [&](const TensorFunction::Child &) {
-                           double index = round(state.peek(child_cnt++).as_double());
-                           size_t dim_idx = self.param_type().dimension_index(pos->first);
-                           assert(dim_idx != ValueType::Dimension::npos);
-                           const auto &param_dim = self.param_type().dimensions()[dim_idx];
-                           if (param_dim.is_mapped()) {
-                               addr.emplace(pos->first, vespalib::make_string("%" PRId64, int64_t(index)));
-                           } else {
-                               addr.emplace(pos->first, size_t(index));
-                           }
-                       }
-                   }, pos->second);
-    }
-    TensorSpec spec = state.engine.to_spec(state.peek(child_cnt++));
-    const Value &result = self.result_type().is_double()
-                          ? extract_single_value(spec, addr, state)
-                          : extract_tensor_subspace(self.result_type(), spec, addr, state);
-    state.pop_n_push(child_cnt, result);
-}
-
-} // namespace vespalib::eval::tensor_function
+} // namespace vespalib::eval::tensor_function::<unnamed>
 
 //-----------------------------------------------------------------------------
 
@@ -235,7 +108,7 @@ Op2::visit_children(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-ConstValue::compile_self(Stash &) const
+ConstValue::compile_self(const ValueBuilderFactory &, Stash &) const
 {
     return Instruction(op_load_const, wrap_param<Value>(_value));
 }
@@ -254,7 +127,7 @@ ConstValue::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Inject::compile_self(Stash &) const
+Inject::compile_self(const ValueBuilderFactory &, Stash &) const
 {
     return Instruction::fetch_param(_param_idx);
 }
@@ -269,10 +142,9 @@ Inject::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Reduce::compile_self(Stash &stash) const
+Reduce::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    ReduceParams &params = stash.create<ReduceParams>(_aggr, _dimensions);
-    return Instruction(op_tensor_reduce, wrap_param<ReduceParams>(params));
+    return instruction::GenericReduce::make_instruction(result_type(), child().result_type(), aggr(), dimensions(), factory, stash);
 }
 
 void
@@ -286,12 +158,9 @@ Reduce::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Map::compile_self(Stash &) const
+Map::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
-    if (result_type().is_double()) {
-        return Instruction(op_double_map, to_param(_function));
-    }
-    return Instruction(op_tensor_map, to_param(_function));
+    return instruction::GenericMap::make_instruction(result_type(), child().result_type(), _function, stash);
 }
 
 void
@@ -304,18 +173,9 @@ Map::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Join::compile_self(Stash &) const
+Join::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    if (result_type().is_double()) {
-        if (_function == operation::Mul::f) {
-            return Instruction(op_double_mul);
-        }
-        if (_function == operation::Add::f) {
-            return Instruction(op_double_add);
-        }
-        return Instruction(op_double_join, to_param(_function));
-    }
-    return Instruction(op_tensor_join, to_param(_function));
+    return instruction::GenericJoin::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), function(), factory, stash);
 }
 
 void
@@ -328,9 +188,9 @@ Join::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Merge::compile_self(Stash &) const
+Merge::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    return Instruction(op_tensor_merge, to_param(_function));
+    return instruction::GenericMerge::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), function(), factory, stash);
 }
 
 void
@@ -343,9 +203,9 @@ Merge::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Concat::compile_self(Stash &) const
+Concat::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    return Instruction(op_tensor_concat, wrap_param<vespalib::string>(_dimension));
+    return instruction::GenericConcat::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), dimension(), factory, stash);
 }
 
 void
@@ -357,26 +217,113 @@ Concat::visit_self(vespalib::ObjectVisitor &visitor) const
 
 //-----------------------------------------------------------------------------
 
+InterpretedFunction::Instruction
+CellCast::compile_self(const ValueBuilderFactory &, Stash &stash) const
+{
+    return instruction::GenericCellCast::make_instruction(result_type(), child().result_type(), cell_type(), stash);
+}
+
+void
+CellCast::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Super::visit_self(visitor);
+    visitor.visitString("cell_type", value_type::cell_type_to_name(cell_type()));
+}
+
+//-----------------------------------------------------------------------------
+
 void
 Create::push_children(std::vector<Child::CREF> &children) const
 {
-    for (const auto &cell: _spec) {
+    for (const auto &cell: _map) {
         children.emplace_back(cell.second);
     }
 }
 
-Instruction
-Create::compile_self(Stash &) const
+Create::Spec
+Create::make_spec() const
 {
-    return Instruction(op_tensor_create, wrap_param<Create>(*this));
+    Spec generic_spec;
+    size_t child_idx = 0;
+    for (const auto & kv : map()) {
+        generic_spec[kv.first] = child_idx++;
+    }
+    return generic_spec;
+}
+
+Instruction
+Create::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+{
+    return instruction::GenericCreate::make_instruction(result_type(), make_spec(), factory, stash);
 }
 
 void
 Create::visit_children(vespalib::ObjectVisitor &visitor) const
 {
-    for (const auto &cell: _spec) {
+    for (const auto &cell: _map) {
         ::visit(visitor, ::vespalib::eval::as_string(cell.first), cell.second.get());
     }
+}
+
+//-----------------------------------------------------------------------------
+
+namespace {
+
+bool step_labels(std::vector<size_t> &labels, const ValueType &type) {
+    for (size_t idx = labels.size(); idx-- > 0; ) {
+        if (++labels[idx] < type.dimensions()[idx].size) {
+            return true;
+        } else {
+            labels[idx] = 0;
+        }
+    }
+    return false;
+}
+
+struct ParamProxy : public LazyParams {
+    const std::vector<size_t> &labels;
+    const LazyParams          &params;
+    const std::vector<size_t> &bindings;
+    ParamProxy(const std::vector<size_t> &labels_in, const LazyParams &params_in, const std::vector<size_t> &bindings_in)
+        : labels(labels_in), params(params_in), bindings(bindings_in) {}
+    const Value &resolve(size_t idx, Stash &stash) const override {
+        if (idx < labels.size()) {
+            return stash.create<DoubleValue>(labels[idx]);
+        }
+        return params.resolve(bindings[idx - labels.size()], stash);
+    }
+};
+
+}
+
+TensorSpec
+Lambda::create_spec_impl(const ValueType &type, const LazyParams &params, const std::vector<size_t> &bind, const InterpretedFunction &fun)
+{
+    std::vector<size_t> labels(type.dimensions().size(), 0);
+    ParamProxy param_proxy(labels, params, bind);
+    InterpretedFunction::Context ctx(fun);
+    TensorSpec spec(type.to_spec());
+    do {
+        TensorSpec::Address address;
+        for (size_t i = 0; i < labels.size(); ++i) {
+            address.emplace(type.dimensions()[i].name, labels[i]);
+        }
+        spec.add(std::move(address), fun.eval(ctx, param_proxy).as_double());
+    } while (step_labels(labels, type));
+    return spec;
+}
+
+InterpretedFunction::Instruction
+Lambda::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+{
+    return instruction::GenericLambda::make_instruction(*this, factory, stash);
+}
+
+void
+Lambda::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Super::visit_self(visitor);
+    ::visit(visitor, "bindings", _bindings);
 }
 
 //-----------------------------------------------------------------------------
@@ -385,28 +332,48 @@ void
 Peek::push_children(std::vector<Child::CREF> &children) const
 {
     children.emplace_back(_param);
-    for (const auto &dim: _spec) {
+    for (const auto &dim: _map) {
         std::visit(vespalib::overload
                    {
                        [&](const Child &child) {
                            children.emplace_back(child);
                        },
-                       [](const TensorSpec::Label &){}
+                       [](const TensorSpec::Label &) noexcept {}
                    }, dim.second);
     }
 }
 
-Instruction
-Peek::compile_self(Stash &) const
+Peek::Spec
+Peek::make_spec() const
 {
-    return Instruction(op_tensor_peek, wrap_param<Peek>(*this));
+    Spec generic_spec;
+    // the value peeked is child 0, so
+    // children (for label computation) in spec start at 1:
+    size_t child_idx = 1;
+    for (const auto & [dim_name, label_or_child] : map()) {
+        std::visit(vespalib::overload {
+                [&,&dim_name = dim_name](const TensorSpec::Label &label) {
+                    generic_spec.emplace(dim_name, label);
+                },
+                [&,&dim_name = dim_name](const TensorFunction::Child &) {
+                    generic_spec.emplace(dim_name, child_idx++);
+                }
+            }, label_or_child);
+    }
+    return generic_spec;
+}
+
+Instruction
+Peek::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+{
+    return instruction::GenericPeek::make_instruction(result_type(), param_type(), make_spec(), factory, stash);
 }
 
 void
 Peek::visit_children(vespalib::ObjectVisitor &visitor) const
 {
     ::visit(visitor, "param", _param.get());
-    for (const auto &dim: _spec) {
+    for (const auto &dim: _map) {
         std::visit(vespalib::overload
                    {
                        [&](const TensorSpec::Label &label) {
@@ -426,10 +393,9 @@ Peek::visit_children(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Rename::compile_self(Stash &stash) const
+Rename::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    RenameParams &params = stash.create<RenameParams>(_from, _to);
-    return Instruction(op_tensor_rename, wrap_param<RenameParams>(params));
+    return instruction::GenericRename::make_instruction(result_type(), child().result_type(), from(), to(), factory, stash);
 }
 
 void
@@ -450,7 +416,7 @@ If::push_children(std::vector<Child::CREF> &children) const
 }
 
 Instruction
-If::compile_self(Stash &) const
+If::compile_self(const ValueBuilderFactory &, Stash &) const
 {
     // 'if' is handled directly by compile_tensor_function to enable
     // lazy-evaluation of true/false sub-expressions.
@@ -467,58 +433,72 @@ If::visit_children(vespalib::ObjectVisitor &visitor) const
 
 //-----------------------------------------------------------------------------
 
-const Node &const_value(const Value &value, Stash &stash) {
+const TensorFunction &const_value(const Value &value, Stash &stash) {
     return stash.create<ConstValue>(value);
 }
 
-const Node &inject(const ValueType &type, size_t param_idx, Stash &stash) {
+const TensorFunction &inject(const ValueType &type, size_t param_idx, Stash &stash) {
     return stash.create<Inject>(type, param_idx);
 }
 
-const Node &reduce(const Node &child, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) {
+const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) {
     ValueType result_type = child.result_type().reduce(dimensions);
-    return stash.create<Reduce>(result_type, child, aggr, dimensions);
+    if (dimensions.empty()) { // expand dimension list for full reduce
+        return stash.create<Reduce>(result_type, child, aggr, child.result_type().dimension_names());
+    } else {
+        return stash.create<Reduce>(result_type, child, aggr, dimensions);
+    }
 }
 
-const Node &map(const Node &child, map_fun_t function, Stash &stash) {
-    ValueType result_type = child.result_type();
+const TensorFunction &map(const TensorFunction &child, map_fun_t function, Stash &stash) {
+    ValueType result_type = child.result_type().map();
     return stash.create<Map>(result_type, child, function);
 }
 
-const Node &join(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash) {
+const TensorFunction &join(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash) {
     ValueType result_type = ValueType::join(lhs.result_type(), rhs.result_type());
     return stash.create<Join>(result_type, lhs, rhs, function);
 }
 
-const Node &merge(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash) {
+const TensorFunction &merge(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash) {
     ValueType result_type = ValueType::merge(lhs.result_type(), rhs.result_type());
     return stash.create<Merge>(result_type, lhs, rhs, function);
 }
 
-const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dimension, Stash &stash) {
+const TensorFunction &concat(const TensorFunction &lhs, const TensorFunction &rhs, const vespalib::string &dimension, Stash &stash) {
     ValueType result_type = ValueType::concat(lhs.result_type(), rhs.result_type(), dimension);
     return stash.create<Concat>(result_type, lhs, rhs, dimension);
 }
 
-const Node &create(const ValueType &type, const std::map<TensorSpec::Address,Node::CREF> &spec, Stash &stash) {
+const TensorFunction &create(const ValueType &type, const std::map<TensorSpec::Address,TensorFunction::CREF> &spec, Stash &stash) {
     return stash.create<Create>(type, spec);
 }
 
-const Node &peek(const Node &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, Node::CREF>> &spec, Stash &stash) {
+const TensorFunction &lambda(const ValueType &type, const std::vector<size_t> &bindings, const Function &function, NodeTypes node_types, Stash &stash) {
+    return stash.create<Lambda>(type, bindings, function, std::move(node_types));
+}
+
+const TensorFunction &cell_cast(const TensorFunction &child, CellType cell_type, Stash &stash) {
+    ValueType result_type = child.result_type().cell_cast(cell_type);
+    return stash.create<CellCast>(result_type, child, cell_type);
+}
+
+const TensorFunction &peek(const TensorFunction &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec, Stash &stash) {
     std::vector<vespalib::string> dimensions;
     for (const auto &dim_spec: spec) {
         dimensions.push_back(dim_spec.first);
     }
-    ValueType result_type = param.result_type().reduce(dimensions);
+    assert(!dimensions.empty());
+    ValueType result_type = param.result_type().peek(dimensions);
     return stash.create<Peek>(result_type, param, spec);
 }
 
-const Node &rename(const Node &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) {
+const TensorFunction &rename(const TensorFunction &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) {
     ValueType result_type = child.result_type().rename(from, to);
     return stash.create<Rename>(result_type, child, from, to);
 }
 
-const Node &if_node(const Node &cond, const Node &true_child, const Node &false_child, Stash &stash) {
+const TensorFunction &if_node(const TensorFunction &cond, const TensorFunction &true_child, const TensorFunction &false_child, Stash &stash) {
     ValueType result_type = ValueType::either(true_child.result_type(), false_child.result_type());
     return stash.create<If>(result_type, cond, true_child, false_child);
 }

@@ -8,7 +8,7 @@ vespa_add_executable(storageserver_gtest_runner_app TEST
     DEPENDS
     storageserver_storageapp
     vdstestlib
-    gtest
+    GTest::GTest
 )
 
 vespa_add_test(

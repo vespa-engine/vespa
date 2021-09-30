@@ -3,17 +3,21 @@ package com.yahoo.vespa.model.utils;
 
 import com.yahoo.config.FileNode;
 import com.yahoo.config.FileReference;
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.model.test.MockRoot;
-import com.yahoo.vespa.config.*;
+import com.yahoo.vespa.config.ConfigDefinition;
+import com.yahoo.vespa.config.ConfigDefinitionKey;
+import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,15 +28,42 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class FileSenderTest {
 
     private SimpleConfigProducer<?> producer;
     private ConfigPayloadBuilder builder;
     private List<AbstractService> serviceList;
+    private final MyFileRegistry fileRegistry = new MyFileRegistry();
     private ConfigDefinition def;
     private TestService service;
+
+    private static class MyFileRegistry implements FileRegistry {
+        public Map<String, FileReference> pathToRef = new HashMap<>();
+        @Override
+        public FileReference addFile(String relativePath) {
+            return pathToRef.get(relativePath);
+        }
+
+        @Override
+        public FileReference addUri(String uri) {
+            return null;
+        }
+
+        @Override
+        public FileReference addBlob(String name, ByteBuffer blob) {
+            return null;
+        }
+
+        @Override
+        public List<Entry> export() {
+            return null;
+        }
+    }
+
+    private FileSender fileSender() {
+        return new FileSender(serviceList, fileRegistry, new BaseDeployLogger());
+    }
 
     @Before
     public void setup() {
@@ -42,7 +73,7 @@ public class FileSenderTest {
         serviceList = new ArrayList<>();
         serviceList.add(service);
         ConfigDefinitionKey key = new ConfigDefinitionKey("myname", "mynamespace");
-        def = new ConfigDefinition("myname", "1", "mynamespace");
+        def = new ConfigDefinition("myname", "mynamespace");
         builder = new ConfigPayloadBuilder(def);
         Map<ConfigDefinitionKey, ConfigPayloadBuilder> builderMap = new HashMap<>();
         builderMap.put(key, builder);
@@ -56,8 +87,8 @@ public class FileSenderTest {
         def.addStringDef("stringVal");
         builder.setField("fileVal", "foo.txt");
         builder.setField("stringVal", "foo.txt");
-        service.pathToRef.put("foo.txt", new FileNode("fooshash").value());
-        FileSender.sendUserConfiguredFiles(producer, serviceList, new BaseDeployLogger());
+        fileRegistry.pathToRef.put("foo.txt", new FileNode("fooshash").value());
+        fileSender().sendUserConfiguredFiles(producer);
         assertThat(builder.getObject("fileVal").getValue(), is("fooshash"));
         assertThat(builder.getObject("stringVal").getValue(), is("foo.txt"));
     }
@@ -68,8 +99,8 @@ public class FileSenderTest {
         def.addStringDef("stringVal");
         builder.setField("fileVal", "foo.txt");
         builder.setField("stringVal", "foo.txt");
-        service.pathToRef.put("foo.txt", new FileNode("fooshash").value());
-        FileSender.sendUserConfiguredFiles(producer, serviceList, new BaseDeployLogger());
+        fileRegistry.pathToRef.put("foo.txt", new FileNode("fooshash").value());
+        fileSender().sendUserConfiguredFiles(producer);
         assertThat(builder.getObject("fileVal").getValue(), is("fooshash"));
         assertThat(builder.getObject("stringVal").getValue(), is("foo.txt"));
     }
@@ -81,8 +112,8 @@ public class FileSenderTest {
         ConfigPayloadBuilder inner = builder.getArray("inner").append();
         inner.setField("fileVal", "bar.txt");
         inner.setField("stringVal", "bar.txt");
-        service.pathToRef.put("bar.txt", new FileNode("barhash").value());
-        FileSender.sendUserConfiguredFiles(producer, serviceList, new BaseDeployLogger());
+        fileRegistry.pathToRef.put("bar.txt", new FileNode("barhash").value());
+        fileSender().sendUserConfiguredFiles(producer);
         assertThat(builder.getArray("inner").get(0).getObject("fileVal").getValue(), is("barhash"));
         assertThat(builder.getArray("inner").get(0).getObject("stringVal").getValue(), is("bar.txt"));
     }
@@ -96,10 +127,10 @@ public class FileSenderTest {
         builder.getArray("fileArray").append("bar.txt");
         builder.getArray("pathArray").append("path.txt");
         builder.getArray("stringArray").append("foo.txt");
-        service.pathToRef.put("foo.txt", new FileNode("foohash").value());
-        service.pathToRef.put("bar.txt", new FileNode("barhash").value());
-        service.pathToRef.put("path.txt", new FileNode("pathhash").value());
-        FileSender.sendUserConfiguredFiles(producer, serviceList, new BaseDeployLogger());
+        fileRegistry.pathToRef.put("foo.txt", new FileNode("foohash").value());
+        fileRegistry.pathToRef.put("bar.txt", new FileNode("barhash").value());
+        fileRegistry.pathToRef.put("path.txt", new FileNode("pathhash").value());
+        fileSender().sendUserConfiguredFiles(producer);
         assertThat(builder.getArray("fileArray").get(0).getValue(), is("foohash"));
         assertThat(builder.getArray("fileArray").get(1).getValue(), is("barhash"));
         assertThat(builder.getArray("pathArray").get(0).getValue(), is("pathhash"));
@@ -112,8 +143,8 @@ public class FileSenderTest {
         def.structDef("struct").addStringDef("stringVal");
         builder.getObject("struct").setField("fileVal", "foo.txt");
         builder.getObject("struct").setField("stringVal", "foo.txt");
-        service.pathToRef.put("foo.txt", new FileNode("foohash").value());
-        FileSender.sendUserConfiguredFiles(producer, serviceList, new BaseDeployLogger());
+        fileRegistry.pathToRef.put("foo.txt", new FileNode("foohash").value());
+        fileSender().sendUserConfiguredFiles(producer);
         assertThat(builder.getObject("struct").getObject("fileVal").getValue(), is("foohash"));
         assertThat(builder.getObject("struct").getObject("stringVal").getValue(), is("foo.txt"));
     }
@@ -127,10 +158,10 @@ public class FileSenderTest {
         builder.getMap("fileMap").put("bar", "bar.txt");
         builder.getMap("pathMap").put("path", "path.txt");
         builder.getMap("stringMap").put("bar", "bar.txt");
-        service.pathToRef.put("foo.txt", new FileNode("foohash").value());
-        service.pathToRef.put("bar.txt", new FileNode("barhash").value());
-        service.pathToRef.put("path.txt", new FileNode("pathhash").value());
-        FileSender.sendUserConfiguredFiles(producer, serviceList, new BaseDeployLogger());
+        fileRegistry.pathToRef.put("foo.txt", new FileNode("foohash").value());
+        fileRegistry.pathToRef.put("bar.txt", new FileNode("barhash").value());
+        fileRegistry.pathToRef.put("path.txt", new FileNode("pathhash").value());
+        fileSender().sendUserConfiguredFiles(producer);
         assertThat(builder.getMap("fileMap").get("foo").getValue(), is("foohash"));
         assertThat(builder.getMap("fileMap").get("bar").getValue(), is("barhash"));
         assertThat(builder.getMap("pathMap").get("path").getValue(), is("pathhash"));
@@ -144,8 +175,8 @@ public class FileSenderTest {
         ConfigPayloadBuilder inner = builder.getMap("inner").put("foo");
         inner.setField("fileVal", "bar.txt");
         inner.setField("stringVal", "bar.txt");
-        service.pathToRef.put("bar.txt", new FileNode("barhash").value());
-        FileSender.sendUserConfiguredFiles(producer, serviceList, new BaseDeployLogger());
+        fileRegistry.pathToRef.put("bar.txt", new FileNode("barhash").value());
+        fileSender().sendUserConfiguredFiles(producer);
         assertThat(builder.getMap("inner").get("foo").getObject("fileVal").getValue(), is("barhash"));
         assertThat(builder.getMap("inner").get("foo").getObject("stringVal").getValue(), is("bar.txt"));
     }
@@ -153,20 +184,14 @@ public class FileSenderTest {
     @Test(expected = IllegalArgumentException.class)
     public void require_that_null_files_are_not_sent() {
         def.addFileDef("fileVal");
-        service.pathToRef.put("foo.txt", new FileNode("fooshash").value());
-        FileSender.sendUserConfiguredFiles(producer, serviceList, new BaseDeployLogger());
+        fileRegistry.pathToRef.put("foo.txt", new FileNode("fooshash").value());
+        fileSender().sendUserConfiguredFiles(producer);
     }
 
 
     private static class TestService extends AbstractService {
-        public Map<String, FileReference> pathToRef = new HashMap<>();
         public TestService(AbstractConfigProducer<?> parent, String name) {
             super(parent, name);
-        }
-
-        @Override
-        public FileReference sendFile(String relativePath) {
-            return pathToRef.get(relativePath);
         }
 
         @Override

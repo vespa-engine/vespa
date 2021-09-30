@@ -6,6 +6,7 @@
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/fastos/app.h>
 #include <vespa/vespalib/util/exception.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 using namespace search;
@@ -49,7 +50,7 @@ VerifyLogDataStoreApp::verify(const vespalib::string & dir)
     GrowStrategy growStrategy;
     TuneFileSummary tuning;
     search::index::DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(1, 128*1024);
+    vespalib::ThreadStackExecutor executor(1, 128_Ki);
     transactionlog::NoSyncProxy noTlSyncer;
 
     try {

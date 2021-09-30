@@ -28,7 +28,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class SearchClusterTest {
 
-    static class State implements AutoCloseable{
+    static class State implements AutoCloseable {
 
         final String clusterId;
         final int nodesPerGroup;
@@ -191,8 +191,22 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatVipStatusIsDefaultDownWithOnlySingleLocalDispatch() {
+    public void requireThatVipStatusStaysUpWithLocalDispatchAndClusterSize1() {
         try (State test = new State("cluster.1", 1, HostName.getLocalhost())) {
+            assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
+
+            assertFalse(test.vipStatus.isInRotation());
+            test.waitOneFullPingRound();
+            assertTrue(test.vipStatus.isInRotation());
+            test.numDocsPerNode.get(0).set(-1);
+            test.waitOneFullPingRound();
+            assertTrue(test.vipStatus.isInRotation());
+        }
+    }
+
+    @Test
+    public void requireThatVipStatusIsDefaultDownWithLocalDispatchAndClusterSize2() {
+        try (State test = new State("cluster.1", 1, HostName.getLocalhost(), "otherhost")) {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
 
             assertFalse(test.vipStatus.isInRotation());
@@ -320,4 +334,48 @@ public class SearchClusterTest {
         assertEquals(3, node.getLastReceivedPongId());
     }
 
+    @Test
+    public void requireThatEmptyGroupIsInBalance() {
+        Group group = new Group(0, new ArrayList<>());
+        assertTrue(group.isBalanced());
+        group.aggregateNodeValues();
+        assertTrue(group.isBalanced());
+    }
+
+    @Test
+    public void requireThatSingleNodeGroupIsInBalance() {
+        Group group = new Group(0, Arrays.asList(new Node(1, "n", 1)));
+        group.nodes().forEach(node -> node.setWorking(true));
+        assertTrue(group.isBalanced());
+        group.aggregateNodeValues();
+        assertTrue(group.isBalanced());
+        group.nodes().get(0).setActiveDocuments(1000);
+        group.aggregateNodeValues();
+        assertTrue(group.isBalanced());
+    }
+
+    @Test
+    public void requireThatMultiNodeGroupDetectsBalance() {
+        Group group = new Group(0, Arrays.asList(new Node(1, "n1", 1), new Node(2, "n2", 1)));
+        assertTrue(group.isBalanced());
+        group.nodes().forEach(node -> node.setWorking(true));
+        assertTrue(group.isBalanced());
+        group.aggregateNodeValues();
+        assertTrue(group.isBalanced());
+        group.nodes().get(0).setActiveDocuments(1000);
+        group.aggregateNodeValues();
+        assertFalse(group.isBalanced());
+        group.nodes().get(1).setActiveDocuments(100);
+        group.aggregateNodeValues();
+        assertFalse(group.isBalanced());
+        group.nodes().get(1).setActiveDocuments(800);
+        group.aggregateNodeValues();
+        assertFalse(group.isBalanced());
+        group.nodes().get(1).setActiveDocuments(818);
+        group.aggregateNodeValues();
+        assertFalse(group.isBalanced());
+        group.nodes().get(1).setActiveDocuments(819);
+        group.aggregateNodeValues();
+        assertTrue(group.isBalanced());
+    }
 }

@@ -2,6 +2,8 @@
 
 #include "test.h"
 
+namespace fast::testsuite {
+
 Test::Test(std::ostream* osptr, const char*name) :
     m_osptr(osptr),
     name_(name),
@@ -134,4 +136,6 @@ long Test::Report(int padSpaces) const
                  << std::endl;
     }
     return m_nFail;
+}
+
 }

@@ -4,17 +4,16 @@ package com.yahoo.feedapi;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.vespa.config.content.LoadTypeConfig;
-import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
-import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.routing.Route;
+import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespaclient.config.FeederConfig;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -152,8 +151,8 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         defaultAbortOnDocumentError = feederOptions.abortOnDocumentError();
         defaultAbortOnSendError = feederOptions.abortOnSendError();
 
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Received new config (" +
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Received new config (" +
                                     "route: " + (defaultRoute != null ? defaultRoute : "<none>") +
                                     ", timeout: " + defaultTimeoutMillis + " ms, retry enabled: " + retryEnabled +
                                     ", docproc chain: " + (defaultDocprocChain != null ? defaultDocprocChain : "<none>") +
@@ -208,14 +207,6 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
             this.route = route;
         }
 
-        public long getTimeout() {
-            return timeout;
-        }
-
-        public void setTimeout(long timeout) {
-            this.timeout = timeout;
-        }
-
         public DocumentProtocol.Priority getPriority() {
             return priority;
         }
@@ -255,22 +246,6 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
             }
         }
 
-        public void process(VisitorParameters params) {
-            if (route != null) {
-                params.setRoute(route);
-            }
-            params.setTimeoutMs(timeout);
-
-            params.setTraceLevel(Math.max(getFeederOptions().getTraceLevel(), traceLevel));
-
-            if (loadType != null) {
-                params.setLoadType(loadType);
-                params.setPriority(loadType.getPriority());
-            }
-
-            if (priority != null) {
-                params.setPriority(priority);
-            }
-        }
     }
+
 }

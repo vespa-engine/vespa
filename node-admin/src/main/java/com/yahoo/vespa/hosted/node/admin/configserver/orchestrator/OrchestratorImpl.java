@@ -5,14 +5,15 @@ import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConnectionException;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
-import com.yahoo.vespa.orchestrator.restapi.HostApi;
-import com.yahoo.vespa.orchestrator.restapi.HostSuspensionApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
+import com.yahoo.vespa.orchestrator.restapi.wire.HostStateChangeDenialReason;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * @author stiankri
@@ -20,6 +21,8 @@ import java.util.Optional;
  * @author dybis
  */
 public class OrchestratorImpl implements Orchestrator {
+    private static final Logger logger = Logger.getLogger(OrchestratorImpl.class.getName());
+
     // The server-side Orchestrator has an internal timeout of 10s.
     //
     // Note: A 409 has been observed to be returned after 33s in a case possibly involving
@@ -32,9 +35,9 @@ public class OrchestratorImpl implements Orchestrator {
     // TODO: Find a way to avoid duplicating this (present in orchestrator's services.xml also).
     private static final String ORCHESTRATOR_PATH_PREFIX = "/orchestrator";
     static final String ORCHESTRATOR_PATH_PREFIX_HOST_API
-            = ORCHESTRATOR_PATH_PREFIX + HostApi.PATH_PREFIX;
+            = ORCHESTRATOR_PATH_PREFIX + "/v1/hosts";
     static final String ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API
-            = ORCHESTRATOR_PATH_PREFIX + HostSuspensionApi.PATH_PREFIX;
+            = ORCHESTRATOR_PATH_PREFIX + "/v1/suspensions/hosts";
 
     private final ConfigServerApi configServerApi;
 
@@ -46,7 +49,10 @@ public class OrchestratorImpl implements Orchestrator {
     public void suspend(final String hostName) {
         UpdateHostResponse response;
         try {
-            var params = new ConfigServerApi.Params().setConnectionTimeout(CONNECTION_TIMEOUT);
+            var params = new ConfigServerApi
+                    .Params<UpdateHostResponse>()
+                    .setConnectionTimeout(CONNECTION_TIMEOUT)
+                    .setRetryPolicy(createRetryPolicyForSuspend());
             response = configServerApi.put(getSuspendPath(hostName), Optional.empty(), UpdateHostResponse.class, params);
         } catch (HttpException.NotFoundException n) {
             throw new OrchestratorNotFoundException("Failed to suspend " + hostName + ", host not found");
@@ -63,11 +69,35 @@ public class OrchestratorImpl implements Orchestrator {
         });
     }
 
+    private static ConfigServerApi.RetryPolicy<UpdateHostResponse> createRetryPolicyForSuspend() {
+        return new ConfigServerApi.RetryPolicy<UpdateHostResponse>() {
+            @Override
+            public boolean tryNextConfigServer(URI configServerEndpoint, UpdateHostResponse response) {
+                HostStateChangeDenialReason reason = response.reason();
+                if (reason == null) {
+                    return false;
+                }
+
+                // The config server has likely just bootstrapped, so try the next.
+                if ("unknown-service-status".equals(reason.constraintName())) {
+                    // Warn for now and until this feature has proven to work well
+                    logger.warning("Config server at [" + configServerEndpoint +
+                                   "] failed with transient error (will try next): " +
+                                   reason.message());
+
+                    return true;
+                }
+
+                return false;
+            }
+        };
+    }
+
     @Override
     public void suspend(String parentHostName, List<String> hostNames) {
         final BatchOperationResult batchOperationResult;
         try {
-            var params = new ConfigServerApi.Params().setConnectionTimeout(CONNECTION_TIMEOUT);
+            var params = new ConfigServerApi.Params<BatchOperationResult>().setConnectionTimeout(CONNECTION_TIMEOUT);
             String hostnames = String.join("&hostname=", hostNames);
             String url = String.format("%s/%s?hostname=%s", ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
                                        parentHostName, hostnames);

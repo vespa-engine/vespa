@@ -5,14 +5,13 @@
 #include "itlssyncer.h"
 
 namespace vespalib { class ThreadExecutor; }
-namespace search { namespace transactionlog { class SyncProxy; } }
+namespace search::transactionlog { class SyncProxy; }
 
-namespace proton
-{
+namespace proton {
 
 class IGetSerialNum;
 
-/*
+/**
  * Class for syncing transaction log server in a safe manner.  The
  * serial number is retrieved by running a task in the document db
  * master thread to ensure that it reflects changes performed to data

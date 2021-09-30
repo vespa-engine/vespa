@@ -2,12 +2,9 @@
 package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
-import com.yahoo.slime.JsonFormat;
-import com.yahoo.slime.Slime;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 
 /**
@@ -16,19 +13,13 @@ import java.util.List;
  * @author Ulf Lilleengen
  * @since 5.1
  */
-class SessionContentListResponse extends SessionResponse {
-    private final Slime slime = new Slime();
+class SessionContentListResponse extends SlimeJsonResponse {
 
     public SessionContentListResponse(String urlBase, List<ApplicationFile> files) {
-        super();
         Cursor array = slime.setArray();
         for (ApplicationFile file : files) {
             array.addString(urlBase + file.getPath() + (file.isDirectory() ? "/" : ""));
         }
     }
 
-    @Override
-    public void render(OutputStream outputStream) throws IOException {
-        new JsonFormat(true).encode(outputStream, slime);
-    }
 }

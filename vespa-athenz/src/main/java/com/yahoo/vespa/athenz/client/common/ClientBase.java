@@ -2,8 +2,10 @@
 package com.yahoo.vespa.athenz.client.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.yahoo.vespa.athenz.client.ErrorHandler;
 import com.yahoo.vespa.athenz.client.common.bindings.ErrorResponseEntity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentitySslSocketFactory;
 import org.apache.http.HttpResponse;
@@ -16,6 +18,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -23,22 +26,29 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author bjorncs
  */
 public abstract class ClientBase implements AutoCloseable {
 
+    protected final Logger logger = Logger.getLogger(getClass().getName());
+
     private static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final CloseableHttpClient client;
     private final ClientExceptionFactory exceptionFactory;
+    private final ErrorHandler errorHandler;
 
     protected ClientBase(String userAgent,
                          Supplier<SSLContext> sslContextSupplier,
                          ClientExceptionFactory exceptionFactory,
-                         HostnameVerifier hostnameVerifier) {
+                         HostnameVerifier hostnameVerifier,
+                         ErrorHandler errorHandler) {
         this.exceptionFactory = exceptionFactory;
+        this.errorHandler = errorHandler;
         this.client = createHttpClient(userAgent, sslContextSupplier, hostnameVerifier);
     }
 
@@ -46,8 +56,15 @@ public abstract class ClientBase implements AutoCloseable {
         try {
             return client.execute(request, responseHandler);
         } catch (IOException e) {
+            try {
+                reportError(request, e);
+            } catch (Exception _ignored) {}
             throw new UncheckedIOException(e);
         }
+    }
+
+    private void reportError(HttpUriRequest request, Exception e) {
+        errorHandler.reportError(() -> request.getURI().getHost(), e);
     }
 
     protected StringEntity toJsonStringEntity(Object entity) {
@@ -59,15 +76,22 @@ public abstract class ClientBase implements AutoCloseable {
     }
 
     protected <T> T readEntity(HttpResponse response, Class<T> entityType) throws IOException {
-        if (isSuccess(response.getStatusLine().getStatusCode())) {
+        int statusCode = response.getStatusLine().getStatusCode();
+        if (isSuccess(statusCode)) {
             if (entityType.equals(Void.class)) {
                 return null;
             } else {
                 return objectMapper.readValue(response.getEntity().getContent(), entityType);
             }
         } else {
-            ErrorResponseEntity errorEntity = objectMapper.readValue(response.getEntity().getContent(), ErrorResponseEntity.class);
-            throw exceptionFactory.createException(errorEntity.code, errorEntity.description);
+            byte[] entity = EntityUtils.toByteArray(response.getEntity());
+            try {
+                ErrorResponseEntity errorEntity = objectMapper.readValue(entity, ErrorResponseEntity.class);
+                throw exceptionFactory.createException(errorEntity.code, errorEntity.description);
+            } catch (JsonMappingException e) {
+                logger.log(Level.INFO, String.format("Response returned status %d, but error response not parseable: %s", statusCode, new String(entity)), e);
+                throw new RuntimeException("Non JSON response from Athenz.");
+            }
         }
     }
 
@@ -80,6 +104,7 @@ public abstract class ClientBase implements AutoCloseable {
                 .setRetryHandler(new DefaultHttpRequestRetryHandler(3, /*requestSentRetryEnabled*/true))
                 .setUserAgent(userAgent)
                 .setSSLSocketFactory(new SSLConnectionSocketFactory(new ServiceIdentitySslSocketFactory(sslContextSupplier), hostnameVerifier))
+                .setMaxConnPerRoute(8)
                 .setDefaultRequestConfig(RequestConfig.custom()
                                                  .setConnectTimeout((int) Duration.ofSeconds(10).toMillis())
                                                  .setConnectionRequestTimeout((int)Duration.ofSeconds(10).toMillis())
@@ -100,4 +125,5 @@ public abstract class ClientBase implements AutoCloseable {
     protected interface ClientExceptionFactory {
         RuntimeException createException(int errorCode, String description);
     }
+
 }

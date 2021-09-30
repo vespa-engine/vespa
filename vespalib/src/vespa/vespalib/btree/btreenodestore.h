@@ -6,7 +6,7 @@
 #include "btreetraits.h"
 #include <vespa/vespalib/datastore/datastore.h>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 class BTreeNodeReclaimer
 {
@@ -16,24 +16,27 @@ public:
     }
 };
 
+template <typename ToFreeze>
+struct FrozenBtreeNode : public ToFreeze {
+    FrozenBtreeNode() : ToFreeze() { this->freeze(); }
+};
 
 template <typename EntryType>
-class BTreeNodeBufferType : public datastore::BufferType<EntryType>
+class BTreeNodeBufferType : public datastore::BufferType<EntryType, FrozenBtreeNode<EntryType>>
 {
-    typedef datastore::BufferType<EntryType> ParentType;
+    using ParentType = datastore::BufferType<EntryType, FrozenBtreeNode<EntryType>>;
     using ParentType::_emptyEntry;
     using ParentType::_arraySize;
+    using ElemCount = typename ParentType::ElemCount;
     using CleanContext = typename ParentType::CleanContext;
 public:
     BTreeNodeBufferType(uint32_t minArrays, uint32_t maxArrays)
         : ParentType(1, minArrays, maxArrays)
-    {
-        _emptyEntry.freeze();
-    }
+    { }
 
-    void initializeReservedElements(void *buffer, size_t reservedElements) override;
+    void initializeReservedElements(void *buffer, ElemCount reservedElements) override;
 
-    void cleanHold(void *buffer, size_t offset, size_t numElems, CleanContext cleanCtx) override;
+    void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) override;
 };
 
 
@@ -156,6 +159,8 @@ public:
 
     std::vector<uint32_t> startCompact();
 
+    std::vector<uint32_t> start_compact_worst();
+
     void finishCompact(const std::vector<uint32_t> &toHold);
 
     void transferHoldLists(generation_t generation) {
@@ -186,6 +191,10 @@ public:
         return _store.getCompacting(ref);
     }
 
+    bool has_held_buffers() const {
+        return _store.has_held_buffers();
+    }
+    
     template <typename FunctionType>
     void foreach_key(EntryRef ref, FunctionType func) const {
         if (!ref.valid())
@@ -218,5 +227,34 @@ extern template class BTreeNodeStore<uint32_t, BTreeNoLeafData, NoAggregated,
 extern template class BTreeNodeStore<uint32_t, int32_t, MinMaxAggregated,
                                      BTreeDefaultTraits::INTERNAL_SLOTS,
                                      BTreeDefaultTraits::LEAF_SLOTS>;
+
+extern template class BTreeNodeBufferType<BTreeInternalNode<uint32_t, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS>>;
+extern template class BTreeNodeBufferType<BTreeInternalNode<uint32_t, MinMaxAggregated, BTreeDefaultTraits::INTERNAL_SLOTS>>;
+
+extern template class BTreeNodeBufferType<BTreeLeafNode<uint32_t, uint32_t, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS>>;
+extern template class BTreeNodeBufferType<BTreeLeafNode<uint32_t, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS>>;
+extern template class BTreeNodeBufferType<BTreeLeafNode<uint32_t, int32_t, MinMaxAggregated, BTreeDefaultTraits::LEAF_SLOTS>>;
+
+}
+
+namespace vespalib::datastore {
+
+using namespace btree;
+
+extern template class BufferType<BTreeInternalNode<uint32_t, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS>,
+                                 FrozenBtreeNode<BTreeInternalNode<uint32_t, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS>>>;
+extern template class BufferType<BTreeInternalNode<uint32_t, MinMaxAggregated, BTreeDefaultTraits::INTERNAL_SLOTS>,
+                                 FrozenBtreeNode<BTreeInternalNode<uint32_t, MinMaxAggregated, BTreeDefaultTraits::INTERNAL_SLOTS>>>;
+
+extern template class BufferType<BTreeLeafNode<uint32_t, uint32_t, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS>,
+                                 FrozenBtreeNode<BTreeLeafNode<uint32_t, uint32_t, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS>>>;
+extern template class BufferType<BTreeLeafNode<uint32_t, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS>,
+                                 FrozenBtreeNode<BTreeLeafNode<uint32_t, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS>>>;
+extern template class BufferType<BTreeLeafNode<uint32_t, int32_t, MinMaxAggregated, BTreeDefaultTraits::LEAF_SLOTS>,
+                                 FrozenBtreeNode<BTreeLeafNode<uint32_t, int32_t, MinMaxAggregated, BTreeDefaultTraits::LEAF_SLOTS>>>;
+
+extern template class BufferType<BTreeKeyData<uint32_t, uint32_t>>;
+extern template class BufferType<BTreeKeyData<uint32_t, int32_t>>;
+extern template class BufferType<BTreeKeyData<uint32_t, BTreeNoLeafData>>;
 
 }

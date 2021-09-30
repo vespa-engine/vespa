@@ -6,7 +6,7 @@
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/text/utf8.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
 using namespace document;
@@ -74,7 +74,7 @@ void insertPredicate(const Schema::Field &sfield,
 
 void insertTensor(const Schema::Field &schemaField,
                   document::FieldValue *fvalue,
-                  std::unique_ptr<vespalib::tensor::Tensor> val) {
+                  std::unique_ptr<vespalib::eval::Value> val) {
     if (schemaField.getDataType() == schema::DataType::TENSOR) {
         *(dynamic_cast<TensorFieldValue *>(fvalue)) = std::move(val);
     } else {
@@ -539,7 +539,7 @@ DocBuilder::AttributeFieldHandle::addPredicate(
 
 void
 DocBuilder::AttributeFieldHandle::addTensor(
-        std::unique_ptr<vespalib::tensor::Tensor> val)
+        std::unique_ptr<vespalib::eval::Value> val)
 {
     if (_element) {
         insertTensor(_sfield, _element.get(), std::move(val));
@@ -618,7 +618,7 @@ DocBuilder::DocumentHandle::DocumentHandle(document::Document &doc,
 DocBuilder::DocBuilder(const Schema &schema)
     : _schema(schema),
       _doctypes_config(DocTypeBuilder(schema).makeConfig()),
-      _repo(new DocumentTypeRepo(_doctypes_config)),
+      _repo(std::make_shared<DocumentTypeRepo>(_doctypes_config)),
       _docType(*_repo->getDocumentType("searchdocument")),
       _doc(),
       _handleDoc(),
@@ -626,14 +626,14 @@ DocBuilder::DocBuilder(const Schema &schema)
 {
 }
 
-DocBuilder::~DocBuilder() {}
+DocBuilder::~DocBuilder() = default;
 
 DocBuilder &
 DocBuilder::startDocument(const vespalib::string & docId)
 {
-    _doc.reset(new Document(_docType, DocumentId(docId)));
+    _doc = std::make_unique<Document>(_docType, DocumentId(docId));
     _doc->setRepo(*_repo);
-    _handleDoc.reset(new DocumentHandle(*_doc, docId));
+    _handleDoc = std::make_shared<DocumentHandle>(*_doc, docId);
     return *this;
 }
 
@@ -773,7 +773,7 @@ DocBuilder::addPredicate(std::unique_ptr<vespalib::Slime> val)
 }
 
 DocBuilder &
-DocBuilder::addTensor(std::unique_ptr<vespalib::tensor::Tensor> val)
+DocBuilder::addTensor(std::unique_ptr<vespalib::eval::Value> val)
 {
     assert(_currDoc != nullptr);
     _currDoc->getFieldHandle()->addTensor(std::move(val));

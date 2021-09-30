@@ -12,11 +12,10 @@ import com.yahoo.config.provision.zone.ZoneId;
  */
 public interface ArtifactRepository {
 
-    // TODO unused, remove
-    /** Returns the tenant application package of the given version. */
-    byte[] getApplicationPackage(ApplicationId application, String applicationVersion);
-
     /** Returns the system application package of the given version. */
     byte[] getSystemApplicationPackage(ApplicationId application, ZoneId zone, Version version);
+
+    /** Returns the current stable OS version for the given major version */
+    StableOsVersion stableOsVersion(int major);
 
 }

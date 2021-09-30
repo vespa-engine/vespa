@@ -2,7 +2,7 @@
 
 #include "query.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-
+#include <charconv>
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.querynode");
 
@@ -10,8 +10,10 @@ namespace search::streaming {
 
 namespace {
     vespalib::stringref DEFAULT("default");
-    bool isPhraseOrNear(const QueryNode * qn) {
-        return dynamic_cast<const NearQueryNode *> (qn) || dynamic_cast<const PhraseQueryNode *> (qn);
+    bool disableRewrite(const QueryNode * qn) {
+        return dynamic_cast<const NearQueryNode *> (qn) ||
+               dynamic_cast<const PhraseQueryNode *> (qn) ||
+               dynamic_cast<const SameElementQueryNode *>(qn);
     }
 }
 
@@ -41,7 +43,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             QueryConnector * qc = dynamic_cast<QueryConnector *> (qn.get());
             NearQueryNode * nqn = dynamic_cast<NearQueryNode *> (qc);
             if (nqn) {
-                nqn->distance(queryRep.getArg1());
+                nqn->distance(queryRep.getNearDistance());
             }
             if ((type == ParseItem::ITEM_WEAK_AND) ||
                 (type == ParseItem::ITEM_WEIGHTED_SET) ||
@@ -56,13 +58,18 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
                 if (qc->isFlattenable(queryRep.getType())) {
                     arity += queryRep.getArity();
                 } else {
-                    UP child = Build(qc, factory, queryRep, allowRewrite && !isPhraseOrNear(qn.get()));
-                    qc->push_back(std::move(child));
+                    qc->addChild(Build(qc, factory, queryRep, allowRewrite && !disableRewrite(qn.get())));
                 }
             }
         }
     }
     break;
+    case ParseItem::ITEM_GEO_LOCATION_TERM:
+        // TODO implement this:
+        // vespalib::string field = queryRep.getIndexName();
+        // vespalib::stringref location_term = queryRep.getTerm();
+        // qn = std::make_unique<LocationQueryNode> ...something ....
+        // break;
     case ParseItem::ITEM_NUMTERM:
     case ParseItem::ITEM_TERM:
     case ParseItem::ITEM_PREFIXTERM:
@@ -84,47 +91,59 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
         if (dynamic_cast<const SameElementQueryNode *>(parent) != nullptr) {
             index = parent->getIndex() + "." + index;
         }
-        vespalib::stringref term = queryRep.getTerm();
-        QueryTerm::SearchTerm sTerm(QueryTerm::WORD);
+        using TermType = QueryTerm::Type;
+        TermType sTerm(TermType::WORD);
         switch (type) {
         case ParseItem::ITEM_REGEXP:
-            sTerm = QueryTerm::REGEXP;
+            sTerm = TermType::REGEXP;
             break;
         case ParseItem::ITEM_PREFIXTERM:
-            sTerm = QueryTerm::PREFIXTERM;
+            sTerm = TermType::PREFIXTERM;
             break;
         case ParseItem::ITEM_SUBSTRINGTERM:
-            sTerm = QueryTerm::SUBSTRINGTERM;
+            sTerm = TermType::SUBSTRINGTERM;
             break;
         case ParseItem::ITEM_EXACTSTRINGTERM:
-            sTerm = QueryTerm::EXACTSTRINGTERM;
+            sTerm = TermType::EXACTSTRINGTERM;
             break;
         case ParseItem::ITEM_SUFFIXTERM:
-            sTerm = QueryTerm::SUFFIXTERM;
+            sTerm = TermType::SUFFIXTERM;
             break;
         default:
             break;
         }
-        QueryTerm::string ssTerm(term);
+        QueryTerm::string ssTerm;
+        if (type == ParseItem::ITEM_PURE_WEIGHTED_LONG) {
+            char buf[24];
+            auto res = std::to_chars(buf, buf + sizeof(buf), queryRep.getIntergerTerm(), 10);
+            ssTerm.assign(buf, res.ptr - buf);
+        } else {
+            ssTerm = queryRep.getTerm();
+        }
         QueryTerm::string ssIndex(index);
         if (ssIndex == "sddocname") {
             // This is suboptimal as the term should be checked too.
             // But it will do for now as only correct sddocname queries are sent down.
-            qn.reset(new TrueNode());
+            qn = std::make_unique<TrueNode>();
         } else {
-            std::unique_ptr<QueryTerm> qt(new QueryTerm(factory.create(), ssTerm, ssIndex, sTerm));
+            auto qt = std::make_unique<QueryTerm>(factory.create(), ssTerm, ssIndex, sTerm);
             qt->setWeight(queryRep.GetWeight());
             qt->setUniqueId(queryRep.getUniqueId());
-            if ( qt->encoding().isBase10Integer() || ! qt->encoding().isFloat() || ! factory.getRewriteFloatTerms() || !allowRewrite || (ssTerm.find('.') == vespalib::string::npos)) {
+            if (qt->encoding().isBase10Integer() ||
+                ! qt->encoding().isFloat() ||
+                ! factory.getRewriteFloatTerms() ||
+                ! allowRewrite ||
+                (ssTerm.find('.') == vespalib::string::npos))
+            {
                 qn = std::move(qt);
             } else {
-                std::unique_ptr<PhraseQueryNode> phrase(new PhraseQueryNode());
-                phrase->push_back(UP(new QueryTerm(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, QueryTerm::WORD)));
-                phrase->push_back(UP(new QueryTerm(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, QueryTerm::WORD)));
-                std::unique_ptr<EquivQueryNode> orqn(new EquivQueryNode());
-                orqn->push_back(std::move(qt));
-                orqn->push_back(std::move(phrase));
-                qn.reset(orqn.release());
+                auto phrase = std::make_unique<PhraseQueryNode>();
+                phrase->addChild(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, TermType::WORD));
+                phrase->addChild(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, TermType::WORD));
+                auto orqn = std::make_unique<EquivQueryNode>();
+                orqn->addChild(std::move(qt));
+                orqn->addChild(std::move(phrase));
+                qn = std::move(orqn);
             }
         }
     }

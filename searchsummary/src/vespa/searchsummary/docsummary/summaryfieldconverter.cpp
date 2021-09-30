@@ -24,14 +24,15 @@
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/util/url.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -389,9 +390,11 @@ private:
         MapFieldValueInserter map_inserter(_inserter, _tokenize);
         if (filter_matching_elements()) {
             assert(v.has_no_erased_keys());
-            for (uint32_t id_to_keep : (*_matching_elems)) {
-                auto entry = v[id_to_keep];
-                map_inserter.insert_entry(*entry.first, *entry.second);
+            if (!_matching_elems->empty() && _matching_elems->back() < v.size()) {
+                for (uint32_t id_to_keep : (*_matching_elems)) {
+                    auto entry = v[id_to_keep];
+                    map_inserter.insert_entry(*entry.first, *entry.second);
+                }
             }
         } else {
             for (const auto &entry : v) {
@@ -406,8 +409,10 @@ private:
             ArrayInserter ai(a);
             SlimeFiller conv(ai, _tokenize);
             if (filter_matching_elements()) {
-                for (uint32_t id_to_keep : (*_matching_elems)) {
-                    value[id_to_keep].accept(conv);
+                if (!_matching_elems->empty() && _matching_elems->back() < value.size()) {
+                    for (uint32_t id_to_keep : (*_matching_elems)) {
+                        value[id_to_keep].accept(conv);
+                    }
                 }
             } else {
                 for (const FieldValue &fv : value) {
@@ -506,7 +511,7 @@ private:
         const auto &tensor = value.getAsTensorPtr();
         vespalib::nbostream s;
         if (tensor) {
-            vespalib::tensor::TypedBinaryFormat::serialize(s, *tensor);
+            encode_value(*tensor, s);
         }
         _inserter.insertData(vespalib::Memory(s.peek(), s.size()));
     }
@@ -552,7 +557,7 @@ public:
         SlimeInserter inserter(slime);
         SlimeFiller visitor(inserter, _tokenize, _matching_elems);
         input.accept(visitor);
-        search::RawBuf rbuf(4096);
+        search::RawBuf rbuf(4_Ki);
         search::SlimeOutputRawBufAdapter adapter(rbuf);
         vespalib::slime::BinaryFormat::encode(slime, adapter);
         return std::make_unique<RawFieldValue>(rbuf.GetDrainPos(), rbuf.GetUsedLen());

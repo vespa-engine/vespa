@@ -1,33 +1,66 @@
 {
-  "lastVersions": {},
-  "deploying": {},
-  "deployments": [],
-  "jobs": {},
-  "devJobs": {
-    "dev-us-east-1": {
+  "deployment": [
+    {
+      "jobName": "dev-us-east-1",
       "runs": [
         {
-          "id": 1,
-          "status": "success",
+          "versions": {
+            "targetApplication": {
+              "build": 2
+            },
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "build": 1
+            },
+            "sourcePlatform": "6.1.0"
+          },
+          "start": 0,
+          "id": 2,
+          "steps": [
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "unfinished"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "unfinished"
+            }
+          ],
+          "url": "https://some.url:43/root/run/2",
+          "status": "running"
+        },
+        {
+          "versions": {
+            "targetApplication": {
+              "build": 1
+            },
+            "targetPlatform": "6.1.0"
+          },
           "start": 0,
           "end": 0,
-          "wantedPlatform": "6.1",
-          "wantedApplication": {
-            "hash": "unknown"
-          },
-          "steps": {
-            "deployReal": "succeeded",
-            "installReal": "succeeded",
-            "copyVespaLogs": "succeeded"
-          },
-          "tasks": {
-            "deploy": "succeeded",
-            "install": "succeeded"
-          },
-          "log": "https://some.url:43/root/dev-us-east-1/run/1"
+          "id": 1,
+          "steps": [
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/root/run/1",
+          "status": "success"
         }
-      ],
-      "url": "https://some.url:43/root/dev-us-east-1"
+      ]
     }
-  }
+  ]
 }

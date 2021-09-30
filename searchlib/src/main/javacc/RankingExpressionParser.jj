@@ -115,6 +115,7 @@ TOKEN :
     <SQRT: "sqrt"> |
     <TAN: "tan"> |
     <TANH: "tanh"> |
+    <ERF: "erf"> |
 
     <ATAN2: "atan2"> |
     <FMOD: "fmod"> |
@@ -122,6 +123,8 @@ TOKEN :
     // MAX
     // MIN
     <POW: "pow"> |
+    <BIT: "bit"> |
+    <HAMMING: "hamming"> |
 
     <MAP: "map"> |
     <REDUCE: "reduce"> |
@@ -140,13 +143,15 @@ TOKEN :
     <XW_PLUS_B: "xw_plus_b"> |
     <ARGMAX: "argmax"> |
     <ARGMIN: "argmin"> |
+    <CELL_CAST: "cell_cast"> |
 
     <AVG: "avg" > |
     <COUNT: "count"> |
+    <MAX: "max"> |
+    <MEDIAN: "median"> |
+    <MIN: "min"> |
     <PROD: "prod"> |
     <SUM: "sum"> |
-    <MAX: "max"> |
-    <MIN: "min"> |
 
     <IDENTIFIER: (["A"-"Z","a"-"z","0"-"9","_","@"](["A"-"Z","a"-"z","0"-"9","_","@","$"])*)>
 }
@@ -326,28 +331,8 @@ List<ExpressionNode> args() :
     ExpressionNode argument;
 }
 {
-    ( ( argument = arg() { arguments.add(argument); } ( <COMMA> argument = arg() { arguments.add(argument); } )* )? )
+    ( ( argument = expression() { arguments.add(argument); } ( <COMMA> argument = expression() { arguments.add(argument); } )* )? )
     { return arguments; }
-}
-
-// TODO: Replace use of this for function arguments with value()
-// For that to work with the current search execution framework
-// we need to generate another function for the argument such that we can replace
-// instances of the argument with the reference to that function in the same way
-// as we replace by constants/names today (this can make for some fun combinatorial explosion).
-// We should also stop doing function expansion in the toString of a function.
-// - Jon 2014-05-02
-ExpressionNode arg() :
-{
-    ExpressionNode ret;
-    String name;
-    Function fnc;
-}
-{
-    ( ret = constantPrimitive()                                          |
-      LOOKAHEAD(2) ret = feature()                                       |
-      name = identifier()              { ret = new NameNode(name);       } )
-    { return ret; }
 }
 
 ExpressionNode function() :
@@ -398,7 +383,8 @@ TensorFunctionNode tensorFunction() :
         tensorExpression = tensorSoftmax() |
         tensorExpression = tensorXwPlusB() |
         tensorExpression = tensorArgmax() |
-        tensorExpression = tensorArgmin()
+        tensorExpression = tensorArgmin() |
+        tensorExpression = tensorCellCast()
     )
     { return tensorExpression; }
 }
@@ -598,21 +584,31 @@ TensorFunctionNode tensorXwPlusB() :
 TensorFunctionNode tensorArgmax() :
 {
     ExpressionNode tensor;
-    String dimension;
+    List<String> dimensions = null;
 }
 {
-    <ARGMAX> <LBRACE> tensor = expression() <COMMA> dimension = identifier() <RBRACE>
-    { return new TensorFunctionNode(new Argmax(TensorFunctionNode.wrap(tensor), dimension)); }
+    <ARGMAX> <LBRACE> tensor = expression() dimensions = tagCommaLeadingList() <RBRACE>
+    { return new TensorFunctionNode(new Argmax(TensorFunctionNode.wrap(tensor), dimensions)); }
 }
 
 TensorFunctionNode tensorArgmin() :
 {
     ExpressionNode tensor;
-    String dimension;
+    List<String> dimensions = null;
 }
 {
-    <ARGMIN> <LBRACE> tensor = expression() <COMMA> dimension = identifier() <RBRACE>
-    { return new TensorFunctionNode(new Argmin(TensorFunctionNode.wrap(tensor), dimension)); }
+    <ARGMIN> <LBRACE> tensor = expression() dimensions = tagCommaLeadingList() <RBRACE>
+    { return new TensorFunctionNode(new Argmin(TensorFunctionNode.wrap(tensor), dimensions)); }
+}
+
+TensorFunctionNode tensorCellCast() :
+{
+    ExpressionNode tensor;
+    String valueType;
+}
+{
+    <CELL_CAST> <LBRACE> tensor = expression() <COMMA> valueType = identifier() <RBRACE>
+    { return new TensorFunctionNode(new CellCast(TensorFunctionNode.wrap(tensor), TensorType.Value.fromId(valueType)));}
 }
 
 LambdaFunctionNode lambdaFunction() :
@@ -629,7 +625,7 @@ Reduce.Aggregator tensorReduceAggregator() :
 {
 }
 {
-    ( <AVG> | <COUNT> | <PROD> | <SUM> | <MAX> | <MIN> )
+    ( <AVG> | <COUNT> | <MAX> | <MEDIAN> | <MIN> | <PROD> | <SUM>  )
     { return Reduce.Aggregator.valueOf(token.image); }
 }
 
@@ -685,7 +681,7 @@ String tensorFunctionName() :
     ( <MAP>          { return token.image; } ) |
     ( <REDUCE>       { return token.image; } ) |
     ( <JOIN>         { return token.image; } ) |
-    ( <MERGE>         { return token.image; } ) |
+    ( <MERGE>        { return token.image; } ) |
     ( <RENAME>       { return token.image; } ) |
     ( <CONCAT>       { return token.image; } ) |
     ( <TENSOR>       { return token.image; } ) |
@@ -699,6 +695,7 @@ String tensorFunctionName() :
     ( <XW_PLUS_B>    { return token.image; } ) |
     ( <ARGMAX>       { return token.image; } ) |
     ( <ARGMIN>       { return token.image; } ) |
+    ( <CELL_CAST>    { return token.image; } ) |
     ( aggregator = tensorReduceAggregator() { return aggregator.toString(); } )
 }
 
@@ -727,7 +724,8 @@ Function unaryFunctionName() : { }
     <SQUARE>  { return Function.square;  } |
     <SQRT>    { return Function.sqrt;    } |
     <TAN>     { return Function.tan;     } |
-    <TANH>    { return Function.tanh;    }
+    <TANH>    { return Function.tanh;    } |
+    <ERF>     { return Function.erf;     }
 }
 
 Function binaryFunctionName() : { }
@@ -737,7 +735,9 @@ Function binaryFunctionName() : { }
     <LDEXP> { return Function.ldexp; } |
     <MAX>   { return Function.max;   } |
     <MIN>   { return Function.min;   } |
-    <POW>   { return Function.pow;   }
+    <POW>   { return Function.pow;   } |
+    <BIT>   { return Function.bit;   } |
+    <HAMMING> { return Function.hamming; }
 }
 
 List<ExpressionNode> expressionList() :

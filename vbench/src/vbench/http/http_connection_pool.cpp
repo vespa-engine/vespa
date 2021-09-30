@@ -19,7 +19,7 @@ HttpConnection::UP
 HttpConnectionPool::getConnection(const ServerSpec &server)
 {
     double now = _timer.sample();
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     auto res = _map.insert(std::make_pair(server, _store.size()));
     if (res.second) {
         _store.emplace_back();
@@ -40,7 +40,7 @@ void
 HttpConnectionPool::putConnection(HttpConnection::UP conn)
 {
     double now = _timer.sample();
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     conn->touch(now);
     size_t idx = _map[conn->server()];
     assert(idx < _store.size());

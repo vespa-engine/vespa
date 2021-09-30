@@ -1,15 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "maintenancejobrunner.h"
-#include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.maintenancejobrunner");
 
 using vespalib::Executor;
-using vespalib::makeClosure;
-using vespalib::makeTask;
+using vespalib::makeLambdaTask;
 
 namespace proton {
 
@@ -20,16 +19,22 @@ MaintenanceJobRunner::run()
     addExecutorTask();
 }
 
+void
+MaintenanceJobRunner::stop() {
+    {
+        Guard guard(_lock);
+        _stopped = true;
+    }
+    _job->stop();
+}
 
 void
 MaintenanceJobRunner::addExecutorTask()
 {
-    if (!_stopped && !_job->isBlocked()) {
-        Guard guard(_lock);
-        if (!_queued) {
-            _queued = true;
-            _executor.execute(makeTask(makeClosure(this, &MaintenanceJobRunner::runJobInExecutor)));
-        }
+    Guard guard(_lock);
+    if (!_stopped && !_job->isBlocked() && !_queued) {
+        _queued = true;
+        _executor.execute(makeLambdaTask([this]() { runJobInExecutor(); }));
     }
 }
 
@@ -39,6 +44,9 @@ MaintenanceJobRunner::runJobInExecutor()
     {
         Guard guard(_lock);
         _queued = false;
+        if (_stopped) {
+            return;
+        }
         _running = true;
     }
     bool finished = _job->run();
@@ -57,8 +65,7 @@ MaintenanceJobRunner::runJobInExecutor()
     }
 }
 
-MaintenanceJobRunner::MaintenanceJobRunner(Executor &executor,
-                                           IMaintenanceJob::UP job)
+MaintenanceJobRunner::MaintenanceJobRunner(Executor &executor, IMaintenanceJob::UP job)
     : _executor(executor),
       _job(std::move(job)),
       _stopped(false),
@@ -71,6 +78,13 @@ MaintenanceJobRunner::MaintenanceJobRunner(Executor &executor,
 
 bool
 MaintenanceJobRunner::isRunning() const
+{
+    Guard guard(_lock);
+    return _running;
+}
+
+bool
+MaintenanceJobRunner::isRunnable() const
 {
     Guard guard(_lock);
     return _running || _queued;

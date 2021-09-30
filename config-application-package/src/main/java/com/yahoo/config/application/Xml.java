@@ -1,9 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.io.reader.NamedReader;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
 import org.w3c.dom.Document;
@@ -61,7 +61,7 @@ public class Xml {
         try {
             return factory.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
-            log.log(LogLevel.WARNING, "No XML parser available - " + e);
+            log.log(Level.WARNING, "No XML parser available - " + e);
             return null;
         }
     }
@@ -73,10 +73,6 @@ public class Xml {
         factory.setXIncludeAware(false);
         factory.setValidating(false);
         return factory.newDocumentBuilder();
-    }
-
-    static File getServices(File app) {
-        return new File(app, "services.xml"); // TODO Do not hard-code
     }
 
     static Document copyDocument(Document input) throws TransformerException {
@@ -142,9 +138,7 @@ public class Xml {
         List<Element> children = XML.getChildren(parent, name);
         List<Element> allFromFiles = allElemsFromPath(app, pathFromAppRoot);
         for (Element fromFile : allFromFiles) {
-            for (Element inThatFile : XML.getChildren(fromFile, name)) {
-                children.add(inThatFile);
-            }
+            children.addAll(XML.getChildren(fromFile, name));
         }
         return children;
     }

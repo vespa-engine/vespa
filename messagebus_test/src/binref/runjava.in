@@ -2,9 +2,17 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 unset VESPA_LOG_TARGET
 unset LD_PRELOAD
-CLASSPATH=@PROJECT_SOURCE_DIR@/messagebus/target/messagebus-jar-with-dependencies.jar
-CLASSPATH=$CLASSPATH:@PROJECT_SOURCE_DIR@/component/target/component.jar
+
+if [ -n "$VESPA_CPP_TEST_JARS" ]; then
+  CLASSPATH=$VESPA_CPP_TEST_JARS/messagebus-jar-with-dependencies.jar
+  CLASSPATH=$CLASSPATH:$VESPA_CPP_TEST_JARS/component.jar
+else
+  CLASSPATH=@PROJECT_SOURCE_DIR@/messagebus/target/messagebus-jar-with-dependencies.jar
+  CLASSPATH=$CLASSPATH:@PROJECT_SOURCE_DIR@/component/target/component.jar
+fi
+
 CLASSPATH=$CLASSPATH:.
+
 if [ $# -lt 1 ]; then
   echo "usage: runjava <class> [args]"
   exit 1

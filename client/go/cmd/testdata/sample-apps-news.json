@@ -1,0 +1,178 @@
+[
+  {
+    "name": "README.md",
+    "path": "news/README.md",
+    "sha": "faaf9e19a01ae471d7a53ba9ed727bd792edf77c",
+    "size": 193,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/README.md?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/news/README.md",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/faaf9e19a01ae471d7a53ba9ed727bd792edf77c",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/news/README.md",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/README.md?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/faaf9e19a01ae471d7a53ba9ed727bd792edf77c",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/news/README.md"
+    }
+  },
+  {
+    "name": "app-1-getting-started",
+    "path": "news/app-1-getting-started",
+    "sha": "beba7dde150de79caf412a90ccf10177aef3af92",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/app-1-getting-started?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/news/app-1-getting-started",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/beba7dde150de79caf412a90ccf10177aef3af92",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/app-1-getting-started?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/beba7dde150de79caf412a90ccf10177aef3af92",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/news/app-1-getting-started"
+    }
+  },
+  {
+    "name": "app-2-feed-and-query",
+    "path": "news/app-2-feed-and-query",
+    "sha": "508dff55513ec03db25765b1022b85f5d5b225c3",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/app-2-feed-and-query?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/news/app-2-feed-and-query",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/508dff55513ec03db25765b1022b85f5d5b225c3",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/app-2-feed-and-query?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/508dff55513ec03db25765b1022b85f5d5b225c3",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/news/app-2-feed-and-query"
+    }
+  },
+  {
+    "name": "app-3-searching",
+    "path": "news/app-3-searching",
+    "sha": "431c96c3a93e0ac988acb6349456b1b423fb6ff8",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/app-3-searching?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/news/app-3-searching",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/431c96c3a93e0ac988acb6349456b1b423fb6ff8",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/app-3-searching?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/431c96c3a93e0ac988acb6349456b1b423fb6ff8",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/news/app-3-searching"
+    }
+  },
+  {
+    "name": "app-5-recommendation",
+    "path": "news/app-5-recommendation",
+    "sha": "fdbc92176cf8ee10732f3f14726ab9fba41652e0",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/app-5-recommendation?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/news/app-5-recommendation",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/fdbc92176cf8ee10732f3f14726ab9fba41652e0",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/app-5-recommendation?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/fdbc92176cf8ee10732f3f14726ab9fba41652e0",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/news/app-5-recommendation"
+    }
+  },
+  {
+    "name": "app-6-recommendation-with-searchers",
+    "path": "news/app-6-recommendation-with-searchers",
+    "sha": "b636cb11c3c3c2f5334b04e151101c100d22c375",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/app-6-recommendation-with-searchers?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/news/app-6-recommendation-with-searchers",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/b636cb11c3c3c2f5334b04e151101c100d22c375",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/app-6-recommendation-with-searchers?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/b636cb11c3c3c2f5334b04e151101c100d22c375",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/news/app-6-recommendation-with-searchers"
+    }
+  },
+  {
+    "name": "app-7-parent-child",
+    "path": "news/app-7-parent-child",
+    "sha": "56760f75354c43c7cdc387758f6b68659c10087b",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/app-7-parent-child?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/news/app-7-parent-child",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/56760f75354c43c7cdc387758f6b68659c10087b",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/app-7-parent-child?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/56760f75354c43c7cdc387758f6b68659c10087b",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/news/app-7-parent-child"
+    }
+  },
+  {
+    "name": "bin",
+    "path": "news/bin",
+    "sha": "7c755f24e4d885d3f6677ec593e46c7d64c377f8",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/bin?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/news/bin",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/7c755f24e4d885d3f6677ec593e46c7d64c377f8",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/bin?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/7c755f24e4d885d3f6677ec593e46c7d64c377f8",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/news/bin"
+    }
+  },
+  {
+    "name": "doc.json",
+    "path": "news/doc.json",
+    "sha": "4f7cad1c86d48ad9b1470c19bcec0a9c136dee11",
+    "size": 72,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/doc.json?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/news/doc.json",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/4f7cad1c86d48ad9b1470c19bcec0a9c136dee11",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/news/doc.json",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/doc.json?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/4f7cad1c86d48ad9b1470c19bcec0a9c136dee11",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/news/doc.json"
+    }
+  },
+  {
+    "name": "requirements.txt",
+    "path": "news/requirements.txt",
+    "sha": "21fe4a3bc4ed1fcc2797c8a9f4188e48fed6d4e7",
+    "size": 37,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/requirements.txt?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/news/requirements.txt",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/21fe4a3bc4ed1fcc2797c8a9f4188e48fed6d4e7",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/news/requirements.txt",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/requirements.txt?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/21fe4a3bc4ed1fcc2797c8a9f4188e48fed6d4e7",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/news/requirements.txt"
+    }
+  },
+  {
+    "name": "src",
+    "path": "news/src",
+    "sha": "106a0eca050c215f3b6a919640d6b4449d0c0aa5",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/src?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/news/src",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/106a0eca050c215f3b6a919640d6b4449d0c0aa5",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news/src?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/106a0eca050c215f3b6a919640d6b4449d0c0aa5",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/news/src"
+    }
+  }
+]

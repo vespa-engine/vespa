@@ -12,11 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static java.util.Collections.emptyList;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bjorncs
@@ -29,7 +26,7 @@ public class SiaUtilsTest {
     @Test
     public void it_finds_all_identity_names_from_files_in_sia_keys_directory() throws IOException {
         Path siaRoot = tempDirectory.getRoot().toPath();
-        assertThat(SiaUtils.findSiaServices(siaRoot), is(emptyList()));
+        assertTrue(SiaUtils.findSiaServices(siaRoot).isEmpty());
         Files.createDirectory(siaRoot.resolve("keys"));
         AthenzService fooService = new AthenzService("my.domain.foo");
         Files.createFile(SiaUtils.getPrivateKeyFile(siaRoot, fooService));
@@ -37,9 +34,9 @@ public class SiaUtilsTest {
         Files.createFile(SiaUtils.getPrivateKeyFile(siaRoot, barService));
 
         List<AthenzIdentity> siaIdentities = SiaUtils.findSiaServices(siaRoot);
-        assertThat(siaIdentities.size(), equalTo(2));
-        assertThat(siaIdentities, hasItem(fooService));
-        assertThat(siaIdentities, hasItem(barService));
+        assertEquals(2, siaIdentities.size());
+        assertTrue(siaIdentities.contains(fooService));
+        assertTrue(siaIdentities.contains(barService));
     }
 
 }

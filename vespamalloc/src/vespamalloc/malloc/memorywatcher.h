@@ -43,7 +43,7 @@ private:
         const char * valueName()   const { return _valueName; }
         const char * value()       const { return _value; }
         void value(const char * v) __attribute__((noinline));
-        long valueAsLong()         const __attribute__((noinline)) { return strtol(_value, NULL, 0); }
+        long valueAsLong()         const __attribute__((noinline)) { return strtol(_value, nullptr, 0); }
         void info(FILE * os) __attribute__ ((noinline)) {
             fprintf(os, "%s = %s %ld", valueName(), value(), valueAsLong());
         }
@@ -54,15 +54,11 @@ private:
     class Params {
     public:
         enum {
-            alwaysreuselimit = 0,
             threadcachelimit,
             logfile,
             sigprof_loglevel,
             atend_loglevel,
             pralloc_loglimit,
-            atnomem_loglevel,
-            atdoubledelete_loglevel,
-            atinvalid_loglevel,
             bigsegment_loglevel,
             bigsegment_limit,
             bigsegment_increment,
@@ -109,8 +105,6 @@ private:
         NameValuePair _params[numberofentries];
     };
     FILE * _logFile;
-    int    _infoAtAbort;
-    int    _infoAtNOMEM;
 
     Params _params;
     struct sigaction _oldSig;
@@ -119,15 +113,11 @@ private:
 template <typename T, typename S>
 MemoryWatcher<T, S>::Params::Params()
 {
-    _params[       alwaysreuselimit] = NameValuePair("alwaysreuselimit", "0x200000"); // 2M for allignment with hugepage size.
     _params[       threadcachelimit] = NameValuePair("threadcachelimit", "0x10000");  // 64K
     _params[                logfile] = NameValuePair("logfile", "stderr");
     _params[       sigprof_loglevel] = NameValuePair("sigprof_loglevel", "1");
     _params[         atend_loglevel] = NameValuePair("atend_loglevel", "1");
     _params[       pralloc_loglimit] = NameValuePair("pralloc_loglimit", "0x2000000");
-    _params[       atnomem_loglevel] = NameValuePair("atnomem_loglevel", "1");
-    _params[atdoubledelete_loglevel] = NameValuePair("atdoubledelete_loglevel", "1");
-    _params[     atinvalid_loglevel] = NameValuePair("atinvalid_loglevel", "1");
     _params[    bigsegment_loglevel] = NameValuePair("bigsegment_loglevel", "1");
     _params[       bigsegment_limit] = NameValuePair("bigsegment_limit", "0x1000000000");  // 64GM
     _params[   bigsegment_increment] = NameValuePair("bigsegment_increment", "0x100000000"); //4GM
@@ -163,9 +153,7 @@ void MemoryWatcher<T, S>::NameValuePair::value(const char * v) {
 template <typename T, typename S>
 MemoryWatcher<T, S>::MemoryWatcher(int infoAtEnd, size_t prAllocAtStart) :
     MemoryManager<T, S>(prAllocAtStart),
-    _logFile(stderr),
-    _infoAtAbort(-1),
-    _infoAtNOMEM(1)
+    _logFile(stderr)
 {
     _manager = this;
     char tmp[16];
@@ -199,7 +187,7 @@ bool MemoryWatcher<T, S>::activateLogFile(const char *logfile)
     if ((oldFp != stderr) && (oldFp != stdout)) {
         fclose(oldFp);
     }
-    return (_logFile != NULL);
+    return (_logFile != nullptr);
 }
 
 template <typename T, typename S>
@@ -207,16 +195,12 @@ void MemoryWatcher<T, S>::activateOptions()
 {
     activateLogFile(_params[Params::logfile].value());
     T::dumpFile(_logFile);
-    this->setupSegmentLog(_params[Params::atnomem_loglevel].valueAsLong(),
-                    _params[Params::bigsegment_loglevel].valueAsLong(),
-                    _params[Params::bigsegment_limit].valueAsLong(),
-                    _params[Params::bigsegment_increment].valueAsLong(),
-                    _params[Params::allocs2show].valueAsLong());
-    this->setupLog(_params[Params::atdoubledelete_loglevel].valueAsLong(),
-                   _params[Params::atinvalid_loglevel].valueAsLong(),
-                   _params[Params::pralloc_loglimit].valueAsLong());
-    this->setParams(_params[Params::alwaysreuselimit].valueAsLong(),
-                    _params[Params::threadcachelimit].valueAsLong());
+    this->setupSegmentLog(_params[Params::bigsegment_loglevel].valueAsLong(),
+                          _params[Params::bigsegment_limit].valueAsLong(),
+                          _params[Params::bigsegment_increment].valueAsLong(),
+                          _params[Params::allocs2show].valueAsLong());
+    this->setupLog(_params[Params::pralloc_loglimit].valueAsLong());
+    this->setParams(_params[Params::threadcachelimit].valueAsLong());
     T::bigBlockLimit(_params[Params::bigblocklimit].valueAsLong());
     T::setFill(_params[Params::fillvalue].valueAsLong());
 
@@ -229,7 +213,7 @@ const char *vespaHomeConf(char pathName[])
     const char *home = "/opt/vespa";
     const char *conf = "/etc/vespamalloc.conf";
     const char *env = getenv("VESPA_HOME");
-    if (env != NULL) {
+    if (env != nullptr) {
         home = env;
     }
     if ((strlen(home) + strlen(conf)) >= PATH_MAX) {
@@ -279,21 +263,21 @@ void MemoryWatcher<T, S>::parseOptions(char * options)
 {
     bool isComment(false);
     const char ignore('\0');
-    const char *valueName(NULL);
-    const char *value(NULL);
+    const char *valueName(nullptr);
+    const char *value(nullptr);
     bool isWhite(true);
     for(char *p=options; *p; p++) {
         char c(*p);
         if (c == '\n') {
-            if ((valueName != NULL) && (value != NULL)) {
+            if ((valueName != nullptr) && (value != nullptr)) {
                 if (_params.update(valueName, value) == false) {
                     fprintf(stderr, "Invalid parameter %s", valueName);
                 }
             }
             isComment = false;
             isWhite = true;
-            valueName = NULL;
-            value = NULL;
+            valueName = nullptr;
+            value = nullptr;
         } else if (isComment) {
             *p = ignore;
         } else if (c == '#') {
@@ -302,7 +286,7 @@ void MemoryWatcher<T, S>::parseOptions(char * options)
         } else {
             if (isWhite) {
                 if (!isspace(c)) {
-                    if (valueName == NULL) {
+                    if (valueName == nullptr) {
                         valueName = p;
                     } else {
                         value = p;
@@ -347,7 +331,7 @@ void MemoryWatcher<T, S>::signalHandler(int signum, siginfo_t * sig, void *  arg
     if (_params[Params::sigprof_loglevel].valueAsLong() > 1) {
         fprintf(_logFile, "SignalHandler %d done\n", signum);
     }
-    if ((_oldSig.sa_handler != SIG_IGN) && (_oldSig.sa_handler != SIG_DFL) && (_oldSig.sa_handler != NULL)) {
+    if ((_oldSig.sa_handler != SIG_IGN) && (_oldSig.sa_handler != SIG_DFL) && (_oldSig.sa_handler != nullptr)) {
         (_oldSig.sa_sigaction)(signum, sig, arg);
     }
 }
@@ -377,7 +361,7 @@ bool MemoryWatcher<T, S>::signal(int signum)
 }
 
 template <typename T, typename S>
-MemoryWatcher<T, S> * MemoryWatcher<T, S>::_manager = NULL;
+MemoryWatcher<T, S> * MemoryWatcher<T, S>::_manager = nullptr;
 
 } // namespace vespamalloc
 

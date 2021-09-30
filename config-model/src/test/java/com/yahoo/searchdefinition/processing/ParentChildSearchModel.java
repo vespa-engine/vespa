@@ -3,6 +3,8 @@ package com.yahoo.searchdefinition.processing;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.ReferenceDataType;
@@ -10,6 +12,7 @@ import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.derived.TestableDeployLogger;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.TemporaryImportedField;
@@ -29,7 +32,7 @@ public class ParentChildSearchModel {
     }
 
     protected Search createSearch(String name) {
-        Search result = new Search(name, app);
+        Search result = new Search(name, app, new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
         result.addDocument(new SDDocumentType(name));
         return result;
     }

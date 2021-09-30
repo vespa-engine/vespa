@@ -3,6 +3,8 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespamalloc/malloc/allocchunk.h>
 #include <vespamalloc/util/callstack.h>
+#include <thread>
+
 #include <vespa/log/log.h>
 LOG_SETUP("linklist_test");
 
@@ -37,7 +39,7 @@ public:
     size_t size()       const { return 0; }
     bool allocated()    const { return false; }
     int threadId()      const { return 0; }
-    void info(FILE *, unsigned level=0) const  { level = 0; }
+    void info(FILE *, unsigned level=0) const  { (void) level; }
     Stack * callStack()                   { return NULL; }
     size_t callStackLen()           const { return 0; }
 

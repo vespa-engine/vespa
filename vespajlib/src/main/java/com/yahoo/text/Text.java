@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
+import java.util.Locale;
 import java.util.OptionalInt;
 
 /**
@@ -174,4 +175,19 @@ public final class Text {
         return stripped != null ? stripped.toString() : string;
     }
 
+    /**
+     * Returns a string which is never larger than the given number of characters.
+     * If the string is longer than the given length it will be truncated.
+     * If length is 4 or less the string will be truncated to length.
+     * If length is longer than 4, it will be truncated at length-4 with " ..." added at the end.
+     */
+    public static String truncate(String s, int length) {
+        if (s.length() <= length) return s;
+        if (length <= 4) return s.substring(0, length);
+        return s.substring(0, length - 4) + " ...";
+    }
+
+    public static String format(String format, Object... args) {
+	return String.format(Locale.US, format, args);
+    }
 }

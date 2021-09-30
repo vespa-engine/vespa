@@ -45,3 +45,4 @@ Testing
 .DS_Store
 install_manifest.txt
 *.cbp
+!/.copr/Makefile

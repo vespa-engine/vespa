@@ -28,6 +28,15 @@ public:
     };
 
     /**
+     * Filter a string (std::string or vespalib::string)
+     * and replace any invalid UTF8 sequences with the
+     * standard replacement char U+FFFD; note that any
+     * UTF-8 encoded surrogates are also considered invalid.
+     **/
+    template <typename T>
+    static T filter_invalid_sequences(const T& input);
+
+    /**
      * check if a byte is valid as the first byte of an UTF-8 character.
      * @param c the byte to be checked
      * @return true if a valid UTF-8 character can start with this byte
@@ -155,7 +164,7 @@ protected:
         first_high_surrogate = 0xD800,
         last_high_surrogate = 0xDBFF,
         first_low_surrogate = 0xDC00,
-        last_low_surrogate = 0xDCFF
+        last_low_surrogate = 0xDFFF
     };
 };
 
@@ -321,9 +330,10 @@ public:
 /**
  * @brief Writer class that appends UTF-8 characters to a string
  **/
+template <typename Target>
 class Utf8Writer : public Utf8
 {
-    string &_target;
+    Target &_target;
 public:
     /**
      * construct a writer appending to the given string
@@ -331,7 +341,7 @@ public:
      * that the writer will append to.  Must be writable
      * and must be kept alive while the writer is active.
      **/
-    Utf8Writer(string &target) : _target(target) {}
+    Utf8Writer(Target &target) : _target(target) {}
 
     /**
      * append the given character to the target string.

@@ -3,7 +3,6 @@ package com.yahoo.search.query.profile.types.test;
 
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.prelude.query.QueryException;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.types.QueryProfileType;
@@ -23,22 +22,22 @@ public class NativePropertiesTestCase {
 
     @Test
     public void testNativeInStrict() {
-        QueryProfileType strictType=new QueryProfileType("strict");
+        QueryProfileType strictType = new QueryProfileType("strict");
         strictType.setStrict(true);
-        QueryProfile strict=new QueryProfile("profile");
+        QueryProfile strict = new QueryProfile("profile");
         strict.setType(strictType);
 
         try {
             new Query(HttpRequest.createTestRequest("?hits=10&tracelevel=5", Method.GET), strict.compile(null));
             fail("Above statement should throw");
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             // As expected.
         }
 
         try {
             new Query(HttpRequest.createTestRequest("?notnative=5", Method.GET), strict.compile(null));
             fail("Above statement should throw");
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             // As expected.
             assertThat(
                     Exceptions.toMessageString(e),

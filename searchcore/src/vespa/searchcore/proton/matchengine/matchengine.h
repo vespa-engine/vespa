@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "imatchhandler.h"
+#include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <vespa/searchcore/proton/common/statusreport.h>
@@ -19,6 +19,7 @@ class MatchEngine : public search::engine::SearchServer,
 private:
     std::mutex                         _lock;
     const uint32_t                     _distributionKey;
+    bool                               _async;
     bool                               _closed;
     HandlerMap<ISearchHandler>         _handlers;
     vespalib::ThreadStackExecutor      _executor;
@@ -43,14 +44,18 @@ public:
      * @param numThreads Number of threads allocated for handling search requests.
      * @param threadsPerSearch number of threads used for each search
      * @param distributionKey distributionkey of this node.
+     * @param async if query is dispatched to threadpool
      */
-    MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t distributionKey);
+    MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t distributionKey, bool async);
+    MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t distributionKey)
+        : MatchEngine(numThreads, threadsPerSearch, distributionKey, true)
+    {}
 
     /**
      * Frees any allocated resources. this will also stop all internal threads
      * and wait for them to finish. All pending search requests are deleted.
      */
-    ~MatchEngine();
+    ~MatchEngine() override;
 
     /**
      * Observe and reset internal executor stats
@@ -58,6 +63,11 @@ public:
      * @return executor stats
      **/
     vespalib::ThreadStackExecutor::Stats getExecutorStats() { return _executor.getStats(); }
+
+    /**
+     * Returns the underlying executor. Only used for state explorers.
+     */
+    const vespalib::SyncableThreadExecutor& get_executor() const { return _executor; }
 
     /**
      * Closes the request handler interface. This will prevent any more data
@@ -109,8 +119,8 @@ public:
      * @param req    The search request to perform.
      * @param client The client to pass the results to.
      */
-    void performSearch(search::engine::SearchRequest::Source req,
-                       search::engine::SearchClient &client);
+    std::unique_ptr<search::engine::SearchReply>
+    performSearch(search::engine::SearchRequest::Source req);
 
     /** obtain current online status */
     bool isOnline() const;
@@ -118,18 +128,15 @@ public:
     /** 
      * Set node up/down, based on info from cluster controller.
      */
-    void
-    setNodeUp(bool nodeUp);
+    void setNodeUp(bool nodeUp);
 
     StatusReport::UP reportStatus() const;
 
-    // Implements SearchServer.
     search::engine::SearchReply::UP search(
             search::engine::SearchRequest::Source request,
             search::engine::SearchClient &client) override;
 
-    // Implements vespalib::StateExplorer
-    virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
 };
 
 } // namespace proton

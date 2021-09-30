@@ -41,8 +41,7 @@ void
 ModifiedBucketCheckerTest::SetUp()
 {
     _config.reset(new vdstestlib::DirConfig(getStandardConfig(true)));
-    _node.reset(new TestServiceLayerApp(DiskCount(1), NodeIndex(0),
-                                        _config->getConfigId()));
+    _node.reset(new TestServiceLayerApp(NodeIndex(0), _config->getConfigId()));
     _node->setupDummyPersistence();
 
     _top.reset(new DummyStorageLink);

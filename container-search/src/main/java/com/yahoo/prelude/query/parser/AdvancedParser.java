@@ -147,11 +147,11 @@ public class AdvancedParser extends StructuredParser {
                 return equiv;
             }
             return topLevelItem;
-        } else if (isTheWord("wand", item)) {
-            int n=consumeNumericArgument();
-            if (n==0)
-                n=WeakAndItem.defaultN;
-            if (topLevelIsClosed || !(topLevelItem instanceof WeakAndItem) || n!=((WeakAndItem)topLevelItem).getN()) {
+        } else if (isTheWord("wand", item) || isTheWord("weakand", item)) {
+            int n = consumeNumericArgument();
+            if (n == 0)
+                n = WeakAndItem.defaultN;
+            if (topLevelIsClosed || !(topLevelItem instanceof WeakAndItem) || n != ((WeakAndItem)topLevelItem).getN()) {
                 WeakAndItem wand = new WeakAndItem();
                 wand.setN(n);
                 wand.addItem(topLevelItem);
@@ -206,7 +206,7 @@ public class AdvancedParser extends StructuredParser {
         if (!tokens.currentIs(LBRACE)) return 0;
         tokens.skip(LBRACE);
         if (!tokens.currentIsNoIgnore(NUMBER)) throw new IllegalArgumentException("Expected an integer argument");
-        int distance=Integer.valueOf(tokens.next().image);
+        int distance = Integer.valueOf(tokens.next().image);
         if (!tokens.skip(Token.Kind.RBRACE)) throw new IllegalArgumentException("Expected a right brace following the argument");
         return distance;
     }

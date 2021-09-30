@@ -1,10 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "direct_buffer_bio.h"
-#include <vespa/vespalib/net/tls/crypto_exception.h>
+#include <vespa/vespalib/crypto/crypto_exception.h>
+#include <vespa/vespalib/util/backtrace.h>
 #include <utility>
 #include <cassert>
-
-#include <vespa/vespalib/util/backtrace.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.net.tls.impl.direct_buffer_bio");
@@ -18,6 +17,8 @@ LOG_SETUP(".vespalib.net.tls.impl.direct_buffer_bio");
  *  - https://github.com/openssl/openssl/blob/master/crypto/bio/bss_mem.c
  *  - https://github.com/indutny/uv_ssl_t/blob/master/src/bio.c
  */
+
+using namespace vespalib::crypto;
 
 namespace vespalib::net::tls::impl {
 

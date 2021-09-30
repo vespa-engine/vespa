@@ -37,19 +37,12 @@ public class VespaModelUtil {
 
     public static final ClusterId ADMIN_CLUSTER_ID = new ClusterId("admin");
 
-    public static final ServiceType SLOBROK_SERVICE_TYPE = new ServiceType("slobrok");
-    public static final ServiceType CLUSTER_CONTROLLER_SERVICE_TYPE = new ServiceType("container-clustercontroller");
-    public static final ServiceType DISTRIBUTOR_SERVICE_TYPE = new ServiceType("distributor");
-    public static final ServiceType SEARCHNODE_SERVICE_TYPE = new ServiceType("searchnode");
-    public static final ServiceType STORAGENODE_SERVICE_TYPE = new ServiceType("storagenode");
-    public static final ServiceType METRICS_PROXY_SERVICE_TYPE = new ServiceType("metricsproxy-container");
-
     private static final Comparator<ServiceInstance> CLUSTER_CONTROLLER_INDEX_COMPARATOR =
             Comparator.comparing(serviceInstance -> VespaModelUtil.getClusterControllerIndex(serviceInstance.configId()));
 
     // @return true iff the service cluster refers to a cluster controller service cluster.
     public static boolean isClusterController(ServiceCluster cluster) {
-        return CLUSTER_CONTROLLER_SERVICE_TYPE.equals(cluster.serviceType());
+        return ServiceType.CLUSTER_CONTROLLER.equals(cluster.serviceType());
     }
 
     /**
@@ -59,23 +52,29 @@ public class VespaModelUtil {
      * @return true iff the service cluster consists of storage nodes (proton or vds).
      */
     public static boolean isStorage(ServiceCluster cluster) {
-        return STORAGENODE_SERVICE_TYPE.equals(cluster.serviceType());
+        return ServiceType.STORAGE.equals(cluster.serviceType());
     }
 
     /**
      * @return true iff the service cluster is a content service cluster.
      */
     public static boolean isContent(ServiceCluster cluster) {
-        return DISTRIBUTOR_SERVICE_TYPE.equals(cluster.serviceType()) ||
-                SEARCHNODE_SERVICE_TYPE.equals(cluster.serviceType()) ||
-                STORAGENODE_SERVICE_TYPE.equals(cluster.serviceType());
+        return isContent(cluster.serviceType());
     }
 
+    /**
+     * @return true iff the service type refers to a content service cluster.
+     */
+    public static boolean isContent(ServiceType serviceType) {
+        return ServiceType.DISTRIBUTOR.equals(serviceType) ||
+                ServiceType.SEARCH.equals(serviceType) ||
+                ServiceType.STORAGE.equals(serviceType);
+    }
     /**
      * @return The set of all Cluster Controller service instances for the application.
      */
     public static List<HostName> getClusterControllerInstancesInOrder(ApplicationInstance application,
-                                                                          ClusterId contentClusterId)
+                                                                      ClusterId contentClusterId)
     {
         Set<ServiceCluster> controllerClusters = getClusterControllerServiceClusters(application);
 
@@ -85,11 +84,7 @@ public class VespaModelUtil {
         if (controllerClustersForContentCluster.size() == 1) {
             clusterControllerInstances = first(controllerClustersForContentCluster).serviceInstances();
         } else if (controllerClusters.size() == 1) {
-            ServiceCluster cluster = first(controllerClusters);
-            log.warning("No cluster controller cluster for content cluster " + contentClusterId
-                    + ", using the only cluster controller cluster available: " + cluster.clusterId());
-
-            clusterControllerInstances = cluster.serviceInstances();
+            clusterControllerInstances = first(controllerClusters).serviceInstances();
         } else {
             throw new RuntimeException("Failed getting cluster controller for content cluster " + contentClusterId +
                     ". Available clusters = " + controllerClusters +
@@ -118,8 +113,7 @@ public class VespaModelUtil {
     }
 
     /**
-     * @return  Host name for a Cluster Controller that is likely to be the master, is !isPresent() if
-     *          no cluster controller was found.
+     * @return  Host name for a Cluster Controller that is likely to be the master.
      * @throws  java.lang.IllegalArgumentException if there are no cluster controller instances.
      */
     public static HostName getControllerHostName(ApplicationInstance application, ClusterId contentClusterId) {

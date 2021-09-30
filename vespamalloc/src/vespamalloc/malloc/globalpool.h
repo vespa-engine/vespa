@@ -27,7 +27,10 @@ public:
     DataSegment<MemBlockPtrT> & dataSegment()      { return _dataSegment; }
     void enableThreadSupport() __attribute__((noinline));
 
-    static void setParams(size_t alwaysReuseLimit, size_t threadCacheLimit);
+    static void setParams(size_t threadCacheLimit);
+    static size_t computeExactSize(size_t sz) {
+        return (((sz + (ALWAYS_REUSE_LIMIT - 1)) / ALWAYS_REUSE_LIMIT) * ALWAYS_REUSE_LIMIT);
+    }
 
     void info(FILE * os, size_t level=0) __attribute__((noinline));
 private:
@@ -77,7 +80,6 @@ private:
     std::atomic<size_t>         _allocChunkList;
     Stat                        _stat[NUM_SIZE_CLASSES];
     static size_t               _threadCacheLimit __attribute__((visibility("hidden")));
-    static size_t               _alwaysReuseLimit __attribute__((visibility("hidden")));
 };
 
 }

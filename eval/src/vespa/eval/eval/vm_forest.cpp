@@ -136,8 +136,8 @@ void encode_less(const nodes::Less &less,
     auto symbol = nodes::as<nodes::Symbol>(less.lhs());
     assert(symbol);
     model_out.push_back(uint32_t(symbol->id()) << 12);
-    assert(less.rhs().is_const());
-    encode_const(less.rhs().get_const_value(), model_out);
+    assert(less.rhs().is_const_double());
+    encode_const(less.rhs().get_const_double_value(), model_out);
     size_t skip_idx = model_out.size();
     model_out.push_back(0); // left child size placeholder
     uint32_t left_type = encode_node(left_child, model_out);
@@ -157,7 +157,7 @@ void encode_in(const nodes::In &in,
     size_t set_size_idx = model_out.size();
     model_out.push_back(in.num_entries());
     for (size_t i = 0; i < in.num_entries(); ++i) {
-        encode_large_const(in.get_entry(i).get_const_value(), model_out);
+        encode_large_const(in.get_entry(i).get_const_double_value(), model_out);
     }
     size_t left_idx = model_out.size();
     uint32_t left_type = encode_node(left_child, model_out);
@@ -176,8 +176,8 @@ void encode_inverted(const nodes::Not &inverted,
     auto symbol = nodes::as<nodes::Symbol>(ge->lhs());
     assert(symbol);
     model_out.push_back(uint32_t(symbol->id()) << 12);
-    assert(ge->rhs().is_const());
-    encode_const(ge->rhs().get_const_value(), model_out);
+    assert(ge->rhs().is_const_double());
+    encode_const(ge->rhs().get_const_double_value(), model_out);
     size_t skip_idx = model_out.size();
     model_out.push_back(0); // left child size placeholder
     uint32_t left_type = encode_node(left_child, model_out);
@@ -204,8 +204,8 @@ uint32_t encode_node(const nodes::Node &node_in, std::vector<uint32_t> &model_ou
             return INVERTED;
         }
     } else {
-        assert(node_in.is_const());
-        encode_const(node_in.get_const_value(), model_out);
+        assert(node_in.is_const_double());
+        encode_const(node_in.get_const_double_value(), model_out);
         return LEAF;
     }
 }

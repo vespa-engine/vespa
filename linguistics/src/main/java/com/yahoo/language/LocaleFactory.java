@@ -2,6 +2,7 @@
 package com.yahoo.language;
 
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * @author Simon Thoresen Hult
@@ -10,25 +11,20 @@ public final class LocaleFactory {
 
     private static final Locale UNKNOWN = new Locale("", "", "");
 
-    private LocaleFactory() {
-        // hide
-    }
+    private LocaleFactory() {}
 
     /**
      * Implements a simple parser for RFC5646 language tags. The language tag is parsed into a Locale.
      *
-     * @param tag The language tag to parse.
-     * @return The corresponding Locale.
+     * @param tag the language tag to parse
+     * @return the corresponding Locale
      */
-    @SuppressWarnings("ConstantConditions")
     public static Locale fromLanguageTag(String tag) {
-        // TODO: Should be replaced by return Locale.forLanguageTag(tag); ?
+        Objects.requireNonNull(tag, "tag cannot be null");
 
-        tag.getClass(); // throws NullPointerException
         tag = tag.trim();
-        if (tag.isEmpty()) {
-            return UNKNOWN;
-        }
+        if (tag.isEmpty()) return UNKNOWN;
+
         String language = "";
         String region = "";
         String script = "";
@@ -48,9 +44,7 @@ public final class LocaleFactory {
                 }
             }
         }
-        if (language.isEmpty()) {
-            return UNKNOWN;
-        }
+        if (language.isEmpty()) return UNKNOWN;
         return new Locale(language, region, script);
     }
 

@@ -5,9 +5,9 @@
 #include <vespa/searchcore/proton/feedoperation/lidvectorcontext.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/query/base.h>
-#include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchlib/common/commit_param.h>
 
-namespace search { class IDestructorCallback; }
+namespace vespalib { class IDestructorCallback; }
 namespace document {
     class DocumentUpdate;
     class Document;
@@ -23,51 +23,46 @@ struct IFieldUpdateCallback;
  */
 class IAttributeWriter {
 public:
-    typedef std::unique_ptr<IAttributeWriter> UP;
-    typedef std::shared_ptr<IAttributeWriter> SP;
-    typedef std::vector<search::AttributeGuard> AttributeGuardList;
-    typedef LidVectorContext::LidVector LidVector;
-    typedef search::SerialNum SerialNum;
-    typedef search::DocumentIdT DocumentIdT;
-    typedef document::DocumentUpdate DocumentUpdate;
-    typedef document::Document Document;
-    using OnWriteDoneType = const std::shared_ptr<search::IDestructorCallback> &;
+    using UP = std::unique_ptr<IAttributeWriter>;
+    using SP = std::shared_ptr<IAttributeWriter>;
+    using LidVector = LidVectorContext::LidVector;
+    using SerialNum = search::SerialNum;
+    using CommitParam = search::CommitParam;
+    using DocumentIdT = search::DocumentIdT;
+    using DocumentUpdate = document::DocumentUpdate;
+    using Document = document::Document;
+    using OnWriteDoneType = const std::shared_ptr<vespalib::IDestructorCallback> &;
 
-    virtual ~IAttributeWriter() {}
+    virtual ~IAttributeWriter() = default;
 
     virtual std::vector<search::AttributeVector *> getWritableAttributes() const = 0;
     virtual search::AttributeVector *getWritableAttribute(const vespalib::string &attrName) const = 0;
-    virtual void put(SerialNum serialNum, const Document &doc, DocumentIdT lid,
-                     bool immediateCommit, OnWriteDoneType onWriteDone) = 0;
-    virtual void remove(SerialNum serialNum, DocumentIdT lid, bool immediateCommit,
-                        OnWriteDoneType onWriteDone) = 0;
-    virtual void remove(const LidVector &lidVector, SerialNum serialNum,
-                        bool immediateCommit, OnWriteDoneType onWriteDone) = 0;
+    virtual void put(SerialNum serialNum, const Document &doc, DocumentIdT lid, OnWriteDoneType onWriteDone) = 0;
+    virtual void remove(SerialNum serialNum, DocumentIdT lid, OnWriteDoneType onWriteDone) = 0;
+    virtual void remove(const LidVector &lidVector, SerialNum serialNum, OnWriteDoneType onWriteDone) = 0;
     /**
      * Update the underlying attributes based on the content of the given DocumentUpdate.
      * The OnWriteDoneType instance should ensure the lifetime of the given DocumentUpdate instance.
      */
     virtual void update(SerialNum serialNum, const DocumentUpdate &upd, DocumentIdT lid,
-                        bool immediateCommit, OnWriteDoneType onWriteDone, IFieldUpdateCallback & onUpdate) = 0;
+                        OnWriteDoneType onWriteDone, IFieldUpdateCallback & onUpdate) = 0;
     /*
      * Update the underlying struct field attributes based on updated document.
      */
-    virtual void update(SerialNum serialNum, const Document &doc, DocumentIdT lid,
-                        bool immediateCommit, OnWriteDoneType onWriteDone) = 0;
+    virtual void update(SerialNum serialNum, const Document &doc, DocumentIdT lid, OnWriteDoneType onWriteDone) = 0;
     virtual void heartBeat(SerialNum serialNum) = 0;
     /**
      * Compact the lid space of the underlying attribute vectors.
      */
-    virtual void compactLidSpace(uint32_t wantedLidLimi, SerialNum serialNum) = 0;
+    virtual void compactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum) = 0;
     virtual const proton::IAttributeManager::SP &getAttributeManager() const = 0;
 
     /**
-     * Commit all underlying attribute vectors with the given serial number.
+     * Commit all underlying attribute vectors with the given param.
      */
-    virtual void forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone) = 0;
+    virtual void forceCommit(const CommitParam & param, OnWriteDoneType onWriteDone) = 0;
 
     virtual void onReplayDone(uint32_t docIdLimit) = 0;
-
     virtual bool hasStructFieldAttribute() const = 0;
 };
 

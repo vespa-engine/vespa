@@ -9,3 +9,4 @@ vespa_add_executable(searchcore_verify_ranksetup_app
     searchcore_matching
     searchcore_documentmetastore
 )
+vespa_generate_config(searchcore_verify_ranksetup_app verify-ranksetup.def)

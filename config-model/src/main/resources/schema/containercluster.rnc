@@ -12,7 +12,6 @@ ContainerCluster = element container | jdisc {
 }
 
 ContainerServices =
-    RestApi* &
     Servlet* &
     SearchInContainer? &
     DocprocInContainer? &
@@ -27,6 +26,7 @@ ContainerServices =
     Http? &
     AccessLog* &
     SecretStore? &
+    ZooKeeper? &
     GenericConfig*
 
 # TODO(ogronnesby): Change this configuration syntax
@@ -53,6 +53,7 @@ Http = element http {
 }
 
 Filtering = element filtering {
+    attribute strict-mode { xsd:boolean }? &
     HttpFilter* &
     AccessControl? &
     element request-chain {
@@ -66,6 +67,8 @@ Filtering = element filtering {
 HttpServer =  element server {
     attribute port { xsd:nonNegativeInteger }? &
     attribute required { xsd:boolean }? &
+    attribute default-request-chain { xsd:string }? &
+    attribute default-response-chain { xsd:string }? &
     ComponentId &
     (Ssl | SslProvider)? &
     GenericConfig*
@@ -76,16 +79,29 @@ AccessLog = element accesslog {
     attribute fileNamePattern { string }? &
     attribute compressOnRotation { xsd:boolean }? &
     attribute symlinkName { string }? &
-
+    attribute compressionType { string "gzip" | string "zstd" }? &
+    attribute queueSize { xsd:nonNegativeInteger }? &
+    attribute bufferSize { xsd:nonNegativeInteger }? &
     attribute rotationInterval { string }?
 }
 
 SecretStore = element secret-store {
-    attribute type { string "oath-ckms" } &
+    attribute type { string "oath-ckms" | string "cloud" } &
     element group {
       attribute name { string } &
       attribute environment { string "alpha" | string "corp" | string "prod" | string "aws" | string "aws_stage" }
-    } +
+    } * &
+    element store {
+      attribute id { string } &
+      element aws-parameter-store {
+        attribute account { string } &
+        attribute aws-region { string }
+      } *
+    }?
+}
+
+ZooKeeper = element zookeeper {
+    empty
 }
 
 ModelEvaluation = element model-evaluation {
@@ -105,20 +121,10 @@ SslProvider = element ssl-provider {
     BundleSpec
 }
 
-# REST-API:
-
-RestApi = element rest-api {
-    attribute path { xsd:string { pattern = "\w[\w_/\-\.]*" } } &
-    attribute jersey2 { xsd:boolean }? &
-    element components {
-      attribute bundle { xsd:Name } &
-      element package { xsd:NCName }*
-    }*
-
-#    element inject {
-#        attribute component { xsd:Name } &
-#        attribute for-name { xsd:Name }
-#    }*
+Threadpool = element threadpool {
+    element max-threads { xsd:nonNegativeInteger } &
+    element min-threads { xsd:nonNegativeInteger } &
+    element queue-size { xsd:nonNegativeInteger }
 }
 
 # Servlet:
@@ -142,7 +148,8 @@ SearchInContainer = element search {
     SearchChain* &
     Provider* &
     Renderer* &
-    GenericConfig*
+    GenericConfig* &
+    Threadpool?
 }
 
 SearchChain = element chain {
@@ -207,10 +214,16 @@ DocumentApi = element document-api {
    element retrydelay { xsd:double { minInclusive = "0.0" } }? &
    element timeout { xsd:double { minInclusive = "0.0" } }? &
    element tracelevel { xsd:positiveInteger }? &
-   element mbusport { xsd:positiveInteger }?
+   element mbusport { xsd:positiveInteger }? &
+   DocumentRestApi? &
+   HttpClientApi?
 }
 
+DocumentRestApi = element rest-api { empty }
 
+HttpClientApi = element http-client-api {
+    Threadpool?
+}
 
 # NODES:
 
@@ -239,7 +252,7 @@ NodesOfContainerCluster = element nodes {
       attribute type { xsd:string }
       |
       (
-        attribute count { xsd:positiveInteger } &
+        attribute count { xsd:positiveInteger | xsd:string  } &
         attribute flavor { xsd:string }? &
         attribute required { xsd:boolean }? &
         attribute exclusive { xsd:boolean }? &

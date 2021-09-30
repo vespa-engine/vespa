@@ -13,8 +13,8 @@ import java.util.ListIterator;
  */
 public class StructFieldOperation implements FieldOperation, FieldOperationContainer {
 
-    private String structFieldName;
-    private List<FieldOperation> pendingOperations = new LinkedList<>();
+    private final String structFieldName;
+    private final List<FieldOperation> pendingOperations = new LinkedList<>();
 
     public StructFieldOperation(String structFieldName) {
         this.structFieldName = structFieldName;

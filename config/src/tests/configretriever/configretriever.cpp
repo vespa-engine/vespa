@@ -1,5 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "config-bootstrap.h"
+#include "config-foo.h"
+#include "config-bar.h"
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/config/print.h>
@@ -7,11 +10,11 @@
 #include <vespa/config/retriever/simpleconfigretriever.h>
 #include <vespa/config/retriever/simpleconfigurer.h>
 #include <vespa/config/common/configholder.h>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/config/subscription/configsubscription.h>
+#include <vespa/config/subscription/sourcespec.h>
 #include <vespa/config/common/exceptions.h>
-#include "config-bootstrap.h"
-#include "config-foo.h"
-#include "config-bar.h"
+#include <thread>
 #include <atomic>
 
 using namespace config;
@@ -39,7 +42,7 @@ struct ConfigTestFixture {
           bootstrapBuilder(),
           componentConfig(),
           set(),
-          context(new ConfigContext(set)),
+          context(std::make_shared<ConfigContext>(set)),
           idcounter(-1)
     {
         set.addBuilder(configId, &bootstrapBuilder);
@@ -145,9 +148,9 @@ private:
 
 ConfigValue createKeyValueV2(const vespalib::string & key, const vespalib::string & value)
 {
-    FixedPayload * payload = new FixedPayload();
+    auto payload = std::make_unique<FixedPayload>();
     payload->getData().setObject().setString(key, Memory(value));
-    return ConfigValue(PayloadPtr(payload), "");
+    return ConfigValue(std::move(payload), "");
 }
 
 

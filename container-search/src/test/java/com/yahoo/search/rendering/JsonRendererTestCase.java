@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -56,9 +55,6 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.text.Utf8;
 import com.yahoo.yolean.trace.TraceNode;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -67,7 +63,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -82,6 +77,8 @@ import static org.junit.Assert.assertTrue;
  * @author bratseth
  */
 public class JsonRendererTestCase {
+
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private JsonRenderer originalRenderer;
     private JsonRenderer renderer;
@@ -120,6 +117,55 @@ public class JsonRendererTestCase {
         Result r = newEmptyResult();
         Hit h = new Hit("docIdTest");
         h.setField("documentid", new DocumentId("id:unittest:smoke::whee"));
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+        String summary = render(r);
+        assertEqualJson(expected, summary);
+    }
+
+    @Test
+    public void testTensorShortForm() throws ExecutionException, InterruptedException, IOException {
+        String expected = "{" +
+                "\"root\":{" +
+                    "\"id\":\"toplevel\"," +
+                    "\"relevance\":1.0," +
+                    "\"fields\":{" +
+                        "\"totalCount\":1" +
+                    "}," +
+                    "\"children\":[{" +
+                        "\"id\":\"tensors\"," +
+                        "\"relevance\":1.0," +
+                        "\"fields\":{" +
+                            "\"tensor_standard\":{\"type\":\"tensor(x{},y{})\",\"cells\":[{\"address\":{\"x\":\"a\",\"y\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"b\",\"y\":\"1\"},\"value\":2.0}]}," +
+                            "\"tensor_indexed\":{\"type\":\"tensor(x[2],y[3])\",\"values\":[[1.0,2.0,3.0],[4.0,5.0,6.0]]}," +
+                            "\"tensor_single_mapped\":{\"type\":\"tensor(x{})\",\"cells\":{\"a\":1.0,\"b\":2.0}}," +
+                            "\"tensor_mixed\":{\"type\":\"tensor(x{},y[2])\",\"blocks\":{\"a\":[1.0,2.0],\"b\":[3.0,4.0]}}," +
+                            "\"summaryfeatures\":{" +
+                                "\"tensor_standard\":{\"type\":\"tensor(x{},y{})\",\"cells\":[{\"address\":{\"x\":\"a\",\"y\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"b\",\"y\":\"1\"},\"value\":2.0}]}," +
+                                "\"tensor_indexed\":{\"type\":\"tensor(x[2],y[3])\",\"values\":[[1.0,2.0,3.0],[4.0,5.0,6.0]]}," +
+                                "\"tensor_single_mapped\":{\"type\":\"tensor(x{})\",\"cells\":{\"a\":1.0,\"b\":2.0}}," +
+                                "\"tensor_mixed\":{\"type\":\"tensor(x{},y[2])\",\"blocks\":{\"a\":[1.0,2.0],\"b\":[3.0,4.0]}}" +
+                            "}" +
+                        "}" +
+                    "}]" +
+                "}}\n";
+
+        Slime slime = new Slime();
+        Cursor features = slime.setObject();
+        features.setData("tensor_standard", TypedBinaryFormat.encode(Tensor.from("tensor(x{},y{}):{ {x:a,y:0}:1.0, {x:b,y:1}:2.0 }")));
+        features.setData("tensor_indexed", TypedBinaryFormat.encode(Tensor.from("tensor(x[2],y[3]):[[1,2,3],[4,5,6]]")));
+        features.setData("tensor_single_mapped", TypedBinaryFormat.encode(Tensor.from("tensor(x{}):{ a:1, b:2 }")));
+        features.setData("tensor_mixed", TypedBinaryFormat.encode(Tensor.from("tensor(x{},y[2]):{a:[1,2], b:[3,4]}")));
+        FeatureData summaryFeatures = new FeatureData(new SlimeAdapter(slime.get()));
+
+        Hit h = new Hit("tensors");
+        h.setField("tensor_standard", new TensorFieldValue(Tensor.from("tensor(x{},y{}):{ {x:a,y:0}:1.0, {x:b,y:1}:2.0 }")));
+        h.setField("tensor_indexed", new TensorFieldValue(Tensor.from("tensor(x[2],y[3]):[[1,2,3],[4,5,6]]")));
+        h.setField("tensor_single_mapped", new TensorFieldValue(Tensor.from("tensor(x{}):{ a:1, b:2 }")));
+        h.setField("tensor_mixed", new TensorFieldValue(Tensor.from("tensor(x{},y[2]):{a:[1,2], b:[3,4]}")));
+        h.setField("summaryfeatures", summaryFeatures);
+
+        Result r = new Result(new Query("/?format.tensors=short"));
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
@@ -466,7 +512,6 @@ public class JsonRendererTestCase {
         assertEqualJson(expected, summary);
     }
 
-
     @Test
     public void testTracingOfNodesWithBothChildrenAndDataAndEmptySubnode() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
@@ -555,7 +600,6 @@ public class JsonRendererTestCase {
         String summary = render(execution, r);
         assertEqualJson(expected, summary);
     }
-
 
     @Test
     public void test() throws IOException, InterruptedException, ExecutionException {
@@ -959,7 +1003,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testJsonObjects() throws InterruptedException, ExecutionException, IOException, JSONException {
+    public void testJsonObjects() throws InterruptedException, ExecutionException, IOException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -973,14 +1017,6 @@ public class JsonRendererTestCase {
                 + "                    },"
                 + "                    \"json producer\": {"
                 + "                        \"long in structured\": 7809531904"
-                + "                    },"
-                + "                    \"org.json array\": ["
-                + "                        true,"
-                + "                        true,"
-                + "                        false"
-                + "                    ],"
-                + "                    \"org.json object\": {"
-                + "                        \"forty-two\": 42"
                 + "                    }"
                 + "                },"
                 + "                \"id\": \"json objects\","
@@ -996,26 +1032,17 @@ public class JsonRendererTestCase {
                 + "}";
         Result r = newEmptyResult();
         Hit h = new Hit("json objects");
-        JSONObject o = new JSONObject();
-        JSONArray a = new JSONArray();
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode j = mapper.createObjectNode();
+        ObjectNode j = jsonMapper.createObjectNode();
         JSONString s = new JSONString("{\"a\": \"b\"}");
         Slime slime = new Slime();
         Cursor c = slime.setObject();
         c.setLong("long in structured", 7809531904L);
         SlimeAdapter slimeInit = new SlimeAdapter(slime.get());
         StructuredData struct = new StructuredData(slimeInit);
-        ((ObjectNode) j).put("Nineteen-eighty-four", 1984);
-        o.put("forty-two", 42);
-        a.put(true);
-        a.put(true);
-        a.put(false);
+        j.put("Nineteen-eighty-four", 1984);
         h.setField("inspectable", s);
         h.setField("jackson", j);
         h.setField("json producer", struct);
-        h.setField("org.json array", a);
-        h.setField("org.json object", o);
         r.hits().add(h);
         String summary = render(r);
         assertEqualJson(expected, summary);
@@ -1236,11 +1263,13 @@ public class JsonRendererTestCase {
     public void testThatTheJsonValidatorCanCatchErrors() {
         String json = "{"
                 + "    \"root\": {"
-                + "        \"duplicate\": 1,"
-                + "        \"duplicate\": 2"
+                + "        \"invalidvalue\": 1adsf,"
                 + "    }"
                 + "}";
-        assertEquals("Duplicate key \"duplicate\"", validateJSON(json));
+        assertEquals(
+                "Unexpected character ('a' (code 97)): was expecting comma to separate Object entries\n" +
+                        " at [Source: (String)\"{    \"root\": {        \"invalidvalue\": 1adsf,    }}\"; line: 1, column: 41]",
+                validateJSON(json));
     }
 
     @Test
@@ -1316,9 +1345,9 @@ public class JsonRendererTestCase {
 
     private String validateJSON(String presumablyValidJson) {
         try {
-            new JSONObject(presumablyValidJson);
+            jsonMapper.readTree(presumablyValidJson);
             return "";
-        } catch (JSONException e) {
+        } catch (IOException e) {
             return e.getMessage();
         }
     }

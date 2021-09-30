@@ -77,7 +77,7 @@ HttpUrlPath::print(std::ostream& out, bool, const std::string&) const
     if (!_attributes.empty()) {
         out << "?";
         size_t cnt = 0;
-        for (const auto attr: _attributes) {
+        for (const auto &attr: _attributes) {
             if (cnt++ > 0) {
                 out << "&";
             }

@@ -2,7 +2,7 @@
 package com.yahoo.search.rendering;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.net.URI;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.hitfield.HitField;
@@ -395,7 +395,7 @@ public final class SyncDefaultRenderer extends Renderer {
         if (e instanceof IOException) {
             throw (IOException) e;
         } else {
-            log.log(LogLevel.WARNING, "Exception thrown when rendering the result:", e);
+            log.log(Level.WARNING, "Exception thrown when rendering the result:", e);
         }
     }
 

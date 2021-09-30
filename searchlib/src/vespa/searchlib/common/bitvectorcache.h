@@ -3,6 +3,7 @@
 
 #include "condensedbitvectors.h"
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/fastos/dynamiclibrary.h>
 #include <mutex>
 
@@ -40,6 +41,7 @@ public:
     void adjustDocIdLimit(uint32_t docId);
     void populate(uint32_t count, const PopulateInterface &);
     bool needPopulation() const { return _needPopulation; }
+    void requirePopulation() { _needPopulation = true; }
 private:
     class KeyMeta {
     public:
@@ -76,12 +78,12 @@ private:
     VESPA_DLL_LOCAL static void populate(Key2Index & newKeys, CondensedBitVector & chunk, const PopulateInterface & lookup);
     VESPA_DLL_LOCAL bool hasCostChanged(const std::lock_guard<std::mutex> &);
 
-    uint64_t       _lookupCount;
-    bool           _needPopulation;
+    uint64_t           _lookupCount;
+    bool               _needPopulation;
     mutable std::mutex _lock;
-    Key2Index      _keys;
-    ChunkV         _chunks;
-    GenerationHolder &_genHolder;
+    Key2Index          _keys;
+    ChunkV             _chunks;
+    GenerationHolder  &_genHolder;
 };
 
 }

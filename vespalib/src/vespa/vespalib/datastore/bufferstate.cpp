@@ -1,49 +1,55 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bufferstate.h"
+#include <vespa/vespalib/util/memory_allocator.h>
 #include <limits>
+#include <cassert>
 
 using vespalib::alloc::Alloc;
 using vespalib::alloc::MemoryAllocator;
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 BufferState::FreeListList::~FreeListList()
 {
-    assert(_head == NULL);  // Owner should have disabled free lists
+    assert(_head == nullptr);  // Owner should have disabled free lists
 }
-
 
 BufferState::BufferState()
     : _usedElems(0),
       _allocElems(0),
       _deadElems(0u),
-      _state(FREE),
-      _disableElemHoldList(false),
       _holdElems(0u),
       _extraUsedBytes(0),
       _extraHoldBytes(0),
       _freeList(),
-      _freeListList(NULL),
-      _nextHasFree(NULL),
-      _prevHasFree(NULL),
-      _typeHandler(NULL),
-      _typeId(0),
+      _freeListList(nullptr),
+      _nextHasFree(nullptr),
+      _prevHasFree(nullptr),
+      _typeHandler(nullptr),
+      _buffer(Alloc::alloc(0, MemoryAllocator::HUGEPAGE_SIZE)),
       _arraySize(0),
-      _compacting(false),
-      _buffer(Alloc::alloc(0, MemoryAllocator::HUGEPAGE_SIZE))
+      _typeId(0),
+      _state(FREE),
+      _disableElemHoldList(false),
+      _compacting(false)
 {
 }
-
 
 BufferState::~BufferState()
 {
     assert(_state == FREE);
-    assert(_freeListList == NULL);
-    assert(_nextHasFree == NULL);
-    assert(_prevHasFree == NULL);
+    assert(_freeListList == nullptr);
+    assert(_nextHasFree == nullptr);
+    assert(_prevHasFree == nullptr);
     assert(_holdElems == 0);
-    assert(_freeList.empty());
+    assert(isFreeListEmpty());
+}
+
+void
+BufferState::decHoldElems(size_t value) {
+    assert(_holdElems >= value);
+    _holdElems -= value;
 }
 
 namespace {
@@ -97,56 +103,60 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
                       size_t elementsNeeded,
                       void *&buffer)
 {
-    assert(buffer == NULL);
-    assert(_buffer.get() == NULL);
+    assert(buffer == nullptr);
+    assert(_buffer.get() == nullptr);
     assert(_state == FREE);
-    assert(_typeHandler == NULL);
+    assert(_typeHandler == nullptr);
     assert(_allocElems == 0);
     assert(_usedElems == 0);
     assert(_deadElems == 0u);
     assert(_holdElems == 0);
     assert(_extraUsedBytes == 0);
     assert(_extraHoldBytes == 0);
-    assert(_freeList.empty());
-    assert(_nextHasFree == NULL);
-    assert(_prevHasFree == NULL);
-    assert(_freeListList == NULL || _freeListList->_head != this);
+    assert(isFreeListEmpty());
+    assert(_nextHasFree == nullptr);
+    assert(_prevHasFree == nullptr);
+    assert(_freeListList == nullptr || _freeListList->_head != this);
 
     size_t reservedElements = typeHandler->getReservedElements(bufferId);
     (void) reservedElements;
     AllocResult alloc = calcAllocation(bufferId, *typeHandler, elementsNeeded, false);
     assert(alloc.elements >= reservedElements + elementsNeeded);
+    auto allocator = typeHandler->get_memory_allocator();
+    _buffer = (allocator != nullptr) ? Alloc::alloc_with_allocator(allocator) : Alloc::alloc(0, MemoryAllocator::HUGEPAGE_SIZE);
     _buffer.create(alloc.bytes).swap(_buffer);
     buffer = _buffer.get();
-    assert(buffer != NULL || alloc.elements == 0u);
+    assert(buffer != nullptr || alloc.elements == 0u);
     _allocElems = alloc.elements;
     _state = ACTIVE;
     _typeHandler = typeHandler;
+    assert(typeId <= std::numeric_limits<uint16_t>::max());
     _typeId = typeId;
     _arraySize = _typeHandler->getArraySize();
-    typeHandler->onActive(bufferId, &_usedElems, _deadElems, buffer);
+    typeHandler->onActive(bufferId, &_usedElems, &_deadElems, buffer);
 }
 
 
 void
-BufferState::onHold()
+BufferState::onHold(uint32_t buffer_id)
 {
     assert(_state == ACTIVE);
-    assert(_typeHandler != NULL);
+    assert(_typeHandler != nullptr);
     _state = HOLD;
     _compacting = false;
     assert(_deadElems <= _usedElems);
     assert(_holdElems <= (_usedElems - _deadElems));
-    _holdElems = _usedElems - _deadElems; // Put everyting not dead on hold
-    _typeHandler->onHold(&_usedElems);
-    if (!_freeList.empty()) {
+    _deadElems = 0;
+    _holdElems = _usedElems; // Put everyting on hold
+    _typeHandler->onHold(buffer_id, &_usedElems, &_deadElems);
+    if ( ! isFreeListEmpty()) {
         removeFromFreeListList();
         FreeList().swap(_freeList);
     }
-    assert(_nextHasFree == NULL);
-    assert(_prevHasFree == NULL);
-    assert(_freeListList == NULL || _freeListList->_head != this);
-    setFreeListList(NULL);
+    assert(_nextHasFree == nullptr);
+    assert(_prevHasFree == nullptr);
+    assert(_freeListList == nullptr || _freeListList->_head != this);
+    setFreeListList(nullptr);
 }
 
 
@@ -155,13 +165,13 @@ BufferState::onFree(void *&buffer)
 {
     assert(buffer == _buffer.get());
     assert(_state == HOLD);
-    assert(_typeHandler != NULL);
+    assert(_typeHandler != nullptr);
     assert(_deadElems <= _usedElems);
     assert(_holdElems == _usedElems - _deadElems);
     _typeHandler->destroyElements(buffer, _usedElems);
     Alloc::alloc().swap(_buffer);
     _typeHandler->onFree(_usedElems);
-    buffer = NULL;
+    buffer = nullptr;
     _usedElems = 0;
     _allocElems = 0;
     _deadElems = 0u;
@@ -169,54 +179,54 @@ BufferState::onFree(void *&buffer)
     _extraUsedBytes = 0;
     _extraHoldBytes = 0;
     _state = FREE;
-    _typeHandler = NULL;
+    _typeHandler = nullptr;
     _arraySize = 0;
-    assert(_freeList.empty());
-    assert(_nextHasFree == NULL);
-    assert(_prevHasFree == NULL);
-    assert(_freeListList == NULL || _freeListList->_head != this);
-    setFreeListList(NULL);
+    assert(isFreeListEmpty());
+    assert(_nextHasFree == nullptr);
+    assert(_prevHasFree == nullptr);
+    assert(_freeListList == nullptr || _freeListList->_head != this);
+    setFreeListList(nullptr);
     _disableElemHoldList = false;
 }
 
 
 void
-BufferState::dropBuffer(void *&buffer)
+BufferState::dropBuffer(uint32_t buffer_id, void *&buffer)
 {
     if (_state == FREE) {
-        assert(buffer == NULL);
+        assert(buffer == nullptr);
         return;
     }
-    assert(buffer != NULL || _allocElems == 0);
+    assert(buffer != nullptr || _allocElems == 0);
     if (_state == ACTIVE) {
-        onHold();
+        onHold(buffer_id);
     }
     if (_state == HOLD) {
         onFree(buffer);
     }
     assert(_state == FREE);
-    assert(buffer == NULL);
+    assert(buffer == nullptr);
 }
 
 
 void
 BufferState::setFreeListList(FreeListList *freeListList)
 {
-    if (_state == FREE && freeListList != NULL) {
+    if (_state == FREE && freeListList != nullptr) {
         return;
     }
     if (freeListList == _freeListList) {
         return; // No change
     }
-    if (_freeListList != NULL && !_freeList.empty()) {
+    if (_freeListList != nullptr && ! isFreeListEmpty()) {
         removeFromFreeListList(); // Remove from old free list
     }
     _freeListList = freeListList;
-    if (!_freeList.empty()) {
-        if (freeListList != NULL) {
+    if ( ! isFreeListEmpty() ) {
+        if (freeListList != nullptr) {
             addToFreeListList(); // Changed free list list
         } else {
-            FreeList().swap(_freeList); // Free lists have been disabled
+            FreeList().swap(_freeList);; // Free lists have been disabled
         }
     }
 }
@@ -225,10 +235,10 @@ BufferState::setFreeListList(FreeListList *freeListList)
 void
 BufferState::addToFreeListList()
 {
-    assert(_freeListList != NULL && _freeListList->_head != this);
-    assert(_nextHasFree == NULL);
-    assert(_prevHasFree == NULL);
-    if (_freeListList->_head != NULL) {
+    assert(_freeListList != nullptr && _freeListList->_head != this);
+    assert(_nextHasFree == nullptr);
+    assert(_prevHasFree == nullptr);
+    if (_freeListList->_head != nullptr) {
         _nextHasFree = _freeListList->_head;
         _prevHasFree = _nextHasFree->_prevHasFree;
         _nextHasFree->_prevHasFree = this;
@@ -244,21 +254,21 @@ BufferState::addToFreeListList()
 void
 BufferState::removeFromFreeListList()
 {
-    assert(_freeListList != NULL);
-    assert(_nextHasFree != NULL);
-    assert(_prevHasFree != NULL);
+    assert(_freeListList != nullptr);
+    assert(_nextHasFree != nullptr);
+    assert(_prevHasFree != nullptr);
     if (_nextHasFree == this) {
         assert(_prevHasFree == this);
         assert(_freeListList->_head == this);
-        _freeListList->_head = NULL;
+        _freeListList->_head = nullptr;
     } else {
         assert(_prevHasFree != this);
         _freeListList->_head = _nextHasFree;
         _nextHasFree->_prevHasFree = _prevHasFree;
         _prevHasFree->_nextHasFree = _nextHasFree;
     }
-    _nextHasFree = NULL;
-    _prevHasFree = NULL;
+    _nextHasFree = nullptr;
+    _prevHasFree = nullptr;
 }
 
 
@@ -276,8 +286,8 @@ BufferState::fallbackResize(uint32_t bufferId,
                             Alloc &holdBuffer)
 {
     assert(_state == ACTIVE);
-    assert(_typeHandler != NULL);
-    assert(holdBuffer.get() == NULL);
+    assert(_typeHandler != nullptr);
+    assert(holdBuffer.get() == nullptr);
     AllocResult alloc = calcAllocation(bufferId, *_typeHandler, elementsNeeded, true);
     assert(alloc.elements >= _usedElems + elementsNeeded);
     assert(alloc.elements > _allocElems);
@@ -289,6 +299,12 @@ BufferState::fallbackResize(uint32_t bufferId,
     buffer = _buffer.get();
     _allocElems = alloc.elements;
     std::atomic_thread_fence(std::memory_order_release);
+}
+
+void
+BufferState::resume_primary_buffer(uint32_t buffer_id)
+{
+    _typeHandler->resume_primary_buffer(buffer_id, &_usedElems, &_deadElems);
 }
 
 }

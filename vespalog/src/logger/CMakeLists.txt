@@ -13,7 +13,7 @@ vespa_add_executable(vespalog_vlogreplay_app
     logreplay.c
     OUTPUT_NAME vespa-log-replay
     INSTALL bin
-    DEPENDS
+    EXTERNAL_DEPENDS
     m
 )
 vespa_add_executable(vespalog_vespa-runserver_app

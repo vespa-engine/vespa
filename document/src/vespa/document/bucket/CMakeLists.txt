@@ -2,7 +2,6 @@
 vespa_add_library(document_bucket OBJECT
     SOURCES
     bucket.cpp
-    bucketdistribution.cpp
     bucketid.cpp
     bucketidfactory.cpp
     bucketidlist.cpp
@@ -10,6 +9,4 @@ vespa_add_library(document_bucket OBJECT
     bucketspace.cpp
     fixed_bucket_spaces.cpp
     DEPENDS
-    AFTER
-    document_documentconfig
 )

@@ -3,23 +3,26 @@
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/attrvector.h>
+#include <vespa/searchlib/attribute/multienumattribute.hpp>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
+#include <vespa/searchlib/attribute/multivalueattribute.hpp>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
+#include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <cmath>
@@ -1493,20 +1496,21 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
     typedef ArithmeticValueUpdate ArithVU;
     auto & vec = static_cast<VectorType &>(*ptr.get());
 
-    addDocs(ptr, 6);
-    for (uint32_t doc = 0; doc < 6; ++doc) {
+    addDocs(ptr, 7);
+    for (uint32_t doc = 0; doc < 7; ++doc) {
         ASSERT_TRUE(vec.append(doc, initValue.getValue(), 100));
     }
-    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 6u);
+    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 7u);
     EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 0u);
 
     EXPECT_TRUE(ptr->apply(0, MapVU(initFieldValue, ArithVU(ArithVU::Add, 10))));
     EXPECT_TRUE(ptr->apply(1, MapVU(initFieldValue, ArithVU(ArithVU::Sub, 10))));
     EXPECT_TRUE(ptr->apply(2, MapVU(initFieldValue, ArithVU(ArithVU::Mul, 10))));
     EXPECT_TRUE(ptr->apply(3, MapVU(initFieldValue, ArithVU(ArithVU::Div, 10))));
+    EXPECT_TRUE(ptr->apply(6, MapVU(initFieldValue, AssignValueUpdate(IntFieldValue(70)))));
     ptr->commit();
-    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 10u);
-    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 4u);
+    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 12u);
+    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 5u);
 
     std::vector<BufferType> buf(2);
     ptr->get(0, &buf[0], 2);
@@ -1517,6 +1521,8 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
     EXPECT_EQUAL(buf[0].getWeight(), 1000);
     ptr->get(3, &buf[0], 2);
     EXPECT_EQUAL(buf[0].getWeight(), 10);
+    ptr->get(6, &buf[0], 2);
+    EXPECT_EQUAL(buf[0].getWeight(), 70);
 
     // removeifzero
     EXPECT_TRUE(ptr->apply(4, MapVU(initFieldValue, ArithVU(ArithVU::Sub, 100))));
@@ -1527,8 +1533,8 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
         EXPECT_EQUAL(ptr->get(4, &buf[0], 2), uint32_t(1));
         EXPECT_EQUAL(buf[0].getWeight(), 0);
     }
-    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 11u);
-    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 5u);
+    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 13u);
+    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 6u);
 
     // createifnonexistant
     EXPECT_TRUE(ptr->apply(5, MapVU(nonExistant, ArithVU(ArithVU::Add, 10))));
@@ -1542,18 +1548,18 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
         EXPECT_EQUAL(ptr->get(5, &buf[0], 2), uint32_t(1));
         EXPECT_EQUAL(buf[0].getWeight(), 100);
     }
-    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 12u);
-    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 6u);
+    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 14u);
+    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 7u);
 
 
     // try divide by zero (should be ignored)
     vec.clearDoc(0);
-    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 13u);
+    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 15u);
     ASSERT_TRUE(vec.append(0, initValue.getValue(), 12345));
-    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 14u);
+    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 16u);
     EXPECT_TRUE(ptr->apply(0, MapVU(initFieldValue, ArithVU(ArithVU::Div, 0))));
-    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 14u);
-    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 6u);
+    EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 16u);
+    EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 7u);
     ptr->commit();
     ptr->get(0, &buf[0], 1);
     EXPECT_EQUAL(buf[0].getWeight(), 12345);
@@ -1636,7 +1642,7 @@ AttributeTest::testStatus()
     // No posting list
     static constexpr size_t LeafNodeSize = 4 + sizeof(IEnumStore::Index) * EnumTreeTraits::LEAF_SLOTS;
     static constexpr size_t InternalNodeSize =
-        8 + (sizeof(IEnumStore::Index) + sizeof(datastore::EntryRef)) * EnumTreeTraits::INTERNAL_SLOTS;
+        8 + (sizeof(IEnumStore::Index) + sizeof(vespalib::datastore::EntryRef)) * EnumTreeTraits::INTERNAL_SLOTS;
     static constexpr size_t NestedVectorSize = 24; // sizeof(vespalib::Array)
 
     {
@@ -1655,7 +1661,7 @@ AttributeTest::testStatus()
         expUsed += 1 * InternalNodeSize + 1 * LeafNodeSize; // enum store tree
         expUsed += 1 * 32; // enum store (uniquevalues * bytes per entry)
         // multi value mapping (numdocs * sizeof(MappingIndex) + numvalues * sizeof(EnumIndex))
-        expUsed += 100 * sizeof(datastore::EntryRef) + 100 * 4;
+        expUsed += 100 * sizeof(vespalib::datastore::EntryRef) + 100 * 4;
         EXPECT_GREATER_EQUAL(ptr->getStatus().getUsed(), expUsed);
         EXPECT_GREATER_EQUAL(ptr->getStatus().getAllocated(), expUsed);
     }
@@ -1665,8 +1671,8 @@ AttributeTest::testStatus()
         AttributePtr ptr = createAttribute("as", cfg);
         addDocs(ptr, numDocs);
         auto & sa = *(static_cast<StringAttribute *>(ptr.get()));
-        const size_t numUniq(16);
-        const size_t numValuesPerDoc(16);
+        const size_t numValuesPerDoc(values.size());
+        const size_t numUniq(numValuesPerDoc);
         for (uint32_t i = 0; i < numDocs; ++i) {
             EXPECT_TRUE(appendToVector(sa, i, numValuesPerDoc, values));
         }
@@ -1675,11 +1681,11 @@ AttributeTest::testStatus()
         EXPECT_EQUAL(ptr->getStatus().getNumValues(), numDocs*numValuesPerDoc);
         EXPECT_EQUAL(ptr->getStatus().getNumUniqueValues(), numUniq);
         size_t expUsed = 0;
-        expUsed += 1 * InternalNodeSize + 1 * LeafNodeSize; // enum store tree
-        expUsed += numUniq * 32; // enum store (16 unique values, 32 bytes per entry)
+        expUsed += 1 * InternalNodeSize + 1 * LeafNodeSize; // Approximate enum store tree
+        expUsed += 272; // TODO Approximate... enum store (16 unique values, 17 bytes per entry)
         // multi value mapping (numdocs * sizeof(MappingIndex) + numvalues * sizeof(EnumIndex) +
-        // numdocs * sizeof(Array<EnumIndex>) (due to vector vector))
-        expUsed += numDocs * sizeof(datastore::EntryRef) + numDocs * numValuesPerDoc * sizeof(IEnumStore::Index) + ((numValuesPerDoc > 1024) ? numDocs * NestedVectorSize : 0);
+        // 32 + numdocs * sizeof(Array<EnumIndex>) (due to vector vector))
+        expUsed += 32 + numDocs * sizeof(vespalib::datastore::EntryRef) + numDocs * numValuesPerDoc * sizeof(IEnumStore::Index) + ((numValuesPerDoc > 1024) ? numDocs * NestedVectorSize : 0);
         EXPECT_GREATER_EQUAL(ptr->getStatus().getUsed(), expUsed);
         EXPECT_GREATER_EQUAL(ptr->getStatus().getAllocated(), expUsed);
     }
@@ -2055,7 +2061,7 @@ get_default_value_ref_count(AttributeVector &attr)
     auto &enum_store = dynamic_cast<EnumStoreT<int32_t> &>(*enum_store_base);
     IAttributeVector::EnumHandle default_value_handle(0);
     if (enum_store.find_enum(attr.getDefaultValue(), default_value_handle)) {
-        datastore::EntryRef default_value_ref(default_value_handle);
+        vespalib::datastore::EntryRef default_value_ref(default_value_handle);
         assert(default_value_ref.valid());
         return enum_store.get_ref_count(default_value_ref);
     } else {
@@ -2100,30 +2106,30 @@ AttributeTest::requireThatAddressSpaceUsageIsReported(const Config &config, bool
     AddressSpaceUsage after = attrPtr->getAddressSpaceUsage();
     if (attrPtr->hasEnum()) {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): Has enum", attrName.c_str());
-        EXPECT_EQUAL(before.enumStoreUsage().used(), 1u);
-        EXPECT_EQUAL(before.enumStoreUsage().dead(), 1u);
-        EXPECT_GREATER(after.enumStoreUsage().used(), before.enumStoreUsage().used());
-        EXPECT_GREATER_EQUAL(after.enumStoreUsage().limit(), before.enumStoreUsage().limit());
-        EXPECT_GREATER(after.enumStoreUsage().limit(), 4200000000u);
+        EXPECT_EQUAL(before.enum_store_usage().used(), 1u);
+        EXPECT_EQUAL(before.enum_store_usage().dead(), 1u);
+        EXPECT_GREATER(after.enum_store_usage().used(), before.enum_store_usage().used());
+        EXPECT_GREATER_EQUAL(after.enum_store_usage().limit(), before.enum_store_usage().limit());
+        EXPECT_GREATER(after.enum_store_usage().limit(), 4200000000u);
     } else {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): NOT enum", attrName.c_str());
-        EXPECT_EQUAL(before.enumStoreUsage().used(), 0u);
-        EXPECT_EQUAL(before.enumStoreUsage().dead(), 0u);
-        EXPECT_EQUAL(after.enumStoreUsage(), before.enumStoreUsage());
-        EXPECT_EQUAL(AddressSpaceUsage::defaultEnumStoreUsage(), after.enumStoreUsage());
+        EXPECT_EQUAL(before.enum_store_usage().used(), 0u);
+        EXPECT_EQUAL(before.enum_store_usage().dead(), 0u);
+        EXPECT_EQUAL(after.enum_store_usage(), before.enum_store_usage());
+        EXPECT_EQUAL(AddressSpaceComponents::default_enum_store_usage(), after.enum_store_usage());
     }
     if (attrPtr->hasMultiValue()) {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): Has multi-value", attrName.c_str());
-        EXPECT_EQUAL(before.multiValueUsage().used(), 1u);
-        EXPECT_EQUAL(before.multiValueUsage().dead(), 1u);
-        EXPECT_GREATER_EQUAL(after.multiValueUsage().used(), before.multiValueUsage().used());
-        EXPECT_GREATER(after.multiValueUsage().limit(), before.multiValueUsage().limit());
-        EXPECT_GREATER((1ull << 32), after.multiValueUsage().limit());
+        EXPECT_EQUAL(before.multi_value_usage().used(), 1u);
+        EXPECT_EQUAL(before.multi_value_usage().dead(), 1u);
+        EXPECT_GREATER_EQUAL(after.multi_value_usage().used(), before.multi_value_usage().used());
+        EXPECT_GREATER(after.multi_value_usage().limit(), before.multi_value_usage().limit());
+        EXPECT_GREATER((1ull << 32), after.multi_value_usage().limit());
     } else {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): NOT multi-value", attrName.c_str());
-        EXPECT_EQUAL(before.multiValueUsage().used(), 0u);
-        EXPECT_EQUAL(after.multiValueUsage(), before.multiValueUsage());
-        EXPECT_EQUAL(AddressSpaceUsage::defaultMultiValueUsage(), after.multiValueUsage());
+        EXPECT_EQUAL(before.multi_value_usage().used(), 0u);
+        EXPECT_EQUAL(after.multi_value_usage(), before.multi_value_usage());
+        EXPECT_EQUAL(AddressSpaceComponents::default_multi_value_usage(), after.multi_value_usage());
     }
 }
 

@@ -46,7 +46,7 @@ public class SummaryDiskAccessValidator extends Processor {
                         throw new IllegalArgumentException(summaryField + " in " + summary + " references " +
                                                            source + ", but this field does not exist");
                     if ( ! isInMemory(field, summaryField) && ! summary.isFromDisk()) {
-                        deployLogger.log(Level.WARNING, summaryField + " in " + summary + " references " +
+                        deployLogger.logApplicationPackage(Level.WARNING, summaryField + " in " + summary + " references " +
                                                         source + ", which is not an attribute: Using this " +
                                                         "summary will cause disk accesses. " +
                                                         "Set 'from-disk' on this summary class to silence this warning.");

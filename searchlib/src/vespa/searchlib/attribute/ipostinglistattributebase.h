@@ -4,6 +4,8 @@
 
 #include <vespa/searchcommon/attribute/iattributevector.h>
 
+namespace search { class CompactionStrategy; }
+
 namespace vespalib { class MemoryUsage; }
 
 namespace search::attribute {
@@ -23,6 +25,8 @@ public:
 
     virtual void forwardedShrinkLidSpace(uint32_t newSize) = 0;
     virtual vespalib::MemoryUsage getMemoryUsage() const = 0;
+    virtual bool consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy) = 0;
+    virtual bool consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy) = 0;
 };
 
 } // namespace search::attribute

@@ -4,23 +4,21 @@
 #include <vespa/searchlib/aggregation/predicates.h>
 #include <vespa/searchlib/aggregation/modifiers.h>
 
-namespace search {
+namespace search::grouping {
 
 using aggregation::CountFS4Hits;
 using aggregation::FS4HitSetDistributionKey;
 
-namespace grouping {
-
 void
 GroupingContext::deserialize(const char *groupSpec, uint32_t groupSpecLen)
 {
-    if ((groupSpec != NULL) && (groupSpecLen > 4)) {
+    if ((groupSpec != nullptr) && (groupSpecLen > 4)) {
         vespalib::nbostream is(groupSpec, groupSpecLen);
         vespalib::NBOSerializer nis(is);
         uint32_t numGroupings = 0;
         nis >> numGroupings;
         for (size_t i = 0; i < numGroupings; i++) {
-            GroupingPtr grouping(new search::aggregation::Grouping);
+            auto grouping = std::make_shared<search::aggregation::Grouping>();
             grouping->deserialize(nis);
             grouping->setClock(&_clock);
             grouping->setTimeOfDoom(_timeOfDoom);
@@ -102,6 +100,4 @@ GroupingContext::needRanking() const
     return true;
 }
 
-
-} // namespace search::grouping
-} // namespace search
+}

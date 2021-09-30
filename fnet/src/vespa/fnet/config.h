@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include <vespa/vespalib/util/time.h>
 
 /**
  * This class is used internally by the @ref FNET_Transport to keep
@@ -11,10 +11,12 @@
 class FNET_Config
 {
 public:
-    uint32_t  _iocTimeOut;
+    vespalib::duration  _iocTimeOut;
+    uint32_t  _events_before_wakeup;
     uint32_t  _maxInputBufferSize;
     uint32_t  _maxOutputBufferSize;
     bool      _tcpNoDelay;
+    bool      _drop_empty_buffers;
 
     FNET_Config();
 };

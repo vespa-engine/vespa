@@ -38,12 +38,16 @@ public class FunctionReferenceContext {
 
     /** Create a context for a single serialization task */
     public FunctionReferenceContext(Map<String, ExpressionFunction> functions) {
-        this(functions.values());
+        this(functions, null);
     }
 
     /** Create a context for a single serialization task */
     public FunctionReferenceContext(Map<String, ExpressionFunction> functions, Map<String, String> bindings) {
-        this.functions = ImmutableMap.copyOf(functions);
+        this(ImmutableMap.copyOf(functions), bindings);
+    }
+
+    protected FunctionReferenceContext(ImmutableMap<String, ExpressionFunction> functions, Map<String, String> bindings) {
+        this.functions = functions;
         if (bindings != null)
             this.bindings.putAll(bindings);
     }
@@ -66,6 +70,11 @@ public class FunctionReferenceContext {
     /** Returns a new context with the bindings replaced by the given bindings */
     public FunctionReferenceContext withBindings(Map<String, String> bindings) {
         return new FunctionReferenceContext(this.functions, bindings);
+    }
+
+    /** Returns a fresh context without bindings */
+    public FunctionReferenceContext withoutBindings() {
+        return new FunctionReferenceContext(this.functions);
     }
 
 }

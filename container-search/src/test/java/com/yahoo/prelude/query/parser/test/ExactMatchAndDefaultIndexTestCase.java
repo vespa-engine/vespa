@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
@@ -34,7 +35,7 @@ public class ExactMatchAndDefaultIndexTestCase {
         q.getModel().setExecution(new Execution(new Execution.Context(null, facts, null, null, null)));
         assertEquals("AND testexact:a/b testexact:foo.com", q.getModel().getQueryTree().getRoot().toString());
         q = new Query("?query=" + enc("a/b foo.com"));
-        assertEquals("AND \"a b\" \"foo com\"", q.getModel().getQueryTree().getRoot().toString());
+        assertEquals("AND a b foo com", q.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
@@ -44,11 +45,7 @@ public class ExactMatchAndDefaultIndexTestCase {
     }
 
     private String enc(String s) {
-        try {
-            return URLEncoder.encode(s, "utf-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 
 }

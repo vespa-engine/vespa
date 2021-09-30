@@ -35,12 +35,12 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
 
     private final Map<TenantName, Set<ApplicationInfo>> models;
     private final Zone zone;
-    private final BooleanFlag use4443Upstream;
+    private final BooleanFlag generateNonMtlsEndpoint;
 
     public LbServicesProducer(Map<TenantName, Set<ApplicationInfo>> models, Zone zone, FlagSource flagSource) {
         this.models = models;
         this.zone = zone;
-        this.use4443Upstream = Flags.USE_4443_UPSTREAM.bindTo(flagSource);
+        generateNonMtlsEndpoint = Flags.GENERATE_NON_MTLS_ENDPOINT.bindTo(flagSource);
     }
 
     @Override
@@ -72,8 +72,8 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
     private LbServicesConfig.Tenants.Applications.Builder getAppConfig(ApplicationInfo app) {
         LbServicesConfig.Tenants.Applications.Builder ab = new LbServicesConfig.Tenants.Applications.Builder();
         ab.activeRotation(getActiveRotation(app));
-        ab.use4443Upstream(
-                use4443Upstream.with(FetchVector.Dimension.APPLICATION_ID, app.getApplicationId().serializedForm()).value());
+        ab.usePowerOfTwoChoicesLb(true);
+        ab.generateNonMtlsEndpoint(generateNonMtlsEndpoint(app));
         app.getModel().getHosts().stream()
                 .sorted((a, b) -> a.getHostname().compareTo(b.getHostname()))
                 .forEach(hostInfo -> ab.hosts(hostInfo.getHostname(), getHostsConfig(hostInfo)));
@@ -88,10 +88,14 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
                                    serviceInfo.getServiceType().equals(QRSERVER.serviceName)).
                     findAny();
             if (container.isPresent()) {
-                activeRotation |= Boolean.valueOf(container.get().getProperty("activeRotation").orElse("false"));
+                activeRotation |= Boolean.parseBoolean(container.get().getProperty("activeRotation").orElse("false"));
             }
         }
         return activeRotation;
+    }
+
+    private boolean generateNonMtlsEndpoint(ApplicationInfo app) {
+        return generateNonMtlsEndpoint.with(FetchVector.Dimension.APPLICATION_ID, app.getApplicationId().serializedForm()).value();
     }
 
     private LbServicesConfig.Tenants.Applications.Hosts.Builder getHostsConfig(HostInfo hostInfo) {

@@ -1,19 +1,31 @@
 {
   "jobs": [
     {
+      "name": "ApplicationMetaDataGarbageCollector"
+    },
+    {
       "name": "ApplicationOwnershipConfirmer"
     },
     {
-      "name": "BillingMaintainer"
+      "name": "ArchiveAccessMaintainer"
     },
     {
-      "name": "CloudEventReporter"
+      "name": "ArchiveUriUpdater"
     },
     {
-      "name": "ClusterInfoMaintainer"
+      "name": "ChangeRequestMaintainer"
+    },
+    {
+      "name": "CloudEventTracker"
+    },
+    {
+      "name": "CloudTrialExpirer"
     },
     {
       "name": "ContactInformationMaintainer"
+    },
+    {
+      "name": "ContainerImageExpirer"
     },
     {
       "name": "CostReportMaintainer"
@@ -31,6 +43,15 @@
       "name": "DeploymentMetricsMaintainer"
     },
     {
+      "name": "DeploymentUpgrader"
+    },
+    {
+      "name": "EndpointCertificateMaintainer"
+    },
+    {
+      "name": "HostInfoUpdater"
+    },
+    {
       "name": "JobRunner"
     },
     {
@@ -38,6 +59,9 @@
     },
     {
       "name": "NameServiceDispatcher"
+    },
+    {
+      "name": "OsUpgradeScheduler"
     },
     {
       "name": "OsVersionStatusUpdater"
@@ -49,19 +73,37 @@
       "name": "ReadyJobsTrigger"
     },
     {
+      "name": "ReindexingTriggerer"
+    },
+    {
       "name": "ResourceMeterMaintainer"
     },
     {
       "name": "ResourceTagMaintainer"
     },
     {
-      "name": "RotationStatusUpdater"
+      "name":"RetriggerMaintainer"
+    },
+    {
+      "name": "SystemRoutingPolicyMaintainer"
     },
     {
       "name": "SystemUpgrader"
     },
     {
+      "name":"TenantRoleMaintainer"
+    },
+    {
+      "name": "TrafficShareUpdater"
+    },
+    {
       "name": "Upgrader"
+    },
+    {
+      "name": "UserManagementMaintainer"
+    },
+    {
+      "name": "VcmrMaintainer"
     },
     {
       "name": "VersionStatusUpdater"

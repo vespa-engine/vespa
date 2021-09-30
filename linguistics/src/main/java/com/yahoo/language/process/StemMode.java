@@ -10,16 +10,10 @@ package com.yahoo.language.process;
  */
 public enum StemMode {
 
-    NONE(0),
-    DEFAULT(1),
-    ALL(2),
-    SHORTEST(4),
-    BEST(5);
-
-    private final int value;
-
-    StemMode(int value) {
-        this.value = value;
-    }
+    NONE,
+    DEFAULT,
+    ALL,
+    SHORTEST,
+    BEST;
 
 }

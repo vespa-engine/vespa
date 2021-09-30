@@ -9,7 +9,9 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
-import com.yahoo.vespa.model.admin.*;
+import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.vespa.model.admin.Configserver;
+import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import org.junit.Before;
 import org.junit.Test;
@@ -122,12 +124,10 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
         Admin admin = buildAdmin(servicesMultitenantAdminOnly(), true, configServerSpecs);
         assertThat(admin.getConfigservers().size(), is(3));
         assertThat(admin.getSlobroks().size(), is(1));
-        assertThat(admin.getClusterControllerHosts().size(), is(1));
         assertNotNull(admin.hostSystem().getHostByHostname("test1"));
         for (Configserver configserver : admin.getConfigservers()) {
-            assertThat(configserver.getHostName(), is(not(admin.getClusterControllerHosts().get(0).getHost().getHostname())));
             for (Slobrok slobrok : admin.getSlobroks()) {
-                    assertThat(slobrok.getHostName(), is(not(configserver.getHostName())));
+                assertThat(slobrok.getHostName(), is(not(configserver.getHostName())));
             }
         }
     }
@@ -210,9 +210,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     private Admin buildAdmin(Element xml, boolean multitenant, List<ConfigServerSpec> configServerSpecs) {
         DeployState deployState = DeployState.createTestState();
         final DomAdminV2Builder domAdminBuilder =
-                new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT,
-                                      deployState.getFileRegistry(), multitenant,
-                                      configServerSpecs);
+                new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT, multitenant, configServerSpecs);
         Admin admin = domAdminBuilder.build(deployState, root, xml);
         admin.addPerHostServices(root.hostSystem().getHosts(), deployState);
         return admin;

@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.document.*;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
+import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -13,7 +13,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static org.junit.Assert.*;
-public class ImplicitStructTypesTestCase extends SearchDefinitionTestCase {
+public class ImplicitStructTypesTestCase extends SchemaTestCase {
     @Test
     public void testRequireThatImplicitStructsAreCreated() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/examples/nextgen/toggleon.sd");

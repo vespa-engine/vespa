@@ -13,7 +13,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
-import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
+import com.yahoo.language.process.SpecialTokenRegistry;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.IndexInfoConfig;

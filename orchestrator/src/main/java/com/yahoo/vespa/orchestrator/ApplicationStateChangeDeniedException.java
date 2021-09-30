@@ -11,10 +11,6 @@ public class ApplicationStateChangeDeniedException extends Exception {
 
     final String reason;
 
-    public ApplicationStateChangeDeniedException() {
-        this("Unknown");
-    }
-
     public ApplicationStateChangeDeniedException(String reason) {
         super();
         this.reason = reason;

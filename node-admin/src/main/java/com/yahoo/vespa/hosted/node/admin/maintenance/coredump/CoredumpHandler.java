@@ -2,6 +2,10 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.vespa.hosted.node.admin.container.metrics.Dimensions;
+import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
@@ -10,8 +14,10 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,12 +40,11 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  */
 public class CoredumpHandler {
 
-    private static final Pattern JAVA_CORE_PATTERN = Pattern.compile("java_pid.*\\.hprof");
     private static final Pattern HS_ERR_PATTERN = Pattern.compile("hs_err_pid[0-9]+\\.log");
     private static final String LZ4_PATH = "/usr/bin/lz4";
     private static final String PROCESSING_DIRECTORY_NAME = "processing";
     private static final String METADATA_FILE_NAME = "metadata.json";
-    private static final String COREDUMP_FILENAME_PREFIX = "dump_";
+    public static final String COREDUMP_FILENAME_PREFIX = "dump_";
 
     private final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -50,6 +55,8 @@ public class CoredumpHandler {
     private final Path crashPatchInContainer;
     private final Path doneCoredumpsPath;
     private final String operatorGroupName;
+    private final Metrics metrics;
+    private final Clock clock;
     private final Supplier<String> coredumpIdSupplier;
 
     /**
@@ -58,32 +65,42 @@ public class CoredumpHandler {
      * @param operatorGroupName name of the group that will be set as the owner of the processed coredump
      */
     public CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                           Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName) {
+                           Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName, Metrics metrics) {
         this(terminal, coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
-                operatorGroupName, () -> UUID.randomUUID().toString());
+                operatorGroupName, metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString());
     }
 
     CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                           Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName, Supplier<String> coredumpIdSupplier) {
+                    Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName, Metrics metrics,
+                    Clock clock, Supplier<String> coredumpIdSupplier) {
         this.terminal = terminal;
         this.coreCollector = coreCollector;
         this.coredumpReporter = coredumpReporter;
         this.crashPatchInContainer = crashPathInContainer;
         this.doneCoredumpsPath = doneCoredumpsPath;
         this.operatorGroupName = operatorGroupName;
+        this.metrics = metrics;
+        this.clock = clock;
         this.coredumpIdSupplier = coredumpIdSupplier;
     }
 
 
-    public void converge(NodeAgentContext context, Supplier<Map<String, Object>> nodeAttributesSupplier) {
+    public void converge(NodeAgentContext context, Supplier<Map<String, Object>> nodeAttributesSupplier, boolean throwIfCoreBeingWritten) {
         Path containerCrashPathOnHost = context.pathOnHostFromPathInNode(crashPatchInContainer);
         Path containerProcessingPathOnHost = containerCrashPathOnHost.resolve(PROCESSING_DIRECTORY_NAME);
 
-        // Remove java core dumps
-        FileFinder.files(containerCrashPathOnHost)
-                .match(nameMatches(JAVA_CORE_PATTERN))
-                .maxDepth(1)
-                .deleteRecursively(context);
+        updateMetrics(context, containerCrashPathOnHost);
+
+        if (throwIfCoreBeingWritten) {
+            List<String> pendingCores = FileFinder.files(containerCrashPathOnHost)
+                    .match(fileAttributes -> !isReadyForProcessing(fileAttributes))
+                    .maxDepth(1).stream()
+                    .map(FileFinder.FileAttributes::filename)
+                    .collect(Collectors.toUnmodifiableList());
+            if (!pendingCores.isEmpty())
+                throw new ConvergenceException(String.format("Cannot process %s coredumps: Still being written",
+                        pendingCores.size() < 5 ? pendingCores : pendingCores.size()));
+        }
 
         // Check if we have already started to process a core dump or we can enqueue a new core one
         getCoredumpToProcess(containerCrashPathOnHost, containerProcessingPathOnHost)
@@ -109,7 +126,7 @@ public class CoredumpHandler {
      */
     Optional<Path> enqueueCoredump(Path containerCrashPathOnHost, Path containerProcessingPathOnHost) {
         List<Path> toProcess = FileFinder.files(containerCrashPathOnHost)
-                .match(nameStartsWith(".").negate()) // Skip core dump files currently being written
+                .match(this::isReadyForProcessing)
                 .maxDepth(1)
                 .stream()
                 .sorted(Comparator.comparing(FileFinder.FileAttributes::lastModifiedTime))
@@ -155,8 +172,12 @@ public class CoredumpHandler {
         if (!Files.exists(metadataPath.toPath())) {
             Path coredumpFilePathOnHost = findCoredumpFileInProcessingDirectory(coredumpDirectory);
             Path coredumpFilePathInContainer = context.pathInNodeFromPathOnHost(coredumpFilePathOnHost);
-            Map<String, Object> metadata = coreCollector.collect(context, coredumpFilePathInContainer);
+            Map<String, Object> metadata = new HashMap<>(coreCollector.collect(context, coredumpFilePathInContainer));
             metadata.putAll(nodeAttributesSupplier.get());
+            metadata.put("coredump_path", doneCoredumpsPath
+                    .resolve(context.containerName().asString())
+                    .resolve(coredumpDirectory.getFileName())
+                    .resolve(coredumpFilePathOnHost.getFileName()).toString());
 
             String metadataFields = objectMapper.writeValueAsString(Map.of("fields", metadata));
             metadataPath.writeUtf8File(metadataFields);
@@ -180,8 +201,9 @@ public class CoredumpHandler {
         new UnixPath(compressedCoreFile).setGroup(operatorGroupName).setPermissions("rw-r-----");
         Files.delete(coreFile);
 
-        Path newCoredumpDirectory = doneCoredumpsPath.resolve(coredumpDirectory.getFileName());
-        Files.move(coredumpDirectory, newCoredumpDirectory);
+        Path newCoredumpDirectory = doneCoredumpsPath.resolve(context.containerName().asString());
+        uncheck(() -> Files.createDirectories(newCoredumpDirectory));
+        Files.move(coredumpDirectory, newCoredumpDirectory.resolve(coredumpDirectory.getFileName()));
     }
 
     Path findCoredumpFileInProcessingDirectory(Path coredumpProccessingDirectory) {
@@ -194,4 +216,63 @@ public class CoredumpHandler {
                 .orElseThrow(() -> new IllegalStateException(
                         "No coredump file found in processing directory " + coredumpProccessingDirectory));
     }
+
+    void updateMetrics(NodeAgentContext context, Path containerCrashPathOnHost) {
+        Dimensions dimensions = generateDimensions(context);
+
+        // Unprocessed coredumps
+        int numberOfUnprocessedCoredumps = FileFinder.files(containerCrashPathOnHost)
+                .match(nameStartsWith(".").negate())
+                .match(nameMatches(HS_ERR_PATTERN).negate())
+                .match(nameEndsWith(".lz4").negate())
+                .match(nameStartsWith("metadata").negate())
+                .list().size();
+
+        metrics.declareGauge(Metrics.APPLICATION_NODE, "coredumps.enqueued", dimensions, Metrics.DimensionType.PRETAGGED).sample(numberOfUnprocessedCoredumps);
+
+        // Processed coredumps
+        Path processedCoredumpsPath = doneCoredumpsPath.resolve(context.containerName().asString());
+        int numberOfProcessedCoredumps = FileFinder.directories(processedCoredumpsPath)
+                .maxDepth(1)
+                .list().size();
+
+        metrics.declareGauge(Metrics.APPLICATION_NODE, "coredumps.processed", dimensions, Metrics.DimensionType.PRETAGGED).sample(numberOfProcessedCoredumps);
+    }
+
+    private Dimensions generateDimensions(NodeAgentContext context) {
+        NodeSpec node = context.node();
+        Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
+                .add("host", node.hostname())
+                .add("flavor", node.flavor())
+                .add("state", node.state().toString())
+                .add("zone", context.zone().getId().value());
+
+        node.owner().ifPresent(owner ->
+            dimensionsBuilder
+                    .add("tenantName", owner.tenant().value())
+                    .add("applicationName", owner.application().value())
+                    .add("instanceName", owner.instance().value())
+                    .add("app", String.join(".", owner.application().value(), owner.instance().value()))
+                    .add("applicationId", owner.toFullString())
+        );
+
+        node.membership().ifPresent(membership ->
+            dimensionsBuilder
+                    .add("clustertype", membership.type().value())
+                    .add("clusterid", membership.clusterId())
+        );
+
+        node.parentHostname().ifPresent(parent -> dimensionsBuilder.add("parentHostname", parent));
+        dimensionsBuilder.add("orchestratorState", node.orchestratorStatus().asString());
+        node.currentVespaVersion().ifPresent(vespaVersion -> dimensionsBuilder.add("vespaVersion", vespaVersion.toFullString()));
+
+        return dimensionsBuilder.build();
+    }
+
+    private boolean isReadyForProcessing(FileFinder.FileAttributes fileAttributes) {
+        // Wait at least a minute until we start processing a core/heap dump to ensure that
+        // kernel/JVM has finished writing it
+        return clock.instant().minusSeconds(60).isAfter(fileAttributes.lastModifiedTime());
+    }
+
 }

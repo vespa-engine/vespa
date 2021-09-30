@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_modify_update.h"
+#include "tensor_partial_update.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/tensor_data_type.h>
@@ -9,8 +10,8 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/eval/eval/operation.h>
-#include <vespa/eval/tensor/cell_values.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -19,9 +20,10 @@
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
-using vespalib::tensor::Tensor;
 using vespalib::make_string;
 using vespalib::eval::ValueType;
+using vespalib::eval::CellType;
+using vespalib::eval::FastValueBuilderFactory;
 
 using join_fun_t = double (*)(double, double);
 
@@ -76,7 +78,7 @@ convertToCompatibleType(const TensorDataType &tensorType)
     for (const auto &dim : tensorType.getTensorType().dimensions()) {
         list.emplace_back(dim.name);
     }
-    return std::make_unique<const TensorDataType>(ValueType::tensor_type(std::move(list), tensorType.getTensorType().cell_type()));
+    return std::make_unique<const TensorDataType>(ValueType::make_type(tensorType.getTensorType().cell_type(), std::move(list)));
 }
 
 }
@@ -156,16 +158,21 @@ TensorModifyUpdate::checkCompatibility(const Field& field) const
     }
 }
 
-std::unique_ptr<Tensor>
-TensorModifyUpdate::applyTo(const Tensor &tensor) const
+std::unique_ptr<vespalib::eval::Value>
+TensorModifyUpdate::applyTo(const vespalib::eval::Value &tensor) const
 {
-    auto &cellsTensor = _tensor->getAsTensorPtr();
-    if (cellsTensor) {
-        // Cells tensor being sparse was validated during deserialize().
-        vespalib::tensor::CellValues cellValues(static_cast<const vespalib::tensor::SparseTensor &>(*cellsTensor));
-        return tensor.modify(getJoinFunction(_operation), cellValues);
+    return apply_to(tensor, FastValueBuilderFactory::get());
+}
+
+std::unique_ptr<vespalib::eval::Value>
+TensorModifyUpdate::apply_to(const Value &old_tensor,
+                             const ValueBuilderFactory &factory) const
+{
+    if (auto cellsTensor = _tensor->getAsTensorPtr()) {
+        auto op = getJoinFunction(_operation);
+        return TensorPartialUpdate::modify(old_tensor, op, *cellsTensor, factory);
     }
-    return std::unique_ptr<Tensor>();
+    return {};
 }
 
 bool
@@ -173,7 +180,7 @@ TensorModifyUpdate::applyTo(FieldValue& value) const
 {
     if (value.inherits(TensorFieldValue::classId)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
-        auto &oldTensor = tensorFieldValue.getAsTensorPtr();
+        auto oldTensor = tensorFieldValue.getAsTensorPtr();
         if (oldTensor) {
             auto newTensor = applyTo(*oldTensor);
             if (newTensor) {
@@ -207,13 +214,17 @@ TensorModifyUpdate::print(std::ostream& out, bool verbose, const std::string& in
 namespace {
 
 void
-verifyCellsTensorIsSparse(const std::unique_ptr<Tensor> &cellsTensor)
+verifyCellsTensorIsSparse(const vespalib::eval::Value *cellsTensor)
 {
-    if (cellsTensor && !dynamic_cast<const vespalib::tensor::SparseTensor *>(cellsTensor.get())) {
-        vespalib::string err = make_string("Expected cell values tensor to be sparse, but has type '%s'",
-                                           cellsTensor->type().to_spec().c_str());
-        throw IllegalStateException(err, VESPA_STRLOC);
+    if (cellsTensor == nullptr) {
+        return;
     }
+    if (cellsTensor->type().is_sparse()) {
+        return;
+    }
+    vespalib::string err = make_string("Expected cells tensor to be sparse, but has type '%s'",
+                                       cellsTensor->type().to_spec().c_str());
+    throw IllegalStateException(err, VESPA_STRLOC);
 }
 
 }

@@ -5,12 +5,16 @@
 #include "field_spec.h"
 #include "unpackinfo.h"
 #include "executeinfo.h"
+#include "global_filter.h"
+#include "multisearch.h"
+#include <vespa/searchlib/common/bitvector.h>
 
 namespace vespalib { class ObjectVisitor; }
 namespace vespalib::slime {
     struct Cursor;
     struct Inserter;
 }
+namespace search { class MatchingElementsFields; }
 namespace search::attribute { class ISearchContext; }
 namespace search::fef {
     class TermFieldMatchDataArray;
@@ -21,6 +25,7 @@ namespace search::queryeval {
 
 class SearchIterator;
 class ExecuteInfo;
+class MatchingElementsSearch;
 
 /**
  * A Blueprint is an intermediate representation of a search. More
@@ -63,6 +68,7 @@ public:
         uint32_t          _cost_tier;
         uint32_t          _tree_size;
         bool              _allow_termwise_eval;
+        bool              _want_global_filter;
 
     public:
         static constexpr uint32_t COST_TIER_NORMAL = 1;
@@ -101,6 +107,8 @@ public:
         uint32_t tree_size() const { return _tree_size; }
         void allow_termwise_eval(bool value) { _allow_termwise_eval = value; }
         bool allow_termwise_eval() const { return _allow_termwise_eval; }
+        void want_global_filter(bool value) { _want_global_filter = value; }
+        bool want_global_filter() const { return _want_global_filter; }
         void cost_tier(uint32_t value) { _cost_tier = value; }
         uint32_t cost_tier() const { return _cost_tier; }
     };
@@ -159,6 +167,12 @@ public:
         virtual bool check(const Blueprint & bp) const = 0;
     };
 
+    // Signal if createFilterSearch should ensure the returned
+    // iterator is an upper bound (yielding a hit on at least
+    // all matching documents) or a lower bound (never yielding a
+    // hit that isn't certain to be a match).
+    enum class FilterConstraint { UPPER_BOUND, LOWER_BOUND };
+
     Blueprint();
     Blueprint(const Blueprint &) = delete;
     Blueprint &operator=(const Blueprint &) = delete;
@@ -182,6 +196,7 @@ public:
 
     virtual bool supports_termwise_children() const { return false; }
     virtual bool always_needs_unpack() const { return false; }
+    virtual void set_global_filter(const GlobalFilter &global_filter);
 
     virtual const State &getState() const = 0;
     const Blueprint &root() const;
@@ -193,6 +208,9 @@ public:
     bool frozen() const { return _frozen; }
 
     virtual SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const = 0;
+    virtual SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const;
+    static std::unique_ptr<SearchIterator> create_and_filter(const std::vector<Blueprint *>& children, bool strict, FilterConstraint constraint);
+    static std::unique_ptr<SearchIterator> create_or_filter(const std::vector<Blueprint *>& children, bool strict, FilterConstraint constraint);
 
     // for debug dumping
     vespalib::string asString() const;
@@ -202,7 +220,15 @@ public:
     virtual bool isEquiv() const { return false; }
     virtual bool isWhiteList() const { return false; }
     virtual bool isIntermediate() const { return false; }
+    virtual bool isAnd() const { return false; }
+    virtual bool isAndNot() const { return false; }
+    virtual bool isOr() const { return false; }
+    virtual bool isSourceBlender() const { return false; }
+    virtual bool isRank() const { return false; }
     virtual const attribute::ISearchContext *get_attribute_search_context() const { return nullptr; }
+
+    // For document summaries with matched-elements-only set.
+    virtual std::unique_ptr<MatchingElementsSearch> create_matching_elements_search(const MatchingElementsFields &fields) const;
 };
 
 namespace blueprint {
@@ -244,6 +270,7 @@ private:
     uint32_t calculate_cost_tier() const;
     uint32_t calculate_tree_size() const;
     bool infer_allow_termwise_eval() const;
+    bool infer_want_global_filter() const;
 
     size_t count_termwise_nodes(const UnpackInfo &unpack) const;
     virtual double computeNextHitRate(const Blueprint & child, double hitRate) const;
@@ -259,6 +286,8 @@ protected:
 
     bool should_do_termwise_eval(const UnpackInfo &unpack, double match_limit) const;
 
+    const Children& get_children() const { return _children; }
+
 public:
     typedef std::vector<size_t> IndexList;
     IntermediateBlueprint();
@@ -267,11 +296,12 @@ public:
     void setDocIdLimit(uint32_t limit) override final;
 
     void optimize(Blueprint* &self) override final;
+    void set_global_filter(const GlobalFilter &global_filter) override;
 
     IndexList find(const IPredicate & check) const;
     size_t childCnt() const { return _children.size(); }
-    const Blueprint &getChild(size_t n) const;
-    Blueprint &getChild(size_t n);
+    const Blueprint &getChild(size_t n) const { return *_children[n]; }
+    Blueprint &getChild(size_t n) { return *_children[n]; }
     IntermediateBlueprint & insertChild(size_t n, Blueprint::UP child);
     IntermediateBlueprint &addChild(Blueprint::UP child);
     Blueprint::UP removeChild(size_t n);
@@ -282,7 +312,7 @@ public:
     virtual void sort(std::vector<Blueprint*> &children) const = 0;
     virtual bool inheritStrict(size_t i) const = 0;
     virtual SearchIteratorUP
-    createIntermediateSearch(const std::vector<SearchIterator *> &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const = 0;
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
@@ -304,6 +334,7 @@ protected:
     void setEstimate(HitEstimate est);
     void set_cost_tier(uint32_t value);
     void set_allow_termwise_eval(bool value);
+    void set_want_global_filter(bool value);
     void set_tree_size(uint32_t value);
 
     LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwise_eval);

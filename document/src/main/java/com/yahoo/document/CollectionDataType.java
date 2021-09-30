@@ -9,9 +9,10 @@ import com.yahoo.vespa.objects.ObjectVisitor;
 import java.util.List;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public abstract class CollectionDataType extends DataType {
+
     // The global class identifier shared with C++.
     public static int classId = registerClass(Ids.document + 53, CollectionDataType.class);
 
@@ -23,7 +24,7 @@ public abstract class CollectionDataType extends DataType {
     }
 
     @Override
-    public abstract CollectionFieldValue createFieldValue();
+    public abstract CollectionFieldValue<?> createFieldValue();
 
     @Override
     public CollectionDataType clone() {
@@ -56,7 +57,7 @@ public abstract class CollectionDataType extends DataType {
         if (!(value instanceof CollectionFieldValue)) {
             return false;
         }
-        CollectionFieldValue cfv = (CollectionFieldValue) value;
+        CollectionFieldValue<?> cfv = (CollectionFieldValue<?>) value;
         return equals(cfv.getDataType());
     }
 

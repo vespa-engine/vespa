@@ -4,6 +4,7 @@
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/subscription/configsubscription.h>
 #include <config-my.h>
+#include <thread>
 
 using namespace config;
 using namespace std::chrono_literals;

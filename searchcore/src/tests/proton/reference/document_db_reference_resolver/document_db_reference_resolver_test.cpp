@@ -19,7 +19,7 @@
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 
@@ -33,6 +33,8 @@ using proton::test::MockDocumentDBReference;
 using search::attribute::test::MockAttributeManager;
 using vespa::config::search::ImportedFieldsConfig;
 using vespa::config::search::ImportedFieldsConfigBuilder;
+using vespalib::SequencedTaskExecutor;
+using vespalib::ISequencedTaskExecutor;
 
 const ReferenceAttribute *getReferenceAttribute(const IGidToLidChangeListener &listener) {
     auto mylistener = dynamic_cast<const GidToLidChangeListener *>(&listener);
@@ -42,7 +44,7 @@ const ReferenceAttribute *getReferenceAttribute(const IGidToLidChangeListener &l
 
 struct MyGidToLidMapperFactory : public IGidToLidMapperFactory {
     using SP = std::shared_ptr<MyGidToLidMapperFactory>;
-    virtual std::unique_ptr<IGidToLidMapper> getMapper() const override {
+    std::unique_ptr<IGidToLidMapper> getMapper() const override {
         return std::unique_ptr<IGidToLidMapper>();
     }
 };
@@ -59,15 +61,15 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
     std::shared_ptr<MockGidToLidChangeHandler> _gidToLidChangeHandler;
 
     MyDocumentDBReference(MyGidToLidMapperFactory::SP factory_,
-                          std::shared_ptr<MockGidToLidChangeHandler> gidToLidChangeHandler)
-        : factory(factory_),
+                          std::shared_ptr<MockGidToLidChangeHandler> gidToLidChangeHandler) noexcept
+        : factory(std::move(factory_)),
           _gidToLidChangeHandler(std::move(gidToLidChangeHandler))
     {
     }
-    virtual IGidToLidMapperFactory::SP getGidToLidMapperFactory() override {
+    IGidToLidMapperFactory::SP getGidToLidMapperFactory() override {
         return factory;
     }
-    virtual std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(vespalib::stringref name) override {
+    std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(vespalib::stringref name) override {
         auto itr = attributes.find(name);
         if (itr != attributes.end()) {
             return itr->second;
@@ -78,7 +80,7 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
     void addIntAttribute(vespalib::stringref name) {
         attributes[name] = AttributeFactory::createAttribute(name, Config(BasicType::INT32));
     }
-    virtual std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const vespalib::string &docTypeName) override {
+    std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const vespalib::string &docTypeName) override {
         return std::make_unique<GidToLidChangeRegistrator>(_gidToLidChangeHandler, docTypeName);
     }
 
@@ -93,12 +95,12 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
 struct MyReferenceRegistry : public IDocumentDBReferenceRegistry {
     using ReferenceMap = std::map<vespalib::string, IDocumentDBReference::SP>;
     ReferenceMap map;
-    virtual IDocumentDBReference::SP get(vespalib::stringref name) const override {
+    IDocumentDBReference::SP get(vespalib::stringref name) const override {
         auto itr = map.find(name);
         ASSERT_TRUE(itr != map.end());
         return itr->second;
     }
-    virtual IDocumentDBReference::SP tryGet(vespalib::stringref name) const override {
+    IDocumentDBReference::SP tryGet(vespalib::stringref name) const override {
         auto itr = map.find(name);
         if (itr != map.end()) {
             return itr->second;
@@ -106,10 +108,10 @@ struct MyReferenceRegistry : public IDocumentDBReferenceRegistry {
             return IDocumentDBReference::SP();
         }
     }
-    virtual void add(vespalib::stringref name, IDocumentDBReference::SP reference) override {
+    void add(vespalib::stringref name, IDocumentDBReference::SP reference) override {
         map[name] = reference;
     }
-    virtual void remove(vespalib::stringref) override {}
+    void remove(vespalib::stringref) override {}
 };
 
 struct MyAttributeManager : public MockAttributeManager {
@@ -121,7 +123,7 @@ struct MyAttributeManager : public MockAttributeManager {
     }
     const ReferenceAttribute *getReferenceAttribute(const vespalib::string &name) const {
         AttributeGuard::UP guard = getAttribute(name);
-        const ReferenceAttribute *result = dynamic_cast<const ReferenceAttribute *>(guard->get());
+        auto *result = dynamic_cast<const ReferenceAttribute *>(guard->get());
         ASSERT_TRUE(result != nullptr);
         return result;
     }
@@ -148,15 +150,14 @@ struct DocumentModel {
     }
     ~DocumentModel();
     void initChildDocType() {
-        childDocType.addField(Field("ref", refDataType, true));
-        childDocType.addField(Field("other_ref", refDataType, true));
-        childDocType.addField(Field("parent2_ref", refDataType2, true));
-        childDocType.addField(Field("parent3_ref", refDataType3, true));
+        childDocType.addField(Field("ref", refDataType));
+        childDocType.addField(Field("other_ref", refDataType));
+        childDocType.addField(Field("parent2_ref", refDataType2));
+        childDocType.addField(Field("parent3_ref", refDataType3));
     }
 };
 
-DocumentModel::~DocumentModel() {
-}
+DocumentModel::~DocumentModel() = default;
 
 void
 set(const vespalib::string &name,
@@ -182,14 +183,17 @@ createImportedFieldsConfig()
 const ImportedAttributeVector &
 asImportedAttribute(const IAttributeVector &attr)
 {
-    const ImportedAttributeVector *result = dynamic_cast<const ImportedAttributeVector *>(&attr);
+    auto *result = dynamic_cast<const ImportedAttributeVector *>(&attr);
     ASSERT_TRUE(result != nullptr);
     return *result;
 }
 
+VESPA_THREAD_STACK_TAG(attribute_executor)
+
 struct Fixture {
     MyGidToLidMapperFactory::SP factory;
     MonitoredRefCount _gidToLidChangeListenerRefCount;
+    std::unique_ptr<ISequencedTaskExecutor> _attributeFieldWriter;
     std::shared_ptr<MockGidToLidChangeHandler> _parentGidToLidChangeHandler;
     std::shared_ptr<MockGidToLidChangeHandler> _parentGidToLidChangeHandler2;
     MyDocumentDBReference::SP parentReference;
@@ -199,10 +203,10 @@ struct Fixture {
     MyAttributeManager oldAttrMgr;
     DocumentModel docModel;
     ImportedFieldsConfig importedFieldsCfg;
-    SequencedTaskExecutor _attributeFieldWriter;
     Fixture() :
         factory(std::make_shared<MyGidToLidMapperFactory>()),
         _gidToLidChangeListenerRefCount(),
+        _attributeFieldWriter(SequencedTaskExecutor::create(attribute_executor, 1)),
         _parentGidToLidChangeHandler(std::make_shared<MockGidToLidChangeHandler>()),
         _parentGidToLidChangeHandler2(std::make_shared<MockGidToLidChangeHandler>()),
         parentReference(std::make_shared<MyDocumentDBReference>(factory, _parentGidToLidChangeHandler)),
@@ -210,9 +214,7 @@ struct Fixture {
         registry(),
         attrMgr(),
         docModel(),
-        importedFieldsCfg(createImportedFieldsConfig()),
-        _attributeFieldWriter(1)
-
+        importedFieldsCfg(createImportedFieldsConfig())
     {
         registry.add("parent", parentReference);
         registry.add("parent2", parentReference2);
@@ -231,7 +233,7 @@ struct Fixture {
         oldAttrMgr.addReferenceAttribute("parent3_ref");
     }
     ImportedAttributesRepo::UP resolve(vespalib::duration visibilityDelay, bool useReferences) {
-        DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, _attributeFieldWriter, useReferences);
+        DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, *_attributeFieldWriter, useReferences);
         return resolver.resolve(attrMgr, oldAttrMgr, std::shared_ptr<search::IDocumentMetaStoreContext>(), visibilityDelay);
     }
     ImportedAttributesRepo::UP resolve(vespalib::duration visibilityDelay) {
@@ -244,7 +246,7 @@ struct Fixture {
         return resolve(vespalib::duration::zero());
     }
     void teardown() {
-        DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, _attributeFieldWriter, false);
+        DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, *_attributeFieldWriter, false);
         resolver.teardown(attrMgr);
     }
     const IGidToLidMapperFactory *getMapperFactoryPtr(const vespalib::string &attrName) {
@@ -254,7 +256,7 @@ struct Fixture {
                                  const vespalib::string &referenceField,
                                  const vespalib::string &targetField,
                                  bool useSearchCache,
-                                 ImportedAttributeVector::SP attr) {
+                                 const ImportedAttributeVector::SP & attr) {
         ASSERT_TRUE(attr.get());
         EXPECT_EQUAL(name, attr->getName());
         EXPECT_EQUAL(attrMgr.getReferenceAttribute(referenceField), attr->getReferenceAttribute().get());

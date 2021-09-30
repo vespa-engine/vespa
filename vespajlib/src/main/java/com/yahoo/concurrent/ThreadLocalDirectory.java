@@ -62,14 +62,13 @@ import java.util.List;
  * example.
  * </p>
  *
- * @param AGGREGATOR
- *            the type input data is aggregated into
- * @param SAMPLE
- *            the type of input data
+ * @param <AGGREGATOR> the type input data is aggregated into
+ * @param <SAMPLE> the type of input data
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
+
     /**
      * Factory interface to create the data container for each generation of
      * samples, and putting data into it.
@@ -85,19 +84,18 @@ public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
      * need to implement both.
      * </p>
      *
-     * @param AGGREGATOR
-     *            The type of the data container to produce
-     * @param SAMPLE
-     *            The type of the incoming data to store in the container.
+     * @param <AGGREGATOR> the type of the data container to produce
+     * @param <SAMPLE> the type of the incoming data to store in the container.
      */
     public interface Updater<AGGREGATOR, SAMPLE> {
+
         /**
          * Create data container to receive produced data. This is invoked once
          * on every instance every time ThreadLocalDirectory.fetch() is invoked.
          * This might be an empty list, creating a new counter set to zero, or
          * even copying the current state of LocalInstance.current.
          * LocalInstance.current will be set to the value received from this
-         * factory after invokation this method.
+         * factory after invocation this method.
          *
          * <p>
          * The first time this method is invoked for a thread, previous will be
@@ -137,7 +135,7 @@ public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
          *
          * @return a fresh structure to receive data
          */
-        public AGGREGATOR createGenerationInstance(AGGREGATOR previous);
+        AGGREGATOR createGenerationInstance(AGGREGATOR previous);
 
         /**
          * Insert a data element of type S into the current generation of data
@@ -180,7 +178,8 @@ public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
          *            the data to insert
          * @return the new current value, may be the same as previous
          */
-        public AGGREGATOR update(AGGREGATOR current, SAMPLE x);
+        AGGREGATOR update(AGGREGATOR current, SAMPLE x);
+
     }
 
     /**
@@ -188,14 +187,12 @@ public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
      * ThreadLocalDirectory without resetting the local instances in each
      * thread.
      *
-     * @param <AGGREGATOR>
-     *            as for {@link Updater}
-     * @param <SAMPLE>
-     *            as for {@link Updater}
+     * @param <AGGREGATOR> as for {@link Updater}
+     * @param <SAMPLE> as for {@link Updater}
      * @see ThreadLocalDirectory#view()
      */
-    public interface ObservableUpdater<AGGREGATOR, SAMPLE> extends
-            Updater<AGGREGATOR, SAMPLE> {
+    public interface ObservableUpdater<AGGREGATOR, SAMPLE> extends Updater<AGGREGATOR, SAMPLE> {
+
         /**
          * Create an application specific copy of the AGGREGATOR for a thread.
          *
@@ -203,7 +200,8 @@ public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
          *            the AGGREGATOR instance to copy
          * @return a copy of the incoming parameter
          */
-        public AGGREGATOR copy(AGGREGATOR current);
+        AGGREGATOR copy(AGGREGATOR current);
+
     }
 
     private final ThreadLocal<LocalInstance<AGGREGATOR, SAMPLE>> local = new ThreadLocal<>();
@@ -225,7 +223,7 @@ public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
         // Has to set registered before adding to the list. Otherwise, the
         // instance might be removed from the list, set as unregistered, and
         // then the local thread might happily remove that information. The Java
-        // memory model is a guarantuee for the minimum amount of visibility,
+        // memory model is a guarantee for the minimum amount of visibility,
         // not a definition of the actual amount.
         q.setRegistered(true);
         synchronized (directoryLock) {
@@ -268,8 +266,7 @@ public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
      * to have been instantiated with an updater implementing ObservableUpdater.
      *
      * @return a list of a copy of the current data in all producer threads
-     * @throws IllegalStateException
-     *             if the updater does not implement {@link ObservableUpdater}
+     * @throws IllegalStateException if the updater does not implement {@link ObservableUpdater}
      */
     public List<AGGREGATOR> view() {
         if (observableUpdater == null) {
@@ -310,8 +307,7 @@ public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
     /**
      * Input data from a producer thread.
      *
-     * @param x
-     *            the data to insert
+     * @param x the data to insert
      */
     public void update(SAMPLE x) {
         update(x, getOrCreateLocal());
@@ -330,10 +326,8 @@ public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
      * calls necessary to update(SAMPLE, LocalInstance&lt;AGGREGATOR, SAMPLE&gt;).
      * </p>
      *
-     * @param x
-     *            the data to insert
-     * @param localInstance
-     *            the local data insertion instance
+     * @param x the data to insert
+     * @param localInstance the local data insertion instance
      */
     public void update(SAMPLE x, LocalInstance<AGGREGATOR, SAMPLE> localInstance) {
         boolean isRegistered;

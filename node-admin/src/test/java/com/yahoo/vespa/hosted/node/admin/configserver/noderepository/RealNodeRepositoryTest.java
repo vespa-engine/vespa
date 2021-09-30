@@ -9,6 +9,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
+import com.yahoo.vespa.hosted.provision.restapi.NodesV2ApiHandler;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -52,7 +53,7 @@ public class RealNodeRepositoryTest {
      * Starts NodeRepository with
      *   {@link com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors}
      *   {@link com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository}
-     *   {@link com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler}
+     *   {@link NodesV2ApiHandler}
      * These classes define some test data that is used in these tests.
      */
     @Before
@@ -136,7 +137,7 @@ public class RealNodeRepositoryTest {
                 hostname,
                 new NodeAttributes()
                         .withRestartGeneration(1)
-                        .withDockerImage(DockerImage.fromString("image-1:6.2.3")));
+                        .withDockerImage(DockerImage.fromString("registry.example.com/image-1:6.2.3")));
     }
 
     @Test
@@ -162,9 +163,9 @@ public class RealNodeRepositoryTest {
     @Test
     public void testAddNodes() {
         AddNode host = AddNode.forHost("host123.domain.tld",
+                                       Optional.of("id1"),
                                        "default",
                                        Optional.of(FlavorOverrides.ofDisk(123)),
-                                       Optional.empty(),
                                        NodeType.confighost,
                                        Set.of("::1"), Set.of("::2", "::3"));
 
@@ -175,6 +176,7 @@ public class RealNodeRepositoryTest {
         nodeRepositoryApi.addNodes(List.of(host, node));
 
         NodeSpec hostSpec = nodeRepositoryApi.getOptionalNode("host123.domain.tld").orElseThrow();
+        assertEquals("id1", hostSpec.id().orElseThrow());
         assertEquals("default", hostSpec.flavor());
         assertEquals(123, hostSpec.diskGb(), 0);
         assertEquals(NodeType.confighost, hostSpec.type());

@@ -1,16 +1,15 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.lb;
 
-import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,32 +28,30 @@ public class SharedLoadBalancerService implements LoadBalancerService {
 
     private final NodeRepository nodeRepository;
 
-    @Inject
     public SharedLoadBalancerService(NodeRepository nodeRepository) {
-        this.nodeRepository = Objects.requireNonNull(nodeRepository, "nodeRepository must be non-null");
+        this.nodeRepository = Objects.requireNonNull(nodeRepository);
     }
 
     @Override
-    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force) {
-        var proxyNodes = new ArrayList<>(nodeRepository.getNodes(NodeType.proxy));
-        proxyNodes.sort(hostnameComparator);
+    public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
+        NodeList proxyNodes = nodeRepository.nodes().list().nodeType(NodeType.proxy).sortedBy(hostnameComparator);
 
         if (proxyNodes.size() == 0) {
             throw new IllegalStateException("Missing proxy nodes in node repository");
         }
 
-        var firstProxyNode = proxyNodes.get(0);
-        var networkNames = proxyNodes.stream()
-                                     .flatMap(node -> node.ipAddresses().stream())
-                                     .map(SharedLoadBalancerService::withPrefixLength)
-                                     .collect(Collectors.toSet());
+        Node firstProxyNode = proxyNodes.first().get();
+        Set<String> networks = proxyNodes.stream()
+                                         .flatMap(node -> node.ipConfig().primary().stream())
+                                         .map(SharedLoadBalancerService::withPrefixLength)
+                                         .collect(Collectors.toSet());
 
         return new LoadBalancerInstance(
                 HostName.from(firstProxyNode.hostname()),
                 Optional.empty(),
                 Set.of(4080, 4443),
-                networkNames,
-                reals
+                networks,
+                spec.reals()
         );
     }
 
@@ -66,6 +63,12 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     @Override
     public Protocol protocol() {
         return Protocol.dualstack;
+    }
+
+    @Override
+    public boolean supports(NodeType nodeType, ClusterSpec.Type clusterType) {
+        // Shared routing layer only supports routing to tenant nodes
+        return nodeType == NodeType.tenant && clusterType.isContainer();
     }
 
     private static String withPrefixLength(String address) {

@@ -11,5 +11,6 @@ public class Log {
     public long time;
     public String level;
     public String message;
+    public boolean applicationPackage;
 
 }

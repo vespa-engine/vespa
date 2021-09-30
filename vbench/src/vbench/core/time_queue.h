@@ -4,8 +4,9 @@
 
 #include "closeable.h"
 #include <vespa/vespalib/util/priority_queue.h>
-#include <vespa/vespalib/util/sync.h>
 #include <memory>
+#include <mutex>
+#include <condition_variable>
 
 namespace vbench {
 
@@ -21,19 +22,20 @@ private:
     struct Entry {
         std::unique_ptr<T> object;
         double time;
-        Entry(std::unique_ptr<T> obj, double t) : object(std::move(obj)), time(t) {}
-        Entry(Entry &&rhs) : object(std::move(rhs.object)), time(rhs.time) {}
-        Entry &operator=(Entry &&rhs) {
+        Entry(std::unique_ptr<T> obj, double t) noexcept : object(std::move(obj)), time(t) {}
+        Entry(Entry &&rhs) noexcept : object(std::move(rhs.object)), time(rhs.time) {}
+        Entry &operator=(Entry &&rhs) noexcept {
             object = std::move(rhs.object);
             time = rhs.time;
             return *this;
         }
-        bool operator<(const Entry &rhs) const {
+        bool operator<(const Entry &rhs) const noexcept {
             return (time < rhs.time);
         }
     };
 
-    vespalib::Monitor              _monitor;
+    std::mutex                     _lock;
+    std::condition_variable        _cond;
     double                         _time;
     double                         _window;
     double                         _tick;
@@ -42,6 +44,7 @@ private:
 
 public:
     TimeQueue(double window, double tick);
+    ~TimeQueue();
     void close() override;
     void discard();
     void insert(std::unique_ptr<T> obj, double time);

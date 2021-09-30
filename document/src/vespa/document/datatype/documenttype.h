@@ -61,12 +61,10 @@ public:
 
     DocumentType();
     DocumentType(vespalib::stringref name, int32_t id);
-    DocumentType(vespalib::stringref name, int32_t id,
-                 const StructDataType& fields);
+    DocumentType(vespalib::stringref name, int32_t id, const StructDataType& fields);
 
     explicit DocumentType(vespalib::stringref name);
-    DocumentType(vespalib::stringref name,
-                 const StructDataType& fields);
+    DocumentType(vespalib::stringref name, const StructDataType& fields);
 
     ~DocumentType() override;
 
@@ -89,6 +87,7 @@ public:
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     bool operator==(const DataType& type) const override;
+    bool operator==(const DocumentType& type) const { return operator==(static_cast<const DataType&>(type)); }
     uint32_t getFieldCount() const override {
         return _fields->getFieldCount();
     }
@@ -101,6 +100,7 @@ public:
 
     DocumentType & addFieldSet(const vespalib::string & name, FieldSet::Fields fields);
     const FieldSet * getFieldSet(const vespalib::string & name) const;
+    const FieldSetMap & getFieldSets() const { return _fieldSets; }
 
     const ImportedFieldNames& imported_field_names() const noexcept {
         return _imported_field_names;

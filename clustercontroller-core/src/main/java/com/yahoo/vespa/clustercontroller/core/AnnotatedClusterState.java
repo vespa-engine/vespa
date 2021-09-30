@@ -1,10 +1,15 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
 
 public class AnnotatedClusterState implements Cloneable {
 
@@ -15,7 +20,7 @@ public class AnnotatedClusterState implements Cloneable {
     public static class Builder {
         private ClusterState clusterState = ClusterState.emptyState();
         private Optional<ClusterStateReason> clusterReason = Optional.empty();
-        private Map<Node, NodeStateReason> nodeStateReasons = new HashMap<>();
+        private final Map<Node, NodeStateReason> nodeStateReasons = new HashMap<>();
 
         public Builder clusterState(String stateStr) {
             clusterState = ClusterState.stateFromString(stateStr);

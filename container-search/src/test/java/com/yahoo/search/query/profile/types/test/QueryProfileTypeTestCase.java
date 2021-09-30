@@ -3,8 +3,10 @@ package com.yahoo.search.query.profile.types.test;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.prelude.query.QueryException;
+import com.yahoo.language.Language;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
 import com.yahoo.processing.request.CompoundName;
@@ -20,8 +22,9 @@ import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
@@ -39,29 +42,32 @@ public class QueryProfileTypeTestCase {
 
     private QueryProfileRegistry registry;
 
-    private QueryProfileType type, typeStrict, user, userStrict;
+    private QueryProfileType testtype, emptyInheritingTesttype, testtypeStrict, user, userStrict;
 
     @Before
     public void setUp() {
         registry = new QueryProfileRegistry();
 
-        type = new QueryProfileType(new ComponentId("testtype"));
-        type.inherited().add(registry.getTypeRegistry().getComponent(new ComponentId("native")));
-        typeStrict = new QueryProfileType(new ComponentId("testtypeStrict"));
-        typeStrict.setStrict(true);
+        testtype = new QueryProfileType(new ComponentId("testtype"));
+        testtype.inherited().add(registry.getTypeRegistry().getComponent(new ComponentId("native")));
+        emptyInheritingTesttype = new QueryProfileType(new ComponentId("emptyInheritingTesttype"));
+        emptyInheritingTesttype.inherited().add(testtype);
+        testtypeStrict = new QueryProfileType(new ComponentId("testtypeStrict"));
+        testtypeStrict.setStrict(true);
         user = new QueryProfileType(new ComponentId("user"));
         userStrict = new QueryProfileType(new ComponentId("userStrict"));
         userStrict.setStrict(true);
 
-        registry.getTypeRegistry().register(type);
-        registry.getTypeRegistry().register(typeStrict);
+        registry.getTypeRegistry().register(testtype);
+        registry.getTypeRegistry().register(emptyInheritingTesttype);
+        registry.getTypeRegistry().register(testtypeStrict);
         registry.getTypeRegistry().register(user);
         registry.getTypeRegistry().register(userStrict);
 
-        addTypeFields(type, registry.getTypeRegistry());
-        type.addField(new FieldDescription("myUserQueryProfile", FieldType.fromString("query-profile:user", registry.getTypeRegistry())));
-        addTypeFields(typeStrict, registry.getTypeRegistry());
-        typeStrict.addField(new FieldDescription("myUserQueryProfile", FieldType.fromString("query-profile:userStrict", registry.getTypeRegistry())));
+        addTypeFields(testtype, registry.getTypeRegistry());
+        testtype.addField(new FieldDescription("myUserQueryProfile", FieldType.fromString("query-profile:user", registry.getTypeRegistry())));
+        addTypeFields(testtypeStrict, registry.getTypeRegistry());
+        testtypeStrict.addField(new FieldDescription("myUserQueryProfile", FieldType.fromString("query-profile:userStrict", registry.getTypeRegistry())));
         addUserFields(user, registry.getTypeRegistry());
         addUserFields(userStrict, registry.getTypeRegistry());
 
@@ -78,6 +84,7 @@ public class QueryProfileTypeTestCase {
         type.addField(new FieldDescription("ranking.features.query(myTensor1)", FieldType.fromString("tensor(a{},b{})", registry)), registry);
         type.addField(new FieldDescription("ranking.features.query(myTensor2)", FieldType.fromString("tensor(x[2],y[2])", registry)), registry);
         type.addField(new FieldDescription("ranking.features.query(myTensor3)", FieldType.fromString("tensor<float>(x{})",registry)), registry);
+        type.addField(new FieldDescription("ranking.features.query(myTensor4)", FieldType.fromString("tensor<float>(x[5])",registry)), registry);
         type.addField(new FieldDescription("myQuery", FieldType.fromString("query", registry)), registry);
         type.addField(new FieldDescription("myQueryProfile", FieldType.fromString("query-profile", registry),"qp"), registry);
     }
@@ -90,7 +97,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTypedOfPrimitivesAssignmentNonStrict() {
         QueryProfile profile=new QueryProfile("test");
-        profile.setType(type);
+        profile.setType(testtype);
         registry.register(profile);
 
         profile.set("myString","anyValue", registry);
@@ -100,7 +107,7 @@ public class QueryProfileTypeTestCase {
         profile.set("myInteger", 3, registry);
         assertWrongType(profile,"long","myLong","notLong");
         assertWrongType(profile, "long", "myLong", "1.5");
-        profile.set("myLong", 4000000000000l, registry);
+        profile.set("myLong", 4000000000000L, registry);
         assertWrongType(profile, "float", "myFloat", "notFloat");
         profile.set("myFloat", 3.14f, registry);
         assertWrongType(profile, "double", "myDouble", "notDouble");
@@ -157,7 +164,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTypedOfPrimitivesAssignmentStrict() {
         QueryProfile profile=new QueryProfile("test");
-        profile.setType(typeStrict);
+        profile.setType(testtypeStrict);
 
         profile.set("myString", "anyValue", registry);
         assertNotPermitted(profile, "nontypedString", "anyValueToo"); // Illegal because this is strict
@@ -199,7 +206,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTypedAssignmentOfQueryProfilesNonStrict() {
         QueryProfile profile=new QueryProfile("test");
-        profile.setType(type);
+        profile.setType(testtype);
 
         QueryProfile map1=new QueryProfile("myMap1");
         map1.set("key1","value1", registry);
@@ -230,7 +237,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTypedAssignmentOfQueryProfilesStrict() {
         QueryProfile profile=new QueryProfile("test");
-        profile.setType(typeStrict);
+        profile.setType(testtypeStrict);
 
         QueryProfile map1=new QueryProfile("myMap1");
         map1.set("key1","value1", registry);
@@ -261,7 +268,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTypedAssignmentOfQueryProfileReferencesNonStrict() {
         QueryProfile profile = new QueryProfile("test");
-        profile.setType(type);
+        profile.setType(testtype);
 
         QueryProfile map1 = new QueryProfile("myMap1");
         map1.set("key1","value1", registry);
@@ -305,7 +312,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTypedOverridingOfQueryProfileReferencesNonStrictThroughQuery() {
         QueryProfile profile=new QueryProfile("test");
-        profile.setType(type);
+        profile.setType(testtype);
 
         QueryProfile myUser=new QueryProfile("myUser");
         myUser.setType(user);
@@ -338,20 +345,22 @@ public class QueryProfileTypeTestCase {
      */
     @Test
     public void testTypedAssignmentOfQueryProfileReferencesNonStrictThroughQuery() {
-        QueryProfile profile=new QueryProfile("test");
-        profile.setType(type);
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(testtype);
 
-        QueryProfile newUser=new QueryProfile("newUser");
+        QueryProfile newUser = new QueryProfile("newUser");
         newUser.setType(user);
-        newUser.set("myUserString","newUserValue1", registry);
-        newUser.set("myUserInteger",845, registry);
+        newUser.set("myUserString", "newUserValue1", registry);
+        newUser.set("myUserInteger", 845, registry);
 
         registry.register(profile);
         registry.register(newUser);
         CompiledQueryProfileRegistry cRegistry = registry.compile();
         CompiledQueryProfile cprofile = cRegistry.getComponent("test");
 
-        Query query = new Query(HttpRequest.createTestRequest("?myUserQueryProfile=newUser", com.yahoo.jdisc.http.HttpRequest.Method.GET), cprofile);
+        Query query = new Query(HttpRequest.createTestRequest("?myUserQueryProfile=newUser",
+                                                              com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                                cprofile);
 
         assertEquals(0, query.errors().size());
 
@@ -365,13 +374,13 @@ public class QueryProfileTypeTestCase {
      */
     @Test
     public void testTypedAssignmentOfQueryProfileReferencesStrictThroughQuery() {
-        QueryProfile profile=new QueryProfile("test");
-        profile.setType(typeStrict);
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(testtypeStrict);
 
-        QueryProfile newUser=new QueryProfile("newUser");
+        QueryProfile newUser = new QueryProfile("newUser");
         newUser.setType(userStrict);
-        newUser.set("myUserString","newUserValue1", registry);
-        newUser.set("myUserInteger",845, registry);
+        newUser.set("myUserString", "newUserValue1", registry);
+        newUser.set("myUserInteger", 845, registry);
 
         registry.register(profile);
         registry.register(newUser);
@@ -381,11 +390,11 @@ public class QueryProfileTypeTestCase {
         Query query = new Query(HttpRequest.createTestRequest("?myUserQueryProfile=newUser", com.yahoo.jdisc.http.HttpRequest.Method.GET), cRegistry.getComponent("test"));
         assertEquals(0, query.errors().size());
 
-        assertEquals("newUserValue1",query.properties().get("myUserQueryProfile.myUserString"));
-        assertEquals(845,query.properties().get("myUserQueryProfile.myUserInteger"));
+        assertEquals("newUserValue1", query.properties().get("myUserQueryProfile.myUserString"));
+        assertEquals(845, query.properties().get("myUserQueryProfile.myUserInteger"));
 
         try {
-            query.properties().set("myUserQueryProfile.someKey","value");
+            query.properties().set("myUserQueryProfile.someKey", "value");
             fail("Should not be allowed to set this");
         }
         catch (IllegalArgumentException e) {
@@ -396,47 +405,96 @@ public class QueryProfileTypeTestCase {
     }
 
     @Test
-    public void testTensorRankFeatureInRequest() throws UnsupportedEncodingException {
+    public void testTensorRankFeatureInRequest() {
         QueryProfile profile = new QueryProfile("test");
-        profile.setType(type);
+        profile.setType(testtype);
         registry.register(profile);
 
         CompiledQueryProfileRegistry cRegistry = registry.compile();
         String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
-        Query query = new Query(HttpRequest.createTestRequest("?" + encode("ranking.features.query(myTensor1)") +
-                                                              "=" + encode(tensorString),
-                                                              com.yahoo.jdisc.http.HttpRequest.Method.GET), cRegistry.getComponent("test"));
+        Query query = new Query(HttpRequest.createTestRequest("?" + urlEncode("ranking.features.query(myTensor1)") +
+                                                              "=" + urlEncode(tensorString),
+                                                              com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                                cRegistry.getComponent("test"));
         assertEquals(0, query.errors().size());
         assertEquals(Tensor.from(tensorString), query.properties().get("ranking.features.query(myTensor1)"));
         assertEquals(Tensor.from(tensorString), query.getRanking().getFeatures().getTensor("query(myTensor1)").get());
     }
 
-    private String encode(String s) throws UnsupportedEncodingException {
-        return URLEncoder.encode(s, "utf8");
+    // Expected to work exactly as testTensorRankFeatureInRequest
+    @Test
+    public void testTensorRankFeatureInRequestWithInheritedQueryProfileType() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(emptyInheritingTesttype);
+        registry.register(profile);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
+        Query query = new Query(HttpRequest.createTestRequest("?" + urlEncode("ranking.features.query(myTensor1)") +
+                                                              "=" + urlEncode(tensorString),
+                                                              com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                                cRegistry.getComponent("test"));
+        assertEquals(0, query.errors().size());
+        assertEquals(Tensor.from(tensorString), query.properties().get("ranking.features.query(myTensor1)"));
+        assertEquals(Tensor.from(tensorString), query.getRanking().getFeatures().getTensor("query(myTensor1)").get());
+    }
+
+    @Test
+    public void testUnembeddedTensorRankFeatureInRequest() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(testtype);
+        registry.register(profile);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        String textToEmbed = "text to embed into a tensor";
+        Tensor expectedTensor = Tensor.from("tensor<float>(x[5]):[3,7,4,0,0]]");
+        Query query1 = new Query.Builder().setRequest(HttpRequest.createTestRequest("?" + urlEncode("ranking.features.query(myTensor4)") +
+                                                                                   "=" + urlEncode("embed(" + textToEmbed + ")"),
+                                                                                   com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                                         .setQueryProfile(cRegistry.getComponent("test"))
+                                         .setEmbedder(new MockEmbedder(textToEmbed, Language.UNKNOWN, expectedTensor))
+                                         .build();
+        assertEquals(0, query1.errors().size());
+        assertEquals(expectedTensor, query1.properties().get("ranking.features.query(myTensor4)"));
+        assertEquals(expectedTensor, query1.getRanking().getFeatures().getTensor("query(myTensor4)").get());
+
+        // Explicit language
+        Query query2 = new Query.Builder().setRequest(HttpRequest.createTestRequest("?" + urlEncode("ranking.features.query(myTensor4)") +
+                                                                                   "=" + urlEncode("embed(" + textToEmbed + ")") +
+                                                                                   "&language=en",
+                                                                                   com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                                         .setQueryProfile(cRegistry.getComponent("test"))
+                                         .setEmbedder(new MockEmbedder(textToEmbed, Language.ENGLISH, expectedTensor))
+                                         .build();
+        assertEquals(0, query2.errors().size());
+        assertEquals(expectedTensor, query2.properties().get("ranking.features.query(myTensor4)"));
+        assertEquals(expectedTensor, query2.getRanking().getFeatures().getTensor("query(myTensor4)").get());
+
+    }
+
+    private String urlEncode(String s) {
+        return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 
     @Test
     public void testIllegalStrictAssignmentFromRequest() {
-        QueryProfile profile=new QueryProfile("test");
-        profile.setType(typeStrict);
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(testtypeStrict);
 
-        QueryProfile newUser=new QueryProfile("newUser");
+        QueryProfile newUser = new QueryProfile("newUser");
         newUser.setType(userStrict);
 
         profile.set("myUserQueryProfile", newUser, registry);
 
         try {
-            new Query(
-                    HttpRequest.createTestRequest(
-                            "?myUserQueryProfile.nondeclared=someValue",
-                            com.yahoo.jdisc.http.HttpRequest.Method.GET),
-                    profile.compile(null));
+            new Query(HttpRequest.createTestRequest("?myUserQueryProfile.nondeclared=someValue",
+                                                    com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                      profile.compile(null));
             fail("Above statement should throw");
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             // As expected.
-            assertThat(
-                    Exceptions.toMessageString(e),
-                    containsString("Could not set 'myUserQueryProfile.nondeclared' to 'someValue': 'nondeclared' is not declared in query profile type 'userStrict', and the type is strict"));
+            assertThat(Exceptions.toMessageString(e),
+                       containsString("Could not set 'myUserQueryProfile.nondeclared' to 'someValue': 'nondeclared' is not declared in query profile type 'userStrict', and the type is strict"));
         }
     }
 
@@ -453,7 +511,7 @@ public class QueryProfileTypeTestCase {
         topMap.set("subMap", subMap, registry);
 
         QueryProfile test = new QueryProfile("test");
-        test.setType(type);
+        test.setType(testtype);
         subMap.set("typeProfile", test, registry);
 
         QueryProfile myUser = new QueryProfile("myUser");
@@ -474,7 +532,9 @@ public class QueryProfileTypeTestCase {
         registry.register(newUser);
         CompiledQueryProfileRegistry cRegistry = registry.compile();
 
-        Query query = new Query(HttpRequest.createTestRequest("?subMap.typeProfile.myUserQueryProfile=newUser", com.yahoo.jdisc.http.HttpRequest.Method.GET), cRegistry.getComponent("topMap"));
+        Query query = new Query(HttpRequest.createTestRequest("?subMap.typeProfile.myUserQueryProfile=newUser",
+                                                              com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                                cRegistry.getComponent("topMap"));
 
         assertEquals(0, query.errors().size());
 
@@ -487,25 +547,25 @@ public class QueryProfileTypeTestCase {
      */
     @Test
     public void testAnonTypedOverridingOfQueryProfileReferencesNonStrictThroughQueryNestedInAnUntypedProfile() {
-        QueryProfile topMap=new QueryProfile("topMap");
+        QueryProfile topMap = new QueryProfile("topMap");
 
-        QueryProfile subMap=new QueryProfile("topSubMap");
-        topMap.set("subMap",subMap, registry);
+        QueryProfile subMap = new QueryProfile("topSubMap");
+        topMap.set("subMap", subMap, registry);
 
-        QueryProfile test=new QueryProfile("test");
-        test.setType(type);
-        subMap.set("typeProfile",test, registry);
+        QueryProfile test = new QueryProfile("test");
+        test.setType(testtype);
+        subMap.set("typeProfile", test, registry);
 
-        QueryProfile myUser=new QueryProfile("myUser");
+        QueryProfile myUser = new QueryProfile("myUser");
         myUser.setType(user);
-        myUser.set("myUserString","userValue1", registry);
-        myUser.set("myUserInteger",442, registry);
-        test.set("myQueryProfile",myUser, registry);
+        myUser.set("myUserString", "userValue1", registry);
+        myUser.set("myUserInteger", 442, registry);
+        test.set("myQueryProfile", myUser, registry);
 
-        QueryProfile newUser=new QueryProfile("newUser");
+        QueryProfile newUser = new QueryProfile("newUser");
         newUser.setType(user);
-        newUser.set("myUserString","newUserValue1", registry);
-        newUser.set("myUserInteger",845, registry);
+        newUser.set("myUserString", "newUserValue1", registry);
+        newUser.set("myUserInteger", 845, registry);
 
         registry.register(topMap);
         registry.register(subMap);
@@ -526,14 +586,14 @@ public class QueryProfileTypeTestCase {
      */
     @Test
     public void testSettingValueInStrictTypeNestedUnderUntypedMaps() {
-        QueryProfile topMap=new QueryProfile("topMap");
+        QueryProfile topMap = new QueryProfile("topMap");
 
-        QueryProfile subMap=new QueryProfile("topSubMap");
-        topMap.set("subMap",subMap, registry);
+        QueryProfile subMap = new QueryProfile("topSubMap");
+        topMap.set("subMap", subMap, registry);
 
-        QueryProfile test=new QueryProfile("test");
-        test.setType(typeStrict);
-        subMap.set("typeProfile",test, registry);
+        QueryProfile test = new QueryProfile("test");
+        test.setType(testtypeStrict);
+        subMap.set("typeProfile", test, registry);
 
         registry.register(topMap);
         registry.register(subMap);
@@ -542,16 +602,14 @@ public class QueryProfileTypeTestCase {
 
         try {
             new Query(
-                    HttpRequest.createTestRequest(
-                            "?subMap.typeProfile.someValue=value",
-                            com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                    HttpRequest.createTestRequest("?subMap.typeProfile.someValue=value",
+                                                  com.yahoo.jdisc.http.HttpRequest.Method.GET),
                     cRegistry.getComponent("topMap"));
             fail("Above statement should throw");
-        } catch (QueryException e) {
+        } catch (IllegalArgumentException e) {
             // As expected.
-            assertThat(
-                    Exceptions.toMessageString(e),
-                    containsString("Could not set 'subMap.typeProfile.someValue' to 'value': 'someValue' is not declared in query profile type 'testtypeStrict', and the type is strict"));
+            assertThat(Exceptions.toMessageString(e),
+                       containsString("Could not set 'subMap.typeProfile.someValue' to 'value': 'someValue' is not declared in query profile type 'testtypeStrict', and the type is strict"));
         }
     }
 
@@ -562,19 +620,19 @@ public class QueryProfileTypeTestCase {
      */
     @Test
     public void testTypedSettingOfQueryProfileReferencesNonStrictThroughQueryNestedInAnUntypedProfile() {
-        QueryProfile topMap=new QueryProfile("topMap");
+        QueryProfile topMap = new QueryProfile("topMap");
 
-        QueryProfile subMap=new QueryProfile("topSubMap");
+        QueryProfile subMap = new QueryProfile("topSubMap");
         topMap.set("subMap",subMap, registry);
 
-        QueryProfile test=new QueryProfile("test");
-        test.setType(type);
+        QueryProfile test = new QueryProfile("test");
+        test.setType(testtype);
         subMap.set("typeProfile",test, registry);
 
-        QueryProfile newUser=new QueryProfile("newUser");
+        QueryProfile newUser = new QueryProfile("newUser");
         newUser.setType(user);
-        newUser.set("myUserString","newUserValue1", registry);
-        newUser.set("myUserInteger",845, registry);
+        newUser.set("myUserString", "newUserValue1", registry);
+        newUser.set("myUserInteger", 845, registry);
 
         registry.register(topMap);
         registry.register(subMap);
@@ -582,11 +640,64 @@ public class QueryProfileTypeTestCase {
         registry.register(newUser);
         CompiledQueryProfileRegistry cRegistry = registry.compile();
 
-        Query query = new Query(HttpRequest.createTestRequest("?subMap.typeProfile.myUserQueryProfile=newUser", com.yahoo.jdisc.http.HttpRequest.Method.GET), cRegistry.getComponent("topMap"));
+        Query query = new Query(HttpRequest.createTestRequest("?subMap.typeProfile.myUserQueryProfile=newUser",
+                                                              com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                                cRegistry.getComponent("topMap"));
         assertEquals(0, query.errors().size());
 
         assertEquals("newUserValue1", query.properties().get("subMap.typeProfile.myUserQueryProfile.myUserString"));
         assertEquals(845, query.properties().get("subMap.typeProfile.myUserQueryProfile.myUserInteger"));
+    }
+
+    @Test
+    public void testNestedTypeName() {
+        ComponentId.resetGlobalCountersForTests();
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfileType type = new QueryProfileType("testType");
+        registry.getTypeRegistry().register(type);
+        type.addField(new FieldDescription("ranking.features.query(embedding_profile)",
+                                           "tensor<float>(model{},x[128])"),
+                      registry.getTypeRegistry());
+        QueryProfile test = new QueryProfile("test");
+        registry.register(test);
+        test.setType(type);
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        Query query = new Query("?query=foo", cRegistry.getComponent("test"));
+
+        // With a prefix we're not in the built-in type space
+        query.properties().set("prefix.ranking.foo", 0.1);
+        assertEquals(0.1, query.properties().get("prefix.ranking.foo"));
+    }
+
+    @Test
+    public void testNestedTypeNameUsingBuiltInTypes() {
+        ComponentId.resetGlobalCountersForTests();
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfileType type = new QueryProfileType("testType");
+        type.inherited().add(Query.getArgumentType()); // Include native type checking
+        registry.getTypeRegistry().register(type);
+        type.addField(new FieldDescription("ranking.features.query(embedding_profile)",
+                                           "tensor<float>(model{},x[128])"),
+                      registry.getTypeRegistry());
+        QueryProfile test = new QueryProfile("test");
+        registry.register(test);
+        test.setType(type);
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        Query query = new Query("?query=foo", cRegistry.getComponent("test"));
+
+        // Cannot set a property in a strict built-in type
+        try {
+            query.properties().set("ranking.foo", 0.1);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("'foo' is not a valid property in 'ranking'. See the query api for valid keys starting by 'ranking'.",
+                         e.getCause().getMessage());
+        }
+
+        // With a prefix we're not in the built-in type space
+        query.properties().set("prefix.ranking.foo", 0.1);
+        assertEquals(0.1, query.properties().get("prefix.ranking.foo"));
     }
 
     private void assertWrongType(QueryProfile profile,String typeName,String name,Object value) {
@@ -609,6 +720,36 @@ public class QueryProfileTypeTestCase {
         catch (IllegalArgumentException e) {
             assertTrue(Exceptions.toMessageString(e).startsWith("Could not set '" + name + "' to '" + value + "': '" + localName + "' is not declared"));
         }
+    }
+
+    private static final class MockEmbedder implements Embedder {
+
+        private final String expectedText;
+        private final Language expectedLanguage;
+        private final Tensor tensorToReturn;
+
+        public MockEmbedder(String expectedText,
+                            Language expectedLanguage,
+                            Tensor tensorToReturn) {
+            this.expectedText = expectedText;
+            this.expectedLanguage = expectedLanguage;
+            this.tensorToReturn = tensorToReturn;
+        }
+
+        @Override
+        public List<Integer> embed(String text, Language language) {
+            fail("Unexpected call");
+            return null;
+        }
+
+        @Override
+        public Tensor embed(String text, Language language, TensorType tensorType) {
+            assertEquals(expectedText, text);
+            assertEquals(expectedLanguage, language);
+            assertEquals(tensorToReturn.type(), tensorType);
+            return tensorToReturn;
+        }
+
     }
 
 }

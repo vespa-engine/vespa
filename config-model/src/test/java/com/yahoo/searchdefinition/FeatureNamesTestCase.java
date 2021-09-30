@@ -1,10 +1,15 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests rank feature names.
@@ -43,4 +48,47 @@ public class FeatureNamesTestCase {
                      FeatureNames.asQueryFeature("foo.bar").toString());
     }
 
+    @Test
+    public void testLegalFeatureNames() {
+        assertTrue(FeatureNames.notNeedQuotes("_"));
+        assertFalse(FeatureNames.notNeedQuotes("-"));
+        assertTrue(FeatureNames.notNeedQuotes("_-"));
+        assertTrue(FeatureNames.notNeedQuotes("0_-azAZxy98-_"));
+        assertFalse(FeatureNames.notNeedQuotes("0_-azAZxy98-_+"));
+    }
+
+    @Test
+    @Ignore
+    /*
+     * Unignore to verify performance
+     * 2021/09/05 performance was a factor of 5.25
+     * 'Identifier handcoded validity check took 4301ms
+     *  Identifier regexp validity check took 22609ms'
+     */
+    public void benchMarkPatternMatching() {
+        Pattern identifierRegexp = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9_-]*");
+        String[] strings = new String[1000];
+        for (int i = 0; i < strings.length; i++) {
+            strings[i] = i + "-legal_string" + i;
+        }
+
+        countValid(strings, 1000, "handcoded warmup", FeatureNames::notNeedQuotes);
+        countValid(strings, 1000, "regexp warmup", (s) -> identifierRegexp.matcher(s).matches());
+
+        countValid(strings, 100000, "handcoded", FeatureNames::notNeedQuotes);
+        countValid(strings, 100000, "regexp", (s) -> identifierRegexp.matcher(s).matches());
+    }
+
+    private void countValid(String [] strings, int numReps, String text, Function<String, Boolean> func) {
+        long start = System.nanoTime();
+        int validCount = 0;
+        for (int i = 0; i < numReps; i++) {
+            for (String s : strings) {
+                if (func.apply(s)) validCount++;
+            }
+        }
+        long end = System.nanoTime();
+        assertEquals(strings.length * numReps, validCount);
+        System.out.println("Identifier " + text + " validity check took " + (end - start)/1000000 + "ms");
+    }
 }

@@ -11,7 +11,7 @@ class RemoveLocationCommand : public BucketInfoCommand
 {
 public:
     RemoveLocationCommand(vespalib::stringref documentSelection, const document::Bucket &bucket);
-    ~RemoveLocationCommand();
+    ~RemoveLocationCommand() override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     const vespalib::string& getDocumentSelection() const { return _documentSelection; }
@@ -22,8 +22,13 @@ private:
 
 class RemoveLocationReply : public BucketInfoReply
 {
+    uint32_t _documents_removed;
 public:
-    RemoveLocationReply(const RemoveLocationCommand& cmd);
+    explicit RemoveLocationReply(const RemoveLocationCommand& cmd, uint32_t docs_removed = 0);
+    void set_documents_removed(uint32_t docs_removed) noexcept {
+        _documents_removed = docs_removed;
+    }
+    uint32_t documents_removed() const noexcept { return _documents_removed; }
     DECLARE_STORAGEREPLY(RemoveLocationReply, onRemoveLocationReply)
 };
 

@@ -2,9 +2,6 @@
 package com.yahoo.config.model.application.provider;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.TenantName;
 
 /**
  * Data generated or computed during deployment
@@ -30,22 +27,6 @@ public class DeployData {
     /* Application generation. Incremented by one each time an application is deployed. */
     private final long generation;
     private final long currentlyActiveGeneration;
-
-    // TODO: Remove after September 2019
-    public DeployData(String deployedByUser,
-                      String deployedFromDir,
-                      String applicationName,
-                      Long deployTimestamp,
-                      boolean internalRedeploy,
-                      Long generation,
-                      long currentlyActiveGeneration) {
-        this(deployedByUser,
-             deployedFromDir,
-             ApplicationId.from(TenantName.defaultName(), ApplicationName.from(applicationName), InstanceName.from("default")),
-             deployTimestamp,
-             internalRedeploy,
-             generation, currentlyActiveGeneration);
-    }
 
     public DeployData(String deployedByUser,
                       String deployedFromDir,
@@ -76,8 +57,5 @@ public class DeployData {
     public long getCurrentlyActiveGeneration() { return currentlyActiveGeneration; }
 
     public ApplicationId getApplicationId() { return applicationId; }
-
-    // TODO: remove after September 2019
-    public String getApplicationName() { return applicationId.application().toString(); }
 
 }

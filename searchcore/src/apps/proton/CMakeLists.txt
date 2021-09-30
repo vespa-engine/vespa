@@ -1,7 +1,6 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_executable(searchcore_proton_app
     SOURCES
-    downpersistence.cpp
     proton.cpp
     OUTPUT_NAME vespa-proton-bin
     INSTALL sbin

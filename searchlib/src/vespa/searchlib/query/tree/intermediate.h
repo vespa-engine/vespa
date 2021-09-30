@@ -17,6 +17,7 @@ class Intermediate : public Node
 
     Intermediate() = default;
     virtual ~Intermediate() = 0;
+    bool isIntermediate() const override { return true; }
 
     const std::vector<Node *> &getChildren() const { return _children; }
     Intermediate &reserve(size_t sz) { _children.reserve(sz); return *this; }

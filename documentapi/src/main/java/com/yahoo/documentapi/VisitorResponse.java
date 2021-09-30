@@ -2,10 +2,9 @@
 package com.yahoo.documentapi;
 
 /**
- * Common class for all visitor responses. All visitor responses have ack
- * tokens that must be acked.
+ * Common class for all visitor responses. All visitor responses have ack tokens that must be ack'ed.
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
+ * @author Håkon Humberset
  */
 public class VisitorResponse {
     private AckToken token;

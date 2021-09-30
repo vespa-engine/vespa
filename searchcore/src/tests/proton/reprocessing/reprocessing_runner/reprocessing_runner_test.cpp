@@ -32,7 +32,7 @@ struct MyTask : public IReprocessingTask
            double initProgress,
            double middleProgress,
            double finalProgress,
-           double weight)
+           double weight) noexcept
         : _runner(runner),
           _initProgress(initProgress),
           _middleProgress(middleProgress),
@@ -42,9 +42,7 @@ struct MyTask : public IReprocessingTask
     {
     }
 
-    virtual void
-    run() override
-    {
+    void run() override {
         ASSERT_EQUAL(_initProgress, _runner.getProgress());
         _myProgress = 0.5;
         ASSERT_EQUAL(_middleProgress, _runner.getProgress());
@@ -52,9 +50,7 @@ struct MyTask : public IReprocessingTask
         ASSERT_EQUAL(_finalProgress, _runner.getProgress());
     }
 
-    virtual Progress
-    getProgress() const override
-    {
+    Progress getProgress() const override {
         return Progress(_myProgress, _weight);
     }
 
@@ -65,11 +61,7 @@ struct MyTask : public IReprocessingTask
            double finalProgress,
            double weight)
     {
-        return std::make_shared<MyTask>(runner,
-                                        initProgress,
-                                        middleProgress,
-                                        finalProgress,
-                                        weight);
+        return std::make_shared<MyTask>(runner, initProgress, middleProgress, finalProgress, weight);
     }
 };
 
@@ -77,16 +69,8 @@ TEST_F("require that progress is calculated when tasks are executed", Fixture)
 {
     TaskList tasks;
     EXPECT_EQUAL(0.0, f._runner.getProgress());
-    tasks.push_back(MyTask::create(f._runner,
-                                   0.0,
-                                   0.1,
-                                   0.2,
-                                   1.0));
-    tasks.push_back(MyTask::create(f._runner,
-                                   0.2,
-                                   0.6,
-                                   1.0,
-                                   4.0));
+    tasks.push_back(MyTask::create(f._runner, 0.0, 0.1, 0.2, 1.0));
+    tasks.push_back(MyTask::create(f._runner, 0.2, 0.6, 1.0, 4.0));
     f._runner.addTasks(tasks);
     tasks.clear();
     EXPECT_EQUAL(0.0, f._runner.getProgress());
@@ -99,11 +83,7 @@ TEST_F("require that runner can be reset", Fixture)
 {
     TaskList tasks;
     EXPECT_EQUAL(0.0, f._runner.getProgress());
-    tasks.push_back(MyTask::create(f._runner,
-                                   0.0,
-                                   0.5,
-                                   1.0,
-                                   1.0));
+    tasks.push_back(MyTask::create(f._runner, 0.0, 0.5, 1.0, 1.0));
     f._runner.addTasks(tasks);
     tasks.clear();
     EXPECT_EQUAL(0.0, f._runner.getProgress());
@@ -111,21 +91,13 @@ TEST_F("require that runner can be reset", Fixture)
     EXPECT_EQUAL(1.0, f._runner.getProgress());
     f._runner.reset();
     EXPECT_EQUAL(0.0, f._runner.getProgress());
-    tasks.push_back(MyTask::create(f._runner,
-                                   0.0,
-                                   0.5,
-                                   1.0,
-                                   1.0));
+    tasks.push_back(MyTask::create(f._runner, 0.0, 0.5, 1.0, 1.0));
     f._runner.addTasks(tasks);
     tasks.clear();
     EXPECT_EQUAL(0.0, f._runner.getProgress());
     f._runner.reset();
     EXPECT_EQUAL(0.0, f._runner.getProgress());
-    tasks.push_back(MyTask::create(f._runner,
-                                   0.0,
-                                   0.5,
-                                   1.0,
-                                   4.0));
+    tasks.push_back(MyTask::create(f._runner, 0.0, 0.5, 1.0, 4.0));
     f._runner.addTasks(tasks);
     tasks.clear();
     EXPECT_EQUAL(0.0, f._runner.getProgress());

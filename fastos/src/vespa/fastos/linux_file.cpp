@@ -12,6 +12,12 @@
 #include <sstream>
 #include <unistd.h>
 #include <fcntl.h>
+#include "file_rw_ops.h"
+#include <cstdio>
+#include <cstring>
+#include <system_error>
+
+using fastos::File_RW_Ops;
 
 const size_t FastOS_Linux_File::_directIOFileAlign = 4096;
 const size_t FastOS_Linux_File::_directIOMemAlign = 4096;
@@ -31,57 +37,27 @@ FastOS_Linux_File::FastOS_Linux_File(const char *filename)
 ssize_t
 FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length, int64_t readOffset)
 {
-    ssize_t readResult = ::pread(fh, buffer, length, readOffset);
-    if (readResult < 0 && _failedHandler != nullptr) {
-        int error = errno;
-        const char *fileName = GetFileName();
-        _failedHandler("read", fileName, error, readOffset, length, readResult);
-        errno = error;
-    }
-    return readResult;
+    return File_RW_Ops::pread(fh, buffer, length, readOffset);
 }
 
 
 ssize_t
 FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length)
 {
-    ssize_t readResult = ::read(fh, buffer, length);
-    if (readResult < 0 && _failedHandler != nullptr) {
-        int error = errno;
-        int64_t readOffset = GetPosition();
-        const char *fileName = GetFileName();
-        _failedHandler("read", fileName, error, readOffset, length, readResult);
-        errno = error;
-    }
-    return readResult;
+    return File_RW_Ops::read(fh, buffer, length);
 }
 
 
 ssize_t
 FastOS_Linux_File::writeInternal(int fh, const void *buffer, size_t length, int64_t writeOffset)
 {
-    ssize_t writeRes = ::pwrite(fh, buffer, length, writeOffset);
-    if (writeRes < 0 && _failedHandler != nullptr) {
-        int error = errno;
-        const char *fileName = GetFileName();
-        _failedHandler("write", fileName, error, writeOffset, length, writeRes);
-        errno = error;
-    }
-    return writeRes;
+    return File_RW_Ops::pwrite(fh, buffer, length, writeOffset);
 }
 
 ssize_t
 FastOS_Linux_File::writeInternal(int fh, const void *buffer, size_t length)
 {
-    ssize_t writeRes = ::write(fh, buffer, length);
-    if (writeRes < 0 && _failedHandler != nullptr) {
-        int error = errno;
-        int64_t writeOffset = GetPosition();
-        const char *fileName = GetFileName();
-        _failedHandler("write", fileName, error, writeOffset, length, writeRes);
-        errno = error;
-    }
-    return writeRes;
+    return File_RW_Ops::write(fh, buffer, length);
 }
 
 
@@ -426,6 +402,27 @@ bool
 FastOS_Linux_File::InitializeClass()
 {
     return FastOS_UNIX_File::InitializeClass();
+}
+
+int
+FastOS_Linux_File::count_open_files()
+{
+    static const char * const fd_dir_name = "/proc/self/fd";
+    int count = 0;
+    DIR *dp = opendir(fd_dir_name);
+    if (dp != nullptr) {
+        struct dirent *ptr;
+        while ((ptr = readdir(dp)) != nullptr) {
+            if ((strcmp(".", ptr->d_name) != 0) && (strcmp("..", ptr->d_name) != 0)) {
+                ++count;
+            }
+        }
+        closedir(dp);
+    } else {
+        std::error_code ec(errno, std::system_category());
+        fprintf(stderr, "could not scan directory %s: %s\n", fd_dir_name, ec.message().c_str());
+    }
+    return count;
 }
 
 #include <vespa/fastos/backtrace.h>

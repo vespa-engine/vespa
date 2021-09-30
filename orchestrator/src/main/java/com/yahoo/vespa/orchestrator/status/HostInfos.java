@@ -5,7 +5,6 @@ import com.yahoo.vespa.applicationmodel.HostName;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Collection of the suspended hosts of an application.
@@ -27,5 +26,10 @@ public class HostInfos {
     /** Get host info for hostname, returning a NO_REMARKS HostInfo if unknown. */
     public HostInfo getOrNoRemarks(HostName hostname) {
         return hostInfos.getOrDefault(hostname, HostInfo.createNoRemarks());
+    }
+
+    /** The set of hostnames that were set in ZooKeeper - used for removing orphaned hostnames. */
+    public Set<HostName> getZkHostnames() {
+        return Set.copyOf(hostInfos.keySet());
     }
 }

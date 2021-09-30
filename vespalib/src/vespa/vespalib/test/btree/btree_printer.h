@@ -6,7 +6,7 @@
 #include "aggregated_printer.h"
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 
-namespace search::btree::test {
+namespace vespalib::btree::test {
 
 template <typename ostream, typename NodeAllocator>
 class BTreePrinter
@@ -100,4 +100,4 @@ public:
     }
 };
 
-} // namespace search::btree::test
+} // namespace vespalib::btree::test

@@ -4,16 +4,9 @@
 
 #include <vespa/persistence/spi/bucketinfo.h>
 
-namespace document
-{
+namespace document { class BucketId; }
 
-class BucketId;
-
-}
-
-namespace proton
-{
-
+namespace proton {
 
 /**
  * Interface used to notify when bucket state has changed.
@@ -24,8 +17,7 @@ public:
     virtual void notifyBucketStateChanged(const document::BucketId &bucketId,
                                           storage::spi::BucketInfo::ActiveState newState) = 0;
 
-    virtual ~IBucketStateChangedHandler() {}
+    virtual ~IBucketStateChangedHandler() = default;
 };
 
-
-} // namespace proton
+}

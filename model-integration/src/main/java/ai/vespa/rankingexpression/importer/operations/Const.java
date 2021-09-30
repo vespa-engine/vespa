@@ -53,12 +53,6 @@ public class Const extends IntermediateOperation {
         return new TensorFunctionNode.ExpressionTensorFunction(expressionNode);
     }
 
-    /** Constant names are prefixed by "modelName_" to avoid name conflicts between models */
-    @Override
-    public String vespaName() {
-        return modelName + "_" + super.vespaName();
-    }
-
     @Override
     public void addDimensionNameConstraints(DimensionRenamer renamer) {
         addConstraintsFrom(type, renamer);
@@ -77,7 +71,7 @@ public class Const extends IntermediateOperation {
 
     private Value value() {
         Optional<Value> value = attributeMap.get("value", type);
-        if ( ! value.isPresent()) {
+        if (value.isEmpty()) {
             throw new IllegalArgumentException("Node '" + name + "' of type " +
                                                "const has missing or non-recognized 'value' attribute");
         }

@@ -2,7 +2,7 @@
 
 #include "struct_fields_resolver.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/searchlib/common/struct_field_mapper.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -22,12 +22,14 @@ StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, c
       _array_fields(),
       _array_attributes(),
       _has_map_key(false),
+      _has_map_value(false),
       _error(false)
 {
     std::vector<const search::attribute::IAttributeVector *> attrs;
     attr_ctx.getAttributeList(attrs);
     vespalib::string prefix = field_name + ".";
     _map_key_attribute = prefix + "key";
+    vespalib::string map_value_attribute_name = prefix + "value";
     vespalib::string value_prefix = prefix + "value.";
     for (const auto attr : attrs) {
         vespalib::string name = attr->getName();
@@ -45,6 +47,8 @@ StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, c
             _array_fields.emplace_back(name.substr(prefix.size()));
             if (name == _map_key_attribute) {
                 _has_map_key = true;
+            } else if (name == map_value_attribute_name) {
+                _has_map_value = true;
             }
         }
     }
@@ -74,18 +78,18 @@ StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, c
 StructFieldsResolver::~StructFieldsResolver() = default;
 
 void
-StructFieldsResolver::apply_to(StructFieldMapper& mapper) const
+StructFieldsResolver::apply_to(MatchingElementsFields& fields) const
 {
     if (is_map_of_struct()) {
         if (_has_map_key) {
-            mapper.add_mapping(_field_name, _map_key_attribute);
+            fields.add_mapping(_field_name, _map_key_attribute);
         }
         for (const auto& sub_field : _map_value_attributes) {
-            mapper.add_mapping(_field_name, sub_field);
+            fields.add_mapping(_field_name, sub_field);
         }
     } else {
         for (const auto& sub_field : _array_attributes) {
-            mapper.add_mapping(_field_name, sub_field);
+            fields.add_mapping(_field_name, sub_field);
         }
     }
 }

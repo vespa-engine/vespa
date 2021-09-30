@@ -4,6 +4,7 @@
 #include "attribute_directory.h"
 #include "attributedisklayout.h"
 #include "attributemanager.h"
+#include "attribute_type_matcher.h"
 #include "imported_attributes_context.h"
 #include "imported_attributes_repo.h"
 #include "sequential_attributes_initializer.h"
@@ -12,12 +13,13 @@
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/attribute/interlock.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/searchlib/common/threaded_compactable_lid_space.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/threadexecutor.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -41,25 +43,8 @@ namespace {
 
 bool matchingTypes(const AttributeVector::SP &av, const search::attribute::Config &newConfig) {
     if (av) {
-        const auto &oldConfig = av->getConfig();
-        if ((oldConfig.basicType() != newConfig.basicType()) ||
-            (oldConfig.collectionType() != newConfig.collectionType())) {
-            return false;
-        }
-        if (newConfig.basicType().type() == BasicType::TENSOR) {
-            if (oldConfig.tensorType() != newConfig.tensorType()) {
-                return false;
-            }
-        }
-        if (newConfig.basicType().type() == BasicType::PREDICATE) {
-            using Params = search::attribute::PersistentPredicateParams;
-            const Params &oldParams = oldConfig.predicateParams();
-            const Params &newParams = newConfig.predicateParams();
-            if (!(oldParams == newParams)) {
-                return false;
-            }
-        }
-        return true;
+        AttributeTypeMatcher matching_types;
+        return matching_types(av->getConfig(), newConfig);
     } else {
         return false;
     }
@@ -74,12 +59,14 @@ search::SerialNum estimateShrinkSerialNum(const AttributeVector &attr)
     return std::max(attr.getStatus().getLastSyncToken(), serialNum);
 }
 
-std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::SP &attr, search::ISequencedTaskExecutor &attributeFieldWriter, AttributeDiskLayout &diskLayout)
+std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::SP &attr, vespalib::ISequencedTaskExecutor &attributeFieldWriter, AttributeDiskLayout &diskLayout)
 {
     using Type = IFlushTarget::Type;
     using Component = IFlushTarget::Component;
 
-    auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(attr, attributeFieldWriter, attributeFieldWriter.getExecutorId(attr->getNamePrefix()));
+    auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(attr, attributeFieldWriter,
+                                                                    attributeFieldWriter.getExecutorIdFromName(
+                                                                            attr->getNamePrefix()));
     const vespalib::string &name = attr->getName();
     auto dir = diskLayout.createAttributeDir(name);
     search::SerialNum shrinkSerialNum = estimateShrinkSerialNum(*attr);
@@ -133,7 +120,7 @@ AttributeManager::internalAddAttribute(const AttributeSpec &spec,
                                        uint64_t serialNum,
                                        const IAttributeFactory &factory)
 {
-    AttributeInitializer initializer(_diskLayout->createAttributeDir(spec.getName()), _documentSubDbName, spec, serialNum, factory);
+    AttributeInitializer initializer(_diskLayout->createAttributeDir(spec.getName()), _documentSubDbName, spec, serialNum, factory, _shared_executor);
     AttributeInitializerResult result = initializer.init();
     if (result) {
         result.getAttribute()->setInterlock(_interlock);
@@ -162,7 +149,7 @@ AttributeManager::addAttribute(const AttributeWrap &attribute, const ShrinkerSP 
 AttributeVector::SP
 AttributeManager::findAttribute(const vespalib::string &name) const
 {
-    AttributeMap::const_iterator itr = _attributes.find(name);
+    auto itr = _attributes.find(name);
     return (itr != _attributes.end())
         ? itr->second.getAttribute()
         : AttributeVector::SP();
@@ -171,7 +158,7 @@ AttributeManager::findAttribute(const vespalib::string &name) const
 const AttributeManager::FlushableWrap *
 AttributeManager::findFlushable(const vespalib::string &name) const
 {
-    FlushableMap::const_iterator itr = _flushables.find(name);
+    auto itr = _flushables.find(name);
     return (itr != _flushables.end()) ? &itr->second : nullptr;
 }
 
@@ -190,10 +177,14 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
             auto shrinker = wrap->getShrinker();
             assert(shrinker);
             addAttribute(AttributeWrap::normalAttribute(av), shrinker);
+            auto id = _attributeFieldWriter.getExecutorIdFromName(av->getNamePrefix());
+            auto cfg = aspec.getConfig();
+            _attributeFieldWriter.execute(id, [av, cfg]() { av->update_config(cfg); });
         } else {
             toBeAdded.push_back(aspec);
         }
     }
+    _attributeFieldWriter.sync();
 }
 
 void
@@ -205,9 +196,9 @@ AttributeManager::addNewAttributes(const Spec &newSpec,
         LOG(debug, "Creating initializer for attribute vector '%s': docIdLimit=%u, serialNumber=%" PRIu64,
                    aspec.getName().c_str(), newSpec.getDocIdLimit(), newSpec.getCurrentSerialNum());
 
-        AttributeInitializer::UP initializer =
-            std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(aspec.getName()), _documentSubDbName,
-                        aspec, newSpec.getCurrentSerialNum(), *_factory);
+        auto initializer = std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(aspec.getName()),
+                                                                  _documentSubDbName, aspec, newSpec.getCurrentSerialNum(),
+                                                                  *_factory, _shared_executor);
         initializerRegistry.add(std::move(initializer));
 
         // TODO: Might want to use hardlinks to make attribute vector
@@ -238,8 +229,8 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const vespalib::string &documentSubDbName,
                                    const TuneFileAttributes &tuneFileAttributes,
                                    const FileHeaderContext &fileHeaderContext,
-                                   search::ISequencedTaskExecutor &
-                                   attributeFieldWriter,
+                                   vespalib::ISequencedTaskExecutor &attributeFieldWriter,
+                                   vespalib::ThreadExecutor& shared_executor,
                                    const HwInfo &hwInfo)
     : proton::IAttributeManager(),
       _attributes(),
@@ -249,21 +240,21 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _documentSubDbName(documentSubDbName),
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
-      _factory(new AttributeFactory()),
+      _factory(std::make_shared<AttributeFactory>()),
       _interlock(std::make_shared<search::attribute::Interlock>()),
       _attributeFieldWriter(attributeFieldWriter),
+      _shared_executor(shared_executor),
       _hwInfo(hwInfo),
       _importedAttributes()
 {
 }
 
-
 AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const vespalib::string &documentSubDbName,
                                    const search::TuneFileAttributes &tuneFileAttributes,
                                    const search::common::FileHeaderContext &fileHeaderContext,
-                                   search::ISequencedTaskExecutor &
-                                   attributeFieldWriter,
+                                   vespalib::ISequencedTaskExecutor &attributeFieldWriter,
+                                   vespalib::ThreadExecutor& shared_executor,
                                    const IAttributeFactory::SP &factory,
                                    const HwInfo &hwInfo)
     : proton::IAttributeManager(),
@@ -277,6 +268,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _factory(factory),
       _interlock(std::make_shared<search::attribute::Interlock>()),
       _attributeFieldWriter(attributeFieldWriter),
+      _shared_executor(shared_executor),
       _hwInfo(hwInfo),
       _importedAttributes()
 {
@@ -296,6 +288,7 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
       _factory(currMgr._factory),
       _interlock(currMgr._interlock),
       _attributeFieldWriter(currMgr._attributeFieldWriter),
+      _shared_executor(currMgr._shared_executor),
       _hwInfo(currMgr._hwInfo),
       _importedAttributes()
 {
@@ -338,8 +331,8 @@ AttributeManager::flushAll(SerialNum currentSerial)
     auto flushTargets = getFlushTargets();
     for (const auto &ft : flushTargets) {
         vespalib::Executor::Task::UP task;
-        task = ft->initFlush(currentSerial);
-        if (task.get() != NULL) {
+        task = ft->initFlush(currentSerial, std::make_shared<search::FlushToken>());
+        if (task) {
             task->run();
         }
     }
@@ -387,15 +380,16 @@ AttributeManager::padAttribute(AttributeVector &v, uint32_t docIdLimit)
             v.commit();
         }
     }
-    if (needCommit > 1)
+    if (needCommit > 1) {
         v.commit();
+    }
     assert(v.getNumDocs() >= docIdLimit);
 }
 
 AttributeGuard::UP
 AttributeManager::getAttribute(const vespalib::string &name) const
 {
-    return AttributeGuard::UP(new AttributeGuard(findAttribute(name)));
+    return std::make_unique<AttributeGuard>(findAttribute(name));
 }
 
 std::unique_ptr<search::attribute::AttributeReadGuard>
@@ -548,30 +542,33 @@ AttributeManager::pruneRemovedFields(search::SerialNum serialNum)
     }
 }
 
-search::ISequencedTaskExecutor &
+vespalib::ISequencedTaskExecutor &
 AttributeManager::getAttributeFieldWriter() const
 {
     return _attributeFieldWriter;
 }
 
+vespalib::ThreadExecutor&
+AttributeManager::get_shared_executor() const
+{
+    return _shared_executor;
+}
 
 AttributeVector *
 AttributeManager::getWritableAttribute(const vespalib::string &name) const
 {
-    AttributeMap::const_iterator itr = _attributes.find(name);
+    auto itr = _attributes.find(name);
     if (itr == _attributes.end() || itr->second.isExtra()) {
         return nullptr;
     }
     return itr->second.getAttribute().get();
 }
 
-
 const std::vector<AttributeVector *> &
 AttributeManager::getWritableAttributes() const
 {
     return _writableAttributes;
 }
-
 
 void
 AttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const
@@ -581,20 +578,20 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> 
             continue;
         }
         AttributeVector::SP attrsp = attr.second.getAttribute();
-        _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(attrsp->getNamePrefix()),
+        _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(attrsp->getNamePrefix()),
                                       [attrsp, func]() { (*func)(*attrsp); });
     }
 }
 
 void
 AttributeManager::asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const {
-    AttributeMap::const_iterator itr = _attributes.find(name);
+    auto itr = _attributes.find(name);
     if (itr == _attributes.end() || itr->second.isExtra() || !func) {
         return;
     }
     AttributeVector::SP attrsp = itr->second.getAttribute();
     vespalib::string attrName = attrsp->getNamePrefix();
-    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(attrName),
+    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(attrName),
                                   [attr=std::move(attrsp), func=std::move(func)]() { (*func)(*attr); });
 }
 

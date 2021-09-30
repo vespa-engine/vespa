@@ -2,26 +2,13 @@
 
 #pragma once
 
-#include <vespa/searchlib/query/tree/location.h>
-#include <vespa/searchlib/query/tree/range.h>
-#include <string>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace search::query { class Node; }
 
 namespace search::queryeval {
 
-inline const vespalib::string &termAsString(const vespalib::string &term) {
-    return term;
-}
-
-vespalib::string termAsString(double float_term);
-
-vespalib::string termAsString(int64_t int_term);
-
-vespalib::string termAsString(const search::query::Range &term);
-
-vespalib::string termAsString(const search::query::Location &term);
-
 vespalib::string termAsString(const search::query::Node &term_node);
+vespalib::stringref termAsString(const search::query::Node &term_node, vespalib::string & scratchPad);
 
 }

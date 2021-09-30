@@ -9,10 +9,9 @@ import java.util.List;
 
 /**
  * @author Tony Vaagenes
+ * @author gjoranv
  */
 public interface Osgi {
-
-    List<Bundle> getInitialBundles();
 
     Bundle[] getBundles();
 
@@ -24,5 +23,9 @@ public interface Osgi {
     List<Bundle> install(String absolutePath);
 
     void allowDuplicateBundles(Collection<Bundle> bundles);
+
+    default boolean hasFelixFramework() {
+       return false;
+    }
 
 }

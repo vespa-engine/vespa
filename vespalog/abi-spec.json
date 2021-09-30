@@ -186,19 +186,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.log.MappedLevelControllerRepo": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.nio.MappedByteBuffer, int, int, java.lang.String)",
-      "public com.yahoo.log.LevelController getLevelController(java.lang.String)",
-      "public void checkBack()"
-    ],
-    "fields": []
-  },
   "com.yahoo.log.RejectFilter": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -300,15 +287,10 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.lang.String, java.lang.String, java.lang.String)",
-      "public com.yahoo.log.LevelController getLevelControl(java.lang.String)",
       "public com.yahoo.log.LevelController getLevelController(java.lang.String)",
       "public void close()"
     ],
-    "fields": [
-      "public static final int controlFileHeaderLength",
-      "public static final int numLevels"
-    ]
+    "fields": []
   },
   "com.yahoo.log.event.Collection": {
     "superClass": "com.yahoo.log.event.Event",

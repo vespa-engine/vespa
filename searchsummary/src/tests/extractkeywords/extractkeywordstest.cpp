@@ -2,7 +2,8 @@
 
 #include "extractkeywordstest.h"
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
-#include <vespa/searchlib/parsequery/simplequerystack.h>
+#include "simplequerystack.h"
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/time.h>
 
 #define NUMTESTS 5
@@ -18,7 +19,7 @@ ExtractKeywordsTest::Main()
     bool failed = false;
 
     if (_argc == 1)
-        Usage(_argv[0]);
+        return Usage(_argv[0]);
 
     // default initialize to not run any tests.
     for (int n = 0; n < NUMTESTS; n++)
@@ -157,7 +158,7 @@ bool
 ExtractKeywordsTest::RunTest(int testno, bool verify)
 {
     search::SimpleQueryStack stack;
-    search::RawBuf buf(32768);
+    search::RawBuf buf(32_Ki);
     const char *correct = nullptr;
     const char *keywords = nullptr;
 
@@ -165,7 +166,7 @@ ExtractKeywordsTest::RunTest(int testno, bool verify)
     case 0:
     {
         // Simple term query
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foobar"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "foobar"));
 
         stack.AppendBuffer(&buf);
         keywords = _extractor->ExtractKeywords(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
@@ -178,11 +179,15 @@ ExtractKeywordsTest::RunTest(int testno, bool verify)
 
     case 1:
     {
+        // check that skipping these works also:
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_GEO_LOCATION_TERM, "no"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_NEAREST_NEIGHBOR, "no"));
         // multi term query
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foobar"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foo"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "bar"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_OR, 3));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "foobar"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "foo"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "bar"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_OR, 3));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_AND, 3));
 
         stack.AppendBuffer(&buf);
         keywords = _extractor->ExtractKeywords(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
@@ -196,10 +201,10 @@ ExtractKeywordsTest::RunTest(int testno, bool verify)
     case 2:
     {
         // phrase term query
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foobar"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foo"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "bar"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_PHRASE, 3, "index"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "foobar"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "foo"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "bar"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_PHRASE, 3, "index"));
 
         stack.AppendBuffer(&buf);
         keywords = _extractor->ExtractKeywords(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
@@ -213,16 +218,16 @@ ExtractKeywordsTest::RunTest(int testno, bool verify)
     case 3:
     {
         // multiple phrase and term query
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "xyzzy"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "xyz"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_PHRASE, 2, "index"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foobar"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foo"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "bar"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_PHRASE, 3, "index"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "baz"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "zog"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_AND, 3));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "xyzzy"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "xyz"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_PHRASE, 2, "index"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "foobar"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "foo"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "bar"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_PHRASE, 3, "index"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "baz"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "zog"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_AND, 3));
 
         stack.AppendBuffer(&buf);
         keywords = _extractor->ExtractKeywords(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
@@ -236,11 +241,11 @@ ExtractKeywordsTest::RunTest(int testno, bool verify)
     case 4:
     {
         // phrase term query with wrong argument items
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foobar"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "foo"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_AND, 2));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_TERM, "bar"));
-        stack.Push(new search::ParseItem(search::ParseItem::ITEM_PHRASE, 2, "index"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "foobar"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "foo"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_AND, 2));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_TERM, "bar"));
+        stack.Push(new search::SimpleQueryStackItem(search::ParseItem::ITEM_PHRASE, 2, "index"));
 
         stack.AppendBuffer(&buf);
         keywords = _extractor->ExtractKeywords(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
@@ -271,7 +276,7 @@ ExtractKeywordsTest::RunTest(int testno, bool verify)
     return result;
 }
 
-void
+int
 ExtractKeywordsTest::Usage(char *progname)
 {
     printf("%s {testnospec}+\n\
@@ -279,7 +284,7 @@ ExtractKeywordsTest::Usage(char *progname)
       num:     single test\n\
       num-num: inclusive range (open range permitted)\n",progname);
     printf("There are tests from %d to %d\n\n", 0, NUMTESTS-1);
-    exit(-1);
+    return EXIT_FAILURE;
 }
 
 int

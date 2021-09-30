@@ -6,9 +6,8 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.ObjectTraverser;
-import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -56,7 +55,7 @@ public class TestConfig {
      * is returned, using {@link #fromEndpointsOnly}. Otherwise, all config attributes are parsed.
      */
     public static TestConfig fromJson(byte[] jsonBytes) {
-        Inspector config = new JsonDecoder().decode(new Slime(), jsonBytes).get();
+        Inspector config = SlimeUtils.jsonToSlime(jsonBytes).get();
         if (config.field("localEndpoints").valid())
             return TestConfig.fromEndpointsOnly(toClusterMap(config.field("localEndpoints")));
 

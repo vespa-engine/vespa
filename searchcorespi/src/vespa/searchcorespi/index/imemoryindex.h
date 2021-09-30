@@ -8,7 +8,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/memoryusage.h>
 
-namespace search { class IDestructorCallback; }
+namespace vespalib { class IDestructorCallback; }
 
 namespace searchcorespi::index {
 
@@ -17,7 +17,7 @@ namespace searchcorespi::index {
  */
 struct IMemoryIndex : public searchcorespi::IndexSearchable {
     using SP = std::shared_ptr<IMemoryIndex>;
-    using OnWriteDoneType = const std::shared_ptr<search::IDestructorCallback> &;
+    using OnWriteDoneType = const std::shared_ptr<vespalib::IDestructorCallback> &;
     virtual ~IMemoryIndex() {}
 
     /**

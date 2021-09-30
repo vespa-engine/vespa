@@ -1,13 +1,19 @@
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 
-[![#Vespa](https://vespa.ai/img/VespaLogoBlack.png)](https://vespa.ai)
+[![#Vespa](https://vespa.ai/assets/vespa-logo-color.png)](https://vespa.ai)
 
-The big data serving engine - Store, search, rank and organize big data at user serving time.
-Vespa is an engine for low-latency computation over large data sets.
-It stores and indexes your data and executes distributed queries including evaluation of
-machine-learned models over many data points in real time.
+The open big data serving engine - Store, search, organize and make machine-learned inferences 
+over big data at serving time.
 
-Travis-CI build status: [![Build Status](https://travis-ci.org/vespa-engine/vespa.svg?branch=master)](https://travis-ci.org/vespa-engine/vespa)
+This is the primary repository for Vespa where all development is happening. 
+New production releases from this repository's master branch are made each weekday from Monday to Thursday.
+
+* Home page: [https://vespa.ai](https://vespa.ai)  
+* Documentation: [https://docs.vespa.ai](https://docs.vespa.ai)  
+* Continuous build: [https://factory.vespa.oath.cloud](https://factory.vespa.oath.cloud)
+* Run applications in the cloud for free: [https://cloud.vespa.ai](https://cloud.vespa.ai)
+
+Vespa build status: [![Vespa Build Status](https://cd.screwdriver.cd/pipelines/6386/build-vespa/badge)](https://cd.screwdriver.cd/pipelines/6386)
 
 ## Table of contents
 
@@ -24,30 +30,28 @@ Use cases such as search, recommendation and personalization need to select a su
 evaluate machine-learned models over the selected data, organize and aggregate it and return it, typically in less
 than 100 milliseconds, all while the data corpus is continuously changing. 
 
-This is hard to do, especially with large corpuses that needs to be distributed over multiple nodes and evaluated in 
-parallel. Vespa is a platform which performs these operations for you. It has been in development for many years 
-and is used on a number of large internet services and apps which serve hundreds of thousands of queries from 
-Vespa per second.
+This is hard to do, especially with large data sets that needs to be distributed over multiple nodes and evaluated in 
+parallel. Vespa is a platform which performs these operations for you  with high availability and performance. 
+It has been in development for many years and is used on a number of large internet services and apps which serve 
+hundreds of thousands of queries from Vespa per second.
+
 
 ## Install
 
-To get started using Vespa pick one of the quick start documents:
+Run your own Vespa instance: [https://docs.vespa.ai/en/getting-started.html](https://docs.vespa.ai/en/getting-started.html)  
+Or deploy your Vespa applications to the cloud service: [https://cloud.vespa.ai](https://cloud.vespa.ai)
 
-- [Run on a Mac or Linux machine using Docker](https://docs.vespa.ai/documentation/vespa-quick-start.html)
-- [Run on a Windows machine using Docker](https://docs.vespa.ai/documentation/vespa-quick-start-windows.html)
-- [Run on a Mac or Linux machine using VirtualBox+Vagrant](https://docs.vespa.ai/documentation/vespa-quick-start-centos.html)
-- [Multinode install on AWS EC2](https://docs.vespa.ai/documentation/vespa-quick-start-multinode-aws.html)
-- [Multinode install on AWS ECS](https://docs.vespa.ai/documentation/vespa-quick-start-multinode-aws-ecs.html)
 
 ## Usage 
 
-- The application created in the quickstart is fully functional and production ready, but you may want to [add more nodes](https://docs.vespa.ai/documentation/multinode-systems.html) for redundancy.
-- Try the [Blog search and recommendation tutorial](https://docs.vespa.ai/documentation/tutorials/blog-search.html) to learn more about using Vespa
-- See [developing applications](https://docs.vespa.ai/documentation/jdisc/developing-applications.html) on adding your own Java components to your Vespa application.
-- [Vespa APIs](https://docs.vespa.ai/documentation/api.html) is useful to understand how to interface with Vespa
+- The application created in the getting started guide is fully functional and production ready, but you may want to [add more nodes](https://docs.vespa.ai/en/multinode-systems.html) for redundancy.
+- See [developing applications](https://docs.vespa.ai/en/developer-guide.html) on adding your own Java components to your Vespa application.
+- [Vespa APIs](https://docs.vespa.ai/en/api.html) is useful to understand how to interface with Vespa
 - Explore the [sample applications](https://github.com/vespa-engine/sample-apps/tree/master)
+- Follow the [Vespa Blog](https://blog.vespa.ai/) for feature updates / use cases
 
 Full documentation is available on [https://docs.vespa.ai](https://docs.vespa.ai).
+
 
 ## Contribute
 
@@ -63,39 +67,27 @@ You do not need to build Vespa to use it, but if you want to contribute you need
 This section explains how to build and test Vespa. To understand where to make changes, see [Code-map.md](Code-map.md).
 Some suggested improvements with pointers to code are in [TODO.md](TODO.md).
 
-### Set up the build environment
+### Development environment
 
-C++ and Java building is supported on CentOS 7. The Java source can also be built on any platform having Java 11 and Maven installed. 
-We recommend using the following environment: [Create C++ / Java dev environment on CentOS using VirtualBox and Vagrant](vagrant/README.md).
-You can also setup CentOS 7 natively and install the following build dependencies:
-
-    sudo yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
-    sudo yum -y install epel-release centos-release-scl yum-utils
-    sudo yum -y install ccache \
-        rpm-build
-    yum-builddep -y <vespa-source>/dist/vespa.spec
+C++ and Java building is supported on CentOS 7.
+The Java source can also be built on any platform having Java 11 and Maven installed.
+Use the following guide to set up a complete development environment using Docker
+for building Vespa, running unit tests and running system tests:
+[Vespa development on CentOS 7](https://github.com/vespa-engine/docker-image-dev#vespa-development-on-centos-7).
 
 ### Build Java modules
 
     export MAVEN_OPTS="-Xms128m -Xmx1024m"
-    source /opt/rh/rh-maven35/enable
-    bash bootstrap.sh java
-    mvn -T <num-threads> install
+    ./bootstrap.sh java
+    mvn install --threads 1C
 
-### Build C++ modules
+Use this if you only need to build the Java modules, otherwise follow the complete development guide above.
 
-Replace `<build-dir>` with the name of the directory in which you'd like to build Vespa.
-Replace `<source-dir>` with the directory in which you've cloned/unpacked the source tree.
+### Build RPM packages
 
-    bash bootstrap-cpp.sh <source-dir> <build-dir>
-    cd <build-dir>
-    make -j <num-threads>
-    ctest3 -j <num-threads>
+See [Building Vespa RPM](docker/README.md#building-vespa-rpm) for details.
 
-### Create RPM packages
 
-    sh dist.sh VERSION && rpmbuild -ba ~/rpmbuild/SPECS/vespa-VERSION.spec
-    
 ## License
 
 Code licensed under the Apache 2.0 license. See [LICENSE](LICENSE) for terms.

@@ -33,7 +33,6 @@ TEST_F(SanityCheckedDeleteTest, delete_bucket_fails_when_provider_out_of_sync) {
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(bucket, "foo",
                         StorBucketDatabase::CREATE_IF_NONEXISTING));
-        entry->disk = 0;
         entry->info = serviceLayerInfo;
         entry.write();
     }

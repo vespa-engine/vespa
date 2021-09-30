@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
@@ -6,10 +6,13 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.Pair;
 import com.yahoo.compress.Compressor;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.searchdefinition.OnnxModel;
+import com.yahoo.searchdefinition.LargeRankExpressions;
+import com.yahoo.searchdefinition.RankExpressionBody;
 import com.yahoo.searchdefinition.document.RankType;
 import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchdefinition.expressiontransforms.OnnxModelTransformer;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
@@ -18,12 +21,15 @@ import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -37,10 +43,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
     /** A reusable compressor with default settings */
     private static final Compressor compressor = new Compressor();
-    
+
     private final String keyEndMarker = "\r=";
     private final String valueEndMarker = "\r\n";
-    
+
     // TODO: These are to expose coupling between the strings used here and elsewhere
     public final static String summaryFeatureFefPropertyPrefix = "vespa.summary.feature";
     public final static String rankFeatureFefPropertyPrefix = "vespa.dump.feature";
@@ -52,18 +58,14 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     /**
      * Creates a raw rank profile from the given rank profile
      */
-    public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels, AttributeFields attributeFields, ModelContext.Properties deployProperties) {
+    public RawRankProfile(RankProfile rankProfile, LargeRankExpressions largeExpressions,
+                          QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
+                          AttributeFields attributeFields, ModelContext.Properties deployProperties) {
         this.name = rankProfile.getName();
-        compressedProperties = compress(new Deriver(rankProfile, queryProfiles, importedModels, attributeFields, deployProperties).derive());
+        compressedProperties = compress(new Deriver(rankProfile.compile(queryProfiles, importedModels),
+                                                    attributeFields, deployProperties).derive(largeExpressions));
     }
 
-    /**
-     * Only for testing
-     */
-    public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels, AttributeFields attributeFields) {
-        this(rankProfile, queryProfiles, importedModels, attributeFields, new TestProperties());
-    }
-    
     private Compressor.Compression compress(List<Pair<String, String>> properties) {
         StringBuilder b = new StringBuilder();
         for (Pair<String, String> property : properties)
@@ -109,66 +111,86 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         b.fef(fefB);
     }
 
-    /** 
+    /**
      * Returns the properties of this as an unmodifiable list.
      * Note: This method is expensive.
      */
     public List<Pair<String, String>> configProperties() { return decompress(compressedProperties); }
-    
+
     private static class Deriver {
 
-        /**
-         * The field rank settings of this profile
-         */
-        private Map<String, FieldRankSettings> fieldRankSettings = new java.util.LinkedHashMap<>();
-
-        private RankingExpression firstPhaseRanking = null;
-
-        private RankingExpression secondPhaseRanking = null;
-
-        private Set<ReferenceNode> summaryFeatures = new LinkedHashSet<>();
-
-        private Set<ReferenceNode> rankFeatures = new LinkedHashSet<>();
-
-        private List<RankProfile.RankProperty> rankProperties = new ArrayList<>();
+        private final Map<String, FieldRankSettings> fieldRankSettings = new java.util.LinkedHashMap<>();
+        private final Set<ReferenceNode> summaryFeatures;
+        private final Set<ReferenceNode> rankFeatures;
+        private final List<RankProfile.RankProperty> rankProperties;
 
         /**
          * Rank properties for weight settings to make these available to feature executors
          */
-        private List<RankProfile.RankProperty> boostAndWeightRankProperties = new ArrayList<>();
+        private final List<RankProfile.RankProperty> boostAndWeightRankProperties = new ArrayList<>();
 
-        private boolean ignoreDefaultRankFeatures = false;
-
-        private RankProfile.MatchPhaseSettings matchPhaseSettings = null;
-
-        private int rerankCount = -1;
-        private int keepRankCount = -1;
-        private int numThreadsPerSearch = -1;
-        private int minHitsPerThread = -1;
-        private int numSearchPartitions = -1;
-        private double termwiseLimit = 1.0;
-        private double rankScoreDropLimit = -Double.MAX_VALUE;
+        private final boolean ignoreDefaultRankFeatures;
+        private final RankProfile.MatchPhaseSettings matchPhaseSettings;
+        private final int rerankCount;
+        private final int keepRankCount;
+        private final int numThreadsPerSearch;
+        private final int minHitsPerThread;
+        private final int numSearchPartitions;
+        private final double termwiseLimit;
+        private final double rankScoreDropLimit;
+        private final int largeRankExpressionLimit;
 
         /**
          * The rank type definitions used to derive settings for the native rank features
          */
         private final NativeRankTypeDefinitionSet nativeRankTypeDefinitions = new NativeRankTypeDefinitionSet("default");
-
         private final Map<String, String> attributeTypes;
         private final Map<String, String> queryFeatureTypes;
+        private final Set<String> filterFields = new java.util.LinkedHashSet<>();
+        private final String rankprofileName;
 
-        private Set<String> filterFields = new java.util.LinkedHashSet<>();
+        private RankingExpression firstPhaseRanking;
+        private RankingExpression secondPhaseRanking;
 
         /**
          * Creates a raw rank profile from the given rank profile
          */
-        Deriver(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
-                       AttributeFields attributeFields, ModelContext.Properties deployProperties)
+        Deriver(RankProfile compiled, AttributeFields attributeFields, ModelContext.Properties deployProperties)
         {
-            RankProfile compiled = rankProfile.compile(queryProfiles, importedModels);
+            rankprofileName = compiled.getName();
             attributeTypes = compiled.getAttributeTypes();
             queryFeatureTypes = compiled.getQueryFeatureTypes();
-            deriveRankingFeatures(compiled, deployProperties);
+            firstPhaseRanking = compiled.getFirstPhaseRanking();
+            secondPhaseRanking = compiled.getSecondPhaseRanking();
+            summaryFeatures = new LinkedHashSet<>(compiled.getSummaryFeatures());
+            rankFeatures = compiled.getRankFeatures();
+            rerankCount = compiled.getRerankCount();
+            matchPhaseSettings = compiled.getMatchPhaseSettings();
+            numThreadsPerSearch = compiled.getNumThreadsPerSearch();
+            minHitsPerThread = compiled.getMinHitsPerThread();
+            numSearchPartitions = compiled.getNumSearchPartitions();
+            termwiseLimit = compiled.getTermwiseLimit().orElse(deployProperties.featureFlags().defaultTermwiseLimit());
+            keepRankCount = compiled.getKeepRankCount();
+            rankScoreDropLimit = compiled.getRankScoreDropLimit();
+            ignoreDefaultRankFeatures = compiled.getIgnoreDefaultRankFeatures();
+            largeRankExpressionLimit = deployProperties.featureFlags().largeRankExpressionLimit();
+            rankProperties = new ArrayList<>(compiled.getRankProperties());
+
+            Map<String, RankProfile.RankingExpressionFunction> functions = compiled.getFunctions();
+            List<ExpressionFunction> functionExpressions = functions.values().stream().map(f -> f.function()).collect(Collectors.toList());
+            Map<String, String> functionProperties = new LinkedHashMap<>();
+            SerializationContext functionSerializationContext = new SerializationContext(functionExpressions);
+
+            if (firstPhaseRanking != null) {
+                functionProperties.putAll(firstPhaseRanking.getRankProperties(functionSerializationContext));
+            }
+            if (secondPhaseRanking != null) {
+                functionProperties.putAll(secondPhaseRanking.getRankProperties(functionSerializationContext));
+            }
+
+            derivePropertiesAndSummaryFeaturesFromFunctions(functions, functionProperties, functionSerializationContext);
+            deriveOnnxModelFunctionsAndSummaryFeatures(compiled);
+
             deriveRankTypeSetting(compiled, attributeFields);
             deriveFilterFields(compiled);
             deriveWeightProperties(compiled);
@@ -178,53 +200,32 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             filterFields.addAll(rp.allFilterFields());
         }
 
-        private void deriveRankingFeatures(RankProfile rankProfile, ModelContext.Properties deployProperties) {
-            firstPhaseRanking = rankProfile.getFirstPhaseRanking();
-            secondPhaseRanking = rankProfile.getSecondPhaseRanking();
-            summaryFeatures = new LinkedHashSet<>(rankProfile.getSummaryFeatures());
-            rankFeatures = rankProfile.getRankFeatures();
-            rerankCount = rankProfile.getRerankCount();
-            matchPhaseSettings = rankProfile.getMatchPhaseSettings();
-            numThreadsPerSearch = rankProfile.getNumThreadsPerSearch();
-            minHitsPerThread = rankProfile.getMinHitsPerThread();
-            numSearchPartitions = rankProfile.getNumSearchPartitions();
-            termwiseLimit = rankProfile.getTermwiseLimit().orElse(deployProperties.defaultTermwiseLimit());
-            keepRankCount = rankProfile.getKeepRankCount();
-            rankScoreDropLimit = rankProfile.getRankScoreDropLimit();
-            ignoreDefaultRankFeatures = rankProfile.getIgnoreDefaultRankFeatures();
-            rankProperties = new ArrayList<>(rankProfile.getRankProperties());
-            derivePropertiesAndSummaryFeaturesFromFunctions(rankProfile.getFunctions());
-        }
-
-        private void derivePropertiesAndSummaryFeaturesFromFunctions(Map<String, RankProfile.RankingExpressionFunction> functions) {
+        private void derivePropertiesAndSummaryFeaturesFromFunctions(Map<String, RankProfile.RankingExpressionFunction> functions,
+                                                                     Map<String, String> functionProperties,
+                                                                     SerializationContext functionContext) {
             if (functions.isEmpty()) return;
 
-            List<ExpressionFunction> functionExpressions = functions.values().stream().map(f -> f.function()).collect(Collectors.toList());
+            replaceFunctionSummaryFeatures(functionContext);
 
-            Map<String, String> functionProperties = new LinkedHashMap<>();
-            functionProperties.putAll(deriveFunctionProperties(functions, functionExpressions));
-
-            if (firstPhaseRanking != null) {
-                functionProperties.putAll(firstPhaseRanking.getRankProperties(functionExpressions));
-            }
-            if (secondPhaseRanking != null) {
-                functionProperties.putAll(secondPhaseRanking.getRankProperties(functionExpressions));
-            }
+            // First phase, second phase and summary features should add all required functions to the context.
+            // However, we need to add any functions not referenced in those anyway for model-evaluation.
+            deriveFunctionProperties(functions, functionProperties, functionContext);
 
             for (Map.Entry<String, String> e : functionProperties.entrySet()) {
                 rankProperties.add(new RankProfile.RankProperty(e.getKey(), e.getValue()));
             }
-            SerializationContext context = new SerializationContext(functionExpressions, null, functionProperties);
-            replaceFunctionSummaryFeatures(context);
         }
 
-        private Map<String, String> deriveFunctionProperties(Map<String, RankProfile.RankingExpressionFunction> functions,
-                                                             List<ExpressionFunction> functionExpressions) {
-            SerializationContext context = new SerializationContext(functionExpressions);
+        private void deriveFunctionProperties(Map<String, RankProfile.RankingExpressionFunction> functions,
+                                              Map<String, String> functionProperties,
+                                              SerializationContext context) {
             for (Map.Entry<String, RankProfile.RankingExpressionFunction> e : functions.entrySet()) {
-                String expressionString = e.getValue().function().getBody().getRoot().toString(new StringBuilder(), context, null, null).toString();
-                context.addFunctionSerialization(RankingExpression.propertyName(e.getKey()), expressionString);
+                String propertyName = RankingExpression.propertyName(e.getKey());
+                if (context.serializedFunctions().containsKey(propertyName)) continue;
 
+                String expressionString = e.getValue().function().getBody().getRoot().toString(context).toString();
+
+                context.addFunctionSerialization(propertyName, expressionString);
                 for (Map.Entry<String, TensorType> argumentType : e.getValue().function().argumentTypes().entrySet())
                     context.addArgumentTypeSerialization(e.getKey(), argumentType.getKey(), argumentType.getValue());
                 if (e.getValue().function().returnType().isPresent())
@@ -232,7 +233,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 // else if (e.getValue().function().arguments().isEmpty()) TODO: Enable this check when we resolve all types
                 //     throw new IllegalStateException("Type of function '" + e.getKey() + "' is not resolved");
             }
-            return context.serializedFunctions();
+            functionProperties.putAll(context.serializedFunctions());
         }
 
         private void replaceFunctionSummaryFeatures(SerializationContext context) {
@@ -241,9 +242,11 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             for (Iterator<ReferenceNode> i = summaryFeatures.iterator(); i.hasNext(); ) {
                 ReferenceNode referenceNode = i.next();
                 // Is the feature a function?
-                if (context.getFunction(referenceNode.getName()) != null) {
-                    context.addFunctionSerialization(RankingExpression.propertyName(referenceNode.getName()),
-                                                     referenceNode.toString(new StringBuilder(), context, null, null).toString());
+                ExpressionFunction function = context.getFunction(referenceNode.getName());
+                if (function != null) {
+                    String propertyName = RankingExpression.propertyName(referenceNode.getName());
+                    String expressionString = function.getBody().getRoot().toString(context).toString();
+                    context.addFunctionSerialization(propertyName, expressionString);
                     ReferenceNode newReferenceNode = new ReferenceNode("rankingExpression(" + referenceNode.getName() + ")", referenceNode.getArguments().expressions(), referenceNode.getOutput());
                     functionSummaryFeatures.put(referenceNode.getName(), newReferenceNode);
                     i.remove(); // Will add the expanded one in next block
@@ -316,10 +319,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         }
 
         /** Derives the properties this produces */
-        public List<Pair<String, String>>  derive() {
+        public List<Pair<String, String>> derive(LargeRankExpressions largeRankExpressions) {
             List<Pair<String, String>>  properties = new ArrayList<>();
             for (RankProfile.RankProperty property : rankProperties) {
-                if ("rankingExpression(firstphase).rankingScript".equals(property.getName())) {
+                if (RankingExpression.propertyName(RankProfile.FIRST_PHASE).equals(property.getName())) {
                     // Could have been set by function expansion. Set expressions, then skip this property.
                     try {
                         firstPhaseRanking = new RankingExpression(property.getValue());
@@ -327,7 +330,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                         throw new IllegalArgumentException("Could not parse first phase expression", e);
                     }
                 }
-                else if ("rankingExpression(secondphase).rankingScript".equals(property.getName())) {
+                else if (RankingExpression.propertyName(RankProfile.SECOND_PHASE).equals(property.getName())) {
                     try {
                         secondPhaseRanking = new RankingExpression(property.getValue());
                     } catch (ParseException e) {
@@ -338,8 +341,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                     properties.add(new Pair<>(property.getName(), property.getValue()));
                 }
             }
-            properties.addAll(deriveRankingPhaseRankProperties(firstPhaseRanking, "firstphase"));
-            properties.addAll(deriveRankingPhaseRankProperties(secondPhaseRanking, "secondphase"));
+            properties.addAll(deriveRankingPhaseRankProperties(firstPhaseRanking, RankProfile.FIRST_PHASE));
+            properties.addAll(deriveRankingPhaseRankProperties(secondPhaseRanking, RankProfile.SECOND_PHASE));
             for (FieldRankSettings settings : fieldRankSettings.values()) {
                 properties.addAll(settings.deriveRankProperties());
             }
@@ -391,9 +394,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             if (ignoreDefaultRankFeatures) {
                 properties.add(new Pair<>("vespa.dump.ignoredefaultfeatures", String.valueOf(true)));
             }
-            Iterator filterFieldsIterator = filterFields.iterator();
-            while (filterFieldsIterator.hasNext()) {
-                String fieldName = (String) filterFieldsIterator.next();
+            for (String fieldName : filterFields) {
                 properties.add(new Pair<>("vespa.isfilterfield." + fieldName, String.valueOf(true)));
             }
             for (Map.Entry<String, String> attributeType : attributeTypes.entrySet()) {
@@ -403,7 +404,24 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 properties.add(new Pair<>("vespa.type.query." + queryFeatureType.getKey(), queryFeatureType.getValue()));
             }
             if (properties.size() >= 1000000) throw new RuntimeException("Too many rank properties");
+            distributeLargeExpressionsAsFiles(properties, largeRankExpressions);
             return properties;
+        }
+
+        private void distributeLargeExpressionsAsFiles(List<Pair<String, String>> properties, LargeRankExpressions largeRankExpressions) {
+            for (ListIterator<Pair<String, String>> iter = properties.listIterator(); iter.hasNext();) {
+                Pair<String, String> property = iter.next();
+                String expression = property.getSecond();
+                if (expression.length() > largeRankExpressionLimit) {
+                    String propertyName = property.getFirst();
+                    String functionName = RankingExpression.extractScriptName(propertyName);
+                    if (functionName != null) {
+                        String mangledName = rankprofileName + "." + functionName;
+                        largeRankExpressions.add(new RankExpressionBody(mangledName, ByteBuffer.wrap(expression.getBytes(StandardCharsets.UTF_8))));
+                        iter.set(new Pair<>(RankingExpression.propertyExpressionName(functionName), mangledName));
+                    }
+                }
+            }
         }
 
         private List<Pair<String, String>> deriveRankingPhaseRankProperties(RankingExpression expression, String phase) {
@@ -418,9 +436,43 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 properties.add(new Pair<>("vespa.rank." + phase, expression.getRoot().toString()));
             } else {
                 properties.add(new Pair<>("vespa.rank." + phase, "rankingExpression(" + name + ")"));
-                properties.add(new Pair<>("rankingExpression(" + name + ").rankingScript", expression.getRoot().toString()));
+                properties.add(new Pair<>(RankingExpression.propertyName(name), expression.getRoot().toString()));
             }
             return properties;
+        }
+
+        private void deriveOnnxModelFunctionsAndSummaryFeatures(RankProfile rankProfile) {
+            if (rankProfile.getSearch() == null) return;
+            if (rankProfile.getSearch().onnxModels().asMap().isEmpty()) return;
+            replaceOnnxFunctionInputs(rankProfile);
+            replaceImplicitOnnxConfigSummaryFeatures(rankProfile);
+        }
+
+        private void replaceOnnxFunctionInputs(RankProfile rankProfile) {
+            Set<String> functionNames = rankProfile.getFunctions().keySet();
+            if (functionNames.isEmpty()) return;
+            for (OnnxModel onnxModel: rankProfile.getSearch().onnxModels().asMap().values()) {
+                for (Map.Entry<String, String> mapping : onnxModel.getInputMap().entrySet()) {
+                    String source = mapping.getValue();
+                    if (functionNames.contains(source)) {
+                        onnxModel.addInputNameMapping(mapping.getKey(), "rankingExpression(" + source + ")");
+                    }
+                }
+            }
+        }
+
+        private void replaceImplicitOnnxConfigSummaryFeatures(RankProfile rankProfile) {
+            if (summaryFeatures == null || summaryFeatures.isEmpty()) return;
+            Set<ReferenceNode> replacedSummaryFeatures = new HashSet<>();
+            for (Iterator<ReferenceNode> i = summaryFeatures.iterator(); i.hasNext(); ) {
+                ReferenceNode referenceNode = i.next();
+                ReferenceNode replacedNode = (ReferenceNode) OnnxModelTransformer.transformFeature(referenceNode, rankProfile);
+                if (referenceNode != replacedNode) {
+                    replacedSummaryFeatures.add(replacedNode);
+                    i.remove();
+                }
+            }
+            summaryFeatures.addAll(replacedSummaryFeatures);
         }
 
     }

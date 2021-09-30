@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.transform;
 
+import com.yahoo.document.update.ArithmeticValueUpdate;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
@@ -46,6 +47,7 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
     }
 
     private ExpressionNode transformArithmetic(ArithmeticNode node) {
+        // Fold the subset of expressions that are constant (such that in "1 + 2 + var")
         if (node.children().size() > 1) {
             List<ExpressionNode> children = new ArrayList<>(node.children());
             List<ArithmeticOperator> operators = new ArrayList<>(node.operators());
@@ -54,32 +56,34 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
             node = new ArithmeticNode(children, operators);
         }
 
-        if (isConstant(node))
+        if (isConstant(node) && ! node.evaluate(null).isNaN())
             return new ConstantNode(node.evaluate(null));
-        else if (allMultiplicationOrDivision(node) && hasZero(node)) // disregarding the /0 case
+        else if (allMultiplicationOrDivision(node) && hasZero(node) && ! hasDivisionByZero(node))
             return new ConstantNode(new DoubleValue(0));
         else
             return node;
     }
 
-    private void transform(ArithmeticOperator operator, List<ExpressionNode> children, List<ArithmeticOperator> operators) {
+    private void transform(ArithmeticOperator operatorToTransform,
+                           List<ExpressionNode> children, List<ArithmeticOperator> operators) {
         int i = 0;
         while (i < children.size()-1) {
-            if ( ! operators.get(i).equals(operator)) {
+            boolean transformed = false;
+            if ( operators.get(i).equals(operatorToTransform)) {
+                ExpressionNode child1 = children.get(i);
+                ExpressionNode child2 = children.get(i + 1);
+                if (isConstant(child1) && isConstant(child2) && hasPrecedence(operators, i)) {
+                    Value evaluated = new ArithmeticNode(child1, operators.get(i), child2).evaluate(null);
+                    if ( ! evaluated.isNaN()) { // Don't replace by NaN
+                        operators.remove(i);
+                        children.set(i, new ConstantNode(evaluated.freeze()));
+                        children.remove(i + 1);
+                        transformed = true;
+                    }
+                }
+            }
+            if ( ! transformed) // try the next index
                 i++;
-                continue;
-            }
-
-            ExpressionNode child1 = children.get(i);
-            ExpressionNode child2 = children.get(i + 1);
-            if (isConstant(child1) && isConstant(child2) && hasPrecedence(operators, i)) {
-                Value evaluated = new ArithmeticNode(child1, operators.remove(i), child2).evaluate(null);
-                children.set(i, new ConstantNode(evaluated.freeze()));
-                children.remove(i+1);
-            }
-            else { // try the next index
-                i++;
-            }
         }
     }
 
@@ -105,20 +109,32 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
 
     private boolean allMultiplicationOrDivision(ArithmeticNode node) {
         for (ArithmeticOperator o : node.operators())
-            if (o == ArithmeticOperator.PLUS || o == ArithmeticOperator.MINUS)
+            if (o != ArithmeticOperator.MULTIPLY && o != ArithmeticOperator.DIVIDE)
                 return false;
         return true;
     }
 
     private boolean hasZero(ArithmeticNode node) {
         for (ExpressionNode child : node.children()) {
-            if ( ! (child instanceof ConstantNode)) continue;
-            ConstantNode constant = (ConstantNode)child;
-            if ( ! constant.getValue().hasDouble()) return false;
-            if (constant.getValue().asDouble() == 0.0)
+            if (isZero(child))
                 return true;
         }
         return false;
+    }
+
+    private boolean hasDivisionByZero(ArithmeticNode node) {
+        for (int i = 1; i < node.children().size(); i++) {
+            if ( node.operators().get(i - 1) == ArithmeticOperator.DIVIDE && isZero(node.children().get(i)))
+                return true;
+        }
+        return false;
+    }
+
+    private boolean isZero(ExpressionNode node) {
+        if ( ! (node instanceof ConstantNode)) return false;
+        ConstantNode constant = (ConstantNode)node;
+        if ( ! constant.getValue().hasDouble()) return false;
+        return constant.getValue().asDouble() == 0.0;
     }
 
     private boolean isConstant(ExpressionNode node) {

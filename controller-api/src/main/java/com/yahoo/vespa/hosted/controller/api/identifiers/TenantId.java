@@ -10,10 +10,6 @@ public class TenantId extends NonDefaultIdentifier {
         super(id);
     }
 
-    public boolean isUser() {
-        return id().startsWith("by-");
-    }
-
     @Override
     public void validate() {
         super.validate();
@@ -21,9 +17,9 @@ public class TenantId extends NonDefaultIdentifier {
     }
 
     public static void validate(String id) {
-        if (!strictPattern.matcher(id).matches()) {
+        if ( ! strictPattern.matcher(id).matches())
             throwInvalidId(id, strictPatternExplanation);
-        }
+        new TenantId(id); // validate
     }
 
 }

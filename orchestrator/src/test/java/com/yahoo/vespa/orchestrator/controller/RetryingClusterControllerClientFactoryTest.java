@@ -27,6 +27,7 @@ public class RetryingClusterControllerClientFactoryTest {
     private final Clock clock = new ManualClock();
 
     @Test
+    @SuppressWarnings("removal") // VespaJerseyJaxRsClientFactory
     public void verifyJerseyCallForSetNodeState() throws IOException {
         VespaJerseyJaxRsClientFactory clientFactory = mock(VespaJerseyJaxRsClientFactory.class);
         ClusterControllerJaxRsApi api = mock(ClusterControllerJaxRsApi.class);

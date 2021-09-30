@@ -19,7 +19,7 @@ public class HandlerTest {
     public static void assertHttpStatusCodeErrorCodeAndMessage(
             HttpResponse response,
             int statusCode,
-            HttpErrorResponse.errorCodes errorCode,
+            HttpErrorResponse.ErrorCode errorCode,
             String contentType,
             String message) throws IOException {
         assertNotNull(response);
@@ -37,7 +37,7 @@ public class HandlerTest {
         assertThat(renderedString, containsString(message));
     }
 
-    public static void assertHttpStatusCodeErrorCodeAndMessage(HttpResponse response, int statusCode, HttpErrorResponse.errorCodes errorCode, String message) throws IOException {
+    public static void assertHttpStatusCodeErrorCodeAndMessage(HttpResponse response, int statusCode, HttpErrorResponse.ErrorCode errorCode, String message) throws IOException {
         assertHttpStatusCodeErrorCodeAndMessage(response, statusCode, errorCode, null, message);
     }
 

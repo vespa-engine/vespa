@@ -18,11 +18,13 @@ import java.util.List;
 public class WireSystemFlagsDeployResult {
     @JsonProperty("changes") public List<WireFlagDataChange> changes;
     @JsonProperty("errors") public List<WireOperationFailure> errors;
+    @JsonProperty("warnings") public List<WireWarning> warnings;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class WireFlagDataChange {
         @JsonProperty("flag-id") public String flagId;
+        @JsonProperty("owners") @JsonInclude(JsonInclude.Include.NON_EMPTY) public List<String> owners;
         @JsonProperty("targets") public List<String> targets;
         @JsonProperty("operation") public String operation;
         @JsonProperty("data") public WireFlagData data;
@@ -33,10 +35,20 @@ public class WireSystemFlagsDeployResult {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class WireOperationFailure {
         @JsonProperty("flag-id") public String flagId;
+        @JsonProperty("owners") @JsonInclude(JsonInclude.Include.NON_EMPTY) public List<String> owners;
         @JsonProperty("message") public String message;
         @JsonProperty("targets") public List<String> targets;
         @JsonProperty("operation") public String operation;
         @JsonProperty("data") public WireFlagData data;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class WireWarning {
+        @JsonProperty("flag-id") public String flagId;
+        @JsonProperty("owners") @JsonInclude(JsonInclude.Include.NON_EMPTY) public List<String> owners;
+        @JsonProperty("message") public String message;
+        @JsonProperty("targets") public List<String> targets;
     }
 
     public boolean hasErrors() { return errors != null && !errors.isEmpty(); }

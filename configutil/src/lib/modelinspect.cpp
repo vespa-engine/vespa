@@ -6,6 +6,7 @@
 #include <vespa/config/common/exceptions.h>
 #include <iostream>
 #include <algorithm>
+#include <cstdlib>
 
 using configdefinitions::tagsContain;
 using configdefinitions::upcase;
@@ -35,7 +36,7 @@ ModelInspect::ModelInspect(Flags flags, const config::ConfigUri uri, std::ostrea
         if (_flags.verbose) std::cerr << "success!\n";
     } else {
         std::cerr << "FATAL ERROR: failed to get model configuration.\n";
-        exit(1);
+        std::_Exit(1);
     }
 }
 

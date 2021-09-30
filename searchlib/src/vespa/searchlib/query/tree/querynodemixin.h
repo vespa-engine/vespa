@@ -8,7 +8,7 @@ namespace search::query {
 
 template <typename T, typename Base>
 struct QueryNodeMixin : Base {
-    typedef QueryNodeMixin<T, Base> QueryNodeMixinType;
+    using QueryNodeMixinType = QueryNodeMixin<T, Base>;
 
     ~QueryNodeMixin() = 0;
     void accept(QueryVisitor &visitor) override {

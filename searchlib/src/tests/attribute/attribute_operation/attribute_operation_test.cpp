@@ -2,7 +2,7 @@
 
 #include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.h>
+#include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/testkit/testapp.h>
 

@@ -1,11 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/vespalib/portal/handle_manager.h>
-#include <vespa/vespalib/util/gate.h>
-
-#include <thread>
-#include <chrono>
 #include <atomic>
 
 using namespace vespalib;
@@ -85,9 +82,9 @@ TEST_MT_FF("require that destroy waits for active handle guards", 2, Fixture(), 
         {
             auto guard = f1.manager.lock(f1.handle);
             TEST_BARRIER(); // #1
-            EXPECT_TRUE(!f1.gate.await(20));
+            EXPECT_TRUE(!f1.gate.await(20ms));
         }
-        EXPECT_TRUE(f1.gate.await(60000));
+        EXPECT_TRUE(f1.gate.await(60s));
     } else {
         TEST_BARRIER(); // #1
         EXPECT_TRUE(f1.manager.destroy(f1.handle));

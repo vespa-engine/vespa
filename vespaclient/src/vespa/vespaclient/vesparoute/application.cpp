@@ -25,7 +25,6 @@ using document::DocumentTypeRepo;
 namespace vesparoute {
 
 Application::Application() :
-    _loadTypes(),
     _net(),
     _mbus(),
     _params()
@@ -54,7 +53,7 @@ Application::Main()
                         *_net,
                         mbus::MessageBusParams()
                         .setRetryPolicy(mbus::IRetryPolicy::SP())
-                        .addProtocol(std::make_shared<documentapi::DocumentProtocol>(_loadTypes, repo)));
+                        .addProtocol(std::make_shared<documentapi::DocumentProtocol>(repo)));
         mbus::ConfigAgent cfg(*_mbus);
         cfg.configure(ConfigGetter<MessagebusConfig>::getConfig(_params.getRoutingConfigId()));
 

@@ -68,27 +68,26 @@ public class ClusterControllerStateRestAPI implements StateRestAPI {
         log.finest("Got getState() request");
         UnitPathResolver<UnitResponse> resolver = new UnitPathResolver<>(fleetControllerResolver.getFleetControllers());
         Request<? extends UnitResponse> req = resolver.visit(
-                request.getUnitPath(), new UnitPathResolver.Visitor<UnitResponse>()
+                request.getUnitPath(), new UnitPathResolver.Visitor<>()
         {
             @Override
-            public Request<? extends UnitResponse> visitGlobal() throws StateRestApiException {
+            public Request<? extends UnitResponse> visitGlobal() {
                 return new ClusterListRequest(request.getRecursiveLevels(), fleetControllerResolver);
             }
             @Override
-            public Request<? extends UnitResponse> visitCluster(Id.Cluster id) throws StateRestApiException {
+            public Request<? extends UnitResponse> visitCluster(Id.Cluster id)  {
                 return new ClusterStateRequest(id, request.getRecursiveLevels());
             }
             @Override
-            public Request<? extends UnitResponse> visitService(Id.Service id) throws StateRestApiException {
+            public Request<? extends UnitResponse> visitService(Id.Service id)  {
                 return new ServiceStateRequest(id, request.getRecursiveLevels());
             }
             @Override
-            public Request<? extends UnitResponse> visitNode(Id.Node id) throws StateRestApiException {
-                return new NodeStateRequest(id, request.getRecursiveLevels(),
-                                            EnumSet.of(VerboseReport.STATISTICS));
+            public Request<? extends UnitResponse> visitNode(Id.Node id)  {
+                return new NodeStateRequest(id);
             }
             @Override
-            public Request<? extends UnitResponse> visitPartition(Id.Partition id) throws StateRestApiException {
+            public Request<? extends UnitResponse> visitPartition(Id.Partition id)  {
                 return new PartitionStateRequest(id, EnumSet.of(VerboseReport.STATISTICS));
             }
         });
@@ -116,15 +115,15 @@ public class ClusterControllerStateRestAPI implements StateRestAPI {
     public SetResponse setUnitState(final SetUnitStateRequest request) throws StateRestApiException {
         UnitPathResolver<SetResponse> resolver = new UnitPathResolver<>(fleetControllerResolver.getFleetControllers());
         Request<? extends SetResponse> req = resolver.visit(request.getUnitPath(),
-                new UnitPathResolver.AbstractVisitor<SetResponse>(request.getUnitPath(),
-                                                     "State can only be set at cluster or node level")
+                new UnitPathResolver.AbstractVisitor<>(request.getUnitPath(),
+                                                       "State can only be set at cluster or node level")
         {
             @Override
-            public Request<? extends SetResponse> visitCluster(Id.Cluster id) throws StateRestApiException {
+            public Request<? extends SetResponse> visitCluster(Id.Cluster id) {
                 return new SetNodeStatesForClusterRequest(id, request);
             }
             @Override
-            public Request<? extends SetResponse> visitNode(Id.Node id) throws StateRestApiException {
+            public Request<? extends SetResponse> visitNode(Id.Node id) {
                 return new SetNodeStateRequest(id, request);
             }
         });

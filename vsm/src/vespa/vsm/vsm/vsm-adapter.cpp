@@ -38,11 +38,6 @@ void GetDocsumsStateCallback::FillRankFeatures(GetDocsumsState * state, IDocsumE
     }
 }
 
-void GetDocsumsStateCallback::ParseLocation(GetDocsumsState *state)
-{
-    (void) state;
-}
-
 void GetDocsumsStateCallback::FillDocumentLocations(GetDocsumsState *state, IDocsumEnvironment * env)
 {
     (void) state;
@@ -50,10 +45,10 @@ void GetDocsumsStateCallback::FillDocumentLocations(GetDocsumsState *state, IDoc
 }
 
 std::unique_ptr<MatchingElements>
-GetDocsumsStateCallback::fill_matching_elements(const search::StructFieldMapper& struct_field_mapper)
+GetDocsumsStateCallback::fill_matching_elements(const search::MatchingElementsFields& fields)
 {
     if (_matching_elements_filler) {
-        return _matching_elements_filler->fill_matching_elements(struct_field_mapper);
+        return _matching_elements_filler->fill_matching_elements(fields);
     }
     return std::make_unique<MatchingElements>();
 }
@@ -121,7 +116,7 @@ DocsumTools::obtainFieldNames(const FastS_VsmsummaryHandle &cfg)
 void
 VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     LOG(debug, "(re-)configure VSM (docsum tools)");
 
     std::shared_ptr<SummaryConfig>      summary(snapshot.getConfig<SummaryConfig>().release());
@@ -146,7 +141,7 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     }
 
     // init keyword extractor
-    std::unique_ptr<KeywordExtractor> kwExtractor(new KeywordExtractor(NULL));
+    auto kwExtractor = std::make_unique<KeywordExtractor>(nullptr);
     kwExtractor->AddLegalIndexSpec(_highlightindexes.c_str());
     vespalib::string spec = kwExtractor->GetLegalIndexSpec();
     LOG(debug, "index highlight spec: '%s'", spec.c_str());

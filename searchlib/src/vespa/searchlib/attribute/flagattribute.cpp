@@ -89,26 +89,26 @@ FlagAttributeT<B>::onLoadEnumerated(ReaderBase &attrReader)
     if (numValues > 0)
         _bitVectorSize = numDocs;
 
-    fileutil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
+    auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
     assert((udatBuffer->size() % sizeof(TT)) == 0);
     vespalib::ConstArrayRef<TT> map(reinterpret_cast<const TT *>(udatBuffer->buffer()),
                                     udatBuffer->size() / sizeof(TT));
     SaveBits<FlagAttributeT<B>, TT> saver(map, *this);
-    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, saver);
+    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, vespalib::ConstArrayRef<uint32_t>(), saver);
     this->checkSetMaxValueCount(maxvc);
     
     return true;
 }
 
 template <typename B>
-bool FlagAttributeT<B>::onLoad()
+bool FlagAttributeT<B>::onLoad(vespalib::Executor * executor)
 {
     for (size_t i(0), m(_bitVectors.size()); i < m; i++) {
         _bitVectorStore[i].reset();
         _bitVectors[i] = nullptr;
     }
     _bitVectorSize = 0;
-    return B::onLoad();
+    return B::onLoad(executor);
 }
 
 template <typename B>

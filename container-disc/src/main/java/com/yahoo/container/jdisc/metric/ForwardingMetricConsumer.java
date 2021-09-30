@@ -55,4 +55,5 @@ public final class ForwardingMetricConsumer implements MetricConsumer {
             this.contexts = contexts;
         }
     }
+
 }

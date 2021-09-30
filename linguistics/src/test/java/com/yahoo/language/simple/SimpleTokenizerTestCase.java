@@ -6,7 +6,7 @@ import com.yahoo.language.process.StemMode;
 import org.junit.Test;
 
 /**
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @author bratseth
  */
 public class SimpleTokenizerTestCase extends AbstractTokenizerTestCase {

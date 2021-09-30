@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.ComponentsConfig;
@@ -50,6 +51,11 @@ public abstract class ContainerModelBuilderTestBase {
             "  </nodes>";
 
     protected MockRoot root;
+
+    protected void createBasicContainerModel() {
+        Element clusterElem = DomBuilderTest.parse("<container id='default' version='1.0' />");
+        createModel(root, clusterElem);
+    }
 
     public static void createModel(MockRoot root, DeployState deployState, VespaModel vespaModel, Element... containerElems) {
         for (Element containerElem : containerElems) {

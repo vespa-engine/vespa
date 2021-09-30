@@ -3,7 +3,7 @@
 #include "enumattributesaver.h"
 #include "i_enum_store_dictionary.h"
 #include "iattributesavetarget.h"
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/datastore/unique_store_enumerator.hpp>
 
 namespace search {
@@ -24,7 +24,7 @@ EnumAttributeSaver::writeUdat(IAttributeSaveTarget &saveTarget)
 {
     if (saveTarget.getEnumerated()) {
         auto udatWriter = saveTarget.udatWriter().allocBufferWriter();
-        _enumerator->foreach_key([&](datastore::EntryRef idx){
+        _enumerator->foreach_key([&](vespalib::datastore::EntryRef idx){
             _enumStore.write_value(*udatWriter, idx);
         });
         udatWriter->flush();
@@ -33,8 +33,8 @@ EnumAttributeSaver::writeUdat(IAttributeSaveTarget &saveTarget)
 
 }  // namespace search
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
-template class UniqueStoreEnumerator<IEnumStore::InternalIndex>;
+template class UniqueStoreEnumerator<search::IEnumStore::InternalIndex>;
 
 }

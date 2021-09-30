@@ -6,8 +6,8 @@
 
 namespace search {
 
-    namespace attribute { class IAttributeVector; }
-    class AttributeGuard;
+namespace attribute { class IAttributeVector; }
+class AttributeGuard;
 
 namespace common {
 
@@ -19,18 +19,14 @@ namespace common {
  */
 class DocumentLocations
 {
-
 private:
-    std::unique_ptr<search::AttributeGuard> _vec_guard;
     const search::attribute::IAttributeVector *_vec;
 
 public:
-    DocumentLocations(DocumentLocations &&) = default;
-    DocumentLocations & operator = (DocumentLocations &&) = default;
+    DocumentLocations(DocumentLocations &&);
+    DocumentLocations & operator = (DocumentLocations &&);
     DocumentLocations();
     virtual ~DocumentLocations();
-
-    void setVecGuard(std::unique_ptr<search::AttributeGuard> guard);
 
     void setVec(const search::attribute::IAttributeVector &vec) {
         _vec = &vec;

@@ -2,8 +2,7 @@
 
 #include "htmlstatusreporter.h"
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 HtmlStatusReporter::HtmlStatusReporter(vespalib::stringref id,
                                        vespalib::stringref name)
@@ -11,9 +10,7 @@ HtmlStatusReporter::HtmlStatusReporter(vespalib::stringref id,
 {
 }
 
-HtmlStatusReporter::~HtmlStatusReporter()
-{
-}
+HtmlStatusReporter::~HtmlStatusReporter() = default;
 
 void
 HtmlStatusReporter::reportHtmlHeader(std::ostream& out,
@@ -52,5 +49,4 @@ HtmlStatusReporter::reportStatus(std::ostream& out,
     return true;
 }
 
-} // framework
-} // storage
+}

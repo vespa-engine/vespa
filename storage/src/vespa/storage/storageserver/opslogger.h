@@ -13,7 +13,6 @@
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storage/config/config-stor-opslogger.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/config/config.h>
 
 namespace storage {
@@ -23,7 +22,7 @@ class OpsLogger : public StorageLink,
 public:
     explicit OpsLogger(StorageComponentRegister&,
                        const config::ConfigUri & configUri);
-    ~OpsLogger();
+    ~OpsLogger() override;
 
     void onClose() override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -36,9 +35,9 @@ public:
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override { return false; };
     void configure(std::unique_ptr<vespa::config::content::core::StorOpsloggerConfig> config) override;
 private:
-    vespalib::Lock _lock;
-    std::string _fileName;
-    FILE* _targetFile;
+    std::mutex    _lock;
+    std::string   _fileName;
+    FILE        * _targetFile;
     framework::Component _component;
 
     config::ConfigFetcher _configFetcher;

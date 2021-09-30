@@ -35,6 +35,8 @@ import java.util.function.BiConsumer;
  * done of a lightweight version of the hits, which is cheaper if a significant
  * number of hits are filtered out.</p>
  *
+ * <p>Do not cache this as it holds references to objects that should be garbage collected.</p>
+ *
  * @author bratseth
  */
 public class Hit extends ListenableFreezableClass implements Data, Comparable<Hit>, Cloneable {
@@ -45,8 +47,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     private static final String DOCUMENT_ID = "documentid";
 
     /** A collection of string keyed object properties. */
-    private Map<String,Object> fields = null;
-    private Map<String,Object> unmodifiableFieldMap = null;
+    private Map<String, Object> fields = null;
+    private Map<String, Object> unmodifiableFieldMap = null;
 
     /** Meta data describing how a given searcher should treat this hit. */
     // TODO: The case for this is to allow multiple levels of federation searcher routing.
@@ -473,7 +475,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     private Map<String, Object> getFieldMap(int minSize) {
         if (fields == null) {
             // Compensate for loadfactor and then some, rounded up....
-            fields = new LinkedHashMap<>(2*minSize);
+            fields = new LinkedHashMap<>(2 * minSize);
         }
         return fields;
     }
@@ -505,7 +507,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
 
     /** Returns the types of this as a modifiable set. Modifications to this set are directly reflected in this hit */
-    //TODO This shoudld not be exposed as a modifiable set
+    // TODO: This should not be exposed as a modifiable set
     public Set<String> types() {
         if (types == null)
             types = new ArraySet<>(1);
@@ -682,7 +684,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
          * Called for fields which are available as UTF-8 instead of accept(String, Object).
          *
          * @param fieldName the name of the field
-         * @param utf8Data raw utf-8 data. The reciver <b>must not</b> modify this data
+         * @param utf8Data raw utf-8 data. The receiver <b>must not</b> modify this data
          * @param offset the start index in the utf8Data array of the data to accept
          * @param length the length starting from offset in the utf8Data array of the data to accept
          */

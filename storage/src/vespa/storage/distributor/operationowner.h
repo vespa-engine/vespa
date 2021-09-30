@@ -5,7 +5,6 @@
 #include "distributormessagesender.h"
 #include "operationstarter.h"
 #include <vespa/storage/common/storagelink.h>
-#include <vespa/vdslib/state/clusterstate.h>
 
 namespace storage::framework { struct Clock; }
 
@@ -19,10 +18,10 @@ class Operation;
 class OperationOwner : public OperationStarter {
 public:
 
-    class Sender : public DistributorMessageSender {
+    class Sender : public DistributorStripeMessageSender {
     public:
         Sender(OperationOwner& owner,
-               DistributorMessageSender& sender,
+               DistributorStripeMessageSender& sender,
                const std::shared_ptr<Operation>& cb)
             : _owner(owner),
               _sender(sender),
@@ -40,26 +39,34 @@ public:
             return _sender.getDistributorIndex();
         }
         
-        const std::string& getClusterName() const override {
-            return _sender.getClusterName();
+        const ClusterContext & cluster_context() const override {
+            return _sender.cluster_context();
+        }
+
+        PendingMessageTracker& getPendingMessageTracker() override {
+            return _sender.getPendingMessageTracker();
         }
 
         const PendingMessageTracker& getPendingMessageTracker() const override {
             return _sender.getPendingMessageTracker();
         }
 
+        const OperationSequencer& operation_sequencer() const noexcept override {
+            return _sender.operation_sequencer();
+        }
+
     private:
         OperationOwner& _owner;
-        DistributorMessageSender& _sender;
+        DistributorStripeMessageSender& _sender;
         std::shared_ptr<Operation> _cb;
     };
 
-    OperationOwner(DistributorMessageSender& sender,
+    OperationOwner(DistributorStripeMessageSender& sender,
                    const framework::Clock& clock)
     : _sender(sender),
       _clock(clock) {
     }
-    ~OperationOwner();
+    ~OperationOwner() override;
 
     /**
        Handles replies from storage, mapping from a message id to an operation.
@@ -82,13 +89,15 @@ public:
      */
     void erase(api::StorageMessage::Id msgId);
 
+    [[nodiscard]] DistributorStripeMessageSender& sender() noexcept { return _sender; }
+
     void onClose();
     uint32_t size() const { return _sentMessageMap.size(); }
     std::string toString() const;
 
 private:
     SentMessageMap _sentMessageMap;
-    DistributorMessageSender& _sender;
+    DistributorStripeMessageSender& _sender;
     const framework::Clock& _clock;
 };
 

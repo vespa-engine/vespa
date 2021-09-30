@@ -60,7 +60,7 @@ public:
     IEnumStore::Index
     getEidx() const
     {
-        return IEnumStore::Index(datastore::EntryRef(_value._eidx));
+        return IEnumStore::Index(vespalib::datastore::EntryRef(_value._eidx));
     }
 
     void
@@ -105,7 +105,7 @@ public:
     };
     uint32_t                         _docId;
     uint32_t                         _idx;
-    datastore::EntryRef                  _pidx;
+    vespalib::datastore::EntryRef                  _pidx;
 private:
     int32_t                          _weight;
     Value                            _value;

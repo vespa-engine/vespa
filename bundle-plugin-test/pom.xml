@@ -23,6 +23,7 @@
   <properties>
     <!-- This project only builds test artifacts -->
     <maven.deploy.skip>true</maven.deploy.skip>
+    <maven.javadoc.skip>true</maven.javadoc.skip>
   </properties>
 
 </project>

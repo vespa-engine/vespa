@@ -2,11 +2,9 @@
 
 #pragma once
 
-namespace vespalib {
+namespace vespalib { class Stash; }
 
-class Stash;
-
-namespace slime {
+namespace vespalib::slime {
 
 class Value;
 
@@ -16,9 +14,7 @@ class Value;
  **/
 struct ValueFactory {
     virtual Value *create(Stash & stash) const = 0;
-    virtual ~ValueFactory() {}
+    virtual ~ValueFactory() = default;
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

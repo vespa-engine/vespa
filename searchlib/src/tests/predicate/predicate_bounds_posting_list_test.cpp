@@ -6,6 +6,7 @@
 #include <vespa/searchlib/predicate/predicate_bounds_posting_list.h>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -28,8 +29,8 @@ SimpleIndexConfig config;
 const uint64_t hash = 0x123;
 
 TEST("require that empty bounds posting list starts at 0.") {
-    PredicateIndex index(generation_handler, generation_holder, limit_provider, config, 8);
-    datastore::EntryRef ref;
+    PredicateIndex index(generation_holder, limit_provider, config, 8);
+    vespalib::datastore::EntryRef ref;
     PredicateBoundsPostingList<PredicateIndex::BTreeIterator>
         posting_list(index.getIntervalStore(),
                      index.getBoundsIndex().getBTreePostingList(ref), 42);
@@ -53,7 +54,7 @@ void checkNext(PredicateBoundsPostingList<PredicateIndex::BTreeIterator> &postin
 }
 
 TEST("require that bounds posting list checks bounds.") {
-    PredicateIndex index(generation_handler, generation_holder, limit_provider, config, 8);
+    PredicateIndex index(generation_holder, limit_provider, config, 8);
     const auto &bounds_index = index.getBoundsIndex();
     for (uint32_t id = 1; id < 100; ++id) {
         PredicateTreeAnnotations annotations(id);

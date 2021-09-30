@@ -7,8 +7,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 class FakeSearch : public SearchIterator
 {
@@ -41,9 +40,12 @@ public:
     bool is_attr() const { return (_ctx != nullptr); }
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t docid) override;
+    void initRange(uint32_t begin, uint32_t end) override {
+        SearchIterator::initRange(begin, end);
+        _offset = 0;
+    }
     const PostingInfo *getPostingInfo() const override { return _result.postingInfo(); }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 };
 
-} // namespace queryeval
-} // namespace search
+}

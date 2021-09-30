@@ -8,8 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -29,63 +29,78 @@ public class ByteLimitedInputStreamTestCase {
     public void requireThatBasicsWork() throws IOException {
         ByteLimitedInputStream stream = create("abcdefghijklmnopqr".getBytes(StandardCharsets.US_ASCII), 9);
 
-        assertThat(stream.available(), is(9));
-        assertThat(stream.read(), is(97));
-        assertThat(stream.available(), is(8));
-        assertThat(stream.read(), is(98));
-        assertThat(stream.available(), is(7));
-        assertThat(stream.read(), is(99));
-        assertThat(stream.available(), is(6));
-        assertThat(stream.read(), is(100));
-        assertThat(stream.available(), is(5));
-        assertThat(stream.read(), is(101));
-        assertThat(stream.available(), is(4));
-        assertThat(stream.read(), is(102));
-        assertThat(stream.available(), is(3));
-        assertThat(stream.read(), is(103));
-        assertThat(stream.available(), is(2));
-        assertThat(stream.read(), is(104));
-        assertThat(stream.available(), is(1));
-        assertThat(stream.read(), is(105));
-        assertThat(stream.available(), is(0));
-        assertThat(stream.read(), is(-1));
-        assertThat(stream.available(), is(0));
-        assertThat(stream.read(), is(-1));
-        assertThat(stream.available(), is(0));
-        assertThat(stream.read(), is(-1));
-        assertThat(stream.available(), is(0));
-        assertThat(stream.read(), is(-1));
-        assertThat(stream.available(), is(0));
-        assertThat(stream.read(), is(-1));
-        assertThat(stream.available(), is(0));
+        assertEquals(9, stream.available());
+        assertEquals(97, stream.read());
+        assertEquals(8, stream.available());
+        assertEquals(98, stream.read());
+        assertEquals(7, stream.available());
+        assertEquals(99, stream.read());
+        assertEquals(6, stream.available());
+        assertEquals(100, stream.read());
+        assertEquals(5, stream.available());
+        assertEquals(101, stream.read());
+        assertEquals(4, stream.available());
+        assertEquals(102, stream.read());
+        assertEquals(3, stream.available());
+        assertEquals(103, stream.read());
+        assertEquals(2, stream.available());
+        assertEquals(104, stream.read());
+        assertEquals(1, stream.available());
+        assertEquals(105, stream.read());
+        assertEquals(0, stream.available());
+        assertEquals(-1, stream.read());
+        assertEquals(0, stream.available());
+        assertEquals(-1, stream.read());
+        assertEquals(0, stream.available());
+        assertEquals(-1, stream.read());
+        assertEquals(0, stream.available());
+        assertEquals(-1, stream.read());
+        assertEquals(0, stream.available());
+        assertEquals(-1, stream.read());
+        assertEquals(0, stream.available());
     }
 
     @Test
     public void requireThatChunkedReadWorks() throws IOException {
         ByteLimitedInputStream stream = create("abcdefghijklmnopqr".getBytes(StandardCharsets.US_ASCII), 9);
 
-        assertThat(stream.available(), is(9));
+        assertEquals(9, stream.available());
         byte[] toBuf = new byte[4];
-        assertThat(stream.read(toBuf), is(4));
-        assertThat(toBuf[0], is((byte) 97));
-        assertThat(toBuf[1], is((byte) 98));
-        assertThat(toBuf[2], is((byte) 99));
-        assertThat(toBuf[3], is((byte) 100));
-        assertThat(stream.available(), is(5));
+        assertEquals(4, stream.read(toBuf));
+        assertEquals(97, toBuf[0]);
+        assertEquals(98, toBuf[1]);
+        assertEquals(99, toBuf[2]);
+        assertEquals(100, toBuf[3]);
+        assertEquals(5, stream.available());
 
-        assertThat(stream.read(toBuf), is(4));
-        assertThat(toBuf[0], is((byte) 101));
-        assertThat(toBuf[1], is((byte) 102));
-        assertThat(toBuf[2], is((byte) 103));
-        assertThat(toBuf[3], is((byte) 104));
-        assertThat(stream.available(), is(1));
+        assertEquals(4, stream.read(toBuf));
+        assertEquals(101, toBuf[0]);
+        assertEquals(102, toBuf[1]);
+        assertEquals(103, toBuf[2]);
+        assertEquals(104, toBuf[3]);
+        assertEquals(1, stream.available());
 
-        assertThat(stream.read(toBuf), is(1));
-        assertThat(toBuf[0], is((byte) 105));
-        assertThat(stream.available(), is(0));
+        assertEquals(1, stream.read(toBuf));
+        assertEquals(105, toBuf[0]);
+        assertEquals(0, stream.available());
 
-        assertThat(stream.read(toBuf), is(-1));
-        assertThat(stream.available(), is(0));
+        assertEquals(-1, stream.read(toBuf));
+        assertEquals(0, stream.available());
+    }
+
+    @Test
+    public void requireMarkWorks() throws IOException {
+        InputStream stream = create("abcdefghijklmnopqr".getBytes(StandardCharsets.US_ASCII), 9);
+        assertEquals(97, stream.read());
+        assertTrue(stream.markSupported());
+        stream.mark(5);
+        assertEquals(98, stream.read());
+        assertEquals(99, stream.read());
+        stream.reset();
+        assertEquals(98, stream.read());
+        assertEquals(99, stream.read());
+        assertEquals(100, stream.read());
+        assertEquals(101, stream.read());
     }
 
 }

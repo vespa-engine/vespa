@@ -1,0 +1,12 @@
+{
+    "update": "id:mynamespace:music::a-head-full-of-dreams",
+    "fields": {
+        "category_scores": {
+            "cells": [
+                { "address" : { "cat" : "pop" },  "value": 1 },
+                { "address" : { "cat" : "rock" }, "value": 0.2 },
+                { "address" : { "cat" : "jazz" }, "value": 0 }
+            ]
+        }
+    }
+}

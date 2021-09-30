@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "executorthreadingservice.h"
 #include "fast_access_doc_subdb.h"
-#include "feedhandler.h"
 #include "searchable_doc_subdb_configurer.h"
 #include "searchable_feed_view.h"
 #include "searchview.h"
@@ -92,23 +90,19 @@ private:
                                   std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager) const;
 
     void setupIndexManager(searchcorespi::IIndexManager::SP indexManager);
-    void initFeedView(const IAttributeWriter::SP &attrWriter, const DocumentDBConfig &configSnapshot);
+    void initFeedView(IAttributeWriter::SP attrWriter, const DocumentDBConfig &configSnapshot);
     void reconfigureMatchingMetrics(const vespa::config::search::RankProfilesConfig &config);
 
-    bool reconfigure(vespalib::Closure0<bool>::UP closure) override;
+    bool reconfigure(std::unique_ptr<Configure> configure) override;
     void reconfigureIndexSearchable();
     void syncViews();
     void applyFlushConfig(const DocumentDBFlushConfig &flushConfig);
     void propagateFlushConfig();
 protected:
     IFlushTargetList getFlushTargetsInternal() override;
-
-    using Parent::updateLidReuseDelayer;
-
-    void updateLidReuseDelayer(const LidReuseDelayerConfig &config) override;
 public:
     SearchableDocSubDB(const Config &cfg, const Context &ctx);
-    ~SearchableDocSubDB();
+    ~SearchableDocSubDB() override;
 
     std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
@@ -120,7 +114,7 @@ public:
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
-    virtual void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc) override;
+    void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc) override;
 
     void clearViews() override;
 

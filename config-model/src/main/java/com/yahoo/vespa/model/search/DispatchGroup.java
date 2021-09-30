@@ -54,19 +54,18 @@ public class DispatchGroup {
 
     public int getSearchableCopies() { return sc.getSearchableCopies(); }
 
-    public int getMaxNodesDownPerFixedRow() {
-        return sc.getMaxNodesDownPerFixedRow();
-    }
-
     static class Iterator implements java.util.Iterator<SearchInterface> {
+
         private java.util.Iterator<Map<Integer, SearchInterface>> it1;
         private java.util.Iterator<SearchInterface> it2;
+
         Iterator(Map<Integer, Map<Integer, SearchInterface> > s) {
             it1 = s.values().iterator();
             if (it1.hasNext()) {
                 it2 = it1.next().values().iterator();
             }
         }
+
         @Override
         public boolean hasNext() {
             if (it2 == null) {

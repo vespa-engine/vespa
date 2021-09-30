@@ -14,12 +14,14 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
+#include <vespa/metrics/updatehook.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
 #include <vespa/vdslib/state/random.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <future>
 
@@ -62,7 +64,6 @@ public:
     std::unique_ptr<DummyStorageLink> _top;
     BucketManager *_manager;
     DummyStorageLink* _bottom;
-    FileStorManager* _filestorManager;
     std::map<document::BucketId, TestBucketInfo> _bucketInfo;
     uint32_t _emptyBuckets;
     document::Document::SP _document;
@@ -99,7 +100,7 @@ protected:
         _manager->updateMinUsedBits();
     }
     void trigger_metric_manager_update() {
-        vespalib::Monitor l;
+        std::mutex l;
         _manager->updateMetrics(BucketManager::MetricLockGuard(l));
     }
 
@@ -151,8 +152,7 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
                 *ConfigGetter<DocumenttypesConfig>::getConfig(
                     "config-doctypes", FileSpec("../config-doctypes.cfg")));
     _top = std::make_unique<DummyStorageLink>();
-    _node = std::make_unique<TestServiceLayerApp>(
-                DiskCount(2), NodeIndex(0), config.getConfigId());
+    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), config.getConfigId());
     _node->setTypeRepo(repo);
     _node->setupDummyPersistence();
     // Set up the 3 links
@@ -165,9 +165,8 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
         _top->push_back(std::move(bottom));
     } else {
         auto bottom = std::make_unique<FileStorManager>(
-                    config.getConfigId(), _node->getPartitions(),
-                    _node->getPersistenceProvider(), _node->getComponentRegister());
-        _filestorManager = bottom.get();
+                    config.getConfigId(),
+                    _node->getPersistenceProvider(), _node->getComponentRegister(), *_node, _node->get_host_info());
         _top->push_back(std::move(bottom));
     }
     // Generate a doc to use for testing..
@@ -192,7 +191,7 @@ void BucketManagerTest::addBucketsToDB(uint32_t count)
         info.size = randomizer.nextUint32();
         info.count = randomizer.nextUint32(1, 0xFFFF);
 
-        info.partition = _node->getPartition(id);
+        info.partition = 0u;
         _bucketInfo[id] = info;
     }
 
@@ -205,7 +204,6 @@ void BucketManagerTest::addBucketsToDB(uint32_t count)
     ++_emptyBuckets;
     for (const auto& bi : _bucketInfo) {
         bucketdb::StorageBucketInfo entry;
-        entry.disk = bi.second.partition;
         entry.setBucketInfo(api::BucketInfo(bi.second.crc,
                                             bi.second.count,
                                             bi.second.size));
@@ -225,7 +223,6 @@ BucketManagerTest::wasBlockedDueToLastModified(api::StorageMessage* msg,
     {
         bucketdb::StorageBucketInfo entry;
         entry.setBucketInfo(info);
-        entry.disk = 0;
         _node->getStorageBucketDatabase().insert(id, entry, "foo");
     }
 
@@ -289,7 +286,7 @@ TEST_F(BucketManagerTest, distribution_bit_change_on_create_bucket){
     EXPECT_EQ(4u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
 }
 
-TEST_F(BucketManagerTest, Min_Used_Bits_From_Component_Is_Honored) {
+TEST_F(BucketManagerTest, min_used_bits_from_component_is_honored) {
     setupTestEnvironment();
     // Let these differ in order to test state update behavior.
     _node->getComponentRegister().getMinUsedBitsTracker().setMinUsedBits(10);
@@ -439,7 +436,6 @@ TEST_F(BucketManagerTest, metrics_generation) {
     // Add 3 buckets; 2 ready, 1 active. 300 docs total, 600 bytes total.
     for (int i = 0; i < 3; ++i) {
         bucketdb::StorageBucketInfo entry;
-        entry.disk = 0;
         api::BucketInfo info(50, 100, 200);
         if (i > 0) {
             info.setReady();
@@ -455,13 +451,27 @@ TEST_F(BucketManagerTest, metrics_generation) {
     _top->doneInit();
     trigger_metric_manager_update();
 
-    ASSERT_EQ(2u, bucket_manager_metrics().disks.size());
-    const DataStoredMetrics& m(*bucket_manager_metrics().disks[0]);
+    ASSERT_TRUE(bucket_manager_metrics().disk);
+    const DataStoredMetrics& m(*bucket_manager_metrics().disk);
     EXPECT_EQ(3, m.buckets.getLast());
     EXPECT_EQ(300, m.docs.getLast());
     EXPECT_EQ(600, m.bytes.getLast());
     EXPECT_EQ(1, m.active.getLast());
     EXPECT_EQ(2, m.ready.getLast());
+}
+
+namespace {
+
+void verify_db_memory_metrics_present(const ContentBucketDbMetrics& db_metrics) {
+    auto* m = db_metrics.memory_usage.getMetric("allocated_bytes");
+    ASSERT_TRUE(m != nullptr);
+    // Actual values are very much implementation defined, so just check for non-zero.
+    EXPECT_GT(m->getLongValue("last"), 0);
+    m = db_metrics.memory_usage.getMetric("used_bytes");
+    ASSERT_TRUE(m != nullptr);
+    EXPECT_GT(m->getLongValue("last"), 0);
+}
+
 }
 
 TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
@@ -470,7 +480,6 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     auto& repo = _node->getComponentRegister().getBucketSpaceRepo();
     {
         bucketdb::StorageBucketInfo entry;
-        entry.disk = 0;
         api::BucketInfo info(50, 100, 200);
         info.setReady(true);
         entry.setBucketInfo(info);
@@ -479,7 +488,6 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     }
     {
         bucketdb::StorageBucketInfo entry;
-        entry.disk = 0;
         api::BucketInfo info(60, 150, 300);
         info.setActive(true);
         entry.setBucketInfo(info);
@@ -499,6 +507,8 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     EXPECT_EQ(0,   default_m->second->active_buckets.getLast());
     EXPECT_EQ(1,   default_m->second->ready_buckets.getLast());
 
+    verify_db_memory_metrics_present(default_m->second->bucket_db_metrics);
+
     auto global_m = spaces.find(document::FixedBucketSpaces::global_space());
     ASSERT_TRUE(global_m != spaces.end());
     EXPECT_EQ(1,   global_m->second->buckets_total.getLast());
@@ -506,6 +516,8 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     EXPECT_EQ(300, global_m->second->bytes.getLast());
     EXPECT_EQ(1,   global_m->second->active_buckets.getLast());
     EXPECT_EQ(0,   global_m->second->ready_buckets.getLast());
+
+    verify_db_memory_metrics_present(global_m->second->bucket_db_metrics);
 }
 
 void
@@ -513,7 +525,6 @@ BucketManagerTest::insertSingleBucket(const document::BucketId& bucket,
                                       const api::BucketInfo& info)
 {
     bucketdb::StorageBucketInfo entry;
-    entry.disk = 0;
     entry.setBucketInfo(info);
     _node->getStorageBucketDatabase().insert(bucket, entry, "foo");
 }
@@ -545,7 +556,7 @@ class ConcurrentOperationFixture {
 public:
     explicit ConcurrentOperationFixture(BucketManagerTest& self)
         : _self(self),
-          _state("distributor:1 storage:1")
+          _state(std::make_shared<lib::ClusterState>("distributor:1 storage:1"))
     {
         _self.setupTestEnvironment();
         _self._top->open();
@@ -555,15 +566,23 @@ public:
 
         // Need a cluster state to work with initially, so that processing
         // bucket requests can calculate a target distributor.
-        _self._node->setClusterState(_state);
-        _self._manager->onDown(
-                std::make_shared<api::SetSystemStateCommand>(_state));
+        updater_internal_cluster_state_with_current();
     }
 
     void setUp(const WithBuckets& buckets) {
         for (auto& b : buckets._bucketsAndInfo) {
             _self.insertSingleBucket(b.first, b.second);
         }
+    }
+
+    void updater_internal_cluster_state_with_current() {
+        _self._node->setClusterState(*_state);
+        _self._manager->onDown(std::make_shared<api::SetSystemStateCommand>(*_state));
+    }
+
+    void update_cluster_state(const lib::ClusterState& state) {
+        _state = std::make_shared<lib::ClusterState>(state);
+        updater_internal_cluster_state_with_current();
     }
 
     auto acquireBucketLock(const document::BucketId& bucket) {
@@ -599,15 +618,15 @@ public:
     }
 
     auto createFullFetchCommand() const {
-        return std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, _state);
+        return std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, *_state);
     }
 
     auto createFullFetchCommandWithHash(vespalib::stringref hash) const {
-        return std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, _state, hash);
+        return std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, *_state, hash);
     }
 
     auto createFullFetchCommandWithHash(document::BucketSpace space, vespalib::stringref hash) const {
-        return std::make_shared<api::RequestBucketInfoCommand>(space, 0, _state, hash);
+        return std::make_shared<api::RequestBucketInfoCommand>(space, 0, *_state, hash);
     }
 
     auto acquireBucketLockAndSendInfoRequest(const document::BucketId& bucket) {
@@ -715,7 +734,7 @@ group[2].nodes[2].index 5
 
 private:
     BucketManagerTest& _self;
-    lib::ClusterState _state;
+    std::shared_ptr<lib::ClusterState> _state;
 };
 
 TEST_F(BucketManagerTest, split_reply_ordered_after_bucket_reply) {
@@ -1201,6 +1220,27 @@ TEST_F(BucketManagerTest, fall_back_to_legacy_global_distribution_hash_on_mismat
     auto replies = f.awaitAndGetReplies(1);
     auto& reply = dynamic_cast<api::RequestBucketInfoReply&>(*replies[0]);
     EXPECT_EQ(api::ReturnCode::OK, reply.getResult().getResult()); // _not_ REJECTED
+}
+
+// It's possible for the request processing thread and onSetSystemState (which use
+// the same mutex) to race with the actual internal component cluster state switch-over.
+// Ensure we detect and handle this by bouncing the request back to the distributor.
+// It's for all intents and purposes guaranteed that the internal state has converged
+// once the distributor has gotten around to retrying the operation.
+TEST_F(BucketManagerTest, bounce_request_on_internal_cluster_state_version_mismatch) {
+    ConcurrentOperationFixture f(*this);
+
+    // Make manager-internal and component-internal version state inconsistent
+    f.update_cluster_state(lib::ClusterState("version:2 distributor:1 storage:1"));
+    _manager->onDown(std::make_shared<api::SetSystemStateCommand>(lib::ClusterState("version:3 distributor:1 storage:1")));
+
+    // Info command is sent with state version 2, which mismatches that of internal state 3
+    // even though it's the same as the component's current version.
+    _top->sendDown(f.createFullFetchCommand());
+
+    auto replies = f.awaitAndGetReplies(1);
+    auto& reply = dynamic_cast<api::RequestBucketInfoReply&>(*replies[0]);
+    EXPECT_EQ(api::ReturnCode::REJECTED, reply.getResult().getResult());
 }
 
 } // storage

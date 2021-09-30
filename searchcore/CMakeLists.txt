@@ -20,6 +20,7 @@ vespa_define_module(
     fileacquirer
 
     LIBS
+    src/vespa/searchcore/bmcluster
     src/vespa/searchcore/config
     src/vespa/searchcore/grouping
     src/vespa/searchcore/proton/attribute
@@ -46,8 +47,10 @@ vespa_define_module(
     src/apps/tests
     src/apps/verify_ranksetup
     src/apps/vespa-dump-feed
+    src/apps/vespa-feed-bm
     src/apps/vespa-gen-testdocs
     src/apps/vespa-proton-cmd
+    src/apps/vespa-redistribute-bm
     src/apps/vespa-transactionlog-inspect
 
     TESTS
@@ -59,6 +62,8 @@ vespa_define_module(
     src/tests/proton/attribute/attribute_manager
     src/tests/proton/attribute/attribute_populator
     src/tests/proton/attribute/attribute_usage_filter
+    src/tests/proton/attribute/attribute_usage_sampler_functor
+    src/tests/proton/attribute/attribute_usage_stats
     src/tests/proton/attribute/attributes_state_explorer
     src/tests/proton/attribute/document_field_extractor
     src/tests/proton/attribute/document_field_populator
@@ -67,9 +72,11 @@ vespa_define_module(
     src/tests/proton/attribute/imported_attributes_repo
     src/tests/proton/bucketdb/bucketdb
     src/tests/proton/common
+    src/tests/proton/common/alloc_config
     src/tests/proton/common/attribute_updater
     src/tests/proton/common/document_type_inspector
     src/tests/proton/common/hw_info_sampler
+    src/tests/proton/common/operation_rate_tracker
     src/tests/proton/common/state_reporter_utils
     src/tests/proton/docsummary
     src/tests/proton/document_iterator
@@ -121,6 +128,7 @@ vespa_define_module(
     src/tests/proton/metrics/metrics_engine
     src/tests/proton/persistenceconformance
     src/tests/proton/persistenceengine
+    src/tests/proton/persistenceengine/resource_usage_tracker
     src/tests/proton/persistenceengine/persistence_handler_map
     src/tests/proton/proton
     src/tests/proton/proton_config_fetcher
@@ -138,10 +146,11 @@ vespa_define_module(
     src/tests/proton/reprocessing/reprocessing_runner
     src/tests/proton/server
     src/tests/proton/server/disk_mem_usage_filter
+    src/tests/proton/server/disk_mem_usage_metrics
+    src/tests/proton/server/disk_mem_usage_sampler
     src/tests/proton/server/health_adapter
     src/tests/proton/server/memory_flush_config_updater
     src/tests/proton/server/memoryflush
-    src/tests/proton/server/visibility_handler
     src/tests/proton/statusreport
     src/tests/proton/summaryengine
     src/tests/proton/verify_ranksetup

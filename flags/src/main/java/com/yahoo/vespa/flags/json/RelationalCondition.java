@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 
-import java.util.List;
 import java.util.function.Predicate;
 
 /**
@@ -46,6 +45,21 @@ public class RelationalCondition implements Condition {
         this.relationalPredicate = relationalPredicate;
         this.predicate = predicate;
         this.dimension = dimension;
+    }
+
+    @Override
+    public Type type() {
+        return Type.RELATIONAL;
+    }
+
+    @Override
+    public FetchVector.Dimension dimension() {
+        return dimension;
+    }
+
+    @Override
+    public CreateParams toCreateParams() {
+        return new CreateParams(dimension).withPredicate(relationalPredicate.toWire());
     }
 
     @Override

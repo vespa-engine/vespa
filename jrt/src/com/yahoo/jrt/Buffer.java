@@ -6,9 +6,6 @@ import java.nio.ByteBuffer;
 
 
 class Buffer {
-
-    static final int MAX_IO = 65000;
-
     private ByteBuffer buf;
     private int        readPos;
     private int        writePos;
@@ -110,21 +107,5 @@ class Buffer {
         setWriteMode();
         ensureFree(minFree);
         return buf;
-    }
-
-    public ByteBuffer getChannelReadable() {
-        ByteBuffer bb = getReadable();
-        if (bb.remaining() > MAX_IO) {
-            bb.limit(bb.position() + MAX_IO);
-        }
-        return bb;
-    }
-
-    public ByteBuffer getChannelWritable(int minFree) {
-        ByteBuffer bb = getWritable(minFree);
-        if (bb.remaining() > MAX_IO) {
-            bb.limit(bb.position() + MAX_IO);
-        }
-        return bb;
     }
 }

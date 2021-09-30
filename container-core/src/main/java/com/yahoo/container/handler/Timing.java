@@ -17,11 +17,11 @@ package com.yahoo.container.handler;
  */
 public class Timing {
 
-    protected long summaryStartTime;
+    private final long summaryStartTime;
 
-    protected long queryStartTime;
+    private final long queryStartTime;
 
-    protected long timeout;
+    private final long timeout;
 
     /**
      * Do consider using
@@ -70,4 +70,5 @@ public class Timing {
     public long getTimeout() {
         return timeout;
     }
+
 }

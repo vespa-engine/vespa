@@ -7,8 +7,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/host_name.h>
 
-namespace vespalib {
-namespace ws {
+namespace vespalib::ws {
 
 namespace {
 
@@ -116,7 +115,13 @@ void handle_upgrade(Connection &conn, Request &req) {
 
 } // namespace vespalib::ws::<unnamed>
 
-WebsocketServer::StaticPage::~StaticPage() {}
+WebsocketServer::StaticPage::StaticPage(const vespalib::string & type, const vespalib::string & content_in)
+    : content_type(type),
+      content(content_in)
+{}
+WebsocketServer::StaticPage::StaticPage(const StaticPage &) = default;
+WebsocketServer::StaticPage & WebsocketServer::StaticPage::operator = (const StaticPage &) = default;
+WebsocketServer::StaticPage::~StaticPage() = default;
 
 WebsocketServer::WebsocketServer(int port_in, StaticRepo &&repo)
     : _acceptor(port_in, *this),
@@ -125,7 +130,7 @@ WebsocketServer::WebsocketServer(int port_in, StaticRepo &&repo)
 {
 }
 
-WebsocketServer::~WebsocketServer() {}
+WebsocketServer::~WebsocketServer() = default;
 
 void
 WebsocketServer::handle(std::unique_ptr<Socket> socket)
@@ -156,5 +161,4 @@ WebsocketServer::handle(std::unique_ptr<Socket> socket)
     }
 }
 
-} // namespace vespalib::ws
-} // namespace vespalib
+}

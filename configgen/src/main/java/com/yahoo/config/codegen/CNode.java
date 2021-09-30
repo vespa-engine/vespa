@@ -73,10 +73,6 @@ public abstract class CNode {
         return defVersion;
     }
 
-    void setVersion(String version) {
-        defVersion = version;
-    }
-
     public String getNamespace() {
         if (defNamespace != null) return defNamespace;
         if (defPackage != null) return defPackage;

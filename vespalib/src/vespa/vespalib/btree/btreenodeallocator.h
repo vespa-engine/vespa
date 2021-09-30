@@ -10,7 +10,7 @@
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vector>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename, typename, typename, size_t, size_t> class BTreeRootBase;
 
@@ -164,6 +164,8 @@ public:
 
     bool getCompacting(EntryRef ref) const { return _nodeStore.getCompacting(ref); }
     std::vector<uint32_t> startCompact() { return _nodeStore.startCompact(); }
+
+    std::vector<uint32_t> start_compact_worst() { return _nodeStore.start_compact_worst(); }
 
     void finishCompact(const std::vector<uint32_t> &toHold) {
         return _nodeStore.finishCompact(toHold);

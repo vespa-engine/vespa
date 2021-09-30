@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for PredicateTreeAnnotator.
 
-#include <vespa/log/log.h>
-LOG_SETUP("PredicateTreeAnnotator_test");
-
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
@@ -12,7 +9,9 @@ LOG_SETUP("PredicateTreeAnnotator_test");
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <sstream>
-#include <vector>
+
+#include <vespa/log/log.h>
+LOG_SETUP("PredicateTreeAnnotator_test");
 
 using document::Predicate;
 using std::ostringstream;
@@ -217,9 +216,34 @@ TEST("show different types of NOT-intervals") {
     checkInterval(result, "key=C", {0x00010005});
     checkInterval(result, "key=D", {0x00070007});
     checkInterval(result, Constants::z_star_compressed_attribute_name,
-                  {0x00010000, 0x00070002, 0x00050000,
-                   0x00070006});
+                  {0x00010000, 0x00070002, 0x00050000,0x00070006});
 
+}
+
+TEST("require short edge_partitions to get correct intervals and features") {
+    Slime slime;
+    Cursor &children = makeAndNode(slime.setObject());
+    makeHashedFeatureRange(children.addObject(), "key",{}, {{0, 5, -1}, {30, 0, 3}});
+    makeHashedFeatureRange(children.addObject(), "foo",{}, {{0, 5, -1}, {30, 0, 3}});
+
+    PredicateTreeAnnotations result;
+    PredicateTreeAnnotator::annotate(slime.get(), result);
+
+    EXPECT_EQUAL(2u, result.min_feature);
+    EXPECT_EQUAL(2u, result.interval_range);
+    EXPECT_EQUAL(0u, result.interval_map.size());
+    EXPECT_EQUAL(4u, result.bounds_map.size());
+    EXPECT_EQUAL(4u, result.features.size());
+    EXPECT_EQUAL(0u, result.range_features.size());
+
+    EXPECT_EQUAL(0xdbc38b103b5d50a9ul, result.features[0]);
+    EXPECT_EQUAL(0xbe6d86e3e2270b0aul, result.features[1]);
+    EXPECT_EQUAL(0xb2b301e26efffdc2ul, result.features[2]);
+    EXPECT_EQUAL(0x31afc4833c50e1d9ul, result.features[3]);
+    checkBounds(result, "key=0", {{0x00010001, 0xffffffff}});
+    checkBounds(result, "key=30", {{0x00010001, 3}});
+    checkBounds(result, "foo=0", {{0x00020002, 0xffffffff}});
+    checkBounds(result, "foo=30", {{0x00020002, 3}});
 }
 
 TEST("require that hashed ranges get correct intervals") {
@@ -239,6 +263,9 @@ TEST("require that hashed ranges get correct intervals") {
     EXPECT_EQUAL(2u, result.interval_range);
     EXPECT_EQUAL(4u, result.interval_map.size());
     EXPECT_EQUAL(4u, result.bounds_map.size());
+    EXPECT_EQUAL(0u, result.features.size());
+    EXPECT_EQUAL(2u, result.range_features.size());
+
     checkInterval(result, "key=10-19", {0x00010001});
     checkInterval(result, "key=20-29", {0x00010001});
     checkBounds(result, "key=0", {{0x00010001, 0xffffffff}});

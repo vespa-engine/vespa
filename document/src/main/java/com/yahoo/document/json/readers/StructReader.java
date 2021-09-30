@@ -34,9 +34,10 @@ public class StructReader {
 
     public static Field getField(TokenBuffer buffer, StructuredFieldValue parent) {
         Field field = parent.getField(buffer.currentName());
-        if (field == null)
+        if (field == null) {
             throw new IllegalArgumentException("No field '" + buffer.currentName() + "' in the structure of type '" +
-                                               parent.getDataType().getDataTypeName() + "'");
+                    parent.getDataType().getDataTypeName() + "', which has the fields:" + parent.getDataType().getFields());
+        }
         return field;
     }
 

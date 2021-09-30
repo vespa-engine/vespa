@@ -17,12 +17,6 @@ AbstractCountMetric::logWarning(const char* msg, const char * op) const
     LOG(warning, "%s", ost.str().data());
 }
 
-void
-AbstractCountMetric::sendLogCountEvent(Metric::String name, uint64_t value) const
-{
-    EV_COUNT(name.c_str(), value);
-}
-
 template class CountMetric<uint64_t, true>;
 
 } // metrics

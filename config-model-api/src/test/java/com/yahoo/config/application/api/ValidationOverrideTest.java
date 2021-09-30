@@ -4,16 +4,10 @@ package com.yahoo.config.application.api;
 import com.yahoo.test.ManualClock;
 import org.junit.Assert;
 import org.junit.Test;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
 import java.io.StringReader;
-import java.time.Clock;
 import java.time.Instant;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
@@ -67,10 +61,11 @@ public class ValidationOverrideTest {
             ValidationOverrides overrides = ValidationOverrides.fromXml(new StringReader(validationOverrides));
             Instant now = ManualClock.at("2000-01-01T23:59:00");
             overrides.allows("indexing-change", now);
+            overrides.validate(now);
             Assert.fail("Expected validation interval override validation validation failure");
         }
         catch (IllegalArgumentException e) {
-            Assert.assertEquals("allow 'indexing-change' until 2000-02-03T00:00:00Z is too far in the future: Max 30 days is allowed",
+            Assert.assertEquals("validation-overrides is invalid: allow 'indexing-change' until 2000-02-03T00:00:00Z is too far in the future: Max 30 days is allowed",
                                 e.getMessage());
         }
     }
@@ -80,15 +75,6 @@ public class ValidationOverrideTest {
         ValidationOverrides empty = ValidationOverrides.empty;
         ValidationOverrides emptyReserialized = ValidationOverrides.fromXml(empty.xmlForm());
         assertEquals(empty.xmlForm(), emptyReserialized.xmlForm());
-    }
-
-    @Test
-    public void testAll() {
-        ValidationOverrides all = ValidationOverrides.all;
-        assertTrue(all.allows(ValidationId.deploymentRemoval, Clock.systemUTC().instant()));
-        assertTrue(all.allows(ValidationId.contentClusterRemoval, Clock.systemUTC().instant()));
-        assertTrue(all.allows(ValidationId.indexModeChange, Clock.systemUTC().instant()));
-        assertTrue(all.allows(ValidationId.fieldTypeChange, Clock.systemUTC().instant()));
     }
 
     private void assertOverridden(String validationId, ValidationOverrides overrides, Instant now) {

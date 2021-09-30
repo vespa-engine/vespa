@@ -21,4 +21,5 @@ public abstract class StringFieldConverter extends FieldValueConverter {
     }
 
     protected abstract FieldValue doConvert(StringFieldValue value);
+
 }

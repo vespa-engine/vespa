@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <csignal>
+#include <cstdlib>
 
 int main(int argc, char *argv[])
 {
@@ -15,7 +16,7 @@ int main(int argc, char *argv[])
 
     if (argc < 3) {
         fprintf(stderr, "Usage: %s logfmt prog [...]\n", argv[0]);
-        exit(1);
+        return 1;
     }
 
     pipe(lfpipe);
@@ -29,11 +30,11 @@ int main(int argc, char *argv[])
         }
         execlp(argv[1], argv[1], "-", (const char *)NULL);
         perror("exec logfmt failed");
-        exit(1);
+        std::_Exit(1);
     }
     if (lfmtpid < 0) {
         perror("fork failed");
-        exit(1);
+        return 1;
     }
     close(lfpipe[0]);
 
@@ -50,11 +51,11 @@ int main(int argc, char *argv[])
         argv[i-2] = NULL;
         execvp(argv[0], argv);
         perror("exec program failed");
-        exit(1);
+        std::_Exit(1);
     }
     if (progpid < 0) {
         perror("fork failed");
-        exit(1);
+        return 1;
     }
     close(lfpipe[1]);
 
@@ -74,5 +75,5 @@ int main(int argc, char *argv[])
         kill(getpid(), sig);
     }
     /* should not get here */
-    exit(1);
+    return 1;
 }

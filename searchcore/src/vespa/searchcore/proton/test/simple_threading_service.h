@@ -4,8 +4,7 @@
 #include "simple_thread_service.h"
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 
-namespace proton {
-namespace test {
+namespace proton::test {
 
 /**
  * Implementation of IThreadingService that overrides IThreadService::isCurrentThread() to true.
@@ -47,7 +46,6 @@ public:
     }
 };
 
-} // namespace test
-} // namespace proton
+}
 
 

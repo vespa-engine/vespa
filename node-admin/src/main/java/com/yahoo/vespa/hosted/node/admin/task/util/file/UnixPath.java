@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
@@ -11,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
@@ -19,10 +21,8 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.ifExists;
@@ -37,21 +37,32 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 public class UnixPath {
     private final Path path;
 
-    public UnixPath(Path path) {
-        this.path = path;
+    public UnixPath(Path path) { this.path = path; }
+    public UnixPath(String path) { this(Paths.get(path)); }
+
+    public Path toPath() { return path; }
+    public UnixPath resolve(String relativeOrAbsolutePath) { return new UnixPath(path.resolve(relativeOrAbsolutePath)); }
+
+    public UnixPath getParent() {
+        Path parentPath = path.getParent();
+        if (parentPath == null) {
+            throw new IllegalStateException("Path has no parent directory: '" + path + "'");
+        }
+
+        return new UnixPath(parentPath);
     }
 
-    public UnixPath(String path) {
-        this(Paths.get(path));
+    public String getFilename() {
+        Path filename = path.getFileName();
+        if (filename == null) {
+            // E.g. "/".
+            throw new IllegalStateException("Path has no filename: '" + path.toString() + "'");
+        }
+
+        return filename.toString();
     }
 
-    public Path toPath() {
-        return path;
-    }
-
-    public boolean exists() {
-        return Files.exists(path);
-    }
+    public boolean exists() { return Files.exists(path); }
 
     public String readUtf8File() {
         return new String(readBytes(), StandardCharsets.UTF_8);
@@ -88,6 +99,18 @@ public class UnixPath {
 
     public UnixPath writeBytes(byte[] content, OpenOption... options) {
         uncheck(() -> Files.write(path, content, options));
+        return this;
+    }
+
+    public UnixPath atomicWriteUt8(String content) {
+        return atomicWriteBytes(content.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** Write a file to the same dir as this, and then atomically move it to this' path. */
+    public UnixPath atomicWriteBytes(byte[] content) {
+        UnixPath temporaryPath = getParent().resolve(getFilename() + ".10Ia2f4N5");
+        temporaryPath.writeBytes(content);
+        temporaryPath.atomicMove(path);
         return this;
     }
 
@@ -135,6 +158,15 @@ public class UnixPath {
         return getAttributes().lastModifiedTime();
     }
 
+    public UnixPath updateLastModifiedTime() {
+        return setLastModifiedTime(Instant.now());
+    }
+
+    public UnixPath setLastModifiedTime(Instant instant) {
+        uncheck(() -> Files.setLastModifiedTime(path, FileTime.from(instant)));
+        return this;
+    }
+
     public FileAttributes getAttributes() {
         PosixFileAttributes attributes = uncheck(() ->
                 Files.getFileAttributeView(path, PosixFileAttributeView.class).readAttributes());
@@ -172,8 +204,19 @@ public class UnixPath {
         return this;
     }
 
+    /** Create directory unless it already exists, and return this. */
     public UnixPath createDirectory() {
-        uncheck(() -> Files.createDirectory(path));
+        try {
+            Files.createDirectory(path);
+        } catch (FileAlreadyExistsException ignore) {
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return this;
+    }
+
+    public UnixPath createDirectories() {
+        uncheck(() -> Files.createDirectories(path));
         return this;
     }
 
@@ -198,8 +241,8 @@ public class UnixPath {
      */
     public boolean deleteRecursively() {
         if (!isSymbolicLink() && isDirectory()) {
-            for (UnixPath path : listContentsOfDirectory()) {
-                path.deleteRecursively();
+            try (Stream<UnixPath> paths = listContentsOfDirectory()) {
+                paths.forEach(UnixPath::deleteRecursively);
             }
         }
         return uncheck(() -> Files.deleteIfExists(path));
@@ -210,13 +253,14 @@ public class UnixPath {
         return this;
     }
 
-    public List<UnixPath> listContentsOfDirectory() {
-        try (Stream<Path> stream = Files.list(path)){
-            return stream
-                    .map(UnixPath::new)
-                    .collect(Collectors.toList());
+    /** Lists the contents of this as a stream. Callers should use try-with to ensure that the stream is closed */
+    public Stream<UnixPath> listContentsOfDirectory() {
+        try {
+            // Avoid the temptation to collect the stream here as collecting a directory with a high number of entries
+            // can quickly lead to out of memory conditions
+            return Files.list(path).map(UnixPath::new);
         } catch (NoSuchFileException ignored) {
-            return List.of();
+            return Stream.empty();
         } catch (IOException e) {
             throw new RuntimeException("Failed to list contents of directory " + path.toAbsolutePath(), e);
         }

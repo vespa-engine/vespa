@@ -5,6 +5,7 @@
 #include "ireplyhandler.h"
 #include "emptyreply.h"
 #include "errorcode.h"
+#include "error.h"
 #include <vespa/vespalib/util/backtrace.h>
 
 #include <vespa/log/log.h>

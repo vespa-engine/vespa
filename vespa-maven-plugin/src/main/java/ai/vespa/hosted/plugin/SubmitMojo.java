@@ -43,8 +43,8 @@ public class SubmitMojo extends AbstractVespaMojo {
 
     @Override
     public void doExecute() {
-        applicationZip = firstNonBlank(applicationZip, projectPathOf("target", "application.zip"));
-        applicationTestZip = firstNonBlank(applicationTestZip, projectPathOf("target", "application-test.zip"));
+        applicationZip = firstNonBlank(applicationZip, projectPathOf("target", "application.zip")).orElseThrow();
+        applicationTestZip = firstNonBlank(applicationTestZip, projectPathOf("target", "application-test.zip")).orElseThrow();
         Submission submission = new Submission(optionalOf(repository), optionalOf(branch), optionalOf(commit),
                                                optionalOf(sourceUrl), optionalOf(authorEmail),
                                                Paths.get(applicationZip), Paths.get(applicationTestZip),

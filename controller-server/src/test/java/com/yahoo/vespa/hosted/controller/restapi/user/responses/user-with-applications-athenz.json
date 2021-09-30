@@ -1,9 +1,12 @@
 {
   "isPublic": false,
+  "isCd": false,
+  "hasTrialCapacity": (ignore),
   "user": {
     "name": "Joe Developer",
     "email": "dev@domail",
-    "nickname": "dev"
+    "nickname": "dev",
+    "verified": false
   },
   "tenants": {
     "sandbox": {
@@ -11,57 +14,22 @@
         "administrator",
         "developer",
         "reader"
-      ],
-      "applications": {
-        "app1": {
-          "instances": [
-            "default"
-          ]
-        },
-        "app2": {
-          "instances": [
-            "default",
-            "dev"
-          ]
-        }
-      }
+      ]
     },
     "tenant1": {
       "roles": [
         "administrator",
         "developer",
         "reader"
-      ],
-      "applications": {
-        "app1": {
-          "instances": [
-            "default"
-          ]
-        },
-        "app2": {
-          "instances": [
-            "default",
-            "myinstance"
-          ]
-        },
-        "app3": {
-          "instances": []
-        }
-      }
+      ]
     },
     "tenant2": {
       "roles": [
         "administrator",
         "developer",
         "reader"
-      ],
-      "applications": {
-        "app2": {
-          "instances": [
-            "test"
-          ]
-        }
-      }
+      ]
     }
-  }
+  },
+  "flags": [{"id":"enable-public-signup-flow","rules":[{"value":false}]}]
 }

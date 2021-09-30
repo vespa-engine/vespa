@@ -26,6 +26,7 @@ import static org.junit.Assert.assertThat;
  * @author ollivir
  */
 public class LoadBalancerTest {
+
     @Test
     public void requireThatLoadBalancerServesSingleNodeSetups() {
         Node n1 = new Node(0, "test-node1", 0);

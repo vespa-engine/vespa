@@ -1,21 +1,25 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/output_writer.h>
 #include <vespa/vespalib/data/slime/json_format.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/tensor.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/eval/tensor_engine.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/eval/value_type.h>
-#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/test/reference_evaluation.h>
 #include <vespa/eval/eval/test/test_io.h>
+#include <vespa/eval/eval/test/gen_spec.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/streamed/streamed_value_builder_factory.h>
 #include <unistd.h>
 #include <functional>
 
@@ -28,8 +32,18 @@ using namespace vespalib::slime::convenience;
 using vespalib::slime::inject;
 using vespalib::slime::SlimeInserter;
 using slime::JsonFormat;
-using tensor::DefaultTensorEngine;
 using namespace std::placeholders;
+
+//-----------------------------------------------------------------------------
+
+size_t fail_cnt = 0;
+size_t ignore_cnt = 0;
+
+//-----------------------------------------------------------------------------
+
+const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
+const ValueBuilderFactory &simple_factory = SimpleValueBuilderFactory::get();
+const ValueBuilderFactory &streamed_factory = StreamedValueBuilderFactory::get();
 
 //-----------------------------------------------------------------------------
 
@@ -40,7 +54,7 @@ uint8_t unhex(char c) {
     if (c >= 'A' && c <= 'F') {
         return ((c - 'A') + 10);
     }
-    TEST_ERROR("bad hex char");
+    REQUIRE_FAILED("bad hex char");
     return 0;
 }
 
@@ -67,44 +81,14 @@ nbostream extract_data(const Inspector &value) {
 
 void insert_value(Cursor &cursor, const vespalib::string &name, const TensorSpec &spec) {
     nbostream data;
-    Value::UP value = SimpleTensorEngine::ref().from_spec(spec);
-    SimpleTensorEngine::ref().encode(*value, data);
+    Value::UP value = value_from_spec(spec, simple_factory);
+    encode_value(*value, data);
     cursor.setData(name, Memory(data.peek(), data.size()));
 }
 
 TensorSpec extract_value(const Inspector &inspector) {
     nbostream data = extract_data(inspector);
-    const auto &engine = SimpleTensorEngine::ref();
-    return engine.to_spec(*engine.decode(data));
-}
-
-//-----------------------------------------------------------------------------
-
-std::vector<ValueType> get_types(const std::vector<Value::UP> &param_values) {
-    std::vector<ValueType> param_types;
-    for (size_t i = 0; i < param_values.size(); ++i) {
-        param_types.emplace_back(param_values[i]->type());
-    }
-    return param_types;
-}
-
-TensorSpec eval_expr(const Inspector &test, const TensorEngine &engine, bool typed) {
-    auto fun = Function::parse(test["expression"].asString().make_string());
-    std::vector<Value::UP> param_values;
-    std::vector<Value::CREF> param_refs;
-    for (size_t i = 0; i < fun->num_params(); ++i) {
-        param_values.emplace_back(engine.from_spec(extract_value(test["inputs"][fun->param_name(i)])));
-        param_refs.emplace_back(*param_values.back());
-    }
-    NodeTypes types = typed ? NodeTypes(*fun, get_types(param_values)) : NodeTypes();
-    InterpretedFunction ifun(engine, *fun, types);
-    InterpretedFunction::Context ctx(ifun);
-    SimpleObjectParams params(param_refs);
-    const Value &result = ifun.eval(ctx, params);
-    if (typed) {
-        ASSERT_EQUAL(result.type(), types.get_type(fun->root()));
-    }
-    return engine.to_spec(result);
+    return spec_from_value(*decode_value(data, simple_factory));
 }
 
 //-----------------------------------------------------------------------------
@@ -122,68 +106,6 @@ std::vector<vespalib::string> extract_fields(const Inspector &object) {
 
 //-----------------------------------------------------------------------------
 
-class MyTestBuilder : public TestBuilder {
-private:
-    TestWriter _writer;
-    void make_test(const vespalib::string &expression,
-                   const std::map<vespalib::string,TensorSpec> &input_map,
-                   const TensorSpec *expect = nullptr)
-    {
-        Cursor &test = _writer.create();
-        test.setString("expression", expression);
-        Cursor &inputs = test.setObject("inputs");
-        for (const auto &input: input_map) {
-            insert_value(inputs, input.first, input.second);
-        }
-        if (expect != nullptr) {
-            insert_value(test.setObject("result"), "expect", *expect);
-        } else {
-            insert_value(test.setObject("result"), "expect",
-                         eval_expr(test, SimpleTensorEngine::ref(), false));
-        }
-    }
-public:
-    MyTestBuilder(Output &out) : _writer(out) {}
-    void add(const vespalib::string &expression,
-             const std::map<vespalib::string,TensorSpec> &inputs,
-             const TensorSpec &expect) override
-    {
-        make_test(expression, inputs, &expect);
-    }
-    void add(const vespalib::string &expression,
-             const std::map<vespalib::string,TensorSpec> &inputs) override
-    {
-        make_test(expression, inputs);
-    }
-};
-
-void generate(Output &out) {
-    MyTestBuilder my_test_builder(out);
-    Generator::generate(my_test_builder);
-}
-
-//-----------------------------------------------------------------------------
-
-void evaluate(Input &in, Output &out) {
-    auto handle_test = [&out](Slime &slime)
-                       {
-                           insert_value(slime["result"], "cpp_prod",
-                                   eval_expr(slime.get(), DefaultTensorEngine::ref(), true));
-                           insert_value(slime["result"], "cpp_prod_untyped",
-                                   eval_expr(slime.get(), DefaultTensorEngine::ref(), false));
-                           insert_value(slime["result"], "cpp_ref_typed",
-                                   eval_expr(slime.get(), SimpleTensorEngine::ref(), true));
-                           write_compact(slime, out);
-                       };
-    auto handle_summary = [&out](Slime &slime)
-                          {
-                              write_compact(slime, out);
-                          };
-    for_each_test(in, handle_test, handle_summary);
-}
-
-//-----------------------------------------------------------------------------
-
 void dump_test(const Inspector &test) {
     fprintf(stderr, "expression: '%s'\n", test["expression"].asString().make_string().c_str());
     for (const auto &input: extract_fields(test["inputs"])) {
@@ -192,110 +114,188 @@ void dump_test(const Inspector &test) {
     }
 }
 
-void verify(Input &in, Output &out) {
-    std::map<vespalib::string,size_t> result_map;
-    auto handle_test = [&result_map](Slime &slime)
-                       {
-                           TensorSpec reference_result = eval_expr(slime.get(), SimpleTensorEngine::ref(), false);
-                           for (const auto &result: extract_fields(slime["result"])) {
-                               ++result_map[result];
-                               TEST_STATE(make_string("verifying result: '%s'", result.c_str()).c_str());
-                               if (!EXPECT_EQUAL(reference_result, extract_value(slime["result"][result]))) {
-                                   dump_test(slime.get());
-                               }
-                           }
-                       };
-    auto handle_summary = [&out,&result_map](Slime &slime)
-                          {
-                              Cursor &stats = slime.get().setObject("stats");
-                              for (const auto &entry: result_map) {
-                                  stats.setLong(entry.first, entry.second);
-                              }
-                              JsonFormat::encode(slime, out, false);
-                          };
+//-----------------------------------------------------------------------------
+
+TensorSpec ref_eval(const Inspector &test) {
+    auto fun = Function::parse(test["expression"].asString().make_string());
+    std::vector<TensorSpec> params;
+    for (size_t i = 0; i < fun->num_params(); ++i) {
+        params.push_back(extract_value(test["inputs"][fun->param_name(i)]));
+    }
+    auto result = ReferenceEvaluation::eval(*fun, params);
+    if (result.type() == "error") {
+        dump_test(test);
+        REQUIRE_FAILED("reference evaluation failed!");
+    }
+    return result;
+}
+
+//-----------------------------------------------------------------------------
+
+std::vector<ValueType> get_types(const std::vector<Value::UP> &param_values) {
+    std::vector<ValueType> param_types;
+    for (size_t i = 0; i < param_values.size(); ++i) {
+        param_types.emplace_back(param_values[i]->type());
+    }
+    return param_types;
+}
+
+TensorSpec eval_expr(const Inspector &test, const ValueBuilderFactory &factory) {
+    auto fun = Function::parse(test["expression"].asString().make_string());
+    std::vector<Value::UP> param_values;
+    std::vector<Value::CREF> param_refs;
+    for (size_t i = 0; i < fun->num_params(); ++i) {
+        param_values.emplace_back(value_from_spec(extract_value(test["inputs"][fun->param_name(i)]), factory));
+        param_refs.emplace_back(*param_values.back());
+    }
+    NodeTypes types = NodeTypes(*fun, get_types(param_values));
+    InterpretedFunction ifun(factory, *fun, types);
+    InterpretedFunction::Context ctx(ifun);
+    SimpleObjectParams params(param_refs);
+    const Value &result = ifun.eval(ctx, params);
+    REQUIRE_EQ(result.type(), types.get_type(fun->root()));
+    return spec_from_value(result);
+}
+
+//-----------------------------------------------------------------------------
+
+void print_test(const Inspector &test, OutputWriter &dst) {
+    dst.printf("expression: '%s'\n", test["expression"].asString().make_string().c_str());
+    for (const auto &input: extract_fields(test["inputs"])) {
+        auto value = extract_value(test["inputs"][input]);
+        dst.printf("input '%s': %s\n", input.c_str(), value.to_string().c_str());
+    }
+    auto result = eval_expr(test, prod_factory);
+    dst.printf("result: %s\n", result.to_string().c_str());
+    auto ignore = extract_fields(test["ignore"]);
+    if (!ignore.empty()) {
+        dst.printf("ignore:");
+        for (const auto &impl: ignore) {
+            REQUIRE(test["ignore"][impl].asBool());
+            dst.printf(" %s", impl.c_str());
+        }
+        dst.printf("\n");
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+class MyTestBuilder : public TestBuilder {
+private:
+    TestWriter _writer;
+public:
+    MyTestBuilder(bool full_in, Output &out) : TestBuilder(full_in), _writer(out) {}
+    void add(const vespalib::string &expression,
+             const std::map<vespalib::string,TensorSpec> &inputs_in,
+             const std::set<vespalib::string> &ignore_in) override
+    {
+        Cursor &test = _writer.create();
+        test.setString("expression", expression);
+        Cursor &inputs = test.setObject("inputs");
+        for (const auto& [name, spec]: inputs_in) {
+            insert_value(inputs, name, spec);
+        }
+        test.setObject("result");
+        if (!ignore_in.empty()) {
+            Cursor &ignore = test.setObject("ignore");
+            for (const auto &impl: ignore_in) {
+                ignore.setBool(impl, true);
+            }
+        }
+    }
+    void add_failing_test(bool ignore_fail) {
+        Cursor &test = _writer.create();
+        test.setString("expression", "a");
+        insert_value(test.setObject("inputs"), "a", GenSpec(1).idx("x", 3));
+        insert_value(test.setObject("result"), "dummy", GenSpec(2).idx("x", 3));
+        if (ignore_fail) {
+            test.setObject("ignore").setBool("dummy", true);
+        }
+    }
+};
+
+void generate(Output &out, bool full) {
+    MyTestBuilder my_test_builder(full, out);
+    Generator::generate(my_test_builder);
+    // my_test_builder.add_failing_test(true);
+    // my_test_builder.add_failing_test(false);
+}
+
+//-----------------------------------------------------------------------------
+
+void evaluate(Input &in, Output &out) {
+    auto handle_test = [&out](Slime &slime) {
+        insert_value(slime["result"], "cpp_prod",
+                     eval_expr(slime.get(), prod_factory));
+        insert_value(slime["result"], "cpp_simple_value",
+                     eval_expr(slime.get(), simple_factory));
+        insert_value(slime["result"], "cpp_streamed_value",
+                     eval_expr(slime.get(), streamed_factory));
+        write_compact(slime, out);
+    };
+    auto handle_summary = [&out](Slime &slime) {
+        write_compact(slime, out);
+    };
     for_each_test(in, handle_test, handle_summary);
 }
 
 //-----------------------------------------------------------------------------
 
-struct TestList {
-    std::vector<Slime> list;
-    void add_test(Slime &slime) {
-        list.emplace_back();
-        inject(slime.get(), SlimeInserter(list.back()));
-    }
-};
-
-struct TestSpec {
-    vespalib::string expression;
-    std::vector<TensorSpec> inputs;
-    TensorSpec result;
-    TestSpec() : expression(), inputs(), result("error") {}
-    ~TestSpec();
-    void decode(const Inspector &test) {
-        const auto &my_expression = test["expression"];
-        ASSERT_TRUE(my_expression.valid());
-        expression = my_expression.asString().make_string();
-        auto fun = Function::parse(expression);
-        ASSERT_TRUE(!fun->has_error());
-        ASSERT_EQUAL(fun->num_params(), test["inputs"].fields());
-        for (size_t i = 0; i < fun->num_params(); ++i) {
-            TEST_STATE(make_string("input #%zu", i).c_str());
-            const auto &my_input = test["inputs"][fun->param_name(i)];
-            ASSERT_TRUE(my_input.valid());
-            inputs.push_back(extract_value(my_input));
+void verify(Input &in, Output &out) {
+    std::map<vespalib::string,size_t> result_map;
+    auto handle_test = [&result_map](Slime &slime) {
+        TensorSpec reference_result = ref_eval(slime.get());
+        for (const auto &result: extract_fields(slime["result"])) {
+            ++result_map[result];
+            auto actual_result = extract_value(slime["result"][result]);
+            if (!require_impl::eq(actual_result, reference_result)) {
+                bool ignore_fail = slime["ignore"][result].asBool();
+                if (ignore_fail) {
+                    ++ignore_cnt;
+                } else {
+                    ++fail_cnt;
+                }
+                fprintf(stderr, "%sexpression failed('%s'): '%s'\n", ignore_fail ? "IGNORED: " : "",
+                        result.c_str(), slime["expression"].asString().make_string().c_str());
+                fprintf(stderr, "%s", TensorSpec::diff(actual_result, "actual", reference_result, "expected").c_str());
+                dump_test(slime.get());
+            }
         }
-        const auto &my_result = test["result"]["expect"];
-        ASSERT_TRUE(my_result.valid());
-        result = extract_value(my_result);
-    }
-};
-TestSpec::~TestSpec() = default;
-
-void compare_test(const Inspector &expect_in, const Inspector &actual_in) {
-    TestSpec expect;
-    TestSpec actual;
-    {
-        TEST_STATE("decoding expected test case");
-        expect.decode(expect_in);
-    }
-    {
-        TEST_STATE("decoding actual test case");
-        actual.decode(actual_in);
-    }
-    {
-        TEST_STATE("comparing test cases");
-        ASSERT_EQUAL(expect.expression, actual.expression);
-        ASSERT_EQUAL(expect.inputs.size(), actual.inputs.size());
-        for (size_t i = 0; i < expect.inputs.size(); ++i) {
-            TEST_STATE(make_string("input #%zu", i).c_str());
-            ASSERT_EQUAL(expect.inputs[i], actual.inputs[i]);
+    };
+    auto handle_summary = [&out,&result_map](Slime &slime) {
+        Cursor &stats = slime.get().setObject("stats");
+        for (const auto &entry: result_map) {
+            stats.setLong(entry.first, entry.second);
         }
-        ASSERT_EQUAL(expect.result, actual.result);
-    }
+        REQUIRE(!slime["fail_cnt"].valid());
+        REQUIRE(!slime["ignore_cnt"].valid());
+        slime.get().setLong("fail_cnt", fail_cnt);
+        slime.get().setLong("ignore_cnt", ignore_cnt);
+        JsonFormat::encode(slime, out, false);
+    };
+    for_each_test(in, handle_test, handle_summary);
 }
 
-void compare(Input &expect, Input &actual) {
-    TestList expect_tests;
-    TestList actual_tests;
-    for_each_test(expect, std::bind(&TestList::add_test, &expect_tests, _1), [](Slime &){});
-    for_each_test(actual, std::bind(&TestList::add_test, &actual_tests, _1), [](Slime &){});
-    ASSERT_TRUE(!expect_tests.list.empty());
-    ASSERT_TRUE(!actual_tests.list.empty());
-    ASSERT_EQUAL(expect_tests.list.size(), actual_tests.list.size());
-    size_t num_tests = expect_tests.list.size();
-    fprintf(stderr, "...found %zu test cases to compare...\n", num_tests);
-    for (size_t i = 0; i < num_tests; ++i) {
-        TEST_STATE(make_string("test case #%zu", i).c_str());
-        compare_test(expect_tests.list[i].get(), actual_tests.list[i].get());
-    }
+//-----------------------------------------------------------------------------
+
+void display(Input &in, Output &out) {
+    size_t test_cnt = 0;
+    auto handle_test = [&out,&test_cnt](Slime &slime) {
+        OutputWriter dst(out, 4_Ki);
+        dst.printf("\n------- TEST #%zu -------\n\n", test_cnt++);
+        print_test(slime.get(), dst);
+    };
+    auto handle_summary = [&out,&test_cnt](Slime &) {
+        OutputWriter dst(out, 1024);
+        dst.printf("%zu tests displayed\n", test_cnt);
+    };
+    for_each_test(in, handle_test, handle_summary);
 }
 
 //-----------------------------------------------------------------------------
 
 int usage(const char *self) {
     fprintf(stderr, "usage: %s <mode>\n", self);
-    fprintf(stderr, "usage: %s compare <expect> <actual>\n", self);
     fprintf(stderr, "  <mode>: which mode to activate\n");
     fprintf(stderr, "    'generate': write test cases to stdout\n");
     fprintf(stderr, "    'evaluate': read test cases from stdin, annotate them with\n");
@@ -303,8 +303,9 @@ int usage(const char *self) {
     fprintf(stderr, "                them to stdout\n");
     fprintf(stderr, "    'verify': read annotated test cases from stdin and verify\n");
     fprintf(stderr, "              that all results are as expected\n");
-    fprintf(stderr, "    'compare': read test cases from two separate files and\n");
-    fprintf(stderr, "               compare them to verify equivalence\n");
+    fprintf(stderr, "    'display': read tests from stdin and print them to stdout\n");
+    fprintf(stderr, "               in human-readable form\n");
+    fprintf(stderr, "    'generate-some': write some test cases to stdout\n");
     return 1;
 }
 
@@ -315,32 +316,24 @@ int main(int argc, char **argv) {
         return usage(argv[0]);
     }
     vespalib::string mode = argv[1];
-    TEST_MASTER.init(make_string("vespa-tensor-conformance-%s", mode.c_str()).c_str());
     if (mode == "generate") {
-        generate(std_out);
+        generate(std_out, true);
+    } else if (mode == "generate-some") {
+        generate(std_out, false);
     } else if (mode == "evaluate") {
         evaluate(std_in, std_out);
     } else if (mode == "verify") {
         verify(std_in, std_out);
-    } else if (mode == "compare") {
-        if (argc == 4) {
-            MappedFileInput expect(argv[2]);
-            MappedFileInput actual(argv[3]);
-            if (expect.valid() && actual.valid()) {
-                compare(expect, actual);
-            } else {
-                if (!expect.valid()) {
-                    TEST_ERROR(make_string("could not read file: %s", argv[2]).c_str());
-                }
-                if (!actual.valid()) {
-                    TEST_ERROR(make_string("could not read file: %s", argv[3]).c_str());
-                }
-            }
-        } else {
-            TEST_ERROR("wrong number of parameters for 'compare'\n");
-        }
+    } else if (mode == "display") {
+        display(std_in, std_out);
     } else {
-        TEST_ERROR(make_string("unknown mode: %s", mode.c_str()).c_str());
+        REQUIRE_FAILED(make_string("unknown mode: %s", mode.c_str()).c_str());
     }
-    return (TEST_MASTER.fini() ? 0 : 1);
+    if (fail_cnt == 0) {
+        fprintf(stderr, "(mode=%s) DONE (no failures detected)\n", mode.c_str());
+        return 0;
+    } else {
+        fprintf(stderr, "(mode=%s) ERROR: detected %zu failure(s)\n", mode.c_str(), fail_cnt);
+        return 1;
+    }
 }

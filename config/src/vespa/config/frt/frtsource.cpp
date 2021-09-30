@@ -2,13 +2,10 @@
 #include "frtconfigrequest.h"
 #include "frtconfigresponse.h"
 #include "frtsource.h"
-#include <vespa/vespalib/util/closuretask.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.frtsource");
-
-using vespalib::Closure;
-using vespalib::makeClosure;
 
 namespace config {
 
@@ -35,7 +32,7 @@ FRTSource::FRTSource(const ConnectionFactory::SP & connectionFactory, const FRTC
       _agent(std::move(agent)),
       _currentRequest(),
       _key(key),
-      _task(new GetConfigTask(_connectionFactory->getScheduler(), this)),
+      _task(std::make_unique<GetConfigTask>(_connectionFactory->getScheduler(), this)),
       _lock(),
       _closed(false)
 {
@@ -54,6 +51,10 @@ FRTSource::getConfig()
     int64_t serverTimeout = _agent->getTimeout();
     double clientTimeout = (serverTimeout / 1000.0) + 5.0; // The additional 5 seconds is the time allowed for the server to respond after serverTimeout has elapsed.
     Connection * connection = _connectionFactory->getCurrent();
+    if (connection == nullptr) {
+        LOG(warning, "No connection available - bad config ?");
+        return;
+    }
     const ConfigState & state(_agent->getConfigState());
  //   LOG(debug, "invoking request with md5 %s, gen %" PRId64 ", servertimeout(%" PRId64 "), client(%f)", state.md5.c_str(), state.generation, serverTimeout, clientTimeout);
 
@@ -73,7 +74,7 @@ FRTSource::RequestDone(FRT_RPCRequest * request)
         LOG(debug, "request aborted, stopping");
         return;
     }
-    assert(_currentRequest.get() != NULL);
+    assert(_currentRequest);
     // If this was error from FRT side and nothing to do with config, notify
     // connection about the error.
     if (request->IsError()) {
@@ -88,7 +89,7 @@ void
 FRTSource::close()
 {
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         if (_closed)
             return;
         LOG(spam, "Killing task");
@@ -106,7 +107,7 @@ FRTSource::close()
 void
 FRTSource::scheduleNextGetConfig()
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     if (_closed)
         return;
     double sec = _agent->getWaitTime() / 1000.0;

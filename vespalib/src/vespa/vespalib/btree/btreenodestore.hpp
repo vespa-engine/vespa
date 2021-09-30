@@ -5,11 +5,11 @@
 #include "btreenodestore.h"
 #include <vespa/vespalib/datastore/datastore.hpp>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename EntryType>
 void
-BTreeNodeBufferType<EntryType>::initializeReservedElements(void *buffer, size_t reservedElements)
+BTreeNodeBufferType<EntryType>::initializeReservedElements(void *buffer, ElemCount reservedElements)
 {
     ParentType::initializeReservedElements(buffer, reservedElements);
     EntryType *e = static_cast<EntryType *>(buffer);
@@ -22,7 +22,7 @@ BTreeNodeBufferType<EntryType>::initializeReservedElements(void *buffer, size_t 
 
 template <typename EntryType>
 void
-BTreeNodeBufferType<EntryType>::cleanHold(void *buffer, size_t offset, size_t numElems, CleanContext)
+BTreeNodeBufferType<EntryType>::cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext)
 {
     EntryType *e = static_cast<EntryType *>(buffer) + offset;
     for (size_t j = numElems; j != 0; --j) {
@@ -30,9 +30,6 @@ BTreeNodeBufferType<EntryType>::cleanHold(void *buffer, size_t offset, size_t nu
         ++e;
     }
 }
-
-
-
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
@@ -44,7 +41,7 @@ BTreeNodeStore()
 {
     _store.addType(&_internalNodeType);
     _store.addType(&_leafNodeType);
-    _store.initActiveBuffers();
+    _store.init_primary_buffers();
     _store.enableFreeLists();
 }
 
@@ -70,6 +67,14 @@ startCompact()
     return ret;
 }
 
+template <typename KeyT, typename DataT, typename AggrT,
+          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
+std::vector<uint32_t>
+BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
+start_compact_worst()
+{
+    return _store.startCompactWorstBuffers(true, false);
+}
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
@@ -81,3 +86,10 @@ finishCompact(const std::vector<uint32_t> &toHold)
 }
 
 }
+
+#define VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_INTERNALNODE(K, A, S) \
+    template class BufferType<BTreeInternalNode<K, A, S>, \
+                              FrozenBtreeNode<BTreeInternalNode<K, A, S>>>
+#define VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(K, V, A, S) \
+    template class BufferType<BTreeLeafNode<K, V, A, S>, \
+                              FrozenBtreeNode<BTreeLeafNode<K, V, A, S>>>

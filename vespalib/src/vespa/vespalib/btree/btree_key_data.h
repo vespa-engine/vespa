@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 /**
  * Empty class to use as DataT template parameter for BTree classes to
@@ -28,12 +28,12 @@ public:
     KeyT _key;
     DataT _data;
 
-    BTreeKeyData()
+    BTreeKeyData() noexcept
         : _key(),
           _data()
     {}
 
-    BTreeKeyData(const KeyT &key, const DataT &data)
+    BTreeKeyData(const KeyT &key, const DataT &data) noexcept
         : _key(key),
           _data(data)
     {}
@@ -60,9 +60,9 @@ public:
 
     KeyT _key;
 
-    BTreeKeyData() : _key() {}
+    BTreeKeyData() noexcept : _key() {}
 
-    BTreeKeyData(const KeyT &key, const BTreeNoLeafData &)
+    BTreeKeyData(const KeyT &key, const BTreeNoLeafData &) noexcept
         : _key(key)
     {
     }
@@ -82,4 +82,4 @@ public:
 extern template class BTreeKeyData<uint32_t, uint32_t>;
 extern template class BTreeKeyData<uint32_t, int32_t>;
 
-} // namespace search::btree
+} // namespace vespalib::btree

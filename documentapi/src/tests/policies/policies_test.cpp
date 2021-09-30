@@ -1,16 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "testframe.h"
-
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/messagebus/policies/andpolicy.h>
+#include <vespa/documentapi/messagebus/policies/contentpolicy.h>
 #include <vespa/documentapi/messagebus/policies/documentrouteselectorpolicy.h>
 #include <vespa/documentapi/messagebus/policies/errorpolicy.h>
 #include <vespa/documentapi/messagebus/policies/externpolicy.h>
 #include <vespa/documentapi/messagebus/policies/loadbalancerpolicy.h>
 #include <vespa/documentapi/messagebus/policies/localservicepolicy.h>
 #include <vespa/documentapi/messagebus/policies/roundrobinpolicy.h>
-#include <vespa/documentapi/messagebus/policies/storagepolicy.h>
 #include <vespa/documentapi/messagebus/policies/subsetservicepolicy.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/routing/routingnode.h>
@@ -25,6 +24,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("policies_test");
@@ -45,14 +45,13 @@ using namespace std::chrono_literals;
 
 class Test : public vespalib::TestApp {
 private:
-    LoadTypeSet          _loadTypes;
     std::shared_ptr<const DocumentTypeRepo> _repo;
     const DataType      *_docType;
 
 private:
     bool trySelect(TestFrame &frame, uint32_t numSelects, const std::vector<string> &expected);
     void setupExternPolicy(TestFrame &frame, mbus::Slobrok &slobrok, const string &pattern, int32_t numEntries = -1);
-    StoragePolicy &setupStoragePolicy(TestFrame &frame, const string &param,
+    ContentPolicy &setupContentPolicy(TestFrame &frame, const string &param,
                                       const string &pattern = "", int32_t numEntries = -1);
     bool isErrorPolicy(const string &name, const string &param);
     void assertMirrorReady(const IMirrorAPI &mirror);
@@ -84,10 +83,10 @@ public:
     void requireThatExternPolicyWithUnknownPatternSelectsNone();
     void requireThatExternPolicySelectsFromExternSlobrok();
     void requireThatExternPolicyMergesOneReplyAsProtocol();
-    void requireThatStoragePolicyWithIllegalParamIsAnErrorPolicy();
-    void requireThatStoragePolicyIsRandomWithoutState();
-    void requireThatStoragePolicyIsTargetedWithState();
-    void requireThatStoragePolicyCombinesSystemAndSlobrokState();
+    void requireThatContentPolicyWithIllegalParamIsAnErrorPolicy();
+    void requireThatContentPolicyIsRandomWithoutState();
+    void requireThatContentPolicyIsTargetedWithState();
+    void requireThatContentPolicyCombinesSystemAndSlobrokState();
 };
 
 TEST_APPHOOK(Test);
@@ -129,10 +128,10 @@ Test::Main() {
     requireThatExternPolicySelectsFromExternSlobrok();         TEST_FLUSH();
     requireThatExternPolicyMergesOneReplyAsProtocol();         TEST_FLUSH();
 
-    requireThatStoragePolicyWithIllegalParamIsAnErrorPolicy(); TEST_FLUSH();
-    requireThatStoragePolicyIsRandomWithoutState();            TEST_FLUSH();
-    requireThatStoragePolicyIsTargetedWithState();             TEST_FLUSH();
-    requireThatStoragePolicyCombinesSystemAndSlobrokState();   TEST_FLUSH();
+    requireThatContentPolicyWithIllegalParamIsAnErrorPolicy(); TEST_FLUSH();
+    requireThatContentPolicyIsRandomWithoutState();            TEST_FLUSH();
+    requireThatContentPolicyIsTargetedWithState();             TEST_FLUSH();
+    requireThatContentPolicyCombinesSystemAndSlobrokState();   TEST_FLUSH();
 
     TEST_DONE();
 }
@@ -140,7 +139,7 @@ Test::Main() {
 void
 Test::testProtocol()
 {
-    mbus::IProtocol::SP protocol(new DocumentProtocol(_loadTypes, _repo));
+    mbus::IProtocol::SP protocol(new DocumentProtocol(_repo));
 
     mbus::IRoutingPolicy::UP policy = protocol->createPolicy("AND", "");
     ASSERT_TRUE(dynamic_cast<ANDPolicy*>(policy.get()) != nullptr);
@@ -220,7 +219,7 @@ Test::requireThatExternPolicySelectsFromExternSlobrok()
     for (uint32_t i = 0; i < 10; ++i) {
         mbus::TestServer *server = new mbus::TestServer(
                 mbus::Identity(make_string("docproc/cluster.default/%d", i)), mbus::RoutingSpec(), slobrok,
-                mbus::IProtocol::SP(new DocumentProtocol(_loadTypes, _repo)));
+                mbus::IProtocol::SP(new DocumentProtocol(_repo)));
         servers.push_back(server);
         server->net.registerSession("chain.default");
     }
@@ -247,7 +246,7 @@ Test::requireThatExternPolicyMergesOneReplyAsProtocol()
     frame.setMessage(newPutDocumentMessage("id:ns:testdoc::"));
     mbus::Slobrok slobrok;
     mbus::TestServer server(mbus::Identity("docproc/cluster.default/0"), mbus::RoutingSpec(), slobrok,
-                            mbus::IProtocol::SP(new DocumentProtocol(_loadTypes, _repo)));
+                            mbus::IProtocol::SP(new DocumentProtocol(_repo)));
     server.net.registerSession("chain.default");
     setupExternPolicy(frame, slobrok, "docproc/cluster.default/0/chain.default", 1);
     EXPECT_TRUE(frame.testMergeOneReply(server.net.getConnectionSpec() + "/chain.default"));
@@ -310,7 +309,7 @@ Test::testExternSend()
     // Setup local source node.
     mbus::Slobrok local;
     mbus::TestServer src(mbus::Identity("src"), mbus::RoutingSpec(), local,
-                         std::make_shared<DocumentProtocol>(_loadTypes, _repo));
+                         std::make_shared<DocumentProtocol>(_repo));
     mbus::Receptor sr;
     mbus::SourceSession::UP ss = src.mb.createSourceSession(sr, mbus::SourceSessionParams().setTimeout(60s));
 
@@ -319,17 +318,17 @@ Test::testExternSend()
                          .addTable(mbus::RoutingTableSpec(DocumentProtocol::NAME)
                                    .addRoute(mbus::RouteSpec("default").addHop("dst"))
                                    .addHop(mbus::HopSpec("dst", "dst/session"))),
-                         slobrok, std::make_shared<DocumentProtocol>(_loadTypes, _repo));
+                         slobrok, std::make_shared<DocumentProtocol>(_repo));
     mbus::Receptor ir;
     mbus::IntermediateSession::UP is = itr.mb.createIntermediateSession("session", true, ir, ir);
 
     mbus::TestServer dst(mbus::Identity("dst"), mbus::RoutingSpec(), slobrok,
-                         std::make_shared<DocumentProtocol>(_loadTypes, _repo));
+                         std::make_shared<DocumentProtocol>(_repo));
     mbus::Receptor dr;
     mbus::DestinationSession::UP ds = dst.mb.createDestinationSession("session", true, dr);
 
     // Send message from local node to remote cluster and resolve route there.
-    mbus::Message::UP msg(new GetDocumentMessage(DocumentId("id:ns:testdoc::"), 0));
+    mbus::Message::UP msg = std::make_unique<GetDocumentMessage>(DocumentId("id:ns:testdoc::"));
     msg->getTrace().setLevel(9);
     msg->setRoute(mbus::Route::parse(vespalib::make_string("[Extern:tcp/localhost:%d;itr/session] default", slobrok.port())));
 
@@ -351,7 +350,7 @@ Test::testExternMultipleSlobroks()
 {
     mbus::Slobrok local;
     mbus::TestServer src(mbus::Identity("src"), mbus::RoutingSpec(), local,
-                         std::make_shared<DocumentProtocol>(_loadTypes, _repo));
+                         std::make_shared<DocumentProtocol>(_repo));
     mbus::Receptor sr;
     mbus::SourceSession::UP ss = src.mb.createSourceSession(sr, mbus::SourceSessionParams().setTimeout(60s));
 
@@ -362,10 +361,10 @@ Test::testExternMultipleSlobroks()
         spec.append(vespalib::make_string("tcp/localhost:%d", ext.port()));
 
         mbus::TestServer dst(mbus::Identity("dst"), mbus::RoutingSpec(), ext,
-                             std::make_shared<DocumentProtocol>(_loadTypes, _repo));
+                             std::make_shared<DocumentProtocol>(_repo));
         mbus::DestinationSession::UP ds = dst.mb.createDestinationSession("session", true, dr);
 
-        mbus::Message::UP msg(new GetDocumentMessage(DocumentId("id:ns:testdoc::"), 0));
+        mbus::Message::UP msg = std::make_unique<GetDocumentMessage>(DocumentId("id:ns:testdoc::"));
         msg->setRoute(mbus::Route::parse(vespalib::make_string("[Extern:%s;dst/session]", spec.c_str())));
         ASSERT_TRUE(ss->send(std::move(msg)).isAccepted());
         ASSERT_TRUE((msg = dr.getMessage(TIMEOUT)));
@@ -378,10 +377,10 @@ Test::testExternMultipleSlobroks()
         spec.append(vespalib::make_string(",tcp/localhost:%d", ext.port()));
 
         mbus::TestServer dst(mbus::Identity("dst"), mbus::RoutingSpec(), ext,
-                             std::make_shared<DocumentProtocol>(_loadTypes, _repo));
+                             std::make_shared<DocumentProtocol>(_repo));
         mbus::DestinationSession::UP ds = dst.mb.createDestinationSession("session", true, dr);
 
-        mbus::Message::UP msg(new GetDocumentMessage(DocumentId("id:ns:testdoc::"), 0));
+        mbus::Message::UP msg = std::make_unique<GetDocumentMessage>(DocumentId("id:ns:testdoc::"));
         msg->setRoute(mbus::Route::parse(vespalib::make_string("[Extern:%s;dst/session]", spec.c_str())));
         ASSERT_TRUE(ss->send(std::move(msg)).isAccepted());
         ASSERT_TRUE((msg = dr.getMessage(TIMEOUT)));
@@ -592,12 +591,12 @@ Test::testDocumentRouteSelector()
         "route[0].selector \"foo bar\"\n"
         "route[0].feed \"baz\"\n";
     {
-        DocumentProtocol protocol(_loadTypes, _repo, okConfig);
+        DocumentProtocol protocol(_repo, okConfig);
         EXPECT_TRUE(dynamic_cast<DocumentRouteSelectorPolicy*>(protocol.createPolicy("DocumentRouteSelector", "").get()) != nullptr);
         EXPECT_TRUE(dynamic_cast<ErrorPolicy*>(protocol.createPolicy("DocumentRouteSelector", errConfig).get()) != nullptr);
     }
     {
-        DocumentProtocol protocol(_loadTypes, _repo, errConfig);
+        DocumentProtocol protocol(_repo, errConfig);
         EXPECT_TRUE(dynamic_cast<ErrorPolicy*>(protocol.createPolicy("DocumentRouteSelector", "").get()) != nullptr);
         EXPECT_TRUE(dynamic_cast<DocumentRouteSelectorPolicy*>(protocol.createPolicy("DocumentRouteSelector", okConfig).get()) != nullptr);
     }
@@ -615,7 +614,7 @@ Test::testDocumentRouteSelector()
                  .addRecipient("foo")
                  .addRecipient("bar"));
 
-    frame.setMessage(make_unique<GetDocumentMessage>(DocumentId("id:ns:testdoc::"), 0));
+    frame.setMessage(make_unique<GetDocumentMessage>(DocumentId("id:ns:testdoc::")));
     EXPECT_TRUE(frame.testSelect(StringList().add("foo")));
 
     mbus::Message::UP put = make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("id:ns:testdoc::")));
@@ -723,9 +722,7 @@ Test::get_document_messages_are_sent_to_the_route_handling_the_given_document_ty
 
 namespace {
     string getDefaultDistributionConfig(
-                    uint16_t redundancy = 2, uint16_t nodeCount = 10,
-                    storage::lib::Distribution::DiskDistribution distr
-                            = storage::lib::Distribution::MODULO_BID)
+                    uint16_t redundancy = 2, uint16_t nodeCount = 10)
     {
         std::ostringstream ost;
         ost << "raw:redundancy " << redundancy << "\n"
@@ -737,9 +734,6 @@ namespace {
         for (uint16_t i=0; i<nodeCount; ++i) {
             ost << "group[0].nodes[" << i << "].index " << i << "\n";
         }
-        ost << "disk_distribution "
-            << storage::lib::Distribution::getDiskDistributionName(distr)
-            << "\n";
         return ost.str();
     }
 }
@@ -788,15 +782,15 @@ void Test::testLoadBalancer() {
 }
 
 void
-Test::requireThatStoragePolicyWithIllegalParamIsAnErrorPolicy()
+Test::requireThatContentPolicyWithIllegalParamIsAnErrorPolicy()
 {
-    EXPECT_TRUE(isErrorPolicy("Storage", ""));
-    EXPECT_TRUE(isErrorPolicy("Storage", "config=foo;slobroks=foo"));
-    EXPECT_TRUE(isErrorPolicy("Storage", "slobroks=foo"));
+    EXPECT_TRUE(isErrorPolicy("Content", ""));
+    EXPECT_TRUE(isErrorPolicy("Content", "config=foo;slobroks=foo"));
+    EXPECT_TRUE(isErrorPolicy("Content", "slobroks=foo"));
 }
 
 void
-Test::requireThatStoragePolicyIsRandomWithoutState()
+Test::requireThatContentPolicyIsRandomWithoutState()
 {
     TestFrame frame(_repo);
     frame.setMessage(newPutDocumentMessage("id:ns:testdoc::"));
@@ -807,14 +801,14 @@ Test::requireThatStoragePolicyIsRandomWithoutState()
         mbus::TestServer *srv = new mbus::TestServer(
                 mbus::Identity(vespalib::make_string("storage/cluster.mycluster/distributor/%d", i)),
                 mbus::RoutingSpec(), slobrok,
-                mbus::IProtocol::SP(new DocumentProtocol(_loadTypes, _repo)));
+                mbus::IProtocol::SP(new DocumentProtocol(_repo)));
         servers.push_back(srv);
         srv->net.registerSession("default");
     }
     string param = vespalib::make_string(
             "cluster=mycluster;slobroks=tcp/localhost:%d;clusterconfigid=%s;syncinit",
             slobrok.port(), getDefaultDistributionConfig(2, 5).c_str());
-    StoragePolicy &policy = setupStoragePolicy(
+    ContentPolicy &policy = setupContentPolicy(
             frame, param,
             "storage/cluster.mycluster/distributor/*/default", 5);
     ASSERT_TRUE(policy.getSystemState() == nullptr);
@@ -832,15 +826,15 @@ Test::requireThatStoragePolicyIsRandomWithoutState()
     }
 }
 
-StoragePolicy &
-Test::setupStoragePolicy(TestFrame &frame, const string &param,
+ContentPolicy &
+Test::setupContentPolicy(TestFrame &frame, const string &param,
                          const string &pattern, int32_t numEntries)
 {
-    frame.setHop(mbus::HopSpec("test", vespalib::make_string("[Storage:%s]", param.c_str())));
+    frame.setHop(mbus::HopSpec("test", vespalib::make_string("[Content:%s]", param.c_str())));
     mbus::MessageBus &mbus = frame.getMessageBus();
     const mbus::HopBlueprint *hop = mbus.getRoutingTable(DocumentProtocol::NAME)->getHop("test");
     const mbus::PolicyDirective dir = static_cast<mbus::PolicyDirective&>(*hop->getDirective(0));
-    StoragePolicy &policy = static_cast<StoragePolicy&>(*mbus.getRoutingPolicy(DocumentProtocol::NAME,
+    ContentPolicy &policy = static_cast<ContentPolicy&>(*mbus.getRoutingPolicy(DocumentProtocol::NAME,
                                                                                dir.getName(), dir.getParam()));
     policy.initSynchronous();
     assertMirrorReady(*policy.getMirror());
@@ -851,7 +845,7 @@ Test::setupStoragePolicy(TestFrame &frame, const string &param,
 }
 
 void
-Test::requireThatStoragePolicyIsTargetedWithState()
+Test::requireThatContentPolicyIsTargetedWithState()
 {
     TestFrame frame(_repo);
     frame.setMessage(newPutDocumentMessage("id:ns:testdoc::"));
@@ -862,14 +856,14 @@ Test::requireThatStoragePolicyIsTargetedWithState()
         mbus::TestServer *srv = new mbus::TestServer(
                 mbus::Identity(vespalib::make_string("storage/cluster.mycluster/distributor/%d", i)),
                 mbus::RoutingSpec(), slobrok,
-                make_shared<DocumentProtocol>(_loadTypes, _repo));
+                make_shared<DocumentProtocol>(_repo));
         servers.push_back(srv);
         srv->net.registerSession("default");
     }
     string param = vespalib::make_string(
             "cluster=mycluster;slobroks=tcp/localhost:%d;clusterconfigid=%s;syncinit",
             slobrok.port(), getDefaultDistributionConfig(2, 5).c_str());
-    StoragePolicy &policy = setupStoragePolicy(
+    ContentPolicy &policy = setupContentPolicy(
             frame, param,
             "storage/cluster.mycluster/distributor/*/default", 5);
     ASSERT_TRUE(policy.getSystemState() == nullptr);
@@ -894,7 +888,7 @@ Test::requireThatStoragePolicyIsTargetedWithState()
 }
 
 void
-Test::requireThatStoragePolicyCombinesSystemAndSlobrokState()
+Test::requireThatContentPolicyCombinesSystemAndSlobrokState()
 {
     TestFrame frame(_repo);
     frame.setMessage(newPutDocumentMessage("id:ns:testdoc::"));
@@ -902,13 +896,13 @@ Test::requireThatStoragePolicyCombinesSystemAndSlobrokState()
     mbus::Slobrok slobrok;
     mbus::TestServer server(mbus::Identity("storage/cluster.mycluster/distributor/0"),
                             mbus::RoutingSpec(), slobrok,
-                            make_shared<DocumentProtocol>(_loadTypes, _repo));
+                            make_shared<DocumentProtocol>(_repo));
     server.net.registerSession("default");
 
     string param = vespalib::make_string(
             "cluster=mycluster;slobroks=tcp/localhost:%d;clusterconfigid=%s;syncinit",
             slobrok.port(), getDefaultDistributionConfig(2, 5).c_str());
-    StoragePolicy &policy = setupStoragePolicy(
+    ContentPolicy &policy = setupContentPolicy(
             frame, param,
             "storage/cluster.mycluster/distributor/*/default", 1);
     ASSERT_TRUE(policy.getSystemState() == nullptr);
@@ -1058,7 +1052,7 @@ Test::trySelect(TestFrame &frame, uint32_t numSelects, const std::vector<string>
 bool
 Test::isErrorPolicy(const string &name, const string &param)
 {
-    DocumentProtocol protocol(_loadTypes, _repo);
+    DocumentProtocol protocol(_repo);
     mbus::IRoutingPolicy::UP policy = protocol.createPolicy(name, param);
 
     return policy && dynamic_cast<ErrorPolicy*>(policy.get()) != nullptr;

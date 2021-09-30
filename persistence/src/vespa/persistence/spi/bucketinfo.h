@@ -8,9 +8,7 @@
 
 #include <persistence/spi/types.h>
 
-namespace vespalib {
-    class asciistream;
-}
+namespace vespalib { class asciistream; }
 
 namespace storage::spi {
 

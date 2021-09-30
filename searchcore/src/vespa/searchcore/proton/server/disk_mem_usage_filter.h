@@ -4,12 +4,14 @@
 
 #include "i_disk_mem_usage_notifier.h"
 #include "disk_mem_usage_state.h"
+#include "disk_mem_usage_metrics.h"
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
 #include <atomic>
 #include <filesystem>
 #include <mutex>
+#include <vector>
 
 namespace proton {
 
@@ -39,14 +41,18 @@ public:
     };
 
 private:
-    mutable Mutex _lock; // protect _memoryStats, _usedDiskSizeBytes, _config, _state
+    mutable Mutex                _lock;
     HwInfo                       _hwInfo;
+    std::atomic<bool>            _acceptWrite;
+    // Following member variables are protected by _lock
     vespalib::ProcessMemoryStats _memoryStats;
     uint64_t                     _diskUsedSizeBytes;
+    size_t                       _transient_memory_usage;
+    size_t                       _transient_disk_usage;
     Config                       _config;
     State                        _state;
-    std::atomic<bool>            _acceptWrite;
     DiskMemUsageState            _dmstate;
+    mutable DiskMemUsageMetrics  _disk_mem_usage_metrics;
     std::vector<IDiskMemUsageListener *> _listeners;
 
     void recalcState(const Guard &guard); // called with _lock held
@@ -56,15 +62,21 @@ private:
 
 public:
     DiskMemUsageFilter(const HwInfo &hwInfo);
-    ~DiskMemUsageFilter();
+    ~DiskMemUsageFilter() override;
     void setMemoryStats(vespalib::ProcessMemoryStats memoryStats_in);
     void setDiskUsedSize(uint64_t diskUsedSizeBytes);
+    void set_transient_resource_usage(size_t transient_memory_usage, size_t transient_disk_usage);
     void setConfig(Config config);
     vespalib::ProcessMemoryStats getMemoryStats() const;
     uint64_t getDiskUsedSize() const;
+    size_t get_transient_memory_usage() const;
+    double get_relative_transient_memory_usage() const;
+    size_t get_transient_disk_usage() const;
+    double get_relative_transient_disk_usage() const;
     Config getConfig() const;
     const HwInfo &getHwInfo() const { return _hwInfo; }
     DiskMemUsageState usageState() const;
+    DiskMemUsageMetrics get_metrics() const;
     bool acceptWriteOperation() const override;
     State getAcceptState() const override;
     void addDiskMemUsageListener(IDiskMemUsageListener *listener) override;

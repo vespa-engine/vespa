@@ -2,11 +2,9 @@
 
 #include "nix_value.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 NixValue NixValue::_invalid;
 NixValue NixValue::_instance;
 
 } // namespace vespalib::slime
-} // namespace vespalib

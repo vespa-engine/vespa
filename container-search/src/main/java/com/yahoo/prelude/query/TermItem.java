@@ -97,37 +97,19 @@ public abstract class TermItem extends SimpleIndexedItem implements BlockItem {
     @Override
     public int getTermCount() { return 1; }
 
-    /**
-     * This refers to whether accent removal is a meaningful and possible
-     * operation for this word. It should be named "isTransformable" or similar,
-     * but for historical reasons that is not the case. This method has nothing
-     * to do with Unicode normalization.
-     *
-     * @return true if accent removal can/should be performed
-     */
-    public boolean isNormalizable() {
-        return normalizable;
-    }
+    /** Returns whether accent removal is a meaningful and possible operation for this word. */
+    public boolean isNormalizable() { return normalizable; }
 
     /**
-     * This refers to whether accent removal is a meaningful and possible
-     * operation for this word. It should be named "isTransformable" or similar,
-     * but for historical reasons that is not the case. This method has nothing
-     * to do with Unicode normalization.
+     * Sets whether accent removal is a meaningful and possible operation for this word.
      *
      * @param normalizable set to true if accent removal can/should be performed
      */
-    public void setNormalizable(boolean normalizable) {
-        this.normalizable = normalizable;
-    }
+    public void setNormalizable(boolean normalizable) { this.normalizable = normalizable; }
 
     @Override
-    public SegmentingRule getSegmentingRule() {
-        return segmentingRule;
-    }
+    public SegmentingRule getSegmentingRule() { return segmentingRule; }
 
-    public void setSegmentingRule(SegmentingRule segmentingRule) {
-        this.segmentingRule = segmentingRule;
-    }
+    public void setSegmentingRule(SegmentingRule segmentingRule) { this.segmentingRule = segmentingRule; }
 
 }

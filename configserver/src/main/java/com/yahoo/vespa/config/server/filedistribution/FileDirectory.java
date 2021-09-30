@@ -1,11 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
-import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
+
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
@@ -32,7 +31,7 @@ public class FileDirectory  {
         try {
             ensureRootExist();
         } catch (IllegalArgumentException e) {
-            log.log(LogLevel.WARNING, "Failed creating directory in constructor, will retry on demand : " + e.toString());
+            log.log(Level.WARNING, "Failed creating directory in constructor, will retry on demand : " + e.getMessage());
         }
     }
 
@@ -57,18 +56,18 @@ public class FileDirectory  {
         return root.getAbsolutePath() + "/" + ref.value();
     }
 
-    File getFile(FileReference reference) {
+    public File getFile(FileReference reference) {
         ensureRootExist();
         File dir = new File(getPath(reference));
         if (!dir.exists()) {
-            throw new IllegalArgumentException("File reference '" + reference.toString() + "' with absolute path '" + dir.getAbsolutePath() + "' does not exist.");
+            throw new IllegalArgumentException("File reference '" + reference.value() + "' with absolute path '" + dir.getAbsolutePath() + "' does not exist.");
         }
         if (!dir.isDirectory()) {
-            throw new IllegalArgumentException("File reference '" + reference.toString() + "' with absolute path '" + dir.getAbsolutePath() + "' is not a directory.");
+            throw new IllegalArgumentException("File reference '" + reference.value() + "' with absolute path '" + dir.getAbsolutePath() + "' is not a directory.");
         }
         File [] files = dir.listFiles(new Filter());
         if (files == null || files.length == 0) {
-            throw new IllegalArgumentException("File reference '" + reference.toString() + "' with absolute path '" + dir.getAbsolutePath() + " does not contain any files");
+            throw new IllegalArgumentException("File reference '" + reference.value() + "' with absolute path '" + dir.getAbsolutePath() + " does not contain any files");
         }
         return files[0];
     }
@@ -82,10 +81,10 @@ public class FileDirectory  {
         if (file.isDirectory()) {
             return Files.walk(file.toPath(), 100).map(path -> {
                 try {
-                    log.log(LogLevel.DEBUG, "Calculating hash for '" + path + "'");
+                    log.log(Level.FINE, () -> "Calculating hash for '" + path + "'");
                     return hash(path.toFile(), hasher);
                 } catch (IOException e) {
-                    log.log(LogLevel.WARNING, "Failed getting hash from '" + path + "'");
+                    log.log(Level.WARNING, "Failed getting hash from '" + path + "'");
                     return 0;
                 }
             }).mapToLong(Number::longValue).sum();
@@ -99,15 +98,11 @@ public class FileDirectory  {
         return hasher.hash(ByteBuffer.wrap(wholeFile), hasher.hash(ByteBuffer.wrap(Utf8.toBytes(file.getName())), 0));
     }
 
-    public FileReference addFile(File source) {
-        try {
-            Long hash = computeHash(source);
-            verifyExistingFile(source, hash);
-            FileReference fileReference = fileReferenceFromHash(hash);
-            return addFile(source, fileReference);
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
-        }
+    public FileReference addFile(File source) throws IOException {
+        Long hash = computeHash(source);
+        verifyExistingFile(source, hash);
+        FileReference fileReference = fileReferenceFromHash(hash);
+        return addFile(source, fileReference);
     }
 
     // If there exists a directory for a file reference, but content does not have correct hash or the file we want to add
@@ -119,7 +114,7 @@ public class FileDirectory  {
 
         File existingFile = destinationDir.toPath().resolve(source.getName()).toFile();
         if ( ! existingFile.exists() || ! computeHash(existingFile).equals(hashOfFileToBeAdded)) {
-            log.log(LogLevel.ERROR, "Directory for file reference '" + fileReference.value() +
+            log.log(Level.SEVERE, "Directory for file reference '" + fileReference.value() +
                     "' has content that does not match its hash, deleting everything in " +
                     destinationDir.getAbsolutePath());
             IOUtils.recursiveDeleteDir(destinationDir);
@@ -143,17 +138,17 @@ public class FileDirectory  {
             File destination = new File(tempDestinationDir.toFile(), source.getName());
             if (!destinationDir.exists()) {
                 destinationDir.mkdir();
-                log.log(LogLevel.DEBUG, "file reference ' " + reference.value() + "', source: " + source.getAbsolutePath() );
+                log.log(Level.FINE, () -> "file reference ' " + reference.value() + "', source: " + source.getAbsolutePath() );
                 if (source.isDirectory()) {
-                    log.log(LogLevel.DEBUG, "Copying source " + source.getAbsolutePath() + " to " + destination.getAbsolutePath());
+                    log.log(Level.FINE, () -> "Copying source " + source.getAbsolutePath() + " to " + destination.getAbsolutePath());
                     IOUtils.copyDirectory(source, destination, -1);
                 } else {
                     copyFile(source, destination);
                 }
                 if (!destinationDir.exists()) {
-                    log.log(LogLevel.DEBUG, "Moving from " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
+                    log.log(Level.FINE, () -> "Moving from " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
                     if ( ! tempDestinationDir.toFile().renameTo(destinationDir)) {
-                        log.log(LogLevel.WARNING, "Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'.");
+                        log.log(Level.WARNING, "Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'.");
                     }
                 } else {
                     IOUtils.copyDirectory(tempDestinationDir.toFile(), destinationDir, -1);
@@ -168,7 +163,7 @@ public class FileDirectory  {
 
     private void logfileInfo(File file ) throws IOException {
         BasicFileAttributes basicFileAttributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-        log.log(LogLevel.DEBUG, "Adding file " + file.getAbsolutePath() + " (created " + basicFileAttributes.creationTime() +
+        log.log(Level.FINE, () -> "Adding file " + file.getAbsolutePath() + " (created " + basicFileAttributes.creationTime() +
                 ", modified " + basicFileAttributes.lastModifiedTime() +
                 ", size " + basicFileAttributes.size() + ")");
     }
@@ -179,4 +174,10 @@ public class FileDirectory  {
             destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
         }
     }
+
+    @Override
+    public String toString() {
+        return "root dir: " + root.getAbsolutePath();
+    }
+
 }

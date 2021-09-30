@@ -7,6 +7,7 @@ import org.junit.Test;
 import java.text.ParseException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -180,6 +181,46 @@ public class GroupAvailabilityCalculatorTest {
         // 3 down in each group
         assertThat(calc.nodesThatShouldBeDown(clusterState(
                 "distributor:8 storage:8 .0.s:d .1.s:d .2.s:d .4.s:d .5.s:d .6.s:d")), equalTo(emptySet()));
+    }
+
+    @Test
+    public void one_safe_maintenance_node_does_not_take_down_group() {
+        // 2 groups of 5 nodes each.  Set node #5 safely in maintenance (1st node in last group).
+        // Since the minimum number of nodes that can safely be set to maintenance before taking
+        // the whole group down is 2, the whole group should NOT be taken down.
+
+        DistributionBuilder.GroupBuilder groupBuilder = DistributionBuilder.withGroups(2).eachWithNodeCount(5);
+        GroupAvailabilityCalculator calculator = GroupAvailabilityCalculator.builder()
+                .withDistribution(DistributionBuilder.forHierarchicCluster(groupBuilder))
+                .withMinNodeRatioPerGroup(0)
+                .withSafeMaintenanceGroupThreshold(2)
+                .withNodesSafelySetToMaintenance(List.of(5))
+                .build();
+
+        GroupAvailabilityCalculator.Result result = calculator
+                .calculate(clusterState("distributor:10 storage:10 .5.s:m .6.s:m .8.s:r .9.s:d"));
+        assertThat(result.nodesThatShouldBeMaintained(), equalTo(indices()));
+        assertThat(result.nodesThatShouldBeDown(), equalTo(indices()));
+    }
+
+    @Test
+    public void two_safe_maintenance_nodes_takes_down_group() {
+        // 2 groups of 5 nodes each.  Set nodes #5 and #6 safely in maintenance (1st and 2nd nodes
+        // in last group, respectively).  Since the minimum number of nodes that can safely be set to
+        // maintenance before taking the whole group down is 2, the whole group should be taken down.
+
+        DistributionBuilder.GroupBuilder groupBuilder = DistributionBuilder.withGroups(2).eachWithNodeCount(5);
+        GroupAvailabilityCalculator calculator = GroupAvailabilityCalculator.builder()
+                .withDistribution(DistributionBuilder.forHierarchicCluster(groupBuilder))
+                .withMinNodeRatioPerGroup(0)
+                .withSafeMaintenanceGroupThreshold(2)
+                .withNodesSafelySetToMaintenance(List.of(5, 6))
+                .build();
+
+        GroupAvailabilityCalculator.Result result = calculator
+                .calculate(clusterState("distributor:10 storage:10 .5.s:m .6.s:m .8.s:r .9.s:d"));
+        assertThat(result.nodesThatShouldBeMaintained(), equalTo(indices(7, 8, 9)));
+        assertThat(result.nodesThatShouldBeDown(), equalTo(indices()));
     }
 
 }

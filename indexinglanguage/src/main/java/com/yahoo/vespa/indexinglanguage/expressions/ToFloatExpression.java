@@ -13,13 +13,13 @@ public final class ToFloatExpression extends Expression {
         super(UnresolvedDataType.INSTANCE);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(new FloatFieldValue(Float.valueOf(String.valueOf(ctx.getValue()))));
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(new FloatFieldValue(Float.valueOf(String.valueOf(context.getValue()))));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

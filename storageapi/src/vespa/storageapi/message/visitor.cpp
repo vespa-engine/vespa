@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visitor.h"
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <climits>
 #include <ostream>
@@ -32,7 +33,7 @@ CreateVisitorCommand::CreateVisitorCommand(document::BucketSpace bucketSpace,
       _instanceId(instanceId),
       _visitorId(0),
       _visitRemoves(false),
-      _fieldSet("[all]"),
+      _fieldSet(document::AllFields::NAME),
       _visitInconsistentBuckets(false),
       _queueTimeout(2000ms),
       _maxPendingReplyCount(2),
@@ -71,6 +72,16 @@ document::Bucket
 CreateVisitorCommand::getBucket() const
 {
     return document::Bucket(_bucketSpace, document::BucketId());
+}
+
+document::BucketId
+CreateVisitorCommand::super_bucket_id() const
+{
+    if (_buckets.empty()) {
+        // TODO STRIPE: Is this actually an error situation? Should be fixed elsewhere.
+        return document::BucketId();
+    }
+    return _buckets[0];
 }
 
 void
@@ -119,6 +130,7 @@ CreateVisitorCommand::print(std::ostream& out, bool verbose,
 
 CreateVisitorReply::CreateVisitorReply(const CreateVisitorCommand& cmd)
     : StorageReply(cmd),
+      _super_bucket_id(cmd.super_bucket_id()),
       _lastBucket(document::BucketId(INT_MAX))
 {
 }

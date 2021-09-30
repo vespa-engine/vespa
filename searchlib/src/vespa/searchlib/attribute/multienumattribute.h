@@ -43,21 +43,15 @@ protected:
     using Change = typename B::BaseClass::Change;
     using DocId = typename B::BaseClass::DocId;
     using EnumHandle = typename B::BaseClass::EnumHandle;
-    using EnumModifier = typename B::BaseClass::EnumModifier;
     using LoadedVector = typename B::BaseClass::LoadedVector;
-    using UniqueSet = typename B::UniqueSet;
     using ValueModifier = typename B::BaseClass::ValueModifier;
     using WeightedEnum = typename B::BaseClass::WeightedEnum;
     using generation_t = typename B::BaseClass::generation_t;
 
     using DocIndices = typename MultiValueAttribute<B, M>::DocumentValues;
     using EnumIndex = IEnumStore::Index;
-    using EnumIndexRemapper = IEnumStore::EnumIndexRemapper;
-    using EnumIndexVector = IEnumStore::IndexVector;
     using EnumStoreBatchUpdater = typename B::EnumStoreBatchUpdater;
     using EnumVector = IEnumStore::EnumVector;
-    using LoadedEnumAttribute = attribute::LoadedEnumAttribute;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using WeightedIndex = typename MultiValueAttribute<B, M>::MultiValueType;
     using WeightedIndexArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
     using WeightedIndexVector = typename MultiValueAttribute<B, M>::ValueVector;
@@ -66,7 +60,7 @@ protected:
     bool extractChangeData(const Change & c, EnumIndex & idx) override; // EnumIndex is ValueType. Use EnumStore
 
     // from EnumAttribute
-    void considerAttributeChange(const Change & c, UniqueSet & newUniques) override; // same for both string and numeric
+    void considerAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter) override; // same for both string and numeric
 
     virtual void applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater);
 

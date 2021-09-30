@@ -73,6 +73,14 @@ public:
         return vespalib::eval::ConstantValue::UP();
     }
 
+    vespalib::string getRankingExpression(const vespalib::string &) const override {
+        return {};
+    }
+
+    const search::fef::OnnxModel *getOnnxModel(const vespalib::string &) const override {
+        return nullptr;
+    }
+
     bool addField(const vespalib::string & name, bool isAttribute);
 
     search::fef::Properties & getProperties() { return _properties; }
@@ -80,6 +88,9 @@ public:
     const std::set<vespalib::string> & getHintedRankAttributes() const { return _rankAttributes; }
 
     const std::set<vespalib::string> & getHintedDumpAttributes() const { return _dumpAttributes; }
+
+    //TODO Wire in proper distribution key
+    uint32_t getDistributionKey() const override { return 0; }
 
 };
 

@@ -4,14 +4,14 @@
 #include <vespa/config-attributes.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
-#include <vespa/searchcore/proton/attribute/attribute_utils.h>
+#include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <vespa/searchcore/proton/common/config_hash.hpp>
 #include <vespa/searchcore/proton/common/i_document_type_inspector.h>
 #include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
-using proton::attribute::isUpdateableInMemoryOnly;
+using search::attribute::isUpdateableInMemoryOnly;
 using search::attribute::BasicType;
 using search::attribute::ConfigConverter;
 using vespa::config::search::AttributesConfig;

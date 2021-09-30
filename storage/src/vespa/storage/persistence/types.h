@@ -7,12 +7,13 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storageapi/buckets/bucketinfo.h>
-#include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storageapi/defs.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/storageframework/generic/clock/time.h>
 
 namespace storage {
+
+class MessageTracker;
 
 struct Types {
     typedef document::BucketId BucketId;
@@ -23,8 +24,7 @@ struct Types {
     typedef Timestamp RevertToken;
     typedef vespalib::string String;
     typedef api::BucketInfo BucketInfo;
-    typedef api::ReturnCode ReturnCode;
-    typedef StorBucketDatabase::WrappedEntry BucketDBEntry;
+    using MessageTrackerUP = std::unique_ptr<MessageTracker>;
 
     static const framework::MicroSecTime MAX_TIMESTAMP;
     static const framework::MicroSecTime UNSET_TIMESTAMP;

@@ -8,28 +8,26 @@ import java.util.Map;
 /**
  * An annotation is a description of a an area of text, with a given class. For example, an annotation for the
  *
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
 public class Annotations {
 
-
-    private Span span;
+    private final Span span;
 
     protected Map<String,Object> annotations;
-
 
     /**
      * Adds an annotation to the the the set of annotations.
      */
     public void put(String key,Object o) {
-        if(annotations == null) {
+        if (annotations == null) {
             annotations = new HashMap<>();
         }
         annotations.put(key,o);
     }
 
     public Map<String,Object> getMap() {
-        if(annotations == null) {
+        if (annotations == null) {
             return Collections.emptyMap();
         } else {
             return annotations;
@@ -113,12 +111,11 @@ public class Annotations {
      */
     public Boolean getBoolean(String key) {
         Object o = getMap().get(key);
-        if(o == null || !(o instanceof Boolean)) {
+        if ( ! (o instanceof Boolean)) {
             return null;
         } else {
-            return (Boolean) o;
+            return (Boolean)o;
         }
     }
-
 
 }

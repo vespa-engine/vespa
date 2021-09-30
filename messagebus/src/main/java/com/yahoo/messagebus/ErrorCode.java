@@ -59,10 +59,10 @@ public final class ErrorCode {
     /** The protocol specified for the message is unknown. */
     public static final int UNKNOWN_PROTOCOL       = FATAL_ERROR + 7;
 
-    /** An error occured while decoding the message. */
+    /** An error occurred while decoding the message. */
     public static final int DECODE_ERROR           = FATAL_ERROR + 8;
 
-    /** A timeout occured while sending. */
+    /** A timeout occurred while sending. */
     public static final int TIMEOUT                = FATAL_ERROR + 9;
 
     /** The target is running an incompatible version. */

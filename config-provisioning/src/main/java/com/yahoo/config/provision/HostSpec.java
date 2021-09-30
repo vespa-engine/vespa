@@ -1,7 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import java.util.ArrayList;
+import com.yahoo.component.Version;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -20,63 +21,65 @@ public class HostSpec implements Comparable<HostSpec> {
     /** Aliases of this host */
     private final List<String> aliases;
 
+    private final NodeResources realResources;
+    private final NodeResources advertisedResources;
+    private final NodeResources requestedResources;
+
     /** The current membership role of this host in the cluster it belongs to */
     private final Optional<ClusterMembership> membership;
 
-    private final Optional<Flavor> flavor;
+    private final Optional<Version> version;
 
-    private final Optional<com.yahoo.component.Version> version;
+    private final Optional<DockerImage> dockerImageRepo;
 
     private final Optional<NetworkPorts> networkPorts;
 
-    private final Optional<NodeResources> requestedResources;
-
-    public HostSpec(String hostname, Optional<ClusterMembership> membership) {
-        this(hostname, new ArrayList<>(), Optional.empty(), membership);
+    /** Create a host in a non-cloud system, where hosts are specified in config */
+    public HostSpec(String hostname, List<String> aliases, Optional<NetworkPorts> networkPorts) {
+        this(hostname, aliases,
+             NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
+             Optional.empty(), Optional.empty(), networkPorts, Optional.empty());
     }
 
-    public HostSpec(String hostname, ClusterMembership membership, Flavor flavor, Optional<com.yahoo.component.Version> version) {
-        this(hostname, new ArrayList<>(), Optional.of(flavor), Optional.of(membership), version);
+    /** Create a host in a hosted system */
+    public HostSpec(String hostname,
+                    NodeResources realResources,
+                    NodeResources advertisedResources,
+                    NodeResources requestedResources,
+                    ClusterMembership membership,
+                    Optional<Version> version,
+                    Optional<NetworkPorts> networkPorts,
+                    Optional<DockerImage> dockerImageRepo) {
+        this(hostname,
+             List.of(),
+             realResources,
+             advertisedResources,
+             requestedResources,
+             Optional.of(membership),
+             version,
+             networkPorts,
+             dockerImageRepo);
     }
 
-    public HostSpec(String hostname, List<String> aliases) {
-        this(hostname, aliases, Optional.empty(), Optional.empty());
-    }
-
-    public HostSpec(String hostname, List<String> aliases, Flavor flavor) {
-        this(hostname, aliases, Optional.of(flavor), Optional.empty());
-    }
-
-    public HostSpec(String hostname, List<String> aliases, ClusterMembership membership) {
-        this(hostname, aliases, Optional.empty(), Optional.of(membership));
-    }
-
-    public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor, Optional<ClusterMembership> membership) {
-        this(hostname, aliases, flavor, membership, Optional.empty());
-    }
-
-    public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
-                    Optional<ClusterMembership> membership, Optional<com.yahoo.component.Version> version) {
-        this(hostname, aliases, flavor, membership, version, Optional.empty());
-    }
-
-    public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
-                    Optional<ClusterMembership> membership, Optional<com.yahoo.component.Version> version,
-                    Optional<NetworkPorts> networkPorts) {
-        this(hostname, aliases, flavor, membership, version, networkPorts, Optional.empty());
-    }
-
-    public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
-                    Optional<ClusterMembership> membership, Optional<com.yahoo.component.Version> version,
-                    Optional<NetworkPorts> networkPorts, Optional<NodeResources> requestedResources) {
+    private HostSpec(String hostname,
+                     List<String> aliases,
+                     NodeResources realResources,
+                     NodeResources advertisedResurces,
+                     NodeResources requestedResources,
+                     Optional<ClusterMembership> membership,
+                     Optional<Version> version,
+                     Optional<NetworkPorts> networkPorts,
+                     Optional<DockerImage> dockerImageRepo) {
         if (hostname == null || hostname.isEmpty()) throw new IllegalArgumentException("Hostname must be specified");
         this.hostname = hostname;
         this.aliases = List.copyOf(aliases);
-        this.flavor = flavor;
-        this.membership = membership;
-        this.version = Objects.requireNonNull(version, "Version cannot be null but can be empty");;
-        this.networkPorts = Objects.requireNonNull(networkPorts, "Network ports cannot be null but can be empty");;
+        this.realResources = Objects.requireNonNull(realResources);
+        this.advertisedResources = Objects.requireNonNull(advertisedResurces);
         this.requestedResources = Objects.requireNonNull(requestedResources, "RequestedResources cannot be null");
+        this.membership = Objects.requireNonNull(membership);
+        this.version = Objects.requireNonNull(version, "Version cannot be null but can be empty");
+        this.networkPorts = Objects.requireNonNull(networkPorts, "Network ports cannot be null but can be empty");
+        this.dockerImageRepo = Objects.requireNonNull(dockerImageRepo, "Docker image repo cannot be null but can be empty");
     }
 
     /** Returns the name identifying this host */
@@ -85,7 +88,11 @@ public class HostSpec implements Comparable<HostSpec> {
     /** Returns the aliases of this host as an immutable list. This may be empty but never null. */
     public List<String> aliases() { return aliases; }
 
-    public Optional<Flavor> flavor() { return flavor; }
+    /** The real resources available for Vespa processes on this node, after subtracting infrastructure overhead. */
+    public NodeResources realResources() { return realResources; }
+
+    /** The total advertised resources of this node, typically matching what's requested. */
+    public NodeResources advertisedResources() { return advertisedResources; }
 
     /** Returns the current version of Vespa running on this node, or empty if not known */
     public Optional<com.yahoo.component.Version> version() { return version; }
@@ -96,11 +103,13 @@ public class HostSpec implements Comparable<HostSpec> {
     /** Returns the network port allocations on this host, or empty if not present */
     public Optional<NetworkPorts> networkPorts() { return networkPorts; }
 
-    /** Returns the requested resources leading to this host being provisioned, or empty if not known */
-    public Optional<NodeResources> requestedResources() { return requestedResources; }
+    /** Returns the requested resources leading to this host being provisioned, or empty if unspecified */
+    public Optional<NodeResources> requestedResources() { return requestedResources.asOptional(); }
+
+    public Optional<DockerImage> dockerImageRepo() { return dockerImageRepo; }
 
     public HostSpec withPorts(Optional<NetworkPorts> ports) {
-        return new HostSpec(hostname, aliases, flavor, membership, version, ports, requestedResources);
+        return new HostSpec(hostname, aliases, realResources, advertisedResources, requestedResources, membership, version, ports, dockerImageRepo);
     }
 
     @Override

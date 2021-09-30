@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.systemstate.rule;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -22,7 +22,7 @@ public class NodeState {
     /** A location string that expresses the use of THIS node. */
     public static final String NODE_CURRENT = ".";
 
-    private static Logger log = Logger.getLogger(NodeState.class.getName());
+    private static final Logger log = Logger.getLogger(NodeState.class.getName());
     private final Map<String, NodeState> children = new LinkedHashMap<String, NodeState>();
     private final Map<String, String> state = new LinkedHashMap<String, String>();
     private NodeState parent = null;
@@ -91,7 +91,7 @@ public class NodeState {
         }
         if (arr[0].equals(NODE_PARENT)) {
             if (parent == null) {
-                log.log(LogLevel.ERROR, "Location string '" + key + "' requests a parent above the top-most node, " +
+                log.log(Level.SEVERE, "Location string '" + key + "' requests a parent above the top-most node, " +
                                         "returning self to avoid crash.");
             }
             return parent.getChild(arr[1], force);

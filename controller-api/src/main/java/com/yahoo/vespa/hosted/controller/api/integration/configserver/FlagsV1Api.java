@@ -1,6 +1,9 @@
 // Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.flags.json.wire.WireFlagData;
 import com.yahoo.vespa.flags.json.wire.WireFlagDataList;
 
@@ -13,6 +16,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author hakonhall
@@ -36,4 +41,15 @@ public interface FlagsV1Api {
     @GET
     @Path("/data")
     WireFlagDataList listFlagData(@QueryParam("recursive") Boolean recursive);
+
+    @GET
+    @Path("/defined")
+    Map<String, WireFlagDefinition> listFlagDefinition();
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    class WireFlagDefinition {
+        @JsonProperty("owners") public List<String> owners;
+        @JsonProperty("expiresAt") public String expiresAt;
+    }
 }

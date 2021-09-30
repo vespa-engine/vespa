@@ -229,15 +229,14 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         /* Not yet
         assertNotNull(h.getService("qrserver"));
-        assertNotNull(h.getService("topleveldisptach"));
         assertNotNull(h.getService("docproc"));
         */
 
     }
 
     @Test
-    public void requireThatContentStreamingHandlesMultipleSearchDefinitions() {
-        final String musicClusterId = "music-cluster-id";
+    public void requireThatContentStreamingHandlesMultipleSchemas() {
+        String musicClusterId = "music-cluster-id";
 
         ContentCluster cluster = createContentWithBooksToo(
                 "<content version='1.0' id='" + musicClusterId + "'>" +
@@ -480,7 +479,7 @@ public class ContentBuilderTest extends DomBuilderTest {
             assertEquals("VESPA_USE_VESPAMALLOC_D=\"distributord\" ", n.getVespaMallocDebugEnvVariable());
             assertEquals("storaged", n.getVespaMalloc());
             assertEquals("VESPA_USE_VESPAMALLOC_DST=\"all\" ", n.getVespaMallocDebugStackTraceEnvVariable());
-            assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_NO_VESPAMALLOC=\"proton\" VESPA_USE_VESPAMALLOC=\"storaged\" VESPA_USE_VESPAMALLOC_D=\"distributord\" VESPA_USE_VESPAMALLOC_DST=\"all\" ", n.getEnvVariables());
+            assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_NO_VESPAMALLOC=\"proton\" VESPA_USE_VESPAMALLOC=\"storaged\" VESPA_USE_VESPAMALLOC_D=\"distributord\" VESPA_USE_VESPAMALLOC_DST=\"all\" ", n.getEnvVariables());
         }
     }
 
@@ -509,10 +508,10 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(b.getRootGroup().getVespaMallocDebugStackTrace().isPresent());
 
         assertThat(s.getSearchNodes().size(), is(4));
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_NO_VESPAMALLOC=\"proton\" ", s.getSearchNodes().get(0).getEnvVariables());
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC_D=\"distributord\" ", s.getSearchNodes().get(1).getEnvVariables());
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC_DST=\"all\" ", s.getSearchNodes().get(2).getEnvVariables());
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC=\"storaged\" ", s.getSearchNodes().get(3).getEnvVariables());
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_NO_VESPAMALLOC=\"proton\" ", s.getSearchNodes().get(0).getEnvVariables());
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_VESPAMALLOC_D=\"distributord\" ", s.getSearchNodes().get(1).getEnvVariables());
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_VESPAMALLOC_DST=\"all\" ", s.getSearchNodes().get(2).getEnvVariables());
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_VESPAMALLOC=\"storaged\" ", s.getSearchNodes().get(3).getEnvVariables());
     }
 
     @Test
@@ -720,6 +719,17 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertThat(config.search().mmap().options(0), is(ProtonConfig.Search.Mmap.Options.POPULATE));
     }
 
+    private String singleNodeContentXml() {
+        return  "<services>" +
+                "<content version='1.0' id='search'>" +
+                "  <redundancy>1</redundancy>" +
+                "  <documents>" +
+                "    <document type='music' mode='index'/>" +
+                "  </documents>" +
+                "  <nodes count='1'/>" +
+                "</content>" +
+                "</services>";
+    }
     @Test
     public void ensurePruneRemovedDocumentsAgeForHostedVespa() {
         {
@@ -739,15 +749,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         }
 
         {
-            String hostedXml = "<services>" +
-                    "<content version='1.0' id='search'>" +
-                    "  <redundancy>1</redundancy>" +
-                    "  <documents>" +
-                    "    <document type='music' mode='index'/>" +
-                    "  </documents>" +
-                    "  <nodes count='1'/>" +
-                    "</content>" +
-                    "</services>";
+            String hostedXml = singleNodeContentXml();
 
             DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true));
             VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
@@ -758,6 +760,68 @@ public class ContentBuilderTest extends DomBuilderTest {
             ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
             assertEquals(349260.0, config.pruneremoveddocumentsage(), 0.001);
         }
+    }
+
+    private String xmlWithVisibilityDelay(Double visibilityDelay) {
+        return "<services>" +
+                "<content version='1.0' id='search'>" +
+                "  <redundancy>1</redundancy>" +
+                "  <search>" +
+                ((visibilityDelay != null) ? "    <visibility-delay>" + visibilityDelay + "</visibility-delay>" : "") +
+                "  </search>" +
+                "  <documents>" +
+                "    <document type='music' mode='index'/>" +
+                "  </documents>" +
+                "  <nodes count='1'/>" +
+                "</content>" +
+                "</services>";
+    }
+
+    private void verifyFeedSequencer(String input, String expected) {
+        verifyFeedSequencer(input, expected, 0);
+    }
+    private void verifyFeedSequencer(String input, String expected, double visibilityDelay) {
+        String hostedXml = xmlWithVisibilityDelay(visibilityDelay);
+
+        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setFeedSequencerType(input));
+        VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
+                .withServices(hostedXml)
+                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                .build())
+                .create(deployStateBuilder);
+        ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
+        assertEquals(expected, config.indexing().optimize().toString());
+
+    }
+
+    @Test
+    public void ensureFeedSequencerIsControlledByFlag() {
+        verifyFeedSequencer("LATENCY", "LATENCY");
+        verifyFeedSequencer("ADAPTIVE", "ADAPTIVE");
+        verifyFeedSequencer("THROUGHPUT", "LATENCY", 0);
+        verifyFeedSequencer("THROUGHPUT", "THROUGHPUT", 0.1);
+
+        verifyFeedSequencer("THOUGHPUT", "LATENCY");
+        verifyFeedSequencer("adaptive", "LATENCY");
+
+    }
+
+    private void verifyThatFeatureFlagControlsVisibilityDelayDefault(Double xmlOverride, double expected) {
+        String hostedXml = xmlWithVisibilityDelay(xmlOverride);
+        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties());
+        VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
+                .withServices(hostedXml)
+                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                .build())
+                .create(deployStateBuilder);
+        ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
+        assertEquals(expected, config.documentdb(0).visibilitydelay(), 0.0);
+    }
+    @Test
+    public void verifyThatFeatureFlagControlsVisibilityDelayDefault() {
+        verifyThatFeatureFlagControlsVisibilityDelayDefault(null, 0.0);
+        verifyThatFeatureFlagControlsVisibilityDelayDefault(0.5, 0.5);
+        verifyThatFeatureFlagControlsVisibilityDelayDefault(0.6, 0.6);
     }
 
     @Test
@@ -825,8 +889,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         VespaModel m = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                                                                 .withHosts(getHosts())
                                                                 .withServices(combined)
-                                                                .withSearchDefinitions(Arrays.asList(MockApplicationPackage.MUSIC_SEARCHDEFINITION,
-                                                                                                     MockApplicationPackage.BOOK_SEARCHDEFINITION))
+                                                                .withSchemas(Arrays.asList(MockApplicationPackage.MUSIC_SEARCHDEFINITION,
+                                                                                           MockApplicationPackage.BOOK_SEARCHDEFINITION))
                                                                 .build())
                 .create();
 

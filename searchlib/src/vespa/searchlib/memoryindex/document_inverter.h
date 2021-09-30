@@ -6,16 +6,16 @@
 #include <vespa/searchlib/index/schema_index_fields.h>
 
 namespace document {
-class DataType;
-class Document;
-class DocumentType;
-class Field;
-class FieldValue;
+    class DataType;
+    class Document;
+    class DocumentType;
+    class Field;
+    class FieldValue;
 }
 
-namespace search {
-    class ISequencedTaskExecutor;
+namespace vespalib {
     class IDestructorCallback;
+    class ISequencedTaskExecutor;
 }
 
 namespace search::memoryindex {
@@ -31,6 +31,7 @@ class IFieldIndexCollection;
  */
 class DocumentInverter {
 private:
+    using ISequencedTaskExecutor = vespalib::ISequencedTaskExecutor;
     DocumentInverter(const DocumentInverter &) = delete;
     DocumentInverter &operator=(const DocumentInverter &) = delete;
 
@@ -38,15 +39,12 @@ private:
 
     void addFieldPath(const document::DocumentType &docType, uint32_t fieldId);
     void buildFieldPath(const document::DocumentType & docType, const document::DataType *dataType);
-    void invertNormalDocTextField(size_t fieldId, const document::FieldValue &field);
-    void invertNormalDocUriField(const index::UriField &handle, const document::FieldValue &field);
 
     using FieldPath = document::Field;
     using IndexedFieldPaths = std::vector<std::unique_ptr<FieldPath>>;
-    IndexedFieldPaths                   _indexedFieldPaths;
-    const document::DataType *          _dataType;
-
-    index::SchemaIndexFields  _schemaIndexFields;
+    IndexedFieldPaths          _indexedFieldPaths;
+    const document::DataType * _dataType;
+    index::SchemaIndexFields   _schemaIndexFields;
 
     std::vector<std::unique_ptr<FieldInverter>> _inverters;
     std::vector<std::unique_ptr<UrlFieldInverter>> _urlInverters;
@@ -83,7 +81,7 @@ public:
      * NOTE: The caller of this function should sync the 'invert threads' executor first,
      * to ensure that inverting is completed before pushing starts.
      */
-    void pushDocuments(const std::shared_ptr<IDestructorCallback> &onWriteDone);
+    void pushDocuments(const std::shared_ptr<vespalib::IDestructorCallback> &onWriteDone);
 
     /**
      * Invert (add) the given document.

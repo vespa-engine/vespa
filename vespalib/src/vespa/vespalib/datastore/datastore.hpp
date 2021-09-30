@@ -9,7 +9,7 @@
 #include "raw_allocator.hpp"
 #include <vespa/vespalib/util/array.hpp>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename RefT>
 DataStoreT<RefT>::DataStoreT()
@@ -29,7 +29,7 @@ DataStoreT<RefT>::freeElem(EntryRef ref, size_t numElems)
     BufferState &state = getBufferState(intRef.bufferId());
     if (state.isActive()) {
         if (state.freeListList() != nullptr && numElems == state.getArraySize()) {
-            if (state.freeList().empty()) {
+            if (state.isFreeListEmpty()) {
                 state.addToFreeListList();
             }
             state.freeList().push_back(ref);
@@ -133,11 +133,23 @@ DataStoreT<RefT>::freeListRawAllocator(uint32_t typeId)
 
 template <typename EntryType, typename RefT>
 DataStore<EntryType, RefT>::DataStore()
-    : ParentType(),
-      _type(1, RefType::offsetSize(), RefType::offsetSize())
+    : DataStore(std::make_unique<BufferType<EntryType>>(1, RefType::offsetSize(), RefType::offsetSize()))
 {
-    addType(&_type);
-    initActiveBuffers();
+}
+
+template <typename EntryType, typename RefT>
+DataStore<EntryType, RefT>::DataStore(uint32_t min_arrays)
+    : DataStore(std::make_unique<BufferType<EntryType>>(1, min_arrays, RefType::offsetSize()))
+{
+}
+
+template <typename EntryType, typename RefT>
+DataStore<EntryType, RefT>::DataStore(BufferTypeUP type)
+    : ParentType(),
+      _type(std::move(type))
+{
+    addType(_type.get());
+    init_primary_buffers();
 }
 
 template <typename EntryType, typename RefT>
@@ -150,15 +162,9 @@ template <typename EntryType, typename RefT>
 EntryRef
 DataStore<EntryType, RefT>::addEntry(const EntryType &e)
 {
-    ensureBufferCapacity(0, 1);
-    uint32_t activeBufferId = _activeBufferIds[0];
-    BufferState &state = this->getBufferState(activeBufferId);
-    size_t oldSize = state.size();
-    EntryType *be = static_cast<EntryType *>(this->getBuffer(activeBufferId)) + oldSize;
-    new (static_cast<void *>(be)) EntryType(e);
-    RefType ref(oldSize, activeBufferId);
-    state.pushed_back(1);
-    return ref;
+    using NoOpReclaimer = DefaultReclaimer<EntryType>;
+    // Note: This will fallback to regular allocation if free lists are not enabled.
+    return FreeListAllocator<EntryType, RefT, NoOpReclaimer>(*this, 0).alloc(e).ref;
 }
 
 template <typename EntryType, typename RefT>
@@ -168,14 +174,6 @@ DataStore<EntryType, RefT>::getEntry(EntryRef ref) const
     RefType intRef(ref);
     const EntryType *be = this->template getEntry<EntryType>(intRef);
     return *be;
-}
-
-template <typename EntryType, typename RefT>
-template <typename ReclaimerT>
-FreeListAllocator<EntryType, RefT, ReclaimerT>
-DataStore<EntryType, RefT>::freeListAllocator()
-{
-    return FreeListAllocator<EntryType, RefT, ReclaimerT>(*this, 0);
 }
 
 extern template class DataStoreT<EntryRefT<22> >;

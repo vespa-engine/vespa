@@ -4,29 +4,24 @@
 
 #include "value_factory.h"
 #include "nix_value.h"
-#include "array_value.h"
-#include "object_value.h"
-#include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
-struct NixValueFactory : public ValueFactory {
+struct NixValueFactory final : public ValueFactory {
     Value *create(Stash &) const override { return NixValue::instance(); }
 };
 
-struct ArrayValueFactory : public ValueFactory {
+struct ArrayValueFactory final : public ValueFactory {
     SymbolTable &symbolTable;
-    ArrayValueFactory(SymbolTable &table) : symbolTable(table) {}
+    size_t _reserve;
+    ArrayValueFactory(SymbolTable &table, size_t reserve) noexcept : symbolTable(table), _reserve(reserve) {}
     Value *create(Stash & stash) const override;
 };
 
-struct ObjectValueFactory : public ValueFactory {
+struct ObjectValueFactory final : public ValueFactory {
     SymbolTable &symbolTable;
-    ObjectValueFactory(SymbolTable &table) : symbolTable(table) {}
+    ObjectValueFactory(SymbolTable &table) noexcept : symbolTable(table) {}
     Value *create(Stash & stash) const override;
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

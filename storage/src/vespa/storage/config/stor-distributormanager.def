@@ -89,6 +89,12 @@ priority_merge_out_of_sync_copies int default=120
 ## Merge for restoring redundancy of copies
 priority_merge_too_few_copies int default=120
 
+## Merge that involves a global bucket. There are generally significantly fewer such
+## buckets than default-space buckets, and searches to documents in the default space
+## may depend on the presence of (all) global documents. Consequently, this priority
+## should be higher (i.e. numerically smaller) than that of regular merges.
+priority_merge_global_buckets int default=115
+
 ## Copy activation when there are no other active copies (likely causing
 ## lack of search coverage for that bucket)
 priority_activate_no_existing_active int default=100
@@ -96,7 +102,7 @@ priority_activate_no_existing_active int default=100
 ## Copy activation when there is already an active copy for the bucket.
 priority_activate_with_existing_active int default=100
 
-## Deletion of bucket copy. Cheap on VDS, not necessarily so on indexed search.
+## Deletion of bucket copy.
 priority_delete_bucket_copy int default=100
 
 ## Joining caused by bucket siblings getting sufficiently small to fit into a
@@ -203,7 +209,7 @@ simulated_db_merging_latency_msec int default=0
 ## Whether to use a B-tree data structure for the distributor bucket database instead
 ## of the legacy database. Setting this option may trigger alternate code paths for
 ## read only operations, as the B-tree database is thread safe for concurrent reads.
-use_btree_database bool default=false restart
+use_btree_database bool default=true restart
 
 ## If a bucket is inconsistent and an Update operation is received, a two-phase
 ## write-repair path is triggered in which a Get is sent to all diverging replicas.
@@ -228,3 +234,49 @@ merge_operations_disabled bool default=false
 ## consistent view of fields across document versions.
 ## This is mostly useful in a system that is effectively read-only.
 use_weak_internal_read_consistency_for_client_gets bool default=false
+
+## If true, adds an initial metadata-only fetch phase to updates that touch buckets
+## with inconsistent replicas. Metadata timestamps are compared and a single full Get
+## is sent _only_ to one node with the highest timestamp. Without a metadata phase,
+## full gets would be sent to _all_ nodes.
+## Setting this option to true always implicitly enables the fast update restart
+## feature, so it's not required to set that config to true, nor will setting it
+## to false actually disable the feature.
+enable_metadata_only_fetch_phase_for_inconsistent_updates bool default=false
+
+## If a distributor main thread tick is constantly processing requests or responses
+## originating from other nodes, setting this value above zero will prevent implicit
+## maintenance scans from being done as part of the tick for up to N rounds of ticking.
+## This is to reduce the amount of CPU spent on ideal state calculations and bucket DB
+## accesses when the distributor is heavily loaded with feed operations.
+max_consecutively_inhibited_maintenance_ticks int default=20
+
+## If set, pending merges to buckets in the global bucket space will be prioritized
+## higher than merges to buckets in the default bucket space. This ensures that global
+## documents will be kept in sync without being starved by non-global documents.
+## Note that enabling this feature risks starving default bucket space merges if a
+## resource exhaustion case prevents global merges from completing.
+## This is a live config for that reason, i.e. it can be disabled in an emergency
+## situation if needed.
+prioritize_global_bucket_merges bool default=true
+
+## If set, activation of bucket replicas is limited to only those replicas that have
+## bucket info consistent with a majority of the other replicas for that bucket.
+## Multiple active replicas is only a feature that is enabled for grouped clusters,
+## and this feature is intended to prevent nodes in stale groups (whose buckets are
+## likely to be out of sync) from serving query traffic until they have gotten back
+## into sync.
+## Up to the given number of groups can have their replica activation inhibited
+## by this feature. If zero, the feature is functionally disabled.
+## If more groups are out of sync than the configured number N, the inhibited groups
+## will be the N first groups present in the distribution config.
+## Note: this feature only kicks in if the number of groups in the cluster is greater
+## than 1.
+max_activation_inhibited_out_of_sync_groups int default=0
+
+## Specifies the number of stripes over which a distributor internally distributes
+## its buckets and operation processing. Every stripe receives its own thread.
+## If <= 0, the number of stripes is inferred automatically based on the number of
+## CPU cores available. If > 0, the number of stripes is explicitly overridden.
+## Stripe counts must be a power of two.
+num_distributor_stripes int default=0 restart

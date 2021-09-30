@@ -5,10 +5,12 @@ vespa_add_library(searchlib_queryeval OBJECT
     andsearch.cpp
     blueprint.cpp
     booleanmatchiteratorwrapper.cpp
+    children_iterators.cpp
     create_blueprint_visitor_helper.cpp
     document_weight_search_iterator.cpp
     dot_product_blueprint.cpp
     dot_product_search.cpp
+    elementiterator.cpp
     emptysearch.cpp
     equiv_blueprint.cpp
     equivsearch.cpp
@@ -18,13 +20,17 @@ vespa_add_library(searchlib_queryeval OBJECT
     fake_search.cpp
     fake_searchable.cpp
     field_spec.cpp
+    filter_wrapper.cpp
+    full_search.cpp
     get_weight_from_node.cpp
+    global_filter.cpp
     hitcollector.cpp
     intermediate_blueprints.cpp
     isourceselector.cpp
     iterator_pack.cpp
     iterators.cpp
     leaf_blueprints.cpp
+    matching_elements_search.cpp
     monitoring_dump_iterator.cpp
     monitoring_search_iterator.cpp
     multibitvectoriterator.cpp
@@ -32,6 +38,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     nearest_neighbor_blueprint.cpp
     nearest_neighbor_iterator.cpp
     nearsearch.cpp
+    nns_index_iterator.cpp
     orsearch.cpp
     predicate_blueprint.cpp
     predicate_search.cpp

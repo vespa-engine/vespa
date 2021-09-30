@@ -87,7 +87,7 @@ ShrinkLidSpaceFlushTarget::needUrgentFlush() const
 }
 
 IFlushTarget::Task::UP
-ShrinkLidSpaceFlushTarget::initFlush(SerialNum currentSerial)
+ShrinkLidSpaceFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>)
 {
     if (currentSerial < _flushedSerialNum) {
         _lastFlushTime = vespalib::system_clock::now();

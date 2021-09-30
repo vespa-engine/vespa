@@ -14,6 +14,7 @@ import static com.yahoo.search.query.textserialize.item.ListUtil.first;
  * @author Tony Vaagenes
  */
 class Serializer {
+
     static String serialize(Object child, ItemIdMapper itemIdMapper) {
         if (child instanceof DispatchForm) {
             return ((DispatchForm) child).serialize(itemIdMapper);
@@ -76,4 +77,5 @@ class Serializer {
     static String serializeItem(Item item, ItemIdMapper itemIdMapper) {
         return ItemExecutorRegistry.getByType(item.getItemType()).itemToForm(item, itemIdMapper).serialize(itemIdMapper);
     }
+
 }

@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Logger;
 
 /**
  * A group in a search cluster. This class is multithread safe.
@@ -15,12 +16,17 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class Group {
 
+    private static final Logger log = Logger.getLogger(Group.class.getName());
+    private final static double maxContentSkew = 0.10; // If documents on a node is more than 10% off from the average the group is unbalanced
+    private final static int minDocsPerNodeToRequireLowSkew = 100;
+
     private final int id;
     private final ImmutableList<Node> nodes;
-
     private final AtomicBoolean hasSufficientCoverage = new AtomicBoolean(true);
     private final AtomicBoolean hasFullCoverage = new AtomicBoolean(true);
     private final AtomicLong activeDocuments = new AtomicLong(0);
+    private final AtomicBoolean isBlockingWrites = new AtomicBoolean(false);
+    private final AtomicBoolean isBalanced = new AtomicBoolean(true);
 
     public Group(int id, List<Node> nodes) {
         this.id = id;
@@ -52,38 +58,52 @@ public class Group {
     }
 
     public int workingNodes() {
-        int nodesUp = 0;
-        for (Node node : nodes) {
-            if (node.isWorking() == Boolean.TRUE) {
-                nodesUp++;
+        return (int) nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).count();
+    }
+
+    public void aggregateNodeValues() {
+        long activeDocs = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(Node::getActiveDocuments).sum();
+        activeDocuments.set(activeDocs);
+        isBlockingWrites.set(nodes.stream().anyMatch(Node::isBlockingWrites));
+        int numWorkingNodes = workingNodes();
+        if (numWorkingNodes > 0) {
+            long average = activeDocs / numWorkingNodes;
+            long skew = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(node -> Math.abs(node.getActiveDocuments() - average)).sum();
+            boolean balanced = skew <= activeDocs * maxContentSkew;
+            if (!isBalanced.get() || balanced != isBalanced.get()) {
+                if (!isSparse())
+                    log.info("Content is " + (balanced ? "" : "not ") + "well balanced. Current deviation = " +
+                             skew * 100 / activeDocs + " %. activeDocs = " + activeDocs + ", skew = " + skew +
+                             ", average = " + average);
+                isBalanced.set(balanced);
             }
+        } else {
+            isBalanced.set(true);
         }
-        return nodesUp;
     }
 
-    void aggregateActiveDocuments() {
-        long activeDocumentsInGroup = 0;
-        for (Node node : nodes) {
-            if (node.isWorking() == Boolean.TRUE) {
-                activeDocumentsInGroup += node.getActiveDocuments();
-            }
-        }
-        activeDocuments.set(activeDocumentsInGroup);
+    /** Returns the active documents on this group. If unknown, 0 is returned. */
+    long activeDocuments() { return activeDocuments.get(); }
 
+    /** Returns whether any node in this group is currently blocking write operations */
+    public boolean isBlockingWrites() { return isBlockingWrites.get(); }
+
+    /** Returns whether the nodes in the group have about the same number of documents */
+    public boolean isBalanced() { return isBalanced.get(); }
+
+    /** Returns whether this group has too few documents per node to expect it to be balanced */
+    public boolean isSparse() {
+        if (nodes.isEmpty()) return false;
+        return activeDocuments.get() / nodes.size() < minDocsPerNodeToRequireLowSkew;
     }
 
-    /** Returns the active documents on this node. If unknown, 0 is returned. */
-    long getActiveDocuments() {
-        return this.activeDocuments.get();
-    }
-
-    public boolean isFullCoverageStatusChanged(boolean hasFullCoverageNow) {
+    public boolean fullCoverageStatusChanged(boolean hasFullCoverageNow) {
         boolean previousState = hasFullCoverage.getAndSet(hasFullCoverageNow);
         return previousState != hasFullCoverageNow;
     }
 
     @Override
-    public String toString() { return "search group " + id; }
+    public String toString() { return "group " + id; }
 
     @Override
     public int hashCode() { return id; }

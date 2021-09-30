@@ -5,17 +5,10 @@
 namespace search::engine {
 
 MonitorReply::MonitorReply()
-    : mld(),
-      activeDocsRequested(false),
-      partid(),
+    : activeDocs(0),
       distribution_key(-1),
       timestamp(),
-      totalNodes(),
-      activeNodes(),
-      totalParts(),
-      activeParts(),
-      activeDocs(0),
-      flags()
+      is_blocking_writes(false)
 { }
 
 }

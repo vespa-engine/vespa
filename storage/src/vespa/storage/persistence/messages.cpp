@@ -2,13 +2,14 @@
 
 #include "messages.h"
 #include <ostream>
+#include <cassert>
 
 using document::BucketSpace;
 
 namespace storage {
 
 GetIterCommand::GetIterCommand(const document::Bucket &bucket,
-                               const spi::IteratorId iteratorId,
+                               spi::IteratorId iteratorId,
                                uint32_t maxByteSize)
     : api::InternalCommand(ID),
       _bucket(bucket),
@@ -175,6 +176,58 @@ AbortBucketOperationsReply::print(std::ostream& out, bool, const std::string &) 
 std::unique_ptr<api::StorageReply>
 AbortBucketOperationsCommand::makeReply() {
     return std::make_unique<AbortBucketOperationsReply>(*this);
+}
+
+std::unique_ptr<api::StorageReply>
+RunTaskCommand::makeReply() {
+    return std::make_unique<RunTaskReply>(*this);
+}
+
+RunTaskCommand::RunTaskCommand(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task)
+    : api::InternalCommand(ID),
+      _task(std::move(task)),
+      _bucket(bucket)
+{ }
+
+RunTaskCommand::~RunTaskCommand() {
+    if (_task) {
+        _task->fail(_bucket);
+    }
+}
+
+void
+RunTaskCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    out << "RunTaskCommand(" << _bucket <<")";
+
+    if (verbose) {
+        out << " : ";
+        InternalCommand::print(out, true, indent);
+    }
+}
+
+void
+RunTaskCommand::run(const spi::Bucket & bucket, std::shared_ptr<vespalib::IDestructorCallback> onComplete)
+{
+    if (_task) {
+        _task->run(bucket, std::move(onComplete));
+        _task.reset();
+    }
+}
+
+RunTaskReply::RunTaskReply(const RunTaskCommand& cmd)
+    : api::InternalReply(ID, cmd)
+{ }
+
+RunTaskReply::~RunTaskReply() = default;
+
+void
+RunTaskReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    out << "RunTaskReply()";
+
+    if (verbose) {
+        out << " : ";
+        InternalReply::print(out, true, indent);
+    }
 }
 
 }

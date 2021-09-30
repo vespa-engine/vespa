@@ -48,20 +48,20 @@ public class AsyncExecutionOfOneChainTestCase {
     private class ParallelExecutor extends Searcher {
 
         /** The number of parallel executions */
-        private static final int parallelism=2;
+        private static final int parallelism = 2;
 
         @Override
         public Result search(Query query, Execution execution) {
-            List<FutureResult> futureResults=new ArrayList<>(parallelism);
-            for (int i=0; i<parallelism; i++)
+            List<FutureResult> futureResults = new ArrayList<>(parallelism);
+            for (int i = 0; i < parallelism; i++)
                 futureResults.add(new AsyncExecution(execution).search(query.clone()));
 
-            Result mainResult=execution.search(query);
+            Result mainResult = execution.search(query);
 
             // Add hits from other threads
             AsyncExecution.waitForAll(futureResults,query.getTimeLeft());
             for (FutureResult futureResult : futureResults) {
-                Result result=futureResult.get();
+                Result result = futureResult.get();
                 mainResult.mergeWith(result);
                 mainResult.hits().addAll(result.hits().asList());
             }
@@ -72,7 +72,7 @@ public class AsyncExecutionOfOneChainTestCase {
 
     private static class RegularProvider extends Searcher {
 
-        private AtomicInteger counter=new AtomicInteger();
+        private final AtomicInteger counter = new AtomicInteger();
 
         @Override
         public Result search(Query query,Execution execution) {

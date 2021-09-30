@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "translogserver.h"
 #include <vespa/vespalib/net/state_explorer.h>
 
 namespace search::transactionlog {
+
+class TransLogServer;
 
 /**
  * Class used to explore the state of a transaction log server.
@@ -13,13 +14,15 @@ namespace search::transactionlog {
 class TransLogServerExplorer : public vespalib::StateExplorer
 {
 private:
-    TransLogServer::SP _server;
+    using TransLogServerSP = std::shared_ptr<TransLogServer>;
+    TransLogServerSP _server;
 
 public:
-    TransLogServerExplorer(TransLogServer::SP server) : _server(std::move(server)) {}
-    virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
-    virtual std::vector<vespalib::string> get_children_names() const override;
-    virtual std::unique_ptr<StateExplorer> get_child(vespalib::stringref name) const override;
+    TransLogServerExplorer(TransLogServerSP server) : _server(std::move(server)) {}
+    ~TransLogServerExplorer() override;
+    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    std::vector<vespalib::string> get_children_names() const override;
+    std::unique_ptr<StateExplorer> get_child(vespalib::stringref name) const override;
 };
 
 }

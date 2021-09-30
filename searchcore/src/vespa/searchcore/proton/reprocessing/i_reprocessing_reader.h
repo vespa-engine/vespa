@@ -14,7 +14,7 @@ struct IReprocessingReader
 {
     typedef std::shared_ptr<IReprocessingReader> SP;
 
-    virtual ~IReprocessingReader() {}
+    virtual ~IReprocessingReader() = default;
 
     /**
      * Handle the given existing document.

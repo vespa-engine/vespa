@@ -4,6 +4,6 @@ vespa_add_executable(logd_proto_converter_test_app TEST
     proto_converter_test.cpp
     DEPENDS
     logd
-    gtest
+    GTest::GTest
 )
 vespa_add_test(NAME logd_proto_converter_test_app COMMAND logd_proto_converter_test_app)

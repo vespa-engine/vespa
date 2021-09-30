@@ -1,8 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "mergeoperation.h"
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <array>
 
 #include <vespa/log/bufferedlogger.h>
@@ -10,7 +13,7 @@ LOG_SETUP(".distributor.operation.idealstate.merge");
 
 namespace storage::distributor {
 
-MergeOperation::~MergeOperation() {}
+MergeOperation::~MergeOperation() = default;
 
 std::string
 MergeOperation::getStatus() const
@@ -104,7 +107,7 @@ struct NodeIndexComparator
 }
 
 void
-MergeOperation::onStart(DistributorMessageSender& sender)
+MergeOperation::onStart(DistributorStripeMessageSender& sender)
 {
     BucketDatabase::Entry entry = _bucketSpace->getBucketDatabase().get(getBucketId());
     if (!entry.valid()) {
@@ -142,7 +145,7 @@ MergeOperation::onStart(DistributorMessageSender& sender)
         auto msg = std::make_shared<api::MergeBucketCommand>(
                 getBucket(),
                 _mnodes,
-                _manager->getDistributorComponent().getUniqueTimestamp(),
+                _manager->operation_context().generate_unique_timestamp(),
                 clusterState.getVersion());
 
         // Due to merge forwarding/chaining semantics, we must always send
@@ -160,7 +163,7 @@ MergeOperation::onStart(DistributorMessageSender& sender)
 
         sender.sendToNode(lib::NodeType::STORAGE, _mnodes[0].index, msg);
 
-        _sentMessageTime = _manager->getDistributorComponent().getClock().getTimeInSeconds();
+        _sentMessageTime = _manager->node_context().clock().getTimeInSeconds();
     } else {
         LOGBP(debug,
               "Unable to merge bucket %s, since only one copy is available. System state %s",
@@ -207,7 +210,7 @@ MergeOperation::sourceOnlyCopyChangedDuringMerge(
 void
 MergeOperation::deleteSourceOnlyNodes(
         const BucketDatabase::Entry& currentState,
-        DistributorMessageSender& sender)
+        DistributorStripeMessageSender& sender)
 {
     assert(currentState.valid());
     std::vector<uint16_t> sourceOnlyNodes;
@@ -227,16 +230,13 @@ MergeOperation::deleteSourceOnlyNodes(
         getBucketId().toString().c_str());
 
     if (!sourceOnlyNodes.empty()) {
-        _removeOperation.reset(
-                new RemoveBucketOperation(
-                        _manager->getDistributorComponent().getClusterName(),
-                        BucketAndNodes(getBucket(), sourceOnlyNodes)));
+        _removeOperation = std::make_unique<RemoveBucketOperation>(
+                        _manager->node_context(),
+                        BucketAndNodes(getBucket(), sourceOnlyNodes));
         // Must not send removes to source only copies if something has caused
         // pending load to the copy after the merge was sent!
-        if (_removeOperation->isBlocked(sender.getPendingMessageTracker())) {
-            LOG(debug,
-                "Source only removal for %s was blocked by a pending "
-                "operation",
+        if (_removeOperation->isBlocked(_manager->operation_context(), sender.operation_sequencer())) {
+            LOG(debug, "Source only removal for %s was blocked by a pending operation",
                 getBucketId().toString().c_str());
             _ok = false;
             done();
@@ -254,7 +254,7 @@ MergeOperation::deleteSourceOnlyNodes(
 }
 
 void
-MergeOperation::onReceive(DistributorMessageSender& sender,
+MergeOperation::onReceive(DistributorStripeMessageSender& sender,
                           const std::shared_ptr<api::StorageReply> & msg)
 {
     if (_removeOperation.get()) {
@@ -324,14 +324,32 @@ bool MergeOperation::shouldBlockThisOperation(uint32_t messageType, uint8_t pri)
     return IdealStateOperation::shouldBlockThisOperation(messageType, pri);
 }
 
-bool MergeOperation::isBlocked(const PendingMessageTracker& pending_tracker) const {
-    const auto& node_info = pending_tracker.getNodeInfo();
-    for (auto node : getNodes()) {
-        if (node_info.isBusy(node)) {
-            return true;
+bool MergeOperation::isBlocked(const DistributorStripeOperationContext& ctx,
+                               const OperationSequencer& op_seq) const {
+    // To avoid starvation of high priority global bucket merges, we do not consider
+    // these for blocking due to a node being "busy" (usually caused by a full merge
+    // throttler queue).
+    //
+    // This is for two reasons:
+    //  1. When an ideal state op is blocked, it is still removed from the internal
+    //     maintenance priority queue. This means a blocked high pri operation will
+    //     not be retried until the next DB pass (at which point the node is likely
+    //     to still be marked as busy when there's heavy merge traffic).
+    //  2. Global bucket merges have high priority and will most likely be allowed
+    //     to enter the merge throttler queues, displacing lower priority merges.
+    if (!is_global_bucket_merge()) {
+        const auto& node_info = ctx.pending_message_tracker().getNodeInfo();
+        for (auto node : getNodes()) {
+            if (node_info.isBusy(node)) {
+                return true;
+            }
         }
     }
-    return IdealStateOperation::isBlocked(pending_tracker);
+    return IdealStateOperation::isBlocked(ctx, op_seq);
+}
+
+bool MergeOperation::is_global_bucket_merge() const noexcept {
+    return getBucket().getBucketSpace() == document::FixedBucketSpaces::global_space();
 }
 
 }

@@ -1,0 +1,71 @@
+{
+  "jobs": [
+    {
+      "name": "AutoscalingMaintainer"
+    },
+    {
+      "name": "DirtyExpirer"
+    },
+    {
+      "name": "ExpeditedChangeApplicationMaintainer"
+    },
+    {
+      "name": "FailedExpirer"
+    },
+    {
+      "name": "HostEncrypter"
+    },
+    {
+      "name": "InactiveExpirer"
+    },
+    {
+      "name": "InfrastructureProvisioner"
+    },
+    {
+      "name": "LoadBalancerExpirer"
+    },
+    {
+      "name": "MetricsReporter"
+    },
+    {
+      "name": "NodeFailer"
+    },
+    {
+      "name": "NodeHealthTracker"
+    },
+    {
+      "name": "NodeMetricsDbMaintainer"
+    },
+    {
+      "name": "NodeRebooter"
+    },
+    {
+      "name": "OsUpgradeActivator"
+    },
+    {
+      "name": "PeriodicApplicationMaintainer"
+    },
+    {
+      "name": "ProvisionedExpirer"
+    },
+    {
+      "name": "Rebalancer"
+    },
+    {
+      "name": "ReservationExpirer"
+    },
+    {
+      "name": "RetiredExpirer"
+    },
+    {
+      "name": "ScalingSuggestionsMaintainer"
+    },
+    {
+      "name": "SpareCapacityMaintainer"
+    },
+    {
+      "name": "SwitchRebalancer"
+    }
+  ],
+  "inactive": []
+}

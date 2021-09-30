@@ -6,13 +6,12 @@
 #include <vespa/storage/distributor/maintenance/maintenancepriorityandtype.h>
 #include <vespa/storage/distributor/maintenance/node_maintenance_stats_tracker.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class MaintenancePriorityGenerator
 {
 public:
-    virtual ~MaintenancePriorityGenerator() {}
+    virtual ~MaintenancePriorityGenerator() = default;
 
     virtual MaintenancePriorityAndType prioritize(
             const document::Bucket &bucket,
@@ -20,5 +19,3 @@ public:
 };
 
 }
-}
-

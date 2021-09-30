@@ -3,7 +3,13 @@ package com.yahoo.jdisc;
 
 import com.google.common.collect.ImmutableList;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * This is an encapsulation of the header fields that belong to either a {@link Request} or a {@link Response}. It is
@@ -14,13 +20,7 @@ import java.util.*;
  */
 public class HeaderFields implements Map<String, List<String>> {
 
-    private final TreeMap<String, List<String>> content = new TreeMap<>(new Comparator<String>() {
-
-        @Override
-        public int compare(String lhs, String rhs) {
-            return lhs.compareToIgnoreCase(rhs);
-        }
-    });
+    private final ConcurrentSkipListMap<String, List<String>> content = new ConcurrentSkipListMap<>(String::compareToIgnoreCase);
 
     @Override
     public int size() {
@@ -141,14 +141,14 @@ public class HeaderFields implements Map<String, List<String>> {
      *         <code>key</code>.
      */
     public List<String> put(String key, String value) {
-        ArrayList<String> list = new ArrayList<String>(1);
+        List<String> list = Collections.synchronizedList(new ArrayList<>(1));
         list.add(value);
         return content.put(key, list);
     }
 
     @Override
     public List<String> put(String key, List<String> value) {
-        return content.put(key, new ArrayList<>(value));
+        return content.put(key, Collections.synchronizedList(new ArrayList<>(value)));
     }
 
     @Override
@@ -300,6 +300,11 @@ public class HeaderFields implements Map<String, List<String>> {
         @Override
         public String setValue(String value) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String toString() {
+            return key + '=' + value;
         }
     }
 

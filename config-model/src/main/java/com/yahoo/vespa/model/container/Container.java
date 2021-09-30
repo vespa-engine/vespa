@@ -1,10 +1,12 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
-import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
@@ -46,7 +48,7 @@ import static com.yahoo.container.QrConfig.Rpc;
  * @author Einar M R Rosenvinge
  * @author Tony Vaagenes
  */
-//qr is restart because it is handled by ConfiguredApplication.start
+// qr is restart because it is handled by ConfiguredApplication.start
 @RestartConfigs({QrStartConfig.class, QrConfig.class})
 public abstract class Container extends AbstractService implements
         QrConfig.Producer,
@@ -58,7 +60,10 @@ public abstract class Container extends AbstractService implements
     public static final int BASEPORT = Defaults.getDefaults().vespaWebServicePort();
     public static final String SINGLENODE_CONTAINER_SERVICESPEC = "default_singlenode_container";
 
-    protected final AbstractConfigProducer parent;
+    /** The cluster this container belongs to, or null if it is not added to any cluster */
+    private ContainerCluster<?> owner = null;
+
+    protected final AbstractConfigProducer<?> parent;
     private final String name;
     private boolean requireSpecificPorts = true;
 
@@ -69,30 +74,42 @@ public abstract class Container extends AbstractService implements
     private final boolean retired;
     /** The unique index of this node */
     private final int index;
+    private final boolean dumpHeapOnShutdownTimeout;
+    private final double shutdownTimeoutS;
 
     private final ComponentGroup<Handler<?>> handlers = new ComponentGroup<>(this, "handler");
     private final ComponentGroup<Component<?, ?>> components = new ComponentGroup<>(this, "components");
 
-    private final JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
+    private final JettyHttpServer defaultHttpServer;
 
-    protected Container(AbstractConfigProducer parent, String name, int index) {
-        this(parent, name, false, index);
+    protected Container(AbstractConfigProducer<?> parent, String name, int index, DeployState deployState) {
+        this(parent, name, false, index, deployState);
     }
 
-    protected Container(AbstractConfigProducer parent, String name, boolean retired, int index) {
+    protected Container(AbstractConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
         super(parent, name);
         this.name = name;
         this.parent = parent;
         this.retired = retired;
         this.index = index;
-
+        dumpHeapOnShutdownTimeout = deployState.featureFlags().containerDumpHeapOnShutdownTimeout();
+        shutdownTimeoutS = deployState.featureFlags().containerShutdownTimeout();
+        this.defaultHttpServer = new JettyHttpServer("DefaultHttpServer", containerClusterOrNull(parent), deployState.isHosted());
         if (getHttp() == null) {
             addChild(defaultHttpServer);
         }
         addBuiltinHandlers();
 
         addChild(new SimpleComponent("com.yahoo.container.jdisc.ConfiguredApplication$ApplicationContext"));
+
+        appendJvmOptions(jvmOmitStackTraceInFastThrowOption(deployState.featureFlags()));
     }
+
+    protected String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
+        return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.container);
+    }
+
+    void setOwner(ContainerCluster<?> owner) { this.owner = owner; }
 
     /** True if this container is retired (slated for removal) */
     public boolean isRetired() { return retired; }
@@ -101,7 +118,7 @@ public abstract class Container extends AbstractService implements
         return handlers;
     }
 
-    public ComponentGroup getComponents() {
+    public ComponentGroup<?> getComponents() {
         return components;
     }
 
@@ -113,7 +130,7 @@ public abstract class Container extends AbstractService implements
         addComponent(new SimpleComponent(new ComponentModel(idSpec, classSpec, bundleSpec)));
     }
 
-    public final void addHandler(Handler h) {
+    public final void addHandler(Handler<?> h) {
         handlers.addComponent(h);
     }
     
@@ -128,7 +145,7 @@ public abstract class Container extends AbstractService implements
     }
 
     public Http getHttp() {
-        return (parent instanceof ContainerCluster) ? ((ContainerCluster) parent).getHttp() : null;
+        return (parent instanceof ContainerCluster) ? ((ContainerCluster<?>) parent).getHttp() : null;
     }
 
     public JettyHttpServer getDefaultHttpServer() {
@@ -140,7 +157,7 @@ public abstract class Container extends AbstractService implements
         if (http == null) {
             return defaultHttpServer;
         } else {
-            return http.getHttpServer();
+            return http.getHttpServer().orElse(null);
         }
     }
 
@@ -167,7 +184,7 @@ public abstract class Container extends AbstractService implements
     }
 
     private void initDefaultJettyConnector() {
-        defaultHttpServer.addConnector(new ConnectorFactory("SearchServer", getSearchPort()));
+        defaultHttpServer.addConnector(new ConnectorFactory.Builder("SearchServer", getSearchPort()).build());
     }
 
     private ContainerServiceType myServiceType = null;
@@ -228,10 +245,10 @@ public abstract class Container extends AbstractService implements
             // XXX unused - remove:
             from.allocatePort("http/1");
             portsMeta.on(offset++).tag("http").tag("external");
-        } else if (getHttp().getHttpServer() == null) {
+        } else if (getHttp().getHttpServer().isEmpty()) {
             // no http server ports
         } else {
-            for (ConnectorFactory connectorFactory : getHttp().getHttpServer().getConnectorFactories()) {
+            for (ConnectorFactory connectorFactory : getHttp().getHttpServer().get().getConnectorFactories()) {
                 int port = getPort(connectorFactory);
                 String name = "http/" + connectorFactory.getName();
                 from.requirePort(port, name);
@@ -280,7 +297,7 @@ public abstract class Container extends AbstractService implements
         final Http http = getHttp();
         if (http != null) {
             // TODO: allow the user to specify health port manually
-            if (http.getHttpServer() == null) {
+            if (http.getHttpServer().isEmpty()) {
                 return -1;
             } else {
                 return getRelativePort(0);
@@ -296,17 +313,15 @@ public abstract class Container extends AbstractService implements
 
     @Override
     public void getConfig(QrConfig.Builder builder) {
-        builder.
-                rpc(new Rpc.Builder()
-                        .enabled(rpcServerEnabled())
-                        .port(getRpcPort())
-                        .slobrokId(serviceSlobrokId())).
-                filedistributor(filedistributorConfig());
-        if (clusterName != null) {
-            builder.discriminator(clusterName+"."+name);
-        } else {
-            builder.discriminator(name);
-        }
+        builder.rpc(new Rpc.Builder()
+                            .enabled(rpcServerEnabled())
+                            .port(getRpcPort())
+                            .slobrokId(serviceSlobrokId()))
+                .filedistributor(filedistributorConfig())
+                .discriminator((clusterName != null ? clusterName + "." : "" ) + name)
+                .nodeIndex(index)
+                .shutdown.dumpHeapOnTimeout(dumpHeapOnShutdownTimeout)
+                         .timeout(shutdownTimeoutS);
     }
 
     /** Returns the jvm args set explicitly for this node */
@@ -321,13 +336,14 @@ public abstract class Container extends AbstractService implements
 
         FileDistributionConfigProducer fileDistribution = getRoot().getFileDistributionConfigProducer();
         if (fileDistribution != null) {
-            builder.configid(fileDistribution.getConfigProducer(getHost()).getConfigId());
+            builder.configid(fileDistribution.getConfigProducer(getHost().getHost()).getConfigId());
         }
         return builder;
     }
 
     @Override
     public void getConfig(ComponentsConfig.Builder builder) {
+        builder.setApplyOnRestart(owner.getDeferChangesUntilRestart()); //  Sufficient to set on one config
         builder.components.addAll(ComponentsConfigGenerator.generate(allEnabledComponents()));
     }
 
@@ -388,8 +404,12 @@ public abstract class Container extends AbstractService implements
         return containerCluster().isPresent() && containerCluster().get().rpcServerEnabled();
     }
 
-    private Optional<ContainerCluster> containerCluster() {
-        return (parent instanceof ContainerCluster) ? Optional.of((ContainerCluster) parent) : Optional.empty();
+    protected Optional<ContainerCluster> containerCluster() {
+        return Optional.ofNullable(containerClusterOrNull(parent));
+    }
+
+    private static ContainerCluster containerClusterOrNull(AbstractConfigProducer producer) {
+        return producer instanceof ContainerCluster<?> ? (ContainerCluster<?>) producer : null;
     }
 
 }

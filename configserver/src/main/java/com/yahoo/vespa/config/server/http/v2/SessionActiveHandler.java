@@ -12,8 +12,9 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.http.v2.response.SessionActiveResponse;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.TimeoutBudget;
@@ -45,17 +46,17 @@ public class SessionActiveHandler extends SessionHandler {
         Utils.checkThatTenantExists(tenantRepository, tenantName);
         Tenant tenant = tenantRepository.getTenant(tenantName);
         TimeoutBudget timeoutBudget = getTimeoutBudget(request, DEFAULT_ACTIVATE_TIMEOUT);
-        final Long sessionId = getSessionIdV2(request);
+        long sessionId = getSessionIdV2(request);
         ApplicationId applicationId = applicationRepository.activate(tenant, sessionId, timeoutBudget,
                                                                      shouldIgnoreSessionStaleFailure(request));
-        ApplicationMetaData metaData = applicationRepository.getMetadataFromSession(tenant, sessionId);
+        ApplicationMetaData metaData = applicationRepository.getMetadataFromLocalSession(tenant, sessionId);
         return new SessionActiveResponse(metaData.getSlime(), request, applicationId, sessionId, zone);
     }
 
     // Overridden to make sure we are logging when this low-level handling of timeout happens
     @Override
     public void handleTimeout(Request request, ResponseHandler responseHandler) {
-        log.log(LogLevel.ERROR, "activate timed out for " + request.getUri(), new RuntimeException("activate timed out"));
+        log.log(Level.SEVERE, "activate timed out for " + request.getUri(), new RuntimeException("activate timed out"));
         super.handleTimeout(request, responseHandler);
     }
 

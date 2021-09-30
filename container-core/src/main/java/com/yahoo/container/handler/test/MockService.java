@@ -5,7 +5,6 @@ import com.google.common.annotations.Beta;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.jdisc.Metric;
 
@@ -19,7 +18,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 /**
  * This is a generic http handler that can be used to mock a service when testing your application on jDISC.
@@ -43,21 +41,20 @@ import java.util.logging.Logger;
 @Beta
 public class MockService extends LoggingRequestHandler {
 
-    private MockServiceHandler handler;
+    private final MockServiceHandler handler;
 
     /**
      * Create a mock service that mocks an external service using data provided via file distribution.
      * A custom handler can be created by subclassing and overriding the createHandler method.
      *
-     * @param executor An {@link Executor} used to create threads.
-     * @param accessLog An {@link AccessLog} where requests will be logged.
-     * @param fileAcquirer A {@link FileAcquirer} which is used to fetch file from config.
-     * @param config A {@link MockserviceConfig} for this service.
-     * @throws InterruptedException if unable to get data file within timeout.
-     * @throws IOException if unable to create handler due to some IO errors.
+     * @param executor used to create threads
+     * @param fileAcquirer used to fetch file from config
+     * @param config the mock config for this service
+     * @throws InterruptedException if unable to get data file within timeout
+     * @throws IOException if unable to create handler due to some IO errors
      */
-    public MockService(Executor executor, AccessLog accessLog, FileAcquirer fileAcquirer, MockserviceConfig config, Metric metric) throws InterruptedException, IOException {
-        super(executor, accessLog, metric);
+    public MockService(Executor executor, FileAcquirer fileAcquirer, MockserviceConfig config, Metric metric) throws InterruptedException, IOException {
+        super(executor, metric);
         File dataFile = fileAcquirer.waitFor(config.file(), config.fileAcquirerTimeout(), TimeUnit.SECONDS);
         this.handler = createHandler(dataFile);
     }
@@ -65,9 +62,9 @@ public class MockService extends LoggingRequestHandler {
     /**
      * Create a handler for a file. Override this method to handle a custom file syntax of your own.
      *
-     * @param dataFile A file to read.
-     * @return a {@link MockServiceHandler} used to handle requests.
-     * @throws IOException if errors occured when loading the file
+     * @param dataFile the file to read
+     * @return the handler used to handle requests
+     * @throws IOException if errors occurred when loading the file
      */
     protected MockServiceHandler createHandler(File dataFile) throws IOException {
         if (!dataFile.getName().endsWith(".txt")) {
@@ -210,7 +207,7 @@ public class MockService extends LoggingRequestHandler {
         }
     }
 
-    private class ExceptionResponse extends HttpResponse {
+    private static class ExceptionResponse extends HttpResponse {
         private final Exception e;
         public ExceptionResponse(int code, Exception e) {
             super(code);
@@ -224,4 +221,5 @@ public class MockService extends LoggingRequestHandler {
             }
         }
     }
+
 }

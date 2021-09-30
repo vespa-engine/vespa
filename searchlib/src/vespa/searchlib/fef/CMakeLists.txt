@@ -4,25 +4,26 @@ vespa_add_library(searchlib_fef OBJECT
     blueprint.cpp
     blueprintfactory.cpp
     blueprintresolver.cpp
+    feature_resolver.cpp
     feature_type.cpp
     featureexecutor.cpp
     featurenamebuilder.cpp
     featurenameparser.cpp
     featureoverrider.cpp
-    feature_resolver.cpp
     fef.cpp
     fieldinfo.cpp
     fieldpositionsiterator.cpp
     filetablefactory.cpp
     functiontablefactory.cpp
     indexproperties.cpp
-    location.cpp
     matchdata.cpp
     matchdatalayout.cpp
     objectstore.cpp
+    onnx_model.cpp
     parameter.cpp
     parameterdescriptions.cpp
     parametervalidator.cpp
+    phrase_splitter_query_env.cpp
     phrasesplitter.cpp
     properties.cpp
     queryproperties.cpp

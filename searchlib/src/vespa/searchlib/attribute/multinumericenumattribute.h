@@ -25,10 +25,7 @@ protected:
     using DocId = typename B::BaseClass::DocId;
     using EnumHandle = typename B::BaseClass::EnumHandle;
     using EnumIndex = IEnumStore::Index;
-    using EnumIndexVector = IEnumStore::IndexVector;
     using EnumVector = IEnumStore::EnumVector;
-    using LoadedEnumAttribute = attribute::LoadedEnumAttribute;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using LoadedNumericValueT = typename B::BaseClass::LoadedNumericValueT;
     using LoadedVector = typename B::BaseClass::LoadedVector;
     using LoadedVectorR = SequentialReadModifyWriteVector<LoadedNumericValueT>;
@@ -154,7 +151,7 @@ protected:
 public:
     MultiValueNumericEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
 
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 

@@ -14,7 +14,7 @@ public:
      * Schedule job to be run in the future.
      */
     virtual void run() = 0;
-    virtual ~IMaintenanceJobRunner() { }
+    virtual ~IMaintenanceJobRunner() = default;
 };
 
 } // namespace proton

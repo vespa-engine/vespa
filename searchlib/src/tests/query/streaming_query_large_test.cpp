@@ -4,11 +4,20 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <sys/resource.h>
 
 using namespace search;
 using namespace search::query;
 using namespace search::streaming;
+
+#ifndef __SANITIZE_ADDRESS__
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define __SANITIZE_ADDRESS__
+#endif
+#endif
+#endif
 
 namespace {
 
@@ -27,7 +36,11 @@ void setMaxStackSize(rlim_t maxStackSize)
 // a stack overflow if the stack usage increases.
 TEST("testveryLongQueryResultingInBug6850778") {
     const uint32_t NUMITEMS=20000;
-    setMaxStackSize(4 * 1024 * 1024);
+#ifdef __SANITIZE_ADDRESS__
+    setMaxStackSize(12_Mi);
+#else
+    setMaxStackSize(4_Mi);
+#endif
     QueryBuilder<SimpleQueryNodeTypes> builder;
     for (uint32_t i=0; i <= NUMITEMS; i++) {
         builder.addAnd(2);

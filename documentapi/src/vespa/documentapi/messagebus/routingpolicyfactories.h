@@ -16,10 +16,6 @@ public:
     public:
         mbus::IRoutingPolicy::UP createPolicy(const string &param) const override;
     };
-    class StoragePolicyFactory : public IRoutingPolicyFactory {
-    public:
-        mbus::IRoutingPolicy::UP createPolicy(const string &param) const override;
-    };
     class MessageTypePolicyFactory : public IRoutingPolicyFactory {
     public:
         mbus::IRoutingPolicy::UP createPolicy(const string &param) const override;

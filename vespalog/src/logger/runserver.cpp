@@ -44,7 +44,12 @@ time_t steady_time() {
     return duration_cast<seconds>(steady_clock::now().time_since_epoch()).count();
 }
 
+bool whole_seconds(int cnt, int secs) {
+    cnt %= (secs * 10);
+    return cnt == 0;
 }
+
+} // namespace
 
 class PidFile
 {
@@ -102,7 +107,7 @@ PidFile::writePid()
     if (didtruncate != 0) {
         fprintf(stderr, "could not truncate pid file %s: %s\n",
                 _pidfile, strerror(errno));
-        exit(1);
+        std::_Exit(1);
     }
     char buf[100];
     sprintf(buf, "%d\n", getpid());
@@ -111,7 +116,7 @@ PidFile::writePid()
     if (didw != l) {
         fprintf(stderr, "could not write pid to %s: %s\n",
                 _pidfile, strerror(errno));
-        exit(1);
+        std::_Exit(1);
     }
     LOG(debug, "wrote '%s' to %s (fd %d)", buf, _pidfile, _fd);
 }
@@ -168,7 +173,7 @@ int loop(const char *svc, char * const * run)
 
     if (pipe(pstdout) < 0 || pipe(pstderr) < 0) {
         LOG(error, "pipe: %s", strerror(errno));
-        exit(1);
+        std::_Exit(1);
     }
     LOG(debug, "stdout pipe %d <- %d; stderr pipe %d <- %d",
         pstdout[0], pstdout[1],
@@ -188,11 +193,11 @@ int loop(const char *svc, char * const * run)
         close(pstderr[1]);
         execvp(run[0], run);
         LOG(error, "exec %s: %s", run[0], strerror(errno));
-        exit(1);
+        std::_Exit(1);
     }
     if (child < 0) {
         LOG(error, "fork(): %s", strerror(errno));
-        exit(1);
+        std::_Exit(1);
     }
     // I am the parent process
 
@@ -325,13 +330,13 @@ int loop(const char *svc, char * const * run)
     return WEXITSTATUS(wstat);
 }
 
-void usage(char *prog, int es)
+int usage(char *prog, int es)
 {
     fprintf(stderr, "Usage: %s\n"
             "       [-s service] [-r restartinterval] [-p pidfile]"
             " program [args ...]\n"
             "or:    [-p pidfile] [-k killcmd] -S\n", prog);
-    exit(es);
+    return es;
 }
 
 int main(int argc, char *argv[])
@@ -363,7 +368,7 @@ int main(int argc, char *argv[])
             killcmd = optarg;
             break;
         default:
-            usage(argv[0], ch != 'h');
+            return usage(argv[0], ch != 'h');
         }
     }
 
@@ -374,7 +379,7 @@ int main(int argc, char *argv[])
     }
     if (chdir(envROOT) != 0) {
         fprintf(stderr, "Cannot chdir to %s: %s\n", envROOT, strerror(errno));
-        exit(1);
+        return 1;
     }
 
     PidFile mypf(pidfile);
@@ -387,20 +392,36 @@ int main(int argc, char *argv[])
                 if (system(killcmd) != 0) {
                     fprintf(stderr, "WARNING: stop command '%s' had some problem\n", killcmd);
                 }
+                fflush(stdout);
             } else {
                 fprintf(stdout, "%s was running with pid %d, sending SIGTERM\n",
                     service, pid);
-                if (killpg(pid, SIGTERM) != 0) {
+                if (kill(pid, SIGTERM) != 0) {
                     fprintf(stderr, "could not signal %d: %s\n", pid,
                             strerror(errno));
-                    exit(1);
+                    killpg(pid, SIGTERM);
+                    return 1;
                 }
             }
-            fprintf(stdout, "Waiting for exit (up to 60 seconds)\n");
-            for (int cnt(0); cnt < 1800; cnt++) {
+            fprintf(stdout, "Waiting for exit (up to 15 minutes)\n");
+            fflush(stdout);
+            const int one_day = 24 * 60 * 60 * 10;
+            const int twelve_minutes = 12 * 60 * 10;
+            const int fifteen_minutes = 15 * 60 * 10;
+            for (int cnt(0); cnt < one_day; cnt++) {
                 usleep(100000); // wait 0.1 seconds
-                if ((cnt > 300) && (cnt % 100 == 0)) {
+                if ((cnt < twelve_minutes) && (kill(pid, 0) != 0)) {
+                    if (killpg(pid, SIGTERM) == 0) {
+                        fprintf(stdout, " %s exited, terminating strays in its progress groups\n", service);
+                        fflush(stdout);
+                    }
+                    cnt = twelve_minutes;
+                }
+                if ((cnt > twelve_minutes) && whole_seconds(cnt, 10)) {
+                    fprintf(stdout, " %s or its children not stopping: sending SIGTERM to process group %d\n",
+                            service, pid);
                     killpg(pid, SIGTERM);
+                    fflush(stdout);
                 }
                 if (killpg(pid, 0) == 0) {
                     if (cnt%10 == 0) {
@@ -408,12 +429,14 @@ int main(int argc, char *argv[])
                         fflush(stdout);
                     }
                 } else {
-                    fprintf(stdout, "DONE\n");
+                    fprintf(stdout, " DONE\n");
+                    fflush(stdout);
                     break;
                 }
-                if (cnt == 900) {
-                    printf("\ngiving up, sending KILL signal\n");
+                if ((cnt >= fifteen_minutes) && whole_seconds(cnt, 5)) {
+                    printf(" giving up, sending KILL signal\n");
                     killpg(pid, SIGKILL);
+                    fflush(stdout);
                 }
             }
         } else {
@@ -421,16 +444,16 @@ int main(int argc, char *argv[])
                     service, pidfile);
         }
         mypf.cleanUp();
-        exit(0);
+        return 0;
     }
     if (optind >= argc || killcmd != NULL) {
-        usage(argv[0], 1);
+        return usage(argv[0], 1);
     }
 
     if (mypf.anotherRunning()) {
         fprintf(stderr, "runserver already running with pid %d\n",
                 mypf.readPid());
-        exit(0);
+        return 0;
     }
 
     if (!mypf.writeOpen()) {
@@ -443,17 +466,17 @@ int main(int argc, char *argv[])
         close(0);
         if (open("/dev/null", O_RDONLY) != 0) {
             perror("open /dev/null for reading failed");
-            exit(1);
+            std::_Exit(1);
         }
         close(1);
         if (open("/dev/null", O_WRONLY) != 1) {
             perror("open /dev/null for writing failed");
-            exit(1);
+            std::_Exit(1);
         }
         dup2(1, 2);
         if (setsid() < 0) {
             perror("setsid");
-            exit(1);
+            std::_Exit(1);
         }
         struct sigaction act;
         struct sigaction oact;
@@ -482,15 +505,14 @@ int main(int argc, char *argv[])
             } while (!gotstopsig && restart > 0);
         } catch (MsgException& ex) {
             LOG(error, "exception: '%s'", ex.what());
-            exit(1);
+            return 1;
         }
         if (restart > 0) {
             LOG(debug, "final exit status: %d", stat);
         }
         mypf.cleanUp();
-        exit(stat);
+        return stat;
     }
-
     if (rsp < 0) {
         perror("fork");
         return 1;

@@ -1,0 +1,441 @@
+{
+  "nodes": [
+    {
+      "hostname": "generic-host-name.test.com",
+      "role": "content/content/0/0",
+      "node": {
+        "timestamp": 1596117620,
+        "metrics": [
+          {
+            "values": {
+              "cpu.util": 269.1793453856039,
+              "cpu.sys.util": 83.3299189868703,
+              "cpu.vcpus": 0.1,
+              "disk.limit": 50000000000,
+              "disk.used": 659972096,
+              "disk.util": 1.319944192,
+              "mem.limit": 8589934592,
+              "mem.used": 1048584192,
+              "mem.util": 12.2071266174316,
+              "mem_total.used": 1572433920,
+              "mem_total.util": 18.3055400848389,
+              "bandwidth.limit": 300000000
+            },
+            "dimensions": {
+              "applicationId": "tenant.name-of-app.user",
+              "host": "generic_host_name",
+              "zone": "dev.generic-1",
+              "clusterId": "content/content"
+            }
+          },
+          {
+            "values": {
+              "net.in.bytes": 24793122,
+              "net.in.errors": 0,
+              "net.in.dropped": 0,
+              "net.out.bytes": 19822788,
+              "net.out.errors": 0,
+              "net.out.dropped": 0
+            },
+            "dimensions": {
+              "applicationId": "tenant.name-of-app.user",
+              "host": "generic_host_name",
+              "zone": "dev.generic-1",
+              "clusterId": "content/content"
+            }
+          }
+        ]
+      },
+      "services": [
+        {
+          "name": "vespa.searchnode",
+          "timestamp": 1596117620,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 460963840,
+                "memory_rss": 206643200,
+                "cpu": 5.7167235494881
+              },
+              "dimensions": {
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "searchnode",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "content.proton.documentdb.matching.rank_profile.query_setup_time.average": 0
+              },
+              "dimensions": {
+                "rankProfile": "unranked",
+                "documenttype": "doc",
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "searchnode",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "content.proton.documentdb.matching.rank_profile.rerank_time.average": 0,
+                "content.proton.documentdb.matching.rank_profile.query_latency.average": 0
+              },
+              "dimensions": {
+                "rankProfile": "default",
+                "documenttype": "doc",
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "searchnode",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "content.proton.documentdb.matching.docs_reranked.rate": 0,
+                "content.proton.documentdb.memory_usage.allocated_bytes.last": 8167610,
+                "content.proton.transactionlog.disk_usage.last": 31315422
+              },
+              "dimensions": {
+                "documenttype": "doc",
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "searchnode",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "content.proton.search_protocol.query.latency.average": 0,
+                "content.proton.search_protocol.docsum.latency.average": 0,
+                "content.proton.search_protocol.docsum.requested_documents.rate": 0
+              },
+              "dimensions": {
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "searchnode",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "content.proton.documentdb.matching.docs_matched.rate": 0,
+                "content.proton.documentdb.documents.active.last": 1275,
+                "content.proton.documentdb.documents.ready.last": 1275,
+                "content.proton.documentdb.documents.total.last": 1275,
+                "content.proton.documentdb.disk_usage.last": 14781856
+              },
+              "dimensions": {
+                "documenttype": "doc",
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "searchnode",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "content.proton.resource_usage.disk.average": 0.0009083386306,
+                "content.proton.resource_usage.memory.average": 0.0183488434436,
+                "content.proton.resource_usage.feeding_blocked.last": 0
+              },
+              "dimensions": {
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "searchnode",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "content.proton.documentdb.matching.rank_profile.query_setup_time.average": 0
+              },
+              "dimensions": {
+                "rankProfile": "default",
+                "documenttype": "doc",
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "searchnode",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "content.proton.documentdb.matching.rank_profile.rerank_time.average": 0,
+                "content.proton.documentdb.matching.rank_profile.query_latency.average": 0
+              },
+              "dimensions": {
+                "rankProfile": "unranked",
+                "documenttype": "doc",
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "searchnode",
+                "clusterId": "content/content"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.distributor",
+          "timestamp": 1596117620,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 323432448,
+                "memory_rss": 110497792,
+                "cpu": 6.6040955631399
+              },
+              "dimensions": {
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "distributor",
+                "clusterId": "content/content"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.container-clustercontroller",
+          "timestamp": 1596117620,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 1375522816,
+                "memory_rss": 327823360,
+                "cpu": 1.3139931740614
+              },
+              "dimensions": {
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "container-clustercontroller",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 1.6666666666667
+              },
+              "dimensions": {
+                "gcName": "G1YoungGeneration",
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "container-clustercontroller",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 0
+              },
+              "dimensions": {
+                "gcName": "G1OldGeneration",
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "container-clustercontroller",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "serverActiveThreads.average": 0
+              },
+              "dimensions": {
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "container-clustercontroller",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 0.0666666666667
+              },
+              "dimensions": {
+                "httpMethod": "GET",
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "container-clustercontroller",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 0
+              },
+              "dimensions": {
+                "httpMethod": "POST",
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "container-clustercontroller",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "mem.heap.free.average": 15434608
+              },
+              "dimensions": {
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "container-clustercontroller",
+                "clusterId": "content/content"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.metricsproxy-container",
+          "timestamp": 1596117620,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 1364717568,
+                "memory_rss": 379650048,
+                "cpu": 1.3993174061433
+              },
+              "dimensions": {
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 0
+              },
+              "dimensions": {
+                "gcName": "G1OldGeneration",
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "mem.heap.free.average": 38444168
+              },
+              "dimensions": {
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 0.0666666666667
+              },
+              "dimensions": {
+                "httpMethod": "GET",
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "serverActiveThreads.average": 0.05
+              },
+              "dimensions": {
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "jdisc.gc.ms.average": 4.6666666666667
+              },
+              "dimensions": {
+                "gcName": "G1YoungGeneration",
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "content/content"
+              }
+            },
+            {
+              "values": {
+                "http.status.2xx.rate": 0.0333333333333
+              },
+              "dimensions": {
+                "httpMethod": "GET",
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "metricsproxy-container",
+                "clusterId": "content/content"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.config-sentinel",
+          "timestamp": 1596117620,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 0,
+                "memory_rss": 0,
+                "cpu": 0
+              },
+              "dimensions": {
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "config-sentinel",
+                "clusterId": "content/content"
+              }
+            }
+          ]
+        },
+        {
+          "name": "vespa.logd",
+          "timestamp": 1596117620,
+          "status": {
+            "code": "up",
+            "description": "Data collected successfully"
+          },
+          "metrics": [
+            {
+              "values": {
+                "memory_virt": 120094720,
+                "memory_rss": 13119488,
+                "cpu": 0.3242320819113
+              },
+              "dimensions": {
+                "zone": "dev.generic-1",
+                "applicationId": "tenant.name-of-app.user",
+                "serviceId": "logd",
+                "clusterId": "content/content"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

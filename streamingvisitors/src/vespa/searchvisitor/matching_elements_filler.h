@@ -29,7 +29,7 @@ public:
     MatchingElementsFiller(vsm::FieldIdTSearcherMap& field_searcher_map, search::streaming::Query& query,
                            HitCollector& hit_collector, vdslib::SearchResult& search_result);
     virtual ~MatchingElementsFiller();
-    std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::StructFieldMapper& struct_field_mapper) override;
+    std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::MatchingElementsFields& fields) override;
 };
     
 }

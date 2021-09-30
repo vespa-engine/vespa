@@ -14,8 +14,19 @@
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
-      <!-- TODO: Testing out 3.5 version, set to zookeeper.client.version when that has been set to 3.5.x -->
-      <version>3.5.6</version>
+      <version>${zookeeper.client.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>zookeeper-client-common</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>security-utils</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <!-- Needed by vespa-zkcli -->
@@ -25,7 +36,7 @@
     <dependency>
        <groupId>org.slf4j</groupId>
        <artifactId>slf4j-api</artifactId>
-       <version>1.7.25</version>
+       <scope>compile</scope>
     </dependency>
   </dependencies>
   <build>
@@ -35,7 +46,7 @@
         <configuration>
            <archive>
              <manifest>
-               <mainClass>org.apache.zookeeper.ZooKeeperMain</mainClass>
+               <mainClass>com.yahoo.vespa.zookeeper.cli.Main</mainClass>
              </manifest>
            </archive>
            <descriptorRefs>

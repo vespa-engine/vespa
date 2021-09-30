@@ -21,12 +21,11 @@ import java.util.logging.Logger;
  */
 public final class EndPointResultFactory {
 
-    private static Logger log = Logger.getLogger(EndPointResultFactory.class.getName());
-
+    private static final Logger log = Logger.getLogger(EndPointResultFactory.class.getName());
     private static final String EMPTY_MESSAGE = "-";
 
-    public static Collection<EndpointResult> createResult(
-            Endpoint endpoint, InputStream inputStream) throws IOException {
+    public static Collection<EndpointResult> createResult(Endpoint endpoint,
+                                                          InputStream inputStream) throws IOException {
         List<EndpointResult> results = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(inputStream, StandardCharsets.US_ASCII))) {
@@ -38,30 +37,28 @@ public final class EndPointResultFactory {
         return results;
     }
 
-    public static EndpointResult createError(
-            Endpoint endpoint, String operationId, Exception exception) {
-        return new EndpointResult(operationId, new Result.Detail(
-                endpoint,  Result.ResultType.FATAL_ERROR, null, exception));
+    public static EndpointResult createError(Endpoint endpoint, String operationId, Exception exception) {
+        return new EndpointResult(operationId, new Result.Detail(endpoint,
+                                                                 Result.ResultType.FATAL_ERROR,
+                                                                 null,
+                                                                 exception));
     }
 
-    public static EndpointResult createTransientError(
-            Endpoint endpoint, String operationId, Exception exception) {
-        return new EndpointResult(operationId, new Result.Detail(
-                endpoint, Result.ResultType.TRANSITIVE_ERROR, null, exception));
+    public static EndpointResult createTransientError(Endpoint endpoint, String operationId, Exception exception) {
+        return new EndpointResult(operationId, new Result.Detail(endpoint,
+                                                                 Result.ResultType.TRANSITIVE_ERROR,
+                                                                 null,
+                                                                 exception));
     }
 
     private static Result.ResultType replyToResultType(OperationStatus reply) {
-        final Result.ResultType resultType;
         // The ordering below is important, e.g. if success, it is never a transient error even if isTransient is true.
-        if (reply.errorCode.isSuccess()) {
+        if (reply.errorCode.isSuccess())
             return Result.ResultType.OPERATION_EXECUTED;
-        }
-        if (reply.isConditionNotMet) {
+        if (reply.isConditionNotMet)
             return Result.ResultType.CONDITION_NOT_MET;
-        }
-        if (reply.errorCode.isTransient()) {
+        if (reply.errorCode.isTransient())
             return Result.ResultType.TRANSITIVE_ERROR;
-        }
         return Result.ResultType.FATAL_ERROR;
     }
 
@@ -84,9 +81,9 @@ public final class EndPointResultFactory {
             return new EndpointResult(
                     reply.operationId,
                     new Result.Detail(endpoint,
-                            replyToResultType(reply),
-                            reply.traceMessage,
-                            exception));
+                                      replyToResultType(reply),
+                                      reply.traceMessage,
+                                      exception));
         } catch (Throwable t) {
             throw new IllegalArgumentException("Bad result line from server: '" + line + "'", t);
         }

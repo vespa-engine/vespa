@@ -7,15 +7,15 @@
  */
 #pragma once
 
-namespace vespalib {
-    class MonitorGuard;
-}
+#include <mutex>
+
+namespace metrics { class MetricLockGuard; }
 
 namespace storage::framework {
 
 struct MetricUpdateHook {
-    using MetricLockGuard = vespalib::MonitorGuard;
-    virtual ~MetricUpdateHook() {}
+    using MetricLockGuard = metrics::MetricLockGuard;
+    virtual ~MetricUpdateHook() = default;
 
     virtual void updateMetrics(const MetricLockGuard &) = 0;
 };

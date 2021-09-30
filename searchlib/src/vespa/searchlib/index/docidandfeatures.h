@@ -26,14 +26,14 @@ private:
     uint32_t _elementLen;
 
 public:
-    WordDocElementFeatures()
+    WordDocElementFeatures() noexcept
         : _elementId(0u),
           _numOccs(0u),
           _weight(1),
           _elementLen(SEARCHLIB_FEF_UNKNOWN_FIELD_LENGTH)
     {}
 
-    WordDocElementFeatures(uint32_t elementId)
+    WordDocElementFeatures(uint32_t elementId) noexcept
         : _elementId(elementId),
           _numOccs(0u),
           _weight(1),
@@ -42,7 +42,7 @@ public:
 
     WordDocElementFeatures(uint32_t elementId,
                            uint32_t weight,
-                           uint32_t elementLen)
+                           uint32_t elementLen) noexcept
         : _elementId(elementId),
           _numOccs(0u),
           _weight(weight),
@@ -71,11 +71,11 @@ private:
     uint32_t _wordPos;
 
 public:
-    WordDocElementWordPosFeatures()
+    WordDocElementWordPosFeatures() noexcept
         : _wordPos(0u)
     {}
 
-    WordDocElementWordPosFeatures(uint32_t wordPos)
+    WordDocElementWordPosFeatures(uint32_t wordPos) noexcept
         : _wordPos(wordPos)
     {}
 
@@ -101,17 +101,17 @@ protected:
     std::vector<WordDocElementWordPosFeatures> _word_positions;
 
     // Raw data (file format specific, packed)
-    RawData _blob; // Feature data for (word, docid) pair
+    RawData  _blob; // Feature data for (word, docid) pair
     uint32_t _bit_offset; // Offset of feature start ([0..63])
     uint32_t _bit_length; // Length of features
-    bool _has_raw_data;
+    bool     _has_raw_data;
 
 public:
     DocIdAndFeatures();
     DocIdAndFeatures(const DocIdAndFeatures &);
     DocIdAndFeatures & operator = (const DocIdAndFeatures &);
-    DocIdAndFeatures(DocIdAndFeatures &&) = default;
-    DocIdAndFeatures & operator = (DocIdAndFeatures &&) = default;
+    DocIdAndFeatures(DocIdAndFeatures &&) noexcept = default;
+    DocIdAndFeatures & operator = (DocIdAndFeatures &&) noexcept = default;
     ~DocIdAndFeatures();
 
     void clear_features() {

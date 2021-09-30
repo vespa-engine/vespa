@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "feedtoken.h"
+#include <vespa/persistence/spi/result.h>
 
 namespace proton::feedtoken {
 
 State::State(ITransport & transport) :
     _transport(transport),
-    _result(new storage::spi::Result()),
+    _result(std::make_unique<storage::spi::Result>()),
     _documentWasFound(false),
     _alreadySent(false)
 {
@@ -27,12 +28,22 @@ State::ack()
 }
 
 void
+State::setResult(ResultUP result, bool documentWasFound) {
+    _documentWasFound = documentWasFound;
+    _result = std::move(result);
+}
+
+void
 State::fail()
 {
     bool alreadySent = _alreadySent.exchange(true);
     if ( !alreadySent ) {
         _transport.send(std::move(_result), _documentWasFound);
     }
+}
+
+OwningState::~OwningState() {
+    ack();
 }
 
 } // namespace proton

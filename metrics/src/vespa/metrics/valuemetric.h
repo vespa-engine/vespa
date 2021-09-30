@@ -48,14 +48,12 @@ class ValueMetric : public AbstractValueMetric {
     MetricValueSet<Values> _values;
 
     enum Flag {
-        SUMMED_AVERAGE = 2, UNSET_ON_ZERO_VALUE = 4, LOG_IF_UNSET = 8
+        SUMMED_AVERAGE = 2, UNSET_ON_ZERO_VALUE = 4
     };
 
     bool summedAverage() const override { return _values.hasFlag(SUMMED_AVERAGE); }
 
     bool unsetOnZeroValue() const { return _values.hasFlag(UNSET_ON_ZERO_VALUE); }
-
-    bool logIfUnset() const { return _values.hasFlag(LOG_IF_UNSET); }
 
     void add(const Values &values, bool sumOnAdd);
 
@@ -92,8 +90,6 @@ public:
     }
 
     void unsetOnZeroValue() { _values.setFlag(UNSET_ON_ZERO_VALUE); }
-
-    void logOnlyIfSet() { _values.removeFlag(LOG_IF_UNSET); }
 
     ValueMetric *clone(std::vector<Metric::UP> &, CopyType type, MetricSet *owner,
                        bool /*includeUnused*/) const override {
@@ -135,7 +131,6 @@ public:
     AvgVal getLast() const { return _values.getValues()._last; }
 
     void reset() override { _values.reset(); }
-    bool logEvent(const String& fullName) const override;
 
     void print(std::ostream&, bool verbose,
                const std::string& indent, uint64_t secondsPassed) const override;

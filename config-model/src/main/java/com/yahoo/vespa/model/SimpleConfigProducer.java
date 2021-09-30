@@ -18,7 +18,7 @@ public final class SimpleConfigProducer<T extends AbstractConfigProducer<?>> ext
      * @param parent   parent ConfigProducer.
      * @param configId name of this instance
      */
-    public SimpleConfigProducer(AbstractConfigProducer parent, String configId) {
+    public SimpleConfigProducer(AbstractConfigProducer<?> parent, String configId) {
         super(parent, configId);
     }
 

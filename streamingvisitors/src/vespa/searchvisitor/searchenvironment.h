@@ -19,7 +19,7 @@ private:
     public:
         typedef std::shared_ptr<Env> SP;
         Env(const vespalib::string & muffens, const config::ConfigUri & configUri, Fast_NormalizeWordFolder & wf);
-        ~Env();
+        ~Env() override;
         const vsm::VSMAdapter * getVSMAdapter() const { return _vsmAdapter.get(); }
         const RankManager * getRankManager() const { return _rankManager.get(); }
         void configure(const config::ConfigSnapshot & snapshot) override;
@@ -38,7 +38,7 @@ private:
     static __thread EnvMap * _localEnvMap;
     EnvMap                   _envMap;
     ThreadLocals             _threadLocals;
-    vespalib::Lock           _lock;
+    std::mutex               _lock;
     Fast_NormalizeWordFolder _wordFolder;
     config::ConfigUri        _configUri;
 

@@ -2,15 +2,17 @@
 
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metrics.h>
-#include <vespa/metrics/printutils.h>
+#include <vespa/metrics/metricmanager.h>
 #include <vespa/metrics/state_api_adapter.h>
 #include <vespa/metrics/textwriter.h>
 #include <vespa/metrics/xmlwriter.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -145,7 +147,7 @@ namespace {
 std::pair<std::string, std::string>
 getMatchedMetrics(const vespalib::string& config)
 {
-    FastOS_ThreadPool pool(256 * 1024);
+    FastOS_ThreadPool pool(256_Ki);
     TestMetricSet mySet;
     MetricManager mm;
     mm.registerMetric(mm.getMetricLock(), mySet.set);
@@ -464,7 +466,7 @@ std::string dumpAllSnapshots(const MetricManager& mm,
 
 TEST_F(MetricManagerTest, test_snapshots)
 {
-    FastOS_ThreadPool pool(256 * 1024);
+    FastOS_ThreadPool pool(256_Ki);
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     TestMetricSet mySet;
@@ -564,72 +566,9 @@ TEST_F(MetricManagerTest, test_snapshots)
     ASSERT_VALUES(mm,  0 * 60, "0,0,0,0,0,0,0,0,0,0,0");
 }
 
-TEST_F(MetricManagerTest, test_print_utils)
-{
-    FastOS_ThreadPool pool(256 * 1024);
-    FakeTimer* timer = new FakeTimer(1000);
-    std::unique_ptr<MetricManager::Timer> timerImpl(timer);
-    MetricManager mm(std::move(timerImpl));
-    TestMetricSet mySet;
-    {
-        MetricLockGuard lockGuard(mm.getMetricLock());
-        mm.registerMetric(lockGuard, mySet.set);
-    }
-        // Adding metrics to have some values in them
-    mySet.val6.addValue(2);
-    mySet.val9.val1.addValue(4);
-    mySet.val10.count.inc();
-    mySet.val10.a.val1.addValue(7);
-    mySet.val10.a.val2.addValue(2);
-    mySet.val10.b.val1.addValue(1);
-        // Initialize metric manager to get snapshots created.
-    mm.init("raw:"
-            "consumer[2]\n"
-            "consumer[0].name snapper\n"
-            "consumer[0].tags[1]\n"
-            "consumer[0].tags[0] snaptest\n"
-            "consumer[1].name log\n"
-            "consumer[1].tags[1]\n"
-            "consumer[1].tags[0] snaptest\n",
-            pool);
-    using namespace printutils;
-    MetricLockGuard lockGuard(mm.getMetricLock());
-    MetricSource source(mm.getActiveMetrics(lockGuard),
-                        "temp.multisub");
-    ASSERT_TRUE(source.getMetric("count") != nullptr);
-    ASSERT_TRUE(source.getMetric("a.val1") != nullptr);
-    ASSERT_TRUE(source.getMetric("a.valsum") != nullptr);
-    ASSERT_TRUE(source.getMetric("sum.val1") != nullptr);
-    ASSERT_TRUE(source.getMetric("sum.valsum") != nullptr);
-
-    std::vector<Metric::String> metrics(
-            source.getPathsMatchingPrefix("a.val"));
-    std::vector<Metric::String> expected;
-    expected.push_back("val1");
-    expected.push_back("val2");
-    expected.push_back("valsum");
-    EXPECT_EQ(expected, metrics);
-
-    HttpTable table("mytable", "stuff");
-    table.colNames.push_back("values");
-    table.rowNames.push_back("valsum");
-    table[0][0] = getValueString(
-              getLongMetric("a.val1.value", source)
-            + getLongMetric("a.val2.value", source));
-    std::ostringstream ost;
-    table.print(ost);
-    EXPECT_EQ(std::string(
-                      "<h3>mytable</h3>\n"
-                      "<table border=\"1\">\n"
-                      "<tr><th>stuff</th><th>values</th></tr>\n"
-                      "<tr><td>valsum</td><td align=\"right\">9</td></tr>\n"
-                      "</table>\n"
-              ), ost.str());
-}
-
 TEST_F(MetricManagerTest, test_xml_output)
 {
-    FastOS_ThreadPool pool(256 * 1024);
+    FastOS_ThreadPool pool(256_Ki);
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     MetricManager mm(std::move(timerImpl));
@@ -707,7 +646,7 @@ TEST_F(MetricManagerTest, test_xml_output)
 
 TEST_F(MetricManagerTest, test_json_output)
 {
-    FastOS_ThreadPool pool(256 * 1024);
+    FastOS_ThreadPool pool(256_Ki);
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     MetricManager mm(std::move(timerImpl));
@@ -796,7 +735,7 @@ namespace {
 
 struct MetricSnapshotTestFixture
 {
-    static const size_t DEFAULT_THREAD_STACK_SIZE = 256 * 1024;
+    static const size_t DEFAULT_THREAD_STACK_SIZE = 256_Ki;
 
     MetricManagerTest& test;
     FastOS_ThreadPool pool;
@@ -1036,7 +975,7 @@ TEST_F(MetricManagerTest, json_output_can_have_multiple_sets_with_same_name)
 
 TEST_F(MetricManagerTest, test_text_output)
 {
-    FastOS_ThreadPool pool(256 * 1024);
+    FastOS_ThreadPool pool(256_Ki);
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     MetricManager mm(std::move(timerImpl));
@@ -1125,7 +1064,7 @@ namespace {
 TEST_F(MetricManagerTest, test_update_hooks)
 {
     std::ostringstream output;
-    FastOS_ThreadPool pool(256 * 1024);
+    FastOS_ThreadPool pool(256_Ki);
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
         // Add a metric set just so one exist

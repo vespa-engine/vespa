@@ -16,7 +16,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP("positionsdfw_test");
 
-using search::RawBuf;
 using search::IAttributeManager;
 using search::MatchingElements;
 using search::SingleInt64ExtAttribute;
@@ -109,8 +108,7 @@ public:
 struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
     virtual void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override {}
     virtual void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override {}
-    virtual void ParseLocation(GetDocsumsState *) override {}
-    std::unique_ptr<MatchingElements> fill_matching_elements(const StructFieldMapper &) override { abort(); }
+    std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields &) override { abort(); }
 };
 
 template <typename AttrType>

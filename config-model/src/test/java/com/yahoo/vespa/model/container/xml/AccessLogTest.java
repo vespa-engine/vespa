@@ -4,6 +4,8 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.container.core.AccessLogConfig;
+import com.yahoo.container.logging.ConnectionLogConfig;
+import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.container.logging.VespaAccessLog;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -12,9 +14,9 @@ import org.junit.Test;
 import org.w3c.dom.Element;
 
 import static com.yahoo.text.StringUtilities.quote;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author gjoranv
@@ -67,7 +69,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
                 "  <accesslog type='vespa' ",
                 "             fileNamePattern='pattern' rotationInterval='interval' />",
                 "  <accesslog type='json' ",
-                "             fileNamePattern='pattern' rotationInterval='interval' />",
+                "             fileNamePattern='pattern' rotationInterval='interval' queueSize='17' bufferSize='65536'/>",
                 nodesXml,
                 "</container>" );
 
@@ -83,6 +85,8 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
             AccessLogConfig.FileHandler fileHandlerConfig = config.fileHandler();
             assertEquals("pattern", fileHandlerConfig.pattern());
             assertEquals("interval", fileHandlerConfig.rotation());
+            assertEquals(256, fileHandlerConfig.queueSize());
+            assertEquals(256*1024, fileHandlerConfig.bufferSize());
         }
 
         { // json
@@ -93,7 +97,39 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
             AccessLogConfig.FileHandler fileHandlerConfig = config.fileHandler();
             assertEquals("pattern", fileHandlerConfig.pattern());
             assertEquals("interval", fileHandlerConfig.rotation());
+            assertEquals(17, fileHandlerConfig.queueSize());
+            assertEquals(65536, fileHandlerConfig.bufferSize());
         }
     }
 
+    @Test
+    public void connection_log_configured_when_access_log_not_disabled() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <accesslog type='vespa' ",
+                "             fileNamePattern='pattern' rotationInterval='interval' />",
+                "  <accesslog type='json' ",
+                "             fileNamePattern='pattern' rotationInterval='interval' />",
+                nodesXml,
+                "</container>" );
+        createModel(root, clusterElem);
+        Component<?, ?> connectionLogComponent = getContainerComponent("default", FileConnectionLog.class.getName());
+        assertNotNull(connectionLogComponent);
+        ConnectionLogConfig config = root.getConfig(ConnectionLogConfig.class, "default/component/com.yahoo.container.logging.FileConnectionLog");
+        assertEquals("default", config.cluster());
+        assertEquals(-1, config.queueSize());
+        assertEquals(256*1024, config.bufferSize());
+    }
+
+    @Test
+    public void connection_log_disabled_when_access_log_disabled() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <accesslog type='disabled' />",
+                nodesXml,
+                "</container>" );
+        createModel(root, clusterElem);
+        Component<?, ?> fileConnectionLogComponent = getContainerComponent("default", FileConnectionLog.class.getName());
+        assertNull(fileConnectionLogComponent);
+    }
 }

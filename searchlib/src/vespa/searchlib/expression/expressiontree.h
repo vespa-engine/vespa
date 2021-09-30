@@ -10,11 +10,10 @@ namespace document {
     class DocumentType;
     class Document;
 }
-namespace search {
 
-namespace attribute { class IAttributeContext; }
+namespace search::attribute { class IAttributeContext; }
 
-namespace expression {
+namespace search::expression {
 
 class AttributeNode;
 class DocumentAccessorNode;
@@ -45,11 +44,11 @@ public:
     ExpressionTree(const ExpressionNode & root);
     ExpressionTree(ExpressionNode::UP root);
     ExpressionTree(const ExpressionTree & rhs);
-    ExpressionTree(ExpressionTree &&) = default;
+    ExpressionTree(ExpressionTree &&) noexcept = default;
     ~ExpressionTree();
     ExpressionTree & operator = (ExpressionNode::UP rhs);
     ExpressionTree & operator = (const ExpressionTree & rhs);
-    ExpressionTree & operator = (ExpressionTree &&) = default;
+    ExpressionTree & operator = (ExpressionTree &&) noexcept = default;
 
     bool execute(DocId docId, HitRank rank) const;
     bool execute(const document::Document & doc, HitRank rank) const;
@@ -79,5 +78,4 @@ private:
     ArrayAtLookupList         _arrayAtLookupNodes;
 };
 
-} // namespace expression
-} // namespace search
+}

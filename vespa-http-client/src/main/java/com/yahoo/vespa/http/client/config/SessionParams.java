@@ -21,7 +21,7 @@ public final class SessionParams {
     /**
      * Interface for handling serious errors with connection.
      */
-    public interface  ErrorReporter {
+    public interface ErrorReporter {
         void onSessionError(Endpoint endpoint, String oldSessionID, String newSessionId);
     }
 
@@ -102,7 +102,6 @@ public final class SessionParams {
          * @return the minimum number of requests to be used in throttler or zero if throttler is static.
          *
          * @param throttlerMinSize the value of the min size.
-         * @return pointer to the setter.
          */
         public Builder setThrottlerMinSize(int throttlerMinSize) {
             this.throttlerMinSize = throttlerMinSize;
@@ -140,15 +139,14 @@ public final class SessionParams {
     private final ConnectionParams connectionParams;
     private final int clientQueueSize;
     private final ErrorReporter errorReport;
-    private int throttlerMinSize;
+    private final int throttlerMinSize;
 
-    private SessionParams(
-            Collection<Cluster> clusters,
-            FeedParams feedParams,
-            ConnectionParams connectionParams,
-            int clientQueueSize,
-            ErrorReporter errorReporter,
-            int throttlerMinSize) {
+    private SessionParams(Collection<Cluster> clusters,
+                          FeedParams feedParams,
+                          ConnectionParams connectionParams,
+                          int clientQueueSize,
+                          ErrorReporter errorReporter,
+                          int throttlerMinSize) {
         this.clusters = Collections.unmodifiableList(new ArrayList<>(clusters));
         this.feedParams = feedParams;
         this.connectionParams = connectionParams;

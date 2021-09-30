@@ -5,7 +5,7 @@
 #include "unique_store_string_allocator.h"
 #include "datastore.hpp"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename RefT>
 UniqueStoreStringAllocator<RefT>::UniqueStoreStringAllocator()
@@ -23,7 +23,7 @@ UniqueStoreStringAllocator<RefT>::UniqueStoreStringAllocator()
         assert(type_id == exp_type_id);
         ++exp_type_id;
     }
-    _store.initActiveBuffers();
+    _store.init_primary_buffers();
     _store.enableFreeLists();
 }
 

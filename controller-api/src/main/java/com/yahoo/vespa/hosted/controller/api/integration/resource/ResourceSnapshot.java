@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
+ * Represents the resources allocated to a deployment at a specific point in time.
+ *
  * @author olaa
  */
 public class ResourceSnapshot {
@@ -49,6 +51,10 @@ public class ResourceSnapshot {
 
     public ApplicationId getApplicationId() {
         return applicationId;
+    }
+
+    public ResourceAllocation allocation() {
+        return resourceAllocation;
     }
 
     public double getCpuCores() {

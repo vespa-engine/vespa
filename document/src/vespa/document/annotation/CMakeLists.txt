@@ -8,6 +8,4 @@ vespa_add_library(document_annotation OBJECT
     spannode.cpp
     spantree.cpp
     DEPENDS
-    AFTER
-    document_documentconfig
 )

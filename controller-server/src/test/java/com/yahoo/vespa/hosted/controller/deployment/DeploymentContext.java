@@ -1,6 +1,8 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
@@ -8,7 +10,6 @@ import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
@@ -19,7 +20,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -27,14 +28,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGeneratorMock;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
-import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
@@ -44,12 +42,10 @@ import com.yahoo.vespa.hosted.controller.routing.Status;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
-import java.net.URI;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -79,47 +75,54 @@ import static org.junit.Assert.assertTrue;
  */
 public class DeploymentContext {
 
-    public static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+    // Application packages are expensive to construct, and a given test typically only needs to the test in the context
+    // of a single system. Construct them lazily.
+    private static final Supplier<ApplicationPackage> applicationPackage = Suppliers.memoize(() -> new ApplicationPackageBuilder()
             .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
             .upgradePolicy("default")
             .region("us-central-1")
             .parallel("us-west-1", "us-east-3")
             .emailRole("author")
             .emailAddress("b@a")
-            .build();
+            .build());
 
-    public static final ApplicationPackage publicCdApplicationPackage = new ApplicationPackageBuilder()
+    private static final Supplier<ApplicationPackage> publicCdApplicationPackage = Suppliers.memoize(() -> new ApplicationPackageBuilder()
             .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
             .upgradePolicy("default")
             .region("aws-us-east-1c")
             .emailRole("author")
             .emailAddress("b@a")
             .trust(generateCertificate())
-            .build();
+            .build());
+
     public static final SourceRevision defaultSourceRevision = new SourceRevision("repository1", "master", "commit1");
 
     private final TenantAndApplicationId applicationId;
     private final ApplicationId instanceId;
     private final TesterId testerId;
     private final JobController jobs;
-    private final RoutingGeneratorMock routing;
     private final JobRunner runner;
     private final DeploymentTester tester;
-    private final Set<Environment> deferLoadBalancerProvisioning = new HashSet<>();
 
     private ApplicationVersion lastSubmission = null;
     private boolean deferDnsUpdates = false;
 
     public DeploymentContext(ApplicationId instanceId, DeploymentTester tester) {
-
         this.applicationId = TenantAndApplicationId.from(instanceId);
         this.instanceId = instanceId;
         this.testerId = TesterId.of(instanceId);
         this.jobs = tester.controller().jobController();
         this.runner = tester.runner();
         this.tester = tester;
-        this.routing = tester.controllerTester().serviceRegistry().routingGeneratorMock();
         createTenantAndApplication();
+    }
+
+    public static ApplicationPackage applicationPackage() {
+        return applicationPackage.get();
+    }
+
+    public static ApplicationPackage publicApplicationPackage() {
+        return publicCdApplicationPackage.get();
     }
 
     private void createTenantAndApplication() {
@@ -190,22 +193,23 @@ public class DeploymentContext {
         for (var spec : application().deploymentSpec().instances())
             for (JobType type : new DeploymentSteps(spec, tester.controller()::system).productionJobs())
                 assertTrue(tester.configServer().nodeRepository()
-                                 .list(type.zone(tester.controller().system()), applicationId.defaultInstance()).stream() // TODO jonmv: support more
+                                 .list(type.zone(tester.controller().system()),
+                                       NodeFilter.all().applications(applicationId.defaultInstance())).stream() // TODO jonmv: support more
                                  .allMatch(node -> node.currentVersion().equals(version)));
 
         assertFalse(instance().change().hasTargets());
         return this;
     }
 
-    /**
-     * Defer provisioning of load balancers in zones in given environment. Default behaviour is to automatically
-     * provision load balancers in all zones that support direct routing.
-     */
+    /** Defer provisioning of load balancers in zones in given environment */
     public DeploymentContext deferLoadBalancerProvisioningIn(Environment... environment) {
-        deferLoadBalancerProvisioning.addAll(List.of(environment));
-        return this;
+        return deferLoadBalancerProvisioningIn(Set.of(environment));
     }
 
+    public DeploymentContext deferLoadBalancerProvisioningIn(Set<Environment> environments) {
+        configServer().deferLoadBalancerProvisioningIn(environments);
+        return this;
+    }
 
     /** Defer DNS updates */
     public DeploymentContext deferDnsUpdates() {
@@ -223,31 +227,21 @@ public class DeploymentContext {
 
     /** Flush count pending DNS updates */
     public DeploymentContext flushDnsUpdates(int count) {
-        var dispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofDays(1),
-                                                   new JobControl(tester.controller().curator()), count);
+        var dispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofDays(1), count);
         dispatcher.run();
         return this;
     }
 
-    /** Add a routing policy for this in given zone, with status set to active */
-    public DeploymentContext addRoutingPolicy(ZoneId zone, boolean active) {
-        return addRoutingPolicy(instanceId, zone, active);
-    }
-
-    /** Add a routing policy for tester instance of this in given zone, with status set to active */
-    public DeploymentContext addTesterRoutingPolicy(ZoneId zone, boolean active) {
-        return addRoutingPolicy(testerId.id(), zone, active);
-    }
-
-    private DeploymentContext addRoutingPolicy(ApplicationId instance, ZoneId zone, boolean active) {
-        var clusterId = "default" + (!active ? "-inactive" : "");
-        var id = new RoutingPolicyId(instance, ClusterSpec.Id.from(clusterId), zone);
-        var policies = new LinkedHashMap<>(tester.controller().curator().readRoutingPolicies(instance));
+    /** Add a routing policy for this in given zone, with status set to inactive */
+    public DeploymentContext addInactiveRoutingPolicy(ZoneId zone) {
+        var clusterId = "default-inactive";
+        var id = new RoutingPolicyId(instanceId, ClusterSpec.Id.from(clusterId), zone);
+        var policies = new LinkedHashMap<>(tester.controller().curator().readRoutingPolicies(instanceId));
         policies.put(id, new RoutingPolicy(id, HostName.from("lb-host"),
                                            Optional.empty(),
-                                           Set.of(EndpointId.of("c0")),
-                                           new Status(active, GlobalRouting.DEFAULT_STATUS)));
-        tester.controller().curator().writeRoutingPolicies(instance, policies);
+                                           Set.of(EndpointId.of("default")),
+                                           new Status(false, GlobalRouting.DEFAULT_STATUS)));
+        tester.controller().curator().writeRoutingPolicies(instanceId, policies);
         return this;
     }
 
@@ -263,30 +257,28 @@ public class DeploymentContext {
                               .projectId()
                               .orElse(1000); // These are really set through submission, so just pick one if it hasn't been set.
         lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(),
-                                     Optional.empty(), projectId, applicationPackage, new byte[0]);
+                                     projectId, applicationPackage, new byte[0]);
         return this;
     }
 
 
     /** Submit the default application package for deployment */
     public DeploymentContext submit() {
-        return submit(tester.controller().system().isPublic() ? publicCdApplicationPackage : applicationPackage);
+        return submit(tester.controller().system().isPublic() ? publicApplicationPackage() : applicationPackage());
     }
 
     /** Trigger all outstanding jobs, if any */
     public DeploymentContext triggerJobs() {
-        while (tester.controller().applications().deploymentTrigger().triggerReadyJobs() > 0);
+        tester.triggerJobs();
         return this;
     }
 
     /** Fail current deployment in given job */
     public DeploymentContext outOfCapacity(JobType type) {
         return failDeployment(type,
-                              new ConfigServerException(URI.create("https://config.server"),
-                                                        "Failed to deploy application",
+                              new ConfigServerException(ConfigServerException.ErrorCode.OUT_OF_CAPACITY,
                                                         "Out of capacity",
-                                                        ConfigServerException.ErrorCode.OUT_OF_CAPACITY,
-                                                        new RuntimeException("Out of capacity from test code")));
+                                                        "Failed to deploy application"));
     }
 
     /** Fail current deployment in given job */
@@ -303,7 +295,6 @@ public class DeploymentContext {
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasFailed());
         assertTrue(jobs.run(id).get().hasEnded());
-        doTeardown(job);
         return this;
     }
 
@@ -327,21 +318,23 @@ public class DeploymentContext {
                     throw new AssertionError("Job '" + run.id() + "' was run twice");
 
         assertFalse("Change should have no targets, but was " + instance().change(), instance().change().hasTargets());
-        if (!deferDnsUpdates) {
-            flushDnsUpdates();
-        }
         return this;
     }
 
     /** Runs a deployment of the given package to the given dev/perf job, on the given version. */
     public DeploymentContext runJob(JobType type, ApplicationPackage applicationPackage, Version vespaVersion) {
-        jobs.deploy(instanceId, type, Optional.ofNullable(vespaVersion), applicationPackage);
+        jobs.deploy(instanceId, type, Optional.ofNullable(vespaVersion), applicationPackage, false);
         return runJob(type);
     }
 
-    /** Runs a deployment of the given package to the given dev/perf job. */
+    /** Runs a deployment of the given package to the given manually deployable job. */
     public DeploymentContext runJob(JobType type, ApplicationPackage applicationPackage) {
         return runJob(type, applicationPackage, null);
+    }
+
+    /** Runs a deployment of the given package to the given manually deployable zone. */
+    public DeploymentContext runJob(ZoneId zone, ApplicationPackage applicationPackage) {
+        return runJob(JobType.from(tester.controller().system(), zone).get(), applicationPackage, null);
     }
 
     /** Pulls the ready job trigger, and then runs the whole of the given job, successfully. */
@@ -357,11 +350,10 @@ public class DeploymentContext {
         }
         if (job.type().isTest())
             doTests(job);
-        doTeardown(job);
         return this;
     }
 
-    /** Abort the running job of the given type and. */
+    /** Abort the running job of the given type. */
     public DeploymentContext abortJob(JobType type) {
         var job = jobId(type);
         assertNotSame(RunStatus.aborted, currentRun(job).status());
@@ -386,11 +378,10 @@ public class DeploymentContext {
         triggerJobs();
         RunId id = currentRun(job).id();
         doDeploy(job);
-        tester.clock().advance(InternalStepRunner.installationTimeout.plusSeconds(1));
+        tester.clock().advance(InternalStepRunner.Timeouts.of(tester.controller().system()).noNodesDown().plusSeconds(1));
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasFailed());
         assertTrue(jobs.run(id).get().hasEnded());
-        doTeardown(job);
         return this;
     }
 
@@ -401,11 +392,10 @@ public class DeploymentContext {
         RunId id = currentRun(job).id();
         doDeploy(job);
         doUpgrade(job);
-        tester.clock().advance(InternalStepRunner.installationTimeout.plusSeconds(1));
+        tester.clock().advance(InternalStepRunner.Timeouts.of(tester.controller().system()).noNodesDown().plusSeconds(1));
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasFailed());
         assertTrue(jobs.run(id).get().hasEnded());
-        doTeardown(job);
         return this;
     }
 
@@ -429,11 +419,13 @@ public class DeploymentContext {
 
     /** Start tests in system test stage */
     public RunId startSystemTestTests() {
-        RunId id = newRun(JobType.systemTest);
+        var id = newRun(JobType.systemTest);
+        var testZone = JobType.systemTest.zone(tester.controller().system());
         runner.run();
-        configServer().convergeServices(instanceId, JobType.systemTest.zone(tester.controller().system()));
-        configServer().convergeServices(testerId.id(), JobType.systemTest.zone(tester.controller().system()));
-        setEndpoints(JobType.systemTest.zone(tester.controller().system()));
+        if ( ! deferDnsUpdates)
+            flushDnsUpdates();
+        configServer().convergeServices(instanceId, testZone);
+        configServer().convergeServices(testerId.id(), testZone);
         runner.run();
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.endTests));
         assertTrue(jobs.run(id).get().steps().get(Step.endTests).startTime().isPresent());
@@ -456,28 +448,19 @@ public class DeploymentContext {
         ZoneId zone = zone(job);
         DeploymentId deployment = new DeploymentId(job.application(), zone);
 
-        // Provision load balancers in directly routed zones, unless explicitly deferred
-        if (provisionLoadBalancerIn(zone)) {
-            configServer().putLoadBalancers(zone, List.of(new LoadBalancer(deployment.toString(),
-                                                                           deployment.applicationId(),
-                                                                           ClusterSpec.Id.from("default"),
-                                                                           HostName.from("lb-0--" + instanceId.serializedForm() + "--" + zone.toString()),
-                                                                           LoadBalancer.State.active,
-                                                                           Optional.of("dns-zone-1"))));
-        }
-
         // First step is always a deployment.
         runner.advance(currentRun(job));
+
+        if ( ! deferDnsUpdates)
+            flushDnsUpdates();
 
         if (job.type().isTest())
             doInstallTester(job);
 
         if (job.type() == JobType.stagingTest) { // Do the initial deployment and installation of the real application.
             assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
-            Versions versions = currentRun(job).versions();
-            tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), versions.sourcePlatform().orElse(versions.targetPlatform()));
+            tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), tester.configServer().application(job.application(), zone).get().version().get());
             configServer().convergeServices(id.application(), zone);
-            setEndpoints(zone);
             runner.advance(currentRun(job));
             assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
 
@@ -500,7 +483,7 @@ public class DeploymentContext {
         DeploymentId deployment = new DeploymentId(job.application(), zone);
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installReal));
-        configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), currentRun(job).versions().targetPlatform());
+        configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), tester.configServer().application(job.application(), zone).get().version().get());
         runner.advance(currentRun(job));
     }
 
@@ -509,30 +492,9 @@ public class DeploymentContext {
         Run run = jobs.last(job)
                       .filter(r -> r.id().type() == job.type())
                       .orElseThrow(() -> new AssertionError(job.type() + " is not among the active: " + jobs.active()));
-        assertFalse(run.id() + " should not have failed yet", run.hasFailed());
-        assertFalse(run.id() + " should not have ended yet", run.hasEnded());
+        assertFalse(run.id() + " should not have failed yet: " + run, run.hasFailed());
+        assertFalse(run.id() + " should not have ended yet: " + run, run.hasEnded());
         return run;
-    }
-
-    /** Sets a single endpoint in the routing layer */
-    DeploymentContext setEndpoints(ZoneId zone) {
-        if (!supportsRoutingMethod(RoutingMethod.shared, zone)) return this;
-        var id = instanceId;
-        routing.putEndpoints(new DeploymentId(id, zone),
-                             Collections.singletonList(new RoutingEndpoint(String.format("https://%s--%s--%s.%s.%s.vespa:43",
-                                                                                         id.instance().value(),
-                                                                                         id.application().value(),
-                                                                                         id.tenant().value(),
-                                                                                         zone.region().value(),
-                                                                                         zone.environment().value()),
-                                                                           "host1",
-                                                                           true,
-                                                                           String.format("cluster1.%s.%s.%s.%s",
-                                                                                         id.application().value(),
-                                                                                         id.tenant().value(),
-                                                                                         zone.region().value(),
-                                                                                         zone.environment().value()))));
-        return this;
     }
 
     /** Lets nodes converge on new application version. */
@@ -542,14 +504,13 @@ public class DeploymentContext {
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installReal));
         configServer().convergeServices(id.application(), zone);
-        setEndpoints(zone);
         runner.advance(currentRun(job));
         if (job.type().environment().isManuallyDeployed()) {
             assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installReal));
             assertTrue(jobs.run(id).get().hasEnded());
             return;
         }
-        assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installReal));
+        assertEquals("Status of " + id, Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installReal));
     }
 
     /** Installs tester and starts tests. */
@@ -558,7 +519,7 @@ public class DeploymentContext {
         ZoneId zone = zone(job);
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
-        configServer().nodeRepository().doUpgrade(new DeploymentId(TesterId.of(job.application()).id(), zone), Optional.empty(), tester.controller().systemVersion());
+        configServer().nodeRepository().doUpgrade(new DeploymentId(TesterId.of(job.application()).id(), zone), Optional.empty(), tester.configServer().application(id.tester().id(), zone).get().version().get());
         runner.advance(currentRun(job));
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
         configServer().convergeServices(TesterId.of(id.application()).id(), zone);
@@ -584,27 +545,7 @@ public class DeploymentContext {
         assertTrue(jobs.run(id).get().hasEnded());
         assertFalse(jobs.run(id).get().hasFailed());
         assertEquals(job.type().isProduction(), instance().deployments().containsKey(zone));
-        assertTrue(configServer().nodeRepository().list(zone, TesterId.of(id.application()).id()).isEmpty());
-    }
-
-    /** Removes endpoints from routing layer — always call this. */
-    private void doTeardown(JobId job) {
-        ZoneId zone = zone(job);
-        DeploymentId deployment = new DeploymentId(job.application(), zone);
-
-        if ( ! instance().deployments().containsKey(zone))
-            routing.removeEndpoints(deployment);
-        routing.removeEndpoints(new DeploymentId(TesterId.of(job.application()).id(), zone));
-    }
-
-    /** Returns whether a load balancer is expected to be provisioned in given zone */
-    private boolean provisionLoadBalancerIn(ZoneId zone) {
-        return !deferLoadBalancerProvisioning.contains(zone.environment()) &&
-               supportsRoutingMethod(RoutingMethod.exclusive, zone);
-    }
-
-    private boolean supportsRoutingMethod(RoutingMethod method, ZoneId zone) {
-        return tester.controller().zoneRegistry().zones().routingMethod(method).ids().contains(zone);
+        assertTrue(configServer().nodeRepository().list(zone, NodeFilter.all().applications(TesterId.of(id.application()).id())).isEmpty());
     }
 
     private JobId jobId(JobType type) {

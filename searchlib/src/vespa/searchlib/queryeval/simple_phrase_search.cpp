@@ -102,15 +102,30 @@ public:
 
     void fillPositions(TermFieldMatchData &tmd) {
         if (_tmds.size() == 1) {
-            for (const fef::TermFieldMatchDataPosition & pos : *_tmds[0]) {
-                tmd.appendPosition(pos);
+            if (tmd.needs_normal_features()) {
+                for (const fef::TermFieldMatchDataPosition & pos : *_tmds[0]) {
+                    tmd.appendPosition(pos);
+                }
+            }
+            if (tmd.needs_interleaved_features()) {
+                tmd.setNumOccs(_tmds[0]->size());
+                tmd.setFieldLength(_tmds[0]->getFieldLength());
             }
         } else {
+            const bool needs_normal_features = tmd.needs_normal_features();
+            uint32_t num_occs = 0;
             while (iterator(_eval_order[0]) != end(_eval_order[0])) {
                 if (match()) {
-                    tmd.appendPosition(*iterator(0));
+                    if (needs_normal_features) {
+                        tmd.appendPosition(*iterator(0));
+                    }
+                    ++num_occs;
                 }
                 ++iterator(_eval_order[0]);
+            }
+            if (tmd.needs_interleaved_features()) {
+                tmd.setNumOccs(num_occs);
+                tmd.setFieldLength(_tmds[0]->getFieldLength());
             }
         }
     }
@@ -142,23 +157,23 @@ SimplePhraseSearch::phraseSeek(uint32_t doc_id) {
 }
 
 
-SimplePhraseSearch::SimplePhraseSearch(const Children &children,
+SimplePhraseSearch::SimplePhraseSearch(Children children,
                                        fef::MatchData::UP md,
                                        const fef::TermFieldMatchDataArray &childMatch,
                                        vector<uint32_t> eval_order,
                                        TermFieldMatchData &tmd, bool strict)
-    : AndSearch(children),
+    : AndSearch(std::move(children)),
       _md(std::move(md)),
       _childMatch(childMatch),
       _eval_order(std::move(eval_order)),
       _tmd(tmd),
       _doom(nullptr),
       _strict(strict),
-      _iterators(children.size())
+      _iterators(getChildren().size())
 {
-    assert(!children.empty());
-    assert(children.size() == _childMatch.size());
-    assert(children.size() == _eval_order.size());
+    assert(getChildren().size() > 0);
+    assert(getChildren().size() == _childMatch.size());
+    assert(getChildren().size() == _eval_order.size());
 }
 
 void

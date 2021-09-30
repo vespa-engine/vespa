@@ -3,17 +3,14 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
-import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceInstance;
-import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -21,11 +18,8 @@ import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.yolean.Exceptions;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -36,9 +30,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.counting;
-
 /**
  * Maintains information in the node repo about when this node last responded to ping
  * and fails nodes which have not responded within the given time limit.
@@ -46,7 +37,7 @@ import static java.util.stream.Collectors.counting;
  * @author bratseth
  * @author mpolden
  */
-public class NodeFailer extends Maintainer {
+public class NodeFailer extends NodeRepositoryMaintainer {
 
     private static final Logger log = Logger.getLogger(NodeFailer.class.getName());
     private static final Duration nodeRequestInterval = Duration.ofMinutes(10);
@@ -54,161 +45,142 @@ public class NodeFailer extends Maintainer {
     /** Metric for number of hosts that we want to fail, but cannot due to throttling */
     static final String throttledHostFailuresMetric = "throttledHostFailures";
 
-    /** Metric for number of nodes (docker containers) that we want to fail, but cannot due to throttling */
+    /** Metric for number of nodes that we want to fail, but cannot due to throttling */
     static final String throttledNodeFailuresMetric = "throttledNodeFailures";
 
     /** Metric that indicates whether throttling is active where 1 means active and 0 means inactive */
     static final String throttlingActiveMetric = "nodeFailThrottling";
 
-    /** Provides information about the status of ready hosts */
-    private final HostLivenessTracker hostLivenessTracker;
-
-    /** Provides (more accurate) information about the status of active hosts */
-    private final ServiceMonitor serviceMonitor;
-
     private final Deployer deployer;
     private final Duration downTimeLimit;
-    private final Clock clock;
     private final Orchestrator orchestrator;
     private final Instant constructionTime;
     private final ThrottlePolicy throttlePolicy;
     private final Metric metric;
 
-    public NodeFailer(Deployer deployer, HostLivenessTracker hostLivenessTracker,
-                      ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
-                      Duration downTimeLimit, Clock clock, Orchestrator orchestrator,
+    public NodeFailer(Deployer deployer, NodeRepository nodeRepository,
+                      Duration downTimeLimit, Duration interval, Orchestrator orchestrator,
                       ThrottlePolicy throttlePolicy, Metric metric) {
-        // check ping status every five minutes, but at least twice as often as the down time limit
-        super(nodeRepository, min(downTimeLimit.dividedBy(2), Duration.ofMinutes(5)));
+        // check ping status every interval, but at least twice as often as the down time limit
+        super(nodeRepository, min(downTimeLimit.dividedBy(2), interval), metric);
         this.deployer = deployer;
-        this.hostLivenessTracker = hostLivenessTracker;
-        this.serviceMonitor = serviceMonitor;
         this.downTimeLimit = downTimeLimit;
-        this.clock = clock;
         this.orchestrator = orchestrator;
-        this.constructionTime = clock.instant();
+        this.constructionTime = nodeRepository.clock().instant();
         this.throttlePolicy = throttlePolicy;
         this.metric = metric;
     }
 
     @Override
-    protected void maintain() {
+    protected double maintain() {
+        if ( ! nodeRepository().nodes().isWorking()) return 0.0;
+
+        int attempts = 0;
+        int failures = 0;
         int throttledHostFailures = 0;
         int throttledNodeFailures = 0;
 
         // Ready nodes
-        try (Mutex lock = nodeRepository().lockUnallocated()) {
-            updateNodeLivenessEventsForReadyNodes(lock);
-
+        try (Mutex lock = nodeRepository().nodes().lockUnallocated()) {
             for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
+                attempts++;
                 Node node = entry.getKey();
                 if (throttle(node)) {
-                    if (node.type().isDockerHost()) throttledHostFailures++;
-                    else throttledNodeFailures++;
+                    failures++;
+                    if (node.type().isHost())
+                        throttledHostFailures++;
+                    else
+                        throttledNodeFailures++;
                     continue;
                 }
                 String reason = entry.getValue();
-                nodeRepository().fail(node.hostname(), Agent.NodeFailer, reason);
+                nodeRepository().nodes().fail(node.hostname(), Agent.NodeFailer, reason);
             }
         }
 
-        updateNodeDownState();
-        List<Node> activeNodes = nodeRepository().getNodes(Node.State.active);
-
-        // Fail active nodes
-        for (Map.Entry<Node, String> entry : getActiveNodesByFailureReason(activeNodes).entrySet()) {
+        // Active nodes
+        for (Map.Entry<Node, String> entry : getActiveNodesByFailureReason().entrySet()) {
+            attempts++;
             Node node = entry.getKey();
-            if (!failAllowedFor(node.type())) {
-                continue;
-            }
+            if (!failAllowedFor(node.type())) continue;
+
             if (throttle(node)) {
-                if (node.type().isDockerHost()) throttledHostFailures++;
-                else throttledNodeFailures++;
+                failures++;
+                if (node.type().isHost())
+                    throttledHostFailures++;
+                else
+                    throttledNodeFailures++;
                 continue;
             }
             String reason = entry.getValue();
             failActive(node, reason);
         }
 
-        metric.set(throttlingActiveMetric, Math.min( 1, throttledHostFailures + throttledNodeFailures), null);
-        metric.set(throttledHostFailuresMetric, throttledHostFailures, null);
-        metric.set(throttledNodeFailuresMetric, throttledNodeFailures, null);
-    }
-
-    private void updateNodeLivenessEventsForReadyNodes(Mutex lock) {
-        // Update node last request events through ZooKeeper to collect request to all config servers.
-        // We do this here ("lazily") to avoid writing to zk for each config request.
-        for (Node node : nodeRepository().getNodes(Node.State.ready)) {
-            Optional<Instant> lastLocalRequest = hostLivenessTracker.lastRequestFrom(node.hostname());
-            if ( ! lastLocalRequest.isPresent()) continue;
-
-            if (! node.history().hasEventAfter(History.Event.Type.requested, lastLocalRequest.get())) {
-                History updatedHistory = node.history()
-                        .with(new History.Event(History.Event.Type.requested, Agent.NodeFailer, lastLocalRequest.get()));
-                nodeRepository().write(node.with(updatedHistory), lock);
+        // Active hosts
+        NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
+        for (Node host : activeNodes.hosts().failing()) {
+            if ( ! activeNodes.childrenOf(host).isEmpty()) continue;
+            Optional<NodeMutex> locked = Optional.empty();
+            try {
+                attempts++;
+                locked = nodeRepository().nodes().lockAndGet(host);
+                if (locked.isEmpty()) continue;
+                nodeRepository().nodes().fail(List.of(locked.get().node()), Agent.NodeFailer,
+                                              "Host should be failed and have no tenant nodes");
+            }
+            catch (Exception e) {
+                failures++;
+            }
+            finally {
+                locked.ifPresent(NodeMutex::close);
             }
         }
+
+        int throttlingActive = Math.min(1, throttledHostFailures + throttledNodeFailures);
+        metric.set(throttlingActiveMetric, throttlingActive, null);
+        metric.set(throttledHostFailuresMetric, throttledHostFailures, null);
+        metric.set(throttledNodeFailuresMetric, throttledNodeFailures, null);
+        return asSuccessFactor(attempts, failures);
     }
 
     private Map<Node, String> getReadyNodesByFailureReason() {
         Instant oldestAcceptableRequestTime =
                 // Allow requests some time to be registered in case all config servers have been down
-                constructionTime.isAfter(clock.instant().minus(nodeRequestInterval.multipliedBy(2))) ?
+                constructionTime.isAfter(clock().instant().minus(nodeRequestInterval.multipliedBy(2))) ?
                         Instant.EPOCH :
 
                         // Nodes are taken as dead if they have not made a config request since this instant.
                         // Add 10 minutes to the down time limit to allow nodes to make a request that infrequently.
-                        clock.instant().minus(downTimeLimit).minus(nodeRequestInterval);
+                        clock().instant().minus(downTimeLimit).minus(nodeRequestInterval);
 
         Map<Node, String> nodesByFailureReason = new HashMap<>();
-        for (Node node : nodeRepository().getNodes(Node.State.ready)) {
-            if (expectConfigRequests(node) && ! hasNodeRequestedConfigAfter(node, oldestAcceptableRequestTime)) {
-                nodesByFailureReason.put(node, "Not receiving config requests from node");
-            } else {
-                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);
-                List<String> failureReports = reasonsToFailParentHost(hostNode);
-                if (failureReports.size() > 0) {
-                    if (hostNode.equals(node)) {
-                        nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
-                    } else {
-                        nodesByFailureReason.put(node, "Parent (" + hostNode + ") has failure reports: " + failureReports);
-                    }
+        for (Node node : nodeRepository().nodes().list(Node.State.ready)) {
+            Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
+            List<String> failureReports = reasonsToFailParentHost(hostNode);
+            if (failureReports.size() > 0) {
+                if (hostNode.equals(node)) {
+                    nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
+                } else {
+                    nodesByFailureReason.put(node, "Parent (" + hostNode + ") has failure reports: " + failureReports);
                 }
             }
         }
         return nodesByFailureReason;
     }
 
-    /**
-     * If the node is down (see {@link #badNode}), and there is no "down" history record, we add it.
-     * Otherwise we remove any "down" history record.
-     */
-    private void updateNodeDownState() {
-        Map<String, Node> activeNodesByHostname = nodeRepository().getNodes(Node.State.active).stream()
-                .collect(Collectors.toMap(Node::hostname, node -> node));
-
-        serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName()
-                .forEach((hostName, serviceInstances) -> {
-                    Node node = activeNodesByHostname.get(hostName.s());
-                    if (node == null) return;
-
-                    if (badNode(serviceInstances)) {
-                        recordAsDown(node);
-                    } else {
-                        clearDownRecord(node);
-                    }
-                });
-    }
-
-    private Map<Node, String> getActiveNodesByFailureReason(List<Node> activeNodes) {
-        Instant graceTimeEnd = clock.instant().minus(downTimeLimit);
+    private Map<Node, String> getActiveNodesByFailureReason() {
+        NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
+        Instant graceTimeEnd = clock().instant().minus(downTimeLimit);
         Map<Node, String> nodesByFailureReason = new HashMap<>();
         for (Node node : activeNodes) {
             if (node.history().hasEventBefore(History.Event.Type.down, graceTimeEnd) && ! applicationSuspended(node)) {
-                nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
-            } else if (hostSuspended(node, activeNodes)) {
-                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);
-                if (hostNode.type().isDockerHost()) {
+                // Allow a grace period after node re-activation
+                if ( ! node.history().hasEventAfter(History.Event.Type.activated, graceTimeEnd))
+                    nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
+            }
+            else if (hostSuspended(node, activeNodes)) {
+                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
+                if (hostNode.type().isHost()) {
                     List<String> failureReports = reasonsToFailParentHost(hostNode);
                     if (failureReports.size() > 0) {
                         if (hostNode.equals(node)) {
@@ -233,12 +205,12 @@ public class NodeFailer extends Maintainer {
 
     /** Returns whether node has any kind of hardware issue */
     static boolean hasHardwareIssue(Node node, NodeRepository nodeRepository) {
-        Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository.getNode(parent)).orElse(node);
+        Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository.nodes().node(parent)).orElse(node);
         return reasonsToFailParentHost(hostNode).size() > 0;
     }
 
     private boolean expectConfigRequests(Node node) {
-        return !node.type().isDockerHost();
+        return !node.type().isHost();
     }
 
     private boolean hasNodeRequestedConfigAfter(Node node, Instant instant) {
@@ -273,7 +245,7 @@ public class NodeFailer extends Maintainer {
     }
 
     /** Is the node and all active children suspended? */
-    private boolean hostSuspended(Node node, List<Node> activeNodes) {
+    private boolean hostSuspended(Node node, NodeList activeNodes) {
         if (!nodeSuspended(node)) return false;
         if (node.parentHostname().isPresent()) return true; // optimization
         return activeNodes.stream()
@@ -295,44 +267,9 @@ public class NodeFailer extends Maintainer {
                 return true;
             case proxy:
             case proxyhost:
-                return nodeRepository().getNodes(nodeType, Node.State.failed).size() == 0;
+                return nodeRepository().nodes().list(Node.State.failed).nodeType(nodeType).isEmpty();
             default:
                 return false;
-        }
-    }
-
-    /**
-     * Returns true if the node is considered bad: All monitored services services are down.
-     * If a node remains bad for a long time, the NodeFailer will try to fail the node.
-     */
-    static boolean badNode(List<ServiceInstance> services) {
-        Map<ServiceStatus, Long> countsByStatus = services.stream()
-                .collect(Collectors.groupingBy(ServiceInstance::serviceStatus, counting()));
-
-        return countsByStatus.getOrDefault(ServiceStatus.UP, 0L) <= 0L &&
-               countsByStatus.getOrDefault(ServiceStatus.DOWN, 0L) > 0L;
-    }
-
-    /**
-     * Record a node as down if not already recorded and returns the node in the new state.
-     * This assumes the node is found in the node
-     * repo and that the node is allocated. If we get here otherwise something is truly odd.
-     */
-    private Node recordAsDown(Node node) {
-        if (node.history().event(History.Event.Type.down).isPresent()) return node; // already down: Don't change down timestamp
-
-        try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
-            node = nodeRepository().getNode(node.hostname(), Node.State.active).get(); // re-get inside lock
-            return nodeRepository().write(node.downAt(clock.instant(), Agent.NodeFailer), lock);
-        }
-    }
-
-    private void clearDownRecord(Node node) {
-        if ( ! node.history().event(History.Event.Type.down).isPresent()) return;
-
-        try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
-            node = nodeRepository().getNode(node.hostname(), Node.State.active).get(); // re-get inside lock
-            nodeRepository().write(node.up(), lock);
         }
     }
 
@@ -346,60 +283,67 @@ public class NodeFailer extends Maintainer {
     private boolean failActive(Node node, String reason) {
         Optional<Deployment> deployment =
             deployer.deployFromLocalActive(node.allocation().get().owner(), Duration.ofMinutes(30));
-        if ( ! deployment.isPresent()) return false; // this will be done at another config server
+        if (deployment.isEmpty()) return false;
 
-        try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
+        try (Mutex lock = nodeRepository().nodes().lock(node.allocation().get().owner())) {
             // If the active node that we are trying to fail is of type host, we need to successfully fail all
             // the children nodes running on it before we fail the host
             boolean allTenantNodesFailedOutSuccessfully = true;
             String reasonForChildFailure = "Failing due to parent host " + node.hostname() + " failure: " + reason;
-            for (Node failingTenantNode : nodeRepository().list().childrenOf(node)) {
+            for (Node failingTenantNode : nodeRepository().nodes().list().childrenOf(node)) {
                 if (failingTenantNode.state() == Node.State.active) {
                     allTenantNodesFailedOutSuccessfully &= failActive(failingTenantNode, reasonForChildFailure);
                 } else {
-                    nodeRepository().fail(failingTenantNode.hostname(), Agent.NodeFailer, reasonForChildFailure);
+                    nodeRepository().nodes().fail(failingTenantNode.hostname(), Agent.NodeFailer, reasonForChildFailure);
                 }
             }
 
             if (! allTenantNodesFailedOutSuccessfully) return false;
-            node = nodeRepository().fail(node.hostname(), Agent.NodeFailer, reason);
+            wantToFail(node, true, lock);
             try {
                 deployment.get().activate();
                 return true;
             } catch (TransientException e) {
-                log.log(LogLevel.INFO, "Failed to redeploy " + node.allocation().get().owner() +
-                        " with a transient error, will be retried by application maintainer: " + Exceptions.toMessageString(e));
+                log.log(Level.INFO, "Failed to redeploy " + node.allocation().get().owner() +
+                                    " with a transient error, will be retried by application maintainer: " +
+                                    Exceptions.toMessageString(e));
                 return true;
             } catch (RuntimeException e) {
-                // The expected reason for deployment to fail here is that there is no capacity available to redeploy.
-                // In that case we should leave the node in the active state to avoid failing additional nodes.
-                nodeRepository().reactivate(node.hostname(), Agent.NodeFailer,
-                                            "Failed to redeploy after being failed by NodeFailer");
-                log.log(Level.WARNING, "Attempted to fail " + node + " for " + node.allocation().get().owner() +
-                                       ", but redeploying without the node failed", e);
+                // Reset want to fail: We'll retry failing unless it heals in the meantime
+                nodeRepository().nodes().node(node.hostname())
+                                        .ifPresent(n -> wantToFail(n, false, lock));
+                log.log(Level.WARNING, "Could not fail " + node + " for " + node.allocation().get().owner() +
+                                       " for " + reason + ": " + Exceptions.toMessageString(e));
                 return false;
             }
         }
     }
 
+    private void wantToFail(Node node, boolean wantToFail, Mutex lock) {
+        nodeRepository().nodes().write(node.withWantToFail(wantToFail, Agent.NodeFailer, clock().instant()), lock);
+    }
+
     /** Returns true if node failing should be throttled */
     private boolean throttle(Node node) {
         if (throttlePolicy == ThrottlePolicy.disabled) return false;
-        Instant startOfThrottleWindow = clock.instant().minus(throttlePolicy.throttleWindow);
-        List<Node> nodes = nodeRepository().getNodes();
-        NodeList recentlyFailedNodes = nodes.stream()
-                                            .filter(n -> n.history().hasEventAfter(History.Event.Type.failed, startOfThrottleWindow))
-                                            .collect(collectingAndThen(Collectors.toList(), NodeList::copyOf));
+        Instant startOfThrottleWindow = clock().instant().minus(throttlePolicy.throttleWindow);
+        NodeList allNodes = nodeRepository().nodes().list();
+        NodeList recentlyFailedNodes = allNodes.state(Node.State.failed)
+                                               .matching(n -> n.history().hasEventAfter(History.Event.Type.failed,
+                                                                                        startOfThrottleWindow));
 
-        // Allow failing nodes within policy
-        if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(nodes.size())) return false;
+        // Allow failing any node within policy
+        if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(allNodes.size())) return false;
 
-        // Always allow failing physical nodes up to minimum limit
-        if (!node.parentHostname().isPresent() &&
+        // Always allow failing a minimum number of hosts
+        if (node.parentHostname().isEmpty() &&
             recentlyFailedNodes.parents().size() < throttlePolicy.minimumAllowedToFail) return false;
 
+        // Always allow failing children of a failed host
+        if (recentlyFailedNodes.parentOf(node).isPresent()) return false;
+
         log.info(String.format("Want to fail node %s, but throttling is in effect: %s", node.hostname(),
-                               throttlePolicy.toHumanReadableString(nodes.size())));
+                               throttlePolicy.toHumanReadableString(allNodes.size())));
 
         return true;
     }

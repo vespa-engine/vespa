@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.*;
@@ -32,8 +32,6 @@ public class ClusterStateViewTest {
 
         verify(statsAggregator, never()).updateForDistributor(anyInt(), any());
     }
-
-
 
     @Test
     public void testStateVersionMismatch() {
@@ -100,4 +98,5 @@ public class ClusterStateViewTest {
         assert(indices.contains(2));
         assert(indices.contains(6));
     }
+
 }

@@ -10,9 +10,11 @@ import java.util.Set;
 
 /**
  * Policies for REST APIs in the controller. A policy is only considered when defined in a {@link Role}.
- * A policy describes a set of {@link Privilege}s, which are valid for a set of {@link SystemName}s.
- * A policy is evaluated by an {@link Enforcer}, which holds the {@link SystemName} the evaluation is done in.
- * A policy is evaluated with a {@link Context}, which may limit it to a specific {@link TenantName} or {@link ApplicationName}.
+ *
+ * - A policy describes a set of {@link Privilege}s, which are valid for a set of {@link SystemName}s.
+ * - A policy is evaluated by an {@link Enforcer}, which holds the {@link SystemName} the evaluation is done in.
+ * - A policy is evaluated in a {@link Context}, which may limit it to a specific {@link TenantName} or
+ *   {@link ApplicationName}.
  *
  * @author mpolden
  */
@@ -20,13 +22,19 @@ enum Policy {
 
     /** Full access to everything. */
     operator(Privilege.grant(Action.all())
-                      .on(PathGroup.all())
-                      .in(SystemName.all())),
+                      .on(PathGroup.allExcept(PathGroup.billingPaths()))
+                      .in(SystemName.all()),
+             Privilege.grant(Action.read)
+                      .on(PathGroup.billingPathsNoToken())
+                      .in(SystemName.all()),
+             Privilege.grant(Action.read)
+                      .on(PathGroup.billingToken)
+                      .in(SystemName.PublicCd)),
 
     /** Full access to everything. */
     supporter(Privilege.grant(Action.read)
-                     .on(PathGroup.all())
-                     .in(SystemName.all())),
+                       .on(PathGroup.all())
+                       .in(SystemName.all())),
 
     /** Full access to user management for a tenant in select systems. */
     tenantManager(Privilege.grant(Action.all())
@@ -43,10 +51,10 @@ enum Policy {
                   .on(PathGroup.user)
                   .in(SystemName.main, SystemName.cd, SystemName.dev)),
 
-    /** Access to create a tenant in select systems. */
+    /** Access to create a tenant. */
     tenantCreate(Privilege.grant(Action.create)
                           .on(PathGroup.tenant)
-                          .in(SystemName.main, SystemName.cd, SystemName.dev)), // TODO SystemName.all()
+                          .in(SystemName.all())),
 
     /** Full access to tenant information and settings. */
     tenantDelete(Privilege.grant(Action.delete)
@@ -55,6 +63,7 @@ enum Policy {
 
     /** Full access to tenant information and settings. */
     tenantUpdate(Privilege.grant(Action.update)
+                          .on(PathGroup.tenantInfo)
                           .on(PathGroup.tenant)
                           .in(SystemName.all())),
 
@@ -63,6 +72,11 @@ enum Policy {
                         .on(PathGroup.tenant, PathGroup.tenantInfo, PathGroup.tenantUsers, PathGroup.applicationUsers)
                         .in(SystemName.all())),
 
+    /** Access to set and unset archive access role under a tenant. */
+    tenantArchiveAccessManagement(Privilege.grant(Action.update, Action.delete)
+                                           .on(PathGroup.tenantArchiveAccess)
+                                           .in(SystemName.all())),
+
     /** Access to create application under a certain tenant. */
     applicationCreate(Privilege.grant(Action.create)
                                .on(PathGroup.application)
@@ -70,7 +84,7 @@ enum Policy {
 
     /** Read access to application information and settings. */
     applicationRead(Privilege.grant(Action.read)
-                             .on(PathGroup.application, PathGroup.applicationInfo)
+                             .on(PathGroup.application, PathGroup.applicationInfo, PathGroup.reindexing, PathGroup.serviceDump)
                              .in(SystemName.all())),
 
     /** Read access to application information and settings. */
@@ -85,7 +99,7 @@ enum Policy {
 
     /** Full access to application information and settings. */
     applicationOperations(Privilege.grant(Action.write())
-                                   .on(PathGroup.applicationInfo, PathGroup.productionRestart)
+                                   .on(PathGroup.applicationInfo, PathGroup.productionRestart, PathGroup.reindexing, PathGroup.serviceDump)
                                    .in(SystemName.all())),
 
     /** Access to create and delete developer and deploy keys under a tenant. */
@@ -93,15 +107,15 @@ enum Policy {
                            .on(PathGroup.tenantKeys, PathGroup.applicationKeys)
                            .in(SystemName.all())),
 
+    /** Access to revoke keys from the tenant */
+    keyRevokal(Privilege.grant(Action.delete)
+                        .on(PathGroup.tenantKeys, PathGroup.applicationKeys)
+                        .in(SystemName.all())),
+
     /** Full access to application development deployments. */
     developmentDeployment(Privilege.grant(Action.all())
                                    .on(PathGroup.developmentDeployment, PathGroup.developmentRestart)
                                    .in(SystemName.all())),
-
-    /** Full access to application production deployments. */
-    productionDeployment(Privilege.grant(Action.all())
-                                  .on(PathGroup.productionDeployment)
-                                  .in(SystemName.all())),
 
     /** Read access to all application deployments. */
     deploymentRead(Privilege.grant(Action.read)
@@ -113,19 +127,10 @@ enum Policy {
                         .on(PathGroup.submission)
                         .in(SystemName.all())),
 
-    /** Full access to the additional tasks needed for continuous deployment. */
-    deploymentPipeline(Privilege.grant(Action.all()) // TODO remove when everyone is on new pipeline.
-                                .on(PathGroup.buildService, PathGroup.productionRestart)
-                                .in(SystemName.all())),
-
     /** Read access to all information in select systems. */
     classifiedRead(Privilege.grant(Action.read)
                             .on(PathGroup.allExcept(PathGroup.classifiedOperator))
                             .in(SystemName.main, SystemName.cd, SystemName.dev)),
-
-    classifiedApiRead(Privilege.grant(Action.read)
-            .on(PathGroup.classifiedApiInfo)
-            .in(SystemName.all())),
 
     /** Read access to public info. */
     publicRead(Privilege.grant(Action.read)
@@ -140,7 +145,67 @@ enum Policy {
     /** Access to /system-flags/v1/dryrun. */
     systemFlagsDryrun(Privilege.grant(Action.update)
                                   .on(PathGroup.systemFlagsDryrun)
-                                  .in(SystemName.all()));
+                                  .in(SystemName.all())),
+
+    /** Access to /payment/notification */
+    paymentProcessor(Privilege.grant(Action.create)
+                                .on(PathGroup.paymentProcessor)
+                                .in(SystemName.PublicCd)),
+
+    /** Read your own instrument information */
+    paymentInstrumentRead(Privilege.grant(Action.read)
+                                   .on(PathGroup.billingInstrument)
+                                   .in(SystemName.PublicCd, SystemName.Public)),
+
+    /** Ability to update tenant payment instrument */
+    paymentInstrumentUpdate(Privilege.grant(Action.update)
+                                     .on(PathGroup.billingInstrument)
+                                     .in(SystemName.PublicCd, SystemName.Public)),
+
+    /** Ability to remove your own payment instrument */
+    paymentInstrumentDelete(Privilege.grant(Action.delete)
+                                     .on(PathGroup.billingInstrument)
+                                     .in(SystemName.PublicCd, SystemName.Public)),
+
+    /** Get the token to view instrument form */
+    paymentInstrumentCreate(Privilege.grant(Action.read)
+                                    .on(PathGroup.billingToken)
+                                    .in(SystemName.PublicCd, SystemName.Public)),
+
+    /** Ability to update tenant payment instrument */
+    planUpdate(Privilege.grant(Action.update)
+            .on(PathGroup.billingPlan, PathGroup.billing)
+            .in(SystemName.PublicCd, SystemName.Public)),
+
+    /** Ability to update tenant collection method */
+    collectionMethodUpdate(Privilege.grant(Action.update)
+            .on(PathGroup.billingCollection)
+            .in(SystemName.PublicCd, SystemName.Public)),
+
+
+    /** Read the generated bills */
+    billingInformationRead(Privilege.grant(Action.read)
+                                    .on(PathGroup.billingList, PathGroup.billing)
+                                    .in(SystemName.PublicCd, SystemName.Public)),
+
+    /** Invoice management */
+    hostedAccountant(Privilege.grant(Action.all())
+                                    .on(PathGroup.hostedAccountant, PathGroup.accountant)
+                                    .in(SystemName.PublicCd, SystemName.Public)),
+
+    /** Listing endpoint certificate request info */
+    endpointCertificateRequestInfo(Privilege.grant(Action.read)
+            .on(PathGroup.endpointCertificateRequestInfo)
+            .in(SystemName.all())),
+
+    /** Secret store operations */
+    secretStoreOperations(Privilege.grant(Action.all())
+                                .on(PathGroup.secretStore)
+                                .in(SystemName.PublicCd, SystemName.Public)),
+
+    horizonProxyOperations(Privilege.grant(Action.all())
+            .on(PathGroup.horizonProxy)
+            .in(SystemName.PublicCd, SystemName.Public));
 
     private final Set<Privilege> privileges;
 

@@ -1,7 +1,6 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
@@ -12,8 +11,8 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNodeStatsBridge;
 
 import java.text.ParseException;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -26,7 +25,7 @@ import java.util.logging.Logger;
  */
 public class ClusterStateView {
 
-    private static Logger log = Logger.getLogger(ClusterStateView.class.getName());
+    private static final Logger log = Logger.getLogger(ClusterStateView.class.getName());
     private final ClusterState clusterState;
     private final ClusterStatsAggregator statsAggregator;
 
@@ -70,18 +69,6 @@ public class ClusterStateView {
         return nodesBeingUp;
     }
 
-    /**
-     * Creates a new ClusterStateView which is set up with the same static view of the cluster state
-     * (i.e. the ClusterState is a clone of this instance's ClusterState), while transient and dynamic
-     * parts are cleared.
-     */
-    public ClusterStateView cloneForNewState() {
-        ClusterState clonedClusterState = clusterState.clone();
-        return new ClusterStateView(
-                clonedClusterState,
-                createNewAggregator(clonedClusterState));
-    }
-
     public ClusterState getClusterState() { return clusterState; }
 
     public void handleUpdatedHostInfo(NodeInfo node, HostInfo hostInfo) {
@@ -102,7 +89,7 @@ public class ClusterStateView {
             // The distributor may be old (null), or the distributor may not have updated
             // to the latest state version just yet. We log here with fine, because it may
             // also be a symptom of something wrong.
-            log.log(LogLevel.DEBUG, "Current state version is " + currentStateVersion +
+            log.log(Level.FINE, () -> "Current state version is " + currentStateVersion +
                     ", while host info received from distributor " + node.getNodeIndex() +
                     " is " + hostVersion);
             return;

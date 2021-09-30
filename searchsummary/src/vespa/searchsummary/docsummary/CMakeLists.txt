@@ -30,6 +30,4 @@ vespa_add_library(searchsummary_docsummary OBJECT
     summaryfieldconverter.cpp
     textextractordfw.cpp
     tokenizer.cpp
-    AFTER
-    searchsummary_config
 )

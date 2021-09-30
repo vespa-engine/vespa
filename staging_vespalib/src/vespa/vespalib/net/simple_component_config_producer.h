@@ -3,19 +3,20 @@
 #pragma once
 
 #include "component_config_producer.h"
-#include <vespa/vespalib/util/sync.h>
 #include <map>
+#include <mutex>
 
 namespace vespalib {
 
 class SimpleComponentConfigProducer : public ComponentConfigProducer
 {
 private:
-    Lock _lock;
+    std::mutex _lock;
     std::map<vespalib::string, Config> _state;
 
 public:
     SimpleComponentConfigProducer();
+    ~SimpleComponentConfigProducer() override;
     void addConfig(const Config &config);
     void removeConfig(const vespalib::string &name);
     void getComponentConfig(Consumer &consumer) override;

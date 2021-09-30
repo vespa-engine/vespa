@@ -2,6 +2,7 @@
 
 #include "filealign.h"
 #include <vespa/fastos/file.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <cassert>
 
 namespace search {
@@ -43,11 +44,11 @@ FileAlign::FileAlign()
 { }
 
 
-FileAlign::~FileAlign() { }
+FileAlign::~FileAlign() = default;
 
 
 size_t
-FileAlign::adjustSize(int64_t offset, size_t size)
+FileAlign::adjustSize(int64_t offset, size_t size) const
 {
     if (_directio && (offset & (_directIOFileAlign - 1)) != 0) {
         // Align end of IO to direct IO boundary
@@ -68,7 +69,7 @@ FileAlign::adjustSize(int64_t offset, size_t size)
 
 
 size_t
-FileAlign::adjustElements(int64_t eoffset, size_t esize)
+FileAlign::adjustElements(int64_t eoffset, size_t esize) const
 {
     return adjustSize(eoffset * _elemSize, esize * _elemSize) / _elemSize;
 }
@@ -84,7 +85,7 @@ FileAlign::setupAlign(size_t elements,
     size_t transferGranularity;
     size_t transferMaximum;
 
-    if (file != NULL) {
+    if (file != nullptr) {
         _directio = file->GetDirectIORestrictions(memoryAlignment, transferGranularity, transferMaximum);
     } else
         _directio = false;
@@ -97,8 +98,8 @@ FileAlign::setupAlign(size_t elements,
         _directIOFileAlign = 1;
         _directIOMemAlign = 1;
     }
-    if (preferredFileAlignment < 4096)
-        preferredFileAlignment = 4096;
+    if (preferredFileAlignment < 4_Ki)
+        preferredFileAlignment = 4_Ki;
     _preferredFileAlign = preferredFileAlignment;
 
     size_t minDirectIOElements = getMinBlocking(elemSize, _directIOFileAlign);

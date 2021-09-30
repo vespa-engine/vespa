@@ -1,0 +1,1 @@
+join(constant(my_tensor),attribute(date),f(t,d)(join(t,d,f(x,y)(x+y))))

@@ -14,7 +14,7 @@ import static com.yahoo.container.core.ChainsConfig.Chains.Type;
  */
 public class DocprocChain extends Chain<DocumentProcessor> {
 
-    private Map<Pair<String, String>, String> fieldNameSchemaMap;
+    private final Map<Pair<String, String>, String> fieldNameSchemaMap;
     private static final Type.Enum TYPE = Type.Enum.DOCPROC;
 
     public DocprocChain(ChainSpecification specWithoutInnerComponents, Map<Pair<String,String>, String> fieldNameSchemaMap) {
@@ -23,8 +23,9 @@ public class DocprocChain extends Chain<DocumentProcessor> {
     }
 
     /**
-     * The field name schema map that applies to this whole chain
-     * @return doctype,from → to
+     * The field name schema map that applies to this whole chain.
+     *
+     * @return doctype, from → to
      */
     public Map<Pair<String,String>,String> fieldNameSchemaMap() {
         return fieldNameSchemaMap;

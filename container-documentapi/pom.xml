@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.yahoo.vespa</groupId>
+    <artifactId>parent</artifactId>
+    <version>7-SNAPSHOT</version>
+    <relativePath>../parent/pom.xml</relativePath>
+  </parent>
+  <artifactId>container-documentapi</artifactId>
+  <packaging>container-plugin</packaging>
+  <version>7-SNAPSHOT</version>
+
+  <dependencies>
+
+    <dependency>
+      <!-- NOTE: this is instead of moving the java code in documentapi to this module (and turning the deps around),
+                 which is made difficult by using common test files with the C++ code. -->
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>documentapi</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>documentapi-dependencies</artifactId>
+      <version>${project.version}</version>
+      <type>pom</type>
+      <scope>provided</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>bundle-plugin</artifactId>
+        <extensions>true</extensions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.logging.Logger;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 /**
  * This class is not thread-safe.
@@ -33,7 +33,7 @@ public class LogWriter {
         this.archive = archive;
         this.generation = archive.highestGen(prefix);
         writer = nextWriter();
-        archive.maintenance();
+        archive.triggerMaintenance();
     }
 
     /**
@@ -66,7 +66,7 @@ public class LogWriter {
 
             // if file does not exist we have a winner
             if (! f.exists()) {
-                log.log(LogLevel.DEBUG, "nextWriter, new file: " + name);
+                log.log(Level.FINE, () -> "nextWriter, new file: " + name);
                 currentFile = f;
                 bytesWritten = 0;
                 return new FileWriter(f, true);
@@ -99,7 +99,7 @@ public class LogWriter {
     public void write(String str) throws IOException {
         if (writer == null) {
             writer = nextWriter();
-            archive.maintenance();
+            archive.triggerMaintenance();
         }
 
         bytesWritten += str.length();
@@ -110,7 +110,7 @@ public class LogWriter {
                              + currentFile.getAbsolutePath()
                              + "' full, rotating");
             writer = nextWriter();
-            archive.maintenance();
+            archive.triggerMaintenance();
         }
     }
 

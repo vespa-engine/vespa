@@ -6,22 +6,24 @@
 #include <vespa/vespalib/datastore/bufferstate.h>
 #include <vespa/vespalib/datastore/datastorebase.h>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename RefT>
-UniqueStoreEnumerator<RefT>::UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, const DataStoreBase &store)
+UniqueStoreEnumerator<RefT>::UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, const DataStoreBase &store, bool sort_unique_values)
     : _dict_snapshot(dict.get_read_snapshot()),
       _store(store),
       _enumValues(),
       _next_enum_val(1)
 {
+    _dict_snapshot->fill();
+    if (sort_unique_values) {
+        _dict_snapshot->sort();
+    }
     allocate_enum_values();
 }
 
 template <typename RefT>
-UniqueStoreEnumerator<RefT>::~UniqueStoreEnumerator()
-{
-}
+UniqueStoreEnumerator<RefT>::~UniqueStoreEnumerator() = default;
 
 template <typename RefT>
 void
@@ -44,7 +46,7 @@ UniqueStoreEnumerator<RefT>::allocate_enum_values()
     for (uint32_t bufferId = 0; bufferId < RefType::numBuffers(); ++bufferId) {
         const BufferState &state = _store.getBufferState(bufferId);
         if (state.isActive()) {
-            _enumValues[bufferId].resize(state.size() / state.getArraySize());
+            _enumValues[bufferId].resize(state.get_used_arrays());
         }
     }
 }

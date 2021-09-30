@@ -5,6 +5,7 @@
 #include <vespa/storage/storageserver/servicelayernode.h>
 #include <vespa/storageserver/app/distributorprocess.h>
 #include <vespa/storageserver/app/dummyservicelayerprocess.h>
+#include <vespa/messagebus/message.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -21,7 +22,7 @@ struct StorageServerTest : public ::testing::Test {
     std::unique_ptr<vdstestlib::DirConfig> storConfig;
 
     StorageServerTest();
-    ~StorageServerTest();
+    ~StorageServerTest() override;
 
     void SetUp() override;
     void TearDown() override;
@@ -34,7 +35,7 @@ StorageServerTest::~StorageServerTest() = default;
 namespace {
 
 struct Node {
-    virtual ~Node() {}
+    virtual ~Node() = default;
     virtual StorageNode& getNode() = 0;
     virtual StorageNodeContext& getContext() = 0;
 };
@@ -43,10 +44,10 @@ struct Distributor : public Node {
     DistributorProcess _process;
 
     Distributor(vdstestlib::DirConfig& config);
-    ~Distributor();
+    ~Distributor() override;
 
-    virtual StorageNode& getNode() override { return _process.getNode(); }
-    virtual StorageNodeContext& getContext() override { return _process.getContext(); }
+    StorageNode& getNode() override { return _process.getNode(); }
+    StorageNodeContext& getContext() override { return _process.getContext(); }
 };
 
 struct Storage : public Node {
@@ -54,10 +55,10 @@ struct Storage : public Node {
     StorageComponent::UP _component;
 
     Storage(vdstestlib::DirConfig& config);
-    ~Storage();
+    ~Storage() override;
 
-    virtual StorageNode& getNode() override { return _process.getNode(); }
-    virtual StorageNodeContext& getContext() override { return _process.getContext(); }
+    StorageNode& getNode() override { return _process.getNode(); }
+    StorageNodeContext& getContext() override { return _process.getContext(); }
 };
 
 Distributor::Distributor(vdstestlib::DirConfig& config)
@@ -74,8 +75,8 @@ Storage::Storage(vdstestlib::DirConfig& config)
 {
     _process.setupConfig(60000ms);
     _process.createNode();
-    _component.reset(new StorageComponent(
-    getContext().getComponentRegister(), "test"));
+    _component = std::make_unique<StorageComponent>(
+    getContext().getComponentRegister(), "test");
 }
 
 Storage::~Storage() = default;
@@ -87,9 +88,9 @@ StorageServerTest::SetUp()
 {
     [[maybe_unused]] int systemResult = system("chmod -R 755 vdsroot");
     systemResult = system("rm -rf vdsroot*");
-    slobrok.reset(new mbus::Slobrok);
-    distConfig.reset(new vdstestlib::DirConfig(getStandardConfig(false)));
-    storConfig.reset(new vdstestlib::DirConfig(getStandardConfig(true)));
+    slobrok = std::make_unique<mbus::Slobrok>();
+    distConfig = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(false));
+    storConfig = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true));
     addSlobrokConfig(*distConfig, *slobrok);
     addSlobrokConfig(*storConfig, *slobrok);
     storConfig->getConfig("stor-filestor").set("fail_disk_after_error_count", "1");

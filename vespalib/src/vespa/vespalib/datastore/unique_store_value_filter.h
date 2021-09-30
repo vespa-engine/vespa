@@ -2,7 +2,7 @@
 
 #pragma once
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /*
  * Helper class for normalizing values inserted into unique store.

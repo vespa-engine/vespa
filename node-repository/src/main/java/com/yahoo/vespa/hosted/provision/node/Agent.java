@@ -2,20 +2,31 @@
 package com.yahoo.vespa.hosted.provision.node;
 
 /**
- * The enum of kinds of actions making changes to the system.
+ * The enum of agents making changes to the system.
  * 
  * @author bratseth
  */
 public enum Agent {
+
     operator, // A hosted Vespa operator. Some logic recognizes these events.
-    application, // An application package change depoyment
+    application, // An application package change deployment
     system, // An unspecified system agent
+
     // Specific system agents:
     NodeFailer,
+    NodeHealthTracker,
     Rebalancer,
     DirtyExpirer,
     FailedExpirer,
     InactiveExpirer,
     ProvisionedExpirer,
-    ReservationExpirer
+    ReservationExpirer,
+    ParkedExpirer,
+    DynamicProvisioningMaintainer,
+    RetiringUpgrader,
+    RebuildingOsUpgrader,
+    SpareCapacityMaintainer,
+    SwitchRebalancer,
+    HostEncrypter,
+
 }

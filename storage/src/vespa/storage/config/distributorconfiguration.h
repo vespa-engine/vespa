@@ -1,15 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "config-stor-distributormanager.h"
-#include "config-stor-visitordispatcher.h"
+#include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/vespalib/util/time.h>
 
 namespace storage {
 
-namespace distributor { struct DistributorTest; }
+namespace distributor { struct LegacyDistributorTest; }
 
 class DistributorConfiguration {
 public: 
@@ -23,6 +23,7 @@ public:
         uint8_t mergeMoveToIdealNode {120};
         uint8_t mergeOutOfSyncCopies {120};
         uint8_t mergeTooFewCopies {120};
+        uint8_t mergeGlobalBuckets {115};
         uint8_t activateNoExistingActive {100};
         uint8_t activateWithExistingActive {100};
         uint8_t deleteBucketCopy {100};
@@ -235,6 +236,37 @@ public:
         return _use_weak_internal_read_consistency_for_client_gets;
     }
 
+    void set_enable_metadata_only_fetch_phase_for_inconsistent_updates(bool enable) noexcept {
+        _enable_metadata_only_fetch_phase_for_inconsistent_updates = enable;
+    }
+    bool enable_metadata_only_fetch_phase_for_inconsistent_updates() const noexcept {
+        return _enable_metadata_only_fetch_phase_for_inconsistent_updates;
+    }
+
+    uint32_t max_consecutively_inhibited_maintenance_ticks() const noexcept {
+        return _max_consecutively_inhibited_maintenance_ticks;
+    }
+
+    void set_prioritize_global_bucket_merges(bool prioritize) noexcept {
+        _prioritize_global_bucket_merges = prioritize;
+    }
+    bool prioritize_global_bucket_merges() const noexcept {
+        return _prioritize_global_bucket_merges;
+    }
+
+    void set_max_activation_inhibited_out_of_sync_groups(uint32_t max_groups) noexcept {
+        _max_activation_inhibited_out_of_sync_groups = max_groups;
+    }
+    uint32_t max_activation_inhibited_out_of_sync_groups() const noexcept {
+        return _max_activation_inhibited_out_of_sync_groups;
+    }
+
+    bool enable_revert() const noexcept {
+        return _enable_revert;
+    }
+
+    uint32_t num_distributor_stripes() const noexcept { return _num_distributor_stripes; }
+
     bool containsTimeStatement(const std::string& documentSelection) const;
     
 private:
@@ -251,6 +283,8 @@ private:
     uint32_t _maxIdealStateOperations;
     uint32_t _idealStateChunkSize;
     uint32_t _maxNodesPerMerge;
+    uint32_t _max_consecutively_inhibited_maintenance_ticks;
+    uint32_t _max_activation_inhibited_out_of_sync_groups;
 
     std::string _garbageCollectionSelection;
 
@@ -264,6 +298,8 @@ private:
 
     uint32_t _maxVisitorsPerNodePerClientVisitor;
     uint32_t _minBucketsPerVisitor;
+
+    uint32_t _num_distributor_stripes;
 
     MaintenancePriorities _maintenancePriorities;
     std::chrono::seconds _maxClusterClockSkew;
@@ -281,10 +317,13 @@ private:
     bool _update_fast_path_restart_enabled;
     bool _merge_operations_disabled;
     bool _use_weak_internal_read_consistency_for_client_gets;
+    bool _enable_metadata_only_fetch_phase_for_inconsistent_updates;
+    bool _prioritize_global_bucket_merges;
+    bool _enable_revert;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
-    
-    friend struct distributor::DistributorTest;
+
+    friend struct distributor::LegacyDistributorTest;
     void configureMaintenancePriorities(
             const vespa::config::content::core::StorDistributormanagerConfig&);
 };

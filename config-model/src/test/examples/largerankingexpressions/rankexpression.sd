@@ -1,0 +1,64 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search rankexpression {
+
+  document rankexpression {
+
+    field artist type string {
+      indexing: summary | index
+    }
+
+    field title type string {
+      indexing: summary | index
+    }
+
+    field surl type string {
+      indexing: summary
+    }
+
+    field year type int {
+      indexing: summary | attribute
+    }
+
+  }
+
+  rank-profile base {
+
+    function large_f() {
+      expression: 78+closeness(distance)*(attribute(year)+attribute(year))/attribute(year)
+    }
+    macro large_m() {
+      expression: 78+closeness(distance)*(attribute(year)+attribute(year))/attribute(year)
+    }
+  }
+
+  rank-profile child_a inherits base {
+
+    function large_local_f() {
+      expression: large_f() + large_m()
+    }
+
+    function large_local_m() {
+      expression: large_f() + large_m()
+    }
+
+    first-phase {
+      expression: 0.8+0.2*large_local_f() + large_local_m()
+    }
+  }
+
+  rank-profile child_b inherits base {
+
+    function large_local_f() {
+      expression: large_f() + large_m()
+    }
+
+    function large_local_m() {
+      expression: large_f() + large_m()
+    }
+
+    first-phase {
+      expression: 0.8+0.2*large_local_f() + large_local_m()
+    }
+  }
+
+}

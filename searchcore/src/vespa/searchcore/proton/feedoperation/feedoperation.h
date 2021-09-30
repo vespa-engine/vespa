@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <memory>
 
 namespace document { class DocumentTypeRepo; }
 namespace vespalib { class nbostream; }
@@ -36,7 +37,8 @@ public:
         MOVE                    = 15,
         CREATE_BUCKET           = 16,
         COMPACT_LID_SPACE       = 17,
-        UPDATE                  = 18
+        UPDATE                  = 18,
+        REMOVE_GID              = 19
     };
 
 private:
@@ -44,8 +46,11 @@ private:
     SerialNum _serialNum;
 
 public:
-    FeedOperation(Type type);
-    virtual ~FeedOperation() {}
+    FeedOperation(Type type) noexcept
+        : _type(type),
+          _serialNum(0)
+    { }
+    virtual ~FeedOperation() = default;
     Type getType() const { return _type; }
     void setSerialNum(SerialNum serialNum) { _serialNum = serialNum; }
     SerialNum getSerialNum() const { return _serialNum; }

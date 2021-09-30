@@ -137,7 +137,7 @@ public class RpcFillInvoker extends FillInvoker {
             root.setString("ranking", rankProfile);
         }
         if (location != null) {
-            root.setString("location", location.toString());
+            root.setString("location", location.backendString());
         }
         Cursor gids = root.setArray("gids");
         for (FastHit hit : hits) {

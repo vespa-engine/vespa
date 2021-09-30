@@ -21,7 +21,7 @@ main(int argc, char** argv)
 
     // parse options and override defaults.
     int         optIdx;
-    char        opt;
+    int         opt;
     const char *arg;
     bool        optError;
 

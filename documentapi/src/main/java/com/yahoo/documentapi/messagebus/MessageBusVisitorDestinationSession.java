@@ -6,7 +6,7 @@ import com.yahoo.documentapi.VisitorDestinationParameters;
 import com.yahoo.documentapi.VisitorDestinationSession;
 import com.yahoo.documentapi.VisitorResponse;
 import com.yahoo.documentapi.messagebus.protocol.*;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.*;
 
 import java.util.logging.Logger;
@@ -26,9 +26,9 @@ import java.util.logging.Logger;
  * <code>MessageBusDocumentAccess.createVisitorSession</code> method and
  * progress tracked through the resulting visitor session.
  *
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
-public class MessageBusVisitorDestinationSession implements VisitorDestinationSession,MessageHandler
+public class MessageBusVisitorDestinationSession implements VisitorDestinationSession, MessageHandler
 {
     private static final Logger log = Logger.getLogger(MessageBusVisitorDestinationSession.class.getName());
 
@@ -56,7 +56,7 @@ public class MessageBusVisitorDestinationSession implements VisitorDestinationSe
 
     public void ack(AckToken token) {
         try {
-            log.log(LogLevel.DEBUG, "Sending ack " + token.ackObject);
+            log.log(Level.FINE, () -> "Sending ack " + token.ackObject);
             session.reply((Reply) token.ackObject);
         } catch (Exception e) {
             e.printStackTrace();

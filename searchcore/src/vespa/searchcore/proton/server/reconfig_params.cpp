@@ -15,6 +15,8 @@ ReconfigParams::configHasChanged() const
 {
     return _res.rankProfilesChanged ||
             _res.rankingConstantsChanged ||
+            _res.rankingExpressionsChanged ||
+            _res.onnxModelsChanged ||
             _res.indexschemaChanged ||
             _res.attributesChanged ||
             _res.summaryChanged ||
@@ -26,7 +28,8 @@ ReconfigParams::configHasChanged() const
             _res.tuneFileDocumentDBChanged ||
             _res.schemaChanged ||
             _res.maintenanceChanged ||
-            _res.storeChanged;
+            _res.storeChanged ||
+            _res.alloc_config_changed;
 }
 
 bool
@@ -38,7 +41,7 @@ ReconfigParams::shouldSchemaChange() const
 bool
 ReconfigParams::shouldMatchersChange() const
 {
-    return _res.rankProfilesChanged || _res.rankingConstantsChanged || shouldSchemaChange();
+    return _res.rankProfilesChanged || _res.rankingConstantsChanged || _res.rankingExpressionsChanged || _res.onnxModelsChanged || shouldSchemaChange();
 }
 
 bool
@@ -50,7 +53,7 @@ ReconfigParams::shouldIndexManagerChange() const
 bool
 ReconfigParams::shouldAttributeManagerChange() const
 {
-    return _res.attributesChanged || _res.importedFieldsChanged || _res.visibilityDelayChanged;
+    return _res.attributesChanged || _res.importedFieldsChanged || _res.visibilityDelayChanged || _res.alloc_config_changed;
 }
 
 bool

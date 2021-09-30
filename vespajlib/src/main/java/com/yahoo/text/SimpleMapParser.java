@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * <p>Superclasses of parsers of a map represented textually as
  * <code>{key1:value1,"anystringkey":value2,'anystringkey2':value3 ...}</code>.

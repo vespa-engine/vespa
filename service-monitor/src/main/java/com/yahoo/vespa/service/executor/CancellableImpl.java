@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.executor;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -97,7 +97,7 @@ class CancellableImpl implements Cancellable, Runnable {
             runlet.close();
             periodicExecutionCancellation.get().run();
         } catch (Throwable e) {
-            logger.log(LogLevel.ERROR, "Failed run of periodic execution", e);
+            logger.log(Level.SEVERE, "Failed run of periodic execution", e);
         }
     }
 }

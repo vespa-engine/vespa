@@ -4,6 +4,7 @@
 #include "configkey.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
+#include <memory>
 
 namespace vespalib {
     class Slime;
@@ -18,7 +19,7 @@ namespace config {
 /**
  * Miscellaneous utility functions specific to config.
  */
-vespalib::string calculateContentMd5(const std::vector<vespalib::string> & fileContents);
+vespalib::string calculateContentXxhash64(const std::vector<vespalib::string> & fileContents);
 
 bool isGenerationNewer(int64_t newGen, int64_t oldGen);
 

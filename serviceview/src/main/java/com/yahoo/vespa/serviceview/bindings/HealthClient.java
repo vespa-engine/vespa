@@ -11,7 +11,7 @@ import javax.ws.rs.core.MediaType;
 /**
  * Client to fetch the model config from the configserver.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public interface HealthClient {
 

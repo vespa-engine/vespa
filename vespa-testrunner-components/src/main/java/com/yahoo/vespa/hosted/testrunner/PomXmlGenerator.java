@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.testrunner;
 
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.testrunner.legacy.TestProfile;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -37,7 +38,7 @@ public class PomXmlGenerator {
             "    <version>1.0.0</version>\n" +
             "\n" +
             "    <properties>\n" +
-            "        <junit_version>5.4.2</junit_version>\n" +
+            "        <junit_version>5.7.0</junit_version>\n" +
             "        <surefire_version>2.22.0</surefire_version>\n" +
             "%PROPERTIES%" +
             "    </properties>\n" +

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.http.client.core;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonParser;
 import com.yahoo.vespa.http.client.FeedClient;
 
@@ -38,7 +39,7 @@ public class JsonReader {
      */
     public static void read(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) {
         try (InputStreamJsonElementBuffer jsonElementBuffer = new InputStreamJsonElementBuffer(inputStream)) {
-            JsonFactory jfactory = new JsonFactory().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES);
+            JsonFactory jfactory = new JsonFactoryBuilder().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES).build();
             JsonParser jParser = jfactory.createParser(jsonElementBuffer);
             while (true) {
                 int documentStart = (int) jParser.getCurrentLocation().getCharOffset();

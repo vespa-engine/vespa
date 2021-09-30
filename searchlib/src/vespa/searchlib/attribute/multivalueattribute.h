@@ -20,7 +20,6 @@ protected:
     typedef typename B::DocId                             DocId;
     typedef typename B::Change                            Change;
     typedef typename B::ChangeVector                      ChangeVector;
-    typedef typename B::ChangeVector::const_iterator      ChangeVectorIterator;
 
     using MultiValueType = M;
     using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;
@@ -49,7 +48,7 @@ protected:
      **/
     bool onAddDoc(DocId doc) override { (void) doc; return false; }
 
-    vespalib::AddressSpace getMultiValueAddressSpaceUsage() const override;
+    void populate_address_space_usage(AddressSpaceUsage& usage) const override;
 
 public:
     MultiValueAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);

@@ -5,14 +5,13 @@ import com.yahoo.io.BufferChain;
 import com.yahoo.io.WritableByteTransmitter;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -29,7 +28,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
     private boolean failed = false;
     private final Object failLock = new Object();
 
-    public ContentChannelOutputStream(final ContentChannel endpoint) {
+    public ContentChannelOutputStream(ContentChannel endpoint) {
         this.endpoint = endpoint;
         buffer = new BufferChain(this);
     }
@@ -38,7 +37,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
      * Buffered write of a single byte.
      */
     @Override
-    public void write(final int b) throws IOException {
+    public void write(int b) throws IOException {
         try {
             buffer.append((byte) b);
         } catch (RuntimeException e) {
@@ -53,11 +52,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
     public void close() throws IOException {
         // the endpoint is closed in a finally{} block inside AbstractHttpRequestHandler
         // this class should be possible to close willynilly as it is exposed to plug-ins
-        try {
-            buffer.flush();
-        } catch (RuntimeException e) {
-            throw new IOException(Exceptions.toMessageString(e), e);
-        }
+        flush();
     }
 
     /**
@@ -78,8 +73,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
      * It is in other words safe to recycle the array {@code b}.
      */
     @Override
-    public void write(final byte[] b, final int off, final int len)
-            throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         nonCopyingWrite(Arrays.copyOfRange(b, off, off + len));
     }
 
@@ -89,7 +83,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
      * It is in other words safe to recycle the array {@code b}.
      */
     @Override
-    public void write(final byte[] b) throws IOException {
+    public void write(byte[] b) throws IOException {
             nonCopyingWrite(Arrays.copyOf(b, b.length));
     }
 
@@ -98,8 +92,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
      * <i>transferring</i> ownership of that array to this stream. It is in
      * other words <i>not</i> safe to recycle the array {@code b}.
      */
-    public void nonCopyingWrite(final byte[] b, final int off, final int len)
-            throws IOException {
+    public void nonCopyingWrite(byte[] b, int off, int len) throws IOException {
         try {
             buffer.append(b, off, len);
         } catch (RuntimeException e) {
@@ -112,7 +105,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
      * <i>transferring</i> ownership of that array to this stream. It is in
      * other words <i>not</i> safe to recycle the array {@code b}.
      */
-    public void nonCopyingWrite(final byte[] b) throws IOException {
+    public void nonCopyingWrite(byte[] b) throws IOException {
         try {
             buffer.append(b);
         } catch (RuntimeException e) {
@@ -129,29 +122,35 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
      * the ByteBuffer to this stream.
      */
     @Override
-    public void send(final ByteBuffer src) throws IOException {
-        // Don't do a buffer.flush() from here, this method is used by the
-        // buffer itself
+    public void send(ByteBuffer src) throws IOException {
+        // Don't do a buffer.flush() from here, this method is used by the buffer itself
+        send(src, null);
+    }
+
+    protected void send(ByteBuffer src, CompletionHandler completionHandler) throws IOException {
         try {
-            byteBufferData += (long) src.remaining();
-            endpoint.write(src, new LoggingCompletionHandler());
+            byteBufferData += src.remaining();
+            endpoint.write(src, new LoggingCompletionHandler(completionHandler));
         } catch (RuntimeException e) {
             throw new IOException(Exceptions.toMessageString(e), e);
         }
     }
 
-    /**
-     * Give the number of bytes written.
-     *
-     * @return the number of bytes written to this stream
-     */
+    /** Returns the number of bytes written to this stream */
     public long written() {
         return buffer.appended() + byteBufferData;
     }
 
-    class LoggingCompletionHandler implements CompletionHandler {
+    private class LoggingCompletionHandler implements CompletionHandler {
+        private final CompletionHandler nested;
+        LoggingCompletionHandler(CompletionHandler nested) {
+            this.nested = nested;
+        }
         @Override
         public void completed() {
+            if (nested != null) {
+                nested.completed();
+            }
         }
 
         @Override
@@ -159,15 +158,19 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
             Level logLevel;
             synchronized (failLock) {
                 if (failed) {
-                    logLevel = LogLevel.SPAM;
+                    logLevel = Level.FINEST;
                 } else {
-                    logLevel = LogLevel.DEBUG;
+                    logLevel = Level.FINE;
                 }
                 failed = true;
             }
             if (log.isLoggable(logLevel)) {
                 log.log(logLevel, "Got exception when writing to client: " + Exceptions.toMessageString(t));
             }
+            if (nested != null) {
+                nested.failed(t);
+            }
         }
     }
+
 }

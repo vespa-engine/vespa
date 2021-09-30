@@ -1,40 +1,46 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.io.File;
 import java.time.Duration;
 
 /**
- * Removes unused file references from disk
+ * Removes unused file references older than a configured time, but always keeps a certain number of file references
+ * even when they are unused.
  * <p>
  * Note: Unit test is in ApplicationRepositoryTest
  *
  * @author hmusum
  */
-public class FileDistributionMaintainer extends Maintainer {
+public class FileDistributionMaintainer extends ConfigServerMaintainer {
+
+    private static final int numberToAlwaysKeep = 10;
 
     private final ApplicationRepository applicationRepository;
     private final File fileReferencesDir;
-    private final ConfigserverConfig configserverConfig;
+    private final Duration maxUnusedFileReferenceAge;
 
     FileDistributionMaintainer(ApplicationRepository applicationRepository,
                                Curator curator,
                                Duration interval,
-                               ConfigserverConfig configserverConfig) {
-        super(applicationRepository, curator, interval);
+                               FlagSource flagSource) {
+        super(applicationRepository, curator, flagSource, applicationRepository.clock().instant(), interval);
         this.applicationRepository = applicationRepository;
-        this.configserverConfig = configserverConfig;
+        ConfigserverConfig configserverConfig = applicationRepository.configserverConfig();
+        this.maxUnusedFileReferenceAge = Duration.ofMinutes(configserverConfig.keepUnusedFileReferencesMinutes());
         this.fileReferencesDir = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
     }
 
     @Override
-    protected void maintain() {
-        applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir,
-                                                                     Duration.ofHours(configserverConfig.keepUnusedFileReferencesHours()));
+    protected double maintain() {
+        applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, maxUnusedFileReferenceAge, numberToAlwaysKeep);
+        return 1.0;
     }
+
 }

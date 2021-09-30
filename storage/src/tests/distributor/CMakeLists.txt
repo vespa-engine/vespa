@@ -7,13 +7,14 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     bucket_db_prune_elision_test.cpp
     bucketdatabasetest.cpp
     bucketdbmetricupdatertest.cpp
-    bucketdbupdatertest.cpp
     bucketgctimecalculatortest.cpp
     bucketstateoperationtest.cpp
+    distributor_bucket_space_test.cpp
     distributor_host_info_reporter_test.cpp
     distributor_message_sender_stub.cpp
-    distributortest.cpp
-    distributortestutil.cpp
+    distributor_stripe_pool_test.cpp
+    distributor_stripe_test.cpp
+    distributor_stripe_test_util.cpp
     externaloperationhandlertest.cpp
     garbagecollectiontest.cpp
     getoperationtest.cpp
@@ -21,9 +22,9 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     idealstatemanagertest.cpp
     joinbuckettest.cpp
     maintenanceschedulertest.cpp
-    mapbucketdatabasetest.cpp
     mergelimitertest.cpp
     mergeoperationtest.cpp
+    multi_thread_stripe_access_guard_test.cpp
     nodeinfotest.cpp
     nodemaintenancestatstrackertest.cpp
     operation_sequencer_test.cpp
@@ -32,6 +33,7 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     pendingmessagetrackertest.cpp
     persistence_metrics_set_test.cpp
     putoperationtest.cpp
+    read_for_write_visitor_operation_test.cpp
     removebucketoperationtest.cpp
     removelocationtest.cpp
     removeoperationtest.cpp
@@ -42,6 +44,9 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     statoperationtest.cpp
     statusreporterdelegatetest.cpp
     throttlingoperationstartertest.cpp
+    top_level_bucket_db_updater_test.cpp
+    top_level_distributor_test.cpp
+    top_level_distributor_test_util.cpp
     twophaseupdateoperationtest.cpp
     updateoperationtest.cpp
     visitoroperationtest.cpp
@@ -49,10 +54,11 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     storage_testcommon
     storage_testhostreporter
     storage_distributor
-    gtest
+    GTest::GTest
 )
 
 vespa_add_test(
     NAME storage_distributor_gtest_runner_app
     COMMAND storage_distributor_gtest_runner_app
+    COST 350
 )

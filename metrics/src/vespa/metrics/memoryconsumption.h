@@ -18,6 +18,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/printable.h>
+#include <memory>
 
 namespace metrics {
 

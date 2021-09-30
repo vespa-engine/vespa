@@ -10,7 +10,7 @@ vespa_add_executable(storage_visiting_gtest_runner_app TEST
     DEPENDS
     storage
     storage_teststorageserver
-    gtest
+    GTest::GTest
 )
 
 vespa_add_test(

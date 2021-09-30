@@ -12,13 +12,12 @@
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/common/featureset.h>
-#include <vespa/searchlib/common/struct_field_mapper.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/clock.h>
-#include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <mutex>
 
@@ -54,8 +53,8 @@ private:
     using SearchRequest = search::engine::SearchRequest;
     using Properties = search::fef::Properties;
     using my_clock = std::chrono::steady_clock;
-    using StructFieldMapper = search::StructFieldMapper;
     using MatchingElements = search::MatchingElements;
+    using MatchingElementsFields = search::MatchingElementsFields;
     IndexEnvironment              _indexEnv;
     search::fef::BlueprintFactory _blueprintFactory;
     std::shared_ptr<search::fef::RankSetup>  _rankSetup;
@@ -89,7 +88,9 @@ public:
      **/
     Matcher(const search::index::Schema &schema, const Properties &props,
             const vespalib::Clock &clock, QueryLimiter &queryLimiter,
-            const IConstantValueRepo &constantValueRepo, uint32_t distributionKey);
+            const IConstantValueRepo &constantValueRepo,
+            RankingExpressions rankingExpressions, OnnxModels onnxModels,
+            uint32_t distributionKey);
 
     const search::fef::IIndexEnvironment &get_index_env() const { return _indexEnv; }
 
@@ -107,7 +108,7 @@ public:
     std::unique_ptr<MatchToolsFactory>
     create_match_tools_factory(const search::engine::Request &request, ISearchContext &searchContext,
                                IAttributeContext &attrContext, const search::IDocumentMetaStore &metaStore,
-                               const Properties &feature_overrides) const;
+                               const Properties &feature_overrides, bool is_search) const;
 
     /**
      * Perform a search against this matcher.
@@ -162,13 +163,13 @@ public:
      * @param search_ctx abstract view of searchable data
      * @param attr_ctx abstract view of attribute data
      * @param session_manager multilevel grouping session and query cache
-     * @param field_mapper knows which fields to collect information
-     *                     about and how they relate to each other
+     * @param fields knows which fields to collect information
+     *               about and how they relate to each other
      * @return matching elements
      **/
     MatchingElements::UP get_matching_elements(const DocsumRequest &req, ISearchContext &search_ctx,
                                                IAttributeContext &attr_ctx, SessionManager &session_manager,
-                                               const StructFieldMapper &field_mapper);
+                                               const MatchingElementsFields &fields);
 
     DocsumMatcher::UP create_docsum_matcher(const DocsumRequest &req, ISearchContext &search_ctx,
                                             IAttributeContext &attr_ctx, SessionManager &session_manager);

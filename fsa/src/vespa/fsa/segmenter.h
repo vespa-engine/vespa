@@ -147,7 +147,7 @@ public:
        *
        * Null segment at postion zero.
        */
-      Segment() : _beg(0), _end(0), _conn(0) {}
+      Segment() noexcept : _beg(0), _end(0), _conn(0) {}
 
       /**
        * @brief Constructor.
@@ -156,7 +156,7 @@ public:
        * @param e End of the segment (the position after the last term).
        * @param c Connexity of the segment.
        */
-      Segment(unsigned int b, unsigned int e, unsigned int c) :
+      Segment(unsigned int b, unsigned int e, unsigned int c) noexcept :
         _beg(b), _end(e), _conn(c) {}
 
       /**
@@ -164,12 +164,12 @@ public:
        *
        * @param s Segment object to copy.
        */
-      Segment(const Segment &s) : _beg(s._beg), _end(s._end), _conn(s._conn) {}
+      Segment(const Segment &s) noexcept : _beg(s._beg), _end(s._end), _conn(s._conn) {}
 
       /**
        * @brief Destructor.
        */
-      ~Segment() {}
+      ~Segment() = default;
 
       /**
        * @brief Set the segment parameters.

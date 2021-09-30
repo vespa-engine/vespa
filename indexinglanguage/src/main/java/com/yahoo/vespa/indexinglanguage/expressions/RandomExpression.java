@@ -27,19 +27,19 @@ public final class RandomExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
+    protected void doExecute(ExecutionContext context) {
         int max;
         if (this.max != null) {
             max = this.max;
         } else {
-            max = Integer.parseInt(String.valueOf(ctx.getValue()));
+            max = Integer.parseInt(String.valueOf(context.getValue()));
         }
-        ctx.setValue(new IntegerFieldValue(ThreadLocalRandom.current().nextInt(max)));
+        context.setValue(new IntegerFieldValue(ThreadLocalRandom.current().nextInt(max)));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

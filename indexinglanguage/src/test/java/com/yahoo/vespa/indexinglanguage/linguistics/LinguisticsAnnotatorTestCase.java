@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -29,12 +30,6 @@ import static org.junit.Assert.assertTrue;
 public class LinguisticsAnnotatorTestCase {
 
     private static final AnnotatorConfig CONFIG = new AnnotatorConfig();
-
-    // --------------------------------------------------------------------------------
-    //
-    // Tests
-    //
-    // --------------------------------------------------------------------------------
 
     @Test
     public void requireThatAnnotateFailsWithZeroTokens() {
@@ -145,7 +140,7 @@ public class LinguisticsAnnotatorTestCase {
                     continue;
                 }
                 assertAnnotations(expected, "foo",
-                                  newLinguistics(Arrays.asList(newToken("foo", "foo", type, specialToken)),
+                                  newLinguistics(List.of(newToken("foo", "foo", type, specialToken)),
                                                  Collections.singletonMap("foo", "bar")));
             }
         }
@@ -159,7 +154,7 @@ public class LinguisticsAnnotatorTestCase {
         StringFieldValue val = new StringFieldValue("foo");
         val.setSpanTree(spanTree);
 
-        Linguistics linguistics = newLinguistics(Arrays.asList(newToken("foo", "bar", TokenType.ALPHABETIC, false)),
+        Linguistics linguistics = newLinguistics(List.of(newToken("foo", "bar", TokenType.ALPHABETIC, false)),
                                                  Collections.<String, String>emptyMap());
         new LinguisticsAnnotator(linguistics, CONFIG).annotate(val);
 
@@ -253,11 +248,15 @@ public class LinguisticsAnnotatorTestCase {
     private static class MyTokenizer implements Tokenizer {
 
         final List<Token> tokens;
-        final Map<String, String> replacementTerms;
 
         public MyTokenizer(List<? extends Token> tokens, Map<String, String> replacementTerms) {
-            this.tokens = new ArrayList<>(tokens);
-            this.replacementTerms = replacementTerms;
+            this.tokens = tokens.stream().map(token -> replace(token, replacementTerms)).collect(Collectors.toList());
+        }
+
+        private Token replace(Token token, Map<String, String> replacementTerms) {
+            var simpleToken = (SimpleToken)token;
+            simpleToken.setTokenString(replacementTerms.getOrDefault(token.getTokenString(), token.getTokenString()));
+            return simpleToken;
         }
 
         @Override
@@ -265,10 +264,6 @@ public class LinguisticsAnnotatorTestCase {
             return tokens;
         }
 
-        @Override
-        public String getReplacementTerm(String term) {
-            String replacement = replacementTerms.get(term);
-            return replacement != null ? replacement : term;
-        }
     }
+
 }

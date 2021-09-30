@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
+import com.yahoo.text.Utf8;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -8,11 +9,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
-import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -32,7 +33,37 @@ public class UnsafeContentInputStreamTestCase {
         assertNull(reader.readLine());
     }
 
-    @SuppressWarnings("deprecation")
+    @Test
+    public void testMark() throws IOException {
+        BufferedContentChannel channel = new BufferedContentChannel();
+        FastContentWriter writer = new FastContentWriter(channel);
+        writer.write("Hello ");
+        writer.write("World!");
+        writer.close();
+
+        InputStream stream = asInputStream(channel);
+        assertTrue(stream.markSupported());
+        int first = stream.read();
+        assertEquals('H', first);
+        stream.mark(10);
+        byte [] buf = new byte[8];
+        stream.read(buf);
+        assertEquals("ello Wor", Utf8.toString(buf));
+        stream.reset();
+        stream.mark(5);
+        buf = new byte [9];
+        stream.read(buf);
+        assertEquals("ello Worl", Utf8.toString(buf));
+        try {
+            stream.reset();
+            fail("UnsafeContentInputStream.reset expected to fail when your read past readLimit.");
+        } catch (IOException e) {
+            assertEquals("mark has not been called, or too much has been read since marked.", e.getMessage());
+        } catch (Throwable t) {
+            fail("Did not expect " + t);
+        }
+    }
+
     @Test
     public void requireThatCompletionsAreCalledWithDeprecatedContentWriter() throws IOException {
         BufferedContentChannel channel = new BufferedContentChannel();
@@ -63,7 +94,6 @@ public class UnsafeContentInputStreamTestCase {
         assertTrue(writer.isDone());
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void requireThatCloseDrainsStreamWithDeprecatedContentWriter() {
         BufferedContentChannel channel = new BufferedContentChannel();

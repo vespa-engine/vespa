@@ -25,7 +25,7 @@ public class Node {
     }
 
     public Node(String role, String hostname, int port, String path) {
-        Objects.requireNonNull(role, "Null configId is not allowed");
+        Objects.requireNonNull(role, "Null role is not allowed");
         Objects.requireNonNull(hostname, "Null hostname is not allowed");
         Objects.requireNonNull(path, "Null path is not allowed");
 
@@ -54,5 +54,11 @@ public class Node {
     @Override
     public int hashCode() {
         return Objects.hash(role, hostname, port, path);
+    }
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(role).append(":").append(metricsUriBase);
+        return sb.toString();
     }
 }

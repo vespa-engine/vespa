@@ -31,6 +31,7 @@ public:
     void setDone() { _state = State::DONE; }
     void addDependency(SP dependency);
     virtual void run() = 0;
+    virtual size_t get_transient_memory_usage() const;
 };
 
 }

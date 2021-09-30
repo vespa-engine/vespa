@@ -19,7 +19,7 @@ public class ClusterSizeReductionValidatorTest {
 
     @Test
     public void testSizeReductionValidation() {
-        ValidationTester tester = new ValidationTester(30);
+        ValidationTester tester = new ValidationTester(33);
 
         VespaModel previous = tester.deploy(null, getServices(30), Environment.prod, null).getFirst();
         try {
@@ -27,7 +27,9 @@ public class ClusterSizeReductionValidatorTest {
             fail("Expected exception due to cluster size reduction");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("cluster-size-reduction: Size reduction in 'default' is too large. Current size: 30, new size: 14. New size must be at least 50% of the current size. " +
+            assertEquals("cluster-size-reduction: Size reduction in 'default' is too large: " +
+                         "New min size must be at least 50% of the current min size. " +
+                         "Current size: 30, new size: 14. " +
                          ValidationOverrides.toAllowMessage(ValidationId.clusterSizeReduction),
                          Exceptions.toMessageString(expected));
         }
@@ -41,19 +43,9 @@ public class ClusterSizeReductionValidatorTest {
         tester.deploy(previous, getServices(2), Environment.prod, null);
     }
 
-    /*
-    @Test
-    public void testSizeReductionTo50PercentIsAllowed() throws IOException, SAXException {
-        ValidationTester tester = new ValidationTester(30);
-
-        VespaModel previous = tester.deploy(null, getServices(30), null).getFirst();
-        tester.deploy(previous, getServices(15), null);
-    }
-    */
-
     @Test
     public void testOverridingSizereductionValidation() {
-        ValidationTester tester = new ValidationTester(30);
+        ValidationTester tester = new ValidationTester(33);
 
         VespaModel previous = tester.deploy(null, getServices(30), Environment.prod, null).getFirst();
         tester.deploy(previous, getServices(14), Environment.prod, sizeReductionOverride); // Allowed due to override

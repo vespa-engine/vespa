@@ -13,11 +13,18 @@ httpport       int default=0 restart
 ## Cluster name
 clustername	string default="" restart
 
-## Partition number
-partition     int default=0 restart
-
 ## Distribution key
 distributionkey int default=-1
+
+## Number of threads used for rpc transport threads
+## A zero value will make the backend smart about the number.
+rpc.transportthreads int default=0 restart
+
+## Dispatch search requests to threadpool
+search.async bool default=true
+
+## Dispatch docsum requests to threadpool
+docsum.async bool default=true
 
 ## Num searcher threads
 numsearcherthreads int default=64 restart
@@ -28,8 +35,10 @@ numthreadspersearch int default=1 restart
 ## Num summary threads
 numsummarythreads int default=16 restart
 
-## Stop on io errors ?
-stoponioerrors bool default=false restart
+## Perform extra validation of stored data on startup
+## It requires a restart to enable, but no restart to disable.
+## Hence it must always be followed by a manual restart when enabled.
+validate_and_sanitize_docstore enum {NO, YES} default = NO
 
 ## Maximum number of concurrent flushes outstanding.
 flush.maxconcurrent int default=2 restart
@@ -59,8 +68,10 @@ flush.memory.each.maxmemory long default=1073741824
 flush.memory.each.diskbloatfactor double default=0.2
 
 ## Age of unflushed content before forcing age prioritization.
-## Unit is seconds with 1 day being the default.
-flush.memory.maxage.time double default=86400.0
+## Unit is seconds with 31 hours being the default.
+## 31 is selected as it is both a prime and (31-24=7) is a prime and hence it will
+## not be closer to a multiple of a day for a month, and it will be at least one hour away.
+flush.memory.maxage.time double default=111600.0
 
 ## When resource limit for memory is reached we choose a conservative mode for the flush strategy.
 ## In this case this factor is multiplied with 'maxmemory' and 'each.maxmemory' to calculate conservative values to use instead.
@@ -117,16 +128,24 @@ indexing.read.io enum {NORMAL, DIRECTIO} default=DIRECTIO restart
 ## Control number of threads used for indexing
 indexing.threads int default=1 restart
 
+## Option to specify what is most important during indexing.
+## This is experimental and will most likely be temporary.
+indexing.optimize enum {LATENCY, THROUGHPUT, ADAPTIVE} default=LATENCY restart
+
 ## Maximum number of pending operations for each of the internal
 ## indexing threads.  Only used when visibility delay is zero.
-indexing.tasklimit int default=1000 restart
+indexing.tasklimit int default=1000
 
-## Parameter used to calculate maximum number of pending operations
-## for each of the internal indexing threads when visibility delay is
-## nonzero. The number is divided by the number of indexing threads,
-## i.e.  when indexing.threads is 4 and indexing.semiunboundtasklimit
-## is 40000 then effective task limit is 10000.
-indexing.semiunboundtasklimit int default = 40000 restart
+## Deprecated and ignored, will soon go away
+indexing.semiunboundtasklimit int default = 1000
+
+## Kind of watermark for when to activate extra manpower
+## Utilized if optimize is set to either THROUGHPUT or ADAPTIVE
+indexing.kind_of_watermark int default = 0 restart
+
+## Controls minimum reaction time in seconds if using THROUGHPUT
+indexing.reactiontime double default = 0.005 restart
+
 
 ## How long a freshly loaded index shall be warmed up
 ## before being used for serving
@@ -153,7 +172,7 @@ index.cache.size long default=0 restart
 attribute.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart
 
 ## Multiple optional options for use with mmap
-search.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
+search.mmap.options[] enum {POPULATE, HUGETLB} restart
 
 ## Advise to give to os when mapping memory.
 search.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restart
@@ -233,6 +252,9 @@ summary.log.chunk.skipcrconread bool default=false
 ## Max size per summary file.
 summary.log.maxfilesize long default=1000000000
 
+## Max number of lid entries per file
+summary.log.maxnumlids int default=40000000
+
 ## Max disk bloat factor. This will trigger compacting.
 summary.log.maxdiskbloatfactor double default=0.1
 
@@ -252,7 +274,7 @@ summary.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO
 summary.read.io enum {NORMAL, DIRECTIO, MMAP } default=MMAP restart
 
 ## Multiple optional options for use with mmap
-summary.read.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
+summary.read.mmap.options[] enum {POPULATE, HUGETLB} restart
 
 ## Advise to give to os when mapping memory.
 summary.read.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restart
@@ -292,6 +314,12 @@ documentdb[].allocation.amortizecount int default=10000
 ## The grow factor used when allocating buffers in the array store
 ## used in multi-value attribute vectors to store underlying values.
 documentdb[].allocation.multivaluegrowfactor double default=0.2
+
+## The ratio of used bytes that can be dead before attempting to perform compaction.
+documentdb[].allocation.max_dead_bytes_ratio double default=0.05
+
+## The ratio of used address space that can be dead before attempting to perform compaction.
+documentdb[].allocation.max_dead_address_space_ratio double default=0.2
 
 ## The interval of when periodic tasks should be run
 periodic.interval double default=3600.0
@@ -344,7 +372,7 @@ lidspacecompaction.interval double default=10.0
 ##
 ## When considering compaction the lid bloat is calculated as (docIdLimit - numDocs).
 ## The lid bloat must be >= allowedlidbloat before considering compaction.
-lidspacecompaction.allowedlidbloat int default=1000
+lidspacecompaction.allowedlidbloat int default=1
 
 ## The allowed lid bloat factor (relative) before considering lid space compaction.
 ##
@@ -352,6 +380,7 @@ lidspacecompaction.allowedlidbloat int default=1000
 ## The lid bloat factor must be >= allowedlidbloatfactor before considering compaction.
 lidspacecompaction.allowedlidbloatfactor double default=0.01
 
+## DEPRECATED (no longer used): Remove on Vespa 8
 ## The delay (in seconds) for when the last remove batch operation would be considered to block lid space compaction.
 ##
 ## When considering compaction, if the document meta store has received a remove batch operation in the last delay seconds,
@@ -361,6 +390,27 @@ lidspacecompaction.allowedlidbloatfactor double default=0.01
 ## This functionality ensures that during massive deleting of buckets (e.g. as part of redistribution of data to a new node),
 ## lid space compaction do not interfere, but instead is applied after deleting of buckets is complete.
 lidspacecompaction.removebatchblockdelay double default=2.0
+
+## The rate (ops / second) of remove batch operations for when to block lid space compaction.
+##
+## When considering compaction, if the current observed rate of remove batch operations
+## is higher than the given block rate, the lid space compaction job is blocked.
+## It is considered again at the next regular interval (see above).
+##
+## Remove batch operations are used when deleting buckets on a content node.
+## This functionality ensures that during massive deleting of buckets (e.g. as part of redistribution of data to a new node),
+## lid space compaction do not interfere, but instead is applied after deleting of buckets is complete.
+lidspacecompaction.removebatchblockrate double default=0.5
+
+## The rate (ops / second) of remove operations for when to block lid space compaction.
+##
+## When considering compaction, if the current observed rate of remove operations
+## is higher than the given block rate, the lid space compaction job is blocked.
+## It is considered again at the next regular interval (see above).
+lidspacecompaction.removeblockrate double default=100.0
+
+## Maximum docs to move in single operation per bucket
+bucketmove.maxdocstomoveperbucket int default=1
 
 ## This is the maximum value visibilitydelay you can have.
 ## A to higher value here will cost more memory while not improving too much.
@@ -381,13 +431,9 @@ visit.ignoremaxbytes bool default=true
 ## When set to 0 (default) we use 1 separate thread per document database.
 initialize.threads int default = 0
 
-## Portion of enumstore address space that can be used before put and update
-## portion of feed is blocked.
-writefilter.attribute.enumstorelimit double default = 0.9
-
-## Portion of attribute multivalue mapping address space that can be used
-## before put and update portion of feed is blocked.
-writefilter.attribute.multivaluelimit double default = 0.9
+## Portion of max address space used in components in attribute vectors
+## before put and update operations in feed is blocked.
+writefilter.attribute.address_space_limit double default = 0.9
 
 ## Portion of physical memory that can be resident memory in anonymous mapping
 ## by the proton process before put and update portion of feed is blocked.
@@ -397,8 +443,8 @@ writefilter.memorylimit double default = 0.8
 ## put and update portion of feed is blocked.
 writefilter.disklimit double default = 0.8
 
-## Interval between sampling of disk and memory usage. Default is 20 seconds.
-writefilter.sampleinterval double default = 20.0
+## Interval between sampling of disk and memory usage. Default is 10 seconds.
+writefilter.sampleinterval double default = 10.0
 
 ## The size of the disk partition (in bytes) on which proton basedir is located.
 ## If set to 0, the disk size is sampled by looking at the filesystem space info.
@@ -456,8 +502,15 @@ maintenancejobs.resourcelimitfactor double default = 1.05
 ##
 ## The job is unblocked (and executed again) when this goes under the limit again.
 ## Currently used by 'lid_space_compaction' job.
-maintenancejobs.maxoutstandingmoveops int default=10
+maintenancejobs.maxoutstandingmoveops int default=100
 
 ## Controls the type of bucket checksum used. Do not change unless 
 ## in depth understanding is present.
 bucketdb.checksumtype enum {LEGACY, XXHASH64} default = LEGACY restart
+
+## Specifies which tensor implementation to use for all backend code.
+##
+## TENSOR_ENGINE (default) uses DefaultTensorEngine, which has been the production implementation for years.
+## FAST_VALUE uses the new and optimized FastValueBuilderFactory instead.
+## TODO: Remove when default has been switched to FAST_VALUE.
+tensor_implementation enum {TENSOR_ENGINE, FAST_VALUE} default = FAST_VALUE

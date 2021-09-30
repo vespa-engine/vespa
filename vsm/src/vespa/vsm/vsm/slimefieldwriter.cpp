@@ -3,6 +3,7 @@
 #include "slimefieldwriter.h"
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.slimefieldwriter");
@@ -160,7 +161,7 @@ SlimeFieldWriter::explorePath(vespalib::stringref candidate)
 }
 
 SlimeFieldWriter::SlimeFieldWriter() :
-    _rbuf(4096),
+    _rbuf(4_Ki),
     _slime(),
     _inputFields(nullptr),
     _currPath()

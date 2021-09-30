@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <memory>
+
 namespace search::tensor {
 
 /**
@@ -9,6 +11,7 @@ namespace search::tensor {
  */
 class RandomLevelGenerator {
 public:
+    using UP = std::unique_ptr<RandomLevelGenerator>;
     virtual ~RandomLevelGenerator() {}
     virtual uint32_t max_level() = 0;
 };

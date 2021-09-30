@@ -51,11 +51,6 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>jdisc_http_service</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>predicate-search-core</artifactId>
             <version>${project.version}</version>
         </dependency>

@@ -40,7 +40,7 @@ public class StreamingValidator extends Validator {
         if (sc.getSdConfig() != null) {
             for (ImmutableSDField sd : sc.getSdConfig().getSearch().allConcreteFields()) {
                 if (sd.getMatching().getType().equals(Matching.Type.GRAM)) {
-                    logger.log(Level.WARNING, "For streaming search cluster '" + sc.getClusterName() +
+                    logger.logApplicationPackage(Level.WARNING, "For streaming search cluster '" + sc.getClusterName() +
                             "', SD field '" + sd.getName() + "': n-gram matching is not supported for streaming search.");
                 }
             }
@@ -67,7 +67,7 @@ public class StreamingValidator extends Validator {
         // If the field is numeric, we can't print this, because we may have converted the field to
         // attribute indexing ourselves (IntegerIndex2Attribute)
         if (sd.getDataType() instanceof NumericDataType) return;
-        logger.log(Level.WARNING, "For streaming search cluster '" + sc.getClusterName() +
+        logger.logApplicationPackage(Level.WARNING, "For streaming search cluster '" + sc.getClusterName() +
                 "', SD field '" + sd.getName() + "': 'attribute' has same match semantics as 'index'.");
     }
 

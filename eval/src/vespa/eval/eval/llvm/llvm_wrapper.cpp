@@ -4,6 +4,8 @@
 #include "llvm_wrapper.h"
 #include <vespa/eval/eval/node_visitor.h>
 #include <vespa/eval/eval/node_traverser.h>
+#include <vespa/eval/eval/extract_bit.h>
+#include <vespa/eval/eval/hamming_distance.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/IR/IRBuilder.h>
@@ -12,15 +14,10 @@
 #include <llvm/Analysis/Passes.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/Transforms/Scalar.h>
-#if LLVM_VERSION_MAJOR == 9 && defined(__clang__)
-// Avoid reference to undefined symbol llvm::cfg::Update<llvm::BasicBlock*>::dump() const
-#define NDEBUG
-#endif
-#include <llvm/LinkAllPasses.h>
-#if LLVM_VERSION_MAJOR == 9 && defined(__clang__)
-#undef NDEBUG
-#endif
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
+#if LLVM_VERSION_MAJOR > 9
+#include <llvm/Support/ManagedStatic.h>
+#endif
 #include <vespa/eval/eval/check_type.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/approx.h>
@@ -34,6 +31,8 @@ double vespalib_eval_approx(double a, double b) { return (vespalib::approx_equal
 double vespalib_eval_relu(double a) { return std::max(a, 0.0); }
 double vespalib_eval_sigmoid(double a) { return 1.0 / (1.0 + std::exp(-1.0 * a)); }
 double vespalib_eval_elu(double a) { return (a < 0) ? std::exp(a) - 1.0 : a; }
+double vespalib_eval_bit(double a, double b) { return vespalib::eval::extract_bit(a, b); }
+double vespalib_eval_hamming(double a, double b) { return vespalib::eval::hamming_distance(a, b); }
 
 using vespalib::eval::gbdt::Forest;
 using resolve_function = double (*)(void *ctx, size_t idx);
@@ -66,7 +65,7 @@ struct SetMemberHash : PluginState {
     vespalib::hash_set<double> members;
     explicit SetMemberHash(const In &in) : members(in.num_entries() * 3) {
         for (size_t i = 0; i < in.num_entries(); ++i) {
-            members.insert(in.get_entry(i).get_const_value());
+            members.insert(in.get_entry(i).get_const_double_value());
         }
     }
     static bool check_membership(const PluginState *state, double value) {
@@ -106,7 +105,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     llvm::PointerType *make_eval_forest_funptr_t() {
         std::vector<llvm::Type*> param_types;
-        param_types.push_back(builder.getVoidTy()->getPointerTo());
+        param_types.push_back(builder.getInt8Ty()->getPointerTo());
         param_types.push_back(builder.getDoubleTy()->getPointerTo());
         llvm::FunctionType *function_type = llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
         return llvm::PointerType::get(function_type, 0);
@@ -114,7 +113,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     llvm::PointerType *make_resolve_param_funptr_t() {
         std::vector<llvm::Type*> param_types;
-        param_types.push_back(builder.getVoidTy()->getPointerTo());
+        param_types.push_back(builder.getInt8Ty()->getPointerTo());
         param_types.push_back(builder.getInt64Ty());
         llvm::FunctionType *function_type = llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
         return llvm::PointerType::get(function_type, 0);
@@ -123,9 +122,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     llvm::PointerType *make_eval_forest_proxy_funptr_t() {
         std::vector<llvm::Type*> param_types;
         param_types.push_back(make_eval_forest_funptr_t());
-        param_types.push_back(builder.getVoidTy()->getPointerTo());
+        param_types.push_back(builder.getInt8Ty()->getPointerTo());
         param_types.push_back(make_resolve_param_funptr_t());
-        param_types.push_back(builder.getVoidTy()->getPointerTo());
+        param_types.push_back(builder.getInt8Ty()->getPointerTo());
         param_types.push_back(builder.getInt64Ty());
         llvm::FunctionType *function_type = llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
         return llvm::PointerType::get(function_type, 0);
@@ -133,7 +132,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     llvm::PointerType *make_check_membership_funptr_t() {
         std::vector<llvm::Type*> param_types;
-        param_types.push_back(builder.getVoidTy()->getPointerTo());
+        param_types.push_back(builder.getInt8Ty()->getPointerTo());
         param_types.push_back(builder.getDoubleTy());
         llvm::FunctionType *function_type = llvm::FunctionType::get(builder.getInt1Ty(), param_types, false);
         return llvm::PointerType::get(function_type, 0);
@@ -169,7 +168,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         } else {
             assert(pass_params == PassParams::LAZY);
             param_types.push_back(make_resolve_param_funptr_t());
-            param_types.push_back(builder.getVoidTy()->getPointerTo());
+            param_types.push_back(builder.getInt8Ty()->getPointerTo());
         }
         llvm::FunctionType *function_type = llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
         function = llvm::Function::Create(function_type, llvm::Function::ExternalLinkage, name_in.c_str(), &module);
@@ -192,12 +191,13 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         } else if (pass_params == PassParams::ARRAY) {
             assert(params.size() == 1);
             llvm::Value *param_array = params[0];
-            llvm::Value *addr = builder.CreateGEP(param_array, builder.getInt64(idx));
-            return builder.CreateLoad(addr);
+            llvm::Value *addr = builder.CreateGEP(param_array->getType()->getScalarType()->getPointerElementType(), param_array, builder.getInt64(idx));
+            return builder.CreateLoad(addr->getType()->getPointerElementType(), addr);
         }
         assert(pass_params == PassParams::LAZY);
         assert(params.size() == 2);
-        return builder.CreateCall(params[0], {params[1], builder.getInt64(idx)}, "resolve_param");
+        return builder.CreateCall(llvm::cast<llvm::FunctionType>(params[0]->getType()->getPointerElementType()),
+                                  params[0], {params[1], builder.getInt64(idx)}, "resolve_param");
     }
 
     //-------------------------------------------------------------------------
@@ -247,14 +247,16 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         gbdt::Forest *forest = forests.back().get();
         llvm::PointerType *eval_funptr_t = make_eval_forest_funptr_t();
         llvm::Value *eval_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)eval_ptr), eval_funptr_t, "inject_eval");
-        llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)forest), builder.getVoidTy()->getPointerTo(), "inject_ctx");
+        llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)forest), builder.getInt8Ty()->getPointerTo(), "inject_ctx");
         if (pass_params == PassParams::ARRAY) {
-	    push(builder.CreateCall(eval_fun, {ctx, params[0]}, "call_eval"));
+            push(builder.CreateCall(llvm::cast<llvm::FunctionType>(eval_fun->getType()->getPointerElementType()),
+                                    eval_fun, {ctx, params[0]}, "call_eval"));
         } else {
             assert(pass_params == PassParams::LAZY);
             llvm::PointerType *proxy_funptr_t = make_eval_forest_proxy_funptr_t();
             llvm::Value *proxy_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)vespalib_eval_forest_proxy), proxy_funptr_t, "inject_eval_proxy");
-            push(builder.CreateCall(proxy_fun, {eval_fun, ctx, params[0], params[1], builder.getInt64(stats.num_params)}));
+            push(builder.CreateCall(llvm::cast<llvm::FunctionType>(proxy_fun->getType()->getPointerElementType()),
+                                    proxy_fun, {eval_fun, ctx, params[0], params[1], builder.getInt64(stats.num_params)}));
         }
         return true;
     }
@@ -262,8 +264,8 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     //-------------------------------------------------------------------------
 
     bool open(const Node &node) override {
-        if (node.is_const()) {
-            push_double(node.get_const_value());
+        if (node.is_const_double()) {
+            push_double(node.get_const_double_value());
             return false;
         }
         if (!inside_forest && (pass_params != PassParams::SEPARATE) && node.is_forest()) {
@@ -407,13 +409,14 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
             PluginState *state = plugin_state.back().get();
             llvm::PointerType *funptr_t = make_check_membership_funptr_t();
             llvm::Value *call_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)call_ptr), funptr_t, "inject_call_addr");
-            llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)state), builder.getVoidTy()->getPointerTo(), "inject_ctx");
-            push(builder.CreateCall(call_fun, {ctx, lhs}, "call_check_membership"));
+            llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)state), builder.getInt8Ty()->getPointerTo(), "inject_ctx");
+            push(builder.CreateCall(llvm::cast<llvm::FunctionType>(call_fun->getType()->getPointerElementType()),
+                                    call_fun, {ctx, lhs}, "call_check_membership"));
         } else {
             // build explicit code to check all set members
             llvm::Value *found = builder.getFalse();
             for (size_t i = 0; i < item.num_entries(); ++i) {
-                llvm::Value *elem = llvm::ConstantFP::get(builder.getDoubleTy(), item.get_entry(i).get_const_value());
+                llvm::Value *elem = llvm::ConstantFP::get(builder.getDoubleTy(), item.get_entry(i).get_const_double_value());
                 llvm::Value *elem_eq = builder.CreateFCmpOEQ(lhs, elem, "elem_eq");
                 found = builder.CreateOr(found, elem_eq, "found");
             }
@@ -479,7 +482,13 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const TensorConcat &node) override {
         make_error(node.num_children());
     }
+    void visit(const TensorCellCast &node) override {
+        make_error(node.num_children());
+    }
     void visit(const TensorCreate &node) override {
+        make_error(node.num_children());
+    }
+    void visit(const TensorLambda &node) override {
         make_error(node.num_children());
     }
     void visit(const TensorPeek &node) override {
@@ -637,6 +646,15 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
     void visit(const Elu &) override {
         make_call_1("vespalib_eval_elu");
+    }
+    void visit(const Erf &) override {
+        make_call_1("erf");
+    }
+    void visit(const Bit &) override {
+        make_call_2("vespalib_eval_bit");
+    }
+    void visit(const Hamming &) override {
+        make_call_2("vespalib_eval_hamming");
     }
 };
 

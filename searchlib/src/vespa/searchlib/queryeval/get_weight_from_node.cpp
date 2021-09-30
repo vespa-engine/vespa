@@ -18,7 +18,8 @@ struct WeightExtractor : public TemplateTermVisitor<WeightExtractor, SimpleQuery
 
     WeightExtractor() : weight(0) {}
 
-    template <class TermType> void visitTerm(TermType &n) {
+    template <class TermType>
+    void visitTerm(TermType &n) {
         weight = n.getWeight();
     }
 

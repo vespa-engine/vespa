@@ -39,16 +39,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author havardpe
  * @author Simon Thoresen Hult
  */
 public class RoutingTestCase {
-
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Setup
-    //
-    ////////////////////////////////////////////////////////////////////////////////
 
     Slobrok slobrok;
     TestServer srcServer, dstServer;
@@ -81,12 +75,6 @@ public class RoutingTestCase {
         srcSession.destroy();
         srcServer.destroy();
     }
-
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Tests
-    //
-    ////////////////////////////////////////////////////////////////////////////////
 
     @Test
     public void requireThatNullRouteIsCaught() {
@@ -1154,4 +1142,5 @@ public class RoutingTestCase {
             return new MyPolicy(Route.parse(select), null, null, null, e, true);
         }
     }
+
 }

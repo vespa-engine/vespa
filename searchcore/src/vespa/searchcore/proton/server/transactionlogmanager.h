@@ -2,11 +2,8 @@
 
 #pragma once
 
-#include "documentdbconfig.h"
 #include "tls_replay_progress.h"
 #include "transactionlogmanagerbase.h"
-#include <vespa/searchcore/proton/index/i_index_writer.h>
-#include <vespa/searchlib/transactionlog/translogclient.h>
 
 namespace proton {
 struct ConfigStore;
@@ -16,7 +13,7 @@ struct ConfigStore;
  **/
 class TransactionLogManager : public TransactionLogManagerBase
 {
-    TransLogClient::Visitor::UP _visitor;
+    std::unique_ptr<Visitor> _visitor;
 
     void doLogReplayComplete(const vespalib::string &domainName, vespalib::duration elapsedTime) const override;
 
@@ -36,10 +33,10 @@ public:
      * @param oldestConfigSerial the serial num of the oldest config.
      * @param the pruned serial num will be set to 1 lower than
      *        the serial num of the first entry in the transaction log.
-     * @param the current serial num will be set to 1 higher than
-     *        the serial num of the last entry in the transaction log.
+     * @param replay_end_serial_num will be set to the serial num of
+     *        the last entry in the transaction log.
      **/
-    void init(SerialNum oldestConfigSerial, SerialNum &prunedSerialNum, SerialNum &serialNum);
+    void init(SerialNum oldestConfigSerial, SerialNum &prunedSerialNum, SerialNum &replay_end_serial_num);
 
     /**
      * Prepare replay of the transaction log.
@@ -51,10 +48,17 @@ public:
                   SerialNum flushedSummaryMgrSerial,
                   ConfigStore &config_store);
 
+
+    /*
+     * Make a tls replay progress object for serial numbers (first..last]
+     */
+    std::unique_ptr<TlsReplayProgress>
+    make_replay_progress(SerialNum first, SerialNum last);
+
     /**
      * Start replay of the transaction log.
      **/
-    TlsReplayProgress::UP startReplay(SerialNum first, SerialNum syncToken, TransLogClient::Session::Callback &callback);
+    void startReplay(SerialNum first, SerialNum syncToken, Callback &callback);
 
     /**
      * Indicate that replay is done.

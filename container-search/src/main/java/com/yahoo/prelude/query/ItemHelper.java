@@ -5,8 +5,9 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Helper function for Item
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * Helper functions for Item
+ *
+ * @author Arne Bergene Fossaa
  */
 public class ItemHelper {
 
@@ -76,6 +77,5 @@ public class ItemHelper {
             terms.add((TermItem)item);
         }
     }
-
 
 }

@@ -17,7 +17,7 @@ public interface ServiceStatusProvider {
      * Get the {@link ServiceStatus} of a particular service.
      *
      * <p>{@link ServiceStatus#NOT_CHECKED NOT_CHECKED} must be returned if the
-     * service status provider does does not monitor the service status for
+     * service status provider does not monitor the service status for
      * the particular application, cluster, service type, and config id.
      */
     ServiceStatusInfo getStatus(ApplicationId applicationId,

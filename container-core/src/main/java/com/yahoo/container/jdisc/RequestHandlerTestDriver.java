@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 @Beta
 public class RequestHandlerTestDriver implements AutoCloseable {
 
-    private TestDriver driver;
+    private final TestDriver driver;
 
     private MockResponseHandler responseHandler = null;
 
@@ -74,14 +74,14 @@ public class RequestHandlerTestDriver implements AutoCloseable {
     }
 
     public MockResponseHandler sendRequest(String uri, HttpRequest.Method method, ByteBuffer body) {
-        responseHandler = new MockResponseHandler();
+        MockResponseHandler responseHandler = new MockResponseHandler();
         Request request = HttpRequest.newServerRequest(driver, URI.create(uri), method);
         request.context().put("contextVariable", 37); // TODO: Add a method for accepting a Request instead
         ContentChannel requestContent = request.connect(responseHandler);
         requestContent.write(body, null);
         requestContent.close(null);
         request.release();
-        return responseHandler;
+        return this.responseHandler = responseHandler;
     }
 
     public MockResponseHandler sendRequest(String uri, HttpRequest.Method method, ByteBuffer body, String contentType) {
@@ -121,13 +121,13 @@ public class RequestHandlerTestDriver implements AutoCloseable {
         }
 
         /**
-         * Read the next piece of data from this channel even it blocking is needed.
+         * Read the next piece of data from this channel, blocking if needed.
          * If all data is already read, this returns null.
          */
         public String read() {
             ByteBuffer nextBuffer = content.read();
             if (nextBuffer == null) return null; // end of transmission
-            return Charset.forName("utf-8").decode(nextBuffer).toString();
+            return StandardCharsets.UTF_8.decode(nextBuffer).toString();
         }
 
         /** Returns the number of bytes available in the handler right now */
@@ -147,12 +147,12 @@ public class RequestHandlerTestDriver implements AutoCloseable {
             return responseString.toString();
         }
 
-        /** Consumes all <i>currently</i> available data, or return "" if no data is available right now. Never blocks. */
+        /** Consumes all <i>currently</i> available data, or returns "" if no data is available right now. Never blocks. */
         public String readIfAvailable() {
             StringBuilder b = new StringBuilder();
             while (content.available()>0) {
                 ByteBuffer nextBuffer = content.read();
-                b.append(Charset.forName("utf-8").decode(nextBuffer).toString());
+                b.append(Charset.forName("utf-8").decode(nextBuffer));
             }
             return b.toString();
         }

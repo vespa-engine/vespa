@@ -13,10 +13,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class NodeHistory {
+
     @JsonProperty("at")
     public Long at;
     @JsonProperty("agent")
-    public Agent agent;
+    public String agent;
     @JsonProperty("event")
     public String event;
 
@@ -24,25 +25,12 @@ public class NodeHistory {
         return at;
     }
 
-    public Agent getAgent() {
+    public String getAgent() {
         return agent;
     }
 
     public String getEvent() {
         return event;
-    }
-
-    public enum Agent {
-        operator,
-        application,
-        system,
-        NodeFailer,
-        Rebalancer,
-        DirtyExpirer,
-        FailedExpirer,
-        InactiveExpirer,
-        ProvisionedExpirer,
-        ReservationExpirer
     }
 
 }

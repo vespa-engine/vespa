@@ -1,16 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "bucket_guard.h"
 #include "i_document_retriever.h"
 #include "resulthandler.h"
-#include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 
 namespace document {
     class Document;
     class DocumentUpdate;
 }
+namespace storage::spi { class ClusterState; }
+
 namespace proton {
 
 /**
@@ -26,14 +26,12 @@ protected:
 public:
     using UP = std::unique_ptr<IPersistenceHandler>;
     using SP = std::shared_ptr<IPersistenceHandler>;
+    /// Note that you can not move awaythe handlers in the vector.
     using RetrieversSP = std::shared_ptr<std::vector<IDocumentRetriever::SP> >;
     IPersistenceHandler(const IPersistenceHandler &) = delete;
     IPersistenceHandler & operator = (const IPersistenceHandler &) = delete;
 
-    /**
-     * Virtual destructor to allow inheritance.
-     */
-    virtual ~IPersistenceHandler() { }
+    virtual ~IPersistenceHandler() = default;
 
     /**
      * Called before all other functions so that the persistence handler
@@ -42,10 +40,10 @@ public:
     virtual void initialize() = 0;
 
     virtual void handlePut(FeedToken token, const storage::spi::Bucket &bucket,
-                           storage::spi::Timestamp timestamp, const DocumentSP &doc) = 0;
+                           storage::spi::Timestamp timestamp, DocumentSP doc) = 0;
 
     virtual void handleUpdate(FeedToken token, const storage::spi::Bucket &bucket,
-                              storage::spi::Timestamp timestamp, const DocumentUpdateSP &upd) = 0;
+                              storage::spi::Timestamp timestamp, DocumentUpdateSP upd) = 0;
 
     virtual void handleRemove(FeedToken token, const storage::spi::Bucket &bucket,
                               storage::spi::Timestamp timestamp, const document::DocumentId &id) = 0;
@@ -69,7 +67,6 @@ public:
                             const storage::spi::Bucket &target1, const storage::spi::Bucket &target2) = 0;
 
     virtual RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency consistency) = 0;
-    virtual BucketGuard::UP lockBucket(const storage::spi::Bucket &bucket) = 0;
 
     virtual void handleListActiveBuckets(IBucketIdListResultHandler &resultHandler) = 0;
 

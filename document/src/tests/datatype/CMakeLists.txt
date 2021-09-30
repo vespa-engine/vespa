@@ -4,8 +4,6 @@ vespa_add_executable(document_datatype_test_app TEST
     datatype_test.cpp
     DEPENDS
     document
-    AFTER
-    document_documentconfig
 )
 vespa_add_test(NAME document_datatype_test_app COMMAND document_datatype_test_app)
 
@@ -14,7 +12,5 @@ vespa_add_executable(document_referencedatatype_test_app TEST
     referencedatatype_test.cpp
     DEPENDS
     document
-    AFTER
-    document_documentconfig
 )
 vespa_add_test(NAME document_referencedatatype_test_app COMMAND document_referencedatatype_test_app)

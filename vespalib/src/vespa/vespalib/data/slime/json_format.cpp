@@ -8,6 +8,7 @@
 #include <vespa/vespalib/locale/c.h>
 #include <cmath>
 #include <sstream>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.data.slime.json_format");

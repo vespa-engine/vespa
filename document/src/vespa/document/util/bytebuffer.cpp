@@ -28,7 +28,7 @@ void throwOutOfBounds(size_t want, size_t has)
 
 }
 
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__i386__) || defined(__x86_64__) || defined(__AARCH64EL__)
 
 template<typename T>
 void

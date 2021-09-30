@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
 import com.yahoo.jrt.Request;
@@ -7,26 +7,21 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Payload;
-import com.yahoo.vespa.config.util.ConfigUtils;
 
 /**
  * For unit testing
  *
  * @author hmusum
  */
-public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Connection {
+public class MockConnection implements ConnectionPool, Connection {
 
     private Request lastRequest;
     private final ResponseHandler responseHandler;
     private int numberOfRequests = 0;
 
-    public int getNumberOfFailovers() {
-        return numberOfFailovers;
-    }
-
-    private int numberOfFailovers = 0;
     private final int numSpecs;
 
     public MockConnection() {
@@ -59,16 +54,6 @@ public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Co
     }
 
     @Override
-    public void setError(int errorCode) {
-        numberOfFailovers++;
-    }
-
-    @Override
-    public void setSuccess() {
-        numberOfFailovers = 0;
-    }
-
-    @Override
     public String getAddress() {
         return null;
     }
@@ -77,9 +62,7 @@ public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Co
     public void close() {}
 
     @Override
-    public void setError(Connection connection, int errorCode) {
-        connection.setError(errorCode);
-    }
+    public void setError(Connection connection, int errorCode) { }
 
     @Override
     public Connection getCurrent() {
@@ -87,9 +70,7 @@ public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Co
     }
 
     @Override
-    public Connection setNewCurrentConnection() {
-        return this;
-    }
+    public Connection switchConnection(Connection connection) { return this; }
 
     @Override
     public int getSize() {
@@ -115,7 +96,7 @@ public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Co
             JRTServerConfigRequestV3 jrtReq = JRTServerConfigRequestV3.createFromRequest(request);
             Payload payload = Payload.from(ConfigPayload.empty());
             long generation = 1;
-            jrtReq.addOkResponse(payload, generation, false, ConfigUtils.getMd5(payload.getData()));
+            jrtReq.addOkResponse(payload, generation, false, PayloadChecksums.fromPayload(payload));
         }
 
     }

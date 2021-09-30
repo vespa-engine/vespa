@@ -20,8 +20,8 @@
 
     <!-- compile scope -->
     <dependency>
-      <groupId>net.jpountz.lz4</groupId>
-      <artifactId>lz4</artifactId>
+      <groupId>org.lz4</groupId>
+      <artifactId>lz4-java</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -30,6 +30,11 @@
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.airlift</groupId>
+      <artifactId>aircompressor</artifactId>
+      <scope>compile</scope>
     </dependency>
 
     <!-- provided scope -->
@@ -63,11 +68,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>testutil</artifactId>
       <version>${project.version}</version>
@@ -76,6 +76,16 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
 
@@ -98,6 +108,8 @@
         <configuration>
           <compilerArgs>
             <arg>-Xlint:all</arg>
+            <arg>-Xlint:-try</arg>
+            <arg>-Xlint:-serial</arg>
             <arg>-Werror</arg>
           </compilerArgs>
         </configuration>

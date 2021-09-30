@@ -4,7 +4,6 @@
 
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/enumstore.h>
-#include <vespa/searchlib/util/foldedstringcompare.h>
 
 namespace search {
 

@@ -33,8 +33,7 @@ public class Binding implements Comparable<Binding> {
 
     private final int hashCode;
 
-    @SuppressWarnings("unchecked")
-    public static final Binding nullBinding = new Binding(Integer.MAX_VALUE, Collections.<String,String>emptyMap());
+    public static final Binding nullBinding = new Binding(Integer.MAX_VALUE, Map.of());
 
     public static Binding createFrom(DimensionBinding dimensionBinding) {
         if (dimensionBinding.getDimensions().size() > maxDimensions)
@@ -57,26 +56,64 @@ public class Binding implements Comparable<Binding> {
         return new Binding(generality, context);
     }
 
-    private Binding(int generality, Map<String, String> binding) {
+    /** Creates a binding from a map containing the exact bindings this will have */
+    private Binding(int generality, Map<String, String> bindings) {
         this.generality = generality;
 
         // Map -> arrays to limit memory consumption and speed up evaluation
-        dimensions = new String[binding.size()];
-        dimensionValues = new String[binding.size()];
+        dimensions = new String[bindings.size()];
+        dimensionValues = new String[bindings.size()];
 
         int i = 0;
-        int bindingHash = 0;
-        for (Map.Entry<String,String> entry : binding.entrySet()) {
+        for (Map.Entry<String,String> entry : bindings.entrySet()) {
             dimensions[i] = entry.getKey();
             dimensionValues[i] = entry.getValue();
-            bindingHash += i * entry.getKey().hashCode() +  11 * i * entry.getValue().hashCode();
             i++;
         }
-        this.hashCode = bindingHash;
+        this.hashCode = Arrays.hashCode(dimensions) + 11 * Arrays.hashCode(dimensionValues);
+    }
+
+    Binding(DimensionalValue.BindingSpec spec, Map<String, String> bindings) {
+        this.generality = 0; // Not used here
+
+        // Map -> arrays to limit memory consumption and speed up evaluation
+        dimensions = spec.dimensions();
+        dimensionValues = new String[spec.dimensions().length];
+        for (int i = 0; i < dimensions.length; i++) {
+            dimensionValues[i] = bindings.get(dimensions[i]);
+        }
+        this.hashCode = Arrays.hashCode(dimensions) + 11 * Arrays.hashCode(dimensionValues);
+    }
+
+    /**
+     * Returns whether this binding is a proper generalization of the given binding:
+     * Meaning it contains a proper subset of the given bindings.
+     */
+    public boolean generalizes(Binding other) {
+        if ( this.dimensions.length >= other.dimensions.length) return false;
+        for (int i = 0; i < this.dimensions.length; i++) {
+            int otherIndexOfDimension = this.indexOf(dimensions[i], other.dimensions);
+            if (otherIndexOfDimension < 0) return false;
+            if ( ! this.dimensionValues[i].equals(other.dimensionValues[otherIndexOfDimension])) return false;
+        }
+        return true;
+    }
+
+    private int indexOf(String value, String[] array) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i].equals(value))
+                return i;
+        }
+        return -1;
     }
 
     /** Returns true only if this binding is null (contains no values for its dimensions (if any) */
     public boolean isNull() { return dimensions.length == 0; }
+
+    /** Do not change the returtned array */
+    String[] dimensions() { return dimensions; }
+
+    String[] dimensionValues() { return dimensionValues; }
 
     @Override
     public String toString() {
@@ -106,7 +143,7 @@ public class Binding implements Comparable<Binding> {
      * Returns true if all the dimension values in this have the same values
      * in the given context.
      */
-    public boolean matches(Map<String,String> context) {
+    public boolean matches(Map<String, String> context) {
         for (int i = 0; i < dimensions.length; i++) {
             if ( ! dimensionValues[i].equals(context.get(dimensions[i]))) return false;
         }
@@ -116,7 +153,7 @@ public class Binding implements Comparable<Binding> {
     /**
      * Implements a partial ordering where more specific bindings come before less specific ones,
      * taking both the number of bindings and their positions into account (earlier dimensions
-     * take precedence over later ones.
+     * take precedence over later ones).
      * <p>
      * The order is not well defined for bindings in different dimensional spaces.
      */

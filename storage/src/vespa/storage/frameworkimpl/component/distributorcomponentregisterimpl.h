@@ -8,33 +8,34 @@
 #pragma once
 
 #include "storagecomponentregisterimpl.h"
-#include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/nodestateupdater.h>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
     class IdealNodeCalculatorConfigurable;
+    class ClusterState;
 }
+
+namespace storage {
 
 class DistributorComponentRegisterImpl
         : public virtual DistributorComponentRegister,
           public virtual StorageComponentRegisterImpl,
           private StateListener
 {
-    vespalib::Lock _componentLock;
+    std::mutex _componentLock;
     std::vector<DistributorManagedComponent*> _components;
 
     UniqueTimeCalculator* _timeCalculator;
     DistributorConfig _distributorConfig;
     VisitorConfig _visitorConfig;
-    lib::ClusterState _clusterState;
+    std::shared_ptr<lib::ClusterState> _clusterState;
 
 public:
     typedef std::unique_ptr<DistributorComponentRegisterImpl> UP;
 
     DistributorComponentRegisterImpl();
-    ~DistributorComponentRegisterImpl();
+    ~DistributorComponentRegisterImpl() override;
 
     void registerDistributorComponent(DistributorManagedComponent&) override;
     void setTimeCalculator(UniqueTimeCalculator& calc);
@@ -45,4 +46,4 @@ private:
     void setNodeStateUpdater(NodeStateUpdater& updater) override;
 };
 
-} // storage
+}

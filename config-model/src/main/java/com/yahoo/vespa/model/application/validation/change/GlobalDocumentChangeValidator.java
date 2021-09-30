@@ -8,7 +8,6 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
-import java.util.Collections;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +29,7 @@ public class GlobalDocumentChangeValidator implements ChangeValidator {
                 validateContentCluster(currentEntry.getValue(), nextCluster);
             }
         }
-        return Collections.emptyList();
+        return List.of();
     }
 
     private void validateContentCluster(ContentCluster currentCluster, ContentCluster nextCluster) {

@@ -21,7 +21,7 @@ public class DimensionValues implements Comparable<DimensionValues> {
     public static final DimensionValues empty = new DimensionValues(new String[] {});
 
     public static DimensionValues createFrom(String[] values) {
-        if (values==null || values.length==0 || containsAllNulls(values)) return empty;
+        if (values == null || values.length == 0 || containsAllNulls(values)) return empty;
         return new DimensionValues(values);
     }
 
@@ -34,10 +34,10 @@ public class DimensionValues implements Comparable<DimensionValues> {
      */
     private DimensionValues(String[] values) {
         if (values == null) throw new NullPointerException("Dimension values cannot be null");
-        this.values=Arrays.copyOf(values, values.length);
+        this.values = Arrays.copyOf(values, values.length);
     }
 
-    /** Returns true if this is has the same value every place it has a value as the givenValues. */
+    /** Returns true if this is has the same value every place it has a value as the given values. */
     public boolean matches(DimensionValues givenValues) {
         for (int i = 0; i < this.size() || i < givenValues.size() ; i++)
             if ( ! matches(this.get(i), givenValues.get(i)))
@@ -73,14 +73,14 @@ public class DimensionValues implements Comparable<DimensionValues> {
 
     /** Helper method which uses compareTo to return whether this is most specific */
     public boolean isMoreSpecificThan(DimensionValues other) {
-        return this.compareTo(other)<0;
+        return this.compareTo(other) < 0;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if ( ! (o instanceof DimensionValues)) return false;
-        DimensionValues other = (DimensionValues)o;
+        DimensionValues other = (DimensionValues) o;
         for (int i = 0; i < this.size() || i < other.size(); i++) {
             if (get(i) == null) {
                 if (other.get(i) != null) return false;

@@ -1,68 +1,65 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
-import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.NodesAndHosts;
+import com.yahoo.vespa.hosted.provision.node.Nodes;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * Builds up data structures necessary for node prioritization. It wraps each node
- * up in a PrioritizableNode object with attributes used in sorting.
+ * up in a {@link NodeCandidate} object with attributes used in sorting.
  *
- * The actual sorting/prioritization is implemented in the PrioritizableNode class as a compare method.
+ * The prioritization logic is implemented by {@link NodeCandidate}.
  *
  * @author smorgrav
  */
 public class NodePrioritizer {
 
-    /** Node states in which host can get new nodes allocated in, ordered by preference (ascending) */
-    public static final List<Node.State> ALLOCATABLE_HOST_STATES =
-            List.of(Node.State.provisioned, Node.State.ready, Node.State.active);
-    private final static Logger log = Logger.getLogger(NodePrioritizer.class.getName());
-
-    private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
-    private final LockedNodeList allNodes;
-    private final DockerHostCapacity capacity;
+    private final List<NodeCandidate> nodes = new ArrayList<>();
+    private final NodesAndHosts<LockedNodeList> allNodesAndHosts;
+    private final HostCapacity capacity;
     private final NodeSpec requestedNodes;
     private final ApplicationId application;
     private final ClusterSpec clusterSpec;
     private final NameResolver nameResolver;
-    private final boolean isDocker;
-    private final boolean isAllocatingForReplacement;
-    private final boolean isTopologyChange;
-    private final boolean dynamicProvisioningEnabled;
+    private final boolean dynamicProvisioning;
+    /** Whether node specification allows new nodes to be allocated. */
+    private final boolean canAllocateNew;
+    private final boolean canAllocateToSpareHosts;
+    private final boolean topologyChange;
     private final int currentClusterSize;
     private final Set<Node> spareHosts;
 
-    NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
-                    int spares, int wantedGroups, NameResolver nameResolver, HostResourcesCalculator hostResourcesCalculator,
-                    boolean dynamicProvisioningEnabled) {
-        this.allNodes = allNodes;
-        this.capacity = new DockerHostCapacity(allNodes, hostResourcesCalculator);
+    public NodePrioritizer(NodesAndHosts<LockedNodeList> allNodesAndHosts, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
+                           int wantedGroups, boolean dynamicProvisioning, NameResolver nameResolver,
+                           HostResourcesCalculator hostResourcesCalculator, int spareCount) {
+        this.allNodesAndHosts = allNodesAndHosts;
+        this.capacity = new HostCapacity(this.allNodesAndHosts, hostResourcesCalculator);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.application = application;
+        this.dynamicProvisioning = dynamicProvisioning;
+        this.spareHosts = dynamicProvisioning ?
+                capacity.findSpareHostsInDynamicallyProvisionedZones(this.allNodesAndHosts.nodes().asList()) :
+                capacity.findSpareHosts(this.allNodesAndHosts.nodes().asList(), spareCount);
         this.nameResolver = nameResolver;
-        this.spareHosts = findSpareHosts(allNodes, capacity, spares);
-        this.dynamicProvisioningEnabled = dynamicProvisioningEnabled;
 
-        NodeList nodesInCluster = allNodes.owner(application).type(clusterSpec.type()).cluster(clusterSpec.id());
+        NodeList nodesInCluster = this.allNodesAndHosts.nodes().owner(application).type(clusterSpec.type()).cluster(clusterSpec.id());
         NodeList nonRetiredNodesInCluster = nodesInCluster.not().retired();
         long currentGroups = nonRetiredNodesInCluster.state(Node.State.active).stream()
                 .flatMap(node -> node.allocation()
@@ -70,168 +67,158 @@ public class NodePrioritizer {
                         .stream())
                 .distinct()
                 .count();
-        this.isTopologyChange = currentGroups != wantedGroups;
+        this.topologyChange = currentGroups != wantedGroups;
 
         this.currentClusterSize = (int) nonRetiredNodesInCluster.state(Node.State.active).stream()
                 .map(node -> node.allocation().flatMap(alloc -> alloc.membership().cluster().group()))
                 .filter(clusterSpec.group()::equals)
                 .count();
 
-        this.isAllocatingForReplacement = isReplacement(
-                nodesInCluster.size(),
-                nodesInCluster.state(Node.State.failed).size());
-        this.isDocker = resources(requestedNodes) != null;
+        // In dynamically provisioned zones, we can always take spare hosts since we can provision new on-demand,
+        // NodeCandidate::compareTo will ensure that they will not be used until there is no room elsewhere.
+        // In non-dynamically provisioned zones, we only allow allocating to spare hosts to replace failed nodes.
+        this.canAllocateToSpareHosts = dynamicProvisioning || isReplacement(nodesInCluster, clusterSpec.group());
+        // Do not allocate new nodes for exclusive deployments in dynamically provisioned zones: provision new host instead.
+        this.canAllocateNew = requestedNodes instanceof NodeSpec.CountNodeSpec
+                              && (!dynamicProvisioning || !requestedNodes.isExclusive());
     }
 
-    /**
-     * Spare hosts are the two hosts in the system with the most free capacity.
-     *
-     * We do not count retired or inactive nodes as used capacity (as they could have been
-     * moved to create space for the spare node in the first place).
-     */
-    private static Set<Node> findSpareHosts(LockedNodeList nodes, DockerHostCapacity capacity, int spares) {
-        return nodes.asList().stream()
-                    .filter(node -> node.type() == NodeType.host)
-                    .filter(dockerHost -> dockerHost.state() == Node.State.active)
-                    .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
-                    .sorted(capacity::compareWithoutInactive)
-                    .limit(spares)
-                    .collect(Collectors.toSet());
+    /** Collects all node candidates for this application and returns them in the most-to-least preferred order */
+    public List<NodeCandidate> collect(List<Node> surplusActiveNodes) {
+        addApplicationNodes();
+        addSurplusNodes(surplusActiveNodes);
+        addReadyNodes();
+        addCandidatesOnExistingHosts();
+        return prioritize();
     }
 
-    /** Returns the list of nodes sorted by PrioritizableNode::compare */
-    List<PrioritizableNode> prioritize() {
-        return nodes.values().stream().sorted().collect(Collectors.toList());
+    /** Returns the list of nodes sorted by {@link NodeCandidate#compareTo(NodeCandidate)} */
+    private List<NodeCandidate> prioritize() {
+        // Group candidates by their switch hostname
+        Map<String, List<NodeCandidate>> candidatesBySwitch = this.nodes.stream()
+                .collect(Collectors.groupingBy(candidate -> candidate.parent.orElseGet(candidate::toNode)
+                                                                            .switchHostname()
+                                                                            .orElse("")));
+        // Mark lower priority nodes on shared switch as non-exclusive
+        List<NodeCandidate> nodes = new ArrayList<>(this.nodes.size());
+        for (var clusterSwitch : candidatesBySwitch.keySet()) {
+            List<NodeCandidate> switchCandidates = candidatesBySwitch.get(clusterSwitch);
+            if (clusterSwitch.isEmpty()) {
+                nodes.addAll(switchCandidates); // Nodes are on exclusive switch by default
+            } else {
+                Collections.sort(switchCandidates);
+                NodeCandidate bestNode = switchCandidates.get(0);
+                nodes.add(bestNode);
+                for (var node : switchCandidates.subList(1, switchCandidates.size())) {
+                    nodes.add(node.withExclusiveSwitch(false));
+                }
+            }
+        }
+        Collections.sort(nodes);
+        return nodes;
     }
 
     /**
      * Add nodes that have been previously reserved to the same application from
      * an earlier downsizing of a cluster
      */
-    void addSurplusNodes(List<Node> surplusNodes) {
+    private void addSurplusNodes(List<Node> surplusNodes) {
         for (Node node : surplusNodes) {
-            PrioritizableNode nodePri = toPrioritizable(node, true, false);
-            if (!nodePri.violatesSpares || isAllocatingForReplacement) {
-                nodes.put(node, nodePri);
+            NodeCandidate candidate = candidateFrom(node, true);
+            if (!candidate.violatesSpares || canAllocateToSpareHosts) {
+                nodes.add(candidate);
             }
         }
     }
 
-    /** Add a node on each docker host with enough capacity for the requested flavor  */
-    void addNewDockerNodes() {
-        if ( ! isDocker) return;
+    /** Add a node on each host with enough capacity for the requested flavor  */
+    private void addCandidatesOnExistingHosts() {
+        if ( !canAllocateNew) return;
 
-        LockedNodeList candidates = allNodes
-                .filter(node -> node.type() != NodeType.host || ALLOCATABLE_HOST_STATES.contains(node.state()))
-                .filter(node -> node.reservedTo().isEmpty() || node.reservedTo().get().equals(application.tenant()));
-
-        if (dynamicProvisioningEnabled) {
-            Set<String> candidateHostnames = candidates.asList().stream()
-                                                       .filter(node -> node.type() == NodeType.tenant)
-                                                       .filter(node -> node.allocation()
-                                                                           .map(a -> a.owner().tenant().equals(this.application.tenant()))
-                                                                           .orElse(false))
-                                                       .flatMap(node -> node.parentHostname().stream())
-                                                       .collect(Collectors.toSet());
-
-            candidates = candidates.filter(node -> candidateHostnames.contains(node.hostname()));
-        }
-
-        addNewDockerNodesOn(candidates);
-    }
-
-    private void addNewDockerNodesOn(LockedNodeList candidates) {
-        NodeResources wantedResources = resources(requestedNodes);
-
-        for (Node host : candidates) {
-            if (!host.type().canRun(requestedNodes.type())) continue;
-            if (host.status().wantToRetire()) continue;
-
-            boolean hostHasCapacityForWantedFlavor = capacity.hasCapacity(host, wantedResources);
-            boolean conflictingCluster = allNodes.childrenOf(host).owner(application).asList().stream()
-                                                 .anyMatch(child -> child.allocation().get().membership().cluster().id().equals(clusterSpec.id()));
-
-            if (!hostHasCapacityForWantedFlavor || conflictingCluster) continue;
-
-            log.log(LogLevel.DEBUG, "Trying to add new Docker node on " + host);
-            Optional<IP.Allocation> allocation;
-            try {
-                allocation = host.ipConfig().pool().findAllocation(allNodes, nameResolver);
-                if (allocation.isEmpty()) continue; // No free addresses in this pool
-            } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed allocating IP address on " + host.hostname(), e);
-                continue;
-            }
-
-            Node newNode = Node.createDockerNode(allocation.get().addresses(),
-                                                 allocation.get().hostname(),
-                                                 host.hostname(),
-                                                 resources(requestedNodes).with(host.flavor().resources().diskSpeed())
-                                                                          .with(host.flavor().resources().storageType()),
-                                                 NodeType.tenant);
-            PrioritizableNode nodePri = toPrioritizable(newNode, false, true);
-            if ( ! nodePri.violatesSpares || isAllocatingForReplacement) {
-                log.log(LogLevel.DEBUG, "Adding new Docker node " + newNode);
-                nodes.put(newNode, nodePri);
-            }
+        for (Node host : allNodesAndHosts.nodes()) {
+            if ( ! Nodes.canAllocateTenantNodeTo(host, dynamicProvisioning)) continue;
+            if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
+            if (host.reservedTo().isPresent() && application.instance().isTester()) continue;
+            if (host.exclusiveToApplicationId().isPresent()) continue; // Never allocate new nodes to exclusive hosts
+            if ( ! host.exclusiveToClusterType().map(clusterSpec.type()::equals).orElse(true)) continue;
+            if (spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
+            if ( ! capacity.hasCapacity(host, requestedNodes.resources().get())) continue;
+            if ( ! allNodesAndHosts.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
+            nodes.add(NodeCandidate.createNewChild(requestedNodes.resources().get(),
+                                                   capacity.availableCapacityOf(host),
+                                                   host,
+                                                   spareHosts.contains(host),
+                                                   allNodesAndHosts.nodes(),
+                                                   nameResolver));
         }
     }
 
     /** Add existing nodes allocated to the application */
-    void addApplicationNodes() {
+    private void addApplicationNodes() {
         EnumSet<Node.State> legalStates = EnumSet.of(Node.State.active, Node.State.inactive, Node.State.reserved);
-        allNodes.asList().stream()
+        allNodesAndHosts.nodes().stream()
                 .filter(node -> node.type() == requestedNodes.type())
                 .filter(node -> legalStates.contains(node.state()))
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(application))
-                .map(node -> toPrioritizable(node, false, false))
-                .forEach(prioritizableNode -> nodes.put(prioritizableNode.node, prioritizableNode));
+                .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
+                .filter(node -> node.state() == Node.State.active || canStillAllocate(node))
+                .map(node -> candidateFrom(node, false))
+                .forEach(nodes::add);
     }
 
     /** Add nodes already provisioned, but not allocated to any application */
-    void addReadyNodes() {
-        allNodes.asList().stream()
+    private void addReadyNodes() {
+        allNodesAndHosts.nodes().stream()
                 .filter(node -> node.type() == requestedNodes.type())
                 .filter(node -> node.state() == Node.State.ready)
-                .map(node -> toPrioritizable(node, false, false))
-                .filter(n -> !n.violatesSpares || isAllocatingForReplacement)
-                .forEach(prioritizableNode -> nodes.put(prioritizableNode.node, prioritizableNode));
+                .map(node -> candidateFrom(node, false))
+                .filter(n -> !n.violatesSpares || canAllocateToSpareHosts)
+                .forEach(nodes::add);
+    }
+
+    /** Create a candidate from given pre-existing node */
+    private NodeCandidate candidateFrom(Node node, boolean isSurplus) {
+        Optional<Node> optionalParent = allNodesAndHosts.parentOf(node);
+        if (optionalParent.isPresent()) {
+            Node parent = optionalParent.get();
+            return NodeCandidate.createChild(node,
+                                             capacity.availableCapacityOf(parent),
+                                             parent,
+                                             spareHosts.contains(parent),
+                                             isSurplus,
+                                             false,
+                                             parent.exclusiveToApplicationId().isEmpty()
+                                             && requestedNodes.canResize(node.resources(),
+                                                                         capacity.availableCapacityOf(parent),
+                                                                         clusterSpec.type(),
+                                                                         topologyChange,
+                                                                         currentClusterSize));
+        } else {
+            return NodeCandidate.createStandalone(node, isSurplus, false);
+        }
+    }
+
+    /** Returns whether we are allocating to replace a failed node */
+    private boolean isReplacement(NodeList nodesInCluster, Optional<ClusterSpec.Group> group) {
+        NodeList nodesInGroup = group.map(ClusterSpec.Group::index)
+                                     .map(nodesInCluster::group)
+                                     .orElse(nodesInCluster);
+        int failedNodesInGroup = nodesInGroup.failing().size() + nodesInGroup.state(Node.State.failed).size();
+        if (failedNodesInGroup == 0) return false;
+        return ! requestedNodes.fulfilledBy(nodesInGroup.size() - failedNodesInGroup);
     }
 
     /**
-     * Convert a list of nodes to a list of node priorities. This includes finding, calculating
-     * parameters to the priority sorting procedure.
+     * We may regret that a non-active node is allocated to a host and not offer it to the application
+     * now, e.g if we want to retire the host.
+     *
+     * @return true if we still want to allocate the given node to its parent
      */
-    private PrioritizableNode toPrioritizable(Node node, boolean isSurplusNode, boolean isNewNode) {
-        PrioritizableNode.Builder builder = new PrioritizableNode.Builder(node)
-                .surplusNode(isSurplusNode)
-                .newNode(isNewNode);
-
-        allNodes.parentOf(node).ifPresent(parent -> {
-            NodeResources parentCapacity = capacity.freeCapacityOf(parent, false);
-            builder.parent(parent).freeParentCapacity(parentCapacity);
-
-            if (!isNewNode)
-                builder.resizable(!dynamicProvisioningEnabled && requestedNodes.canResize(
-                        node.flavor().resources(), parentCapacity, isTopologyChange, currentClusterSize));
-
-            if (spareHosts.contains(parent))
-                builder.violatesSpares(true);
-        });
-
-        return builder.build();
-    }
-
-    private boolean isReplacement(int nofNodesInCluster, int nodeFailedNodes) {
-        if (nodeFailedNodes == 0) return false;
-
-        return requestedNodes.fulfilledBy(nofNodesInCluster - nodeFailedNodes);
-    }
-
-    private static NodeResources resources(NodeSpec requestedNodes) {
-        if ( ! (requestedNodes instanceof NodeSpec.CountNodeSpec)) return null;
-        return requestedNodes.resources().get();
+    private boolean canStillAllocate(Node node) {
+        if (node.type() != NodeType.tenant || node.parentHostname().isEmpty()) return true;
+        Optional<Node> parent = allNodesAndHosts.parentOf(node);
+        return parent.isPresent() ? Nodes.canAllocateTenantNodeTo(parent.get(), dynamicProvisioning) : null;
     }
 
 }

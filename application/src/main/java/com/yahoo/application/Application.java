@@ -11,7 +11,11 @@ import com.google.common.annotations.Beta;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.impl.StandaloneContainerRunner;
 import com.yahoo.application.content.ContentCluster;
-import com.yahoo.config.*;
+import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.InnerNode;
+import com.yahoo.config.InnerNodeVector;
+import com.yahoo.config.LeafNode;
+import com.yahoo.config.LeafNodeVector;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
@@ -37,7 +41,13 @@ import java.net.BindException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 
 /**
  * Contains one or more containers built from services.xml.
@@ -118,8 +128,8 @@ public final class Application implements AutoCloseable {
             List<MlModelImporter> modelImporters = List.of(new VespaImporter(),
                                                            new TensorFlowImporter(),
                                                            new OnnxImporter(),
-                                                           new LightGBMImporter(),
-                                                           new XGBoostImporter());
+                                                           new XGBoostImporter(),
+                                                           new LightGBMImporter());
             DeployState deployState = new DeployState.Builder()
                     .applicationPackage(FilesApplicationPackage.fromFile(path.toFile(), true))
                     .modelImporters(modelImporters)
@@ -254,13 +264,13 @@ public final class Application implements AutoCloseable {
          * @throws java.io.IOException e.g.if file not found
          */
         public Builder documentType(String name, String searchDefinition) throws IOException {
-            Path path = nestedResource(ApplicationPackage.SEARCH_DEFINITIONS_DIR, name, ApplicationPackage.SD_NAME_SUFFIX);
+            Path path = nestedResource(ApplicationPackage.SCHEMAS_DIR, name, ApplicationPackage.SD_NAME_SUFFIX);
             createFile(path, searchDefinition);
             return this;
         }
 
         public Builder expressionInclude(String name, String searchDefinition) throws IOException {
-            Path path = nestedResource(ApplicationPackage.SEARCH_DEFINITIONS_DIR, name, ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX);
+            Path path = nestedResource(ApplicationPackage.SCHEMAS_DIR, name, ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX);
             createFile(path, searchDefinition);
             return this;
         }
@@ -271,7 +281,7 @@ public final class Application implements AutoCloseable {
          * @throws java.io.IOException e.g.if file not found
          */
         public Builder rankExpression(String name, String rankExpressionContent) throws IOException {
-            Path path = nestedResource(ApplicationPackage.SEARCH_DEFINITIONS_DIR, name, ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX);
+            Path path = nestedResource(ApplicationPackage.SCHEMAS_DIR, name, ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX);
             createFile(path, rankExpressionContent);
             return this;
         }

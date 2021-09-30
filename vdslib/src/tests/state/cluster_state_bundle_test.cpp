@@ -35,13 +35,20 @@ TEST(ClusterStateBundleTest, baseline_state_is_returned_if_bucket_space_is_not_f
 }
 
 ClusterStateBundle
-makeBundle(const vespalib::string &baselineState, const std::map<BucketSpace, vespalib::string> &derivedStates)
+makeBundle(const vespalib::string &baselineState, const std::map<BucketSpace, vespalib::string> &derivedStates,
+           bool deferred_activation = false)
 {
     ClusterStateBundle::BucketSpaceStateMapping derivedBucketSpaceStates;
     for (const auto &entry : derivedStates) {
         derivedBucketSpaceStates[entry.first] = std::make_shared<const ClusterState>(entry.second);
     }
-    return ClusterStateBundle(ClusterState(baselineState), std::move(derivedBucketSpaceStates));
+    return ClusterStateBundle(ClusterState(baselineState), std::move(derivedBucketSpaceStates), deferred_activation);
+}
+
+ClusterStateBundle
+bundle_with_feed_block(const ClusterStateBundle::FeedBlock& feed_block)
+{
+    return ClusterStateBundle(ClusterState("storage:2"), {}, feed_block, false);
 }
 
 TEST(ClusterStateBundleTest, verify_equality_operator)
@@ -51,8 +58,39 @@ TEST(ClusterStateBundleTest, verify_equality_operator)
     EXPECT_NE(f.bundle, makeBundle("storage:2", {}));
     EXPECT_NE(f.bundle, makeBundle("storage:2", {{BucketSpace(1), "storage:2 .0.s:m"}}));
     EXPECT_NE(f.bundle, makeBundle("storage:2", {{BucketSpace(2), "storage:2 .1.s:m"}}));
+    EXPECT_NE(f.bundle, makeBundle("storage:2", {{BucketSpace(1), "storage:2 .1.s:m"}}, true));
 
     EXPECT_EQ(f.bundle, makeBundle("storage:2", {{BucketSpace(1), "storage:2 .1.s:m"}}));
+}
+
+TEST(ClusterStateBundleTest, feed_block_state_is_available)
+{
+    auto non_blocking = makeBundle("storage:2", {});
+    auto blocking = bundle_with_feed_block({true, "foo"});
+
+    EXPECT_FALSE(non_blocking.block_feed_in_cluster());
+    EXPECT_FALSE(non_blocking.feed_block().has_value());
+
+    EXPECT_TRUE(blocking.block_feed_in_cluster());
+    EXPECT_TRUE(blocking.feed_block().has_value());
+    EXPECT_TRUE(blocking.feed_block()->block_feed_in_cluster());
+    EXPECT_EQ("foo", blocking.feed_block()->description());
+}
+
+TEST(ClusterStateBundleTest, equality_operator_considers_feed_block)
+{
+    EXPECT_NE(bundle_with_feed_block({true, "foo"}), bundle_with_feed_block({false, "foo"}));
+    EXPECT_NE(bundle_with_feed_block({true, "foo"}), bundle_with_feed_block({true, "bar"}));
+    EXPECT_NE(makeBundle("storage:2", {}), bundle_with_feed_block({false, "bar"}));
+
+    EXPECT_EQ(bundle_with_feed_block({true, "foo"}), bundle_with_feed_block({true, "foo"}));
+    EXPECT_EQ(bundle_with_feed_block({false, "foo"}), bundle_with_feed_block({false, "foo"}));
+}
+
+TEST(ClusterStateBundleTest, toString_with_feed_block_includes_description)
+{
+    EXPECT_EQ("ClusterStateBundle('storage:2', feed blocked: 'full disk')",
+              bundle_with_feed_block({true, "full disk"}).toString());
 }
 
 }

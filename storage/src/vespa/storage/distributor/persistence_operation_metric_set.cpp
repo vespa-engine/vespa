@@ -2,7 +2,6 @@
 
 #include "distributormetricsset.h"
 #include <vespa/storageapi/messageapi/returncode.h>
-#include <vespa/metrics/loadmetric.hpp>
 #include <vespa/metrics/summetric.hpp>
 
 namespace storage {

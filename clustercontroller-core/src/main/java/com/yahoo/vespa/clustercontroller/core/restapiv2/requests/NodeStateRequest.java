@@ -3,24 +3,19 @@ package com.yahoo.vespa.clustercontroller.core.restapiv2.requests;
 
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
+import com.yahoo.vespa.clustercontroller.core.hostinfo.Metrics;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Id;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Request;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Response;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.MissingResourceException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
 
-import java.util.Set;
-
 public class NodeStateRequest extends Request<Response.NodeResponse> {
     private final Id.Node id;
-    private final int recursive;
-    private final Set<VerboseReport> verboseReports;
 
-    public NodeStateRequest(Id.Node id, int recursive, Set<VerboseReport> verboseReports) {
+    public NodeStateRequest(Id.Node id) {
         super(MasterState.MUST_BE_MASTER);
         this.id = id;
-        this.recursive = recursive;
-        this.verboseReports = verboseReports;
     }
 
     @Override
@@ -38,16 +33,34 @@ public class NodeStateRequest extends Request<Response.NodeResponse> {
         result.addState("generated", new Response.UnitStateImpl(context.currentConsolidatedState.getNodeState(id.getNode())));
         result.addState("unit", new Response.UnitStateImpl(info.getReportedState()));
         result.addState("user", new Response.UnitStateImpl(info.getWantedState()));
-
-        for (int i=0; i<info.getReportedState().getDiskCount(); ++i) {
-            Id.Partition partitionId = new Id.Partition(id, i);
-            if (recursive > 0) {
-                PartitionStateRequest psr = new PartitionStateRequest(partitionId, verboseReports);
-                result.addEntry("partition", String.valueOf(i), psr.calculateResult(context));
-            } else {
-                result.addLink("partition", String.valueOf(i), partitionId.toString());
-            }
+        if (info.isStorage()) {
+            fillInMetrics(context.cluster.getNodeInfo(id.getNode()).getHostInfo().getMetrics(), result);
         }
+
         return result;
+    }
+    private static void fillInMetrics(Metrics metrics, Response.NodeResponse result) {
+        for (Metrics.Metric metric: metrics.getMetrics()) {
+            fillInMetricValue(metric.getName(), metric.getValue(), result);
+        }
+    }
+
+    private static void fillInMetricValue(String name, Metrics.Value value, Response.NodeResponse result) {
+        if (name.equals("vds.datastored.alldisks.docs")) {
+            if (value.getLast() == null) {
+                return;
+            }
+            result.addMetric("unique-document-count", value.getLast());
+        } else if (name.equals("vds.datastored.alldisks.bytes")) {
+            if (value.getLast() == null) {
+                return;
+            }
+            result.addMetric("unique-document-total-size", value.getLast());
+        } else if (name.equals("vds.datastored.alldisks.buckets")) {
+            if (value.getLast() == null) {
+                return;
+            }
+            result.addMetric("bucket-count", value.getLast());
+        }
     }
 }

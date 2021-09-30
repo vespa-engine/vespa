@@ -21,15 +21,11 @@ const string Predicate::SET("feature_set");
 const string Predicate::RANGE_MIN("range_min");
 const string Predicate::RANGE_MAX("range_max");
 const string Predicate::CHILDREN("children");
-const string Predicate::PARTITIONS("partitions");
-const string Predicate::EDGE_PARTITIONS("edge_partitions");
 const string Predicate::HASHED_PARTITIONS("hashed_partitions");
 const string Predicate::HASHED_EDGE_PARTITIONS("hashed_edge_partitions");
 const string Predicate::HASH("hash");
 const string Predicate::PAYLOAD("payload");
-const string Predicate::LABEL("label");
 const string Predicate::VALUE("value");
-const string Predicate::LOWER_BOUND("lower_bound");
 const string Predicate::UPPER_BOUND("upper_bound");
 
 namespace {

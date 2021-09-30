@@ -5,7 +5,6 @@
 #include "http_connection.h"
 #include <vbench/core/timer.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
-#include <vespa/vespalib/util/sync.h>
 #include <map>
 
 namespace vbench {
@@ -22,7 +21,7 @@ private:
     typedef std::map<ServerSpec, size_t> Map;
     using CryptoEngine = vespalib::CryptoEngine;
 
-    vespalib::Lock     _lock;
+    std::mutex         _lock;
     Map                _map;
     std::vector<Queue> _store;
     CryptoEngine::SP   _crypto;

@@ -6,6 +6,7 @@
 #include "randreaders.h"
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -78,9 +79,10 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & base
       _dataFileName(createDatFileName(_name)),
       _idxFileName(createIdxFileName(_name)),
       _chunkInfo(),
+      _lastPersistedSerialNum(0),
       _dataHeaderLen(0u),
       _idxHeaderLen(0u),
-      _lastPersistedSerialNum(0),
+      _numLids(0),
       _docIdLimit(std::numeric_limits<uint32_t>::max()),
       _modificationTime()
 {
@@ -160,7 +162,7 @@ FileChunk::erase()
 }
 
 size_t
-FileChunk::updateLidMap(const LockGuard &guard, ISetLid &ds, uint64_t serialNum, uint32_t docIdLimit)
+FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNum, uint32_t docIdLimit)
 {
     size_t sz(0);
     assert(_chunkInfo.empty());
@@ -228,6 +230,7 @@ FileChunk::updateLidMap(const LockGuard &guard, ISetLid &ds, uint64_t serialNum,
                                 globalBucketMap.recordLid(bucketId);
                             }
                             ds.setLid(guard, lidMeta.getLid(), LidInfo(getFileId().getId(), _chunkInfo.size(), lidMeta.size()));
+                            _numLids++;
                         } else {
                             remove(lidMeta.getLid(), lidMeta.size());
                         }
@@ -318,7 +321,7 @@ appendChunks(FixedParams * args, Chunk::UP chunk)
     for (const Chunk::Entry & e : ll) {
         LidInfo lidInfo(args->fileId, chunk->getId(), e.netSize());
         if (args->db.getLid(args->lidReadGuard, e.getLid()) == lidInfo) {
-            vespalib::LockGuard guard(args->db.getLidGuard(e.getLid()));
+            auto guard(args->db.getLidGuard(e.getLid()));
             if (args->db.getLid(args->lidReadGuard, e.getLid()) == lidInfo) {
                 // I am still in use so I need to taken care of.
                 vespalib::ConstBufferRef data(chunk->getLid(e.getLid()));
@@ -341,7 +344,7 @@ FileChunk::appendTo(vespalib::ThreadExecutor & executor, const IGetLid & db, IWr
     vespalib::GenerationHandler::Guard lidReadGuard(db.getLidReadGuard());
     assert(numChunks <= getNumChunks());
     FixedParams fixedParams = {db, dest, lidReadGuard, getFileId().getId(), visitorProgress};
-    vespalib::BlockingThreadStackExecutor singleExecutor(1, 64*1024, executor.getNumThreads()*2);
+    vespalib::BlockingThreadStackExecutor singleExecutor(1, 64_Ki, executor.getNumThreads()*2);
     for (size_t chunkId(0); chunkId < numChunks; chunkId++) {
         std::promise<Chunk::UP> promisedChunk;
         std::future<Chunk::UP> futureChunk = promisedChunk.get_future();

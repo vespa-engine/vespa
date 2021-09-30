@@ -2,7 +2,6 @@
 
 #include "bucketownershipnotifier.h"
 #include <vespa/storage/common/nodestateupdater.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -17,8 +16,7 @@ using document::BucketSpace;
 namespace storage {
 
 uint16_t
-BucketOwnershipNotifier::getOwnerDistributorForBucket(
-        const document::Bucket &bucket) const
+BucketOwnershipNotifier::getOwnerDistributorForBucket(const document::Bucket &bucket) const
 {
     try {
         auto distribution(_component.getBucketSpaceRepo().get(bucket.getBucketSpace()).getDistribution());
@@ -28,24 +26,19 @@ BucketOwnershipNotifier::getOwnerDistributorForBucket(
         // If we get exceptions there aren't any distributors, so they'll have
         // to explicitly fetch all bucket info eventually anyway.
     } catch (lib::TooFewBucketBitsInUseException& e) {
-        LOGBP(debug, "Too few bucket bits used for %s to be assigned "
-              "to a distributor. Not notifying any distributor of "
-              "bucket change.",
-              bucket.toString().c_str());
+        LOGBP(debug, "Too few bucket bits used for %s to be assigned to a distributor."
+                     " Not notifying any distributor of bucket change.",
+                     bucket.toString().c_str());
     } catch (lib::NoDistributorsAvailableException& e) {
-        LOGBP(debug, "No distributors available. Not notifying any "
-              "distributor of bucket change.");
+        LOGBP(debug, "No distributors available. Not notifying any distributor of bucket change.");
     } catch (const std::exception& e) {
-        LOG(error,
-            "Got unknown exception while resolving distributor: %s",
-            e.what());
+        LOG(error, "Got unknown exception while resolving distributor: %s", e.what());
     }
     return FAILED_TO_RESOLVE;
 }
 
 bool
-BucketOwnershipNotifier::distributorOwns(uint16_t distributor,
-                                         const document::Bucket &bucket) const
+BucketOwnershipNotifier::distributorOwns(uint16_t distributor, const document::Bucket &bucket) const
 {
     return (distributor == getOwnerDistributorForBucket(bucket));
 }
@@ -64,13 +57,10 @@ BucketOwnershipNotifier::sendNotifyBucketToDistributor(
             vespalib::getStackTrace(0).c_str());
         return;
     }
-    api::NotifyBucketChangeCommand::SP notifyCmd(
-                new api::NotifyBucketChangeCommand(bucket, infoToSend));
+    auto notifyCmd = std::make_shared<api::NotifyBucketChangeCommand>(bucket, infoToSend);
 
-    notifyCmd->setAddress(api::StorageMessageAddress(
-                                  _component.getClusterName(),
-                                  lib::NodeType::DISTRIBUTOR,
-                                  distributorIndex));
+    const auto *cluster_np = _component.cluster_context().cluster_name_ptr();
+    notifyCmd->setAddress(api::StorageMessageAddress::create(cluster_np, lib::NodeType::DISTRIBUTOR, distributorIndex));
     notifyCmd->setSourceIndex(_component.getIndex());
     LOG(debug,
         "Sending notify to distributor %u: %s",
@@ -93,12 +83,6 @@ BucketOwnershipNotifier::logNotification(const document::Bucket &bucket,
         currentOwnerIndex,
         sourceIndex,
         newInfo.toString().c_str());
-    LOG_BUCKET_OPERATION_NO_LOCK(
-            bucket,
-            vespalib::make_string(
-                    "Sending notify to distributor %u "
-                    "(ownership changed away from %u)",
-                    currentOwnerIndex, sourceIndex));
 }
 
 void

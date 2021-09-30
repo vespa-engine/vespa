@@ -19,7 +19,6 @@
 #include <vespa/vespalib/util/xmlstream.h>
 #include <sstream>
 
-using vespalib::FieldBase;
 using vespalib::nbostream;
 using vespalib::IllegalArgumentException;
 using namespace vespalib::xml;

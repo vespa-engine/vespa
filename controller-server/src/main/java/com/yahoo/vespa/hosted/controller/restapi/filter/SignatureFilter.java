@@ -9,7 +9,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -29,8 +29,9 @@ import java.util.logging.Logger;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Assigns the {@link Role#buildService(TenantName, ApplicationName)} role to requests with a
- * Authorization header signature matching the public key of the indicated application.
+ * Assigns the {@link Role#headless(TenantName, ApplicationName)} role or
+ * {@link Role#developer(TenantName)} to requests with a X-Authorization header signature
+ * matching the public key of the indicated application.
  * Requests which already have a set of roles assigned to them are not modified.
  *
  * @author jonmv
@@ -58,20 +59,17 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
                 });
             }
             catch (Exception e) {
-                logger.log(LogLevel.DEBUG, () -> "Exception verifying signed request: " + Exceptions.toMessageString(e));
+                logger.log(Level.FINE, () -> "Exception verifying signed request: " + Exceptions.toMessageString(e));
             }
         return Optional.empty();
     }
 
-    // TODO jonmv: Remove after October 2019.
-    private boolean anyDeployKeyMatches(TenantAndApplicationId id, DiscFilterRequest request) {
-        return controller.applications().getApplication(id).stream()
-                         .map(Application::deployKeys)
-                         .flatMap(Set::stream)
-                         .anyMatch(key -> keyVerifies(key, request));
-    }
-
     private boolean keyVerifies(PublicKey key, DiscFilterRequest request) {
+        /* This method only checks that the content hash has been signed by the provided public key, but
+         * does not verify the content of the request.  jDisc request filters do not allow inspecting the
+         * request body, so this responsibility falls on the handler consuming the body instead.  For the
+         * deployment cases, the request body is validated in {@link ApplicationApiHandler.parseDataParts}.
+         */
         return new RequestVerifier(key, controller.clock()).verify(Method.valueOf(request.getMethod()),
                                                                    request.getUri(),
                                                                    request.getHeader("X-Timestamp"),
@@ -80,30 +78,23 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
     }
 
     private Optional<SecurityContext> getSecurityContext(DiscFilterRequest request) {
-        ApplicationId id = ApplicationId.fromSerializedForm(request.getHeader("X-Key-Id"));
-        if (request.getHeader("X-Key") != null) { // TODO jonmv: Remove check and else branch after Oct 2019.
-            PublicKey key = KeyUtils.fromPemEncodedPublicKey(new String(Base64.getDecoder().decode(request.getHeader("X-Key")), UTF_8));
-            if (keyVerifies(key, request)) {
-                Optional<CloudTenant> tenant = controller.tenants().get(id.tenant())
-                                                         .filter(CloudTenant.class::isInstance)
-                                                         .map(CloudTenant.class::cast);
-                if (tenant.isPresent() && tenant.get().developerKeys().containsKey(key))
-                    return Optional.of(new SecurityContext(tenant.get().developerKeys().get(key),
-                                                           Set.of(Role.reader(id.tenant()),
-                                                                  Role.developer(id.tenant()))));
+        PublicKey key = KeyUtils.fromPemEncodedPublicKey(new String(Base64.getDecoder().decode(request.getHeader("X-Key")), UTF_8));
+        if (keyVerifies(key, request)) {
+            ApplicationId id = ApplicationId.fromSerializedForm(request.getHeader("X-Key-Id"));
+            Optional<CloudTenant> tenant = controller.tenants().get(id.tenant())
+                                                     .filter(CloudTenant.class::isInstance)
+                                                     .map(CloudTenant.class::cast);
+            if (tenant.isPresent() && tenant.get().developerKeys().containsKey(key))
+                return Optional.of(new SecurityContext(tenant.get().developerKeys().get(key),
+                                                       Set.of(Role.reader(id.tenant()), Role.developer(id.tenant())),
+                                                       controller.clock().instant()));
 
-                Optional <Application> application = controller.applications().getApplication(TenantAndApplicationId.from(id));
-                if (application.isPresent() && application.get().deployKeys().contains(key))
-                    return Optional.of(new SecurityContext(new SimplePrincipal("headless@" + id.tenant() + "." + id.application()),
-                                                           Set.of(Role.reader(id.tenant()),
-                                                                  Role.developer(id.tenant())))); // TODO jonmv: Change to headless after Oct 10 2019.
-            }
+            Optional <Application> application = controller.applications().getApplication(TenantAndApplicationId.from(id));
+            if (application.isPresent() && application.get().deployKeys().contains(key))
+                return Optional.of(new SecurityContext(new SimplePrincipal("headless@" + id.tenant() + "." + id.application()),
+                                                       Set.of(Role.reader(id.tenant()), Role.headless(id.tenant(), id.application())),
+                                                       controller.clock().instant()));
         }
-        else if (anyDeployKeyMatches(TenantAndApplicationId.from(id), request))
-            return Optional.of(new SecurityContext(new SimplePrincipal("headless@" + id.tenant() + "." + id.application()),
-                                                   Set.of(Role.reader(id.tenant()),
-                                                          Role.developer(id.tenant()))));
-
         return Optional.empty();
     }
 

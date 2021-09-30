@@ -3,7 +3,9 @@ package com.yahoo.tensor.functions;
 
 import com.google.common.collect.ImmutableList;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
@@ -31,6 +33,7 @@ public class ScalarFunctions {
     public static DoubleBinaryOperator pow() { return new Pow(); }
     public static DoubleBinaryOperator squareddifference() { return new SquaredDifference(); }
     public static DoubleBinaryOperator subtract() { return new Subtract(); }
+    public static DoubleBinaryOperator hamming() { return new Hamming(); }
 
     public static DoubleUnaryOperator abs() { return new Abs(); }
     public static DoubleUnaryOperator acos() { return new Acos(); }
@@ -50,6 +53,7 @@ public class ScalarFunctions {
     public static DoubleUnaryOperator square() { return new Square(); }
     public static DoubleUnaryOperator tan() { return new Tan(); }
     public static DoubleUnaryOperator tanh() { return new Tanh(); }
+    public static DoubleUnaryOperator erf() { return new Erf(); }
 
     public static DoubleUnaryOperator elu() { return new Elu(); }
     public static DoubleUnaryOperator elu(double alpha) { return new Elu(alpha); }
@@ -147,6 +151,26 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return left - right; }
         @Override
         public String toString() { return "f(a,b)(a - b)"; }
+    }
+
+    
+    public static class Hamming implements DoubleBinaryOperator {
+        public static double hamming(double left, double right) {
+            double distance = 0;
+            byte a = (byte) left;
+            byte b = (byte) right;
+            for (int i = 0; i < 8; i++) {
+                byte bit = (byte) (1 << i);
+                if ((a & bit) != (b & bit)) {
+                    distance += 1;
+                }
+            }
+            return distance;
+        }
+        @Override
+        public double applyAsDouble(double left, double right) { return hamming(left, right); }
+        @Override
+        public String toString() { return "f(a,b)(hamming(a,b))"; }
     }
 
 
@@ -330,6 +354,84 @@ public class ScalarFunctions {
         public String toString() { return "f(a)(tanh(a))"; }
     }
 
+    public static class Erf implements DoubleUnaryOperator {
+        static final Comparator<Double> byAbs = (x,y) -> Double.compare(Math.abs(x), Math.abs(y));
+
+        static double kummer(double a, double b, double z) {
+            PriorityQueue<Double> terms = new PriorityQueue<>(byAbs);
+            double term = 1.0;
+            long n = 0;
+            while (Math.abs(term) > Double.MIN_NORMAL) {
+                terms.add(term);
+                term *= (a+n);
+                term /= (b+n);
+                ++n;
+                term *= z;
+                term /= n;
+            }
+            double sum = terms.remove();
+            while (! terms.isEmpty()) {
+                sum += terms.remove();
+                terms.add(sum);
+                sum = terms.remove();
+            }
+            return sum;
+        }
+
+        static double approx_erfc(double x) {
+            double sq = x*x;
+            double mult = Math.exp(-sq) / (x * Math.sqrt(Math.PI));
+            double term = 1.0;
+            long n = 1;
+            double sum = 0.0;
+            while ((sum + term) != sum) {
+                double pterm = term;
+                sum += term;
+                term = 0.5 * pterm * n / sq;
+                if (term > pterm) {
+                    sum -= 0.5 * pterm;
+                    return sum*mult;
+                }
+                n += 2;
+                pterm = term;
+                sum -= term;
+                term = 0.5 * pterm * n / sq;
+                if (term > pterm) {
+                    sum += 0.5 * pterm;
+                    return sum*mult;
+                }
+                n += 2;
+            }
+            return sum*mult;
+        }
+
+        @Override
+        public double applyAsDouble(double operand) { return erf(operand); }
+        @Override
+        public String toString() { return "f(a)(erf(a))"; }
+
+        static final double nearZeroMultiplier = 2.0 / Math.sqrt(Math.PI);
+
+        public static double erf(double v) {
+            if (v < 0) {
+                return -erf(Math.abs(v));
+            }
+            if (v < 1.0e-10) {
+                // Just use the derivate when very near zero:
+                return v * nearZeroMultiplier;
+            }
+            if (v <= 1.0) {
+                // works best when v is small
+                return v * nearZeroMultiplier * kummer(0.5, 1.5, -v*v);
+            }
+            if (v < 4.3) {
+                // slower, but works with bigger v
+                return v * nearZeroMultiplier * Math.exp(-v*v) * kummer(1.0, 1.5, v*v);
+            }
+            // works only with "very big" v
+            return 1.0 - approx_erfc(v);
+        }
+    }
 
     // Variable-length operators -----------------------------------------------------------------------------
 

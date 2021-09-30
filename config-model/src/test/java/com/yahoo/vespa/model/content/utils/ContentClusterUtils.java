@@ -1,10 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.utils;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.DefaultMonitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import org.w3c.dom.Document;
 
 import java.util.Collections;
@@ -30,54 +28,66 @@ import java.util.Optional;
 public class ContentClusterUtils {
 
     public static MockRoot createMockRoot(String[] hosts) {
-        return createMockRoot(hosts, SearchDefinitionBuilder.createSearchDefinitions("test"));
+        return createMockRoot(hosts, SchemaBuilder.createSchemas("test"));
     }
 
-    private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> searchDefinitions) {
-        return createMockRoot(provisioner, searchDefinitions, new DeployState.Builder());
+    private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> schemas) {
+        return createMockRoot(provisioner, schemas, new DeployState.Builder());
     }
 
-    private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> searchDefinitions, DeployState.Builder deployStateBuilder) {
-        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withSearchDefinitions(searchDefinitions).build();
+    public static MockRoot createMockRoot(HostProvisioner provisioner, List<String> schemas, DeployState.Builder deployStateBuilder) {
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withSchemas(schemas).build();
         DeployState deployState = deployStateBuilder.applicationPackage(applicationPackage)
                           .modelHostProvisioner(provisioner)
                           .build();
         return new MockRoot("", deployState);
     }
 
-    public static MockRoot createMockRoot(String[] hosts, List<String> searchDefinitions) {
-        return createMockRoot(new InMemoryProvisioner(true, hosts), searchDefinitions);
+    public static MockRoot createMockRoot(String[] hosts, List<String> schemas) {
+        return createMockRoot(new InMemoryProvisioner(true, false, hosts), schemas);
     }
 
-    public static MockRoot createMockRoot(List<String> searchDefinitions) {
-        return createMockRoot(new SingleNodeProvisioner(), searchDefinitions);
+    public static MockRoot createMockRoot(List<String> schemas) {
+        return createMockRoot(new SingleNodeProvisioner(), schemas);
     }
 
-    public static MockRoot createMockRoot(List<String> searchDefinitions, DeployState.Builder deployStateBuilder) {
-        return createMockRoot(new SingleNodeProvisioner(), searchDefinitions, deployStateBuilder);
+    public static MockRoot createMockRoot(List<String> schemas, DeployState.Builder deployStateBuilder) {
+        return createMockRoot(new SingleNodeProvisioner(), schemas, deployStateBuilder);
     }
 
     public static ContentCluster createCluster(String clusterXml, MockRoot root) {
+        ConfigModelContext.ApplicationType applicationType = ConfigModelContext.ApplicationType.DEFAULT;
+        Admin admin = new Admin(root,
+                                new DefaultMonitoring(),
+                                new Metrics(),
+                                false,
+                                root.getDeployState().isHosted(),
+                                applicationType);
         Document doc = XML.getDocument(clusterXml);
-        Admin admin = new Admin(root, new DefaultMonitoring("vespa", 60), new Metrics(), false,
-                                new FileDistributionConfigProducer(root, new MockFileRegistry(), null),
-                                root.getDeployState().isHosted());
-        ConfigModelContext context = ConfigModelContext.create(null, root.getDeployState(),
-                                                    null,null, root, null);
+        ConfigModelContext context = ConfigModelContext.create(applicationType, root.getDeployState(),
+                                                               null,null, root, null);
 
         return new ContentCluster.Builder(admin).build(Collections.emptyList(), context, doc.getDocumentElement());
     }
 
-    public static ContentCluster createCluster(String clusterXml, List<String> searchDefinitions) throws Exception {
-        MockRoot root = createMockRoot(searchDefinitions);
+    public static ContentCluster createCluster(String clusterXml, List<String> schemas, DeployState.Builder deployStateBuilder) throws Exception {
+        MockRoot root = createMockRoot(schemas, deployStateBuilder);
         ContentCluster cluster = createCluster(clusterXml, root);
         root.freezeModelTopology();
         cluster.validate();
         return cluster;
     }
 
+    public static ContentCluster createCluster(String clusterXml, List<String> schemas) throws Exception {
+        return createCluster(clusterXml, schemas, new DeployState.Builder());
+    }
+
     public static ContentCluster createCluster(String clusterXml) throws Exception {
-        return createCluster(clusterXml, SearchDefinitionBuilder.createSearchDefinitions("test"));
+        return createCluster(clusterXml, SchemaBuilder.createSchemas("test"), new DeployState.Builder());
+    }
+
+    public static ContentCluster createCluster(String clusterXml, DeployState.Builder deployStateBuilder) throws Exception {
+        return createCluster(clusterXml, SchemaBuilder.createSchemas("test"), deployStateBuilder);
     }
 
     public static String createClusterXml(String groupXml, int redundancy, int searchableCopies) {

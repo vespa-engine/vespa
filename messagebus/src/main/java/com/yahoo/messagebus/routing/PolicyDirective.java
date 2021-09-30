@@ -3,7 +3,7 @@ package com.yahoo.messagebus.routing;
 
 /**
  * This class represents a policy directive within a {@link Hop}'s selector. This means to create the named protocol
- * using the given parameter string, and the running that protocol within the context of this directive.
+ * using the given parameter string, and then running that protocol within the context of this directive.
  *
  * @author Simon Thoresen Hult
  */

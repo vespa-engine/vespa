@@ -41,7 +41,7 @@ GroupingSession::init(GroupingContext & groupingContext, const IAttributeContext
         GroupingPtr g(sessionList[i]);
         // Make internal copy of those we want to keep for another pass
         if (!_sessionId.empty() && g->getLastLevel() < g->levels().size()) {
-            GroupingPtr gp(new Grouping(*g));
+            auto gp = std::make_shared<Grouping>(*g);
             gp->setLastLevel(gp->levels().size());
             _groupingMap[gp->getId()] = gp;
             g = gp;
@@ -62,7 +62,7 @@ GroupingSession::prepareThreadContextCreation(size_t num_threads)
 GroupingContext::UP
 GroupingSession::createThreadContext(size_t thread_id, const IAttributeContext &attrCtx)
 {
-    GroupingContext::UP ctx(new GroupingContext(*_mgrContext));
+    auto ctx = std::make_unique<GroupingContext>(*_mgrContext);
     if (thread_id == 0) {
         GroupingContext::GroupingList &groupingList = _mgrContext->getGroupingList();
         for (size_t i = 0; i < groupingList.size(); ++i) {

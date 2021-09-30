@@ -6,7 +6,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/time.h>
 #include <thread>
 
 namespace storage::framework::defaultimplementation {
@@ -28,7 +27,7 @@ struct MyApp : public TickingThread {
     TickingThreadPool::UP _threadPool;
 
     MyApp(int threadCount, bool doCritOverlapTest = false);
-    ~MyApp();
+    ~MyApp() override;
 
     void start(ThreadPool& p) { _threadPool->start(p); }
 
@@ -95,7 +94,7 @@ MyApp::MyApp(int threadCount, bool doCritOverlapTest)
     }
 }
 
-MyApp::~MyApp() { }
+MyApp::~MyApp() = default;
 
 }
 
@@ -120,17 +119,14 @@ TEST(TickingThreadTest, test_ticks_before_wait_basic)
 
 TEST(TickingThreadTest, test_ticks_before_wait_live_update)
 {
-    TestComponentRegister testReg(
-            ComponentRegisterImpl::UP(new ComponentRegisterImpl));
+    TestComponentRegister testReg = std::make_unique<ComponentRegisterImpl>();
     int threadCount = 1;
     MyApp app(threadCount);
     // Configure thread pool to send bulks of 5000 ticks each second.
     long unsigned int ticksBeforeWaitMs = 5000;
-    MilliSecTime waitTimeMs(1000);
-    MilliSecTime maxProcessingTime(234234);
     app.start(testReg.getThreadPoolImpl());
     app._threadPool->updateParametersAllThreads(
-        waitTimeMs, maxProcessingTime, ticksBeforeWaitMs);
+        1s, 234234ms, ticksBeforeWaitMs);
 
     // Check that 5000 ticks are received instantly (usually <2 ms)
     // (if live update is broken it will take more than an hour).
@@ -146,16 +142,14 @@ TEST(TickingThreadTest, test_ticks_before_wait_live_update)
 
 TEST(TickingThreadTest, test_destroy_without_starting)
 {
-    TestComponentRegister testReg(
-            ComponentRegisterImpl::UP(new ComponentRegisterImpl));
+    TestComponentRegister testReg(std::make_unique<ComponentRegisterImpl>());
     int threadCount = 5;
     MyApp app(threadCount, true);
 }
 
 TEST(TickingThreadTest, test_verbose_stopping)
 {
-    TestComponentRegister testReg(
-            ComponentRegisterImpl::UP(new ComponentRegisterImpl));
+    TestComponentRegister testReg(std::make_unique<ComponentRegisterImpl>());
     int threadCount = 5;
     MyApp app(threadCount, true);
     app.start(testReg.getThreadPoolImpl());
@@ -167,8 +161,7 @@ TEST(TickingThreadTest, test_verbose_stopping)
 
 TEST(TickingThreadTest, test_stop_on_deletion)
 {
-    TestComponentRegister testReg(
-            ComponentRegisterImpl::UP(new ComponentRegisterImpl));
+    TestComponentRegister testReg(std::make_unique<ComponentRegisterImpl>());
     int threadCount = 5;
     MyApp app(threadCount, true);
     app.start(testReg.getThreadPoolImpl());
@@ -179,8 +172,7 @@ TEST(TickingThreadTest, test_stop_on_deletion)
 
 TEST(TickingThreadTest, test_lock_all_ticks)
 {
-    TestComponentRegister testReg(
-            ComponentRegisterImpl::UP(new ComponentRegisterImpl));
+    TestComponentRegister testReg(std::make_unique<ComponentRegisterImpl>());
     int threadCount = 5;
     MyApp app1(threadCount);
     MyApp app2(threadCount);
@@ -207,8 +199,7 @@ TEST(TickingThreadTest, test_lock_all_ticks)
 
 TEST(TickingThreadTest, test_lock_critical_ticks)
 {
-    TestComponentRegister testReg(
-            ComponentRegisterImpl::UP(new ComponentRegisterImpl));
+    TestComponentRegister testReg(std::make_unique<ComponentRegisterImpl>());
     int threadCount = 5;
     uint64_t iterationsBeforeOverlap = 0;
     {
@@ -231,21 +222,6 @@ TEST(TickingThreadTest, test_lock_critical_ticks)
             }
             EXPECT_TRUE(!app.hasCritOverlap());
         }
-    }
-}
-
-TEST(TickingThreadTest, test_fails_on_start_without_threads)
-{
-    TestComponentRegister testReg(
-            ComponentRegisterImpl::UP(new ComponentRegisterImpl));
-    int threadCount = 0;
-    MyApp app(threadCount, true);
-    try{
-        app.start(testReg.getThreadPoolImpl());
-        FAIL() << "Expected starting without threads to fail";
-    } catch (vespalib::Exception& e) {
-        EXPECT_EQ(vespalib::string("Makes no sense to start threadpool without threads"),
-                  e.getMessage());
     }
 }
 
@@ -288,7 +264,7 @@ struct BroadcastApp : public TickingThread {
     ThreadWaitInfo doNonCriticalTick(ThreadIndex) override {
         if (!_active.empty()) {
             for (uint32_t i=0; i<_active.size(); ++i) {
-                printTaskInfo(_queue[i], "processing");
+                printTaskInfo(_active[i], "processing");
                 _processed.push_back(_active[i]);
             }
             _active.clear();
@@ -305,18 +281,17 @@ struct BroadcastApp : public TickingThread {
 };
 
 BroadcastApp::BroadcastApp()
-    : _threadPool(TickingThreadPool::createDefault("testApp", MilliSecTime(300000)))
+    : _threadPool(TickingThreadPool::createDefault("testApp", 300s))
 {
     _threadPool->addThread(*this);
 }
-BroadcastApp::~BroadcastApp() {}
+BroadcastApp::~BroadcastApp() = default;
 
 }
 
 TEST(TickingThreadTest, test_broadcast)
 {
-    TestComponentRegister testReg(
-            ComponentRegisterImpl::UP(new ComponentRegisterImpl));
+    TestComponentRegister testReg(std::make_unique<ComponentRegisterImpl>());
     BroadcastApp app;
     app.start(testReg.getThreadPoolImpl());
     app.doTask("foo");

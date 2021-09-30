@@ -101,16 +101,21 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
-
         <!-- Vespa feeding dependencies -->
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>vespa-http-client</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespa-feed-client</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
 
     </dependencies>
@@ -133,6 +138,10 @@
                                 <relocation>
                                     <pattern>com.google</pattern>
                                     <shadedPattern>shaded.vespa</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.bouncycastle</pattern>
+                                    <shadedPattern>shaded.vespa.bouncycastle</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>commons-codec</pattern>
@@ -198,7 +207,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0</version>
+                <version>3.8.1</version>
                 <configuration>
                     <jdkToolchain>
                         <version>${java.version}</version>

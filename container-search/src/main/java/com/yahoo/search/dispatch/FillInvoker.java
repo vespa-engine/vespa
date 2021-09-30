@@ -10,7 +10,8 @@ import com.yahoo.search.Result;
  * @author ollivir
  */
 public abstract class FillInvoker extends CloseableInvoker {
-    /** Retrieve document summaries for the unfilled hits in the given {@link Result} */
+
+    /** Retrieves document summaries for the unfilled hits in the given {@link Result} */
     public void fill(Result result, String summaryClass) {
         sendFillRequest(result, summaryClass);
         getFillResults(result, summaryClass);
@@ -19,4 +20,5 @@ public abstract class FillInvoker extends CloseableInvoker {
     protected abstract void getFillResults(Result result, String summaryClass);
 
     protected abstract void sendFillRequest(Result result, String summaryClass);
+
 }

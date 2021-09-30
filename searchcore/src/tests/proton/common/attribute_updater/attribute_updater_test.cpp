@@ -13,6 +13,7 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/addvalueupdate.h>
+#include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/clearvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
@@ -21,14 +22,15 @@
 #include <vespa/document/update/tensor_add_update.h>
 #include <vespa/document/update/tensor_modify_update.h>
 #include <vespa/document/update/tensor_remove_update.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
-#include <vespa/searchlib/tensor/generic_tensor_attribute.h>
+#include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -48,12 +50,12 @@ using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
 using search::tensor::ITensorAttribute;
 using search::tensor::DenseTensorAttribute;
-using search::tensor::GenericTensorAttribute;
+using search::tensor::SerializedFastValueAttribute;
 using search::tensor::TensorAttribute;
-using vespalib::eval::ValueType;
+using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
-using vespalib::tensor::DefaultTensorEngine;
-using vespalib::tensor::Tensor;
+using vespalib::eval::Value;
+using vespalib::eval::ValueType;
 
 namespace search {
 
@@ -85,13 +87,13 @@ makeDocumentTypeRepo()
     return std::make_unique<DocumentTypeRepo>(builder.config());
 }
 
+std::unique_ptr<DocumentTypeRepo> repo = makeDocumentTypeRepo();
+
 struct Fixture {
-    std::unique_ptr<DocumentTypeRepo> repo;
     const DocumentType *docType;
 
     Fixture()
-        : repo(makeDocumentTypeRepo()),
-          docType(repo->getDocumentType("testdoc"))
+        : docType(repo->getDocumentType("testdoc"))
     {
     }
 
@@ -408,11 +410,10 @@ getTensorDataType(const vespalib::string &spec)
     return *insres.first->second;
 }
 
-std::unique_ptr<Tensor>
+std::unique_ptr<Value>
 makeTensor(const TensorSpec &spec)
 {
-    auto result = DefaultTensorEngine::ref().from_spec(spec);
-    return std::unique_ptr<Tensor>(dynamic_cast<Tensor*>(result.release()));
+    return SimpleValue::from_spec(spec);
 }
 
 std::unique_ptr<TensorFieldValue>
@@ -442,7 +443,8 @@ struct TensorFixture : public Fixture {
     }
 
     void assertTensor(const TensorSpec &expSpec) {
-        EXPECT_EQUAL(expSpec, attribute->getTensor(1)->toSpec());
+        auto actual = spec_from_value(*attribute->getTensor(1));
+        EXPECT_EQUAL(expSpec, actual);
     }
 };
 
@@ -452,12 +454,12 @@ TEST_F("require that tensor modify update is applied",
     f.setTensor(TensorSpec(f.type).add({{"x", 0}}, 3).add({{"x", 1}}, 5));
     f.applyValueUpdate(*f.attribute, 1,
                        TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE,
-                                          makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x", 0}}, 7))));
+                                          makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x", "0"}}, 7))));
     f.assertTensor(TensorSpec(f.type).add({{"x", 0}}, 7).add({{"x", 1}}, 5));
 }
 
 TEST_F("require that tensor add update is applied",
-        TensorFixture<GenericTensorAttribute>("tensor(x{})", "sparse_tensor"))
+        TensorFixture<SerializedFastValueAttribute>("tensor(x{})", "sparse_tensor"))
 {
     f.setTensor(TensorSpec(f.type).add({{"x", "a"}}, 2));
     f.applyValueUpdate(*f.attribute, 1,
@@ -465,8 +467,16 @@ TEST_F("require that tensor add update is applied",
     f.assertTensor(TensorSpec(f.type).add({{"x", "a"}}, 3));
 }
 
+TEST_F("require that tensor add update to non-existing tensor creates empty tensor first",
+       TensorFixture<SerializedFastValueAttribute>("tensor(x{})", "sparse_tensor"))
+{
+    f.applyValueUpdate(*f.attribute, 1,
+                       TensorAddUpdate(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "a"}}, 3))));
+    f.assertTensor(TensorSpec(f.type).add({{"x", "a"}}, 3));
+}
+
 TEST_F("require that tensor remove update is applied",
-        TensorFixture<GenericTensorAttribute>("tensor(x{})", "sparse_tensor"))
+        TensorFixture<SerializedFastValueAttribute>("tensor(x{})", "sparse_tensor"))
 {
     f.setTensor(TensorSpec(f.type).add({{"x", "a"}}, 2).add({{"x", "b"}}, 3));
     f.applyValueUpdate(*f.attribute, 1,

@@ -42,7 +42,7 @@ echo "Using maven command: ${MAVEN_CMD}"
 echo "Using maven extra opts: ${MAVEN_EXTRA_OPTS}"
 
 mvn_install() {
-    ${MAVEN_CMD} --no-snapshot-updates clean install ${MAVEN_EXTRA_OPTS} "$@"
+    ${MAVEN_CMD} --no-snapshot-updates -Dmaven.wagon.http.retryHandler.count=5 clean install ${MAVEN_EXTRA_OPTS} "$@"
 }
 
 # Generate vtag map
@@ -74,7 +74,7 @@ mvn_install -N
 
 # and build plugins first:
 echo "Building Vespa Maven plugins."
-mvn_install --threads 1.5C -f maven-plugins/pom.xml
+mvn_install -f maven-plugins/pom.xml
 
 # now everything else should just work with normal maven dependency resolution:
 
@@ -83,7 +83,7 @@ case "$MODE" in
         ;;
     full)
 	echo "Building full set of dependencies."
-        mvn_install -am -pl jrt,linguistics,messagebus
+        mvn_install -am -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -pl jrt,linguistics,messagebus
         ;;
     default)
 	echo "Building default set of dependencies."

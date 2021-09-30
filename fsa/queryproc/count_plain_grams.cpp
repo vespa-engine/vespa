@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
   if(argc!=2){
     std::cerr << "usage: " << argv[0] << " fsa_file" << std::endl;
-    exit(1);
+    return 1;
   }
 
   FSA fsa(argv[1]);

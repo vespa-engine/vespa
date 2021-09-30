@@ -1,3 +1,4 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.http.application;
 
 import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
@@ -21,7 +22,7 @@ public class PublicDimensionsProcessor implements MetricsProcessor {
     private final int maxDimensions;
     private Set<DimensionId> publicDimensions = getPublicDimensions();
 
-    PublicDimensionsProcessor(int maxDimensions) {
+    public PublicDimensionsProcessor(int maxDimensions) {
         int numCommonDimensions = PublicDimensions.commonDimensions.size();
         if (numCommonDimensions > maxDimensions) {
             throw new IllegalArgumentException(String.format(

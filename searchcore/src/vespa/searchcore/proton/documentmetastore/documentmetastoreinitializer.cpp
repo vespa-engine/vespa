@@ -49,9 +49,9 @@ DocumentMetaStoreInitializer::run()
             if (!_dms->load()) {
                 throw IllegalStateException(failedMsg(_docTypeName.c_str()));
             } else {
-                _dms->commit(snap.syncToken, snap.syncToken);
+                _dms->commit(search::CommitParam(snap.syncToken));
             }
-            EventLogger::loadDocumentMetaStoreComplete(_subDbName, vespalib::count_ms(stopWatch.elapsed()));
+            EventLogger::loadDocumentMetaStoreComplete(_subDbName, stopWatch.elapsed());
         }
     } else {
         vespalib::mkdir(_baseDir, false);

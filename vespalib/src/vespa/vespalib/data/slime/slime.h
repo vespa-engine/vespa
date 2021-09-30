@@ -3,7 +3,6 @@
 #pragma once
 
 #include "array_traverser.h"
-#include "array_value.h"
 #include "basic_value.h"
 #include "basic_value_factory.h"
 #include "binary_format.h"
@@ -18,7 +17,6 @@
 #include "named_symbol_lookup.h"
 #include "nix_value.h"
 #include "object_traverser.h"
-#include "object_value.h"
 #include "resolved_symbol.h"
 #include "root_value.h"
 #include "symbol.h"
@@ -31,7 +29,6 @@
 #include "external_data_value_factory.h"
 #include <vespa/vespalib/data/input_reader.h>
 #include <vespa/vespalib/data/output_writer.h>
-#include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/output.h>
 
 namespace vespalib {
@@ -87,7 +84,7 @@ public:
 
     ~Slime();
 
-    Slime(Slime &&rhs) :
+    Slime(Slime &&rhs) noexcept :
         _names(std::move(rhs._names)),
         _stash(std::move(rhs._stash)),
         _root(std::move(rhs._root))
@@ -158,7 +155,10 @@ public:
         return _root.set(slime::ExternalDataValueFactory(std::move(data)));
     }
     Cursor &setArray() {
-        return _root.set(slime::ArrayValueFactory(*_names));
+        return setArray(0);
+    }
+    Cursor &setArray(size_t reserve) {
+        return _root.set(slime::ArrayValueFactory(*_names, reserve));
     }
     Cursor &setObject() {
         return _root.set(slime::ObjectValueFactory(*_names));

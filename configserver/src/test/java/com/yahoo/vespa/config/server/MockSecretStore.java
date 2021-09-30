@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MockSecretStore implements SecretStore {
-    Map<String, Map<Integer, String>> secrets = new HashMap<>();
+    final Map<String, Map<Integer, String>> secrets = new HashMap<>();
 
     @Override
     public String getSecret(String key) {

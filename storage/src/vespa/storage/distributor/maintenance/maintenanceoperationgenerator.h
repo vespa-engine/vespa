@@ -5,13 +5,12 @@
 #include <vespa/storage/distributor/maintenance/maintenanceoperation.h>
 #include <vespa/storage/distributor/maintenance/node_maintenance_stats_tracker.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class MaintenanceOperationGenerator
 {
 public:
-    virtual ~MaintenanceOperationGenerator() {}
+    virtual ~MaintenanceOperationGenerator() = default;
 
     /**
      * Generate and return the highest prioritized maintenance operation for
@@ -40,5 +39,4 @@ public:
     }
 };
 
-} // distributor
-} // storage
+} // storage::distributor

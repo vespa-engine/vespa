@@ -1,8 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search.test;
 
+import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.searchlib.TranslogserverConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.Host;
@@ -34,9 +38,9 @@ public class SearchNodeTest {
         assertEquals(expected, cfg.basedir());
     }
 
-    private void prepare(MockRoot root, SearchNode node) {
+    private void prepare(MockRoot root, SearchNode node, Boolean useFsync) {
         Host host = new Host(root, "mockhost");
-        TransactionLogServer tls = new TransactionLogServer(root, "mycluster");
+        TransactionLogServer tls = new TransactionLogServer(root, "mycluster", useFsync);
         tls.setHostResource(new HostResource(host));
         tls.setBasePort(100);
         tls.initService(root.deployLogger());
@@ -47,23 +51,34 @@ public class SearchNodeTest {
         root.freezeModelTopology();
     }
 
-    private static SearchNode createSearchNode(AbstractConfigProducer parent, String name, int distributionKey,
-                                               NodeSpec nodeSpec, boolean flushOnShutDown, boolean isHosted) {
-        return SearchNode.create(parent, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown, Optional.empty(), Optional.empty(), isHosted);
+    private static SearchNode createSearchNode(MockRoot root, String name, int distributionKey,
+                                               NodeSpec nodeSpec, boolean flushOnShutDown, boolean isHosted, boolean combined) {
+        return SearchNode.create(root, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown, Optional.empty(), Optional.empty(), isHosted, combined);
+    }
+
+    private static SearchNode createSearchNode(MockRoot root) {
+        return createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), true, true, false);
+    }
+
+    @Test
+    public void requireThatSyncIsHonoured() {
+        assertTrue(getTlsConfig(new TestProperties(), null).usefsync());
+        assertTrue(getTlsConfig(new TestProperties(), true).usefsync());
+        assertFalse(getTlsConfig(new TestProperties(), false).usefsync());
     }
 
     @Test
     public void requireThatBasedirIsCorrectForElasticMode() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted());
-        prepare(root, node);
+        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted(), false);
+        prepare(root, node, true);
         assertBaseDir(Defaults.getDefaults().underVespaHome("var/db/vespa/search/cluster.mycluster/n3"), node);
     }
 
     @Test
     public void requireThatPreShutdownCommandIsEmptyWhenNotActivated() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted());
+        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted(), false);
         node.setHostResource(new HostResource(new Host(node, "mynbode")));
         node.initService(root.deployLogger());
         assertFalse(node.getPreShutdownCommand().isPresent());
@@ -72,12 +87,25 @@ public class SearchNodeTest {
     @Test
     public void requireThatPreShutdownCommandUsesPrepareRestartWhenActivated() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, root.getDeployState().isHosted());
+        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, root.getDeployState().isHosted(), false);
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
         node.initService(root.deployLogger());
         assertTrue(node.getPreShutdownCommand().isPresent());
         Assert.assertThat(node.getPreShutdownCommand().get(),
                 CoreMatchers.containsString("vespa-proton-cmd " + node.getRpcPort() + " prepareRestart"));
+    }
+
+    private MockRoot createRoot(ModelContext.Properties properties) {
+        return new MockRoot("", new DeployState.Builder().properties(properties).build());
+    }
+
+    private TranslogserverConfig getTlsConfig(ModelContext.Properties properties, Boolean useFsync) {
+        MockRoot root = createRoot(properties);
+        SearchNode node = createSearchNode(root);
+        prepare(root, node, useFsync);
+        TranslogserverConfig.Builder tlsBuilder = new TranslogserverConfig.Builder();
+        node.getConfig(tlsBuilder);
+        return tlsBuilder.build();
     }
 
 }

@@ -16,7 +16,11 @@
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/messagebus/staticthrottlepolicy.h>
-#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/metricset.h>
+#include <vespa/metrics/summetric.h>
+#include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/valuemetric.h>
+#include <vespa/metrics/metrictimer.h>
 #include <vespa/config/config.h>
 #include <chrono>
 
@@ -44,7 +48,7 @@ public:
         metrics::LongCountMetric other;
 
         MergeFailureMetrics(metrics::MetricSet* owner);
-        ~MergeFailureMetrics();
+        ~MergeFailureMetrics() override;
     };
 
     class MergeOperationMetrics : public metrics::MetricSet {
@@ -53,12 +57,13 @@ public:
         MergeFailureMetrics failures;
 
         MergeOperationMetrics(const std::string& name, metrics::MetricSet* owner);
-        ~MergeOperationMetrics();
+        ~MergeOperationMetrics() override;
     };
 
     class Metrics : public metrics::MetricSet {
     public:
         metrics::DoubleAverageMetric averageQueueWaitingTime;
+        metrics::LongValueMetric queueSize;
         metrics::LongCountMetric bounced_due_to_back_pressure;
         MergeOperationMetrics chaining;
         MergeOperationMetrics local;
@@ -154,8 +159,9 @@ private:
     std::size_t _maxQueueSize;
     mbus::StaticThrottlePolicy::UP _throttlePolicy;
     uint64_t _queueSequence; // TODO: move into a stable priority queue class
-    vespalib::Monitor _messageLock;
-    vespalib::Lock _stateLock;
+    mutable std::mutex _messageLock;
+    std::condition_variable _messageCond;
+    mutable std::mutex _stateLock;
     config::ConfigFetcher _configFetcher;
     // Messages pending to be processed by the worker thread
     std::vector<api::StorageMessage::SP> _messagesDown;
@@ -204,8 +210,8 @@ public:
     const mbus::StaticThrottlePolicy& getThrottlePolicy() const { return *_throttlePolicy; }
     mbus::StaticThrottlePolicy& getThrottlePolicy() { return *_throttlePolicy; }
     // For unit testing only
-    vespalib::Monitor& getMonitor() { return _messageLock; }
-    vespalib::Lock& getStateLock() { return _stateLock; }
+    std::mutex & getMonitor() { return _messageLock; }
+    std::mutex & getStateLock() { return _stateLock; }
 
     Metrics& getMetrics() { return *_metrics; }
     std::size_t getMaxQueueSize() const { return _maxQueueSize; }
@@ -365,9 +371,9 @@ private:
     void rejectOutdatedQueuedMerges(MessageGuard& msgGuard, uint32_t rejectLessThanVersion);
     bool attemptProcessNextQueuedMerge(MessageGuard& msgGuard);
     bool processQueuedMerges(MessageGuard& msgGuard);
-    void handleRendezvous(vespalib::MonitorGuard& guard);
-    void rendezvousWithWorkerThread(vespalib::MonitorGuard&);
-    void releaseWorkerThreadRendezvous(vespalib::MonitorGuard&);
+    void handleRendezvous(std::unique_lock<std::mutex> & guard, std::condition_variable & cond);
+    void rendezvousWithWorkerThread(std::unique_lock<std::mutex> & guard, std::condition_variable & cond);
+    void releaseWorkerThreadRendezvous(std::unique_lock<std::mutex> & guard, std::condition_variable & cond);
     bool isDiffCommand(const api::StorageMessage& msg) const;
     bool isMergeCommand(const api::StorageMessage& msg) const;
     bool isMergeReply(const api::StorageMessage& msg) const;

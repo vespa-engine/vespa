@@ -5,7 +5,6 @@
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/vespalib/component/version.h>
-#include <vespa/vespalib/util/sync.h>
 
 namespace mbus {
 
@@ -27,7 +26,7 @@ public:
         /**
          * Virtual destructor required for inheritance.
          */
-        virtual ~IVersionHandler() { }
+        virtual ~IVersionHandler() = default;
 
         /**
          * This method is invoked once the version of the corresponding {@link
@@ -50,13 +49,14 @@ private:
     };
     typedef std::unique_ptr<vespalib::Version> Version_UP;
 
-    vespalib::Monitor _lock;
-    FRT_Supervisor   &_orb;
-    string            _name;
-    FRT_Target       &_target;
-    ResolveState      _state;
-    Version_UP        _version;
-    HandlerList       _versionHandlers;
+    std::mutex                 _lock;
+    std::condition_variable    _cond;
+    FRT_Supervisor            &_orb;
+    string                     _name;
+    FRT_Target                &_target;
+    std::atomic<ResolveState>  _state;
+    Version_UP                 _version;
+    HandlerList                _versionHandlers;
 
 public:
     /**

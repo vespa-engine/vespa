@@ -12,9 +12,12 @@
       "bandwidthGbps": 1.0,
       "diskSpeed": "slow",
       "storageType": "remote",
-      "fastDisk": false,
-      "clusterId": "cluster",
-      "clusterType": "container"
+      "clusterId": "default",
+      "clusterType": "container",
+      "down": false,
+      "retired": false,
+      "restarting": false,
+      "rebooting": false
     }
   ]
 }

@@ -90,7 +90,7 @@ public class Query extends QueryChain {
 
     /**
      * And.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#and
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#and
      *
      * @param fieldName the field name
      * @return the field
@@ -105,7 +105,7 @@ public class Query extends QueryChain {
 
     /**
      * Andnot.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#andnot
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#andnot
      *
      * @param fieldName the field name
      * @return the field
@@ -120,7 +120,7 @@ public class Query extends QueryChain {
 
     /**
      * Or.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#or
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#or
      *
      * @param fieldName the field name
      * @return the field
@@ -135,7 +135,7 @@ public class Query extends QueryChain {
 
     /**
      * And.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#and
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#and
      *
      * @param query the query
      * @return the query
@@ -149,7 +149,7 @@ public class Query extends QueryChain {
 
     /**
      * Andnot.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#andnot
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#andnot
      *
      * @param query the query
      * @return the query
@@ -163,7 +163,7 @@ public class Query extends QueryChain {
 
     /**
      * Or.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#or
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#or
      *
      * @param query the query
      * @return the query
@@ -177,7 +177,7 @@ public class Query extends QueryChain {
 
     /**
      * Annotate a query (sub-expression).
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#annotations-of-sub-expressions
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#annotations-of-sub-expressions
      *
      * @param annotation the annotation
      * @return the query
@@ -189,7 +189,7 @@ public class Query extends QueryChain {
 
     /**
      * Offset.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#limit-offset
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#limit-offset
      *
      * @param offset the offset
      * @return the end query
@@ -200,7 +200,7 @@ public class Query extends QueryChain {
 
     /**
      * Limit.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#limit-offset
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#limit-offset
      *
      * @param hits the hits
      * @return the end query
@@ -211,7 +211,7 @@ public class Query extends QueryChain {
 
     /**
      * Timeout.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#timeout
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#timeout
      *
      * @param timeout the timeout
      * @return the end query
@@ -222,7 +222,7 @@ public class Query extends QueryChain {
 
     /**
      * Group.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#grouping
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#grouping
      *
      * @param group the group
      * @return the end query
@@ -233,7 +233,7 @@ public class Query extends QueryChain {
 
     /**
      * Group.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#grouping
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#grouping
      *
      * @param groupStr the group str
      * @return the end query
@@ -244,7 +244,7 @@ public class Query extends QueryChain {
 
     /**
      * Order by asc.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#order-by
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#order-by
      *
      * @param fieldName the field name
      * @return the end query
@@ -255,7 +255,7 @@ public class Query extends QueryChain {
 
     /**
      * Order by asc.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#order-by
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#order-by
      *
      * @param annotation the annotation
      * @param fieldName the field name
@@ -267,7 +267,7 @@ public class Query extends QueryChain {
 
     /**
      * Order by desc.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#order-by
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#order-by
      *
      * @param fieldName the field name
      * @return the end query
@@ -279,7 +279,7 @@ public class Query extends QueryChain {
 
     /**
      * Order by desc.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#order-by
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#order-by
      *
      * @param annotation the annotation
      * @param fieldName the field name

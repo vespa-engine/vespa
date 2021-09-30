@@ -2,10 +2,6 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.vespa.config.content.StorDistributionConfig;
-import com.yahoo.config.model.test.MockRoot;
-import com.yahoo.vespa.model.Host;
-import com.yahoo.vespa.model.HostResource;
-import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.search.DispatchGroup;
 import com.yahoo.vespa.model.search.SearchInterface;
@@ -17,9 +13,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.hamcrest.Matchers.containsString;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createCluster;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createClusterXml;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -205,7 +201,6 @@ public class IndexedHierarchicDistributionTest {
         assertEquals(8, dg.getRowBits());
         assertEquals(3, dg.getNumPartitions());
         assertEquals(true, dg.useFixedRowInDispatch());
-        assertEquals(1, dg.getMaxNodesDownPerFixedRow());
         ArrayList<SearchInterface> list = new ArrayList<>();
         for(SearchInterface si : dg.getSearchersIterable()) {
             list.add(si);
@@ -256,12 +251,6 @@ public class IndexedHierarchicDistributionTest {
     @Test
     public void allowLessReadyCopiesThanRedundancy() throws Exception {
         getTwoGroupsCluster(4, 2, "2|*");
-    }
-
-    @Test
-    public void allowNoReadyCopies() throws Exception {
-        // The active one should be indexed anyhow. Setting up no ready copies
-        getTwoGroupsCluster(4, 0, "2|*");
     }
 
 }

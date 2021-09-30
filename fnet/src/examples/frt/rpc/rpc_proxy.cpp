@@ -1,6 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/frt/target.h>
+#include <vespa/fnet/frt/invoker.h>
+#include <vespa/fnet/channel.h>
+#include <vespa/fnet/transport_thread.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fnet/signalshutdown.h>
+
 #include <vespa/fastos/app.h>
 #include <chrono>
 
@@ -15,12 +23,10 @@ struct Session
     uint32_t         id;
     uint32_t         finiCnt;
 
-    Session(uint32_t xid) : client(nullptr), server(nullptr), id(xid), finiCnt(0) {}
+    explicit Session(uint32_t xid) : client(nullptr), server(nullptr), id(xid), finiCnt(0) {}
     ~Session() { assert(client == nullptr && server == nullptr && finiCnt == 2); }
-
-private:
-    Session(const Session &);
-    Session &operator=(const Session &);
+    Session(const Session &) = delete;
+    Session &operator=(const Session &) = delete;
 };
 
 //-----------------------------------------------------------------------------
@@ -34,10 +40,9 @@ private:
     uint32_t        _currID;
     char            _prefixStr[256];
 
-    RPCProxy(const RPCProxy &);
-    RPCProxy &operator=(const RPCProxy &);
-
 public:
+    RPCProxy(const RPCProxy &) = delete;
+    RPCProxy &operator=(const RPCProxy &) = delete;
     RPCProxy(FRT_Supervisor &supervisor,
              const char *spec,
              bool verbose)
@@ -69,7 +74,7 @@ private:
     RPCProxy &_proxy;
 
 public:
-    ReqDone(RPCProxy &proxy) : _proxy(proxy) {}
+    explicit ReqDone(RPCProxy &proxy) : _proxy(proxy) {}
     void RequestDone(FRT_RPCRequest *req) override;
 };
 

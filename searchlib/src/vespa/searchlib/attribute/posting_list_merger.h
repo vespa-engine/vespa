@@ -15,7 +15,7 @@ namespace search::attribute {
 template <typename DataT>
 class PostingListMerger
 {
-    using Posting = btree::BTreeKeyData<uint32_t, DataT>;
+    using Posting = vespalib::btree::BTreeKeyData<uint32_t, DataT>;
     using PostingVector = std::vector<Posting>;
     using StartVector = std::vector<size_t>;
 
@@ -61,6 +61,8 @@ public:
         postingList.foreach_key([&bv, limit](uint32_t key)
                                 { if (__builtin_expect(key < limit, true)) { bv.setBit(key); } });
     }
+
+    bool merge_done() const { return hasArray() || hasBitVector(); }
 
     // Until diversity handling has been rewritten
     PostingVector &getWritableArray() { return _array; }

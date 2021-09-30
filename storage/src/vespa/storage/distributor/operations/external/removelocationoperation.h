@@ -15,28 +15,32 @@ class DistributorBucketSpace;
 class RemoveLocationOperation  : public Operation
 {
 public:
-    RemoveLocationOperation(DistributorComponent& manager,
+    RemoveLocationOperation(const DistributorNodeContext& node_ctx,
+                            DistributorStripeOperationContext& op_ctx,
+                            const DocumentSelectionParser& parser,
                             DistributorBucketSpace &bucketSpace,
-                            const std::shared_ptr<api::RemoveLocationCommand> & msg,
+                            std::shared_ptr<api::RemoveLocationCommand> msg,
                             PersistenceOperationMetricSet& metric);
-    ~RemoveLocationOperation();
+    ~RemoveLocationOperation() override;
 
 
-    static int getBucketId(DistributorComponent& manager,
+    static int getBucketId(const DistributorNodeContext& node_ctx,
+                           const DocumentSelectionParser& parser,
                            const api::RemoveLocationCommand& cmd,
                            document::BucketId& id);
-    void onStart(DistributorMessageSender& sender) override;
+    void onStart(DistributorStripeMessageSender& sender) override;
     const char* getName() const override { return "removelocation"; };
     std::string getStatus() const override { return ""; };
-    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
-    void onClose(DistributorMessageSender& sender) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+    void onClose(DistributorStripeMessageSender& sender) override;
 private:
     PersistenceMessageTrackerImpl _trackerInstance;
     PersistenceMessageTracker& _tracker;
 
     std::shared_ptr<api::RemoveLocationCommand> _msg;
 
-    DistributorComponent& _manager;
+    const DistributorNodeContext& _node_ctx;
+    const DocumentSelectionParser& _parser;
     DistributorBucketSpace &_bucketSpace;
 };
 

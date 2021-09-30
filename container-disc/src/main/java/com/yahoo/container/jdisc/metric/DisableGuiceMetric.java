@@ -28,4 +28,5 @@ public class DisableGuiceMetric implements Metric {
     private static RuntimeException newException() {
         return new UnsupportedOperationException("The Metric framework is only available to components.");
     }
+
 }

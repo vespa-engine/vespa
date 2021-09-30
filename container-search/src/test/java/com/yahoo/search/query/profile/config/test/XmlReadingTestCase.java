@@ -3,7 +3,6 @@ package com.yahoo.search.query.profile.config.test;
 
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.processing.execution.Execution;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
@@ -30,6 +29,17 @@ import static org.junit.Assert.fail;
  * @author bratseth
  */
 public class XmlReadingTestCase {
+
+    @Test
+    public void testInheritance() {
+        QueryProfileRegistry registry =
+                new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/inheritance");
+
+        CompiledQueryProfile cProfile = registry.getComponent("child").compile(null);
+        Query q = new Query("?query=foo", cProfile);
+        assertEquals("a.b-parent", q.properties().getString("a.b"));
+        assertEquals("d-parent", q.properties().getString("d"));
+    }
 
     @Test
     public void testValid() {
@@ -209,6 +219,19 @@ public class XmlReadingTestCase {
     }
 
     @Test
+    public void testQueryProfileVariantsWithOverridableFalse() {
+        QueryProfileXMLReader reader = new QueryProfileXMLReader();
+        CompiledQueryProfileRegistry registry = reader.read("src/test/java/com/yahoo/search/query/profile/config/test/variants/").compile();
+        CompiledQueryProfile profile = registry.findQueryProfile("default");
+
+        assertEquals("a.b.c-value", new Query("?d1=d1v", profile).properties().get("a.b.c"));
+        assertEquals("a.b.c-variant-value", new Query("?d1=d1v&d2=d2v", profile).properties().get("a.b.c"));
+
+        assertTrue(profile.isOverridable(new CompoundName("a.b.c"), Map.of("d1", "d1v")));
+        assertFalse(profile.isOverridable(new CompoundName("a.b.c"), Map.of("d1", "d1v", "d2", "d2v")));
+    }
+
+    @Test
     public void testNewsFE1() {
         CompiledQueryProfileRegistry registry=new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/newsfe").compile();
 
@@ -299,67 +322,70 @@ public class XmlReadingTestCase {
         String queryString="tiled?query=india&queryProfile=myprofile&source.common.intl=tw&source.common.mode=adv";
 
         Query query=new Query(HttpRequest.createTestRequest(queryString, Method.GET), registry.getComponent("myprofile"));
-        for (Map.Entry e : query.properties().listProperties().entrySet())
-            System.out.println(e);
         assertEquals("news",query.properties().listProperties().get("source.common.provider"));
         assertEquals("news",query.properties().get("source.common.provider"));
     }
 
     @Test
     public void testNewsCase1() {
-        CompiledQueryProfileRegistry registry=new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/newscase1").compile();
+        CompiledQueryProfileRegistry registry = new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/newscase1").compile();
 
         Query query;
-        query = new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent", Method.GET),registry.getComponent("default"));
+        query = new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent", Method.GET),
+                          registry.getComponent("default"));
         assertEquals(0.0, query.properties().get("ranking.features.b"));
         assertEquals("0.0", query.properties().listProperties().get("ranking.features.b"));
-        query = new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent&custid_2=child", Method.GET),registry.getComponent("default"));
+        query = new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent&custid_2=child", Method.GET),
+                          registry.getComponent("default"));
         assertEquals(0.1, query.properties().get("ranking.features.b"));
         assertEquals("0.1", query.properties().listProperties().get("ranking.features.b"));
     }
 
     @Test
     public void testNewsCase2() {
-        CompiledQueryProfileRegistry registry=new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/newscase2").compile();
+        CompiledQueryProfileRegistry registry = new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/newscase2").compile();
 
         Query query;
-        query=new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent", Method.GET),registry.getComponent("default"));
-        assertEquals("0.0",query.properties().get("a.features.b"));
-        assertEquals("0.0",query.properties().listProperties().get("a.features.b"));
-        query=new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent&custid_2=child", Method.GET),registry.getComponent("default"));
-        assertEquals("0.1",query.properties().get("a.features.b"));
-        assertEquals("0.1",query.properties().listProperties().get("a.features.b"));
+        query = new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent", Method.GET),
+                          registry.getComponent("default"));
+        assertEquals("0.0", query.properties().get("a.features.b"));
+        assertEquals("0.0", query.properties().listProperties().get("a.features.b"));
+        query = new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent&custid_2=child", Method.GET),
+                          registry.getComponent("default"));
+        assertEquals("0.1", query.properties().get("a.features.b"));
+        assertEquals("0.1", query.properties().listProperties().get("a.features.b"));
     }
 
     @Test
     public void testNewsCase3() {
-        CompiledQueryProfileRegistry registry=new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/newscase3").compile();
+        CompiledQueryProfileRegistry registry = new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/newscase3").compile();
 
-        Query query;
-        query=new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent", Method.GET),registry.getComponent("default"));
+        Query query = new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent", Method.GET),
+                                registry.getComponent("default"));
         assertEquals("0.0",query.properties().get("a.features"));
-        query=new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent&custid_2=child", Method.GET),registry.getComponent("default"));
+        query = new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent&custid_2=child", Method.GET),
+                          registry.getComponent("default"));
         assertEquals("0.1",query.properties().get("a.features"));
     }
 
-    // Should cause an exception on the first line as we are trying to create a profile setting an illegal value in "ranking"
     @Test
     public void testNewsCase4() {
-        CompiledQueryProfileRegistry registry=new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/newscase4").compile();
+        CompiledQueryProfileRegistry registry = new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/newscase4").compile();
 
-        Query query;
-        query=new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent", Method.GET),registry.getComponent("default"));
-        assertEquals("0.0",query.properties().get("ranking.features"));
-        query=new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent&custid_2=child", Method.GET),registry.getComponent("default"));
-        assertEquals("0.1",query.properties().get("ranking.features"));
+        Query query = new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent", Method.GET),
+                                registry.getComponent("default"));
+        assertEquals(0.0, query.properties().get("ranking.features.foo"));
+        query = new Query(HttpRequest.createTestRequest("?query=test&custid_1=parent&custid_2=child", Method.GET),
+                          registry.getComponent("default"));
+        assertEquals(0.1, query.properties().get("ranking.features.foo"));
     }
 
     @Test
     public void testVersionRefs() {
-        CompiledQueryProfileRegistry registry=new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/versionrefs").compile();
+        CompiledQueryProfileRegistry registry = new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/versionrefs").compile();
 
-        Query query=new Query(HttpRequest.createTestRequest("?query=test", Method.GET),registry.getComponent("default"));
-        assertEquals("MyProfile:1.0.2",query.properties().get("profile1.name"));
+        Query query = new Query(HttpRequest.createTestRequest("?query=test", Method.GET), registry.getComponent("default"));
+        assertEquals("MyProfile:1.0.2", query.properties().get("profile1.name"));
     }
 
     @Test
@@ -368,26 +394,28 @@ public class XmlReadingTestCase {
 
         {
             // Original reference
-            Query query=new Query(HttpRequest.createTestRequest("?query=test", Method.GET),registry.getComponent("default"));
-            assertEquals(null,query.properties().get("profileRef"));
-            assertEquals("MyProfile1",query.properties().get("profileRef.name"));
-            assertEquals("myProfile1Only",query.properties().get("profileRef.myProfile1Only"));
+            Query query = new Query(HttpRequest.createTestRequest("?query=test", Method.GET),
+                                    registry.getComponent("default"));
+            assertEquals(null, query.properties().get("profileRef"));
+            assertEquals("MyProfile1", query.properties().get("profileRef.name"));
+            assertEquals("myProfile1Only", query.properties().get("profileRef.myProfile1Only"));
             assertNull(query.properties().get("profileRef.myProfile2Only"));
         }
 
         {
             // Overridden reference
-            Query query=new Query(HttpRequest.createTestRequest("?query=test&profileRef=ref:MyProfile2", Method.GET),registry.getComponent("default"));
+            Query query = new Query(HttpRequest.createTestRequest("?query=test&profileRef=ref:MyProfile2", Method.GET),registry.getComponent("default"));
             assertEquals(null,query.properties().get("profileRef"));
-            assertEquals("MyProfile2",query.properties().get("profileRef.name"));
-            assertEquals("myProfile2Only",query.properties().get("profileRef.myProfile2Only"));
+            assertEquals("MyProfile2", query.properties().get("profileRef.name"));
+            assertEquals("myProfile2Only", query.properties().get("profileRef.myProfile2Only"));
             assertNull(query.properties().get("profileRef.myProfile1Only"));
 
             // later assignment
             query.properties().set("profileRef.name", "newName");
             assertEquals("newName", query.properties().get("profileRef.name"));
             // ...will not impact others
-            query=new Query(HttpRequest.createTestRequest("?query=test&profileRef=ref:MyProfile2", Method.GET), registry.getComponent("default"));
+            query = new Query(HttpRequest.createTestRequest("?query=test&profileRef=ref:MyProfile2", Method.GET),
+                              registry.getComponent("default"));
             assertEquals("MyProfile2", query.properties().get("profileRef.name"));
         }
 

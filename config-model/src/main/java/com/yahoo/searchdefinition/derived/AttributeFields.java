@@ -6,6 +6,8 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.Case;
+import com.yahoo.searchdefinition.document.Dictionary;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Ranking;
 import com.yahoo.searchdefinition.document.Sorting;
@@ -220,6 +222,9 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         if (attribute.isHuge()) {
             aaB.huge(true);
         }
+        if (attribute.isPaged()) {
+            aaB.paged(true);
+        }
         if (attribute.getSorting().isDescending()) {
             aaB.sortascending(false);
         }
@@ -240,7 +245,54 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
             aaB.tensortype(attribute.tensorType().get().toString());
         }
         aaB.imported(imported);
+        var dma = attribute.distanceMetric();
+        aaB.distancemetric(AttributesConfig.Attribute.Distancemetric.Enum.valueOf(dma.toString()));
+        if (attribute.hnswIndexParams().isPresent()) {
+            var ib = new AttributesConfig.Attribute.Index.Builder();
+            var params = attribute.hnswIndexParams().get();
+            ib.hnsw.enabled(true);
+            ib.hnsw.maxlinkspernode(params.maxLinksPerNode());
+            ib.hnsw.neighborstoexploreatinsert(params.neighborsToExploreAtInsert());
+            ib.hnsw.multithreadedindexing(params.multiThreadedIndexing());
+            aaB.index(ib);
+        }
+        Dictionary dictionary = attribute.getDictionary();
+        if (dictionary != null) {
+            aaB.dictionary.type(convert(dictionary.getType()));
+            aaB.dictionary.match(convert(dictionary.getMatch()));
+        }
+        aaB.match(convertMatch(attribute.getCase()));
         return aaB;
+    }
+
+    private static AttributesConfig.Attribute.Dictionary.Type.Enum convert(Dictionary.Type type) {
+        switch (type) {
+            case BTREE:
+                return AttributesConfig.Attribute.Dictionary.Type.BTREE;
+            case HASH:
+                return AttributesConfig.Attribute.Dictionary.Type.HASH;
+            case BTREE_AND_HASH:
+                return AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH;
+        }
+        return AttributesConfig.Attribute.Dictionary.Type.BTREE;
+    }
+    private static AttributesConfig.Attribute.Dictionary.Match.Enum convert(Case type) {
+        switch (type) {
+            case CASED:
+                return AttributesConfig.Attribute.Dictionary.Match.CASED;
+            case UNCASED:
+                return AttributesConfig.Attribute.Dictionary.Match.UNCASED;
+        }
+        return AttributesConfig.Attribute.Dictionary.Match.UNCASED;
+    }
+    private static AttributesConfig.Attribute.Match.Enum convertMatch(Case type) {
+        switch (type) {
+            case CASED:
+                return AttributesConfig.Attribute.Match.CASED;
+            case UNCASED:
+                return AttributesConfig.Attribute.Match.UNCASED;
+        }
+        return AttributesConfig.Attribute.Match.UNCASED;
     }
 
     public void getConfig(AttributesConfig.Builder builder, FieldSet fs) {

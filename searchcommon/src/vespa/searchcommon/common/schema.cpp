@@ -69,17 +69,21 @@ namespace index {
 
 const uint32_t Schema::UNKNOWN_FIELD_ID(std::numeric_limits<uint32_t>::max());
 
-Schema::Field::Field(vespalib::stringref n, DataType dt)
-    : _name(n),
-      _dataType(dt),
-      _collectionType(schema::CollectionType::SINGLE)
+Schema::Field::Field(vespalib::stringref n, DataType dt) noexcept
+    : Field(n, dt, schema::CollectionType::SINGLE, "")
 {
 }
 
-Schema::Field::Field(vespalib::stringref n, DataType dt, CollectionType ct)
+Schema::Field::Field(vespalib::stringref n, DataType dt, CollectionType ct) noexcept
+    : Field(n, dt, ct, "")
+{
+}
+
+Schema::Field::Field(vespalib::stringref n, DataType dt, CollectionType ct, vespalib::stringref tensor_spec) noexcept
     : _name(n),
       _dataType(dt),
-      _collectionType(ct)
+      _collectionType(ct),
+      _tensor_spec(tensor_spec)
 {
 }
 
@@ -91,8 +95,8 @@ Schema::Field::Field(const std::vector<vespalib::string> & lines)
 {
 }
 
-Schema::Field::Field(const Field &) = default;
-Schema::Field & Schema::Field::operator = (const Field &) = default;
+Schema::Field::Field(const Field &) noexcept = default;
+Schema::Field & Schema::Field::operator = (const Field &) noexcept = default;
 Schema::Field::Field(Field &&) noexcept = default;
 Schema::Field & Schema::Field::operator = (Field &&) noexcept = default;
 
@@ -111,18 +115,17 @@ Schema::Field::operator==(const Field &rhs) const
 {
     return _name == rhs._name &&
            _dataType == rhs._dataType &&
-           _collectionType == rhs._collectionType;
+           _collectionType == rhs._collectionType &&
+           _tensor_spec == rhs._tensor_spec;
 }
 
 bool
 Schema::Field::operator!=(const Field &rhs) const
 {
-    return _name != rhs._name ||
-           _dataType != rhs._dataType ||
-           _collectionType != rhs._collectionType;
+    return !((*this) == rhs);
 }
 
-Schema::IndexField::IndexField(vespalib::stringref name, DataType dt)
+Schema::IndexField::IndexField(vespalib::stringref name, DataType dt) noexcept
     : Field(name, dt),
       _avgElemLen(512),
       _interleaved_features(false)
@@ -130,7 +133,7 @@ Schema::IndexField::IndexField(vespalib::stringref name, DataType dt)
 }
 
 Schema::IndexField::IndexField(vespalib::stringref name, DataType dt,
-                               CollectionType ct)
+                               CollectionType ct) noexcept
     : Field(name, dt, ct),
       _avgElemLen(512),
       _interleaved_features(false)
@@ -144,8 +147,8 @@ Schema::IndexField::IndexField(const std::vector<vespalib::string> &lines)
 {
 }
 
-Schema::IndexField::IndexField(const IndexField &) = default;
-Schema::IndexField & Schema::IndexField::operator = (const IndexField &) = default;
+Schema::IndexField::IndexField(const IndexField &) noexcept = default;
+Schema::IndexField & Schema::IndexField::operator = (const IndexField &) noexcept = default;
 Schema::IndexField::IndexField(IndexField &&) noexcept = default;
 Schema::IndexField & Schema::IndexField::operator = (IndexField &&) noexcept = default;
 

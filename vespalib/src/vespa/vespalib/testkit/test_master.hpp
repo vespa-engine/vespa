@@ -4,6 +4,15 @@
 
 namespace vespalib {
 
+#if (!defined(__clang__) && defined(__GNUC__) &&  __GNUC__ < 9) || (defined(__clang__) && defined(__apple_build_version__))
+// cf. https://cplusplus.github.io/LWG/issue2221
+template<class charT, class traits>
+std::basic_ostream<charT, traits>& operator<<(std::basic_ostream<charT, traits>& os, std::nullptr_t)
+{
+  return os << (void*) nullptr;
+}
+#endif
+
 template<class A, class B, class OP>
 bool
 TestMaster::compare(const char *file, uint32_t line,
@@ -24,7 +33,7 @@ TestMaster::compare(const char *file, uint32_t line,
     lhs << a;
     rhs << b;
     {
-        vespalib::LockGuard guard(_lock);
+        lock_guard guard(_lock);
         checkFailed(guard, file, line, str.c_str());
         printDiff(guard, str, file, line, lhs.str(), rhs.str());
         handleFailure(guard, fatal);

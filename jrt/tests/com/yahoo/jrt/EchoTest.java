@@ -91,8 +91,8 @@ public class EchoTest {
     public void setUp() throws ListenFailedException {
         metrics =  TransportMetrics.getInstance();
         startSnapshot = metrics.snapshot();
-        server   = new Supervisor(new Transport(crypto, 1));
-        client   = new Supervisor(new Transport(crypto, 1));
+        server   = new Supervisor(new Transport("server", crypto, 1));
+        client   = new Supervisor(new Transport("client", crypto, 1));
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()));
         server.addMethod(new Method("echo", "*", "*", this::rpc_echo));

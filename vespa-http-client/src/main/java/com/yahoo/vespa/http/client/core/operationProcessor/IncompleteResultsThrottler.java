@@ -3,6 +3,7 @@ package com.yahoo.vespa.http.client.core.operationProcessor;
 
 import com.yahoo.vespa.http.client.core.ThrottlePolicy;
 
+import java.time.Clock;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -57,6 +58,7 @@ public class IncompleteResultsThrottler {
 
     /**
      * Creates the throttler.
+     *
      * @param minInFlightValue the throttler will never throttle beyond this limit.
      * @param maxInFlightValue the throttler will never throttle above this limit. If zero, no limit.
      * @param clock use to calculate window size. Can be null if minWindowSize and maxInFlightValue are equal.
@@ -68,7 +70,7 @@ public class IncompleteResultsThrottler {
         this.policy = policy;
         this.clock = clock;
         if (minInFlightValue != maxInFlightValue) {
-            this.sampleStartTimeMs = clock.getTimeMillis();
+            this.sampleStartTimeMs = clock.millis();
         }
         setNewSemaphoreSize(INITIAL_MAX_IN_FLIGHT_VALUE);
     }
@@ -94,10 +96,6 @@ public class IncompleteResultsThrottler {
         synchronized (monitor) {
             return debugMessage.toString();
         }
-    }
-
-    public interface Clock {
-        long getTimeMillis();
     }
 
     public void resultReady(boolean success) {
@@ -147,9 +145,8 @@ public class IncompleteResultsThrottler {
     }
 
     private void adjustThrottling() {
-        if (clock.getTimeMillis() < sampleStartTimeMs + phaseSizeMs) {
-            return;
-        }
+        if (clock.millis() < sampleStartTimeMs + phaseSizeMs) return;
+
         sampleStartTimeMs += phaseSizeMs;
 
         if (stabilizingPhasesLeft-- == 0) {

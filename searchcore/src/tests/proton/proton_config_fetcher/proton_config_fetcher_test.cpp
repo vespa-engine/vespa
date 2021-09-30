@@ -6,13 +6,18 @@
 #include <vespa/searchcore/proton/server/proton_config_fetcher.h>
 #include <vespa/searchcore/proton/server/proton_config_snapshot.h>
 #include <vespa/searchcore/proton/server/i_proton_configurer.h>
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/proton/common/subdbtype.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
+#include <vespa/searchcore/config/config-ranking-expressions.h>
+#include <vespa/searchcore/config/config-onnx-models.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-imported-fields.h>
@@ -21,6 +26,7 @@
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
 #include <map>
+#include <thread>
 
 using namespace config;
 using namespace proton;
@@ -39,12 +45,16 @@ using document::DocumenttypesConfigBuilder;
 using search::TuneFileDocumentDB;
 using std::map;
 using vespalib::VarHolder;
+using search::GrowStrategy;
+using search::CompactionStrategy;
 
 struct DoctypeFixture {
     using UP = std::unique_ptr<DoctypeFixture>;
     AttributesConfigBuilder attributesBuilder;
     RankProfilesConfigBuilder rankProfilesBuilder;
     RankingConstantsConfigBuilder rankingConstantsBuilder;
+    RankingExpressionsConfigBuilder rankingExpressionsBuilder;
+    OnnxModelsConfigBuilder onnxModelsBuilder;
     IndexschemaConfigBuilder indexschemaBuilder;
     SummaryConfigBuilder summaryBuilder;
     SummarymapConfigBuilder summarymapBuilder;
@@ -71,7 +81,7 @@ struct ConfigTestFixture {
           bucketspacesBuilder(),
           dbConfig(),
           set(),
-          context(new ConfigContext(set)),
+          context(std::make_shared<ConfigContext>(set)),
           idcounter(-1)
     {
         set.addBuilder(configId, &protonBuilder);
@@ -100,6 +110,8 @@ struct ConfigTestFixture {
         set.addBuilder(db.configid, &fixture->attributesBuilder);
         set.addBuilder(db.configid, &fixture->rankProfilesBuilder);
         set.addBuilder(db.configid, &fixture->rankingConstantsBuilder);
+        set.addBuilder(db.configid, &fixture->rankingExpressionsBuilder);
+        set.addBuilder(db.configid, &fixture->onnxModelsBuilder);
         set.addBuilder(db.configid, &fixture->indexschemaBuilder);
         set.addBuilder(db.configid, &fixture->summaryBuilder);
         set.addBuilder(db.configid, &fixture->summarymapBuilder);
@@ -253,7 +265,7 @@ TEST_FF("require that documentdb config manager subscribes for config",
         DocumentDBConfigManager(f1.configId + "/typea", "typea")) {
     f1.addDocType("typea");
     const ConfigKeySet keySet(f2.createConfigKeySet());
-    ASSERT_EQUAL(8u, keySet.size());
+    ASSERT_EQUAL(10u, keySet.size());
     ASSERT_TRUE(f1.configEqual("typea", getDocumentDBConfig(f1, f2)));
 }
 
@@ -383,6 +395,32 @@ TEST_FF("require that docstore config computes cachesize automatically if unset"
     f1.protonBuilder.summary.cache.maxbytes = -700;
     config = getDocumentDBConfig(f1, f2, hwInfo);
     EXPECT_EQUAL(500000ul, config->getStoreConfig().getMaxCacheBytes());
+}
+
+TEST_FF("require that allocation config is propagated",
+        ConfigTestFixture("test"),
+        DocumentDBConfigManager(f1.configId + "/test", "test"))
+{
+    f1.protonBuilder.distribution.redundancy = 5;
+    f1.protonBuilder.distribution.searchablecopies = 2;
+    f1.addDocType("test");
+    {
+        auto& allocation = f1.protonBuilder.documentdb.back().allocation;
+        allocation.initialnumdocs = 10000000;
+        allocation.growfactor = 0.1;
+        allocation.growbias = 1;
+        allocation.amortizecount = 10000;
+        allocation.multivaluegrowfactor = 0.15;
+        allocation.maxDeadBytesRatio = 0.25;
+        allocation.maxDeadAddressSpaceRatio = 0.3;
+    }
+    auto config = getDocumentDBConfig(f1, f2);
+    {
+        auto& alloc_config = config->get_alloc_config();
+        EXPECT_EQUAL(AllocStrategy(GrowStrategy(20000000, 0.1, 1, 0.15), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::READY));
+        EXPECT_EQUAL(AllocStrategy(GrowStrategy(100000, 0.1, 1, 0.15), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::REMOVED));
+        EXPECT_EQUAL(AllocStrategy(GrowStrategy(30000000, 0.1, 1, 0.15), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::NOTREADY));
+    }
 }
 
 TEST("test HwInfo equality") {

@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "name_repo.h"
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/stllike/string.h>
-#include "name_repo.h"
+#include <memory>
 
 namespace metrics {
 
@@ -12,7 +13,6 @@ struct AbstractValueMetric;
 class Metric;
 class MetricSet;
 class MetricSnapshot;
-class XmlWriterMetricVisitor;
 class MemoryConsumption;
 
 /** Implement class to visit metrics. */
@@ -103,7 +103,7 @@ private:
 class Metric : public vespalib::Printable
 {
 public:
-    using String = std::string;
+    using String = vespalib::string;
     using stringref = vespalib::stringref;
     using UP = std::unique_ptr<Metric>;
     using SP = std::shared_ptr<Metric>;
@@ -162,10 +162,6 @@ public:
 
     /** Reset all metric values. */
     virtual void reset() = 0;
-
-    virtual bool logFromTotalMetrics() const { return false; }
-    /** Implement to make metric able to log event. */
-    virtual bool logEvent(const String& fullName) const = 0;
 
     void print(std::ostream& out, bool verbose,
                        const std::string& indent) const override {
@@ -250,6 +246,8 @@ public:
     virtual void printDebug(std::ostream&, const std::string& indent="") const;
 
     virtual bool isMetricSet() const { return false; }
+
+    virtual bool is_sum_metric() const;
 
 private:
 

@@ -2,7 +2,8 @@
 package com.yahoo.vespa.hosted.controller.restapi.systemflags;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
-import com.yahoo.log.LogLevel;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
@@ -10,6 +11,7 @@ import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.SystemFlagsDataArchive;
 import com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.OperationError;
+import com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.Warning;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -38,16 +41,18 @@ class SystemFlagsDeployer  {
     private static final Logger log = Logger.getLogger(SystemFlagsDeployer.class.getName());
 
     private final FlagsClient client;
+    private final SystemName system;
     private final Set<FlagsTarget> targets;
     private final ExecutorService executor = Executors.newCachedThreadPool(new DaemonThreadFactory("system-flags-deployer-"));
 
 
-    SystemFlagsDeployer(ServiceIdentityProvider identityProvider, Set<FlagsTarget> targets) {
-        this(new FlagsClient(identityProvider, targets), targets);
+    SystemFlagsDeployer(ServiceIdentityProvider identityProvider, SystemName system, Set<FlagsTarget> targets) {
+        this(new FlagsClient(identityProvider, targets), system, targets);
     }
 
-    SystemFlagsDeployer(FlagsClient client, Set<FlagsTarget> targets) {
+    SystemFlagsDeployer(FlagsClient client, SystemName system, Set<FlagsTarget> targets) {
         this.client = client;
+        this.system = system;
         this.targets = targets;
     }
 
@@ -61,31 +66,40 @@ class SystemFlagsDeployer  {
             try {
                 results.add(future.get());
             } catch (InterruptedException | ExecutionException e) {
-                log.log(LogLevel.ERROR, String.format("Failed to deploy flags for target '%s': %s", target, e.getMessage()), e);
+                log.log(Level.SEVERE, Text.format("Failed to deploy flags for target '%s': %s", target, e.getMessage()), e);
                 throw new RuntimeException(e);
             }
         });
+        try {
+            archive.validateAllFilesAreForTargets(system, targets);
+        } catch (IllegalArgumentException e) {
+            results.add(new SystemFlagsDeployResult(List.of(OperationError.archiveValidationFailed(e.getMessage()))));
+        }
         return SystemFlagsDeployResult.merge(results);
     }
 
-    private SystemFlagsDeployResult deployFlags(FlagsTarget target, Set<FlagData> flagData, boolean dryRun) {
+    private SystemFlagsDeployResult deployFlags(FlagsTarget target, List<FlagData> flagData, boolean dryRun) {
         Map<FlagId, FlagData> wantedFlagData = lookupTable(flagData);
         Map<FlagId, FlagData> currentFlagData;
+        List<FlagId> definedFlags;
         try {
             currentFlagData = lookupTable(client.listFlagData(target));
+            definedFlags = client.listDefinedFlags(target);
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, String.format("Failed to list flag data for target '%s': %s", target, e.getMessage()), e);
+            log.log(Level.WARNING, Text.format("Failed to list flag data for target '%s': %s", target, e.getMessage()), e);
             return new SystemFlagsDeployResult(List.of(OperationError.listFailed(e.getMessage(), target)));
         }
 
         List<OperationError> errors = new ArrayList<>();
         List<FlagDataChange> results = new ArrayList<>();
+        List<Warning> warnings = new ArrayList<>();
 
         createNewFlagData(target, dryRun, wantedFlagData, currentFlagData, results, errors);
         updateExistingFlagData(target, dryRun, wantedFlagData, currentFlagData, results, errors);
         removeOldFlagData(target, dryRun, wantedFlagData, currentFlagData, results, errors);
-
-        return new SystemFlagsDeployResult(results, errors);
+        failOnNewFlagDataForUndefinedFlags(target, wantedFlagData, currentFlagData, definedFlags, errors);
+        failOnFlagDataForUndefinedFlags(target, wantedFlagData, currentFlagData, definedFlags, errors);
+        return new SystemFlagsDeployResult(results, errors, warnings);
     }
 
     private void createNewFlagData(FlagsTarget target,
@@ -106,7 +120,7 @@ class SystemFlagsDeployer  {
                     dryRunFlagDataValidation(data);
                 }
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, String.format("Failed to put flag '%s' for target '%s': %s", data.id(), target, e.getMessage()), e);
+                log.log(Level.WARNING, Text.format("Failed to put flag '%s' for target '%s': %s", data.id(), target, e.getMessage()), e);
                 errors.add(OperationError.createFailed(e.getMessage(), target, data));
                 return;
             }
@@ -132,7 +146,7 @@ class SystemFlagsDeployer  {
                     dryRunFlagDataValidation(wantedData);
                 }
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, String.format("Failed to update flag '%s' for target '%s': %s", wantedData.id(), target, e.getMessage()), e);
+                log.log(Level.WARNING, Text.format("Failed to update flag '%s' for target '%s': %s", wantedData.id(), target, e.getMessage()), e);
                 errors.add(OperationError.updateFailed(e.getMessage(), target, wantedData));
                 return;
             }
@@ -154,13 +168,39 @@ class SystemFlagsDeployer  {
                 try {
                     client.deleteFlagData(target, id);
                 } catch (Exception e) {
-                    log.log(LogLevel.WARNING, String.format("Failed to delete flag '%s' for target '%s': %s", id, target, e.getMessage()), e);
+                    log.log(Level.WARNING, Text.format("Failed to delete flag '%s' for target '%s': %s", id, target, e.getMessage()), e);
                     errors.add(OperationError.deleteFailed(e.getMessage(), target, id));
                     return;
                 }
             }
             results.add(FlagDataChange.deleted(id, target));
         });
+    }
+
+    private static void failOnNewFlagDataForUndefinedFlags(FlagsTarget target,
+                                                           Map<FlagId, FlagData> wantedFlagData,
+                                                           Map<FlagId, FlagData> currentFlagData,
+                                                           List<FlagId> definedFlags,
+                                                           List<OperationError> errors) {
+        String errorMessage = "Flag not defined in target zone. If zone/configserver cluster is new, add an empty flag " +
+                "data file for this zone as a temporary measure until the stale flag data files are removed.";
+        for (FlagId flagId : wantedFlagData.keySet()) {
+            if (!currentFlagData.containsKey(flagId) && !definedFlags.contains(flagId)) {
+                errors.add(OperationError.createFailed(errorMessage, target, wantedFlagData.get(flagId)));
+            }
+        }
+    }
+
+    private static void failOnFlagDataForUndefinedFlags(FlagsTarget target,
+                                                        Map<FlagId, FlagData> wantedFlagData,
+                                                        Map<FlagId, FlagData> currentFlagData,
+                                                        List<FlagId> definedFlags,
+                                                        List<OperationError> errors) {
+        for (FlagId flagId : currentFlagData.keySet()) {
+            if (wantedFlagData.containsKey(flagId) && !definedFlags.contains(flagId)) {
+                errors.add(OperationError.dataForUndefinedFlag(target, flagId));
+            }
+        }
     }
 
     private static void dryRunFlagDataValidation(FlagData data) {

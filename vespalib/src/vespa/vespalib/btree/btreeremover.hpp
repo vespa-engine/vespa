@@ -6,7 +6,7 @@
 #include "btreerootbase.hpp"
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS,
           size_t LEAF_SLOTS, class AggrCalcT>
@@ -16,7 +16,7 @@ BTreeRemoverBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
 steal(InternalNodeType *pNode,
       BTreeNode::Ref sNodeRef,
       NodeType * sNode, uint32_t idx, NodeAllocatorType &allocator,
-      const AggrCalcT &aggrCalc,
+      [[maybe_unused]] const AggrCalcT &aggrCalc,
       Iterator &itr,
       uint32_t level)
 {
@@ -65,7 +65,7 @@ steal(InternalNodeType *pNode,
         uint32_t stolen = oldLeftValid - leftVictim->validSlots();
         pNode->update(idx, sNode->getLastKey(), sNodeRef);
         pNode->update(idx - 1, leftVictim->getLastKey(), leftVictimRef);
-        if (AggrCalcT::hasAggregated()) {
+        if constexpr (AggrCalcT::hasAggregated()) {
             Aggregator::recalc(*leftVictim, allocator, aggrCalc);
         }
         itr.adjustSteal(level, false, stolen);
@@ -79,11 +79,11 @@ steal(InternalNodeType *pNode,
         sNode->stealSomeFromRightNode(rightVictim, allocator);
         pNode->update(idx, sNode->getLastKey(), sNodeRef);
         pNode->update(idx + 1, rightVictim->getLastKey(), rightVictimRef);
-        if (AggrCalcT::hasAggregated()) {
+        if constexpr (AggrCalcT::hasAggregated()) {
             Aggregator::recalc(*rightVictim, allocator, aggrCalc);
         }
     }
-    if (AggrCalcT::hasAggregated()) {
+    if constexpr (AggrCalcT::hasAggregated()) {
         Aggregator::recalc(*sNode, allocator, aggrCalc);
     }
 }
@@ -110,15 +110,21 @@ remove(BTreeNode::Ref &root,
     NodeAllocatorType &allocator(itr.getAllocator());
     AggrT oldca(AggrCalcT::hasAggregated() ? lnode->getAggregated() : AggrT());
     AggrT ca;
-    if (AggrCalcT::hasAggregated() &&
-        aggrCalc.remove(lnode->getAggregated(),
-                        aggrCalc.getVal(lnode->getData(idx)))) {
+    if constexpr (AggrCalcT::hasAggregated()) {
+        bool need_aggregation_recalc;
+        if constexpr (AggrCalcT::aggregate_over_values()) {
+            need_aggregation_recalc = aggrCalc.remove(lnode->getAggregated(), aggrCalc.getVal(lnode->getData(idx)));
+        } else {
+            need_aggregation_recalc = aggrCalc.remove(lnode->getAggregated(), aggrCalc.getVal(lnode->getKey(idx)));
+        }
         lnode->remove(idx);
-        Aggregator::recalc(*lnode, aggrCalc);
+        if (need_aggregation_recalc) {
+            Aggregator::recalc(*lnode, aggrCalc);
+        }
     } else {
         lnode->remove(idx);
     }
-    if (AggrCalcT::hasAggregated()) {
+    if constexpr (AggrCalcT::hasAggregated()) {
         ca = lnode->getAggregated();
     }
     bool steppedBack = idx >= lnode->validSlots();
@@ -160,7 +166,7 @@ remove(BTreeNode::Ref &root,
                      itr, level);
             }
         }
-        if (AggrCalcT::hasAggregated()) {
+        if constexpr (AggrCalcT::hasAggregated()) {
             if (aggrCalc.remove(node->getAggregated(), oldca, ca)) {
                 Aggregator::recalc(*node, allocator, aggrCalc);
             }

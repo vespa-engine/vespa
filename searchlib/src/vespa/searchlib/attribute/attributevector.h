@@ -15,6 +15,7 @@
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
 #include <vespa/searchlib/common/identifiable.h>
+#include <vespa/searchlib/common/commit_param.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -30,12 +31,14 @@ class FastOS_FileInterface;
 
 namespace document {
     class ArithmeticValueUpdate;
+    class AssignValueUpdate;
     class MapValueUpdate;
     class FieldValue;
 }
 
 namespace vespalib {
     class GenericHeader;
+    class Executor;
 }
 
 namespace search {
@@ -68,7 +71,6 @@ namespace search {
 }
 
 namespace search {
-
 
 using search::attribute::WeightedType;
 using search::attribute::Status;
@@ -119,7 +121,6 @@ protected:
     using BasicType = search::attribute::BasicType;
     using QueryTermSimpleUP = std::unique_ptr<QueryTermSimple>;
     using QueryPacketT = vespalib::stringref;
-    using LoadedBufferUP = std::unique_ptr<fileutil::LoadedBuffer>;
     using stringref = vespalib::stringref;
 public:
     typedef std::shared_ptr<AttributeVector> SP;
@@ -212,11 +213,6 @@ protected:
     void setNumDocs(uint32_t n)          { _status.setNumDocs(n); }
     void incNumDocs()                    { _status.incNumDocs(); }
 
-    LoadedBufferUP loadDAT();
-    LoadedBufferUP loadIDX();
-    LoadedBufferUP loadWeight();
-    LoadedBufferUP loadUDAT();
-
     class ValueModifier
     {
     public:
@@ -236,9 +232,9 @@ protected:
 public:
     class EnumModifier
     {
-        std::unique_lock<std::shared_timed_mutex> _enumLock;
+        std::unique_lock<std::shared_mutex> _enumLock;
     public:
-        EnumModifier(std::shared_timed_mutex &lock, attribute::InterlockGuard &interlockGuard)
+        EnumModifier(std::shared_mutex &lock, attribute::InterlockGuard &interlockGuard)
             : _enumLock(lock)
         {
             (void) interlockGuard;
@@ -269,10 +265,6 @@ protected:
     }
     
 public:
-    std::unique_ptr<FastOS_FileInterface> openDAT();
-    std::unique_ptr<FastOS_FileInterface> openIDX();
-    std::unique_ptr<FastOS_FileInterface> openWeight();
-    std::unique_ptr<FastOS_FileInterface> openUDAT();
     void incGeneration();
     void removeAllOldGenerations();
 
@@ -291,6 +283,14 @@ public:
 
     virtual IExtendAttribute * getExtendInterface();
 
+    /**
+     * Returns the number of readers holding a generation guard.
+     * Should be called by the writer thread.
+     **/
+    uint32_t getGenerationRefCount(generation_t gen) const {
+        return _genHandler.getGenerationRefCount(gen);
+    }
+
 protected:
     /**
      * Called when a new document has been added, but only for
@@ -299,14 +299,6 @@ protected:
      * Should return true if underlying structures were resized.
      **/
     virtual bool onAddDoc(DocId) { return false; }
-
-    /**
-     * Returns the number of readers holding a generation guard.
-     * Should be called by the writer thread.
-     */
-    uint32_t getGenerationRefCount(generation_t gen) const {
-        return _genHandler.getGenerationRefCount(gen);
-    }
 
     const GenerationHandler & getGenerationHandler() const {
         return _genHandler;
@@ -317,6 +309,10 @@ protected:
     }
 
     GenerationHolder & getGenerationHolder() {
+        return _genHolder;
+    }
+
+    const GenerationHolder& getGenerationHolder() const {
         return _genHolder;
     }
 
@@ -337,6 +333,9 @@ protected:
     template<typename T>
     bool adjustWeight(ChangeVectorT< ChangeTemplate<T> > &changes, DocId doc, const T &v, const ArithmeticValueUpdate &wd);
 
+    template<typename T>
+    bool adjustWeight(ChangeVectorT< ChangeTemplate<T> > &changes, DocId doc, const T &v, const document::AssignValueUpdate &wu);
+
     template <typename T>
     static int32_t
     applyWeightChange(int32_t weight, const ChangeTemplate<T> &weightChange) {
@@ -346,6 +345,8 @@ protected:
             return weight * weightChange._weight;
         } else if (weightChange._type == ChangeBase::DIVWEIGHT) {
             return weight / weightChange._weight;
+        } else if (weightChange._type == ChangeBase::SETWEIGHT) {
+            return weightChange._weight;
         }
         return weight;
     }
@@ -381,8 +382,7 @@ protected:
     }
 
     virtual vespalib::MemoryUsage getEnumStoreValuesMemoryUsage() const;
-    virtual vespalib::AddressSpace getEnumStoreAddressSpaceUsage() const;
-    virtual vespalib::AddressSpace getMultiValueAddressSpaceUsage() const;
+    virtual void populate_address_space_usage(AddressSpaceUsage& usage) const;
 
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(AttributeVector);
@@ -392,10 +392,12 @@ public:
     /** Return the fixed length of the attribute. If 0 then you must inquire each document. */
     size_t getFixedWidth() const override { return _config.basicType().fixedSize(); }
     const Config &getConfig() const { return _config; }
+    void update_config(const Config& cfg);
     BasicType getInternalBasicType() const { return _config.basicType(); }
     CollectionType getInternalCollectionType() const { return _config.collectionType(); }
     const BaseName & getBaseFileName() const { return _baseFileName; }
     void setBaseFileName(vespalib::stringref name) { _baseFileName = name; }
+    bool isUpdateableInMemoryOnly() const { return _isUpdateableInMemoryOnly; }
 
     const vespalib::string & getName() const override final { return _baseFileName.getAttributeName(); }
 
@@ -446,8 +448,10 @@ public:
 
     bool isEnumeratedSaveFormat() const;
     bool load();
-    void commit(bool forceStatUpdate = false);
-    void commit(uint64_t firstSyncToken, uint64_t lastSyncToken);
+    bool load(vespalib::Executor * executor);
+    void commit() { commit(false); }
+    void commit(bool forceUpdateStats);
+    void commit(const CommitParam & param);
     void setCreateSerialNum(uint64_t createSerialNum);
     uint64_t getCreateSerialNum() const;
     virtual uint32_t getVersion() const;
@@ -566,16 +570,15 @@ private:
     virtual void onAddDocs(DocId docIdLimit) = 0;
     void divideByZeroWarning();
     virtual bool applyWeight(DocId doc, const FieldValue &fv, const ArithmeticValueUpdate &wAdjust);
+    virtual bool applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust);
     virtual void onSave(IAttributeSaveTarget & saveTarget);
-    virtual bool onLoad();
-    std::unique_ptr<FastOS_FileInterface> openFile(const char *suffix);
-    LoadedBufferUP loadFile(const char *suffix);
+    virtual bool onLoad(vespalib::Executor * executor);
 
 
     BaseName                              _baseFileName;
     Config                                _config;
     std::shared_ptr<attribute::Interlock> _interlock;
-    mutable std::shared_timed_mutex       _enumLock;
+    mutable std::shared_mutex             _enumLock;
     GenerationHandler                     _genHandler;
     GenerationHolder                      _genHolder;
     Status                                _status;
@@ -587,6 +590,7 @@ private:
     uint64_t                              _compactLidSpaceGeneration;
     bool                                  _hasEnum;
     bool                                  _loaded;
+    bool                                  _isUpdateableInMemoryOnly;
     vespalib::steady_time                 _nextStatUpdateTime;
 
 ////// Locking strategy interface. only available from the Guards.
@@ -606,7 +610,7 @@ private:
      * Used to regulate access to critical resources. Apply the
      * reader/writer guards.
      */
-    std::shared_timed_mutex & getEnumLock() { return _enumLock; }
+    std::shared_mutex & getEnumLock() { return _enumLock; }
 
     friend class ComponentGuard<AttributeVector>;
     friend class AttributeValueGuard;
@@ -665,6 +669,8 @@ public:
     static bool isEnumerated(const vespalib::GenericHeader &header);
 
     virtual vespalib::MemoryUsage getChangeVectorMemoryUsage() const;
+
+    void drain_hold(uint64_t hold_limit);
 };
 
 }

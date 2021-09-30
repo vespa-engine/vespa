@@ -12,8 +12,8 @@ import java.util.List;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RefeedAction {
+
     public final String name;
-    public final boolean allowed;
     public final String documentType;
     public final String clusterName;
     public final List<ServiceInfo> services;
@@ -21,13 +21,11 @@ public class RefeedAction {
 
     @JsonCreator
     public RefeedAction(@JsonProperty("name") String name,
-                        @JsonProperty("allowed") boolean allowed,
                         @JsonProperty("documentType") String documentType,
                         @JsonProperty("clusterName") String clusterName,
                         @JsonProperty("services") List<ServiceInfo> services,
                         @JsonProperty("messages") List<String> messages) {
         this.name = name;
-        this.allowed = allowed;
         this.documentType = documentType;
         this.clusterName = clusterName;
         this.services = services;
@@ -38,11 +36,11 @@ public class RefeedAction {
     public String toString() {
         return "RefeedAction{" +
                 "name='" + name + '\'' +
-                ", allowed=" + allowed +
                 ", documentType='" + documentType + '\'' +
                 ", clusterName='" + clusterName + '\'' +
                 ", services=" + services +
                 ", messages=" + messages +
                 '}';
     }
+
 }

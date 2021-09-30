@@ -3,21 +3,22 @@
 
 namespace proton {
 
-DocumentDBFlushConfig::DocumentDBFlushConfig()
+DocumentDBFlushConfig::DocumentDBFlushConfig() noexcept
     : DocumentDBFlushConfig(2, 20)
 {
 }
 
-DocumentDBFlushConfig::DocumentDBFlushConfig(uint32_t maxFlushed, uint32_t maxFlushedRetired)
+DocumentDBFlushConfig::DocumentDBFlushConfig(uint32_t maxFlushed, uint32_t maxFlushedRetired) noexcept
     : _maxFlushed(maxFlushed),
       _maxFlushedRetired(maxFlushedRetired)
 {
 }
 
 bool
-DocumentDBFlushConfig::operator==(const DocumentDBFlushConfig &rhs) const
+DocumentDBFlushConfig::operator==(const DocumentDBFlushConfig &rhs) const noexcept
 {
-    return _maxFlushed == rhs._maxFlushed &&
+    return
+        _maxFlushed == rhs._maxFlushed &&
         _maxFlushedRetired == rhs._maxFlushedRetired;
 }
 

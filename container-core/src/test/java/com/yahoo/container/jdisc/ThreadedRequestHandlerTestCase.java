@@ -1,22 +1,30 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler.MaxPendingContentChannelOutputStream;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.handler.*;
 import com.yahoo.jdisc.test.TestDriver;
-import org.junit.Ignore;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -353,4 +361,44 @@ public class ThreadedRequestHandlerTestCase {
             latch.countDown();
         }
     }
+
+    @Test
+    public void testMaxPendingOutputStream() throws IOException, ExecutionException, InterruptedException {
+        ReadableContentChannel buffer = new ReadableContentChannel();
+        MaxPendingContentChannelOutputStream limited = new MaxPendingContentChannelOutputStream(buffer, 2);
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        limited.send(ByteBuffer.allocate(2));
+        limited.send(ByteBuffer.allocate(1)); // 2 is not > 2, so OK.
+
+        // Next write will block.
+        Future<?> future = executor.submit(() -> Exceptions.uncheck(() -> limited.send(ByteBuffer.allocate(0))));
+        try {
+            future.get(100, TimeUnit.MILLISECONDS);
+            fail("Should not be able to write now");
+        }
+        catch (TimeoutException expected) { }
+
+        // Free buffer capacity, so write completes, then drain buffer.
+        assertEquals(2, buffer.read().capacity());
+        future.get();
+        buffer.close(null);
+        assertEquals(1, buffer.read().capacity());
+        assertEquals(0, buffer.read().capacity());
+        assertNull(buffer.read());
+
+        // Buffer is closed, so further writes fail. This does not count towards pending bytes.
+        try {
+            limited.send(ByteBuffer.allocate(3));
+            fail("Should throw");
+        }
+        catch (IOException expected) { }
+        try {
+            limited.send(ByteBuffer.allocate(3));
+            fail("Should throw");
+        }
+        catch (IOException expected) { }
+    }
+
 }

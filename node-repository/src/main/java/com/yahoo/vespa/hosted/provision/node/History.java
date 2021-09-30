@@ -39,6 +39,13 @@ public class History {
     /** Returns this event if it is present in this history */
     public Optional<Event> event(Event.Type type) { return Optional.ofNullable(events.get(type)); }
 
+    /** Returns true if a given event is registered in this history at the given time */
+    public boolean hasEventAt(Event.Type type, Instant time) {
+        return event(type)
+                       .map(event -> event.at().equals(time))
+                       .orElse(false);
+    }
+
     /** Returns true if a given event is registered in this history after the given time */
     public boolean hasEventAfter(Event.Type type, Instant time) {
         return event(type)
@@ -80,15 +87,17 @@ public class History {
         // If the event is a re-reservation, allow the new one to override the older one.
         if (from == to && from != Node.State.reserved) return this;
         switch (to) {
-            case provisioned: return this.with(new Event(Event.Type.provisioned, agent, at));
-            case ready:       return this.withoutApplicationEvents().with(new Event(Event.Type.readied, agent, at));
-            case active:      return this.with(new Event(Event.Type.activated, agent, at));
-            case inactive:    return this.with(new Event(Event.Type.deactivated, agent, at));
-            case reserved:    return this.with(new Event(Event.Type.reserved, agent, at));
-            case failed:      return this.with(new Event(Event.Type.failed, agent, at));
-            case dirty:       return this.with(new Event(Event.Type.deallocated, agent, at));
-            case parked:      return this.with(new Event(Event.Type.parked, agent, at));
-            default:          return this;
+            case provisioned:   return this.with(new Event(Event.Type.provisioned, agent, at));
+            case deprovisioned: return this.with(new Event(Event.Type.deprovisioned, agent, at));
+            case ready:         return this.withoutApplicationEvents().with(new Event(Event.Type.readied, agent, at));
+            case active:        return this.with(new Event(Event.Type.activated, agent, at));
+            case inactive:      return this.with(new Event(Event.Type.deactivated, agent, at));
+            case reserved:      return this.with(new Event(Event.Type.reserved, agent, at));
+            case failed:        return this.with(new Event(Event.Type.failed, agent, at));
+            case dirty:         return this.with(new Event(Event.Type.deallocated, agent, at));
+            case parked:        return this.with(new Event(Event.Type.parked, agent, at));
+            case breakfixed:    return this.with(new Event(Event.Type.breakfixed, agent, at));
+            default:            return this;
         }
     }
     
@@ -109,7 +118,7 @@ public class History {
         StringBuilder b = new StringBuilder("history: ");
         for (Event e : events.values())
             b.append(e).append(", ");
-         b.setLength(b.length() -2); // remove last comma
+         b.setLength(b.length() - 2); // remove last comma
         return b.toString();
     }
 
@@ -127,24 +136,38 @@ public class History {
         }
 
         public enum Type { 
-            // State move events
-            provisioned(false), readied, reserved, activated, deactivated, deallocated, parked,
-            // The node was scheduled for retirement
-            wantToRetire,
+            // State changes
+            activated,
+            breakfixed(false),
+            deactivated,
+            deallocated,
+            deprovisioned(false),
+            failed(false),
+            parked,
+            provisioned(false),
+            readied,
+            reserved,
+
+            // The node was scheduled for retirement (hard)
+            wantToRetire(false),
+            // The node was scheduled for retirement (soft)
+            preferToRetire(false),
+            // This node was scheduled for failing
+            wantToFail,
             // The active node was retired
             retired,
             // The active node went down according to the service monitor
             down, 
             // The node made a config request, indicating it is live
             requested,
+            // The node resources/flavor were changed
+            resized(false),
             // The node was rebooted
             rebooted(false),
             // The node upgraded its OS (implies a reboot)
             osUpgraded(false),
             // The node verified its firmware (whether this resulted in a reboot depends on the node model)
-            firmwareVerified(false),
-            // The node was failed
-            failed(false);
+            firmwareVerified(false);
             
             private final boolean applicationLevel;
             

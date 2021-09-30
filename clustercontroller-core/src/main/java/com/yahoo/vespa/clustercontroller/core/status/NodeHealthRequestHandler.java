@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.status;
 
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageResponse;
@@ -18,21 +18,17 @@ public class NodeHealthRequestHandler implements StatusPageServer.RequestHandler
     @Override
     public StatusPageResponse handle(StatusPageServer.HttpRequest request) {
         StatusPageResponse response = new StatusPageResponse();
-        StringBuilder content = new StringBuilder();
         response.setContentType("application/json");
-        content.append(
-            "{\n" +
-            "  \"status\" : {\n" +
-            "    \"code\" : \"up\"\n" +
-            "  },\n" +
-            "  \"config\" : {\n" +
-            "    \"component\" : {\n" +
-            "      \"generation\" : " + data.getConfigGeneration() + "\n" +
-            "    }\n" +
-            "  }\n" +
-            "}"
-        );
-        response.writeContent(content.toString());
+        response.writeContent("{\n" +
+                          "  \"status\" : {\n" +
+                          "    \"code\" : \"up\"\n" +
+                          "  },\n" +
+                          "  \"config\" : {\n" +
+                          "    \"component\" : {\n" +
+                          "      \"generation\" : " + data.getConfigGeneration() + "\n" +
+                          "    }\n" +
+                          "  }\n" +
+                          "}");
         return response;
     }
 

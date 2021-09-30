@@ -1,27 +1,35 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/document/test/make_document_bucket.h>
 #include <tests/common/dummystoragelink.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/storage/distributor/top_level_bucket_db_updater.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storageapi/message/persistence.h>
+#include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
-#include <vespa/storage/distributor/bucketdbupdater.h>
-#include <vespa/storage/distributor/distributor.h>
-#include <tests/distributor/distributortestutil.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/storageapi/message/persistence.h>
+#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 
 using document::test::makeDocumentBucket;
+using document::test::makeBucketSpace;
 using namespace ::testing;
 
 namespace storage::distributor {
 
-struct MergeOperationTest : Test, DistributorTestUtil {
-    std::unique_ptr<PendingMessageTracker> _pendingTracker;
+namespace {
+vespalib::string _g_storage("storage");
+}
+
+struct MergeOperationTest : Test, DistributorStripeTestUtil {
+    OperationSequencer _operation_sequencer;
 
     void SetUp() override {
         createLinks();
-        _pendingTracker = std::make_unique<PendingMessageTracker>(getComponentRegister());
-        _sender.setPendingMessageTracker(*_pendingTracker);
+        _sender.setPendingMessageTracker(pending_message_tracker());
+        _sender.set_operation_sequencer(_operation_sequencer);
     }
 
     void TearDown() override {
@@ -37,7 +45,7 @@ TEST_F(MergeOperationTest, simple) {
                        "1=20/1/1,"
                        "2=10/1/1/t");
 
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
 
     MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0, 1, 2)));
@@ -65,7 +73,7 @@ TEST_F(MergeOperationTest, fail_if_source_only_copies_changed) {
                        "1=20/1/1,"
                        "2=10/1/1/t");
 
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
 
     MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0, 1, 2)));
@@ -228,7 +236,7 @@ TEST_F(MergeOperationTest, do_not_remove_copies_with_pending_messages) {
     document::BucketId bucket(16, 1);
 
     getClock().setAbsoluteTimeInSeconds(10);
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
     addNodesToBucketDB(bucket,
                        "0=10/1/1/t,"
                        "1=20/1/1,"
@@ -250,8 +258,8 @@ TEST_F(MergeOperationTest, do_not_remove_copies_with_pending_messages) {
     // at will.
     auto msg = std::make_shared<api::SetBucketStateCommand>(
             makeDocumentBucket(bucket), api::SetBucketStateCommand::ACTIVE);
-    msg->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
-    _pendingTracker->insert(msg);
+    msg->setAddress(api::StorageMessageAddress::create(&_g_storage, lib::NodeType::STORAGE, 1));
+    pending_message_tracker().insert(msg);
 
     sendReply(op);
     // Should not be a remove here!
@@ -292,7 +300,7 @@ TEST_F(MergeOperationTest, allow_deleting_active_source_only_replica) {
                        "1=20/1/1/u/a,"
                        "2=10/1/1/t");
 
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
     MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
@@ -310,7 +318,7 @@ TEST_F(MergeOperationTest, allow_deleting_active_source_only_replica) {
               _sender.getLastCommand(true));
 }
 
-TEST_F(MergeOperationTest, MarkRedundantTrustedCopiesAsSourceOnly) {
+TEST_F(MergeOperationTest, mark_redundant_trusted_copies_as_source_only) {
     // This test uses the same distribution as testGenerateNodeList(), i.e.
     // an ideal state sequence of [3, 5, 7, 6, 8, 0, 9, 2, 1, 4]
 
@@ -390,28 +398,56 @@ TEST_F(MergeOperationTest, mark_post_merge_redundant_replicas_source_only) {
 TEST_F(MergeOperationTest, merge_operation_is_blocked_by_any_busy_target_node) {
     getClock().setAbsoluteTimeInSeconds(10);
     addNodesToBucketDB(document::BucketId(16, 1), "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
     MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
 
     // Should not block on nodes _not_ included in operation node set
-    _pendingTracker->getNodeInfo().setBusy(3, std::chrono::seconds(10));
-    EXPECT_FALSE(op.isBlocked(*_pendingTracker));
+    pending_message_tracker().getNodeInfo().setBusy(3, std::chrono::seconds(10));
+    EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer));
 
     // Node 1 is included in operation node set and should cause a block
-    _pendingTracker->getNodeInfo().setBusy(0, std::chrono::seconds(10));
-    EXPECT_TRUE(op.isBlocked(*_pendingTracker));
+    pending_message_tracker().getNodeInfo().setBusy(0, std::chrono::seconds(10));
+    EXPECT_TRUE(op.isBlocked(operation_context(), _operation_sequencer));
 
     getClock().addSecondsToTime(11);
-    EXPECT_FALSE(op.isBlocked(*_pendingTracker)); // No longer busy
+    EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer)); // No longer busy
 
     // Should block on other operation nodes than the first listed as well
-    _pendingTracker->getNodeInfo().setBusy(1, std::chrono::seconds(10));
-    EXPECT_TRUE(op.isBlocked(*_pendingTracker));
+    pending_message_tracker().getNodeInfo().setBusy(1, std::chrono::seconds(10));
+    EXPECT_TRUE(op.isBlocked(operation_context(), _operation_sequencer));
+}
+
+
+TEST_F(MergeOperationTest, global_bucket_merges_are_not_blocked_by_busy_nodes) {
+    getClock().setAbsoluteTimeInSeconds(10);
+    document::BucketId bucket_id(16, 1);
+    addNodesToBucketDB(bucket_id, "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
+    enable_cluster_state("distributor:1 storage:3");
+    document::Bucket global_bucket(document::FixedBucketSpaces::global_space(), bucket_id);
+    MergeOperation op(BucketAndNodes(global_bucket, toVector<uint16_t>(0, 1, 2)));
+    op.setIdealStateManager(&getIdealStateManager());
+
+    // Node 1 is included in operation node set but should not cause a block of global bucket merge
+    pending_message_tracker().getNodeInfo().setBusy(0, std::chrono::seconds(10));
+    EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer));
+}
+
+TEST_F(MergeOperationTest, merge_operation_is_blocked_by_locked_bucket) {
+    getClock().setAbsoluteTimeInSeconds(10);
+    addNodesToBucketDB(document::BucketId(16, 1), "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
+    enable_cluster_state("distributor:1 storage:3");
+    MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(0, 1, 2)));
+    op.setIdealStateManager(&getIdealStateManager());
+
+    EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer));
+    auto token = _operation_sequencer.try_acquire(makeDocumentBucket(document::BucketId(16, 1)), "foo");
+    EXPECT_TRUE(token.valid());
+    EXPECT_TRUE(op.isBlocked(operation_context(), _operation_sequencer));
 }
 
 TEST_F(MergeOperationTest, missing_replica_is_included_in_limited_node_list) {
-    setupDistributor(Redundancy(4), NodeCount(4), "distributor:1 storage:4");
+    setup_stripe(Redundancy(4), NodeCount(4), "distributor:1 storage:4");
     getClock().setAbsoluteTimeInSeconds(10);
     addNodesToBucketDB(document::BucketId(16, 1), "1=0/0/0/t,2=0/0/0/t,3=0/0/0/t");
     const uint16_t max_merge_size = 2;
@@ -424,6 +460,44 @@ TEST_F(MergeOperationTest, missing_replica_is_included_in_limited_node_list) {
               "cluster state version: 0, nodes: [0, 1], chain: [], "
               "reasons to start: ) => 0",
               _sender.getLastCommand(true));
+}
+
+TEST_F(MergeOperationTest, merge_operation_is_blocked_by_request_bucket_info_to_any_node_in_chain) {
+    getClock().setAbsoluteTimeInSeconds(10);
+    document::BucketId bucket_id(16, 1);
+    addNodesToBucketDB(bucket_id, "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
+    enable_cluster_state("distributor:1 storage:3");
+    MergeOperation op(BucketAndNodes(makeDocumentBucket(bucket_id), toVector<uint16_t>(0, 1, 2)));
+    op.setIdealStateManager(&getIdealStateManager());
+
+    // Not initially blocked
+    EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer));
+
+    auto info_cmd = std::make_shared<api::RequestBucketInfoCommand>(
+            makeBucketSpace(), std::vector<document::BucketId>({bucket_id}));
+    info_cmd->setAddress(api::StorageMessageAddress::create(&_g_storage, lib::NodeType::STORAGE, 1)); // 1 is in chain
+    pending_message_tracker().insert(info_cmd);
+
+    // Now blocked by info request
+    EXPECT_TRUE(op.isBlocked(operation_context(), _operation_sequencer));
+}
+
+TEST_F(MergeOperationTest, merge_operation_is_not_blocked_by_request_bucket_info_to_unrelated_bucket) {
+    getClock().setAbsoluteTimeInSeconds(10);
+    document::BucketId bucket_id(16, 1);
+    document::BucketId other_bucket_id(16, 2);
+    addNodesToBucketDB(bucket_id, "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
+    enable_cluster_state("distributor:1 storage:3");
+    MergeOperation op(BucketAndNodes(makeDocumentBucket(bucket_id), toVector<uint16_t>(0, 1, 2)));
+    op.setIdealStateManager(&getIdealStateManager());
+
+    auto info_cmd = std::make_shared<api::RequestBucketInfoCommand>(
+            makeBucketSpace(), std::vector<document::BucketId>({other_bucket_id}));
+    info_cmd->setAddress(api::StorageMessageAddress::create(&_g_storage, lib::NodeType::STORAGE, 1));
+    pending_message_tracker().insert(info_cmd);
+
+    // Not blocked; bucket info request is for another bucket
+    EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer));
 }
 
 } // storage::distributor

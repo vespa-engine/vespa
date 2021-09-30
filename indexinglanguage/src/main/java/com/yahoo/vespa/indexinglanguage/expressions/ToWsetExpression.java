@@ -30,20 +30,20 @@ public final class ToWsetExpression extends Expression {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getValue();
         DataType inputType = input.getDataType();
 
         WeightedSetDataType outputType = DataType.getWeightedSet(inputType, createIfNonExistent, removeIfZero);
         WeightedSet output = outputType.createFieldValue();
         output.add(input);
 
-        ctx.setValue(output);
+        context.setValue(output);
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(DataType.getWeightedSet(context.getValue(), createIfNonExistent, removeIfZero));
+        context.setValueType(DataType.getWeightedSet(context.getValueType(), createIfNonExistent, removeIfZero));
     }
 
     @Override

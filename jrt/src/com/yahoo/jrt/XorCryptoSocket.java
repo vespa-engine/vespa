@@ -119,5 +119,8 @@ public class XorCryptoSocket implements CryptoSocket {
             return FlushResult.DONE;
         }
     }
-
+    @Override public void dropEmptyBuffers() {
+        input.shrink(0);
+        output.shrink(0);
+    }
 }

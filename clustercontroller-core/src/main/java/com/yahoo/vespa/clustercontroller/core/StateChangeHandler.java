@@ -1,14 +1,19 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.jrt.Spec;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
-import com.yahoo.vdslib.state.*;
+import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -21,7 +26,7 @@ import java.util.logging.Logger;
  */
 public class StateChangeHandler {
 
-    private static Logger log = Logger.getLogger(StateChangeHandler.class.getName());
+    private static final Logger log = Logger.getLogger(StateChangeHandler.class.getName());
 
     private final Timer timer;
     private final EventLogInterface eventLog;
@@ -32,14 +37,10 @@ public class StateChangeHandler {
     private int maxInitProgressTime = 5000;
     private int maxPrematureCrashes = 4;
     private long stableStateTimePeriod = 60 * 60 * 1000;
-    private Map<Integer, String> hostnames = new HashMap<>();
     private int maxSlobrokDisconnectGracePeriod = 1000;
     private static final boolean disableUnstableNodes = true;
 
-    /**
-     * @param metricUpdater may be null, in which case no metrics will be recorded.
-     */
-    public StateChangeHandler(Timer timer, EventLogInterface eventLog, MetricUpdater metricUpdater) {
+    public StateChangeHandler(Timer timer, EventLogInterface eventLog) {
         this.timer = timer;
         this.eventLog = eventLog;
         maxTransitionTime.put(NodeType.DISTRIBUTOR, 5000);
@@ -51,7 +52,7 @@ public class StateChangeHandler {
                                             final DatabaseHandler database,
                                             final DatabaseHandler.Context dbContext) throws InterruptedException {
         int startTimestampsReset = 0;
-        log.log(LogLevel.DEBUG, String.format("handleAllDistributorsInSync invoked for state version %d", currentState.getVersion()));
+        log.log(Level.FINE, "handleAllDistributorsInSync invoked for state version %d", currentState.getVersion());
         for (NodeType nodeType : NodeType.getTypes()) {
             for (ConfiguredNode configuredNode : nodes) {
                 final Node node = new Node(nodeType, configuredNode.index());
@@ -59,20 +60,15 @@ public class StateChangeHandler {
                 final NodeState nodeState = currentState.getNodeState(node);
                 if (nodeInfo != null && nodeState != null) {
                     if (nodeState.getStartTimestamp() > nodeInfo.getStartTimestamp()) {
-                        if (log.isLoggable(LogLevel.DEBUG)) {
-                            log.log(LogLevel.DEBUG, String.format("Storing away new start timestamp for node %s (%d)",
-                                    node, nodeState.getStartTimestamp()));
-                        }
+                        log.log(Level.FINE, () -> String.format("Storing away new start timestamp for node %s (%d)", node, nodeState.getStartTimestamp()));
                         nodeInfo.setStartTimestamp(nodeState.getStartTimestamp());
                     }
                     if (nodeState.getStartTimestamp() > 0) {
-                        if (log.isLoggable(LogLevel.DEBUG)) {
-                            log.log(LogLevel.DEBUG, String.format("Resetting timestamp in cluster state for node %s", node));
-                        }
+                        log.log(Level.FINE, "Resetting timestamp in cluster state for node %s", node);
                         ++startTimestampsReset;
                     }
-                } else if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, node + ": " +
+                } else if (log.isLoggable(Level.FINE)) {
+                    log.log(Level.FINE, node + ": " +
                                             (nodeInfo == null ? "null" : nodeInfo.getStartTimestamp()) + ", " +
                                             (nodeState == null ? "null" : nodeState.getStartTimestamp()));
                 }
@@ -85,7 +81,7 @@ public class StateChangeHandler {
             stateMayHaveChanged = true;
             database.saveStartTimestamps(dbContext);
         } else {
-            log.log(LogLevel.DEBUG, "Found no start timestamps to reset in cluster state.");
+            log.log(Level.FINE, "Found no start timestamps to reset in cluster state.");
         }
     }
 
@@ -118,7 +114,7 @@ public class StateChangeHandler {
                                            final NodeStateOrHostInfoChangeHandler nodeListener)
     {
         final NodeState currentState = currentClusterState.getNodeState(node.getNode());
-        final LogLevel level = (currentState.equals(reportedState) && node.getVersion() == 0) ? LogLevel.SPAM : LogLevel.DEBUG;
+        final Level level = (currentState.equals(reportedState) && node.getVersion() == 0) ? Level.FINEST : Level.FINE;
         if (log.isLoggable(level)) {
             log.log(level, String.format("Got nodestate reply from %s: %s (Current state is %s)",
                     node, node.getReportedState().getTextualDifference(reportedState), currentState.toString(true)));
@@ -132,9 +128,9 @@ public class StateChangeHandler {
         // *** LOGGING ONLY
         if ( ! reportedState.similarTo(node.getReportedState())) {
             if (reportedState.getState().equals(State.DOWN)) {
-                eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(node, "Failed to get node state: " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
+                eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(node, "Failed to get node state: " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), Level.INFO);
             } else {
-                eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(node, "Now reporting state " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), LogLevel.DEBUG);
+                eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(node, "Now reporting state " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), Level.FINE);
             }
         }
 
@@ -147,13 +143,12 @@ public class StateChangeHandler {
         if (reportedState.getMinUsedBits() != currentState.getMinUsedBits()) {
             final int oldCount = currentState.getMinUsedBits();
             final int newCount = reportedState.getMinUsedBits();
-            log.log(LogLevel.DEBUG,
-                    String.format("Altering node state to reflect that min distribution bit count has changed from %d to %d",
-                            oldCount, newCount));
+            log.log(Level.FINE,
+                    () -> String.format("Altering node state to reflect that min distribution bit count has changed from %d to %d", oldCount, newCount));
             eventLog.add(NodeEvent.forBaseline(node, String.format("Altered min distribution bit count from %d to %d", oldCount, newCount),
                          NodeEvent.Type.CURRENT, currentTime), isMaster);
-        } else if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, String.format("Not altering state of %s in cluster state because new state is too similar: %s",
+        } else {
+            log.log(Level.FINE, () -> String.format("Not altering state of %s in cluster state because new state is too similar: %s",
                     node, currentState.getTextualDifference(reportedState)));
         }
 
@@ -161,17 +156,13 @@ public class StateChangeHandler {
     }
 
     public void handleNewNode(NodeInfo node) {
-        setHostName(node);
         String message = "Found new node " + node + " in slobrok at " + node.getRpcAddress();
         eventLog.add(NodeEvent.forBaseline(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
     }
 
     public void handleMissingNode(final ClusterState currentClusterState,
                                   final NodeInfo node,
-                                  final NodeStateOrHostInfoChangeHandler nodeListener)
-    {
-        removeHostName(node);
-
+                                  final NodeStateOrHostInfoChangeHandler nodeListener) {
         final long timeNow = timer.getCurrentTimeInMillis();
 
         if (node.getLatestNodeStateRequestTime() != null) {
@@ -181,12 +172,12 @@ public class StateChangeHandler {
         }
 
         if (node.getReportedState().getState().equals(State.STOPPING)) {
-            log.log(LogLevel.DEBUG, "Node " + node.getNode() + " is no longer in slobrok. Was in stopping state, so assuming it has shut down normally. Setting node down");
+            log.log(Level.FINE, () -> "Node " + node.getNode() + " is no longer in slobrok. Was in stopping state, so assuming it has shut down normally. Setting node down");
             NodeState ns = node.getReportedState().clone();
             ns.setState(State.DOWN);
             handleNewReportedNodeState(currentClusterState, node, ns.clone(), nodeListener);
         } else {
-            log.log(LogLevel.DEBUG, "Node " + node.getNode() + " no longer in slobrok was in state " + node.getReportedState() + ". Waiting to see if it reappears in slobrok");
+            log.log(Level.FINE, () -> "Node " + node.getNode() + " no longer in slobrok was in state " + node.getReportedState() + ". Waiting to see if it reappears in slobrok");
         }
 
         stateMayHaveChanged = true;
@@ -208,9 +199,7 @@ public class StateChangeHandler {
         }
         stateMayHaveChanged = true;
 
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, String.format("Got new wanted nodestate for %s: %s", node, currentState.getTextualDifference(proposedState)));
-        }
+        log.log(Level.FINE, () -> String.format("Got new wanted nodestate for %s: %s", node, currentState.getTextualDifference(proposedState)));
         // Should be checked earlier before state was set in cluster
         assert(proposedState.getState().validWantedNodeState(node.getNode().getType()));
         long timeNow = timer.getCurrentTimeInMillis();
@@ -227,30 +216,13 @@ public class StateChangeHandler {
     }
 
     public void handleNewRpcAddress(NodeInfo node) {
-        setHostName(node);
         String message = "Node " + node + " has a new address in slobrok: " + node.getRpcAddress();
         eventLog.add(NodeEvent.forBaseline(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
     }
 
     public void handleReturnedRpcAddress(NodeInfo node) {
-        setHostName(node);
         String message = "Node got back into slobrok with same address as before: " + node.getRpcAddress();
         eventLog.add(NodeEvent.forBaseline(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
-    }
-
-    private void setHostName(NodeInfo node) {
-        String rpcAddress = node.getRpcAddress();
-        if (rpcAddress == null) {
-            // This may happen if we haven't seen the node in Slobrok yet.
-            return;
-        }
-
-        Spec address = new Spec(rpcAddress);
-        if (address.malformed()) {
-            return;
-        }
-
-        hostnames.put(node.getNodeIndex(), address.host());
     }
 
     void reconfigureFromOptions(FleetControllerOptions options) {
@@ -259,14 +231,6 @@ public class StateChangeHandler {
         setMaxInitProgressTime(options.maxInitProgressTime);
         setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod);
         setMaxTransitionTime(options.maxTransitionTime);
-    }
-
-    private void removeHostName(NodeInfo node) {
-        hostnames.remove(node.getNodeIndex());
-    }
-
-    Map<Integer, String> getHostnames() {
-        return Collections.unmodifiableMap(hostnames);
     }
 
     // TODO too many hidden behavior dependencies between this and the actually
@@ -321,11 +285,11 @@ public class StateChangeHandler {
 
         if (mayResetCrashCounterOnStableUpNode(currentTime, node, lastReportedState)) {
             node.setPrematureCrashCount(0);
-            log.log(LogLevel.DEBUG, "Resetting premature crash count on node " + node + " as it has been up for a long time.");
+            log.log(Level.FINE, () -> "Resetting premature crash count on node " + node + " as it has been up for a long time.");
             triggeredAnyTimers = true;
         } else if (mayResetCrashCounterOnStableDownNode(currentTime, node, lastReportedState)) {
             node.setPrematureCrashCount(0);
-            log.log(LogLevel.DEBUG, "Resetting premature crash count on node " + node + " as it has been down for a long time.");
+            log.log(Level.FINE, () -> "Resetting premature crash count on node " + node + " as it has been down for a long time.");
             triggeredAnyTimers = true;
         }
 
@@ -415,19 +379,14 @@ public class StateChangeHandler {
                                                  final NodeState reportedState,
                                                  final NodeStateOrHostInfoChangeHandler nodeListener) {
         final long timeNow = timer.getCurrentTimeInMillis();
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, String.format("Finding new cluster state entry for %s switching state %s",
-                    node, currentState.getTextualDifference(reportedState)));
-        }
+        log.log(Level.FINE, () -> String.format("Finding new cluster state entry for %s switching state %s", node, currentState.getTextualDifference(reportedState)));
 
         if (handleReportedNodeCrashEdge(node, currentState, reportedState, nodeListener, timeNow)) {
             return;
         }
         if (initializationProgressHasIncreased(currentState, reportedState)) {
             node.setInitProgressTime(timeNow);
-            if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Reset initialize timer on " + node + " to " + node.getInitProgressTime());
-            }
+            log.log(Level.FINEST, () -> "Reset initialize timer on " + node + " to " + node.getInitProgressTime());
         }
         if (handleImplicitCrashEdgeFromReverseInitProgress(node, currentState, reportedState, nodeListener, timeNow)) {
             return;
@@ -482,16 +441,14 @@ public class StateChangeHandler {
         if (nodeUpToDownEdge(node, currentState, reportedState)) {
             node.setTransitionTime(timeNow);
             if (node.getUpStableStateTime() + stableStateTimePeriod > timeNow && !isControlledShutdown(reportedState)) {
-                log.log(LogLevel.DEBUG, "Stable state: " + node.getUpStableStateTime() + " + " + stableStateTimePeriod + " > " + timeNow);
+                log.log(Level.FINE, () -> "Stable state: " + node.getUpStableStateTime() + " + " + stableStateTimePeriod + " > " + timeNow);
                 eventLog.add(NodeEvent.forBaseline(node,
                         String.format("Stopped or possibly crashed after %d ms, which is before " +
                                       "stable state time period. Premature crash count is now %d.",
                                 timeNow - node.getUpStableStateTime(), node.getPrematureCrashCount() + 1),
                         NodeEvent.Type.CURRENT,
                         timeNow), isMaster);
-                if (handlePrematureCrash(node, nodeListener)) {
-                    return true;
-                }
+                return handlePrematureCrash(node, nodeListener);
             }
         }
         return false;

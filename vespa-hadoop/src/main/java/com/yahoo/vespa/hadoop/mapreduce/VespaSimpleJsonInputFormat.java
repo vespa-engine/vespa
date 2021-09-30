@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hadoop.mapreduce;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,8 +55,7 @@ public class VespaSimpleJsonInputFormat extends FileInputFormat<Text, NullWritab
             }
 
             remaining = fileSplit.getLength();
-
-            JsonFactory factory = new JsonFactory().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES);
+            JsonFactory factory = new JsonFactoryBuilder().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES).build();
             parser = factory.createParser(new BufferedInputStream(stream));
             parser.setCodec(new ObjectMapper());
             parser.nextToken();

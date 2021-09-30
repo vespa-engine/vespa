@@ -1,8 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vdslib/state/clusterstate.h>
 #include <cassert>
+
+namespace storage::lib { class ClusterState; }
 
 namespace storage::distributor {
 
@@ -16,9 +17,9 @@ class BucketOwnership
           _owned(false)
     { }
 
+public:
     BucketOwnership() : _checkedState(nullptr), _owned(true) {}
 
-public:
     bool isOwned() const { return _owned; }
     /**
      * Cluster state in which the ownership check failed. Lifetime of returned

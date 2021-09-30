@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -21,16 +22,16 @@ public class MetricsTest {
     public void testIterator() {
         Metrics m = new Metrics();
         long now = System.currentTimeMillis() / 1000;
-        m.add(new Metric("a", 1, now));
-        m.add(new Metric("b", 2.5, now));
+        m.add(new Metric(toMetricId("a"), 1, now));
+        m.add(new Metric(toMetricId("b"), 2.5, now));
 
         //should expire after 0 seconds
-        m.add(new Metric("c", 2, now));
+        m.add(new Metric(toMetricId("c"), 2, now));
 
         Map<String, Number> map = new HashMap<>();
 
         for (Metric metric: m.getMetrics()) {
-            String k = metric.getName();
+            String k = metric.getName().id;
 
             assertThat(map.containsKey(k), is(false));
             map.put(k, metric.getValue());
@@ -43,9 +44,9 @@ public class MetricsTest {
     @Test
     public void testBasicMetric() {
         Metrics m = new Metrics();
-        m.add(new Metric("count", 1, System.currentTimeMillis() / 1000));
+        m.add(new Metric(toMetricId("count"), 1, System.currentTimeMillis() / 1000));
         assertThat(m.getMetrics().size(), is(1));
-        assertThat(m.getMetrics().get(0).getName(), is("count"));
+        assertThat(m.getMetrics().get(0).getName(), is(toMetricId("count")));
     }
 
     @Test

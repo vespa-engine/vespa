@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("move_operation_limiter_test");
 
 #include <vespa/searchcore/proton/server/i_blockable_maintenance_job.h>
 #include <vespa/searchcore/proton/server/move_operation_limiter.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <queue>
+
+#include <vespa/log/log.h>
+LOG_SETUP("move_operation_limiter_test");
 
 using namespace proton;
 
@@ -26,10 +27,11 @@ struct MyBlockableMaintenanceJob : public IBlockableMaintenanceJob {
         blocked = false;
     }
     bool run() override { return true; }
+    void onStop() override { }
 };
 
 struct Fixture {
-    using OpsQueue = std::queue<std::shared_ptr<search::IDestructorCallback>>;
+    using OpsQueue = std::queue<std::shared_ptr<vespalib::IDestructorCallback>>;
     using MoveOperationLimiterSP = std::shared_ptr<MoveOperationLimiter>;
 
     MyBlockableMaintenanceJob job;
@@ -53,6 +55,15 @@ struct Fixture {
         EXPECT_FALSE(job.blocked);
     }
 };
+
+TEST_F("require that hasPending reflects if any jobs are outstanding", Fixture)
+{
+    EXPECT_FALSE(f.limiter->hasPending());
+    f.beginOp();
+    EXPECT_TRUE(f.limiter->hasPending());
+    f.endOp();
+    EXPECT_FALSE(f.limiter->hasPending());
+}
 
 TEST_F("require that job is blocked / unblocked when crossing max outstanding ops boundaries", Fixture)
 {

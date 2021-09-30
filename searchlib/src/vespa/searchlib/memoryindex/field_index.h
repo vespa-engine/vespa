@@ -37,11 +37,11 @@ public:
 
     // Mapping from docid -> feature ref
     using PostingListEntryType = PostingListEntry<interleaved_features>;
-    using PostingList = btree::BTreeRoot<uint32_t, PostingListEntryType, search::btree::NoAggregated>;
-    using PostingListStore = btree::BTreeStore<uint32_t, PostingListEntryType,
-                                               search::btree::NoAggregated,
+    using PostingList = vespalib::btree::BTreeRoot<uint32_t, PostingListEntryType, vespalib::btree::NoAggregated>;
+    using PostingListStore = vespalib::btree::BTreeStore<uint32_t, PostingListEntryType,
+                                               vespalib::btree::NoAggregated,
                                                std::less<uint32_t>,
-                                               btree::BTreeDefaultTraits>;
+                                               vespalib::btree::BTreeDefaultTraits>;
     using PostingListKeyDataType = typename PostingListStore::KeyDataType;
 
 private:
@@ -109,84 +109,78 @@ public:
 
 }
 
-namespace search::btree {
+namespace vespalib::btree {
 
 extern template
-class BTreeNodeDataWrap<memoryindex::FieldIndexBase::WordKey,
+class BTreeNodeDataWrap<search::memoryindex::FieldIndexBase::WordKey,
                         BTreeDefaultTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeNodeT<memoryindex::FieldIndexBase::WordKey,
+class BTreeNodeT<search::memoryindex::FieldIndexBase::WordKey,
                  BTreeDefaultTraits::INTERNAL_SLOTS>;
 
-#if 0
 extern template
-class BTreeNodeT<memoryindex::FieldIndexBase::WordKey,
-                 BTreeDefaultTraits::LEAF_SLOTS>;
-#endif
-
-extern template
-class BTreeNodeTT<memoryindex::FieldIndexBase::WordKey,
-                  datastore::EntryRef,
-                  search::btree::NoAggregated,
+class BTreeNodeTT<search::memoryindex::FieldIndexBase::WordKey,
+                  vespalib::datastore::EntryRef,
+                  NoAggregated,
                   BTreeDefaultTraits::INTERNAL_SLOTS>;
 
 extern template
-class BTreeNodeTT<memoryindex::FieldIndexBase::WordKey,
-                  memoryindex::FieldIndexBase::PostingListPtr,
-                  search::btree::NoAggregated,
+class BTreeNodeTT<search::memoryindex::FieldIndexBase::WordKey,
+                  search::memoryindex::FieldIndexBase::PostingListPtr,
+                  NoAggregated,
                   BTreeDefaultTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeInternalNode<memoryindex::FieldIndexBase::WordKey,
-                        search::btree::NoAggregated,
+class BTreeInternalNode<search::memoryindex::FieldIndexBase::WordKey,
+                        NoAggregated,
                         BTreeDefaultTraits::INTERNAL_SLOTS>;
 
 extern template
-class BTreeLeafNode<memoryindex::FieldIndexBase::WordKey,
-                    memoryindex::FieldIndexBase::PostingListPtr,
-                    search::btree::NoAggregated,
+class BTreeLeafNode<search::memoryindex::FieldIndexBase::WordKey,
+                    search::memoryindex::FieldIndexBase::PostingListPtr,
+                    NoAggregated,
                     BTreeDefaultTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeNodeStore<memoryindex::FieldIndexBase::WordKey,
-                     memoryindex::FieldIndexBase::PostingListPtr,
-                     search::btree::NoAggregated,
+class BTreeNodeStore<search::memoryindex::FieldIndexBase::WordKey,
+                     search::memoryindex::FieldIndexBase::PostingListPtr,
+                     NoAggregated,
                      BTreeDefaultTraits::INTERNAL_SLOTS,
                      BTreeDefaultTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeIterator<memoryindex::FieldIndexBase::WordKey,
-                    memoryindex::FieldIndexBase::PostingListPtr,
-                    search::btree::NoAggregated,
-                    const memoryindex::FieldIndexBase::KeyComp,
+class BTreeIterator<search::memoryindex::FieldIndexBase::WordKey,
+                    search::memoryindex::FieldIndexBase::PostingListPtr,
+                    NoAggregated,
+                    const search::memoryindex::FieldIndexBase::KeyComp,
                     BTreeDefaultTraits>;
 
 extern template
-class BTree<memoryindex::FieldIndexBase::WordKey,
-            memoryindex::FieldIndexBase::PostingListPtr,
-            search::btree::NoAggregated,
-            const memoryindex::FieldIndexBase::KeyComp,
+class BTree<search::memoryindex::FieldIndexBase::WordKey,
+            search::memoryindex::FieldIndexBase::PostingListPtr,
+            NoAggregated,
+            const search::memoryindex::FieldIndexBase::KeyComp,
             BTreeDefaultTraits>;
 
 extern template
-class BTreeRoot<memoryindex::FieldIndexBase::WordKey,
-                memoryindex::FieldIndexBase::PostingListPtr,
-                search::btree::NoAggregated,
-                const memoryindex::FieldIndexBase::KeyComp,
+class BTreeRoot<search::memoryindex::FieldIndexBase::WordKey,
+                search::memoryindex::FieldIndexBase::PostingListPtr,
+                NoAggregated,
+                const search::memoryindex::FieldIndexBase::KeyComp,
                 BTreeDefaultTraits>;
 
 extern template
-class BTreeRootBase<memoryindex::FieldIndexBase::WordKey,
-                    memoryindex::FieldIndexBase::PostingListPtr,
-                    search::btree::NoAggregated,
+class BTreeRootBase<search::memoryindex::FieldIndexBase::WordKey,
+                    search::memoryindex::FieldIndexBase::PostingListPtr,
+                    NoAggregated,
                     BTreeDefaultTraits::INTERNAL_SLOTS,
                     BTreeDefaultTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeNodeAllocator<memoryindex::FieldIndexBase::WordKey,
-                         memoryindex::FieldIndexBase::PostingListPtr,
-                         search::btree::NoAggregated,
+class BTreeNodeAllocator<search::memoryindex::FieldIndexBase::WordKey,
+                         search::memoryindex::FieldIndexBase::PostingListPtr,
+                         NoAggregated,
                          BTreeDefaultTraits::INTERNAL_SLOTS,
                          BTreeDefaultTraits::LEAF_SLOTS>;
 

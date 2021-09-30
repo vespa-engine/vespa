@@ -11,6 +11,7 @@ package com.yahoo.search.cluster;
 public class Hasher<T> {
 
     public static class NodeFactor<T> {
+
         private final T node;
 
         /**

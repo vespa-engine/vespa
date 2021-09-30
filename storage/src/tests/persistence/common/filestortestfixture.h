@@ -1,13 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
-#include <vespa/persistence/spi/persistenceprovider.h>
+#include <tests/common/teststorageapp.h>
+#include <vespa/storage/persistence/filestorage/filestorhandlerimpl.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <tests/common/dummystoragelink.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/common/testhelper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace storage {
@@ -15,8 +14,6 @@ namespace storage {
 class FileStorTestFixture : public ::testing::Test
 {
 public:
-    static spi::LoadType defaultLoadType;
-
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<vdstestlib::DirConfig> _config;
     const document::DocumentType* _testdoctype1;
@@ -28,7 +25,7 @@ public:
 
     void SetUp() override;
     void TearDown() override;
-    void setupPersistenceThreads(uint32_t diskCount);
+    void setupPersistenceThreads(uint32_t threads);
     void createBucket(const document::BucketId& bid);
     bool bucketExistsInDb(const document::BucketId& bucket) const;
 

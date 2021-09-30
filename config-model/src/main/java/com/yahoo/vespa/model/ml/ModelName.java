@@ -4,16 +4,16 @@ package com.yahoo.vespa.model.ml;
 import com.yahoo.path.Path;
 
 /**
- * Models used in a rank profile has the rank profile name as name space while gGlobal model names have no namespace
+ * Models used in a rank profile has the rank profile name as name space while global model names have no namespace
  *
  * @author bratseth
  */
 public class ModelName {
 
     /** The namespace, or null if none */
-    private String namespace;
-    private String name;
-    private String fullName;
+    private final String namespace;
+    private final String name;
+    private final String fullName;
 
     public ModelName(String name) {
         this(null, name);

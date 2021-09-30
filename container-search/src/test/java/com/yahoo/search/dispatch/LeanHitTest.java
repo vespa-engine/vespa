@@ -37,10 +37,14 @@ public class LeanHitTest {
     }
     @Test
     public void testOrderingBySortData() {
-        assertEquals(0, new LeanHit(gidA, 0, 0, gidA).compareTo(new LeanHit(gidA, 0, 0, gidA)));
-        verifyTransitiveOrdering(new LeanHit(gidA, 0, 0, gidA),
-                new LeanHit(gidA, 0, 0, gidB),
-                new LeanHit(gidA, 0, 0, gidC));
+        assertEquals(0, new LeanHit(gidA, 0, 0, 0.0, gidA).compareTo(new LeanHit(gidA, 0, 0, 0.0, gidA)));
+        verifyTransitiveOrdering(new LeanHit(gidA, 0, 0, 0.0, gidA),
+                new LeanHit(gidA, 0, 0, 0.0, gidB),
+                new LeanHit(gidA, 0, 0, 0.0, gidC));
+    }
+    @Test
+    public void testRelevanceIsKeptEvenWithBySortData() {
+        assertEquals(1.3, new LeanHit(gidA, 0, 0, 1.3, gidA).getRelevance(), 0.0);
     }
     @Test
     public void testNaN2negativeInfinity() {

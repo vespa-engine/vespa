@@ -2,6 +2,7 @@
 
 #include "testnodestateupdater.h"
 #include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 namespace storage {
 
@@ -10,7 +11,8 @@ TestNodeStateUpdater::TestNodeStateUpdater(const lib::NodeType& type)
       _current(new lib::NodeState(type, lib::State::UP)),
       _clusterStateBundle(std::make_shared<const lib::ClusterStateBundle>(lib::ClusterState())),
       _listeners(),
-      _explicit_node_state_reply_send_invocations(0)
+      _explicit_node_state_reply_send_invocations(0),
+      _requested_almost_immediate_node_state_replies(0)
 { }
 
 TestNodeStateUpdater::~TestNodeStateUpdater() = default;
@@ -22,7 +24,7 @@ TestNodeStateUpdater::getClusterStateBundle() const
 }
 
 void
-TestNodeStateUpdater::setClusterState(lib::ClusterState::CSP c)
+TestNodeStateUpdater::setClusterState(std::shared_ptr<const lib::ClusterState> c)
 {
     setClusterStateBundle(std::make_shared<const lib::ClusterStateBundle>(*c));
 }

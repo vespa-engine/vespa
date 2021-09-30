@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "operation.h"
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
@@ -12,8 +13,8 @@ namespace eval {
 enum class Aggr;
 struct TensorFunction;
 namespace visit {
-using map_fun_t = double (*)(double);
-using join_fun_t = double (*)(double, double);
+using map_fun_t = vespalib::eval::operation::op1_t;
+using join_fun_t = vespalib::eval::operation::op2_t;
 struct DimList {
     const std::vector<vespalib::string> &list;
     DimList(const std::vector<vespalib::string> &list_in)

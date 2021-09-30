@@ -4,9 +4,17 @@ package com.yahoo.searchlib.aggregation;
 import com.yahoo.searchlib.expression.AggregationRefNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
 import com.yahoo.searchlib.expression.ResultNode;
-import com.yahoo.vespa.objects.*;
+import com.yahoo.vespa.objects.Deserializer;
+import com.yahoo.vespa.objects.Identifiable;
+import com.yahoo.vespa.objects.ObjectOperation;
+import com.yahoo.vespa.objects.ObjectPredicate;
+import com.yahoo.vespa.objects.ObjectVisitor;
+import com.yahoo.vespa.objects.Serializer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 public class Group extends Identifiable {
 
@@ -132,11 +140,7 @@ public class Group extends Identifiable {
         if (sortType == SortType.BYID) {
             return;
         }
-        Collections.sort(children, new Comparator<Group>() {
-            public int compare(Group lhs, Group rhs) {
-                return lhs.compareId(rhs);
-            }
-        });
+        Collections.sort(children, (Group lhs, Group rhs) -> lhs.compareId(rhs));
         sortType = SortType.BYID;
     }
 
@@ -145,11 +149,8 @@ public class Group extends Identifiable {
         if (sortType == SortType.BYRANK) {
             return;
         }
-        Collections.sort(children, new Comparator<Group>() {
-            public int compare(Group lhs, Group rhs) {
-                return lhs.compareRank(rhs);
-            }
-        });
+        Collections.sort(children, (Group lhs, Group rhs) ->  lhs.compareRank(rhs) );
+
         sortType = SortType.BYRANK;
     }
 
@@ -403,22 +404,19 @@ public class Group extends Identifiable {
         if (id != null) {
             obj.id = (ResultNode)id.clone();
         }
-        obj.aggregationResults = new ArrayList<AggregationResult>();
+        obj.aggregationResults = new ArrayList<>();
         for (AggregationResult result : aggregationResults) {
             obj.aggregationResults.add(result.clone());
         }
-        obj.orderByIdx = new ArrayList<Integer>();
-        for (Integer idx : orderByIdx) {
-            obj.orderByIdx.add(idx);
-        }
-        obj.orderByExp = new ArrayList<ExpressionNode>();
+        obj.orderByIdx = new ArrayList<>(orderByIdx);
+        obj.orderByExp = new ArrayList<>();
         RefResolver resolver = new RefResolver(obj);
         for (ExpressionNode exp : orderByExp) {
             exp = exp.clone();
             exp.select(REF_LOCATOR, resolver);
             obj.orderByExp.add(exp);
         }
-        obj.children = new ArrayList<Group>();
+        obj.children = new ArrayList<>();
         for (Group child : children) {
             obj.children.add(child.clone());
         }
@@ -447,7 +445,7 @@ public class Group extends Identifiable {
         }
     }
 
-    private static enum SortType {
+    private enum SortType {
         UNSORTED,
         BYRANK,
         BYID

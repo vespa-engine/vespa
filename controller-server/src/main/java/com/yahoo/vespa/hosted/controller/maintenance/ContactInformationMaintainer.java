@@ -2,10 +2,10 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.TenantController;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
@@ -13,45 +13,58 @@ import com.yahoo.yolean.Exceptions;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.logging.Level.FINE;
 
 /**
  * Periodically fetch and store contact information for tenants.
  *
  * @author mpolden
  */
-public class ContactInformationMaintainer extends Maintainer {
+public class ContactInformationMaintainer extends ControllerMaintainer {
 
     private static final Logger log = Logger.getLogger(ContactInformationMaintainer.class.getName());
 
     private final ContactRetriever contactRetriever;
 
-    public ContactInformationMaintainer(Controller controller, Duration interval, JobControl jobControl) {
-        super(controller, interval, jobControl, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
+    public ContactInformationMaintainer(Controller controller, Duration interval) {
+        super(controller, interval, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
         this.contactRetriever = controller.serviceRegistry().contactRetriever();
     }
 
     @Override
-    protected void maintain() {
+    protected double maintain() {
         TenantController tenants = controller().tenants();
+        int attempts = 0;
+        int failures = 0;
         for (Tenant tenant : tenants.asList()) {
+            log.log(FINE, () -> "Updating contact information for " + tenant);
             try {
+                attempts++;
                 switch (tenant.type()) {
-                    case athenz: tenants.lockIfPresent(tenant.name(), LockedTenant.Athenz.class, lockedTenant ->
-                            tenants.store(lockedTenant.with(contactRetriever.getContact(lockedTenant.get().propertyId()))));
-                        return;
-                    case user: tenants.lockIfPresent(tenant.name(), LockedTenant.User.class, lockedTenant ->
-                            tenants.store(lockedTenant.with(contactRetriever.getContact(Optional.empty()))));
-                        return;
-                    case cloud: return;
-                    default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
+                    case athenz:
+                        tenants.lockIfPresent(tenant.name(), LockedTenant.Athenz.class, lockedTenant -> {
+                            Contact contact = contactRetriever.getContact(lockedTenant.get().propertyId());
+                            log.log(FINE, () -> "Contact found for " + tenant + " was " +
+                                          (Optional.of(contact).equals(tenant.contact()) ? "un" : "") + "changed");
+                            tenants.store(lockedTenant.with(contact));
+                        });
+                        break;
+                    case cloud:
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
                 }
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed to update contact information for " + tenant + ": " +
-                                          Exceptions.toMessageString(e) + ". Retrying in " +
-                                          maintenanceInterval());
+                failures++;
+                log.log(Level.WARNING, "Failed to update contact information for " + tenant + ": " +
+                                       Exceptions.toMessageString(e) + ". Retrying in " +
+                                       interval());
             }
         }
+        return asSuccessFactor(attempts, failures);
     }
 
 }

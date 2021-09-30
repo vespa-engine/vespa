@@ -3,37 +3,32 @@
 
 #include <vespa/searchcore/proton/flushengine/iflushhandler.h>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 /**
  * Default implementation used for testing.
  */
 struct DummyFlushHandler : public IFlushHandler
 {
-    DummyFlushHandler(const vespalib::string &name)
+    DummyFlushHandler(const vespalib::string &name) noexcept
         : IFlushHandler(name)
     {}
 
-    // Implements IFlushHandler
-    virtual std::vector<IFlushTarget::SP> getFlushTargets() override {
+    std::vector<IFlushTarget::SP> getFlushTargets() override {
         return std::vector<IFlushTarget::SP>();
     }
 
-    virtual SerialNum getCurrentSerialNumber() const override {
+    SerialNum getCurrentSerialNumber() const override {
         return 0;
     }
 
-    virtual void flushDone(SerialNum oldestSerial) override {
+    void flushDone(SerialNum oldestSerial) override {
         (void) oldestSerial;
     }
 
-    virtual void syncTls(SerialNum syncTo) override {
+    void syncTls(SerialNum syncTo) override {
         (void) syncTo;
     }
 };
 
-} // namespace test
-
-} // namespace proton
+}

@@ -12,5 +12,5 @@ public interface ResponseHandler {
      *
      * @param response The response to process.
      */
-    public void handleResponse(Response response);
+    void handleResponse(Response response);
 }

@@ -45,31 +45,19 @@ private:
     vespalib::string             _subDbName;
     uint32_t                     _distributionKey;
 
-    void
-    reconfigureFeedView(const SearchView::SP &searchView);
+    void reconfigureFeedView(IAttributeWriter::SP attrWriter,
+                             search::index::Schema::SP schema,
+                             std::shared_ptr<const document::DocumentTypeRepo> repo);
 
-    void
-    reconfigureFeedView(const IIndexWriter::SP &indexWriter,
-                        const ISummaryAdapter::SP &summaryAdapter,
-                        const IAttributeWriter::SP &attrWriter,
-                        const search::index::Schema::SP &schema,
-                        const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                        const SearchView::SP &searchView);
+    void reconfigureMatchView(const searchcorespi::IndexSearchable::SP &indexSearchable);
 
-    void
-    reconfigureMatchView(const searchcorespi::IndexSearchable::SP &indexSearchable);
+    void reconfigureMatchView(const Matchers::SP &matchers,
+                              const searchcorespi::IndexSearchable::SP &indexSearchable,
+                              const IAttributeManager::SP &attrMgr);
 
-    void
-    reconfigureMatchView(const Matchers::SP &matchers,
-                         const searchcorespi::IndexSearchable::SP &indexSearchable,
-                         const IAttributeManager::SP &attrMgr);
+    void reconfigureSearchView(MatchView::SP matchView);
 
-    void
-    reconfigureSearchView(const MatchView::SP &matchView);
-
-    void
-    reconfigureSearchView(const ISummaryManager::ISummarySetup::SP &summarySetup,
-                           const MatchView::SP &matchView);
+    void reconfigureSearchView(ISummaryManager::ISummarySetup::SP summarySetup, MatchView::SP matchView);
 
 public:
     SearchableDocSubDBConfigurer(const SearchableDocSubDBConfigurer &) = delete;
@@ -84,18 +72,17 @@ public:
                                  uint32_t distributionKey);
     ~SearchableDocSubDBConfigurer();
 
-    Matchers::UP
-    createMatchers(const search::index::Schema::SP &schema,
-                   const vespa::config::search::RankProfilesConfig &cfg);
+    Matchers::UP createMatchers(const search::index::Schema::SP &schema,
+                                const vespa::config::search::RankProfilesConfig &cfg,
+                                const proton::matching::RankingExpressions &rankingExpressions,
+                                const proton::matching::OnnxModels &onnxModels);
 
-    void
-    reconfigureIndexSearchable();
+    void reconfigureIndexSearchable();
 
-    void
-    reconfigure(const DocumentDBConfig &newConfig,
-                const DocumentDBConfig &oldConfig,
-                const ReconfigParams &params,
-                IDocumentDBReferenceResolver &resolver);
+    void reconfigure(const DocumentDBConfig &newConfig,
+                     const DocumentDBConfig &oldConfig,
+                     const ReconfigParams &params,
+                     IDocumentDBReferenceResolver &resolver);
 
     IReprocessingInitializer::UP
     reconfigure(const DocumentDBConfig &newConfig,

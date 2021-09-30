@@ -19,7 +19,7 @@ import com.yahoo.protect.Validator;
  */
 public class LiteralPhraseProduction extends TermProduction {
 
-    private List<String> terms=new ArrayList<>();
+    private final List<String> terms = new ArrayList<>();
 
     /** Creates a new produced literal phrase */
     public LiteralPhraseProduction() {
@@ -45,20 +45,20 @@ public class LiteralPhraseProduction extends TermProduction {
     public List<String> getTerms() { return Collections.unmodifiableList(terms); }
 
     public void produce(RuleEvaluation e,int offset) {
-        PhraseItem newPhrase=new PhraseItem();
+        PhraseItem newPhrase = new PhraseItem();
         newPhrase.setIndexName(getLabel());
         for (String term : terms)
             newPhrase.addItem(new WordItem(term));
 
         if (replacing) {
-            Match matched=e.getNonreferencedMatch(0);
-            insertMatch(e,matched,newPhrase,offset);
+            Match matched = e.getNonreferencedMatch(0);
+            insertMatch(e, matched, newPhrase, offset);
         }
         else {
             newPhrase.setWeight(getWeight());
-            if (e.getTraceLevel()>=6)
-                e.trace(6,"Adding '" + newPhrase + "'");
-            e.addItem(newPhrase,getTermType());
+            if (e.getTraceLevel() >= 6)
+                e.trace(6, "Adding '" + newPhrase + "'");
+            e.addItem(newPhrase, getTermType());
         }
     }
 
@@ -67,8 +67,8 @@ public class LiteralPhraseProduction extends TermProduction {
     }
 
     private String getSpaceSeparated(List<String> terms) {
-        StringBuilder builder=new StringBuilder();
-        for (Iterator<String> i=terms.iterator(); i.hasNext(); ) {
+        StringBuilder builder = new StringBuilder();
+        for (Iterator<String> i = terms.iterator(); i.hasNext(); ) {
             builder.append(i.next());
             if (i.hasNext())
                 builder.append(" ");

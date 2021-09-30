@@ -1,3 +1,5 @@
 .depend
 Makefile
 vespa-verify-ranksetup-bin
+config-*.cpp
+config-*.h

@@ -21,6 +21,9 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <stdexcept>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.memoryindex.fieldinverter");
+
 namespace search::memoryindex {
 
 using document::AlternateSpanList;
@@ -197,8 +200,8 @@ FieldInverter::sortWords()
     // Populate word numbers in word buffer and mapping from
     // word numbers to word reference.
     // TODO: shrink word buffer to only contain unique words
-    std::vector<uint32_t>::const_iterator w(_wordRefs.begin() + 1);
-    std::vector<uint32_t>::const_iterator we(_wordRefs.end());
+    auto w(_wordRefs.begin() + 1);
+    auto we(_wordRefs.end());
     uint32_t wordNum = 1;   // First valid word number
     const char *lastWord = getWordFromRef(*w);
     updateWordNum(*w, wordNum);
@@ -240,7 +243,11 @@ FieldInverter::saveWord(const vespalib::stringref word)
 {
     const size_t wordsSize = _words.size();
     // assert((wordsSize & 3) == 0); // Check alignment
-    size_t len = word.size();
+    size_t len = strnlen(word.data(), word.size());
+    if (len < word.size()) {
+        const Schema::IndexField &field = _schema.getIndexField(_fieldId);
+        LOG(error, "Detected NUL byte in word, length reduced from %zu to %zu, lid is %u, field is %s, truncated word is %s", word.size(), len, _docId, field.getName().c_str(), word.data());
+    }
     if (len == 0) {
         return 0u;
     }

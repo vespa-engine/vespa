@@ -6,8 +6,7 @@
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 void
 FakeSearch::doSeek(uint32_t docid)
@@ -47,6 +46,10 @@ FakeSearch::doUnpack(uint32_t docid)
     if (is_attr()) {
         _tfmda[0]->appendPosition(PosCtx(0, 0, sum_weight, 1));
     }
+    if (_tfmda[0]->needs_interleaved_features()) {
+        _tfmda[0]->setNumOccs(doc.num_occs);
+        _tfmda[0]->setFieldLength(doc.field_length);
+    }
 }
 
 void
@@ -57,5 +60,4 @@ FakeSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "term",  _term);
 }
 
-} // namespace search::queryeval
-} // namespace search
+}

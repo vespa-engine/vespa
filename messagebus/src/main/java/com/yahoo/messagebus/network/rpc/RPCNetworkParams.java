@@ -13,13 +13,18 @@ import com.yahoo.cloud.config.SlobroksConfig;
 public class RPCNetworkParams {
 
     private Identity identity = new Identity("");
-    private String slobrokConfigId = "admin/slobrok.0";
+    private String slobrokConfigId = "client";
     private SlobroksConfig slobroksConfig = null;
     private int listenPort = 0;
     private int maxInputBufferSize = 256 * 1024;
     private int maxOutputBufferSize = 256 * 1024;
     private double connectionExpireSecs = 30;
     private int numTargetsPerSpec = 1;
+    private int numNetworkThreads = 2;
+
+    private int transportEventsBeforeWakeup = 1;
+    public enum Optimization {LATENCY, THROUGHPUT}
+    Optimization optimization = Optimization.LATENCY;
 
     /**
      * Constructs a new instance of this class with reasonable default values.
@@ -42,6 +47,8 @@ public class RPCNetworkParams {
         maxInputBufferSize = params.maxInputBufferSize;
         maxOutputBufferSize = params.maxOutputBufferSize;
         numTargetsPerSpec = params.numTargetsPerSpec;
+        numNetworkThreads = params.numNetworkThreads;
+        optimization = params.optimization;
     }
 
     /**
@@ -152,6 +159,22 @@ public class RPCNetworkParams {
         return numTargetsPerSpec;
     }
 
+    public RPCNetworkParams setNumNetworkThreads(int numNetworkThreads) {
+        this.numNetworkThreads = numNetworkThreads;
+        return this;
+    }
+    int getNumNetworkThreads() {
+        return numNetworkThreads;
+    }
+
+    public RPCNetworkParams setOptimization(Optimization optimization) {
+        this.optimization = optimization;
+        return this;
+    }
+    Optimization getOptimization() {
+        return optimization;
+    }
+
     /**
      * Returns the maximum input buffer size allowed for the underlying FNET connection.
      *
@@ -193,6 +216,15 @@ public class RPCNetworkParams {
      */
     RPCNetworkParams setMaxOutputBufferSize(int maxOutputBufferSize) {
         this.maxOutputBufferSize = maxOutputBufferSize;
+        return this;
+    }
+
+    public int getTransportEventsBeforeWakeup() {
+        return transportEventsBeforeWakeup;
+    }
+
+    public RPCNetworkParams setTransportEventsBeforeWakeup(int transportEventsBeforeWakeup) {
+        this.transportEventsBeforeWakeup = transportEventsBeforeWakeup;
         return this;
     }
 }

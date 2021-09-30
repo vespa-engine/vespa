@@ -28,14 +28,16 @@ public final class FileReference {
     }
 
     @Override
-    public int hashCode() {
-        return value.hashCode();
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FileReference that = (FileReference) o;
+        return value.equals(that.value);
     }
 
     @Override
-    public boolean equals(Object other) {
-        return other instanceof FileReference &&
-                value.equals(((FileReference)other).value);
+    public int hashCode() {
+        return Objects.hash(value);
     }
 
     @Override

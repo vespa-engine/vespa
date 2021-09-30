@@ -29,6 +29,11 @@ private:
     feature_t _maxDistance;
     feature_t _scaleDistance;
     feature_t _halfResponse;
+    vespalib::string _arg_string;
+    uint32_t _attr_id;
+    bool _use_geo_pos;
+    bool _use_nns_tensor;
+    bool _use_item_label;
 
 public:
 
@@ -36,7 +41,7 @@ public:
     void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
-        return fef::ParameterDescriptions().desc().string();
+        return fef::ParameterDescriptions().desc().string().desc().string().string();
     }
     bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;

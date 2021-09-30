@@ -10,6 +10,7 @@
 #include <vespa/config/set/configinstancesourcefactory.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/config/print/asciiconfigwriter.h>
+#include <cassert>
 
 namespace config {
 
@@ -120,7 +121,7 @@ ServerSpec::createSourceFactory(const TimingValues & timingValues) const
 {
     const auto vespaVersion = VespaVersion::getCurrentVersion();
     return std::make_unique<FRTSourceFactory>(std::make_unique<FRTConnectionPool>(*this, timingValues), timingValues,
-                                              _protocolVersion, _traceLevel, vespaVersion, _compressionType);
+                                              _traceLevel, vespaVersion, _compressionType);
 }
 
 

@@ -3,6 +3,7 @@ package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
 
@@ -43,10 +44,10 @@ public class DeploymentSpecTest {
         assertEquals(1, spec.requireInstance("default").steps().size());
         assertFalse(spec.majorVersion().isPresent());
         assertTrue(spec.requireInstance("default").steps().get(0).concerns(Environment.test));
-        assertTrue(spec.requireInstance("default").deploysTo(Environment.test, Optional.empty()));
-        assertFalse(spec.requireInstance("default").deploysTo(Environment.test, Optional.of(RegionName.from("region1"))));
-        assertFalse(spec.requireInstance("default").deploysTo(Environment.staging, Optional.empty()));
-        assertFalse(spec.requireInstance("default").deploysTo(Environment.prod, Optional.empty()));
+        assertTrue(spec.requireInstance("default").concerns(Environment.test, Optional.empty()));
+        assertTrue(spec.requireInstance("default").concerns(Environment.test, Optional.of(RegionName.from("region1")))); // test steps specify no region
+        assertFalse(spec.requireInstance("default").concerns(Environment.staging, Optional.empty()));
+        assertFalse(spec.requireInstance("default").concerns(Environment.prod, Optional.empty()));
         assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
     }
 
@@ -80,9 +81,9 @@ public class DeploymentSpecTest {
         assertEquals(1, spec.steps().size());
         assertEquals(1, spec.requireInstance("default").steps().size());
         assertTrue(spec.requireInstance("default").steps().get(0).concerns(Environment.staging));
-        assertFalse(spec.requireInstance("default").deploysTo(Environment.test, Optional.empty()));
-        assertTrue(spec.requireInstance("default").deploysTo(Environment.staging, Optional.empty()));
-        assertFalse(spec.requireInstance("default").deploysTo(Environment.prod, Optional.empty()));
+        assertFalse(spec.requireInstance("default").concerns(Environment.test, Optional.empty()));
+        assertTrue(spec.requireInstance("default").concerns(Environment.staging, Optional.empty()));
+        assertFalse(spec.requireInstance("default").concerns(Environment.prod, Optional.empty()));
         assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
     }
 
@@ -109,14 +110,15 @@ public class DeploymentSpecTest {
         assertTrue(spec.requireInstance("default").steps().get(1).concerns(Environment.prod, Optional.of(RegionName.from("us-west1"))));
         assertTrue(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(1)).active());
 
-        assertFalse(spec.requireInstance("default").deploysTo(Environment.test, Optional.empty()));
-        assertFalse(spec.requireInstance("default").deploysTo(Environment.staging, Optional.empty()));
-        assertTrue(spec.requireInstance("default").deploysTo(Environment.prod, Optional.of(RegionName.from("us-east1"))));
-        assertTrue(spec.requireInstance("default").deploysTo(Environment.prod, Optional.of(RegionName.from("us-west1"))));
-        assertFalse(spec.requireInstance("default").deploysTo(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
+        assertFalse(spec.requireInstance("default").concerns(Environment.test, Optional.empty()));
+        assertFalse(spec.requireInstance("default").concerns(Environment.staging, Optional.empty()));
+        assertTrue(spec.requireInstance("default").concerns(Environment.prod, Optional.of(RegionName.from("us-east1"))));
+        assertTrue(spec.requireInstance("default").concerns(Environment.prod, Optional.of(RegionName.from("us-west1"))));
+        assertFalse(spec.requireInstance("default").concerns(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
         assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
 
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.requireInstance("default").upgradePolicy());
+        assertEquals(DeploymentSpec.UpgradeRollout.separate, spec.requireInstance("default").upgradeRollout());
     }
 
     @Test
@@ -288,12 +290,12 @@ public class DeploymentSpecTest {
         assertTrue(instance.steps().get(4).concerns(Environment.prod, Optional.of(RegionName.from("us-west1"))));
         assertTrue(((DeploymentSpec.DeclaredZone)instance.steps().get(4)).active());
 
-        assertTrue(instance.deploysTo(Environment.test, Optional.empty()));
-        assertFalse(instance.deploysTo(Environment.test, Optional.of(RegionName.from("region1"))));
-        assertTrue(instance.deploysTo(Environment.staging, Optional.empty()));
-        assertTrue(instance.deploysTo(Environment.prod, Optional.of(RegionName.from("us-east1"))));
-        assertTrue(instance.deploysTo(Environment.prod, Optional.of(RegionName.from("us-west1"))));
-        assertFalse(instance.deploysTo(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
+        assertTrue(instance.concerns(Environment.test, Optional.empty()));
+        assertTrue(instance.concerns(Environment.test, Optional.of(RegionName.from("region1")))); // test steps specify no region
+        assertTrue(instance.concerns(Environment.staging, Optional.empty()));
+        assertTrue(instance.concerns(Environment.prod, Optional.of(RegionName.from("us-east1"))));
+        assertTrue(instance.concerns(Environment.prod, Optional.of(RegionName.from("us-west1"))));
+        assertFalse(instance.concerns(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
         assertFalse(instance.globalServiceId().isPresent());
     }
 
@@ -359,33 +361,43 @@ public class DeploymentSpecTest {
     }
 
     @Test
+    public void productionSpecWithUpgradeRollout() {
+        StringReader r = new StringReader(
+                "<deployment>" +
+                "   <instance id='default'>" +
+                "      <upgrade rollout='leading' />" +
+                "   </instance>" +
+                "   <instance id='custom'/>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("leading", spec.requireInstance("default").upgradeRollout().toString());
+        assertEquals("separate", spec.requireInstance("custom").upgradeRollout().toString());
+    }
+
+    @Test
     public void productionSpecWithUpgradePolicy() {
         StringReader r = new StringReader(
                 "<deployment>" +
                 "   <instance id='default'>" +
                 "      <upgrade policy='canary'/>" +
-                "      <prod>" +
-                "         <region active='true'>us-west-1</region>" +
-                "         <region active='true'>us-central-1</region>" +
-                "         <region active='true'>us-east-3</region>" +
-                "      </prod>" +
                 "   </instance>" +
+                "   <instance id='custom'/>" +
                 "</deployment>"
         );
-
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("canary", spec.requireInstance("default").upgradePolicy().toString());
+        assertEquals("defaultPolicy", spec.requireInstance("custom").upgradePolicy().toString());
     }
 
     @Test
     public void upgradePolicyDefault() {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +
-                "   <upgrade policy='canary'/>" +
-                "   <instance id='instance1'>" +
-                "   </instance>" +
+                "   <upgrade policy='canary' rollout='leading'/>" +
+                "   <instance id='instance1'/>" +
                 "   <instance id='instance2'>" +
-                "      <upgrade policy='conservative'/>" +
+                "      <upgrade policy='conservative' rollout='separate'/>" +
                 "   </instance>" +
                 "</deployment>"
         );
@@ -393,6 +405,8 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("canary", spec.requireInstance("instance1").upgradePolicy().toString());
         assertEquals("conservative", spec.requireInstance("instance2").upgradePolicy().toString());
+        assertEquals("leading", spec.requireInstance("instance1").upgradeRollout().toString());
+        assertEquals("separate", spec.requireInstance("instance2").upgradeRollout().toString());
     }
 
     @Test
@@ -404,7 +418,7 @@ public class DeploymentSpecTest {
                     "      <upgrade policy='canary'/>" +
                     "      <prod>" +
                     "         <region active='true'>us-west-1</region>" +
-                    "         <delay hours='23'/>" +
+                    "         <delay hours='47'/>" +
                     "         <region active='true'>us-central-1</region>" +
                     "         <delay minutes='59' seconds='61'/>" +
                     "         <region active='true'>us-east-3</region>" +
@@ -417,8 +431,25 @@ public class DeploymentSpecTest {
         }
         catch (IllegalArgumentException e) {
             // success
-            assertEquals("The total delay specified is PT24H1S but max 24 hours is allowed", e.getMessage());
+            assertEquals("The total delay specified is PT48H1S but max 48 hours is allowed", e.getMessage());
         }
+    }
+
+    @Test
+    public void testOnlyAthenzServiceDefinedInInstance() {
+        StringReader r = new StringReader(
+                "<deployment athenz-domain='domain'>" +
+                "  <instance id='default' athenz-service='service' />" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+
+        assertEquals("domain", spec.athenzDomain().get().value());
+        assertEquals(1, spec.instances().size());
+
+        DeploymentInstanceSpec instance = spec.instances().get(0);
+        assertEquals("default", instance.name().value());
+        assertEquals("service", instance.athenzService(Environment.prod, RegionName.defaultName()).get().value());
     }
 
     @Test
@@ -652,7 +683,7 @@ public class DeploymentSpecTest {
     public void deploymentSpecWithIncreasinglyStrictUpgradePoliciesInParallel() {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +
-                "  <instance />" +
+                "  <instance id='instance0'/>" +
                 "  <parallel>" +
                 "     <instance id='instance1'>" +
                 "        <upgrade policy='conservative'/>" +
@@ -678,7 +709,7 @@ public class DeploymentSpecTest {
                 "        <upgrade policy='canary'/>" +
                 "     </instance>" +
                 "  </parallel>" +
-                "  <instance />" +
+                "  <instance id='instance3'/>" +
                 "</deployment>"
         );
         DeploymentSpec.fromXml(r);
@@ -891,9 +922,10 @@ public class DeploymentSpecTest {
     @Test
     public void athenz_service_is_overridden_from_environment() {
         StringReader r = new StringReader(
-                "<deployment athenz-domain='domain' athenz-service='service'>" +
+                "<deployment athenz-domain='domain' athenz-service='unused-service'>" +
                 "   <instance id='default' athenz-service='service'>" +
-                "      <test/>" +
+                "      <test />" +
+                "      <staging athenz-service='staging-service' />" +
                 "      <prod athenz-service='prod-service'>" +
                 "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
@@ -901,6 +933,12 @@ public class DeploymentSpecTest {
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("service",
+                     spec.requireInstance("default").athenzService(Environment.test,
+                                                                   RegionName.from("us-east-1")).get().value());
+        assertEquals("staging-service",
+                     spec.requireInstance("default").athenzService(Environment.staging,
+                                                                   RegionName.from("us-north-1")).get().value());
         assertEquals("prod-service",
                      spec.requireInstance("default").athenzService(Environment.prod,
                                                                    RegionName.from("us-west-1")).get().value());
@@ -1002,14 +1040,14 @@ public class DeploymentSpecTest {
     public void notificationsDefault() {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +
-                "   <notifications when=\"failing-commit\">" +
-                "      <email role=\"author\"/>" +
+                "   <notifications>" +
+                "      <email role=\"author\" when=\"failing\"/>" +
                 "      <email address=\"mary@dev\"/>" +
                 "   </notifications>" +
                 "   <instance id='instance1'>" +
                 "      <notifications when=\"failing\">" +
                 "         <email role=\"author\"/>" +
-                "         <email address=\"john@operator\"/>" +
+                "         <email address=\"john@operator\" when=\"failing-commit\"/>" +
                 "      </notifications>" +
                 "   </instance>" +
                 "   <instance id='instance2'>" +
@@ -1020,9 +1058,13 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         DeploymentInstanceSpec instance1 = spec.requireInstance("instance1");
         assertEquals(Set.of(author), instance1.notifications().emailRolesFor(failing));
-        assertEquals(Set.of("john@operator"), instance1.notifications().emailAddressesFor(failing));
+        assertEquals(Set.of(), instance1.notifications().emailAddressesFor(failing));
+        assertEquals(Set.of(author), instance1.notifications().emailRolesFor(failingCommit));
+        assertEquals(Set.of("john@operator"), instance1.notifications().emailAddressesFor(failingCommit));
 
         DeploymentInstanceSpec instance2 = spec.requireInstance("instance2");
+        assertEquals(Set.of(author), instance2.notifications().emailRolesFor(failing));
+        assertEquals(Set.of(), instance2.notifications().emailAddressesFor(failing));
         assertEquals(Set.of(author), instance2.notifications().emailRolesFor(failingCommit));
         assertEquals(Set.of("mary@dev"), instance2.notifications().emailAddressesFor(failingCommit));
     }

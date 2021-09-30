@@ -7,7 +7,9 @@
 #include "tls_stats_map.h"
 #include "tls_stats_factory.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/vespalib/util/jsonwriter.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -49,6 +51,8 @@ logTarget(const char * text, const FlushContext & ctx) {
         ctx.getHandler()->getCurrentSerialNumber());
 }
 
+VESPA_THREAD_STACK_TAG(flush_engine_executor)
+
 }
 
 FlushEngine::FlushMeta::FlushMeta(const vespalib::string & name, uint32_t id)
@@ -74,15 +78,15 @@ FlushEngine::FlushInfo::FlushInfo(uint32_t taskId, const IFlushTarget::SP &targe
 }
 
 FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStatsFactory,
-                         IFlushStrategy::SP strategy, uint32_t numThreads, uint32_t idleIntervalMS)
+                         IFlushStrategy::SP strategy, uint32_t numThreads, vespalib::duration idleInterval)
     : _closed(false),
       _maxConcurrent(numThreads),
-      _idleIntervalMS(idleIntervalMS),
+      _idleInterval(idleInterval),
       _taskId(0),
-      _threadPool(128 * 1024),
+      _threadPool(128_Ki),
       _strategy(std::move(strategy)),
       _priorityStrategy(),
-      _executor(numThreads, 128 * 1024),
+      _executor(numThreads, 128_Ki, flush_engine_executor),
       _lock(),
       _cond(),
       _handlers(),
@@ -91,7 +95,9 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
       _strategyLock(),
       _strategyCond(),
       _tlsStatsFactory(std::move(tlsStatsFactory)),
-      _pendingPrune()
+      _pendingPrune(),
+      _normal_flush_token(std::make_shared<search::FlushToken>()),
+      _gc_flush_token(std::make_shared<search::FlushToken>())
 { }
 
 FlushEngine::~FlushEngine()
@@ -114,6 +120,7 @@ FlushEngine::close()
     {
         std::lock_guard<std::mutex> strategyGuard(_strategyLock);
         std::lock_guard<std::mutex> guard(_lock);
+        _gc_flush_token->request_stop();
         _closed = true;
         _cond.notify_all();
     }
@@ -145,13 +152,13 @@ FlushEngine::canFlushMore(const std::unique_lock<std::mutex> &guard) const
 }
 
 bool
-FlushEngine::wait(size_t minimumWaitTimeIfReady)
+FlushEngine::wait(vespalib::duration minimumWaitTimeIfReady, bool ignorePendingPrune)
 {
     std::unique_lock<std::mutex> guard(_lock);
-    if ( (minimumWaitTimeIfReady > 0) && canFlushMore(guard) && _pendingPrune.empty()) {
-        _cond.wait_for(guard, std::chrono::milliseconds(minimumWaitTimeIfReady));
+    if ( (minimumWaitTimeIfReady != vespalib::duration::zero()) && canFlushMore(guard) && _pendingPrune.empty()) {
+        _cond.wait_for(guard, minimumWaitTimeIfReady);
     }
-    while ( ! canFlushMore(guard) && _pendingPrune.empty()) {
+    while ( ! canFlushMore(guard) && ( ignorePendingPrune || _pendingPrune.empty())) {
         _cond.wait_for(guard, 1s); // broadcast when flush done
     }
     return !_closed;
@@ -162,7 +169,7 @@ FlushEngine::Run(FastOS_ThreadInterface *, void *)
 {
     bool shouldIdle = false;
     vespalib::string prevFlushName;
-    while (wait(shouldIdle ? _idleIntervalMS : 0)) {
+    while (wait(shouldIdle ? _idleInterval : vespalib::duration::zero(), false)) {
         shouldIdle = false;
         if (prune()) {
             continue; // Prune attempted on one or more handlers
@@ -175,8 +182,8 @@ FlushEngine::Run(FastOS_ThreadInterface *, void *)
         } else {
             shouldIdle = true;
         }
-        LOG(debug, "Making another wait(idle=%s, timeMS=%d) last was '%s'",
-            shouldIdle ? "true" : "false", shouldIdle ? _idleIntervalMS : 0, prevFlushName.c_str());
+        LOG(debug, "Making another wait(idle=%s, timeS=%1.3f) last was '%s'",
+            shouldIdle ? "true" : "false", shouldIdle ? vespalib::to_s(_idleInterval) : 0, prevFlushName.c_str());
     }
     _executor.sync();
     prune();
@@ -214,7 +221,8 @@ FlushEngine::prune()
     return true;
 }
 
-bool FlushEngine::isFlushing(const std::lock_guard<std::mutex> & guard, const vespalib::string & name) const
+bool
+FlushEngine::isFlushing(const std::lock_guard<std::mutex> & guard, const vespalib::string & name) const
 {
     (void) guard;
     for(const auto & it : _flushing) {
@@ -266,6 +274,16 @@ FlushEngine::getSortedTargetList()
     return ret;
 }
 
+std::shared_ptr<search::IFlushToken>
+FlushEngine::get_flush_token(const FlushContext& ctx)
+{
+    if (ctx.getTarget()->getType() == IFlushTarget::Type::GC) {
+        return _gc_flush_token;
+    } else {
+        return _normal_flush_token;
+    }
+}
+
 FlushContext::SP
 FlushEngine::initNextFlush(const FlushContext::List &lst)
 {
@@ -274,7 +292,7 @@ FlushEngine::initNextFlush(const FlushContext::List &lst)
         if (LOG_WOULD_LOG(event)) {
             EventLogger::flushInit(it->getName());
         }
-        if (it->initFlush()) {
+        if (it->initFlush(get_flush_token(*it))) {
             ctx = it;
             break;
         }
@@ -290,8 +308,8 @@ FlushEngine::flushAll(const FlushContext::List &lst)
 {
     LOG(debug, "%ld targets to flush.", lst.size());
     for (const FlushContext::SP & ctx : lst) {
-        if (wait(0)) {
-            if (ctx->initFlush()) {
+        if (wait(vespalib::duration::zero(), true)) {
+            if (ctx->initFlush(get_flush_token(*ctx))) {
                 logTarget("initiated", *ctx);
                 _executor.execute(std::make_unique<FlushTask>(initFlush(*ctx), *this, ctx));
             } else {
@@ -355,7 +373,7 @@ FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
     }
     if (LOG_WOULD_LOG(event)) {
         FlushStats stats = ctx.getTarget()->getLastFlushStats();
-        EventLogger::flushComplete(ctx.getName(), vespalib::count_ms(duration), ctx.getTarget()->getFlushedSerialNum(),
+        EventLogger::flushComplete(ctx.getName(), duration, ctx.getTarget()->getFlushedSerialNum(),
                                    stats.getPath(), stats.getPathElementsToLog());
     }
     LOG(debug, "FlushEngine::flushDone(taskId='%d') took '%f' secs", taskId, vespalib::to_s(duration));

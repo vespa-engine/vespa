@@ -1,9 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "name_collection.h"
-#include <assert.h>
+#include <cassert>
 
-namespace vespalib {
-namespace metrics {
+namespace vespalib::metrics {
 
 using Guard = std::lock_guard<std::mutex>;
 
@@ -16,6 +15,8 @@ NameCollection::NameCollection()
     assert(_names.size() == 1);
     (void) first; // in case of NOP asserts
 }
+
+NameCollection::~NameCollection() = default;
 
 const vespalib::string &
 NameCollection::lookup(size_t id) const
@@ -44,5 +45,4 @@ NameCollection::size() const
     return _names_by_id.size();
 }
 
-} // namespace vespalib::metrics
-} // namespace vespalib
+}

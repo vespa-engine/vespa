@@ -7,10 +7,9 @@ import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.fs4.MapEncoder;
-import com.yahoo.log.LogLevel;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.query.Highlight;
-import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.dispatch.Dispatcher;
@@ -57,6 +56,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -182,7 +183,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     //---------------- Tracing ----------------------------------------------------
 
-    private static Logger log = Logger.getLogger(Query.class.getName());
+    private static final Logger log = Logger.getLogger(Query.class.getName());
 
     /** The time this query was created */
     private long startTime;
@@ -201,7 +202,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public static final CompoundName TIMEOUT = new CompoundName("timeout");
 
 
-    private static QueryProfileType argumentType;
+    private static final QueryProfileType argumentType;
     static {
         argumentType = new QueryProfileType("native");
         argumentType.setBuiltin(true);
@@ -227,7 +228,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     /** The aliases of query properties */
-    private static Map<String, CompoundName> propertyAliases;
+    private static final Map<String, CompoundName> propertyAliases;
     static {
         Map<String,CompoundName> propertyAliasesBuilder = new HashMap<>();
         addAliases(Query.getArgumentType(), propertyAliasesBuilder);
@@ -317,7 +318,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * Creates a query from a request
      *
      * @param request the HTTP request from which this is created
-     * @param queryProfile the query profile to use for this query, or null if none.
+     * @param queryProfile the query profile to use for this query, or null if none
      */
     public Query(HttpRequest request, CompiledQueryProfile queryProfile) {
         this(request, request.propertyMap(), queryProfile);
@@ -326,27 +327,39 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /**
      * Creates a query from a request
      *
-     * @param request the HTTP request from which this is created.
-     * @param requestMap the property map of the query.
-     * @param queryProfile the query profile to use for this query, or null if none.
+     * @param request the HTTP request from which this is created
+     * @param requestMap the property map of the query
+     * @param queryProfile the query profile to use for this query, or null if none
      */
     public Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
         super(new QueryPropertyAliases(propertyAliases));
         this.httpRequest = request;
-        init(requestMap, queryProfile);
+        init(requestMap, queryProfile, Embedder.throwsOnUse);
     }
 
-    private void init(Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
-        startTime = System.currentTimeMillis();
+    // TODO: Deprecate most constructors above here
+
+    private Query(Builder builder) {
+        this(builder.getRequest(), builder.getRequestMap(), builder.getQueryProfile(), builder.getEmbedder());
+    }
+
+    private Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile, Embedder embedder) {
+        super(new QueryPropertyAliases(propertyAliases));
+        this.httpRequest = request;
+        init(requestMap, queryProfile, embedder);
+    }
+
+    private void init(Map<String, String> requestMap, CompiledQueryProfile queryProfile, Embedder embedder) {
+        startTime = httpRequest.getJDiscRequest().creationTime(TimeUnit.MILLISECONDS);
         if (queryProfile != null) {
             // Move all request parameters to the query profile just to validate that the parameter settings are legal
-            Properties queryProfileProperties = new QueryProfileProperties(queryProfile);
+            Properties queryProfileProperties = new QueryProfileProperties(queryProfile, embedder);
             properties().chain(queryProfileProperties);
             // TODO: Just checking legality rather than actually setting would be faster
             setPropertiesFromRequestMap(requestMap, properties(), true); // Adds errors to the query for illegal set attempts
 
             // Create the full chain
-            properties().chain(new QueryProperties(this, queryProfile.getRegistry())).
+            properties().chain(new QueryProperties(this, queryProfile.getRegistry(), embedder)).
                          chain(new ModelObjectMap()).
                          chain(new RequestContextProperties(requestMap)).
                          chain(queryProfileProperties).
@@ -365,7 +378,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
         else { // bypass these complications if there is no query profile to get values from and validate against
             properties().
-                    chain(new QueryProperties(this, CompiledQueryProfileRegistry.empty)).
+                    chain(new QueryProperties(this, CompiledQueryProfileRegistry.empty, embedder)).
                     chain(new PropertyMap()).
                     chain(new DefaultProperties());
             setPropertiesFromRequestMap(requestMap, properties(), false);
@@ -413,11 +426,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             if (field.getType() == FieldType.genericQueryProfileType) { // Generic map
                 CompoundName fullName = prefix.append(field.getName());
                 for (Map.Entry<String, Object> entry : originalProperties.listProperties(fullName, context).entrySet()) {
-                    try {
-                        properties().set(fullName.append(entry.getKey()), entry.getValue(), context);
-                    } catch (IllegalArgumentException e) {
-                        throw new QueryException("Invalid request parameter", e);
-                    }
+                    properties().set(fullName.append(entry.getKey()), entry.getValue(), context);
                 }
             }
             else if (field.getType() instanceof QueryProfileFieldType) { // Nested arguments
@@ -427,11 +436,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                 CompoundName fullName = prefix.append(field.getName());
                 Object value = originalProperties.get(fullName, context);
                 if (value != null) {
-                    try {
-                        properties().set(fullName, value, context);
-                    } catch (IllegalArgumentException e) {
-                        throw new QueryException("Invalid request parameter", e);
-                    }
+                    properties().set(fullName, value, context);
                 }
             }
         }
@@ -440,13 +445,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /** Calls properties.set on all entries in requestMap */
     private void setPropertiesFromRequestMap(Map<String, String> requestMap, Properties properties, boolean ignoreSelect) {
         for (var entry : requestMap.entrySet()) {
-            try {
-                if (ignoreSelect && entry.getKey().equals(Select.SELECT)) continue;
-                properties.set(entry.getKey(), entry.getValue(), requestMap);
-            }
-            catch (IllegalArgumentException e) {
-                throw new QueryException("Invalid request parameter", e);
-            }
+            if (ignoreSelect && entry.getKey().equals(Select.SELECT)) continue;
+            properties.set(entry.getKey(), entry.getValue(), requestMap);
         }
     }
 
@@ -663,7 +663,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         // getQueryTree isn't exception safe
         try {
             queryTree = model.getQueryTree().toString();
-        } catch (Exception e) {
+        } catch (Exception | StackOverflowError e) {
             queryTree = "[Could not parse user input: " + model.getQueryString() + "]";
         }
         return "query '" + queryTree + "'";
@@ -675,7 +675,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         // getQueryTree isn't exception safe
         try {
             queryTree = model.getQueryTree().toString();
-        } catch (Exception e) {
+        } catch (Exception | StackOverflowError e) {
             queryTree = "Could not parse user input: " + model.getQueryString();
         }
         return "query=[" + queryTree + "]" + " offset=" + getOffset() + " hits=" + getHits() + "]";
@@ -726,7 +726,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         if (includeQuery)
             message += ": [" + queryTreeText() + "]";
 
-        log.log(LogLevel.DEBUG,message);
+        log.log(Level.FINE,message);
 
         // Pass 0 as traceLevel as the trace level check is already done above,
         // and it is not propagated to trace until execution has started
@@ -995,6 +995,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         clone.properties().setParentQuery(clone);
         assert (clone.properties().getParentQuery() == clone);
 
+        clone.setTimeout(getTimeout());
         clone.setTraceLevel(getTraceLevel());
         clone.setExplainLevel(getExplainLevel());
         clone.setHits(getHits());
@@ -1122,6 +1123,61 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         getModel().prepare(getRanking());
         getPresentation().prepare();
         getRanking().prepare();
+    }
+
+    public static class Builder {
+
+        private HttpRequest request = null;
+        private Map<String, String> requestMap = null;
+        private CompiledQueryProfile queryProfile = null;
+        private Embedder embedder = Embedder.throwsOnUse;
+
+        public Builder setRequest(String query) {
+            request = HttpRequest.createTestRequest(query, com.yahoo.jdisc.http.HttpRequest.Method.GET);
+            return this;
+        }
+
+        public Builder setRequest(HttpRequest request) {
+            this.request = request;
+            return this;
+        }
+
+        public HttpRequest getRequest() {
+            if (request == null)
+                return HttpRequest.createTestRequest("", com.yahoo.jdisc.http.HttpRequest.Method.GET);
+            return request;
+        }
+
+        /** Sets the request mao to use explicitly. If not set, the request map will be getRequest().propertyMap() */
+        public Builder setRequestMap(Map<String, String> requestMap) {
+            this.requestMap = requestMap;
+            return this;
+        }
+
+        public Map<String, String> getRequestMap() {
+            if (requestMap == null)
+                return getRequest().propertyMap();
+            return requestMap;
+        }
+
+        public Builder setQueryProfile(CompiledQueryProfile queryProfile) {
+            this.queryProfile = queryProfile;
+            return this;
+        }
+
+        /** Returns the query profile of this query, or null if none. */
+        public CompiledQueryProfile getQueryProfile() { return queryProfile; }
+
+        public Builder setEmbedder(Embedder embedder) {
+            this.embedder = embedder;
+            return this;
+        }
+
+        public Embedder getEmbedder() { return embedder; }
+
+        /** Creates a new query from this builder. No properties are required to before calling this. */
+        public Query build() { return new Query(this); }
+
     }
 
 }

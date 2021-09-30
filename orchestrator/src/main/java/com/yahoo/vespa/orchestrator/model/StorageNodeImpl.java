@@ -2,7 +2,7 @@
 package com.yahoo.vespa.orchestrator.model;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
@@ -62,7 +62,7 @@ public class StorageNodeImpl implements StorageNode {
         ConfigId configId = storageService.configId();
         int nodeIndex = VespaModelUtil.getStorageNodeIndex(configId);
 
-        logger.log(LogLevel.DEBUG, () -> "Setting cluster controller state for " +
+        logger.log(Level.FINE, () -> "Setting cluster controller state for " +
                 "application " + applicationInstance.reference().asString() +
                 ", host " + hostName() +
                 ", cluster name " + clusterId +
@@ -104,12 +104,6 @@ public class StorageNodeImpl implements StorageNode {
                     HostedVespaPolicy.SET_NODE_STATE_CONSTRAINT,
                     "Failed to set state to " + wantedNodeState + " in cluster controller: " + response.reason);
         }
-
-        String logSuffix = context.isProbe() ?
-                " would have been set to " + wantedNodeState + " (this is a probe)" :
-                " has been set to " + wantedNodeState;
-        logger.log(LogLevel.INFO, "Storage node " + nodeIndex + " in cluster " + clusterId +
-                " application " + applicationInstance.reference().asString() + " on host " + hostName() + logSuffix);
     }
 
     @Override

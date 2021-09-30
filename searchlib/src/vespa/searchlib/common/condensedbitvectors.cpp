@@ -2,6 +2,7 @@
 #include "condensedbitvectors.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/rcuvector.h>
+#include <cassert>
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
@@ -128,9 +129,7 @@ void throwIllegalKey(size_t numKeys, size_t key)
 
 }
 
-CondensedBitVector::~CondensedBitVector()
-{
-}
+CondensedBitVector::~CondensedBitVector() = default;
 
 void
 CondensedBitVector::addKey(Key key) const
@@ -143,7 +142,7 @@ CondensedBitVector::addKey(Key key) const
 CondensedBitVector::UP
 CondensedBitVector::create(size_t size, GenerationHolder &genHolder)
 {
-    return UP(new CondensedBitVectorT<uint32_t>(size, genHolder));
+    return std::make_unique<CondensedBitVectorT<uint32_t>>(size, genHolder);
 }
 
 }

@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
@@ -12,12 +11,9 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
-import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.node.Reports;
-import com.yahoo.vespa.hosted.provision.node.Status;
 
-import javax.swing.*;
+import javax.swing.JFrame;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -78,10 +74,14 @@ public class AllocationSimulator {
     }
 
     private Node node(String hostname, Flavor flavor, Optional<String> parent, Optional<String> tenant) {
-        var ipConfig = new IP.Config(Set.of("127.0.0.1"), parent.isPresent() ? Set.of() : getAdditionalIP());
-        return new Node("fake", ipConfig, hostname, parent, flavor, Status.initial(),
-                        parent.isPresent() ? Node.State.ready : Node.State.active, allocation(tenant, flavor), History.empty(),
-                        parent.isPresent() ? NodeType.tenant : NodeType.host, new Reports(), Optional.empty(), Optional.empty());
+        Node.Builder builder = Node.create("fake", hostname, flavor,
+                parent.isPresent() ? Node.State.ready : Node.State.active,
+                parent.isPresent() ? NodeType.tenant : NodeType.host)
+                .ipConfig(IP.Config.of(Set.of("127.0.0.1"), parent.isPresent() ? Set.of() : getAdditionalIP(), List.of()));
+        parent.ifPresent(builder::parentHostname);
+        allocation(tenant, flavor).ifPresent(builder::allocation);
+
+        return builder.build();
     }
 
     private Set<String> getAdditionalIP() {
@@ -93,7 +93,7 @@ public class AllocationSimulator {
     private Optional<Allocation> allocation(Optional<String> tenant, Flavor flavor) {
         if (tenant.isPresent()) {
             Allocation allocation = new Allocation(app(tenant.get()),
-                                                   ClusterMembership.from("container/id1/3", new Version()),
+                                                   ClusterMembership.from("container/id1/3", new Version(), Optional.empty()),
                                                    flavor.resources(),
                                                    Generation.initial(),
                                                    false);
@@ -107,10 +107,6 @@ public class AllocationSimulator {
                 .tenant(tenant)
                 .applicationName("test")
                 .instanceName("default").build();
-    }
-
-    private ClusterSpec cluster() {
-        return ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), ClusterSpec.Group.from(1), Version.fromString("6.41"), false);
     }
 
     /* ------------ Methods to add events to the system ----------------*/

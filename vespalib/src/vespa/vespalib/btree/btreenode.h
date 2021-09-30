@@ -11,10 +11,10 @@
 #include <utility>
 #include <cstddef>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename, typename> class Allocator;
-template <typename> class BufferType;
+template <typename, typename> class BufferType;
 
 namespace allocator {
 template <typename, typename ...> struct Assigner;
@@ -22,7 +22,7 @@ template <typename, typename ...> struct Assigner;
 
 }
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename, typename, typename, size_t, size_t> class BTreeNodeAllocator;
 template <typename, typename, typename, size_t, size_t> class BTreeNodeStore;
@@ -63,7 +63,7 @@ protected:
     ~BTreeNode() { assert(_isFrozen); }
 
 public:
-    typedef datastore::EntryRef Ref;
+    using Ref = datastore::EntryRef;
 
     bool isLeaf() const { return _level == 0u; }
     bool getFrozen() const { return _isFrozen; }
@@ -172,7 +172,7 @@ protected:
           _keys()
     {}
 
-    ~BTreeNodeT() {}
+    ~BTreeNodeT() = default;
 
     BTreeNodeT(const BTreeNodeT &rhs)
         : BTreeNode(rhs)
@@ -276,8 +276,7 @@ public:
 };
 
 template <typename KeyT, typename AggrT, uint32_t NumSlots = 16>
-class BTreeInternalNode : public BTreeNodeTT<KeyT, BTreeNode::Ref, AggrT,
-                                             NumSlots>
+class BTreeInternalNode : public BTreeNodeTT<KeyT, BTreeNode::Ref, AggrT, NumSlots>
 {
 public:
     typedef BTreeNodeTT<KeyT, BTreeNode::Ref, AggrT, NumSlots> ParentType;
@@ -288,7 +287,7 @@ public:
     friend class BTreeNodeStore;
     template <typename, uint32_t>
     friend class BTreeNodeDataWrap;
-    template <typename>
+    template <typename, typename>
     friend class datastore::BufferType;
     template <typename, typename>
     friend class datastore::Allocator;
@@ -308,7 +307,7 @@ public:
     typedef Ref DataType;
 private:
     uint32_t _validLeaves;
-
+protected:
     BTreeInternalNode()
         : ParentType(EMPTY_LEVEL),
           _validLeaves(0u)
@@ -326,7 +325,7 @@ private:
         _validLeaves = rhs._validLeaves;
         return *this;
     }
-
+private:
     template <typename NodeAllocatorType>
     uint32_t countValidLeaves(uint32_t start, uint32_t end, NodeAllocatorType &allocator);
 
@@ -370,6 +369,26 @@ public:
         }
     }
 
+    /**
+     * Call func with leaf entry key value as argument for all leaf entries in subtrees
+     * for children [start_idx, end_idx).
+     */
+    template <typename NodeStoreType, typename FunctionType>
+    void foreach_key_range(NodeStoreType &store, uint32_t start_idx, uint32_t end_idx, FunctionType func) const {
+        const BTreeNode::Ref *it = this->_data;
+        const BTreeNode::Ref *ite = it + end_idx;
+        it += start_idx;
+        if (this->getLevel() > 1u) {
+            for (; it != ite; ++it) {
+                store.mapInternalRef(*it)->foreach_key(store, func);
+            }
+        } else {
+            for (; it != ite; ++it) {
+                store.mapLeafRef(*it)->foreach_key(func);
+            }
+        }
+    }
+
     template <typename NodeStoreType, typename FunctionType>
     void foreach(NodeStoreType &store, FunctionType func) const {
         const BTreeNode::Ref *it = this->_data;
@@ -397,7 +416,7 @@ public:
     friend class BTreeNodeAllocator;
     template <typename, typename, typename, size_t, size_t>
     friend class BTreeNodeStore;
-    template <typename>
+    template <typename, typename>
     friend class datastore::BufferType;
     template <typename, typename>
     friend class datastore::Allocator;
@@ -415,17 +434,16 @@ public:
     typedef BTreeKeyData<KeyT, DataT> KeyDataType;
     typedef KeyT KeyType;
     typedef DataT DataType;
-private:
+protected:
     BTreeLeafNode() : ParentType(LEAF_LEVEL) {}
 
-protected:
     BTreeLeafNode(const BTreeLeafNode &rhs)
         : ParentType(rhs)
     {}
 
     BTreeLeafNode(const KeyDataType *smallArray, uint32_t arraySize);
 
-    ~BTreeLeafNode() {}
+    ~BTreeLeafNode() = default;
 
     BTreeLeafNode &operator=(const BTreeLeafNode &rhs) {
         ParentType::operator=(rhs);
@@ -454,6 +472,19 @@ public:
     void foreach_key(FunctionType func) const {
         const KeyT *it = _keys;
         const KeyT *ite = it + _validSlots;
+        for (; it != ite; ++it) {
+            func(*it);
+        }
+    }
+
+    /**
+     * Call func with leaf entry key value as argument for leaf entries [start_idx, end_idx).
+     */
+    template <typename FunctionType>
+    void foreach_key_range(uint32_t start_idx, uint32_t end_idx, FunctionType func) const {
+        const KeyT *it = _keys;
+        const KeyT *ite = it + end_idx;
+        it += start_idx;
         for (; it != ite; ++it) {
             func(*it);
         }
@@ -497,13 +528,10 @@ extern template class BTreeNodeTT<uint32_t, int32_t, MinMaxAggregated, 16>;
 extern template class BTreeInternalNode<uint32_t, NoAggregated, 16>;
 extern template class BTreeInternalNode<uint32_t, MinMaxAggregated, 16>;
 extern template class BTreeLeafNode<uint32_t, uint32_t, NoAggregated, 16>;
-extern template class BTreeLeafNode<uint32_t, BTreeNoLeafData, NoAggregated,
-                                    16>;
+extern template class BTreeLeafNode<uint32_t, BTreeNoLeafData, NoAggregated, 16>;
 extern template class BTreeLeafNode<uint32_t, int32_t, MinMaxAggregated, 16>;
 extern template class BTreeLeafNodeTemp<uint32_t, uint32_t, NoAggregated, 16>;
-extern template class BTreeLeafNodeTemp<uint32_t, int32_t, MinMaxAggregated,
-                                        16>;
-extern template class BTreeLeafNodeTemp<uint32_t, BTreeNoLeafData,
-                                        NoAggregated, 16>;
+extern template class BTreeLeafNodeTemp<uint32_t, int32_t, MinMaxAggregated, 16>;
+extern template class BTreeLeafNodeTemp<uint32_t, BTreeNoLeafData, NoAggregated, 16>;
 
 }

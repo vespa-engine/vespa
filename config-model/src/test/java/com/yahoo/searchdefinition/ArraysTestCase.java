@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author bratseth
  */
-public class ArraysTestCase extends SearchDefinitionTestCase {
+public class ArraysTestCase extends SchemaTestCase {
 
     @Test
     public void testArrayImporting() throws IOException, ParseException {

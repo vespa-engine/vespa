@@ -11,11 +11,11 @@
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentmessage.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
-#include <vespa/vespalib/util/time.h>
 #include <thread>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -23,6 +23,8 @@ using document::test::makeDocumentBucket;
 using namespace ::testing;
 
 namespace storage {
+
+vespalib::string _Storage("storage");
 
 struct CommunicationManagerTest : Test {
 
@@ -35,8 +37,8 @@ struct CommunicationManagerTest : Test {
     {
         auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)),
                                                      document::DocumentId("id:ns:mytype::mydoc"),
-                                                     "[all]");
-        cmd->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
+                                                     document::AllFields::NAME);
+        cmd->setAddress(api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1));
         cmd->setPriority(priority);
         return cmd;
     }
@@ -71,8 +73,8 @@ TEST_F(CommunicationManagerTest, simple) {
 
     // Send a message through from distributor to storage
     auto cmd = std::make_shared<api::GetCommand>(
-            makeDocumentBucket(document::BucketId(0)), document::DocumentId("id:ns:mytype::mydoc"), "[all]");
-    cmd->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
+            makeDocumentBucket(document::BucketId(0)), document::DocumentId("id:ns:mytype::mydoc"), document::AllFields::NAME);
+    cmd->setAddress(api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1));
     distributorLink->sendUp(cmd);
     storageLink->waitForMessages(1, MESSAGE_WAIT_TIME_SEC);
     ASSERT_GT(storageLink->getNumCommands(), 0);
@@ -158,6 +160,7 @@ TEST_F(CommunicationManagerTest, commands_are_dequeued_in_fifo_order) {
                                  storConfig.getConfigId());
     DummyStorageLink *storageLink = new DummyStorageLink();
     storage.push_back(std::unique_ptr<StorageLink>(storageLink));
+    storage.open();
 
     // Message dequeing does not start before we invoke `open` on the storage
     // link chain, so we enqueue messages in randomized priority order before
@@ -166,9 +169,8 @@ TEST_F(CommunicationManagerTest, commands_are_dequeued_in_fifo_order) {
     // Lower number == higher priority.
     std::vector<api::StorageMessage::Priority> pris{200, 0, 255, 128};
     for (auto pri : pris) {
-        storage.enqueue(createDummyCommand(pri));
+        storage.dispatch_async(createDummyCommand(pri));
     }
-    storage.open();
     storageLink->waitForMessages(pris.size(), MESSAGE_WAIT_TIME_SEC);
 
     for (size_t i = 0; i < pris.size(); ++i) {
@@ -191,12 +193,12 @@ TEST_F(CommunicationManagerTest, replies_are_dequeued_in_fifo_order) {
                                  storConfig.getConfigId());
     DummyStorageLink *storageLink = new DummyStorageLink();
     storage.push_back(std::unique_ptr<StorageLink>(storageLink));
+    storage.open();
 
     std::vector<api::StorageMessage::Priority> pris{200, 0, 255, 128};
     for (auto pri : pris) {
-        storage.enqueue(createDummyCommand(pri)->makeReply());
+        storage.dispatch_async(createDummyCommand(pri)->makeReply());
     }
-    storage.open();
     storageLink->waitForMessages(pris.size(), MESSAGE_WAIT_TIME_SEC);
 
     // Want FIFO order for replies, not priority-sorted order.

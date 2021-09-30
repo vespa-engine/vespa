@@ -9,10 +9,10 @@ vespa_add_library(searchcore_documentmetastore STATIC
     documentmetastoreflushtarget.cpp
     documentmetastoreinitializer.cpp
     documentmetastoresaver.cpp
+    gid_to_lid_map_key.cpp
     search_context.cpp
     lid_allocator.cpp
     lid_gid_key_comparator.cpp
-    lid_reuse_delayer_config.cpp
     lidreusedelayer.cpp
     lidstatevector.cpp
     lid_hold_list.cpp

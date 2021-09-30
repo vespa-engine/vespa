@@ -1,24 +1,32 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributormetricsset.h"
-#include <vespa/metrics/loadmetric.hpp>
-#include <vespa/metrics/summetric.hpp>
+#include <vespa/vespalib/util/memoryusage.h>
 
-namespace storage {
+namespace storage::distributor {
 
 using metrics::MetricSet;
 
-DistributorMetricSet::DistributorMetricSet(const metrics::LoadTypeSet& lt)
+BucketDbMetrics::BucketDbMetrics(const vespalib::string& db_type, metrics::MetricSet* owner)
+    : metrics::MetricSet("bucket_db", {{"bucket_db_type", db_type}}, "", owner),
+      memory_usage(this)
+{}
+
+BucketDbMetrics::~BucketDbMetrics() = default;
+
+//TODO Vespa 8 all metrics with .sum in the name should have that removed.
+DistributorMetricSet::DistributorMetricSet()
     : MetricSet("distributor", {{"distributor"}}, ""),
-      puts(lt, PersistenceOperationMetricSet("puts"), this),
-      updates(lt, UpdateMetricSet(), this),
-      update_puts(lt, PersistenceOperationMetricSet("update_puts"), this),
-      update_gets(lt, PersistenceOperationMetricSet("update_gets"), this),
-      removes(lt, PersistenceOperationMetricSet("removes"), this),
-      removelocations(lt, PersistenceOperationMetricSet("removelocations"), this),
-      gets(lt, PersistenceOperationMetricSet("gets"), this),
-      stats(lt, PersistenceOperationMetricSet("stats"), this),
-      getbucketlists(lt, PersistenceOperationMetricSet("getbucketlists"), this),
-      visits(lt, VisitorMetricSet(), this),
+      puts("puts.sum", this),
+      updates(this),
+      update_puts("update_puts", this),
+      update_gets("update_gets", this),
+      update_metadata_gets("update_metadata_gets", this),
+      removes("removes.sum", this),
+      removelocations("removelocations.sum", this),
+      gets("gets.sum", this),
+      stats("stats", this),
+      getbucketlists("getbucketlists", this),
+      visits(this),
       stateTransitionTime("state_transition_time", {},
               "Time it takes to complete a cluster state transition. If a "
               "state transition is preempted before completing, its elapsed "
@@ -40,15 +48,11 @@ DistributorMetricSet::DistributorMetricSet(const metrics::LoadTypeSet& lt)
       bytesStored("bytesstored",
               {{"logdefault"},{"yamasdefault"}},
               "Number of bytes stored in all buckets controlled by "
-              "this distributor", this)
-{
-    docsStored.logOnlyIfSet();
-    bytesStored.logOnlyIfSet();
-}
+              "this distributor", this),
+      mutable_dbs("mutable", this),
+      read_only_dbs("read_only", this)
+{}
 
-DistributorMetricSet::~DistributorMetricSet() { }
+DistributorMetricSet::~DistributorMetricSet() = default;
 
 } // storage
-
-template class metrics::LoadMetric<storage::PersistenceOperationMetricSet>;
-template class metrics::SumMetric<storage::PersistenceOperationMetricSet>;

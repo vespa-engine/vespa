@@ -6,10 +6,14 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 
 /**
+ * A service/application model of the controller with health status.
+ *
  * @author mpolden
  */
 public class ControllerApplication extends ConfigServerLikeApplication {
+
     public ControllerApplication() {
         super("controller", NodeType.controller, ClusterSpec.Type.container, ServiceType.CONTROLLER);
     }
+
 }

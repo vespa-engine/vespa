@@ -7,7 +7,7 @@
 
 namespace vespalib {
 
-template< typename K, typename V, typename H = vespalib::hash<K>, typename EQ = std::equal_to<>, typename M=hashtable_base::prime_modulator >
+template< typename K, typename V, typename H = vespalib::hash<K>, typename EQ = std::equal_to<>, typename M=hashtable_base::and_modulator >
 class hash_map
 {
 public:
@@ -26,7 +26,8 @@ public:
     hash_map & operator = (hash_map &&) noexcept = default;
     hash_map(const hash_map &) = default;
     hash_map & operator = (const hash_map &) = default;
-    hash_map(size_t reserveSize=0);
+    hash_map();
+    explicit hash_map(size_t reserveSize);
     hash_map(size_t reserveSize, H hasher, EQ equality);
     hash_map(std::initializer_list<value_type> input);
     ~hash_map() noexcept;
@@ -51,6 +52,8 @@ public:
     void erase(iterator it)                     { return erase(it->first); }
     void erase(const_iterator it)               { return erase(it->first); }
     iterator find(const K & key)                { return _ht.find(key); }
+    size_t count(const K & key)           const { return _ht.find(key) != _ht.end() ? 1 : 0; }
+    bool contains(const K & key)          const { return _ht.find(key) != end(); }
     const_iterator find(const K & key)    const { return _ht.find(key); }
 
     template< typename AltKey >

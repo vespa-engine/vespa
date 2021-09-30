@@ -1,10 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.controller;
 
+import com.yahoo.concurrent.maintenance.JobControl;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
-import com.yahoo.restapi.SlimeJsonResponse;
+
+import java.util.TreeSet;
 
 /**
  * A response containing maintenance job status
@@ -26,7 +28,7 @@ public class JobsResponse extends SlimeJsonResponse {
             jobArray.addObject().setString("name", jobName);
 
         Cursor inactiveArray = root.setArray("inactive");
-        for (String jobName : jobControl.inactiveJobs())
+        for (String jobName : new TreeSet<>(jobControl.inactiveJobs()))
             inactiveArray.addString(jobName);
 
         return slime;

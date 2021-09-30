@@ -7,6 +7,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -25,34 +27,42 @@ public class NodeAgentContextManagerTest {
     private final NodeAgentContextManager manager = new NodeAgentContextManager(clock, initialContext);
 
     @Test(timeout = TIMEOUT)
-    public void returns_immediately_if_next_context_is_ready() throws InterruptedException {
+    public void context_is_ignored_unless_scheduled_while_waiting() {
         NodeAgentContext context1 = generateContext();
         manager.scheduleTickWith(context1, clock.instant());
-
         assertSame(initialContext, manager.currentContext());
-        assertSame(context1, manager.nextContext());
-        assertSame(context1, manager.currentContext());
+
+        AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
+        manager.waitUntilWaitingForNextContext();
+        assertFalse(async.isCompleted());
+
+        NodeAgentContext context2 = generateContext();
+        manager.scheduleTickWith(context2, clock.instant());
+
+        assertSame(context2, async.awaitResult().response.get());
+        assertSame(context2, manager.currentContext());
     }
 
     @Test(timeout = TIMEOUT)
-    public void returns_no_earlier_than_at_given_time() throws InterruptedException {
+    public void returns_no_earlier_than_at_given_time() {
+        AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
+        manager.waitUntilWaitingForNextContext();
+
         NodeAgentContext context1 = generateContext();
         Instant returnAt = clock.instant().plusMillis(500);
         manager.scheduleTickWith(context1, returnAt);
 
-        assertSame(initialContext, manager.currentContext());
-        assertSame(context1, manager.nextContext());
+        assertSame(context1, async.awaitResult().response.get());
         assertSame(context1, manager.currentContext());
         // Is accurate to a millisecond
         assertFalse(clock.instant().plusMillis(1).isBefore(returnAt));
     }
 
     @Test(timeout = TIMEOUT)
-    public void blocks_in_nextContext_until_one_is_scheduled() throws InterruptedException {
+    public void blocks_in_nextContext_until_one_is_scheduled() {
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
-        assertFalse(async.response.isPresent());
-        Thread.sleep(10);
-        assertFalse(async.response.isPresent());
+        manager.waitUntilWaitingForNextContext();
+        assertFalse(async.isCompleted());
 
         NodeAgentContext context1 = generateContext();
         manager.scheduleTickWith(context1, clock.instant());
@@ -63,11 +73,10 @@ public class NodeAgentContextManagerTest {
     }
 
     @Test(timeout = TIMEOUT)
-    public void blocks_in_nextContext_until_interrupt() throws InterruptedException {
+    public void blocks_in_nextContext_until_interrupt() {
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
-        assertFalse(async.response.isPresent());
-        Thread.sleep(10);
-        assertFalse(async.response.isPresent());
+        manager.waitUntilWaitingForNextContext();
+        assertFalse(async.isCompleted());
 
         manager.interrupt();
 
@@ -77,13 +86,15 @@ public class NodeAgentContextManagerTest {
     }
 
     @Test(timeout = TIMEOUT)
-    public void setFrozen_does_not_block_with_no_timeout() throws InterruptedException {
+    public void setFrozen_does_not_block_with_no_timeout() {
         assertFalse(manager.setFrozen(false, Duration.ZERO));
 
         // Generate new context and get it from the supplier, this completes the unfreeze
         NodeAgentContext context1 = generateContext();
+        AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
+        manager.waitUntilWaitingForNextContext();
         manager.scheduleTickWith(context1, clock.instant());
-        assertSame(context1, manager.nextContext());
+        assertSame(context1, async.awaitResult().response.get());
 
         assertTrue(manager.setFrozen(false, Duration.ZERO));
     }
@@ -100,17 +111,34 @@ public class NodeAgentContextManagerTest {
 
     @Test(timeout = TIMEOUT)
     public void setFrozen_is_successful_if_converged_in_time() throws InterruptedException {
-        AsyncExecutor<Boolean> async = new AsyncExecutor<>(() -> manager.setFrozen(false, Duration.ofMillis(500)));
-
-        assertFalse(async.response.isPresent());
+        AsyncExecutor<NodeAgentContext> asyncConsumer1 = new AsyncExecutor<>(() -> {
+            NodeAgentContext context = manager.nextContext();
+            Thread.sleep(200); // Simulate running NodeAgent::converge
+            return context;
+        });
+        manager.waitUntilWaitingForNextContext();
 
         NodeAgentContext context1 = generateContext();
         manager.scheduleTickWith(context1, clock.instant());
-        assertSame(context1, manager.nextContext());
+        Thread.sleep(10);
 
-        async.awaitResult();
-        assertEquals(Optional.of(true), async.response);
-        assertFalse(async.exception.isPresent());
+        // Scheduler wants to freeze
+        AsyncExecutor<Boolean> asyncScheduler = new AsyncExecutor<>(() -> manager.setFrozen(true, Duration.ofMillis(500)));
+        Thread.sleep(20);
+        assertFalse(asyncConsumer1.isCompleted()); // Still running NodeAgent::converge
+        assertSame(context1, asyncConsumer1.awaitResult().response.get());
+        assertFalse(asyncScheduler.isCompleted()); // Still waiting for consumer to converge to frozen
+
+        AsyncExecutor<NodeAgentContext> asyncConsumer2 = new AsyncExecutor<>(manager::nextContext);
+        manager.waitUntilWaitingForNextContext();
+        assertFalse(asyncConsumer2.isCompleted()); // Waiting for next context
+        asyncScheduler.awaitResult(); // We should be able to converge to frozen now
+
+        // Interrupt manager to end asyncConsumer2
+        manager.interrupt();
+        asyncConsumer2.awaitResult();
+
+        assertEquals(Optional.of(true), asyncScheduler.response);
     }
 
     private static NodeAgentContext generateContext() {
@@ -118,39 +146,30 @@ public class NodeAgentContextManagerTest {
     }
 
     private static class AsyncExecutor<T> {
-        private final Object monitor = new Object();
-        private final Thread thread;
+        private final CountDownLatch latch = new CountDownLatch(1);
         private volatile Optional<T> response = Optional.empty();
         private volatile Optional<Exception> exception = Optional.empty();
-        private boolean completed = false;
 
-        private AsyncExecutor(ThrowingSupplier<T> supplier) {
-            this.thread = new Thread(() -> {
+        private AsyncExecutor(Callable<T> supplier) {
+            new Thread(() -> {
                 try {
-                    response = Optional.of(supplier.get());
+                    response = Optional.of(supplier.call());
                 } catch (Exception e) {
                     exception = Optional.of(e);
                 }
-                synchronized (monitor) {
-                    completed = true;
-                    monitor.notifyAll();
-                }
-            });
-            this.thread.start();
+                latch.countDown();
+            }).start();
         }
 
-        private void awaitResult() {
-            synchronized (monitor) {
-                while (!completed) {
-                    try {
-                        monitor.wait();
-                    } catch (InterruptedException ignored) { }
-                }
-            }
+        private AsyncExecutor<T> awaitResult() {
+            try {
+                latch.await();
+            } catch (InterruptedException ignored) { }
+            return this;
         }
-    }
 
-    private interface ThrowingSupplier<T> {
-        T get() throws Exception;
+        private boolean isCompleted() {
+            return latch.getCount() == 0;
+        }
     }
 }

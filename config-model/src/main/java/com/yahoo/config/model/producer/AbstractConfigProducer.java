@@ -6,7 +6,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.subscription.ConfigInstanceUtil;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
@@ -43,7 +43,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
     private final String subId;
     private String configId = null;
 
-    private List<Service> descendantServices = new ArrayList<>();
+    private final List<Service> descendantServices = new ArrayList<>();
 
     private AbstractConfigProducer parent = null;
 
@@ -59,8 +59,8 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
      * Creates a new AbstractConfigProducer with the given parent and subId.
      * This constructor will add the resulting producer to the children of parent.
      *
-     * @param parent  The parent of this ConfigProducer
-     * @param subId   The fragment of the config id for the producer
+     * @param parent the parent of this ConfigProducer
+     * @param subId  the fragment of the config id for the producer
      */
     public AbstractConfigProducer(AbstractConfigProducer parent, String subId) {
         this(subId);
@@ -69,7 +69,13 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         }
     }
 
-    protected final void setParent(AbstractConfigProducer parent) {
+    /** Removes this from the config model */
+    protected void remove() {
+        if (parent != null)
+            parent.removeChild(this);
+    }
+
+    protected final void setParent(AbstractConfigProducer<?> parent) {
         this.parent = parent;
         computeConfigId();
     }
@@ -92,7 +98,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
     /**
      * Adds a child to this config producer.
      *
-     * @param child  The child config producer to add.
+     * @param child the child config producer to add
      */
     protected void addChild(CHILD child) {
         if (child == null) {
@@ -202,8 +208,8 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
             found = parent.cascadeConfig(builder);
 
         boolean foundHere = builder.dispatchGetConfig(this);
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "cascadeconfig in " + this + ", getting config " +
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "cascadeconfig in " + this + ", getting config " +
                     builder.getClass().getDeclaringClass().getName() + " for config id '" + configId + "' found here=" + foundHere);
         }
         found = found || foundHere;
@@ -217,15 +223,11 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
             didApply = parent.addUserConfig(builder);
         }
 
-        if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, "User configs is: " + userConfigs.toString());
-        }
+        log.log(Level.FINEST, () -> "User configs is: " + userConfigs.toString());
         // TODO: What do we do with md5. Currently ignored for user configs?
         ConfigDefinitionKey key = new ConfigDefinitionKey(builder.getDefName(), builder.getDefNamespace());
         if (userConfigs.get(key) != null) {
-            if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Apply in " + configId);
-            }
+            log.log(Level.FINEST, () -> "Apply in " + configId);
             applyUserConfig(builder, userConfigs.get(key));
             didApply = true;
         }

@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -41,10 +40,9 @@ public interface NodeAdmin {
     Duration subsystemFreezeDuration();
 
     /**
-     * Stop services on these nodes
-     * @param nodes List of hostnames to suspend
+     * Stop all services on these nodes
      */
-    void stopNodeAgentServices(List<String> nodes);
+    void stopNodeAgentServices();
 
     /**
      * Start node-admin schedulers.

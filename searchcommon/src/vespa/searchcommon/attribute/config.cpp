@@ -4,24 +4,29 @@
 
 namespace search::attribute {
 
-Config::Config() :
-    _basicType(BasicType::NONE),
-    _type(CollectionType::SINGLE),
-    _fastSearch(false),
-    _huge(false),
-    _enableBitVectors(false),
-    _enableOnlyBitVector(false),
-    _isFilter(false),
-    _fastAccess(false),
-    _mutable(false),
-    _growStrategy(),
-    _compactionStrategy(),
-    _predicateParams(),
-    _tensorType(vespalib::eval::ValueType::error_type())
+Config::Config() noexcept :
+        _basicType(BasicType::NONE),
+        _type(CollectionType::SINGLE),
+        _fastSearch(false),
+        _huge(false),
+        _enableBitVectors(false),
+        _enableOnlyBitVector(false),
+        _isFilter(false),
+        _fastAccess(false),
+        _mutable(false),
+        _paged(false),
+        _match(Match::UNCASED),
+        _dictionary(),
+        _growStrategy(),
+        _compactionStrategy(),
+        _predicateParams(),
+        _tensorType(vespalib::eval::ValueType::error_type()),
+        _distance_metric(DistanceMetric::Euclidean),
+        _hnsw_index_params()
 {
 }
 
-Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_)
+Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_) noexcept
     : _basicType(bt),
       _type(ct),
       _fastSearch(fastSearch_),
@@ -31,10 +36,15 @@ Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_)
       _isFilter(false),
       _fastAccess(false),
       _mutable(false),
+      _paged(false),
+      _match(Match::UNCASED),
+      _dictionary(),
       _growStrategy(),
       _compactionStrategy(),
       _predicateParams(),
-      _tensorType(vespalib::eval::ValueType::error_type())
+      _tensorType(vespalib::eval::ValueType::error_type()),
+      _distance_metric(DistanceMetric::Euclidean),
+      _hnsw_index_params()
 {
 }
 
@@ -56,11 +66,16 @@ Config::operator==(const Config &b) const
            _isFilter == b._isFilter &&
            _fastAccess == b._fastAccess &&
            _mutable == b._mutable &&
+           _paged == b._paged &&
+           _match == b._match &&
+           _dictionary == b._dictionary &&
            _growStrategy == b._growStrategy &&
            _compactionStrategy == b._compactionStrategy &&
            _predicateParams == b._predicateParams &&
            (_basicType.type() != BasicType::Type::TENSOR ||
-            _tensorType == b._tensorType);
+            _tensorType == b._tensorType) &&
+            _distance_metric == b._distance_metric &&
+            _hnsw_index_params == b._hnsw_index_params;
 }
 
 }

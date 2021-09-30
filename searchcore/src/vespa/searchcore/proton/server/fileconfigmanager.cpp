@@ -4,8 +4,6 @@
 #include "bootstrapconfig.h"
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/config/print/fileconfigwriter.h>
-#include <vespa/config/print/fileconfigsnapshotreader.h>
-#include <vespa/config/print/fileconfigsnapshotwriter.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
@@ -19,6 +17,7 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <sstream>
+#include <cassert>
 #include <fcntl.h>
 
 #include <vespa/log/log.h>
@@ -41,7 +40,8 @@ using vespa::config::search::summary::JuniperrcConfig;
 using vespa::config::content::core::BucketspacesConfig;
 using vespalib::nbostream;
 
-typedef IndexMetaInfo::SnapshotList SnapshotList;
+using SnapshotList = IndexMetaInfo::SnapshotList;
+using Snapshot = IndexMetaInfo::Snapshot;
 using namespace std::chrono_literals;
 
 namespace proton {
@@ -55,7 +55,6 @@ makeSnapDirBaseName(SerialNum serialNum)
     os << "config-" << serialNum;
     return os.str();
 }
-
 
 void
 fsyncFile(const vespalib::string &fileName)
@@ -74,9 +73,7 @@ fsyncFile(const vespalib::string &fileName)
 
 template <class Config>
 void
-saveHelper(const vespalib::string &snapDir,
-           const vespalib::string &name,
-           const Config &config)
+saveHelper(const vespalib::string &snapDir, const vespalib::string &name, const Config &config)
 {
     vespalib::string fileName(snapDir + "/" + name + ".cfg");
     config::FileConfigWriter writer(fileName);
@@ -93,7 +90,6 @@ save(const vespalib::string &snapDir, const Config &config)
     saveHelper(snapDir, config.defName(), config);
 }
 
-
 class ConfigFile
 {
     typedef std::shared_ptr<ConfigFile> SP;
@@ -106,16 +102,12 @@ public:
     ConfigFile();
     ~ConfigFile();
 
-    ConfigFile(const vespalib::string &name,
-               const vespalib::string &fullName);
+    ConfigFile(const vespalib::string &name, const vespalib::string &fullName);
 
     nbostream &serialize(nbostream &stream) const;
-
     nbostream &deserialize(nbostream &stream);
-
     void save(const vespalib::string &snapDir) const;
 };
-
 
 ConfigFile::ConfigFile()
     : _name(),
@@ -124,11 +116,9 @@ ConfigFile::ConfigFile()
 {
 }
 
-ConfigFile::~ConfigFile() {}
+ConfigFile::~ConfigFile() = default;
 
-
-ConfigFile::ConfigFile(const vespalib::string &name,
-                       const vespalib::string &fullName)
+ConfigFile::ConfigFile(const vespalib::string &name, const vespalib::string &fullName)
     : _name(name),
       _modTime(0),
       _content()
@@ -144,11 +134,10 @@ ConfigFile::ConfigFile(const vespalib::string &name,
     file.Close();
 }
 
-
 nbostream &
 ConfigFile::serialize(nbostream &stream) const
 {
-    assert(strchr(_name.c_str(), '/') == NULL);
+    assert(strchr(_name.c_str(), '/') == nullptr);
     stream << _name;
     stream << static_cast<int64_t>(_modTime);;
     uint32_t sz = _content.size();
@@ -157,12 +146,11 @@ ConfigFile::serialize(nbostream &stream) const
     return stream;
 }
 
-
 nbostream &
 ConfigFile::deserialize(nbostream &stream)
 {
     stream >> _name;
-    assert(strchr(_name.c_str(), '/') == NULL);
+    assert(strchr(_name.c_str(), '/') == nullptr);
     int64_t modTime;
     stream >> modTime;
     _modTime = modTime;
@@ -174,7 +162,6 @@ ConfigFile::deserialize(nbostream &stream)
     stream.adjustReadPos(sz);
     return stream;
 }
-
 
 void
 ConfigFile::save(const vespalib::string &snapDir) const
@@ -193,20 +180,17 @@ ConfigFile::save(const vespalib::string &snapDir) const
     fsyncFile(fullName);
 }
 
-
 nbostream &
 operator<<(nbostream &stream, const ConfigFile &configFile)
 {
     return configFile.serialize(stream);
 }
 
-
 nbostream &
 operator>>(nbostream &stream, ConfigFile &configFile)
 {
     return configFile.deserialize(stream);
 }
-
 
 std::vector<vespalib::string>
 getFileList(const vespalib::string &snapDir)
@@ -222,7 +206,6 @@ getFileList(const vespalib::string &snapDir)
     std::sort(res.begin(), res.end());
     return res;
 }
-
 
 }
 
@@ -243,11 +226,7 @@ FileConfigManager::FileConfigManager(const vespalib::string &baseDir,
     _protonConfig.reset(new ProtonConfig());
 }
 
-
-FileConfigManager::~FileConfigManager()
-{
-}
-
+FileConfigManager::~FileConfigManager() = default;
 
 SerialNum
 FileConfigManager::getBestSerialNum() const
@@ -255,7 +234,6 @@ FileConfigManager::getBestSerialNum() const
     Snapshot snap = _info.getBestSnapshot();
     return snap.valid ? snap.syncToken : UINT64_C(0);
 }
-
 
 SerialNum
 FileConfigManager::getOldestSerialNum() const
@@ -271,10 +249,8 @@ FileConfigManager::getOldestSerialNum() const
     return res;
 }
 
-
 void
-FileConfigManager::saveConfig(const DocumentDBConfig &snapshot,
-                              SerialNum serialNum)
+FileConfigManager::saveConfig(const DocumentDBConfig &snapshot, SerialNum serialNum)
 {
     if (getBestSerialNum() >= serialNum) {
         LOG(warning, "Config for serial >= %" PRIu64 " already saved",
@@ -336,8 +312,7 @@ void addEmptyFile(vespalib::string snapDir, vespalib::string fileName)
 }
 
 void
-FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
-                              search::SerialNum serialNum,
+FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot, search::SerialNum serialNum,
                               DocumentDBConfig::SP &loadedSnapshot)
 {
     vespalib::string snapDirBaseName(makeSnapDirBaseName(serialNum));
@@ -345,17 +320,20 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
     config::DirSpec spec(snapDir);
 
     addEmptyFile(snapDir, "ranking-constants.cfg");
+    addEmptyFile(snapDir, "ranking-expressions.cfg");
+    addEmptyFile(snapDir, "onnx-models.cfg");
     addEmptyFile(snapDir, "imported-fields.cfg");
 
     DocumentDBConfigHelper dbc(spec, _docTypeName);
 
-    typedef DocumenttypesConfig DTC;
-    typedef DocumentDBConfig::DocumenttypesConfigSP DTCSP;
-    DTCSP docTypesCfg(config::ConfigGetter<DTC>::getConfig("", spec).release());
+    using DTC = DocumenttypesConfig;
+    using DTCSP =  DocumentDBConfig::DocumenttypesConfigSP;
+    DTCSP docTypesCfg = config::ConfigGetter<DTC>::getConfig("", spec);
     std::shared_ptr<const DocumentTypeRepo> repo;
     if (currentSnapshot.getDocumenttypesConfigSP() &&
         currentSnapshot.getDocumentTypeRepoSP() &&
-        currentSnapshot.getDocumenttypesConfig() == *docTypesCfg) {
+        (currentSnapshot.getDocumenttypesConfig() == *docTypesCfg))
+    {
         docTypesCfg = currentSnapshot.getDocumenttypesConfigSP();
         repo = currentSnapshot.getDocumentTypeRepoSP();
     } else {
@@ -387,7 +365,6 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
     loadedSnapshot = dbc.getConfig();
     loadedSnapshot->setConfigId(_configId);
 }
-
 
 void
 FileConfigManager::removeInvalid()
@@ -421,7 +398,6 @@ FileConfigManager::removeInvalid()
     (void) saveRemInvalidSnap;
 }
 
-
 void
 FileConfigManager::prune(SerialNum serialNum)
 {
@@ -447,14 +423,12 @@ FileConfigManager::prune(SerialNum serialNum)
     removeInvalid();
 }
 
-
 bool
 FileConfigManager::hasValidSerial(SerialNum serialNum) const
 {
     IndexMetaInfo::Snapshot snap = _info.getSnapshot(serialNum);
     return snap.valid;
 }
-
 
 SerialNum
 FileConfigManager::getPrevValidSerial(SerialNum serialNum) const
@@ -470,7 +444,6 @@ FileConfigManager::getPrevValidSerial(SerialNum serialNum) const
     return res;
 }
 
-
 void
 FileConfigManager::serializeConfig(SerialNum serialNum, nbostream &stream)
 {
@@ -483,12 +456,10 @@ FileConfigManager::serializeConfig(SerialNum serialNum, nbostream &stream)
     uint32_t numConfigs = configs.size();
     stream << numConfigs;
     for (const auto &config : configs) {
-        ConfigFile file(config,
-                        snapDir + "/" + config);
+        ConfigFile file(config, snapDir + "/" + config);
         stream << file;
     }
 }
-
 
 void
 FileConfigManager::deserializeConfig(SerialNum serialNum, nbostream &stream)
@@ -524,13 +495,10 @@ FileConfigManager::deserializeConfig(SerialNum serialNum, nbostream &stream)
     }
 }
 
-
 void
 FileConfigManager::setProtonConfig(const ProtonConfigSP &protonConfig)
 {
     _protonConfig = protonConfig;
 }
-
-
 
 } // namespace proton

@@ -9,9 +9,9 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
+import com.yahoo.net.HostName;
 
 import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -22,7 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.yahoo.log.LogLevel.DEBUG;
+import static java.util.logging.Level.FINE;
 
 /**
  * The parent node for all Host instances, and thus accessible
@@ -32,31 +32,38 @@ import static com.yahoo.log.LogLevel.DEBUG;
  */
 public class HostSystem extends AbstractConfigProducer<Host> {
 
-    private static Logger log = Logger.getLogger(HostSystem.class.getName());
+    private static final Logger log = Logger.getLogger(HostSystem.class.getName());
+    private static final boolean doCheckIp;
 
-    private Map<String,String> hostnames = new LinkedHashMap<>();
 
     private final Map<String, HostResource> hostname2host = new LinkedHashMap<>();
     private final HostProvisioner provisioner;
     private final DeployLogger deployLogger;
 
-    public HostSystem(AbstractConfigProducer parent, String name, HostProvisioner provisioner, DeployLogger deployLogger) {
+    static {
+        String checkIpProperty = System.getProperty("config_model.ip_check", "true");
+        doCheckIp = ! checkIpProperty.equalsIgnoreCase("false");
+    }
+
+    public HostSystem(AbstractConfigProducer<?> parent, String name, HostProvisioner provisioner, DeployLogger deployLogger) {
         super(parent, name);
         this.provisioner = provisioner;
         this.deployLogger = deployLogger;
     }
 
     void checkName(String hostname) {
-        // Give a warning if the host does not exist
-        try {
-            Object address = java.net.InetAddress.getByName(hostname);
-        } catch (UnknownHostException e) {
-            deployLogger.log(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
-        }
-        if (! hostname.contains(".")) {
-            deployLogger.log(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
-                                            "since it is not a canonical hostname. " +
-                                            "Disregard this warning when testing in a Docker container.");
+        if (doCheckIp) {
+            // Give a warning if the host does not exist
+            try {
+                var inetAddr = java.net.InetAddress.getByName(hostname);
+                String canonical = inetAddr.getCanonicalHostName();
+                if (!hostname.equals(canonical)) {
+                    deployLogger.logApplicationPackage(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
+                            "since it differs from its canonical hostname '" + canonical + "' (check DNS and /etc/hosts).");
+                }
+            } catch (UnknownHostException e) {
+                deployLogger.logApplicationPackage(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
+            }
         }
     }
 
@@ -67,47 +74,24 @@ public class HostSystem extends AbstractConfigProducer<Host> {
      * @return the host with the given hostname, or null if no such host
      */
     public HostResource getHostByHostname(String name) {
-        // TODO: please eliminate the following ugly hack
-        if ("localhost.fortestingpurposesonly".equals(name)) {
-            String localhost = "localhost";
-            if ( ! getChildren().containsKey(localhost)) {
-                new Host(this, localhost);
+        String localhost = "localhost";
+        HostResource hostResource = hostname2host.get(name);
+        if (hostResource == null) {
+            // Create a new HostResource if this is the host this code is running on (as it is when running tests)
+            if (HostName.getLocalhost().equals(name)) {
+                if (! getChildren().containsKey(localhost)) {
+                    new Host(this, localhost);
+                }
+                hostResource = new HostResource(getChildren().get(localhost));
             }
-            return new HostResource(getChildren().get(localhost));
         }
-        return hostname2host.get(name);
-    }
-
-    /**
-     * Returns the canonical name of a given host. This will cache names for faster lookup.
-     *
-     * @param hostname the hostname to retrieve the canonical hostname for.
-     * @return The canonical hostname, or null if unable to resolve.
-     * @throws UnknownHostException if the hostname cannot be resolved
-     */
-    public String getCanonicalHostname(String hostname) throws UnknownHostException {
-        if ( ! hostnames.containsKey(hostname)) {
-            hostnames.put(hostname, lookupCanonicalHostname(hostname));
-        }
-        return hostnames.get(hostname);
-    }
-
-    /**
-     * Static helper method that looks up the canonical name of a given host.
-     *
-     * @param hostname the hostname to retrieve the canonical hostname for.
-     * @return The canonical hostname, or null if unable to resolve.
-     * @throws UnknownHostException if the hostname cannot be resolved
-     */
-    // public - This is used by amenders outside this repo
-    public static String lookupCanonicalHostname(String hostname) throws UnknownHostException {
-        return java.net.InetAddress.getByName(hostname).getCanonicalHostName();
+        return hostResource;
     }
 
     @Override
     public String toString() {
         return "hosts [" + hostname2host.values().stream()
-                                                 .map(host -> host.getHostname())
+                                                 .map(HostResource::getHostname)
                                                  .collect(Collectors.joining(", ")) +
                "]";
     }
@@ -139,8 +123,8 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         }
     }
 
-    public Map<HostResource, ClusterMembership> allocateHosts(ClusterSpec cluster, Capacity capacity, int groups, DeployLogger logger) {
-        List<HostSpec> allocatedHosts = provisioner.prepare(cluster, capacity, groups, new ProvisionDeployLogger(logger));
+    public Map<HostResource, ClusterMembership> allocateHosts(ClusterSpec cluster, Capacity capacity, DeployLogger logger) {
+        List<HostSpec> allocatedHosts = provisioner.prepare(cluster, capacity, new ProvisionDeployLogger(logger));
         // TODO: Even if HostResource owns a set of memberships, we need to return a map because the caller needs the current membership.
         Map<HostResource, ClusterMembership> retAllocatedHosts = new LinkedHashMap<>();
         for (HostSpec spec : allocatedHosts) {
@@ -148,7 +132,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
             HostResource host = getExistingHost(spec).orElseGet(() -> addNewHost(spec));
             retAllocatedHosts.put(host, spec.membership().orElse(null));
         }
-        retAllocatedHosts.keySet().forEach(host -> log.log(DEBUG, () -> "Allocated host " + host.getHostname() + " with flavor " + host.getFlavor()));
+        retAllocatedHosts.keySet().forEach(host -> log.log(FINE, () -> "Allocated host " + host.getHostname() + " with resources " + host.advertisedResources()));
         return retAllocatedHosts;
     }
 
@@ -159,7 +143,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         if (hosts.isEmpty()) {
             return Optional.empty();
         } else {
-            log.log(DEBUG, () -> "Found existing host resource for " + key.hostname() + " with flavor " + hosts.get(0).getFlavor());
+            log.log(FINE, () -> "Found existing host resource for " + key.hostname() + " with resources" + hosts.get(0).advertisedResources());
             return Optional.of(hosts.get(0));
         }
     }
@@ -169,7 +153,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     }
 
     Set<HostSpec> getHostSpecs() {
-        return getHosts().stream().map(host -> host.spec()).collect(Collectors.toCollection(LinkedHashSet::new));
+        return getHosts().stream().map(HostResource::spec).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /** A provision logger which forwards to a deploy logger */

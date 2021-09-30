@@ -7,19 +7,33 @@ import com.google.inject.binder.AnnotatedBindingBuilder;
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
-import com.yahoo.jdisc.application.*;
+import com.yahoo.jdisc.application.Application;
+import com.yahoo.jdisc.application.ContainerActivator;
+import com.yahoo.jdisc.application.ContainerBuilder;
+import com.yahoo.jdisc.application.DeactivatedContainer;
+import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.core.ApplicationLoader;
 import com.yahoo.jdisc.core.BootstrapLoader;
 import com.yahoo.jdisc.core.FelixFramework;
 import com.yahoo.jdisc.core.FelixParams;
-import com.yahoo.jdisc.handler.*;
+import com.yahoo.jdisc.handler.BindingNotFoundException;
+import com.yahoo.jdisc.handler.CompletionHandler;
+import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.handler.RequestDeniedException;
+import com.yahoo.jdisc.handler.RequestDispatch;
+import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.CurrentContainer;
 
 import java.net.URI;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -27,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * {@link BootstrapLoader} that provides convenient access to the {@link ContainerActivator} and {@link
  * CurrentContainer} interfaces. A typical test case using this class looks as follows:</p>
  * <pre>
- * {@literal @}Test
+ *{@literal @}Test
  * public void requireThatMyComponentIsWellBehaved() {
  *     TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
  *     ContainerBuilder builder = driver.newContainerBuilder();

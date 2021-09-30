@@ -8,7 +8,6 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -30,7 +29,7 @@ public class ContentClusterRemovalValidator implements ChangeValidator {
                                   now);
         }
 
-        return Collections.emptyList();
+        return List.of();
     }
 
 }

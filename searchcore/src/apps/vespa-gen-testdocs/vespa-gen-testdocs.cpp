@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
@@ -66,7 +67,7 @@ shafile(const string &baseDir,
     string fullFile(prependBaseDir(baseDir, file));
     FastOS_File f;
     std::ostringstream os;
-    Alloc buf = Alloc::alloc(65536, MemoryAllocator::HUGEPAGE_SIZE, 0x1000);
+    Alloc buf = Alloc::alloc_aligned(64_Ki, 0x1000);
     f.EnableDirectIO();
     bool openres = f.OpenReadOnly(fullFile.c_str());
     if (!openres) {
@@ -98,10 +99,10 @@ shafile(const string &baseDir,
 
 class StringGenerator
 {
-    search::Rand48 &_rnd;
+    vespalib::Rand48 &_rnd;
 
 public:
-    StringGenerator(search::Rand48 &rnd);
+    StringGenerator(vespalib::Rand48 &rnd);
 
     void
     rand_string(string &res, uint32_t minLen, uint32_t maxLen);
@@ -114,7 +115,7 @@ public:
 };
 
 
-StringGenerator::StringGenerator(search::Rand48 &rnd)
+StringGenerator::StringGenerator(vespalib::Rand48 &rnd)
     : _rnd(rnd)
 {
 }
@@ -219,12 +220,12 @@ class ConstTextFieldGenerator : public FieldGenerator
 {
     string _value;
 public:
-    ConstTextFieldGenerator(std::vector<string> argv);
+    ConstTextFieldGenerator(std::vector<string> argv) noexcept;
     virtual ~ConstTextFieldGenerator() override;
     virtual void generateValue(vespalib::asciistream &doc, uint32_t id) override;
 };
 
-ConstTextFieldGenerator::ConstTextFieldGenerator(std::vector<string> argv)
+ConstTextFieldGenerator::ConstTextFieldGenerator(std::vector<string> argv) noexcept
     : FieldGenerator(argv[0]),
       _value()
 {
@@ -283,7 +284,7 @@ PrefixTextFieldGenerator::generateValue(vespalib::asciistream &doc, uint32_t id)
 
 class RandTextFieldGenerator : public FieldGenerator
 {
-    search::Rand48 &_rnd;
+    vespalib::Rand48 &_rnd;
     uint32_t _numWords;
     StringArray _strings;
     uint32_t _minFill;
@@ -291,7 +292,7 @@ class RandTextFieldGenerator : public FieldGenerator
 
 public:
     RandTextFieldGenerator(const string &name,
-                           search::Rand48 &rnd,
+                           vespalib::Rand48 &rnd,
                            uint32_t numWords,
                            uint32_t minFill,
                            uint32_t maxFill);
@@ -302,7 +303,7 @@ public:
 
 
 RandTextFieldGenerator::RandTextFieldGenerator(const string &name,
-                                               search::Rand48 &rnd,
+                                               vespalib::Rand48 &rnd,
                                                uint32_t numWords,
                                                uint32_t minFill,
                                                uint32_t randFill)
@@ -354,7 +355,7 @@ class ModTextFieldGenerator : public FieldGenerator
 
 public:
     ModTextFieldGenerator(const string &name,
-                          search::Rand48 &rnd,
+                          vespalib::Rand48 &rnd,
                           const std::vector<uint32_t> &mods);
     virtual ~ModTextFieldGenerator();
     virtual void generateValue(vespalib::asciistream &doc, uint32_t id) override;
@@ -362,7 +363,7 @@ public:
 
 
 ModTextFieldGenerator::ModTextFieldGenerator(const string &name,
-                                             [[maybe_unused]] search::Rand48 &rnd,
+                                             [[maybe_unused]] vespalib::Rand48 &rnd,
                                              const std::vector<uint32_t> &mods)
     : FieldGenerator(name),
       _mods(mods)
@@ -419,13 +420,13 @@ IdTextFieldGenerator::generateValue(vespalib::asciistream &doc, uint32_t id)
 
 class RandIntFieldGenerator : public FieldGenerator
 {
-    search::Rand48 &_rnd;
+    vespalib::Rand48 &_rnd;
     uint32_t _low;
     uint32_t _count;
 
 public:
     RandIntFieldGenerator(const string &name,
-                          search::Rand48 &rnd,
+                          vespalib::Rand48 &rnd,
                           uint32_t low,
                           uint32_t count);
     virtual ~RandIntFieldGenerator();
@@ -436,7 +437,7 @@ public:
 
 
 RandIntFieldGenerator::RandIntFieldGenerator(const string &name,
-                                             search::Rand48 &rnd,
+                                             vespalib::Rand48 &rnd,
                                              uint32_t low,
                                              uint32_t count)
     : FieldGenerator(name),
@@ -617,7 +618,7 @@ class GenTestDocsApp : public SubApp
     int _optIndex;
     std::vector<FieldGenerator::SP> _fields;
     std::vector<uint32_t> _mods;
-    search::Rand48 _rnd;
+    vespalib::Rand48 _rnd;
     string _outFile;
     bool _headers;
     bool _json;

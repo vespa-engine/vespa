@@ -4,9 +4,14 @@
 #include <vespa/config/common/misc.h>
 #include <vespa/config/frt/protocol.h>
 #include <vespa/config/config.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/config/common/configcontext.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+
 #include "config-my.h"
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/simple_buffer.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("failover");
 
@@ -55,7 +60,7 @@ struct RPCServer : public FRT_Invokable {
         info.setString("uncompressedSize", "0");
         root.setString(RESPONSE_CONFIGID, "myId");
         root.setString(RESPONSE_CLIENT_HOSTNAME, "myhost");
-        root.setString(RESPONSE_CONFIG_MD5, "md5");
+        root.setString(RESPONSE_CONFIG_XXHASH64, "xxhash64");
         root.setLong(RESPONSE_CONFIG_GENERATION, gen);
         root.setObject(RESPONSE_TRACE);
         Slime payload;
@@ -188,7 +193,7 @@ struct ConfigCheckFixture {
     NetworkFixture & nf;
 
     ConfigCheckFixture(NetworkFixture & f2)
-        : ctx(new ConfigContext(testTimingValues, f2.spec)),
+        : ctx(std::make_shared<ConfigContext>(testTimingValues, f2.spec)),
           nf(f2)
     {
     }
@@ -222,7 +227,7 @@ struct ConfigReloadFixture {
     ConfigHandle<MyConfig>::UP handle;
 
     ConfigReloadFixture(NetworkFixture & f2)
-        : ctx(new ConfigContext(testTimingValues, f2.spec)),
+        : ctx(std::make_shared<ConfigContext>(testTimingValues, f2.spec)),
           nf(f2),
           s(ctx),
           handle(s.subscribe<MyConfig>("myId"))

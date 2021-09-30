@@ -33,7 +33,7 @@ public:
      * Creates a new object with an initial capacity of 16 without dynamic allocation.
      **/
     AttributeContent() :
-        _dynamicBuf(NULL),
+        _dynamicBuf(nullptr),
         _size(0),
         _capacity(16)
     {
@@ -42,7 +42,7 @@ public:
      * Destructs the object.
      **/
     ~AttributeContent() {
-        if (_dynamicBuf != NULL) {
+        if (_dynamicBuf != nullptr) {
             delete [] _dynamicBuf;
         }
     }
@@ -53,7 +53,7 @@ public:
      * @return iterator
      **/
     const T * begin() const {
-        if (_dynamicBuf != NULL) {
+        if (_dynamicBuf != nullptr) {
             return _dynamicBuf;
         }
         return _staticBuf;
@@ -102,7 +102,7 @@ public:
      * @return read/write pointer.
      **/
     T * data() {
-        if (_dynamicBuf != NULL) {
+        if (_dynamicBuf != nullptr) {
             return _dynamicBuf;
         }
         return _staticBuf;
@@ -126,7 +126,7 @@ public:
      **/
     void allocate(uint32_t n) {
         if (n > _capacity) {
-            if (_dynamicBuf != NULL) {
+            if (_dynamicBuf != nullptr) {
                 delete [] _dynamicBuf;
             }
             _dynamicBuf = new T[n];
@@ -141,8 +141,7 @@ public:
      * @param attribute the attribute vector
      * @param docId the docId
      **/
-    void fill(const search::attribute::IAttributeVector & attribute,
-              search::attribute::IAttributeVector::DocId docId)
+    void fill(const IAttributeVector & attribute, IAttributeVector::DocId docId)
     {
         uint32_t count = attribute.get(docId, data(), capacity());
         while (count > capacity()) {

@@ -2,12 +2,13 @@
 package com.yahoo.vespa.hosted.controller.api.role;
 
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import org.junit.Test;
 
 import java.net.URI;
+import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -19,6 +20,7 @@ public class RoleTest {
 
     private static final Enforcer mainEnforcer = new Enforcer(SystemName.main);
     private static final Enforcer publicEnforcer = new Enforcer(SystemName.Public);
+    private static final Enforcer publicCdEnforcer = new Enforcer(SystemName.PublicCd);
 
     @Test
     public void operator_membership() {
@@ -30,6 +32,10 @@ public class RoleTest {
         assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/os/v1/bar")));
         assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
         assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t2/application/a2")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/routing/v1/")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/routing/v1/status/environment/")));
+        assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/routing/v1/status/environment/prod")));
+        assertTrue(mainEnforcer.allows(role, Action.create, URI.create("/routing/v1/inactive/environment/prod/region/us-north-1")));
     }
 
     @Test
@@ -51,6 +57,10 @@ public class RoleTest {
         assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/application/v4/tenant/t1/application/a1")));
         assertTrue(mainEnforcer.allows(role, Action.read, URI.create("/application/v4/tenant/t2/application/a2")));
         assertFalse(mainEnforcer.allows(role, Action.delete, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/environment/dev/region/r1")));
+
+        // Check that we are allowed to create tenants in public.
+        // hostedSupporter isn't actually allowed to create tenants - but any logged in user will be a member of the "everyone" role.
+        assertTrue(publicEnforcer.allows(Role.everyone(), Action.create, URI.create("/application/v4/tenant/t1")));
     }
 
     @Test
@@ -69,67 +79,11 @@ public class RoleTest {
 
     @Test
     public void build_service_membership() {
-        Role role = Role.tenantPipeline(TenantName.from("t1"), ApplicationName.from("a1"));
+        Role role = Role.buildService(TenantName.from("t1"), ApplicationName.from("a1"));
         assertFalse(publicEnforcer.allows(role, Action.create, URI.create("/not/explicitly/defined")));
         assertFalse(publicEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
-        assertTrue(publicEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t1/application/a1/jobreport")));
+        assertTrue(publicEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t1/application/a1/submit")));
         assertFalse("No global read access", publicEnforcer.allows(role, Action.read, URI.create("/controller/v1/foo")));
-    }
-
-    @Test
-    public void athenz_user_membership() {
-        Role role = Role.athenzUser(TenantName.from("t8"), ApplicationName.from("a6"), InstanceName.from("i1"));
-        assertTrue(mainEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/deploy/some-job")));
-        assertTrue(mainEnforcer.allows(role, Action.delete, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/environment/dev/region/r1")));
-        assertFalse(mainEnforcer.allows(role, Action.delete, URI.create("/application/v4/tenant/t8/application/a6/instance/i1/environment/prod/region/r1")));
-    }
-
-    @Test
-    public void implications() {
-        TenantName tenant1 = TenantName.from("t1");
-        ApplicationName application1 = ApplicationName.from("a1");
-        TenantName tenant2 = TenantName.from("t2");
-        ApplicationName application2 = ApplicationName.from("a2");
-
-        Role tenantOwner1 = Role.tenantOwner(tenant1);
-        Role tenantAdmin1 = Role.tenantAdmin(tenant1);
-        Role tenantAdmin2 = Role.tenantAdmin(tenant2);
-        Role tenantOperator1 = Role.tenantOperator(tenant1);
-        Role applicationAdmin11 = Role.applicationAdmin(tenant1, application1);
-        Role applicationOperator11 = Role.applicationOperator(tenant1, application1);
-        Role applicationDeveloper11 = Role.applicationDeveloper(tenant1, application1);
-        Role applicationReader11 = Role.applicationReader(tenant1, application1);
-        Role applicationReader12 = Role.applicationReader(tenant1, application2);
-        Role applicationReader22 = Role.applicationReader(tenant2, application2);
-
-        assertFalse(tenantOwner1.implies(tenantOwner1));
-        assertTrue(tenantOwner1.implies(tenantAdmin1));
-        assertFalse(tenantOwner1.implies(tenantAdmin2));
-        assertTrue(tenantOwner1.implies(tenantOperator1));
-        assertTrue(tenantOwner1.implies(applicationAdmin11));
-        assertTrue(tenantOwner1.implies(applicationReader11));
-        assertTrue(tenantOwner1.implies(applicationReader12));
-        assertFalse(tenantOwner1.implies(applicationReader22));
-
-        assertFalse(tenantAdmin1.implies(tenantOwner1));
-        assertFalse(tenantAdmin1.implies(tenantAdmin2));
-        assertTrue(tenantAdmin1.implies(applicationDeveloper11));
-
-        assertFalse(tenantOperator1.implies(applicationReader11));
-
-        assertFalse(applicationAdmin11.implies(tenantAdmin1));
-        assertFalse(applicationAdmin11.implies(tenantOperator1));
-        assertTrue(applicationAdmin11.implies(applicationOperator11));
-        assertTrue(applicationAdmin11.implies(applicationDeveloper11));
-        assertTrue(applicationAdmin11.implies(applicationReader11));
-        assertFalse(applicationAdmin11.implies(applicationReader12));
-        assertFalse(applicationAdmin11.implies(applicationReader22));
-
-        assertFalse(applicationOperator11.implies(applicationDeveloper11));
-        assertTrue(applicationOperator11.implies(applicationReader11));
-
-        assertFalse(applicationDeveloper11.implies(applicationOperator11));
-        assertTrue(applicationDeveloper11.implies(applicationReader11));
     }
 
     @Test
@@ -164,5 +118,199 @@ public class RoleTest {
         assertFalse(mainEnforcer.allows(Role.hostedSupporter(), action, dryrunUri));
         assertTrue(mainEnforcer.allows(Role.systemFlagsDryrunner(), action, dryrunUri));
         assertFalse(mainEnforcer.allows(Role.everyone(), action, dryrunUri));
+    }
+
+    @Test
+    public void routing() {
+        var tenantUrl = URI.create("/routing/v1/status/tenant/t1");
+        var applicationUrl = URI.create("/routing/v1/status/tenant/t1/application/a1");
+        var instanceUrl = URI.create("/routing/v1/status/tenant/t1/application/a1/instance/i1");
+        var deploymentUrl = URI.create("/routing/v1/status/tenant/t1/application/a1/instance/i1/environment/prod/region/us-north-1");
+        // Read
+        for (var url : List.of(tenantUrl, applicationUrl, instanceUrl, deploymentUrl)) {
+            var allowedRole = Role.reader(TenantName.from("t1"));
+            var disallowedRole = Role.reader(TenantName.from("t2"));
+            assertTrue(allowedRole + " can read " + url, mainEnforcer.allows(allowedRole, Action.read, url));
+            assertFalse(disallowedRole + " cannot read " + url, mainEnforcer.allows(disallowedRole, Action.read, url));
+        }
+
+        // Write
+        {
+            var url = URI.create("/routing/v1/inactive/tenant/t1/application/a1/instance/i1/environment/prod/region/us-north-1");
+            var allowedRole = Role.developer(TenantName.from("t1"));
+            var disallowedRole = Role.developer(TenantName.from("t2"));
+            assertTrue(allowedRole + " can override status at " + url, mainEnforcer.allows(allowedRole, Action.create, url));
+            assertTrue(allowedRole + " can clear status at " + url, mainEnforcer.allows(allowedRole, Action.delete, url));
+            assertFalse(disallowedRole + " cannot override status at " + url, mainEnforcer.allows(disallowedRole, Action.create, url));
+            assertFalse(disallowedRole + " cannot clear status at " + url, mainEnforcer.allows(disallowedRole, Action.delete, url));
+        }
+    }
+
+    @Test
+    public void payment_instrument() {
+        URI paymentInstrumentUri = URI.create("/billing/v1/tenant/t1/instrument/foobar");
+        URI tenantPaymentInstrumentUri = URI.create("/billing/v1/tenant/t1/instrument");
+        URI tokenUri = URI.create("/billing/v1/tenant/t1/token");
+
+        Role user = Role.reader(TenantName.from("t1"));
+        assertTrue(publicCdEnforcer.allows(user, Action.read, paymentInstrumentUri));
+        assertTrue(publicCdEnforcer.allows(user, Action.delete, paymentInstrumentUri));
+        assertFalse(publicCdEnforcer.allows(user, Action.update, tenantPaymentInstrumentUri));
+        assertFalse(publicCdEnforcer.allows(user, Action.read, tokenUri));
+
+        Role developer = Role.developer(TenantName.from("t1"));
+        assertTrue(publicCdEnforcer.allows(developer, Action.read, paymentInstrumentUri));
+        assertTrue(publicCdEnforcer.allows(developer, Action.delete, paymentInstrumentUri));
+        assertFalse(publicCdEnforcer.allows(developer, Action.update, tenantPaymentInstrumentUri));
+        assertFalse(publicCdEnforcer.allows(developer, Action.read, tokenUri));
+
+        Role admin = Role.administrator(TenantName.from("t1"));
+        assertTrue(publicCdEnforcer.allows(admin, Action.read, paymentInstrumentUri));
+        assertTrue(publicCdEnforcer.allows(admin, Action.delete, paymentInstrumentUri));
+        assertTrue(publicCdEnforcer.allows(admin, Action.update, tenantPaymentInstrumentUri));
+        assertTrue(publicCdEnforcer.allows(admin, Action.read, tokenUri));
+    }
+
+    @Test
+    public void billing_tenant() {
+        URI billing = URI.create("/billing/v1/tenant/t1/billing");
+
+        Role user = Role.reader(TenantName.from("t1"));
+        Role developer = Role.developer(TenantName.from("t1"));
+        Role admin = Role.administrator(TenantName.from("t1"));
+
+        Stream.of(user, developer, admin).forEach(role -> {
+            assertTrue(publicCdEnforcer.allows(role, Action.read, billing));
+            assertFalse(publicCdEnforcer.allows(role, Action.update, billing));
+            assertFalse(publicCdEnforcer.allows(role, Action.delete, billing));
+            assertFalse(publicCdEnforcer.allows(role, Action.create, billing));
+        });
+
+    }
+
+    @Test
+    public void billing_test() {
+        var tester = new EnforcerTester(publicEnforcer);
+
+        var accountant = Role.hostedAccountant();
+        var operator = Role.hostedOperator();
+        var reader = Role.reader(TenantName.from("t1"));
+        var developer = Role.developer(TenantName.from("t1"));
+        var admin = Role.administrator(TenantName.from("t1"));
+        var otherAdmin = Role.administrator(TenantName.from("t2"));
+
+        tester.on("/billing/v1/tenant/t1/token")
+                .assertAction(accountant)
+                .assertAction(operator)
+                .assertAction(reader)
+                .assertAction(developer)
+                .assertAction(admin,    Action.read)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/tenant/t1/instrument")
+                .assertAction(accountant)
+                .assertAction(operator,                 Action.read)
+                .assertAction(reader,                   Action.read,                Action.delete)
+                .assertAction(developer,                Action.read,                Action.delete)
+                .assertAction(admin,                    Action.read, Action.update, Action.delete)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/tenant/t1/instrument/i1")
+                .assertAction(accountant)
+                .assertAction(operator,  Action.read)
+                .assertAction(reader,    Action.read,                Action.delete)
+                .assertAction(developer, Action.read,                Action.delete)
+                .assertAction(admin,     Action.read, Action.update, Action.delete)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/tenant/t1/billing")
+                .assertAction(accountant)
+                .assertAction(operator,  Action.read)
+                .assertAction(reader,    Action.read)
+                .assertAction(developer, Action.read)
+                .assertAction(admin,     Action.read)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/tenant/t1/plan")
+                .assertAction(accountant, Action.update)
+                .assertAction(operator,   Action.read)
+                .assertAction(reader)
+                .assertAction(developer)
+                .assertAction(admin,      Action.update)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/tenant/t1/collection")
+                .assertAction(accountant, Action.update)
+                .assertAction(operator,   Action.read)
+                .assertAction(reader)
+                .assertAction(developer)
+                .assertAction(admin)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/billing")
+                .assertAction(accountant, Action.create, Action.read, Action.update, Action.delete)
+                .assertAction(operator,   Action.read)
+                .assertAction(reader)
+                .assertAction(developer)
+                .assertAction(admin)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/invoice/tenant/t1/line-item")
+                .assertAction(accountant, Action.create, Action.read, Action.update, Action.delete)
+                .assertAction(operator,                  Action.read)
+                .assertAction(reader)
+                .assertAction(developer)
+                .assertAction(admin)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/invoice")
+                .assertAction(accountant, Action.create, Action.read, Action.update, Action.delete)
+                .assertAction(operator,                  Action.read)
+                .assertAction(reader)
+                .assertAction(developer)
+                .assertAction(admin)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/invoice/i1/status")
+                .assertAction(accountant, Action.create, Action.read, Action.update, Action.delete)
+                .assertAction(operator,                  Action.read)
+                .assertAction(reader)
+                .assertAction(developer)
+                .assertAction(admin)
+                .assertAction(otherAdmin);
+    }
+
+    private static class EnforcerTester {
+        private final Enforcer enforcer;
+        private final URI resource;
+
+        EnforcerTester(Enforcer enforcer) {
+            this(enforcer, null);
+        }
+
+        EnforcerTester(Enforcer enforcer, URI uri) {
+            this.enforcer = enforcer;
+            this.resource = uri;
+        }
+
+        public EnforcerTester on(String uri) {
+            return new EnforcerTester(enforcer, URI.create(uri));
+        }
+
+        public EnforcerTester assertAction(Role role, Action ...actions) {
+            var allowed = List.of(actions);
+
+            allowed.forEach(action -> {
+                var msg = String.format("%s should be allowed to %s on %s", role, action, resource);
+                assertTrue(msg, enforcer.allows(role, action, resource));
+            });
+
+            Action.all().stream().filter(a -> ! allowed.contains(a)).forEach(action -> {
+                var msg = String.format("%s should not be allowed to %s on %s", role, action, resource);
+                assertFalse(msg, enforcer.allows(role, action, resource));
+            });
+
+            return this;
+        }
     }
 }

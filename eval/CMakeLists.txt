@@ -5,50 +5,87 @@ vespa_define_module(
     staging_vespalib
 
     APPS
+    src/apps/analyze_onnx_model
     src/apps/eval_expr
     src/apps/make_tensor_binary_format_test_spec
     src/apps/tensor_conformance
 
     TESTS
     src/tests/ann
+    src/tests/apps/eval_expr
+    src/tests/eval/addr_to_symbol
     src/tests/eval/aggr
+    src/tests/eval/array_array_map
+    src/tests/eval/cell_type_space
     src/tests/eval/compile_cache
     src/tests/eval/compiled_function
+    src/tests/eval/fast_value
+    src/tests/eval/feature_name_extractor
     src/tests/eval/function
     src/tests/eval/function_speed
     src/tests/eval/gbdt
+    src/tests/eval/gen_spec
+    src/tests/eval/inline_operation
+    src/tests/eval/int8float
     src/tests/eval/interpreted_function
+    src/tests/eval/multiply_add
+    src/tests/eval/nested_loop
+    src/tests/eval/node_tools
     src/tests/eval/node_types
     src/tests/eval/param_usage
-    src/tests/eval/simple_tensor
+    src/tests/eval/reference_evaluation
+    src/tests/eval/reference_operations
+    src/tests/eval/simple_value
     src/tests/eval/tensor_function
+    src/tests/eval/tensor_lambda
     src/tests/eval/tensor_spec
+    src/tests/eval/typed_cells
     src/tests/eval/value_cache
+    src/tests/eval/value_codec
     src/tests/eval/value_type
     src/tests/gp/ponder_nov2017
-    src/tests/tensor/dense_add_dimension_optimizer
-    src/tests/tensor/dense_dimension_combiner
-    src/tests/tensor/dense_dot_product_function
-    src/tests/tensor/dense_fast_rename_optimizer
-    src/tests/tensor/dense_generic_join
-    src/tests/tensor/dense_inplace_join_function
-    src/tests/tensor/dense_inplace_map_function
-    src/tests/tensor/dense_matmul_function    
-    src/tests/tensor/dense_remove_dimension_optimizer
-    src/tests/tensor/dense_replace_type_function
-    src/tests/tensor/dense_tensor_create_function
-    src/tests/tensor/dense_tensor_peek_function
-    src/tests/tensor/dense_xw_product_function
-    src/tests/tensor/direct_dense_tensor_builder
-    src/tests/tensor/direct_sparse_tensor_builder
-    src/tests/tensor/tensor_add_operation
-    src/tests/tensor/tensor_address
+    src/tests/instruction/add_trivial_dimension_optimizer
+    src/tests/instruction/best_similarity_function
+    src/tests/instruction/dense_dot_product_function
+    src/tests/instruction/dense_hamming_distance
+    src/tests/instruction/dense_inplace_join_function
+    src/tests/instruction/dense_matmul_function
+    src/tests/instruction/dense_multi_matmul_function
+    src/tests/instruction/dense_replace_type_function
+    src/tests/instruction/dense_simple_expand_function
+    src/tests/instruction/dense_single_reduce_function
+    src/tests/instruction/dense_tensor_create_function
+    src/tests/instruction/dense_tensor_peek_function
+    src/tests/instruction/dense_xw_product_function
+    src/tests/instruction/fast_rename_optimizer
+    src/tests/instruction/generic_cell_cast
+    src/tests/instruction/generic_concat
+    src/tests/instruction/generic_create
+    src/tests/instruction/generic_join
+    src/tests/instruction/generic_map
+    src/tests/instruction/generic_merge
+    src/tests/instruction/generic_peek
+    src/tests/instruction/generic_reduce
+    src/tests/instruction/generic_rename
+    src/tests/instruction/index_lookup_table
+    src/tests/instruction/inplace_map_function
+    src/tests/instruction/join_with_number
+    src/tests/instruction/mixed_inner_product_function
+    src/tests/instruction/mixed_simple_join_function
+    src/tests/instruction/pow_as_map_optimizer
+    src/tests/instruction/remove_trivial_dimension_optimizer
+    src/tests/instruction/sparse_dot_product_function
+    src/tests/instruction/sparse_full_overlap_join_function
+    src/tests/instruction/sparse_merge_function
+    src/tests/instruction/sparse_no_overlap_join_function
+    src/tests/instruction/sum_max_dot_product_function
+    src/tests/instruction/unpack_bits_function
+    src/tests/instruction/vector_from_doubles_function
+    src/tests/streamed/value
+    src/tests/tensor/binary_format
+    src/tests/tensor/instruction_benchmark
+    src/tests/tensor/onnx_wrapper
     src/tests/tensor/tensor_conformance
-    src/tests/tensor/tensor_modify_operation
-    src/tests/tensor/tensor_remove_operation
-    src/tests/tensor/tensor_serialization
-    src/tests/tensor/typed_cells
-    src/tests/tensor/vector_from_doubles_function
 
     LIBS
     src/vespa/eval
@@ -57,8 +94,7 @@ vespa_define_module(
     src/vespa/eval/eval/test
     src/vespa/eval/eval/value_cache
     src/vespa/eval/gp
-    src/vespa/eval/tensor
-    src/vespa/eval/tensor/dense
-    src/vespa/eval/tensor/serialization
-    src/vespa/eval/tensor/sparse
+    src/vespa/eval/instruction
+    src/vespa/eval/onnx
+    src/vespa/eval/streamed
 )

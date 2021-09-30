@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
@@ -13,6 +14,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
+import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -24,7 +26,9 @@ import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.ArgumentMatcher;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -47,7 +51,6 @@ import static org.mockito.Mockito.when;
 @RunWith(Parameterized.class)
 public class InfraDeployerImplTest {
 
-
     @Parameterized.Parameters(name = "application={0}")
     public static Iterable<Object[]> parameters() {
         return List.of(
@@ -58,8 +61,10 @@ public class InfraDeployerImplTest {
 
     private final NodeRepositoryTester tester = new NodeRepositoryTester();
     private final NodeRepository nodeRepository = tester.nodeRepository();
-    private final Provisioner provisioner = spy(new NodeRepositoryProvisioner(
-            nodeRepository, Zone.defaultZone(), new EmptyProvisionServiceProvider(), new InMemoryFlagSource()));
+    private final Provisioner provisioner = spy(new NodeRepositoryProvisioner(nodeRepository,
+                                                                              Zone.defaultZone(),
+                                                                              new EmptyProvisionServiceProvider(),
+                                                                              new InMemoryFlagSource()));
     private final InfrastructureVersions infrastructureVersions = nodeRepository.infrastructureVersions();
     private final DuperModelInfraApi duperModelInfraApi = mock(DuperModelInfraApi.class);
     private final InfraDeployerImpl infraDeployer;
@@ -98,10 +103,14 @@ public class InfraDeployerImplTest {
         verify(duperModelInfraApi, never()).infraApplicationActivated(any(), any());
         if (applicationIsActive) {
             verify(duperModelInfraApi).infraApplicationRemoved(application.getApplicationId());
-            verify(provisioner).remove(any(), eq(application.getApplicationId()));
+            ArgumentMatcher<ApplicationTransaction> txMatcher = tx -> {
+                assertEquals(application.getApplicationId(), tx.application());
+                return true;
+            };
+            verify(provisioner).remove(argThat(txMatcher));
             verify(duperModelInfraApi).infraApplicationRemoved(eq(application.getApplicationId()));
         } else {
-            verify(provisioner, never()).remove(any(), any());
+            verify(provisioner, never()).remove(any());
             verify(duperModelInfraApi, never()).infraApplicationRemoved(any());
         }
     }
@@ -117,7 +126,7 @@ public class InfraDeployerImplTest {
         addNode(5, Node.State.dirty, Optional.empty());
         addNode(6, Node.State.ready, Optional.empty());
         Node node7 = addNode(7, Node.State.active, Optional.of(target));
-        nodeRepository.setRemovable(application.getApplicationId(), List.of(node7));
+        nodeRepository.nodes().setRemovable(application.getApplicationId(), List.of(node7));
 
         infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
 
@@ -129,18 +138,23 @@ public class InfraDeployerImplTest {
     private void verifyActivated(String... hostnames) {
         verify(duperModelInfraApi).infraApplicationActivated(
                 eq(application.getApplicationId()), eq(Stream.of(hostnames).map(HostName::from).collect(Collectors.toList())));
-        verify(provisioner).activate(any(), eq(application.getApplicationId()), argThat(hostSpecs -> {
+        ArgumentMatcher<ApplicationTransaction> transactionMatcher = t -> {
+            assertEquals(application.getApplicationId(), t.application());
+            return true;
+        };
+        ArgumentMatcher<Collection<HostSpec>> hostsMatcher = hostSpecs -> {
             assertEquals(Set.of(hostnames), hostSpecs.stream().map(HostSpec::hostname).collect(Collectors.toSet()));
             return true;
-        }));
+        };
+        verify(provisioner).activate(argThat(hostsMatcher), any(), argThat(transactionMatcher));
     }
 
     private Node addNode(int id, Node.State state, Optional<Version> wantedVespaVersion) {
-        Node node = tester.addNode("id-" + id, "node-" + id, "default", nodeType);
+        Node node = tester.addHost("id-" + id, "node-" + id, "default", nodeType);
         Optional<Node> nodeWithAllocation = wantedVespaVersion.map(version -> {
             ClusterSpec clusterSpec = application.getClusterSpecWithVersion(version).with(Optional.of(ClusterSpec.Group.from(0)));
-            ClusterMembership membership = ClusterMembership.from(clusterSpec, 1);
-            Allocation allocation = new Allocation(application.getApplicationId(), membership, node.flavor().resources(), Generation.initial(), false);
+            ClusterMembership membership = ClusterMembership.from(clusterSpec, 0);
+            Allocation allocation = new Allocation(application.getApplicationId(), membership, node.resources(), Generation.initial(), false);
             return node.with(allocation);
         });
         return nodeRepository.database().writeTo(state, nodeWithAllocation.orElse(node), Agent.system, Optional.empty());

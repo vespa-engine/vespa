@@ -1,3 +1,4 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.google.common.collect.ImmutableMap;
@@ -8,10 +9,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -23,13 +22,16 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapaci
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 
+/**
+ * @author jonmv
+ */
 public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceList> {
 
-    private final Map<ApplicationId, DeploymentStatus> statuses;
+    private final Map<ApplicationId, DeploymentStatus> instances;
 
-    private InstanceList(Collection<? extends ApplicationId> items, boolean negate, Map<ApplicationId, DeploymentStatus> statuses) {
-        super(items, negate, (i, n) -> new InstanceList(i, n, statuses));
-        this.statuses = statuses;
+    private InstanceList(Collection<? extends ApplicationId> items, boolean negate, Map<ApplicationId, DeploymentStatus> instances) {
+        super(items, negate, (i, n) -> new InstanceList(i, n, instances));
+        this.instances = instances;
     }
 
     public static InstanceList from(DeploymentStatusList statuses) {
@@ -55,9 +57,9 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
 
     /** Returns the subset of instances that are allowed to upgrade to the given version at the given time */
     public InstanceList canUpgradeAt(Version version, Instant instant) {
-        return matching(id -> statuses.get(id).instanceSteps().get(id.instance())
-                                      .readyAt(Change.of(version))
-                                      .map(readyAt -> ! readyAt.isAfter(instant)).orElse(false));
+        return matching(id -> instances.get(id).instanceSteps().get(id.instance())
+                                       .readyAt(Change.of(version))
+                                       .map(readyAt -> ! readyAt.isAfter(instant)).orElse(false));
     }
 
     /** Returns the subset of instances which have at least one productiog deployment */
@@ -65,15 +67,22 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
         return matching(id -> instance(id).productionDeployments().size() > 0);
     }
 
-    /** Returns the subset of instances which have at least one deployment on a lower version than the given one */
+    /** Returns the subset of instances which contain declared jobs */
+    public InstanceList withDeclaredJobs() {
+        return matching(id -> instances.get(id).jobSteps().values().stream()
+                                       .anyMatch(job -> job.isDeclared() && job.job().get().application().equals(id)));
+    }
+
+    /** Returns the subset of instances which have at least one deployment on a lower version than the given one, or which have no production deployments */
     public InstanceList onLowerVersionThan(Version version) {
-        return matching(id -> instance(id).productionDeployments().values().stream()
-                                          .anyMatch(deployment -> deployment.version().isBefore(version)));
+        return matching(id ->    instance(id).productionDeployments().isEmpty()
+                              || instance(id).productionDeployments().values().stream()
+                                             .anyMatch(deployment -> deployment.version().isBefore(version)));
     }
 
     /** Returns the subset of instances which have changes left to deploy; blocked, or deploying */
     public InstanceList withChanges() {
-        return matching(id -> instance(id).change().hasTargets() || statuses.get(id).outstandingChange(id.instance()).hasTargets());
+        return matching(id -> instance(id).change().hasTargets() || instances.get(id).outstandingChange(id.instance()).hasTargets());
     }
 
     /** Returns the subset of instances which are currently deploying a change */
@@ -83,9 +92,9 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
 
     /** Returns the subset of instances which currently have failing jobs on the given version */
     public InstanceList failingOn(Version version) {
-        return matching(id -> ! statuses.get(id).instanceJobs().get(id).failing()
-                                        .not().withStatus(outOfCapacity)
-                                        .lastCompleted().on(version).isEmpty());
+        return matching(id -> ! instances.get(id).instanceJobs().get(id).failing()
+                                         .not().withStatus(outOfCapacity)
+                                         .lastCompleted().on(version).isEmpty());
     }
 
     /** Returns the subset of instances which are not pinned to a certain Vespa version. */
@@ -95,12 +104,12 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
 
     /** Returns the subset of instances which are not currently failing any jobs. */
     public InstanceList failing() {
-        return matching(id -> ! statuses.get(id).instanceJobs().get(id).failing().not().withStatus(outOfCapacity).isEmpty());
+        return matching(id -> ! instances.get(id).instanceJobs().get(id).failing().not().withStatus(outOfCapacity).isEmpty());
     }
 
     /** Returns the subset of instances which are currently failing an upgrade. */
     public InstanceList failingUpgrade() {
-        return matching(id -> ! statuses.get(id).instanceJobs().get(id).failing().not().failingApplicationChange().isEmpty());
+        return matching(id -> ! instances.get(id).instanceJobs().get(id).failing().not().failingApplicationChange().isEmpty());
     }
 
     /** Returns the subset of instances which are upgrading (to any version), not considering block windows. */
@@ -125,7 +134,7 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
 
     /** Returns the subset of instances which started failing on the given version */
     public InstanceList startedFailingOn(Version version) {
-        return matching(id -> ! statuses.get(id).instanceJobs().get(id).firstFailing().on(version).isEmpty());
+        return matching(id -> ! instances.get(id).instanceJobs().get(id).firstFailing().on(version).isEmpty());
     }
 
     /** Returns this list sorted by increasing oldest production deployment version. Applications without any deployments are ordered first. */
@@ -137,7 +146,7 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
     }
 
     private Application application(ApplicationId id) {
-        return statuses.get(id).application();
+        return instances.get(id).application();
     }
 
     private Instance instance(ApplicationId id) {

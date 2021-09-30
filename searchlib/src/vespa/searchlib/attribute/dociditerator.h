@@ -80,15 +80,15 @@ public:
     DocIdMinMaxIterator()
         : DocIdIterator<P>()
     { }
-    inline btree::MinMaxAggregated getAggregated() const { return btree::MinMaxAggregated(1, 1); }
+    inline vespalib::btree::MinMaxAggregated getAggregated() const { return vespalib::btree::MinMaxAggregated(1, 1); }
 };
 
 
 template<>
-inline btree::MinMaxAggregated
+inline vespalib::btree::MinMaxAggregated
 DocIdMinMaxIterator<AttributeWeightPosting>::getAggregated() const
 {
-    btree::MinMaxAggregated a;
+    vespalib::btree::MinMaxAggregated a;
     for (const AttributeWeightPosting *cur = _cur, *end = _end; cur != end; ++cur) {
         a.add(cur->getData());
     }

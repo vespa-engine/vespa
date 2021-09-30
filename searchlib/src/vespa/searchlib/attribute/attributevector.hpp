@@ -3,7 +3,9 @@
 
 #include "attributevector.h"
 #include "integerbase.h"
+#include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
 #include <cmath>
 
 namespace search {
@@ -61,26 +63,17 @@ AttributeVector::adjustWeight(ChangeVectorT< ChangeTemplate<T> > & changes, DocI
 
 template<typename T>
 bool
-AttributeVector::applyArithmetic(ChangeVectorT< ChangeTemplate<T> > & changes, DocId doc, const T & v,
-                                 const ArithmeticValueUpdate & arithm)
+AttributeVector::adjustWeight(ChangeVectorT< ChangeTemplate<T> >& changes, DocId doc, const T& v, const document::AssignValueUpdate& wu)
 {
-    (void) v;
-    bool retval(!hasMultiValue() && (doc < getNumDocs()));
+    bool retval(hasWeightedSetType() && (doc < getNumDocs()));
     if (retval) {
         size_t oldSz(changes.size());
-        ArithmeticValueUpdate::Operator op(arithm.getOperator());
-        double aop = arithm.getOperand();
-        if (op == ArithmeticValueUpdate::Add) {
-            changes.push_back(ChangeTemplate<T>(ChangeBase::ADD, doc, 0, 0));
-        } else if (op == ArithmeticValueUpdate::Sub) {
-            changes.push_back(ChangeTemplate<T>(ChangeBase::SUB, doc, 0, 0));
-        } else if (op == ArithmeticValueUpdate::Mul) {
-            changes.push_back(ChangeTemplate<T>(ChangeBase::MUL, doc, 0, 0));
-        } else if (op == ArithmeticValueUpdate::Div) {
-            if (this->getClass().inherits(IntegerAttribute::classId) && aop == 0) {
-                divideByZeroWarning();
+        if (wu.hasValue()) {
+            const FieldValue &wv = wu.getValue();
+            if (wv.inherits(document::IntFieldValue::classId)) {
+                changes.push_back(ChangeTemplate<T>(ChangeBase::SETWEIGHT, doc, v, wv.getAsInt()));
             } else {
-                changes.push_back(ChangeTemplate<T>(ChangeBase::DIV, doc, 0, 0));
+                retval = false;
             }
         } else {
             retval = false;
@@ -89,12 +82,43 @@ AttributeVector::applyArithmetic(ChangeVectorT< ChangeTemplate<T> > & changes, D
             const size_t diff = changes.size() - oldSz;
             _status.incNonIdempotentUpdates(diff);
             _status.incUpdates(diff);
-            if (diff > 0) {
-                changes.back()._arithOperand = aop;
-            }
         }
     }
     return retval;
+}
+
+template<typename T>
+bool
+AttributeVector::applyArithmetic(ChangeVectorT< ChangeTemplate<T> > & changes, DocId doc, const T &,
+                                 const ArithmeticValueUpdate & arithm)
+{
+    if (hasMultiValue() || (doc >= getNumDocs())) return false;
+
+    size_t oldSz(changes.size());
+    ArithmeticValueUpdate::Operator op(arithm.getOperator());
+    double aop = arithm.getOperand();
+    if (op == ArithmeticValueUpdate::Add) {
+        changes.push_back(ChangeTemplate<T>(ChangeBase::ADD, doc, 0, 0));
+    } else if (op == ArithmeticValueUpdate::Sub) {
+        changes.push_back(ChangeTemplate<T>(ChangeBase::SUB, doc, 0, 0));
+    } else if (op == ArithmeticValueUpdate::Mul) {
+        changes.push_back(ChangeTemplate<T>(ChangeBase::MUL, doc, 0, 0));
+    } else if (op == ArithmeticValueUpdate::Div) {
+        if (this->getClass().inherits(IntegerAttribute::classId) && aop == 0) {
+            divideByZeroWarning();
+        } else {
+            changes.push_back(ChangeTemplate<T>(ChangeBase::DIV, doc, 0, 0));
+        }
+    } else {
+        return false;
+    }
+    const size_t diff = changes.size() - oldSz;
+    _status.incNonIdempotentUpdates(diff);
+    _status.incUpdates(diff);
+    if (diff > 0) {
+        changes.back()._arithOperand = aop;
+    }
+    return true;
 }
 
 template<typename T>

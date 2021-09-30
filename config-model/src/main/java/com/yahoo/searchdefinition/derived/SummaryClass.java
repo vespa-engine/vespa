@@ -27,6 +27,8 @@ public class SummaryClass extends Derived {
 
     /** True if this summary class needs to access summary information on disk */
     private boolean accessingDiskSummary = false;
+    private final boolean rawAsBase64;
+    private final boolean omitSummaryFeatures;
 
     /** The summary fields of this indexed by name */
     private Map<String,SummaryClassField> fields = new java.util.LinkedHashMap<>();
@@ -42,6 +44,8 @@ public class SummaryClass extends Derived {
      */
     public SummaryClass(Search search, DocumentSummary summary, DeployLogger deployLogger) {
         this.deployLogger = deployLogger;
+        this.rawAsBase64 = search.isRawAsBase64();
+        this.omitSummaryFeatures = summary.omitSummaryFeatures();
         deriveName(summary);
         deriveFields(search,summary);
         deriveImplicitFields(summary);
@@ -74,12 +78,12 @@ public class SummaryClass extends Derived {
     private void addField(String name, DataType type, SummaryTransform transform) {
         if (fields.containsKey(name)) {
             SummaryClassField sf = fields.get(name);
-            if (!SummaryClassField.convertDataType(type, transform).equals(sf.getType())) {
-                deployLogger.log(Level.WARNING, "Conflicting definition of field " + name + ". " +
+            if (!SummaryClassField.convertDataType(type, transform, rawAsBase64).equals(sf.getType())) {
+                deployLogger.logApplicationPackage(Level.WARNING, "Conflicting definition of field " + name + ". " +
                                "Declared as type " + sf.getType() + " and " + type);
             }
         } else {
-            fields.put(name, new SummaryClassField(name, type, transform));
+            fields.put(name, new SummaryClassField(name, type, transform, rawAsBase64));
         }
     }
 
@@ -126,7 +130,8 @@ public class SummaryClass extends Derived {
         }
         classBuilder.
             id(id).
-            name(getName());
+            name(getName()).
+            omitsummaryfeatures(omitSummaryFeatures);
         for (SummaryClassField field : fields.values() ) {
             classBuilder.fields(new SummaryConfig.Classes.Fields.Builder().
                     name(field.getName()).

@@ -1,7 +1,8 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.benchmark;
 
 import com.yahoo.collections.Tuple2;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
@@ -33,8 +34,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.yahoo.vespa.config.ConfigKey.createFull;
+
 /**
- * A config client for generating load against a config server or config proxy.
+ * A client for generating load (config requests) against a config server or config proxy.
  * <p>
  * Log messages from a run will have a # first in the line, the end result will not.
  *
@@ -42,13 +45,29 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class LoadTester {
 
-    private static boolean debug = false;
-    private Transport transport = new Transport();
+    private final Transport transport = new Transport("rpc-client");
     protected Supervisor supervisor = new Supervisor(transport);
     private List<ConfigKey<?>> configs = new ArrayList<>();
     private Map<ConfigDefinitionKey, Tuple2<String, String[]>> defs = new HashMap<>();
-    private long protocolVersion = Long.parseLong(JRTConfigRequestFactory.getProtocolVersion());
-    private CompressionType compressionType = JRTConfigRequestFactory.getCompressionType();
+    private final CompressionType compressionType = JRTConfigRequestFactory.getCompressionType();
+
+    private final String host;
+    private final int port;
+    private final int iterations;
+    private final int threads;
+    private final String configFile;
+    private final String defPath;
+    private final boolean debug;
+
+    LoadTester(String host, int port, int iterations, int threads, String configFile, String defPath, boolean debug) {
+        this.host = host;
+        this.port = port;
+        this.iterations = iterations;
+        this.threads = threads;
+        this.configFile = configFile;
+        this.defPath = defPath;
+        this.debug = debug;
+    }
 
     /**
      * @param args command-line arguments
@@ -60,28 +79,29 @@ public class LoadTester {
         parser.addRequiredBinarySwitch("-p", "port");
         parser.addRequiredBinarySwitch("-i", "iterations per thread");
         parser.addRequiredBinarySwitch("-t", "threads");
-        parser.addLegalBinarySwitch("-l", "configs file, on form name,configid. (To get list: vespa-configproxy-cmd -m cache | cut -d ',' -f1-2)");
+        parser.addLegalBinarySwitch("-l", "config file, on form name,configid. (To get list: vespa-configproxy-cmd -m cache | cut -d ',' -f1-2)");
         parser.addLegalBinarySwitch("-dd", "dir with def files, must be of form name.def");
         parser.parse();
         String host = parser.getBinarySwitches().get("-c");
         int port = Integer.parseInt(parser.getBinarySwitches().get("-p"));
         int iterations = Integer.parseInt(parser.getBinarySwitches().get("-i"));
         int threads = Integer.parseInt(parser.getBinarySwitches().get("-t"));
-        String configsList = parser.getBinarySwitches().get("-l");
+        String configFile = parser.getBinarySwitches().get("-l");
         String defPath = parser.getBinarySwitches().get("-dd");
-        debug = parser.getUnarySwitches().contains("-d");
-        LoadTester loadTester = new LoadTester();
-        loadTester.runLoad(host, port, iterations, threads, configsList, defPath);
+        boolean debug = parser.getUnarySwitches().contains("-d");
+        new LoadTester(host, port, iterations, threads, configFile, defPath, debug)
+                .runLoad();
     }
 
-    private void runLoad(String host, int port, int iterations, int threads,
-                         String configsList, String defPath) throws IOException, InterruptedException {
-        configs = readConfigs(configsList);
+    private void runLoad() throws IOException, InterruptedException {
+        configs = readConfigs(configFile);
         defs = readDefs(defPath);
+        validateConfigs(configs, defs);
+
         List<LoadThread> threadList = new ArrayList<>();
-        long start = System.currentTimeMillis();
         Metrics m = new Metrics();
 
+        long startInNanos = System.nanoTime();
         for (int i = 0; i < threads; i++) {
             LoadThread lt = new LoadThread(iterations, host, port);
             threadList.add(lt);
@@ -92,20 +112,25 @@ public class LoadTester {
             lt.join();
             m.merge(lt.metrics);
         }
-        printOutput(start, threads, iterations, m);
+        float durationInSeconds = (float) (System.nanoTime() - startInNanos) / 1_000_000_000f;
+
+        printResults(durationInSeconds, threads, iterations, m);
     }
 
     private Map<ConfigDefinitionKey, Tuple2<String, String[]>> readDefs(String defPath) throws IOException {
         Map<ConfigDefinitionKey, Tuple2<String, String[]>> ret = new HashMap<>();
         if (defPath == null) return ret;
+
         File defDir = new File(defPath);
         if (!defDir.isDirectory()) {
-            System.out.println("# Given def file dir is not a directory: " + defDir.getPath() + " , will not send def contents in requests.");
+            System.out.println("# Given def file dir is not a directory: " +
+                               defDir.getPath() + " , will not send def contents in requests.");
             return ret;
         }
-        final File[] files = defDir.listFiles();
+        File[] files = defDir.listFiles();
         if (files == null) {
-            System.out.println("# Given def file dir has no files: " + defDir.getPath() + " , will not send def contents in requests.");
+            System.out.println("# Given def file dir has no files: " +
+                               defDir.getPath() + " , will not send def contents in requests.");
             return ret;
         }
         for (File f : files) {
@@ -119,20 +144,17 @@ public class LoadTester {
         return ret;
     }
 
-    private void printOutput(long start, long threads, long iterations, Metrics metrics) {
-        long stop = System.currentTimeMillis();
-        float durSec = (float) (stop - start) / 1000f;
+    private void printResults(float durationInSeconds, long threads, long iterations, Metrics metrics) {
         StringBuilder sb = new StringBuilder();
-        sb.append("#reqs/sec #bytes/sec #avglatency #minlatency #maxlatency #failedrequests\n");
-        sb.append(((float) (iterations * threads)) / durSec).append(",");
-        sb.append((metrics.totBytes / durSec)).append(",");
-        sb.append((metrics.totLatency / threads / iterations)).append(",");
+        sb.append("#reqs/sec #avglatency #minlatency #maxlatency #failedrequests\n");
+        sb.append(((float) (iterations * threads)) / durationInSeconds).append(",");
+        sb.append((metrics.latencyInMillis / threads / iterations)).append(",");
         sb.append((metrics.minLatency)).append(",");
         sb.append((metrics.maxLatency)).append(",");
         sb.append((metrics.failedRequests));
         sb.append("\n");
         sb.append('#').append(TransportMetrics.getInstance().snapshot().toString()).append('\n');
-        System.out.println(sb.toString());
+        System.out.println(sb);
     }
 
     private List<ConfigKey<?>> readConfigs(String configsList) throws IOException {
@@ -150,25 +172,32 @@ public class LoadTester {
         return ret;
     }
 
-    private class Metrics {
+    private void validateConfigs(List<ConfigKey<?>> configs, Map<ConfigDefinitionKey, Tuple2<String, String[]>> defs) {
+        for (ConfigKey<?> configKey : configs) {
+            ConfigDefinitionKey dKey = new ConfigDefinitionKey(configKey);
+            Tuple2<String, String[]> defContent = defs.get(dKey);
+            if (defContent == null)
+                throw new IllegalArgumentException("No matching config definition for " + configKey +
+                                                   ", known config definitions: " + defs.keySet());
+        }
+    }
 
-        long totBytes = 0;
-        long totLatency = 0;
+    private static class Metrics {
+
+        long latencyInMillis = 0;
         long failedRequests = 0;
         long maxLatency = Long.MIN_VALUE;
         long minLatency = Long.MAX_VALUE;
 
         public void merge(Metrics m) {
-            this.totBytes += m.totBytes;
-            this.totLatency += m.totLatency;
+            this.latencyInMillis += m.latencyInMillis;
             this.failedRequests += m.failedRequests;
             updateMin(m.minLatency);
             updateMax(m.maxLatency);
         }
 
-        public void update(long bytes, long latency) {
-            this.totBytes += bytes;
-            this.totLatency += latency;
+        public void update(long latency) {
+            this.latencyInMillis += latency;
             updateMin(latency);
             updateMax(latency);
         }
@@ -190,88 +219,70 @@ public class LoadTester {
 
     private class LoadThread extends Thread {
 
-        int iterations = 0;
-        String host = "";
-        int port = 0;
-        Metrics metrics = new Metrics();
+        private final int iterations;
+        private final Spec spec;
+        private final Metrics metrics = new Metrics();
 
         LoadThread(int iterations, String host, int port) {
             this.iterations = iterations;
-            this.host = host;
-            this.port = port;
+            this.spec = new Spec(host, port);
         }
 
         @Override
         public void run() {
-            Spec spec = new Spec(host, port);
             Target target = connect(spec);
-            ConfigKey<?> reqKey;
-            JRTClientConfigRequest request;
-            int totConfs = configs.size();
-            boolean reconnCycle = false; // to log reconn message only once, for instance at restart
+            int numberOfConfigs = configs.size();
             for (int i = 0; i < iterations; i++) {
-                reqKey = configs.get(ThreadLocalRandom.current().nextInt(totConfs));
-                ConfigDefinitionKey dKey = new ConfigDefinitionKey(reqKey);
-                Tuple2<String, String[]> defContent = defs.get(dKey);
-                if (defContent == null && defs.size() > 0) { // Only complain if we actually did run with a def dir
-                    System.out.println("# No def found for " + dKey + ", not sending in request.");
-                }/* else {
-                    System.out.println("# FOUND: "+dKey+" : "+ StringUtilities.implode(defContent, "\n"));
-                }*/
-                request = getRequest(ConfigKey.createFull(reqKey.getName(), reqKey.getConfigId(), reqKey.getNamespace(), defContent.first), defContent.second);
-                if (debug) System.out.println("# Requesting: " + reqKey);
-                long start = System.currentTimeMillis();
-                target.invokeSync(request.getRequest(), 10.0);
-                long end = System.currentTimeMillis();
-                if (request.isError()) {
-                    if ("Connection lost".equals(request.errorMessage()) || "Connection down".equals(request.errorMessage())) {
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                        if (!reconnCycle) {
-                            System.out.println("# Connection lost, reconnecting...");
-                            reconnCycle = true;
-                        }
-                        target.close();
-                        target = connect(spec);
-                    } else {
-                        System.err.println(request.errorMessage());
-                    }
-                    metrics.incFailedRequests();
-                } else {
-                    if (reconnCycle) {
-                        reconnCycle = false;
-                        System.out.println("# Connection OK");
-                    }
-                    long duration = end - start;
+                ConfigKey<?> reqKey = configs.get(ThreadLocalRandom.current().nextInt(numberOfConfigs));
+                JRTClientConfigRequest request = createRequest(reqKey);
+                if (debug)
+                    System.out.println("# Requesting: " + reqKey);
 
-                    if (debug) {
-                        String payload = request.getNewPayload().toString();
-                        metrics.update(payload.length(), duration); // assume 8 bit...
-                        System.out.println("# Ret: " + payload);
-                    } else {
-                        metrics.update(0, duration);
-                    }
+                long start = System.nanoTime();
+                target.invokeSync(request.getRequest(), 10.0);
+                long durationInMillis = (System.nanoTime() - start) / 1_000_000;
+
+                if (request.isError()) {
+                    target = handleError(request, spec, target);
+                } else {
+                    metrics.update(durationInMillis);
                 }
             }
         }
 
-        private JRTClientConfigRequest getRequest(ConfigKey<?> reqKey, String[] defContent) {
-            if (defContent == null) defContent = new String[0];
+        private JRTClientConfigRequest createRequest(ConfigKey<?> reqKey) {
+            ConfigDefinitionKey dKey = new ConfigDefinitionKey(reqKey);
+            Tuple2<String, String[]> defContent = defs.get(dKey);
+            ConfigKey<?> fullKey = createFull(reqKey.getName(), reqKey.getConfigId(), reqKey.getNamespace());
+
             final long serverTimeout = 1000;
-            if (protocolVersion == 3) {
-                return JRTClientConfigRequestV3.createWithParams(reqKey, DefContent.fromList(Arrays.asList(defContent)),
-                                                                 "unknown", "", 0, serverTimeout, Trace.createDummy(),
-                                                                 compressionType, Optional.empty());
-            } else {
-                throw new RuntimeException("Unsupported protocol version" + protocolVersion);
-            }
+            return JRTClientConfigRequestV3.createWithParams(fullKey, DefContent.fromList(List.of(defContent.second)),
+                                                             ConfigUtils.getCanonicalHostName(), PayloadChecksums.empty(),
+                                                             0, serverTimeout, Trace.createDummy(),
+                                                             compressionType, Optional.empty());
         }
 
         private Target connect(Spec spec) {
             return supervisor.connect(spec);
         }
+
+        private Target handleError(JRTClientConfigRequest request, Spec spec, Target target) {
+            if (List.of("Connection lost", "Connection down").contains(request.errorMessage())) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                System.out.println("# Connection lost, reconnecting...");
+                target.close();
+                target = connect(spec);
+            } else {
+                System.err.println(request.errorMessage());
+            }
+            metrics.incFailedRequests();
+            return target;
+        }
+
     }
+
 }

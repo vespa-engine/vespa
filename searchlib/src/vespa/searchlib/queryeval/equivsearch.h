@@ -18,12 +18,12 @@ class EquivSearch : public SearchIterator
 public:
     typedef MultiSearch::Children Children;
 
-    // Caller takes ownership of the returned SearchIterator.
-    static SearchIterator *create(const Children &children,
-                                  fef::MatchData::UP inputMD,
-                                  const fef::TermMatchDataMerger::Inputs &inputs,
-                                  const fef::TermFieldMatchDataArray &outputs,
-                                  bool strict);
+    static SearchIterator::UP
+    create(Children children,
+           fef::MatchData::UP inputMD,
+           const fef::TermMatchDataMerger::Inputs &inputs,
+           const fef::TermFieldMatchDataArray &outputs,
+           bool strict);
 };
 
 }

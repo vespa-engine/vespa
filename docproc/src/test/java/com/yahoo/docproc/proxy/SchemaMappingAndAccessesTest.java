@@ -306,7 +306,6 @@ public class SchemaMappingAndAccessesTest {
         assertEquals(mapped.getId().toString(), "id:map:album::2");
         assertEquals(doc.getId().toString(), "id:map:album::2");
         assertEquals(doc.getHeader(), mapped.getHeader());
-        assertEquals(doc.getBody(), mapped.getBody());
         assertEquals(doc.getSerializedSize(), mapped.getSerializedSize());
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ByteArrayOutputStream bos2 = new ByteArrayOutputStream();

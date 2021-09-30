@@ -1,23 +1,19 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.EndpointList;
+import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 
 import java.time.Instant;
@@ -28,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Function;
@@ -58,8 +55,8 @@ public class Instance {
     public Instance(ApplicationId id, Collection<Deployment> deployments, Map<JobType, Instant> jobPauses,
                     List<AssignedRotation> rotations, RotationStatus rotationStatus, Change change) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
-        this.deployments = ImmutableMap.copyOf(Objects.requireNonNull(deployments, "deployments cannot be null").stream()
-                                                      .collect(Collectors.toMap(Deployment::zone, Function.identity())));
+        this.deployments = Objects.requireNonNull(deployments, "deployments cannot be null").stream()
+                                  .collect(Collectors.toUnmodifiableMap(Deployment::zone, Function.identity()));
         this.jobPauses = Map.copyOf(Objects.requireNonNull(jobPauses, "deploymentJobs cannot be null"));
         this.rotations = List.copyOf(Objects.requireNonNull(rotations, "rotations cannot be null"));
         this.rotationStatus = Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null");
@@ -67,14 +64,19 @@ public class Instance {
     }
 
     public Instance withNewDeployment(ZoneId zone, ApplicationVersion applicationVersion, Version version,
-                                      Instant instant, Map<DeploymentMetrics.Warning, Integer> warnings) {
+                                      Instant instant, Map<DeploymentMetrics.Warning, Integer> warnings, QuotaUsage quotaUsage) {
         // Use info from previous deployment if available, otherwise create a new one.
         Deployment previousDeployment = deployments.getOrDefault(zone, new Deployment(zone, applicationVersion,
-                                                                                      version, instant));
+                                                                                      version, instant,
+                                                                                      DeploymentMetrics.none,
+                                                                                      DeploymentActivity.none,
+                                                                                      QuotaUsage.none,
+                                                                                      OptionalDouble.empty()));
         Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
-                                                  previousDeployment.clusterInfo(),
                                                   previousDeployment.metrics().with(warnings),
-                                                  previousDeployment.activity());
+                                                  previousDeployment.activity(),
+                                                  quotaUsage,
+                                                  previousDeployment.cost());
         return with(newDeployment);
     }
 
@@ -88,12 +90,6 @@ public class Instance {
         return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
     }
 
-    public Instance withClusterInfo(ZoneId zone, Map<ClusterSpec.Id, ClusterInfo> clusterInfo) {
-        Deployment deployment = deployments.get(zone);
-        if (deployment == null) return this;    // No longer deployed in this zone.
-        return with(deployment.withClusterInfo(clusterInfo));
-    }
-
     public Instance recordActivityAt(Instant instant, ZoneId zone) {
         Deployment deployment = deployments.get(zone);
         if (deployment == null) return this;
@@ -104,6 +100,15 @@ public class Instance {
         Deployment deployment = deployments.get(zone);
         if (deployment == null) return this;    // No longer deployed in this zone.
         return with(deployment.withMetrics(deploymentMetrics));
+    }
+
+    public Instance withDeploymentCosts(Map<ZoneId, Double> costByZone) {
+        Map<ZoneId, Deployment> deployments = this.deployments.entrySet().stream()
+                .map(entry -> Optional.ofNullable(costByZone.get(entry.getKey()))
+                        .map(entry.getValue()::withCost)
+                        .orElseGet(entry.getValue()::withoutCost))
+                .collect(Collectors.toUnmodifiableMap(Deployment::zone, deployment -> deployment));
+        return with(deployments);
     }
 
     public Instance withoutDeploymentIn(ZoneId zone) {
@@ -146,9 +151,9 @@ public class Instance {
      * (deployments also includes manually deployed environments)
      */
     public Map<ZoneId, Deployment> productionDeployments() {
-        return ImmutableMap.copyOf(deployments.values().stream()
-                                           .filter(deployment -> deployment.zone().environment() == Environment.prod)
-                                           .collect(Collectors.toMap(Deployment::zone, Function.identity())));
+        return deployments.values().stream()
+                          .filter(deployment -> deployment.zone().environment() == Environment.prod)
+                          .collect(Collectors.toUnmodifiableMap(Deployment::zone, Function.identity()));
     }
 
     /** Returns the instant until which the given job is paused, or empty. */
@@ -166,20 +171,6 @@ public class Instance {
         return rotations;
     }
 
-    /** Returns the default global endpoints for this in given system - for a given endpoint ID */
-    public EndpointList endpointsIn(SystemName system, EndpointId endpointId) {
-        if (rotations.isEmpty()) return EndpointList.EMPTY;
-        return EndpointList.create(id, endpointId, system);
-    }
-
-    /** Returns the default global endpoints for this in given system */
-    public EndpointList endpointsIn(SystemName system) {
-        if (rotations.isEmpty()) return EndpointList.EMPTY;
-        final var endpointStream = rotations.stream()
-                .flatMap(rotation -> EndpointList.create(id, rotation.endpointId(), system).asList().stream());
-        return EndpointList.of(endpointStream);
-    }
-
     /** Returns the status of the global rotation(s) assigned to this */
     public RotationStatus rotationStatus() {
         return rotationStatus;
@@ -188,6 +179,21 @@ public class Instance {
     /** Returns the currently deploying change for this instance. */
     public Change change() {
         return change;
+    }
+
+    /** Returns the total quota usage for this instance, excluding temporary deployments **/
+    public QuotaUsage quotaUsage() {
+        return deployments.values().stream()
+                .filter(d -> !d.zone().environment().isTest()) // Exclude temporary deployments
+                .map(Deployment::quota).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
+    }
+
+    /** Returns the total quota usage for this instance, excluding one specific deployment (and temporary deployments) */
+    public QuotaUsage quotaUsageExcluding(ApplicationId application, ZoneId zone) {
+        return deployments.values().stream()
+                .filter(d -> !d.zone().environment().isTest()) // Exclude temporary deployments
+                .filter(d -> !(application.equals(id) && d.zone().equals(zone)))
+                .map(Deployment::quota).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
     }
 
     @Override
@@ -209,5 +215,4 @@ public class Instance {
     public String toString() {
         return "application '" + id + "'";
     }
-
 }

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "summaryengine.h"
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.summaryengine.summaryengine");
@@ -42,6 +43,8 @@ uint32_t getNumDocs(const DocsumReply &reply) {
     }
 }
 
+VESPA_THREAD_STACK_TAG(summary_engine_executor)
+
 } // namespace anonymous
 
 namespace proton {
@@ -56,11 +59,12 @@ SummaryEngine::DocsumMetrics::DocsumMetrics()
 
 SummaryEngine::DocsumMetrics::~DocsumMetrics() = default;
 
-SummaryEngine::SummaryEngine(size_t numThreads)
+SummaryEngine::SummaryEngine(size_t numThreads, bool async)
     : _lock(),
+      _async(async),
       _closed(false),
       _handlers(),
-      _executor(numThreads, 128 * 1024),
+      _executor(numThreads, 128_Ki, summary_engine_executor),
       _metrics(std::make_unique<DocsumMetrics>())
 { }
 
@@ -107,15 +111,18 @@ SummaryEngine::getDocsums(DocsumRequest::Source request, DocsumClient & client)
 {
     if (_closed) {
         LOG(warning, "Receiving docsumrequest after engine has been shutdown");
-        DocsumReply::UP ret(new DocsumReply());
+        auto ret = std::make_unique<DocsumReply>();
 
         // TODO: Notify closed.
 
         return ret;
     }
-    vespalib::Executor::Task::UP task(new DocsumTask(*this, std::move(request), client));
-    _executor.execute(std::move(task));
-    return DocsumReply::UP();
+    if (_async) {
+        auto task = std::make_unique<DocsumTask>(*this, std::move(request), client);
+        _executor.execute(std::move(task));
+        return DocsumReply::UP();
+    }
+    return getDocsums(request.release());
 }
 
 DocsumReply::UP
@@ -128,13 +135,13 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
         if (searchHandler) {
             reply = searchHandler->getDocsums(*req);
         } else {
-            vespalib::Sequence<ISearchHandler*>::UP snapshot;
+            HandlerMap<ISearchHandler>::Snapshot snapshot;
             {
                 std::lock_guard<std::mutex> guard(_lock);
                 snapshot = _handlers.snapshot();
             }
-            if (snapshot->valid()) {
-                reply = snapshot->get()->getDocsums(*req); // use the first handler
+            if (snapshot.valid()) {
+                reply = snapshot.get()->getDocsums(*req); // use the first handler
             }
         }
         updateDocsumMetrics(vespalib::to_s(req->getTimeUsed()), getNumDocs(*reply));

@@ -1,0 +1,25 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+schema parent1 {
+
+  document parent1 {
+
+    field field1 type int {
+      indexing: attribute
+    }
+
+  }
+
+  rank-profile profile1 {
+
+    function function1() {
+      expression: attribute(field1) + 5
+    }
+
+    summary-features {
+      function1
+      attribute(field1)
+    }
+
+  }
+
+}

@@ -1,8 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fnet/fnet.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fnet/simplepacketstreamer.h>
+#include <vespa/fnet/channel.h>
+#include <vespa/fnet/connection.h>
 #include <examples/ping/packets.h>
 #include <vespa/fastos/app.h>
+#include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("pingclient");
@@ -18,7 +22,7 @@ int
 PingClient::Main()
 {
     if (_argc < 2) {
-        printf("usage  : pingclient <connectspec>\n");
+        printf("usage  : pingclient <connectspec> <timeout>\n");
         printf("example: pingclient 'tcp/localhost:8000'\n");
         return 1;
     }
@@ -29,7 +33,12 @@ PingClient::Main()
     FNET_SimplePacketStreamer  streamer(&factory);
     FNET_Transport             transport;
     FNET_Connection           *conn = transport.Connect(_argv[1], &streamer);
+    uint32_t                   timeout_ms=5000;
     FNET_Channel              *channels[10];
+
+    if (_argc == 3) {
+        timeout_ms = atof(_argv[2]) * 1000;
+    }
     transport.Start(&pool);
 
     uint32_t channelCnt = 0;
@@ -48,7 +57,7 @@ PingClient::Main()
     FNET_Packet  *packet;
     FNET_Context  context;
     while (channelCnt > 0) {
-        packet = queue.DequeuePacket(5000, &context);
+        packet = queue.DequeuePacket(timeout_ms, &context);
         if (packet == nullptr) {
             fprintf(stderr, "Timeout\n");
             for(int c = 0; c < 10; c++) {

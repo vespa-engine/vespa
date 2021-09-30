@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.properties;
 
+import com.yahoo.language.process.Embedder;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 
@@ -10,6 +12,7 @@ import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.Select;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
+import com.yahoo.search.query.profile.types.ConversionContext;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
@@ -31,10 +34,12 @@ public class QueryProperties extends Properties {
 
     private Query query;
     private final CompiledQueryProfileRegistry profileRegistry;
+    private final Embedder embedder;
 
-    public QueryProperties(Query query, CompiledQueryProfileRegistry profileRegistry) {
+    public QueryProperties(Query query, CompiledQueryProfileRegistry profileRegistry, Embedder embedder) {
         this.query = query;
         this.profileRegistry = profileRegistry;
+        this.embedder = embedder;
     }
 
     public void setParentQuery(Query query) {
@@ -67,9 +72,10 @@ public class QueryProperties extends Properties {
                 if (key.last().equals(Ranking.SORTING)) return ranking.getSorting();
                 if (key.last().equals(Ranking.FRESHNESS)) return ranking.getFreshness();
                 if (key.last().equals(Ranking.QUERYCACHE)) return ranking.getQueryCache();
+                if (key.last().equals(Ranking.RERANKCOUNT)) return ranking.getRerankCount();
                 if (key.last().equals(Ranking.LIST_FEATURES)) return ranking.getListFeatures();
             }
-            else if (key.size()>=3 && key.get(1).equals(Ranking.MATCH_PHASE)) {
+            else if (key.size() >= 3 && key.get(1).equals(Ranking.MATCH_PHASE)) {
                 if (key.size() == 3) {
                     MatchPhase matchPhase = ranking.getMatchPhase();
                     if (key.last().equals(MatchPhase.ATTRIBUTE)) return matchPhase.getAttribute();
@@ -144,7 +150,6 @@ public class QueryProperties extends Properties {
         return super.get(key, context, substitution);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void set(CompoundName key, Object value, Map<String,String> context) {
         // Note: The defaults here are never used
@@ -172,7 +177,7 @@ public class QueryProperties extends Properties {
                 else if (key.last().equals(Model.RESTRICT))
                     model.setRestrict(asString(value,""));
                 else
-                    throwIllegalParameter(key.last(),Model.MODEL);
+                    throwIllegalParameter(key.last(), Model.MODEL);
             }
             else if (key.first().equals(Ranking.RANKING)) {
                 Ranking ranking = query.getRanking();
@@ -187,57 +192,85 @@ public class QueryProperties extends Properties {
                         ranking.setFreshness(asString(value, ""));
                     else if (key.last().equals(Ranking.QUERYCACHE))
                         ranking.setQueryCache(asBoolean(value, false));
+                    else if (key.last().equals(Ranking.RERANKCOUNT))
+                        ranking.setRerankCount(asInteger(value, null));
                     else if (key.last().equals(Ranking.LIST_FEATURES))
                         ranking.setListFeatures(asBoolean(value,false));
+                    else
+                        throwIllegalParameter(key.last(), Ranking.RANKING);
                 }
-                else if (key.size()>=3 && key.get(1).equals(Ranking.MATCH_PHASE)) {
+                else if (key.size() >= 3 && key.get(1).equals(Ranking.MATCH_PHASE)) {
                     if (key.size() == 3) {
                         MatchPhase matchPhase = ranking.getMatchPhase();
-                        if (key.last().equals(MatchPhase.ATTRIBUTE)) {
+                        if (key.last().equals(MatchPhase.ATTRIBUTE))
                             matchPhase.setAttribute(asString(value, null));
-                        } else if (key.last().equals(MatchPhase.ASCENDING)) {
+                        else if (key.last().equals(MatchPhase.ASCENDING))
                             matchPhase.setAscending(asBoolean(value, false));
-                        } else if (key.last().equals(MatchPhase.MAX_HITS)) {
+                        else if (key.last().equals(MatchPhase.MAX_HITS))
                             matchPhase.setMaxHits(asLong(value, null));
-                        } else if (key.last().equals(MatchPhase.MAX_FILTER_COVERAGE)) {
+                        else if (key.last().equals(MatchPhase.MAX_FILTER_COVERAGE))
                             matchPhase.setMaxFilterCoverage(asDouble(value, 0.2));
-                        }
+                        else
+                            throwIllegalParameter(key.rest().toString(), Ranking.MATCH_PHASE);
                     } else if (key.size() > 3 && key.get(2).equals(Ranking.DIVERSITY)) {
                         Diversity diversity = ranking.getMatchPhase().getDiversity();
                         if (key.last().equals(Diversity.ATTRIBUTE)) {
                             diversity.setAttribute(asString(value, null));
-                        } else if (key.last().equals(Diversity.MINGROUPS)) {
+                        }
+                        else if (key.last().equals(Diversity.MINGROUPS)) {
                             diversity.setMinGroups(asLong(value, null));
-                        } else if ((key.size() > 4) && key.get(3).equals(Diversity.CUTOFF)) {
-                            if (key.last().equals(Diversity.FACTOR)) {
+                        }
+                        else if ((key.size() > 4) && key.get(3).equals(Diversity.CUTOFF)) {
+                            if (key.last().equals(Diversity.FACTOR))
                                 diversity.setCutoffFactor(asDouble(value, 10.0));
-                            } else if (key.last().equals(Diversity.STRATEGY)) {
+                            else if (key.last().equals(Diversity.STRATEGY))
                                 diversity.setCutoffStrategy(asString(value, "loose"));
-                            }
+                            else
+                                throwIllegalParameter(key.rest().toString(), Diversity.CUTOFF);
+                        }
+                        else {
+                            throwIllegalParameter(key.rest().toString(), Ranking.DIVERSITY);
                         }
                     }
                 }
                 else if (key.size() == 3 && key.get(1).equals(Ranking.SOFTTIMEOUT)) {
                     SoftTimeout soft = ranking.getSoftTimeout();
-                    if (key.last().equals(SoftTimeout.ENABLE)) soft.setEnable(asBoolean(value, true));
-                    if (key.last().equals(SoftTimeout.FACTOR)) soft.setFactor(asDouble(value, null));
-                    if (key.last().equals(SoftTimeout.TAILCOST)) soft.setTailcost(asDouble(value, null));
+                    if (key.last().equals(SoftTimeout.ENABLE))
+                        soft.setEnable(asBoolean(value, true));
+                    else if (key.last().equals(SoftTimeout.FACTOR))
+                        soft.setFactor(asDouble(value, null));
+                    else if (key.last().equals(SoftTimeout.TAILCOST))
+                        soft.setTailcost(asDouble(value, null));
+                    else
+                        throwIllegalParameter(key.rest().toString(), Ranking.SOFTTIMEOUT);
                 }
                 else if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
                     Matching matching = ranking.getMatching();
-                    if (key.last().equals(Matching.TERMWISELIMIT)) matching.setTermwiselimit(asDouble(value, 1.0));
-                    if (key.last().equals(Matching.NUMTHREADSPERSEARCH)) matching.setNumThreadsPerSearch(asInteger(value, 1));
-                    if (key.last().equals(Matching.NUMSEARCHPARTITIIONS)) matching.setNumSearchPartitions(asInteger(value, 1));
-                    if (key.last().equals(Matching.MINHITSPERTHREAD)) matching.setMinHitsPerThread(asInteger(value, 0));
+                    if (key.last().equals(Matching.TERMWISELIMIT))
+                        matching.setTermwiselimit(asDouble(value, 1.0));
+                    else if (key.last().equals(Matching.NUMTHREADSPERSEARCH))
+                        matching.setNumThreadsPerSearch(asInteger(value, 1));
+                    else if (key.last().equals(Matching.NUMSEARCHPARTITIIONS))
+                        matching.setNumSearchPartitions(asInteger(value, 1));
+                    else if (key.last().equals(Matching.MINHITSPERTHREAD))
+                        matching.setMinHitsPerThread(asInteger(value, 0));
+                    else
+                        throwIllegalParameter(key.rest().toString(), Ranking.MATCHING);
                 }
                 else if (key.size() > 2) {
                     String restKey = key.rest().rest().toString();
                     if (key.get(1).equals(Ranking.FEATURES))
-                        setRankingFeature(query, restKey, toSpecifiedType(restKey, value, profileRegistry.getTypeRegistry().getComponent("features")));
+                        setRankingFeature(query, restKey, toSpecifiedType(restKey,
+                                                                          value,
+                                                                          profileRegistry.getTypeRegistry().getComponent("features"),
+                                                                          context));
                     else if (key.get(1).equals(Ranking.PROPERTIES))
-                        ranking.getProperties().put(restKey, toSpecifiedType(restKey, value, profileRegistry.getTypeRegistry().getComponent("properties")));
+                        ranking.getProperties().put(restKey, toSpecifiedType(restKey,
+                                                                             value,
+                                                                             profileRegistry.getTypeRegistry().getComponent("properties"),
+                                                                             context));
                     else
-                        throwIllegalParameter(key.rest().toString(),Ranking.RANKING);
+                        throwIllegalParameter(key.rest().toString(), Ranking.RANKING);
                 }
             }
             else if (key.size() == 2 && key.first().equals(Presentation.PRESENTATION)) {
@@ -259,20 +292,27 @@ public class QueryProperties extends Properties {
                     query.getSelect().setGroupingExpressionString(asString(value, ""));
                 }
                 else if (key.size() == 2) {
-                    if (key.last().equals(Select.WHERE)) {
+                    if (key.last().equals(Select.WHERE))
                         query.getSelect().setWhereString(asString(value, ""));
-                    } else if (key.last().equals(Select.GROUPING)) {
+                    else if (key.last().equals(Select.GROUPING))
                         query.getSelect().setGroupingString(asString(value, ""));
-                    }
+                    else
+                        throwIllegalParameter(key.rest().toString(), Select.SELECT);
                 }
                 else {
                     throwIllegalParameter(key.last(), Select.SELECT);
                 }
             }
             else if (key.first().equals("rankfeature") || key.first().equals("featureoverride") ) { // featureoverride is deprecated
-                setRankingFeature(query, key.rest().toString(), toSpecifiedType(key.rest().toString(), value, profileRegistry.getTypeRegistry().getComponent("features")));
+                setRankingFeature(query, key.rest().toString(), toSpecifiedType(key.rest().toString(),
+                                                                                value,
+                                                                                profileRegistry.getTypeRegistry().getComponent("features"),
+                                                                                context));
             } else if (key.first().equals("rankproperty")) {
-                query.getRanking().getProperties().put(key.rest().toString(), toSpecifiedType(key.rest().toString(), value, profileRegistry.getTypeRegistry().getComponent("properties")));
+                query.getRanking().getProperties().put(key.rest().toString(), toSpecifiedType(key.rest().toString(),
+                                                                                              value,
+                                                                                              profileRegistry.getTypeRegistry().getComponent("properties"),
+                                                                                              context));
             } else if (key.size()==1) {
                 if (key.equals(Query.HITS))
                     query.setHits(asInteger(value,10));
@@ -294,10 +334,10 @@ public class QueryProperties extends Properties {
                 super.set(key,value,context);
         }
         catch (Exception e) { // Make sure error messages are informative. This should be moved out of this properties implementation
-            if (e.getMessage().startsWith("Could not set"))
+            if (e.getMessage() != null && e.getMessage().startsWith("Could not set"))
                 throw e;
             else
-                throw new IllegalArgumentException("Could not set '" + key + "' to '" + value + "'", e);
+                throw new IllegalInputException("Could not set '" + key + "' to '" + value + "'", e);
         }
     }
 
@@ -335,17 +375,17 @@ public class QueryProperties extends Properties {
         }
     }
 
-    private Object toSpecifiedType(String key, Object value, QueryProfileType type) {
+    private Object toSpecifiedType(String key, Object value, QueryProfileType type, Map<String,String> context) {
         if ( ! ( value instanceof String)) return value; // already typed
         if (type == null) return value; // no type info -> keep as string
         FieldDescription field = type.getField(key);
         if (field == null) return value; // ditto
-        return field.getType().convertFrom(value, profileRegistry);
+        return field.getType().convertFrom(value, new ConversionContext(profileRegistry, embedder, context));
     }
 
     private void throwIllegalParameter(String key,String namespace) {
-        throw new IllegalArgumentException("'" + key + "' is not a valid property in '" + namespace +
-                                           "'. See the search api for valid keys starting by '" + namespace + "'.");
+        throw new IllegalInputException("'" + key + "' is not a valid property in '" + namespace +
+                                        "'. See the query api for valid keys starting by '" + namespace + "'.");
     }
 
     @Override

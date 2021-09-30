@@ -23,6 +23,8 @@ public class TestProcessFactory implements ProcessFactory {
     private final List<SpawnCall> expectedSpawnCalls = new ArrayList<>();
     private final List<CommandLine> spawnCommandLines = new ArrayList<>();
 
+    private boolean muteVerifyAllCommandsExecuted = false;
+
     /** Forward call to spawn() to callback. */
     public TestProcessFactory interceptSpawn(String commandDescription,
                                              Function<CommandLine, ChildProcess2> callback) {
@@ -32,9 +34,10 @@ public class TestProcessFactory implements ProcessFactory {
 
     // Convenience method for the caller to avoid having to create a TestChildProcess2 instance.
     public TestProcessFactory expectSpawn(String commandLineString, TestChildProcess2 toReturn) {
+        int commandIndex = expectedSpawnCalls.size();
         return interceptSpawn(
                 commandLineString,
-                commandLine -> defaultSpawn(commandLine, commandLineString, toReturn));
+                commandLine -> defaultSpawn(commandLine, commandLineString, toReturn, commandIndex));
     }
 
     // Convenience method for the caller to avoid having to create a TestChildProcess2 instance.
@@ -54,6 +57,8 @@ public class TestProcessFactory implements ProcessFactory {
     }
 
     public void verifyAllCommandsExecuted() {
+        if (muteVerifyAllCommandsExecuted) return;
+
         if (spawnCommandLines.size() < expectedSpawnCalls.size()) {
             int missingCommandIndex = spawnCommandLines.size();
             throw new IllegalStateException("Command #" + missingCommandIndex +
@@ -81,12 +86,14 @@ public class TestProcessFactory implements ProcessFactory {
         return expectedSpawnCalls.get(spawnCommandLines.size() - 1).callback.apply(commandLine);
     }
 
-    private static ChildProcess2 defaultSpawn(CommandLine commandLine,
+    private ChildProcess2 defaultSpawn(CommandLine commandLine,
                                               String expectedCommandLineString,
-                                              ChildProcess2 toReturn) {
+                                              ChildProcess2 toReturn,
+                                              int commandSequenceNumber) {
         String actualCommandLineString = commandLine.toString();
         if (!Objects.equals(actualCommandLineString, expectedCommandLineString)) {
-            throw new IllegalArgumentException("Expected command line '" +
+            muteVerifyAllCommandsExecuted = true;
+            throw new IllegalArgumentException("Expected command #" + commandSequenceNumber + " to be '" +
                     expectedCommandLineString + "' but got '" + actualCommandLineString + "'");
         }
 

@@ -3,28 +3,31 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.io.InputStream;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * The API controllers use when communicating with config servers.
  *
- * @author Oyvind Grønnesby
+ * @author Øyvind Grønnesby
  */
 public interface ConfigServer {
 
@@ -32,13 +35,19 @@ public interface ConfigServer {
         PrepareResponse prepareResponse();
     }
 
-    PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions,
-                               Set<ContainerEndpoint> containerEndpoints, Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
-                               byte[] content);
+    PreparedApplication deploy(DeploymentData deployment);
 
-    void restart(DeploymentId deployment, Optional<Hostname> hostname);
+    void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes, boolean indexedOnly);
 
-    void deactivate(DeploymentId deployment) throws NotFoundException;
+    ApplicationReindexing getReindexing(DeploymentId deployment);
+
+    void disableReindexing(DeploymentId deployment);
+
+    void enableReindexing(DeploymentId deployment);
+
+    void restart(DeploymentId deployment, RestartFilter restartFilter);
+
+    void deactivate(DeploymentId deployment);
 
     boolean isSuspended(DeploymentId deployment);
 
@@ -46,7 +55,7 @@ public interface ConfigServer {
 
     Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, String restPath);
 
-    String getClusterControllerStatus(DeploymentId deployment, String restPath);
+    String getServiceStatusPage(DeploymentId deployment, String serviceName, String node, String subPath);
 
     /**
      * Gets the Vespa logs of the given deployment.
@@ -57,7 +66,19 @@ public interface ConfigServer {
      */
     InputStream getLogs(DeploymentId deployment, Map<String, String> queryParameters);
 
-    List<ClusterMetrics> getMetrics(DeploymentId deployment);
+    /**
+     * Gets the contents of a file inside the current application package for a given deployment. If the path is to
+     * a directly, a JSON list with URLs to contents is returned.
+     *
+     * @param deployment deployment to get application package content for
+     * @param path path within package to get
+     * @param requestUri request URI on the controller, used to rewrite paths in response from config server
+     */
+    ProxyResponse getApplicationPackageContent(DeploymentId deployment, String path, URI requestUri);
+
+    List<ClusterMetrics> getDeploymentMetrics(DeploymentId deployment);
+
+    List<ProtonMetrics> getProtonMetrics(DeploymentId deployment);
 
     List<String> getContentClusters(DeploymentId deployment);
 
@@ -120,5 +141,16 @@ public interface ConfigServer {
 
     /** Is tester node ready */
     boolean isTesterReady(DeploymentId deployment);
+
+    Optional<TestReport> getTestReport(DeploymentId deployment);
+
+    /** Get maximum resources consumed */
+    QuotaUsage getQuotaUsage(DeploymentId deploymentId);
+
+    /** Sets suspension status — whether application node operations are orchestrated — for the given deployment. */
+    void setSuspension(DeploymentId deploymentId, boolean suspend);
+
+    /** Validates secret store configuration. */
+    String validateSecretStore(DeploymentId deploymentId, TenantSecretStore tenantSecretStore, String region, String parameterName);
 
 }

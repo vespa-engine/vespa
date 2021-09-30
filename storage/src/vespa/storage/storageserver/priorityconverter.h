@@ -5,9 +5,9 @@
 #include <vespa/storage/config/config-stor-prioritymapping.h>
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/documentapi/messagebus/priority.h>
-#include <vespa/vespalib/util/sync.h>
 #include <atomic>
 #include <array>
+#include <mutex>
 
 namespace config {class ConfigUri; }
 
@@ -20,8 +20,8 @@ class PriorityConverter
 public:
     typedef vespa::config::content::core::StorPrioritymappingConfig Config;
 
-    PriorityConverter(const config::ConfigUri& configUri);
-    ~PriorityConverter();
+    explicit PriorityConverter(const config::ConfigUri& configUri);
+    ~PriorityConverter() override;
 
     /** Converts the given priority into a storage api priority number. */
     uint8_t toStoragePriority(documentapi::Priority::Value) const;
@@ -40,7 +40,7 @@ private:
 
     std::array<std::atomic<uint8_t>, PRI_ENUM_SIZE> _mapping;
     std::map<uint8_t, documentapi::Priority::Value> _reverseMapping;
-    vespalib::Lock _mutex;
+    mutable std::mutex _mutex;
 
     config::ConfigFetcher _configFetcher;
 };

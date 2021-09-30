@@ -26,7 +26,7 @@ class ThrottlingOperationStarter : public OperationStarter
         ThrottlingOperation(const ThrottlingOperation&);
         ThrottlingOperation& operator=(const ThrottlingOperation&);
         
-        void onClose(DistributorMessageSender& sender) override {
+        void onClose(DistributorStripeMessageSender& sender) override {
             _operation->onClose(sender);
         }
         const char* getName() const override {
@@ -38,21 +38,21 @@ class ThrottlingOperationStarter : public OperationStarter
         std::string toString() const override {
             return _operation->toString();
         }
-        void start(DistributorMessageSender& sender, framework::MilliSecTime startTime) override {
+        void start(DistributorStripeMessageSender& sender, framework::MilliSecTime startTime) override {
             _operation->start(sender, startTime);
         }
-        void receive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override {
+        void receive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override {
             _operation->receive(sender, msg);
         }
         framework::MilliSecTime getStartTime() const {
             return _operation->getStartTime();
         }
-        void onStart(DistributorMessageSender&) override {
+        void onStart(DistributorStripeMessageSender&) override {
             // Should never be called directly on the throttled operation
             // instance, but rather on its wrapped implementation.
             HDR_ABORT("should not be reached");
         }
-        void onReceive(DistributorMessageSender&,
+        void onReceive(DistributorStripeMessageSender&,
                                const std::shared_ptr<api::StorageReply>&) override {
             HDR_ABORT("should not be reached");
         }

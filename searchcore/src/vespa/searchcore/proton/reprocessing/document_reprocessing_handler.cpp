@@ -27,7 +27,7 @@ DocumentReprocessingHandler::DocumentReprocessingHandler(uint32_t docIdLimit)
       _docIdLimit(docIdLimit)
 {}
 
-DocumentReprocessingHandler::~DocumentReprocessingHandler() {}
+DocumentReprocessingHandler::~DocumentReprocessingHandler() = default;
 
 void
 DocumentReprocessingHandler::visit(uint32_t lid, const std::shared_ptr<document::Document> &doc)

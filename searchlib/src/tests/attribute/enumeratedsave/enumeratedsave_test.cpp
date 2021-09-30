@@ -9,20 +9,18 @@
 #include <vespa/searchlib/attribute/attributememoryfilebufferwriter.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
-#include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/attribute/multistringattribute.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/searchlib/attribute/singlestringattribute.h>
-#include <vespa/searchlib/queryeval/executeinfo.h>
+#include <vespa/searchlib/attribute/i_enum_store_dictionary.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/parsequery/parse.h>
+#include <vespa/searchlib/queryeval/executeinfo.h>
+#include <vespa/searchlib/util/bufferwriter.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/searchlib/util/randomgenerator.h>
+#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/bufferwriter.h>
 #include <vespa/vespalib/util/compress.h>
-
-#include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <limits>
 #include <iostream>
@@ -60,7 +58,7 @@ public:
     }
 
     virtual Buffer allocBuf(size_t size) override {
-        return std::make_unique<BufferBuf>(size, 4096);
+        return std::make_unique<BufferBuf>(size, search::FileSettings::DIRECTIO_ALIGNMENT);
     }
 
     virtual void writeBuf(Buffer buf_in) override {
@@ -107,6 +105,17 @@ public:
         return _weightWriter;
     }
     IAttributeFileWriter &udatWriter() override { return _udatWriter; }
+
+    bool setup_writer(const vespalib::string& file_suffix,
+                      const vespalib::string& desc) override {
+        (void) file_suffix;
+        (void) desc;
+        abort();
+    }
+    IAttributeFileWriter& get_writer(const vespalib::string& file_suffix) override {
+        (void) file_suffix;
+        abort();
+    }
 
     bool bufEqual(const Buffer &lhs, const Buffer &rhs) const;
  
@@ -157,7 +166,7 @@ private:
     void testReload(AttributePtr v0, AttributePtr v1, AttributePtr v2,
                     MemAttr::SP mv0, MemAttr::SP mv1, MemAttr::SP mv2,
                     MemAttr::SP emv0, MemAttr::SP emv1, MemAttr::SP emv2,
-                    Config cfg, const vespalib::string &pref, bool fastSearch);
+                    Config cfg, const vespalib::string &pref, bool fastSearch, search::DictionaryConfig dictionary_config);
 
 public:
     template <typename VectorType, typename BufferType>
@@ -216,7 +225,7 @@ void
 EnumeratedSaveTest::populate(IntegerAttribute &v, unsigned seed,
                              BasicType bt)
 {
-    search::Rand48 rnd;
+    vespalib::Rand48 rnd;
     IntegerAttribute::largeint_t mask(std::numeric_limits
                                       <IntegerAttribute::largeint_t>::max());
     switch (bt.type()) {
@@ -273,7 +282,7 @@ EnumeratedSaveTest::populate(FloatingPointAttribute &v, unsigned seed,
                              BasicType bt)
 {
     (void) bt;
-    search::Rand48 rnd;
+    vespalib::Rand48 rnd;
     rnd.srand48(seed);
     int weight = 1;
     for(size_t i(0), m(v.getNumDocs()); i < m; i++) {
@@ -523,9 +532,30 @@ EnumeratedSaveTest::saveMemDuringCompaction(AttributeVector &v)
 void
 EnumeratedSaveTest::checkMem(AttributeVector &v, const MemAttr &e)
 {
-    MemAttr m;
-    EXPECT_TRUE(v.save(m, v.getBaseFileName()));
-    ASSERT_TRUE(m == e);
+    auto *esb = v.getEnumStoreBase();
+    if (esb == nullptr || esb->get_dictionary().get_has_btree_dictionary()) {
+        MemAttr m;
+        EXPECT_TRUE(v.save(m, v.getBaseFileName()));
+        ASSERT_TRUE(m == e);
+    } else {
+        // Save without sorting unique values, load into temporary
+        // attribute vector with sorted dictionary and save again
+        // to verify data.
+        search::AttributeMemorySaveTarget ms;
+        search::TuneFileAttributes tune;
+        search::index::DummyFileHeaderContext fileHeaderContext;
+        EXPECT_TRUE(v.save(ms, "convert"));
+        EXPECT_TRUE(ms.writeToFile(tune, fileHeaderContext));
+        auto cfg = v.getConfig();
+        cfg.set_dictionary_config(search::DictionaryConfig(search::DictionaryConfig::Type::BTREE));
+        auto v2 = AttributeFactory::createAttribute("convert", cfg);
+        EXPECT_TRUE(v2->load());
+        MemAttr m2;
+        EXPECT_TRUE(v2->save(m2, v.getBaseFileName()));
+        ASSERT_TRUE(m2 == e);
+        auto v3 = AttributeFactory::createAttribute("convert", v.getConfig());
+        EXPECT_TRUE(v3->load());
+    }
 }
 
 
@@ -589,7 +619,8 @@ EnumeratedSaveTest::testReload(AttributePtr v0,
                                MemAttr::SP emv2,
                                Config cfg,
                                const vespalib::string &pref,
-                               bool fastSearch)
+                               bool fastSearch,
+                               search::DictionaryConfig dictionary_config)
 {
     // typedef AttributePtr AVP;
 
@@ -604,6 +635,7 @@ EnumeratedSaveTest::testReload(AttributePtr v0,
 
     Config check_cfg(cfg);
     check_cfg.setFastSearch(fastSearch);
+    check_cfg.set_dictionary_config(dictionary_config);
     TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "0", v0)));
     TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "1", v1)));
     TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "2", v2)));
@@ -688,11 +720,27 @@ EnumeratedSaveTest::test(BasicType bt, CollectionType ct,
     TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
                                                 mv0, mv1, mv2,
                                                 emv0, emv1, emv2,
-                                                cfg, pref, false)));
+                                                cfg, pref, false, search::DictionaryConfig(search::DictionaryConfig::Type::BTREE))));
     TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
                                                 mv0, mv1, mv2,
                                                 emv0, emv1, emv2,
-                                                cfg, pref, true)));
+                                                cfg, pref, true, search::DictionaryConfig(search::DictionaryConfig::Type::BTREE))));
+    TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
+                                                mv0, mv1, mv2,
+                                                emv0, emv1, emv2,
+                                                cfg, pref, false, search::DictionaryConfig(search::DictionaryConfig::Type::BTREE_AND_HASH))));
+    TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
+                                                mv0, mv1, mv2,
+                                                emv0, emv1, emv2,
+                                                cfg, pref, true, search::DictionaryConfig(search::DictionaryConfig::Type::BTREE_AND_HASH))));
+    TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
+                                                mv0, mv1, mv2,
+                                                emv0, emv1, emv2,
+                                                cfg, pref, false, search::DictionaryConfig(search::DictionaryConfig::Type::HASH))));
+    TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
+                                                mv0, mv1, mv2,
+                                                emv0, emv1, emv2,
+                                                cfg, pref, true, search::DictionaryConfig(search::DictionaryConfig::Type::HASH))));
 }
 
 TEST_F("Test enumerated save with single value int8", EnumeratedSaveTest)

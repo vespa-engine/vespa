@@ -9,11 +9,12 @@
 #include <time.h>
 #include <fcntl.h>
 #include <vespa/vespalib/net/socket_address.h>
+#include <cstdlib>
 
 void error(const char *msg)
 {
     perror(msg);
-    exit(1);
+    std::_Exit(1);
 }
 
 int main(int /*argc*/, char ** /*argv*/)

@@ -7,8 +7,6 @@ import com.yahoo.vespa.clustercontroller.core.restapiv2.Request;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Response;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
 
-import java.util.EnumSet;
-
 public class ServiceStateRequest extends Request<Response.ServiceResponse> {
     private final Id.Service id;
     private final int recursive;
@@ -26,7 +24,7 @@ public class ServiceStateRequest extends Request<Response.ServiceResponse> {
             Id.Node nodeId = new Id.Node(id, i);
             if (recursive > 0) {
                 // Don't include per-node statistics when aggregating over all nodes
-                NodeStateRequest nsr = new NodeStateRequest(nodeId, recursive - 1, EnumSet.noneOf(VerboseReport.class));
+                NodeStateRequest nsr = new NodeStateRequest(nodeId);
                 result.addEntry("node", String.valueOf(i), nsr.calculateResult(context));
             } else {
                 result.addLink("node", String.valueOf(i), nodeId.toString());

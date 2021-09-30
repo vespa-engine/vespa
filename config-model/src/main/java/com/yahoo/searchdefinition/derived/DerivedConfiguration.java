@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -19,7 +20,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.logging.Level;
+import java.util.concurrent.ExecutorService;
 
 /**
  * A set of all derived configuration of a search definition. Use this as a facade to individual configurations when
@@ -29,7 +30,7 @@ import java.util.logging.Level;
  */
 public class DerivedConfiguration {
 
-    private Search search;
+    private final Search search;
     private Summaries summaries;
     private SummaryMap summaryMap;
     private Juniperrc juniperrc;
@@ -41,7 +42,7 @@ public class DerivedConfiguration {
     private VsmSummary streamingSummary;
     private IndexSchema indexSchema;
     private ImportedFields importedFields;
-    private QueryProfileRegistry queryProfiles;
+    private final QueryProfileRegistry queryProfiles;
 
     /**
      * Creates a complete derived configuration from a search definition.
@@ -52,8 +53,12 @@ public class DerivedConfiguration {
      *               modified.
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
      */
-    DerivedConfiguration(Search search, RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels) {
-        this(search, new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfiles, importedModels);
+    public DerivedConfiguration(Search search, RankProfileRegistry rankProfileRegistry) {
+        this(search, rankProfileRegistry, new QueryProfileRegistry());
+    }
+
+    DerivedConfiguration(Search search, RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfiles) {
+        this(search, new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfiles, new ImportedMlModels(), new InThreadExecutorService());
     }
 
     /**
@@ -72,7 +77,8 @@ public class DerivedConfiguration {
                                 ModelContext.Properties deployProperties,
                                 RankProfileRegistry rankProfileRegistry,
                                 QueryProfileRegistry queryProfiles,
-                                ImportedMlModels importedModels) {
+                                ImportedMlModels importedModels,
+                                ExecutorService executor) {
         Validator.ensureNotNull("Search definition", search);
         this.search = search;
         this.queryProfiles = queryProfiles;
@@ -85,7 +91,9 @@ public class DerivedConfiguration {
             summaries = new Summaries(search, deployLogger);
             summaryMap = new SummaryMap(search);
             juniperrc = new Juniperrc(search);
-            rankProfileList = new RankProfileList(search, search.rankingConstants(), attributeFields, rankProfileRegistry, queryProfiles, importedModels, deployProperties);
+            rankProfileList = new RankProfileList(search, search.rankingConstants(), search.rankExpressionFiles(),
+                                                  search.onnxModels(), attributeFields, rankProfileRegistry,
+                                                  queryProfiles, importedModels, deployProperties, executor);
             indexingScript = new IndexingScript(search);
             indexInfo = new IndexInfo(search);
             indexSchema = new IndexSchema(search);

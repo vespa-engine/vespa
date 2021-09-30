@@ -3,6 +3,7 @@ package com.yahoo.vespa.orchestrator.policy;
 
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
@@ -34,7 +35,8 @@ public class HostedVespaPolicyTest {
 
     private final ClusterControllerClientFactory clientFactory = mock(ClusterControllerClientFactory.class);
     private final ClusterControllerClient client = mock(ClusterControllerClient.class);
-    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
+    private final ManualClock clock = new ManualClock();
+    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, 5, clock);
 
     @Before
     public void setUp() {
@@ -44,6 +46,7 @@ public class HostedVespaPolicyTest {
     @Test
     public void testGrantSuspension() throws HostStateChangeDeniedException {
         final HostedVespaClusterPolicy clusterPolicy = mock(HostedVespaClusterPolicy.class);
+        when(clusterPolicy.verifyGroupGoingDownIsFine(any())).thenReturn(SuspensionReasons.nothingNoteworthy());
         final HostedVespaPolicy policy = new HostedVespaPolicy(clusterPolicy, clientFactory, applicationApiFactory);
         final ApplicationApi applicationApi = mock(ApplicationApi.class);
         when(applicationApi.applicationId()).thenReturn(ApplicationId.fromSerializedForm("tenant:app:default"));
@@ -65,7 +68,7 @@ public class HostedVespaPolicyTest {
         when(storageNode1.hostName()).thenReturn(hostName3);
 
         List<StorageNode> upStorageNodes = Arrays.asList(storageNode1, storageNode3);
-        when(applicationApi.getUpStorageNodesInGroupInClusterOrder()).thenReturn(upStorageNodes);
+        when(applicationApi.getNoRemarksStorageNodesInGroupInClusterOrder()).thenReturn(upStorageNodes);
         // setHostState
 
         List<HostName> noRemarksHostNames = Arrays.asList(hostName1, hostName2, hostName3);
@@ -81,7 +84,7 @@ public class HostedVespaPolicyTest {
         order.verify(clusterPolicy).verifyGroupGoingDownIsFine(clusterApi2);
         order.verify(clusterPolicy).verifyGroupGoingDownIsFine(clusterApi3);
 
-        order.verify(applicationApi).getUpStorageNodesInGroupInClusterOrder();
+        order.verify(applicationApi).getNoRemarksStorageNodesInGroupInClusterOrder();
         order.verify(storageNode1).setNodeState(context, ClusterControllerNodeState.MAINTENANCE);
         order.verify(storageNode3).setNodeState(context, ClusterControllerNodeState.MAINTENANCE);
 
@@ -137,9 +140,60 @@ public class HostedVespaPolicyTest {
         order.verify(storageNode3).setNodeState(context, ClusterControllerNodeState.DOWN);
 
         order.verify(applicationApi).getNodesInGroupWith(any());
-        order.verify(applicationApi).setHostState(context, hostName1, HostStatus.ALLOWED_TO_BE_DOWN);
-        order.verify(applicationApi).setHostState(context, hostName2, HostStatus.ALLOWED_TO_BE_DOWN);
-        order.verify(applicationApi).setHostState(context, hostName3, HostStatus.ALLOWED_TO_BE_DOWN);
+        order.verify(applicationApi).setHostState(context, hostName1, HostStatus.PERMANENTLY_DOWN);
+        order.verify(applicationApi).setHostState(context, hostName2, HostStatus.PERMANENTLY_DOWN);
+        order.verify(applicationApi).setHostState(context, hostName3, HostStatus.PERMANENTLY_DOWN);
+
+        order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void testAcquirePermissionToRemoveConfigServer() throws OrchestrationException {
+        final HostedVespaClusterPolicy clusterPolicy = mock(HostedVespaClusterPolicy.class);
+        final HostedVespaPolicy policy = new HostedVespaPolicy(clusterPolicy, clientFactory, applicationApiFactory);
+        final ApplicationApi applicationApi = mock(ApplicationApi.class);
+        when(applicationApi.applicationId()).thenReturn(ApplicationId.fromSerializedForm("tenant:app:default"));
+
+        ClusterApi clusterApi1 = mock(ClusterApi.class);
+        ClusterApi clusterApi2 = mock(ClusterApi.class);
+        ClusterApi clusterApi3 = mock(ClusterApi.class);
+        List<ClusterApi> clusterApis = Arrays.asList(clusterApi1, clusterApi2, clusterApi3);
+        when(applicationApi.getClusters()).thenReturn(clusterApis);
+
+        StorageNode storageNode1 = mock(StorageNode.class);
+        HostName hostName1 = new HostName("storage-1");
+        when(storageNode1.hostName()).thenReturn(hostName1);
+
+        HostName hostName2 = new HostName("host-2");
+
+        StorageNode storageNode3 = mock(StorageNode.class);
+        HostName hostName3 = new HostName("storage-3");
+        when(storageNode1.hostName()).thenReturn(hostName3);
+
+        List<StorageNode> upStorageNodes = Arrays.asList(storageNode1, storageNode3);
+        when(applicationApi.getStorageNodesInGroupInClusterOrder()).thenReturn(upStorageNodes);
+
+        List<HostName> noRemarksHostNames = Arrays.asList(hostName1, hostName2, hostName3);
+        when(applicationApi.getNodesInGroupWith(any())).thenReturn(noRemarksHostNames);
+
+        InOrder order = inOrder(applicationApi, clusterPolicy, storageNode1, storageNode3);
+
+        OrchestratorContext context = mock(OrchestratorContext.class);
+        policy.acquirePermissionToRemove(context, applicationApi);
+
+        order.verify(applicationApi).getClusters();
+        order.verify(clusterPolicy).verifyGroupGoingDownPermanentlyIsFine(clusterApi1);
+        order.verify(clusterPolicy).verifyGroupGoingDownPermanentlyIsFine(clusterApi2);
+        order.verify(clusterPolicy).verifyGroupGoingDownPermanentlyIsFine(clusterApi3);
+
+        order.verify(applicationApi).getStorageNodesInGroupInClusterOrder();
+        order.verify(storageNode1).setNodeState(context, ClusterControllerNodeState.DOWN);
+        order.verify(storageNode3).setNodeState(context, ClusterControllerNodeState.DOWN);
+
+        order.verify(applicationApi).getNodesInGroupWith(any());
+        order.verify(applicationApi).setHostState(context, hostName1, HostStatus.PERMANENTLY_DOWN);
+        order.verify(applicationApi).setHostState(context, hostName2, HostStatus.PERMANENTLY_DOWN);
+        order.verify(applicationApi).setHostState(context, hostName3, HostStatus.PERMANENTLY_DOWN);
 
         order.verifyNoMoreInteractions();
     }

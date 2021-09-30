@@ -1,71 +1,100 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #pragma once
 
 #include "blockable_maintenance_job.h"
 #include "document_db_maintenance_config.h"
 #include "i_disk_mem_usage_listener.h"
-#include "i_lid_space_compaction_handler.h"
-#include "i_operation_storer.h"
-#include "ibucketstatecalculator.h"
 #include "iclusterstatechangedhandler.h"
-#include "iclusterstatechangednotifier.h"
+#include <vespa/searchlib/common/idocumentmetastore.h>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
+#include <vespa/document/bucket/bucketspace.h>
+#include <atomic>
 
+namespace storage::spi { struct BucketExecutor; }
+namespace searchcorespi::index { struct IThreadService; }
+namespace vespalib { class IDestructorCallback; }
 namespace proton {
+    class MoveOperation;
+    class IDiskMemUsageNotifier;
+    class IClusterStateChangedNotifier;
+    struct IOperationStorer;
+    struct ILidSpaceCompactionHandler;
+    struct IDocumentScanIterator;
+    class RemoveOperationsRateTracker;
+}
 
-class IFrozenBucketHandler;
-class IDiskMemUsageNotifier;
-class IClusterStateChangedNotifier;
+namespace proton::lidspace {
 
 /**
- * Job that regularly checks whether lid space compaction should be performed
- * for the given handler.
- *
- * Compaction is handled by moving documents from high lids to low free lids.
- * A handler is typically working over a single document sub db.
+ * Moves documents from higher lids to lower lids. It uses a BucketExecutor that ensures that the bucket
+ * is locked for changes while the document is moved.
  */
-class LidSpaceCompactionJob : public BlockableMaintenanceJob,
-                              public IDiskMemUsageListener,
-                              public IClusterStateChangedHandler
+class CompactionJob : public BlockableMaintenanceJob,
+                      public IDiskMemUsageListener,
+                      public IClusterStateChangedHandler,
+                      public std::enable_shared_from_this<CompactionJob>
 {
 private:
-    const DocumentDBLidSpaceCompactionConfig _cfg;
-    ILidSpaceCompactionHandler   &_handler;
-    IOperationStorer             &_opStorer;
-    IFrozenBucketHandler         &_frozenHandler;
-    IDocumentScanIterator::UP     _scanItr;
-    bool                          _retryFrozenDocument;
-    bool                          _shouldCompactLidSpace;
-    IDiskMemUsageNotifier        &_diskMemUsageNotifier;
-    IClusterStateChangedNotifier &_clusterStateChangedNotifier;
+    using BucketExecutor = storage::spi::BucketExecutor;
+    using IDestructorCallback = vespalib::IDestructorCallback;
+    using IThreadService = searchcorespi::index::IThreadService;
+    const DocumentDBLidSpaceCompactionConfig      _cfg;
+    std::shared_ptr<ILidSpaceCompactionHandler>   _handler;
+    IOperationStorer                             &_opStorer;
+    std::unique_ptr<IDocumentScanIterator>        _scanItr;
+    IDiskMemUsageNotifier                        &_diskMemUsageNotifier;
+    IClusterStateChangedNotifier                 &_clusterStateChangedNotifier;
+    std::shared_ptr<RemoveOperationsRateTracker>  _ops_rate_tracker;
+    bool                                          _is_disabled;
+    bool                                          _shouldCompactLidSpace;
+    IThreadService                               &_master;
+    BucketExecutor                               &_bucketExecutor;
+    RetainGuard                                   _dbRetainer;
+    document::BucketSpace                         _bucketSpace;
 
     bool hasTooMuchLidBloat(const search::LidUsageStats &stats) const;
     bool shouldRestartScanDocuments(const search::LidUsageStats &stats) const;
-    search::DocumentMetaData getNextDocument(const search::LidUsageStats &stats);
-    bool scanDocuments(const search::LidUsageStats &stats);
     void compactLidSpace(const search::LidUsageStats &stats);
-    void refreshRunnable();
-    void refreshAndConsiderRunnable();
-    bool remove_batch_is_ongoing(const search::LidUsageStats& stats) const;
+    bool remove_batch_is_ongoing() const;
+    bool remove_is_ongoing() const;
+    search::DocumentMetaData getNextDocument(const search::LidUsageStats &stats, bool retryLastDocument);
 
+    bool scanDocuments(const search::LidUsageStats &stats);
+    static void moveDocument(std::shared_ptr<CompactionJob> job, const search::DocumentMetaData & metaThen,
+                             std::shared_ptr<IDestructorCallback> onDone);
+    void completeMove(const search::DocumentMetaData & metaThen, std::unique_ptr<MoveOperation> moveOp,
+                      std::shared_ptr<IDestructorCallback> onDone);
+    class MoveTask;
+
+    CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
+                  RetainGuard dbRetainer,
+                  std::shared_ptr<ILidSpaceCompactionHandler> handler,
+                  IOperationStorer &opStorer,
+                  IThreadService & master,
+                  BucketExecutor & bucketExecutor,
+                  IDiskMemUsageNotifier &diskMemUsageNotifier,
+                  const BlockableMaintenanceJobConfig &blockableConfig,
+                  IClusterStateChangedNotifier &clusterStateChangedNotifier,
+                  bool nodeRetired,
+                  document::BucketSpace bucketSpace);
 public:
-    LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
-                          ILidSpaceCompactionHandler &handler,
-                          IOperationStorer &opStorer,
-                          IFrozenBucketHandler &frozenHandler,
-                          IDiskMemUsageNotifier &diskMemUsageNotifier,
-                          const BlockableMaintenanceJobConfig &blockableConfig,
-                          IClusterStateChangedNotifier &clusterStateChangedNotifier,
-                          bool nodeRetired);
-    ~LidSpaceCompactionJob();
-
-    // Implements IDiskMemUsageListener
-    virtual void notifyDiskMemUsage(DiskMemUsageState state) override;
-
-    // Implements IClusterStateChangedNofifier
-    virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
-
-    // Implements IMaintenanceJob
-    virtual bool run() override;
+    static std::shared_ptr<CompactionJob>
+    create(const DocumentDBLidSpaceCompactionConfig &config,
+           RetainGuard dbRetainer,
+           std::shared_ptr<ILidSpaceCompactionHandler> handler,
+           IOperationStorer &opStorer,
+           IThreadService & master,
+           BucketExecutor & bucketExecutor,
+           IDiskMemUsageNotifier &diskMemUsageNotifier,
+           const BlockableMaintenanceJobConfig &blockableConfig,
+           IClusterStateChangedNotifier &clusterStateChangedNotifier,
+           bool nodeRetired,
+           document::BucketSpace bucketSpace);
+    ~CompactionJob() override;
+    void notifyDiskMemUsage(DiskMemUsageState state) override;
+    void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override;
+    bool run() override;
 };
 
 } // namespace proton

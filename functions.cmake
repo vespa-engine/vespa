@@ -17,9 +17,9 @@ endfunction()
 function(vespa_add_target_dependency TARGET OTHER_TARGET)
     get_target_property(TARGET_TYPE ${TARGET} TYPE)
 
+    set_property(GLOBAL APPEND PROPERTY TARGET_${OTHER_TARGET}_MODULE_DEPENDENTS ${MODULE_NAME})
     # (Weak) dependency between object library and other target
     if(TARGET_TYPE STREQUAL OBJECT_LIBRARY)
-        add_dependencies(${TARGET} ${OTHER_TARGET})
         target_include_directories(${TARGET} PRIVATE $<TARGET_PROPERTY:${OTHER_TARGET},INTERFACE_INCLUDE_DIRECTORIES>)
         return()
     endif()
@@ -101,6 +101,18 @@ function(vespa_add_target_system_dependency TARGET PACKAGE_NAME)
     endif()
 endfunction()
 
+function(vespa_add_source_target TARGET)
+    cmake_parse_arguments(
+        ARG
+        ""
+        ""
+        "DEPENDS"
+        ${ARGN}
+    )
+    add_custom_target(${TARGET} DEPENDS ${ARG_DEPENDS})
+    __add_source_target_to_module(${TARGET})
+endfunction()
+
 function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
     # Generate config-<name>.cpp and config-<name>.h from <name>.def
     # Destination directory is always where generate_config is called (or, in the case of out-of-source builds, in the build-tree parallel)
@@ -113,16 +125,12 @@ function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
         get_filename_component(CONFIG_NAME ${RELATIVE_CONFIG_DEF_PATH} NAME_WE)
     endif()
 
-    # configgen.jar takes the parent dir of the destination dir and the destination dirname as separate parameters
-    # so it can produce the correct include statements within the generated .cpp-file (silent cry)
     # Make config path an absolute_path
     set(CONFIG_DEF_PATH ${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_CONFIG_DEF_PATH})
 
-    # Config destination is the 
+    # Config destination is the current source directory (or parallel in build tree)
+    # configgen.jar takes the destination dirname as a property parameter
     set(CONFIG_DEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
-
-    # Get parent of destination directory
-    set(CONFIG_DEST_PARENT_DIR ${CONFIG_DEST_DIR}/..)
 
     # Get destination dirname
     get_filename_component(CONFIG_DEST_DIRNAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
@@ -132,43 +140,57 @@ function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
 
     add_custom_command(
         OUTPUT ${CONFIG_H_PATH} ${CONFIG_CPP_PATH}
-        COMMAND java -Dconfig.spec=${CONFIG_DEF_PATH} -Dconfig.dest=${CONFIG_DEST_PARENT_DIR} -Dconfig.lang=cpp -Dconfig.subdir=${CONFIG_DEST_DIRNAME} -Dconfig.dumpTree=false -Xms64m -Xmx64m -jar ${PROJECT_SOURCE_DIR}/configgen/target/configgen.jar
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+        COMMAND java -Dconfig.spec=${CONFIG_DEF_PATH} -Dconfig.dest=${CONFIG_DEST_DIR} -Dconfig.lang=cpp -Dconfig.dumpTree=false -Xms64m -Xmx64m -jar ${PROJECT_SOURCE_DIR}/configgen/target/configgen.jar
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Generating cpp config for ${CONFIG_NAME} in ${CMAKE_CURRENT_SOURCE_DIR}"
         MAIN_DEPENDENCY ${CONFIG_DEF_PATH}
         )
 
+    if (TARGET ${TARGET}_object)
+        # Generated config is in implicit object library
+        set(TARGET "${TARGET}_object")
+    endif()
     # Add generated to sources for target
     target_sources(${TARGET} PRIVATE ${CONFIG_H_PATH} ${CONFIG_CPP_PATH})
-
-    # Needed to be able to do a #include <CONFIG_DEST_DIRNAME/config-<name>.h> for this target
-    # This is used within the generated config-<name>.cpp
-    # TODO: Should modify configgen to use #include <vespa/<modulename>/config-<name>.h> instead
-    target_include_directories(${TARGET} PRIVATE ${CONFIG_DEST_PARENT_DIR})
 
     # Needed to be able to do a #include <config-<name>.h> for this target
     # This is used within some unit tests
     target_include_directories(${TARGET} PRIVATE ${CONFIG_DEST_DIR})
+    vespa_add_source_target("configgen_${TARGET}_${CONFIG_NAME}" DEPENDS ${CONFIG_H_PATH} ${CONFIG_CPP_PATH})
 endfunction()
+
+macro(__split_sources_list)
+    unset(SOURCE_FILES)
+    unset(NON_TARGET_SOURCE_FILES)
+    unset(TARGET_SOURCE_FILES)
+    if(ARG_SOURCES)
+        set(SOURCE_FILES ${ARG_SOURCES})
+        set(TARGET_SOURCE_FILES ${ARG_SOURCES})
+        set(NON_TARGET_SOURCE_FILES ${ARG_SOURCES})
+        list(FILTER TARGET_SOURCE_FILES INCLUDE REGEX "TARGET_OBJECTS:")
+        list(FILTER NON_TARGET_SOURCE_FILES EXCLUDE REGEX "TARGET_OBJECTS:")
+    endif()
+endmacro()
 
 function(vespa_add_library TARGET)
     cmake_parse_arguments(ARG
-        "STATIC;OBJECT;INTERFACE;TEST"
+        "STATIC;OBJECT;INTERFACE;TEST;ALLOW_UNRESOLVED_SYMBOLS"
         "INSTALL;OUTPUT_NAME"
-        "DEPENDS;AFTER;SOURCES"
+        "DEPENDS;EXTERNAL_DEPENDS;AFTER;SOURCES"
         ${ARGN})
 
     __check_target_parameters()
-
-    if(ARG_SOURCES)
-        set(SOURCE_FILES ${ARG_SOURCES})
-    else()
+    __split_sources_list()
+    if(NOT ARG_SOURCES)
         # In the case where no source files are given, we include an empty source file to suppress a warning from CMake
         # This way, config-only libraries will not generate lots of build warnings
         set(SOURCE_FILES "${CMAKE_SOURCE_DIR}/empty.cpp")
+        set(NON_TARGET_SOURCE_FILES ${SOURCE_FILES})
     endif()
 
     if(ARG_OBJECT)
         set(LIBRARY_TYPE OBJECT)
+        __add_object_target_to_module(${TARGET})
     elseif(ARG_STATIC)
         set(LINKAGE STATIC)
     elseif(ARG_INTERFACE)
@@ -176,7 +198,13 @@ function(vespa_add_library TARGET)
         set(SOURCE_FILES)
     endif()
 
-    add_library(${TARGET} ${LINKAGE} ${LIBRARY_TYPE} ${SOURCE_FILES})
+    if (ARG_OBJECT OR ARG_INTERFACE OR TARGET ${TARGET}_object OR NOT NON_TARGET_SOURCE_FILES)
+        unset(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY)
+        add_library(${TARGET} ${LINKAGE} ${LIBRARY_TYPE} ${SOURCE_FILES})
+    else()
+        set(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY True)
+        add_library(${TARGET} ${LINKAGE} ${LIBRARY_TYPE} $<TARGET_OBJECTS:${TARGET}_object> ${TARGET_SOURCE_FILES})
+    endif()
     __add_dependencies_to_target()
 
     __handle_test_targets()
@@ -190,8 +218,17 @@ function(vespa_add_library TARGET)
         set_target_properties(${TARGET} PROPERTIES OUTPUT_NAME ${ARG_OUTPUT_NAME})
     endif()
 
+    if(NOT ARG_OBJECT AND NOT ARG_STATIC AND NOT ARG_INTERFACE AND NOT ARG_ALLOW_UNRESOLVED_SYMBOLS AND DEFINED VESPA_DISALLOW_UNRESOLVED_SYMBOLS_IN_SHARED_LIBRARIES)
+        __add_private_target_link_option(${TARGET} ${VESPA_DISALLOW_UNRESOLVED_SYMBOLS_IN_SHARED_LIBRARIES})
+    endif()
+
     __add_target_to_module(${TARGET})
     __export_include_directories(${TARGET})
+    if(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY)
+      unset(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY)
+      vespa_add_library(${TARGET}_object OBJECT SOURCES ${NON_TARGET_SOURCE_FILES} DEPENDS ${ARG_DEPENDS})
+      add_dependencies(${TARGET} ${TARGET}_object)
+    endif()
 endfunction()
 
 function(__install_header_files)
@@ -218,11 +255,18 @@ function(vespa_add_executable TARGET)
     cmake_parse_arguments(ARG
         "TEST"
         "INSTALL;OUTPUT_NAME"
-        "DEPENDS;AFTER;SOURCES"
+        "DEPENDS;EXTERNAL_DEPENDS;AFTER;SOURCES"
         ${ARGN})
 
     __check_target_parameters()
-    add_executable(${TARGET} ${ARG_SOURCES})
+    __split_sources_list()
+    if(TARGET ${TARGET}_object OR NOT NON_TARGET_SOURCE_FILES)
+        unset(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY)
+        add_executable(${TARGET} ${ARG_SOURCES})
+    else()
+        set(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY True)
+        add_executable(${TARGET} $<TARGET_OBJECTS:${TARGET}_object> ${TARGET_SOURCE_FILES})
+    endif()
     __add_dependencies_to_target()
 
     __handle_test_targets()
@@ -237,6 +281,11 @@ function(vespa_add_executable TARGET)
 
     __add_target_to_module(${TARGET})
     __export_include_directories(${TARGET})
+    if(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY)
+        unset(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY)
+        vespa_add_library(${TARGET}_object OBJECT SOURCES ${NON_TARGET_SOURCE_FILES} DEPENDS ${ARG_DEPENDS})
+        add_dependencies(${TARGET} ${TARGET}_object)
+    endif()
 endfunction()
 
 macro(vespa_define_module)
@@ -349,7 +398,7 @@ function(__is_command_a_script COMMAND RESULT_VAR)
 endfunction()
 
 function(vespa_add_test)
-    cmake_parse_arguments(ARG "NO_VALGRIND;RUN_SERIAL;BENCHMARK" "NAME;WORKING_DIRECTORY;ENVIRONMENT" "COMMAND;DEPENDS" ${ARGN})
+    cmake_parse_arguments(ARG "NO_VALGRIND;RUN_SERIAL;BENCHMARK" "NAME;WORKING_DIRECTORY;ENVIRONMENT;COST" "COMMAND;DEPENDS" ${ARGN})
 
     if(NOT RUN_BENCHMARKS AND ARG_BENCHMARK)
         return()
@@ -400,8 +449,13 @@ function(vespa_add_test)
 
     list(APPEND ARG_ENVIRONMENT "SOURCE_DIRECTORY=${CMAKE_CURRENT_SOURCE_DIR}")
     set_tests_properties(${ARG_NAME} PROPERTIES ENVIRONMENT "${ARG_ENVIRONMENT}")
+
+    if (ARG_COST)
+        set_tests_properties(${ARG_NAME} PROPERTIES COST ${ARG_COST})
+    endif()
+    
     if(ARG_RUN_SERIAL)
-        set_tests_properties(${TEST_NAME} PROPERTIES RUN_SERIAL TRUE)
+        set_tests_properties(${ARG_NAME} PROPERTIES RUN_SERIAL TRUE)
     endif()
 
     if (AUTORUN_UNIT_TESTS)
@@ -477,6 +531,11 @@ macro(__add_dependencies_to_target)
         vespa_add_target_dependency(${TARGET} ${DEPENDEE})
     endforeach()
 
+    # Link with other external libraries defined as external dependencies
+    foreach(DEPENDEE IN LISTS ARG_EXTERNAL_DEPENDS)
+        vespa_add_target_external_dependency(${TARGET} ${DEPENDEE})
+    endforeach()
+
     # Link with other external libraries defined as module external dependencies
     foreach(DEPENDEE IN LISTS MODULE_EXTERNAL_DEPENDS)
         vespa_add_target_external_dependency(${TARGET} ${DEPENDEE})
@@ -495,6 +554,14 @@ endfunction()
 
 function(__add_test_target_to_module TARGET)
     set_property(GLOBAL APPEND PROPERTY MODULE_${MODULE_NAME}_TEST_TARGETS ${TARGET})
+endfunction()
+
+function(__add_source_target_to_module TARGET)
+    set_property(GLOBAL APPEND PROPERTY MODULE_${MODULE_NAME}_SOURCE_TARGETS ${TARGET})
+endfunction()
+
+function(__add_object_target_to_module TARGET)
+    set_property(GLOBAL APPEND PROPERTY MODULE_${MODULE_NAME}_OBJECT_TARGETS ${TARGET})
 endfunction()
 
 macro(__handle_test_targets)
@@ -527,6 +594,32 @@ function(__create_module_targets PROPERTY_POSTFIX TARGET_POSTFIX)
     endforeach()
 endfunction()
 
+function(__create_module_source_dependencies)
+    get_property(VESPA_MODULES GLOBAL PROPERTY VESPA_MODULES)
+    foreach(MODULE IN LISTS VESPA_MODULES)
+        get_property(TARGETS GLOBAL PROPERTY MODULE_${MODULE}_TARGETS)
+        get_property(TEST_TARGETS GLOBAL PROPERTY MODULE_${MODULE}_TEST_TARGETS)
+        list(APPEND TARGETS ${TEST_TARGETS})
+        if(TARGETS)
+            list(REMOVE_DUPLICATES TARGETS)
+            set(SOURCE_TARGET "${MODULE}+source")
+
+            unset(MODULE_DEPENDENTS)
+            foreach(TARGET IN LISTS TARGETS)
+                get_property(TARGET_MODULE_DEPENDENTS GLOBAL PROPERTY TARGET_${TARGET}_MODULE_DEPENDENTS)
+                list(APPEND MODULE_DEPENDENTS ${TARGET_MODULE_DEPENDENTS})
+                add_dependencies(${TARGET} ${SOURCE_TARGET})
+            endforeach()
+            if (MODULE_DEPENDENTS)
+                list(REMOVE_DUPLICATES MODULE_DEPENDENTS)
+                foreach(MODULE_DEPENDENT IN LISTS MODULE_DEPENDENTS)
+                    add_dependencies(${MODULE_DEPENDENT}+source ${SOURCE_TARGET})
+                endforeach()
+            endif()
+        endif()
+    endforeach()
+endfunction()
+
 function(__export_include_directories TARGET)
     get_directory_property(LOCAL_INCLUDE_DIRS INCLUDE_DIRECTORIES)
     get_target_property(TARGET_TYPE ${TARGET} TYPE)
@@ -543,6 +636,15 @@ function(install_config_definition)
     else()
         install(FILES ${ARGV0} DESTINATION  share/vespa/configdefinitions)
     endif()
+endfunction()
+
+function(install_config_definitions)
+    if(ARGC EQUAL 0)
+        set(DEFINITIONS_DIR src/main/resources/configdefinitions)
+    else()
+        set(DEFINITIONS_DIR ${ARGV0})
+    endif()
+    install(DIRECTORY ${DEFINITIONS_DIR}/ DESTINATION share/vespa/configdefinitions FILES_MATCHING PATTERN "*.def")
 endfunction()
 
 function(install_java_artifact NAME)
@@ -595,7 +697,19 @@ function(vespa_detect_build_platform)
     file(STRINGS /etc/os-release OS_DISTRO REGEX "^ID=")
     string(REGEX REPLACE "ID=\"?([^\"]+)\"?" "\\1" OS_DISTRO ${OS_DISTRO})
     file(STRINGS /etc/os-release OS_DISTRO_VERSION REGEX "^VERSION_ID=")
-    string(REGEX REPLACE "VERSION_ID=\"?([^\"]+)\"?" "\\1" OS_DISTRO_VERSION ${OS_DISTRO_VERSION})
+    if(OS_DISTRO_VERSION)
+      string(REGEX REPLACE "VERSION_ID=\"?([^\"]+)\"?" "\\1" OS_DISTRO_VERSION ${OS_DISTRO_VERSION})
+    else()
+      if (OS_DISTRO STREQUAL "debian")
+        set(OS_DISTRO_VERSION "sid")
+      else()
+        message(FATAL_ERROR "-- Could not determine ${OS_DISTRO} version")
+      endif()
+    endif()
+    file(STRINGS /etc/os-release OS_DISTRO_NAME REGEX "^NAME=")
+    if (OS_DISTRO_NAME)
+      string(REGEX REPLACE "NAME=\"?([^\"]+)\"?" "\\1" OS_DISTRO_NAME ${OS_DISTRO_NAME})
+    endif()
   elseif(EXISTS /etc/redhat-release)
     set(OS_DISTRO "rhel")
     file(STRINGS "/etc/redhat-release" OS_DISTRO_VERSION)
@@ -609,6 +723,9 @@ function(vespa_detect_build_platform)
     set(VESPA_OS_DISTRO_VERSION ${OS_DISTRO_VERSION} PARENT_SCOPE)
     string(CONCAT OS_DISTRO_COMBINED ${OS_DISTRO} " " ${OS_DISTRO_VERSION})
     set(VESPA_OS_DISTRO_COMBINED ${OS_DISTRO_COMBINED} PARENT_SCOPE)
+    if (OS_DISTRO_NAME)
+      set(VESPA_OS_DISTRO_NAME ${OS_DISTRO_NAME} PARENT_SCOPE)
+    endif()
   else()
     message(FATAL_ERROR "-- Could not determine vespa build platform")
   endif()
@@ -616,4 +733,38 @@ endfunction()
 
 function(vespa_install_empty_tmp_dir TARGET)
 install(DIRECTORY DESTINATION ${TARGET} DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_WRITE GROUP_EXECUTE WORLD_READ WORLD_WRITE WORLD_EXECUTE SETGID)
+endfunction()
+
+function(vespa_suppress_warnings_for_protobuf_sources)
+    cmake_parse_arguments(
+        ARG
+        ""
+        ""
+        "SOURCES"
+        ${ARGN}
+    )
+  # protoc-generated files emit compiler warnings that we normally treat as errors.
+  # Instead of rolling our own compiler plugin we'll pragmatically disable the noise.
+  if (NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" AND NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+    if(Protobuf_VERSION VERSION_LESS "3.7.0")
+      set(VESPA_DISABLE_UNUSED_WARNING "-Wno-unused-parameter")
+    else()
+      unset(VESPA_DISABLE_UNUSED_WARNING)
+    endif()
+    set_source_files_properties(${ARG_SOURCES} PROPERTIES COMPILE_FLAGS "-Wno-array-bounds -Wno-suggest-override -Wno-inline ${VESPA_DISABLE_UNUSED_WARNING}")
+  endif()
+endfunction()
+
+function(__add_private_target_link_option TARGET TARGET_LINK_OPTION)
+  if(COMMAND target_link_options)
+    target_link_options(${TARGET} PRIVATE ${TARGET_LINK_OPTION})
+  else()
+    get_target_property(TARGET_LINK_FLAGS ${TARGET} LINK_FLAGS)
+    if (NOT DEFINED TARGET_LINK_FLAGS OR ${TARGET_LINK_FLAGS} STREQUAL "" OR ${TARGET_LINK_FLAGS} STREQUAL "TARGET_LINK_FLAGS-NOTFOUND")
+      set(TARGET_LINK_FLAGS ${TARGET_LINK_OPTION})
+    else()
+      set(TARGET_LINK_FLAGS "${TARGET_LINK_FLAGS} ${TARGET_LINK_OPTION}")
+    endif()
+    set_target_properties(${TARGET} PROPERTIES LINK_FLAGS "${TARGET_LINK_FLAGS}")
+  endif()
 endfunction()

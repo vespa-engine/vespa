@@ -1,10 +1,12 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.jrt.Request;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.PayloadChecksum;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.CompressionType;
 import com.yahoo.vespa.config.protocol.DefContent;
@@ -19,12 +21,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
+import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
+
 /**
  * @author bratseth
  */
 public class ConfigTester {
 
     private static final long defaultTimeout = 10000;
+    private static final List<String> defContent = Collections.singletonList("bar string");
 
     static RawConfig fooConfig;
     static RawConfig barConfig;
@@ -39,10 +45,10 @@ public class ConfigTester {
         ConfigPayload fooConfigPayload = createConfigPayload("bar", "value");
         fooPayload = Payload.from(fooConfigPayload);
 
-        List<String> defContent = Collections.singletonList("bar string");
         long generation = 1;
         String defMd5 = ConfigUtils.getDefMd5(defContent);
-        String configMd5 = ConfigUtils.getMd5(fooConfigPayload);
+        PayloadChecksums configMd5 = PayloadChecksums.from(new PayloadChecksum(ConfigUtils.getMd5(fooConfigPayload), MD5),
+                                                                               PayloadChecksum.empty(XXHASH64));
         fooConfig = new RawConfig(configKey, defMd5, fooPayload, configMd5,
                                   generation, false, defContent, Optional.empty());
 
@@ -57,17 +63,28 @@ public class ConfigTester {
 
     JRTServerConfigRequest createRequest(RawConfig config, long timeout) {
         return createRequest(config.getName(), config.getConfigId(), config.getNamespace(),
-                             config.getConfigMd5(), config.getDefMd5(), config.getGeneration(), timeout);
+                             config.getPayloadChecksums(), config.getGeneration(), timeout);
     }
 
     JRTServerConfigRequest createRequest(String configName, String configId, String namespace, long timeout) {
-        return createRequest(configName, configId, namespace, "", null, 0, timeout);
+        return createRequest(configName, configId, namespace, PayloadChecksums.empty(), 0, timeout);
     }
 
-    private JRTServerConfigRequest createRequest(String configName, String configId, String namespace, String md5, String defMd5, long generation, long timeout) {
+    private JRTServerConfigRequest createRequest(String configName,
+                                                 String configId,
+                                                 String namespace,
+                                                 PayloadChecksums payloadChecksums,
+                                                 long generation,
+                                                 long timeout) {
         Request request = JRTClientConfigRequestV3.
-                createWithParams(new ConfigKey<>(configName, configId, namespace, defMd5, null), DefContent.fromList(Collections.emptyList()),
-                                 "fromHost", md5, generation, timeout, Trace.createDummy(), CompressionType.UNCOMPRESSED,
+                createWithParams(new ConfigKey<>(configName, configId, namespace, null),
+                                 DefContent.fromList(defContent),
+                                 "fromHost",
+                                 payloadChecksums,
+                                 generation,
+                                 timeout,
+                                 Trace.createDummy(),
+                                 CompressionType.UNCOMPRESSED,
                                  Optional.empty()).getRequest();
         return JRTServerConfigRequestV3.createFromRequest(request);
     }

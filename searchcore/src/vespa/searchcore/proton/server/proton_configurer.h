@@ -25,7 +25,7 @@ class IProtonDiskLayout;
 class ProtonConfigurer : public IProtonConfigurer
 {
     using DocumentDBs = std::map<DocTypeName, std::pair<std::weak_ptr<IDocumentDBConfigOwner>, std::weak_ptr<DocumentDBDirectoryHolder>>>;
-    using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
+    using InitializeThreads = std::shared_ptr<vespalib::SyncableThreadExecutor>;
 
     ExecutorThreadService _executor;
     IProtonConfigurerOwner &_owner;
@@ -48,11 +48,11 @@ class ProtonConfigurer : public IProtonConfigurer
     void pruneInitialDocumentDBDirs(const ProtonConfigSnapshot &configSnapshot);
 
 public:
-    ProtonConfigurer(vespalib::ThreadStackExecutorBase &executor,
+    ProtonConfigurer(vespalib::SyncableThreadExecutor &executor,
                      IProtonConfigurerOwner &owner,
                      const std::unique_ptr<IProtonDiskLayout> &diskLayout);
 
-    ~ProtonConfigurer();
+    ~ProtonConfigurer() override;
 
     void setAllowReconfig(bool allowReconfig);
 

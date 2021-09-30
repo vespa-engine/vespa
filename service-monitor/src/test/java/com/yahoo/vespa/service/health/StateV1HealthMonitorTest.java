@@ -20,7 +20,7 @@ public class StateV1HealthMonitorTest {
         StateV1HealthUpdater updater = new StateV1HealthUpdater("https://foo/state/v1/health", client);
         RunletExecutor executor = new RunletExecutorImpl(2);
         try (StateV1HealthMonitor monitor = new StateV1HealthMonitor(updater, executor, Duration.ofMillis(10))) {
-            assertEquals(ServiceStatus.NOT_CHECKED, monitor.getStatus().serviceStatus());
+            assertEquals(ServiceStatus.UNKNOWN, monitor.getStatus().serviceStatus());
 
             when(client.get()).thenReturn(HealthInfo.fromHealthStatusCode(HealthInfo.UP_STATUS_CODE));
             while (monitor.getStatus().serviceStatus() != ServiceStatus.UP) {

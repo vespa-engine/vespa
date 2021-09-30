@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2.requests;
 
-import com.yahoo.vdslib.state.DiskState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.Metrics;
@@ -13,6 +12,7 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiE
 import java.util.Set;
 import java.util.logging.Logger;
 
+//TODO Remove once we have ensured that partition level is no longer used (it has never been)
 public class PartitionStateRequest extends Request<Response.PartitionResponse> {
     private static final Logger log = Logger.getLogger(PartitionStateRequest.class.getName());
     private final Id.Partition id;
@@ -32,8 +32,7 @@ public class PartitionStateRequest extends Request<Response.PartitionResponse> {
             fillInMetrics(context.cluster.getNodeInfo(id.getNode()).getHostInfo().getMetrics(), result);
         }
         NodeState nodeState = context.currentConsolidatedState.getNodeState(id.getNode());
-        DiskState diskState = nodeState.getDiskState(id.getPartitionIndex());
-        result.addState("generated", new Response.UnitStateImpl(diskState));
+        result.addState("generated", new Response.UnitStateImpl(nodeState));
 
         return result;
     }

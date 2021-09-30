@@ -7,20 +7,21 @@
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/rand48.h>
 #include <map>
 
 #include <vespa/log/log.h>
 LOG_SETUP("frozenbtree_test");
 
-using search::btree::BTreeRoot;
-using search::btree::BTreeNode;
-using search::btree::BTreeInternalNode;
-using search::btree::BTreeLeafNode;
-using search::btree::BTreeDefaultTraits;
+using vespalib::btree::BTreeRoot;
+using vespalib::btree::BTreeNode;
+using vespalib::btree::BTreeInternalNode;
+using vespalib::btree::BTreeLeafNode;
+using vespalib::btree::BTreeDefaultTraits;
 using vespalib::GenerationHandler;
 
-namespace search {
+namespace vespalib {
 
 
 class FrozenBTreeTest : public vespalib::TestApp
@@ -47,7 +48,7 @@ private:
     NodeAllocator *_allocator;
     Tree *_tree;
 
-    Rand48 _randomGenerator;
+    vespalib::Rand48 _randomGenerator;
 
     void allocTree();
     void freeTree(bool verbose);
@@ -421,7 +422,9 @@ FrozenBTreeTest::Main()
     allocTree();
     insertRandomValues(*_tree, *_allocator, _randomValues);
     lookupRandomValues(*_tree, *_allocator, _randomValues);
+    EXPECT_TRUE(_tree->getFrozenView(*_allocator).empty());
     _allocator->freeze();
+    EXPECT_FALSE(_tree->getFrozenView(*_allocator).empty());
     _allocator->transferHoldLists(_generationHandler->getCurrentGeneration());
     lookupFrozenRandomValues(*_tree, *_allocator, _randomValues);
     traverseTreeIterator(*_tree,
@@ -466,4 +469,4 @@ FrozenBTreeTest::Main()
 
 }
 
-TEST_APPHOOK(search::FrozenBTreeTest);
+TEST_APPHOOK(vespalib::FrozenBTreeTest);

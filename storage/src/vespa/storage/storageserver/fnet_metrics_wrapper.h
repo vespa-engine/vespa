@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/metricset.h>
+#include <vespa/metrics/valuemetric.h>
+
 #include <vespa/fnet/connection.h>
 
 namespace storage {

@@ -2,9 +2,11 @@
 
 #include "fakememtreeocc.h"
 #include "fpfactory.h"
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
 #include <vespa/searchlib/queryeval/iterators.h>
 #include <vespa/searchlib/util/postingpriorityqueue.h>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreenode.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
@@ -353,16 +355,15 @@ FakeMemTreeOccFactory::setup(const std::vector<const FakeWord *> &fws)
     PostingPriorityQueue<FakeWord::RandomizedReader> heap;
     std::vector<FakeWord::RandomizedReader>::iterator i(r.begin());
     std::vector<FakeWord::RandomizedReader>::iterator ie(r.end());
+    FlushToken flush_token;
     while (i != ie) {
         i->read();
-        if (i->isValid())
+        if (i->isValid()) {
             heap.initialAdd(&*i);
-#if 0
-        heap.merge(_mgr, 4);
-#endif
+        }
         ++i;
     }
-    heap.merge(_mgr, 4);
+    heap.merge(_mgr, 4, flush_token);
     assert(heap.empty());
     _mgr.finalize();
 }

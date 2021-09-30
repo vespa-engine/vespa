@@ -1,11 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
 import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests exporting
@@ -101,7 +104,8 @@ public class ExportingTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testRankExpression() throws IOException, ParseException {
-        assertCorrectDeriving("rankexpression");
+        assertCorrectDeriving("rankexpression", null,
+                new TestProperties().largeRankExpressionLimit(1024), new TestableDeployLogger());
     }
 
     @Test
@@ -117,11 +121,6 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     @Test
     public void testIndexSchema() throws IOException, ParseException {
         assertCorrectDeriving("indexschema");
-    }
-
-    @Test
-    public void testFieldSet2() throws IOException, ParseException {
-        assertCorrectDeriving("fieldset2");
     }
 
     @Test
@@ -153,6 +152,23 @@ public class ExportingTestCase extends AbstractExportingTestCase {
         builder.build();
         derive("tensor2", builder, builder.getSearch("second"));
         assertCorrectConfigFiles("tensor2");
+    }
+
+    @Test
+    public void testHnswIndex() throws IOException, ParseException {
+        assertCorrectDeriving("hnsw_index");
+    }
+
+    @Test
+    public void testRankProfileInheritance() throws IOException, ParseException {
+        assertCorrectDeriving("rankprofileinheritance", "child", new TestableDeployLogger());
+    }
+
+    @Test
+    public void testLanguage() throws IOException, ParseException {
+        TestableDeployLogger logger = new TestableDeployLogger();
+        assertCorrectDeriving("language", logger);
+        assertEquals(0, logger.warnings.size());
     }
 
 }

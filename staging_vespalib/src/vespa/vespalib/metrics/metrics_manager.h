@@ -4,7 +4,6 @@
 #include <memory>
 #include <thread>
 #include <vespa/vespalib/stllike/string.h>
-#include "name_collection.h"
 #include "counter.h"
 #include "gauge.h"
 #include "current_samples.h"
@@ -15,7 +14,6 @@
 #include "label.h"
 
 namespace vespalib::metrics {
-
 
 /**
  * Interface for a Metrics manager, for creating metrics

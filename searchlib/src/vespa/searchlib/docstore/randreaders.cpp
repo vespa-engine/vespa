@@ -107,7 +107,7 @@ MMapRandReadDynamic::MMapRandReadDynamic(const vespalib::string &fileName, int m
 void
 MMapRandReadDynamic::remap(size_t sz)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     if ((sz > 0) && _holder.hasValue() && contains(*_holder.get(), sz)) {
         return;
     }

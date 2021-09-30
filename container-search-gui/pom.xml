@@ -28,12 +28,6 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>jdisc_http_service</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>jdisc_core</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
@@ -72,7 +66,7 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>https://docs.vespa.ai/documentation/reference/search-api-reference.html</url>
+                            <url>https://docs.vespa.ai/en/reference/search-api-reference.html</url>
                             <outputFileName>search-api-reference.html</outputFileName>
                             <outputDirectory>${project.build.outputDirectory}/gui/_includes/</outputDirectory>
                         </configuration>
@@ -84,6 +78,11 @@
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
+            </plugin>
+            <plugin>
+                <!-- Explicit for IntelliJ to detect correct language level from parent -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

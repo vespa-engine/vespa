@@ -5,9 +5,10 @@ import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class SummaryInFieldShortOperation extends SummaryInFieldOperation {
+
     public SummaryInFieldShortOperation(String name) {
         super(name);
     }
@@ -27,4 +28,5 @@ public class SummaryInFieldShortOperation extends SummaryInFieldOperation {
         }
         field.addSummaryField(ret);
     }
+
 }

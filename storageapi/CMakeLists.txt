@@ -8,7 +8,6 @@ vespa_define_module(
     document
     messagebus
     vdslib
-    storageframework
     documentapi
 
     LIBS

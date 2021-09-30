@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <iostream>
+#include <cstdlib>
 
 using ns_log::RejectFilter;
 using ns_log::Logger;
@@ -15,7 +16,7 @@ assertShouldNotReject(RejectFilter & filter, Logger::LogLevel level, const char 
     std::cerr << "Filter should not reject level '" << Logger::levelName(level) << "' message '" << (msg == NULL ? "NULL" : msg)  << "' ...: ";
     if (filter.shouldReject(level, msg)) {
         std::cerr << "Failed!\n";
-        exit(EXIT_FAILURE);
+        std::_Exit(EXIT_FAILURE);
     }
     std::cerr << "Success!\n";
 }
@@ -26,7 +27,7 @@ assertShouldReject(RejectFilter & filter, Logger::LogLevel level, const char * m
     std::cerr << "Filter should reject level '" << Logger::levelName(level) << "' message '" << (msg == NULL ? "NULL" : msg)  << "' ...: ";
     if (!filter.shouldReject(level, msg)) {
         std::cerr << "Failed!\n";
-        exit(EXIT_FAILURE);
+        std::_Exit(EXIT_FAILURE);
     }
     std::cerr << "Success!\n";
 }
@@ -53,5 +54,5 @@ main(int argc, char **argv)
     assertShouldNotReject(defaultFilter, Logger::warning, "foobar");
     assertShouldNotReject(defaultFilter, Logger::event, NULL);
     assertShouldReject(defaultFilter, Logger::warning, "E 18-140313.398540 10727 18/11/2012 14:03:13 yjava_preload.so: [preload.c:670] Accept failed: -1 (4)");
-    exit(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
 }

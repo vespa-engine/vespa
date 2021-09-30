@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
@@ -12,6 +13,7 @@
 #include <vespa/vespalib/net/socket_utils.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/test/make_tls_options_for_testing.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -37,7 +39,7 @@ bool is_blocked(int res) {
 }
 
 void read(CryptoSocket &socket, SmartBuffer &buffer) {
-    size_t chunk_size = std::max(size_t(4096), socket.min_read_buffer_size());
+    size_t chunk_size = std::max(size_t(4_Ki), socket.min_read_buffer_size());
     auto chunk = buffer.reserve(chunk_size);
     int res = socket.read(chunk.data, chunk.size);
     if (res > 0) {
@@ -49,7 +51,7 @@ void read(CryptoSocket &socket, SmartBuffer &buffer) {
 
 void drain(CryptoSocket &socket, SmartBuffer &buffer) {
     int res;
-    size_t chunk_size = std::max(size_t(4096), socket.min_read_buffer_size());
+    size_t chunk_size = std::max(size_t(4_Ki), socket.min_read_buffer_size());
     do {
         auto chunk = buffer.reserve(chunk_size);
         res = socket.drain(chunk.data, chunk.size);
@@ -104,7 +106,7 @@ void read_EOF(CryptoSocket &socket, SmartBuffer &read_buffer) {
     ASSERT_EQUAL(read_buffer.obtain().size, 0u);
     SingleFdSelector selector(socket.get_fd());
     ASSERT_TRUE(selector.wait_readable());
-    size_t chunk_size = std::max(size_t(4096), socket.min_read_buffer_size());
+    size_t chunk_size = std::max(size_t(4_Ki), socket.min_read_buffer_size());
     auto chunk = read_buffer.reserve(chunk_size);
     auto res = socket.read(chunk.data, chunk.size);
     while (is_blocked(res)) {
@@ -204,7 +206,7 @@ void verify_handshake(CryptoSocket &socket) {
 void verify_crypto_socket(SocketPair &sockets, CryptoEngine &engine, bool is_server) {
     SocketHandle &my_handle = is_server ? sockets.server : sockets.client;
     my_handle.set_blocking(false);
-    SmartBuffer read_buffer(4096);
+    SmartBuffer read_buffer(4_Ki);
     CryptoSocket::UP my_socket = is_server
                                  ? engine.create_server_crypto_socket(std::move(my_handle))
                                  : engine.create_client_crypto_socket(std::move(my_handle), local_spec);

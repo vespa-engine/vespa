@@ -6,8 +6,6 @@
 namespace vespamalloc {
 
 template <typename MemBlockPtrT, typename ThreadStatT>
-SizeClassT ThreadPoolT<MemBlockPtrT, ThreadStatT>::_alwaysReuseSCLimit __attribute__((visibility("hidden"))) = MemBlockPtrT::sizeClass(0x200000);
-template <typename MemBlockPtrT, typename ThreadStatT>
 size_t ThreadPoolT<MemBlockPtrT, ThreadStatT>::_threadCacheLimit __attribute__((visibility("hidden"))) = 0x10000;
 
 template <typename MemBlockPtrT, typename ThreadStatT>
@@ -28,7 +26,7 @@ void ThreadPoolT<MemBlockPtrT, ThreadStatT>::info(FILE * os, size_t level, const
             }
         }
     }
-    if (level > 1) {
+    if (level > 2) {
         fprintf(os, "BlockList:%ld,%ld,%ld\n", NELEMS(_stat), sizeof(_stat), sizeof(_stat[0]));
         size_t sum(0), sumLocal(0);
         for (size_t i=0; i < NELEMS(_stat); i++) {
@@ -62,7 +60,7 @@ mallocHelper(size_t exactSize,
         af._allocFrom->sub(mem);
         PARANOID_CHECK2( if (!mem.ptr()) { *(int *)0 = 0; } );
     } else {
-        if ( ! this->alwaysReuse(sc) ) {
+        if ( ! alwaysReuse(sc) ) {
             af._allocFrom = _allocPool->exchangeAlloc(sc, af._allocFrom);
             _stat[sc].incExchangeAlloc();
             if (af._allocFrom) {
@@ -86,16 +84,14 @@ mallocHelper(size_t exactSize,
 
 template <typename MemBlockPtrT, typename ThreadStatT >
 ThreadPoolT<MemBlockPtrT, ThreadStatT>::ThreadPoolT() :
-    _allocPool(NULL),
+    _allocPool(nullptr),
     _threadId(0),
     _osThreadId(0)
 {
 }
 
 template <typename MemBlockPtrT, typename ThreadStatT >
-ThreadPoolT<MemBlockPtrT, ThreadStatT>::~ThreadPoolT()
-{
-}
+ThreadPoolT<MemBlockPtrT, ThreadStatT>::~ThreadPoolT() = default;
 
 template <typename MemBlockPtrT, typename ThreadStatT >
 void ThreadPoolT<MemBlockPtrT, ThreadStatT>::malloc(size_t sz, MemBlockPtrT & mem)
@@ -170,7 +166,7 @@ bool ThreadPoolT<MemBlockPtrT, ThreadStatT>::hasActuallyBeenUsed() const
 {
     bool used(false);
     for (size_t i=0; !used && (i < NELEMS(_memList)); i++) {
-        used = (_memList[i]._allocFrom != NULL
+        used = (_memList[i]._allocFrom != nullptr
                 && !_memList[i]._allocFrom->empty()
                 && !_memList[i]._freeTo->full());
     }
@@ -190,10 +186,8 @@ void ThreadPoolT<MemBlockPtrT, ThreadStatT>::init(int thrId)
 }
 
 template <typename MemBlockPtrT, typename ThreadStatT >
-void ThreadPoolT<MemBlockPtrT, ThreadStatT>::setParams(size_t alwaysReuseLimit, size_t threadCacheLimit)
+void ThreadPoolT<MemBlockPtrT, ThreadStatT>::setParams(size_t threadCacheLimit)
 {
-    _alwaysReuseSCLimit = std::max(MemBlockPtrT::sizeClass(alwaysReuseLimit),
-                                   SizeClassT(MemBlockPtrT::SizeClassSpan));
     _threadCacheLimit = threadCacheLimit;
 }
 

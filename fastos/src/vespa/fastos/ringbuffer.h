@@ -42,18 +42,6 @@ public:
         _closed = false;
     }
 
-    FastOS_RingBufferData *GetData () { return _data; }
-
-    void RepositionDataAt0 ()
-    {
-        uint8_t *src = &_data->_buffer[_dataIndex];
-        uint8_t *dst = _data->_buffer;
-
-        for(int i=0; i<_dataSize; i++)
-            *dst++ = *src++;
-        _dataIndex = 0;
-    }
-
     FastOS_RingBuffer (int bufferSize)
         : _closed(false),
           _data(0),
@@ -91,11 +79,6 @@ public:
     void Produce (int bytes)
     {
         _dataSize += bytes;
-    }
-
-    int GetDataSize ()
-    {
-        return _dataSize;
     }
 
     int GetWriteSpace ()

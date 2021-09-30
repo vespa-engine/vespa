@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/singlenumericpostattribute.h>
-#include <vespa/searchlib/attribute/enumstore.h>
-#include <vespa/searchlib/attribute/enumcomparator.h>
-#include <vespa/searchlib/attribute/singlenumericenumattribute.hpp>
+#include "singlenumericpostattribute.h"
+#include "enumstore.h"
+#include "enumcomparator.h"
+#include "singlenumericenumattribute.hpp"
 
 namespace search {
 
@@ -36,7 +36,7 @@ template <typename B>
 void
 SingleValueNumericPostingAttribute<B>::mergeMemoryStats(vespalib::MemoryUsage & total)
 {
-    total.merge(this->_postingList.getMemoryUsage());
+    total.merge(this->_postingList.update_stat());
 }
 
 template <typename B>
@@ -53,7 +53,7 @@ SingleValueNumericPostingAttribute<B>::applyUpdateValueChange(const Change & c,
 template <typename B>
 void
 SingleValueNumericPostingAttribute<B>::
-makePostingChange(const datastore::EntryComparator *cmpa,
+makePostingChange(const vespalib::datastore::EntryComparator &cmpa,
                   const std::map<DocId, EnumIndex> &currEnumIndices,
                   PostingMap &changePost)
 {
@@ -63,11 +63,11 @@ makePostingChange(const datastore::EntryComparator *cmpa,
         EnumIndex newIdx = elem.second;
 
         // add new posting
-        changePost[EnumPostingPair(newIdx, cmpa)].add(docId, 1);
+        changePost[EnumPostingPair(newIdx, &cmpa)].add(docId, 1);
 
         // remove old posting
         if ( oldIdx.valid()) {
-            changePost[EnumPostingPair(oldIdx, cmpa)].remove(docId);
+            changePost[EnumPostingPair(oldIdx, &cmpa)].remove(docId);
         }
     }
 }
@@ -78,14 +78,13 @@ void
 SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 {
     EnumStore & enumStore = this->getEnumStore();
-    Dictionary & dict = enumStore.get_posting_dictionary();
-    auto cmp = enumStore.make_comparator();
+    IEnumStoreDictionary& dictionary = enumStore.get_dictionary();
     PostingMap changePost;
 
     // used to make sure several arithmetic operations on the same document in a single commit works
     std::map<DocId, EnumIndex> currEnumIndices;
 
-    for (const auto& change : this->_changes) {
+    for (const auto& change : this->_changes.getInsertOrder()) {
         auto enumIter = currEnumIndices.find(change._doc);
         EnumIndex oldIdx;
         if (enumIter != currEnumIndices.end()) {
@@ -95,25 +94,22 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
         }
 
         if (change._type == ChangeBase::UPDATE) {
-            applyUpdateValueChange(change, enumStore,
-                                   currEnumIndices);
+            applyUpdateValueChange(change, enumStore, currEnumIndices);
         } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {
             if (oldIdx.valid()) {
                 T oldValue = enumStore.get_value(oldIdx);
                 T newValue = this->applyArithmetic(oldValue, change);
-
-                auto addItr = dict.find(EnumIndex(), enumStore.make_comparator(newValue));
-                EnumIndex newIdx = addItr.getKey();
+                EnumIndex newIdx;
+                (void) dictionary.find_index(enumStore.make_comparator(newValue), newIdx);
                 currEnumIndices[change._doc] = newIdx;
             }
         } else if(change._type == ChangeBase::CLEARDOC) {
             this->_defaultValue._doc = change._doc;
-            applyUpdateValueChange(this->_defaultValue, enumStore,
-                                   currEnumIndices);
+            applyUpdateValueChange(this->_defaultValue, enumStore, currEnumIndices);
         }
     }
 
-    makePostingChange(&cmp, currEnumIndices, changePost);
+    makePostingChange(enumStore.get_comparator(), currEnumIndices, changePost);
 
     this->updatePostings(changePost);
     SingleValueNumericEnumAttribute<B>::applyValueChanges(updater);
@@ -141,9 +137,7 @@ AttributeVector::SearchContext::UP
 SingleValueNumericPostingAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
                                                  const attribute::SearchContextParams & params) const
 {
-    return std::make_unique<SinglePostingSearchContext>(std::move(qTerm),
-                                                        params,
-                                                        *this);
+    return std::make_unique<SinglePostingSearchContext>(std::move(qTerm), params, *this);
 }
 
 } // namespace search

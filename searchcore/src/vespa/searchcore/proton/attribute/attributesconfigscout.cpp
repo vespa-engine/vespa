@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributesconfigscout.h"
+#include "attribute_type_matcher.h"
 #include <vespa/searchlib/attribute/configconverter.h>
 
 using search::attribute::ConfigConverter;
@@ -27,8 +28,11 @@ AttributesConfigScout::adjust(AttributesConfig::Attribute &attr,
     attr.enableonlybitvector = liveAttr.enableonlybitvector;
     attr.fastsearch = liveAttr.fastsearch;
     attr.huge = liveAttr.huge;
+    attr.paged = liveAttr.paged;
     // Note: Predicate attributes only handle changes for the dense-posting-list-threshold config.
     attr.densepostinglistthreshold = liveAttr.densepostinglistthreshold;
+    attr.distancemetric = liveAttr.distancemetric;
+    attr.index = liveAttr.index;
 }
 
 
@@ -41,8 +45,8 @@ AttributesConfigScout::adjust(AttributesConfig::Attribute &attr)
         const auto &liveAttr = _live.attribute[it->second];
         search::attribute::Config liveCfg =
             ConfigConverter::convert(liveAttr);
-        if (cfg.basicType() == liveCfg.basicType() &&
-            cfg.collectionType() == liveCfg.collectionType()) {
+        AttributeTypeMatcher matching_types;
+        if (matching_types(cfg, liveCfg)) {
             adjust(attr, liveAttr);
         }
     }

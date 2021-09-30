@@ -14,16 +14,15 @@ import com.yahoo.search.statistics.TimeTracker.Activity;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.statistics.Value;
 
-
 /**
  * A searcher which is intended to be useful as a general probe for
  * measuring time consumption a search chain.
  *
- *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @Before("rawQuery")
 public class TimingSearcher extends PingableSearcher {
+
     private Value measurements;
     private final boolean measurePing;
     private final boolean measureSearch;
@@ -139,6 +138,5 @@ public class TimingSearcher extends PingableSearcher {
         measurements.cancel();
         super.deconstruct();
     }
-
 
 }

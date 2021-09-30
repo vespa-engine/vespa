@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/time.h>
 #include <vector>
 
 namespace proton {
@@ -15,7 +16,7 @@ private:
     typedef search::SerialNum SerialNum;
     typedef vespalib::string string;
 public:
-    static void transactionLogReplayComplete(const string &domainName, int64_t elapsedTimeMs);
+    static void transactionLogReplayComplete(const string &domainName, vespalib::duration elapsedTime);
     static void populateAttributeStart(const std::vector<string> &names);
     static void populateAttributeComplete(const std::vector<string> &names, int64_t documentsVisisted);
     static void populateDocumentFieldStart(const string &fieldName);
@@ -23,7 +24,7 @@ public:
     static void lidSpaceCompactionComplete(const string &subDbName, uint32_t lidLimit);
     static void reprocessDocumentsStart(const string &subDb, double visitCost);
     static void reprocessDocumentsProgress(const string &subDb, double progress, double visitCost);
-    static void reprocessDocumentsComplete(const string &subDb, double visitCost, int64_t elapsedTimeMs);
+    static void reprocessDocumentsComplete(const string &subDb, double visitCost, vespalib::duration elapsedTime);
     static void transactionLogReplayStart(const string &domainName,
                                           SerialNum first,
                                           SerialNum last);
@@ -40,18 +41,18 @@ public:
                            SerialNum unflushed,
                            SerialNum current);
     static void flushComplete(const string &name,
-                              int64_t elapsedTimeMs,
+                              vespalib::duration elapsedTime,
                               SerialNum flushed,
                               const string &outputPath,
                               size_t outputPathElems);
     static void flushPrune(const string &name, SerialNum oldestFlushed);
     static void loadAttributeStart(const vespalib::string &subDbName, const vespalib::string &attrName);
     static void loadAttributeComplete(const vespalib::string &subDbName,
-                                      const vespalib::string &attrName, int64_t elapsedTimeMs);
+                                      const vespalib::string &attrName, vespalib::duration elapsedTime);
     static void loadDocumentMetaStoreStart(const vespalib::string &subDbName);
-    static void loadDocumentMetaStoreComplete(const vespalib::string &subDbName, int64_t elapsedTimeMs);
+    static void loadDocumentMetaStoreComplete(const vespalib::string &subDbName, vespalib::duration elapsedTime);
     static void loadDocumentStoreStart(const vespalib::string &subDbName);
-    static void loadDocumentStoreComplete(const vespalib::string &subDbName, int64_t elapsedTimeMs);
+    static void loadDocumentStoreComplete(const vespalib::string &subDbName, vespalib::duration elapsedTime);
     static void transactionLogPruneComplete(const string &domainName, SerialNum prunedSerial);
 };
 

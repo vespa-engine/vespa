@@ -8,7 +8,7 @@
 #include <vespa/log/log.h>
 #include <vespa/config/common/exceptions.h>
 
-LOG_SETUP(".reconfigurable_stateserver");
+LOG_SETUP(".slobrok.server.reconfigurable_stateserver");
 
 using namespace std::chrono_literals;
 

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "filter_attribute_manager.h"
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
@@ -27,8 +27,7 @@ public:
           _type(type)
     {
     }
-
-    ~FlushTargetFilter() { }
+    ~FlushTargetFilter();
 
     bool match(const IFlushTarget::SP &flushTarget) const {
         const vespalib::string &targetName = flushTarget->getName();
@@ -45,6 +44,8 @@ public:
     }
 };
 
+FlushTargetFilter::~FlushTargetFilter() = default;
+
 FlushTargetFilter syncFilter(FLUSH_TARGET_NAME_PREFIX, IFlushTarget::Type::SYNC);
 FlushTargetFilter shrinkFilter(SHRINK_TARGET_NAME_PREFIX, IFlushTarget::Type::GC);
 
@@ -57,9 +58,9 @@ FilterAttributeManager::acceptAttribute(const vespalib::string &name) const
 }
 
 FilterAttributeManager::FilterAttributeManager(const AttributeSet &acceptedAttributes,
-                                               const IAttributeManager::SP &mgr)
+                                               IAttributeManager::SP mgr)
     : _acceptedAttributes(acceptedAttributes),
-      _mgr(mgr)
+      _mgr(std::move(mgr))
 {
     // Assume that list of attributes in mgr doesn't change
     for (const auto attr : _mgr->getWritableAttributes()) {
@@ -160,13 +161,17 @@ FilterAttributeManager::getFlushedSerialNum(const vespalib::string &name) const
     return 0;
 }
 
-
-search::ISequencedTaskExecutor &
+vespalib::ISequencedTaskExecutor &
 FilterAttributeManager::getAttributeFieldWriter() const
 {
     return _mgr->getAttributeFieldWriter();
 }
 
+vespalib::ThreadExecutor&
+FilterAttributeManager::get_shared_executor() const
+{
+    return _mgr->get_shared_executor();
+}
 
 search::AttributeVector *
 FilterAttributeManager::getWritableAttribute(const vespalib::string &name) const
@@ -190,12 +195,12 @@ FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFun
     // Run by document db master thread
     std::vector<AttributeGuard> completeList;
     _mgr->getAttributeList(completeList);
-    search::ISequencedTaskExecutor &attributeFieldWriter = getAttributeFieldWriter();
+    vespalib::ISequencedTaskExecutor &attributeFieldWriter = getAttributeFieldWriter();
     for (auto &guard : completeList) {
         search::AttributeVector::SP attrsp = guard.getSP();
         // Name must be extracted in document db master thread or attribute
         // writer thread
-        attributeFieldWriter.execute(attributeFieldWriter.getExecutorId(attrsp->getNamePrefix()),
+        attributeFieldWriter.execute(attributeFieldWriter.getExecutorIdFromName(attrsp->getNamePrefix()),
                                      [attrsp, func]() { (*func)(*attrsp); });
     }
 }
@@ -204,9 +209,9 @@ void
 FilterAttributeManager::asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const {
     AttributeGuard::UP attr = _mgr->getAttribute(name);
     if (!attr) { return; }
-    search::ISequencedTaskExecutor &attributeFieldWriter = getAttributeFieldWriter();
+    vespalib::ISequencedTaskExecutor &attributeFieldWriter = getAttributeFieldWriter();
     vespalib::string attrName = (*attr)->getNamePrefix();
-    attributeFieldWriter.execute(attributeFieldWriter.getExecutorId(attrName),
+    attributeFieldWriter.execute(attributeFieldWriter.getExecutorIdFromName(attrName),
                                   [attr=std::move(attr), func=std::move(func)]() mutable {
                                       (*func)(**attr);
                                   });
@@ -228,7 +233,7 @@ FilterAttributeManager::setImportedAttributes(std::unique_ptr<ImportedAttributes
 const ImportedAttributesRepo *
 FilterAttributeManager::getImportedAttributes() const
 {
-    throw vespalib::IllegalArgumentException("Not implemented");
+    return nullptr;
 }
 
 std::shared_ptr<search::attribute::ReadableAttributeVector>

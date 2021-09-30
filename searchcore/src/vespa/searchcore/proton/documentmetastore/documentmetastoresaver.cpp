@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentmetastoresaver.h"
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include "document_meta_store_versions.h"
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 
@@ -37,7 +37,8 @@ public:
           _writeDocSize(writeDocSize)
     { }
 
-    void operator()(uint32_t lid) {
+    void operator()(documentmetastore::GidToLidMapKey key) {
+        auto lid = key.get_lid();
         assert(lid < _metaDataStoreSize);
         const RawDocumentMetaData &metaData = _metaDataStore[lid];
         const GlobalId &gid = metaData.getGid();
@@ -82,7 +83,7 @@ DocumentMetaStoreSaver(vespalib::GenerationHandler::Guard &&guard,
 }
 
 
-DocumentMetaStoreSaver::~DocumentMetaStoreSaver() { }
+DocumentMetaStoreSaver::~DocumentMetaStoreSaver() = default;
 
 
 bool

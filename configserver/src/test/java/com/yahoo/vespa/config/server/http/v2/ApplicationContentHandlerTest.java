@@ -1,27 +1,29 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
+import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Clock;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNotNull;
@@ -31,47 +33,47 @@ import static org.junit.Assert.assertThat;
  * @author Ulf Lilleengen
  */
 public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
-    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
-    private final Clock clock = componentRegistry.getClock();
 
+    private static final File testApp = new File("src/test/apps/content");
+
+    private final TenantName tenantName1 = TenantName.from("mofet");
+    private final TenantName tenantName2 = TenantName.from("bla");
+    private final String baseServer = "http://foo:1337";
+
+    private final ApplicationId appId1 = new ApplicationId.Builder().tenant(tenantName1).applicationName("foo").instanceName("quux").build();
+
+    private ApplicationRepository applicationRepository;
     private ApplicationHandler handler;
-    private TenantName tenantName1 = TenantName.from("mofet");
-    private TenantName tenantName2 = TenantName.from("bla");
-    private String baseServer = "http://foo:1337";
 
-    private ApplicationId idTenant1 = new ApplicationId.Builder()
-                                      .tenant(tenantName1)
-                                      .applicationName("foo").instanceName("quux").build();
-    private ApplicationId idTenant2 = new ApplicationId.Builder()
-                                      .tenant(tenantName2)
-                                      .applicationName("foo").instanceName("quux").build();
-    private MockSession session2;
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
-    public void setupHandler() {
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
-        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, tenantName1));
-        tenantRepository.addTenant(TenantBuilder.create(componentRegistry, tenantName2));
+    public void setupHandler() throws IOException {
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
 
-        session2 = new MockSession(2, FilesApplicationPackage.fromFile(new File("src/test/apps/content")));
-        Tenant tenant1 = tenantRepository.getTenant(tenantName1);
-        tenant1.getLocalSessionRepo().addSession(session2);
-        tenant1.getApplicationRepo().createApplication(idTenant1);
-        tenant1.getApplicationRepo().createPutTransaction(idTenant1, 2).commit();
+        TenantRepository tenantRepository = new TestTenantRepository.Builder()
+                .withConfigserverConfig(configserverConfig)
+                .build();
+        tenantRepository.addTenant(tenantName1);
+        tenantRepository.addTenant(tenantName2);
 
-        MockSession session3 = new MockSession(3, FilesApplicationPackage.fromFile(new File("src/test/apps/content2")));
-        Tenant tenant2 = tenantRepository.getTenant(tenantName2);
-        tenant2.getLocalSessionRepo().addSession(session3);
-        tenant2.getApplicationRepo().createApplication(idTenant2);
-        tenant2.getApplicationRepo().createPutTransaction(idTenant2, 3).commit();
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(new MockProvisioner())
+                .withOrchestrator(new OrchestratorMock())
+                .withConfigserverConfig(configserverConfig)
+                .build();
 
+        applicationRepository.deploy(testApp, prepareParams(appId1));
         handler = new ApplicationHandler(ApplicationHandler.testOnlyContext(),
                                          Zone.defaultZone(),
-                                         new ApplicationRepository(tenantRepository,
-                                                                   new MockProvisioner(),
-                                                                   new OrchestratorMock(),
-                                                                   clock));
-        pathPrefix = createPath(idTenant1, Zone.defaultZone());
+                                         applicationRepository);
+        pathPrefix = createPath(appId1, Zone.defaultZone());
         baseUrl = baseServer + pathPrefix;
     }
 
@@ -102,18 +104,11 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
     }
 
     @Test
-    public void require_that_multiple_tenants_are_handled() throws IOException {
-        assertContent("/test.txt", "foo\n");
-        pathPrefix = createPath(idTenant2, Zone.defaultZone());
-        baseUrl = baseServer + pathPrefix;
-        assertContent("/test.txt", "bar\n");
-    }
-
-    @Test
     public void require_that_get_does_not_set_write_flag() throws IOException {
-        session2.status = Session.Status.PREPARE;
+        Tenant tenant1 = applicationRepository.getTenant(appId1);
+        Session session = applicationRepository.getActiveLocalSession(tenant1, appId1);
         assertContent("/test.txt", "foo\n");
-        assertThat(session2.status, is(Session.Status.PREPARE));
+        assertThat(session.getStatus(), is(Session.Status.ACTIVATE));
     }
 
     private void assertNotFound(HttpRequest request) {
@@ -127,4 +122,9 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
         HttpRequest request = HttpRequest.createTestRequest(baseUrl + path, method);
         return handler.handle(request);
     }
+
+    private PrepareParams prepareParams(ApplicationId applicationId) {
+        return new PrepareParams.Builder().applicationId(applicationId).build();
+    }
+
 }

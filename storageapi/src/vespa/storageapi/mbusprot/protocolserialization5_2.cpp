@@ -5,8 +5,7 @@
 #include "storagecommand.h"
 #include "serializationhelper.h"
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 using documentapi::TestAndSetCondition;
 
@@ -62,5 +61,4 @@ void ProtocolSerialization5_2::encodeTasCondition(GBBuf & buf, const api::Storag
     buf.putString(cmd.getCondition().getSelection());
 }
 
-} // mbusprot
-} // storage
+}

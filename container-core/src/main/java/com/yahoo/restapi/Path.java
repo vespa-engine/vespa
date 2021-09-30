@@ -42,28 +42,11 @@ public class Path {
     private final Map<String, String> values = new HashMap<>();
     private String rest = "";
 
-    /**
-     * @deprecated use {@link #Path(URI)} for correct handling of URL encoded paths.
-     */
-    @Deprecated
-    public Path(String path) {
-        this(path, "");
-    }
-
-    /**
-     * @deprecated use {@link #Path(URI, String)} for correct handling of URL encoded paths.
-     */
-    @Deprecated
-    public Path(String path, String optionalPrefix) {
-        this.optionalPrefix = optionalPrefix;
-        this.pathString = path;
-        this.elements = path.split("/");
-    }
-
     public Path(URI uri) {
         this(uri, "");
     }
 
+    // TODO (freva): Remove, used by factory
     public Path(URI uri, String optionalPrefix) {
         this.optionalPrefix = optionalPrefix;
         this.pathString = uri.getRawPath();

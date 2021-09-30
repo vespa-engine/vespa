@@ -27,17 +27,17 @@ public class RedeployTest {
 
     @Test
     public void testRedeploy() {
-        DeployTester tester = new DeployTester();
+        DeployTester tester = new DeployTester.Builder().build();
         tester.deployApp("src/test/apps/app");
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
 
         assertTrue(deployment.isPresent());
         long activeSessionIdBefore = tester.applicationRepository().getActiveSession(tester.applicationId()).getSessionId();
-        assertEquals(tester.applicationId(), tester.tenant().getLocalSessionRepo().getSession(activeSessionIdBefore).getApplicationId());
+        assertEquals(tester.applicationId(), tester.tenant().getSessionRepository().getLocalSession(activeSessionIdBefore).getApplicationId());
         deployment.get().activate();
         long activeSessionIdAfter =  tester.applicationRepository().getActiveSession(tester.applicationId()).getSessionId();
         assertEquals(activeSessionIdAfter, activeSessionIdBefore + 1);
-        assertEquals(tester.applicationId(), tester.tenant().getLocalSessionRepo().getSession(activeSessionIdAfter).getApplicationId());
+        assertEquals(tester.applicationId(), tester.tenant().getSessionRepository().getLocalSession(activeSessionIdAfter).getApplicationId());
     }
 
     /** No deployment is done because there is no local active session. */
@@ -45,7 +45,7 @@ public class RedeployTest {
     public void testNoRedeploy() {
         List<ModelFactory> modelFactories = List.of(createModelFactory(Clock.systemUTC()),
                                                     createFailingModelFactory(Version.fromString("1.0.0")));
-        DeployTester tester = new DeployTester(modelFactories);
+        DeployTester tester = new DeployTester.Builder().modelFactories(modelFactories).build();
         ApplicationId id = ApplicationId.from(tester.tenant().getName(),
                                               ApplicationName.from("default"),
                                               InstanceName.from("default"));

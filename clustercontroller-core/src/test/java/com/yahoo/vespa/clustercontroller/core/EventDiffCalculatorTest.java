@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.exhaustion;
+import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.setOf;
 import static com.yahoo.vespa.clustercontroller.core.matchers.EventForNode.eventForNode;
 import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventForBucketSpace.nodeEventForBucketSpace;
 import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventForBucketSpace.nodeEventForBaseline;
@@ -31,6 +33,8 @@ public class EventDiffCalculatorTest {
         AnnotatedClusterState.Builder baselineAfter = new AnnotatedClusterState.Builder();
         Map<String, AnnotatedClusterState.Builder> derivedBefore = new HashMap<>();
         Map<String, AnnotatedClusterState.Builder> derivedAfter = new HashMap<>();
+        ClusterStateBundle.FeedBlock feedBlockBefore = null;
+        ClusterStateBundle.FeedBlock feedBlockAfter = null;
         long currentTimeMs = 0;
         long maxMaintenanceGracePeriodTimeMs = 10_000;
 
@@ -86,6 +90,14 @@ public class EventDiffCalculatorTest {
             getBuilder(derivedAfter, bucketSpace).storageNodeReason(nodeIndex, reason);
             return this;
         }
+        EventFixture feedBlockBefore(ClusterStateBundle.FeedBlock feedBlock) {
+            this.feedBlockBefore = feedBlock;
+            return this;
+        }
+        EventFixture feedBlockAfter(ClusterStateBundle.FeedBlock feedBlock) {
+            this.feedBlockAfter = feedBlock;
+            return this;
+        }
         private static AnnotatedClusterState.Builder getBuilder(Map<String, AnnotatedClusterState.Builder> derivedStates, String bucketSpace) {
             return derivedStates.computeIfAbsent(bucketSpace, key -> new AnnotatedClusterState.Builder());
         }
@@ -94,8 +106,8 @@ public class EventDiffCalculatorTest {
             return EventDiffCalculator.computeEventDiff(
                     EventDiffCalculator.params()
                             .cluster(clusterFixture.cluster())
-                            .fromState(ClusterStateBundle.of(baselineBefore.build(), toDerivedStates(derivedBefore)))
-                            .toState(ClusterStateBundle.of(baselineAfter.build(), toDerivedStates(derivedAfter)))
+                            .fromState(ClusterStateBundle.of(baselineBefore.build(), toDerivedStates(derivedBefore), feedBlockBefore, false))
+                            .toState(ClusterStateBundle.of(baselineAfter.build(), toDerivedStates(derivedAfter), feedBlockAfter, false))
                             .currentTimeMs(currentTimeMs)
                             .maxMaintenanceGracePeriodTimeMs(maxMaintenanceGracePeriodTimeMs));
         }
@@ -441,6 +453,100 @@ public class EventDiffCalculatorTest {
         assertThat(events.size(), equalTo(1));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(0)),
+                nodeEventForBaseline())));
+    }
+
+    @Test
+    public void feed_block_engage_edge_emits_cluster_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .feedBlockBefore(null)
+                .clusterStateAfter("distributor:3 storage:3")
+                .feedBlockAfter(ClusterStateBundle.FeedBlock.blockedWithDescription("we're closed"));
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(
+                clusterEventWithDescription("Cluster feed blocked due to resource exhaustion: we're closed")));
+    }
+
+    @Test
+    public void feed_block_disengage_edge_emits_cluster_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .feedBlockBefore(ClusterStateBundle.FeedBlock.blockedWithDescription("we're closed"))
+                .clusterStateAfter("distributor:3 storage:3")
+                .feedBlockAfter(null);
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(clusterEventWithDescription("Cluster feed no longer blocked")));
+    }
+
+    @Test
+    public void feed_block_engaged_to_engaged_edge_does_not_emit_new_cluster_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .feedBlockBefore(ClusterStateBundle.FeedBlock.blockedWithDescription("we're closed"))
+                .clusterStateAfter("distributor:3 storage:3")
+                .feedBlockAfter(ClusterStateBundle.FeedBlock.blockedWithDescription("yep yep, still closed"));
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(0));
+    }
+
+    @Test
+    public void feed_block_engage_edge_with_node_exhaustion_info_emits_cluster_and_node_events() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .feedBlockBefore(null)
+                .clusterStateAfter("distributor:3 storage:3")
+                .feedBlockAfter(ClusterStateBundle.FeedBlock.blockedWith(
+                        "we're closed", setOf(exhaustion(1, "oil"))));
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(2));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(1)),
+                nodeEventWithDescription("Added resource exhaustion: oil on node 1 [unknown hostname] (0.800 > 0.700)"),
+                nodeEventForBaseline())));
+        assertThat(events, hasItem(
+                clusterEventWithDescription("Cluster feed blocked due to resource exhaustion: we're closed")));
+    }
+
+    @Test
+    public void added_exhaustion_in_feed_block_resource_set_emits_node_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .feedBlockBefore(ClusterStateBundle.FeedBlock.blockedWith(
+                        "we're closed", setOf(exhaustion(1, "oil"))))
+                .clusterStateAfter("distributor:3 storage:3")
+                .feedBlockAfter(ClusterStateBundle.FeedBlock.blockedWith(
+                        "we're still closed", setOf(exhaustion(1, "oil"), exhaustion(1, "cpu_brake_fluid"))));
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(1)),
+                nodeEventWithDescription("Added resource exhaustion: cpu_brake_fluid on node 1 [unknown hostname] (0.800 > 0.700)"),
+                nodeEventForBaseline())));
+    }
+
+    @Test
+    public void removed_exhaustion_in_feed_block_resource_set_emits_node_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .feedBlockBefore(ClusterStateBundle.FeedBlock.blockedWith(
+                        "we're closed", setOf(exhaustion(1, "oil"), exhaustion(2, "cpu_brake_fluid"))))
+                .clusterStateAfter("distributor:3 storage:3")
+                .feedBlockAfter(ClusterStateBundle.FeedBlock.blockedWith(
+                        "we're still closed", setOf(exhaustion(1, "oil"))));
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(2)),
+                nodeEventWithDescription("Removed resource exhaustion: cpu_brake_fluid on node 2 [unknown hostname] (<= 0.700)"),
                 nodeEventForBaseline())));
     }
 

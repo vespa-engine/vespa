@@ -3,12 +3,10 @@
 #include "zcurve.h"
 #include <vespa/vespalib/geo/zcurve.h>
 
-using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 IMPLEMENT_EXPRESSIONNODE(ZCurveFunctionNode, UnaryFunctionNode);
 
@@ -34,11 +32,11 @@ ZCurveFunctionNode & ZCurveFunctionNode::operator = (const ZCurveFunctionNode & 
 void ZCurveFunctionNode::onPrepareResult()
 {
     if (getArg().getResult().inherits(ResultNodeVector::classId)) {
-        setResultType(std::unique_ptr<ResultNode>(new IntegerResultNodeVector));
-        _handler.reset(new MultiValueHandler(*this));
+        setResultType(std::make_unique<IntegerResultNodeVector>());
+        _handler = std::make_unique<MultiValueHandler>(*this);
     } else {
-        setResultType(std::unique_ptr<ResultNode>(new Int64ResultNode));
-        _handler.reset(new SingleValueHandler(*this));
+        setResultType(std::make_unique<Int64ResultNode>());
+        _handler = std::make_unique<SingleValueHandler>(*this);
     }
 }
 
@@ -86,7 +84,6 @@ Deserializer & ZCurveFunctionNode::onDeserialize(Deserializer & is)
     return is;
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

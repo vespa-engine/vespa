@@ -1,15 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/eval/eval/key_gen.h>
 #include <vespa/eval/eval/test/eval_spec.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <thread>
+#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <set>
 
 using namespace vespalib;
 using namespace vespalib::eval;
+
+using vespalib::make_string_short::fmt;
 
 struct MyExecutor : public Executor {
     std::vector<Executor::Task::UP> tasks;
@@ -24,6 +29,7 @@ struct MyExecutor : public Executor {
         tasks.clear();
     }
     ~MyExecutor() { run_tasks(); }
+    void wakeup() override { }
 };
 
 //-----------------------------------------------------------------------------
@@ -157,7 +163,7 @@ TEST("require that cache usage works") {
 }
 
 TEST("require that async cache usage works") {
-    ThreadStackExecutor executor(8, 256*1024);
+    auto executor = std::make_shared<ThreadStackExecutor>(8, 256_Ki);
     auto binding = CompileCache::bind(executor);
     CompileCache::Token::UP token_a = CompileCache::compile(*Function::parse("x+y"), PassParams::SEPARATE);
     EXPECT_EQUAL(5.0, token_a->get().get_function<2>()(2.0, 3.0));
@@ -166,7 +172,6 @@ TEST("require that async cache usage works") {
     CompileCache::Token::UP token_c = CompileCache::compile(*Function::parse("x+y"), PassParams::SEPARATE);
     EXPECT_EQUAL(5.0, token_c->get().get_function<2>()(2.0, 3.0));
     EXPECT_EQUAL(CompileCache::num_cached(), 2u);
-    executor.sync(); // wait for compile threads to drop all compile cache tokens
     token_a.reset();
     TEST_DO(verify_cache(2, 2));
     token_b.reset();
@@ -176,24 +181,24 @@ TEST("require that async cache usage works") {
 }
 
 TEST("require that compile tasks are run in the most recently bound executor") {
-    MyExecutor exe1;
-    MyExecutor exe2;
+    auto exe1 = std::make_shared<MyExecutor>();
+    auto exe2 = std::make_shared<MyExecutor>();
     auto token0 = CompileCache::compile(*Function::parse("a+b"), PassParams::SEPARATE);
     EXPECT_EQUAL(CompileCache::num_bound(), 0u);
-    EXPECT_EQUAL(exe1.tasks.size(), 0u);
-    EXPECT_EQUAL(exe2.tasks.size(), 0u);
+    EXPECT_EQUAL(exe1->tasks.size(), 0u);
+    EXPECT_EQUAL(exe2->tasks.size(), 0u);
     {
         auto bind1 = CompileCache::bind(exe1);
         auto token1 = CompileCache::compile(*Function::parse("a-b"), PassParams::SEPARATE);
         EXPECT_EQUAL(CompileCache::num_bound(), 1u);
-        EXPECT_EQUAL(exe1.tasks.size(), 1u);
-        EXPECT_EQUAL(exe2.tasks.size(), 0u);
+        EXPECT_EQUAL(exe1->tasks.size(), 1u);
+        EXPECT_EQUAL(exe2->tasks.size(), 0u);
         {
             auto bind2  = CompileCache::bind(exe2);
             auto token2 = CompileCache::compile(*Function::parse("a*b"), PassParams::SEPARATE);
             EXPECT_EQUAL(CompileCache::num_bound(), 2u);
-            EXPECT_EQUAL(exe1.tasks.size(), 1u);
-            EXPECT_EQUAL(exe2.tasks.size(), 1u);
+            EXPECT_EQUAL(exe1->tasks.size(), 1u);
+            EXPECT_EQUAL(exe2->tasks.size(), 1u);
         }
         EXPECT_EQUAL(CompileCache::num_bound(), 1u);
     }
@@ -201,9 +206,9 @@ TEST("require that compile tasks are run in the most recently bound executor") {
 }
 
 TEST("require that executors may be unbound in any order") {
-    MyExecutor exe1;
-    MyExecutor exe2;
-    MyExecutor exe3;
+    auto exe1 = std::make_shared<MyExecutor>();
+    auto exe2 = std::make_shared<MyExecutor>();
+    auto exe3 = std::make_shared<MyExecutor>();
     auto bind1 = CompileCache::bind(exe1);
     auto bind2 = CompileCache::bind(exe2);
     auto bind3 = CompileCache::bind(exe3);
@@ -213,13 +218,13 @@ TEST("require that executors may be unbound in any order") {
     bind3.reset();
     EXPECT_EQUAL(CompileCache::num_bound(), 1u);
     auto token = CompileCache::compile(*Function::parse("a+b"), PassParams::SEPARATE);
-    EXPECT_EQUAL(exe1.tasks.size(), 1u);
-    EXPECT_EQUAL(exe2.tasks.size(), 0u);
-    EXPECT_EQUAL(exe3.tasks.size(), 0u);
+    EXPECT_EQUAL(exe1->tasks.size(), 1u);
+    EXPECT_EQUAL(exe2->tasks.size(), 0u);
+    EXPECT_EQUAL(exe3->tasks.size(), 0u);
 }
 
 TEST("require that the same executor can be bound multiple times") {
-    MyExecutor exe1;
+    auto exe1 = std::make_shared<MyExecutor>();
     auto bind1 = CompileCache::bind(exe1);
     auto bind2 = CompileCache::bind(exe1);
     auto bind3 = CompileCache::bind(exe1);
@@ -230,7 +235,7 @@ TEST("require that the same executor can be bound multiple times") {
     EXPECT_EQUAL(CompileCache::num_bound(), 1u);
     auto token = CompileCache::compile(*Function::parse("a+b"), PassParams::SEPARATE);
     EXPECT_EQUAL(CompileCache::num_bound(), 1u);
-    EXPECT_EQUAL(exe1.tasks.size(), 1u);
+    EXPECT_EQUAL(exe1->tasks.size(), 1u);
 }
 
 struct CompileCheck : test::EvalSpec::EvalTest {
@@ -275,6 +280,7 @@ TEST_F("compile sequentially, then run all conformance tests", test::EvalSpec())
         auto t0 = steady_clock::now();
         f1.each_case(test);
         auto t1 = steady_clock::now();
+        CompileCache::wait_pending();
         auto t2 = steady_clock::now();
         test.verify();
         auto t3 = steady_clock::now();
@@ -285,9 +291,9 @@ TEST_F("compile sequentially, then run all conformance tests", test::EvalSpec())
 
 TEST_F("compile concurrently (8 threads), then run all conformance tests", test::EvalSpec()) {
     f1.add_all_cases();
-    ThreadStackExecutor executor(8, 256*1024);
+    auto executor = std::make_shared<ThreadStackExecutor>(8, 256_Ki);
     auto binding = CompileCache::bind(executor);
-    while (executor.num_idle_workers() < 8) {
+    while (executor->num_idle_workers() < 8) {
         std::this_thread::sleep_for(1ms);
     }
     for (size_t i = 0; i < 2; ++i) {
@@ -295,12 +301,49 @@ TEST_F("compile concurrently (8 threads), then run all conformance tests", test:
         auto t0 = steady_clock::now();
         f1.each_case(test);
         auto t1 = steady_clock::now();
-        executor.sync();
+        CompileCache::wait_pending();
         auto t2 = steady_clock::now();
         test.verify();
         auto t3 = steady_clock::now();
         fprintf(stderr, "concurrent (run %zu): setup: %" PRIu64 " ms, wait: %" PRIu64 " ms, verify: %" PRIu64 " us, total: %" PRIu64 " ms\n",
                 i, count_ms(t1 - t0), count_ms(t2 - t1), count_us(t3 - t2), count_ms(t3 - t0));
+    }
+}
+
+struct MyCompileTask : public Executor::Task {
+    size_t seed;
+    size_t loop;
+    MyCompileTask(size_t seed_in, size_t loop_in) : seed(seed_in), loop(loop_in) {}
+    void run() override {
+        for (size_t i = 0; i < loop; ++i) {
+            // use custom constant to make a unique function that needs compilation
+            auto token = CompileCache::compile(*Function::parse(fmt("%zu", seed + i)), PassParams::SEPARATE);
+        }
+    }
+};
+
+TEST_MT_FF("require that deadlock is avoided with blocking executor", 8, std::shared_ptr<Executor>(nullptr), TimeBomb(300)) {
+    size_t loop = 16;
+    if (thread_id == 0) {
+        auto t0 = steady_clock::now();
+        f1 = std::make_shared<BlockingThreadStackExecutor>(2, 256_Ki, 3);
+        auto binding = CompileCache::bind(f1);
+        TEST_BARRIER(); // #1
+        for (size_t i = 0; i < num_threads; ++i) {
+            f1->execute(std::make_unique<MyCompileTask>(i * loop, loop));
+        }
+        TEST_BARRIER(); // #2
+        auto t1 = steady_clock::now();
+        fprintf(stderr, "deadlock test took %" PRIu64 " ms\n", count_ms(t1 - t0));
+
+    } else {
+        TEST_BARRIER(); // #1
+        size_t seed = (10000 + (thread_id * loop));
+        for (size_t i = 0; i < loop; ++i) {
+            // use custom constant to make a unique function that needs compilation
+            auto token = CompileCache::compile(*Function::parse(fmt("%zu", seed + i)), PassParams::SEPARATE);
+        }
+        TEST_BARRIER(); // #2
     }
 }
 

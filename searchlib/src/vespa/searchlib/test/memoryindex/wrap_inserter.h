@@ -56,7 +56,7 @@ public:
         return *this;
     }
 
-    datastore::EntryRef getWordRef() {
+    vespalib::datastore::EntryRef getWordRef() {
         return _inserter.getWordRef();
     }
 };

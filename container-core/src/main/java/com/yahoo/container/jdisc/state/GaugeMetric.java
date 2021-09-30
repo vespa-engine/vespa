@@ -20,7 +20,7 @@ public final class GaugeMetric extends MetricValue {
     private double min;
     private double sum;
     private long count;
-    private Optional<List<Tuple2<String, Double>>> percentiles;
+    private final Optional<List<Tuple2<String, Double>>> percentiles;
 
     private GaugeMetric(double last, double max, double min, double sum, long count, Optional<List<Tuple2<String, Double>>> percentiles) {
         this.last = last;

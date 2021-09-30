@@ -9,23 +9,22 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/searchlib/common/scheduletaskcallback.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/i_field_length_inspector.h>
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
-#include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
-#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("memoryindexstress_test");
@@ -197,13 +196,13 @@ struct Fixture {
     Schema       schema;
     DocumentTypeRepo  repo;
     vespalib::ThreadStackExecutor _executor;
-    search::SequencedTaskExecutor _invertThreads;
-    search::SequencedTaskExecutor _pushThreads;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor> _invertThreads;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor> _pushThreads;
     MemoryIndex  index;
     uint32_t _readThreads;
     vespalib::ThreadStackExecutor _writer; // 1 write thread
     vespalib::ThreadStackExecutor _readers; // multiple reader threads
-    search::Rand48 _rnd;
+    vespalib::Rand48 _rnd;
     uint32_t _keyLimit;
     std::atomic<long> _readSeed;
     std::atomic<long> _doneWriteWork;
@@ -244,17 +243,19 @@ private:
     Fixture &operator=(Fixture &&index) = delete;
 };
 
+VESPA_THREAD_STACK_TAG(invert_executor)
+VESPA_THREAD_STACK_TAG(push_executor)
 
 Fixture::Fixture(uint32_t readThreads)
     : schema(makeSchema()),
       repo(makeDocTypeRepoConfig()),
-      _executor(1, 128 * 1024),
-      _invertThreads(2),
-      _pushThreads(2),
-      index(schema, MockFieldLengthInspector(), _invertThreads, _pushThreads),
+      _executor(1, 128_Ki),
+      _invertThreads(vespalib::SequencedTaskExecutor::create(invert_executor, 2)),
+      _pushThreads(vespalib::SequencedTaskExecutor::create(push_executor, 2)),
+      index(schema, MockFieldLengthInspector(), *_invertThreads, *_pushThreads),
       _readThreads(readThreads),
-      _writer(1, 128 * 1024),
-      _readers(readThreads, 128 * 1024),
+      _writer(1, 128_Ki),
+      _readers(readThreads, 128_Ki),
       _rnd(),
       _keyLimit(1000000),
       _readSeed(50),
@@ -287,7 +288,7 @@ Fixture::~Fixture()
 void
 Fixture::readWork(uint32_t cnt)
 {
-    search::Rand48 rnd;
+    vespalib::Rand48 rnd;
     rnd.srand48(++_readSeed);
     uint32_t i;
     uint32_t emptyCount = 0;
@@ -347,7 +348,7 @@ Fixture::readWork()
 void
 Fixture::writeWork(uint32_t cnt)
 {
-    search::Rand48 &rnd(_rnd);
+    vespalib::Rand48 &rnd(_rnd);
     for (uint32_t i = 0; i < cnt; ++i) {
         uint32_t key = rnd.lrand48() % _keyLimit;
         if ((rnd.lrand48() & 1) == 0) {
@@ -371,9 +372,9 @@ Fixture::stressTest(uint32_t writeCnt)
     LOG(info,
         "starting stress test, 1 write thread, %u read threads, %u writes",
         readThreads, writeCnt);
-    _writer.execute(makeLambdaTask([=]() { writeWork(writeCnt); }));
+    _writer.execute(makeLambdaTask([this, writeCnt]() { writeWork(writeCnt); }));
     for (uint32_t i = 0; i < readThreads; ++i) {
-        _readers.execute(makeLambdaTask([=]() { readWork(); }));
+        _readers.execute(makeLambdaTask([this]() { readWork(); }));
     }
 }
 

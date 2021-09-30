@@ -406,13 +406,18 @@ abstract class StructuredParser extends AbstractParser {
         }
     }
 
-    /** Words for phrases also permits numerals as words */
-    private Item phraseWord(String indexName, boolean insidePhrase) {
+    /**
+     * Words for phrases also permits numerals as words
+     *
+     * @param quoted whether we are consuming text within quoted
+     * @param insidePhrase whether we are consuming additional items for an existing phrase
+     */
+    private Item phraseWord(String indexName, boolean quoted, boolean insidePhrase) {
         int position = tokens.getPosition();
         Item item = null;
 
         try {
-            item = word(indexName);
+            item = word(indexName, quoted);
 
             if (item == null && tokens.currentIs(NUMBER)) {
                 Token t = tokens.next();
@@ -434,17 +439,19 @@ abstract class StructuredParser extends AbstractParser {
 
     /**
      * Returns a WordItem if this is a non CJK query,
-     * a WordItem or PhraseSegmentItem if this is a CJK query,
+     * a WordItem or SegmentItem if this is a CJK query,
      * null if the current item is not a word
+     *
+     * @param quoted whether this token is inside quotes
      */
-    private Item word(String indexName) {
+    private Item word(String indexName, boolean quoted) {
         int position = tokens.getPosition();
         Item item = null;
 
         try {
-            if (!tokens.currentIs(WORD)
-                    && ((!tokens.currentIs(NUMBER) && !tokens.currentIs(MINUS)
-                    && !tokens.currentIs(UNDERSCORE)) || (!submodes.url && !submodes.site))) {
+            if ( ! tokens.currentIs(WORD)
+                && ((!tokens.currentIs(NUMBER) && !tokens.currentIs(MINUS)
+                && !tokens.currentIs(UNDERSCORE)) || (!submodes.url && !submodes.site))) {
                 return null;
             }
             Token word = tokens.next();
@@ -452,7 +459,7 @@ abstract class StructuredParser extends AbstractParser {
             if (submodes.url) {
                 item = new WordItem(word, true);
             } else {
-                item = segment(indexName, word);
+                item = segment(indexName, word, quoted);
             }
 
             if (submodes.url || submodes.site) {
@@ -539,7 +546,7 @@ abstract class StructuredParser extends AbstractParser {
                 quoted = !quoted;
             }
 
-            Item word = phraseWord(indexName, (firstWord != null) || (composite != null));
+            Item word = phraseWord(indexName, quoted, (firstWord != null) || (composite != null));
 
             if (word == null) {
                 if (tokens.skipMultiple(QUOTE)) {
@@ -557,6 +564,7 @@ abstract class StructuredParser extends AbstractParser {
 
             if (composite != null) {
                 composite.addItem(word);
+                connectLastTermsIn(composite);
             } else if (firstWord != null) {
                 if (submodes.site || submodes.url) {
                     UriItem uriItem = new UriItem();
@@ -584,6 +592,7 @@ abstract class StructuredParser extends AbstractParser {
                 }
                 composite.addItem(firstWord);
                 composite.addItem(word);
+                connectLastTermsIn(composite);
             } else if (word instanceof PhraseItem) {
                 composite = (PhraseItem)word;
             } else {
@@ -651,6 +660,25 @@ abstract class StructuredParser extends AbstractParser {
                 }
             }
             return firstWord;
+        }
+    }
+
+    private void connectLastTermsIn(CompositeItem composite) {
+        int items = composite.items().size();
+        if (items < 2) return;
+        Item nextToLast = composite.items().get(items - 2);
+        if (nextToLast instanceof AndSegmentItem) {
+            var subItems = ((AndSegmentItem) nextToLast).items();
+            nextToLast = subItems.get(subItems.size() - 1);
+        }
+        if ( ! (nextToLast instanceof TermItem)) return;
+        Item last = composite.items().get(items - 1);
+        if (last instanceof AndSegmentItem) {
+            last = ((AndSegmentItem) last).items().get(0);
+        }
+        if (last instanceof TaggableItem) {
+            TermItem t1 = (TermItem) nextToLast;
+            t1.setConnectivity(last, 1);
         }
     }
 

@@ -4,23 +4,15 @@
 
 #include <vespa/vespalib/util/exceptions.h>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
-const State State::UNKNOWN("Unknown", "-", 0,
-        false, true,  true,  false, false, false);
-const State State::MAINTENANCE("Maintenance", "m", 1,
-        false, false, false, true,  true,  false);
-const State State::DOWN("Down", "d", 2,
-        true,  false, false, true,  true,  true);
-const State State::STOPPING("Stopping", "s", 3,
-        false, true,  true,  false, false, true);
-const State State::INITIALIZING("Initializing", "i", 4,
-        false, true,  true,  false, false, true);
-const State State::RETIRED("Retired", "r", 5,
-        false, false, false, true, true,  false);
-const State State::UP("Up", "u", 6,
-        true,  true,  true,  true,  true,  true);
+const State State::UNKNOWN("Unknown", "-", 0, true,  true,  false, false, false);
+const State State::MAINTENANCE("Maintenance", "m", 1, false, false, true,  true,  false);
+const State State::DOWN("Down", "d", 2, false, false, true,  true,  true);
+const State State::STOPPING("Stopping", "s", 3, true,  true,  false, false, true);
+const State State::INITIALIZING("Initializing", "i", 4, true,  true,  false, false, true);
+const State State::RETIRED("Retired", "r", 5, false, false, true, true,  false);
+const State State::UP("Up", "u", 6, true,  true,  true,  true,  true);
 
 const State&
 State::get(vespalib::stringref serialized)
@@ -40,14 +32,13 @@ State::get(vespalib::stringref serialized)
 }
 
 State::State(vespalib::stringref name, vespalib::stringref serialized,
-             uint8_t rank, bool validDisk,
+             uint8_t rank,
              bool validDistributorReported, bool validStorageReported,
              bool validDistributorWanted, bool validStorageWanted,
              bool validCluster)
     : _name(name),
       _serialized(serialized),
       _rankValue(rank),
-      _validDiskState(validDisk),
       _validReportedNodeState(2),
       _validWantedNodeState(2),
       _validClusterState(validCluster)
@@ -62,9 +53,7 @@ State::State(vespalib::stringref name, vespalib::stringref serialized,
     _validWantedNodeState[distributor] = validDistributorWanted;
 }
 
-State::~State()
-{
-}
+State::~State() = default;
 
 void
 State::print(std::ostream& out, bool verbose, const std::string& indent) const
@@ -73,14 +62,4 @@ State::print(std::ostream& out, bool verbose, const std::string& indent) const
     out << (verbose ? _name : _serialized);
 }
 
-bool
-State::oneOf(const char* states) const
-{
-    for (const char* c = states; *c != '\0'; ++c) {
-        if (*c == _serialized[0]) return true;
-    }
-    return false;
 }
-
-} // lib
-} // storage

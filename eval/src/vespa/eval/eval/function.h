@@ -43,7 +43,7 @@ private:
     struct ctor_tag {};
 
 public:
-    Function(nodes::Node_UP root_in, std::vector<vespalib::string> params_in, ctor_tag)
+    Function(nodes::Node_UP root_in, std::vector<vespalib::string> params_in, ctor_tag) noexcept
         : _root(std::move(root_in)), _params(std::move(params_in)) {}
     Function(Function &&rhs) = delete;
     Function(const Function &rhs) = delete;

@@ -7,6 +7,7 @@
 #include "multienumattributesaver.h"
 #include "load_utils.h"
 #include "enum_store_loaders.h"
+#include "ipostinglistattributebase.h"
 #include <vespa/vespalib/stllike/hashtable.hpp>
 #include <vespa/vespalib/datastore/unique_store_remapper.h>
 
@@ -24,24 +25,24 @@ template <typename B, typename M>
 bool
 MultiValueEnumAttribute<B, M>::extractChangeData(const Change & c, EnumIndex & idx)
 {
-    if (c._enumScratchPad == Change::UNSET_ENUM) {
+    if ( ! c.isEnumValid() ) {
         return this->_enumStore.find_index(c._data.raw(), idx);
     }
-    idx = EnumIndex(datastore::EntryRef(c._enumScratchPad));
+    idx = EnumIndex(vespalib::datastore::EntryRef(c._enumScratchPad));
     return true;
 }
 
 template <typename B, typename M>
 void
-MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, UniqueSet & newUniques)
+MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter)
 {
     if (c._type == ChangeBase::APPEND ||
         (this->getInternalCollectionType().createIfNonExistant() &&
-         (c._type >= ChangeBase::INCREASEWEIGHT && c._type <= ChangeBase::DIVWEIGHT)))
+         (c._type >= ChangeBase::INCREASEWEIGHT && c._type <= ChangeBase::SETWEIGHT)))
     {
         EnumIndex idx;
         if (!this->_enumStore.find_index(c._data.raw(), idx)) {
-            newUniques.insert(c._data);
+            c._enumScratchPad = inserter.insert(c._data.raw()).ref();
         } else {
             c._enumScratchPad = idx.ref();
         }
@@ -99,8 +100,9 @@ MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
     loader.reserve_loaded_enums(num_values);
     uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader,
                                                              vespalib::ConstArrayRef<EnumIndex>(loader.get_enum_indexes()),
+                                                             loader.get_enum_value_remapping(),
                                                              attribute::SaveLoadedEnum(loader.get_loaded_enums()));
-    loader.release_enum_indexes();
+    loader.free_enum_value_remapping();
     loader.sort_loaded_enums();
     this->checkSetMaxValueCount(maxvc);
 }
@@ -113,9 +115,12 @@ MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
     loader.allocate_enums_histogram();
     uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader,
                                                              vespalib::ConstArrayRef<EnumIndex>(loader.get_enum_indexes()),
+                                                             loader.get_enum_value_remapping(),
                                                              attribute::SaveEnumHist(loader.get_enums_histogram()));
-    loader.release_enum_indexes();
+    loader.free_enum_value_remapping();
     loader.set_ref_counts();
+    loader.build_dictionary();
+    loader.free_unused_values();
     this->checkSetMaxValueCount(maxvc);
 }
 
@@ -171,13 +176,28 @@ MultiValueEnumAttribute<B, M>::onCommit()
         this->incGeneration();
         this->updateStat(true);
     }
-    auto remapper = this->_enumStore.consider_compact(this->getConfig().getCompactionStrategy());
+    auto remapper = this->_enumStore.consider_compact_values(this->getConfig().getCompactionStrategy());
     if (remapper) {
         multienumattribute::remap_enum_store_refs(*remapper, *this, this->_mvMapping);
         remapper->done();
         remapper.reset();
         this->incGeneration();
         this->updateStat(true);
+    }
+    if (this->_enumStore.consider_compact_dictionary(this->getConfig().getCompactionStrategy())) {
+        this->incGeneration();
+        this->updateStat(true);
+    }
+    auto *pab = this->getIPostingListAttributeBase();
+    if (pab != nullptr) {
+        if (pab->consider_compact_worst_btree_nodes(this->getConfig().getCompactionStrategy())) {
+            this->incGeneration();
+            this->updateStat(true);
+        }
+        if (pab->consider_compact_worst_buffers(this->getConfig().getCompactionStrategy())) {
+            this->incGeneration();
+            this->updateStat(true);
+        }
     }
 }
 

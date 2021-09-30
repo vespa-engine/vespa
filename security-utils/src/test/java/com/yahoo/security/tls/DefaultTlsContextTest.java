@@ -4,7 +4,6 @@ package com.yahoo.security.tls;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
-import com.yahoo.security.tls.policy.HostGlobPattern;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
 import com.yahoo.security.tls.policy.Role;
@@ -43,10 +42,12 @@ public class DefaultTlsContextTest {
                         new PeerPolicy(
                                 "dummy-policy",
                                 singleton(new Role("dummy-role")),
-                                singletonList(new RequiredPeerCredential(RequiredPeerCredential.Field.CN, new HostGlobPattern("dummy"))))));
+                                singletonList(RequiredPeerCredential.of(RequiredPeerCredential.Field.CN, "dummy")))));
 
         DefaultTlsContext tlsContext =
-                new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE, PeerAuthentication.NEED);
+                new DefaultTlsContext(
+                        singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers,
+                        AuthorizationMode.ENFORCE, PeerAuthentication.NEED, HostnameVerification.ENABLED);
 
         SSLEngine sslEngine = tlsContext.createSslEngine();
         assertThat(sslEngine).isNotNull();

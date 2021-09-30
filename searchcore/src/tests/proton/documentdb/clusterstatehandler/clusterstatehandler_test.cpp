@@ -2,6 +2,7 @@
 #include <vespa/searchcore/proton/server/clusterstatehandler.h>
 #include <vespa/searchcore/proton/server/iclusterstatechangedhandler.h>
 #include <vespa/searchcore/proton/test/test.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
@@ -18,9 +19,9 @@ using storage::spi::Result;
 
 struct MyClusterStateChangedHandler : public IClusterStateChangedHandler
 {
-    IBucketStateCalculator::SP _calc;
-    virtual void
-    notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override {
+    std::shared_ptr<IBucketStateCalculator> _calc;
+    void
+    notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override {
         _calc = newCalc;
     }
 };
@@ -61,7 +62,7 @@ TEST_F("require that cluster state change is notified", Fixture)
 {
     f._stateHandler.handleSetClusterState(clusterState, f._genericHandler);
     f._exec.sync();
-    EXPECT_TRUE(f._changedHandler._calc.get() != NULL);
+    EXPECT_TRUE(f._changedHandler._calc);
 }
 
 

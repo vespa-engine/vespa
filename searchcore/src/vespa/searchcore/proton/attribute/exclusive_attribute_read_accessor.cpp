@@ -3,12 +3,12 @@
 #include "exclusive_attribute_read_accessor.h"
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 
 namespace proton {
 
 using search::AttributeVector;
-using search::ISequencedTaskExecutor;
+using vespalib::ISequencedTaskExecutor;
 using vespalib::Executor;
 using vespalib::Gate;
 
@@ -51,7 +51,7 @@ ExclusiveAttributeReadAccessor::takeGuard()
 {
     GateSP entranceGate = std::make_shared<Gate>();
     GateSP exitGate = std::make_shared<Gate>();
-    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(_attribute->getNamePrefix()),
+    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(_attribute->getNamePrefix()),
                                   [this, entranceGate, exitGate]() { attributeWriteBlockingTask(_attribute, entranceGate, exitGate); });
     entranceGate->await();
     return std::make_unique<Guard>(*_attribute, exitGate);

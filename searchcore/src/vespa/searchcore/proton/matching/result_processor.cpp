@@ -124,7 +124,6 @@ ResultProcessor::makeReply(PartialResultUP full_result)
     }
     uint32_t hitOffset = _offset;
     uint32_t hitcnt    = (result.size() > hitOffset) ? (result.size() - hitOffset) : 0;
-    r.offset           = hitOffset;
     r.totalHitCount    = result.totalHits();
     r.hits.resize(hitcnt);
     document::GlobalId gid;

@@ -1,9 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.document.FixedBucketSpaces;
-
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Class that stores content cluster stats (with bucket space stats per node) for
@@ -27,7 +28,6 @@ import java.util.*;
 public class ClusterStatsAggregator {
 
     private final Set<Integer> distributors;
-    private final Set<Integer> storageNodes;
     private final Set<Integer> nonUpdatedDistributors;
 
     // Maps the distributor node index to a map of content node index to the
@@ -41,7 +41,6 @@ public class ClusterStatsAggregator {
 
     ClusterStatsAggregator(Set<Integer> distributors, Set<Integer> storageNodes) {
         this.distributors = distributors;
-        this.storageNodes = storageNodes;
         nonUpdatedDistributors = new HashSet<>(distributors);
         aggregatedStats = new ContentClusterStats(storageNodes);
     }
@@ -66,8 +65,8 @@ public class ClusterStatsAggregator {
         ContentNodeStats result = new ContentNodeStats(distributorIndex);
         ContentClusterStats distributorStats = distributorToStats.get(distributorIndex);
         if (distributorStats != null) {
-            for (Iterator<ContentNodeStats> itr = distributorStats.iterator(); itr.hasNext(); ) {
-                result.add(itr.next());
+            for (ContentNodeStats distributorStat : distributorStats) {
+                result.add(distributorStat);
             }
         }
         return result;

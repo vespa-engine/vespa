@@ -14,16 +14,13 @@ vespa_define_module(
     src/vespa/vdslib/container
     src/vespa/vdslib/distribution
     src/vespa/vdslib/state
-    src/vespa/vdslib/thread
 
     TEST_DEPENDS
     vdstestlib
 
     TESTS
     src/tests
-    src/tests/bucketdistribution
     src/tests/container
     src/tests/distribution
     src/tests/state
-    src/tests/thread
 )

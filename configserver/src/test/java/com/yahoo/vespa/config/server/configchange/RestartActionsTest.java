@@ -5,8 +5,10 @@ import com.yahoo.config.model.api.ServiceInfo;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -80,5 +82,19 @@ public class RestartActionsTest {
         assertThat(entries.size(), is(2));
         assertThat(toString(entries.get(0)), equalTo("content.foo.searchnode:[baz][change]"));
         assertThat(toString(entries.get(1)), equalTo("search.foo.searchnode:[baz][change]"));
+    }
+
+    @Test
+    public void use_for_internal_restart_test() {
+        ConfigChangeActions actions = new ConfigChangeActionsBuilder()
+                .restart(CHANGE_MSG, CLUSTER, CLUSTER_TYPE, SERVICE_TYPE, SERVICE_NAME)
+                .restart(CHANGE_MSG, CLUSTER, CLUSTER_TYPE_2, SERVICE_TYPE, SERVICE_NAME, true).build();
+
+        assertEquals(Set.of(CLUSTER_TYPE, CLUSTER_TYPE_2),
+                actions.getRestartActions().getEntries().stream().map(RestartActions.Entry::getClusterType).collect(Collectors.toSet()));
+        assertEquals(Set.of(CLUSTER_TYPE, CLUSTER_TYPE_2),
+                actions.getRestartActions().useForInternalRestart(false).getEntries().stream().map(RestartActions.Entry::getClusterType).collect(Collectors.toSet()));
+        assertEquals(Set.of(CLUSTER_TYPE),
+                actions.getRestartActions().useForInternalRestart(true).getEntries().stream().map(RestartActions.Entry::getClusterType).collect(Collectors.toSet()));
     }
 }

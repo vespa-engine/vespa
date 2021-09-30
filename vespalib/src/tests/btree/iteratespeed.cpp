@@ -13,6 +13,7 @@
 #include <vespa/vespalib/btree/btreebuilder.hpp>
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/time.h>
 
@@ -21,7 +22,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("iteratespeed");
 
-namespace search::btree {
+namespace vespalib::btree {
 
 enum class IterateMethod
 {
@@ -135,7 +136,7 @@ int
 IterateSpeed::Main()
 {
     int argi;
-    char c;
+    int c;
     const char *optArg;
     argi = 1;
     int loops = 1;
@@ -204,6 +205,6 @@ IterateSpeed::Main()
 
 }
 
-FASTOS_MAIN(search::btree::IterateSpeed);
+FASTOS_MAIN(vespalib::btree::IterateSpeed);
 
 

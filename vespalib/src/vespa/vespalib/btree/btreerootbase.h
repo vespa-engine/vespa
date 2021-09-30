@@ -7,7 +7,7 @@
 #include "btreenodeallocator.h"
 #include <atomic>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename KeyT,
           typename DataT,
@@ -52,6 +52,11 @@ public:
             allocator.needFreeze(this);
     }
 
+    void prepare_hold() {
+        // entry for _root is owned by new copy of BTreeRootBase.
+        _root = BTreeNode::Ref();
+    }
+    
     void setRoots(BTreeNode::Ref newRoot) {
         _root = newRoot;
         _frozenRoot = newRoot.ref();

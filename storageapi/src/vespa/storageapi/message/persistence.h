@@ -34,6 +34,7 @@ public:
      * Used by test and set to retrieve already existing document
      */
     virtual const document::DocumentId & getDocumentId() const = 0;
+    virtual const document::DocumentType * getDocumentType() const { return nullptr; }
 };
 
 /**
@@ -64,6 +65,7 @@ public:
     const DocumentSP& getDocument() const { return _doc; }
     const document::DocumentId& getDocumentId() const override;
     Timestamp getTimestamp() const { return _timestamp; }
+    const document::DocumentType * getDocumentType() const override;
 
     vespalib::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -125,6 +127,7 @@ public:
     Timestamp getTimestamp() const { return _timestamp; }
     Timestamp getOldTimestamp() const { return _oldTimestamp; }
 
+    const document::DocumentType * getDocumentType() const override;
     vespalib::string getSummary() const override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -224,24 +227,27 @@ class GetReply : public BucketInfoReply {
     Timestamp _beforeTimestamp;
     Timestamp _lastModifiedTime;
     bool _had_consistent_replicas;
-
+    bool _is_tombstone;
 public:
-    GetReply(const GetCommand& cmd,
-             const DocumentSP& doc = DocumentSP(),
-             Timestamp lastModified = 0,
-             bool had_consistent_replicas = false);
+    explicit GetReply(const GetCommand& cmd,
+                      const DocumentSP& doc = DocumentSP(),
+                      Timestamp lastModified = 0,
+                      bool had_consistent_replicas = false,
+                      bool is_tombstone = false);
+
     ~GetReply() override;
 
     const DocumentSP& getDocument() const { return _doc; }
     const document::DocumentId& getDocumentId() const { return _docId; }
     const vespalib::string& getFieldSet() const { return _fieldSet; }
 
-    Timestamp getLastModifiedTimestamp() const { return _lastModifiedTime; }
-    Timestamp getBeforeTimestamp() const { return _beforeTimestamp; }
+    Timestamp getLastModifiedTimestamp() const noexcept { return _lastModifiedTime; }
+    Timestamp getBeforeTimestamp() const noexcept { return _beforeTimestamp; }
 
-    bool had_consistent_replicas() const noexcept { return _had_consistent_replicas; }
+    [[nodiscard]] bool had_consistent_replicas() const noexcept { return _had_consistent_replicas; }
+    [[nodiscard]] bool is_tombstone() const noexcept { return _is_tombstone; }
 
-    bool wasFound() const { return (_doc.get() != 0); }
+    bool wasFound() const { return (_doc.get() != nullptr); }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(GetReply, onGetReply)
 };

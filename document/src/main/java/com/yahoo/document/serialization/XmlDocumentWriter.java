@@ -106,7 +106,6 @@ public final class XmlDocumentWriter implements DocumentWriter {
             buffer.addAttribute("lastmodifiedtime", lastModified);
         }
         write(null, value.getHeader());
-        write(null, value.getBody());
 
         buffer.endTag();
     }

@@ -1,19 +1,21 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 search indexrewrite {
+
     document indexrewrite {
         field title_src type string {
-
         }
     }
+
     field title type string {
         indexing: input title_src | lowercase | normalize | tokenize | index
-        # index-to: title, titleabstract, default
         indexing-rewrite: none
         rank-type: about
         stemming: none
         alias: headline
     }
+
     field title_s type string {
         indexing: input title_src | summary
     }
+
 }

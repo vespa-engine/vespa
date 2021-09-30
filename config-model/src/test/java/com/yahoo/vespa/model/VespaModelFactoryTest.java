@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.MockModelContext;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -18,12 +17,12 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -105,23 +104,17 @@ public class VespaModelFactoryTest {
             @Override
             public HostSpec allocateHost(String alias) {
                 return new HostSpec(hostName,
-                                    Collections.emptyList(),
-                                    ClusterMembership.from(ClusterSpec.from(ClusterSpec.Type.admin,
-                                                                            new ClusterSpec.Id(routingClusterName),
-                                                                            ClusterSpec.Group.from(0),
-                                                                            Version.fromString("6.42"), false),
-                                                           0));
+                                    NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
+                                    ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.admin, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0),
+                                    Optional.empty(), Optional.empty(), Optional.empty());
             }
 
             @Override
-            public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
-                return Collections.singletonList(new HostSpec(hostName,
-                                                              Collections.emptyList(),
-                                                              ClusterMembership.from(ClusterSpec.from(ClusterSpec.Type.container,
-                                                                                                      new ClusterSpec.Id(routingClusterName),
-                                                                                                      ClusterSpec.Group.from(0),
-                                                                                                      Version.fromString("6.42"), false),
-                                                                                     0)));
+            public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+                return List.of(new HostSpec(hostName,
+                                            NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
+                                            ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0),
+                                            Optional.empty(), Optional.empty(), Optional.empty()));
             }
         };
 
@@ -147,9 +140,7 @@ public class VespaModelFactoryTest {
             }
 
             @Override
-            public Optional<HostProvisioner> hostProvisioner() {
-                return Optional.of(provisionerToOverride);
-            }
+            public HostProvisioner getHostProvisioner() { return provisionerToOverride; }
 
             @Override
             public Properties properties() {

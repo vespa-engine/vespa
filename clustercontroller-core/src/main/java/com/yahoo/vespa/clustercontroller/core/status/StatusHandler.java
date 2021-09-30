@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.status;
 
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageResponse;
@@ -10,6 +10,7 @@ import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpResult;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -40,7 +41,7 @@ public class StatusHandler implements HttpRequestHandler {
         @Override
         public void shutdown() throws InterruptedException, IOException {}
         @Override
-        public void setPort(int port) throws IOException, InterruptedException {}
+        public void setPort(int port) {}
         @Override
         public StatusPageServer.HttpRequest getCurrentHttpRequest() {
             synchronized (answerMonitor) {
@@ -73,8 +74,8 @@ public class StatusHandler implements HttpRequestHandler {
 
     }
 
-    private static Pattern clusterListRequest = Pattern.compile("^/clustercontroller-status/v1/?$");
-    private static Pattern statusRequest = Pattern.compile("^/clustercontroller-status/v1/([^/]+)(/.*)?$");
+    private static final Pattern clusterListRequest = Pattern.compile("^/clustercontroller-status/v1/?$");
+    private static final Pattern statusRequest = Pattern.compile("^/clustercontroller-status/v1/([^/]+)(/.*)?$");
     private final ClusterStatusPageServerSet statusClusters;
 
     public StatusHandler(ClusterStatusPageServerSet set) {
@@ -117,7 +118,7 @@ public class StatusHandler implements HttpRequestHandler {
         if (response.getContentType() != null) {
             result.addHeader("Content-Type", response.getContentType());
         }
-        result.setContent(new String(response.getOutputStream().toByteArray()));
+        result.setContent(response.getOutputStream().toString(StandardCharsets.UTF_8));
         return result;
     }
 

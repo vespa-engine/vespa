@@ -107,11 +107,6 @@ public class IdentifierTest {
     }
 
     @Test
-    public void user_tenant_id_does_not_contain_underscore() {
-        assertEquals("by-under-score-user", new UserId("under_score_user").toTenantId().id());
-    }
-
-    @Test
     public void dns_names_has_no_underscore() {
         assertEquals("a-b-c", new ApplicationId("a_b_c").toDns());
     }

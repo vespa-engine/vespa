@@ -5,37 +5,73 @@
 
 #pragma once
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 class EntryComparatorWrapper;
+class IUniqueStoreDictionaryReadSnapshot;
+
+class NoBTreeDictionary { };
+class NoHashDictionary;
+
+template <typename BTreeDictionaryT>
+class UniqueStoreBTreeDictionaryBase
+{
+protected:
+    BTreeDictionaryT _btree_dict;
+public:
+    static constexpr bool has_btree_dictionary = true;
+    UniqueStoreBTreeDictionaryBase()
+        : _btree_dict()
+    {
+    }
+};
+
+template <>
+class UniqueStoreBTreeDictionaryBase<NoBTreeDictionary>
+{
+public:
+    static constexpr bool has_btree_dictionary = false;
+    UniqueStoreBTreeDictionaryBase()
+    {
+    }
+};
+
+template <typename HashDictionaryT>
+class UniqueStoreHashDictionaryBase
+{
+protected:
+    HashDictionaryT _hash_dict;
+public:
+    static constexpr bool has_hash_dictionary = true;
+    UniqueStoreHashDictionaryBase(std::unique_ptr<EntryComparator> compare)
+        : _hash_dict(std::move(compare))
+    {
+    }
+};
+
+template <>
+class UniqueStoreHashDictionaryBase<NoHashDictionary>
+{
+public:
+    static constexpr bool has_hash_dictionary = false;
+    UniqueStoreHashDictionaryBase(std::unique_ptr<EntryComparator>)
+    {
+    }
+};
 
 /**
  * A dictionary for unique store. Mostly accessed via base class.
  */
-template <typename DictionaryT, typename ParentT = IUniqueStoreDictionary>
-class UniqueStoreDictionary : public ParentT {
+template <typename BTreeDictionaryT, typename ParentT = IUniqueStoreDictionary, typename HashDictionaryT = NoHashDictionary>
+class UniqueStoreDictionary : public ParentT, public UniqueStoreBTreeDictionaryBase<BTreeDictionaryT>, public UniqueStoreHashDictionaryBase<HashDictionaryT> {
 protected:
-    using DictionaryType = DictionaryT;
-    using DataType = typename DictionaryType::DataType;
-    using FrozenView = typename DictionaryType::FrozenView;
-    using ReadSnapshot = typename ParentT::ReadSnapshot;
+    using BTreeDictionaryType = BTreeDictionaryT;
     using generation_t = typename ParentT::generation_t;
 
-    class ReadSnapshotImpl : public ReadSnapshot {
-    private:
-        FrozenView _frozen_view;
-
-    public:
-        ReadSnapshotImpl(FrozenView frozen_view);
-        size_t count(const EntryComparator& comp) const override;
-        size_t count_in_range(const EntryComparator& low, const EntryComparator& high) const override;
-        void foreach_key(std::function<void(EntryRef)> callback) const override;
-    };
-
-    DictionaryType _dict;
-
 public:
-    UniqueStoreDictionary();
+    using UniqueStoreBTreeDictionaryBase<BTreeDictionaryT>::has_btree_dictionary;
+    using UniqueStoreHashDictionaryBase<HashDictionaryT>::has_hash_dictionary;
+    UniqueStoreDictionary(std::unique_ptr<EntryComparator> compare);
     ~UniqueStoreDictionary() override;
     void freeze() override;
     void transfer_hold_lists(generation_t generation) override;
@@ -46,10 +82,16 @@ public:
     void move_entries(ICompactable& compactable) override;
     uint32_t get_num_uniques() const override;
     vespalib::MemoryUsage get_memory_usage() const override;
-    void build(const std::vector<EntryRef> &refs, const std::vector<uint32_t> &ref_counts, std::function<void(EntryRef)> hold) override;
+    void build(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> ref_counts, std::function<void(EntryRef)> hold) override;
     void build(vespalib::ConstArrayRef<EntryRef> refs) override;
-    void build_with_payload(const std::vector<EntryRef>& refs, const std::vector<uint32_t>& payloads) override;
-    std::unique_ptr<ReadSnapshot> get_read_snapshot() const override;
+    void build_with_payload(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> payloads) override;
+    std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> get_read_snapshot() const override;
+    bool get_has_btree_dictionary() const override;
+    bool get_has_hash_dictionary() const override;
+    vespalib::MemoryUsage get_btree_memory_usage() const override;
+    vespalib::MemoryUsage get_hash_memory_usage() const override;
+    bool has_held_buffers() const override;
+    void compact_worst(bool compact_btree_dictionary, bool compact_hash_dictionary) override;
 };
 
 }

@@ -1,0 +1,46 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.content
+
+##
+## Super config for distribution in each content cluster, keyed by cluster id.
+##
+
+# If this is set to true, the distributor will try to enforce one active copy of
+# buckets per hierarchical leaf group. This lets the top level dispatcher send
+# queries only to the nodes of one group, saving computational effort.
+# If used, hierarchical grouping can not be used for other purposes.
+# Using this option implies that:
+#   - ready_copies == redundancy
+#   - Only one level of hierarchical grouping may be defined.
+#   - That level distributes copies to all defined groups.
+cluster{}.active_per_leaf_group bool default=false
+
+# The number of copies that should be "ready" to be active. Maximum is redundancy.
+cluster{}.ready_copies int default=0
+
+# How many copies of a document are stored, across nodes.
+cluster{}.redundancy int default=3
+
+# Initial redundancy allows put-operations to return as completed after
+# a subset of all copies have been stored.
+# A value of 0 disable this, and causes normal redundancy behavior instead.
+cluster{}.initial_redundancy int default=0
+
+# Hierarchical grouping divides the nodes into a tree of groups. The index is the
+# string representation of a path from the root node in this tree, e.g., "1.2.1".
+cluster{}.group[].index string
+
+# Each group needs to have a name. Obviously. Duh.
+cluster{}.group[].name string
+
+# Capacity of the given group.
+cluster{}.group[].capacity double default=1
+
+# Partitions define how copies are divided among child groups/nodes.
+cluster{}.group[].partitions string default=""
+
+# Leaf groups will have a set of nodes within them. Branch groups will have none.
+cluster{}.group[].nodes[].index int
+
+# Whether this node is retired, and data should migrate out of it.
+cluster{}.group[].nodes[].retired bool default=false

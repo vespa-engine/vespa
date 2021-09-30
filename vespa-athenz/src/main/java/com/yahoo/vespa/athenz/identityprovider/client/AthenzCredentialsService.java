@@ -64,6 +64,9 @@ class AthenzCredentialsService {
         this.clock = clock;
     }
 
+    Path certificatePath() { return SiaUtils.getCertificateFile(VESPA_SIA_DIRECTORY, tenantIdentity); }
+    Path privateKeyPath() { return SiaUtils.getPrivateKeyFile(VESPA_SIA_DIRECTORY, tenantIdentity); }
+
     AthenzCredentials registerInstance() {
         Optional<AthenzCredentials> athenzCredentialsFromDisk = tryReadCredentialsFromDisk();
         if (athenzCredentialsFromDisk.isPresent()) {
@@ -78,7 +81,7 @@ class AthenzCredentialsService {
                 document.ipAddresses(),
                 keyPair);
 
-        try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, nodeIdentityProvider)) {
+        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint).withIdentityProvider(nodeIdentityProvider).build()) {
             InstanceIdentity instanceIdentity =
                     ztsClient.registerInstance(
                             configserverIdentity,
@@ -99,7 +102,7 @@ class AthenzCredentialsService {
                 document.ipAddresses(),
                 newKeyPair);
 
-        try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, sslContext)) {
+        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint).withSslContext(sslContext).build()) {
             InstanceIdentity instanceIdentity =
                     ztsClient.refreshInstance(
                             configserverIdentity,

@@ -658,6 +658,7 @@
       "public static void logAndDie(java.lang.String, boolean)",
       "public static void logAndDie(java.lang.String, java.lang.Throwable)",
       "public static void logAndDie(java.lang.String, java.lang.Throwable, boolean)",
+      "public static void dumpHeap(java.lang.String, boolean)",
       "public static void dumpThreads()"
     ],
     "fields": []
@@ -679,7 +680,8 @@
       "public static void ensureSmaller(java.lang.String, java.lang.Comparable, java.lang.String, java.lang.Comparable)",
       "public static void ensure(java.lang.String, boolean)",
       "public static varargs void ensure(boolean, java.lang.Object[])",
-      "public static void ensureInstanceOf(java.lang.String, java.lang.Object, java.lang.Class)"
+      "public static void ensureInstanceOf(java.lang.String, java.lang.Object, java.lang.Class)",
+      "public static void ensureNotInstanceOf(java.lang.String, java.lang.Object, java.lang.Class)"
     ],
     "fields": []
   },
@@ -890,11 +892,13 @@
       "public varargs double get(long[])",
       "public varargs float getFloat(long[])",
       "public double get(com.yahoo.tensor.TensorAddress)",
+      "public boolean has(com.yahoo.tensor.TensorAddress)",
       "public abstract double get(long)",
       "public abstract float getFloat(long)",
       "public com.yahoo.tensor.TensorType type()",
       "public abstract com.yahoo.tensor.IndexedTensor withType(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.DimensionSizes dimensionSizes()",
+      "public long[] shape()",
       "public java.util.Map cells()",
       "public com.yahoo.tensor.Tensor remove(java.util.Set)",
       "public java.lang.String toString()",
@@ -940,6 +944,7 @@
       "public com.yahoo.tensor.TensorType type()",
       "public long size()",
       "public double get(com.yahoo.tensor.TensorAddress)",
+      "public boolean has(com.yahoo.tensor.TensorAddress)",
       "public java.util.Iterator cellIterator()",
       "public java.util.Iterator valueIterator()",
       "public java.util.Map cells()",
@@ -1030,6 +1035,7 @@
       "public com.yahoo.tensor.TensorType type()",
       "public long size()",
       "public double get(com.yahoo.tensor.TensorAddress)",
+      "public boolean has(com.yahoo.tensor.TensorAddress)",
       "public java.util.Iterator cellIterator()",
       "public java.util.Iterator valueIterator()",
       "public java.util.Map cells()",
@@ -1097,6 +1103,7 @@
       "abstract"
     ],
     "methods": [
+      "public static com.yahoo.tensor.Tensor$Builder of(java.lang.String)",
       "public static com.yahoo.tensor.Tensor$Builder of(com.yahoo.tensor.TensorType)",
       "public static com.yahoo.tensor.Tensor$Builder of(com.yahoo.tensor.TensorType, com.yahoo.tensor.DimensionSizes)",
       "public abstract com.yahoo.tensor.TensorType type()",
@@ -1149,6 +1156,7 @@
       "public boolean isEmpty()",
       "public abstract long size()",
       "public abstract double get(com.yahoo.tensor.TensorAddress)",
+      "public abstract boolean has(com.yahoo.tensor.TensorAddress)",
       "public abstract java.util.Iterator cellIterator()",
       "public abstract java.util.Iterator valueIterator()",
       "public abstract java.util.Map cells()",
@@ -1166,6 +1174,7 @@
       "public com.yahoo.tensor.Tensor concat(com.yahoo.tensor.Tensor, java.lang.String)",
       "public com.yahoo.tensor.Tensor rename(java.util.List, java.util.List)",
       "public static com.yahoo.tensor.Tensor generate(com.yahoo.tensor.TensorType, java.util.function.Function)",
+      "public com.yahoo.tensor.Tensor cellCast(com.yahoo.tensor.TensorType$Value)",
       "public com.yahoo.tensor.Tensor l1Normalize(java.lang.String)",
       "public com.yahoo.tensor.Tensor l2Normalize(java.lang.String)",
       "public com.yahoo.tensor.Tensor matmul(com.yahoo.tensor.Tensor, java.lang.String)",
@@ -1193,6 +1202,8 @@
       "public com.yahoo.tensor.Tensor equal(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor notEqual(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor approxEqual(com.yahoo.tensor.Tensor)",
+      "public com.yahoo.tensor.Tensor bit(com.yahoo.tensor.Tensor)",
+      "public com.yahoo.tensor.Tensor hamming(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor avg()",
       "public com.yahoo.tensor.Tensor avg(java.lang.String)",
       "public com.yahoo.tensor.Tensor avg(java.util.List)",
@@ -1202,6 +1213,9 @@
       "public com.yahoo.tensor.Tensor max()",
       "public com.yahoo.tensor.Tensor max(java.lang.String)",
       "public com.yahoo.tensor.Tensor max(java.util.List)",
+      "public com.yahoo.tensor.Tensor median()",
+      "public com.yahoo.tensor.Tensor median(java.lang.String)",
+      "public com.yahoo.tensor.Tensor median(java.util.List)",
       "public com.yahoo.tensor.Tensor min()",
       "public com.yahoo.tensor.Tensor min(java.lang.String)",
       "public com.yahoo.tensor.Tensor min(java.util.List)",
@@ -1406,7 +1420,9 @@
     ],
     "fields": [
       "public static final enum com.yahoo.tensor.TensorType$Value DOUBLE",
-      "public static final enum com.yahoo.tensor.TensorType$Value FLOAT"
+      "public static final enum com.yahoo.tensor.TensorType$Value FLOAT",
+      "public static final enum com.yahoo.tensor.TensorType$Value BFLOAT16",
+      "public static final enum com.yahoo.tensor.TensorType$Value INT8"
     ]
   },
   "com.yahoo.tensor.TensorType": {
@@ -1449,6 +1465,25 @@
     "methods": [
       "public void <init>()",
       "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.tensor.TypeResolver": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public static com.yahoo.tensor.TensorType map(com.yahoo.tensor.TensorType)",
+      "public static com.yahoo.tensor.TensorType reduce(com.yahoo.tensor.TensorType, java.util.List)",
+      "public static com.yahoo.tensor.TensorType peek(com.yahoo.tensor.TensorType, java.util.List)",
+      "public static com.yahoo.tensor.TensorType rename(com.yahoo.tensor.TensorType, java.util.List, java.util.List)",
+      "public static com.yahoo.tensor.TensorType cell_cast(com.yahoo.tensor.TensorType, com.yahoo.tensor.TensorType$Value)",
+      "public static com.yahoo.tensor.TensorType join(com.yahoo.tensor.TensorType, com.yahoo.tensor.TensorType)",
+      "public static com.yahoo.tensor.TensorType merge(com.yahoo.tensor.TensorType, com.yahoo.tensor.TensorType)",
+      "public static com.yahoo.tensor.TensorType concat(com.yahoo.tensor.TensorType, com.yahoo.tensor.TensorType, java.lang.String)"
     ],
     "fields": []
   },
@@ -1538,7 +1573,9 @@
       "public"
     ],
     "methods": [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction)",
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.util.List)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
       "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
@@ -1553,10 +1590,29 @@
       "public"
     ],
     "methods": [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction)",
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.util.List)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
       "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.tensor.functions.CellCast": {
+    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.TensorType$Value)",
+      "public java.util.List arguments()",
+      "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
+      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
     ],
     "fields": []
@@ -1823,10 +1879,11 @@
     "fields": [
       "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator avg",
       "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator count",
-      "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator prod",
-      "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator sum",
       "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator max",
-      "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator min"
+      "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator median",
+      "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator min",
+      "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator prod",
+      "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator sum"
     ]
   },
   "com.yahoo.tensor.functions.Reduce": {
@@ -1900,6 +1957,7 @@
     ],
     "methods": [
       "public abstract java.lang.Double apply(com.yahoo.tensor.evaluation.EvaluationContext)",
+      "public java.util.Optional asTensorFunction()",
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public bridge synthetic java.lang.Object apply(java.lang.Object)"
     ],
@@ -2071,6 +2129,22 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.functions.ScalarFunctions$Erf": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.util.function.DoubleUnaryOperator"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public double applyAsDouble(double)",
+      "public java.lang.String toString()",
+      "public static double erf(double)"
+    ],
+    "fields": []
+  },
   "com.yahoo.tensor.functions.ScalarFunctions$Exp": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -2111,6 +2185,22 @@
     ],
     "methods": [
       "public void <init>()",
+      "public double applyAsDouble(double, double)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.tensor.functions.ScalarFunctions$Hamming": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.util.function.DoubleBinaryOperator"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public static double hamming(double, double)",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()"
     ],
@@ -2484,6 +2574,7 @@
       "public static java.util.function.DoubleBinaryOperator pow()",
       "public static java.util.function.DoubleBinaryOperator squareddifference()",
       "public static java.util.function.DoubleBinaryOperator subtract()",
+      "public static java.util.function.DoubleBinaryOperator hamming()",
       "public static java.util.function.DoubleUnaryOperator abs()",
       "public static java.util.function.DoubleUnaryOperator acos()",
       "public static java.util.function.DoubleUnaryOperator asin()",
@@ -2502,6 +2593,7 @@
       "public static java.util.function.DoubleUnaryOperator square()",
       "public static java.util.function.DoubleUnaryOperator tan()",
       "public static java.util.function.DoubleUnaryOperator tanh()",
+      "public static java.util.function.DoubleUnaryOperator erf()",
       "public static java.util.function.DoubleUnaryOperator elu()",
       "public static java.util.function.DoubleUnaryOperator elu(double)",
       "public static java.util.function.DoubleUnaryOperator leakyrelu()",
@@ -2588,6 +2680,7 @@
       "public abstract com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public final com.yahoo.tensor.Tensor evaluate()",
       "public abstract java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
+      "public java.util.Optional asScalarFunction()",
       "public java.lang.String toString()"
     ],
     "fields": []
@@ -2859,7 +2952,8 @@
     ],
     "methods": [
       "public static java.lang.String encode(java.util.Map)",
-      "public static java.lang.String escape(java.lang.String)"
+      "public static java.lang.String escape(java.lang.String)",
+      "public static boolean equals(java.lang.String, java.lang.String)"
     ],
     "fields": []
   },
@@ -3022,7 +3116,9 @@
       "public static boolean isTextCharacter(int)",
       "public static java.util.OptionalInt validateTextString(java.lang.String)",
       "public static boolean isDisplayable(int)",
-      "public static java.lang.String stripInvalidCharacters(java.lang.String)"
+      "public static java.lang.String stripInvalidCharacters(java.lang.String)",
+      "public static java.lang.String truncate(java.lang.String, int)",
+      "public static varargs java.lang.String format(java.lang.String, java.lang.Object[])"
     ],
     "fields": []
   },

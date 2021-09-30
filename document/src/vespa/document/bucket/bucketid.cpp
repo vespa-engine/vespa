@@ -45,7 +45,7 @@ void fillUsedMasks(BucketId::Type * masks, uint8_t maxBits)
     typedef BucketId::Type Type;
     for (uint32_t usedBits = 0; usedBits <= maxBits; ++usedBits) {
         uint8_t notused = 8 * sizeof(Type) - usedBits;
-        masks[usedBits] = (std::numeric_limits<Type>::max() << notused) >> notused;
+        masks[usedBits] = (usedBits > 0) ? ((std::numeric_limits<Type>::max() << notused) >> notused) : std::numeric_limits<Type>::max();
     }
 }
 
@@ -54,7 +54,7 @@ void fillStripMasks(BucketId::Type * masks, uint8_t maxBits)
     typedef BucketId::Type Type;
     for (uint32_t usedBits = 0; usedBits <= maxBits; ++usedBits) {
         uint8_t notused = 8 * sizeof(Type) - usedBits;
-        Type usedMask = (std::numeric_limits<Type>::max() << notused) >> notused;
+        Type usedMask = (usedBits > 0) ? ((std::numeric_limits<Type>::max() << notused) >> notused) : std::numeric_limits<Type>::max();
         Type countMask = (std::numeric_limits<Type>::max() >> maxBits) << maxBits;
         masks[usedBits] = usedMask | countMask;
     }
@@ -71,7 +71,7 @@ Initialize _initializeUsedMasks;
 
 }
 
-void BucketId::initialize() {
+void BucketId::initialize() noexcept {
     fillUsedMasks(BucketId::_usedMasks, BucketId::maxNumBits);
     fillStripMasks(BucketId::_stripMasks, BucketId::maxNumBits);
 }
@@ -91,20 +91,16 @@ void BucketId::throwFailedSetUsedBits(uint32_t used, uint32_t availBits) {
 }
 
 BucketId::Type
-BucketId::reverse(Type id)
+BucketId::reverse(Type id) noexcept
 {
-    Type retVal;
-    int bytes = sizeof(Type);
-
-    for (int i = 0; i < bytes; i++) {
-        ((unsigned char*)&retVal)[bytes - i - 1] = reverseBitTable[((const unsigned char*)&id)[i]];
-    }
-
-    return retVal;
+    id = ((id & 0x5555555555555555l) << 1) | ((id & 0xaaaaaaaaaaaaaaaal) >> 1);
+    id = ((id & 0x3333333333333333l) << 2) | ((id & 0xccccccccccccccccl) >> 2);
+    id = ((id & 0x0f0f0f0f0f0f0f0fl) << 4) | ((id & 0xf0f0f0f0f0f0f0f0l) >> 4);
+    return __builtin_bswap64(id);
 }
 
 BucketId::Type
-BucketId::keyToBucketId(Type key)
+BucketId::keyToBucketId(Type key) noexcept
 {
     Type retVal = reverse(key);
 
@@ -117,7 +113,7 @@ BucketId::keyToBucketId(Type key)
 }
 
 bool
-BucketId::contains(const BucketId& id) const
+BucketId::contains(const BucketId& id) const noexcept
 {
     if (id.getUsedBits() < getUsedBits()) {
         return false;

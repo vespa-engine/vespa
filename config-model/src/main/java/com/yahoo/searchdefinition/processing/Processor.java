@@ -25,7 +25,7 @@ import java.util.logging.Level;
 public abstract class Processor {
 
     protected final Search search;
-    protected DeployLogger deployLogger;
+    protected final DeployLogger deployLogger;
     protected final RankProfileRegistry rankProfileRegistry;
     protected final QueryProfiles queryProfiles;
 
@@ -72,7 +72,7 @@ public abstract class Processor {
     protected SDField addField(Search search, SDField field, String suffix, String indexing, String queryCommand) {
         SDField implementationField = search.getConcreteField(field.getName() + "_" + suffix);
         if (implementationField != null) {
-            deployLogger.log(Level.WARNING, "Implementation field " + implementationField + " added twice");
+            deployLogger.logApplicationPackage(Level.WARNING, "Implementation field " + implementationField + " added twice");
         } else {
             implementationField = new SDField(search.getDocument(), field.getName() + "_" + suffix, DataType.STRING);
         }
@@ -128,12 +128,22 @@ public abstract class Processor {
         throw newProcessException(search, field, msg);
     }
 
-    protected void warn(String searchName, String fieldName, String msg) {
-        String fullMsg = formatError(searchName, fieldName, msg);
-        deployLogger.log(Level.WARNING, fullMsg);
+    protected void warn(String searchName, String fieldName, String message) {
+        String fullMsg = formatError(searchName, fieldName, message);
+        deployLogger.logApplicationPackage(Level.WARNING, fullMsg);
     }
 
-    protected void warn(Search search, Field field, String msg) {
-        warn(search.getName(), field.getName(), msg);
+    protected void warn(Search search, Field field, String message) {
+        warn(search.getName(), field.getName(), message);
     }
+
+    protected void info(String searchName, String fieldName, String message) {
+        String fullMsg = formatError(searchName, fieldName, message);
+        deployLogger.logApplicationPackage(Level.INFO, fullMsg);
+    }
+
+    protected void info(Search search, Field field, String message) {
+        info(search.getName(), field.getName(), message);
+    }
+
 }

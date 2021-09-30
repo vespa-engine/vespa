@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.jira;
 
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -14,5 +15,5 @@ public interface Jira {
 
     void commentIssue(JiraIssue issue, JiraComment comment);
 
-    void addAttachment(JiraIssue issue, String filename, String fileContent);
+    void addAttachment(JiraIssue issue, String filename, InputStream fileContent);
 }

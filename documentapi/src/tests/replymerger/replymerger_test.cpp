@@ -8,6 +8,7 @@
 #include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
 #include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/error.h>
 
 using namespace documentapi;
 

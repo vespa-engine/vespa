@@ -1,20 +1,23 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
+import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.node.ClusterId;
+import com.yahoo.vespa.hosted.provision.node.Report;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -26,104 +29,150 @@ import static java.util.stream.Collectors.collectingAndThen;
  * @author bratseth
  * @author mpolden
  */
-public class NodeList implements Iterable<Node> {
+public class NodeList extends AbstractFilteringList<Node, NodeList> {
 
-    private final List<Node> nodes;
-    private final boolean negate;
-
-    NodeList(List<Node> nodes) {
-        this(nodes, true, false);
+    protected NodeList(List<Node> nodes, boolean negate) {
+        super(nodes, negate, NodeList::new);
     }
 
-    private NodeList(List<Node> nodes, boolean copy, boolean negate) {
-        this.nodes = copy ? List.copyOf(nodes) : Collections.unmodifiableList(nodes);
-        this.negate = negate;
-    }
-
-    /** Invert the next filter operation. All other methods that return a {@link NodeList} clears the negation. */
-    public NodeList not() {
-        return new NodeList(nodes, false, true);
+    /** Returns the node with the given hostname from this list, or empty if it is not present  */
+    public Optional<Node> node(String hostname) {
+        return matching(node -> node.hostname().equals(hostname)).first();
     }
 
     /** Returns the subset of nodes which are retired */
     public NodeList retired() {
-        return filter(node -> node.allocation().get().membership().retired());
+        return matching(node -> node.allocation().isPresent() && node.allocation().get().membership().retired());
+    }
+
+    /** Returns the subset of nodes that are being deprovisioned */
+    public NodeList deprovisioning() {
+        return matching(node -> node.status().wantToRetire() && node.status().wantToDeprovision());
+    }
+
+    /** Returns the subset of nodes that are being rebuilt */
+    public NodeList rebuilding() {
+        return matching(node -> node.status().wantToRetire() && node.status().wantToRebuild());
+    }
+
+    /** Returns the subset of nodes which are removable */
+    public NodeList removable() {
+        return matching(node -> node.allocation().isPresent() && node.allocation().get().isRemovable());
     }
 
     /** Returns the subset of nodes having exactly the given resources */
-    public NodeList resources(NodeResources resources) { return filter(node -> node.flavor().resources().equals(resources)); }
+    public NodeList resources(NodeResources resources) { return matching(node -> node.resources().equals(resources)); }
 
-    /** Returns the subset of nodes of the given flavor */
-    public NodeList flavor(String flavor) {
-        return filter(node -> node.flavor().name().equals(flavor));
+    /** Returns the subset of nodes which satisfy the given resources */
+    public NodeList satisfies(NodeResources resources) { return matching(node -> node.resources().satisfies(resources)); }
+
+    /** Returns the subset of nodes not in the given set */
+    public NodeList except(Set<Node> nodes) {
+        return matching(node -> ! nodes.contains(node));
+    }
+
+    /** Returns the subset of nodes excluding given node */
+    public NodeList except(Node node) {
+        return except(Set.of(node));
     }
 
     /** Returns the subset of nodes assigned to the given cluster type */
     public NodeList type(ClusterSpec.Type type) {
-        return filter(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().type().equals(type));
+        return matching(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().type().equals(type));
     }
 
     /** Returns the subset of nodes that run containers */
     public NodeList container() {
-        return filter(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().type().isContainer());
+        return matching(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().type().isContainer());
+    }
+
+    /** Returns the subset of nodes that run a stateless service */
+    public NodeList stateless() {
+        return matching(node -> node.allocation().isPresent() && ! node.allocation().get().membership().cluster().isStateful());
+    }
+
+    /** Returns the subset of nodes that run a stateful service */
+    public NodeList stateful() {
+        return matching(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().isStateful());
     }
 
     /** Returns the subset of nodes that are currently changing their Vespa version */
     public NodeList changingVersion() {
-        return filter(node -> node.status().vespaVersion().isPresent() &&
-                              node.allocation().isPresent() &&
-                              !node.status().vespaVersion().get().equals(node.allocation().get().membership().cluster().vespaVersion()));
+        return matching(node -> node.status().vespaVersion().isPresent() &&
+                                node.allocation().isPresent() &&
+                                !node.status().vespaVersion().get().equals(node.allocation().get().membership().cluster().vespaVersion()));
+    }
+
+    /** Returns the subset of nodes with want to fail set to true */
+    public NodeList failing() {
+        return matching(node -> node.status().wantToFail());
     }
 
     /** Returns the subset of nodes that are currently changing their OS version to given version */
     public NodeList changingOsVersionTo(Version version) {
-        return filter(node -> node.status().osVersion().changingTo(version));
+        return matching(node -> node.status().osVersion().changingTo(version));
     }
 
     /** Returns the subset of nodes that are currently changing their OS version */
     public NodeList changingOsVersion() {
-        return filter(node -> node.status().osVersion().changing());
+        return matching(node -> node.status().osVersion().changing());
     }
 
     /** Returns a copy of this sorted by current OS version (lowest to highest) */
     public NodeList byIncreasingOsVersion() {
-        return nodes.stream()
-                    .sorted(Comparator.comparing(node -> node.status()
-                                                             .osVersion()
-                                                             .current()
-                                                             .orElse(Version.emptyVersion)))
-                    .collect(collectingAndThen(Collectors.toList(), NodeList::wrap));
+        return sortedBy(Comparator.comparing(node -> node.status()
+                                                         .osVersion()
+                                                         .current()
+                                                         .orElse(Version.emptyVersion)));
+    }
+
+    /** Returns the subset of nodes that are currently on a lower version than the given version */
+    public NodeList osVersionIsBefore(Version version) {
+        return matching(node -> node.status().osVersion().isBefore(version));
     }
 
     /** Returns the subset of nodes that are currently on the given OS version */
     public NodeList onOsVersion(Version version) {
-        return filter(node -> node.status().osVersion().matches(version));
+        return matching(node -> node.status().osVersion().matches(version));
     }
 
     /** Returns the subset of nodes assigned to the given cluster */
     public NodeList cluster(ClusterSpec.Id cluster) {
-        return filter(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().id().equals(cluster));
+        return matching(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().id().equals(cluster));
     }
 
     /** Returns the subset of nodes owned by the given application */
     public NodeList owner(ApplicationId application) {
-        return filter(node -> node.allocation().map(a -> a.owner().equals(application)).orElse(false));
+        return matching(node -> node.allocation().map(a -> a.owner().equals(application)).orElse(false));
     }
 
-    /** Returns the subset of nodes matching the given node type(s) */
+    /** Returns the subset of nodes allocated to a tester instance */
+    public NodeList tester() {
+        return matching(node -> node.allocation().isPresent() && node.allocation().get().owner().instance().isTester());
+    }
+
+    /** Returns the subset of nodes matching any of the given node type(s) */
     public NodeList nodeType(NodeType first, NodeType... rest) {
+        if (rest.length == 0) {
+            return matching(node -> node.type() == first);
+        }
         EnumSet<NodeType> nodeTypes = EnumSet.of(first, rest);
-        return filter(node -> nodeTypes.contains(node.type()));
+        return matching(node -> nodeTypes.contains(node.type()));
+    }
+
+    /** Returns the subset of nodes of the host type */
+    public NodeList hosts() {
+        return nodeType(NodeType.host);
     }
 
     /** Returns the subset of nodes that are parents */
     public NodeList parents() {
-        return filter(n -> n.parentHostname().isEmpty());
+        return matching(node -> node.parentHostname().isEmpty());
     }
 
     /** Returns the child nodes of the given parent node */
     public NodeList childrenOf(String hostname) {
-        return filter(n -> n.parentHostname().map(hostname::equals).orElse(false));
+        return matching(node -> node.hasParent(hostname));
     }
 
     public NodeList childrenOf(Node parent) {
@@ -132,63 +181,162 @@ public class NodeList implements Iterable<Node> {
 
     /** Returns the subset of nodes that are in any of the given state(s) */
     public NodeList state(Node.State first, Node.State... rest) {
+        if (rest.length == 0) {
+            return matching(node -> node.state() == first);
+        }
         return state(EnumSet.of(first, rest));
     }
 
     /** Returns the subset of nodes that are in any of the given state(s) */
-    public NodeList state(Collection<Node.State> nodeStates) {
-        return filter(node -> nodeStates.contains(node.state()));
+    public NodeList state(Set<Node.State> nodeStates) {
+        return matching(node -> nodeStates.contains(node.state()));
+    }
+
+    /** Returns the subset of nodes which have a record of being down */
+    public NodeList down() { return matching(Node::isDown); }
+
+    /** Returns the subset of nodes which are being retired */
+    public NodeList retiring() {
+        return matching(node -> node.status().wantToRetire() || node.status().preferToRetire());
     }
 
     /** Returns the parent nodes of the given child nodes */
-    public NodeList parentsOf(Collection<Node> children) {
+    public NodeList parentsOf(NodeList children) {
         return children.stream()
                        .map(this::parentOf)
                        .filter(Optional::isPresent)
                        .flatMap(Optional::stream)
-                       .collect(collectingAndThen(Collectors.toList(), NodeList::wrap));
+                       .collect(collectingAndThen(Collectors.toList(), NodeList::copyOf));
+    }
+
+    /** Returns the nodes contained in the group identified by given index */
+    public NodeList group(int index) {
+        return matching(n -> n.allocation().isPresent() &&
+                             n.allocation().get().membership().cluster().group().equals(Optional.of(ClusterSpec.Group.from(index))));
+    }
+
+    // TODO(mpolden): Remove these when HostEncrypter is removed
+    /** Returns the subset of nodes which are being encrypted */
+    public NodeList encrypting() {
+        return matching(node -> node.reports().getReport(Report.WANT_TO_ENCRYPT_ID).isPresent() &&
+                                node.reports().getReport(Report.DISK_ENCRYPTED_ID).isEmpty());
+    }
+
+    /** Returns the subset of nodes which are encrypted */
+    public NodeList encrypted() {
+        return matching(node -> node.reports().getReport(Report.DISK_ENCRYPTED_ID).isPresent());
     }
 
     /** Returns the parent node of the given child node */
     public Optional<Node> parentOf(Node child) {
         return child.parentHostname()
-                .flatMap(parentHostname -> nodes.stream()
-                        .filter(node -> node.hostname().equals(parentHostname))
-                        .findFirst());
+                    .flatMap(parentHostname -> stream().filter(node -> node.hostname().equals(parentHostname))
+                                                       .findFirst());
     }
 
-    /** Returns the first n nodes in this */
-    public NodeList first(int n) {
-        n = Math.min(n, nodes.size());
-        return wrap(nodes.subList(negate ? n : 0,
-                                  negate ? nodes.size() : n));
+    /** Returns the hostnames of nodes in this */
+    public Set<String> hostnames() {
+        return stream().map(Node::hostname).collect(Collectors.toUnmodifiableSet());
     }
 
-    public int size() { return nodes.size(); }
+    /** Returns the stateful clusters on nodes in this */
+    public Set<ClusterId> statefulClusters() {
+        return stream().filter(node -> node.allocation().isPresent() &&
+                                       node.allocation().get().membership().cluster().isStateful())
+                       .map(node -> new ClusterId(node.allocation().get().owner(),
+                                                  node.allocation().get().membership().cluster().id()))
+                       .collect(Collectors.toUnmodifiableSet());
 
-    /** Returns the immutable list of nodes in this */
-    public List<Node> asList() { return nodes; }
+    }
+
+    /**
+     * Returns the cluster spec of the nodes in this, without any group designation
+     *
+     * @throws IllegalStateException if there are no nodes in thus list or they do not all belong
+     *                               to the same cluster
+     */
+    public ClusterSpec clusterSpec() {
+        ensureSingleCluster();
+        if (isEmpty()) throw new IllegalStateException("No nodes");
+        return first().get().allocation().get().membership().cluster().with(Optional.empty());
+    }
+
+    /**
+     * Returns the resources of the nodes of this.
+     *
+     * NOTE: If the nodes do not all have the same values of node resources, a random pick among those node resources
+     *       will be returned.
+     *
+     * @throws IllegalStateException if the nodes in this do not all belong to the same cluster
+     */
+    public ClusterResources toResources() {
+        ensureSingleCluster();
+        if (isEmpty()) return new ClusterResources(0, 0, NodeResources.unspecified());
+        return new ClusterResources(size(),
+                                    (int)stream().map(node -> node.allocation().get().membership().cluster().group().get())
+                                                 .distinct()
+                                                 .count(),
+                                    first().get().resources());
+    }
+
+    /** Returns the nodes that are allocated on an exclusive network switch within its cluster */
+    public NodeList onExclusiveSwitch(NodeList clusterHosts) {
+        ensureSingleCluster();
+        Map<String, Long> switchCount = clusterHosts.stream()
+                                                    .flatMap(host -> host.switchHostname().stream())
+                                                    .collect(Collectors.groupingBy(Function.identity(),
+                                                                                   Collectors.counting()));
+        return matching(node -> {
+            Optional<Node> nodeOnSwitch = clusterHosts.parentOf(node);
+            if (node.parentHostname().isPresent()) {
+                if (nodeOnSwitch.isEmpty()) {
+                    throw new IllegalArgumentException("Parent of " + node + ", " + node.parentHostname().get() +
+                                                       ", not found in given cluster hosts");
+                }
+            } else {
+                nodeOnSwitch = Optional.of(node);
+            }
+            Optional<String> allocatedSwitch = nodeOnSwitch.flatMap(Node::switchHostname);
+            return allocatedSwitch.isEmpty() || switchCount.get(allocatedSwitch.get()) == 1;
+        });
+    }
+
+    private void ensureSingleCluster() {
+        if (isEmpty()) return;
+
+        if (stream().anyMatch(node -> node.allocation().isEmpty()))
+            throw new IllegalStateException("Some nodes are not allocated to a cluster");
+
+        ClusterSpec firstNodeSpec = first().get().allocation().get().membership().cluster().with(Optional.empty());
+        if (stream().map(node -> node.allocation().get().membership().cluster().with(Optional.empty()))
+                    .anyMatch(clusterSpec -> ! clusterSpec.id().equals(firstNodeSpec.id())))
+            throw new IllegalStateException("Nodes belong to multiple clusters");
+    }
 
     /** Returns the nodes of this as a stream */
     public Stream<Node> stream() { return asList().stream(); }
 
-    public NodeList filter(Predicate<Node> predicate) {
-        return nodes.stream().filter(negate ? predicate.negate() : predicate)
-                    .collect(collectingAndThen(Collectors.toList(), NodeList::wrap));
-    }
-
-    @Override
-    public Iterator<Node> iterator() {
-        return nodes.iterator();
-    }
-
-    /** Create a new list containing the given nodes, without copying */
-    private static NodeList wrap(List<Node> nodes) {
-        return new NodeList(nodes, false, false);
+    public static NodeList of(Node ... nodes) {
+        return copyOf(List.of(nodes));
     }
 
     public static NodeList copyOf(List<Node> nodes) {
-        return new NodeList(nodes, true, false);
+        return new NodeList(nodes, false);
+    }
+
+    @Override
+    public String toString() {
+        return asList().toString();
+    }
+
+    @Override
+    public int hashCode() { return asList().hashCode(); }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof NodeList)) return false;
+        return this.asList().equals(((NodeList) other).asList());
     }
 
 }

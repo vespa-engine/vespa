@@ -1,13 +1,15 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
 import com.google.common.testing.EqualsTester;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.MockReloadHandler;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.application.TenantApplications;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.is;
@@ -18,27 +20,32 @@ import static org.junit.Assert.assertThat;
  */
 public class TenantTest {
 
-    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
-
     private Tenant t1;
     private Tenant t2;
     private Tenant t3;
     private Tenant t4;
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setupTenant() {
+    public void setupTenant() throws IOException {
         t1 = createTenant("foo");
         t2 = createTenant("foo");
         t3 = createTenant("bar");
         t4 = createTenant("baz");
     }
 
-    private Tenant createTenant(String name) {
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
+    private Tenant createTenant(String name) throws IOException {
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
+        TenantRepository tenantRepository = new TestTenantRepository.Builder()
+                .withConfigserverConfig(configserverConfig)
+                .build();
         TenantName tenantName = TenantName.from(name);
-        TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
-                .withApplicationRepo(TenantApplications.create(componentRegistry, new MockReloadHandler(), tenantName));
-        tenantRepository.addTenant(tenantBuilder);
+        tenantRepository.addTenant(tenantName);
         return tenantRepository.getTenant(tenantName);
     }
 

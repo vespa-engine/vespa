@@ -9,7 +9,6 @@ vespa_add_library(storage
     $<TARGET_OBJECTS:storage_spersistence>
     $<TARGET_OBJECTS:storage_storageutil>
     $<TARGET_OBJECTS:storage_visitor>
-    $<TARGET_OBJECTS:storage_bucketmover>
     $<TARGET_OBJECTS:storage_thread>
     $<TARGET_OBJECTS:storage_status>
     $<TARGET_OBJECTS:storage_component>

@@ -3,7 +3,6 @@ vespa_add_library(searchcorespi
     SOURCES
     $<TARGET_OBJECTS:searchcorespi_flush>
     $<TARGET_OBJECTS:searchcorespi_index>
-    $<TARGET_OBJECTS:searchcorespi_plugin>
     INSTALL lib64
     DEPENDS
 )

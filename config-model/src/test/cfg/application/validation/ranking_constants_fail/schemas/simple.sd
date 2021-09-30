@@ -1,0 +1,29 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search simple {
+  document simple {}
+
+  constant constant_tensor_1 {
+    file: tensors/constant_tensor_1.json
+    type: tensor(x[4], y[3])
+  }
+
+  constant constant_tensor_2 {
+    file: tensors/constant_tensor_2.json
+    type: tensor(x[6])
+  }
+
+  constant constant_tensor_3 {
+    file: tensors/constant_tensor_3.json
+    type: tensor(cpp{}, d{})
+  }
+
+  constant constant_tensor_4 {
+    file: tensors/constant_tensor_4.json
+    type: tensor(x{}, y{})
+  }
+
+  constant constant_tensor_5 {
+    file: tensors/constant_tensor_5.json
+    type: tensor(x[33], y[10], z[46])
+  }
+}

@@ -6,6 +6,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Records metrics related to deployment jobs.
@@ -16,6 +17,7 @@ public class JobMetrics {
 
     public static final String start = "deployment.start";
     public static final String outOfCapacity = "deployment.outOfCapacity";
+    public static final String endpointCertificateTimeout = "deployment.endpointCertificateTimeout";
     public static final String deploymentFailure = "deployment.deploymentFailure";
     public static final String convergenceFailure = "deployment.convergenceFailure";
     public static final String testFailure = "deployment.testFailure";
@@ -24,9 +26,9 @@ public class JobMetrics {
     public static final String success = "deployment.success";
 
     private final Metric metric;
-    private final SystemName system;
+    private final Supplier<SystemName> system;
 
-    public JobMetrics(Metric metric, SystemName system) {
+    public JobMetrics(Metric metric, Supplier<SystemName> system) {
         this.metric = metric;
         this.system = system;
     }
@@ -44,12 +46,13 @@ public class JobMetrics {
                       "tenantName", id.application().tenant().value(),
                       "app", id.application().application().value() + "." + id.application().instance().value(),
                       "test", Boolean.toString(id.type().isTest()),
-                      "zone", id.type().zone(system).value());
+                      "zone", id.type().zone(system.get()).value());
     }
 
     static String valueOf(RunStatus status) {
         switch (status) {
             case outOfCapacity: return outOfCapacity;
+            case endpointCertificateTimeout: return endpointCertificateTimeout;
             case deploymentFailed: return deploymentFailure;
             case installationFailed: return convergenceFailure;
             case testFailure: return testFailure;

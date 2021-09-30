@@ -1,5 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "bucket_space_distribution_context.h"
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 namespace storage::distributor {
 
@@ -10,7 +12,7 @@ BucketSpaceDistributionContext::BucketSpaceDistributionContext(
         std::shared_ptr<const lib::ClusterState> default_active_cluster_state,
         std::shared_ptr<const lib::ClusterState> pending_cluster_state,
         std::shared_ptr<const lib::Distribution> distribution,
-        uint16_t this_node_index)
+        uint16_t this_node_index) noexcept
     : _active_cluster_state(std::move(active_cluster_state)),
       _default_active_cluster_state(std::move(default_active_cluster_state)),
       _pending_cluster_state(std::move(pending_cluster_state)),

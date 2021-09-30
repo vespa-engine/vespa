@@ -20,7 +20,6 @@
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/config-bucketspaces.h>
-#include <vespa/storage/config/config-stor-prioritymapping.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/storageutil/resumeguard.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
@@ -31,20 +30,22 @@ namespace document { class DocumentTypeRepo; }
 
 namespace storage {
 
-class StatusMetricConsumer;
-class StateReporter;
+class ApplicationGenerationFetcher;
 class CommunicationManager;
 class FileStorManager;
 class HostInfo;
-class StateManager;
+class IStorageChainBuilder;
 class MemoryStatusViewer;
+class NodeIdentity;
+class StateManager;
+class StateReporter;
+class StatusMetricConsumer;
 class StatusWebServer;
+class StorageComponent;
 class StorageLink;
 struct DeadLockDetector;
 struct StorageMetricSet;
 struct StorageNodeContext;
-class ApplicationGenerationFetcher;
-class StorageComponent;
 
 namespace lib { class NodeType; }
 
@@ -52,7 +53,6 @@ namespace lib { class NodeType; }
 class StorageNode : private config::IFetcherCallback<vespa::config::content::core::StorServerConfig>,
                     private config::IFetcherCallback<vespa::config::content::StorDistributionConfig>,
                     private config::IFetcherCallback<vespa::config::content::UpgradingConfig>,
-                    private config::IFetcherCallback<vespa::config::content::core::StorPrioritymappingConfig>,
                     private config::IFetcherCallback<vespa::config::content::core::BucketspacesConfig>,
                     private framework::MetricUpdateHook,
                     private DoneInitializeHandler,
@@ -90,7 +90,6 @@ public:
      */
     virtual ResumeGuard pause() = 0;
     void requestShutdown(vespalib::stringref reason) override;
-    void notifyPartitionDown(int partId, vespalib::stringref reason);
     DoneInitializeHandler& getDoneInitializeHandler() { return *this; }
 
     // For testing
@@ -100,7 +99,6 @@ protected:
     using StorServerConfig = vespa::config::content::core::StorServerConfig;
     using UpgradingConfig = vespa::config::content::UpgradingConfig;
     using StorDistributionConfig = vespa::config::content::StorDistributionConfig;
-    using StorPrioritymappingConfig = vespa::config::content::core::StorPrioritymappingConfig;
     using BucketspacesConfig = vespa::config::content::core::BucketspacesConfig;
 private:
     bool _singleThreadedDebugMode;
@@ -135,7 +133,6 @@ private:
     void configure(std::unique_ptr<StorServerConfig> config) override;
     void configure(std::unique_ptr<UpgradingConfig> config) override;
     void configure(std::unique_ptr<StorDistributionConfig> config) override;
-    void configure(std::unique_ptr<StorPrioritymappingConfig>) override;
     virtual void configure(std::unique_ptr<document::DocumenttypesConfig> config,
                            bool hasChanged, int64_t generation);
     void configure(std::unique_ptr<BucketspacesConfig>) override;
@@ -143,7 +140,7 @@ private:
 
 protected:
         // Lock taken while doing configuration of the server.
-    vespalib::Lock _configLock;
+    std::mutex _configLock;
     std::mutex _initial_config_mutex;
     using InitialGuard = std::lock_guard<std::mutex>;
         // Current running config. Kept, such that we can see what has been
@@ -151,19 +148,21 @@ protected:
     std::unique_ptr<StorServerConfig> _serverConfig;
     std::unique_ptr<UpgradingConfig> _clusterConfig;
     std::unique_ptr<StorDistributionConfig> _distributionConfig;
-    std::unique_ptr<StorPrioritymappingConfig> _priorityConfig;
     std::unique_ptr<document::DocumenttypesConfig> _doctypesConfig;
     std::unique_ptr<BucketspacesConfig> _bucketSpacesConfig;
         // New configs gotten that has yet to have been handled
     std::unique_ptr<StorServerConfig> _newServerConfig;
     std::unique_ptr<UpgradingConfig> _newClusterConfig;
     std::unique_ptr<StorDistributionConfig> _newDistributionConfig;
-    std::unique_ptr<StorPrioritymappingConfig> _newPriorityConfig;
     std::unique_ptr<document::DocumenttypesConfig> _newDoctypesConfig;
     std::unique_ptr<BucketspacesConfig> _newBucketSpacesConfig;
     std::unique_ptr<StorageComponent> _component;
+    std::unique_ptr<NodeIdentity> _node_identity;
     config::ConfigUri _configUri;
     CommunicationManager* _communicationManager;
+private:
+    std::unique_ptr<IStorageChainBuilder>      _chain_builder;
+protected:
 
     /**
      * Node subclasses currently need to explicitly acquire ownership of state
@@ -177,10 +176,13 @@ protected:
     void initialize();
     virtual void subscribeToConfigs();
     virtual void initializeNodeSpecific() = 0;
-    virtual std::unique_ptr<StorageLink> createChain() = 0;
+    virtual void perform_post_chain_creation_init_steps() = 0;
+    virtual void createChain(IStorageChainBuilder &builder) = 0;
     virtual void handleLiveConfigUpdate(const InitialGuard & initGuard);
     void shutdown();
     virtual void removeConfigSubscriptions();
+public:
+    void set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder);
 };
 
 } // storage

@@ -29,7 +29,7 @@ config[].role string
 config[].id reference
 
 ## Wether the NC should start the corresponding role using the
-## slavewrapper utility application or not.
+## wrapper utility application or not.
 config[].usewrapper bool default=false
 
 routingtable[].hop[].name string

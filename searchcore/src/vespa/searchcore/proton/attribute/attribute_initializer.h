@@ -6,9 +6,9 @@
 #include "attribute_initializer_result.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/searchcommon/attribute/persistent_predicate_params.h>
 
 namespace search::attribute { class AttributeHeader; }
+namespace vespalib { class Executor; }
 
 namespace proton {
 
@@ -30,6 +30,11 @@ private:
     const AttributeSpec             _spec;
     const uint64_t                  _currentSerialNum;
     const IAttributeFactory        &_factory;
+    vespalib::Executor             &_executor;
+    std::unique_ptr<const search::attribute::AttributeHeader> _header;
+    bool                            _header_ok;
+
+    void readHeader();
 
     AttributeVectorSP tryLoadAttribute() const;
 
@@ -42,11 +47,13 @@ private:
 
 public:
     AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir, const vespalib::string &documentSubDbName,
-                         const AttributeSpec &spec, uint64_t currentSerialNum, const IAttributeFactory &factory);
+                         const AttributeSpec &spec, uint64_t currentSerialNum, const IAttributeFactory &factory,
+                         vespalib::Executor & executor);
     ~AttributeInitializer();
 
     AttributeInitializerResult init() const;
     uint64_t getCurrentSerialNum() const { return _currentSerialNum; }
+    size_t get_transient_memory_usage() const;
 };
 
 } // namespace proton

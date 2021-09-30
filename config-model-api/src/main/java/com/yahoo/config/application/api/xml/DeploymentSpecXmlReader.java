@@ -45,6 +45,7 @@ import java.util.stream.Stream;
  */
 public class DeploymentSpecXmlReader {
 
+    private static final String deploymentTag = "deployment";
     private static final String instanceTag = "instance";
     private static final String majorVersionTag = "major-version";
     private static final String testTag = "test";
@@ -93,6 +94,9 @@ public class DeploymentSpecXmlReader {
     /** Reads a deployment spec from XML */
     public DeploymentSpec read(String xmlForm) {
         Element root = XML.getDocument(xmlForm).getDocumentElement();
+        if ( ! root.getTagName().equals(deploymentTag))
+            throw new IllegalArgumentException("The root tag must be <deployment>");
+
         if (isEmptySpec(root))
             return DeploymentSpec.empty;
 
@@ -133,11 +137,19 @@ public class DeploymentSpecXmlReader {
                                                              Element instanceTag,
                                                              MutableOptional<String> globalServiceId,
                                                              Element parentTag) {
+        if (instanceNameString.isBlank())
+            throw new IllegalArgumentException("<instance> attribute 'id' must be specified, and not be blank");
+
+        // If this is an absolutely empty instance, or the implicit "default" instance but without content, ignore it
+        if (XML.getChildren(instanceTag).isEmpty() && (instanceTag.getAttributes().getLength() == 0 || instanceTag == parentTag))
+            return List.of();
+
         if (validate)
             validateTagOrder(instanceTag);
 
         // Values where the parent may provide a default
         DeploymentSpec.UpgradePolicy upgradePolicy = readUpgradePolicy(instanceTag, parentTag);
+        DeploymentSpec.UpgradeRollout upgradeRollout = readUpgradeRollout(instanceTag, parentTag);
         List<DeploymentSpec.ChangeBlocker> changeBlockers = readChangeBlockers(instanceTag, parentTag);
         Optional<AthenzService> athenzService = mostSpecificAttribute(instanceTag, athenzServiceAttribute).map(AthenzService::from);
         Notifications notifications = readNotifications(instanceTag, parentTag);
@@ -154,6 +166,7 @@ public class DeploymentSpecXmlReader {
                      .map(name -> new DeploymentInstanceSpec(InstanceName.from(name),
                                                              steps,
                                                              upgradePolicy,
+                                                             upgradeRollout,
                                                              changeBlockers,
                                                              globalServiceId.asOptional(),
                                                              athenzService,
@@ -393,6 +406,9 @@ public class DeploymentSpecXmlReader {
             return DeploymentSpec.UpgradePolicy.defaultPolicy;
 
         String policy = upgradeElement.getAttribute("policy");
+        if (policy.isEmpty())
+            return DeploymentSpec.UpgradePolicy.defaultPolicy;
+
         switch (policy) {
             case "canary": return DeploymentSpec.UpgradePolicy.canary;
             case "default": return DeploymentSpec.UpgradePolicy.defaultPolicy;
@@ -402,12 +418,32 @@ public class DeploymentSpecXmlReader {
         }
     }
 
+    private DeploymentSpec.UpgradeRollout readUpgradeRollout(Element parent, Element fallbackParent) {
+        Element upgradeElement = XML.getChild(parent, upgradeTag);
+        if (upgradeElement == null)
+            upgradeElement = XML.getChild(fallbackParent, upgradeTag);
+        if (upgradeElement == null)
+            return DeploymentSpec.UpgradeRollout.separate;
+
+        String rollout = upgradeElement.getAttribute("rollout");
+        if (rollout.isEmpty())
+            return DeploymentSpec.UpgradeRollout.separate;
+
+        switch (rollout) {
+            case "separate": return DeploymentSpec.UpgradeRollout.separate;
+            case "leading": return DeploymentSpec.UpgradeRollout.leading;
+            // case "simultaneous": return DeploymentSpec.UpgradePolicy.conservative;
+            default: throw new IllegalArgumentException("Illegal upgrade policy '" + rollout + "': " +
+                                                        "Must be one of " + Arrays.toString(DeploymentSpec.UpgradePolicy.values()));
+        }
+    }
+
     private boolean readActive(Element regionTag) {
         String activeValue = regionTag.getAttribute("active");
         if ("true".equals(activeValue)) return true;
         if ("false".equals(activeValue)) return false;
         throw new IllegalArgumentException("Region tags must have an 'active' attribute set to 'true' or 'false' " +
-                                           "to control whether the region should receive production traffic");
+                                           "to control whether this region should receive traffic from the global endpoint of this application");
     }
 
     private static boolean isEmptySpec(Element root) {

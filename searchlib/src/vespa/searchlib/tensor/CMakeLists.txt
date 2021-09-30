@@ -1,16 +1,35 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchlib_tensor OBJECT
     SOURCES
+    angular_distance.cpp
+    bitvector_visited_tracker.cpp
+    default_nearest_neighbor_index_factory.cpp
     dense_tensor_attribute.cpp
     dense_tensor_attribute_saver.cpp
     dense_tensor_store.cpp
-    generic_tensor_attribute.cpp
-    generic_tensor_store.cpp
+    direct_tensor_attribute.cpp
+    direct_tensor_saver.cpp
+    direct_tensor_store.cpp
+    distance_function_factory.cpp
+    euclidean_distance.cpp
+    geo_degrees_distance.cpp
+    hamming_distance.cpp
+    hash_set_visited_tracker.cpp
+    hnsw_graph.cpp
     hnsw_index.cpp
+    hnsw_index_saver.cpp
     imported_tensor_attribute_vector.cpp
     imported_tensor_attribute_vector_read_guard.cpp
+    inner_product_distance.cpp
+    inv_log_level_generator.cpp
+    nearest_neighbor_index.cpp
+    nearest_neighbor_index_saver.cpp
+    serialized_fast_value_attribute.cpp
+    streamed_value_saver.cpp
+    streamed_value_store.cpp
     tensor_attribute.cpp
-    generic_tensor_attribute_saver.cpp
+    tensor_deserialize.cpp
     tensor_store.cpp
+    reusable_set_visited_tracker.cpp
     DEPENDS
 )

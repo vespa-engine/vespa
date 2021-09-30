@@ -43,7 +43,7 @@ public:
      *                   terms. The term with fewest hits should be
      *                   evaluated first.
      **/
-    SimplePhraseSearch(const Children &children,
+    SimplePhraseSearch(Children children,
                        fef::MatchData::UP md,
                        const fef::TermFieldMatchDataArray &childMatch,
                        std::vector<uint32_t> eval_order,

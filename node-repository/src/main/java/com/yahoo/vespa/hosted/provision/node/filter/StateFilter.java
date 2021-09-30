@@ -1,13 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node.filter;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Objects;
-import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -15,31 +14,30 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-public class StateFilter extends NodeFilter {
+public class StateFilter {
 
-    private final Set<Node.State> states;
+    private StateFilter() {}
 
-    /** Creates a node filter which filters using the given host filter */
-    private StateFilter(Set<Node.State> states, NodeFilter next) {
-        super(next);
+    private static Predicate<Node> makePredicate(EnumSet<Node.State> states) {
         Objects.requireNonNull(states, "state cannot be null, use an empty set");
-        this.states = ImmutableSet.copyOf(states);
-    }
-
-    @Override
-    public boolean matches(Node node) {
-        if ( ! states.isEmpty() && ! states.contains(node.state())) return false;
-        return nextMatches(node);
+        return node -> states.contains(node.state());
     }
 
     /** Returns a copy of the given filter which only matches for the given state */
-    public static StateFilter from(Node.State state, NodeFilter filter) {
-        return new StateFilter(Collections.singleton(state), filter);
+    public static Predicate<Node> from(Node.State state) {
+        return makePredicate(EnumSet.of(state));
     }
 
     /** Returns a node filter which matches a comma or space-separated list of states */
-    public static StateFilter from(String states, NodeFilter next) {
-        return new StateFilter(StringUtilities.split(states).stream().map(Node.State::valueOf).collect(Collectors.toSet()), next);
+    public static Predicate<Node> from(String states, boolean includeDeprovisioned) {
+        if (states == null) {
+            return makePredicate(includeDeprovisioned ?
+                    EnumSet.allOf(Node.State.class) : EnumSet.complementOf(EnumSet.of(Node.State.deprovisioned)));
+        }
+
+        return makePredicate(StringUtilities.split(states).stream()
+                .map(Node.State::valueOf)
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(Node.State.class))));
     }
 
 }

@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.slime.Inspector;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
@@ -77,7 +78,7 @@ public class AthenzAccessControlRequests implements AccessControlRequests {
         Principal principal = request.getUserPrincipal();
         Objects.requireNonNull(principal, "Expected a user principal");
         if ( ! (principal instanceof AthenzPrincipal))
-            throw new RuntimeException(String.format("Expected principal of type %s, got %s",
+            throw new RuntimeException(Text.format("Expected principal of type %s, got %s",
                                                      AthenzPrincipal.class.getSimpleName(), principal.getClass().getName()));
         return (AthenzPrincipal) principal;
     }

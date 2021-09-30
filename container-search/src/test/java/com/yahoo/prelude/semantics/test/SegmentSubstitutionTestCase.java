@@ -23,7 +23,7 @@ public class SegmentSubstitutionTestCase extends RuleBaseAbstractTestCase {
         Query q = new Query("?query=ignored&tracelevel=0&tracelevel.rules=0");
         q.getModel().getQueryTree().setRoot(a);
 
-        assertSemantics("\"first third\"", q);
+        assertSemantics("AND first third", q);
     }
 
     @Test
@@ -32,7 +32,7 @@ public class SegmentSubstitutionTestCase extends RuleBaseAbstractTestCase {
         Query q = new Query("?query=ignored&tracelevel=0&tracelevel.rules=0");
         q.getModel().getQueryTree().setRoot(a);
 
-        assertSemantics("\"bc first third fg\"", q);
+        assertSemantics("AND bc first third fg", q);
     }
 
     @Test
@@ -41,7 +41,7 @@ public class SegmentSubstitutionTestCase extends RuleBaseAbstractTestCase {
         Query q = new Query("?query=ignored&tracelevel=0&tracelevel.rules=0");
         q.getModel().getQueryTree().setRoot(a);
 
-        assertSemantics("+bc -\"first third\"", q);
+        assertSemantics("+bc -(AND first third)", q);
     }
 
     @Test
@@ -50,7 +50,7 @@ public class SegmentSubstitutionTestCase extends RuleBaseAbstractTestCase {
         Query q = new Query("?query=ignored&tracelevel=0&tracelevel.rules=0");
         q.getModel().getQueryTree().setRoot(a);
 
-        assertSemantics("\"9 2 7 0 bc third 2 3 8 9\"", q);
+        assertSemantics("AND 9 2 7 0 bc third 2 3 8 9", q);
     }
 
     private static Item parseQuery(String query) {

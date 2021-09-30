@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.vespa.http.client.config.Cluster;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
@@ -14,7 +15,10 @@ import com.yahoo.vespa.http.client.core.operationProcessor.OperationProcessor;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -24,10 +28,17 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClusterConnection implements AutoCloseable {
 
+    private static ObjectMapper jsonMapper = createMapper();
+
     private final List<IOThread> ioThreads = new ArrayList<>();
     private final int clusterId;
-    private static JsonFactory jsonFactory = new JsonFactory();
-    private static ObjectMapper objectMapper = new ObjectMapper();
+    private final ThreadGroup ioThreadGroup;
+
+    /** The shared queue of document operations the io threads will take from */
+    private final DocumentQueue documentQueue;
+
+    /** The single endpoint this sends to, or null if it will send to multiple endpoints */
+    private final Endpoint singleEndpoint;
 
     public ClusterConnection(OperationProcessor operationProcessor,
                              FeedParams feedParams,
@@ -35,18 +46,23 @@ public class ClusterConnection implements AutoCloseable {
                              Cluster cluster,
                              int clusterId,
                              int clientQueueSizePerCluster,
-                             ScheduledThreadPoolExecutor timeoutExecutor) {
+                             ScheduledThreadPoolExecutor timeoutExecutor,
+                             Clock clock) {
         if (cluster.getEndpoints().isEmpty())
-            throw new IllegalArgumentException("Cannot feed to empty cluster.");
+            throw new IllegalArgumentException("At least a single endpoint is required in " + cluster);
 
         this.clusterId = clusterId;
         int totalNumberOfEndpointsInThisCluster = cluster.getEndpoints().size() * connectionParams.getNumPersistentConnectionsPerEndpoint();
-        if (totalNumberOfEndpointsInThisCluster == 0) return;
-
-        // Lower than 1 does not make any sense.
+        if (totalNumberOfEndpointsInThisCluster == 0)
+            throw new IllegalArgumentException("At least 1 persistent connection per endpoint is required in " + cluster);
         int maxInFlightPerSession = Math.max(1, feedParams.getMaxInFlightRequests() / totalNumberOfEndpointsInThisCluster);
 
-        DocumentQueue documentQueue = null;
+        documentQueue = new DocumentQueue(clientQueueSizePerCluster, clock);
+        ioThreadGroup = operationProcessor.getIoThreadGroup();
+        singleEndpoint = cluster.getEndpoints().size() == 1 ? cluster.getEndpoints().get(0) : null;
+        Double idlePollFrequency = feedParams.getIdlePollFrequency();
+        if (idlePollFrequency == null)
+            idlePollFrequency = 10.0;
         for (Endpoint endpoint : cluster.getEndpoints()) {
             EndpointResultQueue endpointResultQueue = new EndpointResultQueue(operationProcessor,
                                                                               endpoint,
@@ -54,34 +70,43 @@ public class ClusterConnection implements AutoCloseable {
                                                                               timeoutExecutor,
                                                                               feedParams.getServerTimeout(TimeUnit.MILLISECONDS) + feedParams.getClientTimeout(TimeUnit.MILLISECONDS));
             for (int i = 0; i < connectionParams.getNumPersistentConnectionsPerEndpoint(); i++) {
-                GatewayConnection gatewayConnection;
+                GatewayConnectionFactory connectionFactory;
                 if (connectionParams.isDryRun()) {
-                    gatewayConnection = new DryRunGatewayConnection(endpoint);
+                    connectionFactory = new DryRunGatewayConnectionFactory(endpoint, clock);
                 } else {
-                    gatewayConnection = new ApacheGatewayConnection(
-                            endpoint,
-                            feedParams,
-                            cluster.getRoute(),
-                            connectionParams,
-                            new ApacheGatewayConnection.HttpClientFactory(connectionParams, endpoint.isUseSsl()),
-                            operationProcessor.getClientId()
+                    connectionFactory = new ApacheGatewayConnectionFactory(endpoint,
+                                                                           feedParams,
+                                                                           cluster.getRoute(),
+                                                                           connectionParams,
+                                                                           new ApacheGatewayConnection.HttpClientFactory(feedParams, connectionParams, endpoint.isUseSsl()),
+                                                                           operationProcessor.getClientId(),
+                                                                           clock
                     );
                 }
-                if (documentQueue == null) {
-                    documentQueue = new DocumentQueue(clientQueueSizePerCluster);
-                }
                 IOThread ioThread = new IOThread(operationProcessor.getIoThreadGroup(),
+                                                 endpoint,
                                                  endpointResultQueue,
-                                                 gatewayConnection,
+                                                 connectionFactory,
                                                  clusterId,
                                                  feedParams.getMaxChunkSizeBytes(),
                                                  maxInFlightPerSession,
-                                                 feedParams.getLocalQueueTimeOut(),
+                                                 Duration.ofMillis(feedParams.getLocalQueueTimeOut()),
                                                  documentQueue,
-                                                 feedParams.getMaxSleepTimeMs());
+                                                 feedParams.getMaxSleepTimeMs(),
+                                                 connectionParams.getConnectionTimeToLive(),
+                                                 connectionParams.runThreads(),
+                                                 idlePollFrequency,
+                                                 clock);
                 ioThreads.add(ioThread);
             }
         }
+    }
+
+    private static ObjectMapper createMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new Jdk8Module());
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
     }
 
     public int getClusterId() {
@@ -89,15 +114,10 @@ public class ClusterConnection implements AutoCloseable {
     }
 
     public void post(Document document) throws EndpointIOException {
-        String documentIdStr = document.getDocumentId();
-        // The same document ID must always go to the same destination
-        // In noHandshakeMode this has no effect as the documentQueue is shared between the IOThreads.
-        int hash = documentIdStr.hashCode() & 0x7FFFFFFF;  // Strip sign bit
-        IOThread ioThread = ioThreads.get(hash % ioThreads.size());
         try {
-            ioThread.post(document);
-        } catch (Throwable t) {
-            throw new EndpointIOException(ioThread.getEndpoint(), "While sending", t);
+            documentQueue.put(document, Thread.currentThread().getThreadGroup() == ioThreadGroup);
+        } catch (Throwable t) { // InterruptedException if shutting down, IllegalStateException if already shut down
+            throw new EndpointIOException(singleEndpoint, "While sending", t);
         }
     }
 
@@ -136,7 +156,7 @@ public class ClusterConnection implements AutoCloseable {
 
     public String getStatsAsJSon() throws IOException {
         StringWriter stringWriter = new StringWriter();
-        JsonGenerator jsonGenerator = jsonFactory.createGenerator(stringWriter);
+        JsonGenerator jsonGenerator = jsonMapper.createGenerator(stringWriter);
         jsonGenerator.writeStartObject();
         jsonGenerator.writeArrayFieldStart("session");
         for (IOThread ioThread : ioThreads) {
@@ -147,13 +167,17 @@ public class ClusterConnection implements AutoCloseable {
             jsonGenerator.writeEndObject();
             jsonGenerator.writeFieldName("stats");
             IOThread.ConnectionStats connectionStats = ioThread.getConnectionStats();
-            objectMapper.writeValue(jsonGenerator, connectionStats);
+            jsonMapper.writeValue(jsonGenerator, connectionStats);
             jsonGenerator.writeEndObject();
         }
         jsonGenerator.writeEndArray();
         jsonGenerator.writeEndObject();
         jsonGenerator.close();
         return stringWriter.toString();
+    }
+
+    public List<IOThread> ioThreads() {
+        return Collections.unmodifiableList(ioThreads);
     }
 
     @Override
@@ -165,4 +189,5 @@ public class ClusterConnection implements AutoCloseable {
     public int hashCode() {
         return clusterId;
     }
+
 }

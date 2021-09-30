@@ -5,14 +5,11 @@ vespa_add_executable(storage_bucketdb_gtest_runner_app TEST
     bucketinfotest.cpp
     bucketmanagertest.cpp
     gtest_runner.cpp
-    initializertest.cpp
-    judyarraytest.cpp
-    judymultimaptest.cpp
     lockablemaptest.cpp
     DEPENDS
     storage
     storage_testcommon
-    gtest
+    GTest::GTest
 )
 
 vespa_add_test(

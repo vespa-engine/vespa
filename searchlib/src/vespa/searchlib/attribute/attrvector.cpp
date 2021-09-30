@@ -3,6 +3,8 @@
 #include "attrvector.h"
 #include "attrvector.hpp"
 #include "iattributesavetarget.h"
+#include "load_utils.h"
+#include <vespa/vespalib/data/databuffer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attr_vector");
@@ -19,6 +21,11 @@ StringDirectAttribute(const vespalib::string & baseFileName, const Config & c)
 }
 
 StringDirectAttribute::~StringDirectAttribute() = default;
+
+AttributeVector::SearchContext::UP
+StringDirectAttribute::getSearch(QueryTermSimpleUP, const attribute::SearchContextParams &) const {
+    LOG_ABORT("StringDirectAttribute::getSearch is not implemented and should never be called.");
+}
 
 bool StringDirectAttribute::findEnum(const char * key, EnumHandle & e) const
 {
@@ -109,7 +116,7 @@ void addString(const char * v, StringAttribute::OffsetVector & offsets, std::vec
     buffer.push_back('\0');
 }
 
-bool StringDirectAttribute::onLoad()
+bool StringDirectAttribute::onLoad(vespalib::Executor *)
 {
     {
         std::vector<char> empty;
@@ -123,7 +130,7 @@ bool StringDirectAttribute::onLoad()
         setCommittedDocIdLimit(0);
     }
 
-    fileutil::LoadedBuffer::UP tmpBuffer(loadDAT());
+    auto tmpBuffer = attribute::LoadUtils::loadDAT(*this);
     bool rc(tmpBuffer.get());
     if (rc) {
         if ( ! tmpBuffer->empty()) {
@@ -158,7 +165,7 @@ bool StringDirectAttribute::onLoad()
         }
 
         if (hasMultiValue()) {
-            fileutil::LoadedBuffer::UP tmpIdx(loadIDX());
+            auto tmpIdx = attribute::LoadUtils::loadIDX(*this);
             size_t tmpIdxLen(tmpIdx->size(sizeof(uint32_t)));
             _idx.clear();
             _idx.reserve(tmpIdxLen);

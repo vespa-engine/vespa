@@ -195,36 +195,35 @@ class WhiteListBlueprint : public SimpleLeafBlueprint
 {
 private:
     const search::GrowableBitVector &_activeLids;
-    const uint32_t _docIdLimit;
     mutable std::mutex _lock;
     mutable std::vector<search::fef::TermFieldMatchData *> _matchDataVector;
 
     SearchIterator::UP
-    createLeafSearch(const TermFieldMatchDataArray &tfmda,
-                     bool strict) const override
+    createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {
         assert(tfmda.size() == 0);
         (void) tfmda;
-        search::fef::TermFieldMatchData *tfmd =
-            new search::fef::TermFieldMatchData;
-        {
-            std::lock_guard<std::mutex> lock(_lock);
-            _matchDataVector.push_back(tfmd);
-        }
-        return search::BitVectorIterator::create(&_activeLids, _docIdLimit, *tfmd, strict);
+        return createFilterSearch(strict, FilterConstraint::UPPER_BOUND);
     }
-
 public:
-    WhiteListBlueprint(const search::GrowableBitVector &activeLids, uint32_t docIdLimit)
+    WhiteListBlueprint(const search::GrowableBitVector &activeLids)
         : SimpleLeafBlueprint(FieldSpecBaseList()),
           _activeLids(activeLids),
-          _docIdLimit(docIdLimit),
           _matchDataVector()
     {
         setEstimate(HitEstimate(_activeLids.size(), false));
     }
 
     bool isWhiteList() const override { return true; }
+
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint) const override {
+        auto tfmd = new search::fef::TermFieldMatchData;
+        {
+            std::lock_guard<std::mutex> lock(_lock);
+            _matchDataVector.push_back(tfmd);
+        }
+        return search::BitVectorIterator::create(&_activeLids, get_docid_limit(), *tfmd, strict);
+    }
 
     ~WhiteListBlueprint() {
         for (auto matchData : _matchDataVector) {
@@ -236,9 +235,9 @@ public:
 }
 
 Blueprint::UP
-LidAllocator::createWhiteListBlueprint(uint32_t docIdLimit) const
+LidAllocator::createWhiteListBlueprint() const
 {
-    return std::make_unique<WhiteListBlueprint>(_activeLids.getBitVector(), docIdLimit);
+    return std::make_unique<WhiteListBlueprint>(_activeLids.getBitVector());
 }
 
 void

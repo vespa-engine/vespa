@@ -25,4 +25,5 @@ public abstract class TypedExpressionConverter<T extends Expression> extends Exp
     }
 
     protected abstract Expression typedConvert(T exp);
+
 }

@@ -91,26 +91,27 @@ public:
 
     template <class OUT>
     void
-    mergeHeap(OUT &out) __attribute__((noinline));
+    mergeHeap(OUT &out, const IFlushToken& flush_token) __attribute__((noinline));
 
     template <class OUT>
     static void
-    mergeOne(OUT &out, IN &in) __attribute__((noinline));
+    mergeOne(OUT &out, IN &in, const IFlushToken &flush_token) __attribute__((noinline));
 
     template <class OUT>
     static void
-    mergeTwo(OUT &out, IN &in1, IN &in2) __attribute__((noinline));
+    mergeTwo(OUT &out, IN &in1, IN &in2, const IFlushToken& flush_token) __attribute__((noinline));
 
     template <class OUT>
     static void
     mergeSmall(OUT &out,
                typename Vector::iterator ib,
-               typename Vector::iterator ie)
+               typename Vector::iterator ie,
+               const IFlushToken &flush_token)
         __attribute__((noinline));
 
     template <class OUT>
     void
-    merge(OUT &out, uint32_t heapLimit) __attribute__((noinline));
+    merge(OUT &out, uint32_t heapLimit, const IFlushToken& flush_token) __attribute__((noinline));
 };
 
 
@@ -143,9 +144,9 @@ PostingPriorityQueue<IN>::adjust()
 template <class IN>
 template <class OUT>
 void
-PostingPriorityQueue<IN>::mergeHeap(OUT &out)
+PostingPriorityQueue<IN>::mergeHeap(OUT &out, const IFlushToken& flush_token)
 {
-    while (!empty()) {
+    while (!empty() && !flush_token.stop_requested()) {
         IN *low = lowest();
         low->write(out);
         low->read();
@@ -157,9 +158,9 @@ PostingPriorityQueue<IN>::mergeHeap(OUT &out)
 template <class IN>
 template <class OUT>
 void
-PostingPriorityQueue<IN>::mergeOne(OUT &out, IN &in)
+PostingPriorityQueue<IN>::mergeOne(OUT &out, IN &in, const IFlushToken& flush_token)
 {
-    while (in.isValid()) {
+    while (in.isValid() && !flush_token.stop_requested()) {
         in.write(out);
         in.read();
     }
@@ -168,9 +169,9 @@ PostingPriorityQueue<IN>::mergeOne(OUT &out, IN &in)
 template <class IN>
 template <class OUT>
 void
-PostingPriorityQueue<IN>::mergeTwo(OUT &out, IN &in1, IN &in2)
+PostingPriorityQueue<IN>::mergeTwo(OUT &out, IN &in1, IN &in2, const IFlushToken& flush_token)
 {
-    for (;;) {
+    while (!flush_token.stop_requested()) {
         IN &low = in2 < in1 ? in2 : in1;
         low.write(out);
         low.read();
@@ -185,9 +186,10 @@ template <class OUT>
 void
 PostingPriorityQueue<IN>::mergeSmall(OUT &out,
                                      typename Vector::iterator ib,
-                                     typename Vector::iterator ie)
+                                     typename Vector::iterator ie,
+                                     const IFlushToken& flush_token)
 {
-    for (;;) {
+    while (!flush_token.stop_requested()) {
         typename Vector::iterator i = ib;
         IN *low = i->get();
         for (++i; i != ie; ++i)
@@ -204,7 +206,7 @@ PostingPriorityQueue<IN>::mergeSmall(OUT &out,
 template <class IN>
 template <class OUT>
 void
-PostingPriorityQueue<IN>::merge(OUT &out, uint32_t heapLimit)
+PostingPriorityQueue<IN>::merge(OUT &out, uint32_t heapLimit, const IFlushToken& flush_token)
 {
     if (_vec.empty())
         return;
@@ -214,29 +216,30 @@ PostingPriorityQueue<IN>::merge(OUT &out, uint32_t heapLimit)
     }
     if (_vec.size() >= heapLimit) {
         sort();
-        void (PostingPriorityQueue::*mergeHeapFunc)(OUT &out) =
+        void (PostingPriorityQueue::*mergeHeapFunc)(OUT &out, const IFlushToken& flush_token) =
             &PostingPriorityQueue::mergeHeap;
-        (this->*mergeHeapFunc)(out);
+        (this->*mergeHeapFunc)(out, flush_token);
         return;
     }
-    for (;;) {
+    while (!flush_token.stop_requested()) {
         if (_vec.size() == 1) {
-            void (*mergeOneFunc)(OUT &out, IN &in) =
+            void (*mergeOneFunc)(OUT &out, IN &in, const IFlushToken& flush_token) =
                 &PostingPriorityQueue<IN>::mergeOne;
-            (*mergeOneFunc)(out, *_vec.front().get());
+            (*mergeOneFunc)(out, *_vec.front().get(), flush_token);
             _vec.clear();
             return;
         }
         if (_vec.size() == 2) {
-            void (*mergeTwoFunc)(OUT &out, IN &in1, IN &in2) =
+            void (*mergeTwoFunc)(OUT &out, IN &in1, IN &in2, const IFlushToken& flush_token) =
                 &PostingPriorityQueue<IN>::mergeTwo;
-            (*mergeTwoFunc)(out, *_vec[0].get(), *_vec[1].get());
+            (*mergeTwoFunc)(out, *_vec[0].get(), *_vec[1].get(), flush_token);
         } else {
             void (*mergeSmallFunc)(OUT &out,
                                    typename Vector::iterator ib,
-                                   typename Vector::iterator ie) =
+                                   typename Vector::iterator ie,
+                                   const IFlushToken& flush_token) =
                 &PostingPriorityQueue::mergeSmall;
-            (*mergeSmallFunc)(out, _vec.begin(), _vec.end());
+            (*mergeSmallFunc)(out, _vec.begin(), _vec.end(), flush_token);
         }
         for (typename Vector::iterator i = _vec.begin(), ie = _vec.end();
              i != ie; ++i) {

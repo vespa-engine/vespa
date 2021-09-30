@@ -2,8 +2,7 @@
 
 #pragma once
 
-namespace proton
-{
+namespace proton {
 
 class IClusterStateChangedHandler;
 
@@ -13,13 +12,10 @@ class IClusterStateChangedHandler;
 class IClusterStateChangedNotifier
 {
 public:
-    virtual ~IClusterStateChangedNotifier() { }
+    virtual ~IClusterStateChangedNotifier() = default;
 
-    virtual void
-    addClusterStateChangedHandler(IClusterStateChangedHandler *handler) = 0;
-
-    virtual void
-    removeClusterStateChangedHandler(IClusterStateChangedHandler *handler) = 0;
+    virtual void addClusterStateChangedHandler(IClusterStateChangedHandler *handler) = 0;
+    virtual void removeClusterStateChangedHandler(IClusterStateChangedHandler *handler) = 0;
 };
 
-} // namespace proton
+}

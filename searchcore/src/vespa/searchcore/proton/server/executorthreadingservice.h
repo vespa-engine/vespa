@@ -3,13 +3,12 @@
 
 #include "executor_thread_service.h"
 #include <vespa/searchcorespi/index/ithreadingservice.h>
-#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
-namespace search { class SequencedTaskExecutor; }
 namespace proton {
 
 class ExecutorThreadingServiceStats;
+class ThreadingServiceConfig;
 
 /**
  * Implementation of IThreadingService using 2 underlying thread stack executors
@@ -18,28 +17,29 @@ class ExecutorThreadingServiceStats;
 class ExecutorThreadingService : public searchcorespi::index::IThreadingService
 {
 private:
-    vespalib::ThreadStackExecutorBase & _sharedExecutor;
-    vespalib::ThreadStackExecutor _masterExecutor;
-    vespalib::BlockingThreadStackExecutor _indexExecutor;
-    vespalib::BlockingThreadStackExecutor _summaryExecutor;
-    ExecutorThreadService _masterService;
-    ExecutorThreadService _indexService;
-    ExecutorThreadService _summaryService;
-    std::unique_ptr<search::SequencedTaskExecutor> _indexFieldInverter;
-    std::unique_ptr<search::SequencedTaskExecutor> _indexFieldWriter;
-    std::unique_ptr<search::SequencedTaskExecutor> _attributeFieldWriter;
+    vespalib::ThreadExecutor                   & _sharedExecutor;
+    vespalib::ThreadStackExecutor                        _masterExecutor;
+    std::unique_ptr<vespalib::SyncableThreadExecutor>    _indexExecutor;
+    std::unique_ptr<vespalib::SyncableThreadExecutor>    _summaryExecutor;
+    ExecutorThreadService                                _masterService;
+    ExecutorThreadService                                _indexService;
+    ExecutorThreadService                                _summaryService;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor>    _indexFieldInverter;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor>    _indexFieldWriter;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor>    _attributeFieldWriter;
 
+    void syncOnce();
 public:
+    using OptimizeFor = vespalib::Executor::OptimizeFor;
     /**
      * Constructor.
      *
      * @stackSize The size of the stack of the underlying executors.
-     * @taskLimit The task limit for the index executor.
+     * @cfg config used to set up all executors.
      */
-    ExecutorThreadingService(vespalib::ThreadStackExecutorBase &sharedExecutor,
-                             uint32_t threads = 1,
-                             uint32_t stackSize = 128 * 1024,
-                             uint32_t taskLimit = 1000);
+    ExecutorThreadingService(vespalib::ThreadExecutor &sharedExecutor,
+                             const ThreadingServiceConfig & cfg, uint32_t stackSize = 128 * 1024);
+    ExecutorThreadingService(vespalib::ThreadExecutor &sharedExecutor, uint32_t num_treads = 1);
     ~ExecutorThreadingService() override;
 
     /**
@@ -52,14 +52,15 @@ public:
     void setTaskLimit(uint32_t taskLimit, uint32_t summaryTaskLimit);
 
     // Expose the underlying executors for stats fetching and testing.
-    vespalib::ThreadStackExecutorBase &getMasterExecutor() {
+    // TOD: Remove - This is only used for casting to check the underlying type
+    vespalib::ThreadExecutor &getMasterExecutor() {
         return _masterExecutor;
     }
-    vespalib::ThreadStackExecutorBase &getIndexExecutor() {
-        return _indexExecutor;
+    vespalib::ThreadExecutor &getIndexExecutor() {
+        return *_indexExecutor;
     }
-    vespalib::ThreadStackExecutorBase &getSummaryExecutor() {
-        return _summaryExecutor;
+    vespalib::ThreadExecutor &getSummaryExecutor() {
+        return *_summaryExecutor;
     }
 
     /**
@@ -79,9 +80,9 @@ public:
         return _sharedExecutor;
     }
 
-    search::ISequencedTaskExecutor &indexFieldInverter() override;
-    search::ISequencedTaskExecutor &indexFieldWriter() override;
-    search::ISequencedTaskExecutor &attributeFieldWriter() override;
+    vespalib::ISequencedTaskExecutor &indexFieldInverter() override;
+    vespalib::ISequencedTaskExecutor &indexFieldWriter() override;
+    vespalib::ISequencedTaskExecutor &attributeFieldWriter() override;
     ExecutorThreadingServiceStats getStats();
 };
 

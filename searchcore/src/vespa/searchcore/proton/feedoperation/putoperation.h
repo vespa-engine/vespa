@@ -12,17 +12,16 @@ class PutOperation : public DocumentOperation
 
 public:
     PutOperation();
-    PutOperation(const document::BucketId &bucketId,
-                 const storage::spi::Timestamp &timestamp,
-                 const DocumentSP &doc);
-    virtual ~PutOperation();
+    PutOperation(document::BucketId bucketId,
+                 storage::spi::Timestamp timestamp,
+                 DocumentSP doc);
+    ~PutOperation() override;
     const DocumentSP &getDocument() const { return _doc; }
     void assertValid() const;
-    virtual void serialize(vespalib::nbostream &os) const override;
-    virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &repo) override;
+    void serialize(vespalib::nbostream &os) const override;
+    void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
     void deserializeDocument(const document::DocumentTypeRepo &repo);
-    virtual vespalib::string toString() const override;
+    vespalib::string toString() const override;
 };
 
 } // namespace proton

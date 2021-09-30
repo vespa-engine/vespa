@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "statbucketoperation.h"
-#include <vespa/storage/distributor/distributorcomponent.h>
+#include <vespa/storage/distributor/distributor_stripe_component.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
@@ -11,7 +11,6 @@ LOG_SETUP(".distributor.callback.statbucket");
 namespace storage::distributor {
 
 StatBucketOperation::StatBucketOperation(
-        [[maybe_unused]] DistributorComponent& manager,
         DistributorBucketSpace &bucketSpace,
         const std::shared_ptr<api::StatBucketCommand> & cmd)
     : Operation(),
@@ -23,7 +22,7 @@ StatBucketOperation::StatBucketOperation(
 StatBucketOperation::~StatBucketOperation() = default;
 
 void
-StatBucketOperation::onClose(DistributorMessageSender& sender)
+StatBucketOperation::onClose(DistributorStripeMessageSender& sender)
 {
     api::StatBucketReply* rep = (api::StatBucketReply*)_command->makeReply().release();
     rep->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
@@ -31,7 +30,7 @@ StatBucketOperation::onClose(DistributorMessageSender& sender)
 }
 
 void
-StatBucketOperation::onStart(DistributorMessageSender& sender)
+StatBucketOperation::onStart(DistributorStripeMessageSender& sender)
 {
     std::vector<uint16_t> nodes;
 
@@ -69,7 +68,7 @@ StatBucketOperation::onStart(DistributorMessageSender& sender)
 };
 
 void
-StatBucketOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
+StatBucketOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
 {
     assert(msg->getType() == api::MessageType::STATBUCKET_REPLY);
     api::StatBucketReply& myreply(dynamic_cast<api::StatBucketReply&>(*msg));

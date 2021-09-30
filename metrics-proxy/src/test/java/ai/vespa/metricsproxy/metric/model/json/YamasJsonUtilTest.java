@@ -7,8 +7,8 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Set;
 
-import static ai.vespa.metricsproxy.core.VespaMetrics.VESPA_CONSUMER_ID;
-import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
+import static ai.vespa.metricsproxy.core.VespaMetrics.vespaMetricsConsumerId;
+import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil.YAMAS_ROUTING;
 import static ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil.toMetricsPackets;
@@ -60,18 +60,18 @@ public class YamasJsonUtilTest {
     @Test
     public void default_public_consumer_is_filtered_from_yamas_routing() {
         MetricsPacket packet = new MetricsPacket.Builder(toServiceId("foo"))
-                .addConsumers(Set.of(VESPA_CONSUMER_ID, DEFAULT_PUBLIC_CONSUMER_ID))
+                .addConsumers(Set.of(vespaMetricsConsumerId, defaultMetricsConsumerId))
                 .build();
         YamasJsonModel jsonModel = YamasJsonUtil.toYamasArray(singleton(packet)).metrics.get(0);
         List<String> namespaces = jsonModel.routing.get(YAMAS_ROUTING).namespaces;
         assertEquals(1, namespaces.size());
-        assertEquals(VESPA_CONSUMER_ID.id, namespaces.get(0));
+        assertEquals(vespaMetricsConsumerId.id, namespaces.get(0));
     }
 
     @Test
     public void only_default_public_consumer_yields_null_routing_in_json_model() {
         MetricsPacket packet = new MetricsPacket.Builder(toServiceId("foo"))
-                .addConsumers(Set.of(DEFAULT_PUBLIC_CONSUMER_ID))
+                .addConsumers(Set.of(defaultMetricsConsumerId))
                 .build();
         YamasJsonModel jsonModel = YamasJsonUtil.toYamasArray(singleton(packet)).metrics.get(0);
         assertNull(jsonModel.routing);

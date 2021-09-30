@@ -12,12 +12,11 @@
 #pragma once
 
 #include <vespa/config/helper/configfetcher.h>
-#include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vdslib/state/nodestate.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/config/config-stor-bouncer.h>
-#include <vespa/vespalib/util/sync.h>
 #include <unordered_map>
 
 namespace config { class ConfigUri; }
@@ -32,8 +31,8 @@ class Bouncer : public StorageLink,
 {
     std::unique_ptr<vespa::config::content::core::StorBouncerConfig> _config;
     StorageComponent _component;
-    vespalib::Lock _lock;
-    lib::NodeState _baselineNodeState;
+    std::mutex       _lock;
+    lib::NodeState   _baselineNodeState;
     using BucketSpaceNodeStateMapping = std::unordered_map<document::BucketSpace, lib::NodeState, document::BucketSpace::hash>;
     BucketSpaceNodeStateMapping _derivedNodeStates;
     const lib::State* _clusterState;
@@ -67,6 +66,8 @@ private:
 
     void rejectDueToInsufficientPriority(api::StorageMessage&,
                                          api::StorageMessage::Priority);
+
+    void reject_due_to_too_few_bucket_bits(api::StorageMessage&);
 
     bool clusterIsUp() const;
 

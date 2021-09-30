@@ -6,7 +6,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 
 import java.io.InputStream;
 
-import static com.yahoo.vespa.config.server.session.LocalSession.Mode;
+import static com.yahoo.vespa.config.server.session.Session.Mode;
 
 /**
  * Represents a {@link ContentRequest}, and contains common functionality for content requests for all content handlers.

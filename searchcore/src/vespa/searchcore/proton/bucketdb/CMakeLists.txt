@@ -6,9 +6,9 @@ vespa_add_library(searchcore_bucketdb STATIC
     bucket_db_owner.cpp
     bucketdb.cpp
     bucketdbhandler.cpp
+    bucketscaniterator.cpp
     bucketsessionbase.cpp
     bucketstate.cpp
-    checksumaggregator.cpp
     checksumaggregators.cpp
     joinbucketssession.cpp
     splitbucketsession.cpp

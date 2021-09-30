@@ -125,7 +125,7 @@ void StorageLink::sendDown(const StorageMessage::SP& msg)
                 toString().c_str(), msg->toString().c_str(), stateToString(getState()));
             assert(false);
     }
-    assert(msg.get());
+    assert(msg);
     LOG(spam, "Storage Link %s to handle %s", toString().c_str(), msg->toString().c_str());
     if (isBottom()) {
         LOG(spam, "Storage link %s at bottom of chain got message %s.", toString().c_str(), msg->toString().c_str());
@@ -167,7 +167,7 @@ void StorageLink::sendUp(const shared_ptr<StorageMessage> & msg)
                 toString().c_str(), msg->toString(true).c_str(), stateToString(getState()));
             assert(false);
     }
-    assert(msg.get());
+    assert(msg);
     if (isTop()) {
         ostringstream ost;
         ost << "Unhandled message at top of chain " << *msg << ".";
@@ -213,6 +213,12 @@ bool StorageLink::onUp(const shared_ptr<StorageMessage> & msg)
     return msg->callHandler(*this, msg);
 }
 
+void
+StorageLink::print(std::ostream& out, bool, const std::string&) const
+{
+    out << getName();
+}
+
 const char*
 StorageLink::stateToString(State state)
 {
@@ -235,9 +241,54 @@ StorageLink::stateToString(State state)
     }
 }
 
-std::ostream& operator<<(std::ostream& out, StorageLink& link) {
+std::ostream&
+operator<<(std::ostream& out, StorageLink& link) {
     link.printChain(out);
     return out;
+}
+
+Queue::Queue() = default;
+Queue::~Queue() = default;
+
+bool
+Queue::getNext(std::shared_ptr<api::StorageMessage>& msg, vespalib::duration timeout) {
+    std::unique_lock sync(_lock);
+    bool first = true;
+    while (true) { // Max twice
+        if (!_queue.empty()) {
+            LOG(spam, "Picking message from queue");
+            msg = std::move(_queue.front());
+            _queue.pop();
+            return true;
+        }
+        if ((timeout == vespalib::duration::zero()) || !first) {
+            return false;
+        }
+        _cond.wait_for(sync, timeout);
+        first = false;
+    }
+
+    return false;
+}
+
+void
+Queue::enqueue(std::shared_ptr<api::StorageMessage> msg) {
+    {
+        std::lock_guard sync(_lock);
+        _queue.emplace(std::move(msg));
+    }
+    _cond.notify_one();
+}
+
+void
+Queue::signal() {
+    _cond.notify_one();
+}
+
+size_t
+Queue::size() const {
+    std::lock_guard guard(_lock);
+    return _queue.size();
 }
 
 }

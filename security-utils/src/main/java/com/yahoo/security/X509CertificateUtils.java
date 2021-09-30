@@ -18,13 +18,21 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -161,4 +169,28 @@ public class X509CertificateUtils {
         }
     }
 
+    public static X509CertificateWithKey createSelfSigned(String cn, Duration duration) {
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
+        X500Principal subject = new X500Principal(cn);
+        Instant now = Instant.now();
+        X509Certificate cert =
+                X509CertificateBuilder.fromKeypair(keyPair, subject, now,
+                                                   now.plus(duration), SignatureAlgorithm.SHA256_WITH_ECDSA,
+                                                   BigInteger.ONE)
+                        .setBasicConstraints(true, true)
+                        .build();
+        return new X509CertificateWithKey(cert, keyPair.getPrivate());
+    }
+
+    /**
+     * @return certificate SHA-1 fingerprint
+     */
+    public static byte[] getX509CertificateFingerPrint(X509Certificate certificate) {
+        try {
+            MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+            return sha1.digest(certificate.getEncoded());
+        } catch (CertificateEncodingException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

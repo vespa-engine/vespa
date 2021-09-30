@@ -22,6 +22,7 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
     private boolean wantFrozen = false;
     private boolean isFrozen = true;
     private boolean pendingInterrupt = false;
+    private boolean isWaitingForNextContext = false;
 
     public NodeAgentContextManager(Clock clock, NodeAgentContext context) {
         this.clock = clock;
@@ -61,6 +62,9 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
     @Override
     public NodeAgentContext nextContext() throws InterruptedException {
         synchronized (monitor) {
+            nextContext = null; // Reset any previous context and wait for the next one
+            isWaitingForNextContext = true;
+            monitor.notify();
             Duration untilNextContext = Duration.ZERO;
             while (setAndGetIsFrozen(wantFrozen) ||
                     nextContext == null ||
@@ -75,8 +79,8 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
                 } catch (InterruptedException ignored) { }
             }
 
+            isWaitingForNextContext = false;
             currentContext = nextContext;
-            nextContext = null;
             return currentContext;
         }
     }
@@ -103,6 +107,17 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
                 monitor.notifyAll(); // Notify the scheduler of the isFrozen change
             }
             return this.isFrozen;
+        }
+    }
+
+    /** FOR TESTING ONLY */
+    void waitUntilWaitingForNextContext() {
+        synchronized (monitor) {
+            while (!isWaitingForNextContext) {
+                try {
+                    monitor.wait();
+                } catch (InterruptedException ignored) { }
+            }
         }
     }
 }

@@ -8,8 +8,24 @@
 
 namespace storage::lib {
 
+ClusterStateBundle::FeedBlock::FeedBlock(bool block_feed_in_cluster_in,
+                                         const vespalib::string& description_in)
+    : _block_feed_in_cluster(block_feed_in_cluster_in),
+      _description(description_in)
+{
+}
+
+bool
+ClusterStateBundle::FeedBlock::operator==(const FeedBlock& rhs) const
+{
+    return (_block_feed_in_cluster == rhs._block_feed_in_cluster) &&
+            (_description == rhs._description);
+}
+
 ClusterStateBundle::ClusterStateBundle(const ClusterState &baselineClusterState)
     : _baselineClusterState(std::make_shared<const ClusterState>(baselineClusterState)),
+      _derivedBucketSpaceStates(),
+      _feed_block(),
       _deferredActivation(false)
 {
 }
@@ -18,6 +34,7 @@ ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState,
                                        BucketSpaceStateMapping derivedBucketSpaceStates)
     : _baselineClusterState(std::make_shared<const ClusterState>(baselineClusterState)),
       _derivedBucketSpaceStates(std::move(derivedBucketSpaceStates)),
+      _feed_block(),
       _deferredActivation(false)
 {
 }
@@ -25,9 +42,21 @@ ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState,
 ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState,
                                        BucketSpaceStateMapping derivedBucketSpaceStates,
                                        bool deferredActivation)
-        : _baselineClusterState(std::make_shared<const ClusterState>(baselineClusterState)),
-          _derivedBucketSpaceStates(std::move(derivedBucketSpaceStates)),
-          _deferredActivation(deferredActivation)
+    : _baselineClusterState(std::make_shared<const ClusterState>(baselineClusterState)),
+      _derivedBucketSpaceStates(std::move(derivedBucketSpaceStates)),
+      _feed_block(),
+      _deferredActivation(deferredActivation)
+{
+}
+
+ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState,
+                                       BucketSpaceStateMapping derivedBucketSpaceStates,
+                                       const FeedBlock& feed_block_in,
+                                       bool deferredActivation)
+    : _baselineClusterState(std::make_shared<const ClusterState>(baselineClusterState)),
+      _derivedBucketSpaceStates(std::move(derivedBucketSpaceStates)),
+      _feed_block(feed_block_in),
+      _deferredActivation(deferredActivation)
 {
 }
 
@@ -69,6 +98,9 @@ ClusterStateBundle::operator==(const ClusterStateBundle &rhs) const
     if (_derivedBucketSpaceStates.size() != rhs._derivedBucketSpaceStates.size()) {
         return false;
     }
+    if (_feed_block != rhs._feed_block) {
+        return false;
+    }
     if (_deferredActivation != rhs._deferredActivation) {
         return false;
     }
@@ -103,6 +135,9 @@ std::ostream& operator<<(std::ostream& os, const ClusterStateBundle& bundle) {
         }
     }
     os << '\'';
+    if (bundle.block_feed_in_cluster()) {
+        os << ", feed blocked: '" << bundle.feed_block()->description() << "'";
+    }
     if (bundle.deferredActivation()) {
         os << " (deferred activation)";
     }

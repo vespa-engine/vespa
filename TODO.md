@@ -5,21 +5,6 @@ This lists some possible improvements to Vespa which have been considered or req
 independently of other work, and are not yet under development. For more information on the code structure in Vespa, see
 [Code-map.md](Code-map.md).
 
-## Query tracing including content nodes
-
-**Effort:** Low<br/>
-**Difficulty:** Low<br/>
-**Skills:** Java, C++, multithreading
-
-Currently, trace information can be requested for a given query by adding travelevel=N to the query. This is useful for 
-debugging as well as understanding performance bottlenecks. However, the trace information only includes execution in 
-the container, not in the content nodes. This is to implement similar tracing capabilities in the search core and 
-integrating trace information from each content node into the container level trace. This would make it easier to 
-understand the execution and performance consequences of various query expressions.
-
-**Code pointers:**
-- [Container-level tracing](https://github.com/vespa-engine/vespa/blob/master/processing/src/main/java/com/yahoo/processing/execution/Execution.java#L245=)
-
 
 ## Support query profiles for document processors
 
@@ -32,45 +17,11 @@ bundles of parameters accessible to Searchers processing queries. Writes go thro
 Document Processors, but have no equivalent support for parametrization. This is to allow configuration of document 
 processor profiles by reusing the query profile support also for document processors.
 
+See [slack discussion](https://vespatalk.slack.com/archives/C01QNBPPNT1/p1624176344102300) for more details.
+
 **Code pointers:**
 - [Query profiles](https://github.com/vespa-engine/vespa/blob/master/container-search/src/main/java/com/yahoo/search/query/profile/QueryProfile.java)
 - [Document processors](https://github.com/vespa-engine/vespa/blob/master/docproc/src/main/java/com/yahoo/docproc/DocumentProcessor.java)
-
-
-## Background reindexing
-
-**Effort:** Medium<br/>
-**Difficulty:** Low<br/>
-**Skills:** Java
-
-Some times there is a need to reindex existing data to refresh the set of tokens produced from the raw text: Some search 
-definition changes impacts the tokens produced, and changing versions of linguistics libraries also cause token changes. 
-As content clusters store the raw data of documents it should be possible to reindex locally inside clusters in the 
-background. However, today this is not supported and content need to be rewritten from the outside to refresh tokens, 
-which is inconvenient and suboptimal. This is to support (scheduled or triggered) background reindexing from local data. 
-This can be achieved by configuring a message bus route which feeds content from a cluster back to itself through the 
-indexing container cluster and triggering a visiting job using this route.
-
-**Code pointers:**
-- Document API which can be used to receive a dumpt of documents: [DocumentAccess](https://github.com/vespa-engine/vespa/blob/master/documentapi/src/main/java/com/yahoo/documentapi/DocumentAccess.java)
-
-
-## Change search protocol from fnet to RPC
-
-**Effort:** Medium<br/>
-**Difficulty:** Low<br/>
-**Skills:** Java, C++, networking
-
-Currently, search requests happens over a very old custom protocol called "fnet". While this is efficient, it is hard to extend. 
-We want to replace it by RPC calls. 
-An RPC alternative is already implemented for summary fetch requests, but not for search requests.
-The largest part of this work is to encode the Query object as a Slime structure in Java and decode that structure in C++.
-
-**Code pointers:**
-- FS4 protocol search invokers (to be replaced by RPC): [FS4SearchInvoker](https://github.com/vespa-engine/vespa/blob/master/container-search/src/main/java/com/yahoo/prelude/fastsearch/FS4SearchInvoker.java), [FS4FillInvoker](https://github.com/vespa-engine/vespa/blob/master/container-search/src/main/java/com/yahoo/prelude/fastsearch/FS4FillInvoker.java)
-- Current Query encoding (to be replaced by Slime): [QueryPacket](https://github.com/vespa-engine/vespa/blob/master/container-search/src/main/java/com/yahoo/fs4/QueryPacket.java)
-- Slime: [Java](https://github.com/vespa-engine/vespa/blob/master/vespajlib/src/main/java/com/yahoo/slime/Slime.java), [C++](https://github.com/vespa-engine/vespa/blob/master/vespalib/src/vespa/vespalib/data/slime/slime.h)
-- [C++ query (to be constructed from Slime)](https://github.com/vespa-engine/vespa/blob/master/searchlib/src/vespa/searchlib/query/query.h)
 
 
 ## Java implementation of the content layer for testing
@@ -89,17 +40,6 @@ libraries (see the searchlib module).
 **Code pointers:**
 - Content cluster mock in Java  (currently empy): [ContentCluster](https://github.com/vespa-engine/vespa/blob/master/application/src/main/java/com/yahoo/application/content/ContentCluster.java)
 - The model of a search definition this must consume config from: [Search](https://github.com/vespa-engine/vespa/blob/master/config-model/src/main/java/com/yahoo/searchdefinition/Search.java)
-
-## Update where
-
-**Effort:** Medium<br/>
-**Difficulty:** Medium<br/>
-**Skills:** Java, C++, distributed systems
-
-Support "update where" operations which changes/removes all documents matching some document selection expression. This 
-entails adding a new document API operation and probably supporting continuations similar to visiting.
-
-- Document operations: [Java](https://github.com/vespa-engine/vespa/tree/master/document/src/main/java/com/yahoo/document/update), [C++](https://github.com/vespa-engine/vespa/tree/master/document/src/vespa/document/update)
 
 
 ## Indexed search in maps
@@ -139,6 +79,7 @@ supported is part of the design and analysis needed).
 **Code pointers:**
 - [Document API](https://github.com/vespa-engine/vespa/tree/master/documentapi/src/main/java/com/yahoo/documentapi)
 
+
 ## Global dynamic tensors
 
 **Effort:** High<br/>
@@ -158,3 +99,59 @@ model updates.
 
 **Code pointers:**
 - Tensor modify operation (for document tensors): [Java](https://github.com/vespa-engine/vespa/blob/master/document/src/main/java/com/yahoo/document/update/TensorModifyUpdate.java), [C++](https://github.com/vespa-engine/vespa/blob/master/document/src/vespa/document/update/tensor_modify_update.h)
+
+
+## Feed clients in different languages
+
+**Effort:** Low<br/>
+**Difficulty:** Low<br/>
+**Skills:** Knowledge of a decent HTTP/2 library in some language
+
+/document/v1 is a RESTified HTTP API which exposes the Vespa Document API to the
+outside of the application's Java containers. The design of this API is simple,
+with each operation modelled as a single HTTP request, and its result as
+a single HTTP response. While it was previously not possible to achieve comparable
+throughput using this API to what the undocumented, custom-protocol /feedapi offered,
+this changed with HTTP/2 support in Vespa. The clean design of /document/v1 makes it
+easy to interface with from any language and runtime that support HTTP/2.
+An implementation currently only exists for Java, and requires a JDK8+ runtime,
+and implementations in other languages are very welcome. The below psuedo-code could
+be a starting point for an asynchronous implementation with futures and promises.
+
+Let `http` be an asynchronous HTTP/2 client, which returns a `future` for each request.
+A `future` will complete some time in the future, at which point dependent computations
+will trigger, depending on the result of the operation. A `future` is obtained from a
+`promise`, and completes when the `promise` is completed. An efficient feed client is then:
+
+```
+inflight = map<document_id, promise>()
+
+func dispatch(operation: request, result: promise, attempt: int): void
+    http.send(operation).when_complete(response => handle(operation, response, result, attempt))
+
+func handle(operation: request, response: response, result: promise, attempt: int): void
+    if retry(response, attempt):
+        dispatch(operation, result, attempt + 1)
+    else:
+        result.complete(response)
+
+func enqueue(operation): future
+    result_promise = promise()
+    result = result_promise.get_future()
+    previous = inflight.put(document.id, result)  # store `result` under `id` and obtain previous mapping
+    if previous == NIL:
+        while inflight.size >= max_inflight(): wait()
+        dispatch(operation, result, 1)
+    else:
+        previous.when_complete(ignored => dispatch(operation, result, 1))
+    result.when_complete(ignored => inflight.remove_value(result)) # remove mapping unless it has been replaced
+    return result
+```
+
+Apply synchronization as necessary. The `inflight` map is used to serialise multiple operations
+to the same document id: the mapped entry for each id is the tail of a linked queue where new
+dependents may be added, while the queue is emptied from the head one entry at a time, whenever
+a dependency (`previous`) completes computation. `enqueue` blocks until there is room in the client.
+
+**Code pointers:**
+- [Java feed client](https://github.com/vespa-engine/vespa/blob/master/vespa-feed-client/src/main/java/ai/vespa/feed/client/FeedClient.java)

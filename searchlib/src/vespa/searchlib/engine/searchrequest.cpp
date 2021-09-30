@@ -8,7 +8,7 @@ SearchRequest::SearchRequest()
     : SearchRequest(RelativeTime(std::make_unique<SteadyClock>())) {}
 
 SearchRequest::SearchRequest(RelativeTime relativeTime)
-    : Request(std::move(relativeTime)),
+    : Request(std::move(relativeTime), 5),
       offset(0),
       maxhits(10),
       sortSpec(),

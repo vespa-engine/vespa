@@ -11,7 +11,7 @@ namespace search::attribute {
 template <typename PostingList>
 class PostingListTraverser
 {
-    using EntryRef = datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     const PostingList &_postingList;
     EntryRef _pidx;
 public:

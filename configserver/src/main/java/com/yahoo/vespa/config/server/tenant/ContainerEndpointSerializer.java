@@ -54,6 +54,9 @@ public class ContainerEndpointSerializer {
 
     public static List<ContainerEndpoint> endpointListFromSlime(Slime slime) {
         final var inspector = slime.get();
+        return endpointListFromSlime(inspector);
+    }
+    public static List<ContainerEndpoint> endpointListFromSlime(Inspector inspector) {
         final var endpoints = new ArrayList<ContainerEndpoint>();
 
         inspector.traverse((ArrayTraverser) (idx, endpointInspector) -> {
@@ -66,7 +69,7 @@ public class ContainerEndpointSerializer {
 
 
     public static void endpointToSlime(Cursor cursor, ContainerEndpoint endpoint) {
-        cursor.setString(clusterIdField, endpoint.clusterId().toString());
+        cursor.setString(clusterIdField, endpoint.clusterId());
 
         final var namesInspector = cursor.setArray(namesField);
         endpoint.names().forEach(namesInspector::addString);

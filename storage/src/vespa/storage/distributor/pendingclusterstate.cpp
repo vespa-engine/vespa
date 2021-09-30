@@ -1,18 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "pendingclusterstate.h"
+#include "bucket_space_state_map.h"
 #include "pending_bucket_space_db_transition.h"
-#include "bucketdbupdater.h"
-#include "distributor_bucket_space_repo.h"
-#include "distributor_bucket_space.h"
-#include <vespa/storageframework/defaultimplementation/clock/realclock.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
-#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
+#include "pendingclusterstate.h"
+#include "top_level_bucket_db_updater.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
+#include <vespa/storageframework/defaultimplementation/clock/realclock.h>
+#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/xmlstream.hpp>
 #include <climits>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".pendingclusterstate");
 
 using document::BucketSpace;
@@ -27,19 +26,21 @@ PendingClusterState::PendingClusterState(
         const framework::Clock& clock,
         const ClusterInformation::CSP& clusterInfo,
         DistributorMessageSender& sender,
-        DistributorBucketSpaceRepo& bucketSpaceRepo,
+        const BucketSpaceStateMap& bucket_space_states,
         const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
         const OutdatedNodesMap &outdatedNodesMap,
         api::Timestamp creationTimestamp)
     : _cmd(newStateCmd),
+      _sentMessages(),
       _requestedNodes(newStateCmd->getSystemState().getNodeCount(lib::NodeType::STORAGE)),
+      _delayedRequests(),
       _prevClusterStateBundle(clusterInfo->getClusterStateBundle()),
       _newClusterStateBundle(newStateCmd->getClusterStateBundle()),
       _clock(clock),
       _clusterInfo(clusterInfo),
       _creationTimestamp(creationTimestamp),
       _sender(sender),
-      _bucketSpaceRepo(bucketSpaceRepo),
+      _bucket_space_states(bucket_space_states),
       _clusterStateVersion(_cmd->getClusterStateBundle().getVersion()),
       _isVersionedTransition(true),
       _bucketOwnershipTransfer(false),
@@ -53,7 +54,7 @@ PendingClusterState::PendingClusterState(
         const framework::Clock& clock,
         const ClusterInformation::CSP& clusterInfo,
         DistributorMessageSender& sender,
-        DistributorBucketSpaceRepo& bucketSpaceRepo,
+        const BucketSpaceStateMap& bucket_space_states,
         api::Timestamp creationTimestamp)
     : _requestedNodes(clusterInfo->getStorageNodeCount()),
       _prevClusterStateBundle(clusterInfo->getClusterStateBundle()),
@@ -62,7 +63,7 @@ PendingClusterState::PendingClusterState(
       _clusterInfo(clusterInfo),
       _creationTimestamp(creationTimestamp),
       _sender(sender),
-      _bucketSpaceRepo(bucketSpaceRepo),
+      _bucket_space_states(bucket_space_states),
       _clusterStateVersion(0),
       _isVersionedTransition(false),
       _bucketOwnershipTransfer(true),
@@ -78,13 +79,13 @@ void
 PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, const OutdatedNodesMap &outdatedNodesMap)
 {
     OutdatedNodes emptyOutdatedNodes;
-    for (auto &elem : _bucketSpaceRepo) {
+    for (const auto &elem : _bucket_space_states) {
         auto onItr = outdatedNodesMap.find(elem.first);
         const auto &outdatedNodes = (onItr == outdatedNodesMap.end()) ? emptyOutdatedNodes : onItr->second;
         auto pendingTransition =
-            std::make_unique<PendingBucketSpaceDbTransition>
-            (*this, *elem.second, distributionChanged, outdatedNodes,
-             _clusterInfo, *_newClusterStateBundle.getDerivedClusterState(elem.first), _creationTimestamp);
+            std::make_unique<PendingBucketSpaceDbTransition>(
+                    elem.first, *elem.second, distributionChanged, outdatedNodes,
+                    _clusterInfo, *_newClusterStateBundle.getDerivedClusterState(elem.first), _creationTimestamp);
         if (pendingTransition->getBucketOwnershipTransfer()) {
             _bucketOwnershipTransfer = true;
         }
@@ -98,8 +99,7 @@ PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, 
 void
 PendingClusterState::logConstructionInformation() const
 {
-    const auto &distributorBucketSpace(_bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()));
-    const auto &distribution(distributorBucketSpace.getDistribution());
+    const auto &distribution = _bucket_space_states.get(document::FixedBucketSpaces::default_space()).get_distribution();
     LOG(debug,
         "New PendingClusterState constructed with previous cluster "
         "state '%s', new cluster state '%s', distribution config "
@@ -188,8 +188,7 @@ PendingClusterState::requestBucketInfoFromStorageNodesWithChangedState()
 void
 PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
 {
-    const auto &distributorBucketSpace(_bucketSpaceRepo.get(bucketSpaceAndNode.bucketSpace));
-    const auto &distribution(distributorBucketSpace.getDistribution());
+    const auto &distribution = _bucket_space_states.get(bucketSpaceAndNode.bucketSpace).get_distribution();
     vespalib::string distributionHash;
     // TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
     bool sendLegacyHash = false;
@@ -205,10 +204,10 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
     if (!sendLegacyHash) {
         distributionHash = distribution.getNodeGraph().getDistributionConfigHash();
     } else {
-        const auto& defaultSpace = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space());
+        const auto& defaultSpace = _bucket_space_states.get(document::FixedBucketSpaces::default_space());
         // Generate legacy distribution hash explicitly.
         auto legacyGlobalDistr = GlobalBucketSpaceDistributionConverter::convert_to_global(
-                defaultSpace.getDistribution(), true/*use legacy mode*/);
+                defaultSpace.get_distribution(), true/*use legacy mode*/);
         distributionHash = legacyGlobalDistr->getNodeGraph().getDistributionConfigHash();
         LOG(debug, "Falling back to sending legacy hash to node %u: %s",
             bucketSpaceAndNode.node, distributionHash.c_str());
@@ -219,15 +218,14 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
         "and distribution hash '%s'",
         bucketSpaceAndNode.bucketSpace.getId(),
         bucketSpaceAndNode.node,
-        getNewClusterStateBundleString().c_str(),
+        _newClusterStateBundle.getDerivedClusterState(bucketSpaceAndNode.bucketSpace)->toString().c_str(),
         distributionHash.c_str());
 
-    std::shared_ptr<api::RequestBucketInfoCommand> cmd(
-            new api::RequestBucketInfoCommand(
+    auto cmd = std::make_shared<api::RequestBucketInfoCommand>(
                     bucketSpaceAndNode.bucketSpace,
                     _sender.getDistributorIndex(),
                     *_newClusterStateBundle.getDerivedClusterState(bucketSpaceAndNode.bucketSpace),
-                    distributionHash));
+                    distributionHash);
 
     cmd->setPriority(api::StorageMessage::HIGH);
     cmd->setTimeout(vespalib::duration::max());
@@ -248,7 +246,22 @@ PendingClusterState::Summary::Summary(const std::string& prevClusterState,
 
 PendingClusterState::Summary::Summary(const Summary &) = default;
 PendingClusterState::Summary & PendingClusterState::Summary::operator = (const Summary &) = default;
-PendingClusterState::Summary::~Summary() { }
+PendingClusterState::Summary::~Summary() = default;
+
+void PendingClusterState::update_reply_failure_statistics(const api::ReturnCode& result, const BucketSpaceAndNode& source) {
+    auto transition_iter = _pendingTransitions.find(source.bucketSpace);
+    assert(transition_iter != _pendingTransitions.end());
+    auto& transition = *transition_iter->second;
+    transition.increment_request_failures(source.node);
+    // Edge triggered (rate limited) warning for content node bucket fetching failures
+    if (transition.request_failures(source.node) == RequestFailureWarningEdgeTriggerThreshold) {
+        LOGBP(warning, "Have failed multiple bucket info fetch requests towards node %u. Last received error is: %s",
+              source.node, result.toString().c_str());
+    }
+    if (result.getResult() == api::ReturnCode::REJECTED) {
+        transition.incrementRequestRejections(source.node);
+    }
+}
 
 bool
 PendingClusterState::onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply>& reply)
@@ -266,11 +279,7 @@ PendingClusterState::onRequestBucketInfoReply(const std::shared_ptr<api::Request
         resendTime += framework::MilliSecTime(100);
         _delayedRequests.emplace_back(resendTime, bucketSpaceAndNode);
         _sentMessages.erase(iter);
-        if (result.getResult() == api::ReturnCode::REJECTED) {
-            auto transitionIter = _pendingTransitions.find(bucketSpaceAndNode.bucketSpace);
-            assert(transitionIter != _pendingTransitions.end());
-            transitionIter->second->incrementRequestRejections(bucketSpaceAndNode.node);
-        }
+        update_reply_failure_statistics(result, bucketSpaceAndNode);
         return true;
     }
 
@@ -311,10 +320,10 @@ PendingClusterState::requestNodesToString() const
 }
 
 void
-PendingClusterState::mergeIntoBucketDatabases()
+PendingClusterState::merge_into_bucket_databases(StripeAccessGuard& guard)
 {
     for (auto &elem : _pendingTransitions) {
-        elem.second->mergeIntoBucketDatabase();
+        elem.second->merge_into_bucket_databases(guard);
     }
 }
 
@@ -346,6 +355,15 @@ PendingClusterState::getPendingBucketSpaceDbTransition(document::BucketSpace buc
     auto transitionIter = _pendingTransitions.find(bucketSpace);
     assert(transitionIter != _pendingTransitions.end());
     return *transitionIter->second;
+}
+
+std::string
+PendingClusterState::getNewClusterStateBundleString() const {
+    return _newClusterStateBundle.getBaselineClusterState()->toString();
+}
+std::string
+PendingClusterState::getPrevClusterStateBundleString() const {
+    return _prevClusterStateBundle.getBaselineClusterState()->toString();
 }
 
 }

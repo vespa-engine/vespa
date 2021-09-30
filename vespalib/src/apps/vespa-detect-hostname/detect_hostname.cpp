@@ -5,6 +5,7 @@
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <set>
 
 using vespalib::SocketAddress;
@@ -18,7 +19,7 @@ std::set<vespalib::string> make_ip_set() {
 }
 
 vespalib::string get_hostname() {
-    std::vector<char> result(4096, '\0');
+    std::vector<char> result(4_Ki, '\0');
     gethostname(&result[0], 4000);
     return SocketAddress::normalize(&result[0]);
 }
@@ -49,6 +50,10 @@ int main(int, char **) {
     if (check(my_hostname, my_ip_set, my_hostname_error)) {
         fprintf(stdout, "%s\n", my_hostname.c_str());
     } else if (check(localhost, my_ip_set, localhost_error)) {
+        fprintf(stderr, "WARN: hostname detection failed, falling back to local hostname: %s", localhost.c_str());
+        fprintf(stderr, "  WARN: canonical hostname (from gethostname/getaddrinfo): %s\n", my_hostname.c_str());
+        fprintf(stderr, "  WARN: %s\n", my_hostname_error.c_str());
+
         fprintf(stdout, "%s\n", localhost.c_str());
     } else {
         fprintf(stderr, "FATAL: hostname detection failed\n");

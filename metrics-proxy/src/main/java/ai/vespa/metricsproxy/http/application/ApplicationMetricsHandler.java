@@ -3,9 +3,11 @@
 package ai.vespa.metricsproxy.http.application;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
+import ai.vespa.metricsproxy.http.TextResponse;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
+import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
-import ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor;
+import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
 import com.google.inject.Inject;
 import com.yahoo.container.handler.metrics.ErrorResponse;
 import com.yahoo.container.handler.metrics.HttpHandlerBase;
@@ -14,19 +16,18 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.Path;
 
 import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.http.ValuesFetcher.getConsumerOrDefault;
 import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericApplicationModel;
-import static ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor.applyProcessors;
+import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toMetricsPackets;
+import static ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil.toPrometheusModel;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.OK;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Http handler that returns metrics for all nodes in the Vespa application.
@@ -35,10 +36,9 @@ import static java.util.stream.Collectors.toList;
  */
 public class ApplicationMetricsHandler extends HttpHandlerBase {
 
-    public static final String V1_PATH = "/applicationmetrics/v1";
-    public static final String VALUES_PATH = V1_PATH + "/values";
-
-    private static final int MAX_DIMENSIONS = 10;
+    public static final String METRICS_V1_PATH = "/applicationmetrics/v1";
+    public static final String METRICS_VALUES_PATH = METRICS_V1_PATH + "/values";
+    public static final String PROMETHEUS_VALUES_PATH = METRICS_V1_PATH + "/prometheus";
 
     private final ApplicationMetricsRetriever metricsRetriever;
     private final MetricsConsumers metricsConsumers;
@@ -50,44 +50,45 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
         super(executor);
         this.metricsRetriever = metricsRetriever;
         this.metricsConsumers = metricsConsumers;
+        metricsRetriever.startPollAndWait();
     }
 
     @Override
     public Optional<HttpResponse> doHandle(URI requestUri, Path apiPath, String consumer) {
-        if (apiPath.matches(V1_PATH)) return Optional.of(resourceListResponse(requestUri, List.of(VALUES_PATH)));
-        if (apiPath.matches(VALUES_PATH)) return Optional.of(applicationMetricsResponse(consumer));
+        if (apiPath.matches(METRICS_V1_PATH)) return Optional.of(resourceListResponse(requestUri, List.of(METRICS_VALUES_PATH,
+                                                                                                          PROMETHEUS_VALUES_PATH)));
+        if (apiPath.matches(METRICS_VALUES_PATH)) return Optional.of(applicationMetricsResponse(consumer));
+        if (apiPath.matches(PROMETHEUS_VALUES_PATH)) return Optional.of(applicationPrometheusResponse(consumer));
+
         return Optional.empty();
     }
 
     private JsonResponse applicationMetricsResponse(String requestedConsumer) {
         try {
             ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
-            var buildersByNode =  metricsRetriever.getMetrics(consumer);
-            var metricsByNode = processAndBuild(buildersByNode,
-                                                new ServiceIdDimensionProcessor(),
-                                                new ClusterIdDimensionProcessor(),
-                                                new PublicDimensionsProcessor(MAX_DIMENSIONS));
+            var metricsByNode =  metricsRetriever.getMetrics(consumer);
 
             return new JsonResponse(OK, toGenericApplicationModel(metricsByNode).serialize());
+
         } catch (Exception e) {
             log.log(Level.WARNING, "Got exception when retrieving metrics:", e);
             return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
-    private static Map<Node, List<MetricsPacket>> processAndBuild(Map<Node, List<MetricsPacket.Builder>> buildersByNode,
-                                                                  MetricsProcessor... processors) {
-        var metricsByNode = new HashMap<Node, List<MetricsPacket>>();
+    private TextResponse applicationPrometheusResponse(String requestedConsumer) {
+        ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
+        var metricsByNode = metricsRetriever.getMetrics(consumer);
 
-        buildersByNode.forEach((node, builders) -> {
-            var metrics = builders.stream()
-                    .map(builder -> applyProcessors(builder, processors))
-                    .map(MetricsPacket.Builder::build)
-                    .collect(toList());
 
-            metricsByNode.put(node, metrics);
-        });
-        return metricsByNode;
+        List<GenericJsonModel> genericNodes = toGenericApplicationModel(metricsByNode).nodes;
+        List<MetricsPacket> metricsForAllNodes = genericNodes.stream()
+                .flatMap(element -> toMetricsPackets(element)
+                        .stream()
+                        .map(builder -> builder.putDimension(DimensionId.toDimensionId("hostname"), element.hostname))
+                        .map(MetricsPacket.Builder::build))
+                .collect(Collectors.toList());
+        return new TextResponse(200, toPrometheusModel(metricsForAllNodes).serialize());
     }
 
 }

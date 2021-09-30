@@ -47,11 +47,7 @@ public final class VespaHeaders {
     private static final Tuple2<Boolean, Integer> NO_MATCH = new Tuple2<>(false, Response.Status.OK);
 
     public static boolean benchmarkCoverage(boolean benchmarkOutput, HeaderFields headers) {
-        if (benchmarkOutput && headers.get(BenchmarkingHeaders.REQUEST_COVERAGE) != null) {
-            return true;
-        } else {
-            return false;
-        }
+        return benchmarkOutput && headers.get(BenchmarkingHeaders.REQUEST_COVERAGE) != null;
     }
 
     /** Returns true if this is a benchmarking request, according to headers */
@@ -60,14 +56,14 @@ public final class VespaHeaders {
     }
 
     /**
-     * Add search benchmark output to the HTTP getHeaders
+     * Add search benchmark output to the HTTP getHeaders.
      *
-     * @param responseHeaders   The response to write the headers to.
-     * @param benchmarkCoverage True to include coverage headers.
-     * @param t                 The Timing to read data from.
-     * @param c                 The Counts to read data from.
-     * @param errorCount        The error count.
-     * @param coverage          The Coverage to read data from.
+     * @param responseHeaders   the response to write the headers to
+     * @param benchmarkCoverage true to include coverage headers
+     * @param t                 the Timing to read data from
+     * @param c                 the Counts to read data from
+     * @param errorCount        the error count
+     * @param coverage          the Coverage to read data from
      */
     public static void benchmarkOutput(HeaderFields responseHeaders, boolean benchmarkCoverage,
                                        Timing t, HitCounts c, int errorCount, Coverage coverage) {
@@ -106,10 +102,10 @@ public final class VespaHeaders {
     /**
      * (during normal execution) return 200 unless this is not a success or a 4xx error is requested.
      *
-     * @param isSuccess Whether or not the response represents a success.
-     * @param mainError The main error of the response, if any.
-     * @param allErrors All the errors of the response, if any.
-     * @return The status code of the given response.
+     * @param isSuccess whether or not the response represents a success
+     * @param mainError the main error of the response, if any
+     * @param allErrors all the errors of the response, if any
+     * @return the status code of the given response
      */
     public static int getStatus(boolean isSuccess, ErrorMessage mainError, Iterator<? extends ErrorMessage> allErrors) {
         // Do note, SearchResponse has its own implementation of isSuccess()
@@ -129,7 +125,7 @@ public final class VespaHeaders {
 
         Iterator<? extends ErrorMessage> errorIterator = allErrors;
         if (errorIterator != null && errorIterator.hasNext()) {
-            for (; errorIterator.hasNext();) {
+            while (errorIterator.hasNext()) {
                 ErrorMessage error = errorIterator.next();
                 Tuple2<Boolean, Integer> status = chooseWebServiceStatus(error);
                 if (status.first) {

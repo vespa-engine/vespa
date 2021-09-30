@@ -9,6 +9,7 @@
 #include <vespa/vespalib/stllike/cache.hpp>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 
@@ -76,7 +77,7 @@ BackingStore::visit(const IDocumentStore::LidVector &lids, const DocumentTypeRep
 bool
 BackingStore::read(DocumentIdT key, Value &value) const {
     bool found(false);
-    vespalib::DataBuffer buf(4096);
+    vespalib::DataBuffer buf(4_Ki);
     ssize_t len = _backingStore.read(key, buf);
     if (len > 0) {
         value.set(std::move(buf), len, _compression);
@@ -355,7 +356,7 @@ void
 DocumentStore::WrapVisitor<Visitor>::visit(uint32_t lid, const void *buffer, size_t sz)
 {
     Value value;
-    vespalib::DataBuffer buf(4096);
+    vespalib::DataBuffer buf(4_Ki);
     buf.clear();
     buf.writeBytes(buffer, sz);
     ssize_t len = sz;

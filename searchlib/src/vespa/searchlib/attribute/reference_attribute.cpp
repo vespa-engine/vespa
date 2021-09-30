@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributesaver.h"
+#include "load_utils.h"
 #include "readerbase.h"
 #include "reference_attribute.h"
 #include "reference_attribute_saver.h"
@@ -10,9 +11,10 @@
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/datastore/unique_store_builder.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/datastore/unique_store.hpp>
-#include <vespa/vespalib/datastore/unique_store_builder.h>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.reference_attribute");
@@ -24,9 +26,6 @@ using document::GlobalId;
 using document::IdParseException;
 
 namespace {
-
-// minimum dead bytes in unique store before consider compaction
-constexpr size_t DEAD_BYTES_SLACK = 0x10000u;
 
 const vespalib::string uniqueValueCountTag = "uniqueValueCount";
 
@@ -43,7 +42,8 @@ ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName,
     : NotImplementedAttribute(baseFileName, cfg),
       _store(),
       _indices(getGenerationHolder()),
-      _cachedUniqueStoreMemoryUsage(),
+      _cached_unique_store_values_memory_usage(),
+      _cached_unique_store_dictionary_memory_usage(),
       _gidToLidMapperFactory(),
       _referenceMappings(getGenerationHolder(), getCommittedDocIdLimitRef())
 {
@@ -55,7 +55,7 @@ ReferenceAttribute::~ReferenceAttribute()
     _referenceMappings.clearBuilder();
     incGeneration(); // Force freeze
     const auto &store = _store;
-    const auto enumerator = _store.getEnumerator();
+    const auto enumerator = _store.getEnumerator(true);
     enumerator.foreach_key([&store,this](EntryRef ref)
                       {   const Reference &entry = store.get(ref);
                           _referenceMappings.clearMapping(entry);
@@ -111,13 +111,14 @@ ReferenceAttribute::buildReverseMapping(EntryRef newRef, const std::vector<Rever
 void
 ReferenceAttribute::buildReverseMapping()
 {
-    std::vector<std::pair<EntryRef, uint32_t>> indices;
+    using EntryPair = std::pair<EntryRef, uint32_t>;
+    std::vector<EntryPair, vespalib::allocator_large<EntryPair>> indices;
     uint32_t numDocs = _indices.size();
     indices.reserve(numDocs);
     for (uint32_t lid = 0; lid < numDocs; ++lid) {
         EntryRef ref = _indices[lid];
         if (ref.valid()) {
-            indices.push_back(std::make_pair(ref, lid));
+            indices.emplace_back(ref, lid);
         }
     }
     std::sort(indices.begin(), indices.end());
@@ -131,7 +132,7 @@ ReferenceAttribute::buildReverseMapping()
             }
             prevRef = elem.first;
         }
-        adds.emplace_back(elem.second, btree::BTreeNoLeafData());
+        adds.emplace_back(elem.second, vespalib::btree::BTreeNoLeafData());
     }
     if (prevRef.valid()) {
         buildReverseMapping(prevRef, adds);
@@ -177,7 +178,11 @@ ReferenceAttribute::onCommit()
 {
     // Note: Cost can be reduced if unneeded generation increments are dropped
     incGeneration();
-    if (considerCompact(getConfig().getCompactionStrategy())) {
+    if (consider_compact_values(getConfig().getCompactionStrategy())) {
+        incGeneration();
+        updateStat(true);
+    }
+    if (consider_compact_dictionary(getConfig().getCompactionStrategy())) {
         incGeneration();
         updateStat(true);
     }
@@ -186,8 +191,11 @@ ReferenceAttribute::onCommit()
 void
 ReferenceAttribute::onUpdateStat()
 {
-    vespalib::MemoryUsage total = _store.getMemoryUsage();
-    _cachedUniqueStoreMemoryUsage = total;
+    vespalib::MemoryUsage total = _store.get_values_memory_usage();
+    _cached_unique_store_values_memory_usage = total;
+    auto& dictionary = _store.get_dictionary();
+    _cached_unique_store_dictionary_memory_usage = dictionary.get_memory_usage();
+    total.merge(_cached_unique_store_dictionary_memory_usage);
     total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     total.merge(_indices.getMemoryUsage());
     total.merge(_referenceMappings.getMemoryUsage());
@@ -199,8 +207,7 @@ ReferenceAttribute::onUpdateStat()
 std::unique_ptr<AttributeSaver>
 ReferenceAttribute::onInitSave(vespalib::stringref fileName)
 {
-    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().
-                                             takeGuard());
+    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().takeGuard());
     return std::make_unique<ReferenceAttributeSaver>
         (std::move(guard),
          createAttributeHeader(fileName),
@@ -209,7 +216,7 @@ ReferenceAttribute::onInitSave(vespalib::stringref fileName)
 }
 
 bool
-ReferenceAttribute::onLoad()
+ReferenceAttribute::onLoad(vespalib::Executor *)
 {
     ReaderBase attrReader(*this);
     bool ok(attrReader.getHasLoadData());
@@ -220,10 +227,9 @@ ReferenceAttribute::onLoad()
     assert(attrReader.getEnumerated());
     assert(!attrReader.hasIdx());
     size_t numDocs(0);
-    uint64_t numValues(0);
-    numValues = attrReader.getEnumCount();
+    uint64_t numValues = attrReader.getEnumCount();
     numDocs = numValues;
-    fileutil::LoadedBuffer::UP udatBuffer(loadUDAT());
+    auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
     const GenericHeader &header = udatBuffer->getHeader();
     uint32_t uniqueValueCount = extractUniqueValueCount(header);
     assert(uniqueValueCount * sizeof(GlobalId) == udatBuffer->size());
@@ -283,27 +289,42 @@ ReferenceAttribute::getReference(DocId doc) const
 }
 
 bool
-ReferenceAttribute::considerCompact(const CompactionStrategy &compactionStrategy)
+ReferenceAttribute::consider_compact_values(const CompactionStrategy &compactionStrategy)
 {
-    size_t usedBytes = _cachedUniqueStoreMemoryUsage.usedBytes();
-    size_t deadBytes = _cachedUniqueStoreMemoryUsage.deadBytes();
-    bool compactMemory = ((deadBytes >= DEAD_BYTES_SLACK) &&
-                          (usedBytes * compactionStrategy.getMaxDeadBytesRatio() < deadBytes));
-    if (compactMemory) {
-        compactWorst();
+    size_t used_bytes = _cached_unique_store_values_memory_usage.usedBytes();
+    size_t dead_bytes = _cached_unique_store_values_memory_usage.deadBytes();
+    bool compact_memory = compactionStrategy.should_compact_memory(used_bytes, dead_bytes);
+    if (compact_memory) {
+        compact_worst_values();
         return true;
     }
     return false;
 }
 
 void
-ReferenceAttribute::compactWorst()
+ReferenceAttribute::compact_worst_values()
 {
     auto remapper(_store.compact_worst(true, true));
     if (remapper) {
         remapper->remap(vespalib::ArrayRef<EntryRef>(&_indices[0], _indices.size()));
         remapper->done();
     }
+}
+
+bool
+ReferenceAttribute::consider_compact_dictionary(const CompactionStrategy &compaction_strategy)
+{
+    auto& dictionary = _store.get_dictionary();
+    if (dictionary.has_held_buffers()) {
+        return false;
+    }
+    if (compaction_strategy.should_compact_memory(_cached_unique_store_dictionary_memory_usage.usedBytes(),
+                                                  _cached_unique_store_dictionary_memory_usage.deadBytes()))
+    {
+        dictionary.compact_worst(true, true);
+        return true;
+    }
+    return false;
 }
 
 uint64_t
@@ -366,13 +387,13 @@ class TargetLidPopulator : public IGidToLidMapperVisitor
 {
     ReferenceAttribute &_attr;
 public:
-    TargetLidPopulator(ReferenceAttribute &attr)
+    explicit TargetLidPopulator(ReferenceAttribute &attr)
         : IGidToLidMapperVisitor(),
           _attr(attr)
     {
     }
-    virtual ~TargetLidPopulator() override { }
-    virtual void visit(const document::GlobalId &gid, uint32_t lid) const override {
+    ~TargetLidPopulator() override = default;
+    void visit(const document::GlobalId &gid, uint32_t lid) const override {
         _attr.notifyReferencedPutNoCommit(gid, lid);
     }
 };
@@ -471,9 +492,9 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(ReferenceAttribute, AttributeVector);
 
 }
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
-using Reference = attribute::Reference;
+using Reference = search::attribute::Reference;
 
 template class UniqueStoreAllocator<Reference, EntryRefT<22>>;
 template class UniqueStore<Reference, EntryRefT<22>>;

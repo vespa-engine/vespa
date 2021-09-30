@@ -7,6 +7,7 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/storageserver/mergethrottler.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
@@ -28,6 +29,8 @@ using namespace ::testing;
 namespace storage {
 
 namespace {
+
+vespalib::string _Storage("storage");
 
 struct MergeBuilder {
     document::BucketId _bucket;
@@ -104,8 +107,7 @@ struct MergeBuilder {
         auto cmd = std::make_shared<MergeBucketCommand>(
                 makeDocumentBucket(_bucket), n, _maxTimestamp,
                 _clusterStateVersion, _chain);
-        StorageMessageAddress address("storage", lib::NodeType::STORAGE, _nodes[0]);
-        cmd->setAddress(address);
+        cmd->setAddress(StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, _nodes[0]));
         return cmd;
     }
 };
@@ -115,8 +117,7 @@ MergeBuilder::~MergeBuilder() = default;
 std::shared_ptr<api::SetSystemStateCommand>
 makeSystemStateCmd(const std::string& state)
 {
-    return std::make_shared<api::SetSystemStateCommand>(
-            lib::ClusterState(state));
+    return std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(state));
 }
 
 } // anon ns
@@ -156,13 +157,11 @@ MergeThrottlerTest::SetUp()
     vdstestlib::DirConfig config(getStandardConfig(true));
 
     for (int i = 0; i < _storageNodeCount; ++i) {
-        std::unique_ptr<TestServiceLayerApp> server(
-                new TestServiceLayerApp(DiskCount(1), NodeIndex(i)));
-        server->setClusterState(lib::ClusterState(
-                    "distributor:100 storage:100 version:1"));
+        auto server = std::make_unique<TestServiceLayerApp>(NodeIndex(i));
+        server->setClusterState(lib::ClusterState("distributor:100 storage:100 version:1"));
         std::unique_ptr<DummyStorageLink> top;
 
-        top.reset(new DummyStorageLink);
+        top = std::make_unique<DummyStorageLink>();
         MergeThrottler* throttler = new MergeThrottler(config.getConfigId(), server->getComponentRegister());
         // MergeThrottler will be sandwiched in between two dummy links
         top->push_back(std::unique_ptr<StorageLink>(throttler));
@@ -216,7 +215,7 @@ void waitUntilMergeQueueIs(MergeThrottler& throttler, std::size_t sz, int timeou
     while (true) {
         std::size_t count;
         {
-            vespalib::LockGuard lock(throttler.getStateLock());
+            std::lock_guard lock(throttler.getStateLock());
             count = throttler.getMergeQueue().size();
         }
         if (count == sz) {
@@ -268,8 +267,7 @@ TEST_F(MergeThrottlerTest, chain) {
         auto cmd = std::make_shared<MergeBucketCommand>(bucket, nodes, UINT_MAX, 123);
         cmd->setPriority(7);
         cmd->setTimeout(54321ms);
-        StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
-        cmd->setAddress(address);
+        cmd->setAddress(StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 0));
         const uint16_t distributorIndex = 123;
         cmd->setSourceIndex(distributorIndex); // Dummy distributor index that must be forwarded
 
@@ -406,15 +404,13 @@ TEST_F(MergeThrottlerTest, chain) {
 TEST_F(MergeThrottlerTest, with_source_only_node) {
     BucketId bid(14, 0x1337);
 
-    StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
-
     std::vector<MergeBucketCommand::Node> nodes;
     nodes.push_back(0);
     nodes.push_back(2);
     nodes.push_back(MergeBucketCommand::Node(1, true));
     auto cmd = std::make_shared<MergeBucketCommand>(makeDocumentBucket(bid), nodes, UINT_MAX, 123);
 
-    cmd->setAddress(address);
+    cmd->setAddress(StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 0));
     _topLinks[0]->sendDown(cmd);
 
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
@@ -462,9 +458,7 @@ TEST_F(MergeThrottlerTest, legacy_42_distributor_behavior) {
     auto cmd = std::make_shared<MergeBucketCommand>(makeDocumentBucket(bid), nodes, 1234);
 
     // Send to node 1, which is not the lowest index
-    StorageMessageAddress address("storage", lib::NodeType::STORAGE, 1);
-
-    cmd->setAddress(address);
+    cmd->setAddress(StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1));
     _topLinks[1]->sendDown(cmd);
     _bottomLinks[1]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
@@ -502,9 +496,7 @@ TEST_F(MergeThrottlerTest, legacy_42_distributor_behavior_does_not_take_ownershi
     auto cmd = std::make_shared<MergeBucketCommand>(makeDocumentBucket(bid), nodes, 1234);
 
     // Send to node 1, which is not the lowest index
-    StorageMessageAddress address("storage", lib::NodeType::STORAGE, 1);
-
-    cmd->setAddress(address);
+    cmd->setAddress(StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1));
     _topLinks[1]->sendDown(cmd);
     _bottomLinks[1]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
@@ -556,9 +548,7 @@ TEST_F(MergeThrottlerTest, end_of_chain_execution_does_not_take_ownership) {
     auto cmd = std::make_shared<MergeBucketCommand>(makeDocumentBucket(bid), nodes, 1234, 1, chain);
 
     // Send to last node, which is not the lowest index
-    StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
-
-    cmd->setAddress(address);
+    cmd->setAddress(StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 3));
     _topLinks[2]->sendDown(cmd);
     _bottomLinks[2]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
@@ -606,9 +596,7 @@ TEST_F(MergeThrottlerTest, resend_handling) {
     nodes.push_back(2);
     auto cmd = std::make_shared<MergeBucketCommand>(makeDocumentBucket(bid), nodes, 1234);
 
-    StorageMessageAddress address("storage", lib::NodeType::STORAGE, 1);
-
-    cmd->setAddress(address);
+    cmd->setAddress(StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1));
     _topLinks[0]->sendDown(cmd);
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
@@ -1010,9 +998,8 @@ TEST_F(MergeThrottlerTest, unseen_merge_with_node_in_chain) {
     auto cmd = std::make_shared<MergeBucketCommand>(
             makeDocumentBucket(BucketId(32, 0xdeadbeef)), nodes, 1234, 1, chain);
 
-    StorageMessageAddress address("storage", lib::NodeType::STORAGE, 9);
 
-    cmd->setAddress(address);
+    cmd->setAddress(StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 9));
     _topLinks[0]->sendDown(cmd);
 
     // First, test that we get rejected when processing merge immediately
@@ -1220,9 +1207,7 @@ TEST_F(MergeThrottlerTest, unknown_merge_with_self_in_chain) {
     chain.push_back(0);
     auto cmd = std::make_shared<MergeBucketCommand>(makeDocumentBucket(bid), nodes, 1234, 1, chain);
 
-    StorageMessageAddress address("storage", lib::NodeType::STORAGE, 1);
-
-    cmd->setAddress(address);
+    cmd->setAddress(StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1));
     _topLinks[0]->sendDown(cmd);
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
 
@@ -1235,6 +1220,7 @@ TEST_F(MergeThrottlerTest, unknown_merge_with_self_in_chain) {
 TEST_F(MergeThrottlerTest, busy_returned_on_full_queue) {
     size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
     size_t maxQueue = _throttlers[0]->getMaxQueueSize();
+    ASSERT_EQ(20, maxQueue);
     ASSERT_LT(maxPending, 100);
     for (std::size_t i = 0; i < maxPending + maxQueue; ++i) {
         std::vector<MergeBucketCommand::Node> nodes;
@@ -1249,6 +1235,7 @@ TEST_F(MergeThrottlerTest, busy_returned_on_full_queue) {
     // Wait till we have maxPending replies and maxQueue queued
     _topLinks[0]->waitForMessages(maxPending, _messageWaitTime);
     waitUntilMergeQueueIs(*_throttlers[0], maxQueue, _messageWaitTime);
+    EXPECT_EQ(maxQueue, _throttlers[0]->getMetrics().queueSize.getMaximum());
 
     // Clear all forwarded merges
     _topLinks[0]->getRepliesOnce();
@@ -1369,8 +1356,7 @@ TEST_F(MergeThrottlerTest, get_bucket_diff_command_not_in_active_set_is_rejected
 TEST_F(MergeThrottlerTest, apply_bucket_diff_command_not_in_active_set_is_rejected) {
     document::BucketId bucket(16, 1234);
     std::vector<api::GetBucketDiffCommand::Node> nodes;
-    auto applyDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(
-            makeDocumentBucket(bucket), nodes, api::Timestamp(1234));
+    auto applyDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(makeDocumentBucket(bucket), nodes);
 
     ASSERT_NO_FATAL_FAILURE(sendAndExpectReply(applyDiffCmd,
             api::MessageType::APPLYBUCKETDIFF_REPLY,

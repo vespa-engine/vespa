@@ -52,8 +52,8 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
      * Called when a response is received from this node.
      */
     public void responded() {
-        respondedAt=now();
-        succeededAt=respondedAt;
+        respondedAt = now();
+        succeededAt = respondedAt;
 
         setWorking(true,"Responds correctly");
     }
@@ -69,20 +69,20 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
         atStartUp = false;
         if (this.isWorking == working) return; // Old news
 
-        if (explanation==null) {
-            explanation="";
+        if (explanation == null) {
+            explanation = "";
         } else {
-            explanation=": " + explanation;
+            explanation = ": " + explanation;
         }
 
         if (working) {
             log.info("Putting " + node + " in service" + explanation);
         } else {
             log.warning("Taking " + node + " out of service" + explanation);
-            failedAt=now();
+            failedAt = now();
         }
 
-        this.isWorking=working;
+        this.isWorking = working;
     }
 
 }

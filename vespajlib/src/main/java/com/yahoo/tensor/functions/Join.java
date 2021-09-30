@@ -9,6 +9,7 @@ import com.yahoo.tensor.PartialAddress;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -49,7 +50,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
     /** Returns the type resulting from applying Join to the two given types */
     public static TensorType outputType(TensorType a, TensorType b) {
         try {
-            return new TensorType.Builder(false, a, b).build();
+            return TypeResolver.join(a, b);
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Can not join " + a + " and " + b, e);
@@ -125,9 +126,10 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         Tensor.Builder builder = Tensor.Builder.of(joinedType);
         for (Iterator<Tensor.Cell> i = a.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> aCell = i.next();
-            double bCellValue = b.get(aCell.getKey());
-            if (Double.isNaN(bCellValue)) continue; // no match
-            builder.cell(aCell.getKey(), combinator.applyAsDouble(aCell.getValue(), bCellValue));
+            var key = aCell.getKey();
+            if (b.has(key)) {
+                builder.cell(key, combinator.applyAsDouble(aCell.getValue(), b.get(key)));
+            }
         }
         return builder.build();
     }
@@ -202,11 +204,12 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         for (Iterator<Tensor.Cell> i = superspace.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> supercell = i.next();
             TensorAddress subaddress = mapAddressToSubspace(supercell.getKey(), subspaceIndexes);
-            double subspaceValue = subspace.get(subaddress);
-            if ( ! Double.isNaN(subspaceValue))
+            if (subspace.has(subaddress)) {
+                double subspaceValue = subspace.get(subaddress);
                 builder.cell(supercell.getKey(),
                         reversedArgumentOrder ? combinator.applyAsDouble(supercell.getValue(), subspaceValue)
-                                : combinator.applyAsDouble(subspaceValue, supercell.getValue()));
+                             : combinator.applyAsDouble(subspaceValue, supercell.getValue()));
+            }
         }
         return builder.build();
     }

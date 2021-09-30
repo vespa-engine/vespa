@@ -5,7 +5,6 @@
 #include "executor_metrics.h"
 #include "resource_usage_metrics.h"
 #include "trans_log_server_metrics.h"
-#include <vespa/metrics/metrics.h>
 
 namespace proton {
 

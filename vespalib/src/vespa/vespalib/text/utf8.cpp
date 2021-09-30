@@ -175,8 +175,9 @@ Utf8ReaderForZTS::getComplexChar(unsigned char firstbyte, uint32_t fallback)
 }
 
 
-Utf8Writer&
-Utf8Writer::putChar(uint32_t codepoint)
+template <typename Target>
+Utf8Writer<Target>&
+Utf8Writer<Target>::putChar(uint32_t codepoint)
 {
     if (codepoint < 0x80) {
         _target.push_back((char)codepoint);
@@ -229,5 +230,23 @@ Utf8Writer::putChar(uint32_t codepoint)
     return *this;
 }
 
+template class Utf8Writer<vespalib::string>;
+template class Utf8Writer<std::string>;
 
-} // namespace vespalib
+template <typename T>
+T Utf8::filter_invalid_sequences(const T& input)
+{
+    T retval;
+    Utf8Reader reader(input.c_str(), input.size());
+    Utf8Writer writer(retval);
+    while (reader.hasMore()) {
+        uint32_t ch = reader.getChar();
+        writer.putChar(ch);
+    }
+    return retval;
+}
+
+template vespalib::string Utf8::filter_invalid_sequences(const vespalib::string&);
+template std::string Utf8::filter_invalid_sequences(const std::string&);
+
+} // namespace

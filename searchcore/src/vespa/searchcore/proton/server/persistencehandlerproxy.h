@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/persistenceengine/ipersistencehandler.h>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
 
 namespace proton {
 
@@ -13,22 +14,23 @@ class ClusterStateHandler;
 class PersistenceHandlerProxy : public IPersistenceHandler
 {
 private:
-    std::shared_ptr<DocumentDB>       _documentDB;
-    FeedHandler         &_feedHandler;
-    BucketHandler       &_bucketHandler;
-    ClusterStateHandler &_clusterStateHandler;
+    std::shared_ptr<DocumentDB>  _documentDB;
+    FeedHandler                 &_feedHandler;
+    BucketHandler               &_bucketHandler;
+    ClusterStateHandler         &_clusterStateHandler;
+    RetainGuard                  _retainGuard;
 public:
-    PersistenceHandlerProxy(const std::shared_ptr<DocumentDB> &documentDB);
+    explicit PersistenceHandlerProxy(std::shared_ptr<DocumentDB> documentDB);
 
-    virtual ~PersistenceHandlerProxy();
+    ~PersistenceHandlerProxy() override;
 
 
     void initialize() override;
     void handlePut(FeedToken token, const storage::spi::Bucket &bucket,
-                   storage::spi::Timestamp timestamp, const DocumentSP &doc) override;
+                   storage::spi::Timestamp timestamp, DocumentSP doc) override;
 
     void handleUpdate(FeedToken token, const storage::spi::Bucket &bucket,
-                      storage::spi::Timestamp timestamp, const DocumentUpdateSP &upd) override;
+                      storage::spi::Timestamp timestamp, DocumentUpdateSP upd) override;
 
     void handleRemove(FeedToken token, const storage::spi::Bucket &bucket,
                       storage::spi::Timestamp timestamp,
@@ -52,7 +54,6 @@ public:
                     const storage::spi::Bucket &target1, const storage::spi::Bucket &target2) override;
 
     RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency consistency) override;
-    BucketGuard::UP lockBucket(const storage::spi::Bucket &bucket) override;
 
     void handleListActiveBuckets(IBucketIdListResultHandler &resultHandler) override;
 

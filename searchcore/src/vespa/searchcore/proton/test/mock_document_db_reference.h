@@ -7,8 +7,7 @@
 namespace search::attribute { class ReadableAttributeVector; }
 namespace search { class IGidToLidMapperFactory; }
 
-namespace proton {
-namespace test {
+namespace proton::test {
 
 /**
  * Mock of the IDocumentDBReference interface used for unit testing.
@@ -29,5 +28,4 @@ struct MockDocumentDBReference : public IDocumentDBReference {
     }
 };
 
-}
 }

@@ -11,7 +11,6 @@ import java.io.File;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class FilesApplicationFileTest extends ApplicationFileTest {
 

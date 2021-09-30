@@ -3,16 +3,22 @@
 #include "forcecommitcontext.h"
 #include "forcecommitdonetask.h"
 #include <vespa/searchcore/proton/common/docid_limit.h>
+#include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
 #include <cassert>
 
 namespace proton {
 
 ForceCommitContext::ForceCommitContext(vespalib::Executor &executor,
-                                       IDocumentMetaStore &documentMetaStore)
+                                       IDocumentMetaStore &documentMetaStore,
+                                       PendingLidTrackerBase::Snapshot lidsToCommit,
+                                       std::unique_ptr<IPendingGidToLidChanges> pending_gid_to_lid_changes,
+                                       std::shared_ptr<IDestructorCallback> onDone)
     : _executor(executor),
-      _task(std::make_unique<ForceCommitDoneTask>(documentMetaStore)),
+      _task(std::make_unique<ForceCommitDoneTask>(documentMetaStore, std::move(pending_gid_to_lid_changes))),
       _committedDocIdLimit(0u),
-      _docIdLimit(nullptr)
+      _docIdLimit(nullptr),
+      _onDone(std::move(onDone)),
+      _lidsToCommit(std::move(lidsToCommit))
 {
 }
 
@@ -40,8 +46,7 @@ ForceCommitContext::holdUnblockShrinkLidSpace()
 }
 
 void
-ForceCommitContext::registerCommittedDocIdLimit(uint32_t committedDocIdLimit,
-                                                DocIdLimit *docIdLimit)
+ForceCommitContext::registerCommittedDocIdLimit(uint32_t committedDocIdLimit, DocIdLimit *docIdLimit)
 {
     _committedDocIdLimit = committedDocIdLimit;
     _docIdLimit = docIdLimit;

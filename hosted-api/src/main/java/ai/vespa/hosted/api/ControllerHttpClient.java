@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.api;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -12,13 +12,14 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.JsonDecoder;
-import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
+import com.yahoo.text.Utf8;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -29,14 +30,17 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.OptionalLong;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -59,11 +63,18 @@ public abstract class ControllerHttpClient {
     private final URI endpoint;
 
     /** Creates an HTTP client against the given endpoint, using the given HTTP client builder to create a client. */
-    protected ControllerHttpClient(URI endpoint, HttpClient.Builder client) {
+    protected ControllerHttpClient(URI endpoint, SSLContext sslContext) {
+        if (sslContext == null) {
+            try { sslContext = SSLContext.getDefault(); }
+            catch (NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+        }
+
         this.endpoint = endpoint.resolve("/");
-        this.client = client.connectTimeout(Duration.ofSeconds(5))
-                            .version(HttpClient.Version.HTTP_1_1)
-                            .build();
+        this.client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5))
+                                .version(HttpClient.Version.HTTP_1_1)
+                                .sslContext(sslContext)
+                                .sslParameters(tlsv12Parameters(sslContext))
+                                .build();
     }
 
     /** Creates an HTTP client against the given endpoint, which uses the given key to authenticate as the given application. */
@@ -74,6 +85,11 @@ public abstract class ControllerHttpClient {
     /** Creates an HTTP client against the given endpoint, which uses the given key to authenticate as the given application. */
     public static ControllerHttpClient withSignatureKey(URI endpoint, Path privateKeyFile, ApplicationId id) {
         return new SigningControllerHttpClient(endpoint, privateKeyFile, id);
+    }
+
+    /** Creates an HTTP client against the given endpoint, which uses the given SSL context for authentication. */
+    public static ControllerHttpClient withSSLContext(URI endpoint, SSLContext sslContext) {
+        return new MutualTlsControllerHttpClient(endpoint, sslContext);
     }
 
     /** Creates an HTTP client against the given endpoint, which uses the given private key and certificate identity. */
@@ -115,6 +131,13 @@ public abstract class ControllerHttpClient {
                                       DELETE)));
     }
 
+    /** Sets suspension status of the given application in the given zone. */
+    public String suspend(ApplicationId id, ZoneId zone, boolean suspend) {
+        return toMessage(send(request(HttpRequest.newBuilder(suspendPath(id, zone))
+                                                 .timeout(Duration.ofSeconds(10)),
+                                      suspend ? POST : DELETE)));
+    }
+
     /** Returns the default {@link ZoneId} for the given environment, if any. */
     public ZoneId defaultZone(Environment environment) {
         Inspector rootObject = toInspector(send(request(HttpRequest.newBuilder(defaultRegionPath(environment))
@@ -125,7 +148,7 @@ public abstract class ControllerHttpClient {
 
     /** Returns the Vespa version to compile against, for a hosted Vespa application. This is its lowest runtime version. */
     public String compileVersion(ApplicationId id) {
-        return toInspector(send(request(HttpRequest.newBuilder(applicationPath(id.tenant(), id.application()))
+        return toInspector(send(request(HttpRequest.newBuilder(compileVersionPath(id.tenant(), id.application()))
                                                    .timeout(Duration.ofSeconds(20)),
                                         GET)))
                 .field("compileVersion").asString();
@@ -141,8 +164,41 @@ public abstract class ControllerHttpClient {
     /** Returns the sorted list of log entries after the given after from the deployment job of the given ids. */
     public DeploymentLog deploymentLog(ApplicationId id, ZoneId zone, long run, long after) {
         return toDeploymentLog(send(request(HttpRequest.newBuilder(runPath(id, zone, run, after))
-                                                       .timeout(Duration.ofSeconds(10)),
+                                                       .timeout(Duration.ofMinutes(2)),
                                             GET)));
+    }
+
+    /** Returns the application package of the given id. */
+    public HttpResponse<byte[]> applicationPackage(ApplicationId id) {
+        return send(request(HttpRequest.newBuilder(applicationPackagePath(id))
+                                       .timeout(Duration.ofMinutes(2)),
+                            GET));
+    }
+
+    /** Follows the given deployment job until it is done, or this thread is interrupted, at which point the current status is returned. */
+    public DeploymentLog followDeploymentUntilDone(ApplicationId id, ZoneId zone, long run,
+                                                   Consumer<DeploymentLog.Entry> out) {
+        long last = -1;
+        DeploymentLog log = null;
+        while (true) {
+            DeploymentLog update = deploymentLog(id, zone, run, last);
+            for (DeploymentLog.Entry entry : update.entries())
+                out.accept(entry);
+            log = (log == null ? update : log.updatedWith(update));
+            last = log.last().orElse(last);
+
+            if ( ! log.isActive())
+                break;
+
+            try {
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        return log;
     }
 
     /** Returns the sorted list of log entries from the deployment job of the given ids. */
@@ -179,6 +235,10 @@ public abstract class ControllerHttpClient {
         return concatenated(tenantPath(tenant), "application", application.value());
     }
 
+    private URI compileVersionPath(TenantName tenant, ApplicationName application) {
+        return concatenated(applicationPath(tenant, application), "compile-version");
+    }
+
     private URI instancePath(ApplicationId id) {
         return concatenated(applicationPath(id.tenant(), id.application()), "instance", id.instance().value());
     }
@@ -187,6 +247,10 @@ public abstract class ControllerHttpClient {
         return concatenated(instancePath(id),
                             "environment", zone.environment().value(),
                             "region", zone.region().value());
+    }
+
+    private URI suspendPath(ApplicationId id, ZoneId zone) {
+        return concatenated(deploymentPath(id, zone), "suspend");
     }
 
     private URI deploymentJobPath(ApplicationId id, ZoneId zone) {
@@ -206,6 +270,10 @@ public abstract class ControllerHttpClient {
         return withQuery(concatenated(jobPath(id, zone),
                                       "run", Long.toString(run)),
                          "after", Long.toString(after));
+    }
+
+    private URI applicationPackagePath(ApplicationId id) {
+        return concatenated(applicationPath(id.tenant(), id.application()), "package");
     }
 
     private URI defaultRegionPath(Environment environment) {
@@ -239,21 +307,24 @@ public abstract class ControllerHttpClient {
                                  (rootObject.field("error-code").valid() ? " (" + rootObject.field("error-code").asString() + ")" : "") +
                                  ": " + rootObject.field("message").asString();
 
+                if (response.statusCode() == 403)
+                    throw new IllegalArgumentException("Access denied for " + request + ": " + message);
+
                 if (response.statusCode() / 100 == 4)
-                    throw new IllegalArgumentException(message);
+                    throw new IllegalArgumentException("Bad request for " + request + ": " + message);
 
                 throw new IOException(message);
 
             }
             catch (IOException e) { // Catches the above, and timeout exceptions from the client.
                 if (thrown == null)
-                    thrown = new UncheckedIOException(e);
+                    thrown = new UncheckedIOException("Failed " + request + ": " + e, e);
                 else
                     thrown.addSuppressed(e);
 
                 if (attempt < 10)
                     try {
-                        Thread.sleep(100 << attempt);
+                        Thread.sleep(10 << attempt);
                     }
                     catch (InterruptedException f) {
                         throw new RuntimeException(f);
@@ -280,7 +351,8 @@ public abstract class ControllerHttpClient {
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();
         deployment.version().ifPresent(version -> rootObject.setString("vespaVersion", version));
-        rootObject.setBool("deployDirectly", true);
+        if (deployment.isDryRun())
+            rootObject.setString("dryRun", "true");
         return toJson(slime);
     }
 
@@ -344,18 +416,22 @@ public abstract class ControllerHttpClient {
     }
 
     private static Slime toSlime(byte[] data) {
-        return new JsonDecoder().decode(new Slime(), data);
+        return SlimeUtils.jsonToSlime(data);
     }
 
     private static String toJson(Slime slime) {
         try {
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            new JsonFormat(true).encode(buffer, slime);
-            return buffer.toString(UTF_8);
+            return Utf8.toString(SlimeUtils.toJsonBytes(slime));
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static SSLParameters tlsv12Parameters(SSLContext sslContext) {
+        SSLParameters parameters = sslContext.getDefaultSSLParameters();
+        parameters.setProtocols(new String[]{ "TLSv1.2" });
+        return parameters;
     }
 
 
@@ -365,7 +441,7 @@ public abstract class ControllerHttpClient {
         private final RequestSigner signer;
 
         private SigningControllerHttpClient(URI endpoint, String privateKey, ApplicationId id) {
-            super(endpoint, HttpClient.newBuilder());
+            super(endpoint, null);
             this.signer = new RequestSigner(privateKey, id.serializedForm());
         }
 
@@ -384,25 +460,29 @@ public abstract class ControllerHttpClient {
     /** Client that uses a given key / certificate identity to authenticate to the remote controller. */
     private static class MutualTlsControllerHttpClient extends ControllerHttpClient {
 
+        private MutualTlsControllerHttpClient(URI endpoint, SSLContext sslContext) {
+            super(endpoint, Objects.requireNonNull(sslContext));
+        }
+
         private MutualTlsControllerHttpClient(URI endpoint, PrivateKey privateKey, List<X509Certificate> certs) {
-            super(endpoint,
-                  HttpClient.newBuilder()
-                            .sslContext(new SslContextBuilder().withKeyStore(privateKey, certs).build()));
+            this(endpoint, new SslContextBuilder().withKeyStore(privateKey, certs).build());
         }
 
     }
 
+
     private static DeploymentLog.Status valueOf(String status) {
         switch (status) {
-            case "running":             return DeploymentLog.Status.running;
-            case "aborted":             return DeploymentLog.Status.aborted;
-            case "error":               return DeploymentLog.Status.error;
-            case "testFailure":         return DeploymentLog.Status.testFailure;
-            case "outOfCapacity":       return DeploymentLog.Status.outOfCapacity;
-            case "installationFailed":  return DeploymentLog.Status.installationFailed;
-            case "deploymentFailed":    return DeploymentLog.Status.deploymentFailed;
-            case "success":             return DeploymentLog.Status.success;
-            default:                    throw new IllegalArgumentException("Unexpected status '" + status + "'");
+            case "running":                    return DeploymentLog.Status.running;
+            case "aborted":                    return DeploymentLog.Status.aborted;
+            case "error":                      return DeploymentLog.Status.error;
+            case "testFailure":                return DeploymentLog.Status.testFailure;
+            case "outOfCapacity":              return DeploymentLog.Status.outOfCapacity;
+            case "installationFailed":         return DeploymentLog.Status.installationFailed;
+            case "deploymentFailed":           return DeploymentLog.Status.deploymentFailed;
+            case "endpointCertificateTimeout": return DeploymentLog.Status.endpointCertificateTimeout;
+            case "success":                    return DeploymentLog.Status.success;
+            default: throw new IllegalArgumentException("Unexpected status '" + status + "'");
         }
     }
 

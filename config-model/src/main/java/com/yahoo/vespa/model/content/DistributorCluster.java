@@ -41,6 +41,8 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
     private final BucketSplitting bucketSplitting;
     private final GcOptions gc;
     private final boolean hasIndexedDocumentType;
+    private final boolean useThreePhaseUpdates;
+    private final int maxActivationInhibitedOutOfSyncGroups;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<DistributorCluster> {
 
@@ -101,20 +103,28 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
             final ModelElement documentsNode = clusterElement.child("documents");
             final GcOptions gc = parseGcOptions(documentsNode);
             final boolean hasIndexedDocumentType = clusterContainsIndexedDocumentType(documentsNode);
+            boolean useThreePhaseUpdates = deployState.getProperties().featureFlags().useThreePhaseUpdates();
+            int maxInhibitedGroups = deployState.getProperties().featureFlags().maxActivationInhibitedOutOfSyncGroups();
 
             return new DistributorCluster(parent,
-                    new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc, hasIndexedDocumentType);
+                    new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
+                    hasIndexedDocumentType, useThreePhaseUpdates,
+                    maxInhibitedGroups);
         }
     }
 
     private DistributorCluster(ContentCluster parent, BucketSplitting bucketSplitting,
-                               GcOptions gc, boolean hasIndexedDocumentType)
+                               GcOptions gc, boolean hasIndexedDocumentType,
+                               boolean useThreePhaseUpdates,
+                               int maxActivationInhibitedOutOfSyncGroups)
     {
         super(parent, "distributor");
         this.parent = parent;
         this.bucketSplitting = bucketSplitting;
         this.gc = gc;
         this.hasIndexedDocumentType = hasIndexedDocumentType;
+        this.useThreePhaseUpdates = useThreePhaseUpdates;
+        this.maxActivationInhibitedOutOfSyncGroups = maxActivationInhibitedOutOfSyncGroups;
     }
 
     @Override
@@ -126,6 +136,8 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         }
         builder.enable_revert(parent.getPersistence().supportRevert());
         builder.disable_bucket_activation(hasIndexedDocumentType == false);
+        builder.enable_metadata_only_fetch_phase_for_inconsistent_updates(useThreePhaseUpdates);
+        builder.max_activation_inhibited_out_of_sync_groups(maxActivationInhibitedOutOfSyncGroups);
 
         bucketSplitting.getConfig(builder);
     }

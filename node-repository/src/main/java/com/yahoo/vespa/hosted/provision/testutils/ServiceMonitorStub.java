@@ -32,8 +32,7 @@ public class ServiceMonitorStub implements ServiceMonitor {
 
     private final Map<ApplicationId, MockDeployer.ApplicationContext> apps;
     private final NodeRepository nodeRepository;
-
-    private Set<String> downHosts = new HashSet<>();
+    private final Set<String> downHosts = new HashSet<>();
 
     /** Create a service monitor where all nodes are initially up */
     @Inject
@@ -71,15 +70,15 @@ public class ServiceMonitorStub implements ServiceMonitor {
         Map<ApplicationInstanceReference, ApplicationInstance> status = new HashMap<>();
         for (Map.Entry<ApplicationId, MockDeployer.ApplicationContext> app : apps.entrySet()) {
             Set<ServiceInstance> serviceInstances = new HashSet<>();
-            for (Node node : nodeRepository.getNodes(app.getValue().id(), Node.State.active)) {
+            for (Node node : nodeRepository.nodes().list(Node.State.active).owner(app.getValue().id())) {
                 serviceInstances.add(new ServiceInstance(new ConfigId("configid"),
-							 new HostName(node.hostname()),
-							 getHostStatus(node.hostname())));
+                                                         new HostName(node.hostname()),
+                                                         getHostStatus(node.hostname())));
             }
             Set<ServiceCluster> serviceClusters = new HashSet<>();
             serviceClusters.add(new ServiceCluster(new ClusterId(app.getValue().clusterContexts().get(0).cluster().id().value()),
-						   new ServiceType("serviceType"),
-						   serviceInstances));
+                                                   new ServiceType("serviceType"),
+                                                   serviceInstances));
             TenantId tenantId = new TenantId(app.getKey().tenant().value());
             ApplicationInstanceId applicationInstanceId = new ApplicationInstanceId(app.getKey().application().value());
             status.put(new ApplicationInstanceReference(tenantId, applicationInstanceId),

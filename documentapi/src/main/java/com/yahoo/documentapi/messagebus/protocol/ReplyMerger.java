@@ -3,6 +3,7 @@ package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.collections.Tuple2;
 import com.yahoo.messagebus.EmptyReply;
+import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.Reply;
 
 /**
@@ -57,13 +58,20 @@ final class ReplyMerger {
             return;
         }
         if (error == null) {
-            error = new EmptyReply();
-            r.swapState(error);
-            return;
+            error = r;
         }
-        for (int j = 0; j < r.getNumErrors(); ++j) {
-            error.addError(r.getError(j));
+        else if (mostSevereErrorCode(r) > mostSevereErrorCode(error)) {
+            error.getErrors().forEach(r::addError);
+            error = r;
         }
+        else {
+            r.getErrors().forEach(error::addError);
+        }
+    }
+
+    private static int mostSevereErrorCode(Reply reply) {
+        return reply.getErrors().mapToInt(Error::getCode).max()
+                .orElseThrow(() -> new IllegalArgumentException(reply + " has no errors"));
     }
 
     private boolean handleReplyWithOnlyIgnoredErrors(Reply r) {
@@ -96,7 +104,7 @@ final class ReplyMerger {
     }
 
     private Tuple2<Integer, Reply> createEmptyReplyResult() {
-        return new Tuple2<>(null, (Reply)new EmptyReply());
+        return new Tuple2<>(null, new EmptyReply());
     }
 
     public Tuple2<Integer, Reply> mergedReply() {

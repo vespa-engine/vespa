@@ -23,4 +23,7 @@ public interface CredentialsMaintainer {
 
     /** Get time until the certificate expires. Invoked each time metrics are collected.  */
     Duration certificateLifetime(NodeAgentContext context);
+
+    /** Name used when reporting metrics */
+    String name();
 }

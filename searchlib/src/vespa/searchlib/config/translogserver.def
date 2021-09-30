@@ -5,7 +5,7 @@ namespace=searchlib
 listenport int default=13700 restart
 
 ## Max file size (50M)
-filesizemax int default=50000000 restart
+filesizemax int default=50000000
 
 ## Server name to identify server.
 servername string default="tls" restart
@@ -15,10 +15,21 @@ basedir string default="tmp" restart
 
 ## Use fsync after each commit.
 ## If not the below interval is used.
-usefsync bool default=false restart
+usefsync bool default=true
 
 ##Number of threads available for visiting/subscription.
 maxthreads int default=4 restart
 
 ##Default crc method used
 crcmethod enum {ccitt_crc32, xxh64} default=xxh64
+
+## Control compression type.
+compression.type enum {NONE, NONE_MULTI, LZ4, ZSTD} default=ZSTD
+
+## Control compression level
+## LZ4 has normal range 1..9 while ZSTD has range 1..19
+## 9 is a reasonable default for both
+compression.level int default=3
+
+## How large a chunk can grow in memory before beeing flushed
+chunk.sizelimit int default = 256000  # 256k

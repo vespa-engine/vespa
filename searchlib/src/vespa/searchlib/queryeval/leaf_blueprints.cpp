@@ -16,6 +16,12 @@ EmptyBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &,
     return std::make_unique<EmptySearch>();
 }
 
+SearchIterator::UP
+EmptyBlueprint::createFilterSearch(bool /*strict*/, FilterConstraint /* constraint */) const
+{
+    return std::make_unique<EmptySearch>();
+}
+
 EmptyBlueprint::EmptyBlueprint(const FieldSpecBase &field)
     : SimpleLeafBlueprint(field)
 {
@@ -39,6 +45,17 @@ SimpleBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, 
     SimpleSearch *ss = new SimpleSearch(_result);
     SearchIterator::UP search(ss);
     ss->tag(_tag);
+    return search;
+}
+
+SearchIterator::UP
+SimpleBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+{
+    SimpleSearch *ss = new SimpleSearch(_result);
+    SearchIterator::UP search(ss);
+    ss->tag(_tag +
+            (strict ? "<strict," : "<nostrict,") +
+            (constraint == FilterConstraint::UPPER_BOUND ? "upper>" : "lower>"));
     return search;
 }
 

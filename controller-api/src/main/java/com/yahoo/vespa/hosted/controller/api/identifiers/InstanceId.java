@@ -19,6 +19,7 @@ public class InstanceId extends SerializedIdentifier {
     public static void validate(String id) {
         if ( ! strictPattern.matcher(id).matches())
             throwInvalidId(id, strictPatternExplanation);
+        new InstanceId(id); // validate
     }
 
 }

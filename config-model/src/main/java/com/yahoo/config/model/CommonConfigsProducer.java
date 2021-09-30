@@ -2,6 +2,8 @@
 package com.yahoo.config.model;
 
 import com.yahoo.cloud.config.ApplicationIdConfig;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
+import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.cloud.config.SlobroksConfig;
@@ -25,11 +27,13 @@ public interface CommonConfigsProducer extends DocumentmanagerConfig.Producer,
                                                DocumenttypesConfig.Producer,
                                                MessagebusConfig.Producer,
                                                DocumentrouteselectorpolicyConfig.Producer,
+                                               DocumentProtocolPoliciesConfig.Producer,
                                                LogdConfig.Producer,
                                                SlobroksConfig.Producer,
                                                ZookeepersConfig.Producer,
                                                LoadTypeConfig.Producer,
                                                ClusterListConfig.Producer,
+                                               DistributionConfig.Producer,
                                                AllClustersBucketSpacesConfig.Producer,
                                                ModelConfig.Producer,
                                                ApplicationIdConfig.Producer {

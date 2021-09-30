@@ -1,8 +1,67 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "generationhandler.h"
+#include <cassert>
 
 namespace vespalib {
+
+GenerationHandler::GenerationHold::GenerationHold(void)
+    : _refCount(1),
+      _generation(0),
+      _next(0)
+{ }
+
+GenerationHandler::GenerationHold::~GenerationHold() {
+    assert(getRefCount() == 0);
+}
+
+void
+GenerationHandler::GenerationHold::setValid() {
+    assert(!valid(_refCount));
+    _refCount.fetch_sub(1);
+}
+
+bool
+GenerationHandler::GenerationHold::setInvalid() {
+    uint32_t refs = _refCount;
+    assert(valid(refs));
+    if (refs != 0) {
+        return false;
+    }
+    return _refCount.compare_exchange_strong(refs, 1, std::memory_order_seq_cst);
+}
+
+void
+GenerationHandler::GenerationHold::release() {
+    _refCount.fetch_sub(2);
+}
+
+GenerationHandler::GenerationHold *
+GenerationHandler::GenerationHold::acquire() {
+    if (valid(_refCount.fetch_add(2))) {
+        return this;
+    } else {
+        release();
+        return nullptr;
+    }
+}
+
+GenerationHandler::GenerationHold *
+GenerationHandler::GenerationHold::copy(GenerationHold *self) {
+    if (self == nullptr) {
+        return nullptr;
+    } else {
+        uint32_t oldRefCount = self->_refCount.fetch_add(2);
+        (void) oldRefCount;
+        assert(valid(oldRefCount));
+        return self;
+    }
+}
+
+uint32_t
+GenerationHandler::GenerationHold::getRefCount() const {
+    return _refCount / 2;
+}
 
 GenerationHandler::Guard::Guard()
     : _hold(nullptr)
@@ -51,7 +110,6 @@ GenerationHandler::Guard::operator=(Guard &&rhs)
     return *this;
 }
 
-
 void
 GenerationHandler::updateFirstUsedGeneration()
 {
@@ -73,7 +131,6 @@ GenerationHandler::updateFirstUsedGeneration()
     _firstUsedGeneration = _first->_generation;
 }
 
-
 GenerationHandler::GenerationHandler()
     : _generation(0),
       _firstUsedGeneration(0),
@@ -88,10 +145,8 @@ GenerationHandler::GenerationHandler()
     _last->setValid();
 }
 
-
 GenerationHandler::~GenerationHandler(void)
 {
-
     updateFirstUsedGeneration();
     assert(_first == _last);
     while (_free != nullptr) {
@@ -164,7 +219,6 @@ GenerationHandler::incGeneration()
     updateFirstUsedGeneration();
 }
 
-
 uint32_t
 GenerationHandler::getGenerationRefCount(generation_t gen) const
 {
@@ -179,7 +233,6 @@ GenerationHandler::getGenerationRefCount(generation_t gen) const
     return 0u;
 }
 
-
 uint64_t
 GenerationHandler::getGenerationRefCount(void) const
 {
@@ -189,7 +242,6 @@ GenerationHandler::getGenerationRefCount(void) const
     }
     return ret;
 }
-
 
 bool
 GenerationHandler::hasReaders(void) const

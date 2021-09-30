@@ -44,7 +44,7 @@ public class BuilderGenerator {
     }
 
     private static String getSpecialRootBuilderCode(InnerCNode node) {
-        return (node.getParent() == null) ? "\n" + getDispatchCode() + "\n" : "";
+        return (node.getParent() == null) ? "\n" + getRootDeclarations() + "\n" : "";
     }
 
     private static String getBuildMethod(InnerCNode node) {
@@ -53,26 +53,36 @@ public class BuilderGenerator {
                "}\n";
     }
 
-    private static String getDispatchCode() {
+    private static String getRootDeclarations() {
         // Use full path to @Override, as users are free to define an inner node called
         // 'override'. (summarymap.def does)
         // The generated inner 'Override' class would otherwise be mistaken for the
         // annotation.
-        return "@java.lang.Override\n" + //
-                "public final boolean dispatchGetConfig(ConfigInstance.Producer producer) {\n" + //
-                "  if (producer instanceof Producer) {\n" + //
-                "    ((Producer)producer).getConfig(this);\n" + //
-                "    return true;\n" + //
+        return  "private boolean _applyOnRestart = false;\n" +
+                "\n" +
+                "@java.lang.Override\n" +
+                "public final boolean dispatchGetConfig(ConfigInstance.Producer producer) {\n" +
+                "  if (producer instanceof Producer) {\n" +
+                "    ((Producer)producer).getConfig(this);\n" +
+                "    return true;\n" +
                 "  }\n" + //
-                "  return false;\n" + //
-                "}\n" + //
-                "\n" + //
-                "@java.lang.Override\n" + //
-                "public final String getDefMd5()       { return CONFIG_DEF_MD5; }\n" + //
-                "@java.lang.Override\n" + //
-                "public final String getDefName()      { return CONFIG_DEF_NAME; }\n" + //
-                "@java.lang.Override\n" + //
-                "public final String getDefNamespace() { return CONFIG_DEF_NAMESPACE; }";
+                "  return false;\n" +
+                "}\n" +
+                "\n" +
+                "@java.lang.Override\n" +
+                "public final String getDefMd5() { return CONFIG_DEF_MD5; }\n" +
+                "\n" +
+                "@java.lang.Override\n" +
+                "public final String getDefName() { return CONFIG_DEF_NAME; }\n" +
+                "\n" +
+                "@java.lang.Override\n" +
+                "public final String getDefNamespace() { return CONFIG_DEF_NAMESPACE; }\n" +
+                "\n" +
+                "@java.lang.Override\n" +
+                "public final boolean getApplyOnRestart() { return _applyOnRestart; }\n" +
+                "\n" +
+                "@java.lang.Override\n" +
+                "public final void setApplyOnRestart(boolean applyOnRestart) { _applyOnRestart = applyOnRestart; }";
     }
 
     private static String getUninitializedScalars(InnerCNode node) {

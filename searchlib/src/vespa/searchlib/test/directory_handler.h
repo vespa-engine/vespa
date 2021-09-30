@@ -5,8 +5,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace test {
+namespace search::test {
 
 class DirectoryHandler
 {
@@ -17,11 +16,8 @@ private:
 
 public:
     DirectoryHandler(const vespalib::string &mkdir)
-        : _mkdir(mkdir),
-          _rmdir(mkdir),
-          _cleanup(true)
+        : DirectoryHandler(mkdir, mkdir)
     {
-        vespalib::mkdir(_mkdir);
     }
     DirectoryHandler(const vespalib::string &mkdir,
                      const vespalib::string &rmdir)
@@ -37,8 +33,7 @@ public:
         }
     }
     void cleanup(bool v) { _cleanup = v; }
+    const  vespalib::string & getDir() const { return _mkdir; }
 };
 
 }
-}
-

@@ -4,17 +4,19 @@ package com.yahoo.docprocs.indexing;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.language.Linguistics;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
+
+import com.yahoo.language.process.Embedder;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
 import java.util.*;
-import java.util.logging.Level;
 
 /**
  * @author Simon Thoresen Hult
@@ -26,31 +28,31 @@ public class ScriptManager {
     private final Map<String, Map<String, DocumentScript>> documentFieldScripts;
     private final DocumentTypeManager docTypeMgr;
 
-    public ScriptManager(DocumentTypeManager docTypeMgr, IlscriptsConfig config, Linguistics linguistics) {
+    public ScriptManager(DocumentTypeManager docTypeMgr, IlscriptsConfig config, Linguistics linguistics, Embedder embedder) {
         this.docTypeMgr = docTypeMgr;
-        documentFieldScripts = createScriptsMap(docTypeMgr, config, linguistics);
+        documentFieldScripts = createScriptsMap(docTypeMgr, config, linguistics, embedder);
     }
 
 
     private Map<String, DocumentScript> getScripts(DocumentType inputType) {
         Map<String, DocumentScript> scripts = documentFieldScripts.get(inputType.getName());
         if (scripts != null) {
-            log.log(LogLevel.DEBUG, "Using script for type '%s'.", inputType.getName());
+            log.log(Level.FINE, "Using script for type '%s'.", inputType.getName());
             return scripts;
         }
         for (Map.Entry<String, Map<String, DocumentScript>> entry : documentFieldScripts.entrySet()) {
             if (inputType.inherits(docTypeMgr.getDocumentType(entry.getKey()))) {
-                log.log(LogLevel.DEBUG, "Using script of super-type '%s'.", entry.getKey());
+                log.log(Level.FINE, "Using script of super-type '%s'.", entry.getKey());
                 return entry.getValue();
             }
         }
         for (Map.Entry<String, Map<String, DocumentScript>> entry : documentFieldScripts.entrySet()) {
             if (docTypeMgr.getDocumentType(entry.getKey()).inherits(inputType)) {
-                log.log(LogLevel.DEBUG, "Using script of sub-type '%s'.", entry.getKey());
+                log.log(Level.FINE, "Using script of sub-type '%s'.", entry.getKey());
                 return entry.getValue();
             }
         }
-        log.log(LogLevel.DEBUG, "No script for type '%s'.", inputType.getName());
+        log.log(Level.FINE, "No script for type '%s'.", inputType.getName());
         return null;
     }
 
@@ -63,7 +65,7 @@ public class ScriptManager {
         if (fieldScripts != null) {
             DocumentScript script = fieldScripts.get(inputFieldName);
             if (script != null) {
-                log.log(LogLevel.DEBUG, "Using script for type '%s' and field '%s'.", inputType.getName(), inputFieldName);
+                log.log(Level.FINE, "Using script for type '%s' and field '%s'.", inputType.getName(), inputFieldName);
                 return script;
             }
         }
@@ -72,9 +74,10 @@ public class ScriptManager {
 
     private static Map<String, Map<String, DocumentScript>>  createScriptsMap(DocumentTypeManager docTypeMgr,
                                                                               IlscriptsConfig config,
-                                                                              Linguistics linguistics) {
+                                                                              Linguistics linguistics,
+                                                                              Embedder embedder) {
         Map<String, Map<String, DocumentScript>> documentFieldScripts = new HashMap<>(config.ilscript().size());
-        ScriptParserContext parserContext = new ScriptParserContext(linguistics);
+        ScriptParserContext parserContext = new ScriptParserContext(linguistics, embedder);
         parserContext.getAnnotatorConfig().setMaxTermOccurrences(config.maxtermoccurrences());
         parserContext.getAnnotatorConfig().setMaxTokenLength(config.fieldmatchmaxlength());
 
@@ -83,11 +86,17 @@ public class ScriptManager {
             List<StatementExpression> expressions = new ArrayList<>(ilscript.content().size());
             Map<String, DocumentScript> fieldScripts = new HashMap<>(ilscript.content().size());
             for (String content : ilscript.content()) {
-                expressions.add(parse(ilscript.doctype(), parserContext, content));
                 StatementExpression statement = parse(ilscript.doctype(), parserContext, content);
+                expressions.add(statement);
                 InputExpression.InputFieldNameExtractor inputFieldNameExtractor = new InputExpression.InputFieldNameExtractor();
                 statement.select(inputFieldNameExtractor, inputFieldNameExtractor);
+                OutputExpression.OutputFieldNameExtractor outputFieldNameExtractor = new OutputExpression.OutputFieldNameExtractor();
+                statement.select(outputFieldNameExtractor, outputFieldNameExtractor);
                 statement.select(fieldPathOptimizer, fieldPathOptimizer);
+                if ( ! outputFieldNameExtractor.getOutputFieldNames().isEmpty()) {
+                    String outputFieldName = outputFieldNameExtractor.getOutputFieldNames().get(0);
+		    statement.setStatementOutputType(docTypeMgr.getDocumentType(ilscript.doctype()).getField(outputFieldName).getDataType());
+                }
                 if (inputFieldNameExtractor.getInputFieldNames().size() == 1) {
                     String fieldName = inputFieldNameExtractor.getInputFieldNames().get(0);
                     ScriptExpression script;

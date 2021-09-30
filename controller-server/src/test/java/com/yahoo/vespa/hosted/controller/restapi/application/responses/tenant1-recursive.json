@@ -5,5 +5,10 @@
   "property": "property1",
   "applications": [
     @include(instance1-recursive.json)
-  ]
+  ],
+  "metaData": {
+    "createdAtMillis": "(ignore)",
+    "lastDeploymentToDevMillis": "(ignore)",
+    "lastSubmissionToProdMillis": 1000
+  }
 }

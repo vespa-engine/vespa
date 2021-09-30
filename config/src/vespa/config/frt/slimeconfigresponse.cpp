@@ -1,7 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "slimeconfigresponse.h"
 #include <vespa/config/common/misc.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/values.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.slimeconfigresponse");
@@ -22,6 +22,8 @@ SlimeConfigResponse::SlimeConfigResponse(FRT_RPCRequest * request)
 {
 }
 
+SlimeConfigResponse::~SlimeConfigResponse() = default;
+
 void
 SlimeConfigResponse::fill()
 {
@@ -30,9 +32,9 @@ SlimeConfigResponse::fill()
         return;
     }
     Memory json((*_returnValues)[0]._string._str);
-    Slime * data = new Slime();
+    auto data = std::make_unique<Slime>();
     JsonFormat::decode(json, *data);
-    _data.reset(data);
+    _data = std::move(data);
     _key = readKey();
     _state = readState();
     _value = readConfigValue();
@@ -50,7 +52,7 @@ SlimeConfigResponse::readTrace()
     _trace.deserialize(root[RESPONSE_TRACE]);
 }
 
-const ConfigKey
+ConfigKey
 SlimeConfigResponse::readKey() const
 {
     Inspector & root(_data->get());
@@ -60,11 +62,13 @@ SlimeConfigResponse::readKey() const
                      root[RESPONSE_DEF_MD5].asString().make_string());
 }
 
-const ConfigState
+ConfigState
 SlimeConfigResponse::readState() const
 {
     const Slime & data(*_data);
-    return ConfigState(data.get()[RESPONSE_CONFIG_MD5].asString().make_string(),  data.get()[RESPONSE_CONFIG_GENERATION].asLong(), data.get()[RESPONSE_INTERNAL_REDEPLOY].asBool());
+    return ConfigState(data.get()[RESPONSE_CONFIG_XXHASH64].asString().make_string(),
+                       data.get()[RESPONSE_CONFIG_GENERATION].asLong(),
+                       data.get()[RESPONSE_APPLY_ON_RESTART].asBool());
 }
 
 vespalib::string

@@ -13,21 +13,22 @@ namespace {
 class WaitTask : public FNET_Task
 {
 private:
-    bool              _done;
-    vespalib::Monitor _mon;
+    bool                    _done;
+    std::mutex              _mon;
+    std::condition_variable _cond;
 public:
-    WaitTask(FNET_Scheduler *s) : FNET_Task(s), _done(false), _mon() {}
+    explicit WaitTask(FNET_Scheduler *s) : FNET_Task(s), _done(false), _mon() {}
     void wait() {
-        vespalib::MonitorGuard guard(_mon);
+        std::unique_lock guard(_mon);
         while (!_done) {
-            guard.wait();
+            _cond.wait(guard);
         }
     }
 
     void PerformTask() override {
-        vespalib::MonitorGuard guard(_mon);
+        std::lock_guard guard(_mon);
         _done = true;
-        guard.signal();
+        _cond.notify_one();
     }
 };
 } // namespace <unnamed>
@@ -52,11 +53,11 @@ void
 Slobrok::init()
 {
     slobrok::ConfigShim shim(_port);
-    _env.reset(new slobrok::SBEnv(shim));
+    _env = std::make_unique<slobrok::SBEnv>(shim);
     _thread.setEnv(_env.get());
     WaitTask wt(_env->getTransport()->GetScheduler());
     wt.ScheduleNow();
-    if (_pool.NewThread(&_thread, 0) == 0) {
+    if (_pool.NewThread(&_thread, nullptr) == nullptr) {
         LOG_ABORT("Could not spawn thread");
     }
     wt.wait();

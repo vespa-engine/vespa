@@ -18,7 +18,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.VisitorInfoMessage;
 import com.yahoo.documentapi.messagebus.protocol.WrongDistributionReply;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.DestinationSession;
 import com.yahoo.messagebus.DestinationSessionParams;
 import com.yahoo.messagebus.DynamicThrottlePolicy;
@@ -405,7 +405,7 @@ public class MessageBusVisitorSession implements VisitorSession {
         synchronized (progress.getToken()) {
             this.startTimeNanos = clock.monotonicNanoTime();
             if (progress.getIterator().isDone()) {
-                log.log(LogLevel.DEBUG, sessionName + ": progress token indicates " +
+                log.log(Level.FINE, () -> sessionName + ": progress token indicates " +
                         "session is done before it could even start; no-op");
                 return;
             }
@@ -433,7 +433,7 @@ public class MessageBusVisitorSession implements VisitorSession {
      *   successful, will be equal to newState.
      */
     private StateDescription transitionTo(StateDescription newState) {
-        log.log(LogLevel.DEBUG, sessionName + ": attempting transition to state " + newState);
+        log.log(Level.FINE, () -> sessionName + ": attempting transition to state " + newState);
         switch (newState.getState()) {
             case WORKING:
                 assert(state.getState() == State.NOT_STARTED);
@@ -450,7 +450,7 @@ public class MessageBusVisitorSession implements VisitorSession {
             default:
                 com.yahoo.protect.Process.logAndDie("Invalid target transition state: " + newState);
         }
-        log.log(LogLevel.DEBUG, "Session '" + sessionName + "' is now in state " +  state);
+        log.log(Level.FINE, () -> "Session '" + sessionName + "' is now in state " +  state);
         return state;
     }
 
@@ -467,7 +467,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                  // we just immediately go into a failure destruction mode as soon as this
                  // happens, in which we do not wait for any active messages to be replied
                  // to.
-                log.log(LogLevel.WARNING, "Visitor session '" + sessionName +
+                log.log(Level.WARNING, "Visitor session '" + sessionName +
                         "': failed to submit reply task to executor service! " +
                         "Session cannot reliably continue; terminating it early.", e);
 
@@ -500,7 +500,7 @@ public class MessageBusVisitorSession implements VisitorSession {
         // If no cluster route has been set by user arguments, attempt to retrieve it from mbus config.
         if (params.getRoute() == null || !params.getRoute().hasHops()) {
             params.setRoute(getClusterRoute(routingTable));
-            log.log(LogLevel.DEBUG, "No route specified; resolved implicit " +
+            log.log(Level.FINE, () -> "No route specified; resolved implicit " +
                     "storage cluster: " + params.getRoute().toString());
         }
     }
@@ -574,8 +574,8 @@ public class MessageBusVisitorSession implements VisitorSession {
                     1,
                     progressToken);
         } else {
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "parameters specify explicit bucket set " +
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "parameters specify explicit bucket set " +
                         "to visit; using it rather than document selection (" +
                         params.getBucketsToVisit().size() + " buckets given)");
             }
@@ -643,11 +643,14 @@ public class MessageBusVisitorSession implements VisitorSession {
             synchronized (progress.getToken()) {
                 try {
                     scheduledSendCreateVisitors = false;
+                    if (done) {
+                        return; // Session already closed; we must not touch anything else.
+                    }
                     while (progress.getIterator().hasNext()) {
                         VisitorIterator.BucketProgress bucket = progress.getIterator().getNext();
                         Result result = sender.send(createMessage(bucket));
                         if (result.isAccepted()) {
-                            log.log(LogLevel.DEBUG, sessionName + ": sent CreateVisitor for bucket " +
+                            log.log(Level.FINE, () -> sessionName + ": sent CreateVisitor for bucket " +
                                     bucket.getSuperbucket() + " with progress " + bucket.getProgress());
                             ++pendingMessageCount;
                         } else {
@@ -661,7 +664,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                     String msg = "Got exception of type " + e.getClass().getName() +
                             " with message '" + e.getMessage() +
                             "' while attempting to send visitors";
-                    log.log(LogLevel.WARNING, msg);
+                    log.log(Level.WARNING, msg);
                     transitionTo(new StateDescription(State.FAILED, msg));
                     // It's likely that the exception caused a failure to send a
                     // visitor message, meaning we won't get a reply task in the
@@ -687,8 +690,7 @@ public class MessageBusVisitorSession implements VisitorSession {
     private void markSessionCompleted() {
         // 'done' is only ever written when token mutex is held, so safe to check
         // outside of completionMonitor lock.
-        assert(!done) : "Session was marked as completed more than once";
-        log.log(LogLevel.DEBUG, "Visitor session '" + sessionName + "' has completed");
+        log.log(Level.FINE, () -> "Visitor session '" + sessionName + "' has completed");
         if (params.getLocalDataHandler() != null) {
             params.getLocalDataHandler().onDone();
         }
@@ -726,14 +728,14 @@ public class MessageBusVisitorSession implements VisitorSession {
                     } else {
                         String msg = "Received reply we do not know how to handle: " +
                                 reply.getClass().getName();
-                        log.log(LogLevel.ERROR, msg);
+                        log.log(Level.SEVERE, msg);
                         transitionTo(new StateDescription(State.FAILED, msg));
                     }
                 } catch (Exception e) {
                     String msg = "Got exception of type " + e.getClass().getName() +
                             " with message '" + e.getMessage() +
                             "' while processing reply in visitor session";
-                    e.printStackTrace();
+                    log.log(Level.WARNING, msg, e);
                     transitionTo(new StateDescription(State.FAILED, msg));
                 } catch (Throwable t) {
                     // We can't reliably handle this; take a nosedive
@@ -754,8 +756,8 @@ public class MessageBusVisitorSession implements VisitorSession {
 
         @Override
         public void run() {
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Visitor session " + sessionName + ": Received message " + message);
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "Visitor session " + sessionName + ": Received message " + message);
             }
             try {
                 if (message instanceof VisitorInfoMessage) {
@@ -770,9 +772,9 @@ public class MessageBusVisitorSession implements VisitorSession {
     }
 
     private void handleMessageProcessingException(Reply reply, Exception e, String what) {
-        final String errorDesc = formatProcessingException(e, what);
-        final String fullMsg = formatIdentifyingVisitorErrorString(errorDesc);
-        log.log(LogLevel.ERROR, fullMsg, e);
+        String errorDesc = formatProcessingException(e, what);
+        String fullMsg = formatIdentifyingVisitorErrorString(errorDesc);
+        log.log(Level.SEVERE, fullMsg, e);
         int errorCode;
         synchronized (progress.getToken()) {
             if (!params.skipBucketsOnFatalErrors()) {
@@ -809,8 +811,8 @@ public class MessageBusVisitorSession implements VisitorSession {
         Reply reply = msg.createReply();
         msg.swapState(reply);
 
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Visitor session " + sessionName +
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Visitor session " + sessionName +
                     ": Received VisitorInfo with " +
                     msg.getFinishedBuckets().size() + " finished buckets");
         }
@@ -841,7 +843,7 @@ public class MessageBusVisitorSession implements VisitorSession {
         msg.swapState(reply);
 
         if (params.getLocalDataHandler() == null) {
-            log.log(LogLevel.ERROR, sessionName + ": Got visitor data back to client with no local data destination.");
+            log.log(Level.SEVERE, sessionName + ": Got visitor data back to client with no local data destination.");
             reply.addError(new Error(ErrorCode.APP_FATAL_ERROR, "Visitor data with no local data destination"));
             receiver.reply(reply);
             return;
@@ -902,7 +904,7 @@ public class MessageBusVisitorSession implements VisitorSession {
         progress.getIterator().update(bucket, subProgress);
 
         String message = getErrorMessage(reply.getError(0));
-        log.log(LogLevel.DEBUG, sessionName + ": received error reply for bucket " +
+        log.log(Level.FINE, () -> sessionName + ": received error reply for bucket " +
                 bucket + " with message '" + message + "'");
 
         if (isFatalError(reply)) {
@@ -915,7 +917,7 @@ public class MessageBusVisitorSession implements VisitorSession {
             }
         }
         if (isErrorOfType(reply, DocumentProtocol.ERROR_WRONG_DISTRIBUTION)) {
-            handleWrongDistributionReply((WrongDistributionReply)reply);
+            handleWrongDistributionReply((WrongDistributionReply) reply);
         } else {
             if (shouldReportError(reply)) {
                 reportVisitorError(message);
@@ -966,7 +968,7 @@ public class MessageBusVisitorSession implements VisitorSession {
     }
 
     private long messageTimeoutMillis() {
-        return !isInfiniteTimeout(params.getTimeoutMs()) ? params.getTimeoutMs() : 5 * 60 * 1000;
+        return !isInfiniteTimeout(params.getTimeoutMs()) ? Math.max(1, params.getTimeoutMs()) : 5 * 60 * 1000;
     }
 
     private long sessionTimeoutMillis() {
@@ -983,9 +985,10 @@ public class MessageBusVisitorSession implements VisitorSession {
 
     private long computeBoundedMessageTimeoutMillis(long elapsedMs) {
         final long messageTimeoutMillis = messageTimeoutMillis();
-        return !isInfiniteTimeout(sessionTimeoutMillis())
-                ? Math.min(sessionTimeoutMillis() - elapsedMs, messageTimeoutMillis)
-                : messageTimeoutMillis;
+        return ! isInfiniteTimeout(sessionTimeoutMillis())
+               ? Math.min(Math.max(1, sessionTimeoutMillis() - elapsedMs),
+                          messageTimeoutMillis)
+               : messageTimeoutMillis;
     }
 
     /**
@@ -1027,14 +1030,18 @@ public class MessageBusVisitorSession implements VisitorSession {
         BucketId superbucket = msg.getBuckets().get(0);
         BucketId subBucketProgress = reply.getLastBucket();
 
-        log.log(LogLevel.DEBUG, sessionName + ": received CreateVisitorReply for bucket " +
+        log.log(Level.FINE, () -> sessionName + ": received CreateVisitorReply for bucket " +
                 superbucket + " with progress " + subBucketProgress);
 
         progress.getIterator().update(superbucket, subBucketProgress);
         params.getControlHandler().onProgress(progress.getToken());
         statistics.add(reply.getVisitorStatistics());
         params.getControlHandler().onVisitorStatistics(statistics);
-        trace.getRoot().addChild(reply.getTrace().getRoot());
+        // A visitor session might be long lived so we need a safeguard against blowing the memory if tracing
+        // has been enabled.
+        if ( ! reply.getTrace().getRoot().isEmpty() && (trace.getRoot().getNumChildren() < 1000)) {
+            trace.getRoot().addChild(reply.getTrace().getRoot());
+        }
 
         if (params.getDynamicallyIncreaseMaxBucketsPerVisitor()
                 && (reply.getVisitorStatistics().getDocumentsReturned()
@@ -1045,7 +1052,7 @@ public class MessageBusVisitorSession implements VisitorSession {
             int newMaxBuckets = Math.max(Math.min((int)(params.getMaxBucketsPerVisitor()
                     * params.getDynamicMaxBucketsIncreaseFactor()), 128), 1);
             params.setMaxBucketsPerVisitor(newMaxBuckets);
-            log.log(LogLevel.DEBUG, sessionName + ": increasing max buckets per visitor to "
+            log.log(Level.FINE, () -> sessionName + ": increasing max buckets per visitor to "
                     + params.getMaxBucketsPerVisitor());
         }
     }
@@ -1055,7 +1062,7 @@ public class MessageBusVisitorSession implements VisitorSession {
             ClusterState newState = new ClusterState(reply.getSystemState());
             int stateBits = newState.getDistributionBitCount();
             if (stateBits != progress.getIterator().getDistributionBitCount()) {
-                log.log(LogLevel.DEBUG, "System state changed; now at " +
+                log.log(Level.FINE, () -> "System state changed; now at " +
                         stateBits + " distribution bits");
                 // Update the internal state of the visitor iterator. If we're increasing
                 // the number of distribution bits, this may lead to splitting of pending
@@ -1066,7 +1073,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                 progress.getIterator().setDistributionBitCount(stateBits);
             }
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Failed to parse new system state string: "
+            log.log(Level.SEVERE, "Failed to parse new system state string: "
                     + reply.getSystemState());
             transitionTo(new StateDescription(State.FAILED, "Failed to parse cluster state '"
                     + reply.getSystemState() + "'"));
@@ -1101,8 +1108,8 @@ public class MessageBusVisitorSession implements VisitorSession {
 
     @Override
     public void ack(AckToken token) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Visitor session " + sessionName +
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Visitor session " + sessionName +
                     ": Sending ack " + token.ackObject);
         }
         // No locking here; replying should be thread safe in itself
@@ -1144,13 +1151,13 @@ public class MessageBusVisitorSession implements VisitorSession {
 
     @Override
     public void destroy() {
-        log.log(LogLevel.DEBUG, sessionName + ": synchronous destroy() called");
+        log.log(Level.FINE, () -> sessionName + ": synchronous destroy() called");
         try {
             synchronized (progress.getToken()) {
                 synchronized (completionMonitor) {
                     // If we are destroying the session before it has completed (e.g. because
                     // waitUntilDone timed out or an interactive visiting was interrupted)
-                    // set us to aborted state so that we'll seize sending new visitors.
+                    // set us to aborted state so that we'll cease sending new visitors.
                     if (!done) {
                         transitionTo(new StateDescription(State.ABORTED, "Session explicitly destroyed before completion"));
                     }
@@ -1164,15 +1171,15 @@ public class MessageBusVisitorSession implements VisitorSession {
                 }
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            log.log(Level.WARNING, "Interrupted waiting for visitor session to be destroyed");
         } finally {
             try {
                 sender.destroy();
                 receiver.destroy();
             } catch (Exception e) {
-                log.log(LogLevel.ERROR, "Caught exception destroying communication interfaces", e);
+                log.log(Level.SEVERE, "Caught exception destroying communication interfaces", e);
             }
-            log.log(LogLevel.DEBUG, sessionName + ": synchronous destroy() done");
+            log.log(Level.FINE, () -> sessionName + ": synchronous destroy() done");
         }
     }
 }

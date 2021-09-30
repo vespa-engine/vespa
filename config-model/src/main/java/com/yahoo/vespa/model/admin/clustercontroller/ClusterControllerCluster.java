@@ -1,16 +1,25 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.clustercontroller;
 
 import com.google.common.base.Joiner;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
+import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.container.Container;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * Used if clustercontroller is run standalone (not as part of the config server ZooKeeper cluster)
@@ -22,20 +31,32 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ClusterCont
         ZookeeperServerConfig.Producer,
         ZookeepersConfig.Producer {
 
-    private static final int ZK_CLIENT_PORT = 2181;
+    private static final int ZK_CLIENT_PORT = 2181; // Must match the default in CuratorConfig
     private ClusterControllerContainerCluster containerCluster = null;
+    private final Set<String> previousHosts;
 
-    public ClusterControllerCluster(AbstractConfigProducer parent, String subId) {
+    public ClusterControllerCluster(AbstractConfigProducer<?> parent, String subId, DeployState deployState) {
         super(parent, subId);
+        this.previousHosts = deployState.getPreviousModel().stream()
+                                        .map(Model::allocatedHosts)
+                                        .map(AllocatedHosts::getHosts)
+                                        .flatMap(Collection::stream)
+                                        .map(HostSpec::hostname)
+                                        .collect(toUnmodifiableSet());
     }
 
     @Override
     public void getConfig(ZookeeperServerConfig.Builder builder) {
         builder.clientPort(ZK_CLIENT_PORT);
+        builder.juteMaxBuffer(1024 * 1024); // 1 Mb should be more than enough for cluster controller
+        boolean oldQuorumExists = containerCluster.getContainers().stream() // More than half the previous hosts must be present in the new config for quorum to persist.
+                                                  .filter(container -> previousHosts.contains(container.getHostName())) // Set intersection is symmetric.
+                                                  .count() > previousHosts.size() / 2;
         for (ClusterControllerContainer container : containerCluster.getContainers()) {
             ZookeeperServerConfig.Server.Builder serverBuilder = new ZookeeperServerConfig.Server.Builder();
             serverBuilder.hostname(container.getHostName());
             serverBuilder.id(container.index());
+            serverBuilder.joining(oldQuorumExists && ! previousHosts.contains(container.getHostName()));
             builder.server(serverBuilder);
         }
     }

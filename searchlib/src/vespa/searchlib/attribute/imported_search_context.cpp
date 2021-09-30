@@ -13,7 +13,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.imported_search_context");
 
-using search::datastore::EntryRef;
+using vespalib::datastore::EntryRef;
 using search::queryeval::EmptySearch;
 using search::queryeval::SearchIterator;
 using search::attribute::ISearchContext;
@@ -44,7 +44,6 @@ ImportedSearchContext::ImportedSearchContext(
       _target_search_context(_target_attribute.createSearchContext(std::move(term), params)),
       _targetLids(_reference_attribute.getTargetLids()),
       _merger(_reference_attribute.getCommittedDocIdLimit()),
-      _fetchPostingsDone(false),
       _params(params)
 {
 }
@@ -64,7 +63,7 @@ ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool s
         if (_merger.emptyArray()) {
             return SearchIterator::UP(new EmptySearch());
         } else {
-            using Posting = btree::BTreeKeyData<uint32_t, int32_t>;
+            using Posting = vespalib::btree::BTreeKeyData<uint32_t, int32_t>;
             using DocIt = DocIdIterator<Posting>;
             DocIt postings;
             auto array = _merger.getArray();
@@ -94,7 +93,7 @@ struct WeightedRef {
     EntryRef revMapIdx;
     int32_t  weight;
 
-    WeightedRef(EntryRef revMapIdx_, int32_t weight_)
+    WeightedRef(EntryRef revMapIdx_, int32_t weight_) noexcept
         : revMapIdx(revMapIdx_),
           weight(weight_)
     {
@@ -119,11 +118,11 @@ class ReverseMappingBitVector
     const ReverseMapping &_reverseMapping;
     EntryRef _revMapIdx;
 public:
-    ReverseMappingBitVector(const ReverseMapping &reverseMapping, EntryRef revMapIdx)
+    ReverseMappingBitVector(const ReverseMapping &reverseMapping, EntryRef revMapIdx) noexcept
         : _reverseMapping(reverseMapping),
           _revMapIdx(revMapIdx)
     {}
-    ~ReverseMappingBitVector() { }
+    ~ReverseMappingBitVector() = default;
 
     template <typename Func>
     void foreach_key(Func func) const {
@@ -239,15 +238,11 @@ ImportedSearchContext::considerAddSearchCacheEntry()
 }
 
 void ImportedSearchContext::fetchPostings(const queryeval::ExecuteInfo &execInfo) {
-    assert(!_fetchPostingsDone);
-    _fetchPostingsDone = true;
     if (!_searchCacheLookup) {
         _target_search_context->fetchPostings(execInfo);
-        if (execInfo.isStrict()
-            || (_target_attribute.getIsFastSearch() && execInfo.hitRate() > 0.01))
-        {
-            makeMergedPostings(_target_attribute.getIsFilter());
-            considerAddSearchCacheEntry();
+        if (!_merger.merge_done() && (execInfo.isStrict() || (_target_attribute.getIsFastSearch() && execInfo.hitRate() > 0.01))) {
+                makeMergedPostings(_target_attribute.getIsFilter());
+                considerAddSearchCacheEntry();
         }
     }
 }

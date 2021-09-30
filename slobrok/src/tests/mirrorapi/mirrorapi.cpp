@@ -8,6 +8,7 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/transport.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("mirrorapi_test");
@@ -140,7 +141,7 @@ Test::Main()
     FastOS_ThreadPool threadPool(0x10000);
     FNET_Transport transport;
     FRT_Supervisor supervisor(&transport);
-    MirrorAPI mirror(supervisor, config::ConfigUri::createFromInstance(specBuilder));
+    MirrorAPI mirror(supervisor, slobrok::ConfiguratorFactory(config::ConfigUri::createFromInstance(specBuilder)));
     EXPECT_TRUE(!mirror.ready());
     transport.Start(&threadPool);
     std::this_thread::sleep_for(1s);

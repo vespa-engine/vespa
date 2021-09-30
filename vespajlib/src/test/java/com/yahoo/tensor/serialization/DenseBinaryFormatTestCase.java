@@ -41,7 +41,7 @@ public class DenseBinaryFormatTestCase {
     }
 
     @Test
-    public void requireThatDefaultSerializationFormatDoNotChange() {
+    public void requireThatDefaultSerializationFormatDoesNotChange() {
         byte[] encodedTensor = new byte[]{2, // binary format type
                                           2, // dimension count
                                           2, (byte) 'x', (byte) 'y', 2, // dimension xy with size
@@ -54,7 +54,7 @@ public class DenseBinaryFormatTestCase {
     }
 
     @Test
-    public void requireThatFloatSerializationFormatDoNotChange() {
+    public void requireThatFloatSerializationFormatDoesNotChange() {
         byte[] encodedTensor = new byte[]{6, // binary format type
                 1, // float type
                 2, // dimension count
@@ -68,9 +68,44 @@ public class DenseBinaryFormatTestCase {
     }
 
     @Test
+    public void requireThatBFloat16SerializationFormatDoesNotChange() {
+        byte[] encodedTensor = new byte[]{6, // binary format type
+                2, // bfloat16 type
+                2, // dimension count
+                2, (byte) 'x', (byte) 'y', 2, // dimension xy with size
+                1, (byte) 'z', 1, // dimension z with size
+                64, 0,   // value 1
+                64, 64,  // value 2
+        };
+        Tensor tensor = Tensor.from("tensor<bfloat16>(xy[],z[]):{{xy:0,z:0}:2.0,{xy:1,z:0}:3.0}");
+        assertEquals(Arrays.toString(encodedTensor), Arrays.toString(TypedBinaryFormat.encode(tensor)));
+    }
+
+    @Test
+    public void requireThatInt8SerializationFormatDoesNotChange() {
+        byte[] encodedTensor = new byte[]{6, // binary format type
+                3, // int8 type
+                2, // dimension count
+                2, (byte) 'x', (byte) 'y', 2, // dimension xy with size
+                1, (byte) 'z', 1, // dimension z with size
+                2,  // value 1
+                3,  // value 2
+        };
+        Tensor tensor = Tensor.from("tensor<int8>(xy[],z[]):{{xy:0,z:0}:2.0,{xy:1,z:0}:3.0}");
+        assertEquals(Arrays.toString(encodedTensor), Arrays.toString(TypedBinaryFormat.encode(tensor)));
+    }
+
+    @Test
     public void testSerializationOfDifferentValueTypes() {
+        assertSerialization("tensor(x[],y[]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
         assertSerialization("tensor<double>(x[],y[]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
         assertSerialization("tensor<float>(x[],y[]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
+        assertSerialization("tensor<bfloat16>(x[],y[]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
+        assertSerialization("tensor<int8>(x[],y[]):{{x:0,y:0}:2, {x:0,y:1}:3, {x:1,y:0}:4, {x:1,y:1}:5}");
+        assertSerialization("tensor<double>(x[2],y[2]):[2.0, 3.0, 4.0, 5.0]");
+        assertSerialization("tensor<float>(x[2],y[2]):[2.0, 3.0, 4.0, 5.0]");
+        assertSerialization("tensor<bfloat16>(x[2],y[2]):[2.0, 3.0, 4.0, 5.0]");
+        assertSerialization("tensor<int8>(x[2],y[2]):[2, 3, 4, 5]");
     }
 
     private void assertSerialization(String tensorString) {

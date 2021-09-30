@@ -2,10 +2,9 @@
 
 #include "staticrank.h"
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/vespalib/util/stash.h>
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 StaticRankExecutor::StaticRankExecutor(const search::attribute::IAttributeVector * attribute) :
     FeatureExecutor(),
@@ -17,7 +16,7 @@ void
 StaticRankExecutor::execute(uint32_t docId)
 {
     search::attribute::FloatContent staticRank;
-    if (_attribute != NULL) {
+    if (_attribute != nullptr) {
         staticRank.allocate(_attribute->getMaxValueCount());
         staticRank.fill(*_attribute, docId);
     }
@@ -31,9 +30,7 @@ StaticRankBlueprint::StaticRankBlueprint() :
 {
 }
 
-StaticRankBlueprint::~StaticRankBlueprint()
-{
-}
+StaticRankBlueprint::~StaticRankBlueprint() = default;
 
 bool
 StaticRankBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVector & params)
@@ -54,6 +51,4 @@ StaticRankBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib
     return stash.create<StaticRankExecutor>(av);
 }
 
-} // namespace test
-} // namespace fef
-} // namespace search
+}

@@ -17,8 +17,8 @@ import com.yahoo.language.opennlp.OpenNlpLinguistics;
 @SuppressWarnings("unused") // Injected
 public class DefaultLinguisticsProvider implements Provider<Linguistics> {
 
-    // Use lazy initialization to avoid expensive (memory-wise) instantiation f
-    private volatile Supplier<Linguistics> linguisticsSupplier = Suppliers.memoize(OpenNlpLinguistics::new);
+    // Use lazy initialization to avoid expensive (memory-wise) instantiation
+    private final Supplier<Linguistics> linguisticsSupplier = Suppliers.memoize(OpenNlpLinguistics::new);
 
     @Inject
     public DefaultLinguisticsProvider() { }

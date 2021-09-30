@@ -20,10 +20,10 @@ class DocumentMetaStoreSaver : public search::AttributeSaver
 public:
     using KeyComp = documentmetastore::LidGidKeyComparator;
     using DocId = documentmetastore::IStore::DocId;
-    using GidIterator = search::btree::BTreeConstIterator<
-        DocId,
-        search::btree::BTreeNoLeafData,
-        search::btree::NoAggregated,
+    using GidIterator = vespalib::btree::BTreeConstIterator<
+        documentmetastore::GidToLidMapKey,
+        vespalib::btree::BTreeNoLeafData,
+        vespalib::btree::NoAggregated,
         const KeyComp &>;
     using MetaDataStore = vespalib::RcuVectorBase<RawDocumentMetaData>;
 
@@ -32,14 +32,14 @@ private:
     const MetaDataStore &_metaDataStore;
     bool _writeDocSize;
 
-    virtual bool onSave(search::IAttributeSaveTarget &saveTarget) override;
+    bool onSave(search::IAttributeSaveTarget &saveTarget) override;
 public:
     DocumentMetaStoreSaver(vespalib::GenerationHandler::Guard &&guard,
                            const search::attribute::AttributeHeader &header,
                            const GidIterator &gidIterator,
                            const MetaDataStore &metaDataStore);
 
-    virtual ~DocumentMetaStoreSaver();
+    ~DocumentMetaStoreSaver() override;
 };
 
 } // namespace proton

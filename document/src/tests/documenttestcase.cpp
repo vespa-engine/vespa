@@ -92,29 +92,29 @@ Handler::~Handler() = default;
 
 TEST(DocumentTest, testTraversing)
 {
-    Field primitive1("primitive1", 1, *DataType::INT, true);
-    Field primitive2("primitive2", 2, *DataType::INT, true);
+    Field primitive1("primitive1", 1, *DataType::INT);
+    Field primitive2("primitive2", 2, *DataType::INT);
     StructDataType struct1("struct1");
     struct1.addField(primitive1);
     struct1.addField(primitive2);
 
     ArrayDataType iarr(*DataType::INT);
     ArrayDataType sarr(struct1);
-    Field iarrF("iarray", 21, iarr, true);
-    Field sarrF("sarray", 22, sarr, true);
+    Field iarrF("iarray", 21, iarr);
+    Field sarrF("sarray", 22, sarr);
 
     StructDataType struct2("struct2");
     struct2.addField(primitive1);
     struct2.addField(primitive2);
     struct2.addField(iarrF);
     struct2.addField(sarrF);
-    Field s2("ss", 12, struct2, true);
+    Field s2("ss", 12, struct2);
 
     StructDataType struct3("struct3");
     struct3.addField(primitive1);
     struct3.addField(s2);
 
-    Field structl1s1("l1s1", 11, struct3, true);
+    Field structl1s1("l1s1", 11, struct3);
 
     DocumentType type("test");
     type.addField(primitive1);
@@ -175,7 +175,7 @@ TEST(DocumentTest, testVariables)
     ArrayDataType iiarr(static_cast<DataType &>(iarr));
     ArrayDataType iiiarr(static_cast<DataType &>(iiarr));
 
-    Field iiiarrF("iiiarray", 1, iiiarr, true);
+    Field iiiarrF("iiiarray", 1, iiiarr);
     DocumentType type("test");
     type.addField(iiiarrF);
 
@@ -255,19 +255,19 @@ public:
 TEST(DocumentTest, testModifyDocument)
 {
     // Create test document type and content
-    Field primitive1("primitive1", 1, *DataType::INT, true);
-    Field primitive2("primitive2", 2, *DataType::INT, true);
+    Field primitive1("primitive1", 1, *DataType::INT);
+    Field primitive2("primitive2", 2, *DataType::INT);
     StructDataType struct1("struct1");
     struct1.addField(primitive1);
     struct1.addField(primitive2);
 
     ArrayDataType iarr(*DataType::INT);
     ArrayDataType sarr(struct1);
-    Field iarrF("iarray", 21, iarr, true);
-    Field sarrF("sarray", 22, sarr, true);
+    Field iarrF("iarray", 21, iarr);
+    Field sarrF("sarray", 22, sarr);
 
     MapDataType smap(*DataType::STRING, *DataType::STRING);
-    Field smapF("smap", 23, smap, true);
+    Field smapF("smap", 23, smap);
 
     StructDataType struct2("struct2");
     struct2.addField(primitive1);
@@ -275,16 +275,16 @@ TEST(DocumentTest, testModifyDocument)
     struct2.addField(iarrF);
     struct2.addField(sarrF);
     struct2.addField(smapF);
-    Field s2("ss", 12, struct2, true);
+    Field s2("ss", 12, struct2);
 
     MapDataType structmap(*DataType::STRING, struct2);
-    Field structmapF("structmap", 24, structmap, true);
+    Field structmapF("structmap", 24, structmap);
 
     WeightedSetDataType wset(*DataType::STRING, false, false);
-    Field wsetF("wset", 25, wset, true);
+    Field wsetF("wset", 25, wset);
 
     WeightedSetDataType structwset(struct2, false, false);
-    Field structwsetF("structwset", 26, structwset, true);
+    Field structwsetF("structwset", 26, structwset);
 
     StructDataType struct3("struct3");
     struct3.addField(primitive1);
@@ -293,7 +293,7 @@ TEST(DocumentTest, testModifyDocument)
     struct3.addField(wsetF);
     struct3.addField(structwsetF);
 
-    Field structl1s1("l1s1", 11, struct3, true);
+    Field structl1s1("l1s1", 11, struct3);
 
     DocumentType type("test");
     type.addField(primitive1);
@@ -363,9 +363,9 @@ TEST(DocumentTest, testModifyDocument)
 TEST(DocumentTest, testSimpleUsage)
 {
     DocumentType::SP type(new DocumentType("test"));
-    Field intF("int", 1, *DataType::INT, true);
-    Field longF("long", 2, *DataType::LONG, true);
-    Field strF("content", 4, *DataType::STRING, false);
+    Field intF("int", 1, *DataType::INT);
+    Field longF("long", 2, *DataType::LONG);
+    Field strF("content", 4, *DataType::STRING);
 
     type->addField(intF);
     type->addField(longF);
@@ -462,9 +462,9 @@ TEST(DocumentTest, testSimpleUsage)
 "    DocumentType(test, id -877171244)\n"
 "        : DocumentType(document) {\n"
 "      StructDataType(test.header, id 306916075) {\n"
-"        Field(content, id 4, PrimitiveDataType(String, id 2), body)\n"
-"        Field(int, id 1, NumericDataType(Int, id 0), header)\n"
-"        Field(long, id 2, NumericDataType(Long, id 4), header)\n"
+"        Field(content, id 4, PrimitiveDataType(String, id 2))\n"
+"        Field(int, id 1, NumericDataType(Int, id 0))\n"
+"        Field(long, id 2, NumericDataType(Long, id 4))\n"
 "      }\n"
 "    }\n"
 "    int: 1\n"
@@ -484,7 +484,7 @@ TEST(DocumentTest, testSimpleUsage)
         // Fetch a field not existing in type
         // (Would be nice if this failed, but whole idea to fetch by field
         // objects is to improve performance.)
-    Field anotherIntF("int", 17, *DataType::INT, true);
+    Field anotherIntF("int", 17, *DataType::INT);
     EXPECT_TRUE(!value.hasValue(anotherIntF));
     EXPECT_TRUE(!value.getValue(anotherIntF));
 
@@ -1096,10 +1096,10 @@ TEST(DocumentTest, testUnknownEntries)
     // We should be able to deserialize a document with unknown values in it.
     DocumentType type1("test", 0);
     DocumentType type2("test", 0);
-    Field field1("int1", *DataType::INT, true);
-    Field field2("int2", *DataType::INT, true);
-    Field field3("int3", *DataType::INT, false);
-    Field field4("int4", *DataType::INT, false);
+    Field field1("int1", *DataType::INT);
+    Field field2("int2", *DataType::INT);
+    Field field3("int3", *DataType::INT);
+    Field field4("int4", *DataType::INT);
 
     type1.addField(field1);
     type1.addField(field2);

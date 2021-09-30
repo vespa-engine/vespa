@@ -3,6 +3,7 @@
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
 #include <vespa/searchcorespi/index/warmupindexcollection.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
@@ -87,7 +88,7 @@ public:
           _source1(new MockIndexSearchable({3, 5})),
           _source2(new MockIndexSearchable({7, 11})),
           _fusion_source(new FakeIndexSearchable),
-          _executor(1, 128*1024),
+          _executor(1, 128_Ki),
           _warmup(new FakeIndexSearchable)
     {}
     ~IndexCollectionTest() = default;

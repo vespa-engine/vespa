@@ -8,14 +8,18 @@
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/common/foregroundtaskexecutor.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/datastore/datastorebase.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/foreground_thread_executor.h>
+#include <vespa/vespalib/util/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attributeflush_test");
@@ -74,7 +78,7 @@ public:
     GateSP gate;
 
     FlushHandler()
-        : _executor(1, 65536),
+        : _executor(1, 64_Ki),
           gate()
     { }
     ~FlushHandler();
@@ -118,7 +122,7 @@ UpdaterTask::startFlushing(uint64_t syncToken, FlushHandler & handler)
     handler.gate.reset(new Gate());
     IFlushTarget::SP flushable = _am.getFlushable("a1");
     LOG(info, "startFlushing(%" PRIu64 ")", syncToken);
-    handler.doFlushing(flushable->initFlush(syncToken));
+    handler.doFlushing(flushable->initFlush(syncToken, std::make_shared<search::FlushToken>()));
 }
 
 
@@ -157,11 +161,11 @@ UpdaterTask::run()
             }
             ia.update(j, i);
         }
-        ia.commit(i-1, i); // save i as last sync token
+        ia.commit(CommitParam(i-1, i, CommitParam::UpdateStats::SKIP)); // save i as last sync token
         needFlushToken = i;
         assert(i + 1 == ag->getNumDocs());
         if ((commits++ % 20 == 0) &&
-            (flushHandler.gate.get() == NULL ||
+            ( ! flushHandler.gate ||
              flushHandler.gate->getCount() == 0)) {
             startFlushing(i, flushHandler);
             ++flushCount;
@@ -177,7 +181,7 @@ UpdaterTask::run()
             slowedDown = true;
         }
     }
-    if (flushHandler.gate.get() != NULL) {
+    if (flushHandler.gate) {
         flushHandler.gate->await();
     }
     if (flushedToken < needFlushToken) {
@@ -246,6 +250,7 @@ struct BaseFixture
     test::DirectoryHandler   _dirHandler;
     DummyFileHeaderContext   _fileHeaderContext;
     ForegroundTaskExecutor   _attributeFieldWriter;
+    ForegroundThreadExecutor _shared;
     HwInfo                   _hwInfo;
     BaseFixture();
     BaseFixture(const HwInfo &hwInfo);
@@ -256,12 +261,14 @@ BaseFixture::BaseFixture()
         : _dirHandler(test_dir),
           _fileHeaderContext(),
           _attributeFieldWriter(),
+          _shared(),
           _hwInfo()
 { }
 BaseFixture::BaseFixture(const HwInfo &hwInfo)
         : _dirHandler(test_dir),
           _fileHeaderContext(),
           _attributeFieldWriter(),
+          _shared(),
           _hwInfo(hwInfo)
 {}
 BaseFixture::~BaseFixture() = default;
@@ -289,7 +296,7 @@ struct AttributeManagerFixture
 
 AttributeManagerFixture::AttributeManagerFixture(BaseFixture &bf)
     : _msp(std::make_shared<AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(),
-                                              bf._fileHeaderContext, bf._attributeFieldWriter, bf._hwInfo)),
+                                              bf._fileHeaderContext, bf._attributeFieldWriter, bf._shared, bf._hwInfo)),
       _m(*_msp)
 {}
 AttributeManagerFixture::~AttributeManagerFixture() = default;
@@ -373,22 +380,22 @@ Test::requireThatFlushableAttributeManagesSyncTokenInfo()
 
     IndexMetaInfo info("flush/a3");
     EXPECT_EQUAL(0u, fa->getFlushedSerialNum());
-    EXPECT_TRUE(fa->initFlush(0).get() == NULL);
+    EXPECT_TRUE(fa->initFlush(0, std::make_shared<search::FlushToken>()).get() == NULL);
     EXPECT_TRUE(!info.load());
 
-    av->commit(10, 10); // last sync token = 10
+    av->commit(CommitParam(10)); // last sync token = 10
     EXPECT_EQUAL(0u, fa->getFlushedSerialNum());
-    EXPECT_TRUE(fa->initFlush(10).get() != NULL);
-    fa->initFlush(10)->run();
+    EXPECT_TRUE(fa->initFlush(10, std::make_shared<search::FlushToken>()).get() != NULL);
+    fa->initFlush(10, std::make_shared<search::FlushToken>())->run();
     EXPECT_EQUAL(10u, fa->getFlushedSerialNum());
     EXPECT_TRUE(info.load());
     EXPECT_EQUAL(1u, info.snapshots().size());
     EXPECT_TRUE(info.snapshots()[0].valid);
     EXPECT_EQUAL(10u, info.snapshots()[0].syncToken);
 
-    av->commit(20, 20); // last sync token = 20
+    av->commit(CommitParam(20)); // last sync token = 20
     EXPECT_EQUAL(10u, fa->getFlushedSerialNum());
-    fa->initFlush(20)->run();
+    fa->initFlush(20, std::make_shared<search::FlushToken>())->run();
     EXPECT_EQUAL(20u, fa->getFlushedSerialNum());
     EXPECT_TRUE(info.load());
     EXPECT_EQUAL(1u, info.snapshots().size()); // snapshot 10 removed
@@ -419,7 +426,7 @@ Test::requireThatCleanUpIsPerformedAfterFlush()
     Fixture f;
     AttributeVector::SP av = f.addAttribute("a6");
     av->addDocs(1);
-    av->commit(30, 30);
+    av->commit(CommitParam(30));
 
     // fake up some snapshots
     std::string base = "flush/a6";
@@ -437,7 +444,7 @@ Test::requireThatCleanUpIsPerformedAfterFlush()
     FlushableAttribute fa(av, diskLayout->getAttributeDir("a6"), TuneFileAttributes(),
                           f._fileHeaderContext, f._attributeFieldWriter,
                           f._hwInfo);
-    fa.initFlush(30)->run();
+    fa.initFlush(30, std::make_shared<search::FlushToken>())->run();
 
     EXPECT_TRUE(info.load());
     EXPECT_EQUAL(1u, info.snapshots().size()); // snapshots 10 & 20 removed
@@ -456,9 +463,9 @@ Test::requireThatFlushStatsAreUpdated()
     AttributeManager &am = f._m;
     AttributeVector::SP av = f.addAttribute("a7");
     av->addDocs(1);
-    av->commit(100,100);
+    av->commit(CommitParam(100));
     IFlushTarget::SP ft = am.getFlushable("a7");
-    ft->initFlush(101)->run();
+    ft->initFlush(101, std::make_shared<search::FlushToken>())->run();
     FlushStats stats = ft->getLastFlushStats();
     EXPECT_EQUAL("flush/a7/snapshot-101", stats.getPath());
     EXPECT_EQUAL(8u, stats.getPathElementsToLog());
@@ -472,14 +479,14 @@ Test::requireThatOnlyOneFlusherCanRunAtTheSameTime()
     AttributeManager &am = f._m;
     AttributeVector::SP av = f.addAttribute("a8");
     av->addDocs(10000);
-    av->commit(9,9);
+    av->commit(CommitParam(9));
     IFlushTarget::SP ft = am.getFlushable("a8");
     (static_cast<FlushableAttribute *>(ft.get()))->setCleanUpAfterFlush(false);
     vespalib::ThreadStackExecutor exec(16, 64000);
 
     for (size_t i = 10; i < 100; ++i) {
-        av->commit(i, i);
-        vespalib::Executor::Task::UP task = ft->initFlush(i);
+        av->commit(CommitParam(i));
+        vespalib::Executor::Task::UP task = ft->initFlush(i, std::make_shared<search::FlushToken>());
         if (task) {
             exec.execute(std::move(task));
         }
@@ -516,7 +523,7 @@ Test::requireThatLastFlushTimeIsReported()
         AttributeVector::SP av = amf.addAttribute("a9");
         IFlushTarget::SP ft = am.getFlushable("a9");
         EXPECT_EQUAL(vespalib::system_time(), ft->getLastFlushTime());
-        ft->initFlush(200)->run();
+        ft->initFlush(200, std::make_shared<search::FlushToken>())->run();
         EXPECT_TRUE(FastOS_File::Stat("flush/a9/snapshot-200", &stat));
         EXPECT_EQUAL(seconds(stat._modifiedTime), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()));
     }
@@ -527,12 +534,12 @@ Test::requireThatLastFlushTimeIsReported()
         IFlushTarget::SP ft = am.getFlushable("a9");
         EXPECT_EQUAL(seconds(stat._modifiedTime), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()));
         { // updated flush time after nothing to flush
-            std::this_thread::sleep_for(8000ms);
+            std::this_thread::sleep_for(1100ms);
             std::chrono::seconds now = duration_cast<seconds>(vespalib::system_clock::now().time_since_epoch());
-            Executor::Task::UP task = ft->initFlush(200);
+            Executor::Task::UP task = ft->initFlush(200, std::make_shared<search::FlushToken>());
             EXPECT_FALSE(task);
             EXPECT_LESS(seconds(stat._modifiedTime), ft->getLastFlushTime().time_since_epoch());
-            EXPECT_APPROX(now.count(), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()).count(), 8);
+            EXPECT_APPROX(now.count(), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()).count(), 3);
         }
     }
 }
@@ -547,7 +554,7 @@ Test::requireThatShrinkWorks()
     AttributeWriter aw(f._msp);
     
     av->addDocs(1000 - av->getNumDocs());
-    av->commit(50, 50);
+    av->commit(CommitParam(50));
     IFlushTarget::SP ft = am.getShrinker("a10");
     EXPECT_EQUAL(ft->getApproxMemoryGain().getBefore(),
                  ft->getApproxMemoryGain().getAfter());
@@ -575,8 +582,8 @@ Test::requireThatShrinkWorks()
     EXPECT_EQUAL(1000u, av->getNumDocs());
     EXPECT_EQUAL(100u, av->getCommittedDocIdLimit());
     EXPECT_EQUAL(createSerialNum - 1, ft->getFlushedSerialNum());
-    vespalib::ThreadStackExecutor exec(1, 128 * 1024);
-    vespalib::Executor::Task::UP task = ft->initFlush(53);
+    vespalib::ThreadStackExecutor exec(1, 128_Ki);
+    vespalib::Executor::Task::UP task = ft->initFlush(53, std::make_shared<search::FlushToken>());
     exec.execute(std::move(task));
     exec.sync();
     exec.shutdown();
@@ -607,7 +614,7 @@ Test::requireThatFlushedAttributeCanBeLoaded(const HwInfo &hwInfo)
         }
         av->commit();
         IFlushTarget::SP ft = am.getFlushable(attrName);
-        ft->initFlush(200)->run();
+        ft->initFlush(200, std::make_shared<search::FlushToken>())->run();
     }
     {
         AttributeManagerFixture amf(f);
@@ -636,7 +643,7 @@ Test::requireThatFlushFailurePreventsSyncTokenUpdate()
     EXPECT_EQUAL(1u, av->getNumDocs());
     auto flush_target = am.getFlushable("a12");
     EXPECT_EQUAL(0u, flush_target->getFlushedSerialNum());
-    auto flush_task = flush_target->initFlush(200);
+    auto flush_task = flush_target->initFlush(200, std::make_shared<search::FlushToken>());
     // Trigger flush failure
     av->getEnumStoreBase()->inc_compaction_count();
     flush_task->run();

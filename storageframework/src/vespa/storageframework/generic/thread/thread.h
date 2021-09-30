@@ -14,7 +14,6 @@
 
 #include "runnable.h"
 #include <vespa/vespalib/stllike/string.h>
-#include <mutex>
 #include <condition_variable>
 
 namespace vespalib {
@@ -51,17 +50,17 @@ public:
      */
     virtual void join() = 0;
 
-    virtual void updateParameters(uint64_t waitTime,
-                                  uint64_t maxProcessTime,
+    virtual void updateParameters(vespalib::duration waitTime,
+                                  vespalib::duration maxProcessTime,
                                   int ticksBeforeWait) = 0;
 
     /**
      * Utility function to interrupt and join a thread, possibly broadcasting
      * through a monitor after the signalling face.
      */
-    void interruptAndJoin(vespalib::Monitor* m);
+    void interruptAndJoin();
 
-    void interruptAndJoin(std::mutex &m, std::condition_variable &cv);
+    void interruptAndJoin(std::condition_variable &cv);
 };
 
 }

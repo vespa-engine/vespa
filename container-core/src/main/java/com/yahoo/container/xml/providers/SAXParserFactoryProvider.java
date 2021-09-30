@@ -9,7 +9,7 @@ import javax.xml.parsers.SAXParserFactory;
  * @author Einar M R Rosenvinge
  * @deprecated Do not use!
  */
-@Deprecated
+@Deprecated // TODO: Remove on Vespa 8
 public class SAXParserFactoryProvider implements Provider<SAXParserFactory> {
 
     public static final String FACTORY_CLASS = "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl";

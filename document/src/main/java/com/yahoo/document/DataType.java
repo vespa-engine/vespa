@@ -54,7 +54,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
     public final static NumericDataType BYTE = new NumericDataType("byte", 16, ByteFieldValue.class, ByteFieldValue.getFactory());
     public final static PrimitiveDataType PREDICATE = new PrimitiveDataType("predicate", 20, PredicateFieldValue.class, PredicateFieldValue.getFactory());
     public final static int tensorDataTypeCode = 21; // All TensorDataType instances have id=21 but carries additional type information serialized separately
-    // ADDITIONAL parametrized types added at runtime: map, struct, array, weighted set, annotation reference, tensor
+    // ADDITIONAL parametrized types added at runtime: map, struct, array, weighted set, annotation reference, tensor
 
     // Tags are converted to weightedset<string> when reading the search definition TODO: Remove it
     public final static WeightedSetDataType TAG = new WeightedSetDataType(DataType.STRING, true, true);
@@ -84,6 +84,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
         this.dataTypeId = dataTypeId;
     }
 
+    @Override
     public DataType clone() {
         return (DataType)super.clone();
     }
@@ -248,14 +249,17 @@ public abstract class DataType extends Identifiable implements Serializable, Com
         manager.registerSingleType(this);
     }
 
+    @Override
     public int hashCode() {
         return name.hashCode();
     }
 
+    @Override
     public boolean equals(Object other) {
         return (other instanceof DataType) && (dataTypeId == ((DataType)other).dataTypeId);
     }
 
+    @Override
     public String toString() {
         return "datatype " + name + " (code: " + dataTypeId + ")";
     }

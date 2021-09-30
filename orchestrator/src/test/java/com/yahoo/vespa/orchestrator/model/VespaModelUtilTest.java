@@ -18,9 +18,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
-import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceClusterSet;
-import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceInstanceSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -49,8 +48,8 @@ public class VespaModelUtilTest {
     private static final ServiceCluster controllerCluster =
             new ServiceCluster(
                     new ClusterId(CONTENT_CLUSTER_ID.s() + "-controller"),
-                    VespaModelUtil.CLUSTER_CONTROLLER_SERVICE_TYPE,
-                    makeServiceInstanceSet(controller1, controller0));
+                    ServiceType.CLUSTER_CONTROLLER,
+                    Set.of(controller1, controller0));
 
     // Distributor Service Cluster
 
@@ -63,8 +62,8 @@ public class VespaModelUtilTest {
     private static final ServiceCluster distributorCluster =
             new ServiceCluster(
                     CONTENT_CLUSTER_ID,
-                    VespaModelUtil.DISTRIBUTOR_SERVICE_TYPE,
-                    makeServiceInstanceSet(distributor0));
+                    ServiceType.DISTRIBUTOR,
+                    Set.of(distributor0));
 
     // Storage Node Service Cluster
 
@@ -77,8 +76,8 @@ public class VespaModelUtilTest {
     private static final ServiceCluster storageCluster =
             new ServiceCluster(
                     CONTENT_CLUSTER_ID,
-                    VespaModelUtil.STORAGENODE_SERVICE_TYPE,
-                    makeServiceInstanceSet(storage0));
+                    ServiceType.STORAGE,
+                    Set.of(storage0));
 
     // Secondary Distributor Service Cluster
 
@@ -91,8 +90,8 @@ public class VespaModelUtilTest {
     private static final ServiceCluster secondaryDistributorCluster =
             new ServiceCluster(
                     SECONDARY_CONTENT_CLUSTER_ID,
-                    VespaModelUtil.DISTRIBUTOR_SERVICE_TYPE,
-                    makeServiceInstanceSet(secondaryDistributor0));
+                    ServiceType.DISTRIBUTOR,
+                    Set.of(secondaryDistributor0));
 
     // Secondary Storage Node Service Cluster
 
@@ -105,8 +104,8 @@ public class VespaModelUtilTest {
     private static final ServiceCluster secondaryStorageCluster =
             new ServiceCluster(
                     SECONDARY_CONTENT_CLUSTER_ID,
-                    VespaModelUtil.STORAGENODE_SERVICE_TYPE,
-                    makeServiceInstanceSet(secondaryStorage0));
+                    ServiceType.STORAGE,
+                    Set.of(secondaryStorage0));
 
     // The Application Instance
 
@@ -114,7 +113,7 @@ public class VespaModelUtilTest {
             new ApplicationInstance(
                     new TenantId("tenant-0"),
                     new ApplicationInstanceId("application-0"),
-                    makeServiceClusterSet(
+                    Set.of(
                             controllerCluster,
                             distributorCluster,
                             storageCluster,
@@ -130,7 +129,7 @@ public class VespaModelUtilTest {
 
     @Test
     public void verifyControllerClusterIsRecognized() {
-        ServiceCluster cluster = createServiceCluster(VespaModelUtil.CLUSTER_CONTROLLER_SERVICE_TYPE);
+        ServiceCluster cluster = createServiceCluster(ServiceType.CLUSTER_CONTROLLER);
         assertTrue(VespaModelUtil.isClusterController(cluster));
     }
 
@@ -142,9 +141,9 @@ public class VespaModelUtilTest {
 
     @Test
     public void verifyStorageClusterIsRecognized() {
-        ServiceCluster cluster = createServiceCluster(VespaModelUtil.STORAGENODE_SERVICE_TYPE);
+        ServiceCluster cluster = createServiceCluster(ServiceType.STORAGE);
         assertTrue(VespaModelUtil.isStorage(cluster));
-        cluster = createServiceCluster(VespaModelUtil.STORAGENODE_SERVICE_TYPE);
+        cluster = createServiceCluster(ServiceType.STORAGE);
         assertTrue(VespaModelUtil.isStorage(cluster));
     }
 
@@ -156,11 +155,11 @@ public class VespaModelUtilTest {
 
     @Test
     public void verifyContentClusterIsRecognized() {
-        ServiceCluster cluster = createServiceCluster(VespaModelUtil.DISTRIBUTOR_SERVICE_TYPE);
+        ServiceCluster cluster = createServiceCluster(ServiceType.DISTRIBUTOR);
         assertTrue(VespaModelUtil.isContent(cluster));
-        cluster = createServiceCluster(VespaModelUtil.STORAGENODE_SERVICE_TYPE);
+        cluster = createServiceCluster(ServiceType.STORAGE);
         assertTrue(VespaModelUtil.isContent(cluster));
-        cluster = createServiceCluster(VespaModelUtil.SEARCHNODE_SERVICE_TYPE);
+        cluster = createServiceCluster(ServiceType.SEARCH);
         assertTrue(VespaModelUtil.isContent(cluster));
     }
 

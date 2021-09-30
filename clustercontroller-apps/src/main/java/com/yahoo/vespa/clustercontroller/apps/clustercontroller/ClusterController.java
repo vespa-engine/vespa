@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 
 import com.google.inject.Inject;
@@ -11,10 +11,12 @@ import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskSchedul
 import com.yahoo.vespa.clustercontroller.core.restapiv2.ClusterControllerStateRestAPI;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -30,37 +32,26 @@ public class ClusterController extends AbstractComponent
     private final Map<String, StatusHandler.ContainerStatusPageServer> status = new TreeMap<>();
 
     /**
-     * Dependency injection constructor for controller. {@link ZooKeeperProvider} argument given
-     * to ensure that zookeeper has started before we start polling it.
+     * Dependency injection constructor for controller. A {@link VespaZooKeeperServer} argument is required
+     * for all its users, to ensure that zookeeper has started before we start polling it, but
+     * should not be injected here, as that causes recreation of the cluster controller, and old and new
+     * will run master election, etc., concurrently, which breaks everything.
      */
     @Inject
-    public ClusterController(ZooKeeperProvider zooKeeperProvider) {
-        this();
-    }
-
-    ClusterController() {
+    public ClusterController() {
         metricWrapper = new JDiscMetricWrapper(null);
     }
 
-
-    public void setOptions(String clusterName, FleetControllerOptions options, Metric metricImpl) throws Exception {
+    public void setOptions(FleetControllerOptions options, Metric metricImpl) throws Exception {
         metricWrapper.updateMetricImplementation(metricImpl);
-        if (options.zooKeeperServerAddress != null && !"".equals(options.zooKeeperServerAddress)) {
-            // Wipe this path ... it's unclear why
-            String path = "/" + options.clusterName + options.fleetControllerIndex;
-            Curator curator = Curator.create(options.zooKeeperServerAddress);
-            if (curator.framework().checkExists().forPath(path) != null)
-                curator.framework().delete().deletingChildrenIfNeeded().forPath(path);
-            curator.framework().create().creatingParentsIfNeeded().forPath(path);
-        }
+        verifyThatZooKeeperWorks(options);
         synchronized (controllers) {
-            FleetController controller = controllers.get(clusterName);
-
+            FleetController controller = controllers.get(options.clusterName);
             if (controller == null) {
                 StatusHandler.ContainerStatusPageServer statusPageServer = new StatusHandler.ContainerStatusPageServer();
-                controller = FleetController.createForContainer(options, statusPageServer, metricWrapper);
-                controllers.put(clusterName, controller);
-                status.put(clusterName, statusPageServer);
+                controller = FleetController.create(options, statusPageServer, metricWrapper);
+                controllers.put(options.clusterName, controller);
+                status.put(options.clusterName, statusPageServer);
             } else {
                 controller.updateOptions(options, 0);
             }
@@ -83,11 +74,9 @@ public class ClusterController extends AbstractComponent
 
     @Override
     public Map<String, RemoteClusterControllerTaskScheduler> getFleetControllers() {
-        Map<String, RemoteClusterControllerTaskScheduler> m = new LinkedHashMap<>();
         synchronized (controllers) {
-            m.putAll(controllers);
+            return new LinkedHashMap<>(controllers);
         }
-        return m;
     }
 
     @Override
@@ -102,6 +91,18 @@ public class ClusterController extends AbstractComponent
 
     void shutdownController(FleetController controller) throws Exception {
         controller.shutdown();
+    }
+
+    /**
+     * Block until we are connected to zookeeper server
+     */
+    private void verifyThatZooKeeperWorks(FleetControllerOptions options) throws Exception {
+        if (options.zooKeeperServerAddress != null && !"".equals(options.zooKeeperServerAddress)) {
+            try (Curator curator = Curator.create(options.zooKeeperServerAddress)) {
+                if ( ! curator.framework().blockUntilConnected(600, TimeUnit.SECONDS))
+                    com.yahoo.protect.Process.logAndDie("Failed to connect to ZK, dying and restarting container");
+            }
+        }
     }
 
 }

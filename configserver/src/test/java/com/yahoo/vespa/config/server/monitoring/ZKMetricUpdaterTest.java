@@ -15,11 +15,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 public class ZKMetricUpdaterTest {
+
+    private static final Logger LOG = Logger.getLogger(ZKMetricUpdaterTest.class.getName());
+
     private Thread serverThread;
     private int serverPort;
 
@@ -57,12 +61,14 @@ public class ZKMetricUpdaterTest {
         assertThat(reportedMetrics.get(ZKMetricUpdater.METRIC_ZK_LATENCY_MAX), equalTo(1234L));
         assertThat(reportedMetrics.get(ZKMetricUpdater.METRIC_ZK_OUTSTANDING_REQUESTS), equalTo(12L));
         assertThat(reportedMetrics.get(ZKMetricUpdater.METRIC_ZK_ZNODES), equalTo(4L));
+
+        updater.shutdown();
     }
 
     private ZKMetricUpdater buildUpdater() {
         ZookeeperServerConfig zkServerConfig = new ZookeeperServerConfig(
                 new ZookeeperServerConfig.Builder().clientPort(serverPort).myid(12345));
-        return new ZKMetricUpdater(zkServerConfig, 0, -1);
+        return new ZKMetricUpdater(zkServerConfig, 0, 100000);
     }
 
     private void setupTcpServer(Supplier<String> reportProvider) throws IOException {
@@ -79,13 +85,13 @@ public class ZKMetricUpdaterTest {
                         output.close();
                     }
                 } catch (IOException e) {
-                    System.out.println("Error in fake ZK server: " + e.toString());
+                    LOG.severe("Error in fake ZK server: " + e.toString());
                 }
             }
             try {
                 serverSocket.close();
             } catch (IOException e) {
-                System.out.println("Error closing server socket in fake ZK server: " + e.toString());
+                LOG.severe("Error closing server socket in fake ZK server: " + e.toString());
             }
         });
         serverThread.start();

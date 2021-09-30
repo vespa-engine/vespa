@@ -1,0 +1,30 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+namespace=container.handler
+
+## Maximum number of thread in the thread pool
+## 0 is translated to vcpu*4
+## Negative value is interpreted as scale factor ( vcpu*abs(maxThreads) )
+maxthreads int default=500
+
+## The number of threads to keep in the pool, even if they are idle
+## 0 is translated to vcpu*4
+## Negative value is interpreted as scale factor ( vcpu*abs(corePoolSize) )
+corePoolSize int default=500
+
+# The number of seconds that excess idle threads will wait for new tasks before terminating
+keepAliveTime double default=5.0
+
+## max queue size
+## There can be queueSize + maxthreads requests inflight concurrently
+## The container will start replying 503
+## Negative value will cause it to set to maxthreads*4
+queueSize int default=0
+
+# The max time the container tolerates having no threads available before it shuts down to
+# get out of a bad state. This should be set a bit higher than the expected max execution
+# time of each request when in a state of overload, i.e about "worst case execution time*2"
+maxThreadExecutionTimeSeconds int default=190
+
+# Prefix for the name of the threads
+name string default="default-pool"

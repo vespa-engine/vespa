@@ -2,8 +2,10 @@
 
 #include "splitbitdetector.h"
 #include "bucketprocessor.h"
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/documentid.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <sstream>
 #include <cassert>
 
@@ -38,7 +40,6 @@ struct BucketVisitor : public BucketProcessor::EntryProcessor {
     mutable document::DocumentId _conflictId;
     mutable document::BucketId _conflictBucket;
     uint32_t _docCount;
-    uint64_t _docSize;
     struct DocInfo {
         uint64_t timestamp;
         document::DocumentId docId;
@@ -57,16 +58,14 @@ struct BucketVisitor : public BucketProcessor::EntryProcessor {
     BucketVisitor(const document::BucketIdFactory& factory);
     ~BucketVisitor();
 
-    void process(spi::DocEntry& slot) override {
-        assert(slot.getDocumentId());
+    void process(spi::DocEntry& entry) override {
+        assert(entry.getDocumentId());
         ++_docCount;
-        _docSize += slot.getDocumentSize();
 
-        const document::DocumentId& id(*slot.getDocumentId());
+        const document::DocumentId& id(*entry.getDocumentId());
         document::BucketId bucket = _factory.getBucketId(id);
-        // LOG(spam, "Bucket %s", bucket.toString().c_str());
         if (_firstDocs.size() < keepFirstCount) {
-            _firstDocs.push_back(DocInfo(slot.getTimestamp(), id, bucket));
+            _firstDocs.push_back(DocInfo(entry.getTimestamp(), id, bucket));
         }
 
         if (_refBucket.getRawId() == 0) {
@@ -101,10 +100,9 @@ BucketVisitor::BucketVisitor(const document::BucketIdFactory& factory)
     : _factory(factory), _splitBit(58),
       _splitMask(0), _refId(), _refBucket(),
       _conflictId(), _conflictBucket(),
-      _docCount(0), _docSize(0), _firstDocs()
+      _docCount(0), _firstDocs()
 {
     _firstDocs.reserve(keepFirstCount);
-    // LOG(spam, "Checking out meta entries in bucket");
     for (uint32_t i=0; i<_splitBit; ++i) {
         _splitMask = (_splitMask << 1) | 1;
     }
@@ -158,7 +156,8 @@ SplitBitDetector::detectSplit(spi::PersistenceProvider& provider,
     BucketVisitor detector(factory);
 
     BucketProcessor::iterateAll(
-            provider, source, "", detector, spi::ALL_VERSIONS, context);
+            provider, source, "", std::make_shared<document::DocIdOnly>(),
+            detector, spi::ALL_VERSIONS, context);
 
     uint16_t splitBit = detector._splitBit;
 
@@ -211,8 +210,7 @@ SplitBitDetector::detectSplit(spi::PersistenceProvider& provider,
             error << "Could not find differing bit to split bucket contents "
                      "around due to bucket ID collisions. Forcing resulting "
                      "bucket to be 58 bits. Bucket has "
-                  << detector._docCount << " docs totalling "
-                  << detector._docSize << " bytes. ";
+                  << detector._docCount << " docs.";
             detector.printEntrySummary(error);
             LOGBT(warning,
                   source.getBucketId().toString(),

@@ -9,7 +9,7 @@
 #include <map>
 
 using namespace search;
-using namespace search::datastore;
+using namespace vespalib::datastore;
 using namespace search::memoryindex;
 using vespalib::MemoryUsage;
 

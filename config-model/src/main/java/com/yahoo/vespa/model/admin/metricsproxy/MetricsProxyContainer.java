@@ -1,7 +1,9 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package com.yahoo.vespa.model.admin.metricsproxy;
 
+import ai.vespa.metricsproxy.http.metrics.MetricsV2Handler;
+import ai.vespa.metricsproxy.http.metrics.NodeInfoConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
@@ -9,17 +11,24 @@ import ai.vespa.metricsproxy.rpc.RpcConnector;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServices;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.container.Container;
+import com.yahoo.vespa.model.container.component.AccessLogComponent;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.METRICS_PROXY_BUNDLE_NAME;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.createMetricsHandler;
 
 /**
  * Container running a metrics proxy.
@@ -28,24 +37,38 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerClus
  */
 public class MetricsProxyContainer extends Container implements
         NodeDimensionsConfig.Producer,
+        NodeInfoConfig.Producer,
         RpcConnectorConfig.Producer,
-        VespaServicesConfig.Producer
+        VespaServicesConfig.Producer,
+        QrStartConfig.Producer
 {
+    public static final int BASEPORT = 19092;
 
     final boolean isHostedVespa;
+    private final Optional<ClusterMembership> clusterMembership;
+    private final MetricsProxyContainerCluster cluster;
+    private final String jvmGCOptions;
 
-    public MetricsProxyContainer(AbstractConfigProducer parent, String hostname, int index, boolean isHostedVespa) {
-        super(parent, hostname, index);
-        this.isHostedVespa = isHostedVespa;
+    public MetricsProxyContainer(MetricsProxyContainerCluster cluster, HostResource host, int index, DeployState deployState) {
+        super(cluster, host.getHostname(), index, deployState);
+        this.isHostedVespa = deployState.isHosted();
+        this.clusterMembership = host.spec().membership();
+        this.cluster = cluster;
+        this.jvmGCOptions = deployState.getProperties().jvmGCOptions(clusterMembership.map(membership -> membership.cluster().type()));
         setProp("clustertype", "admin");
         setProp("index", String.valueOf(index));
         addNodeSpecificComponents();
+        addComponent(new AccessLogComponent(containerCluster().orElse(null), AccessLogComponent.AccessLogType.jsonAccessLog,
+                AccessLogComponent.CompressionType.ZSTD,
+                "metrics-proxy",
+                deployState.isHosted()));
     }
 
     private void addNodeSpecificComponents() {
         addMetricsProxyComponent(NodeDimensions.class);
         addMetricsProxyComponent(RpcConnector.class);
         addMetricsProxyComponent(VespaServices.class);
+        addHandler(createMetricsHandler(MetricsV2Handler.class, MetricsV2Handler.V2_PATH));
     }
 
     @Override
@@ -53,7 +76,10 @@ public class MetricsProxyContainer extends Container implements
         return METRICS_PROXY_CONTAINER;
     }
 
-    static public int BASEPORT = 19092;
+    @Override
+    protected String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
+        return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.admin);
+    }
 
     @Override
     public int getWantedPort() {
@@ -115,14 +141,48 @@ public class MetricsProxyContainer extends Container implements
             getHostResource().spec().membership().map(ClusterMembership::cluster).ifPresent(cluster -> {
                 dimensions.put(PublicDimensions.INTERNAL_CLUSTER_TYPE, cluster.type().name());
                 dimensions.put(PublicDimensions.INTERNAL_CLUSTER_ID, cluster.id().value());
+                cluster.group().ifPresent(group -> dimensions.put(PublicDimensions.GROUP_ID, group.toString()));
             });
 
             builder.dimensions(dimensions);
         }
     }
 
-    private void  addMetricsProxyComponent(Class<?> componentClass) {
+    @Override
+    public void getConfig(NodeInfoConfig.Builder builder) {
+        builder.role(getNodeRole())
+                .hostname(getHostName());
+    }
+
+    @Override
+    public void getConfig(QrStartConfig.Builder builder) {
+        cluster.getConfig(builder);
+
+        if (clusterMembership.isPresent()) {
+            int maxHeapSize = clusterMembership.get().cluster().type() == ClusterSpec.Type.admin
+                    ? 128
+                    : 256;
+            builder.jvm
+                    .gcopts(jvmGCOptions)
+                    .heapsize(maxHeapSize);
+        }
+    }
+
+    private String getNodeRole() {
+        String hostConfigId = getHost().getHost().getConfigId();
+        if (! isHostedVespa) return hostConfigId;
+        return getHostResource().spec().membership()
+                    .map(ClusterMembership::stringValue)
+                    .orElse(hostConfigId);
+    }
+
+    private void addMetricsProxyComponent(Class<?> componentClass) {
         addSimpleComponent(componentClass.getName(), null, METRICS_PROXY_BUNDLE_NAME);
+    }
+
+    @Override
+    protected String defaultPreload() {
+        return "";
     }
 
 }

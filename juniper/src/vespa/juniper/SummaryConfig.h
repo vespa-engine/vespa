@@ -31,7 +31,7 @@ public:
     inline const std::string & highlight_on()  const { return _highlight_on; }
     inline const std::string & highlight_off() const { return _highlight_off; }
     inline const std::string & dots()          const { return _dots; }
-    inline bool separator(const char c) const { return (c < 0 ? false : _separator.test(c)); }
+    inline bool separator(const char c) const { return ((signed char) c < 0 ? false : _separator.test(c)); }
     inline bool connector(const unsigned char c) const { return _connector.test(c); }
     inline ConfigFlag escape_markup() const { return _escape_markup; }
     inline ConfigFlag preserve_white_space() const { return _preserve_white_space; }

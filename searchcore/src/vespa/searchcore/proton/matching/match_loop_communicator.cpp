@@ -9,10 +9,11 @@ MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN)
     : MatchLoopCommunicator(threads, topN, std::unique_ptr<IDiversifier>())
 {}
 MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier> diversifier)
-    : _best_dropped(),
+    : _best_scores(),
+      _best_dropped(),
       _estimate_match_frequency(threads),
-      _selectBest(threads, topN, _best_dropped, std::move(diversifier)),
-      _rangeCover(threads, _best_dropped)
+      _get_second_phase_work(threads, topN, _best_scores, _best_dropped, std::move(diversifier)),
+      _complete_second_phase(threads, topN, _best_scores, _best_dropped)
 {}
 MatchLoopCommunicator::~MatchLoopCommunicator() = default;
 
@@ -33,25 +34,30 @@ MatchLoopCommunicator::EstimateMatchFrequency::mingle()
     }
 }
 
-MatchLoopCommunicator::SelectBest::SelectBest(size_t n, size_t topN_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier> diversifier)
-    : vespalib::Rendezvous<SortedHitSequence, Hits>(n),
+MatchLoopCommunicator::GetSecondPhaseWork::GetSecondPhaseWork(size_t n, size_t topN_in, Range &best_scores_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier> diversifier)
+    : vespalib::Rendezvous<SortedHitSequence, TaggedHits, true>(n),
       topN(topN_in),
+      best_scores(best_scores_in),
       best_dropped(best_dropped_in),
       _diversifier(std::move(diversifier))
 {}
-MatchLoopCommunicator::SelectBest::~SelectBest() = default;
+MatchLoopCommunicator::GetSecondPhaseWork::~GetSecondPhaseWork() = default;
 
 template<typename Q, typename F>
 void
-MatchLoopCommunicator::SelectBest::mingle(Q &queue, F &&accept)
+MatchLoopCommunicator::GetSecondPhaseWork::mingle(Q &queue, F &&accept)
 {
-    best_dropped.valid = false;
-    for (size_t picked = 0; picked < topN && !queue.empty(); ) {
+    size_t picked = 0;
+    search::feature_t last_score = 0.0;
+    while ((picked < topN) && !queue.empty()) {
         uint32_t i = queue.front();
         const Hit & hit = in(i).get();
         if (accept(hit.first)) {
-            out(i).push_back(hit);
-            ++picked;
+            out(picked % size()).emplace_back(hit, i);
+            last_score = hit.second;
+            if (++picked == 1) {
+                best_scores.high = hit.second;
+            }
         } else if (!best_dropped.valid) {
             best_dropped.valid = true;
             best_dropped.score = hit.second;
@@ -63,16 +69,21 @@ MatchLoopCommunicator::SelectBest::mingle(Q &queue, F &&accept)
             queue.pop_front();
         }
     }
+    if (picked > 0) {
+        best_scores.low = last_score;
+    }
 }
 
 void
-MatchLoopCommunicator::SelectBest::mingle()
+MatchLoopCommunicator::GetSecondPhaseWork::mingle()
 {
-    size_t est_out = (topN / size()) + 16;
+    best_scores = Range();
+    best_dropped.valid = false;
+    size_t est_out = (topN / size()) + 1;
     vespalib::PriorityQueue<uint32_t, SelectCmp> queue(SelectCmp(*this));
     for (size_t i = 0; i < size(); ++i) {
+        out(i).reserve(est_out);
         if (in(i).valid()) {
-            out(i).reserve(est_out);
             queue.push(i);
         }
     }
@@ -84,28 +95,26 @@ MatchLoopCommunicator::SelectBest::mingle()
 }
 
 void
-MatchLoopCommunicator::RangeCover::mingle()
+MatchLoopCommunicator::CompleteSecondPhase::mingle()
 {
-    size_t i = 0;
-    while (i < size() && (!in(i).first.isValid() || !in(i).second.isValid())) {
-        ++i;
+    RangePair score_ranges(best_scores, Range());
+    Range &new_scores = score_ranges.second;
+    size_t est_out = (topN / size()) + 16;
+    for (size_t i = 0; i < size(); ++i) {
+        out(i).first.reserve(est_out);
     }
-    if (i < size()) {
-        RangePair result = in(i++);
-        for (; i < size(); ++i) {
-            if (in(i).first.isValid() && in(i).second.isValid()) {
-                result.first.low = std::min(result.first.low, in(i).first.low);
-                result.first.high = std::max(result.first.high, in(i).first.high);
-                result.second.low = std::min(result.second.low, in(i).second.low);
-                result.second.high = std::max(result.second.high, in(i).second.high);
-            }
+    for (size_t i = 0; i < size(); ++i) {
+        for (const auto &[hit, tag]: in(i)) {
+            out(tag).first.push_back(hit);
+            new_scores.update(hit.second);
         }
+    }
+    if (score_ranges.first.isValid() && score_ranges.second.isValid()) {
         if (best_dropped.valid) {
-            result.first.low = std::max(result.first.low, best_dropped.score);
-            result.first.high = std::max(result.first.low, result.first.high);
+            score_ranges.first.low = std::max(score_ranges.first.low, best_dropped.score);
         }
-        for (size_t j = 0; j < size(); ++j) {
-            out(j) = result;
+        for (size_t i = 0; i < size(); ++i) {
+            out(i).second = score_ranges;
         }
     }
 }

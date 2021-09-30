@@ -24,9 +24,8 @@ import java.io.IOException;
  */
 public class VespaModelCreatorWithFilePkg {
 
-    private FilesApplicationPackage applicationPkg;
-
-    private ConfigModelRegistry configModelRegistry;
+    private final FilesApplicationPackage applicationPkg;
+    private final ConfigModelRegistry configModelRegistry;
 
     public VespaModelCreatorWithFilePkg(String directoryName) {
         this(new File(directoryName));

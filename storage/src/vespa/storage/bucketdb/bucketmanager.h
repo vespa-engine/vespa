@@ -27,7 +27,7 @@
 
 namespace storage {
 
-class BucketManager : public StorageLinkQueued,
+class BucketManager : public StorageLink,
                       public framework::StatusReporter,
                       private framework::Runnable,
                       private framework::MetricUpdateHook
@@ -40,8 +40,6 @@ public:
 
 private:
     config::ConfigUri _configUri;
-
-    uint32_t _chunkLevel;
     BucketInfoRequestMap _bucketInfoRequests;
 
     /**
@@ -122,10 +120,10 @@ private:
     void onOpen() override;
     void onDoneInit() override { _doneInitialized = true; }
     void onClose() override;
-    void onFlush(bool downwards) override;
 
     void updateMetrics(bool updateDocCount);
     void updateMetrics(const MetricLockGuard &) override { updateMetrics(true); }
+    void update_bucket_db_memory_usage_metrics();
     void updateMinUsedBits();
 
     bool onRequestBucketInfo(const std::shared_ptr<api::RequestBucketInfoCommand>&) override;

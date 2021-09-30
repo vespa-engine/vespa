@@ -38,4 +38,5 @@ class JrtMetrics {
             metric.add(metricName, countIncrement, null);
         }
     }
+
 }

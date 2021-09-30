@@ -5,7 +5,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.list");
 
-using vespalib::LockGuard;
+using LockGuard = std::lock_guard<std::mutex>;
 
 namespace slobrok::api {
 
@@ -60,12 +60,12 @@ SlobrokList::logString()
     if (_slobrokSpecs.size() == 0) {
         return "[empty service location broker list]";
     }
-    std::string v;
-    v = _slobrokSpecs[0];
-    for (size_t i = 1 ; i < _slobrokSpecs.size(); ++i) {
-        v += " or ";
+    std::string v = "[";
+    for (size_t i = 0 ; i < _slobrokSpecs.size(); ++i) {
+        if (i > 0) v += ", ";
         v += _slobrokSpecs[i];
     }
+    v += "]";
     return v;
 }
 
@@ -83,7 +83,7 @@ SlobrokList::setup(const std::vector<std::string> &specList)
         _slobrokSpecs.push_back(specList[i]);
     }
 
-    vespalib::RandomGen randomizer(time(NULL));
+    vespalib::RandomGen randomizer(time(nullptr));
     // randomize order
     for (size_t i = 0; i + 1 < cfgSz; ++i) {
         size_t lim = cfgSz - i;

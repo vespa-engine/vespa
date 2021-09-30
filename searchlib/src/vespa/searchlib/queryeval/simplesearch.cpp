@@ -3,8 +3,7 @@
 #include "simplesearch.h"
 #include <vespa/vespalib/objects/visit.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 void
 SimpleSearch::doSeek(uint32_t docid)
@@ -38,9 +37,6 @@ SimpleSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "tag", _tag);
 }
 
-SimpleSearch::~SimpleSearch()
-{
-}
+SimpleSearch::~SimpleSearch() = default;
 
-} // namespace queryeval
-} // namespace search
+}

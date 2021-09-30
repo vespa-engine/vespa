@@ -31,7 +31,8 @@ public class DocumentSelectionConverter {
 
     /**
      * Transforms the selection into a search query.
-     * @return A search query representing the selection.
+     *
+     * @return a search query representing the selection
      */
     public String getQuery(String documentType) {
         if (queryExpressionMap == null)
@@ -43,7 +44,8 @@ public class DocumentSelectionConverter {
 
     /**
      * Transforms the selection into an inverted search query.
-     * @return A search query representing the selection.
+     *
+     * @return a search query representing the selection
      */
     public String getInvertedQuery(String documentType) {
         String query = getQuery(documentType);

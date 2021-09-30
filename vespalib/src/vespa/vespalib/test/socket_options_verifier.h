@@ -18,7 +18,7 @@ void verify_bool_opt(int fd, int level, int name, bool expect) {
     socklen_t size = sizeof(data);
     EXPECT_EQUAL(getsockopt(fd, level, name, &data, &size), 0);
     EXPECT_EQUAL(size, sizeof(data));
-    EXPECT_EQUAL(data, int(expect));
+    EXPECT_EQUAL(data != 0, expect);
 }
 
 } // namespace vespalib::test::<unnamed>

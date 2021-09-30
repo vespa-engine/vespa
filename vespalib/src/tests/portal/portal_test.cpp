@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/vespalib/portal/portal.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -202,7 +203,7 @@ TEST("require that get requests dropped on the floor returns HTTP error") {
     vespalib::string path = "/test";
     auto portal = Portal::create(null_crypto(), 0);
     auto expect = make_expected_error(500, "Internal Server Error");
-    MyGetHandler handler([](Portal::GetRequest){});
+    MyGetHandler handler([](Portal::GetRequest) noexcept {});
     auto bound = portal->bind(path, handler);
     auto result = fetch(portal->listen_port(), null_crypto(), path);
     EXPECT_EQUAL(result, expect);
@@ -305,7 +306,7 @@ TEST_MT_FF("require that GET requests can be completed in another thread", 2,
     if (thread_id == 0) {
         Portal::GetRequest req = f1.latch.read();
         f1.exit_callback.countDown();
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::this_thread::sleep_for(5ms);
         req.respond_with_content("text/plain", "hello");
     } else {
         auto result = fetch(f1.portal->listen_port(), null_crypto(), "/test");
@@ -318,9 +319,9 @@ TEST_MT_FFF("require that bind token destruction waits for active callbacks", 3,
 {
     if (thread_id == 0) {
         Portal::GetRequest req = f1.latch.read();
-        EXPECT_TRUE(!f2.await(20));
+        EXPECT_TRUE(!f2.await(20ms));
         f1.exit_callback.countDown();
-        EXPECT_TRUE(f2.await(60000));
+        EXPECT_TRUE(f2.await(60s));
         req.respond_with_content("application/json", "[1,2,3]");
     } else if (thread_id == 1) {
         f1.enter_callback.await();
@@ -338,9 +339,9 @@ TEST_MT_FFF("require that portal destruction waits for request completion", 3,
     if (thread_id == 0) {
         Portal::GetRequest req = f1.latch.read();
         f1.exit_callback.countDown();
-        EXPECT_TRUE(!f2.await(20));
+        EXPECT_TRUE(!f2.await(20ms));
         req.respond_with_content("application/json", "[1,2,3]");
-        EXPECT_TRUE(f2.await(60000));
+        EXPECT_TRUE(f2.await(60s));
     } else if (thread_id == 1) {
         f1.enter_callback.await();
         f1.bound.reset();

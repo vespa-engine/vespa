@@ -106,6 +106,7 @@ public class MainTest {
         TransportSecurityOptions options = new TransportSecurityOptions.Builder()
                 .withCertificates(Paths.get("/path/to/certificate"), Paths.get("/path/to/key"))
                 .withCaCertificates(Paths.get("/path/to/cacerts"))
+                .withHostnameValidationDisabled(true)
                 .build();
         Path configFile = tmpFolder.newFile().toPath();
         options.toJsonFile(configFile);

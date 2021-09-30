@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 
@@ -56,7 +57,7 @@ public class BufferedLogStore {
         long lastChunkId = buffer.getLogChunkIds(id, type).max().orElse(0);
         long numberOfChunks = Math.max(1, buffer.getLogChunkIds(id, type).count());
         if (numberOfChunks > maxLogSize / chunkSize)
-            return; // Max size exceeded — store no more.
+            return; // Max size exceeded — store no more.
 
         byte[] emptyChunk = "[]".getBytes();
         byte[] lastChunk = buffer.readLog(id, type, lastChunkId).orElse(emptyChunk);
@@ -125,4 +126,11 @@ public class BufferedLogStore {
                                       after);
     }
 
+    public Optional<String> readTestReport(RunId id) {
+        return store.getTestReport(id).map(String::new);
+    }
+
+    public void writeTestReport(RunId id, TestReport report) {
+        store.putTestReport(id, report.toJson().getBytes());
+    }
 }

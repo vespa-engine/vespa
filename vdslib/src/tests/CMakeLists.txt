@@ -6,15 +6,10 @@ vespa_add_executable(vdslib_gtest_runner_app TEST
     SOURCES
     gtest_runner.cpp
     DEPENDS
-    vdslib_bucketdistributiontest
     vdslib_containertest
     vdslib_testdistribution
     vdslib_teststate
-    vdslib_testthread
-    gtest
+    GTest::GTest
 )
 
-vespa_add_test(
-    NAME vdslib_gtest_runner_app
-    COMMAND vdslib_gtest_runner_app
-)
+vespa_add_test(NAME vdslib_gtest_runner_app COMMAND vdslib_gtest_runner_app COST 100)

@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/time.h>
 #include <mutex>
 #include <condition_variable>
-#include <chrono>
 
 class FNET_Task;
 
@@ -19,9 +19,8 @@ class FNET_Task;
 class FNET_Scheduler
 {
 public:
-    using clock = std::chrono::steady_clock;
-    using time_point = clock::time_point;
-    static constexpr auto tick_ms = std::chrono::milliseconds(10);
+    using clock = vespalib::steady_clock;
+    static constexpr auto tick_ms = 10ms;
 
     enum scheduler_constants {
         NUM_SLOTS   = 4096,
@@ -32,16 +31,16 @@ public:
 private:
     std::mutex              _lock;
     std::condition_variable _cond;
-    FNET_Task   *_slots[NUM_SLOTS + 1];
-    time_point   _next;
-    time_point   _now;
-    time_point  *_sampler;
-    uint32_t     _currIter;
-    uint32_t     _currSlot;
-    FNET_Task   *_currPt;
-    FNET_Task   *_tailPt;
-    FNET_Task   *_performing;
-    bool         _waitTask;
+    FNET_Task              *_slots[NUM_SLOTS + 1];
+    vespalib::steady_time   _next;
+    vespalib::steady_time   _now;
+    vespalib::steady_time  *_sampler;
+    uint32_t                _currIter;
+    uint32_t                _currSlot;
+    FNET_Task              *_currPt;
+    FNET_Task              *_tailPt;
+    FNET_Task              *_performing;
+    bool                    _waitTask;
 
     FNET_Scheduler(const FNET_Scheduler &);
     FNET_Scheduler &operator=(const FNET_Scheduler &);
@@ -69,12 +68,10 @@ public:
      * @param sampler if given, this object will be used to obtain the
      *                time when the @ref CheckTasks method is invoked. If a
      *                sampler is not given, time sampling will be
-     *                handled internally.
-     * @param now if given, indicates the current time. This value is
-     *            used by the constructor to init internal variables.
+     *                handled internally. The sampler will also be used by
+     *                the constructor to init internal variables.
      **/
-    FNET_Scheduler(time_point *sampler = nullptr,
-                   time_point *now = nullptr);
+    FNET_Scheduler(vespalib::steady_time *sampler = nullptr);
     virtual ~FNET_Scheduler();
 
 

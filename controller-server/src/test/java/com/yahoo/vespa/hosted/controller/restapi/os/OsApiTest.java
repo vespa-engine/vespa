@@ -10,12 +10,12 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
-import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
-import com.yahoo.vespa.hosted.controller.maintenance.Maintainer;
+import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintainer;
 import com.yahoo.vespa.hosted.controller.maintenance.OsUpgrader;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -52,14 +52,13 @@ public class OsApiTest extends ControllerContainerTest {
         addUserToHostedOperatorRole(operator);
         zoneRegistryMock().setSystemName(SystemName.cd)
                           .setZones(zone1, zone2, zone3)
+                          .reprovisionToUpgradeOsIn(zone3)
                           .setOsUpgradePolicy(cloud1, UpgradePolicy.create().upgrade(zone1).upgrade(zone2))
                           .setOsUpgradePolicy(cloud2, UpgradePolicy.create().upgrade(zone3));
         osUpgraders = List.of(
                 new OsUpgrader(tester.controller(), Duration.ofDays(1),
-                               new JobControl(tester.controller().curator()),
                                cloud1),
                 new OsUpgrader(tester.controller(), Duration.ofDays(1),
-                               new JobControl(tester.controller().curator()),
                                cloud2));
     }
 
@@ -71,10 +70,10 @@ public class OsApiTest extends ControllerContainerTest {
         // All nodes are initially on empty version
         upgradeAndUpdateStatus();
         // Upgrade OS to a different version in each cloud
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.2\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
-                       "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2\"}", 200);
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"8.2.1\", \"cloud\": \"cloud2\"}", Request.Method.PATCH),
-                       "{\"message\":\"Set target OS version for cloud 'cloud2' to 8.2.1\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.2\", \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
+                       "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2 with upgrade budget PT0S\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"8.2.1\", \"cloud\": \"cloud2\", \"upgradeBudget\": \"PT24H\"}", Request.Method.PATCH),
+                       "{\"message\":\"Set target OS version for cloud 'cloud2' to 8.2.1 with upgrade budget PT24H\"}", 200);
 
         // Status is updated after some zones are upgraded
         upgradeAndUpdateStatus();
@@ -87,27 +86,27 @@ public class OsApiTest extends ControllerContainerTest {
         assertFile(new Request("http://localhost:8080/os/v1/"), "versions-all-upgraded.json");
 
         // Downgrade with force is permitted
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.1\", \"cloud\": \"cloud1\", \"force\": true}", Request.Method.PATCH),
-                       "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.1\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.1\", \"cloud\": \"cloud1\", \"force\": true, \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
+                       "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.1 with upgrade budget PT0S\"}", 200);
 
-        // Error: Missing field 'cloud' or 'version'
+        // Error: Missing fields
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.6\"}", Request.Method.PATCH),
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Fields 'version' and 'cloud' are required\"}", 400);
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Fields 'version', 'cloud' and 'upgradeBudget' are required\"}", 400);
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"cloud\": \"cloud1\"}", Request.Method.PATCH),
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Fields 'version' and 'cloud' are required\"}", 400);
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Fields 'version', 'cloud' and 'upgradeBudget' are required\"}", 400);
 
         // Error: Invalid versions
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": null, \"cloud\": \"cloud1\"}", Request.Method.PATCH),
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": null, \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version '0.0.0'\"}", 400);
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"foo\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"foo\", \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version 'foo': For input string: \\\"foo\\\"\"}", 400);
 
         // Error: Invalid cloud
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.6\", \"cloud\": \"foo\"}", Request.Method.PATCH),
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.6\", \"cloud\": \"foo\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cloud 'foo' does not exist in this system\"}", 400);
 
         // Error: Downgrade OS
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.4.1\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.4.1\", \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot downgrade cloud 'cloud1' to version 7.4.1\"}", 400);
 
         // Request firmware checks in all zones.
@@ -130,7 +129,7 @@ public class OsApiTest extends ControllerContainerTest {
     }
 
     private void upgradeAndUpdateStatus() {
-        osUpgraders.forEach(Maintainer::run);
+        osUpgraders.forEach(ControllerMaintainer::run);
         updateVersionStatus();
     }
 
@@ -142,9 +141,9 @@ public class OsApiTest extends ControllerContainerTest {
         for (ZoneId zone : zones) {
             for (SystemApplication application : SystemApplication.all()) {
                 var targetVersion = nodeRepository().targetVersionsOf(zone).osVersion(application.nodeType());
-                for (Node node : nodeRepository().list(zone, application.id())) {
+                for (Node node : nodeRepository().list(zone, NodeFilter.all().applications(application.id()))) {
                     var version = targetVersion.orElse(node.wantedOsVersion());
-                    nodeRepository().putByHostname(zone, new Node.Builder(node).currentOsVersion(version).wantedOsVersion(version).build());
+                    nodeRepository().putNodes(zone, Node.builder(node).currentOsVersion(version).wantedOsVersion(version).build());
                 }
             }
         }

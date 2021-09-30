@@ -13,8 +13,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -32,7 +31,7 @@ public class Bug4475379TestCase {
         annotate(manager, doc);
 
         Document anotherDoc = doc.clone();
-        assertThat(doc, equalTo(anotherDoc));
+        assertEquals(doc, anotherDoc);
     }
 
     public void annotate(DocumentTypeManager manager, Document document) {

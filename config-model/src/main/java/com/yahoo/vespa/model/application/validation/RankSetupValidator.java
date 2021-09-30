@@ -1,69 +1,86 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.collections.Pair;
+import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.InvalidLogFormatException;
-import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogMessage;
-import com.yahoo.yolean.Exceptions;
+import com.yahoo.searchdefinition.DistributableResource;
+import com.yahoo.searchdefinition.OnnxModel;
+import com.yahoo.searchdefinition.RankExpressionBody;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.search.AttributesConfig;
-import com.yahoo.collections.Pair;
-import com.yahoo.config.ConfigInstance;
 import com.yahoo.vespa.config.search.ImportedFieldsConfig;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
-import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.SearchCluster;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Validate rank setup for all search clusters (rank-profiles, index-schema, attributes configs), validating done
- * by running through the binary 'vespa-verify-ranksetup'
+ * Validates rank setup for all content clusters (rank-profiles, index-schema, attributes configs), validation is done
+ * by running the binary 'vespa-verify-ranksetup-bin'
  *
  * @author vegardh
  */
 public class RankSetupValidator extends Validator {
 
     private static final Logger log = Logger.getLogger(RankSetupValidator.class.getName());
-    private final boolean force;
+    private static final String binaryName = "vespa-verify-ranksetup-bin ";
 
-    public RankSetupValidator(boolean force) {
-        this.force = force;
+    private final boolean ignoreValidationErrors;
+
+    public RankSetupValidator(boolean ignoreValidationErrors) {
+        this.ignoreValidationErrors = ignoreValidationErrors;
     }
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {
         File cfgDir = null;
         try {
-            cfgDir = Files.createTempDirectory("deploy_ranksetup").toFile();
+            cfgDir = Files.createTempDirectory("verify-ranksetup." +
+                                               deployState.getProperties().applicationId().toFullString() +
+                                               ".")
+                    .toFile();
 
             for (AbstractSearchCluster cluster : model.getSearchClusters()) {
                 // Skipping rank expression checking for streaming clusters, not implemented yet
-                if (cluster.isRealtime()) {
-                    IndexedSearchCluster sc = (IndexedSearchCluster) cluster;
-                    String clusterDir = cfgDir.getAbsolutePath() + "/" + sc.getClusterName() + "/";
-                    for (DocumentDatabase docDb : sc.getDocumentDbs()) {
-                        final String name = docDb.getDerivedConfiguration().getSearch().getName();
-                        String searchDir = clusterDir + name + "/";
-                        writeConfigs(searchDir, docDb);
-                        if ( ! validate("dir:" + searchDir, sc, name, deployState.getDeployLogger(), cfgDir)) {
-                            return;
-                        }
+                if (cluster.isStreaming()) continue;
+
+                IndexedSearchCluster sc = (IndexedSearchCluster) cluster;
+                String clusterDir = cfgDir.getAbsolutePath() + "/" + sc.getClusterName() + "/";
+                for (DocumentDatabase docDb : sc.getDocumentDbs()) {
+                    final String name = docDb.getDerivedConfiguration().getSearch().getName();
+                    String searchDir = clusterDir + name + "/";
+                    writeConfigs(searchDir, docDb);
+                    writeExtraVerifyRanksetupConfig(searchDir, docDb);
+                    if (!validate("dir:" + searchDir, sc, name, deployState.getDeployLogger(), cfgDir)) {
+                        return;
                     }
                 }
             }
@@ -79,16 +96,13 @@ public class RankSetupValidator extends Validator {
     private boolean validate(String configId, SearchCluster searchCluster, String sdName, DeployLogger deployLogger, File tempDir) {
         Instant start = Instant.now();
         try {
+            log.log(Level.FINE, () -> String.format("Validating schema '%s' for %s with config id %s", sdName, searchCluster, configId));
             boolean ret = execValidate(configId, searchCluster, sdName, deployLogger);
             if (!ret) {
                 // Give up, don't say same error msg repeatedly
                 deleteTempDir(tempDir);
             }
-            log.log(LogLevel.DEBUG, String.format("Validating %s for %s, %s took %s ms",
-                                                  sdName,
-                                                  searchCluster,
-                                                  configId,
-                                                  Duration.between(start, Instant.now()).toMillis()));
+            log.log(Level.FINE, () -> String.format("Validation took %s ms", Duration.between(start, Instant.now()).toMillis()));
             return ret;
         } catch (IllegalArgumentException e) {
             deleteTempDir(tempDir);
@@ -100,31 +114,61 @@ public class RankSetupValidator extends Validator {
         IOUtils.recursiveDeleteDir(dir);
     }
 
-    private void writeConfigs(String dir, AbstractConfigProducer producer) throws IOException {
-            RankProfilesConfig.Builder rpcb = new RankProfilesConfig.Builder();
-            RankProfilesConfig.Producer.class.cast(producer).getConfig(rpcb);
-            RankProfilesConfig rpc = new RankProfilesConfig(rpcb);
-            writeConfig(dir, RankProfilesConfig.getDefName() + ".cfg", rpc);
+    private void writeConfigs(String dir, AbstractConfigProducer<?> producer) throws IOException {
+        RankProfilesConfig.Builder rpcb = new RankProfilesConfig.Builder();
+        ((RankProfilesConfig.Producer) producer).getConfig(rpcb);
+        writeConfig(dir, RankProfilesConfig.getDefName() + ".cfg", rpcb.build());
 
-            IndexschemaConfig.Builder iscb = new IndexschemaConfig.Builder();
-            IndexschemaConfig.Producer.class.cast(producer).getConfig(iscb);
-            IndexschemaConfig isc = new IndexschemaConfig(iscb);
-            writeConfig(dir, IndexschemaConfig.getDefName() + ".cfg", isc);
+        IndexschemaConfig.Builder iscb = new IndexschemaConfig.Builder();
+        ((IndexschemaConfig.Producer) producer).getConfig(iscb);
+        writeConfig(dir, IndexschemaConfig.getDefName() + ".cfg", iscb.build());
 
-            AttributesConfig.Builder acb = new AttributesConfig.Builder();
-            AttributesConfig.Producer.class.cast(producer).getConfig(acb);
-            AttributesConfig ac = new AttributesConfig(acb);
-            writeConfig(dir, AttributesConfig.getDefName() + ".cfg", ac);
+        AttributesConfig.Builder acb = new AttributesConfig.Builder();
+        ((AttributesConfig.Producer) producer).getConfig(acb);
+        writeConfig(dir, AttributesConfig.getDefName() + ".cfg", acb.build());
 
-            RankingConstantsConfig.Builder rccb = new RankingConstantsConfig.Builder();
-            RankingConstantsConfig.Producer.class.cast(producer).getConfig(rccb);
-            RankingConstantsConfig rcc = new RankingConstantsConfig(rccb);
-            writeConfig(dir, RankingConstantsConfig.getDefName() + ".cfg", rcc);
+        RankingConstantsConfig.Builder rccb = new RankingConstantsConfig.Builder();
+        ((RankingConstantsConfig.Producer) producer).getConfig(rccb);
+        writeConfig(dir, RankingConstantsConfig.getDefName() + ".cfg", rccb.build());
 
-            ImportedFieldsConfig.Builder ifcb = new ImportedFieldsConfig.Builder();
-            ImportedFieldsConfig.Producer.class.cast(producer).getConfig(ifcb);
-            ImportedFieldsConfig ifc = new ImportedFieldsConfig(ifcb);
-            writeConfig(dir, ImportedFieldsConfig.getDefName() + ".cfg", ifc);
+        RankingExpressionsConfig.Builder recb = new RankingExpressionsConfig.Builder();
+        ((RankingExpressionsConfig.Producer) producer).getConfig(recb);
+        writeConfig(dir, RankingExpressionsConfig.getDefName() + ".cfg", recb.build());
+
+        OnnxModelsConfig.Builder omcb = new OnnxModelsConfig.Builder();
+        ((OnnxModelsConfig.Producer) producer).getConfig(omcb);
+        writeConfig(dir, OnnxModelsConfig.getDefName() + ".cfg", omcb.build());
+
+        ImportedFieldsConfig.Builder ifcb = new ImportedFieldsConfig.Builder();
+        ((ImportedFieldsConfig.Producer) producer).getConfig(ifcb);
+        writeConfig(dir, ImportedFieldsConfig.getDefName() + ".cfg", ifcb.build());
+    }
+
+    private void writeExtraVerifyRanksetupConfig(List<String> config, Collection<? extends DistributableResource> resources) {
+        for (DistributableResource model : resources) {
+            String modelPath = getFileRepositoryPath(model.getFilePath().getName(), model.getFileReference());
+            int index = config.size() / 2;
+            config.add(String.format("file[%d].ref \"%s\"", index, model.getFileReference()));
+            config.add(String.format("file[%d].path \"%s\"", index, modelPath));
+            log.log(Level.FINE, index + ": " + model.getPathType() + " -> " + model.getName() + " -> " + modelPath + " -> " + model.getFileReference());
+        }
+    }
+
+    private void writeExtraVerifyRanksetupConfig(String dir, DocumentDatabase db) throws IOException {
+        List<String> config = new ArrayList<>();
+
+        // Assist verify-ranksetup in finding the actual ONNX model files
+        writeExtraVerifyRanksetupConfig(config, db.getDerivedConfiguration().getSearch().onnxModels().asMap().values());
+        writeExtraVerifyRanksetupConfig(config, db.getDerivedConfiguration().getSearch().rankExpressionFiles().asMap().values());
+
+        String configContent = config.isEmpty() ? "" : StringUtilities.implodeMultiline(config);
+        IOUtils.writeFile(dir + "verify-ranksetup.cfg", configContent, false);
+    }
+
+    public static String getFileRepositoryPath(String name, String fileReference) {
+        ConfigserverConfig cfg = new ConfigserverConfig(new ConfigserverConfig.Builder());  // assume defaults
+        String fileRefDir = Defaults.getDefaults().underVespaHome(cfg.fileReferencesDir());
+        return Paths.get(fileRefDir, fileReference, name).toString();
     }
 
     private static void writeConfig(String dir, String configName, ConfigInstance config) throws IOException {
@@ -132,8 +176,8 @@ public class RankSetupValidator extends Validator {
     }
 
     private boolean execValidate(String configId, SearchCluster sc, String sdName, DeployLogger deployLogger) {
-        String job = "vespa-verify-ranksetup-bin " + configId;
-        ProcessExecuter executer = new ProcessExecuter();
+        String job = String.format("%s %s", binaryName, configId);
+        ProcessExecuter executer = new ProcessExecuter(true);
         try {
             Pair<Integer, String> ret = executer.exec(job);
             if (ret.getFirst() != 0) {
@@ -147,27 +191,29 @@ public class RankSetupValidator extends Validator {
     }
 
     private void validateWarn(Exception e, DeployLogger deployLogger) {
-        String msg = "Unable to execute 'vespa-verify-ranksetup', validation of rank expressions will only take place when you start Vespa: " +
-                Exceptions.toMessageString(e);
-        deployLogger.log(LogLevel.WARNING, msg);
+        String msg = "Unable to execute '" + binaryName +
+                     "', validation of rank expressions will only take place when you start Vespa: " +
+                     Exceptions.toMessageString(e);
+        deployLogger.logApplicationPackage(Level.WARNING, msg);
     }
 
     private void validateFail(String output, SearchCluster sc, String sdName, DeployLogger deployLogger) {
-        String errMsg = "For search cluster '" + sc.getClusterName() + "', search definition '" + sdName + "': error in rank setup. Details:\n";
+        StringBuilder errMsg = new StringBuilder("Error in rank setup in schema '").append(sdName)
+                .append("' for content cluster '").append(sc.getClusterName()).append("'.").append(" Details:\n");
         for (String line : output.split("\n")) {
             // Remove debug lines from start script
             if (line.startsWith("debug\t")) continue;
             try {
-                LogMessage logmsg = LogMessage.parseNativeFormat(line);
-                errMsg = errMsg + logmsg.getLevel() + ": " + logmsg.getPayload() + "\n";
+                LogMessage logMessage = LogMessage.parseNativeFormat(line);
+                errMsg.append(logMessage.getLevel()).append(": ").append(logMessage.getPayload()).append("\n");
             } catch (InvalidLogFormatException e) {
-                errMsg = errMsg + line + "\n";
+                errMsg.append(line).append("\n");
             }
         }
-        if (force) {
-            deployLogger.log(LogLevel.WARNING, errMsg + "(Continuing because of force.)");
+        if (ignoreValidationErrors) {
+            deployLogger.log(Level.WARNING, errMsg.append("(Continuing since ignoreValidationErrors flag is set.)").toString());
         } else {
-            throw new IllegalArgumentException(errMsg);
+            throw new IllegalArgumentException(errMsg.toString());
         }
     }
 

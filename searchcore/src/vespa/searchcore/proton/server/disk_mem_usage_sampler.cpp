@@ -3,6 +3,7 @@
 #include "disk_mem_usage_sampler.h"
 #include <vespa/vespalib/util/scheduledexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <filesystem>
 
 using vespalib::makeLambdaTask;
@@ -13,7 +14,10 @@ DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, const Confi
     : _filter(config.hwInfo),
       _path(path_in),
       _sampleInterval(60s),
-      _periodicTimer()
+      _lastSampleTime(vespalib::steady_clock::now()),
+      _periodicTimer(),
+      _lock(),
+      _transient_usage_providers()
 {
     setConfig(config);
 }
@@ -30,10 +34,17 @@ DiskMemUsageSampler::setConfig(const Config &config)
     _filter.setConfig(config.filterConfig);
     _sampleInterval = config.sampleInterval;
     sampleUsage();
+    _lastSampleTime = vespalib::steady_clock::now();
     _periodicTimer = std::make_unique<vespalib::ScheduledExecutor>();
-    _periodicTimer->scheduleAtFixedRate(makeLambdaTask([this]()
-                                                       { sampleUsage(); }),
-                                        _sampleInterval, _sampleInterval);
+    vespalib::duration maxInterval = std::min(vespalib::duration(1s), _sampleInterval);
+    _periodicTimer->scheduleAtFixedRate(makeLambdaTask([this]() {
+                                            if (_filter.acceptWriteOperation() && (vespalib::steady_clock::now() < (_lastSampleTime + _sampleInterval))) {
+                                                return;
+                                            }
+                                            sampleUsage();
+                                            _lastSampleTime = vespalib::steady_clock::now();
+                                        }),
+                                        maxInterval, maxInterval);
 }
 
 void
@@ -41,6 +52,7 @@ DiskMemUsageSampler::sampleUsage()
 {
     sampleMemoryUsage();
     sampleDiskUsage();
+    sample_transient_resource_usage();
 }
 
 namespace {
@@ -108,6 +120,40 @@ void
 DiskMemUsageSampler::sampleMemoryUsage()
 {
     _filter.setMemoryStats(vespalib::ProcessMemoryStats::create());
+}
+
+void
+DiskMemUsageSampler::sample_transient_resource_usage()
+{
+    size_t max_transient_memory_usage = 0;
+    size_t max_transient_disk_usage = 0;
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        for (auto provider : _transient_usage_providers) {
+            max_transient_memory_usage = std::max(max_transient_memory_usage, provider->get_transient_memory_usage());
+            max_transient_disk_usage = std::max(max_transient_disk_usage, provider->get_transient_disk_usage());
+        }
+    }
+    _filter.set_transient_resource_usage(max_transient_memory_usage, max_transient_disk_usage);
+}
+
+void
+DiskMemUsageSampler::add_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider)
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    _transient_usage_providers.push_back(provider);
+}
+
+void
+DiskMemUsageSampler::remove_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider)
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    for (auto itr = _transient_usage_providers.begin(); itr != _transient_usage_providers.end(); ++itr) {
+        if (*itr == provider) {
+            _transient_usage_providers.erase(itr);
+            break;
+        }
+    }
 }
 
 } // namespace proton

@@ -19,8 +19,7 @@ public:
     BucketDeltaPair()
         : _delta1(),
           _delta2()
-    {
-    }
+    { }
 };
 
 }

@@ -1,22 +1,29 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.vdslib.state.*;
+import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.utils.util.ComponentMetricReporter;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.BooleanSupplier;
 
 public class MetricUpdater {
 
     private final ComponentMetricReporter metricReporter;
 
-    public MetricUpdater(MetricReporter metricReporter, int controllerIndex) {
+    public MetricUpdater(MetricReporter metricReporter, int controllerIndex, String clusterName) {
         this.metricReporter = new ComponentMetricReporter(metricReporter, "cluster-controller.");
         this.metricReporter.addDimension("controller-index", String.valueOf(controllerIndex));
+        this.metricReporter.addDimension("clusterid", clusterName);
     }
 
     public MetricReporter.Context createContext(Map<String, String> dimensions) {
@@ -32,9 +39,10 @@ public class MetricUpdater {
                 + nodeCounts.getOrDefault(State.MAINTENANCE, 0);
     }
 
-    public void updateClusterStateMetrics(ContentCluster cluster, ClusterState state) {
+    public void updateClusterStateMetrics(ContentCluster cluster, ClusterState state, ResourceUsageStats resourceUsage) {
         Map<String, String> dimensions = new HashMap<>();
         dimensions.put("cluster", cluster.getName());
+        dimensions.put("clusterid", cluster.getName());
         for (NodeType type : NodeType.getTypes()) {
             dimensions.put("node-type", type.toString().toLowerCase());
             MetricReporter.Context context = createContext(dimensions);
@@ -59,6 +67,12 @@ public class MetricUpdater {
         dimensions.remove("node-type");
         MetricReporter.Context context = createContext(dimensions);
         metricReporter.add("cluster-state-change", 1, context);
+
+        metricReporter.set("resource_usage.max_disk_utilization", resourceUsage.getMaxDiskUtilization(), context);
+        metricReporter.set("resource_usage.max_memory_utilization", resourceUsage.getMaxMemoryUtilization(), context);
+        metricReporter.set("resource_usage.nodes_above_limit", resourceUsage.getNodesAboveLimit(), context);
+        metricReporter.set("resource_usage.disk_limit", resourceUsage.getDiskLimit(), context);
+        metricReporter.set("resource_usage.memory_limit", resourceUsage.getMemoryLimit(), context);
     }
 
     public void updateMasterElectionMetrics(Map<Integer, Integer> data) {
@@ -75,14 +89,8 @@ public class MetricUpdater {
         metricReporter.set("agreed-master-votes", maxCount);
     }
 
-    public void becameMaster() {
-        metricReporter.set("is-master", 1);
-        metricReporter.add("master-change", 1);
-    }
-
-    public void noLongerMaster() {
-        metricReporter.set("is-master", 0);
-        metricReporter.add("master-change", 1);
+    public void updateMasterState(boolean isMaster) {
+        metricReporter.set("is-master", isMaster ? 1 : 0);
     }
 
     public void addTickTime(long millis, boolean didWork) {
@@ -98,4 +106,19 @@ public class MetricUpdater {
         metricReporter.add("node-event", 1);
     }
 
+    public void updateRemoteTaskQueueSize(int size) {
+        metricReporter.set("remote-task-queue.size", size);
+    }
+
+    public boolean forWork(String workId, BooleanSupplier work) {
+        long startNanos = System.nanoTime();
+        boolean didWork = work.getAsBoolean();
+        double seconds = Duration.ofNanos(System.nanoTime() - startNanos).toMillis() / 1000.;
+
+        MetricReporter.Context context = createContext(Map.of("didWork", Boolean.toString(didWork),
+                                                              "workId", workId));
+        metricReporter.set("work-ms", seconds, context);
+
+        return didWork;
+    }
 }

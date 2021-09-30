@@ -14,13 +14,12 @@ namespace search::queryeval {
 class EmptyBlueprint : public SimpleLeafBlueprint
 {
 protected:
-    SearchIterator::UP
-    createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
-
+    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
 public:
     EmptyBlueprint(const FieldSpecBaseList &fields);
     EmptyBlueprint(const FieldSpecBase &field);
     EmptyBlueprint();
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -32,14 +31,14 @@ private:
     SimpleResult _result;
 
 protected:
-    SearchIterator::UP
+    SearchIterator::UP 
     createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
-
 public:
     SimpleBlueprint(const SimpleResult &result);
     ~SimpleBlueprint();
     SimpleBlueprint &tag(const vespalib::string &tag);
     const vespalib::string &tag() const { return _tag; }
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 };
 
 //-----------------------------------------------------------------------------

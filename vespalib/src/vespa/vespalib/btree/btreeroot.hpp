@@ -10,7 +10,7 @@
 #include "btreeaggregator.hpp"
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 //----------------------- BTreeRoot ------------------------------------------//
 
@@ -63,7 +63,7 @@ isValid(BTreeNode::Ref node,
                 return false;
             }
         }
-        if (AggrCalcT::hasAggregated()) {
+        if constexpr (AggrCalcT::hasAggregated()) {
             AggrT aggregated = Aggregator::aggregate(*lnode, aggrCalc);
             if (aggregated != lnode->getAggregated()) {
                 return false;
@@ -113,7 +113,7 @@ isValid(BTreeNode::Ref node,
         if (lChildren < inode->validSlots() && iChildren < inode->validSlots()) {
             return false;
         }
-        if (AggrCalcT::hasAggregated()) {
+        if constexpr (AggrCalcT::hasAggregated()) {
             AggrT aggregated = Aggregator::aggregate(*inode, allocator, aggrCalc);
             if (aggregated != inode->getAggregated()) {
                 return false;
@@ -170,10 +170,19 @@ upperBoundHelper(BTreeNode::Ref root, const KeyType & key,
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT>
 BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
+FrozenView::FrozenView()
+    : _frozenRoot(BTreeNode::Ref()),
+      _allocator(nullptr)
+{
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT>
+BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
 FrozenView::FrozenView(BTreeNode::Ref frozenRoot,
-                       const NodeAllocatorType & allocator) :
-    _frozenRoot(frozenRoot),
-    _allocator(allocator)
+                       const NodeAllocatorType & allocator)
+    : _frozenRoot(frozenRoot),
+      _allocator(&allocator)
 {
 }
 
@@ -184,7 +193,7 @@ BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
 FrozenView::find(const KeyType & key,
                  CompareT comp) const
 {
-    ConstIterator itr(BTreeNode::Ref(), _allocator);
+    ConstIterator itr(BTreeNode::Ref(), *_allocator);
     itr.lower_bound(_frozenRoot, key, comp);
     if (itr.valid() && comp(key, itr.getKey())) {
         itr.setupEnd();
@@ -199,7 +208,7 @@ BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
 FrozenView::lowerBound(const KeyType & key,
                        CompareT comp) const
 {
-    ConstIterator itr(BTreeNode::Ref(), _allocator);
+    ConstIterator itr(BTreeNode::Ref(), *_allocator);
     itr.lower_bound(_frozenRoot, key, comp);
     return itr;
 }
@@ -211,7 +220,7 @@ BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
 FrozenView::upperBound(const KeyType & key,
                        CompareT comp) const
 {
-    ConstIterator itr(_frozenRoot, _allocator);
+    ConstIterator itr(_frozenRoot, *_allocator);
     if (itr.valid() && !comp(key, itr.getKey())) {
         itr.seekPast(key, comp);
     }
@@ -225,7 +234,7 @@ BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
 FrozenView::size() const
 {
     if (NodeAllocatorType::isValidRef(_frozenRoot)) {
-        return _allocator.validLeaves(_frozenRoot);
+        return _allocator->validLeaves(_frozenRoot);
     }
     return 0u;
 }
@@ -484,6 +493,19 @@ remove(Iterator &itr,
     Remover::remove(_root, itr, aggrCalc);
     if (oldFrozen && !isFrozen())
         itr.getAllocator().needFreeze(this);
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, class AggrCalcT>
+void
+BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
+move_nodes(NodeAllocatorType &allocator)
+{
+    Iterator itr = this->begin(allocator);
+    this->setRoot(itr.moveFirstLeafNode(this->getRoot()), allocator);
+    while (itr.valid()) {
+        itr.moveNextLeafNode();
+    }
 }
 
 }

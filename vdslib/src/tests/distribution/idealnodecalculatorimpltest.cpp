@@ -2,6 +2,8 @@
 
 #include <vespa/config-stor-distribution.h>
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace storage::lib {

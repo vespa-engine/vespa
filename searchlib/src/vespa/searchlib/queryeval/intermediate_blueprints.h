@@ -18,18 +18,22 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self() override;
+    bool isAndNot() const override { return true; }
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP
+    createFilterSearch(bool strict, FilterConstraint constraint) const override;
 private:
     bool isPositive(size_t index) const override { return index == 0; }
 };
 
 //-----------------------------------------------------------------------------
 
+/** normal AND operator */
 class AndBlueprint : public IntermediateBlueprint
 {
 public:
@@ -37,21 +41,22 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self() override;
-
-private:
-    double computeNextHitRate(const Blueprint & child, double hitRate) const override;
-
-public:
+    bool isAnd() const override { return true; }
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP
+    createFilterSearch(bool strict, FilterConstraint constraint) const override;
+private:
+    double computeNextHitRate(const Blueprint & child, double hitRate) const override;
 };
 
 //-----------------------------------------------------------------------------
 
+/** normal OR operator */
 class OrBlueprint : public IntermediateBlueprint
 {
 public:
@@ -59,12 +64,15 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self() override;
+    bool isOr() const override { return true; }
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP
+    createFilterSearch(bool strict, FilterConstraint constraint) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -82,8 +90,9 @@ public:
     bool inheritStrict(size_t i) const override;
     bool always_needs_unpack() const override;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
     WeakAndBlueprint(uint32_t n) : _n(n) {}
     ~WeakAndBlueprint();
@@ -110,15 +119,16 @@ public:
     bool inheritStrict(size_t i) const override;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
     NearBlueprint(uint32_t window) : _window(window) {}
 };
 
 //-----------------------------------------------------------------------------
 
-class ONearBlueprint : public IntermediateBlueprint
+class ONearBlueprint  : public IntermediateBlueprint
 {
 private:
     uint32_t _window;
@@ -131,15 +141,16 @@ public:
     bool inheritStrict(size_t i) const override;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
     ONearBlueprint(uint32_t window) : _window(window) {}
 };
 
 //-----------------------------------------------------------------------------
 
-class RankBlueprint : public IntermediateBlueprint
+class RankBlueprint final : public IntermediateBlueprint
 {
 public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
@@ -148,14 +159,17 @@ public:
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
+    bool isRank() const override { return true; }
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP
+    createFilterSearch(bool strict, FilterConstraint constraint) const override;
 };
 
 //-----------------------------------------------------------------------------
 
-class SourceBlenderBlueprint : public IntermediateBlueprint
+class SourceBlenderBlueprint final : public IntermediateBlueprint
 {
 private:
     const ISourceSelector &_selector;
@@ -173,11 +187,14 @@ public:
      */
     ssize_t findSource(uint32_t sourceId) const;
     SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
+    SearchIterator::UP
+    createFilterSearch(bool strict, FilterConstraint constraint) const override;
 
     /** check if this blueprint has the same source selector as the other */
     bool isCompatibleWith(const SourceBlenderBlueprint &other) const;
+    bool isSourceBlender() const override { return true; }
 };
 
 }

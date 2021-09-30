@@ -9,6 +9,8 @@ import com.yahoo.language.simple.kstem.KStemmer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * <p>A tokenizer which splits on whitespace, normalizes and transforms using the given implementations
@@ -21,10 +23,13 @@ import java.util.List;
  */
 public class SimpleTokenizer implements Tokenizer {
 
+    private static final Logger log = Logger.getLogger(SimpleTokenizer.class.getName());
     private final static int SPACE_CODE = 32;
+
     private final Normalizer normalizer;
     private final Transformer transformer;
     private final KStemmer stemmer = new KStemmer();
+    private final SpecialTokenRegistry specialTokenRegistry;
 
     public SimpleTokenizer() {
         this(new SimpleNormalizer(), new SimpleTransformer());
@@ -35,8 +40,13 @@ public class SimpleTokenizer implements Tokenizer {
     }
 
     public SimpleTokenizer(Normalizer normalizer, Transformer transformer) {
+        this(normalizer, transformer, new SpecialTokenRegistry(List.of()));
+    }
+
+    public SimpleTokenizer(Normalizer normalizer, Transformer transformer, SpecialTokenRegistry specialTokenRegistry) {
         this.normalizer = normalizer;
         this.transformer = transformer;
+        this.specialTokenRegistry = specialTokenRegistry;
     }
 
     @Override
@@ -53,8 +63,8 @@ public class SimpleTokenizer implements Tokenizer {
                 String original = input.substring(prev, next);
                 String token = processToken(original, language, stemMode, removeAccents);
                 tokens.add(new SimpleToken(original).setOffset(prev)
-                                                .setType(prevType)
-                                                .setTokenString(token));
+                                                    .setType(prevType)
+                                                    .setTokenString(token));
                 prev = next;
                 prevType = nextType;
             }
@@ -64,13 +74,21 @@ public class SimpleTokenizer implements Tokenizer {
     }
 
     private String processToken(String token, Language language, StemMode stemMode, boolean removeAccents) {
+        String original = token;
+        log.log(Level.FINEST, () -> "processToken '" + original + "'");
         token = normalizer.normalize(token);
         token = LinguisticsCase.toLowerCase(token);
         if (removeAccents)
             token = transformer.accentDrop(token, language);
-        if (stemMode != StemMode.NONE)
+        if (stemMode != StemMode.NONE) {
+            String oldToken = token;
             token = stemmer.stem(token);
-        return token;
+            String newToken = token;
+            log.log(Level.FINEST, () -> "stem '" + oldToken+"' to '" + newToken+"'");
+        }
+        String result = token;
+        log.log(Level.FINEST, () -> "processed token is: " + result);
+        return result;
     }
 
 }

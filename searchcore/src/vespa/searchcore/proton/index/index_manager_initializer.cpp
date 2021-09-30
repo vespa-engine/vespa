@@ -34,6 +34,7 @@ IndexManagerInitializer(const vespalib::string &baseDir,
 {
 }
 
+IndexManagerInitializer::~IndexManagerInitializer() = default;
 
 void
 IndexManagerInitializer::run()

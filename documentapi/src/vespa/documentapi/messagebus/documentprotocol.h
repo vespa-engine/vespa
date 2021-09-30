@@ -17,7 +17,6 @@ namespace document {
 
 namespace documentapi {
 
-class LoadTypeSet;
 class RoutingPolicyRepository;
 class RoutableRepository;
 class IRoutingPolicyFactory;
@@ -194,10 +193,8 @@ public:
      *
      * @param configId The id to use when subscribing to config.
      */
-    DocumentProtocol(const LoadTypeSet& loadTypes,
-                     std::shared_ptr<const document::DocumentTypeRepo> repo,
-                     const string &configId = "");
-    ~DocumentProtocol();
+    DocumentProtocol(std::shared_ptr<const document::DocumentTypeRepo> repo, const string &configId = "");
+    ~DocumentProtocol() override;
 
     /**
      * Adds a new routable factory to this protocol. This method is thread-safe, and may be invoked on a

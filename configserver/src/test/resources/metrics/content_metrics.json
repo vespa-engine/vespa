@@ -1,0 +1,36 @@
+{
+  "services": [
+    {
+      "name": "vespa.distributor",
+      "timestamp": 1557306075,
+      "metrics": [
+        {
+          "values": {
+            "vds.distributor.docsstored.average": 3000
+          },
+          "dimensions": {
+            "clustertype": "content",
+            "clusterid": "content_cluster_id"
+          }
+        }
+      ]
+    },
+    {
+      "name": "vespa.searchnode",
+      "timestamp": 1557306075,
+      "metrics": [
+        {
+          "values": {
+            "content.proton.resource_usage.disk.average": 0.6716298061329,
+            "content.proton.resource_usage.memory.average": 0.7172795340244,
+            "content.proton.resource_usage.feeding_blocked.last": 0
+          },
+          "dimensions": {
+            "clustertype": "content",
+            "clusterid": "content_cluster_id"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -2,11 +2,9 @@
 
 #include "imported_tensor_attribute_vector_read_guard.h"
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/value.h>
 
 namespace search::tensor {
-
-using vespalib::tensor::Tensor;
 
 namespace {
 
@@ -38,28 +36,40 @@ ImportedTensorAttributeVectorReadGuard::asTensorAttribute() const
     return this;
 }
 
-std::unique_ptr<Tensor>
+std::unique_ptr<vespalib::eval::Value>
 ImportedTensorAttributeVectorReadGuard::getTensor(uint32_t docId) const
 {
     return _target_tensor_attribute.getTensor(getTargetLid(docId));
 }
 
-std::unique_ptr<Tensor>
+std::unique_ptr<vespalib::eval::Value>
 ImportedTensorAttributeVectorReadGuard::getEmptyTensor() const
 {
     return _target_tensor_attribute.getEmptyTensor();
 }
 
-void
-ImportedTensorAttributeVectorReadGuard::getTensor(uint32_t docId, vespalib::tensor::MutableDenseTensorView &tensor) const
+vespalib::eval::TypedCells
+ImportedTensorAttributeVectorReadGuard::extract_cells_ref(uint32_t docid) const
 {
-    _target_tensor_attribute.getTensor(getTargetLid(docId), tensor);
+    return _target_tensor_attribute.extract_cells_ref(getTargetLid(docid));
 }
 
-vespalib::eval::ValueType
+const vespalib::eval::Value&
+ImportedTensorAttributeVectorReadGuard::get_tensor_ref(uint32_t docid) const
+{
+    return _target_tensor_attribute.get_tensor_ref(getTargetLid(docid));
+}
+
+const vespalib::eval::ValueType &
 ImportedTensorAttributeVectorReadGuard::getTensorType() const
 {
     return _target_tensor_attribute.getTensorType();
+}
+
+void
+ImportedTensorAttributeVectorReadGuard::get_state(const vespalib::slime::Inserter& inserter) const
+{
+    _target_tensor_attribute.get_state(inserter);
 }
 
 }

@@ -17,13 +17,15 @@ import java.util.*;
 /**
  * Creates the search chains vespaPhases, vespa and native.
  *
- * <p>TODO: refactor</p>
  * @author Tony Vaagenes
  */
+// TODO: refactor
 public class VespaSearchChainsCreator {
+
     private static class PhasesCreator {
+
         private static Set<String> set(String successor) {
-            return successor == null ? null : new LinkedHashSet<>(Arrays.asList(successor));
+            return successor == null ? null : new LinkedHashSet<>(List.of(successor));
         }
 
         private static String lastElement(String[] phases) {
@@ -83,35 +85,30 @@ public class VespaSearchChainsCreator {
         }
     }
 
-
     private static ChainSpecification nativeSearchChainSpecification() {
-        return new ChainSpecification(
-                new ComponentId("native"),
-                inheritsVespaPhases(),
-                noPhases(),
-                noSearcherReferences());
+        return new ChainSpecification(new ComponentId("native"),
+                                      inheritsVespaPhases(),
+                                      noPhases(),
+                                      noSearcherReferences());
     }
 
     private static ChainSpecification vespaSearchChainSpecification() {
-        return new ChainSpecification(
-                new ComponentId("vespa"),
-                inherits(nativeSearchChainSpecification().componentId),
-                noPhases(),
-                noSearcherReferences());
+        return new ChainSpecification(new ComponentId("vespa"),
+                                      inherits(nativeSearchChainSpecification().componentId),
+                                      noPhases(),
+                                      noSearcherReferences());
     }
 
-
     private static ChainSpecification vespaPhasesSpecification() {
-        return new ChainSpecification(
-                new ComponentId("vespaPhases"),
-                new ChainSpecification.Inheritance(null, null),
-                PhasesCreator.linearPhases(
-                        PhaseNames.RAW_QUERY,
-                        PhaseNames.TRANSFORMED_QUERY,
-                        PhaseNames.BLENDED_RESULT,
-                        PhaseNames.UNBLENDED_RESULT,
-                        PhaseNames.BACKEND),
-                noSearcherReferences());
+        return new ChainSpecification(new ComponentId("vespaPhases"),
+                                      new ChainSpecification.Inheritance(null, null),
+                                      PhasesCreator.linearPhases(
+                                              PhaseNames.RAW_QUERY,
+                                              PhaseNames.TRANSFORMED_QUERY,
+                                              PhaseNames.BLENDED_RESULT,
+                                              PhaseNames.UNBLENDED_RESULT,
+                                              PhaseNames.BACKEND),
+                                      noSearcherReferences());
     }
 
     private static SearchChain createVespaPhases() {
@@ -131,11 +128,9 @@ public class VespaSearchChainsCreator {
     }
 
     public static void addVespaSearchChains(SearchChains searchChains) {
-        searchChains.add(
-                createVespaPhases());
-        searchChains.add(
-                createNative());
-        searchChains.add(
-                createVespa());
+        searchChains.add(createVespaPhases());
+        searchChains.add(createNative());
+        searchChains.add(createVespa());
     }
+
 }

@@ -25,17 +25,16 @@ TestVisitorMessageSession::TestVisitorMessageSession(VisitorThread& t,
 void
 TestVisitorMessageSession::reply(mbus::Reply::UP rep) {
     {
-        vespalib::MonitorGuard guard(_waitMonitor);
+        std::lock_guard guard(_waitMonitor);
         pendingCount--;
     }
     thread.handleMessageBusReply(std::move(rep), visitor);
 }
 
 mbus::Result
-TestVisitorMessageSession::send(
-        std::unique_ptr<documentapi::DocumentMessage> message)
+TestVisitorMessageSession::send(std::unique_ptr<documentapi::DocumentMessage> message)
 {
-    vespalib::MonitorGuard guard(_waitMonitor);
+    std::lock_guard guard(_waitMonitor);
     if (_autoReply) {
         pendingCount++;
         mbus::Reply::UP rep = message->createReply();
@@ -44,15 +43,12 @@ TestVisitorMessageSession::send(
             reply(std::move(rep));
             return mbus::Result();
         } else {
-            return mbus::Result(_autoReplyError,
-                                std::unique_ptr<mbus::Message>(message.release()));
+            return mbus::Result(_autoReplyError, std::move(message));
         }
     } else {
         pendingCount++;
-        sentMessages.push_back(
-                std::unique_ptr<documentapi::DocumentMessage>(
-                        message.release()));
-        guard.broadcast();
+        sentMessages.push_back(std::move(message));
+        _waitCond.notify_all();
         return mbus::Result();
     }
 }
@@ -60,18 +56,17 @@ TestVisitorMessageSession::send(
 void
 TestVisitorMessageSession::waitForMessages(unsigned int msgCount) {
     framework::defaultimplementation::RealClock clock;
-    framework::MilliSecTime endTime(
-            clock.getTimeInMillis() + framework::MilliSecTime(60 * 1000));
+    vespalib::steady_time endTime = clock.getMonotonicTime() + 60s;
 
-    vespalib::MonitorGuard guard(_waitMonitor);
+    std::unique_lock guard(_waitMonitor);
     while (sentMessages.size() < msgCount) {
-        if (clock.getTimeInMillis() > endTime) {
+        if (clock.getMonotonicTime() > endTime) {
             throw vespalib::IllegalStateException(
                     vespalib::make_string("Timed out waiting for %u messages "
                                           "in test visitor session", msgCount),
                     VESPA_STRLOC);
         }
-        guard.wait(1000);
+        _waitCond.wait_for(guard, 1s);
     }
 };
 

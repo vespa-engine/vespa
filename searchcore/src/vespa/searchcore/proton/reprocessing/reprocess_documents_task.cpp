@@ -44,8 +44,7 @@ ReprocessDocumentsTask::run()
             docstore.accept(_handler, *this, *_docTypeRepo);
         }
         _handler.done();
-        EventLogger::reprocessDocumentsComplete(_subDbName, _visitorCost,
-                                 duration_cast<milliseconds>(clock::now() - _start).count());
+        EventLogger::reprocessDocumentsComplete(_subDbName, _visitorCost,(clock::now() - _start));
     }
 }
 
@@ -55,8 +54,8 @@ ReprocessDocumentsTask::updateProgress(double progress)
     _visitorProgress = progress;
     double deltaProgress = progress - _loggedProgress;
     if (deltaProgress >= 0.01) {
-        auto secondsSinceLastLog = duration_cast<seconds>(clock::now() - _lastLogTime);
-        if (secondsSinceLastLog >= 60s || deltaProgress >= 0.10) {
+        auto timeSinceLastLog = clock::now() - _lastLogTime;
+        if (timeSinceLastLog >= 60s || deltaProgress >= 0.10) {
             EventLogger::reprocessDocumentsProgress(_subDbName, progress, _visitorCost);
             _lastLogTime = clock::now();
             _loggedProgress = progress;

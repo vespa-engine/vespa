@@ -9,7 +9,7 @@ import javax.xml.stream.XMLInputFactory;
  * @author Einar M R Rosenvinge
  * @deprecated Do not use!
  */
-@Deprecated
+@Deprecated // TODO: Remove on Vespa 8
 public class XMLInputFactoryProvider implements Provider<XMLInputFactory> {
 
     private static final String INPUT_FACTORY_INTERFACE = XMLInputFactory.class.getName();

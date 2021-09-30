@@ -1,34 +1,41 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.messagebus;
 
+import com.google.inject.Inject;
+import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUtil;
+import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.SharedResource;
-import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.ConfigAgent;
 import com.yahoo.messagebus.DynamicThrottlePolicy;
 import com.yahoo.messagebus.IntermediateSessionParams;
+import com.yahoo.messagebus.MessageBus;
 import com.yahoo.messagebus.MessageBusParams;
+import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.messagebus.Protocol;
 import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.ThrottlePolicy;
-import com.yahoo.messagebus.network.Identity;
-import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
+import com.yahoo.messagebus.network.NetworkMultiplexer;
 import com.yahoo.messagebus.shared.SharedIntermediateSession;
 import com.yahoo.messagebus.shared.SharedMessageBus;
 import com.yahoo.messagebus.shared.SharedSourceSession;
+import com.yahoo.vespa.config.content.DistributionConfig;
+import com.yahoo.vespa.config.content.LoadTypeConfig;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -37,21 +44,20 @@ import java.util.logging.Logger;
  * @author Steinar Knutsen
  * @author Einar Rosenvinge
  */
+// TODO jonmv: Remove this: only used with more than one entry by FeedHandlerV3, where only timeout varies.
+// rant: This whole construct is because DI at one point didn't exist, so getting hold of a shared resource
+//       or session was hard(?), and one resorted to routing through the Container, using URIs, to the correct
+//       MbusClient, with or without throttling. This introduced the problem of ownership during shutdown,
+//       which was solved with manual reference counting. This is all much better solved with DI, which (now)
+//       owns everything, and does component shutdown in reverse construction order, which is always right.
+//       So for the sake of everyone's mental health, this should all just be removed now! I suspect this is
+//       even the case for Request; we can track in handlers, and warn when requests have been misplaced.
 public final class SessionCache extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(SessionCache.class.getName());
 
-    //config
-    private final String messagebusConfigId;
-    private final String slobrokConfigId;
-    private final String identity;
-    private final String containerMbusConfigId;
-    private final String documentManagerConfigId;
-    private final String loadTypeConfigId;
-    private final DocumentTypeManager documentTypeManager;
-
-    // initialized in start()
-    private ConfigAgent configAgent;
+    private final Object monitor = new Object();
+    private Supplier<SharedMessageBus> messageBuses;
     private SharedMessageBus messageBus;
 
     private final Object intermediateLock = new Object();
@@ -62,50 +68,56 @@ public final class SessionCache extends AbstractComponent {
     private final Map<SourceSessionKey, SharedSourceSession> sources = new HashMap<>();
     private final SourceSessionCreator sourcesCreator = new SourceSessionCreator();
 
-    public SessionCache(String messagebusConfigId, String slobrokConfigId, String identity,
-                        String containerMbusConfigId, String documentManagerConfigId,
-                        String loadTypeConfigId,
-                        DocumentTypeManager documentTypeManager) {
-        this.messagebusConfigId = messagebusConfigId;
-        this.slobrokConfigId = slobrokConfigId;
-        this.identity = identity;
-        this.containerMbusConfigId = containerMbusConfigId;
-        this.documentManagerConfigId = documentManagerConfigId;
-        this.loadTypeConfigId = loadTypeConfigId;
-        this.documentTypeManager = documentTypeManager;
+    @Inject
+    public SessionCache(NetworkMultiplexerProvider nets, ContainerMbusConfig containerMbusConfig,
+                        DocumentmanagerConfig documentmanagerConfig,
+                        LoadTypeConfig loadTypeConfig, MessagebusConfig messagebusConfig,
+                        DocumentProtocolPoliciesConfig policiesConfig,
+                        DistributionConfig distributionConfig) {
+        this(nets::net, containerMbusConfig, documentmanagerConfig,
+             loadTypeConfig, messagebusConfig, policiesConfig, distributionConfig);
+
     }
 
-    public SessionCache(final String identity) {
-        this(identity, identity, identity, identity, identity, identity, new DocumentTypeManager());
+    public SessionCache(Supplier<NetworkMultiplexer> net, ContainerMbusConfig containerMbusConfig,
+                        DocumentmanagerConfig documentmanagerConfig,
+                        LoadTypeConfig loadTypeConfig, MessagebusConfig messagebusConfig,
+                        DocumentProtocolPoliciesConfig policiesConfig,
+                        DistributionConfig distributionConfig) {
+        this(net,
+             containerMbusConfig,
+             messagebusConfig,
+             new DocumentProtocol(new DocumentTypeManager(documentmanagerConfig),
+                                  new LoadTypeSet(loadTypeConfig),
+                                  policiesConfig,
+                                  distributionConfig));
     }
 
+    public SessionCache(Supplier<NetworkMultiplexer> net, ContainerMbusConfig containerMbusConfig,
+                        MessagebusConfig messagebusConfig, Protocol protocol) {
+        this.messageBuses = () -> createSharedMessageBus(net.get(), containerMbusConfig, messagebusConfig, protocol);
+    }
+
+    @Override
     public void deconstruct() {
-        if (configAgent != null) {
-            configAgent.shutdown();
+        synchronized (monitor) {
+            messageBuses = () -> { throw new IllegalStateException("Session cache already deconstructed"); };
+
+            if (messageBus != null)
+                messageBus.release();
         }
     }
 
-
-    private void start() {
-        ContainerMbusConfig mbusConfig = ConfigGetter.getConfig(ContainerMbusConfig.class, containerMbusConfigId);
-        if (documentManagerConfigId != null) {
-            documentTypeManager.configure(documentManagerConfigId);
+    // Lazily create shared message bus.
+    private SharedMessageBus bus() {
+        synchronized (monitor) {
+            return messageBus = messageBus != null ? messageBus : messageBuses.get();
         }
-        LoadTypeSet loadTypeSet = new LoadTypeSet(loadTypeConfigId);
-        DocumentProtocol protocol = new DocumentProtocol(documentTypeManager, identity, loadTypeSet);
-        messageBus = createSharedMessageBus(mbusConfig, slobrokConfigId, identity, protocol);
-        // TODO: stop doing subscriptions to config when that is to be solved in slobrok as well
-        configAgent = new ConfigAgent(messagebusConfigId, messageBus.messageBus());
-        configAgent.subscribe();
     }
 
-
-    private boolean isStarted() {
-        return messageBus != null;
-    }
-
-    private static SharedMessageBus createSharedMessageBus(ContainerMbusConfig mbusConfig,
-                                                           String slobrokConfigId, String identity,
+    private static SharedMessageBus createSharedMessageBus(NetworkMultiplexer net,
+                                                           ContainerMbusConfig mbusConfig,
+                                                           MessagebusConfig messagebusConfig,
                                                            Protocol protocol) {
         MessageBusParams mbusParams = new MessageBusParams().addProtocol(protocol);
 
@@ -117,46 +129,34 @@ public final class SessionCache extends AbstractComponent {
         mbusParams.setMaxPendingCount(mbusConfig.maxpendingcount());
         mbusParams.setMaxPendingSize(maxPendingSize);
 
-        RPCNetworkParams netParams = new RPCNetworkParams()
-                .setSlobrokConfigId(slobrokConfigId)
-                .setIdentity(new Identity(identity))
-                .setListenPort(mbusConfig.port());
-        return SharedMessageBus.newInstance(mbusParams, netParams);
+        MessageBus bus = new MessageBus(net, mbusParams);
+        new ConfigAgent(messagebusConfig, bus); // Configure the wrapped MessageBus with a routing table.
+        return new SharedMessageBus(bus);
     }
 
     private static void logSystemInfo(ContainerMbusConfig containerMbusConfig, long maxPendingSize) {
-        log.log(LogLevel.DEBUG,
+        log.log(Level.FINE,
                 "Running with maximum heap size of " + (Runtime.getRuntime().maxMemory() / 1024L / 1024L) + " MB");
-        log.log(LogLevel.CONFIG,
+        log.log(Level.CONFIG,
                 "Amount of memory reserved for container core: " + containerMbusConfig.containerCoreMemory() + " MB.");
-        log.log(LogLevel.CONFIG,
+        log.log(Level.CONFIG,
                 "Running with document expansion factor " + containerMbusConfig.documentExpansionFactor() + "");
 
         String msgLimit =
                 (containerMbusConfig.maxpendingcount() == 0) ? "unlimited" : "" + containerMbusConfig.maxpendingcount();
-        log.log(LogLevel.CONFIG, ("Starting message bus with max " + msgLimit + " pending messages and max " +
+        log.log(Level.CONFIG, ("Starting message bus with max " + msgLimit + " pending messages and max " +
                 (((double) (maxPendingSize / 1024L)) / 1024.0d) + " pending megabytes."));
     }
 
     ReferencedResource<SharedIntermediateSession> retainIntermediate(final IntermediateSessionParams p) {
-        synchronized (this) {
-            if (!isStarted()) {
-                start();
-            }
-        }
         return intermediatesCreator.retain(intermediateLock, intermediates, p);
     }
 
     public ReferencedResource<SharedSourceSession> retainSource(final SourceSessionParams p) {
-        synchronized (this) {
-            if (!isStarted()) {
-                start();
-            }
-        }
         return sourcesCreator.retain(sourceLock, sources, p);
     }
 
-    private abstract class SessionCreator<PARAMS, KEY, SESSION extends SharedResource> {
+    private abstract static class SessionCreator<PARAMS, KEY, SESSION extends SharedResource> {
 
         abstract SESSION create(PARAMS p);
 
@@ -201,8 +201,8 @@ public final class SessionCache extends AbstractComponent {
 
         @Override
         SharedSourceSession create(SourceSessionParams p) {
-            log.log(LogLevel.DEBUG, "Creating new source session.");
-            return messageBus.newSourceSession(p);
+            log.log(Level.FINE, "Creating new source session.");
+            return bus().newSourceSession(p);
         }
 
         @Override
@@ -212,7 +212,7 @@ public final class SessionCache extends AbstractComponent {
 
         @Override
         void logReuse(final SharedSourceSession session) {
-            log.log(LogLevel.DEBUG, "Reusing source session.");
+            log.log(Level.FINE, "Reusing source session.");
         }
     }
 
@@ -221,8 +221,8 @@ public final class SessionCache extends AbstractComponent {
 
         @Override
         SharedIntermediateSession create(IntermediateSessionParams p) {
-            log.log(LogLevel.DEBUG, "Creating new intermediate session " + p.getName() + "");
-            return messageBus.newIntermediateSession(p);
+            log.log(Level.FINE, "Creating new intermediate session " + p.getName() + "");
+            return bus().newIntermediateSession(p);
         }
 
         @Override
@@ -232,7 +232,7 @@ public final class SessionCache extends AbstractComponent {
 
         @Override
         void logReuse(SharedIntermediateSession session) {
-            log.log(LogLevel.DEBUG, "Reusing intermediate session " + session.name() + "");
+            log.log(Level.FINE, "Reusing intermediate session " + session.name() + "");
         }
     }
 
@@ -349,6 +349,7 @@ public final class SessionCache extends AbstractComponent {
     }
 
     static class UnknownThrottlePolicySignature extends ThrottlePolicySignature {
+
         private final ThrottlePolicy policy;
 
         UnknownThrottlePolicySignature(final ThrottlePolicy policy) {
@@ -406,26 +407,16 @@ public final class SessionCache extends AbstractComponent {
 
         @Override
         public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
+            if (this == obj) return true;
+            if (obj == null) return false;
+            if (getClass() != obj.getClass()) return false;
             SourceSessionKey other = (SourceSessionKey) obj;
             if (policy == null) {
-                if (other.policy != null) {
-                    return false;
-                }
+                if (other.policy != null) return false;
             } else if (!policy.equals(other.policy)) {
                 return false;
             }
-            if (Double.doubleToLongBits(timeout) != Double.doubleToLongBits(other.timeout)) {
-                return false;
-            }
+            if (Double.doubleToLongBits(timeout) != Double.doubleToLongBits(other.timeout)) return false;
             return true;
         }
     }

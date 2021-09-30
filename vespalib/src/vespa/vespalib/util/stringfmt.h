@@ -16,5 +16,13 @@ extern vespalib::string make_string(const char *fmt, ...)
 #endif
     ;
 
-} // namespace vespalib
+namespace make_string_short {
+extern vespalib::string fmt(const char *format, ...)
+#ifdef __GNUC__
+        // Add printf format checks with gcc
+        __attribute__ ((format (printf,1,2)))
+#endif
+    ;
+} // namespace vespalib::make_string_short
 
+} // namespace vespalib

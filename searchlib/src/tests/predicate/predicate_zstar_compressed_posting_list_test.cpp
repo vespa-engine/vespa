@@ -5,6 +5,7 @@
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -28,8 +29,8 @@ SimpleIndexConfig config;
 const uint64_t hash = 0x123;
 
 TEST("require that empty posting list starts at 0.") {
-    PredicateIndex index(generation_handler, generation_holder, limit_provider, config, 8);
-    datastore::EntryRef ref;
+    PredicateIndex index(generation_holder, limit_provider, config, 8);
+    vespalib::datastore::EntryRef ref;
     PredicateZstarCompressedPostingList<PredicateIndex::BTreeIterator>
         posting_list(index.getIntervalStore(), index.getIntervalIndex().getBTreePostingList(ref));
     EXPECT_EQUAL(0u, posting_list.getDocId());
@@ -38,7 +39,7 @@ TEST("require that empty posting list starts at 0.") {
 }
 
 TEST("require that posting list can iterate.") {
-    PredicateIndex index(generation_handler, generation_holder, limit_provider, config, 8);
+    PredicateIndex index(generation_holder, limit_provider, config, 8);
     const auto &interval_index = index.getIntervalIndex();
     vector<vector<Interval>> intervals =
         {{{0x00010000}},

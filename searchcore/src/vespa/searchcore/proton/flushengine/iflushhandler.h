@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/searchcorespi/flush/iflushtarget.h>
-#include <vector>
 
 namespace proton {
 
@@ -28,14 +27,14 @@ public:
      *
      * @param name The unique name of this handler.
      */
-    IFlushHandler(const vespalib::string &name)
+    IFlushHandler(const vespalib::string &name) noexcept
         : _name(name)
     { }
 
     /**
      * Virtual destructor required for inheritance.
      */
-    virtual ~IFlushHandler() { }
+    virtual ~IFlushHandler() = default;
 
     /**
      * Returns the unique name of this handler.

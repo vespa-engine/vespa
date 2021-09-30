@@ -1,54 +1,31 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationMetaData;
-import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
-import com.yahoo.config.model.application.provider.DeployData;
-import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.MockReloadHandler;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.MockProvisioner;
+import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.application.TenantApplications;
-import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
-import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
-import com.yahoo.vespa.config.server.http.SessionHandler;
-import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
-import com.yahoo.vespa.config.server.session.LocalSession;
-import com.yahoo.vespa.config.server.session.LocalSessionRepo;
-import com.yahoo.vespa.config.server.session.MockSessionZKClient;
-import com.yahoo.vespa.config.server.session.RemoteSession;
+import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
-import com.yahoo.vespa.config.server.session.SessionContext;
-import com.yahoo.vespa.config.server.session.SessionTest;
-import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
-import com.yahoo.vespa.config.server.tenant.TenantBuilder;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.hamcrest.core.Is;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -56,278 +33,127 @@ import org.junit.rules.TemporaryFolder;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Optional;
+import java.time.Clock;
+import java.time.Duration;
+import java.util.List;
 
-import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
-import static com.yahoo.jdisc.Response.Status.CONFLICT;
-import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
+import static com.yahoo.vespa.config.server.http.SessionHandlerTest.Cmd;
+import static com.yahoo.vespa.config.server.http.SessionHandlerTest.createTestRequest;
+import static com.yahoo.vespa.config.server.http.SessionHandlerTest.getRenderedString;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
-public class SessionActiveHandlerTest extends SessionHandlerTest {
+public class SessionActiveHandlerTest {
 
     private static final File testApp = new File("src/test/apps/app");
     private static final String appName = "default";
     private static final TenantName tenantName = TenantName.from("activatetest");
     private static final String activatedMessage = " for tenant '" + tenantName + "' activated.";
+    private static final String pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";
 
-    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
-    private Curator curator;
-    private LocalSessionRepo localRepo;
-    private TenantApplications applicationRepo;
-    private MockProvisioner hostProvisioner;
-    private VespaModelFactory modelFactory;
-    private TestComponentRegistry componentRegistry;
-    private TenantRepository tenantRepository;
+    private MockProvisioner provisioner;
+    private ApplicationRepository applicationRepository;
     private SessionActiveHandler handler;
+    private final Clock clock = Clock.systemUTC();
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
-    public void setup() {
-        curator = new MockCurator();
-        modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
-        componentRegistry = new TestComponentRegistry.Builder()
-                .curator(curator)
-                .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(modelFactory)))
+    public void setup() throws IOException {
+        VespaModelFactory modelFactory = new TestModelFactory(Version.fromString("7.222.2"));
+        provisioner = new MockProvisioner();
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        tenantRepository = new TenantRepository(componentRegistry, false);
-        applicationRepo = TenantApplications.create(componentRegistry, new MockReloadHandler(), tenantName);
-        localRepo = new LocalSessionRepo(tenantName, componentRegistry);
-        pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";
-        hostProvisioner = new MockProvisioner();
-        TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
-                .withSessionFactory(new MockSessionFactory())
-                .withLocalSessionRepo(localRepo)
-                .withApplicationRepo(applicationRepo);
-        tenantRepository.addTenant(tenantBuilder);
+        TenantRepository tenantRepository = new TestTenantRepository.Builder()
+                .withConfigserverConfig(configserverConfig)
+                .withModelFactoryRegistry(new ModelFactoryRegistry(List.of((modelFactory))))
+                .build();
+        tenantRepository.addTenant(tenantName);
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(provisioner)
+                .withOrchestrator(new OrchestratorMock())
+                .withClock(clock)
+                .withConfigserverConfig(configserverConfig)
+                .build();
         handler = createHandler();
     }
 
     @Test
-    public void testThatPreviousSessionIsDeactivated() throws Exception {
-        RemoteSession firstSession = activateAndAssertOK(90, 0);
-        activateAndAssertOK(91, 90);
-        assertThat(firstSession.getStatus(), Is.is(Session.Status.DEACTIVATE));
-    }
-
-    @Test
-    public void testForceActivationWithActivationInBetween() throws Exception {
-        activateAndAssertOK(90, 0);
-        activateAndAssertOK(92, 89, "?force=true");
+    public void testActivation() throws Exception {
+        activateAndAssertOK();
     }
 
     @Test
     public void testUnknownSession() {
-        HttpResponse response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 9999L, "?timeout=1.0"));
+        HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 9999L, "?timeout=1.0"));
         assertEquals(response.getStatus(), NOT_FOUND);
     }
 
     @Test
-    public void testActivationWithBarrierTimeout() throws Exception {
-        // Needed so we can test that previous active session is still active after a failed activation
-        activateAndAssertOK(90, 0);
-        ((MockCurator) curator).timeoutBarrierOnEnter(true);
-        ActivateRequest activateRequest = new ActivateRequest(91, 90, "").invoke();
-        HttpResponse actResponse = activateRequest.getActResponse();
-        assertThat(actResponse.getStatus(), Is.is(INTERNAL_SERVER_ERROR));
-    }
-
-    @Test
-    public void require_that_session_created_from_active_that_is_no_longer_active_cannot_be_activated() throws Exception {
-        long sessionId = 1;
-        activateAndAssertOK(1, 0);
-        sessionId++;
-        activateAndAssertOK(sessionId, 1);
-
-        sessionId++;
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, 1, "").invoke();
-        HttpResponse actResponse = activateRequest.getActResponse();
-        String message = getRenderedString(actResponse);
-        assertThat(message, actResponse.getStatus(), Is.is(CONFLICT));
-        assertThat(message,
-                   containsString("Cannot activate session 3 because the currently active session (2) has changed since session 3 was created (was 1 at creation time)"));
-    }
-
-    @Test
-    public void testAlreadyActivatedSession() throws Exception {
-        activateAndAssertOK(1, 0);
-        HttpResponse response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 1L));
-        String message = getRenderedString(response);
-        assertThat(message, response.getStatus(), Is.is(BAD_REQUEST));
-        assertThat(message, containsString("Session 1 is already active"));
-    }
-
-    @Test
-    public void testActivation() throws Exception {
-        activateAndAssertOK(1, 0);
-    }
-
-    @Test
-    public void testActivationWithActivationInBetween() throws Exception {
-        activateAndAssertOK(90, 0);
-        activateAndAssertError(92, 89,
-                               Response.Status.CONFLICT, HttpErrorResponse.errorCodes.ACTIVATION_CONFLICT,
-                               "tenant:" + tenantName + " app:default:default Cannot activate session 92 because the currently active session (90) has changed since session 92 was created (was 89 at creation time)");
-    }
-
-    @Test
-    public void testActivationOfUnpreparedSession() throws Exception {
-        // Needed so we can test that previous active session is still active after a failed activation
-        RemoteSession firstSession = activateAndAssertOK(90, 0);
-        long sessionId = 91L;
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, 0, Session.Status.NEW, "").invoke();
-        HttpResponse actResponse = activateRequest.getActResponse();
-        RemoteSession session = activateRequest.getSession();
-        assertThat(actResponse.getStatus(), is(Response.Status.BAD_REQUEST));
-        assertThat(getRenderedString(actResponse), is("{\"error-code\":\"BAD_REQUEST\",\"message\":\"tenant:"+ tenantName +" app:default:default Session " + sessionId + " is not prepared\"}"));
-        assertThat(session.getStatus(), is(not(Session.Status.ACTIVATE)));
-        assertThat(firstSession.getStatus(), is(Session.Status.ACTIVATE));
-    }
-
-    @Test
     public void require_that_handler_gives_error_for_unsupported_methods() throws Exception {
-        testUnsupportedMethod(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.POST, Cmd.PREPARED, 1L));
-        testUnsupportedMethod(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.DELETE, Cmd.PREPARED, 1L));
-        testUnsupportedMethod(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
-    }
-
-    @Test
-    @Ignore
-    public void require_that_handler_gives_error_when_provisioner_activated_fails() throws Exception {
-        hostProvisioner = new FailingMockProvisioner();
-        hostProvisioner.activated = false;
-        activateAndAssertError(1, 0, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Cannot activate application");
-        assertFalse(hostProvisioner.activated);
-    }
-
-    private RemoteSession createRemoteSession(long sessionId, Session.Status status, SessionZooKeeperClient zkClient) throws IOException {
-        zkClient.writeStatus(status);
-        ZooKeeperClient zkC = new ZooKeeperClient(componentRegistry.getConfigCurator(), new BaseDeployLogger(), false,
-                                                  TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)));
-        zkC.write(Collections.singletonMap(modelFactory.version(), new MockFileRegistry()));
-        zkC.write(AllocatedHosts.withHosts(Collections.emptySet()));
-        return new RemoteSession(tenantName, sessionId, componentRegistry, zkClient);
-    }
-
-    private void addLocalSession(long sessionId, DeployData deployData, SessionZooKeeperClient zkc) throws IOException {
-        writeApplicationId(zkc, deployData.getApplicationId());
-        TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(temporaryFolder.newFolder(), tenantName);
-        ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(testApp, deployData);
-        localRepo.addSession(new LocalSession(tenantName, sessionId, new SessionTest.MockSessionPreparer(),
-                                              new SessionContext(app, zkc, new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId)),
-                                                                 applicationRepo, new HostRegistry<>(),
-                                                                 flagSource)));
-    }
-
-    private ActivateRequest activateAndAssertOKPut(long sessionId, long previousSessionId, String subPath) throws Exception {
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, previousSessionId, subPath);
-        activateRequest.invoke();
-        HttpResponse actResponse = activateRequest.getActResponse();
-        String message = getRenderedString(actResponse);
-        assertThat(message, actResponse.getStatus(), Is.is(OK));
-        assertActivationMessageOK(activateRequest, message);
-        RemoteSession session = activateRequest.getSession();
-        assertThat(session.getStatus(), Is.is(Session.Status.ACTIVATE));
-        return activateRequest;
-    }
-
-    private void activateAndAssertErrorPut(long sessionId, long previousSessionId,
-                                           int statusCode, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, previousSessionId, "");
-        activateRequest.invoke();
-        HttpResponse actResponse = activateRequest.getActResponse();
-        RemoteSession session = activateRequest.getSession();
-        assertThat(actResponse.getStatus(), Is.is(statusCode));
-        String message = getRenderedString(actResponse);
-        assertThat(message, Is.is("{\"error-code\":\"" + errorCode.name() + "\",\"message\":\"" + expectedError + "\"}"));
-        assertThat(session.getStatus(), Is.is(Session.Status.PREPARE));
+        testUnsupportedMethod(createTestRequest(pathPrefix, HttpRequest.Method.POST, Cmd.PREPARED, 1L));
+        testUnsupportedMethod(createTestRequest(pathPrefix, HttpRequest.Method.DELETE, Cmd.PREPARED, 1L));
+        testUnsupportedMethod(createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
     }
 
     private void testUnsupportedMethod(com.yahoo.container.jdisc.HttpRequest request) throws Exception {
         HttpResponse response = handler.handle(request);
         HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response,
                                                             METHOD_NOT_ALLOWED,
-                                                            HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED,
+                                                            HttpErrorResponse.ErrorCode.METHOD_NOT_ALLOWED,
                                                             "Method '" + request.getMethod().name() + "' is not supported");
     }
 
     protected class ActivateRequest {
 
         private long sessionId;
-        private RemoteSession session;
         private HttpResponse actResponse;
-        private Session.Status initialStatus;
-        private DeployData deployData;
         private ApplicationMetaData metaData;
-        private String subPath;
+        private final String subPath;
 
-        ActivateRequest(long sessionId, long previousSessionId, String subPath) {
-            this(sessionId, previousSessionId, Session.Status.PREPARE, subPath);
-        }
-
-        ActivateRequest(long sessionId, long previousSessionId, Session.Status initialStatus, String subPath) {
-            this.sessionId = sessionId;
-            this.initialStatus = initialStatus;
-            this.deployData = new DeployData("foo",
-                                             "bar",
-                                             ApplicationId.from(tenantName.value(), appName, "default"),
-                                             0L,
-                                             false,
-                                             sessionId,
-                                             previousSessionId);
+        ActivateRequest(String subPath) {
             this.subPath = subPath;
         }
 
-        public RemoteSession getSession() {
-            return session;
-        }
+        HttpResponse getActResponse() { return actResponse; }
 
-        public SessionHandler getHandler() {
-            return handler;
-        }
+        public long getSessionId() { return sessionId; }
 
-        HttpResponse getActResponse() {
-            return actResponse;
-        }
+        ApplicationMetaData getMetaData() { return metaData; }
 
-        public long getSessionId() {
-            return sessionId;
-        }
-
-        ApplicationMetaData getMetaData() {
-            return metaData;
-        }
-
-        ActivateRequest invoke() throws Exception {
-            SessionZooKeeperClient zkClient =
-                    new MockSessionZKClient(curator, tenantName, sessionId,
-                                            Optional.of(AllocatedHosts.withHosts(Collections.singleton(new HostSpec("bar", Collections.emptyList())))));
-            session = createRemoteSession(sessionId, initialStatus, zkClient);
-            addLocalSession(sessionId, deployData, zkClient);
-            tenantRepository.getTenant(tenantName).getApplicationRepo().createApplication(deployData.getApplicationId());
-            metaData = localRepo.getSession(sessionId).getMetaData();
-            actResponse = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
-            return this;
+        void invoke() {
+            long sessionId = applicationRepository.createSession(applicationId(),
+                                                                 new TimeoutBudget(clock, Duration.ofSeconds(10)),
+                                                                 testApp);
+            applicationRepository.prepare(sessionId, new PrepareParams.Builder().applicationId(applicationId()).build());
+            actResponse = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
+            Tenant tenant = applicationRepository.getTenant(applicationId());
+            Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
+            metaData = session.getMetaData();
+            this.sessionId = sessionId;
         }
     }
 
-    private RemoteSession activateAndAssertOK(long sessionId, long previousSessionId) throws Exception {
-        ActivateRequest activateRequest = activateAndAssertOKPut(sessionId, previousSessionId, "");
-        return activateRequest.getSession();
+    private void activateAndAssertOK() throws Exception {
+        ActivateRequest activateRequest = new ActivateRequest("");
+        activateRequest.invoke();
+        HttpResponse actResponse = activateRequest.getActResponse();
+        String message = getRenderedString(actResponse);
+        assertThat(message, actResponse.getStatus(), Is.is(OK));
+        assertActivationMessageOK(activateRequest, message);
     }
 
-    private void activateAndAssertOK(long sessionId, long previousSessionId, String subPath) throws Exception {
-        activateAndAssertOKPut(sessionId, previousSessionId, subPath);
-    }
-    
     private void assertActivationMessageOK(ActivateRequest activateRequest, String message) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         new JsonFormat(true).encode(byteArrayOutputStream, activateRequest.getMetaData().getSlime());
@@ -337,27 +163,18 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
                 "/environment/" + "prod" +
                 "/region/" + "default" +
                 "/instance/" + "default"));
-        assertTrue(hostProvisioner.activated);
-        assertThat(hostProvisioner.lastHosts.size(), is(1));
-    }
-
-    private void activateAndAssertError(long sessionId, long previousSessionId, int statusCode, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
-        hostProvisioner.activated = false;
-        activateAndAssertErrorPut(sessionId, previousSessionId, statusCode, errorCode, expectedError);
-        assertFalse(hostProvisioner.activated);
-    }
-
-    private void writeApplicationId(SessionZooKeeperClient zkc, ApplicationId id) {
-        zkc.writeApplicationId(id);
+        assertTrue(provisioner.activated());
+        assertThat(provisioner.lastHosts().size(), is(1));
     }
 
     private SessionActiveHandler createHandler() {
         return new SessionActiveHandler(SessionActiveHandler.testOnlyContext(),
-                                        new ApplicationRepository(tenantRepository,
-                                                                  hostProvisioner,
-                                                                  new OrchestratorMock(),
-                                                                  componentRegistry.getClock()),
+                                        applicationRepository,
                                         Zone.defaultZone());
+    }
+
+    private ApplicationId applicationId() {
+        return ApplicationId.from(tenantName.value(), appName, "default");
     }
 
 }

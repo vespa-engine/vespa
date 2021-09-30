@@ -32,6 +32,8 @@ public class MockClient implements Client {
     public void setMalfunctioning(boolean malfunctioning) { this.malfunctioning = malfunctioning; }
 
     @Override
+    public void close() { }
+    @Override
     public NodeConnection createConnection(String hostname, int port) {
         return new MockNodeConnection(hostname, port);
     }

@@ -18,6 +18,14 @@ struct TypeSpecExtractor : public vespalib::eval::SymbolExtractor {
     }
 };
 
+void print_errors(const NodeTypes &types) {
+    if (!types.errors().empty()) {
+        for (const auto &msg: types.errors()) {
+            fprintf(stderr, "type error: %s\n", msg.c_str());
+        }
+    }
+}
+
 void verify(const vespalib::string &type_expr, const vespalib::string &type_spec) {
     auto function = Function::parse(type_expr, TypeSpecExtractor());
     if (!EXPECT_TRUE(!function->has_error())) {
@@ -29,6 +37,7 @@ void verify(const vespalib::string &type_expr, const vespalib::string &type_spec
         input_types.push_back(ValueType::from_spec(function->param_name(i)));
     }
     NodeTypes types(*function, input_types);
+    print_errors(types);
     ValueType expected_type = ValueType::from_spec(type_spec);
     ValueType actual_type = types.get_type(function->root());
     EXPECT_EQUAL(expected_type, actual_type);
@@ -54,6 +63,8 @@ TEST("require that input parameters preserve their type") {
     TEST_DO(verify("tensor()", "double"));
     TEST_DO(verify("tensor(x{},y[10],z[5])", "tensor(x{},y[10],z[5])"));
     TEST_DO(verify("tensor<float>(x{},y[10],z[5])", "tensor<float>(x{},y[10],z[5])"));
+    TEST_DO(verify("tensor<bfloat16>(x{},y[10],z[5])", "tensor<bfloat16>(x{},y[10],z[5])"));
+    TEST_DO(verify("tensor<int8>(x{},y[10],z[5])", "tensor<int8>(x{},y[10],z[5])"));
 }
 
 TEST("require that if resolves to the appropriate type") {
@@ -65,7 +76,12 @@ TEST("require that if resolves to the appropriate type") {
     TEST_DO(verify("if(double,tensor(a{}),tensor(a{}))", "tensor(a{})"));
     TEST_DO(verify("if(double,tensor(a[2]),tensor(a[2]))", "tensor(a[2])"));
     TEST_DO(verify("if(double,tensor<float>(a[2]),tensor<float>(a[2]))", "tensor<float>(a[2])"));
+    TEST_DO(verify("if(double,tensor<bfloat16>(a[2]),tensor<bfloat16>(a[2]))", "tensor<bfloat16>(a[2])"));
+    TEST_DO(verify("if(double,tensor<int8>(a[2]),tensor<int8>(a[2]))", "tensor<int8>(a[2])"));
     TEST_DO(verify("if(double,tensor(a[2]),tensor<float>(a[2]))", "error"));
+    TEST_DO(verify("if(double,tensor<float>(a[2]),tensor<bfloat16>(a[2]))", "error"));
+    TEST_DO(verify("if(double,tensor<float>(a[2]),tensor<int8>(a[2]))", "error"));
+    TEST_DO(verify("if(double,tensor<bfloat16>(a[2]),tensor<int8>(a[2]))", "error"));
     TEST_DO(verify("if(double,tensor(a[2]),tensor(a[3]))", "error"));
     TEST_DO(verify("if(double,tensor(a[2]),tensor(a{}))", "error"));
     TEST_DO(verify("if(double,tensor(a{}),tensor(b{}))", "error"));
@@ -82,10 +98,17 @@ TEST("require that reduce resolves correct type") {
     TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,x,z)", "tensor(y{})"));
     TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,y,z,x)", "double"));
     TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,w)", "error"));
+    TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,a,b,c)", "error"));
     TEST_DO(verify("reduce(tensor(x{}),sum,x)", "double"));
     TEST_DO(verify("reduce(tensor<float>(x{},y{},z{}),sum,x,z)", "tensor<float>(y{})"));
+    TEST_DO(verify("reduce(tensor<bfloat16>(x{},y{},z{}),sum,x,z)", "tensor<float>(y{})"));
+    TEST_DO(verify("reduce(tensor<int8>(x{},y{},z{}),sum,x,z)", "tensor<float>(y{})"));
     TEST_DO(verify("reduce(tensor<float>(x{}),sum,x)", "double"));
     TEST_DO(verify("reduce(tensor<float>(x{}),sum)", "double"));
+    TEST_DO(verify("reduce(tensor<bfloat16>(x{}),sum,x)", "double"));
+    TEST_DO(verify("reduce(tensor<bfloat16>(x{}),sum)", "double"));
+    TEST_DO(verify("reduce(tensor<int8>(x{}),sum,x)", "double"));
+    TEST_DO(verify("reduce(tensor<int8>(x{}),sum)", "double"));
 }
 
 TEST("require that rename resolves correct type") {
@@ -101,6 +124,8 @@ TEST("require that rename resolves correct type") {
     TEST_DO(verify("rename(tensor(x{},y[1],z[5]),(x,z),(z,x))", "tensor(z{},y[1],x[5])"));
     TEST_DO(verify("rename(tensor(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor(a{},b[1],c[5])"));
     TEST_DO(verify("rename(tensor<float>(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor<float>(a{},b[1],c[5])"));
+    TEST_DO(verify("rename(tensor<bfloat16>(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor<bfloat16>(a{},b[1],c[5])"));
+    TEST_DO(verify("rename(tensor<int8>(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor<int8>(a{},b[1],c[5])"));
 }
 
 vespalib::string strfmt(const char *pattern, const char *a) {
@@ -116,6 +141,8 @@ void verify_op1(const char *pattern) {
     TEST_DO(verify(strfmt(pattern, "double"), "double"));
     TEST_DO(verify(strfmt(pattern, "tensor(x{},y[10],z[1])"), "tensor(x{},y[10],z[1])"));
     TEST_DO(verify(strfmt(pattern, "tensor<float>(x{},y[10],z[1])"), "tensor<float>(x{},y[10],z[1])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x{},y[10],z[1])"), "tensor<float>(x{},y[10],z[1])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<int8>(x{},y[10],z[1])"), "tensor<float>(x{},y[10],z[1])"));
 }
 
 void verify_op2(const char *pattern) {
@@ -136,6 +163,15 @@ void verify_op2(const char *pattern) {
     TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "tensor<float>(x[5])"), "tensor<float>(x[5])"));
     TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "tensor(x[5])"), "tensor(x[5])"));
     TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "double"), "tensor<float>(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor<bfloat16>(x[5])"), "tensor<float>(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor<float>(x[5])"), "tensor<float>(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor(x[5])"), "tensor(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "double"), "tensor<float>(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<int8>(x[5])",     "tensor<int8>(x[5])"), "tensor<float>(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor<int8>(x[5])"), "tensor<float>(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])",    "tensor<int8>(x[5])"), "tensor<float>(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor(x[5])",           "tensor<int8>(x[5])"), "tensor(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "double",                 "tensor<int8>(x[5])"), "tensor<float>(x[5])"));
 }
 
 TEST("require that various operations resolve appropriate type") {
@@ -181,6 +217,9 @@ TEST("require that various operations resolve appropriate type") {
     TEST_DO(verify_op1("relu(%s)"));     // Relu
     TEST_DO(verify_op1("sigmoid(%s)"));  // Sigmoid
     TEST_DO(verify_op1("elu(%s)"));      // Elu
+    TEST_DO(verify_op1("erf(%s)"));      // Erf
+    TEST_DO(verify_op2("bit(%s,%s)"));   // Bit
+    TEST_DO(verify_op2("hamming(%s,%s)")); // Hamming
 }
 
 TEST("require that map resolves correct type") {
@@ -212,17 +251,23 @@ TEST("require that merge resolves to the appropriate type") {
     TEST_DO(verify(strfmt(pattern, "tensor(x[5])", "tensor(x[3])"), "error"));
     TEST_DO(verify(strfmt(pattern, "tensor(x{})", "tensor(x[5])"), "error"));
     TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "tensor<float>(x[5])"), "tensor<float>(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor<bfloat16>(x[5])"), "tensor<float>(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<int8>(x[5])", "tensor<int8>(x[5])"), "tensor<float>(x[5])"));
     TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "tensor(x[5])"), "tensor(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor(x[5])"), "tensor(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<int8>(x[5])", "tensor(x[5])"), "tensor(x[5])"));
     TEST_DO(verify(strfmt(pattern, "tensor(x[5])", "tensor<float>(x[5])"), "tensor(x[5])"));
     TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "double"), "error"));
 }
 
-TEST("require that lambda tensor resolves correct type") {
+TEST("require that static tensor lambda resolves correct type") {
     TEST_DO(verify("tensor(x[5])(1.0)", "tensor(x[5])"));
     TEST_DO(verify("tensor(x[5],y[10])(1.0)", "tensor(x[5],y[10])"));
     TEST_DO(verify("tensor(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])"));
     TEST_DO(verify("tensor<double>(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])"));
     TEST_DO(verify("tensor<float>(x[5],y[10],z[15])(1.0)", "tensor<float>(x[5],y[10],z[15])"));
+    TEST_DO(verify("tensor<bfloat16>(x[5],y[10],z[15])(1.0)", "tensor<bfloat16>(x[5],y[10],z[15])"));
+    TEST_DO(verify("tensor<int8>(x[5],y[10],z[15])(1.0)", "tensor<int8>(x[5],y[10],z[15])"));
 }
 
 TEST("require that tensor create resolves correct type") {
@@ -230,10 +275,22 @@ TEST("require that tensor create resolves correct type") {
     TEST_DO(verify("tensor(x{}):{{x:a}:double,{x:b}:double,{x:c}:double}", "tensor(x{})"));
     TEST_DO(verify("tensor(x{},y[2]):{{x:a,y:0}:double,{x:a,y:1}:double}", "tensor(x{},y[2])"));
     TEST_DO(verify("tensor<float>(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor<float>(x[3])"));
+    TEST_DO(verify("tensor<bfloat16>(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor<bfloat16>(x[3])"));
+    TEST_DO(verify("tensor<int8>(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor<int8>(x[3])"));
     TEST_DO(verify("tensor(x[3]):{{x:0}:double+double,{x:1}:double-double,{x:2}:double/double}", "tensor(x[3])"));
     TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:reduce(tensor(x[2]),sum),{x:2}:double}", "tensor(x[3])"));
     TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:tensor(x[2]),{x:2}:double}", "error"));
     TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:error,{x:2}:double}", "error"));
+}
+
+TEST("require that dynamic tensor lambda resolves correct type") {
+    TEST_DO(verify("tensor(x[3])(error)", "error"));
+    TEST_DO(verify("tensor(x[3])(double)", "tensor(x[3])"));
+    TEST_DO(verify("tensor<float>(x[3])(double)", "tensor<float>(x[3])"));
+    TEST_DO(verify("tensor<bfloat16>(x[3])(double)", "tensor<bfloat16>(x[3])"));
+    TEST_DO(verify("tensor<int8>(x[3])(double)", "tensor<int8>(x[3])"));
+    TEST_DO(verify("tensor(x[3])(tensor(x[2]))", "error"));
+    TEST_DO(verify("tensor(x[3])(reduce(tensor(x[2])+tensor(x[4]),sum))", "error"));
 }
 
 TEST("require that tensor peek resolves correct type") {
@@ -254,11 +311,15 @@ TEST("require that tensor peek resolves correct type") {
     TEST_DO(verify("tensor<float>(x[3]){x:3}", "error"));
     TEST_DO(verify("tensor<float>(x{}){x:1}", "double"));
     TEST_DO(verify("tensor<float>(x{}){x:foo}", "double"));
+    TEST_DO(verify("tensor<bfloat16>(x{}){x:foo}", "double"));
+    TEST_DO(verify("tensor<int8>(x{}){x:foo}", "double"));
     TEST_DO(verify("tensor<float>(x{}){x:(double)}", "double"));
     TEST_DO(verify("tensor<float>(x{}){x:(tensor(x[3]))}", "error"));
     TEST_DO(verify("tensor<float>(x{},y[3]){x:foo,y:2}", "double"));
     TEST_DO(verify("tensor<float>(x{},y[3]){x:foo}", "tensor<float>(y[3])"));
     TEST_DO(verify("tensor<float>(x{},y[3]){y:2}", "tensor<float>(x{})"));
+    TEST_DO(verify("tensor<bfloat16>(x{},y[3]){y:2}", "tensor<bfloat16>(x{})"));
+    TEST_DO(verify("tensor<int8>(x{},y[3]){y:2}", "tensor<int8>(x{})"));
 }
 
 TEST("require that tensor concat resolves correct type") {
@@ -271,13 +332,32 @@ TEST("require that tensor concat resolves correct type") {
     TEST_DO(verify("concat(tensor<float>(x[2]),tensor<float>(x[3]),x)", "tensor<float>(x[5])"));
     TEST_DO(verify("concat(tensor<float>(x[2]),tensor(x[3]),x)", "tensor(x[5])"));
     TEST_DO(verify("concat(tensor<float>(x[2]),double,x)", "tensor<float>(x[3])"));
+    TEST_DO(verify("concat(tensor<bfloat16>(x[2]),tensor<bfloat16>(x[3]),x)", "tensor<bfloat16>(x[5])"));
+    TEST_DO(verify("concat(tensor<bfloat16>(x[2]),tensor<float>(x[3]),x)", "tensor<float>(x[5])"));
+    TEST_DO(verify("concat(tensor<bfloat16>(x[2]),tensor(x[3]),x)", "tensor(x[5])"));
+    TEST_DO(verify("concat(tensor<bfloat16>(x[2]),double,x)", "tensor<bfloat16>(x[3])"));
+    TEST_DO(verify("concat(tensor<int8>(x[3]),tensor<int8>(x[2]),x)", "tensor<int8>(x[5])"));
+    TEST_DO(verify("concat(tensor<bfloat16>(x[3]),tensor<int8>(x[2]),x)", "tensor<float>(x[5])"));
+    TEST_DO(verify("concat(tensor<float>(x[3]),tensor<int8>(x[2]),x)", "tensor<float>(x[5])"));
+    TEST_DO(verify("concat(tensor(x[3]),tensor<int8>(x[2]),x)", "tensor(x[5])"));
+    TEST_DO(verify("concat(double,tensor<int8>(x[2]),x)", "tensor<int8>(x[3])"));
+}
+
+TEST("require that tensor cell_cast resolves correct type") {
+    TEST_DO(verify("cell_cast(double,double)", "double"));
+    TEST_DO(verify("cell_cast(double,float)", "error"));
+    TEST_DO(verify("cell_cast(tensor<double>(x{},y[5]),float)", "tensor<float>(x{},y[5])"));
+    TEST_DO(verify("cell_cast(tensor<float>(x{},y[5]),double)", "tensor<double>(x{},y[5])"));
+    TEST_DO(verify("cell_cast(tensor<float>(x{},y[5]),float)", "tensor<float>(x{},y[5])"));
+    TEST_DO(verify("cell_cast(tensor<float>(x{},y[5]),bfloat16)", "tensor<bfloat16>(x{},y[5])"));
+    TEST_DO(verify("cell_cast(tensor<float>(x{},y[5]),int8)", "tensor<int8>(x{},y[5])"));
 }
 
 TEST("require that double only expressions can be detected") {
     auto plain_fun = Function::parse("1+2");
     auto complex_fun = Function::parse("reduce(a,sum)");
     NodeTypes plain_types(*plain_fun, {});
-    NodeTypes complex_types(*complex_fun, {ValueType::tensor_type({{"x"}})});
+    NodeTypes complex_types(*complex_fun, {ValueType::make_type(CellType::DOUBLE, {{"x"}})});
     EXPECT_TRUE(plain_types.get_type(plain_fun->root()).is_double());
     EXPECT_TRUE(complex_types.get_type(complex_fun->root()).is_double());
     EXPECT_TRUE(plain_types.all_types_are_double());
@@ -290,6 +370,40 @@ TEST("require that empty type repo works as expected") {
     EXPECT_FALSE(function->has_error());
     EXPECT_TRUE(types.get_type(function->root()).is_error());
     EXPECT_FALSE(types.all_types_are_double());
+}
+
+TEST("require that types for a subtree can be exported") {
+    auto function = Function::parse("(1+2)+3");
+    const auto &root = function->root();
+    ASSERT_EQUAL(root.num_children(), 2u);
+    const auto &n_1_2 = root.get_child(0);
+    const auto &n_3 = root.get_child(1);
+    ASSERT_EQUAL(n_1_2.num_children(), 2u);
+    const auto &n_1 = n_1_2.get_child(0);
+    const auto &n_2 = n_1_2.get_child(1);
+    NodeTypes all_types(*function, {});
+    NodeTypes some_types = all_types.export_types(n_1_2);
+    EXPECT_EQUAL(all_types.errors().size(), 0u);
+    EXPECT_EQUAL(some_types.errors().size(), 0u);
+    for (const auto node: {&root, &n_3}) {
+        EXPECT_TRUE(all_types.get_type(*node).is_double());
+        EXPECT_TRUE(some_types.get_type(*node).is_error());
+    }
+    for (const auto node: {&n_1_2, &n_1, &n_2}) {
+        EXPECT_TRUE(all_types.get_type(*node).is_double());
+        EXPECT_TRUE(some_types.get_type(*node).is_double());
+    }
+}
+
+TEST("require that export_types produces an error for missing types") {
+    auto fun1 = Function::parse("1+2");
+    auto fun2 = Function::parse("1+2");
+    NodeTypes fun1_types(*fun1, {});
+    NodeTypes bad_export = fun1_types.export_types(fun2->root());
+    EXPECT_EQUAL(bad_export.errors().size(), 1u);
+    print_errors(bad_export);
+    EXPECT_TRUE(fun1_types.get_type(fun1->root()).is_double());
+    EXPECT_TRUE(bad_export.get_type(fun2->root()).is_error());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -4,6 +4,7 @@ package com.yahoo.search.querytransform;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.prelude.query.PredicateQueryItem;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -26,6 +27,7 @@ import static com.yahoo.yolean.Exceptions.toMessageString;
 @After({ STEMMING, ACCENT_REMOVAL })
 @Provides(BooleanSearcher.PREDICATE)
 public class BooleanSearcher extends Searcher {
+
     private static final CompoundName FIELD = new CompoundName("boolean.field");
     private static final CompoundName ATTRIBUTES = new CompoundName("boolean.attributes");
     private static final CompoundName RANGE_ATTRIBUTES = new CompoundName("boolean.rangeAttributes");
@@ -61,7 +63,11 @@ public class BooleanSearcher extends Searcher {
             } catch (TokenMgrException e) {
                 return new Result(query, ErrorMessage.createInvalidQueryParameter(toMessageString(e)));
             }
-        } else {
+            catch (IllegalArgumentException e) {
+                throw new IllegalInputException("Failed boolean search on field '" + fieldName + "'", e);
+            }
+        }
+        else {
             if (query.isTraceable(5)) {
                 query.trace("BooleanSearcher: Nothing added to query", false, 5);
             }
@@ -79,7 +85,9 @@ public class BooleanSearcher extends Searcher {
     }
 
     static public class PredicateValueAttributeParser extends BooleanAttributeParser {
-        private PredicateQueryItem item;
+
+        private final PredicateQueryItem item;
+
         public PredicateValueAttributeParser(PredicateQueryItem item) {
             this.item = item;
         }
@@ -93,10 +101,13 @@ public class BooleanSearcher extends Searcher {
         protected void addAttribute(String attribute, String value, BigInteger subQueryMask) {
             item.addFeature(attribute, value, subQueryMask.longValue());
         }
+
     }
 
     static private class PredicateRangeAttributeParser extends BooleanAttributeParser {
-        private PredicateQueryItem item;
+
+        private final PredicateQueryItem item;
+
         public PredicateRangeAttributeParser(PredicateQueryItem item) {
             this.item = item;
         }
@@ -110,5 +121,7 @@ public class BooleanSearcher extends Searcher {
         protected void addAttribute(String attribute, String value, BigInteger subQueryMask) {
             item.addRangeFeature(attribute, Long.parseLong(value), subQueryMask.longValue());
         }
+
     }
+
 }

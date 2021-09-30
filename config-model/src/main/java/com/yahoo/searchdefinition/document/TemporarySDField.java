@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.document;
 import com.yahoo.document.DataType;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class TemporarySDField extends SDField {
 

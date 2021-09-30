@@ -2,13 +2,14 @@
 
 #include "http_connection.h"
 #include <vespa/vespalib/data/output_writer.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <cassert>
 
 namespace vespalib::portal {
 
 namespace {
 
-constexpr size_t CHUNK_SIZE = 4096;
+constexpr size_t CHUNK_SIZE = 4_Ki;
 
 enum class ReadRes { OK, END, FAIL };
 enum class WriteRes { OK, BLOCKED, FAIL };

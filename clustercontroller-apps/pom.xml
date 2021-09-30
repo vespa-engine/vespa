@@ -31,12 +31,6 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>clustercontroller-apputil</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>clustercontroller-core</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>

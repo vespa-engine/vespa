@@ -96,27 +96,20 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
 
         doc.getId().serialize(this);
 
-        Struct head = doc.getHeader();
-        Struct body = doc.getBody();
-        boolean hasHead = (head.getFieldCount() != 0);
-        boolean hasBody = (body.getFieldCount() != 0);
+        boolean hasHead = (doc.getFieldCount() != 0);
 
         byte contents = 0x01; // Indicating we have document type which we always have
         if (hasHead) {
             contents |= 0x2; // Indicate we have header
         }
-        if (hasBody) {
-            contents |= 0x4; // Indicate we have a body
-        }
+
         buf.put(contents);
 
         doc.getDataType().serialize(this);
         if (hasHead) {
-            head.serialize(null, this);
+            doc.getHeader().serialize(null, this);
         }
-        if (hasBody) {
-            body.serialize(null, this);
-        }
+
         int finalPos = buf.position();
         buf.position(lenPos);
         buf.putInt(finalPos - lenPos - 4); // Don't include the length itself or the version
@@ -297,10 +290,10 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
 
     @Override
     public void write(FieldBase field, TensorFieldValue value) {
-        if (value.getTensor().isPresent()) {
-            byte[] encodedTensor = TypedBinaryFormat.encode(value.getTensor().get());
-            buf.putInt1_4Bytes(encodedTensor.length);
-            buf.put(encodedTensor);
+        var encodedTensor = value.getSerializedTensor();
+        if (encodedTensor.isPresent()) {
+            buf.putInt1_4Bytes(encodedTensor.get().length);
+            buf.put(encodedTensor.get());
         } else {
             buf.putInt1_4Bytes(0);
         }

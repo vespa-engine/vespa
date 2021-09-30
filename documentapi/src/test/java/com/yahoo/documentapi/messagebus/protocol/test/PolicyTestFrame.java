@@ -155,16 +155,6 @@ public class PolicyTestFrame {
     }
 
     /**
-     * This is a convenience method for invoking {@link #assertMerge(Map,List,List)} with no expected value.
-     *
-     * @param replies        The errors to set in the leaf node replies.
-     * @param expectedErrors The list of expected errors in the merged reply.
-     */
-    public void assertMergeError(Map<String, Integer> replies, List<Integer> expectedErrors) {
-        assertMerge(replies, expectedErrors, null);
-    }
-
-    /**
      * This is a convenience method for invoking {@link this#assertMerge(Map,List,List)} with no expected errors.
      *
      * @param replies       The errors to set in the leaf node replies.
@@ -233,10 +223,10 @@ public class PolicyTestFrame {
 
         Map<String, Integer> replies = new HashMap<>();
         replies.put(recipient, ErrorCode.NONE);
-        assertMergeOk(replies, Arrays.asList(recipient));
+        assertMergeOk(replies, List.of(recipient));
 
         replies.put(recipient, ErrorCode.TRANSIENT_ERROR);
-        assertMergeError(replies, Arrays.asList(ErrorCode.TRANSIENT_ERROR));
+        assertMerge(replies, List.of(ErrorCode.TRANSIENT_ERROR), List.of(recipient));
     }
 
     /**
@@ -252,28 +242,33 @@ public class PolicyTestFrame {
         Map<String, Integer> replies = new HashMap<>();
         replies.put(recipientOne, ErrorCode.NONE);
         replies.put(recipientTwo, ErrorCode.NONE);
-        assertMergeOk(replies, Arrays.asList(recipientOne, recipientTwo));
+        assertMergeOk(replies, List.of(recipientOne, recipientTwo));
 
         replies.put(recipientOne, ErrorCode.TRANSIENT_ERROR);
         replies.put(recipientTwo, ErrorCode.NONE);
-        assertMergeError(replies, Arrays.asList(ErrorCode.TRANSIENT_ERROR));
+        assertMerge(replies, List.of(ErrorCode.TRANSIENT_ERROR), List.of(recipientOne));
+
+        replies.put(recipientOne, ErrorCode.TRANSIENT_ERROR);
+        replies.put(recipientTwo, ErrorCode.FATAL_ERROR);
+        assertMerge(replies, List.of(ErrorCode.TRANSIENT_ERROR, ErrorCode.FATAL_ERROR), List.of(recipientTwo));
 
         replies.put(recipientOne, ErrorCode.TRANSIENT_ERROR);
         replies.put(recipientTwo, ErrorCode.TRANSIENT_ERROR);
-        assertMergeError(replies, Arrays.asList(ErrorCode.TRANSIENT_ERROR, ErrorCode.TRANSIENT_ERROR));
+        assertMerge(replies, Arrays.asList(ErrorCode.TRANSIENT_ERROR, ErrorCode.TRANSIENT_ERROR), List.of(recipientOne, recipientTwo));
 
         replies.put(recipientOne, ErrorCode.NONE);
         replies.put(recipientTwo, DocumentProtocol.ERROR_MESSAGE_IGNORED);
-        assertMergeOk(replies, Arrays.asList(recipientOne));
+        assertMergeOk(replies, List.of(recipientOne));
 
         replies.put(recipientOne, DocumentProtocol.ERROR_MESSAGE_IGNORED);
         replies.put(recipientTwo, ErrorCode.NONE);
-        assertMergeOk(replies, Arrays.asList(recipientTwo));
+        assertMergeOk(replies, List.of(recipientTwo));
 
         replies.put(recipientOne, DocumentProtocol.ERROR_MESSAGE_IGNORED);
         replies.put(recipientTwo, DocumentProtocol.ERROR_MESSAGE_IGNORED);
-        assertMergeError(replies, Arrays.asList(DocumentProtocol.ERROR_MESSAGE_IGNORED,
-                                                DocumentProtocol.ERROR_MESSAGE_IGNORED));
+        assertMerge(replies, List.of(DocumentProtocol.ERROR_MESSAGE_IGNORED,
+                                     DocumentProtocol.ERROR_MESSAGE_IGNORED),
+                    null); // Only ignored errors specifically causes an EmptyReply.
     }
 
     /**

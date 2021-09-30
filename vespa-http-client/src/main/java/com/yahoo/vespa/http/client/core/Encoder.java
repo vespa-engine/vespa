@@ -15,10 +15,8 @@ public final class Encoder {
     /**
      * ISO 646.irv:1991 safe quoting into a StringBuilder instance.
      *
-     * @param input
-     *            the string to encode
-     * @param output
-     *            the destination buffer
+     * @param input the string to encode
+     * @param output the destination buffer
      * @return the destination buffer given as input
      */
     public static StringBuilder encode(String input, StringBuilder output) {
@@ -47,28 +45,20 @@ public final class Encoder {
     /**
      * ISO 646.irv:1991 safe unquoting into a StringBuilder instance.
      *
-     * @param input
-     *            the string to decode
-     * @param output
-     *            the destination buffer
+     * @param input the string to decode
+     * @param output the destination buffer
      * @return the destination buffer given as input
-     * @throws IllegalArgumentException
-     *             if the input string contains unexpected or invalid data
+     * @throws IllegalArgumentException if the input string contains unexpected or invalid data
      */
     public static StringBuilder decode(String input, StringBuilder output) {
         for (int i = 0; i < input.length(); i = input.offsetByCodePoints(i, 1)) {
             int c = input.codePointAt(i);
-            if (c > '~') {
-                throw new IllegalArgumentException("Input contained character above printable ASCII.");
-            }
-            switch (c) {
-                case '{':
-                    i = decode(input, i, output);
-                    break;
-                default:
-                    output.append((char) c);
-                    break;
-            }
+            if (c > '~')
+                throw new IllegalArgumentException("Input contained character above printable ASCII at position " + i);
+            if (c == '{')
+                i = decode(input, i, output);
+            else
+                output.append((char) c);
         }
         return output;
     }

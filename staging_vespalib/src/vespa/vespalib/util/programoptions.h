@@ -27,6 +27,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <memory>
 
 namespace vespalib {
 

@@ -8,8 +8,6 @@
 
 namespace documentapi {
 
-class LoadTypeSet;
-
 /**
  * This interface defines the necessary methods of a routable factory that can be plugged into a {@link
  * DocumentProtocol} using the {@link DocumentProtocol#putRoutableFactory(int, RoutableFactory,
@@ -59,7 +57,7 @@ public:
      * @param loadTypes The set of configured load types.
      * @return The decoded routable.
      */
-    virtual mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const = 0;
+    virtual mbus::Routable::UP decode(document::ByteBuffer &in) const = 0;
 };
 
 }

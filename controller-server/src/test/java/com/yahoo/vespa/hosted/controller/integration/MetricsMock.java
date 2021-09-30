@@ -6,6 +6,8 @@ import com.yahoo.jdisc.Metric;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -17,11 +19,12 @@ import java.util.stream.Collectors;
  */
 public class MetricsMock implements Metric {
 
-    private final Map<Context, Map<String, Number>> metrics = new HashMap<>();
+    private final LinkedHashMap<Context, Map<String, Number>> metrics = new LinkedHashMap<>();
 
     @Override
     public void set(String key, Number val, Context ctx) {
-        Map<String, Number> metricsMap = metrics.getOrDefault(ctx, new HashMap<>());
+        metrics.putIfAbsent(ctx, new HashMap<>());
+        Map<String, Number> metricsMap = metrics.get(ctx);
         metricsMap.put(key, val);
     }
 
@@ -43,10 +46,6 @@ public class MetricsMock implements Metric {
         return ctx;
     }
 
-    public Map<Context, Map<String, Number>> getMetrics() {
-        return metrics;
-    }
-    
     /** Returns a zero-context metric by name, or null if it is not present */
     public Number getMetric(String name) {
         Map<String, Number> valuesForEmptyContext = metrics.get(createContext(Collections.emptyMap()));
@@ -59,17 +58,20 @@ public class MetricsMock implements Metric {
         return metrics.entrySet()
                       .stream()
                       .filter(context -> dimensionMatcher.test(((MapContext) context.getKey()).getDimensions()))
-                      .collect(Collectors.toMap(entry -> (MapContext) entry.getKey(), Map.Entry::getValue));
+                      .collect(Collectors.toMap(kv -> (MapContext) kv.getKey(),
+                                                Map.Entry::getValue,
+                                                (v1, v2) -> { throw new IllegalStateException("Duplicate keys for values '" + v1 + "' and '" + v2 + "'."); },
+                                                LinkedHashMap::new));
     }
 
-    /** Returns metric filtered by dimension and name */
+    /** Returns the most recently added metric matching given dimension and name */
     public Optional<Number> getMetric(Predicate<Map<String, String>> dimensionMatcher, String name) {
-        Map<String, Number> metrics = getMetrics(dimensionMatcher).entrySet()
-                                                                  .stream()
-                                                                  .map(Map.Entry::getValue)
-                                                                  .findFirst()
-                                                                  .orElseGet(Collections::emptyMap);
-        return Optional.ofNullable(metrics.get(name));
+        var metrics = List.copyOf(getMetrics(dimensionMatcher).values());
+        for (int i = metrics.size() - 1; i >= 0; i--) {
+            var metric = metrics.get(i).get(name);
+            if (metric != null) return Optional.of(metric);
+        }
+        return Optional.empty();
     }
 
     public static class MapContext implements Context {
@@ -81,13 +83,16 @@ public class MetricsMock implements Metric {
         }
 
         @Override
-        public boolean equals(Object obj) {
-            return Objects.deepEquals(obj, dimensions);
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            MapContext that = (MapContext) o;
+            return dimensions.equals(that.dimensions);
         }
 
         @Override
         public int hashCode() {
-            return Objects.toString(dimensions).hashCode();
+            return Objects.hash(dimensions);
         }
 
         public Map<String, String> getDimensions() {

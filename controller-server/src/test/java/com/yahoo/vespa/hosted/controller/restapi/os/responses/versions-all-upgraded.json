@@ -3,6 +3,7 @@
     {
       "version": "7.5.2",
       "targetVersion": true,
+      "upgradeBudget": "PT0S",
       "cloud": "cloud1",
       "nodes": [
         {
@@ -100,6 +101,7 @@
     {
       "version": "8.2.1",
       "targetVersion": true,
+      "upgradeBudget": "PT24H",
       "cloud": "cloud2",
       "nodes": [
         {

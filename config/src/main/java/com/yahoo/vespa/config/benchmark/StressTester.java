@@ -168,7 +168,7 @@ public class StressTester {
     }
 
     public static class RpcServer implements Runnable {
-        private Transport transport = new Transport();
+        private Transport transport = new Transport("rpc-server");
         protected Supervisor supervisor = new Supervisor(transport);
         private final Spec spec;
         private final StressTester tester;

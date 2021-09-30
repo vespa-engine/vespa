@@ -3,7 +3,8 @@
 #include <vespa/defaults.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <iostream>
-#include <lib/configstatus.h>
+#include <cstdlib>
+#include "lib/configstatus.h"
 #include <vespa/fastos/app.h>
 
 #include <vespa/log/log.h>
@@ -32,7 +33,7 @@ Application::Application()
 Application::~Application() { }
 
 int Application::parseOpts() {
-    char c = '?';
+    int c = '?';
     const char *optArg = NULL;
     int optInd = 0;
     while ((c = GetOpt("c:s:vC:f:", optArg, optInd)) != -1) {
@@ -48,13 +49,13 @@ int Application::parseOpts() {
             break;
         case 'h':
             usage();
-            exit(0);
+            std::_Exit(0);
         case 'f':
             _flags.host_filter = parse_host_set(optArg);
             break;
         default:
             usage();
-            exit(1);
+            std::_Exit(1);
         }
     }
     if (_specString.empty()) {

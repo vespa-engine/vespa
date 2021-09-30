@@ -2,19 +2,16 @@
 
 #pragma once
 
-#include <vespa/persistence/spi/abstractpersistenceprovider.h>
+#include <vespa/document/bucket/bucketspace.h>
 
-namespace proton
-{
+namespace storage::spi { class ClusterState; }
+
+namespace proton {
 
 class IPersistenceEngineOwner
 {
 public:
-    virtual
-    ~IPersistenceEngineOwner()
-    {
-    }
-
+    virtual ~IPersistenceEngineOwner() = default;
     virtual void
     setClusterState(document::BucketSpace bucketSpace, const storage::spi::ClusterState &calc) = 0;
 };

@@ -10,15 +10,16 @@ import java.time.Duration;
  * 
  * @author bratseth
  */
-public class ReadyJobsTrigger extends Maintainer {
+public class ReadyJobsTrigger extends ControllerMaintainer {
     
-    public ReadyJobsTrigger(Controller controller, Duration interval, JobControl jobControl) {
-        super(controller, interval, jobControl);
+    public ReadyJobsTrigger(Controller controller, Duration interval) {
+        super(controller, interval);
     }
 
     @Override
-    public void maintain() {
+    public double maintain() {
         controller().applications().deploymentTrigger().triggerReadyJobs();
+        return 1.0;
     }
 
 }

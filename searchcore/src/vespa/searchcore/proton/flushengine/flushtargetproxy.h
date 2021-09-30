@@ -31,8 +31,7 @@ public:
      * @param target   The target to decorate.
      * @param prefix   The prefix to prepend to the target
      */
-    FlushTargetProxy(const IFlushTarget::SP &target,
-                     const vespalib::string & prefix);
+    FlushTargetProxy(const IFlushTarget::SP &target, const vespalib::string & prefix);
     /**
      * Returns the decorated flush target. This should not be used for anything
      * but testing, as invoking a method on the returned target beats the
@@ -40,34 +39,16 @@ public:
      *
      * @return The decorated flush target.
      */
-    const IFlushTarget::SP &
-    getFlushTarget() const
-    {
-        return _target;
-    }
+    const IFlushTarget::SP & getFlushTarget() const { return _target; }
     // Implements IFlushTarget.
-    virtual MemoryGain
-    getApproxMemoryGain() const override;
-
-    virtual DiskGain
-    getApproxDiskGain() const override;
-
-    virtual SerialNum
-    getFlushedSerialNum() const override;
-
-    virtual Time
-    getLastFlushTime() const override;
-
-    virtual bool
-    needUrgentFlush() const override;
-
-    virtual Task::UP
-    initFlush(SerialNum currentSerial) override;
-
-    virtual searchcorespi::FlushStats
-    getLastFlushStats() const override;
-
-    virtual uint64_t getApproxBytesToWriteToDisk() const override;
+    MemoryGain getApproxMemoryGain() const override;
+    DiskGain getApproxDiskGain() const override;
+    SerialNum getFlushedSerialNum() const override;
+    Time getLastFlushTime() const override;
+    bool needUrgentFlush() const override;
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    searchcorespi::FlushStats getLastFlushStats() const override;
+    uint64_t getApproxBytesToWriteToDisk() const override;
 };
 
 } // namespace proton

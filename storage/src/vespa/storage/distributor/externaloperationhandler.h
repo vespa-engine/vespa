@@ -1,48 +1,53 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "operation_sequencer.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/storage/distributor/distributorcomponent.h>
+#include <vespa/storage/distributor/distributor_stripe_component.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <atomic>
 #include <chrono>
 #include <mutex>
 
-namespace storage {
+namespace documentapi { class TestAndSetCondition; }
+namespace storage::lib { class ClusterState; }
+namespace storage { class PersistenceOperationMetricSet; }
+
+namespace storage::distributor {
 
 class DistributorMetricSet;
-class PersistenceOperationMetricSet;
-
-namespace distributor {
-
-class Distributor;
+class TopLevelDistributor;
 class MaintenanceOperationGenerator;
 class DirectDispatchSender;
+class SequencingHandle;
+class OperationSequencer;
+class OperationOwner;
+class UuidGenerator;
 
-class ExternalOperationHandler : public DistributorComponent,
-                                 public api::MessageHandler
+class ExternalOperationHandler : public api::MessageHandler
 {
 public:
     using Clock = std::chrono::system_clock;
     using TimePoint = std::chrono::time_point<Clock>;
 
-    DEF_MSG_COMMAND_H(Get);
-    DEF_MSG_COMMAND_H(Put);
-    DEF_MSG_COMMAND_H(Update);
-    DEF_MSG_COMMAND_H(Remove);
-    DEF_MSG_COMMAND_H(RemoveLocation);
-    DEF_MSG_COMMAND_H(StatBucket);
-    DEF_MSG_COMMAND_H(CreateVisitor);
-    DEF_MSG_COMMAND_H(GetBucketList);
+    bool onGet(const std::shared_ptr<api::GetCommand>&) override;
+    bool onPut(const std::shared_ptr<api::PutCommand>&) override;
+    bool onUpdate(const std::shared_ptr<api::UpdateCommand>&) override;
+    bool onRemove(const std::shared_ptr<api::RemoveCommand>&) override;
+    bool onRemoveLocation(const std::shared_ptr<api::RemoveLocationCommand>&) override;
+    bool onStatBucket(const std::shared_ptr<api::StatBucketCommand>&) override;
+    bool onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&) override;
+    bool onGetBucketList(const std::shared_ptr<api::GetBucketListCommand>&) override;
 
-    ExternalOperationHandler(Distributor& owner,
-                             DistributorBucketSpaceRepo& bucketSpaceRepo,
-                             DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
-                             const MaintenanceOperationGenerator&,
-                             DistributorComponentRegister& compReg);
+    ExternalOperationHandler(DistributorNodeContext& node_ctx,
+                             DistributorStripeOperationContext& op_ctx,
+                             DistributorMetricSet& metrics,
+                             ChainedMessageSender& msg_sender,
+                             OperationSequencer& operation_sequencer,
+                             NonTrackingMessageSender& non_tracking_sender,
+                             DocumentSelectionParser& parser,
+                             const MaintenanceOperationGenerator& gen,
+                             OperationOwner& operation_owner);
 
     ~ExternalOperationHandler() override;
 
@@ -74,14 +79,26 @@ public:
         return _use_weak_internal_read_consistency_for_gets.load(std::memory_order_relaxed);
     }
 
+    // Exposed for testing
+    OperationSequencer& operation_sequencer() noexcept {
+        return _operation_sequencer;
+    }
+
 private:
+    DistributorNodeContext& _node_ctx;
+    DistributorStripeOperationContext& _op_ctx;
+    DistributorMetricSet& _metrics;
+    ChainedMessageSender& _msg_sender;
+    OperationSequencer& _operation_sequencer;
+    DocumentSelectionParser& _parser;
     std::unique_ptr<DirectDispatchSender> _direct_dispatch_sender;
     const MaintenanceOperationGenerator& _operationGenerator;
-    OperationSequencer _mutationSequencer;
     Operation::SP _op;
     TimePoint _rejectFeedBeforeTimeReached;
+    OperationOwner& _distributor_operation_owner;
     mutable std::mutex _non_main_thread_ops_mutex;
     OperationOwner _non_main_thread_ops_owner;
+    std::unique_ptr<UuidGenerator> _uuid_generator;
     std::atomic<bool> _concurrent_gets_enabled;
     std::atomic<bool> _use_weak_internal_read_consistency_for_gets;
 
@@ -98,6 +115,7 @@ private:
                                                   const lib::ClusterState& current_state,
                                                   const lib::ClusterState& pending_state);
     void bounce_with_result(api::StorageCommand& cmd, const api::ReturnCode& result);
+    void bounce_with_feed_blocked(api::StorageCommand& cmd);
     std::shared_ptr<Operation> try_generate_get_operation(const std::shared_ptr<api::GetCommand>&);
 
     bool checkSafeTimeReached(api::StorageCommand& cmd);
@@ -114,10 +132,7 @@ private:
 
     api::InternalReadConsistency desired_get_read_consistency() const noexcept;
 
-    DistributorMetricSet& getMetrics() { return getDistributor().getMetrics(); }
+    DistributorMetricSet& getMetrics() { return _metrics; }
 };
 
 }
-
-}
-

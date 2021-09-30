@@ -4,48 +4,46 @@ package com.yahoo.search.searchers;
 
 import com.google.common.annotations.Beta;
 
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NearestNeighborItem;
-import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.query.ranking.RankProperties;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.AttributesConfig;
-import com.yahoo.yolean.chain.After;
+import com.yahoo.yolean.chain.Before;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-// This depends on tensors in query.getRanking which are moved to rank.properties during query.prepare()
-// Query.prepare is done at the same time as canonicalization (by GroupingExecutor), so use that constraint.
-@After(QueryCanonicalizer.queryCanonicalization)
 
 /**
  * Validates any NearestNeighborItem query items.
  *
  * @author arnej
  */
-@Beta
+@Before(GroupingExecutor.COMPONENT_NAME) // Must happen before query.prepare()
 public class ValidateNearestNeighborSearcher extends Searcher {
 
-    private Map<String, TensorType> validAttributes = new HashMap<>();
+    private final Map<String, List<TensorType>> validAttributes = new HashMap<>();
 
     public ValidateNearestNeighborSearcher(AttributesConfig attributesConfig) {
         for (AttributesConfig.Attribute a : attributesConfig.attribute()) {
-            TensorType tt = null;
-            if (a.datatype() == AttributesConfig.Attribute.Datatype.TENSOR) {
-                tt = TensorType.fromSpec(a.tensortype());
+            if (! validAttributes.containsKey(a.name())) {
+                validAttributes.put(a.name(), new ArrayList<TensorType>());
             }
-            validAttributes.put(a.name(), tt);
+            if (a.datatype() == AttributesConfig.Attribute.Datatype.TENSOR) {
+                TensorType tt = TensorType.fromSpec(a.tensortype());
+                validAttributes.get(a.name()).add(tt);
+            }
         }
     }
 
@@ -56,7 +54,7 @@ public class ValidateNearestNeighborSearcher extends Searcher {
     }
 
     private Optional<ErrorMessage> validate(Query query) {
-        NNVisitor visitor = new NNVisitor(query.getRanking().getProperties(), validAttributes);
+        NNVisitor visitor = new NNVisitor(query.getRanking().getProperties(), validAttributes, query);
         ToolBox.visit(visitor, query.getModel().getQueryTree().getRoot());
         return visitor.errorMessage;
     }
@@ -65,24 +63,22 @@ public class ValidateNearestNeighborSearcher extends Searcher {
 
         public Optional<ErrorMessage> errorMessage = Optional.empty();
 
-        private RankProperties rankProperties;
-        private Map<String, TensorType> validAttributes;
+        private final Map<String, List<TensorType>> validAttributes;
+        private final Query query;
 
-        public NNVisitor(RankProperties rankProperties, Map<String, TensorType> validAttributes) {
-            this.rankProperties = rankProperties;
+        public NNVisitor(RankProperties rankProperties, Map<String, List<TensorType>> validAttributes, Query query) {
             this.validAttributes = validAttributes;
+            this.query = query;
         }
 
         @Override
         public boolean visit(Item item) {
             if (item instanceof NearestNeighborItem) {
-                validate((NearestNeighborItem) item);
+                String error = validate((NearestNeighborItem)item);
+                if (error != null)
+                    errorMessage = Optional.of(ErrorMessage.createIllegalQuery(error));
             }
             return true;
-        }
-
-        private void setError(String description) {
-            errorMessage = Optional.of(ErrorMessage.createIllegalQuery(description));
         }
 
         private static boolean isCompatible(TensorType lhs, TensorType rhs) {
@@ -98,50 +94,36 @@ public class ValidateNearestNeighborSearcher extends Searcher {
             return true;
         }
 
-        private void validate(NearestNeighborItem item) {
-            int target = item.getTargetNumHits();
-            if (target < 1) {
-                setError(item.toString() + " has invalid targetNumHits");
-                return;
-            }
-            String qprop = item.getQueryTensorName();
-            List<Object> rankPropValList = rankProperties.asMap().get(qprop);
-            if (rankPropValList == null) {
-                setError(item.toString() + " query tensor not found");
-                return;
-            }
-            if (rankPropValList.size() != 1) {
-                setError(item.toString() + " query tensor does not have a single value");
-                return;
-            }
-            Object rankPropValue = rankPropValList.get(0);
-            if (! (rankPropValue instanceof Tensor)) {
-                setError(item.toString() + " query tensor should be a tensor, was: "+
-                    (rankPropValue == null ? "null" : rankPropValue.getClass().toString()));
-                return;
-            }
-            Tensor qTensor = (Tensor)rankPropValue;
-            TensorType qTensorType = qTensor.type();
+        /** Returns an error message if this is invalid, or null if it is valid */
+        private String validate(NearestNeighborItem item) {
+            if (item.getTargetNumHits() < 1)
+                return item + " has invalid targetHits " + item.getTargetNumHits() + ": Must be >= 1";
 
-            String field = item.getIndexName();
-            if (validAttributes.containsKey(field)) {
-                TensorType fTensorType = validAttributes.get(field);
-                if (fTensorType == null) {
-                    setError(item.toString() + " field is not a tensor");
-                    return;
-                }
-                if (! isCompatible(fTensorType, qTensorType)) {
-                    setError(item.toString() + " field type "+fTensorType+" does not match query tensor type "+qTensorType);
-                    return;
-                }
-                if (! isDenseVector(fTensorType)) {
-                    setError(item.toString() + " tensor type "+fTensorType+" is not a dense vector");
-                    return;
-                }
-            } else {
-                setError(item.toString() + " field is not an attribute");
-                return;
+            String queryFeatureName = "query(" + item.getQueryTensorName() + ")";
+            Optional<Tensor> queryTensor = query.getRanking().getFeatures().getTensor(queryFeatureName);
+            if (queryTensor.isEmpty())
+                return item + " requires a tensor rank feature " + queryFeatureName + " but this is not present";
+
+            if ( ! validAttributes.containsKey(item.getIndexName())) {
+                return item + " field is not an attribute";
             }
+            List<TensorType> allTensorTypes = validAttributes.get(item.getIndexName());
+            for (TensorType fieldType : allTensorTypes) {
+                if (isDenseVector(fieldType) && isCompatible(fieldType, queryTensor.get().type())) {
+                    return null;
+                }
+            }
+            for (TensorType fieldType : allTensorTypes) {
+                if (isDenseVector(fieldType) && ! isCompatible(fieldType, queryTensor.get().type())) {
+                    return item + " field type " + fieldType + " does not match query type " + queryTensor.get().type();
+                }
+            }
+            for (TensorType fieldType : allTensorTypes) {
+                if (! isDenseVector(fieldType)) {
+                    return item + " tensor type " + fieldType + " is not a dense vector";
+                }
+            }
+            return item + " field is not a tensor";
         }
 
         @Override

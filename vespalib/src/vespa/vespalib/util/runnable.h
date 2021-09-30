@@ -3,14 +3,26 @@
 #pragma once
 
 #include <memory>
+#include <functional>
 
 namespace vespalib {
+
+// Convenience macro used to create a function that can be used as an
+// init function when creating an executor to inject a frame with the
+// given name into the stack of all worker threads.
+
+#define VESPA_THREAD_STACK_TAG(name)         \
+    int name(::vespalib::Runnable &worker) { \
+        worker.run();                        \
+        return 1;                            \
+    }
 
 /**
  * Interface implemented in order to be run by a Thread.
  **/
 struct Runnable {
-    typedef std::unique_ptr<Runnable> UP;
+    using UP = std::unique_ptr<Runnable>;
+    using init_fun_t = std::function<int(Runnable&)>;
 
     /**
      * Entry point called by the running thread

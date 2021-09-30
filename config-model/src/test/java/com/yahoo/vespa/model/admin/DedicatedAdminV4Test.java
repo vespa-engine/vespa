@@ -87,7 +87,7 @@ public class DedicatedAdminV4Test {
 
         MetricsConsumer consumer = model.getAdmin().getUserMetrics().getConsumers().get("slingstone");
         assertNotNull(consumer);
-        Metric metric = consumer.getMetrics().get("foobar.count");
+        Metric metric = consumer.metrics().get("foobar.count");
         assertNotNull(metric);
         assertEquals("foobar", metric.outputName);
     }
@@ -147,7 +147,7 @@ public class DedicatedAdminV4Test {
                 "  <admin version='4.0'>" +
                 "    <slobroks><nodes count='2' dedicated='true'/></slobroks>" +
                 "    <logservers><nodes count='1' dedicated='true'/></logservers>" +
-                "    <logforwarding>" +
+                "    <logforwarding include-admin='true'>" +
                 "      <splunk deployment-server='foo:123' client-name='foocli' phone-home-interval='900'/>" +
                 "    </logforwarding>" +
                 "  </admin>" +
@@ -236,7 +236,7 @@ public class DedicatedAdminV4Test {
                 .build();
         return new VespaModel(new NullConfigModelRegistry(), deployStateBuilder
                 .applicationPackage(app)
-                .modelHostProvisioner(new InMemoryProvisioner(Hosts.readFrom(app.getHosts()), true))
+                .modelHostProvisioner(new InMemoryProvisioner(Hosts.readFrom(app.getHosts()), true, false))
                 .build());
     }
 

@@ -3,6 +3,7 @@ package com.yahoo.documentapi;
 
 import com.yahoo.document.BucketId;
 import com.yahoo.document.FixedBucketSpaces;
+import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.ThrottlePolicy;
@@ -29,7 +30,7 @@ public class VisitorParameters extends Parameters {
     private long fromTimestamp = 0;
     private long toTimestamp = 0;
     boolean visitRemoves = false;
-    private String fieldSet = "[all]";
+    private String fieldSet = AllFields.NAME;
     boolean visitInconsistentBuckets = false;
     private ProgressToken resumeToken = null;
     private String resumeFileName = "";

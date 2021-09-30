@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.SlimeUtils;
@@ -18,10 +17,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -36,7 +35,6 @@ import java.security.PublicKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -90,21 +88,24 @@ public class ApplicationSerializerTest {
                                                                         Optional.of(Version.fromString("1.2.3")),
                                                                         Optional.of(Instant.ofEpochMilli(666)),
                                                                         Optional.empty(),
-                                                                        Optional.of("best commit"));
+                                                                        Optional.of("best commit"),
+                                                                        true);
         assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
 
         ApplicationVersion applicationVersion2 = ApplicationVersion
                 .from(new SourceRevision("repo1", "branch1", "commit1"), 32, "a@b",
                       Version.fromString("6.3.1"), Instant.ofEpochMilli(496));
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
-        deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3))); // One deployment without cluster info and utils
+        deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3),
+                                       DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty()));
         deployments.add(new Deployment(zone2, applicationVersion2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
-                                       createClusterInfo(3, 4),
                                        new DeploymentMetrics(2, 3, 4, 5, 6,
                                                              Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
                                                              Map.of(DeploymentMetrics.Warning.all, 3)),
                                        DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
-                                                                 OptionalDouble.of(200), OptionalDouble.of(10))));
+                                                                 OptionalDouble.of(200), OptionalDouble.of(10)),
+                                       QuotaUsage.create(OptionalDouble.of(23.5)),
+                                       OptionalDouble.of(12.3)));
 
         var rotationStatus = RotationStatus.from(Map.of(new RotationId("my-rotation"),
                                                         new RotationStatus.Targets(
@@ -162,14 +163,8 @@ public class ApplicationSerializerTest {
         assertEquals(RotationStatus.EMPTY, serialized.require(id3.instance()).rotationStatus());
 
         assertEquals(2, serialized.require(id1.instance()).deployments().size());
-        assertEquals(original.require(id1.instance()).deployments().get(zone1).applicationVersion(), serialized.require(id1.instance()).deployments().get(zone1).applicationVersion());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).applicationVersion(), serialized.require(id1.instance()).deployments().get(zone2).applicationVersion());
-        assertEquals(original.require(id1.instance()).deployments().get(zone1).version(), serialized.require(id1.instance()).deployments().get(zone1).version());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).version(), serialized.require(id1.instance()).deployments().get(zone2).version());
-        assertEquals(original.require(id1.instance()).deployments().get(zone1).at(), serialized.require(id1.instance()).deployments().get(zone1).at());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).at(), serialized.require(id1.instance()).deployments().get(zone2).at());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).activity().lastQueried().get(), serialized.require(id1.instance()).deployments().get(zone2).activity().lastQueried().get());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).activity().lastWritten().get(), serialized.require(id1.instance()).deployments().get(zone2).activity().lastWritten().get());
+        assertEquals(original.require(id1.instance()).deployments().get(zone1), serialized.require(id1.instance()).deployments().get(zone1));
+        assertEquals(original.require(id1.instance()).deployments().get(zone2), serialized.require(id1.instance()).deployments().get(zone2));
 
         assertEquals(original.require(id1.instance()).jobPause(JobType.systemTest),
                      serialized.require(id1.instance()).jobPause(JobType.systemTest));
@@ -187,16 +182,6 @@ public class ApplicationSerializerTest {
         assertEquals(original.require(id1.instance()).change(), serialized.require(id1.instance()).change());
         assertEquals(original.require(id3.instance()).change(), serialized.require(id3.instance()).change());
 
-        // Test cluster info
-        assertEquals(3, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().size());
-        assertEquals(10, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavorCost());
-        assertEquals(ClusterSpec.Type.content, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getClusterType());
-        assertEquals("flavor2", serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavor());
-        assertEquals(4, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getHostnames().size());
-        assertEquals(2, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavorCPU(), Double.MIN_VALUE);
-        assertEquals(4, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavorMem(), Double.MIN_VALUE);
-        assertEquals(50, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavorDisk(), Double.MIN_VALUE);
-
         // Test metrics
         assertEquals(original.metrics().queryServiceQuality(), serialized.metrics().queryServiceQuality(), Double.MIN_VALUE);
         assertEquals(original.metrics().writeServiceQuality(), serialized.metrics().writeServiceQuality(), Double.MIN_VALUE);
@@ -207,21 +192,9 @@ public class ApplicationSerializerTest {
         assertEquals(original.require(id1.instance()).deployments().get(zone2).metrics().writeLatencyMillis(), serialized.require(id1.instance()).deployments().get(zone2).metrics().writeLatencyMillis(), Double.MIN_VALUE);
         assertEquals(original.require(id1.instance()).deployments().get(zone2).metrics().instant(), serialized.require(id1.instance()).deployments().get(zone2).metrics().instant());
         assertEquals(original.require(id1.instance()).deployments().get(zone2).metrics().warnings(), serialized.require(id1.instance()).deployments().get(zone2).metrics().warnings());
-    }
 
-    private Map<ClusterSpec.Id, ClusterInfo> createClusterInfo(int clusters, int hosts) {
-        Map<ClusterSpec.Id, ClusterInfo> result = new HashMap<>();
-
-        for (int cluster = 0; cluster < clusters; cluster++) {
-            List<String> hostnames = new ArrayList<>();
-            for (int host = 0; host < hosts; host++) {
-                hostnames.add("hostname" + cluster*host + host);
-            }
-
-            result.put(ClusterSpec.Id.from("id" + cluster), new ClusterInfo("flavor" + cluster, 10,
-                2, 4, 50, ClusterSpec.Type.content, hostnames));
-        }
-        return result;
+        // Test quota
+        assertEquals(original.require(id1.instance()).deployments().get(zone2).quota().rate(), serialized.require(id1.instance()).deployments().get(zone2).quota().rate(), 0.001);
     }
 
     @Test

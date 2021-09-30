@@ -3,8 +3,7 @@
 #include "stringbucketresultnode.h"
 #include <vespa/vespalib/objects/visit.hpp>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 IMPLEMENT_RESULTNODE(StringBucketResultNode, BucketResultNode);
 
@@ -44,7 +43,7 @@ StringBucketResultNode::StringBucketResultNode(vespalib::stringref from, vespali
     : _from(new StringResultNode(from)),
       _to(new StringResultNode(to))
 {}
-StringBucketResultNode::~StringBucketResultNode() {}
+StringBucketResultNode::~StringBucketResultNode() = default;
 
 int
 StringBucketResultNode::onCmp(const Identifiable & rhs) const
@@ -76,8 +75,8 @@ int StringBucketResultNode::contains(const char * s) const
 void
 StringBucketResultNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
-    visit(visitor, _fromField.getName(), _from);
-    visit(visitor, _toField.getName(), _to);
+    visit(visitor, _fromField, _from);
+    visit(visitor, _toField, _to);
 }
 
 vespalib::Serializer &
@@ -96,7 +95,6 @@ StringBucketResultNode::onDeserialize(vespalib::Deserializer & is)
     return is;
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

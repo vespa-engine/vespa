@@ -5,18 +5,19 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.math.Quantiles;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
+import com.yahoo.search.dispatch.TopKEstimator;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -38,7 +39,9 @@ public class SearchCluster implements NodeManager<Node> {
     private final ImmutableList<Group> orderedGroups;
     private final VipStatus vipStatus;
     private final PingFactory pingFactory;
+    private final TopKEstimator hitEstimator;
     private long nextLogTime = 0;
+    private static final double SKEW_FACTOR = 0.05;
 
     /**
      * A search node on this local machine having the entire corpus, which we therefore
@@ -76,12 +79,13 @@ public class SearchCluster implements NodeManager<Node> {
         for (Node node : nodes)
             nodesByHostBuilder.put(node.hostname(), node);
         this.nodesByHost = nodesByHostBuilder.build();
+        hitEstimator = new TopKEstimator(30.0, dispatchConfig.topKProbability(), SKEW_FACTOR);
 
         this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(), nodesByHost, groups);
     }
 
-    public void addMonitoring(ClusterMonitor clusterMonitor) {
-        for (var group : orderedGroups) {
+    public void addMonitoring(ClusterMonitor<Node> clusterMonitor) {
+        for (var group : orderedGroups()) {
             for (var node : group.nodes())
                 clusterMonitor.add(node, true);
         }
@@ -129,22 +133,25 @@ public class SearchCluster implements NodeManager<Node> {
 
     /** Returns the n'th (zero-indexed) group in the cluster if possible */
     public Optional<Group> group(int n) {
-        if (orderedGroups.size() > n) {
-            return Optional.of(orderedGroups.get(n));
+        if (orderedGroups().size() > n) {
+            return Optional.of(orderedGroups().get(n));
         } else {
             return Optional.empty();
         }
     }
 
-    /** Returns the number of nodes per group - size()/groups.size() */
-    public int groupSize() {
-        if (groups.size() == 0) return size();
-        return size() / groups.size();
+    /**
+     * Returns the wanted number of nodes per group - size()/groups.size().
+     * The actual node count for a given group may differ due to node retirements.
+     */
+    public int wantedGroupSize() {
+        if (groups().size() == 0) return size();
+        return size() / groups().size();
     }
 
     public int groupsWithSufficientCoverage() {
         int covered = 0;
-        for (Group g : orderedGroups) {
+        for (Group g : orderedGroups()) {
             if (g.hasSufficientCoverage()) {
                 covered++;
             }
@@ -160,7 +167,7 @@ public class SearchCluster implements NodeManager<Node> {
         if ( localCorpusDispatchTarget.isEmpty()) return Optional.empty();
 
         // Only use direct dispatch if the local group has sufficient coverage
-        Group localSearchGroup = groups.get(localCorpusDispatchTarget.get().group());
+        Group localSearchGroup = groups().get(localCorpusDispatchTarget.get().group());
         if ( ! localSearchGroup.hasSufficientCoverage()) return Optional.empty();
 
         // Only use direct dispatch if the local search node is not down
@@ -199,7 +206,10 @@ public class SearchCluster implements NodeManager<Node> {
                 setInRotationOnlyIf(hasWorkingNodes());
         }
         else if (usesLocalCorpusIn(node)) { // follow the status of this node
-            setInRotationOnlyIf(nodeIsWorking);
+            // Do not take this out of rotation if we're a combined cluster of size 1,
+            // as that can't be helpful, and leads to a deadlock where this node is never taken back in servic e
+            if (nodeIsWorking || size() > 1)
+                setInRotationOnlyIf(nodeIsWorking);
         }
     }
 
@@ -219,6 +229,13 @@ public class SearchCluster implements NodeManager<Node> {
             vipStatus.removeFromRotation(clusterId);
     }
 
+    public int estimateHitsToFetch(int wantedHits, int numPartitions) {
+        return hitEstimator.estimateK(wantedHits, numPartitions);
+    }
+    public int estimateHitsToFetch(int wantedHits, int numPartitions, double topKProbability) {
+        return hitEstimator.estimateK(wantedHits, numPartitions, topKProbability);
+    }
+
     public boolean hasInformationAboutAllNodes() {
         return nodesByHost.values().stream().allMatch(node -> node.isWorking() != null);
     }
@@ -236,12 +253,15 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private static class PongCallback implements PongHandler {
+
         private final ClusterMonitor<Node> clusterMonitor;
         private final Node node;
+
         PongCallback(Node node, ClusterMonitor<Node> clusterMonitor) {
             this.node = node;
             this.clusterMonitor = clusterMonitor;
         }
+
         @Override
         public void handle(Pong pong) {
             if (pong.badResponse()) {
@@ -249,10 +269,12 @@ public class SearchCluster implements NodeManager<Node> {
             } else {
                 if (pong.activeDocuments().isPresent()) {
                     node.setActiveDocuments(pong.activeDocuments().get());
+                    node.setBlockingWrites(pong.isBlockingWrites());
                 }
                 clusterMonitor.responded(node);
             }
         }
+
     }
 
     /** Used by the cluster monitor to manage node status */
@@ -263,39 +285,33 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private void pingIterationCompletedSingleGroup() {
-        Group group = groups.values().iterator().next();
-        group.aggregateActiveDocuments();
+        Group group = groups().values().iterator().next();
+        group.aggregateNodeValues();
         // With just one group sufficient coverage may not be the same as full coverage, as the
         // group will always be marked sufficient for use.
         updateSufficientCoverage(group, true);
-        boolean fullCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), group.getActiveDocuments(),
-                                                         group.getActiveDocuments());
-        trackGroupCoverageChanges(0, group, fullCoverage, group.getActiveDocuments());
+        boolean sufficientCoverage = isGroupCoverageSufficient(group.activeDocuments(),
+                                                               group.activeDocuments());
+        trackGroupCoverageChanges(group, sufficientCoverage, group.activeDocuments());
     }
 
     private void pingIterationCompletedMultipleGroups() {
-        int numGroups = orderedGroups.size();
-        // Update active documents per group and use it to decide if the group should be active
-
-        long[] activeDocumentsInGroup = new long[numGroups];
-        long sumOfActiveDocuments = 0;
-        for(int i = 0; i < numGroups; i++) {
-            Group group = orderedGroups.get(i);
-            group.aggregateActiveDocuments();
-            activeDocumentsInGroup[i] = group.getActiveDocuments();
-            sumOfActiveDocuments += activeDocumentsInGroup[i];
-        }
-
+        orderedGroups().forEach(Group::aggregateNodeValues);
+        long medianDocuments = medianDocumentsPerGroup();
         boolean anyGroupsSufficientCoverage = false;
-        for (int i = 0; i < numGroups; i++) {
-            Group group = orderedGroups.get(i);
-            long activeDocuments = activeDocumentsInGroup[i];
-            long averageDocumentsInOtherGroups = (sumOfActiveDocuments - activeDocuments) / (numGroups - 1);
-            boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), activeDocuments, averageDocumentsInOtherGroups);
+        for (Group group : orderedGroups()) {
+            boolean sufficientCoverage = isGroupCoverageSufficient(group.activeDocuments(),
+                                                                   medianDocuments);
             anyGroupsSufficientCoverage = anyGroupsSufficientCoverage || sufficientCoverage;
             updateSufficientCoverage(group, sufficientCoverage);
-            trackGroupCoverageChanges(i, group, sufficientCoverage, averageDocumentsInOtherGroups);
+            trackGroupCoverageChanges(group, sufficientCoverage, medianDocuments);
         }
+    }
+
+    private long medianDocumentsPerGroup() {
+        if (orderedGroups().isEmpty()) return 0;
+        var activeDocuments = orderedGroups().stream().map(Group::activeDocuments).collect(Collectors.toList());
+        return (long)Quantiles.median().compute(activeDocuments);
     }
 
     /**
@@ -305,7 +321,7 @@ public class SearchCluster implements NodeManager<Node> {
      */
     @Override
     public void pingIterationCompleted() {
-        int numGroups = orderedGroups.size();
+        int numGroups = orderedGroups().size();
         if (numGroups == 1) {
             pingIterationCompletedSingleGroup();
         } else {
@@ -313,77 +329,42 @@ public class SearchCluster implements NodeManager<Node> {
         }
     }
 
-    private boolean isGroupCoverageSufficient(int workingNodes, int nodesInGroup, long activeDocuments, long averageDocumentsInOtherGroups) {
-        boolean sufficientCoverage = true;
-
-        if (averageDocumentsInOtherGroups > 0) {
-            double coverage = 100.0 * (double) activeDocuments / averageDocumentsInOtherGroups;
-            sufficientCoverage = coverage >= dispatchConfig.minActivedocsPercentage();
-        }
-        if (sufficientCoverage) {
-            sufficientCoverage = isGroupNodeCoverageSufficient(workingNodes, nodesInGroup);
-        }
-        return sufficientCoverage;
-    }
-
-    private boolean isGroupNodeCoverageSufficient(int workingNodes, int nodesInGroup) {
-        int nodesAllowedDown = dispatchConfig.maxNodesDownPerGroup()
-                + (int) (((double) nodesInGroup * (100.0 - dispatchConfig.minGroupCoverage())) / 100.0);
-        return workingNodes + nodesAllowedDown >= nodesInGroup;
+    private boolean isGroupCoverageSufficient(long activeDocuments, long medianDocuments) {
+        double documentCoverage = 100.0 * (double) activeDocuments / medianDocuments;
+        if (medianDocuments > 0 && documentCoverage < dispatchConfig.minActivedocsPercentage())
+            return false;
+        return true;
     }
 
     /**
      * Calculate whether a subset of nodes in a group has enough coverage
      */
-    public boolean isPartialGroupCoverageSufficient(OptionalInt knownGroupId, List<Node> nodes) {
-        if (orderedGroups.size() == 1) {
-            boolean sufficient = nodes.size() >= groupSize() - dispatchConfig.maxNodesDownPerGroup();
-            return sufficient;
-        }
-
-        if (knownGroupId.isEmpty()) {
-            return false;
-        }
-        int groupId = knownGroupId.getAsInt();
-        Group group = groups.get(groupId);
-        if (group == null) {
-            return false;
-        }
-        int nodesInGroup = group.nodes().size();
-        long sumOfActiveDocuments = 0;
-        int otherGroups = 0;
-        for (Group g : orderedGroups) {
-            if (g.id() != groupId) {
-                sumOfActiveDocuments += g.getActiveDocuments();
-                otherGroups++;
-            }
-        }
-        long activeDocuments = 0;
-        for (Node n : nodes) {
-            activeDocuments += n.getActiveDocuments();
-        }
-        long averageDocumentsInOtherGroups = sumOfActiveDocuments / otherGroups;
-        return isGroupCoverageSufficient(nodes.size(), nodesInGroup, activeDocuments, averageDocumentsInOtherGroups);
+    public boolean isPartialGroupCoverageSufficient(List<Node> nodes) {
+        if (orderedGroups().size() == 1)
+            return true;
+        long activeDocuments = nodes.stream().mapToLong(Node::getActiveDocuments).sum();
+        return isGroupCoverageSufficient(activeDocuments, medianDocumentsPerGroup());
     }
 
-    private void trackGroupCoverageChanges(int index, Group group, boolean fullCoverage, long averageDocuments) {
+    private void trackGroupCoverageChanges(Group group, boolean fullCoverage, long medianDocuments) {
         if ( ! hasInformationAboutAllNodes()) return; // Be silent until we know what we are talking about.
-        boolean changed = group.isFullCoverageStatusChanged(fullCoverage);
+        boolean changed = group.fullCoverageStatusChanged(fullCoverage);
         if (changed || (!fullCoverage && System.currentTimeMillis() > nextLogTime)) {
             nextLogTime = System.currentTimeMillis() + 30 * 1000;
-            int requiredNodes = groupSize() - dispatchConfig.maxNodesDownPerGroup();
             if (fullCoverage) {
-                log.info(() -> String.format("Group %d is now good again (%d/%d active docs, coverage %d/%d)",
-                                             index, group.getActiveDocuments(), averageDocuments, group.workingNodes(), groupSize()));
+                log.info("Cluster " + clusterId + ": " + group + " has full coverage. " +
+                         "Active documents: " + group.activeDocuments() + "/" + medianDocuments + ", " +
+                         "working nodes: " + group.workingNodes() + "/" + group.nodes().size());
             } else {
-                StringBuilder missing = new StringBuilder();
+                StringBuilder unresponsive = new StringBuilder();
                 for (var node : group.nodes()) {
-                    if (node.isWorking() != Boolean.TRUE) {
-                        missing.append('\n').append(node.toString());
-                    }
+                    if (node.isWorking() != Boolean.TRUE)
+                        unresponsive.append('\n').append(node);
                 }
-                log.warning(() -> String.format("Coverage of group %d is only %d/%d (requires %d) (%d/%d active docs) Failed nodes are:%s",
-                        index, group.workingNodes(), groupSize(), requiredNodes, group.getActiveDocuments(), averageDocuments, missing.toString()));
+                log.warning("Cluster " + clusterId + ": " + group + " has reduced coverage: " +
+                            "Active documents: " + group.activeDocuments() + "/" + medianDocuments + ", " +
+                            "working nodes: " + group.workingNodes() + "/" + group.nodes().size() +
+                            ", unresponsive nodes: " + (unresponsive.toString().isEmpty() ? " none" : unresponsive));
             }
         }
     }

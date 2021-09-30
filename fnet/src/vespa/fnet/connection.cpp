@@ -347,7 +347,11 @@ done_read:
     }
 
     UpdateTimeOut();
-    uint32_t maxSize = GetConfig()->_maxInputBufferSize;
+    if (_flags._drop_empty_buffers) {
+        _socket->drop_empty_buffers();
+        _input.Shrink(0);
+    }
+    uint32_t maxSize = getConfig()._maxInputBufferSize;
     if (maxSize > 0 && _input.GetBufSize() > maxSize)
     {
         if (!_flags._gotheader || _packetLength < maxSize) {
@@ -430,7 +434,11 @@ FNET_Connection::Write()
         }
     }
 
-    uint32_t maxSize = GetConfig()->_maxOutputBufferSize;
+    if (_flags._drop_empty_buffers) {
+        _socket->drop_empty_buffers();
+        _output.Shrink(0);
+    }
+    uint32_t maxSize = getConfig()._maxOutputBufferSize;
     if (maxSize > 0 && _output.GetBufSize() > maxSize) {
         _output.Shrink(maxSize);
     }
@@ -477,16 +485,16 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _resolve_handler(nullptr),
       _context(),
       _state(FNET_CONNECTING),
-      _flags(),
+      _flags(owner->owner().getConfig()),
       _packetLength(0),
       _packetCode(0),
       _packetCHID(0),
       _writeWork(0),
       _currentID(1), // <-- NB
-      _input(FNET_READ_SIZE * 2),
+      _input(0),
       _queue(256),
       _myQueue(256),
-      _output(FNET_WRITE_SIZE * 2),
+      _output(0),
       _channels(),
       _callbackTarget(nullptr),
       _cleanup(nullptr)
@@ -511,16 +519,16 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _resolve_handler(nullptr),
       _context(context),
       _state(FNET_CONNECTING),
-      _flags(),
+      _flags(owner->owner().getConfig()),
       _packetLength(0),
       _packetCode(0),
       _packetCHID(0),
       _writeWork(0),
       _currentID(0),
-      _input(FNET_READ_SIZE * 2),
+      _input(0),
       _queue(256),
       _myQueue(256),
-      _output(FNET_WRITE_SIZE * 2),
+      _output(0),
       _channels(),
       _callbackTarget(nullptr),
       _cleanup(nullptr)

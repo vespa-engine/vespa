@@ -1,18 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storagecomponent.h"
-#include <vespa/storage/storageserver/prioritymapper.h>
-
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/document/fieldset/fieldsetrepo.h>
+#include <cassert>
 
 namespace storage {
 
+StorageComponent::Repos::Repos(std::shared_ptr<const document::DocumentTypeRepo> repo)
+    : documentTypeRepo(std::move(repo)),
+      fieldSetRepo(std::make_shared<document::FieldSetRepo>(*documentTypeRepo))
+{}
+
+StorageComponent::Repos::~Repos() = default;
+
 // Defined in cpp file to allow unique pointers of unknown type in header.
-StorageComponent::~StorageComponent()
-{
-}
+StorageComponent::~StorageComponent() = default;
 
 void
 StorageComponent::setNodeInfo(vespalib::stringref clusterName,
@@ -20,31 +25,19 @@ StorageComponent::setNodeInfo(vespalib::stringref clusterName,
                               uint16_t index)
 {
     // Assumed to not be set dynamically.
-    _clusterName = clusterName;
+    assert(_cluster_ctx.my_cluster_name.empty());
+    _cluster_ctx.my_cluster_name = clusterName;
     _nodeType = &nodeType;
     _index = index;
 }
 
 void
-StorageComponent::setDocumentTypeRepo(DocumentTypeRepoSP repo)
+StorageComponent::setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> docTypeRepo)
 {
+    auto repo = std::make_shared<Repos>(std::move(docTypeRepo));
     std::lock_guard guard(_lock);
-    _docTypeRepo = repo;
-}
-
-void
-StorageComponent::setLoadTypes(LoadTypeSetSP loadTypes)
-{
-    std::lock_guard guard(_lock);
-    _loadTypes = loadTypes;
-}
-
-
-void
-StorageComponent::setPriorityConfig(const PriorityConfig& c)
-{
-    // Priority mapper is already thread safe.
-    _priorityMapper->setConfig(c);
+    _repos = std::move(repo);
+    _generation++;
 }
 
 void
@@ -59,6 +52,7 @@ StorageComponent::setDistribution(DistributionSP distribution)
 {
     std::lock_guard guard(_lock);
     _distribution = distribution;
+    _generation++;
 }
 
 void
@@ -75,16 +69,15 @@ StorageComponent::setNodeStateUpdater(NodeStateUpdater& updater)
 StorageComponent::StorageComponent(StorageComponentRegister& compReg,
                                    vespalib::stringref name)
     : Component(compReg, name),
-      _clusterName(),
+      _cluster_ctx(),
       _nodeType(nullptr),
       _index(0),
-      _docTypeRepo(),
-      _loadTypes(),
-      _priorityMapper(new PriorityMapper),
+      _repos(),
       _bucketIdFactory(),
       _distribution(),
       _nodeStateUpdater(nullptr),
-      _lock()
+      _lock(),
+      _generation(0)
 {
     compReg.registerStorageComponent(*this);
 }
@@ -105,29 +98,16 @@ vespalib::string
 StorageComponent::getIdentity() const
 {
     vespalib::asciistream name;
-    name << "storage/cluster." << _clusterName << "/"
+    name << "storage/cluster." << _cluster_ctx.cluster_name() << "/"
          << _nodeType->serialize() << "/" << _index;
     return name.str();
 }
 
-uint8_t
-StorageComponent::getPriority(const documentapi::LoadType& lt) const
-{
-    return _priorityMapper->getPriority(lt);
-}
-
-StorageComponent::DocumentTypeRepoSP
+std::shared_ptr<StorageComponent::Repos>
 StorageComponent::getTypeRepo() const
 {
     std::lock_guard guard(_lock);
-    return _docTypeRepo;
-}
-
-StorageComponent::LoadTypeSetSP
-StorageComponent::getLoadTypes() const
-{
-    std::lock_guard guard(_lock);
-    return _loadTypes;
+    return _repos;
 }
 
 StorageComponent::DistributionSP

@@ -20,12 +20,13 @@ private:
         EstimateMatchFrequency(size_t n) : vespalib::Rendezvous<Matches, double>(n) {}
         void mingle() override;
     };
-    struct SelectBest : vespalib::Rendezvous<SortedHitSequence, Hits> {
+    struct GetSecondPhaseWork : vespalib::Rendezvous<SortedHitSequence, TaggedHits, true> {
         size_t topN;
+        Range &best_scores;
         BestDropped &best_dropped;
         std::unique_ptr<IDiversifier> _diversifier;
-        SelectBest(size_t n, size_t topN_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier>);
-        ~SelectBest() override;
+        GetSecondPhaseWork(size_t n, size_t topN_in, Range &best_scores_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier>);
+        ~GetSecondPhaseWork() override;
         void mingle() override;
         template<typename Q, typename F>
         void mingle(Q &queue, F &&accept);
@@ -34,23 +35,27 @@ private:
         }
     };
     struct SelectCmp {
-        SelectBest &sb;
-        SelectCmp(SelectBest &sb_in) : sb(sb_in) {}
+        GetSecondPhaseWork &sb;
+        SelectCmp(GetSecondPhaseWork &sb_in) : sb(sb_in) {}
         bool operator()(uint32_t a, uint32_t b) const {
             return (sb.cmp(a, b));
         }
     };
-    struct RangeCover : vespalib::Rendezvous<RangePair, RangePair> {
-        BestDropped &best_dropped;
-        RangeCover(size_t n, BestDropped &best_dropped_in)
-            : vespalib::Rendezvous<RangePair, RangePair>(n), best_dropped(best_dropped_in) {}
+    struct CompleteSecondPhase : vespalib::Rendezvous<TaggedHits, std::pair<Hits,RangePair>, true> {
+        size_t topN;
+        const Range &best_scores;
+        const BestDropped &best_dropped;
+        CompleteSecondPhase(size_t n, size_t topN_in, const Range &best_scores_in, const BestDropped &best_dropped_in)
+            : vespalib::Rendezvous<TaggedHits, std::pair<Hits,RangePair>, true>(n),
+              topN(topN_in), best_scores(best_scores_in), best_dropped(best_dropped_in) {}
         void mingle() override;
     };
 
-    BestDropped                   _best_dropped;
-    EstimateMatchFrequency        _estimate_match_frequency;
-    SelectBest                    _selectBest;
-    RangeCover                    _rangeCover;
+    Range                  _best_scores;
+    BestDropped            _best_dropped;
+    EstimateMatchFrequency _estimate_match_frequency;
+    GetSecondPhaseWork     _get_second_phase_work;
+    CompleteSecondPhase    _complete_second_phase;
 
 public:
     MatchLoopCommunicator(size_t threads, size_t topN);
@@ -60,11 +65,13 @@ public:
     double estimate_match_frequency(const Matches &matches) override {
         return _estimate_match_frequency.rendezvous(matches);
     }
-    Hits selectBest(SortedHitSequence sortedHits) override {
-        return _selectBest.rendezvous(sortedHits);
+
+    TaggedHits get_second_phase_work(SortedHitSequence sortedHits, size_t thread_id) override {
+        return _get_second_phase_work.rendezvous(sortedHits, thread_id);
     }
-    RangePair rangeCover(const RangePair &ranges) override {
-        return _rangeCover.rendezvous(ranges);
+
+    std::pair<Hits,RangePair> complete_second_phase(TaggedHits my_results, size_t thread_id) override {
+        return _complete_second_phase.rendezvous(std::move(my_results), thread_id);
     }
 };
 

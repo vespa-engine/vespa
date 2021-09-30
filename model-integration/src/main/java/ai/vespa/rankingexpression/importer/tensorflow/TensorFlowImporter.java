@@ -4,6 +4,7 @@ package ai.vespa.rankingexpression.importer.tensorflow;
 import ai.vespa.rankingexpression.importer.ImportedModel;
 import ai.vespa.rankingexpression.importer.IntermediateGraph;
 import ai.vespa.rankingexpression.importer.ModelImporter;
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import com.yahoo.collections.Pair;
 import com.yahoo.io.IOUtils;
@@ -26,7 +27,7 @@ public class TensorFlowImporter extends ModelImporter {
 
     private static final Logger log = Logger.getLogger(TensorFlowImporter.class.getName());
 
-    private final static int defaultOnnxOpset = 8;
+    private final static int[] onnxOpsetsToTry = {8, 10, 12};
 
     private final OnnxImporter onnxImporter = new OnnxImporter();
 
@@ -52,23 +53,14 @@ public class TensorFlowImporter extends ModelImporter {
      */
     @Override
     public ImportedModel importModel(String modelName, String modelDir) {
-        // Temporary (for testing): if path contains "tf_2_onnx", convert to ONNX then import that model.
-        if (modelDir.contains("tf_2_onnx")) {
-            return convertToOnnxAndImport(modelName, modelDir);
-        }
-        try (SavedModelBundle model = SavedModelBundle.load(modelDir, "serve")) {
-            return importModel(modelName, modelDir, model);
-        }
-        catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Could not import TensorFlow model from directory '" + modelDir + "'", e);
-        }
+        return convertToOnnxAndImport(modelName, modelDir);
     }
 
-    /** Imports a TensorFlow model */
+    /** Imports a TensorFlow model - DEPRECATED */
     public ImportedModel importModel(String modelName, String modelDir, SavedModelBundle model) {
         try {
             IntermediateGraph graph = GraphImporter.importGraph(modelName, model);
-            return convertIntermediateGraphToModel(graph, modelDir);
+            return convertIntermediateGraphToModel(graph, modelDir, ImportedMlModel.ModelType.TENSORFLOW);
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Could not import TensorFlow model '" + model + "'", e);
@@ -78,15 +70,27 @@ public class TensorFlowImporter extends ModelImporter {
     private ImportedModel convertToOnnxAndImport(String modelName, String modelDir) {
         Path tempDir = null;
         try {
-            log.info("Converting TensorFlow model '" + modelDir + "' to ONNX...");
             tempDir = Files.createTempDirectory("tf2onnx");
             String convertedPath = tempDir.toString() + File.separatorChar + "converted.onnx";
-            Pair<Integer, String> res = convertToOnnx(modelDir, convertedPath, defaultOnnxOpset);
-            if (res.getFirst() != 0) {
-                throw new IllegalArgumentException("Conversion from TensorFlow to ONNX failed for '" + modelDir + "'. " +
-                        "Reason: " + res.getSecond());
+            String outputOfLastConversionAttempt = "";
+            for (int opset : onnxOpsetsToTry) {
+                log.info("Converting TensorFlow model '" + modelDir + "' to ONNX with opset " + opset + "...");
+                Pair<Integer, String> res = convertToOnnx(modelDir, convertedPath, opset);
+                if (res.getFirst() == 0) {
+                    log.info("Conversion to ONNX with opset " + opset + " successful.");
+
+                    /*
+                     * For now we have to import tensorflow models as native Vespa expressions.
+                     * The temporary ONNX file that is created by conversion needs to be put
+                     * in the application package so it can be file distributed.
+                     */
+                    return onnxImporter.importModelAsNative(modelName, convertedPath, ImportedMlModel.ModelType.TENSORFLOW);
+                }
+                log.fine("Conversion to ONNX with opset " + opset + " failed. Reason: " + res.getSecond());
+                outputOfLastConversionAttempt = res.getSecond();
             }
-            return onnxImporter.importModel(modelName, convertedPath);
+            throw new IllegalArgumentException("Unable to convert TensorFlow model in '" + modelDir + "' to ONNX. " +
+                    "Reason: " + outputOfLastConversionAttempt);
         } catch (IOException e) {
             throw new IllegalArgumentException("Conversion from TensorFlow to ONNX failed for '" + modelDir + "'");
         } finally {
@@ -98,7 +102,7 @@ public class TensorFlowImporter extends ModelImporter {
 
     private Pair<Integer, String> convertToOnnx(String savedModel, String output, int opset) throws IOException {
         ProcessExecuter executer = new ProcessExecuter();
-        String job = "python3 -m tf2onnx.convert --saved-model " + savedModel + " --output " + output + " --opset " + opset;
+        String job = "vespa-convert-tf2onnx --saved-model " + savedModel + " --output " + output + " --opset " + opset;
         return executer.exec(job);
     }
 

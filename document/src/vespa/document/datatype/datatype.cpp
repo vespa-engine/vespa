@@ -28,6 +28,7 @@ DocumentType DOCUMENT_OBJ("document");
 WeightedSetDataType TAG_OBJ(*DataType::STRING, true, true);
 PrimitiveDataType URI_OBJ(DataType::T_URI);
 PrimitiveDataType PREDICATE_OBJ(DataType::T_PREDICATE);
+PrimitiveDataType TENSOR_OBJ(DataType::T_TENSOR);
 
 }  // namespace
 
@@ -44,6 +45,8 @@ const DocumentType *const DataType::DOCUMENT(&DOCUMENT_OBJ);
 const DataType *const DataType::TAG(&TAG_OBJ);
 const DataType *const DataType::URI(&URI_OBJ);
 const DataType *const DataType::PREDICATE(&PREDICATE_OBJ);
+const DataType *const DataType::TENSOR(&TENSOR_OBJ);
+
 
 namespace {
 

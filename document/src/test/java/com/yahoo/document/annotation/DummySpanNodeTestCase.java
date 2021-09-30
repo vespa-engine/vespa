@@ -3,9 +3,10 @@ package com.yahoo.document.annotation;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -16,14 +17,14 @@ public class DummySpanNodeTestCase {
     @Test
     public void basic() {
         DummySpanNode node = DummySpanNode.INSTANCE;
-        assertThat(node.getFrom(), is(0));
-        assertThat(node.getTo(), is(0));
-        assertThat(node.getLength(), is(0));
-        assertThat(node.getText("baba"), nullValue());
-        assertThat(node.isLeafNode(), is(true));
-        assertThat(node.childIterator().hasNext(), is(false));
-        assertThat(node.childIterator().hasPrevious(), is(false));
-        assertThat(node.childIteratorRecursive().hasNext(), is(false));
-        assertThat(node.childIteratorRecursive().hasPrevious(), is(false));
+        assertEquals(0, node.getFrom());
+        assertEquals(0, node.getTo());
+        assertEquals(0, node.getLength());
+        assertNull(node.getText("baba"));
+        assertTrue(node.isLeafNode());
+        assertFalse(node.childIterator().hasNext());
+        assertFalse(node.childIterator().hasPrevious());
+        assertFalse(node.childIteratorRecursive().hasNext());
+        assertFalse(node.childIteratorRecursive().hasPrevious());
     }
 }

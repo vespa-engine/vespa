@@ -5,6 +5,7 @@
 #include <vespa/config-model.h>
 #include <vespa/config/config.h>
 #include <vespa/config/subscription/sourcespec.h>
+#include <vespa/config/common/configcontext.h>
 
 using namespace config;
 using vespalib::Portal;
@@ -54,7 +55,7 @@ public:
     {
         flags.verbose = true;
         ConfigSet set;
-        ConfigContext::SP ctx(new ConfigContext(set));
+        auto ctx = std::make_shared<ConfigContext>(set);
         cloud::config::ModelConfigBuilder builder;
         
         cloud::config::ModelConfigBuilder::Hosts::Services::Ports port;

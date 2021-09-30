@@ -216,6 +216,9 @@ public:
     /** @brief Returns the msg parameter that this Exception was constructed with */
     const string &getMessage() const { return _msg; }
 
+    /** @brief Returns the message string */
+    const char *message() const { return _msg.c_str(); }
+
     /** @brief Returns the location parameter that this Exception was constructed with */
     const string &getLocation() const { return _location; }
 

@@ -4,7 +4,7 @@ package com.yahoo.documentapi;
 /**
  * A visitor destination session for receiving data from a visitor.
  *
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
 public interface VisitorDestinationSession extends VisitorControlSession {
 }

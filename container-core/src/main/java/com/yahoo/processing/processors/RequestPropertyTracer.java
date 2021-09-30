@@ -12,8 +12,7 @@ import java.util.Map;
  * A processor which adds the current content of the Request.properties() to
  * the trace before calling the next processor, if traceLevel is 4 or more.
  *
- * @author  bratseth
- * @since   5.1.17
+ * @author bratseth
  */
 public class RequestPropertyTracer extends Processor {
 

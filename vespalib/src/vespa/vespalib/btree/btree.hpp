@@ -4,7 +4,7 @@
 
 #include "btree.h"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, class AggrCalcT>
@@ -21,6 +21,16 @@ BTree<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::~BTree()
     clear();
     _alloc.freeze();
     _alloc.clearHoldLists();
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, class AggrCalcT>
+void
+BTree<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::compact_worst()
+{
+    auto to_hold = _alloc.start_compact_worst();
+    _tree.move_nodes(_alloc);
+    _alloc.finishCompact(to_hold);
 }
 
 }

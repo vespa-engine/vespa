@@ -375,8 +375,8 @@ void Matcher::log_matches(int printcount)
     _log_text.append("<table>");
     if (m.size() > 0) {
         _log_text.append("<tr class=shade>");
-        sprintf(buf, "<td colspan=%d align=center><b>Topmost %d matches out of %d",
-                nterms+2, std::min(printcount, m.size()),m.size());
+        sprintf(buf, "<td colspan=%d align=center><b>Topmost %zu matches out of %zu",
+                nterms+2, std::min(static_cast<size_t>(printcount), m.size()),m.size());
         _log_text.append(buf);
         _log_text.append("</b></td></tr>");
     }

@@ -23,7 +23,7 @@ import java.util.Set;
 public class Presentation implements Cloneable {
 
     /** The type representing the property arguments consumed by this */
-    private static QueryProfileType argumentType;
+    private static final QueryProfileType argumentType;
 
     public static final String PRESENTATION = "presentation";
     public static final String BOLDING = "bolding";
@@ -48,7 +48,7 @@ public class Presentation implements Cloneable {
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     /** How the result should be highlighted */
-    private Highlight highlight= null;
+    private Highlight highlight = null;
 
     /** The terms to highlight in the result (only used by BoldingSearcher, may be removed later). */
     private List<IndexedItem> boldingData = null;
@@ -128,15 +128,15 @@ public class Presentation implements Cloneable {
             return clone;
         }
         catch (CloneNotSupportedException e) {
-            throw new RuntimeException("Someone inserted a noncloneable superclass",e);
+            throw new RuntimeException("Someone inserted a noncloneable superclass", e);
         }
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || !(o instanceof Presentation)) return false;
+        if ( ! (o instanceof Presentation)) return false;
         Presentation p = (Presentation) o;
-        return QueryHelper.equals(bolding,p.bolding) && QueryHelper.equals(summary,p.summary);
+        return QueryHelper.equals(bolding, p.bolding) && QueryHelper.equals(summary, p.summary);
     }
 
     @Override

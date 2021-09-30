@@ -14,12 +14,10 @@
  *
  * @author H�kon Humberset
  * @date 2005-09-19
- * @version $Id$
  */
 
 #pragma once
 
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/fastos/thread.h>
 
 namespace document {
@@ -29,14 +27,11 @@ public:
     enum State { NOT_RUNNING, STARTING, RUNNING, STOPPING };
 
 private:
-    mutable vespalib::Monitor _stateLock;
+    mutable std::mutex _stateLock;
+    mutable std::condition_variable _stateCond;
     State _state;
 
     void Run(FastOS_ThreadInterface*, void*) override;
-
-    Runnable(const Runnable&);
-    Runnable& operator=(const Runnable&);
-
 public:
     /**
      * Create a runnable.
@@ -83,8 +78,7 @@ public:
     bool stopping() const
     {
         State s(getState());
-        return (s == STOPPING) ||
-                   (s == RUNNING && GetThread()->GetBreakFlag());
+        return (s == STOPPING) || (s == RUNNING && GetThread()->GetBreakFlag());
     }
 
     /**
@@ -95,8 +89,7 @@ public:
         State s(getState());
         // Must check breakflag too, as threadpool will use that to close
         // down.
-        return (s == STARTING ||
-                (s == RUNNING && !GetThread()->GetBreakFlag()));
+        return (s == STARTING || (s == RUNNING && !GetThread()->GetBreakFlag()));
     }
 };
 

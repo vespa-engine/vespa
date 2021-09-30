@@ -14,17 +14,14 @@ private:
 public:
     CompactLidSpaceOperation();
     CompactLidSpaceOperation(uint32_t subDbId, uint32_t lidLimit);
-    virtual ~CompactLidSpaceOperation() {}
+    ~CompactLidSpaceOperation() override = default;
 
     uint32_t getSubDbId() const { return _subDbId; }
     uint32_t getLidLimit() const { return _lidLimit; }
 
-    // Implements FeedOperation
-    virtual void serialize(vespalib::nbostream &os) const override;
-    virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &) override;
-    virtual vespalib::string toString() const override;
+    void serialize(vespalib::nbostream &os) const override;
+    void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &) override;
+    vespalib::string toString() const override;
 };
 
-} // namespace proton
-
+}

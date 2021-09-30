@@ -51,9 +51,9 @@ public class IndexingValues extends Processor {
         protected boolean shouldConvert(Expression exp) {
             if (exp instanceof OutputExpression && mutatedBy != null) {
                 throw newProcessException(search, field,
-                                          "Indexing expression '" + mutatedBy + "' modifies the value of the " +
-                                          "document field '" + field.getName() + "'. This is no longer supported -- " +
-                                          "declare such fields outside the document.");
+                                          "Indexing expression '" + mutatedBy + "' attempts to modify the value of the " +
+                                          "document field '" + field.getName() + "'. Use a field outside the document " +
+                                          "block instead.");
             }
             if (exp instanceof InputExpression && ((InputExpression)exp).getFieldName().equals(field.getName())) {
                 mutatedBy = null;

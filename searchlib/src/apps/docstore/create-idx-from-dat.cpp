@@ -7,6 +7,7 @@
 #include <vespa/fastos/app.h>
 #include <vespa/vespalib/util/exception.h>
 #include <cinttypes>
+#include <cassert>
 
 using namespace search;
 

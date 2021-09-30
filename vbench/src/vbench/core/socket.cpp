@@ -3,6 +3,7 @@
 #include "socket.h"
 #include <vespa/vespalib/net/socket_options.h>
 #include <vespa/vespalib/net/socket_spec.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace vbench {
 
@@ -17,7 +18,7 @@ vespalib::SocketHandle connect(const string &host, int port) {
 
 } // namespace vbench::<unnamed>
 
-constexpr size_t READ_SIZE = 32768;
+constexpr size_t READ_SIZE = 32_Ki;
 
 Socket::Socket(SyncCryptoSocket::UP socket)
     : _socket(std::move(socket)),

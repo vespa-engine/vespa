@@ -1,38 +1,44 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Duration;
+import java.util.logging.Level;
 
 /**
- * Removes inactive sessions
+ * Removes expired sessions and locks
  * <p>
  * Note: Unit test is in ApplicationRepositoryTest
  *
  * @author hmusum
  */
-public class SessionsMaintainer extends Maintainer {
+public class SessionsMaintainer extends ConfigServerMaintainer {
     private final boolean hostedVespa;
+    private int iteration = 0;
 
-    SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
-        // Start this maintainer immediately. It frees disk space, so if disk goes full and config server
-        // restarts this makes sure that cleanup will happen as early as possible
-        super(applicationRepository, curator, Duration.ZERO, interval);
+    SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, FlagSource flagSource) {
+        super(applicationRepository, curator, flagSource, applicationRepository.clock().instant(), interval);
         this.hostedVespa = applicationRepository.configserverConfig().hostedVespa();
     }
 
     @Override
-    protected void maintain() {
+    protected double maintain() {
+        if (iteration % 10 == 0)
+            log.log(Level.INFO, () -> "Running " + SessionsMaintainer.class.getSimpleName() + ", iteration "  + iteration);
+
         applicationRepository.deleteExpiredLocalSessions();
 
-        // Expired remote sessions are not expected to exist, they should have been deleted when
-        // a deployment happened or when the application was deleted. We still see them from time to time,
-        // probably due to some race or another bug
         if (hostedVespa) {
-            Duration expiryTime = Duration.ofDays(30);
-            applicationRepository.deleteExpiredRemoteSessions(expiryTime);
+            Duration expiryTime = Duration.ofMinutes(90);
+            int deleted = applicationRepository.deleteExpiredRemoteSessions(expiryTime);
+            log.log(Level.FINE, () -> "Deleted " + deleted + " expired remote sessions older than " + expiryTime);
         }
+
+        iteration++;
+        return 1.0;
     }
+
 }

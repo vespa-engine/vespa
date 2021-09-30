@@ -4,9 +4,7 @@ package com.yahoo.vespa.flags;
 import com.yahoo.vespa.flags.json.DimensionHelper;
 
 import javax.annotation.concurrent.Immutable;
-import java.util.Collections;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -24,14 +22,20 @@ public class FetchVector {
      * Note: If this enum is changed, you must also change {@link DimensionHelper}.
      */
     public enum Dimension {
+        /** A legal value for TenantName, e.g. vespa-team */
+        TENANT_ID,
+
         /** Value from ApplicationId::serializedForm of the form tenant:applicationName:instance. */
         APPLICATION_ID,
 
         /** Node type from com.yahoo.config.provision.NodeType::name, e.g. tenant, host, confighost, controller, etc. */
         NODE_TYPE,
 
-        /** Cluster type from com.yahoo.config.provision.ClusterSpec.Type::name, e.g. content, container, admin */
+        /** Cluster type from com.yahoo.config.provision.ClusterSpec.Type::value, e.g. content, container, admin */
         CLUSTER_TYPE,
+
+        /** Cluster ID from com.yahoo.config.provision.ClusterSpec.Id::value, e.g. cluster-controllers, logserver. */
+        CLUSTER_ID,
 
         /**
          * Fully qualified hostname.
@@ -51,6 +55,9 @@ public class FetchVector {
          */
         VESPA_VERSION,
 
+        /** Email address of user - provided by auth0 in console. */
+        CONSOLE_USER_EMAIL,
+
         /**
          * Zone from ZoneId::value of the form environment.region.
          *
@@ -63,15 +70,15 @@ public class FetchVector {
     private final Map<Dimension, String> map;
 
     public FetchVector() {
-        this.map = Collections.emptyMap();
+        this.map = Map.of();
     }
 
     public static FetchVector fromMap(Map<Dimension, String> map) {
-        return new FetchVector(new HashMap<>(map));
+        return new FetchVector(map);
     }
 
     private FetchVector(Map<Dimension, String> map) {
-        this.map = Collections.unmodifiableMap(map);
+        this.map = Map.copyOf(map);
     }
 
     public Optional<String> getValue(Dimension dimension) {
@@ -84,8 +91,16 @@ public class FetchVector {
 
     public boolean isEmpty() { return map.isEmpty(); }
 
-    /** Returns a new FetchVector, identical to {@code this} except for its value in {@code dimension}. */
+    public boolean hasDimension(FetchVector.Dimension dimension) {
+        return map.containsKey(dimension);
+    }
+
+    /**
+     * Returns a new FetchVector, identical to {@code this} except for its value in {@code dimension}.
+     * Dimension is removed if the value is null.
+     */
     public FetchVector with(Dimension dimension, String value) {
+        if (value == null) return makeFetchVector(merged -> merged.remove(dimension));
         return makeFetchVector(merged -> merged.put(dimension, value));
     }
 

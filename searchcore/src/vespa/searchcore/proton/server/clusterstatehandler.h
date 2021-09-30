@@ -39,15 +39,10 @@ private:
 
 public:
     ClusterStateHandler(vespalib::Executor &executor);
+    ~ClusterStateHandler() override;
 
-    virtual
-    ~ClusterStateHandler();
-
-    virtual void
-    addClusterStateChangedHandler(IClusterStateChangedHandler *handler) override;
-
-    virtual void
-    removeClusterStateChangedHandler(IClusterStateChangedHandler *handler) override;
+    void addClusterStateChangedHandler(IClusterStateChangedHandler *handler) override;
+    void removeClusterStateChangedHandler(IClusterStateChangedHandler *handler) override;
 
     /**
      * Implements the cluster state aspect of IPersistenceHandler.

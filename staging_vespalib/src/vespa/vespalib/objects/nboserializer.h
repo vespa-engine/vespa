@@ -11,23 +11,23 @@ class nbostream;
 class NBOSerializer : public Serializer, public Deserializer {
 public:
     NBOSerializer(nbostream &stream) : _stream(stream) { }
-    NBOSerializer &put(const IFieldBase &field, bool value) override;
-    NBOSerializer &put(const IFieldBase &field, uint8_t value) override;
-    NBOSerializer &put(const IFieldBase &field, uint16_t value) override;
-    NBOSerializer &put(const IFieldBase &field, uint32_t value) override;
-    NBOSerializer &put(const IFieldBase &field, uint64_t value) override;
-    NBOSerializer &put(const IFieldBase &field, float value) override;
-    NBOSerializer &put(const IFieldBase &field, double value) override;
-    NBOSerializer &put(const IFieldBase &field, stringref val) override;
+    NBOSerializer &put(bool value) override;
+    NBOSerializer &put(uint8_t value) override;
+    NBOSerializer &put(uint16_t value) override;
+    NBOSerializer &put(uint32_t value) override;
+    NBOSerializer &put(uint64_t value) override;
+    NBOSerializer &put(float value) override;
+    NBOSerializer &put(double value) override;
+    NBOSerializer &put(stringref val) override;
 
-    NBOSerializer &get(const IFieldBase &field, bool &value) override;
-    NBOSerializer &get(const IFieldBase &field, uint8_t &value) override;
-    NBOSerializer &get(const IFieldBase &field, uint16_t &value) override;
-    NBOSerializer &get(const IFieldBase &field, uint32_t &value) override;
-    NBOSerializer &get(const IFieldBase &field, uint64_t &value) override;
-    NBOSerializer &get(const IFieldBase &field, double &value) override;
-    NBOSerializer &get(const IFieldBase &field, float &value) override;
-    NBOSerializer &get(const IFieldBase &field, string &value) override;
+    NBOSerializer &get(bool &value) override;
+    NBOSerializer &get(uint8_t &value) override;
+    NBOSerializer &get(uint16_t &value) override;
+    NBOSerializer &get(uint32_t &value) override;
+    NBOSerializer &get(uint64_t &value) override;
+    NBOSerializer &get(double &value) override;
+    NBOSerializer &get(float &value) override;
+    NBOSerializer &get(string &value) override;
 
     const char *peek() const;
 

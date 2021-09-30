@@ -97,7 +97,7 @@ JoinBucketsSession::finish()
         _bucketDB->deleteEmptyBucket(_source2);
     }
     if (!_source1Delta.empty() || !_source2Delta.empty()) {
-        _bucketCreateNotifier.notifyCreateBucket(_target);
+        _bucketCreateNotifier.notifyCreateBucket(_bucketDB, _target);
     }
 }
 

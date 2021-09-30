@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.test.utils;
 
 import java.util.ArrayList;
@@ -43,15 +43,11 @@ public class ApplicationPackageUtils {
                 "}";
     }
 
-    public static List<String> generateSearchDefinition(String name) {
-        return generateSearchDefinitions(name);
+    public static List<String> generateSchemas(String ... sdNames) {
+        return generateSchemas(Arrays.asList(sdNames));
     }
 
-    public static List<String> generateSearchDefinitions(String ... sdNames) {
-        return generateSearchDefinitions(Arrays.asList(sdNames));
-    }
-
-    public static List<String> generateSearchDefinitions(List<String> sdNames) {
+    public static List<String> generateSchemas(List<String> sdNames) {
         List<String> sds = new ArrayList<>();
         int i = 0;
         for (String sdName : sdNames) {

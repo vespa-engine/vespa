@@ -25,13 +25,13 @@ public final class NowExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(new LongFieldValue(timer.currentTimeSeconds()));
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(new LongFieldValue(timer.currentTimeSeconds()));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override
@@ -61,9 +61,10 @@ public final class NowExpression extends Expression {
         return getClass().hashCode() + timer.hashCode();
     }
 
-    public static interface Timer {
+    public interface Timer {
 
-        public long currentTimeSeconds();
+        long currentTimeSeconds();
+
     }
 
     private static class SystemTimer implements Timer {
@@ -75,4 +76,5 @@ public final class NowExpression extends Expression {
             return System.currentTimeMillis() / 1000;
         }
     }
+
 }

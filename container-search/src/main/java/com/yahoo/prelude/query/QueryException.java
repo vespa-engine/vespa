@@ -4,10 +4,11 @@ package com.yahoo.prelude.query;
 /**
  * Runtime exception to mark errors in query parsing.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
+ * @deprecated no methods throw this
  */
+@Deprecated // TODO: Remove on Vespa 8
 public class QueryException extends RuntimeException {
-    private static final long serialVersionUID = -2975856668328596533L;
 
     public QueryException(String message) {
         super(message);
@@ -16,4 +17,5 @@ public class QueryException extends RuntimeException {
     public QueryException(String message, Throwable cause) {
         super(message, cause);
     }
+
 }

@@ -4,12 +4,12 @@
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/call_nodes.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/operator_nodes.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/eval/eval/vm_forest.h>
 #include <vespa/eval/eval/fast_forest.h>
 #include <vespa/eval/eval/llvm/deinline_forest.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/eval/eval/param_usage.h>
 #include <vespa/fastos/app.h>
@@ -17,7 +17,6 @@
 //-----------------------------------------------------------------------------
 
 using vespalib::BenchmarkTimer;
-using vespalib::tensor::DefaultTensorEngine;
 using namespace vespalib::eval;
 using namespace vespalib::eval::nodes;
 using namespace vespalib::eval::gbdt;
@@ -62,8 +61,9 @@ struct InputInfo {
     std::vector<double> cmp_with;
     double usage_probability;
     double expected_usage;
-    InputInfo(vespalib::stringref name_in, double usage_probability_in, double expected_usage_in)
-        : name(name_in), cmp_with(), usage_probability(usage_probability_in), expected_usage(expected_usage_in) {}
+    InputInfo(vespalib::stringref name_in, double usage_probability_in, double expected_usage_in) noexcept
+        : name(name_in), cmp_with(), usage_probability(usage_probability_in), expected_usage(expected_usage_in)
+    {}
     double select_value() const {
         return cmp_with.empty() ? 0.5 : cmp_with[(cmp_with.size()-1)/2];
     }
@@ -95,11 +95,11 @@ struct FunctionInfo {
         if (node) {
             auto lhs_symbol = as<Symbol>(node->lhs());
             auto rhs_symbol = as<Symbol>(node->rhs());
-            if (lhs_symbol && node->rhs().is_const()) {
-                inputs[lhs_symbol->id()].cmp_with.push_back(node->rhs().get_const_value());
+            if (lhs_symbol && node->rhs().is_const_double()) {
+                inputs[lhs_symbol->id()].cmp_with.push_back(node->rhs().get_const_double_value());
             }
-            if (node->lhs().is_const() && rhs_symbol) {
-                inputs[rhs_symbol->id()].cmp_with.push_back(node->lhs().get_const_value());
+            if (node->lhs().is_const_double() && rhs_symbol) {
+                inputs[rhs_symbol->id()].cmp_with.push_back(node->lhs().get_const_double_value());
             }
         }
     }
@@ -108,7 +108,7 @@ struct FunctionInfo {
         if (node) {
             if (auto symbol = as<Symbol>(node->child())) {
                 for (size_t i = 0; i < node->num_entries(); ++i) {
-                    inputs[symbol->id()].cmp_with.push_back(node->get_entry(i).get_const_value());
+                    inputs[symbol->id()].cmp_with.push_back(node->get_entry(i).get_const_double_value());
                 }
             }
         }
@@ -153,7 +153,7 @@ struct FunctionInfo {
     size_t get_path_len(const TreeList &trees) const {
         size_t path = 0;
         for (const Node *tree: trees) {
-            InterpretedFunction ifun(DefaultTensorEngine::ref(), *tree, params.size(), NodeTypes());
+            InterpretedFunction ifun(FastValueBuilderFactory::get(), *tree, NodeTypes());
             InterpretedFunction::Context ctx(ifun);
             SimpleParams fun_params(params);
             ifun.eval(ctx, fun_params);

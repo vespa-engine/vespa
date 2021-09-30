@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <thread>
+#include <functional>
 
 using namespace vespalib;
 using vespalib::hwaccelrated::IAccelrated;
@@ -48,19 +49,19 @@ public:
     FullBenchmark(size_t numDocs, size_t numValue);
     ~FullBenchmark();
     void compute(size_t docId) const override {
-        _dp->dotProduct(&_query[0], &_values[docId * _query.size()], _query.size());
+        _dp.dotProduct(&_query[0], &_values[docId * _query.size()], _query.size());
     }
 private:
     std::vector<T> _values;
     std::vector<T> _query;
-    IAccelrated::UP _dp;
+    const IAccelrated & _dp;
 };
 
 template <typename T>
 FullBenchmark<T>::FullBenchmark(size_t numDocs, size_t numValues)
     : _values(numDocs*numValues),
       _query(numValues),
-      _dp(IAccelrated::getAccelrator())
+      _dp(IAccelrated::getAccelerator())
 {
     for (size_t i(0); i < numDocs; i++) {
         for (size_t j(0); j < numValues; j++) {
@@ -106,6 +107,8 @@ SparseBenchmark::SparseBenchmark(size_t numDocs, size_t numValues, size_t numQue
 }
 SparseBenchmark::~SparseBenchmark() = default;
 
+std::function<void(int64_t)> use_sum = [](int64_t) noexcept { };
+
 class UnorderedSparseBenchmark : public SparseBenchmark
 {
 private:
@@ -124,6 +127,7 @@ private:
                 sum += static_cast<int64_t>(_values[offset + i]._value) * it->second;
             }
         }
+        use_sum(sum);
     }
     map _query;
 };
@@ -154,6 +158,7 @@ private:
                 sum += static_cast<int64_t>(_values[offset + b]._value) * _query[a]._value;
             }
         }
+        use_sum(sum);
     }
     std::vector<P> _query;
 };

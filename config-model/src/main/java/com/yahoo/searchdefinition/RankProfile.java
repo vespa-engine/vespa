@@ -2,13 +2,16 @@
 package com.yahoo.searchdefinition;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.expressiontransforms.ExpressionTransforms;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -18,9 +21,9 @@ import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.vespa.model.VespaModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,6 +44,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -51,17 +55,17 @@ import java.util.stream.Stream;
  */
 public class RankProfile implements Cloneable {
 
+    public final static String FIRST_PHASE = "firstphase";
+    public final static String SECOND_PHASE = "secondphase";
     /** The search definition-unique name of this rank profile */
     private final String name;
 
     /** The search definition owning this profile, or null if global (owned by a model) */
     private final ImmutableSearch search;
 
-    /** The model owning this profile if it is global, or null if it is owned by a search definition */
-    private final VespaModel model;
-
     /** The name of the rank profile inherited by this */
     private String inheritedName = null;
+    private RankProfile inherited = null;
 
     /** The match settings of this profile */
     private MatchPhaseSettings matchPhaseSettings = null;
@@ -70,10 +74,10 @@ public class RankProfile implements Cloneable {
     protected Set<RankSetting> rankSettings = new java.util.LinkedHashSet<>();
 
     /** The ranking expression to be used for first phase */
-    private RankingExpression firstPhaseRanking = null;
+    private RankingExpressionFunction firstPhaseRanking = null;
 
     /** The ranking expression to be used for second phase */
-    private RankingExpression secondPhaseRanking = null;
+    private RankingExpressionFunction secondPhaseRanking = null;
 
     /** Number of hits to be reranked in second phase, -1 means use default */
     private int rerankCount = -1;
@@ -91,6 +95,7 @@ public class RankProfile implements Cloneable {
     private double rankScoreDropLimit = -Double.MAX_VALUE;
 
     private Set<ReferenceNode> summaryFeatures;
+    private String inheritedSummaryFeatures;
 
     private Set<ReferenceNode> rankFeatures;
 
@@ -100,6 +105,10 @@ public class RankProfile implements Cloneable {
     private Boolean ignoreDefaultRankFeatures = null;
 
     private Map<String, RankingExpressionFunction> functions = new LinkedHashMap<>();
+    // This cache must be invalidated every time modifications are done to 'functions'.
+    private CachedFunctions allFunctionsCached = null;
+
+    private Map<Reference, TensorType> inputFeatures = new LinkedHashMap<>();
 
     private Set<String> filterFields = new HashSet<>();
 
@@ -114,32 +123,57 @@ public class RankProfile implements Cloneable {
 
     private List<ImmutableSDField> allFieldsList;
 
+    /** Global onnx models not tied to a search definition */
+    private final OnnxModels onnxModels;
+    private final RankingConstants rankingConstants;
+    private final ApplicationPackage applicationPackage;
+    private final DeployLogger deployLogger;
+
+    private static class CachedFunctions {
+        private final Map<String, RankingExpressionFunction> allRankingExpressionFunctions;
+        private final ImmutableMap<String, ExpressionFunction> allExpressionFunctions;
+        CachedFunctions(Map<String, RankingExpressionFunction> functions) {
+            allRankingExpressionFunctions = functions;
+            ImmutableMap.Builder<String,ExpressionFunction> mapBuilder = new ImmutableMap.Builder<>();
+            for (var entry : functions.entrySet()) {
+                ExpressionFunction function = entry.getValue().function();
+                mapBuilder.put(function.getName(), function);
+            }
+            allExpressionFunctions = mapBuilder.build();
+        }
+    }
+
     /**
      * Creates a new rank profile for a particular search definition
      *
-     * @param name   the name of the new profile
-     * @param search the search definition owning this profile
+     * @param name                the name of the new profile
+     * @param search              the search definition owning this profile
      * @param rankProfileRegistry the {@link com.yahoo.searchdefinition.RankProfileRegistry} to use for storing
      *                            and looking up rank profiles.
      */
-    public RankProfile(String name, Search search, RankProfileRegistry rankProfileRegistry) {
+    public RankProfile(String name, Search search, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.search = Objects.requireNonNull(search, "search cannot be null");
-        this.model = null;
+        this.onnxModels = null;
+        this.rankingConstants = rankingConstants;
         this.rankProfileRegistry = rankProfileRegistry;
+        this.applicationPackage = search.applicationPackage();
+        this.deployLogger = search.getDeployLogger();
     }
 
     /**
      * Creates a global rank profile
      *
      * @param name  the name of the new profile
-     * @param model the model owning this profile
      */
-    public RankProfile(String name, VespaModel model, RankProfileRegistry rankProfileRegistry) {
+    public RankProfile(String name, ApplicationPackage applicationPackage, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants, OnnxModels onnxModels) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.search = null;
-        this.model = Objects.requireNonNull(model, "model cannot be null");
         this.rankProfileRegistry = rankProfileRegistry;
+        this.rankingConstants = rankingConstants;
+        this.onnxModels = onnxModels;
+        this.applicationPackage = applicationPackage;
+        this.deployLogger = deployLogger;
     }
 
     public String getName() { return name; }
@@ -149,12 +183,16 @@ public class RankProfile implements Cloneable {
 
     /** Returns the application this is part of */
     public ApplicationPackage applicationPackage() {
-        return search != null ? search.applicationPackage() : model.applicationPackage();
+        return applicationPackage;
     }
 
     /** Returns the ranking constants of the owner of this */
     public RankingConstants rankingConstants() {
-        return search != null ? search.rankingConstants() : model.rankingConstants();
+        return rankingConstants;
+    }
+
+    public Map<String, OnnxModel> onnxModels() {
+        return search != null ? search.onnxModels().asMap() : onnxModels.asMap();
     }
 
     private Stream<ImmutableSDField> allFields() {
@@ -178,26 +216,64 @@ public class RankProfile implements Cloneable {
     }
 
     /** Returns the name of the profile this one inherits, or null if none is inherited */
-    public String getInheritedName() {
-        return inheritedName;
-    }
+    public String getInheritedName() { return inheritedName; }
 
     /** Returns the inherited rank profile, or null if there is none */
-    public RankProfile getInherited() {
-        if (getSearch() == null) return getInheritedFromRegistry(inheritedName);
-
-        RankProfile inheritedInThisSearch = rankProfileRegistry.get(search, inheritedName);
-        if (inheritedInThisSearch != null) return inheritedInThisSearch;
-        return getInheritedFromRegistry(inheritedName);
-    }
-
-    private RankProfile getInheritedFromRegistry(String inheritedName) {
-        for (RankProfile r : rankProfileRegistry.all()) {
-            if (r.getName().equals(inheritedName)) {
-                return r;
+    private RankProfile getInherited() {
+        if (inheritedName == null) return null;
+        if (inherited == null) {
+            inherited = resolveInherited();
+            if (inherited == null) {
+                String msg = "rank-profile '" + getName() + "' inherits '" + inheritedName +
+                        "', but it does not exist anywhere in the inheritance of search '" +
+                        ((getSearch() != null) ? getSearch().getName() : " global rank profiles") + "'.";
+                throw new IllegalArgumentException(msg);
+            } else {
+                List<String> children = new ArrayList<>();
+                children.add(createFullyQualifiedName());
+                verifyNoInheritanceCycle(children, inherited);
             }
         }
-        return null;
+        return inherited;
+    }
+
+    private String createFullyQualifiedName() {
+        return (search != null)
+                ? (search.getName() + "." + getName())
+                : getName();
+    }
+
+    private void verifyNoInheritanceCycle(List<String> children, RankProfile parent) {
+        children.add(parent.createFullyQualifiedName());
+        String root = children.get(0);
+        if (root.equals(parent.createFullyQualifiedName())) {
+            throw new IllegalArgumentException("There is a cycle in the inheritance for rank-profile '" + root + "' = " + children);
+        }
+        if (parent.getInherited() != null) {
+            verifyNoInheritanceCycle(children, parent.getInherited());
+        }
+    }
+
+    private RankProfile resolveInherited(ImmutableSearch search) {
+        SDDocumentType documentType = search.getDocument();
+        if (documentType != null) {
+            if (name.equals(inheritedName)) {
+                // If you seemingly inherit yourself, you are actually referencing a rank-profile in one of your inherited schemas
+                for (SDDocumentType baseType : documentType.getInheritedTypes()) {
+                    RankProfile resolvedFromBase = rankProfileRegistry.resolve(baseType, inheritedName);
+                    if (resolvedFromBase != null) return resolvedFromBase;
+                }
+            }
+            return rankProfileRegistry.resolve(documentType, inheritedName);
+        }
+        return rankProfileRegistry.get(search.getName(), inheritedName);
+    }
+
+    private RankProfile resolveInherited() {
+        if (inheritedName == null) return null;
+        return (getSearch() != null)
+                ? resolveInherited(search)
+                : rankProfileRegistry.getGlobal(inheritedName);
     }
 
     /**
@@ -223,7 +299,7 @@ public class RankProfile implements Cloneable {
 
     public MatchPhaseSettings getMatchPhaseSettings() {
         MatchPhaseSettings settings = this.matchPhaseSettings;
-        if (settings != null ) return settings;
+        if (settings != null) return settings;
         if (getInherited() != null) return getInherited().getMatchPhaseSettings();
         return null;
     }
@@ -244,7 +320,7 @@ public class RankProfile implements Cloneable {
      * @return the rank setting found, or null.
      */
     RankSetting getDeclaredRankSetting(String field, RankSetting.Type type) {
-        for (Iterator<RankSetting> i = declaredRankSettingIterator(); i.hasNext();) {
+        for (Iterator<RankSetting> i = declaredRankSettingIterator(); i.hasNext(); ) {
             RankSetting setting = i.next();
             if (setting.getFieldName().equals(field) &&
                 setting.getType().equals(type)) {
@@ -303,6 +379,12 @@ public class RankProfile implements Cloneable {
     }
 
     public void addConstant(String name, Value value) {
+        if (value instanceof TensorValue) {
+            TensorType type = value.type();
+            if (type.dimensions().stream().anyMatch(d -> d.isIndexed() && d.size().isEmpty()))
+                throw new IllegalArgumentException("Illegal type of constant " + name + " type " + type +
+                                                   ": Dense tensor dimensions must have a size");
+        }
         constants.put(name, value.freeze());
     }
 
@@ -343,20 +425,26 @@ public class RankProfile implements Cloneable {
      * Returns null if no expression is set.
      */
     public RankingExpression getFirstPhaseRanking() {
+        RankingExpressionFunction function = getFirstPhase();
+        if (function == null) return null;
+        return function.function.getBody();
+    }
+
+    public RankingExpressionFunction getFirstPhase() {
         if (firstPhaseRanking != null) return firstPhaseRanking;
-        if (getInherited() != null) return getInherited().getFirstPhaseRanking();
+        RankProfile inherited = getInherited();
+        if (inherited != null) return inherited.getFirstPhase();
         return null;
     }
 
     void setFirstPhaseRanking(RankingExpression rankingExpression) {
-        this.firstPhaseRanking = rankingExpression;
+        this.firstPhaseRanking = new RankingExpressionFunction(new ExpressionFunction(FIRST_PHASE, Collections.emptyList(), rankingExpression), false);
     }
 
     public void setFirstPhaseRanking(String expression) {
         try {
-            this.firstPhaseRanking = parseRankingExpression("firstphase", expression);
-        }
-        catch (ParseException e) {
+            firstPhaseRanking = new RankingExpressionFunction(parseRankingExpression(FIRST_PHASE, Collections.emptyList(), expression), false);
+        } catch (ParseException e) {
             throw new IllegalArgumentException("Illegal first phase ranking function", e);
         }
     }
@@ -366,18 +454,21 @@ public class RankProfile implements Cloneable {
      * Returns null if no expression is set.
      */
     public RankingExpression getSecondPhaseRanking() {
-        if (secondPhaseRanking != null) return secondPhaseRanking;
-        if (getInherited() != null) return getInherited().getSecondPhaseRanking();
-        return null;
+        RankingExpressionFunction function = getSecondPhase();
+        if (function == null) return null;
+        return function.function().getBody();
     }
 
-    public void setSecondPhaseRanking(RankingExpression rankingExpression) {
-        this.secondPhaseRanking = rankingExpression;
+    public RankingExpressionFunction getSecondPhase() {
+        if (secondPhaseRanking != null) return secondPhaseRanking;
+        RankProfile inherited = getInherited();
+        if (inherited != null) return inherited.getSecondPhase();
+        return null;
     }
 
     public void setSecondPhaseRanking(String expression) {
         try {
-            this.secondPhaseRanking = parseRankingExpression("secondphase", expression);
+            secondPhaseRanking = new RankingExpressionFunction(parseRankingExpression(SECOND_PHASE, Collections.emptyList(), expression), false);
         }
         catch (ParseException e) {
             throw new IllegalArgumentException("Illegal second phase ranking function", e);
@@ -386,9 +477,15 @@ public class RankProfile implements Cloneable {
 
     /** Returns a read-only view of the summary features to use in this profile. This is never null */
     public Set<ReferenceNode> getSummaryFeatures() {
+        if (inheritedSummaryFeatures != null && summaryFeatures != null) {
+            Set<ReferenceNode> combined = new HashSet<>();
+            combined.addAll(getInherited().getSummaryFeatures());
+            combined.addAll(summaryFeatures);
+            return Collections.unmodifiableSet(combined);
+        }
         if (summaryFeatures != null) return Collections.unmodifiableSet(summaryFeatures);
         if (getInherited() != null) return getInherited().getSummaryFeatures();
-        return Collections.emptySet();
+        return Set.of();
     }
 
     private void addSummaryFeature(ReferenceNode feature) {
@@ -397,15 +494,27 @@ public class RankProfile implements Cloneable {
         summaryFeatures.add(feature);
     }
 
-    /**
-     * Adds the content of the given feature list to the internal list of summary features.
-     *
-     * @param features The features to add.
-     */
+    /** Adds the content of the given feature list to the internal list of summary features. */
     public void addSummaryFeatures(FeatureList features) {
         for (ReferenceNode feature : features) {
             addSummaryFeature(feature);
         }
+    }
+
+    /**
+     * Sets the name this should inherit the summary features of.
+     * Without setting this, this will either have the summary features of the parent,
+     * or if summary features are set in this, only have the summary features in this.
+     * With this set the resulting summary features of this will be the superset of those defined in this and
+     * the final (with inheritance included) summary features of the given parent.
+     * The profile must be the profile which is directly inherited by this.
+     *
+     */
+    public void setInheritedSummaryFeatures(String parentProfile) {
+        if ( ! parentProfile.equals(inheritedName))
+            throw new IllegalArgumentException("This can only inherit the summary features of its parent, '" +
+                                               inheritedName + ", but attemtping to inherit '" + parentProfile);
+        this.inheritedSummaryFeatures = parentProfile;
     }
 
     /** Returns a read-only view of the rank features to use in this profile. This is never null */
@@ -459,12 +568,7 @@ public class RankProfile implements Cloneable {
 
     private void addRankProperty(RankProperty rankProperty) {
         // Just the usual multimap semantics here
-        List<RankProperty> properties = rankProperties.get(rankProperty.getName());
-        if (properties == null) {
-            properties = new ArrayList<>(1);
-            rankProperties.put(rankProperty.getName(), properties);
-        }
-        properties.add(rankProperty);
+        rankProperties.computeIfAbsent(rankProperty.getName(), (String key) -> new ArrayList<>(1)).add(rankProperty);
     }
 
     @Override
@@ -533,7 +637,7 @@ public class RankProfile implements Cloneable {
     /** Adds a function */
     public void addFunction(String name, List<String> arguments, String expression, boolean inline) {
         try {
-            addFunction(new ExpressionFunction(name, arguments, parseRankingExpression(name, expression)), inline);
+            addFunction(parseRankingExpression(name, arguments, expression), inline);
         }
         catch (ParseException e) {
             throw new IllegalArgumentException("Could not parse function '" + name + "'", e);
@@ -543,8 +647,30 @@ public class RankProfile implements Cloneable {
     /** Adds a function and returns it */
     public RankingExpressionFunction addFunction(ExpressionFunction function, boolean inline) {
         RankingExpressionFunction rankingExpressionFunction = new RankingExpressionFunction(function, inline);
+        if (functions.containsKey(function.getName())) {
+            deployLogger.log(Level.WARNING, "Function '" + function.getName() + "' replaces a previous function " +
+                    "with the same name in rank profile '" + this.name + "'");
+        }
         functions.put(function.getName(), rankingExpressionFunction);
+        allFunctionsCached = null;
         return rankingExpressionFunction;
+    }
+
+    /**
+     * Use for rank profiles representing a model evaluation; it will assume
+     * that a input is provided with the declared type (for the purpose of
+     * type resolving).
+     **/
+    public void addInputFeature(String name, TensorType declaredType) {
+        Reference ref = Reference.fromIdentifier(name);
+        if (inputFeatures.containsKey(ref)) {
+            TensorType hadType = inputFeatures.get(ref);
+            if (! declaredType.equals(hadType)) {
+                throw new IllegalArgumentException("Tried to replace input feature "+name+" with different type: "+
+                                                   hadType+" -> "+declaredType);
+            }
+        }
+        inputFeatures.put(ref, declaredType);
     }
 
     public RankingExpressionFunction findFunction(String name) {
@@ -555,6 +681,20 @@ public class RankProfile implements Cloneable {
     }
     /** Returns an unmodifiable snapshot of the functions in this */
     public Map<String, RankingExpressionFunction> getFunctions() {
+        updateCachedFunctions();
+        return allFunctionsCached.allRankingExpressionFunctions;
+    }
+    private ImmutableMap<String, ExpressionFunction> getExpressionFunctions() {
+        updateCachedFunctions();
+        return allFunctionsCached.allExpressionFunctions;
+    }
+    private void updateCachedFunctions() {
+        if (needToUpdateFunctionCache()) {
+            allFunctionsCached = new CachedFunctions(gatherAllFunctions());
+        }
+    }
+
+    private  Map<String, RankingExpressionFunction> gatherAllFunctions() {
         if (functions.isEmpty() && getInherited() == null) return Collections.emptyMap();
         if (functions.isEmpty()) return getInherited().getFunctions();
         if (getInherited() == null) return Collections.unmodifiableMap(new LinkedHashMap<>(functions));
@@ -563,6 +703,12 @@ public class RankProfile implements Cloneable {
         Map<String, RankingExpressionFunction> allFunctions = new LinkedHashMap<>(getInherited().getFunctions());
         allFunctions.putAll(functions);
         return Collections.unmodifiableMap(allFunctions);
+    }
+
+    private boolean needToUpdateFunctionCache() {
+        if (getInherited() != null)
+            return (allFunctionsCached == null) || getInherited().needToUpdateFunctionCache();
+        return allFunctionsCached == null;
     }
 
     public int getKeepRankCount() {
@@ -604,34 +750,39 @@ public class RankProfile implements Cloneable {
         return retval;
     }
 
-    private RankingExpression parseRankingExpression(String expressionName, String expression) throws ParseException {
+    private ExpressionFunction parseRankingExpression(String name, List<String> arguments, String expression) throws ParseException {
         if (expression.trim().length() == 0)
-            throw new ParseException("Encountered an empty ranking expression in " + getName()+ ", " + expressionName + ".");
+            throw new ParseException("Encountered an empty ranking expression in " + getName()+ ", " + name + ".");
 
-        try (Reader rankingExpressionReader = openRankingExpressionReader(expressionName, expression.trim())) {
-            return new RankingExpression(expressionName, rankingExpressionReader);
+        try (Reader rankingExpressionReader = openRankingExpressionReader(name, expression.trim())) {
+            return new ExpressionFunction(name, arguments, new RankingExpression(name, rankingExpressionReader));
         }
         catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
             ParseException exception = new ParseException("Could not parse ranking expression '" + expression.trim() +
-                                                          "' in " + getName()+ ", " + expressionName + ".");
+                                                          "' in " + getName()+ ", " + name + ".");
             throw (ParseException)exception.initCause(e);
         }
         catch (IOException e) {
-            throw new RuntimeException("IOException parsing ranking expression '" + expressionName + "'");
+            throw new RuntimeException("IOException parsing ranking expression '" + name + "'");
         }
     }
 
-    private Reader openRankingExpressionReader(String expName, String expression) {
-        if ( ! expression.startsWith("file:")) return new StringReader(expression);
-
+    private static String extractFileName(String expression) {
         String fileName = expression.substring("file:".length()).trim();
         if ( ! fileName.endsWith(ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX))
             fileName = fileName + ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX;
 
+        return fileName;
+    }
+
+    private Reader openRankingExpressionReader(String expName, String expression) {
+        if (!expression.startsWith("file:")) return new StringReader(expression);
+
+        String fileName = extractFileName(expression);
         File file = new File(fileName);
-        if ( ! (file.isAbsolute()) && file.getPath().contains("/")) // See ticket 4102122
-            throw new IllegalArgumentException("In " + getName() +", " + expName + ", ranking references file '" + file +
-                                               "' in subdirectory, which is not supported.");
+        if (!file.isAbsolute() && file.getPath().contains("/")) // See ticket 4102122
+            throw new IllegalArgumentException("In " + getName() + ", " + expName + ", ranking references file '" + file +
+                    "' in subdirectory, which is not supported.");
 
         return search.getRankingExpression(fileName);
     }
@@ -646,7 +797,9 @@ public class RankProfile implements Cloneable {
             clone.summaryFeatures = summaryFeatures != null ? new LinkedHashSet<>(this.summaryFeatures) : null;
             clone.rankFeatures = rankFeatures != null ? new LinkedHashSet<>(this.rankFeatures) : null;
             clone.rankProperties = new LinkedHashMap<>(this.rankProperties);
+            clone.inputFeatures = new LinkedHashMap<>(this.inputFeatures);
             clone.functions = new LinkedHashMap<>(this.functions);
+            clone.allFunctionsCached = null;
             clone.filterFields = new HashSet<>(this.filterFields);
             clone.constants = new HashMap<>(this.constants);
             return clone;
@@ -680,16 +833,18 @@ public class RankProfile implements Cloneable {
         Map<String, RankingExpressionFunction> inlineFunctions =
                 compileFunctions(this::getInlineFunctions, queryProfiles, featureTypes, importedModels, Collections.emptyMap(), expressionTransforms);
 
-        // Function compiling second pass: compile all functions and insert previously compiled inline functions
-        functions = compileFunctions(this::getFunctions, queryProfiles, featureTypes, importedModels, inlineFunctions, expressionTransforms);
+        firstPhaseRanking = compile(this.getFirstPhase(), queryProfiles, featureTypes, importedModels, getConstants(), inlineFunctions, expressionTransforms);
+        secondPhaseRanking = compile(this.getSecondPhase(), queryProfiles, featureTypes, importedModels, getConstants(), inlineFunctions, expressionTransforms);
 
-        firstPhaseRanking = compile(this.getFirstPhaseRanking(), queryProfiles, featureTypes, importedModels, getConstants(), inlineFunctions, expressionTransforms);
-        secondPhaseRanking = compile(this.getSecondPhaseRanking(), queryProfiles, featureTypes, importedModels, getConstants(), inlineFunctions, expressionTransforms);
+        // Function compiling second pass: compile all functions and insert previously compiled inline functions
+        // TODO This merges all functions from inherited profiles too and erases inheritance information. Not good.
+        functions = compileFunctions(this::getFunctions, queryProfiles, featureTypes, importedModels, inlineFunctions, expressionTransforms);
+        allFunctionsCached = null;
     }
 
     private void checkNameCollisions(Map<String, RankingExpressionFunction> functions, Map<String, Value> constants) {
         for (Map.Entry<String, RankingExpressionFunction> functionEntry : functions.entrySet()) {
-            if (constants.get(functionEntry.getKey()) != null)
+            if (constants.containsKey(functionEntry.getKey()))
                 throw new IllegalArgumentException("Cannot have both a constant and function named '" +
                                                    functionEntry.getKey() + "'");
         }
@@ -713,15 +868,15 @@ public class RankProfile implements Cloneable {
         // A straightforward iteration will either miss those functions, or may cause a ConcurrentModificationException
         while (null != (entry = findUncompiledFunction(functions.get(), compiledFunctions.keySet()))) {
             RankingExpressionFunction rankingExpressionFunction = entry.getValue();
-            RankingExpression compiled = compile(rankingExpressionFunction.function().getBody(), queryProfiles, featureTypes,
+            RankingExpressionFunction compiled = compile(rankingExpressionFunction, queryProfiles, featureTypes,
                                                  importedModels, getConstants(), inlineFunctions, expressionTransforms);
-            compiledFunctions.put(entry.getKey(), rankingExpressionFunction.withExpression(compiled));
+            compiledFunctions.put(entry.getKey(), compiled);
         }
         return compiledFunctions;
     }
 
-    private Map.Entry<String, RankingExpressionFunction> findUncompiledFunction(Map<String, RankingExpressionFunction> functions,
-                                                                                Set<String> compiledFunctionNames) {
+    private static Map.Entry<String, RankingExpressionFunction> findUncompiledFunction(Map<String, RankingExpressionFunction> functions,
+                                                                                       Set<String> compiledFunctionNames) {
         for (Map.Entry<String, RankingExpressionFunction> entry : functions.entrySet()) {
             if ( ! compiledFunctionNames.contains(entry.getKey()))
                 return entry;
@@ -729,25 +884,25 @@ public class RankProfile implements Cloneable {
         return null;
     }
 
-    private RankingExpression compile(RankingExpression expression,
+    private RankingExpressionFunction compile(RankingExpressionFunction function,
                                       QueryProfileRegistry queryProfiles,
                                       Map<Reference, TensorType> featureTypes,
                                       ImportedMlModels importedModels,
                                       Map<String, Value> constants,
                                       Map<String, RankingExpressionFunction> inlineFunctions,
                                       ExpressionTransforms expressionTransforms) {
-        if (expression == null) return null;
+        if (function == null) return null;
         RankProfileTransformContext context = new RankProfileTransformContext(this,
                                                                               queryProfiles,
                                                                               featureTypes,
                                                                               importedModels,
                                                                               constants,
                                                                               inlineFunctions);
-        expression = expressionTransforms.transform(expression, context);
+        RankingExpression expression = expressionTransforms.transform(function.function().getBody(), context);
         for (Map.Entry<String, String> rankProperty : context.rankProperties().entrySet()) {
             addRankProperty(rankProperty.getKey(), rankProperty.getValue());
         }
-        return expression;
+        return function.withExpression(expression);
     }
 
     /**
@@ -758,8 +913,12 @@ public class RankProfile implements Cloneable {
         return typeContext(queryProfiles, collectFeatureTypes());
     }
 
+    public MapEvaluationTypeContext typeContext() { return typeContext(new QueryProfileRegistry()); }
+
     private Map<Reference, TensorType> collectFeatureTypes() {
         Map<Reference, TensorType> featureTypes = new HashMap<>();
+        // Add input features
+        inputFeatures.forEach((k, v) -> featureTypes.put(k, v));
         // Add attributes
         allFields().forEach(field -> addAttributeFeatureTypes(field, featureTypes));
         allImportedFields().forEach(field -> addAttributeFeatureTypes(field, featureTypes));
@@ -767,10 +926,7 @@ public class RankProfile implements Cloneable {
     }
     
     public MapEvaluationTypeContext typeContext(QueryProfileRegistry queryProfiles, Map<Reference, TensorType> featureTypes) {
-        MapEvaluationTypeContext context = new MapEvaluationTypeContext(getFunctions().values().stream()
-                                                                                      .map(RankingExpressionFunction::function)
-                                                                                      .collect(Collectors.toList()),
-                                                                        featureTypes);
+        MapEvaluationTypeContext context = new MapEvaluationTypeContext(getExpressionFunctions(), featureTypes);
 
         // Add small and large constants, respectively
         getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));
@@ -794,7 +950,51 @@ public class RankProfile implements Cloneable {
             }
         }
 
+        // Add output types for ONNX models
+        for (Map.Entry<String, OnnxModel> entry : onnxModels().entrySet()) {
+            String modelName = entry.getKey();
+            OnnxModel model = entry.getValue();
+            Arguments args = new Arguments(new ReferenceNode(modelName));
+            Map<String, TensorType> inputTypes = resolveOnnxInputTypes(model, context);
+
+            TensorType defaultOutputType = model.getTensorType(model.getDefaultOutput(), inputTypes);
+            context.setType(new Reference("onnxModel", args, null), defaultOutputType);
+
+            for (Map.Entry<String, String> mapping : model.getOutputMap().entrySet()) {
+                TensorType type = model.getTensorType(mapping.getKey(), inputTypes);
+                context.setType(new Reference("onnxModel", args, mapping.getValue()), type);
+            }
+        }
         return context;
+    }
+
+    private Map<String, TensorType> resolveOnnxInputTypes(OnnxModel model, MapEvaluationTypeContext context) {
+        Map<String, TensorType> inputTypes = new HashMap<>();
+        for (String onnxInputName : model.getInputMap().keySet()) {
+            resolveOnnxInputType(onnxInputName, model, context).ifPresent(type -> inputTypes.put(onnxInputName, type));
+        }
+        return inputTypes;
+    }
+
+    private Optional<TensorType> resolveOnnxInputType(String onnxInputName, OnnxModel model, MapEvaluationTypeContext context) {
+        String source = model.getInputMap().get(onnxInputName);
+        if (source != null) {
+            // Source is either a simple reference (query/attribute/constant/rankingExpression)...
+            Optional<Reference> reference = Reference.simple(source);
+            if (reference.isPresent()) {
+                if (reference.get().name().equals("rankingExpression") && reference.get().simpleArgument().isPresent()) {
+                    source = reference.get().simpleArgument().get();  // look up function below
+                } else {
+                    return Optional.of(context.getType(reference.get()));
+                }
+            }
+            // ... or a function
+            ExpressionFunction func = context.getFunction(source);
+            if (func != null) {
+                return Optional.of(func.getBody().type(context));
+            }
+        }
+        return Optional.empty();  // if this context does not contain this input
     }
 
     private void addAttributeFeatureTypes(ImmutableSDField field, Map<Reference, TensorType> featureTypes) {
@@ -814,12 +1014,12 @@ public class RankProfile implements Cloneable {
      */
     public static class RankSetting implements Serializable {
 
-        private String fieldName;
+        private final String fieldName;
 
-        private Type type;
+        private final Type type;
 
         /** The rank value */
-        private Object value;
+        private final Object value;
 
         public enum Type {
 
@@ -828,10 +1028,10 @@ public class RankProfile implements Cloneable {
             WEIGHT("weight"),
             PREFERBITVECTOR("preferbitvector",true);
 
-            private String name;
+            private final String name;
 
             /** True if this setting really pertains to an index, not a field within an index */
-            private boolean isIndexLevel;
+            private final boolean isIndexLevel;
 
             Type(String name) {
                 this(name,false);
@@ -904,8 +1104,8 @@ public class RankProfile implements Cloneable {
     /** A rank property. Rank properties are Value Objects */
     public static class RankProperty implements Serializable {
 
-        private String name;
-        private String value;
+        private final String name;
+        private final String value;
 
         public RankProperty(String name, String value) {
             this.name = name;
@@ -980,7 +1180,6 @@ public class RankProfile implements Cloneable {
         public void setMinGroups(int value) { minGroups = value; }
         public void setCutoffFactor(double value) { cutoffFactor = value; }
         public void setCutoffStrategy(Diversity.CutoffStrategy strategy) { cutoffStrategy = strategy; }
-        public void setCutoffStrategy(String strategy) { cutoffStrategy = Diversity.CutoffStrategy.valueOf(strategy); }
         public String getAttribute() { return attribute; }
         public int getMinGroups() { return minGroups; }
         public double getCutoffFactor() { return cutoffFactor; }

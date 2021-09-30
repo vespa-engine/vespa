@@ -1,12 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.container.core.ChainsConfig;
+import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.search.GUIHandler;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
@@ -16,10 +18,17 @@ import org.w3c.dom.Element;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static com.yahoo.test.Matchers.hasItemWithMethod;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
+import static com.yahoo.vespa.model.container.search.ContainerSearch.QUERY_PROFILE_REGISTRY_CLASS;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
@@ -41,7 +50,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
 
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, containsString(GUIHandler.BINDING));
+        assertThat(discBindingsConfig, containsString(GUIHandler.BINDING_PATH));
 
         ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
 
@@ -51,18 +60,16 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
                 guiHandler = (GUIHandler) handler;
             }
         }
-        if (guiHandler == null) fail();
+        assertNotNull(guiHandler);
     }
-
-
 
     @Test
     public void search_handler_bindings_can_be_overridden() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <search>",
-                "    <binding>binding0</binding>",
-                "    <binding>binding1</binding>",
+                "    <binding>http://*/binding0</binding>",
+                "    <binding>http://*/binding1</binding>",
                 "  </search>",
                 nodesXml,
                 "</container>");
@@ -70,8 +77,8 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
 
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, containsString(".serverBindings[0] \"binding0\""));
-        assertThat(discBindingsConfig, containsString(".serverBindings[1] \"binding1\""));
+        assertThat(discBindingsConfig, containsString(".serverBindings[0] \"http://*/binding0\""));
+        assertThat(discBindingsConfig, containsString(".serverBindings[1] \"http://*/binding1\""));
         assertThat(discBindingsConfig, not(containsString("/search/*")));
     }
 
@@ -88,7 +95,26 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
 
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, not(containsString("/search/*")));
+        assertFalse(discBindingsConfig.contains("/search/*"));
+    }
+
+    @Test
+    public void search_handler_binding_can_be_stolen_by_user_configured_handler() {
+        var myHandler = "replaces_search_handler";
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <search />",
+                "  <handler id='" + myHandler + "'>",
+                "    <binding>" + SearchHandler.DEFAULT_BINDING.patternString() + "</binding>",
+                "  </handler>",
+                nodesXml,
+                "</container>");
+
+        createModel(root, clusterElem);
+
+        var discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default");
+        assertEquals(SearchHandler.DEFAULT_BINDING.patternString(), discBindingsConfig.handlers(myHandler).serverBindings(0));
+        assertNull(discBindingsConfig.handlers(SearchHandler.HANDLER_CLASS));
     }
 
     // TODO: remove test when all containers are named 'container'
@@ -96,7 +122,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     public void cluster_with_only_search_gets_qrserver_as_service_name() {
         createClusterWithOnlyDefaultChains();
         ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
-        assertThat(cluster.getContainers().get(0).getServiceName(), is(QRSERVER.serviceName));
+        assertEquals(QRSERVER.serviceName, cluster.getContainers().get(0).getServiceName());
     }
 
     @Test
@@ -105,6 +131,14 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(chainsConfig().chains(), hasItemWithMethod("vespaPhases", "id"));
         assertThat(chainsConfig().chains(), hasItemWithMethod("native", "id"));
         assertThat(chainsConfig().chains(), hasItemWithMethod("vespa", "id"));
+    }
+
+    @Test
+    public void query_profiles_registry_component_is_added() {
+        createClusterWithOnlyDefaultChains();
+        ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
+        var queryProfileRegistryId = ComponentId.fromString(QUERY_PROFILE_REGISTRY_CLASS);
+        assertTrue(cluster.getComponentsMap().containsKey(queryProfileRegistryId));
     }
 
     private void createClusterWithOnlyDefaultChains() {
@@ -132,7 +166,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
             createModel(root, clusterElem);
             fail("Expected exception");
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("Setting up com.yahoo.search.handler.SearchHandler manually is not supported"));
+            assertTrue(e.getMessage().contains("Setting up com.yahoo.search.handler.SearchHandler manually is not supported"));
         }
     }
 
@@ -188,9 +222,54 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         assertFalse(cluster.getSearchChains().localProviders().isEmpty());
     }
 
+    @Test
+    public void search_handler_has_dedicated_threadpool() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <search />",
+                nodesXml,
+                "</container>");
+
+        createModel(root, clusterElem);
+
+        ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
+        Handler<?> searchHandler = cluster.getHandlers().stream()
+                .filter(h -> h.getComponentId().toString().equals(SearchHandler.HANDLER_CLASS))
+                .findAny()
+                .get();
+
+        assertThat(searchHandler.getInjectedComponentIds(), hasItem("threadpool@search-handler"));
+
+        ContainerThreadpoolConfig config = root.getConfig(
+                ContainerThreadpoolConfig.class, "default/component/" + SearchHandler.HANDLER_CLASS + "/threadpool@search-handler");
+        assertEquals(-4, config.maxThreads());
+        assertEquals(-4, config.minThreads());
+        assertEquals(-40, config.queueSize());
+    }
+
+    @Test
+    public void threadpool_configuration_can_be_overridden() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <search>",
+                "    <threadpool>",
+                "      <max-threads>100</max-threads>",
+                "      <min-threads>80</min-threads>",
+                "      <queue-size>10</queue-size>",
+                "    </threadpool>",
+                "  </search>",
+                nodesXml,
+                "</container>");
+        createModel(root, clusterElem);
+        ContainerThreadpoolConfig config = root.getConfig(
+                ContainerThreadpoolConfig.class, "default/component/" + SearchHandler.HANDLER_CLASS + "/threadpool@search-handler");
+        assertEquals(100, config.maxThreads());
+        assertEquals(80, config.minThreads());
+        assertEquals(10, config.queueSize());
+    }
 
     private VespaModel getVespaModelWithMusic(String hosts, String services) {
-        return new VespaModelCreatorWithMockPkg(hosts, services, ApplicationPackageUtils.generateSearchDefinitions("music")).create();
+        return new VespaModelCreatorWithMockPkg(hosts, services, ApplicationPackageUtils.generateSchemas("music")).create();
     }
 
     private String hostsXml() {

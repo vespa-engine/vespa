@@ -4,19 +4,23 @@ package com.yahoo.vespa.hosted.provision;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
-import java.time.Clock;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author bratseth
@@ -25,38 +29,59 @@ public class NodeRepositoryTester {
 
     private final NodeFlavors nodeFlavors;
     private final NodeRepository nodeRepository;
-    private final Clock clock;
+    private final ManualClock clock;
     private final MockCurator curator;
-    
-    
+
     public NodeRepositoryTester() {
         nodeFlavors = new NodeFlavors(createConfig());
         clock = new ManualClock();
         curator = new MockCurator();
         curator.setZooKeeperEnsembleConnectionSpec("server1:1234,server2:5678");
-        nodeRepository = new NodeRepository(nodeFlavors, curator, clock, Zone.defaultZone(),
+        nodeRepository = new NodeRepository(nodeFlavors,
+                                            new EmptyProvisionServiceProvider(),
+                                            curator,
+                                            clock,
+                                            Zone.defaultZone(),
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                            true);
+                                            new InMemoryFlagSource(),
+                                            new MemoryMetricsDb(clock),
+                                            true,
+                                            0, 1000);
     }
     
     public NodeRepository nodeRepository() { return nodeRepository; }
     public MockCurator curator() { return curator; }
     
     public List<Node> getNodes(NodeType type, Node.State ... inState) {
-        return nodeRepository.getNodes(type, inState);
+        return nodeRepository.nodes().list(inState).nodeType(type).asList();
     }
-    
-    public Node addNode(String id, String hostname, String flavor, NodeType type) {
-        Node node = nodeRepository.createNode(id, hostname, Optional.empty(), 
-                                              nodeFlavors.getFlavorOrThrow(flavor), type);
-        return nodeRepository.addNodes(Collections.singletonList(node)).get(0);
+
+    public Node addHost(String id, String flavor) {
+        return addNode(id, id, null, nodeFlavors.getFlavorOrThrow(flavor), NodeType.host);
+    }
+
+    public Node addHost(String id, String hostname, String flavor, NodeType type) {
+        return addNode(id, hostname, null, nodeFlavors.getFlavorOrThrow(flavor), type);
+    }
+
+    public Node addNode(String id, String parentHostname, NodeResources resources) {
+        return addNode(id, id, parentHostname, new Flavor(resources), NodeType.tenant);
     }
 
     public Node addNode(String id, String hostname, String parentHostname, String flavor, NodeType type) {
-        Node node = nodeRepository.createNode(id, hostname, Optional.of(parentHostname),
-                nodeFlavors.getFlavorOrThrow(flavor), type);
-        return nodeRepository.addNodes(Collections.singletonList(node)).get(0);
+        return addNode(id, hostname, parentHostname, nodeFlavors.getFlavorOrThrow(flavor), type);
+    }
+
+    private Node addNode(String id, String hostname, String parentHostname, Flavor flavor, NodeType type) {
+        Set<String> ips = nodeRepository.nameResolver().resolveAll(hostname);
+        IP.Config ipConfig = new IP.Config(ips, type.isHost() ? ips : Set.of());
+        Node node = Node.create(id, ipConfig, hostname, flavor, type).parentHostname(parentHostname).build();
+        return nodeRepository.nodes().addNodes(List.of(node), Agent.system).get(0);
+    }
+
+    public void setNodeState(String hostname, Node.State state) {
+        setNodeState(nodeRepository.nodes().node(hostname).orElseThrow(RuntimeException::new), state);
     }
 
     /**
@@ -64,8 +89,7 @@ public class NodeRepositoryTester {
      * to create wanted test scenario without having to move every node through series
      * of valid state transitions
      */
-    public void setNodeState(String hostname, Node.State state) {
-        Node node = nodeRepository.getNode(hostname).orElseThrow(RuntimeException::new);
+    public void setNodeState(Node node, Node.State state) {
         nodeRepository.database().writeTo(state, node, Agent.system, Optional.empty());
     }
 
@@ -76,5 +100,7 @@ public class NodeRepositoryTester {
         b.addFlavor("docker", 1., 2., 50, 1, Flavor.Type.DOCKER_CONTAINER).cost(1);
         return b.build();
     }
+
+    public ManualClock clock() { return clock; }
 
 }

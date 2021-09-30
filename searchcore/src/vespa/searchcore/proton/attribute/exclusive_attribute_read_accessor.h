@@ -6,9 +6,11 @@
 
 namespace search {
     class AttributeVector;
+}
+namespace vespalib {
+    class Gate;
     class ISequencedTaskExecutor;
 }
-namespace vespalib { class Gate; }
 
 namespace proton {
 
@@ -38,13 +40,13 @@ public:
 private:
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
     AttributeVectorSP _attribute;
-    search::ISequencedTaskExecutor &_attributeFieldWriter;
+    vespalib::ISequencedTaskExecutor &_attributeFieldWriter;
 
 public:
     using UP = std::unique_ptr<ExclusiveAttributeReadAccessor>;
 
     ExclusiveAttributeReadAccessor(const AttributeVectorSP &attribute,
-                                   search::ISequencedTaskExecutor &attributeFieldWriter);
+                                   vespalib::ISequencedTaskExecutor &attributeFieldWriter);
     Guard::UP takeGuard();
 };
 

@@ -5,6 +5,7 @@
 #include <vector>
 #include <regex>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace vespalib {
 
@@ -297,7 +298,11 @@ TEST("require that vespalib::unlink works")
         TEST_FATAL("Should work on directories.");
     } catch (IoException& e) {
         //std::cerr << e.what() << "\n";
+#ifdef __APPLE__
+        EXPECT_EQUAL(IoException::NO_PERMISSION, e.getType());
+#else
         EXPECT_EQUAL(IoException::ILLEGAL_PATH, e.getType());
+#endif
     }
         // Works for file
     {
@@ -402,7 +407,7 @@ TEST("require that vespalib::copy works")
     MallocAutoPtr buffer = getAlignedBuffer(5000);
     memset(buffer.get(), 0, 5000);
     strncpy(static_cast<char*>(buffer.get()), "Hello World!\n", 14);
-    f.write(buffer.get(), 4096, 0);
+    f.write(buffer.get(), 4_Ki, 0);
     f.close();
     std::cerr << "Simple copy\n";
         // Simple copy works (4096b dividable file)
@@ -478,61 +483,6 @@ TEST("require that copy constructor and assignment for vespalib::File works")
             //std::cerr << e.what() << "\n";
             EXPECT_EQUAL(IoException::INTERNAL_FAILURE, e.getType());
         }
-    }
-}
-
-TEST("require that vespalib::LazyFile works")
-{
-        // Copy constructor
-    {
-        LazyFile file("myfile", File::CREATE, true);
-        LazyFile file2(file);
-        EXPECT_EQUAL(file.getFlags(), file2.getFlags());
-        EXPECT_EQUAL(file.autoCreateDirectories(), file2.autoCreateDirectories());
-    }
-        // Assignment
-    {
-        LazyFile file("myfile", File::CREATE, true);
-        LazyFile file2("targetfile", File::READONLY);
-        file = file2;
-        EXPECT_EQUAL(file.getFlags(), file2.getFlags());
-        EXPECT_EQUAL(file.autoCreateDirectories(), file2.autoCreateDirectories());
-    }
-        // Lazily write
-    {
-        LazyFile file("myfile", File::CREATE, true);
-        file.write("foo", 3, 0);
-    }
-        // Lazy stat
-    {
-        LazyFile file("myfile", File::CREATE, true);
-        EXPECT_EQUAL(3, file.getFileSize());
-        file.close();
-
-        LazyFile file2("myfile", File::CREATE, true);
-        FileInfo info = file2.stat();
-        EXPECT_EQUAL(3, info._size);
-        EXPECT_EQUAL(true, info._plainfile);
-    }
-
-        // Lazy read
-    {
-        LazyFile file("myfile", File::CREATE, true);
-        std::vector<char> buf(10, ' ');
-        EXPECT_EQUAL(3u, file.read(&buf[0], 10, 0));
-        EXPECT_EQUAL(std::string("foo"), std::string(&buf[0], 3));
-    }
-        // Lazy resize
-    {
-        LazyFile file("myfile", File::CREATE, true);
-        file.resize(5);
-        EXPECT_EQUAL(5, file.getFileSize());
-    }
-        // Lazy get file descriptor
-    {
-        LazyFile file("myfile", File::CREATE, true);
-        int fd = file.getFileDescriptor();
-        ASSERT_TRUE(fd != -1);
     }
 }
 

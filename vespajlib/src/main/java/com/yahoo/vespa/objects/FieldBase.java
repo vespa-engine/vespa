@@ -5,6 +5,7 @@ package com.yahoo.vespa.objects;
  * @author baldersheim
  */
 public class FieldBase {
+
     private final String name;
 
     public FieldBase(String name) {
@@ -25,7 +26,9 @@ public class FieldBase {
         return name.toLowerCase(java.util.Locale.US).hashCode();
     }
 
+    @Override
     public String toString() {
         return "field " + name;
     }
+
 }

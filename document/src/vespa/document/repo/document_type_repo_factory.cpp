@@ -32,6 +32,8 @@ EmptyFactoryCheck emptyFactoryCheck;
 
 }
 
+DocumentTypeRepoFactory::DocumentTypeRepoEntry::~DocumentTypeRepoEntry() = default;
+
 /*
  * Class handling deletion of document type repo after last reference is gone.
  */

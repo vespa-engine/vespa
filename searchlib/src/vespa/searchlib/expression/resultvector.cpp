@@ -29,7 +29,7 @@ GeneralResultNodeVector::find(const ResultNode & key) const
             return _v[i].get();
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 size_t
@@ -45,13 +45,13 @@ GeneralResultNodeVector::hash() const
 ResultSerializer &
 ResultNodeVector::onSerializeResult(ResultSerializer & os) const
 {
-    return os.putResult(getClass(), *this);
+    return os.putResult(*this);
 }
 
 ResultDeserializer &
 ResultNodeVector::onDeserializeResult(ResultDeserializer & is)
 {
-    return is.getResult(getClass(), *this);
+    return is.getResult(*this);
 }
 
 }

@@ -21,12 +21,11 @@ import java.util.Map;
  *
  * If both slobroks and config is specified, the list from slobroks is used.
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">Haakon Humberset</a>
+ * @author Haakon Humberset
  */
 public class LoadBalancerPolicy extends SlobrokPolicy {
     private final String session;
     private final String pattern;
-
     private final LoadBalancer loadBalancer;
 
     LoadBalancerPolicy(String param) {
@@ -48,7 +47,7 @@ public class LoadBalancerPolicy extends SlobrokPolicy {
         }
 
         pattern = cluster + "/*/" + session;
-        loadBalancer = new LoadBalancer(cluster);
+        loadBalancer = new AdaptiveLoadBalancer(cluster);
     }
 
     @Override
@@ -95,4 +94,7 @@ public class LoadBalancerPolicy extends SlobrokPolicy {
     public void destroy() {
 
     }
+
+    // For testing
+    LoadBalancer getLoadBalancer() { return loadBalancer; }
 }

@@ -2,15 +2,13 @@
 
 #include "proton_disk_layout.h"
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/fastos/file.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton_disk_layout");
 
-using search::transactionlog::TransLogClient;
+using search::transactionlog::client::TransLogClient;
 
 namespace proton {
 

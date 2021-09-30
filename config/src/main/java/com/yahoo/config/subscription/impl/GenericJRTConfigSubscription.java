@@ -1,23 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
-import java.util.List;
-
 import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.subscription.ConfigSubscriber;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
 
+import java.util.List;
+
+import static java.util.logging.Level.FINE;
+
 /**
  * A JRT subscription which does not use the config class, but {@link com.yahoo.vespa.config.RawConfig} instead.
  * Used by config proxy.
  *
  * @author Vegard Havdal
- *
  */
 public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfig> {
 
@@ -32,10 +32,9 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfi
 
     @Override
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
-        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsInternalRedeploy(), RawConfig.createFromResponseParameters(jrtReq) );
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "in setNewConfig, config=" + this.getConfigState().getConfig());
-        }
+        RawConfig rawConfig = RawConfig.createFromResponseParameters(jrtReq);
+        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), rawConfig, jrtReq.getNewChecksums());
+        log.log(FINE, () -> "in setNewConfig, config=" + this.getConfigState().getConfig());
     }
 
     // This method is overridden because config needs to have its generation
@@ -52,12 +51,12 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfi
 
     // Override to propagate internal redeploy into the config value in addition to the config state
     @Override
-    void setInternalRedeploy(boolean internalRedeploy) {
-        super.setInternalRedeploy(internalRedeploy);
+    void setApplyOnRestart(boolean applyOnRestart) {
+        super.setApplyOnRestart(applyOnRestart);
         ConfigState<RawConfig> configState = getConfigState();
 
         if (configState.getConfig() != null) {
-            configState.getConfig().setInternalRedeploy(internalRedeploy);
+            configState.getConfig().setApplyOnRestart(applyOnRestart);
         }
     }
 

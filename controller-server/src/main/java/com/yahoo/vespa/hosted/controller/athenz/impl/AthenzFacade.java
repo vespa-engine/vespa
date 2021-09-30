@@ -1,10 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.impl;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.log.LogLevel;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -29,13 +31,18 @@ import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.security.TenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
 import javax.ws.rs.ForbiddenException;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -49,20 +56,32 @@ public class AthenzFacade implements AccessControl {
     private final ZmsClient zmsClient;
     private final ZtsClient ztsClient;
     private final AthenzIdentity service;
+    private final Function<AthenzIdentity, List<AthenzDomain>> userDomains;
+    private final Predicate<AccessTuple> accessRights;
 
     @Inject
     public AthenzFacade(AthenzClientFactory factory) {
-        this(factory.createZmsClient(), factory.createZtsClient(), factory.getControllerIdentity());
+        this.zmsClient = factory.createZmsClient();
+        this.ztsClient = factory.createZtsClient();
+        this.service = factory.getControllerIdentity();
+        this.userDomains = factory.cacheLookups()
+                           ? CacheBuilder.newBuilder()
+                                         .expireAfterWrite(10, TimeUnit.SECONDS)
+                                         .build(CacheLoader.from(this::getUserDomains))::getUnchecked
+                           : this::getUserDomains;
+        this.accessRights = factory.cacheLookups()
+                            ? CacheBuilder.newBuilder()
+                                          .expireAfterWrite(10, TimeUnit.SECONDS)
+                                          .build(CacheLoader.from(this::lookupAccess))::getUnchecked
+                            : this::lookupAccess;
     }
 
-    public AthenzFacade(ZmsClient zmsClient, ZtsClient ztsClient, AthenzIdentity identity) {
-        this.zmsClient = zmsClient;
-        this.ztsClient = ztsClient;
-        this.service = identity;
+    private List<AthenzDomain> getUserDomains(AthenzIdentity userIdentity) {
+        return ztsClient.getTenantDomains(service, userIdentity, "admin");
     }
 
     @Override
-    public Tenant createTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing) {
+    public Tenant createTenant(TenantSpec tenantSpec, Instant createdAt, Credentials credentials, List<Tenant> existing) {
         AthenzTenantSpec spec = (AthenzTenantSpec) tenantSpec;
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
         AthenzDomain domain = spec.domain();
@@ -77,7 +96,8 @@ public class AthenzFacade implements AccessControl {
         AthenzTenant tenant = AthenzTenant.create(spec.tenant(),
                                                   domain,
                                                   spec.property(),
-                                                  spec.propertyId());
+                                                  spec.propertyId(),
+                                                  createdAt);
 
         if (existingWithSameDomain.isPresent()) { // Throw if domain is already taken.
             throw new IllegalArgumentException("Could not create tenant '" + spec.tenant().value() +
@@ -106,11 +126,16 @@ public class AthenzFacade implements AccessControl {
                                                           .filter(tenant ->    tenant.type() == Tenant.Type.athenz
                                                                             && newDomain.equals(((AthenzTenant) tenant).domain()))
                                                           .findAny();
+        Instant createdAt = existing.stream()
+                .filter(tenant -> tenant.name().equals(spec.tenant()))
+                .findAny().orElseThrow() // Should not happen, we assert that the tenant exists before the method is called
+                .createdAt();
 
         Tenant tenant = AthenzTenant.create(spec.tenant(),
                                             newDomain,
                                             spec.property(),
-                                            spec.propertyId());
+                                            spec.propertyId(),
+                                            createdAt);
 
         if (existingWithSameDomain.isPresent()) { // Throw if domain taken by someone else, or do nothing if taken by this tenant.
             if ( ! existingWithSameDomain.get().equals(tenant)) // Equality by name.
@@ -139,9 +164,20 @@ public class AthenzFacade implements AccessControl {
     @Override
     public void deleteTenant(TenantName tenant, Credentials credentials) {
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
-
-        log("deleteTenancy(tenantDomain=%s, service=%s)", athenzCredentials.domain(), service);
-        zmsClient.deleteTenancy(athenzCredentials.domain(), service, athenzCredentials.identityToken(), athenzCredentials.accessToken());
+        AthenzDomain tenantDomain = athenzCredentials.domain();
+        log("deleteTenancy(tenantDomain=%s, service=%s)", tenantDomain, service);
+        try {
+            zmsClient.deleteTenancy(tenantDomain, service, athenzCredentials.identityToken(), athenzCredentials.accessToken());
+        } catch (ZmsClientException e) {
+            if (e.getErrorCode() == 404) {
+                log.log(Level.WARNING,
+                        "Failed to cleanup tenant " + tenant.value() + " with domain '" + tenantDomain.getName()
+                                + "' in Athenz due to non-existing tenant domain",
+                        e);
+            } else {
+                throw e;
+            }
+        }
     }
 
     @Override
@@ -171,8 +207,19 @@ public class AthenzFacade implements AccessControl {
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
         log("deleteProviderResourceGroup(tenantDomain=%s, providerDomain=%s, service=%s, resourceGroup=%s)",
             athenzCredentials.domain(), service.getDomain().getName(), service.getName(), id.application());
-        zmsClient.deleteProviderResourceGroup(athenzCredentials.domain(), service, id.application().value(),
-                                              athenzCredentials.identityToken(), athenzCredentials.accessToken());
+        try {
+            zmsClient.deleteProviderResourceGroup(athenzCredentials.domain(), service, id.application().value(),
+                    athenzCredentials.identityToken(), athenzCredentials.accessToken());
+        } catch (ZmsClientException e) {
+            if (e.getErrorCode() == 404) {
+                log.log(Level.WARNING,
+                        "Failed to cleanup application '" + id.serialized()
+                                + "' in Athenz due to non-existing tenant domain or resource group",
+                        e);
+            } else {
+                throw e;
+            }
+        }
     }
 
     /**
@@ -184,15 +231,14 @@ public class AthenzFacade implements AccessControl {
     // TODO jonmv: Remove
     public List<Tenant> accessibleTenants(List<Tenant> tenants, Credentials credentials) {
         AthenzIdentity identity =  ((AthenzPrincipal) credentials.user()).getIdentity();
-        List<AthenzDomain> userDomains = ztsClient.getTenantDomains(service, identity, "admin");
         return tenants.stream()
-                      .filter(tenant ->    tenant.type() == Tenant.Type.user && ((UserTenant) tenant).is(identity.getName())
-                                        || tenant.type() == Tenant.Type.athenz && userDomains.contains(((AthenzTenant) tenant).domain()))
+                      .filter(tenant ->    tenant.type() == Tenant.Type.athenz
+                                        && userDomains.apply(identity).contains(((AthenzTenant) tenant).domain()))
                       .collect(Collectors.toUnmodifiableList());
     }
 
     public void addTenantAdmin(AthenzDomain tenantDomain, AthenzUser user) {
-        zmsClient.addRoleMember(new AthenzRole(tenantDomain, "tenancy." + service.getFullName() + ".admin"), user);
+        zmsClient.addRoleMember(new AthenzRole(tenantDomain, "tenancy." + service.getFullName() + ".admin"), user, Optional.empty());
     }
 
     private void deleteApplication(AthenzDomain domain, ApplicationName application, OktaIdentityToken identityToken, OktaAccessToken accessToken) {
@@ -227,6 +273,14 @@ public class AthenzFacade implements AccessControl {
         return hasAccess(dryRun ? "dryrun" : "deploy", new AthenzResourceName(service.getDomain(), "system-flags").toResourceNameString(), identity);
     }
 
+    public boolean hasPaymentCallbackAccess(AthenzIdentity identity) {
+        return hasAccess("callback", new AthenzResourceName(service.getDomain().getName(), "payment-notification-resource").toResourceNameString(), identity);
+    }
+
+    public boolean hasAccountingAccess(AthenzIdentity identity) {
+        return hasAccess("modify", new AthenzResourceName(service.getDomain().getName(), "hosted-accounting-resource").toResourceNameString(), identity);
+    }
+
     /**
      * Used when creating tenancies. As there are no tenancy policies at this point,
      * we cannot use {@link #hasTenantAdminAccess(AthenzIdentity, AthenzDomain)}
@@ -235,11 +289,11 @@ public class AthenzFacade implements AccessControl {
         log("getMembership(domain=%s, role=%s, principal=%s)", domain, "admin", identity);
         if ( ! zmsClient.getMembership(new AthenzRole(domain, "admin"), identity))
             throw new ForbiddenException(
-                    String.format("The user '%s' is not admin in Athenz domain '%s'", identity.getFullName(), domain.getName()));
+                    Text.format("The user '%s' is not admin in Athenz domain '%s'", identity.getFullName(), domain.getName()));
     }
 
     public List<AthenzDomain> getDomainList(String prefix) {
-        log.log(LogLevel.DEBUG, String.format("getDomainList(prefix=%s)", prefix));
+        log.log(Level.FINE, "getDomainList(prefix=%s)", prefix);
         return zmsClient.getDomainList(prefix);
     }
 
@@ -250,16 +304,20 @@ public class AthenzFacade implements AccessControl {
     }
 
     private boolean hasAccess(String action, String resource, AthenzIdentity identity) {
-        log("getAccess(action=%s, resource=%s, principal=%s)", action, resource, identity);
-        return zmsClient.hasAccess(AthenzResourceName.fromString(resource), action, identity);
+        return accessRights.test(new AccessTuple(resource, action, identity));
+    }
+
+    private boolean lookupAccess(AccessTuple tuple) {
+        log("getAccess(action=%s, resource=%s, principal=%s)", tuple.action, tuple.resource, tuple.identity);
+        return zmsClient.hasAccess(AthenzResourceName.fromString(tuple.resource), tuple.action, tuple.identity);
     }
 
     private static void log(String format, Object... args) {
-        log.log(LogLevel.DEBUG, String.format(format, args));
+        log.log(Level.FINE, format, args);
     }
 
     private String resourceStringPrefix(AthenzDomain tenantDomain) {
-        return String.format("%s:service.%s.tenant.%s",
+        return Text.format("%s:service.%s.tenant.%s",
                              service.getDomain().getName(), service.getName(), tenantDomain.getName());
     }
 
@@ -275,6 +333,36 @@ public class AthenzFacade implements AccessControl {
         // This is meant to match only the '*' action of the 'admin' role.
         // If needed, we can replace it with 'create', 'delete' etc. later.
         _modify_
+    }
+
+
+    private static class AccessTuple {
+
+        private final String resource;
+        private final String action;
+        private final AthenzIdentity identity;
+
+        private AccessTuple(String resource, String action, AthenzIdentity identity) {
+            this.resource = resource;
+            this.action = action;
+            this.identity = identity;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            AccessTuple that = (AccessTuple) o;
+            return resource.equals(that.resource) &&
+                   action.equals(that.action) &&
+                   identity.equals(that.identity);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(resource, action, identity);
+        }
+
     }
 
 }

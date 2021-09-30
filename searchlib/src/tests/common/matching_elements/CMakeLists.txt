@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_common_matching_elements_test_app TEST
     matching_elements_test.cpp
     DEPENDS
     searchlib
-    gtest
+    GTest::GTest
 )
 vespa_add_test(NAME searchlib_common_matching_elements_test_app COMMAND searchlib_common_matching_elements_test_app)

@@ -1,36 +1,28 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.RequestWaiter;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
 
-import java.text.SimpleDateFormat;
-import java.util.TimeZone;
+import java.util.Objects;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * A JRT connection to a config server or config proxy.
  *
  * @author Gunnar Gauslaa Bergem
+ * @author hmusum
  */
 public class JRTConnection implements Connection {
-    public final static Logger logger = Logger.getLogger(JRTConnection.class.getPackage().getName());
+    private final static Logger logger = Logger.getLogger(JRTConnection.class.getPackage().getName());
 
     private final String address;
     private final Supervisor supervisor;
     private Target target;
-
-    private long lastConnectionAttempt = 0;  // Timestamp for last connection attempt
-    private long lastSuccess = 0;
-    private long lastFailure = 0;
-
-    private static final long delayBetweenConnectionMessage = 30000; //ms
-
-    private static SimpleDateFormat yyyyMMddz;
-    static {
-        yyyyMMddz = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-        yyyyMMddz.setTimeZone(TimeZone.getTimeZone("GMT"));
-    }
-
 
     public JRTConnection(String address, Supervisor supervisor) {
         this.address = address;
@@ -59,39 +51,28 @@ public class JRTConnection implements Connection {
      */
     public synchronized Target getTarget() {
         if (target == null || !target.isValid()) {
-            if ((System.currentTimeMillis() - lastConnectionAttempt) > delayBetweenConnectionMessage) {
-                logger.fine("Connecting to " + address);
-            }
-            lastConnectionAttempt = System.currentTimeMillis();
+            logger.log(Level.INFO, "Connecting to " + address);
             target = supervisor.connect(new Spec(address));
         }
         return target;
     }
 
     @Override
-    public synchronized void setError(int errorCode) {
-        lastFailure = System.currentTimeMillis();
+    public String toString() {
+        return address;
     }
 
     @Override
-    public synchronized void setSuccess() {
-        lastSuccess = System.currentTimeMillis();
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        JRTConnection that = (JRTConnection) o;
+        return address.equals(that.address);
     }
 
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Address: ");
-        sb.append(address);
-        if (lastSuccess > 0) {
-            sb.append("\n");
-            sb.append("Last success: ");
-            sb.append(yyyyMMddz.format(lastSuccess));
-        }
-        if (lastFailure > 0) {
-            sb.append("\n");
-            sb.append("Last failure: ");
-            sb.append(yyyyMMddz.format(lastFailure));
-        }
-        return sb.toString();
+    @Override
+    public int hashCode() {
+        return Objects.hash(address);
     }
+
 }

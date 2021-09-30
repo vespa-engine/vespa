@@ -10,6 +10,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.text.Text;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -18,7 +19,6 @@ import java.io.Reader;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +81,9 @@ public class RankingExpression implements Serializable {
 
     private String name = "";
     private ExpressionNode root;
+    private final static String RANKEXPRESSION = "rankingExpression(";
+    private final static String RANKINGSCRIPT = ").rankingScript";
+    private final static String EXPRESSION_NAME = ").expressionName";
 
     /** Creates an anonymous ranking expression by consuming from the reader */
     public RankingExpression(Reader reader) throws ParseException {
@@ -115,7 +118,7 @@ public class RankingExpression implements Serializable {
             root = parse(new StringReader(expression));
         }
         catch (ParseException e) {
-            ParseException p = new ParseException("Could not parse '" + expression + "'");
+            ParseException p = new ParseException("Could not parse '" + Text.truncate(expression, 50) + "'");
             p.initCause(e);
             throw p;
         }
@@ -250,16 +253,20 @@ public class RankingExpression implements Serializable {
     /**
      * Creates the necessary rank properties required to implement this expression.
      *
-     * @param functions the expression functions to expand
+     * @param context context for serialization
      * @return a list of named rank properties required to implement this expression
      */
-    public Map<String, String> getRankProperties(List<ExpressionFunction> functions) {
+    public Map<String, String> getRankProperties(SerializationContext context) {
         Deque<String> path = new LinkedList<>();
-        SerializationContext context = new SerializationContext(functions);
         String serializedRoot = root.toString(new StringBuilder(), context, path, null).toString();
         Map<String, String> serializedExpressions = context.serializedFunctions();
         serializedExpressions.put(propertyName(name), serializedRoot);
         return serializedExpressions;
+    }
+
+    @Deprecated
+    public Map<String, String> getRankProperties(List<ExpressionFunction> functions) {
+        return getRankProperties(new SerializationContext(functions));
     }
 
     /**
@@ -269,7 +276,16 @@ public class RankingExpression implements Serializable {
      * @return the property name.
      */
     public static String propertyName(String expressionName) {
-        return "rankingExpression(" + expressionName + ").rankingScript";
+        return RANKEXPRESSION + expressionName + RANKINGSCRIPT;
+    }
+    public static String propertyExpressionName(String expressionName) {
+        return RANKEXPRESSION + expressionName + EXPRESSION_NAME;
+    }
+    public static String extractScriptName(String propertyName) {
+        if (propertyName.startsWith(RANKEXPRESSION) && propertyName.endsWith(RANKINGSCRIPT)) {
+            return propertyName.substring(RANKEXPRESSION.length(), propertyName.length() - RANKINGSCRIPT.length());
+        }
+        return null;
     }
 
     /**

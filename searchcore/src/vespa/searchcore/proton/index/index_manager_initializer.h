@@ -38,6 +38,7 @@ public:
                             const search::TuneFileAttributes & tuneFileAttributes,
                             const search::common::FileHeaderContext & fileHeaderContext,
                             std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager);
+    ~IndexManagerInitializer() override;
     void run() override;
 };
 

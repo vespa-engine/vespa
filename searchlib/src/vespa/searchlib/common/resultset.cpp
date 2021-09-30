@@ -4,6 +4,7 @@
 #include "bitvector.h"
 #include "sortresults.h"
 #include <cstring>
+#include <cassert>
 
 using vespalib::alloc::Alloc;
 

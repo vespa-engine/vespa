@@ -4,8 +4,4 @@
 
 namespace vespalib::slime {
 
-ExternalMemory::~ExternalMemory()
-{
-}
-
 } // namespace vespalib::slime

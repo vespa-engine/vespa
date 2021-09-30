@@ -10,11 +10,12 @@ import com.yahoo.osgi.provider.model.ComponentModel;
  * @author Tony Vaagenes
  */
 public class FileStatusHandlerComponent extends Handler implements VipStatusConfig.Producer {
+
     public static final String CLASS = "com.yahoo.container.handler.VipStatusHandler";
 
     private final String fileName;
 
-    public FileStatusHandlerComponent(String id, String fileName, String... bindings) {
+    public FileStatusHandlerComponent(String id, String fileName, BindingPattern... bindings) {
         super(new ComponentModel(id, CLASS, null, null));
 
         this.fileName = fileName;
@@ -26,4 +27,5 @@ public class FileStatusHandlerComponent extends Handler implements VipStatusConf
         builder.accessdisk(true).
                 statusfile(fileName);
     }
+
 }

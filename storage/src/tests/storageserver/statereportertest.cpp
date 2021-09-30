@@ -2,6 +2,7 @@
 
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
+#include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/storage/storageserver/applicationgenerationfetcher.h>
 #include <vespa/storage/storageserver/statereporter.h>
 #include <vespa/metrics/metricmanager.h>
@@ -10,8 +11,9 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -59,7 +61,7 @@ struct MetricClock : public metrics::MetricManager::Timer
 }
 
 StateReporterTest::StateReporterTest()
-    : _threadPool(256*1024),
+    : _threadPool(256_Ki),
       _clock(nullptr),
       _top(),
       _stateReporter()
@@ -70,7 +72,7 @@ void StateReporterTest::SetUp() {
     _config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, "statereportertest"));
     assert(system(("rm -rf " + getRootFolder(*_config)).c_str()) == 0);
 
-    _node = std::make_unique<TestServiceLayerApp>(DiskCount(4), NodeIndex(0), _config->getConfigId());
+    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), _config->getConfigId());
     _node->setupDummyPersistence();
     _clock = &_node->getClock();
     _clock->setAbsoluteTimeInSeconds(1000000);
@@ -89,11 +91,8 @@ void StateReporterTest::SetUp() {
             _generationFetcher,
             "status");
 
-    uint16_t diskCount = _node->getPartitions().size();
-    documentapi::LoadTypeSet::SP loadTypes(_node->getLoadTypes());
-
-    _filestorMetrics = std::make_shared<FileStorMetrics>(_node->getLoadTypes()->getMetricLoadTypes());
-    _filestorMetrics->initDiskMetrics(diskCount, loadTypes->getMetricLoadTypes(), 1, 1);
+    _filestorMetrics = std::make_shared<FileStorMetrics>();
+    _filestorMetrics->initDiskMetrics(1, 1);
     _topSet->registerMetric(*_filestorMetrics);
 
     _metricManager->init(_config->getConfigId(), _node->getThreadPool());
@@ -218,13 +217,12 @@ TEST_F(StateReporterTest, report_health) {
 }
 
 TEST_F(StateReporterTest, report_metrics) {
-    FileStorDiskMetrics& disk0(*_filestorMetrics->disks[0]);
+    FileStorDiskMetrics& disk0(*_filestorMetrics->disk);
     FileStorThreadMetrics& thread0(*disk0.threads[0]);
 
     LOG(debug, "Adding to get metric");
 
-    using documentapi::LoadType;
-    thread0.get[LoadType::DEFAULT].count.inc(1);
+    thread0.get.count.inc(1);
 
     LOG(debug, "Waiting for 5 minute snapshot to be taken");
     // Wait until active metrics have been added to 5 min snapshot and reset
@@ -240,7 +238,7 @@ TEST_F(StateReporterTest, report_metrics) {
     }
     LOG(debug, "5 minute snapshot should have been taken. Adding put count");
 
-    thread0.put[LoadType::DEFAULT].count.inc(1);
+    thread0.put.count.inc(1);
 
     const int pathCount = 2;
     const char* paths[pathCount] = {

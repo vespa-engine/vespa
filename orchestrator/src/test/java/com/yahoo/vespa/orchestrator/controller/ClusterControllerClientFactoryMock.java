@@ -4,7 +4,7 @@ package com.yahoo.vespa.orchestrator.controller;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.orchestrator.DummyInstanceLookupService;
+import com.yahoo.vespa.orchestrator.DummyServiceMonitor;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 
@@ -37,8 +37,8 @@ public class ClusterControllerClientFactoryMock implements ClusterControllerClie
     }
 
     public void setAllDummyNodesAsUp() {
-        for (ApplicationInstance app : DummyInstanceLookupService.getApplications()) {
-            Set<HostName> hosts = DummyInstanceLookupService.getContentHosts(app.reference());
+        for (ApplicationInstance app : DummyServiceMonitor.getApplications()) {
+            Set<HostName> hosts = DummyServiceMonitor.getContentHosts(app.reference());
             for (HostName host : hosts) {
                 ClusterId clusterName = VespaModelUtil.getContentClusterName(app, host);
                 int storageNodeIndex = VespaModelUtil.getStorageNodeIndex(app, host);

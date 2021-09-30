@@ -8,6 +8,7 @@ import com.yahoo.searchdefinition.derived.DerivedConfiguration;
  * @author mathiasm
  */
 public abstract class Validator {
+
     protected DerivedConfiguration config;
     protected Search search;
 

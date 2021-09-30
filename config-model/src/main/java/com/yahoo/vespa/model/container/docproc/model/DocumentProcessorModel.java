@@ -11,11 +11,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 @Immutable
 public class DocumentProcessorModel extends ChainedComponentModel {
-    private Map<Pair<String, String>, String> fieldNameSchemaMap = new HashMap<>();
+
+    private final Map<Pair<String, String>, String> fieldNameSchemaMap = new HashMap<>();
 
     public DocumentProcessorModel(BundleInstantiationSpecification bundleInstantiationSpec, Dependencies dependencies, Map<Pair<String, String>, String> fieldNameSchemaMap) {
         super(bundleInstantiationSpec, dependencies);
@@ -29,4 +30,5 @@ public class DocumentProcessorModel extends ChainedComponentModel {
     public Map<Pair<String,String>,String> fieldNameSchemaMap() {
         return fieldNameSchemaMap;
     }
+
 }

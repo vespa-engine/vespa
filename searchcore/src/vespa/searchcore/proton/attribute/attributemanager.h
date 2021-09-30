@@ -17,6 +17,8 @@ namespace search::common { class FileHeaderContext; }
 
 namespace searchcorespi { class IFlushTarget; }
 
+namespace vespalib { class ThreadExecutor; }
+
 namespace proton {
 
 class AttributeDiskLayout;
@@ -77,7 +79,8 @@ private:
     const search::common::FileHeaderContext &_fileHeaderContext;
     IAttributeFactory::SP _factory;
     std::shared_ptr<search::attribute::Interlock> _interlock;
-    search::ISequencedTaskExecutor &_attributeFieldWriter;
+    vespalib::ISequencedTaskExecutor &_attributeFieldWriter;
+    vespalib::ThreadExecutor& _shared_executor;
     HwInfo _hwInfo;
     std::unique_ptr<ImportedAttributesRepo> _importedAttributes;
 
@@ -103,14 +106,16 @@ public:
                      const vespalib::string &documentSubDbName,
                      const search::TuneFileAttributes &tuneFileAttributes,
                      const search::common::FileHeaderContext & fileHeaderContext,
-                     search::ISequencedTaskExecutor &attributeFieldWriter,
+                     vespalib::ISequencedTaskExecutor &attributeFieldWriter,
+                     vespalib::ThreadExecutor& shared_executor,
                      const HwInfo &hwInfo);
 
     AttributeManager(const vespalib::string &baseDir,
                      const vespalib::string &documentSubDbName,
                      const search::TuneFileAttributes &tuneFileAttributes,
                      const search::common::FileHeaderContext & fileHeaderContext,
-                     search::ISequencedTaskExecutor &attributeFieldWriter,
+                     vespalib::ISequencedTaskExecutor &attributeFieldWriter,
+                     vespalib::ThreadExecutor& shared_executor,
                      const IAttributeFactory::SP &factory,
                      const HwInfo &hwInfo);
 
@@ -164,7 +169,9 @@ public:
 
     const IAttributeFactory::SP &getFactory() const override { return _factory; }
 
-    search::ISequencedTaskExecutor &getAttributeFieldWriter() const override;
+    vespalib::ISequencedTaskExecutor &getAttributeFieldWriter() const override;
+
+    vespalib::ThreadExecutor& get_shared_executor() const override;
 
     search::AttributeVector *getWritableAttribute(const vespalib::string &name) const override;
 

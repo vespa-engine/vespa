@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/regex/regex.h>
 #include <vespa/searchlib/test/initrange.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/searchlib/queryeval/andsearch.h>
@@ -14,10 +15,10 @@
 #include <vespa/searchlib/queryeval/sourceblendersearch.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
+#include <vespa/searchlib/queryeval/isourceselector.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
@@ -33,6 +34,9 @@ using search::fef::TermFieldMatchDataArray;
 using search::test::InitRangeVerifier;
 
 //-----------------------------------------------------------------------------
+
+constexpr auto lower_bound = Blueprint::FilterConstraint::LOWER_BOUND;
+constexpr auto upper_bound = Blueprint::FilterConstraint::UPPER_BOUND;
 
 template <typename T, typename V=std::vector<T> >
 class Collect
@@ -52,10 +56,12 @@ SearchIterator *simple(const std::string &tag) {
     return &((new SimpleSearch(SimpleResult()))->tag(tag));
 }
 
-Collect<SearchIterator*, MultiSearch::Children> search2(const std::string &t1, const std::string &t2) {
-    return Collect<SearchIterator*, MultiSearch::Children>().add(simple(t1)).add(simple(t2));
+MultiSearch::Children search2(const std::string &t1, const std::string &t2) {
+    MultiSearch::Children children;
+    children.emplace_back(simple(t1));
+    children.emplace_back(simple(t2));
+    return children;
 }
-
 
 class ISourceSelectorDummy : public ISourceSelector
 {
@@ -91,9 +97,9 @@ void testMultiSearch(SearchIterator & search) {
 TEST("test that OR.andWith is a NOOP") {
     TermFieldMatchData tfmd;
     MultiSearch::Children ch;
-    ch.push_back(new TrueSearch(tfmd));
-    ch.push_back(new TrueSearch(tfmd));
-    SearchIterator::UP search(OrSearch::create(ch, true));
+    ch.emplace_back(new TrueSearch(tfmd));
+    ch.emplace_back(new TrueSearch(tfmd));
+    SearchIterator::UP search(OrSearch::create(std::move(ch), true));
     auto filter = std::make_unique<TrueSearch>(tfmd);
 
     EXPECT_TRUE(search->andWith(std::move(filter), 1));
@@ -102,9 +108,9 @@ TEST("test that OR.andWith is a NOOP") {
 TEST("test that non-strict AND.andWith is a NOOP") {
     TermFieldMatchData tfmd;
     MultiSearch::Children ch;
-    ch.push_back(new TrueSearch(tfmd));
-    ch.push_back(new TrueSearch(tfmd));
-    SearchIterator::UP search(AndSearch::create(ch, false));
+    ch.emplace_back(new TrueSearch(tfmd));
+    ch.emplace_back(new TrueSearch(tfmd));
+    SearchIterator::UP search(AndSearch::create(std::move(ch), false));
     SearchIterator::UP filter = std::make_unique<TrueSearch>(tfmd);
     filter = search->andWith(std::move(filter), 8);
     EXPECT_TRUE(filter);
@@ -112,10 +118,10 @@ TEST("test that non-strict AND.andWith is a NOOP") {
 
 TEST("test that strict AND.andWith steals filter and places it correctly based on estimate") {
     TermFieldMatchData tfmd;
-    MultiSearch::Children ch;
-    ch.push_back(new TrueSearch(tfmd));
-    ch.push_back(new TrueSearch(tfmd));
-    SearchIterator::UP search(AndSearch::create(ch, true));
+    std::vector<SearchIterator *> ch;
+    ch.emplace_back(new TrueSearch(tfmd));
+    ch.emplace_back(new TrueSearch(tfmd));
+    SearchIterator::UP search(AndSearch::create({ch[0], ch[1]}, true));
     static_cast<AndSearch &>(*search).estimate(7);
     auto filter = std::make_unique<TrueSearch>(tfmd);
     SearchIterator * filterP = filter.get();
@@ -123,18 +129,18 @@ TEST("test that strict AND.andWith steals filter and places it correctly based o
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter), 8).get());
     const MultiSearch::Children & andChildren = static_cast<MultiSearch &>(*search).getChildren();
     EXPECT_EQUAL(3u, andChildren.size());
-    EXPECT_EQUAL(ch[0], andChildren[0]);
-    EXPECT_EQUAL(filterP, andChildren[1]);
-    EXPECT_EQUAL(ch[1], andChildren[2]);
+    EXPECT_EQUAL(ch[0], andChildren[0].get());
+    EXPECT_EQUAL(filterP, andChildren[1].get());
+    EXPECT_EQUAL(ch[1], andChildren[2].get());
 
     auto filter2 = std::make_unique<TrueSearch>(tfmd);
     SearchIterator * filter2P = filter2.get();
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter2), 6).get());
     EXPECT_EQUAL(4u, andChildren.size());
-    EXPECT_EQUAL(filter2P, andChildren[0]);
-    EXPECT_EQUAL(ch[0], andChildren[1]);
-    EXPECT_EQUAL(filterP, andChildren[2]);
-    EXPECT_EQUAL(ch[1], andChildren[3]);
+    EXPECT_EQUAL(filter2P, andChildren[0].get());
+    EXPECT_EQUAL(ch[0], andChildren[1].get());
+    EXPECT_EQUAL(filterP, andChildren[2].get());
+    EXPECT_EQUAL(ch[1], andChildren[3].get());
 }
 
 class NonStrictTrueSearch : public TrueSearch
@@ -146,71 +152,56 @@ public:
 
 TEST("test that strict AND.andWith does not place non-strict iterator first") {
     TermFieldMatchData tfmd;
-    MultiSearch::Children ch;
-    ch.push_back(new TrueSearch(tfmd));
-    ch.push_back(new TrueSearch(tfmd));
-    SearchIterator::UP search(AndSearch::create(ch, true));
+    std::vector<SearchIterator *> ch;
+    ch.emplace_back(new TrueSearch(tfmd));
+    ch.emplace_back(new TrueSearch(tfmd));
+    SearchIterator::UP search(AndSearch::create({ch[0], ch[1]}, true));
     static_cast<AndSearch &>(*search).estimate(7);
     auto filter = std::make_unique<NonStrictTrueSearch>(tfmd);
     SearchIterator * filterP = filter.get();
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter), 6).get());
     const MultiSearch::Children & andChildren = static_cast<MultiSearch &>(*search).getChildren();
     EXPECT_EQUAL(3u, andChildren.size());
-    EXPECT_EQUAL(ch[0], andChildren[0]);
-    EXPECT_EQUAL(filterP, andChildren[1]);
-    EXPECT_EQUAL(ch[1], andChildren[2]);
+    EXPECT_EQUAL(ch[0], andChildren[0].get());
+    EXPECT_EQUAL(filterP, andChildren[1].get());
+    EXPECT_EQUAL(ch[1], andChildren[2].get());
 }
 
 TEST("test that strict rank search forwards to its greedy first child") {
     TermFieldMatchData tfmd;
-    SearchIterator::UP search(
-        RankSearch::create(
-            Collect<SearchIterator*, MultiSearch::Children>()
-                .add(AndSearch::create(search2("a", "b"), true))
-                .add(new TrueSearch(tfmd)),
-            true)
-    );
+    SearchIterator::UP search = RankSearch::create({ AndSearch::create(search2("a", "b"), true), new TrueSearch(tfmd) }, true);
     auto filter = std::make_unique<TrueSearch>(tfmd);
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter), 8).get());
 }
 
 TEST("test that non-strict rank search does NOT forward to its greedy first child") {
     TermFieldMatchData tfmd;
-    SearchIterator::UP search(
-        RankSearch::create(
-            Collect<SearchIterator*, MultiSearch::Children>()
-                .add(AndSearch::create(search2("a", "b"), true))
-                .add(new TrueSearch(tfmd)),
-            false)
-    );
+    SearchIterator::UP search = RankSearch::create({ AndSearch::create(search2("a", "b"), true), new TrueSearch(tfmd) }, false);
     auto filter = std::make_unique<TrueSearch>(tfmd);
     EXPECT_TRUE(nullptr != search->andWith(std::move(filter), 8).get());
 }
 
 TEST("test that strict andnot search forwards to its greedy first child") {
     TermFieldMatchData tfmd;
-    SearchIterator::UP search(
-        AndNotSearch::create(
-            Collect<SearchIterator*, MultiSearch::Children>()
-                .add(AndSearch::create(search2("a", "b"), true))
-                .add(new TrueSearch(tfmd)),
-            true)
-    );
+    SearchIterator::UP search = AndNotSearch::create({ AndSearch::create(search2("a", "b"), true), new TrueSearch(tfmd) }, true);
     auto filter = std::make_unique<TrueSearch>(tfmd);
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter), 8).get());
 }
 
 TEST("test that non-strict andnot search does NOT forward to its greedy first child") {
     TermFieldMatchData tfmd;
-    SearchIterator::UP search(
-        AndNotSearch::create(
-            Collect<SearchIterator*, MultiSearch::Children>()
-                .add(AndSearch::create(search2("a", "b"), true))
-                .add(new TrueSearch(tfmd)),
-            false)
-    );
+    SearchIterator::UP search = AndNotSearch::create({ AndSearch::create(search2("a", "b"), true), new TrueSearch(tfmd) }, false);
     auto filter = std::make_unique<TrueSearch>(tfmd);
     EXPECT_TRUE(nullptr != search->andWith(std::move(filter), 8).get());
+}
+
+void expect_match(std::string input, std::string regexp) {
+    using vespalib::Regex;
+    Regex pattern = Regex::from_pattern(regexp, Regex::Options::DotMatchesNewline);
+    if (! EXPECT_TRUE(pattern.partial_match(input))) {
+        fprintf(stderr, "no match for pattern: >>>%s<<< in input:\n>>>\n%s\n<<<\n",
+                regexp.c_str(), input.c_str());
+    }
 }
 
 TEST("testAnd") {
@@ -232,8 +223,19 @@ TEST("testAnd") {
     res.search(*and_ab);
     SimpleResult expect;
     expect.addHit(5).addHit(30);
-
     EXPECT_EQUAL(res, expect);
+
+    SearchIterator::UP filter_ab = and_b->createFilterSearch(true, upper_bound);
+    SimpleResult filter_res;
+    filter_res.search(*filter_ab);
+    EXPECT_EQUAL(res, expect);
+    std::string dump = filter_ab->asString();
+    expect_match(dump, "upper");
+    expect_match(dump, "AndSearchStrict.*NoUnpack.*SimpleSearch.*upper.*SimpleSearch.*upper");
+    filter_ab = and_b->createFilterSearch(false, lower_bound);
+    dump = filter_ab->asString();
+    expect_match(dump, "lower");
+    expect_match(dump, "AndSearchNoStrict.*NoUnpack.*SimpleSearch.*lower.*SimpleSearch.*lower");
 }
 
 TEST("mutisearch and initRange") {
@@ -257,16 +259,27 @@ TEST("testOr") {
         res.search(*or_ab);
         SimpleResult expect;
         expect.addHit(5).addHit(10).addHit(17).addHit(30);
-
         EXPECT_EQUAL(res, expect);
+
+        SearchIterator::UP filter_ab = or_b->createFilterSearch(true, upper_bound);
+        SimpleResult filter_res;
+        filter_res.search(*filter_ab);
+        EXPECT_EQUAL(res, expect);
+        std::string dump = filter_ab->asString();
+        expect_match(dump, "upper");
+        expect_match(dump, "OrLikeSearch.true.*NoUnpack.*SimpleSearch.*upper.*SimpleSearch.*upper");
+        filter_ab = or_b->createFilterSearch(false, lower_bound);
+        dump = filter_ab->asString();
+        expect_match(dump, "lower");
+        expect_match(dump, "OrLikeSearch.false.*NoUnpack.*SimpleSearch.*lower.*SimpleSearch.*lower");
     }
     {
         TermFieldMatchData tfmd;
         MultiSearch::Children ch;
-        ch.push_back(new TrueSearch(tfmd));
-        ch.push_back(new TrueSearch(tfmd));
-        ch.push_back(new TrueSearch(tfmd));
-        SearchIterator::UP orSearch(OrSearch::create(ch, true));
+        ch.emplace_back(new TrueSearch(tfmd));
+        ch.emplace_back(new TrueSearch(tfmd));
+        ch.emplace_back(new TrueSearch(tfmd));
+        SearchIterator::UP orSearch(OrSearch::create(std::move(ch), true));
         testMultiSearch(*orSearch);
     }
 }
@@ -274,8 +287,8 @@ TEST("testOr") {
 class TestInsertRemoveSearch : public MultiSearch
 {
 public:
-    TestInsertRemoveSearch(const MultiSearch::Children & children) :
-        MultiSearch(children),
+    TestInsertRemoveSearch(ChildrenIterators children) :
+        MultiSearch(std::move(children)),
         _accumRemove(0),
         _accumInsert(0)
     { }
@@ -292,31 +305,31 @@ struct MultiSearchRemoveTest {
 };
 
 TEST("testMultiSearch") {
-    MultiSearch::Children children;
-    children.push_back(new EmptySearch());
-    children.push_back(new EmptySearch());
-    children.push_back(new EmptySearch());
-    TestInsertRemoveSearch ms(children);
+    std::vector<SearchIterator *> orig;
+    orig.emplace_back(new EmptySearch());
+    orig.emplace_back(new EmptySearch());
+    orig.emplace_back(new EmptySearch());
+    TestInsertRemoveSearch ms({orig[0], orig[1], orig[2]});
     EXPECT_EQUAL(3u, ms.getChildren().size());
-    EXPECT_EQUAL(children[0], ms.getChildren()[0]);
-    EXPECT_EQUAL(children[1], ms.getChildren()[1]);
-    EXPECT_EQUAL(children[2], ms.getChildren()[2]);
+    EXPECT_EQUAL(orig[0], ms.getChildren()[0].get());
+    EXPECT_EQUAL(orig[1], ms.getChildren()[1].get());
+    EXPECT_EQUAL(orig[2], ms.getChildren()[2].get());
     EXPECT_EQUAL(0u, ms._accumInsert);
     EXPECT_EQUAL(0u, ms._accumRemove);
 
-    EXPECT_EQUAL(children[1], MultiSearchRemoveTest::remove(ms, 1).get());
+    EXPECT_EQUAL(orig[1], MultiSearchRemoveTest::remove(ms, 1).get());
     EXPECT_EQUAL(2u, ms.getChildren().size());
-    EXPECT_EQUAL(children[0], ms.getChildren()[0]);
-    EXPECT_EQUAL(children[2], ms.getChildren()[1]);
+    EXPECT_EQUAL(orig[0], ms.getChildren()[0].get());
+    EXPECT_EQUAL(orig[2], ms.getChildren()[1].get());
     EXPECT_EQUAL(0u, ms._accumInsert);
     EXPECT_EQUAL(1u, ms._accumRemove);
 
-    children.push_back(new EmptySearch());
-    ms.insert(1, SearchIterator::UP(children.back()));
+    orig.emplace_back(new EmptySearch());
+    ms.insert(1, SearchIterator::UP(orig.back()));
     EXPECT_EQUAL(3u, ms.getChildren().size());
-    EXPECT_EQUAL(children[0], ms.getChildren()[0]);
-    EXPECT_EQUAL(children[3], ms.getChildren()[1]);
-    EXPECT_EQUAL(children[2], ms.getChildren()[2]);
+    EXPECT_EQUAL(orig[0], ms.getChildren()[0].get());
+    EXPECT_EQUAL(orig[3], ms.getChildren()[1].get());
+    EXPECT_EQUAL(orig[2], ms.getChildren()[2].get());
     EXPECT_EQUAL(1u, ms._accumInsert);
     EXPECT_EQUAL(1u, ms._accumRemove);
 }
@@ -337,7 +350,7 @@ public:
             _a.update(docId, 1);
         }
         _a.commit();
-        _sc = _a.getSearch(std::make_unique<search::QueryTermSimple>("1", search::QueryTermSimple::WORD),
+        _sc = _a.getSearch(std::make_unique<search::QueryTermSimple>("1", search::QueryTermSimple::Type::WORD),
                            SearchContextParams().useBitVector(true));
     }
     SearchIterator::UP
@@ -371,8 +384,19 @@ TEST("testAndNot") {
         res.search(*andnot_ab);
         SimpleResult expect;
         expect.addHit(10);
-
         EXPECT_EQUAL(res, expect);
+
+        SearchIterator::UP filter_ab = andnot_b->createFilterSearch(true, upper_bound);
+        SimpleResult filter_res;
+        filter_res.search(*filter_ab);
+        EXPECT_EQUAL(res, expect);
+        std::string dump = filter_ab->asString();
+        expect_match(dump, "upper");
+        expect_match(dump, "AndNotSearch.*SimpleSearch.*<strict,upper>.*SimpleSearch.*<nostrict,lower>");
+        filter_ab = andnot_b->createFilterSearch(false, lower_bound);
+        dump = filter_ab->asString();
+        expect_match(dump, "lower");
+        expect_match(dump, "AndNotSearch.*SimpleSearch.*<nostrict,lower>.*SimpleSearch.*<nostrict,upper>");
     }
     {
         SimpleResult a;
@@ -581,23 +605,19 @@ TEST("testDump") {
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
-    SearchIterator::UP search(
-            AndSearch::create(
-                    Collect<SearchIterator*, MultiSearch::Children>()
-                    .add(AndNotSearch::create(search2("+", "-"), true))
-                    .add(AndSearch::create(search2("and_a", "and_b"), true))
-                    .add(new BooleanMatchIteratorWrapper(SearchIterator::UP(simple("wrapped")), TermFieldMatchDataArray()))
-                    .add(new NearSearch(search2("near_a", "near_b"),
-                                        TermFieldMatchDataArray(),
-                                        5u, true))
-                    .add(new ONearSearch(search2("onear_a", "onear_b"),
-                                         TermFieldMatchDataArray(), 10, true))
-                    .add(OrSearch::create(search2("or_a", "or_b"), false))
-                    .add(RankSearch::create(search2("rank_a", "rank_b"),false))
-                    .add(SourceBlenderSearch::create(selector(), Collect<Source, SourceBlenderSearch::Children>()
-                                 .add(Source(simple("blend_a"), 2))
-                                 .add(Source(simple("blend_b"), 4)), true))
-                    , true));
+
+    SearchIterator::UP search = AndSearch::create( {
+                AndNotSearch::create(search2("+", "-"), true),
+                AndSearch::create(search2("and_a", "and_b"), true),
+                new BooleanMatchIteratorWrapper(SearchIterator::UP(simple("wrapped")), TermFieldMatchDataArray()),
+                new NearSearch(search2("near_a", "near_b"), TermFieldMatchDataArray(), 5u, true),
+                new ONearSearch(search2("onear_a", "onear_b"), TermFieldMatchDataArray(), 10, true),
+                OrSearch::create(search2("or_a", "or_b"), false),
+                RankSearch::create(search2("rank_a", "rank_b"),false),
+                SourceBlenderSearch::create(selector(), Collect<Source, SourceBlenderSearch::Children>()
+                                            .add(Source(simple("blend_a"), 2))
+                                            .add(Source(simple("blend_b"), 4)),
+                                            true) }, true);
     vespalib::string sas = search->asString();
     EXPECT_TRUE(sas.size() > 50);
     vespalib::Slime slime;
@@ -800,26 +820,26 @@ TEST("test InitRangeVerifier") {
 
 TEST("Test multisearch and andsearchstrict iterators adheres to initRange") {
     InitRangeVerifier ir;
-    ir.verify( AndSearch::create({ ir.createIterator(ir.getExpectedDocIds(), false).release(),
-                                   ir.createFullIterator().release() }, false));
+    ir.verify( AndSearch::create({ ir.createIterator(ir.getExpectedDocIds(), false),
+                                   ir.createFullIterator() }, false));
 
-    ir.verify( AndSearch::create({ ir.createIterator(ir.getExpectedDocIds(), true).release(),
-                                   ir.createFullIterator().release() }, true));
+    ir.verify( AndSearch::create({ ir.createIterator(ir.getExpectedDocIds(), true),
+                                   ir.createFullIterator() }, true));
 }
 
 TEST("Test andnotsearchstrict iterators adheres to initRange") {
     InitRangeVerifier ir;
    
-    TEST_DO(ir.verify( AndNotSearch::create({ir.createIterator(ir.getExpectedDocIds(), false).release(),
-                                             ir.createEmptyIterator().release() }, false)));
-    TEST_DO(ir.verify( AndNotSearch::create({ir.createIterator(ir.getExpectedDocIds(), true).release(),
-                                             ir.createEmptyIterator().release() }, true)));
+    TEST_DO(ir.verify( AndNotSearch::create({ir.createIterator(ir.getExpectedDocIds(), false),
+                                             ir.createEmptyIterator() }, false)));
+    TEST_DO(ir.verify( AndNotSearch::create({ir.createIterator(ir.getExpectedDocIds(), true),
+                                             ir.createEmptyIterator() }, true)));
 
     auto inverted = InitRangeVerifier::invert(ir.getExpectedDocIds(), ir.getDocIdLimit());
-    TEST_DO(ir.verify( AndNotSearch::create({ir.createFullIterator().release(),
-                                              ir.createIterator(inverted, false).release() }, false)));
-    TEST_DO(ir.verify( AndNotSearch::create({ir.createFullIterator().release(),
-                                              ir.createIterator(inverted, false).release() }, true)));
+    TEST_DO(ir.verify( AndNotSearch::create({ir.createFullIterator(),
+                                              ir.createIterator(inverted, false) }, false)));
+    TEST_DO(ir.verify( AndNotSearch::create({ir.createFullIterator(),
+                                              ir.createIterator(inverted, false) }, true)));
 }
 
 

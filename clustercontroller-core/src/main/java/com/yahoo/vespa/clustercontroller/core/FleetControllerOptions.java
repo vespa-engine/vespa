@@ -1,16 +1,22 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.NodeType;
-import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 
-import java.time.Duration;
-import java.util.*;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.time.Duration;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * This class represents all the options that can be set in the fleetcontroller.
@@ -30,7 +36,7 @@ public class FleetControllerOptions implements Cloneable {
     public int stateGatherCount = 2;
 
     // TODO: This cannot be null but nonnull is not verified
-    public String slobrokConnectionSpecs[];
+    public String[] slobrokConnectionSpecs;
     public int rpcPort = 0;
     public int httpPort = 0;
     public int distributionBits = 16;
@@ -88,7 +94,9 @@ public class FleetControllerOptions implements Cloneable {
      * Minimum time to pass (in milliseconds) before broadcasting our first systemstate. Set small in unit tests,
      * but should be a few seconds in a real system to prevent new nodes taking over from disturbing the system by
      * putting out a different systemstate just because all nodes don't answer witihin a single cycle.
-     * If all nodes have reported before this time, the min time is ignored and system state is broadcasted.
+     * The cluster state is allowed to be broadcasted before this time if all nodes have successfully
+     * reported their state in Slobrok and getnodestate. This value should typically be in the order of
+     * maxSlobrokDisconnectGracePeriod and nodeStateRequestTimeoutMS.
      */
     public long minTimeBeforeFirstSystemStateBroadcast = 0;
 
@@ -128,18 +136,11 @@ public class FleetControllerOptions implements Cloneable {
 
     public int maxDivergentNodesPrintedInTaskErrorMessages = 10;
 
-    // TODO: May be removed once rolled out everywhere.
-    public boolean determineBucketsFromBucketSpaceMetric = true;
+    public boolean clusterFeedBlockEnabled = false;
+    // Resource type -> limit in [0, 1]
+    public Map<String, Double> clusterFeedBlockLimit = Collections.emptyMap();
 
-    // TODO: Replace usage of this by usage where the nodes are explicitly passed (below)
-    public FleetControllerOptions(String clusterName) {
-        this.clusterName = clusterName;
-        maxTransitionTime.put(NodeType.DISTRIBUTOR, 0);
-        maxTransitionTime.put(NodeType.STORAGE, 5000);
-        nodes = new TreeSet<>();
-        for (int i = 0; i < 10; i++)
-            nodes.add(new ConfiguredNode(i, false));
-    }
+    public double clusterFeedBlockNoiseLevel = 0.01;
 
     public FleetControllerOptions(String clusterName, Collection<ConfiguredNode> nodes) {
         this.clusterName = clusterName;
@@ -151,7 +152,6 @@ public class FleetControllerOptions implements Cloneable {
     /** Called on reconfiguration of this cluster */
     public void setStorageDistribution(Distribution distribution) {
         this.storageDistribution = distribution;
-        this.nodes = distribution.getNodes();
     }
 
     public Duration getMaxDeferredTaskVersionWaitTime() {
@@ -192,7 +192,7 @@ public class FleetControllerOptions implements Cloneable {
 
     static DecimalFormat DecimalDot2 = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.ENGLISH));
 
-    public void writeHtmlState(StringBuilder sb, StatusPageServer.HttpRequest request) {
+    public void writeHtmlState(StringBuilder sb) {
         String slobrokspecs = "";
         for (int i=0; i<slobrokConnectionSpecs.length; ++i) {
             if (i != 0) slobrokspecs += "<br>";
@@ -243,6 +243,12 @@ public class FleetControllerOptions implements Cloneable {
         sb.append("<tr><td><nobr>Max deferred task version wait time</nobr></td><td align=\"right\">").append(maxDeferredTaskVersionWaitTime.toMillis()).append("ms</td></tr>");
         sb.append("<tr><td><nobr>Cluster has global document types configured</nobr></td><td align=\"right\">").append(clusterHasGlobalDocumentTypes).append("</td></tr>");
         sb.append("<tr><td><nobr>Enable 2-phase cluster state activation protocol</nobr></td><td align=\"right\">").append(enableTwoPhaseClusterStateActivation).append("</td></tr>");
+        sb.append("<tr><td><nobr>Cluster auto feed block on resource exhaustion enabled</nobr></td><td align=\"right\">")
+                        .append(clusterFeedBlockEnabled).append("</td></tr>");
+        sb.append("<tr><td><nobr>Feed block limits</nobr></td><td align=\"right\">")
+                        .append(clusterFeedBlockLimit.entrySet().stream()
+                                .map(kv -> String.format("%s: %.2f%%", kv.getKey(), kv.getValue() * 100.0))
+                                .collect(Collectors.joining("<br/>"))).append("</td></tr>");
 
         sb.append("</table>");
     }

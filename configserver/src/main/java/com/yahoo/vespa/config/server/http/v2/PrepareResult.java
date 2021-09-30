@@ -1,8 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
+import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 
 /**
  * Encapsulates the result from preparing an application
@@ -13,12 +13,12 @@ public class PrepareResult {
 
     private final long sessionId;
     private final ConfigChangeActions configChangeActions;
-    private final Slime deployLog;
+    private final DeployHandlerLogger logger;
 
-    public PrepareResult(long sessionId, ConfigChangeActions configChangeActions, Slime deployLog) {
+    public PrepareResult(long sessionId, ConfigChangeActions configChangeActions, DeployHandlerLogger logger) {
         this.sessionId = sessionId;
         this.configChangeActions = configChangeActions;
-        this.deployLog = deployLog;
+        this.logger = logger;
     }
 
     public long sessionId() {
@@ -29,8 +29,8 @@ public class PrepareResult {
         return configChangeActions;
     }
 
-    public Slime deployLog() {
-        return deployLog;
+    public DeployHandlerLogger deployLogger() {
+        return logger;
     }
 
 }

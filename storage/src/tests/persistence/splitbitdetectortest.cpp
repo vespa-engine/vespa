@@ -7,7 +7,6 @@
 #include <vespa/persistence/spi/test.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/metrics/loadmetric.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <algorithm>
 
@@ -15,10 +14,6 @@ using storage::spi::test::makeSpiBucket;
 using namespace ::testing;
 
 namespace storage {
-
-namespace {
-spi::LoadType defaultLoadType(0, "default");
-}
 
 struct SplitBitDetectorTest : Test {
     document::TestDocMan testDocMan;
@@ -28,12 +23,11 @@ struct SplitBitDetectorTest : Test {
 
     SplitBitDetectorTest()
         : testDocMan(),
-          provider(testDocMan.getTypeRepoSP(), 1),
+          provider(testDocMan.getTypeRepoSP()),
           bucket(makeSpiBucket(document::BucketId(1, 1))),
-          context(defaultLoadType, spi::Priority(0),
-                  spi::Trace::TraceLevel(0))
+          context(spi::Priority(0), spi::Trace::TraceLevel(0))
     {
-        provider.getPartitionStates();
+        provider.initialize();
         provider.createBucket(bucket, context);
     }
 };
@@ -109,7 +103,7 @@ TEST_F(SplitBitDetectorTest, max_bits_one_below_max) {
     SplitBitDetector::Result result(
             SplitBitDetector::detectSplit(provider, my_bucket, 15, context));
     EXPECT_EQ("SplitTargets(error: No use in trying to split "
-              "Bucket(0x3c00000000000001, partition 0) when max split"
+              "Bucket(0x3c00000000000001) when max split"
               " bit is set to 15.)",
               result.toString());
 

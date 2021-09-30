@@ -21,8 +21,8 @@ import static org.junit.Assert.assertEquals;
 public class ApplicationSetTest {
 
     private ApplicationSet applicationSet;
-    private List<Version> vespaVersions = new ArrayList<>();
-    private List<Application> applications = new ArrayList<>();
+    private final List<Version> vespaVersions = new ArrayList<>();
+    private final List<Application> applications = new ArrayList<>();
 
     @Before
     public void setUp() {
@@ -50,7 +50,14 @@ public class ApplicationSetTest {
         applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(1)), Instant.now());
     }
 
+    @Test
+    public void testGetAllVersions() {
+        applicationSet = ApplicationSet.fromList(applications);
+        assertEquals(List.of(Version.fromString("1.2.3"), Version.fromString("1.2.4"), Version.fromString("1.2.5")),
+                     applicationSet.getAllVersions(ApplicationId.defaultId()));
+    }
+
     private Application createApplication(Version version) {
-        return new Application(new ModelStub(), null, 0, false, version, MetricUpdater.createTestUpdater(), ApplicationId.defaultId());
+        return new Application(new ModelStub(), null, 0, version, MetricUpdater.createTestUpdater(), ApplicationId.defaultId());
     }
 }

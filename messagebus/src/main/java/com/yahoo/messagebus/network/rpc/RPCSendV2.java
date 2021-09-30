@@ -21,7 +21,6 @@ import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
 
 /**
@@ -36,8 +35,11 @@ public class RPCSendV2 extends RPCSend {
     private final static String METHOD_RETURN = "bixbix";
     private final Compressor compressor = new Compressor(CompressionType.LZ4, 3, 0.90, 1024);
 
+    protected RPCSendV2(RPCNetwork net) { super(net); }
+
     @Override
     protected String getReturnSpec() { return METHOD_RETURN; }
+
     @Override
     protected Method buildMethod() {
 
@@ -57,21 +59,21 @@ public class RPCSendV2 extends RPCSend {
                 .returnDesc(5, "body_payload", "Slime encoded body payload.");
         return method;
     }
-    private static final String VERSION_F = new String("version");
-    private static final String ROUTE_F = new String("route");
-    private static final String SESSION_F = new String("session");
-    private static final String PROTOCOL_F = new String("prot");
-    private static final String TRACELEVEL_F = new String("tracelevel");
-    private static final String TRACE_F = new String("trace");
-    private static final String USERETRY_F = new String("useretry");
-    private static final String RETRY_F = new String("retry");
-    private static final String RETRYDELAY_F = new String("retrydelay");
-    private static final String TIMEREMAINING_F = new String("timeleft");
-    private static final String ERRORS_F = new String("errors");
-    private static final String SERVICE_F = new String("service");
-    private static final String CODE_F = new String("code");
-    private static final String BLOB_F = new String("msg");
-    private static final String MSG_F = new String("msg");
+    private static final String VERSION_F = "version";
+    private static final String ROUTE_F = "route";
+    private static final String SESSION_F = "session";
+    private static final String PROTOCOL_F = "prot";
+    private static final String TRACELEVEL_F = "tracelevel";
+    private static final String TRACE_F = "trace";
+    private static final String USERETRY_F = "useretry";
+    private static final String RETRY_F = "retry";
+    private static final String RETRYDELAY_F = "retrydelay";
+    private static final String TIMEREMAINING_F = "timeleft";
+    private static final String ERRORS_F = "errors";
+    private static final String SERVICE_F = "service";
+    private static final String CODE_F = "code";
+    private static final String BLOB_F = "msg";
+    private static final String MSG_F = "msg";
 
     @Override
     protected Request encodeRequest(Version version, Route route, RPCServiceAddress address, Message msg,
@@ -88,7 +90,7 @@ public class RPCSendV2 extends RPCSend {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
-        root.setString(VERSION_F, version.toString());
+        root.setString(VERSION_F, version.toUtf8().getBytes());
         root.setString(ROUTE_F, route.toString());
         root.setString(SESSION_F, address.getSessionName());
         root.setString(PROTOCOL_F, msg.getProtocol().toString());
@@ -98,8 +100,7 @@ public class RPCSendV2 extends RPCSend {
         root.setLong(TRACELEVEL_F, traceLevel);
         root.setData(BLOB_F, payload);
 
-        byte[] serializedSlime = BinaryFormat.encode(slime);
-        Compressor.Compression compressionResult = compressor.compress(serializedSlime);
+        Compressor.Compression compressionResult = BinaryFormat.encode_and_compress(slime, compressor);
 
         v.add(new Int8Value(compressionResult.type().getCode()));
         v.add(new Int32Value(compressionResult.uncompressedSize()));
@@ -115,7 +116,7 @@ public class RPCSendV2 extends RPCSend {
         Slime slime = BinaryFormat.decode(slimeBytes);
         Inspector root = slime.get();
 
-        Version version = new Version(root.field(VERSION_F).asString());
+        Version version = new Version(new Utf8Array(root.field(VERSION_F).asUtf8()));
         byte[] payload = root.field(BLOB_F).asData();
 
         // Make sure that the owner understands the protocol.
@@ -156,13 +157,13 @@ public class RPCSendV2 extends RPCSend {
         Slime slime = BinaryFormat.decode(slimeBytes);
         Inspector root = slime.get();
         Params p = new Params();
-        p.version = new Version(root.field(VERSION_F).asString());
+        p.version = new Version(new Utf8Array(root.field(VERSION_F).asUtf8()));
         p.route = root.field(ROUTE_F).asString();
         p.session = root.field(SESSION_F).asString();
         p.retryEnabled = root.field(USERETRY_F).asBool();
         p.retry = (int)root.field(RETRY_F).asLong();
         p.timeRemaining = root.field(TIMEREMAINING_F).asLong();
-        p.protocolName = new Utf8Array(Utf8.toBytes(root.field(PROTOCOL_F).asString()));
+        p.protocolName = new Utf8Array(root.field(PROTOCOL_F).asUtf8());
         p.payload = root.field(BLOB_F).asData();
         p.traceLevel = (int)root.field(TRACELEVEL_F).asLong();
         return p;
@@ -177,9 +178,9 @@ public class RPCSendV2 extends RPCSend {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
-        root.setString(VERSION_F, version.toString());
+        root.setString(VERSION_F, version.toUtf8().getBytes());
         root.setDouble(RETRYDELAY_F, reply.getRetryDelay());
-        root.setString(PROTOCOL_F, reply.getProtocol().toString());
+        root.setString(PROTOCOL_F, reply.getProtocol().getBytes());
         root.setData(BLOB_F, payload);
         if (reply.getTrace().getLevel() > 0) {
             root.setString(TRACE_F, reply.getTrace().getRoot().encode());
@@ -198,8 +199,7 @@ public class RPCSendV2 extends RPCSend {
             }
         }
 
-        byte[] serializedSlime = BinaryFormat.encode(slime);
-        Compressor.Compression compressionResult = compressor.compress(serializedSlime);
+        Compressor.Compression compressionResult = BinaryFormat.encode_and_compress(slime, compressor);
 
         ret.add(new Int8Value(compressionResult.type().getCode()));
         ret.add(new Int32Value(compressionResult.uncompressedSize()));

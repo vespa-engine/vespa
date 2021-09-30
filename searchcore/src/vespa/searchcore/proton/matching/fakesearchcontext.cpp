@@ -7,8 +7,8 @@ namespace proton::matching {
 FakeSearchContext::FakeSearchContext(size_t initialNumDocs)
     : _clock(),
       _doom(_clock, vespalib::steady_time()),
-      _selector(new search::FixedSourceSelector(0, "fs", initialNumDocs)),
-      _indexes(new IndexCollection(_selector)),
+      _selector(std::make_shared<search::FixedSourceSelector>(0, "fs", initialNumDocs)),
+      _indexes(std::make_shared<IndexCollection>(_selector)),
       _attrSearchable(),
       _docIdLimit(initialNumDocs)
 {

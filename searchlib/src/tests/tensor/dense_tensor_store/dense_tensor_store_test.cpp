@@ -2,53 +2,52 @@
 #include <vespa/log/log.h>
 LOG_SETUP("dense_tensor_store_test");
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/searchlib/tensor/dense_tensor_store.h>
+#include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_type.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
+#include <vespa/eval/eval/test/value_compare.h>
 
 using search::tensor::DenseTensorStore;
+using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
+using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using vespalib::tensor::MutableDenseTensorView;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::DefaultTensorEngine;
 
 using EntryRef = DenseTensorStore::EntryRef;
 
-Tensor::UP
+Value::UP
 makeTensor(const TensorSpec &spec)
 {
-    auto tensor = DefaultTensorEngine::ref().from_spec(spec);
-    return Tensor::UP(dynamic_cast<Tensor *>(tensor.release()));
+    return SimpleValue::from_spec(spec);
 }
 
 struct Fixture
 {
     DenseTensorStore store;
     Fixture(const vespalib::string &tensorType)
-        : store(ValueType::from_spec(tensorType))
+        : store(ValueType::from_spec(tensorType), {})
     {}
     void assertSetAndGetTensor(const TensorSpec &tensorSpec) {
-        Tensor::UP expTensor = makeTensor(tensorSpec);
+        Value::UP expTensor = makeTensor(tensorSpec);
         EntryRef ref = store.setTensor(*expTensor);
-        Tensor::UP actTensor = store.getTensor(ref);
-        EXPECT_EQUAL(expTensor->toSpec(), actTensor->toSpec());
+        Value::UP actTensor = store.getTensor(ref);
+        EXPECT_EQUAL(*expTensor, *actTensor);
         assertTensorView(ref, *expTensor);
     }
     void assertEmptyTensor(const TensorSpec &tensorSpec) {
-        Tensor::UP expTensor = makeTensor(tensorSpec);
+        Value::UP expTensor = makeTensor(tensorSpec);
         EntryRef ref;
-        Tensor::UP actTensor = store.getTensor(ref);
+        Value::UP actTensor = store.getTensor(ref);
         EXPECT_TRUE(actTensor.get() == nullptr);
         assertTensorView(ref, *expTensor);
     }
-    void assertTensorView(EntryRef ref, const Tensor &expTensor) {
-        MutableDenseTensorView actTensor(store.type());
-        store.getTensor(ref, actTensor);
-        EXPECT_EQUAL(expTensor.toSpec(), actTensor.toSpec());
+    void assertTensorView(EntryRef ref, const Value &expTensor) {
+        auto cells = store.get_typed_cells(ref);
+        vespalib::eval::DenseValueView actTensor(store.type(), cells);
+        EXPECT_EQUAL(expTensor, actTensor);
     }
 };
 

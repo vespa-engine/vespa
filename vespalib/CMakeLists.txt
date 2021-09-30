@@ -24,12 +24,14 @@ vespa_define_module(
     src/tests/assert
     src/tests/barrier
     src/tests/benchmark_timer
-    src/tests/btree
     src/tests/box
-    src/tests/closure
+    src/tests/btree
+    src/tests/btree/btree_store
+    src/tests/child_process
     src/tests/component
     src/tests/compress
     src/tests/compression
+    src/tests/crypto
     src/tests/data/databuffer
     src/tests/data/input_reader
     src/tests/data/lz4_encode_decode
@@ -41,10 +43,12 @@ vespa_define_module(
     src/tests/datastore/array_store_config
     src/tests/datastore/buffer_type
     src/tests/datastore/datastore
+    src/tests/datastore/fixed_size_hash_map
+    src/tests/datastore/sharded_hash_map
     src/tests/datastore/unique_store
     src/tests/datastore/unique_store_dictionary
     src/tests/datastore/unique_store_string_allocator
-    src/tests/delegatelist
+    src/tests/detect_type_benchmark
     src/tests/dotproduct
     src/tests/drop-file-from-cache
     src/tests/dual_merge_director
@@ -57,6 +61,7 @@ vespa_define_module(
     src/tests/gencnt
     src/tests/guard
     src/tests/host_name
+    src/tests/hwaccelrated
     src/tests/io/fileutil
     src/tests/io/mapped_file_input
     src/tests/latch
@@ -89,16 +94,18 @@ vespa_define_module(
     src/tests/referencecounter
     src/tests/regex
     src/tests/rendezvous
+    src/tests/require
     src/tests/runnable_pair
-    src/tests/rwlock
     src/tests/sha1
+    src/tests/shared_string_repo
     src/tests/sharedptr
     src/tests/signalhandler
     src/tests/simple_thread_bundle
-    src/tests/slaveproc
     src/tests/slime
     src/tests/slime/external_data_value
     src/tests/slime/summary-feature-benchmark
+    src/tests/small_vector
+    src/tests/spin_lock
     src/tests/stash
     src/tests/stllike
     src/tests/stringfmt
@@ -126,10 +133,19 @@ vespa_define_module(
     src/tests/tutorial/minimal
     src/tests/tutorial/simple
     src/tests/tutorial/threads
+    src/tests/typify
+    src/tests/unwind_message
+    src/tests/util/bfloat16
+    src/tests/util/file_area_freelist
     src/tests/util/generationhandler
     src/tests/util/generationhandler_stress
+    src/tests/util/hamming
     src/tests/util/md5
+    src/tests/util/mmap_file_allocator
+    src/tests/util/mmap_file_allocator_factory
     src/tests/util/rcuvector
+    src/tests/util/reusable_set
+    src/tests/util/size_literals
     src/tests/valgrind
     src/tests/visit_ranges
     src/tests/websocket
@@ -139,6 +155,7 @@ vespa_define_module(
     src/vespa/vespalib
     src/vespa/vespalib/btree
     src/vespa/vespalib/component
+    src/vespa/vespalib/crypto
     src/vespa/vespalib/data
     src/vespa/vespalib/data/slime
     src/vespa/vespalib/datastore
@@ -151,6 +168,7 @@ vespa_define_module(
     src/vespa/vespalib/net/tls/impl
     src/vespa/vespalib/objects
     src/vespa/vespalib/portal
+    src/vespa/vespalib/regex
     src/vespa/vespalib/stllike
     src/vespa/vespalib/test
     src/vespa/vespalib/testkit

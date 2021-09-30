@@ -20,11 +20,10 @@ protected:
      *
      * @param children the search objects we are rank'ing
      **/
-    RankSearch(const Children & children) : MultiSearch(children) { }
+    RankSearch(Children children) : MultiSearch(std::move(children)) { }
 
 public:
-    // Caller takes ownership of the returned SearchIterator.
-    static SearchIterator *create(const Children &children, bool strict);
+    static SearchIterator::UP create(ChildrenIterators children, bool strict);
 };
 
 }

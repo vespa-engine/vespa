@@ -3,6 +3,7 @@
 #include <vespa/slobrok/server/slobrokserver.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
+#include <thread>
 
 //-----------------------------------------------------------------------------
 
@@ -280,13 +281,13 @@ TEST("standalone") {
     ASSERT_TRUE(req->GetReturn()->GetValue(0)._string_array._len == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(1)._string_array._len == 0);
 
-    // unregister server A (wrong spec)
+    // unregister server A (wrong spec, but we decided that is not an error)
     req = orb.AllocRPCRequest(req);
     req->SetMethodName("slobrok.unregisterRpcServer");
     req->GetParams()->AddString("A");
     req->GetParams()->AddString("tcp/localhost:18543");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(req->IsError());
+    ASSERT_FALSE(req->IsError());
 
     // lookup 'A' should give 'A'
     req = orb.AllocRPCRequest(req);

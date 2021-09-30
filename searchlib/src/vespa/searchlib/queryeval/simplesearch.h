@@ -5,8 +5,7 @@
 #include "searchiterator.h"
 #include "simpleresult.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * Simple search class used to return a predefined set of
@@ -36,6 +35,4 @@ public:
     ~SimpleSearch();
 };
 
-} // namespace queryeval
-} // namespace search
-
+}

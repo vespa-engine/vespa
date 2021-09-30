@@ -154,11 +154,11 @@ TEST("require that priority queue works with move-only objects") {
 struct MyItem {
     int value;
     int *ref;
-    MyItem(int v, int &r) : value(v), ref(&r) {}
-    MyItem(const MyItem &) = delete;
-    MyItem &operator=(const MyItem &) = delete;
-    MyItem(MyItem &&rhs) : value(rhs.value), ref(rhs.ref) { rhs.ref = 0; }
-    MyItem &operator=(MyItem &&rhs) {
+    MyItem(int v, int &r) noexcept : value(v), ref(&r) {}
+    MyItem(const MyItem &) noexcept = delete;
+    MyItem &operator=(const MyItem &) noexcept = delete;
+    MyItem(MyItem &&rhs) noexcept : value(rhs.value), ref(rhs.ref) { rhs.ref = 0; }
+    MyItem &operator=(MyItem &&rhs) noexcept {
         value = rhs.value;
         ref = rhs.ref;
         rhs.ref = 0;

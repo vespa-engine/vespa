@@ -15,7 +15,13 @@ import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
-import com.yahoo.vespa.indexinglanguage.expressions.*;
+import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.OptimizePredicateExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.SetValueExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.SetVarExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.ArrayList;

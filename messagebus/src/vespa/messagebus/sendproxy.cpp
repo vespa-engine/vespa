@@ -53,11 +53,10 @@ SendProxy::handleReply(Reply::UP reply)
         } else if (logger.wants(ns_log::Logger::spam)) {
             LOG(spam, "Trace for reply:\n%s", reply->getTrace().toString().c_str());
         }
-        Trace empty;
-        trace.swap(empty);
+        trace.clear();
     } else if (trace.getLevel() > 0) {
-        trace.getRoot().addChild(reply->getTrace().getRoot());
-        trace.getRoot().normalize();
+        trace.addChild(reply->steal_trace());
+        trace.normalize();
     }
     reply->swapState(*_msg);
     reply->setMessage(std::move(_msg));

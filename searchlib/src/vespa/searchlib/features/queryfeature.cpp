@@ -11,9 +11,9 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
-#include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/vespalib/locale/c.h>
 #include <cerrno>
 
@@ -121,13 +121,18 @@ createTensorExecutor(const IQueryEnvironment &env,
     if (prop.found() && !prop.get().empty()) {
         const vespalib::string &value = prop.get();
         vespalib::nbostream stream(value.data(), value.size());
-        auto tensor = vespalib::tensor::TypedBinaryFormat::deserialize(stream);
-        if (!TensorDataType::isAssignableType(valueType, tensor->type())) {
-            LOG(warning, "Query feature type is '%s' but other tensor type is '%s'",
-                valueType.to_spec().c_str(), tensor->type().to_spec().c_str());
+        try {
+            auto tensor = vespalib::eval::decode_value(stream, vespalib::eval::FastValueBuilderFactory::get());
+            if (!TensorDataType::isAssignableType(valueType, tensor->type())) {
+                LOG(warning, "Query feature type is '%s' but other tensor type is '%s'",
+                    valueType.to_spec().c_str(), tensor->type().to_spec().c_str());
+                return ConstantTensorExecutor::createEmpty(valueType, stash);
+            }
+            return ConstantTensorExecutor::create(std::move(tensor), stash);
+        } catch (const vespalib::eval::DecodeValueException &e) {
+            LOG(warning, "Query feature has invalid binary format: %s", e.what());
             return ConstantTensorExecutor::createEmpty(valueType, stash);
         }
-        return ConstantTensorExecutor::create(std::move(tensor), stash);
     }
     return ConstantTensorExecutor::createEmpty(valueType, stash);
 }
@@ -137,7 +142,7 @@ createTensorExecutor(const IQueryEnvironment &env,
 FeatureExecutor &
 QueryBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    if (_valueType.is_tensor()) {
+    if (_valueType.has_dimensions()) {
         return createTensorExecutor(env, _key, _valueType, stash);
     } else {
         std::vector<feature_t> values;
@@ -146,11 +151,10 @@ QueryBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &st
             p = env.getProperties().lookup(_key2);
         }
         if (p.found()) {
-            values.push_back(asFeature(p.get()));
+            return stash.create<SingleValueExecutor>(asFeature(p.get()));
         } else {
-            values.push_back(_defaultValue);
+            return stash.create<SingleValueExecutor>(_defaultValue);
         }
-        return stash.create<ValueExecutor>(values);
     }
 }
 

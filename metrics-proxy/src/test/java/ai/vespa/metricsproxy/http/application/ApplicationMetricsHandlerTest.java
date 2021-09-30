@@ -4,15 +4,16 @@ package ai.vespa.metricsproxy.http.application;
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
+import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.json.GenericApplicationModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericMetrics;
 import ai.vespa.metricsproxy.metric.model.json.GenericService;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -22,11 +23,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
-import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
-import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.V1_PATH;
-import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.VALUES_PATH;
+import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
+import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.METRICS_V1_PATH;
+import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.METRICS_VALUES_PATH;
+import static ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler.PROMETHEUS_VALUES_PATH;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -46,10 +49,13 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("UnstableApiUsage")
 public class ApplicationMetricsHandlerTest {
 
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
+
     private static final String HOST = "localhost";
     private static final String URI_BASE = "http://" + HOST;
-    private static final String APP_METRICS_V1_URI = URI_BASE + V1_PATH;
-    private static final String APP_METRICS_VALUES_URI = URI_BASE + VALUES_PATH;
+    private static final String METRICS_V1_URI = URI_BASE + METRICS_V1_PATH;
+    private static final String METRICS_VALUES_URI = URI_BASE + METRICS_VALUES_PATH;
+    private static final String PROMETHEUS_VALUES_URI = URI_BASE + PROMETHEUS_VALUES_PATH;
 
     private static final String TEST_FILE = "generic-sample.json";
     private static final String RESPONSE = getFileContents(TEST_FILE);
@@ -59,6 +65,8 @@ public class ApplicationMetricsHandlerTest {
     private static final String CUSTOM_CONSUMER = "custom-consumer";
 
     private static final String MOCK_METRICS_PATH = "/node0";
+
+    private static final Pattern PROMETHEUS_REGEX_FORMAT = Pattern.compile("[a-z_]+([{]([A-Za-z_]+=\"[A-Za-z.\\-\\/0.9_]+\",)*[}])?( [0-9E]+(\\.[0-9E]+)?){2}");
 
     private int port;
 
@@ -77,13 +85,16 @@ public class ApplicationMetricsHandlerTest {
         ApplicationMetricsHandler handler = new ApplicationMetricsHandler(Executors.newSingleThreadExecutor(),
                                                                           applicationMetricsRetriever,
                                                                           getMetricsConsumers());
+        applicationMetricsRetriever.getMetrics(defaultMetricsConsumerId);
+        applicationMetricsRetriever.getMetrics(ConsumerId.toConsumerId(CUSTOM_CONSUMER));
+        applicationMetricsRetriever.startPollAndWait();
         testDriver = new RequestHandlerTestDriver(handler);
     }
 
     private void setupWireMock() {
         port = wireMockRule.port();
         wireMockRule.stubFor(get(urlPathEqualTo(MOCK_METRICS_PATH))
-                                     .withQueryParam("consumer", equalTo(DEFAULT_PUBLIC_CONSUMER_ID.id))
+                                     .withQueryParam("consumer", equalTo(defaultMetricsConsumerId.id))
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         // Add a slightly different response for a custom consumer.
@@ -95,29 +106,38 @@ public class ApplicationMetricsHandlerTest {
 
     @Test
     public void v1_response_contains_values_uri() throws Exception {
-        String response = testDriver.sendRequest(APP_METRICS_V1_URI).readAll();
-        JSONObject root = new JSONObject(response);
+        String response = testDriver.sendRequest(METRICS_V1_URI).readAll();
+        JsonNode root = jsonMapper.readTree(response);
         assertTrue(root.has("resources"));
 
-        JSONArray resources = root.getJSONArray("resources");
-        assertEquals(1, resources.length());
+        ArrayNode resources = (ArrayNode) root.get("resources");
+        assertEquals(2, resources.size());
 
-        JSONObject valuesUrl = resources.getJSONObject(0);
-        assertEquals(APP_METRICS_VALUES_URI, valuesUrl.getString("url"));
+        JsonNode valuesUrl = resources.get(0);
+        assertEquals(METRICS_VALUES_URI, valuesUrl.get("url").textValue());
+        JsonNode prometheusUrl = resources.get(1);
+        assertEquals(PROMETHEUS_VALUES_URI, prometheusUrl.get("url").textValue());
     }
 
     @Ignore
     @Test
-    public void visually_inspect_values_response() throws Exception {
-        String response = testDriver.sendRequest(APP_METRICS_VALUES_URI).readAll();
+    public void visually_inspect_values_response_metrics() throws Exception {
+        String response = testDriver.sendRequest(METRICS_VALUES_URI).readAll();
         ObjectMapper mapper = createObjectMapper();
         var jsonModel = mapper.readValue(response, GenericApplicationModel.class);
         System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonModel));
     }
 
+    @Ignore
+    @Test
+    public void visually_inspect_values_response_prometheus() throws Exception {
+        String response = testDriver.sendRequest(PROMETHEUS_VALUES_URI).readAll();
+        System.out.println(response);
+    }
+
     @Test
     public void response_contains_node() {
-        GenericApplicationModel jsonModel = getResponseAsJsonModel(DEFAULT_PUBLIC_CONSUMER_ID.id);
+        GenericApplicationModel jsonModel = getResponseAsJsonModel(defaultMetricsConsumerId.id);
 
         assertEquals(1, jsonModel.nodes.size());
         GenericJsonModel nodeModel = jsonModel.nodes.get(0);
@@ -128,8 +148,25 @@ public class ApplicationMetricsHandlerTest {
     }
 
     @Test
+    public void prometheus_response_contains_hostname() {
+        String response = testDriver.sendRequest(PROMETHEUS_VALUES_URI).readAll();
+        Arrays.stream(response.split("\n"))
+                .filter(line -> line.contains("{"))
+                .forEach(line -> assertTrue(line.contains("hostname")));
+    }
+
+    @Test
+    public void prometheus_response_obeys_format() {
+        String response = testDriver.sendRequest(PROMETHEUS_VALUES_URI).readAll();
+        Arrays.stream(response.split("\n"))
+                .filter(line -> !line.startsWith("#"))
+                .filter(line -> !line.contains("{"))
+                .forEach(line -> assertTrue(PROMETHEUS_REGEX_FORMAT.matcher(line).find()));
+    }
+
+    @Test
     public void response_contains_services_with_metrics() {
-        GenericApplicationModel jsonModel = getResponseAsJsonModel(DEFAULT_PUBLIC_CONSUMER_ID.id);
+        GenericApplicationModel jsonModel = getResponseAsJsonModel(defaultMetricsConsumerId.id);
 
         GenericJsonModel nodeModel = jsonModel.nodes.get(0);
         assertEquals(2, nodeModel.services.size());
@@ -142,7 +179,7 @@ public class ApplicationMetricsHandlerTest {
 
     @Test
     public void metrics_processors_are_applied() {
-        GenericApplicationModel jsonModel = getResponseAsJsonModel(DEFAULT_PUBLIC_CONSUMER_ID.id);
+        GenericApplicationModel jsonModel = getResponseAsJsonModel(defaultMetricsConsumerId.id);
 
         GenericService searchnode = jsonModel.nodes.get(0).services.get(0);
         Map<String, String> dimensions = searchnode.metrics.get(0).dimensions;
@@ -166,13 +203,13 @@ public class ApplicationMetricsHandlerTest {
 
     @Test
     public void invalid_path_yields_error_response() throws Exception {
-        String response = testDriver.sendRequest(APP_METRICS_V1_URI + "/invalid").readAll();
-        JSONObject root = new JSONObject(response);
+        String response = testDriver.sendRequest(METRICS_V1_URI + "/invalid").readAll();
+        JsonNode root = jsonMapper.readTree(response);
         assertTrue(root.has("error"));
     }
 
     private GenericApplicationModel getResponseAsJsonModel(String consumer) {
-        String response = testDriver.sendRequest(APP_METRICS_VALUES_URI + "?consumer=" + consumer).readAll();
+        String response = testDriver.sendRequest(METRICS_VALUES_URI + "?consumer=" + consumer).readAll();
         try {
             return createObjectMapper().readValue(response, GenericApplicationModel.class);
         } catch (IOException e) {
@@ -201,7 +238,7 @@ public class ApplicationMetricsHandlerTest {
     private static MetricsConsumers getMetricsConsumers() {
         return new MetricsConsumers(new ConsumersConfig.Builder()
                                             .consumer(new ConsumersConfig.Consumer.Builder()
-                                                              .name(DEFAULT_PUBLIC_CONSUMER_ID.id))
+                                                              .name(defaultMetricsConsumerId.id))
                                             .consumer(new ConsumersConfig.Consumer.Builder()
                                                               .name(CUSTOM_CONSUMER))
                                             .build());

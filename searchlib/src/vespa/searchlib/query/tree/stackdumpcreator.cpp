@@ -6,6 +6,7 @@
 #include "termnodes.h"
 #include <vespa/vespalib/objects/nbo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/searchlib/parsequery/parse.h>
 
 using vespalib::string;
@@ -146,7 +147,7 @@ class QueryNodeConverter : public QueryVisitor {
     }
 
     void visit(Phrase &node) override {
-        createComplexIntermediate(node, node.getChildren(), (ParseItem::ITEM_PHRASE | ParseItem::IF_WEIGHT));
+        createComplexIntermediate(node, node.getChildren(), (static_cast<uint8_t>(ParseItem::ITEM_PHRASE) | static_cast<uint8_t>(ParseItem::IF_WEIGHT)));
     }
 
     template <typename NODE>
@@ -168,26 +169,36 @@ class QueryNodeConverter : public QueryVisitor {
         if (typefield & ParseItem::IF_FLAGS) {
             appendByte(flags);
         }
-        appendCompressedPositiveNumber(node.getChildren().size());
+        appendCompressedPositiveNumber(node.getNumTerms());
         appendString(node.getView());
     }
 
+    void createMultiTermNodes(const MultiTerm & mt) {
+        for (size_t i = 0; i < mt.getNumTerms(); ++i) {
+            auto term = mt.getAsString(i);
+            uint8_t typeField = static_cast<uint8_t>(ParseItem::ITEM_PURE_WEIGHTED_STRING) | static_cast<uint8_t>(ParseItem::IF_WEIGHT);
+            appendByte(typeField);
+            appendCompressedNumber(term.second.percent());
+            appendString(term.first);
+        }
+    }
+
     void visit(WeightedSetTerm &node) override {
-        createWeightedSet(node, ParseItem::ITEM_WEIGHTED_SET | ParseItem::IF_WEIGHT);
-        visitNodes(node.getChildren());
+        createWeightedSet(node, static_cast<uint8_t>(ParseItem::ITEM_WEIGHTED_SET) | static_cast<uint8_t>(ParseItem::IF_WEIGHT));
+        createMultiTermNodes(node);
     }
 
     void visit(DotProduct &node) override {
-        createWeightedSet(node, ParseItem::ITEM_DOT_PRODUCT | ParseItem::IF_WEIGHT);
-        visitNodes(node.getChildren());
+        createWeightedSet(node, static_cast<uint8_t>(ParseItem::ITEM_DOT_PRODUCT) | static_cast<uint8_t>(ParseItem::IF_WEIGHT));
+        createMultiTermNodes(node);
     }
 
     void visit(WandTerm &node) override {
-        createWeightedSet(node, ParseItem::ITEM_WAND | ParseItem::IF_WEIGHT);
+        createWeightedSet(node, static_cast<uint8_t>(ParseItem::ITEM_WAND) | static_cast<uint8_t>(ParseItem::IF_WEIGHT));
         appendCompressedPositiveNumber(node.getTargetNumHits());
         appendDouble(node.getScoreThreshold());
         appendDouble(node.getThresholdBoostFactor());
-        visitNodes(node.getChildren());
+        createMultiTermNodes(node);
     }
 
     void visit(Rank &node) override {
@@ -228,7 +239,7 @@ class QueryNodeConverter : public QueryVisitor {
     }
 
     void visit(LocationTerm &node) override {
-        createTerm(node, ParseItem::ITEM_NUMTERM);
+        createTerm(node, ParseItem::ITEM_GEO_LOCATION_TERM);
     }
 
     void visit(PrefixTerm &node) override {
@@ -263,11 +274,14 @@ class QueryNodeConverter : public QueryVisitor {
         createTermNode(node, ParseItem::ITEM_NEAREST_NEIGHBOR);
         appendString(node.get_query_tensor_name());
         appendCompressedPositiveNumber(node.get_target_num_hits());
+        appendCompressedPositiveNumber(node.get_allow_approximate() ? 0x1 : 0x0);
+        appendCompressedPositiveNumber(node.get_explore_additional_hits());
+        appendDouble(node.get_distance_threshold());
     }
 
 public:
     QueryNodeConverter()
-        : _buf(4096)
+        : _buf(4_Ki)
     {
     }
 

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 public class ClusterEvent implements Event{
@@ -8,9 +8,9 @@ public class ClusterEvent implements Event{
         MASTER_ELECTION
     }
 
-    private String description;
+    private final String description;
     private long timeMs = 0;
-    private Type type;
+    private final Type type;
 
     public ClusterEvent(Type type, String description, long timeMs) {
         this.type = type;

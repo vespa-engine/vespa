@@ -2,12 +2,13 @@
 
 #include "iaccelrated.h"
 #include "generic.h"
-#include "sse2.h"
-#include "avx.h"
+#ifdef __x86_64__
 #include "avx2.h"
 #include "avx512.h"
+#endif
 #include <vespa/vespalib/util/memory.h>
 #include <cstdio>
+#include <vector>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.hwaccelrated");
@@ -18,7 +19,7 @@ namespace {
 
 class Factory {
 public:
-    virtual ~Factory() { }
+    virtual ~Factory() = default;
     virtual IAccelrated::UP create() const = 0;
 };
 
@@ -27,16 +28,7 @@ public:
     IAccelrated::UP create() const override { return std::make_unique<GenericAccelrator>(); }
 };
 
-class Sse2Factory :public Factory{
-public:
-    IAccelrated::UP create() const override { return std::make_unique<Sse2Accelrator>(); }
-};
-
-class AvxFactory :public Factory{
-public:
-    IAccelrated::UP create() const override { return std::make_unique<AvxAccelrator>(); }
-};
-
+#ifdef __x86_64__
 class Avx2Factory :public Factory{
 public:
     IAccelrated::UP create() const override { return std::make_unique<Avx2Accelrator>(); }
@@ -46,18 +38,29 @@ class Avx512Factory :public Factory{
 public:
     IAccelrated::UP create() const override { return std::make_unique<Avx512Accelrator>(); }
 };
+#endif
 
 template<typename T>
-void verifyAccelrator(const IAccelrated & accel)
+std::vector<T> createAndFill(size_t sz) {
+    std::vector<T> v(sz);
+    for (size_t i(0); i < sz; i++) {
+        v[i] = rand()%100;
+    }
+    return v;
+}
+
+template<typename T>
+void
+verifyDotproduct(const IAccelrated & accel)
 {
-    const size_t testLength(127);
-    T * a = new T[testLength];
-    T * b = new T[testLength];
+    const size_t testLength(255);
+    srand(1);
+    std::vector<T> a = createAndFill<T>(testLength);
+    std::vector<T> b = createAndFill<T>(testLength);
     for (size_t j(0); j < 0x20; j++) {
         T sum(0);
         for (size_t i(j); i < testLength; i++) {
-            a[i] = b[i] = i;
-            sum += i*i;
+            sum += a[i]*b[i];
         }
         T hwComputedSum(accel.dotProduct(&a[j], &b[j], testLength - j));
         if (sum != hwComputedSum) {
@@ -65,11 +68,30 @@ void verifyAccelrator(const IAccelrated & accel)
             LOG_ABORT("should not be reached");
         }
     }
-    delete [] a;
-    delete [] b;
 }
 
-void verifyPopulationCount(const IAccelrated & accel)
+template<typename T>
+void
+verifyEuclideanDistance(const IAccelrated & accel) {
+    const size_t testLength(255);
+    srand(1);
+    std::vector<T> a = createAndFill<T>(testLength);
+    std::vector<T> b = createAndFill<T>(testLength);
+    for (size_t j(0); j < 0x20; j++) {
+        T sum(0);
+        for (size_t i(j); i < testLength; i++) {
+            sum += (a[i] - b[i]) * (a[i] - b[i]);
+        }
+        T hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
+        if (sum != hwComputedSum) {
+            fprintf(stderr, "Accelrator is not computing euclidean distance correctly.\n");
+            LOG_ABORT("should not be reached");
+        }
+    }
+}
+
+void
+verifyPopulationCount(const IAccelrated & accel)
 {
     const uint64_t words[7] = {0x123456789abcdef0L,  // 32
                                0x0000000000000000L,  // 0
@@ -86,27 +108,143 @@ void verifyPopulationCount(const IAccelrated & accel)
     }
 }
 
+void
+fill(std::vector<uint64_t> & v, size_t n) {
+    v.reserve(n);
+    for (size_t i(0); i < n; i++) {
+        v.emplace_back(random());
+    }
+}
+
+void
+simpleAndWith(std::vector<uint64_t> & dest, const std::vector<uint64_t> & src) {
+    for (size_t i(0); i < dest.size(); i++) {
+        dest[i] &= src[i];
+    }
+}
+
+void
+simpleOrWith(std::vector<uint64_t> & dest, const std::vector<uint64_t> & src) {
+    for (size_t i(0); i < dest.size(); i++) {
+        dest[i] |= src[i];
+    }
+}
+
+std::vector<uint64_t>
+simpleInvert(const std::vector<uint64_t> & src) {
+    std::vector<uint64_t> inverted;
+    inverted.reserve(src.size());
+    for (size_t i(0); i < src.size(); i++) {
+        inverted.push_back(~src[i]);
+    }
+    return inverted;
+}
+
+std::vector<uint64_t>
+optionallyInvert(bool invert, std::vector<uint64_t> v) {
+    return invert ? simpleInvert(std::move(v)) : std::move(v);
+}
+
+bool shouldInvert(bool invertSome) {
+    return invertSome ? (random() & 1) : false;
+}
+
+void
+verifyOr64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> & vectors,
+           size_t offset, size_t num_vectors, bool invertSome)
+{
+    std::vector<std::pair<const void *, bool>> vRefs;
+    for (size_t j(0); j < num_vectors; j++) {
+        vRefs.emplace_back(&vectors[j][0], shouldInvert(invertSome));
+    }
+
+    std::vector<uint64_t> expected = optionallyInvert(vRefs[0].second, vectors[0]);
+    for (size_t j = 1; j < num_vectors; j++) {
+        simpleOrWith(expected, optionallyInvert(vRefs[j].second, vectors[j]));
+    }
+
+    uint64_t dest[8] __attribute((aligned(64)));
+    accel.or64(offset*sizeof(uint64_t), vRefs, dest);
+    int diff = memcmp(&expected[offset], dest, sizeof(dest));
+    if (diff != 0) {
+        LOG_ABORT("Accelerator fails to compute correct 64 bytes OR");
+    }
+}
+
+void
+verifyAnd64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> & vectors,
+           size_t offset, size_t num_vectors, bool invertSome)
+{
+    std::vector<std::pair<const void *, bool>> vRefs;
+    for (size_t j(0); j < num_vectors; j++) {
+        vRefs.emplace_back(&vectors[j][0], shouldInvert(invertSome));
+    }
+    std::vector<uint64_t> expected = optionallyInvert(vRefs[0].second, vectors[0]);
+    for (size_t j = 1; j < num_vectors; j++) {
+        simpleAndWith(expected, optionallyInvert(vRefs[j].second, vectors[j]));
+    }
+
+    uint64_t dest[8] __attribute((aligned(64)));
+    accel.and64(offset*sizeof(uint64_t), vRefs, dest);
+    int diff = memcmp(&expected[offset], dest, sizeof(dest));
+    if (diff != 0) {
+        LOG_ABORT("Accelerator fails to compute correct 64 bytes AND");
+    }
+}
+
+void
+verifyOr64(const IAccelrated & accel) {
+    std::vector<std::vector<uint64_t>> vectors(3) ;
+    for (auto & v : vectors) {
+        fill(v, 16);
+    }
+    for (size_t offset = 0; offset < 8; offset++) {
+        for (size_t i = 1; i < vectors.size(); i++) {
+            verifyOr64(accel, vectors, offset, i, false);
+            verifyOr64(accel, vectors, offset, i, true);
+        }
+    }
+}
+
+void
+verifyAnd64(const IAccelrated & accel) {
+    std::vector<std::vector<uint64_t>> vectors(3);
+    for (auto & v : vectors) {
+        fill(v, 16);
+    }
+    for (size_t offset = 0; offset < 8; offset++) {
+        for (size_t i = 1; i < vectors.size(); i++) {
+            verifyAnd64(accel, vectors, offset, i, false);
+            verifyAnd64(accel, vectors, offset, i, true);
+        }
+    }
+}
+
 class RuntimeVerificator
 {
 public:
     RuntimeVerificator();
+private:
+    void verify(const IAccelrated & accelrated) {
+        verifyDotproduct<float>(accelrated);
+        verifyDotproduct<double>(accelrated);
+        verifyDotproduct<int32_t>(accelrated);
+        verifyDotproduct<int64_t>(accelrated);
+        verifyEuclideanDistance<float>(accelrated);
+        verifyEuclideanDistance<double>(accelrated);
+        verifyPopulationCount(accelrated);
+        verifyAnd64(accelrated);
+        verifyOr64(accelrated);
+    }
 };
 
 RuntimeVerificator::RuntimeVerificator()
 {
-   GenericAccelrator generic;
-   verifyAccelrator<float>(generic); 
-   verifyAccelrator<double>(generic); 
-   verifyAccelrator<int32_t>(generic); 
-   verifyAccelrator<int64_t>(generic);
-   verifyPopulationCount(generic);
+    GenericAccelrator generic;
+    verify(generic);
 
-   IAccelrated::UP thisCpu(IAccelrated::getAccelrator());
-   verifyAccelrator<float>(*thisCpu); 
-   verifyAccelrator<double>(*thisCpu); 
-   verifyAccelrator<int32_t>(*thisCpu); 
-   verifyAccelrator<int64_t>(*thisCpu); 
-   
+    const IAccelrated & thisCpu(IAccelrated::getAccelerator());
+    verify(thisCpu);
 }
 
 class Selector
@@ -119,18 +257,20 @@ private:
 };
 
 Selector::Selector() :
-    _factory(new GenericFactory())
+    _factory()
 {
+#ifdef __x86_64__
     __builtin_cpu_init ();
     if (__builtin_cpu_supports("avx512f")) {
-        _factory.reset(new Avx512Factory());
+        _factory = std::make_unique<Avx512Factory>();
     } else if (__builtin_cpu_supports("avx2")) {
-        _factory.reset(new Avx2Factory());
-    } else if (__builtin_cpu_supports("avx")) {
-        _factory.reset(new AvxFactory());
-    } else if (__builtin_cpu_supports("sse2")) {
-        _factory.reset(new Sse2Factory());
+        _factory = std::make_unique<Avx2Factory>();
+    } else {
+        _factory = std::make_unique<GenericFactory>();
     }
+#else
+    _factory = std::make_unique<GenericFactory>();
+#endif
 }
 
 }
@@ -139,11 +279,11 @@ static Selector _G_selector;
 
 RuntimeVerificator _G_verifyAccelrator;
 
-
-IAccelrated::UP
-IAccelrated::getAccelrator()
+const IAccelrated &
+IAccelrated::getAccelerator()
 {
-    return _G_selector.create();
+    static IAccelrated::UP accelrator = _G_selector.create();
+    return *accelrator;
 }
 
 }

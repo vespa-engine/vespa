@@ -7,7 +7,6 @@
 namespace search::aggregation {
 
 using expression::ResultNodeVector;
-using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
 
@@ -23,7 +22,7 @@ GroupingLevel::GroupingLevel() :
     _grouper(NULL)
 { }
 
-GroupingLevel::~GroupingLevel() { }
+GroupingLevel::~GroupingLevel() = default;
 
 GroupingLevel::GroupingLevel(const GroupingLevel &) = default;
 GroupingLevel & GroupingLevel::operator =(const GroupingLevel &) = default;

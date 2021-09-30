@@ -8,6 +8,24 @@
 
 namespace vespalib::eval::test {
 
+namespace {
+
+double byte(const vespalib::string &bits) {
+    int8_t res = 0;
+    assert(bits.size() == 8);
+    for (const auto &c: bits) {
+        if (c == '1') {
+            res = (res << 1) | 1;
+        } else {
+            assert(c == '0');
+            res = (res << 1);
+        }
+    }
+    return res;
+}
+
+} // <unnamed>
+
 constexpr double my_nan = std::numeric_limits<double>::quiet_NaN();
 constexpr double my_inf = std::numeric_limits<double>::infinity();
 
@@ -151,27 +169,43 @@ EvalSpec::add_function_call_cases() {
     add_rule({"a", -1.0, 1.0}, "relu(a)", [](double a){ return std::max(a, 0.0); });
     add_rule({"a", -1.0, 1.0}, "sigmoid(a)", [](double a){ return 1.0 / (1.0 + std::exp(-1.0 * a)); });
     add_rule({"a", -1.0, 1.0}, "elu(a)", [](double a){ return (a < 0) ? std::exp(a)-1 : a; });
+    add_rule({"a", -1.0, 1.0}, "erf(a)", [](double a){ return std::erf(a); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "atan2(a,b)", [](double a, double b){ return std::atan2(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "ldexp(a,b)", [](double a, double b){ return std::ldexp(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "pow(a,b)", [](double a, double b){ return std::pow(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "fmod(a,b)", [](double a, double b){ return std::fmod(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "min(a,b)", [](double a, double b){ return std::min(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "max(a,b)", [](double a, double b){ return std::max(a, b); });
+    add_expression({"a", "b"}, "bit(a,b)")
+        .add_case({-128, 7}, 1.0).add_case({-128, 6}, 0.0).add_case({-128, 5}, 0.0).add_case({-128, 4}, 0.0)
+        .add_case({-128, 3}, 0.0).add_case({-128, 2}, 0.0).add_case({-128, 1}, 0.0).add_case({-128, 0}, 0.0)
+        .add_case({-43, 7}, 1.0).add_case({-43, 6}, 1.0).add_case({-43, 5}, 0.0).add_case({-43, 4}, 1.0)
+        .add_case({-43, 3}, 0.0).add_case({-43, 2}, 1.0).add_case({-43, 1}, 0.0).add_case({-43, 0}, 1.0)
+        .add_case({0, 7}, 0.0).add_case({0, 6}, 0.0).add_case({0, 5}, 0.0).add_case({0, 4}, 0.0)
+        .add_case({0, 3}, 0.0).add_case({0, 2}, 0.0).add_case({0, 1}, 0.0).add_case({0, 0}, 0.0)
+        .add_case({85, 7}, 0.0).add_case({85, 6}, 1.0).add_case({85, 5}, 0.0).add_case({85, 4}, 1.0)
+        .add_case({85, 3}, 0.0).add_case({85, 2}, 1.0).add_case({85, 1}, 0.0).add_case({85, 0}, 1.0)
+        .add_case({127, 7}, 0.0).add_case({127, 6}, 1.0).add_case({127, 5}, 1.0).add_case({127, 4}, 1.0)
+        .add_case({127, 3}, 1.0).add_case({127, 2}, 1.0).add_case({127, 1}, 1.0).add_case({127, 0}, 1.0);
+    add_expression({"a", "b"}, "hamming(a,b)")
+        .add_case({0, 0}, 0.0).add_case({-1, -1}, 0.0).add_case({-1, 0}, 8.0).add_case({0, -1}, 8.0)
+        .add_case({byte("11001100"), byte("10101010")}, 4.0).add_case({byte("11001100"), byte("11110000")}, 4.0);
 }
 
 void
 EvalSpec::add_tensor_operation_cases() {
     add_rule({"a", -1.0, 1.0}, "map(a,f(x)(sin(x)))", [](double x){ return std::sin(x); });
-    add_rule({"a", -1.0, 1.0}, "map(a,f(x)(x+x*3))", [](double x){ return (x + (x * 3)); });
+    add_rule({"a", -1.0, 1.0}, "map(a,f(x)(x*x*3))", [](double x){ return ((x * x) * 3); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "join(a,b,f(x,y)(x+y))", [](double x, double y){ return (x + y); });
-    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "join(a,b,f(x,y)(x+y*3))", [](double x, double y){ return (x + (y * 3)); });
+    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "join(a,b,f(x,y)(x*y*3))", [](double x, double y){ return ((x * y) * 3); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "merge(a,b,f(x,y)(x+y))", [](double x, double y){ return (x + y); });
-    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "merge(a,b,f(x,y)(x+y*3))", [](double x, double y){ return (x + (y * 3)); });
+    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "merge(a,b,f(x,y)(x*y*3))", [](double x, double y){ return ((x * y) * 3); });
     add_rule({"a", -1.0, 1.0}, "reduce(a,avg)", [](double a){ return a; });
     add_rule({"a", -1.0, 1.0}, "reduce(a,count)", [](double){ return 1.0; });
     add_rule({"a", -1.0, 1.0}, "reduce(a,prod)", [](double a){ return a; });
     add_rule({"a", -1.0, 1.0}, "reduce(a,sum)", [](double a){ return a; });
     add_rule({"a", -1.0, 1.0}, "reduce(a,max)", [](double a){ return a; });
+    add_rule({"a", -1.0, 1.0}, "reduce(a,median)", [](double a){ return a; });
     add_rule({"a", -1.0, 1.0}, "reduce(a,min)", [](double a){ return a; });
     add_expression({"a"}, "rename(a,x,y)");
     add_expression({"a"}, "rename(a,(x,y),(y,x))");
@@ -179,6 +213,7 @@ EvalSpec::add_tensor_operation_cases() {
     add_expression({}, "tensor(x[10],y[10])(x==y)");
     add_expression({"a","b"}, "concat(a,b,x)");
     add_expression({"a","b"}, "concat(a,b,y)");
+    add_expression({"a"}, "cell_cast(a,float)");
     add_expression({}, "tensor(x[3]):{{x:0}:0,{x:1}:1,{x:2}:2}");
     add_expression({"a"}, "a{x:3}");
 }

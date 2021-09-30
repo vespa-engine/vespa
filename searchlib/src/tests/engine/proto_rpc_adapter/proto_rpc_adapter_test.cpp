@@ -6,7 +6,9 @@
 #include <vespa/searchlib/engine/searchapi.h>
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/searchlib/engine/monitorapi.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
+#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <thread>
@@ -60,7 +62,7 @@ struct MyDocsumServer : DocsumServer {
 };
 
 struct MyMonitorServer : MonitorServer {
-    MonitorReply::UP ping(MonitorRequest::UP req, MonitorClient &) override {
+    std::unique_ptr<MonitorReply> ping(std::unique_ptr<MonitorRequest> req, MonitorClient &) override {
         (void) req;
         assert(req);
         auto reply = std::make_unique<MonitorReply>();
@@ -83,7 +85,7 @@ struct ProtoRpcAdapterTest : ::testing::Test {
     FRT_Target *connect() {
         return server.supervisor().GetTarget(server.supervisor().GetListenPort());
     }
-    ~ProtoRpcAdapterTest() = default;
+    ~ProtoRpcAdapterTest() override = default;
 };
 
 //-----------------------------------------------------------------------------

@@ -4,10 +4,10 @@
 
 namespace proton {
 
-JobTrackedMaintenanceJob::JobTrackedMaintenanceJob(const IJobTracker::SP &tracker,
-                                                   IMaintenanceJob::UP job)
+JobTrackedMaintenanceJob::JobTrackedMaintenanceJob(IJobTracker::SP tracker,
+                                                   IMaintenanceJob::SP job)
     : IMaintenanceJob(job->getName(), job->getDelay(), job->getInterval()),
-      _tracker(tracker),
+      _tracker(std::move(tracker)),
       _job(std::move(job)),
       _running(false)
 {

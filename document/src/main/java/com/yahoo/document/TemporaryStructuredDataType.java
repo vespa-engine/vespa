@@ -2,9 +2,10 @@
 package com.yahoo.document;
 
 /**
- * Internal class, DO NOT USE!!&nbsp;Only public because it must be used from com.yahoo.searchdefinition.parser.
+ * Internal class, DO NOT USE!!
+ * Only public because it must be used from com.yahoo.searchdefinition.parser.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class TemporaryStructuredDataType extends StructDataType {
 
@@ -29,4 +30,5 @@ public class TemporaryStructuredDataType extends StructDataType {
         super.setName(name);
         setId(createId(getName()));
     }
+
 }

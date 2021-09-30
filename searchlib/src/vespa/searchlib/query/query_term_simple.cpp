@@ -25,7 +25,7 @@ void
 QueryTermSimple::visitMembers(vespalib::ObjectVisitor & visitor) const
 {
     visit(visitor, "term", _term);
-    visit(visitor, "type", _type);
+    visit(visitor, "type", static_cast<uint32_t>(_type));
 }
 
 template <typename N>
@@ -189,17 +189,6 @@ bool QueryTermSimple::getAsDoubleTerm(double & lower, double & upper) const
     return getAsNumericTerm(lower, upper, DoubleDecoder());
 }
 
-QueryTermSimple::QueryTermSimple() :
-    _type(WORD),
-    _rangeLimit(0),
-    _maxPerGroup(0),
-    _diversityCutoffGroups(std::numeric_limits<uint32_t>::max()),
-    _diversityCutoffStrict(false),
-    _valid(true),
-    _term(),
-    _diversityAttribute()
-{ }
-
 QueryTermSimple::~QueryTermSimple() = default;
 
 namespace {
@@ -213,15 +202,15 @@ bool isFullRange(vespalib::stringref s) {
 
 }
 
-QueryTermSimple::QueryTermSimple(const string & term_, SearchTerm type) :
-    _type(type),
-    _rangeLimit(0),
-    _maxPerGroup(0),
-    _diversityCutoffGroups(std::numeric_limits<uint32_t>::max()),
-    _diversityCutoffStrict(false),
-    _valid(true),
-    _term(term_),
-    _diversityAttribute()
+QueryTermSimple::QueryTermSimple(const string & term_, Type type)
+    : _rangeLimit(0),
+      _maxPerGroup(0),
+      _diversityCutoffGroups(std::numeric_limits<uint32_t>::max()),
+      _type(type),
+      _diversityCutoffStrict(false),
+      _valid(true),
+      _term(term_),
+      _diversityAttribute()
 {
     if (isFullRange(_term)) {
         stringref rest(_term.c_str() + 1, _term.size() - 2);
@@ -272,7 +261,7 @@ QueryTermSimple::getAsNumericTerm(T & lower, T & upper, D d) const
     bool valid(empty());
     size_t sz(_term.size());
     if (sz) {
-        char *err(NULL);
+        char *err(nullptr);
         T low(lower);
         T high(upper);
         const char * q = _term.c_str();
@@ -320,8 +309,8 @@ QueryTermSimple::getClassName() const
 
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
-           const search::QueryTermSimple *obj)
+void
+visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const search::QueryTermSimple *obj)
 {
     if (obj != 0) {
         self.openStruct(name, obj->getClassName());
@@ -332,8 +321,8 @@ void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
     }
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
-           const search::QueryTermSimple &obj)
+void
+visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const search::QueryTermSimple &obj)
 {
     visit(self, name, &obj);
 }

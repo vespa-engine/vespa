@@ -12,7 +12,6 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.FeatureNames;
-import com.yahoo.searchdefinition.MapEvaluationTypeContext;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
@@ -24,19 +23,10 @@ import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
-import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
-import com.yahoo.searchlib.rankingexpression.rule.GeneratorLambdaFunctionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
-import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.functions.Generate;
-import com.yahoo.tensor.functions.Join;
-import com.yahoo.tensor.functions.Reduce;
-import com.yahoo.tensor.functions.Rename;
-import com.yahoo.tensor.functions.ScalarFunctions;
-import com.yahoo.tensor.functions.TensorFunction;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 
 import java.io.BufferedReader;
@@ -89,37 +79,40 @@ public class ConvertedModel {
      *
      * @param modelPath the path to the model
      * @param pathIsFile true if that path (this kind of model) is stored in a file, false if it is in a directory
+     * @param context the transform context
      */
-    public static ConvertedModel fromSourceOrStore(Path modelPath, boolean pathIsFile, RankProfileTransformContext context) {
+    public static ConvertedModel fromSourceOrStore(Path modelPath,
+                                                   boolean pathIsFile,
+                                                   RankProfileTransformContext context) {
+        ApplicationPackage applicationPackage = context.rankProfile().applicationPackage();
         ImportedMlModel sourceModel = // TODO: Convert to name here, make sure its done just one way
-                context.importedModels().get(sourceModelFile(context.rankProfile().applicationPackage(), modelPath));
+                context.importedModels().get(sourceModelFile(applicationPackage, modelPath));
         ModelName modelName = new ModelName(context.rankProfile().getName(), modelPath, pathIsFile);
 
-        if (sourceModel == null && ! new ModelStore(context.rankProfile().applicationPackage(), modelName).exists())
+        if (sourceModel == null && ! new ModelStore(applicationPackage, modelName).exists())
             throw new IllegalArgumentException("No model '" + modelPath + "' is available. Available models: " +
                                                context.importedModels().all().stream().map(ImportedMlModel::source).collect(Collectors.joining(", ")));
 
         if (sourceModel != null) {
-            return fromSource(modelName,
-                              modelPath.toString(),
-                              context.rankProfile(),
-                              context.queryProfiles(),
-                              sourceModel);
+            if ( ! sourceModel.isNative()) {
+                sourceModel = sourceModel.asNative();
+            }
+            return fromSource(applicationPackage, modelName, modelPath.toString(), context.rankProfile(),
+                              context.queryProfiles(), sourceModel);
         }
         else {
-            return fromStore(modelName,
-                             modelPath.toString(),
-                             context.rankProfile());
+            return fromStore(applicationPackage, modelName, modelPath.toString(), context.rankProfile());
         }
     }
 
-    public static ConvertedModel fromSource(ModelName modelName,
+    public static ConvertedModel fromSource(ApplicationPackage applicationPackage,
+                                            ModelName modelName,
                                             String modelDescription,
                                             RankProfile rankProfile,
                                             QueryProfileRegistry queryProfileRegistry,
                                             ImportedMlModel importedModel) {
         try {
-            ModelStore modelStore = new ModelStore(rankProfile.applicationPackage(), modelName);
+            ModelStore modelStore = new ModelStore(applicationPackage, modelName);
             return new ConvertedModel(modelName,
                                       modelDescription,
                                       convertAndStore(importedModel, rankProfile, queryProfileRegistry, modelStore),
@@ -131,11 +124,12 @@ public class ConvertedModel {
         }
     }
 
-    public static ConvertedModel fromStore(ModelName modelName,
+    public static ConvertedModel fromStore(ApplicationPackage applicationPackage,
+                                           ModelName modelName,
                                            String modelDescription,
                                            RankProfile rankProfile) {
         try {
-            ModelStore modelStore = new ModelStore(rankProfile.applicationPackage(), modelName);
+            ModelStore modelStore = new ModelStore(applicationPackage, modelName);
             return new ConvertedModel(modelName,
                                       modelDescription,
                                       convertStored(modelStore, rankProfile),
@@ -160,7 +154,7 @@ public class ConvertedModel {
      */
     public ExpressionNode expression(FeatureArguments arguments, RankProfileTransformContext context) {
         ExpressionFunction expression = selectExpression(arguments);
-        if (sourceModel.isPresent()) // we should verify
+        if (sourceModel.isPresent() && context != null) // we should verify
             verifyInputs(expression.getBody(), sourceModel.get(), context.rankProfile(), context.queryProfiles());
         return expression.getBody().getRoot();
     }
@@ -220,10 +214,11 @@ public class ConvertedModel {
         Map<String, ExpressionFunction> expressions = new HashMap<>();
         for (ImportedMlFunction outputFunction : model.outputExpressions()) {
             ExpressionFunction expression = asExpressionFunction(outputFunction);
-            addExpression(expression, expression.getName(),
-                          constantsReplacedByFunctions,
-                          model, store, profile, queryProfiles,
-                          expressions);
+            for (Map.Entry<String, TensorType> input : expression.argumentTypes().entrySet()) {
+                profile.addInputFeature(input.getKey(), input.getValue());
+            }
+            addExpression(expression, expression.getName(), constantsReplacedByFunctions,
+                          store, profile, queryProfiles, expressions);
         }
 
         // Transform and save function - must come after reading expressions due to optimization transforms
@@ -248,38 +243,55 @@ public class ConvertedModel {
                                           function.returnType().map(TensorType::fromSpec));
         }
         catch (ParseException e) {
-            throw new IllegalArgumentException("Gor an illegal argument from importing " + function.name(), e);
+            throw new IllegalArgumentException("Got an illegal argument from importing " + function.name(), e);
         }
     }
 
     private static void addExpression(ExpressionFunction expression,
                                       String expressionName,
                                       Set<String> constantsReplacedByFunctions,
-                                      ImportedMlModel model,
                                       ModelStore store,
                                       RankProfile profile,
                                       QueryProfileRegistry queryProfiles,
                                       Map<String, ExpressionFunction> expressions) {
         expression = expression.withBody(replaceConstantsByFunctions(expression.getBody(), constantsReplacedByFunctions));
-        reduceBatchDimensions(expression.getBody(), model, profile, queryProfiles);
+        if (expression.returnType().isEmpty()) {
+            TensorType type = expression.getBody().type(profile.typeContext(queryProfiles));
+            if (type != null) {
+                expression = expression.withReturnType(type);
+            }
+        }
         store.writeExpression(expressionName, expression);
         expressions.put(expressionName, expression);
     }
 
     private static Map<String, ExpressionFunction> convertStored(ModelStore store, RankProfile profile) {
-        for (Pair<String, Tensor> constant : store.readSmallConstants())
+        for (Pair<String, Tensor> constant : store.readSmallConstants()) {
             profile.addConstant(constant.getFirst(), asValue(constant.getSecond()));
+        }
 
         for (RankingConstant constant : store.readLargeConstants()) {
-            if ( ! profile.rankingConstants().asMap().containsKey(constant.getName()))
-                profile.rankingConstants().add(constant);
+            profile.rankingConstants().putIfAbsent(constant);
         }
 
         for (Pair<String, RankingExpression> function : store.readFunctions()) {
             addGeneratedFunctionToProfile(profile, function.getFirst(), function.getSecond());
         }
 
-        return store.readExpressions();
+        Map<String, ExpressionFunction> expressions = new HashMap<>();
+        for (Pair<String, ExpressionFunction> output : store.readExpressions()) {
+            String name = output.getFirst();
+            ExpressionFunction expression = output.getSecond();
+            for (Map.Entry<String, TensorType> input : expression.argumentTypes().entrySet()) {
+                profile.addInputFeature(input.getKey(), input.getValue());
+            }
+            TensorType type = expression.getBody().type(profile.typeContext());
+            if (type != null) {
+                expression = expression.withReturnType(type);
+            }
+            expressions.put(name, expression);
+        }
+        return expressions;
     }
 
     private static void transformSmallConstant(ModelStore store, RankProfile profile, String constantName,
@@ -305,11 +317,10 @@ public class ConvertedModel {
             constantsReplacedByFunctions.add(constantName); // will replace constant(constantName) by constantName later
         }
         else {
-            Path constantPath = store.writeLargeConstant(constantName, constantValue);
-            if ( ! profile.rankingConstants().asMap().containsKey(constantName)) {
-                profile.rankingConstants().add(new RankingConstant(constantName, constantValue.type(),
-                                                                   constantPath.toString()));
-            }
+            profile.rankingConstants().computeIfAbsent(constantName, name -> {
+                Path constantPath = store.writeLargeConstant(name, constantValue);
+                return new RankingConstant(name, constantValue.type(), constantPath.toString());
+            });
         }
     }
 
@@ -331,7 +342,9 @@ public class ConvertedModel {
                                                    "\nwant to add " + expression + "\n");
             return;
         }
-        profile.addFunction(new ExpressionFunction(functionName, expression), false);  // TODO: Inline if only used once
+        ExpressionFunction function = new ExpressionFunction(functionName, expression);
+        // XXX should we resolve type here?
+        profile.addFunction(function, false);  // TODO: Inline if only used once
     }
 
     /**
@@ -344,7 +357,7 @@ public class ConvertedModel {
         addFunctionNamesIn(expression.getRoot(), functionNames, model);
         for (String functionName : functionNames) {
             Optional<TensorType> requiredType = model.inputTypeSpec(functionName).map(TensorType::fromSpec);
-            if ( ! requiredType.isPresent()) continue; // Not a required function
+            if ( requiredType.isEmpty()) continue; // Not a required function
 
             RankProfile.RankingExpressionFunction rankingExpressionFunction = profile.getFunctions().get(functionName);
             if (rankingExpressionFunction == null)
@@ -377,146 +390,6 @@ public class ConvertedModel {
     /** Add the generated functions to the rank profile */
     private static void addGeneratedFunctions(ImportedMlModel model, RankProfile profile) {
         model.functions().forEach((k, v) -> addGeneratedFunctionToProfile(profile, k, RankingExpression.from(v)));
-    }
-
-    /**
-     * Check if batch dimensions of inputs can be reduced out. If the input
-     * function specifies that a single exemplar should be evaluated, we can
-     * reduce the batch dimension out.
-     */
-    private static void reduceBatchDimensions(RankingExpression expression, ImportedMlModel model,
-                                              RankProfile profile, QueryProfileRegistry queryProfiles) {
-        MapEvaluationTypeContext typeContext = profile.typeContext(queryProfiles);
-
-        // Add any missing inputs for type resolution
-        Set<String> functionNames = new HashSet<>();
-        addFunctionNamesIn(expression.getRoot(), functionNames, model);
-        for (String functionName : functionNames) {
-            Optional<TensorType> requiredType = model.inputTypeSpec(functionName).map(TensorType::fromSpec);
-            if (requiredType.isPresent()) {
-                Reference ref = Reference.fromIdentifier(functionName);
-                if (typeContext.getType(ref).equals(TensorType.empty)) {
-                    typeContext.setType(ref, requiredType.get());
-                }
-            }
-        }
-        typeContext.forgetResolvedTypes();
-
-        TensorType typeBeforeReducing = expression.getRoot().type(typeContext);
-
-        // Check generated functions for inputs to reduce
-        for (String functionName : functionNames) {
-            if ( ! model.functions().containsKey(functionName)) continue;
-
-            RankProfile.RankingExpressionFunction rankingExpressionFunction = profile.getFunctions().get(functionName);
-            if (rankingExpressionFunction == null) {
-                throw new IllegalArgumentException("Model refers to generated function '" + functionName +
-                                                   "but this function is not present in " + profile);
-            }
-            RankingExpression functionExpression = rankingExpressionFunction.function().getBody();
-            functionExpression.setRoot(reduceBatchDimensionsAtInput(functionExpression.getRoot(), model, typeContext));
-        }
-
-        // Check expression for inputs to reduce
-        ExpressionNode root = expression.getRoot();
-        root = reduceBatchDimensionsAtInput(root, model, typeContext);
-        TensorType typeAfterReducing = root.type(typeContext);
-        root = expandBatchDimensionsAtOutput(root, typeBeforeReducing, typeAfterReducing);
-        expression.setRoot(root);
-    }
-
-    private static ExpressionNode reduceBatchDimensionsAtInput(ExpressionNode node, ImportedMlModel model,
-                                                               MapEvaluationTypeContext typeContext) {
-        if (node instanceof TensorFunctionNode) {
-            TensorFunction tensorFunction = ((TensorFunctionNode) node).function();
-            if (tensorFunction instanceof Rename) {
-                List<ExpressionNode> children = ((TensorFunctionNode)node).children();
-                if (children.size() == 1 && children.get(0) instanceof ReferenceNode) {
-                    ReferenceNode referenceNode = (ReferenceNode) children.get(0);
-                    if (model.inputTypeSpec(referenceNode.getName()).isPresent()) {
-                        return reduceBatchDimensionExpression(tensorFunction, typeContext);
-                    }
-                }
-                // Modify any renames in expression to disregard batch dimension
-                else if (children.size() == 1 && children.get(0) instanceof TensorFunctionNode) {
-                    TensorFunction<Reference> childFunction = (((TensorFunctionNode) children.get(0)).function());
-                    TensorType childType = childFunction.type(typeContext);
-                    Rename rename = (Rename) tensorFunction;
-                    List<String> from = new ArrayList<>();
-                    List<String> to = new ArrayList<>();
-                    for (TensorType.Dimension dimension : childType.dimensions()) {
-                        int i = rename.fromDimensions().indexOf(dimension.name());
-                        if (i < 0) {
-                            throw new IllegalArgumentException("Rename does not contain dimension '" +
-                                    dimension + "' in child expression type: " + childType);
-                        }
-                        from.add((String)rename.fromDimensions().get(i));
-                        to.add((String)rename.toDimensions().get(i));
-                    }
-                    return new TensorFunctionNode(new Rename<>(childFunction, from, to));
-                }
-            }
-        }
-        if (node instanceof ReferenceNode) {
-            ReferenceNode referenceNode = (ReferenceNode) node;
-            if (model.inputTypeSpec(referenceNode.getName()).isPresent()) {
-                return reduceBatchDimensionExpression(TensorFunctionNode.wrap(node), typeContext);
-            }
-        }
-        if (node instanceof CompositeNode) {
-            List<ExpressionNode> children = ((CompositeNode)node).children();
-            List<ExpressionNode> transformedChildren = new ArrayList<>(children.size());
-            for (ExpressionNode child : children) {
-                transformedChildren.add(reduceBatchDimensionsAtInput(child, model, typeContext));
-            }
-            return ((CompositeNode)node).setChildren(transformedChildren);
-        }
-        return node;
-    }
-
-    private static ExpressionNode reduceBatchDimensionExpression(TensorFunction function, MapEvaluationTypeContext context) {
-        TensorFunction result = function;
-        TensorType type = function.type(context);
-        if (type.dimensions().size() > 1) {
-            List<String> reduceDimensions = new ArrayList<>();
-            for (TensorType.Dimension dimension : type.dimensions()) {
-                if (dimension.size().orElse(-1L) == 1) {
-                    reduceDimensions.add(dimension.name());
-                }
-            }
-            if (reduceDimensions.size() > 0) {
-                result = new Reduce(function, Reduce.Aggregator.sum, reduceDimensions);
-                context.forgetResolvedTypes(); // We changed types
-            }
-        }
-        return new TensorFunctionNode(result);
-    }
-
-    /**
-     * If batch dimensions have been reduced away above, bring them back here
-     * for any following computation of the tensor.
-     */
-    // TODO: determine when this is not necessary!
-    private static ExpressionNode expandBatchDimensionsAtOutput(ExpressionNode node, TensorType before, TensorType after) {
-        if (after.equals(before)) return node;
-
-        TensorType.Builder typeBuilder = new TensorType.Builder(after.valueType());
-        for (TensorType.Dimension dimension : before.dimensions()) {
-            if (dimension.size().orElse(-1L) == 1 && !after.dimensionNames().contains(dimension.name())) {
-                typeBuilder.indexed(dimension.name(), 1);
-            }
-        }
-        TensorType expandDimensionsType = typeBuilder.build();
-        if (expandDimensionsType.dimensions().size() > 0) {
-            ExpressionNode generatedExpression = new ConstantNode(new DoubleValue(1.0));
-            Generate generatedFunction = new Generate(expandDimensionsType,
-                                                      new GeneratorLambdaFunctionNode(expandDimensionsType,
-                                                                                      generatedExpression)
-                                                              .asLongListToDoubleOperator());
-            Join expand = new Join(TensorFunctionNode.wrap(node), generatedFunction, ScalarFunctions.multiply());
-            return new TensorFunctionNode(expand);
-        }
-        return node;
     }
 
     /**
@@ -553,9 +426,10 @@ public class ConvertedModel {
         if (node instanceof ReferenceNode) {
             ReferenceNode referenceNode = (ReferenceNode)node;
             if (referenceNode.getOutput() == null) { // function references cannot specify outputs
-                names.add(referenceNode.getName());
-                if (model.functions().containsKey(referenceNode.getName())) {
-                    addFunctionNamesIn(RankingExpression.from(model.functions().get(referenceNode.getName())).getRoot(), names, model);
+                if (names.add(referenceNode.getName())) {
+                    if (model.functions().containsKey(referenceNode.getName())) {
+                        addFunctionNamesIn(RankingExpression.from(model.functions().get(referenceNode.getName())).getRoot(), names, model);
+                    }
                 }
             }
         }
@@ -613,14 +487,14 @@ public class ConvertedModel {
             application.getFile(modelFiles.expressionPath(name)).writeFile(new StringReader(b.toString()));
         }
 
-        Map<String, ExpressionFunction> readExpressions() {
-            Map<String, ExpressionFunction> expressions = new HashMap<>();
+        List<Pair<String, ExpressionFunction>> readExpressions() {
+            List<Pair<String, ExpressionFunction>> expressions = new ArrayList<>();
             ApplicationFile expressionPath = application.getFile(modelFiles.expressionsPath());
-            if ( ! expressionPath.exists() || ! expressionPath.isDirectory()) return Collections.emptyMap();
+            if ( ! expressionPath.exists() || ! expressionPath.isDirectory()) return Collections.emptyList();
             for (ApplicationFile expressionFile : expressionPath.listFiles()) {
-                try (BufferedReader reader = new BufferedReader(expressionFile.createReader())){
+                try (BufferedReader reader = new BufferedReader(expressionFile.createReader())) {
                     String name = expressionFile.getPath().getName();
-                    expressions.put(name, readExpression(name, reader));
+                    expressions.add(new Pair<>(name, readExpression(name, reader)));
                 }
                 catch (IOException e) {
                     throw new UncheckedIOException("Failed reading " + expressionFile.getPath(), e);
@@ -716,7 +590,7 @@ public class ConvertedModel {
             // Write content explicitly as a file on the file system as this is distributed using file distribution
             // - but only if this is a global model to avoid writing the same constants for each rank profile
             //   where they are used
-            if (modelFiles.modelName.isGlobal()) {
+            if (modelFiles.modelName.isGlobal() || ! application.getFileReference(constantPath).exists()) {
                 createIfNeeded(constantsPath);
                 IOUtils.writeFile(application.getFileReference(constantPath), TypedBinaryFormat.encode(constant));
             }
@@ -752,7 +626,7 @@ public class ConvertedModel {
             // Secret file format for remembering constants:
             application.getFile(modelFiles.smallConstantsPath()).appendFile(name + "\t" +
                                                                             constant.type().toString() + "\t" +
-                                                                            constant.toString() + "\n");
+                                                                            constant + "\n");
         }
 
         /** Workaround for being constructed with the .preprocessed dir as root while later being used outside it */

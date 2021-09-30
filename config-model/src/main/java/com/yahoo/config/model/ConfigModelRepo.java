@@ -11,7 +11,17 @@ import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.graph.ModelGraphBuilder;
 import com.yahoo.config.model.graph.ModelNode;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
-import com.yahoo.log.LogLevel;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -29,7 +39,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Serializable;
 import java.io.StringReader;
-import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -266,7 +275,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
     // TODO: Doctoring on the XML is the wrong level for this. We should be able to mark a model as default instead   -Jon
     private static Element getImplicitAdmin(DeployState deployState) throws IOException, SAXException {
         String defaultAdminElement = deployState.isHosted() ? getImplicitAdminV4() : getImplicitAdminV2();
-        log.log(LogLevel.DEBUG, "No <admin> defined, using " + defaultAdminElement);
+        log.log(Level.FINE, () -> "No <admin> defined, using " + defaultAdminElement);
         return XmlHelper.getDocumentBuilder().parse(new InputSource(new StringReader(defaultAdminElement))).getDocumentElement();
     }
 

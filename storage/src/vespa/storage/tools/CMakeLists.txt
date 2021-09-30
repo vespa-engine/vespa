@@ -4,37 +4,16 @@ vespa_add_executable(storage_getidealstate_app
     getidealstate.cpp
     DEPENDS
     storage
-    AFTER
-    storage_storageconfig
 )
 vespa_add_executable(storage_generatedistributionbits_app
     SOURCES
     generatedistributionbits.cpp
     DEPENDS
     storage
-    AFTER
-    storage_storageconfig
-)
-vespa_add_executable(storage_analyzedistribution_app
-    SOURCES
-    analyzedistribution.cpp
-    DEPENDS
-    storage
-    AFTER
-    storage_storageconfig
 )
 vespa_add_executable(storage_storage-cmd_app
     SOURCES
     storage-cmd.cpp
     OUTPUT_NAME vespa-storage-cmd
     DEPENDS
-    AFTER
-    storage_storageconfig
-)
-vespa_add_executable(storage_statfs_app
-    SOURCES
-    statfs.cpp
-    DEPENDS
-    AFTER
-    storage_storageconfig
 )

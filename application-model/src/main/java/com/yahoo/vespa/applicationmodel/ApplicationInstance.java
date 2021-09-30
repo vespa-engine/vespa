@@ -11,24 +11,28 @@ import java.util.Set;
  */
 public class ApplicationInstance {
 
-    private final TenantId tenantId;
-    private final ApplicationInstanceId applicationInstanceId;
+    private final ApplicationInstanceReference reference;
     private final Set<ServiceCluster> serviceClusters;
 
-    public ApplicationInstance(TenantId tenantId, ApplicationInstanceId applicationInstanceId, Set<ServiceCluster> serviceClusters) {
-        this.tenantId = tenantId;
-        this.applicationInstanceId = applicationInstanceId;
+    public ApplicationInstance(TenantId tenantId,
+                               ApplicationInstanceId applicationInstanceId,
+                               Set<ServiceCluster> serviceClusters) {
+        this(new ApplicationInstanceReference(tenantId, applicationInstanceId), serviceClusters);
+    }
+
+    public ApplicationInstance(ApplicationInstanceReference reference, Set<ServiceCluster> serviceClusters) {
+        this.reference = reference;
         this.serviceClusters = serviceClusters;
     }
 
     @JsonProperty("tenantId")
     public TenantId tenantId() {
-        return tenantId;
+        return reference.tenantId();
     }
 
     @JsonProperty("applicationInstanceId")
     public ApplicationInstanceId applicationInstanceId() {
-        return applicationInstanceId;
+        return reference.applicationInstanceId();
     }
 
     @JsonProperty("serviceClusters")
@@ -38,7 +42,7 @@ public class ApplicationInstance {
 
     @JsonProperty("reference")
     public ApplicationInstanceReference reference() {
-        return new ApplicationInstanceReference(tenantId, applicationInstanceId);
+        return reference;
     }
 
     @Override
@@ -46,21 +50,19 @@ public class ApplicationInstance {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ApplicationInstance that = (ApplicationInstance) o;
-        return Objects.equals(tenantId, that.tenantId) &&
-                Objects.equals(applicationInstanceId, that.applicationInstanceId) &&
+        return Objects.equals(reference, that.reference) &&
                 Objects.equals(serviceClusters, that.serviceClusters);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tenantId, applicationInstanceId, serviceClusters);
+        return Objects.hash(reference, serviceClusters);
     }
 
     @Override
     public String toString() {
         return "ApplicationInstance{" +
-                "tenantId=" + tenantId +
-                ", applicationInstanceId=" + applicationInstanceId +
+                "reference=" + reference +
                 ", serviceClusters=" + serviceClusters +
                 '}';
     }

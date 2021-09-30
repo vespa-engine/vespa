@@ -10,7 +10,7 @@ void MemBlockBoundsCheckBaseT<MaxSizeClassMultiAllocC, StackTraceLen>::info(FILE
 {
     if (validCommon()) {
         if (level & 0x02) {
-            fprintf(os, "{ %8p(%ld, %d) ", ptr(), size(), threadId());
+            fprintf(os, "{ %8p(%ld, %u) ", ptr(), size(), threadId());
             const Stack * cStack = callStack();
             for (int i=0; i<int(StackTraceLen);i++) {
                 if (cStack[i].valid()) {
@@ -21,7 +21,7 @@ void MemBlockBoundsCheckBaseT<MaxSizeClassMultiAllocC, StackTraceLen>::info(FILE
             fprintf(os, " }");
         }
         if (level & 0x01) {
-            fprintf(os, " %8p(%ld, %d)", ptr(), size(), threadId());
+            fprintf(os, " %8p(%ld, %u)", ptr(), size(), threadId());
         }
         if (level == 0) {
             fprintf(os, " %8p(%ld)", ptr(), size());

@@ -1,6 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.state;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Vtag;
@@ -14,23 +19,19 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpHeaders;
-import com.yahoo.metrics.MetricsPresentationConfig;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.io.PrintStream;
-import java.io.ByteArrayOutputStream;
+
+import static com.yahoo.container.jdisc.state.JsonUtil.sanitizeDouble;
 
 /**
  * A handler which returns state (health) information from this container instance: Status, metrics and vespa version.
@@ -38,6 +39,8 @@ import java.io.ByteArrayOutputStream;
  * @author Simon Thoresen Hult
  */
 public class StateHandler extends AbstractRequestHandler {
+
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     public static final String STATE_API_ROOT = "/state/v1";
     private static final String METRICS_PATH = "metrics";
@@ -50,28 +53,28 @@ public class StateHandler extends AbstractRequestHandler {
     private final StateMonitor monitor;
     private final Timer timer;
     private final byte[] config;
-    private final SnapshotProvider snapshotPreprocessor;
+    private final SnapshotProvider snapshotProvider;
 
     @Inject
     public StateHandler(StateMonitor monitor, Timer timer, ApplicationMetadataConfig config,
-                        ComponentRegistry<SnapshotProvider> preprocessors, MetricsPresentationConfig presentation) {
+                        ComponentRegistry<SnapshotProvider> snapshotProviders) {
         this.monitor = monitor;
         this.timer = timer;
         this.config = buildConfigOutput(config);
-        snapshotPreprocessor = getSnapshotPreprocessor(preprocessors, presentation);
+        snapshotProvider = getSnapshotProviderOrThrow(snapshotProviders);
     }
 
-    static SnapshotProvider getSnapshotPreprocessor(ComponentRegistry<SnapshotProvider> preprocessors, MetricsPresentationConfig presentation) {
+    static SnapshotProvider getSnapshotProviderOrThrow(ComponentRegistry<SnapshotProvider> preprocessors) {
         List<SnapshotProvider> allPreprocessors = preprocessors.allComponents();
-        if (presentation.slidingwindow() && allPreprocessors.size() > 0) {
+        if (allPreprocessors.size() > 0) {
             return allPreprocessors.get(0);
         } else {
-            return null;
+            throw new IllegalArgumentException("At least one snapshot provider is required.");
         }
     }
 
     @Override
-    public ContentChannel handleRequest(final Request request, ResponseHandler handler) {
+    public ContentChannel handleRequest(Request request, ResponseHandler handler) {
         new ResponseDispatch() {
 
             @Override
@@ -128,17 +131,16 @@ public class StateHandler extends AbstractRequestHandler {
             }
             base.append(STATE_API_ROOT);
             String uriBase = base.toString();
-            JSONArray linkList = new JSONArray();
+            ArrayNode linkList = jsonMapper.createArrayNode();
             for (String api : new String[] {METRICS_PATH, CONFIG_GENERATION_PATH, HEALTH_PATH, VERSION_PATH}) {
-                JSONObject resource = new JSONObject();
+                ObjectNode resource = jsonMapper.createObjectNode();
                 resource.put("url", uriBase + "/" + api);
-                linkList.put(resource);
+                linkList.add(resource);
             }
-            return new JSONObjectWithLegibleException()
-                    .put("resources", linkList)
-                    .toString(4).getBytes(StandardCharsets.UTF_8);
-        } catch (JSONException e) {
-            throw new RuntimeException("Bad JSON construction.", e);
+            JsonNode resources = jsonMapper.createObjectNode().set("resources", linkList);
+            return toPrettyString(resources);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Bad JSON construction", e);
         }
     }
 
@@ -158,112 +160,115 @@ public class StateHandler extends AbstractRequestHandler {
 
     private static byte[] buildConfigOutput(ApplicationMetadataConfig config) {
         try {
-            return new JSONObjectWithLegibleException()
-                    .put(CONFIG_GENERATION_PATH, new JSONObjectWithLegibleException()
-                            .put("generation", config.generation())
-                            .put("container", new JSONObjectWithLegibleException()
-                                    .put("generation", config.generation())))
-                    .toString(4).getBytes(StandardCharsets.UTF_8);
-        } catch (JSONException e) {
+            return toPrettyString(
+                    jsonMapper.createObjectNode()
+                            .set(CONFIG_GENERATION_PATH, jsonMapper.createObjectNode()
+                                    .put("generation", config.generation())
+                                    .set("container", jsonMapper.createObjectNode()
+                                            .put("generation", config.generation()))));
+        } catch (JsonProcessingException e) {
             throw new RuntimeException("Bad JSON construction.", e);
         }
     }
 
     private static byte[] buildVersionOutput() {
         try {
-            return new JSONObjectWithLegibleException()
-                    .put("version", Vtag.currentVersion)
-                    .toString(4).getBytes(StandardCharsets.UTF_8);
-        } catch (JSONException e) {
+            return toPrettyString(
+                    jsonMapper.createObjectNode()
+                            .put("version", Vtag.currentVersion.toString()));
+        } catch (JsonProcessingException e) {
             throw new RuntimeException("Bad JSON construction.", e);
         }
     }
 
     private byte[] buildMetricOutput(String consumer) {
         try {
-            return buildJsonForConsumer(consumer).toString(4).getBytes(StandardCharsets.UTF_8);
-        } catch (JSONException e) {
+            return toPrettyString(buildJsonForConsumer(consumer));
+        } catch (JsonProcessingException e) {
             throw new RuntimeException("Bad JSON construction.", e);
         }
     }
 
     private byte[] buildHistogramsOutput() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        if (snapshotPreprocessor != null) {
-            snapshotPreprocessor.histogram(new PrintStream(baos));
+        if (snapshotProvider != null) {
+            snapshotProvider.histogram(new PrintStream(baos));
         }
         return baos.toByteArray();
     }
 
-    private JSONObjectWithLegibleException buildJsonForConsumer(String consumer) throws JSONException {
-        JSONObjectWithLegibleException ret = new JSONObjectWithLegibleException();
+    private ObjectNode buildJsonForConsumer(String consumer) {
+        ObjectNode ret = jsonMapper.createObjectNode();
         ret.put("time", timer.currentTimeMillis());
-        ret.put("status", new JSONObjectWithLegibleException().put("code", getStatus().name()));
-        ret.put(METRICS_PATH, buildJsonForSnapshot(consumer, getSnapshot()));
+        ret.set("status", jsonMapper.createObjectNode().put("code", getStatus().name()));
+        ret.set(METRICS_PATH, buildJsonForSnapshot(consumer, getSnapshot()));
         return ret;
     }
 
     private MetricSnapshot getSnapshot() {
-        if (snapshotPreprocessor == null) {
-            return monitor.snapshot();
-        } else {
-            return snapshotPreprocessor.latestSnapshot();
-        }
+        return snapshotProvider.latestSnapshot();
     }
 
     private StateMonitor.Status getStatus() {
         return monitor.status();
     }
 
-    private JSONObjectWithLegibleException buildJsonForSnapshot(String consumer, MetricSnapshot metricSnapshot) throws JSONException {
+    private ObjectNode buildJsonForSnapshot(String consumer, MetricSnapshot metricSnapshot) {
         if (metricSnapshot == null) {
-            return new JSONObjectWithLegibleException();
+            return jsonMapper.createObjectNode();
         }
-        JSONObjectWithLegibleException jsonMetric = new JSONObjectWithLegibleException();
-        jsonMetric.put("snapshot", new JSONObjectWithLegibleException()
-                .put("from", metricSnapshot.getFromTime(TimeUnit.MILLISECONDS) / 1000.0)
-                .put("to", metricSnapshot.getToTime(TimeUnit.MILLISECONDS) / 1000.0));
+        ObjectNode jsonMetric = jsonMapper.createObjectNode();
+        jsonMetric.set("snapshot", jsonMapper.createObjectNode()
+                .put("from", sanitizeDouble(metricSnapshot.getFromTime(TimeUnit.MILLISECONDS) / 1000.0))
+                .put("to", sanitizeDouble(metricSnapshot.getToTime(TimeUnit.MILLISECONDS) / 1000.0)));
 
         boolean includeDimensions = !consumer.equals(HEALTH_PATH);
         long periodInMillis = metricSnapshot.getToTime(TimeUnit.MILLISECONDS) -
                               metricSnapshot.getFromTime(TimeUnit.MILLISECONDS);
         for (Tuple tuple : collapseMetrics(metricSnapshot, consumer)) {
-            JSONObjectWithLegibleException jsonTuple = new JSONObjectWithLegibleException();
+            ObjectNode jsonTuple = jsonMapper.createObjectNode();
             jsonTuple.put("name", tuple.key);
             if (tuple.val instanceof CountMetric) {
                 CountMetric count = (CountMetric)tuple.val;
-                jsonTuple.put("values", new JSONObjectWithLegibleException()
+                jsonTuple.set("values", jsonMapper.createObjectNode()
                         .put("count", count.getCount())
-                        .put("rate", (count.getCount() * 1000.0) / periodInMillis));
+                        .put("rate", sanitizeDouble(count.getCount() * 1000.0) / periodInMillis));
             } else if (tuple.val instanceof GaugeMetric) {
                 GaugeMetric gauge = (GaugeMetric) tuple.val;
-                JSONObjectWithLegibleException valueFields = new JSONObjectWithLegibleException();
-                valueFields.put("average", gauge.getAverage())
-                        .put("sum", gauge.getSum())
+                ObjectNode valueFields = jsonMapper.createObjectNode();
+                valueFields.put("average", sanitizeDouble(gauge.getAverage()))
+                        .put("sum", sanitizeDouble(gauge.getSum()))
                         .put("count", gauge.getCount())
-                        .put("last", gauge.getLast())
-                        .put("max", gauge.getMax())
-                        .put("min", gauge.getMin())
-                        .put("rate", (gauge.getCount() * 1000.0) / periodInMillis);
+                        .put("last", sanitizeDouble(gauge.getLast()))
+                        .put("max", sanitizeDouble(gauge.getMax()))
+                        .put("min", sanitizeDouble(gauge.getMin()))
+                        .put("rate", sanitizeDouble((gauge.getCount() * 1000.0) / periodInMillis));
                 if (gauge.getPercentiles().isPresent()) {
                     for (Tuple2<String, Double> prefixAndValue : gauge.getPercentiles().get()) {
-                        valueFields.put(prefixAndValue.first + "percentile", prefixAndValue.second.doubleValue());
+                        valueFields.put(prefixAndValue.first + "percentile", sanitizeDouble(prefixAndValue.second));
                     }
                 }
-                jsonTuple.put("values", valueFields);
+                jsonTuple.set("values", valueFields);
             } else {
                 throw new UnsupportedOperationException(tuple.val.getClass().getName());
             }
-            Iterator<Map.Entry<String, String>> it = tuple.dim.iterator();
-            if (it.hasNext() && includeDimensions) {
-                JSONObjectWithLegibleException jsonDim = new JSONObjectWithLegibleException();
-                while (it.hasNext()) {
-                    Map.Entry<String, String> entry = it.next();
-                    jsonDim.put(entry.getKey(), entry.getValue());
+            if (tuple.dim != null) {
+                Iterator<Map.Entry<String, String>> it = tuple.dim.iterator();
+                if (it.hasNext() && includeDimensions) {
+                    ObjectNode jsonDim = jsonMapper.createObjectNode();
+                    while (it.hasNext()) {
+                        Map.Entry<String, String> entry = it.next();
+                        jsonDim.put(entry.getKey(), entry.getValue());
+                    }
+                    jsonTuple.set("dimensions", jsonDim);
                 }
-                jsonTuple.put("dimensions", jsonDim);
             }
-            jsonMetric.append("values", jsonTuple);
+            ArrayNode values = (ArrayNode) jsonMetric.get("values");
+            if (values == null) {
+                values = jsonMapper.createArrayNode();
+                jsonMetric.set("values", values);
+            }
+            values.add(jsonTuple);
         }
         return jsonMetric;
     }
@@ -315,6 +320,12 @@ public class StateHandler extends AbstractRequestHandler {
             }
         }
         return metrics;
+    }
+
+    private static byte[] toPrettyString(JsonNode resources) throws JsonProcessingException {
+        return jsonMapper.writerWithDefaultPrettyPrinter()
+                .writeValueAsString(resources)
+                .getBytes();
     }
 
     static class Tuple {

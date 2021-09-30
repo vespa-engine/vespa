@@ -7,6 +7,7 @@ import ai.vespa.rankingexpression.importer.operations.MatMul;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -81,28 +82,36 @@ public class IntermediateGraph {
         DimensionRenamer renamer = new DimensionRenamer(this);
         for (String signature : signatures()) {
             for (String output : outputs(signature).values()) {
-                addDimensionNameConstraints(operations.get(output), renamer);
+                addDimensionNameConstraints(operations.get(output), renamer, new HashSet<>());
             }
         }
         renamer.solve();
         for (String signature : signatures()) {
             for (String output : outputs(signature).values()) {
-                renameDimensions(operations.get(output), renamer);
+                renameDimensions(operations.get(output), renamer, new HashSet<>());
             }
         }
     }
 
-    private static void addDimensionNameConstraints(IntermediateOperation operation, DimensionRenamer renamer) {
+    private static void addDimensionNameConstraints(IntermediateOperation operation, DimensionRenamer renamer, Set<String> processed) {
+        if (processed.contains(operation.name())) {
+            return;
+        }
         if (operation.type().isPresent()) {
-            operation.inputs().forEach(input -> addDimensionNameConstraints(input, renamer));
+            operation.inputs().forEach(input -> addDimensionNameConstraints(input, renamer, processed));
             operation.addDimensionNameConstraints(renamer);
+            processed.add(operation.name());
         }
     }
 
-    private static void renameDimensions(IntermediateOperation operation, DimensionRenamer renamer) {
+    private static void renameDimensions(IntermediateOperation operation, DimensionRenamer renamer, Set<String> processed) {
+        if (processed.contains(operation.name())) {
+            return;
+        }
         if (operation.type().isPresent()) {
-            operation.inputs().forEach(input -> renameDimensions(input, renamer));
+            operation.inputs().forEach(input -> renameDimensions(input, renamer, processed));
             operation.renameDimensions(renamer);
+            processed.add(operation.name());
         }
     }
 

@@ -17,6 +17,9 @@ public enum RunStatus {
     /** Deployment of the real application was rejected. */
     deploymentFailed,
 
+    /** Deployment timed out waiting for endpoint certificate */
+    endpointCertificateTimeout,
+
     /** Installation of the real application timed out. */
     installationFailed,
 

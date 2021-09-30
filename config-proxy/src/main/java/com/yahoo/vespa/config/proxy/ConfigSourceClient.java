@@ -24,6 +24,6 @@ interface ConfigSourceClient {
 
     List<String> getSourceConnections();
 
-    void updateSubscribers(RawConfig config);
+    DelayedResponses delayedResponses();
 
 }

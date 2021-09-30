@@ -16,7 +16,7 @@ class MemoryManager : public IAllocator
 {
 public:
     MemoryManager(size_t logLimitAtStart);
-    ~MemoryManager();
+    ~MemoryManager() override;
     bool initThisThread() override;
     bool quitThisThread() override;
     void enableThreadSupport() override;
@@ -26,11 +26,22 @@ public:
     size_t getMaxNumThreads() const override { return _threadList.getMaxNumThreads(); }
 
     void *malloc(size_t sz);
+    void *malloc(size_t sz, std::align_val_t);
     void *realloc(void *oldPtr, size_t sz);
-    void free(void *ptr) { freeSC(ptr, _segment.sizeClass(ptr)); }
-    void free(void *ptr, size_t sz) { freeSC(ptr, MemBlockPtrT::sizeClass(sz)); }
+    void free(void *ptr) {
+        freeSC(ptr, _segment.sizeClass(ptr));
+    }
+    void free(void *ptr, size_t sz) {
+        freeSC(ptr, MemBlockPtrT::sizeClass(MemBlockPtrT::adjustSize(sz)));
+    }
+    void free(void *ptr, size_t sz, std::align_val_t alignment) {
+        freeSC(ptr, MemBlockPtrT::sizeClass(MemBlockPtrT::adjustSize(sz, alignment)));
+    }
     size_t getMinSizeForAlignment(size_t align, size_t sz) const { return MemBlockPtrT::getMinSizeForAlignment(align, sz); }
     size_t sizeClass(const void *ptr) const { return _segment.sizeClass(ptr); }
+    size_t usable_size(void *ptr) const {
+        return MemBlockPtrT::usable_size(ptr, _segment.getMaxSize(ptr));
+    }
 
     void *calloc(size_t nelm, size_t esz) {
         void * ptr = malloc(nelm * esz);
@@ -42,30 +53,22 @@ public:
 
     void info(FILE * os, size_t level=0) __attribute__ ((noinline));
 
-    void setupSegmentLog(size_t noMemLogLevel,
-                         size_t bigMemLogLevel,
-                         size_t bigLimit,
-                         size_t bigIncrement,
-                         size_t allocs2Show)
-    {
-        _segment.setupLog(noMemLogLevel, bigMemLogLevel, bigLimit, bigIncrement, allocs2Show);
+    void setupSegmentLog(size_t bigMemLogLevel, size_t bigLimit, size_t bigIncrement, size_t allocs2Show) {
+        _segment.setupLog(bigMemLogLevel, bigLimit, bigIncrement, allocs2Show);
     }
-    void setupLog(size_t doubleDelete, size_t invalidMem, size_t prAllocLimit) {
-        _doubleDeleteLogLevel = doubleDelete;
-        _invalidMemLogLevel = invalidMem;
+    void setupLog(size_t prAllocLimit) {
         _prAllocLimit = prAllocLimit;
     }
-    void setParams(size_t alwayReuseLimit, size_t threadCacheLimit) {
-        _threadList.setParams(alwayReuseLimit, threadCacheLimit);
-        _allocPool.setParams(alwayReuseLimit, threadCacheLimit);
+    void setParams(size_t threadCacheLimit) {
+        _threadList.setParams(threadCacheLimit);
+        _allocPool.setParams(threadCacheLimit);
     }
+    const DataSegment<MemBlockPtrT> & dataSegment() const { return _segment; }
 private:
     void freeSC(void *ptr, SizeClassT sc);
     void crash() __attribute__((noinline));;
     typedef AllocPoolT<MemBlockPtrT> AllocPool;
     typedef typename ThreadListT::ThreadPool  ThreadPool;
-    size_t                     _doubleDeleteLogLevel;
-    size_t                     _invalidMemLogLevel;
     size_t                     _prAllocLimit;
     DataSegment<MemBlockPtrT>  _segment;
     AllocPool                  _allocPool;
@@ -75,8 +78,6 @@ private:
 template <typename MemBlockPtrT, typename ThreadListT>
 MemoryManager<MemBlockPtrT, ThreadListT>::MemoryManager(size_t logLimitAtStart) :
     IAllocator(),
-    _doubleDeleteLogLevel(1),
-    _invalidMemLogLevel(1),
     _prAllocLimit(logLimitAtStart),
     _segment(),
     _allocPool(_segment),
@@ -88,9 +89,7 @@ MemoryManager<MemBlockPtrT, ThreadListT>::MemoryManager(size_t logLimitAtStart) 
 }
 
 template <typename MemBlockPtrT, typename ThreadListT>
-MemoryManager<MemBlockPtrT, ThreadListT>::~MemoryManager()
-{
-}
+MemoryManager<MemBlockPtrT, ThreadListT>::~MemoryManager() = default;
 
 template <typename MemBlockPtrT, typename ThreadListT>
 bool MemoryManager<MemBlockPtrT, ThreadListT>::initThisThread()
@@ -159,9 +158,23 @@ void * MemoryManager<MemBlockPtrT, ThreadListT>::malloc(size_t sz)
         fprintf(stderr, "Memory %p(%ld) has been tampered with after free.\n", mem.ptr(), mem.size());
         crash();
     }
-    PARANOID_CHECK2(if (!mem.validFree() && mem.ptr()) { crash(); } );
     mem.setExact(sz);
     mem.alloc(_prAllocLimit<=mem.adjustSize(sz));
+    return mem.ptr();
+}
+
+template <typename MemBlockPtrT, typename ThreadListT>
+void * MemoryManager<MemBlockPtrT, ThreadListT>::malloc(size_t sz, std::align_val_t alignment)
+{
+    MemBlockPtrT mem;
+    ThreadPool & tp = _threadList.getCurrent();
+    tp.malloc(mem.adjustSize(sz, alignment), mem);
+    if (!mem.validFree()) {
+        fprintf(stderr, "Memory %p(%ld) has been tampered with after free.\n", mem.ptr(), mem.size());
+        crash();
+    }
+    mem.setExact(sz, alignment);
+    mem.alloc(_prAllocLimit<=mem.adjustSize(sz, alignment));
     return mem.ptr();
 }
 

@@ -1,22 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/fef/iqueryenvironment.h>
-#include <vespa/searchlib/fef/fieldinfo.h>
-#include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/searchlib/fef/phrasesplitter.h>
-#include <vespa/searchlib/features/queryterm.h>
-#include <vespa/searchlib/common/allocatedbitvector.h>
-#include <string>
-#include <vector>
 #include "metrics.h"
 #include "params.h"
 #include "segmentstart.h"
 #include "simplemetrics.h"
+#include <vespa/searchlib/features/queryterm.h>
+#include <vespa/searchlib/common/allocatedbitvector.h>
+#include <vespa/vespalib/util/arrayref.h>
 
-namespace search {
-namespace features {
-namespace fieldmatch {
+namespace search::fef {
+
+class PhraseSplitter;
+class TermFieldMatchData;
+
+}
+
+namespace search::features::fieldmatch {
+
+class ComputerSharedState;
 
 /**
  * <p>Calculates a set of metrics capturing information about the degree of agreement between a query and a field
@@ -61,13 +63,12 @@ public:
     /**
      * Constructs a new computer object.
      *
-     * @param propertyNamespace The namespace used in query properties.
+     * @param shared_state      The shared state for this computer
      * @param splitter          The environment that holds all query information.
-     * @param fieldInfo         The info object of the matched field.
-     * @param params            The parameter object for this computer.
      */
-    Computer(const vespalib::string &propertyNamespace, const search::fef::PhraseSplitter &splitter,
-             const search::fef::FieldInfo &fieldInfo, const Params &params);
+    Computer(const ComputerSharedState& shared_state, const fef::PhraseSplitter& splitter);
+
+    ~Computer();
 
     /**
      * Resets this object according to the given document id
@@ -125,15 +126,6 @@ public:
     int fieldIndexToSemanticDistance(int j, uint32_t zeroJ) const;
 
     /**
-     * Returns the query environment of this. This contains information about the query.
-     *
-     * @return The query environment.
-     */
-    const search::fef::IQueryEnvironment &getQueryEnvironment() const {
-        return _splitter;
-    }
-
-    /**
      * Returns the id of the searched field.
      *
      * @return The field id.
@@ -161,39 +153,6 @@ public:
     }
 
     /**
-     * Adds the given string to the trace of this, if tracing is enabled.
-     *
-     * @param str The string to trace.
-     * @return This, to allow chaining.
-     */
-    Computer &trace(const vespalib::string &str);
-
-    /**
-     * Returns a textual trace of the last execution of this algorithm, if tracing is on.
-     *
-     * @return The trace string.
-     */
-    vespalib::string getTrace() const;
-
-    /**
-     * Set to true to collect a textual trace from the computation, which can be retrieved using {@link #getTrace}.
-     *
-     * @param tracing Whether or not to trace.
-     * @return This, to allow chaining.
-     */
-    Computer &setTracing(bool tracing) {
-        _tracing = tracing;
-        return *this;
-    }
-
-    /**
-     * Returns whether tracing is on.
-     *
-     * @return True if tracing is on.
-     */
-    bool isTracing() const { return _tracing; }
-
-    /**
      * Returns the number of terms searching on this field.
      *
      * @return The number of terms.
@@ -218,7 +177,7 @@ public:
      * @param  The index of the term match to return.
      * @return The term match.
      */
-    const search::fef::TermFieldMatchData *getQueryTermFieldMatch(int term) const {
+    const fef::TermFieldMatchData *getQueryTermFieldMatch(int term) const {
         return _queryTermFieldMatch[term];
     }
 
@@ -325,31 +284,30 @@ private:
 
 
 private:
-    typedef std::shared_ptr<search::BitVector> BitVectorPtr;
-    typedef std::vector<const search::fef::TermFieldMatchData *> TermFieldMatchDataVector;
+    typedef std::shared_ptr<BitVector> BitVectorPtr;
+    typedef std::vector<const fef::TermFieldMatchData *> TermFieldMatchDataVector;
 
     struct SegmentData {
         SegmentData() : segment(), valid(false) {}
-        SegmentData(const SegmentStart::SP & ss, bool v = false) : segment(ss), valid(v) {}
+        SegmentData(SegmentStart::SP ss, bool v = false) noexcept : segment(std::move(ss)), valid(v) {}
         SegmentStart::SP segment;
         bool valid;
     };
 
     struct BitVectorData {
         BitVectorData() : bitvector(0), valid(false) {}
-        search::AllocatedBitVector bitvector;
+        AllocatedBitVector bitvector;
         bool valid;
     };
 
     // per query
+    const ComputerSharedState&                 _shared_state;
     const search::fef::PhraseSplitter        & _splitter;
     uint32_t                                   _fieldId;
-    Params                                     _params;
-    bool                                       _tracing;
-    std::vector<vespalib::string>              _trace;
+    const Params                               _params;
     bool                                       _useCachedHits;
 
-    QueryTermVector                            _queryTerms;
+    const vespalib::ConstArrayRef<QueryTerm>   _queryTerms;
     TermFieldMatchDataVector                   _queryTermFieldMatch;
     uint32_t                                   _totalTermWeight;
     feature_t                                  _totalTermSignificance;
@@ -364,7 +322,4 @@ private:
     std::vector<BitVectorData>                 _cachedHits;
 };
 
-} // fieldmatch
-} // features
-} // search
-
+}

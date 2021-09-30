@@ -1,0 +1,27 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+search test {
+
+    document test {
+        field document_value type tensor<float>(d0[1]) {
+            indexing: attribute
+        }
+    }
+
+    onnx-model my_add {
+        file:  files/add.onnx
+        input  input1: attribute(document_value)
+        input  input2: my_input_func
+        output output: out
+    }
+
+    rank-profile test {
+        function my_function() {
+            expression: tensor<float>(d0[1])(1)
+        }
+        first-phase {
+            expression: onnx(my_add).out{d0:1}
+        }
+    }
+
+}

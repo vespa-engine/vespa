@@ -36,7 +36,11 @@ ReplayPacketDispatcher::replayEntry(const Packet::Entry &entry)
         replay(op, is, entry);
         break;
     } case FeedOperation::REMOVE: {
-        RemoveOperation op;
+        RemoveOperationWithDocId op;
+        replay(op, is, entry);
+        break;
+    } case FeedOperation::REMOVE_GID: {
+        RemoveOperationWithGid op;
         replay(op, is, entry);
         break;
     } case FeedOperation::UPDATE: {
@@ -84,7 +88,7 @@ ReplayPacketDispatcher::replayEntry(const Packet::Entry &entry)
         throw IllegalStateException
             (make_string("Got packet entry with unknown type id '%u' from TLS", entry.type()));
     }
-    if (is.size() > 0) {
+    if ( ! is.empty()) {
         throw document::DeserializeException
             (make_string("Too much data in packet entry (type id '%u', %ld bytes)",
                          entry.type(), is.size()));

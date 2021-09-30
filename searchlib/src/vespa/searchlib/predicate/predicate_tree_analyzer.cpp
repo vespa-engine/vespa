@@ -4,6 +4,7 @@
 #include <vespa/document/predicate/predicate.h>
 #include <algorithm>
 #include <cmath>
+#include <cassert>
 
 using document::Predicate;
 using std::map;

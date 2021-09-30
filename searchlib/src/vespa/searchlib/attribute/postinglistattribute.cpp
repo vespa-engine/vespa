@@ -14,11 +14,10 @@ PostingListAttributeBase<P>::
 PostingListAttributeBase(AttributeVector &attr,
                          IEnumStore &enumStore)
     : attribute::IPostingListAttributeBase(),
-      _postingList(enumStore.get_dictionary().get_posting_dictionary(), attr.getStatus(),
+      _postingList(enumStore.get_dictionary(), attr.getStatus(),
                    attr.getConfig()),
       _attr(attr),
-      _dict(enumStore.get_dictionary().get_posting_dictionary()),
-      _esb(enumStore)
+      _dictionary(enumStore.get_dictionary())
 { }
 
 template <typename P>
@@ -30,19 +29,11 @@ PostingListAttributeBase<P>::clearAllPostings()
 {
     _postingList.clearBuilder();
     _attr.incGeneration(); // Force freeze
-    auto itr = _dict.begin();
-    EntryRef prev;
-    while (itr.valid()) {
-        EntryRef ref(itr.getData());
-        if (ref.ref() != prev.ref()) {
-            if (ref.valid()) {
-                _postingList.clear(ref);
-            }
-            prev = ref;
-        }
-        itr.writeData(EntryRef().ref());
-        ++itr;
-    }
+    auto clearer = [this](EntryRef posting_idx)
+                   {
+                       _postingList.clear(posting_idx);
+                   };
+    _dictionary.clear_all_posting_lists(clearer);
     _attr.incGeneration(); // Force freeze
 }
 
@@ -62,21 +53,18 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
     uint32_t preve = 0;
     uint32_t refCount = 0;
 
-    auto itr = _dict.begin();
-    auto posting_itr = itr;
-    assert(itr.valid());
+    vespalib::ConstArrayRef<EnumIndex> enum_indexes(loader.get_enum_indexes());
+    assert(!enum_indexes.empty());
+    auto posting_indexes = loader.initialize_empty_posting_indexes();
+    uint32_t posting_enum = preve;
     for (const auto& elem : loaded_enums) {
         if (preve != elem.getEnum()) {
             assert(preve < elem.getEnum());
-            loader.set_ref_count(itr.getKey(), refCount);
+            assert(elem.getEnum() < enum_indexes.size());
+            loader.set_ref_count(enum_indexes[preve], refCount);
             refCount = 0;
-            while (preve != elem.getEnum()) {
-                ++itr;
-                assert(itr.valid());
-                ++preve;
-            }
-            assert(itr.valid());
-            if (loader.is_folded_change(posting_itr.getKey(), itr.getKey())) {
+            preve = elem.getEnum();
+            if (loader.is_folded_change(enum_indexes[posting_enum], enum_indexes[preve])) {
                 postings.removeDups();
                 newIndex = EntryRef();
                 _postingList.apply(newIndex,
@@ -86,11 +74,9 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
                                    &postings._removals[0],
                                    &postings._removals[0] +
                                    postings._removals.size());
-                posting_itr.writeData(newIndex.ref());
-                while (posting_itr != itr) {
-                    ++posting_itr;
-                }
+                posting_indexes[posting_enum] = newIndex.ref();
                 postings.clear();
+                posting_enum = elem.getEnum();
             }
         }
         assert(refCount < std::numeric_limits<uint32_t>::max());
@@ -100,7 +86,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
         postings.add(elem.getDocId(), elem.getWeight());
     }
     assert(refCount != 0);
-    loader.set_ref_count(itr.getKey(), refCount);
+    loader.set_ref_count(enum_indexes[preve], refCount);
     postings.removeDups();
     newIndex = EntryRef();
     _postingList.apply(newIndex,
@@ -108,31 +94,30 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
                        &postings._additions[0] + postings._additions.size(),
                        &postings._removals[0],
                        &postings._removals[0] + postings._removals.size());
-    posting_itr.writeData(newIndex.ref());
+    posting_indexes[posting_enum] = newIndex.ref();
+    loader.build_dictionary();
     loader.free_unused_values();
 }
 
 template <typename P>
 void
 PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
-                                            datastore::EntryComparator &cmp)
+                                            const vespalib::datastore::EntryComparator &cmp)
 {
     for (auto& elem : changePost) {
-        auto& change = elem.second;
         EnumIndex idx = elem.first.getEnumIdx();
-        auto dictItr = _dict.lowerBound(idx, cmp);
-        assert(dictItr.valid() && dictItr.getKey() == idx);
-        EntryRef newPosting(dictItr.getData());
-        
+        auto& change = elem.second;
         change.removeDups();
-        _postingList.apply(newPosting,
-                           &change._additions[0],
-                           &change._additions[0] + change._additions.size(),
-                           &change._removals[0],
-                           &change._removals[0] + change._removals.size());
-        
-        _dict.thaw(dictItr);
-        dictItr.writeData(newPosting.ref());
+        auto updater= [this, &change](EntryRef posting_idx) -> EntryRef
+                      {
+                          _postingList.apply(posting_idx,
+                                             &change._additions[0],
+                                             &change._additions[0] + change._additions.size(),
+                                             &change._removals[0],
+                                             &change._removals[0] + change._removals.size());
+                          return posting_idx;
+                      };
+        _dictionary.update_posting_list(idx, cmp, updater);
     }
 }
 
@@ -160,7 +145,7 @@ PostingListAttributeBase<P>::
 clearPostings(attribute::IAttributeVector::EnumHandle eidx,
               uint32_t fromLid,
               uint32_t toLid,
-              datastore::EntryComparator &cmp)
+              const vespalib::datastore::EntryComparator &cmp)
 {
     PostingChange<P> postings;
 
@@ -169,21 +154,16 @@ clearPostings(attribute::IAttributeVector::EnumHandle eidx,
     }
 
     EntryRef er(eidx);
-    auto itr = _dict.lowerBound(er, cmp);
-    assert(itr.valid());
-    
-    EntryRef newPosting(itr.getData());
-    assert(newPosting.valid());
-    
-    _postingList.apply(newPosting,
-                       &postings._additions[0],
-                       &postings._additions[0] +
-                       postings._additions.size(),
-                       &postings._removals[0],
-                       &postings._removals[0] +
-                       postings._removals.size());
-    _dict.thaw(itr);
-    itr.writeData(newPosting.ref());
+    auto updater = [this, &postings](EntryRef posting_idx) -> EntryRef
+                   {
+                       _postingList.apply(posting_idx,
+                                          &postings._additions[0],
+                                          &postings._additions[0] + postings._additions.size(),
+                                          &postings._removals[0],
+                                          &postings._removals[0] + postings._removals.size());
+                       return posting_idx;
+                   };
+    _dictionary.update_posting_list(er, cmp, updater);
 }
 
 template <typename P>
@@ -198,6 +178,20 @@ vespalib::MemoryUsage
 PostingListAttributeBase<P>::getMemoryUsage() const
 {
     return _postingList.getMemoryUsage();
+}
+
+template <typename P>
+bool
+PostingListAttributeBase<P>::consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy)
+{
+    return _postingList.consider_compact_worst_btree_nodes(compaction_strategy);
+}
+
+template <typename P>
+bool
+PostingListAttributeBase<P>::consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy)
+{
+    return _postingList.consider_compact_worst_buffers(compaction_strategy);
 }
 
 template <typename P, typename LoadedVector, typename LoadedValueType,
@@ -233,7 +227,7 @@ handle_load_posting_lists(LoadedVector& loaded)
             LoadedValueType prev = value.getValue();
             for (size_t i(0), m(loaded.size()); i < m; i++, loaded.next()) {
                 value = loaded.read();
-                if (FoldedComparatorType::equal(prev, value.getValue())) {
+                if (ComparatorType::equal_helper(prev, value.getValue())) {
                     // for single value attributes loaded[numDocs] is used
                     // for default value but we don't want to add an
                     // invalid docId to the posting list.
@@ -287,8 +281,7 @@ void
 PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
 updatePostings(PostingMap &changePost)
 {
-    auto cmp = _es.make_folded_comparator();
-    updatePostings(changePost, cmp);
+    updatePostings(changePost, _es.get_folded_comparator());
 }
 
 
@@ -296,11 +289,9 @@ template <typename P, typename LoadedVector, typename LoadedValueType,
           typename EnumStoreType>
 void
 PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
-clearPostings(attribute::IAttributeVector::EnumHandle eidx,
-              uint32_t fromLid, uint32_t toLid)
+clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid, uint32_t toLid)
 {
-    auto cmp = _es.make_folded_comparator();
-    clearPostings(eidx, fromLid, toLid, cmp);
+    clearPostings(eidx, fromLid, toLid, _es.get_folded_comparator());
 }
 
 

@@ -6,8 +6,7 @@
 #include "ranking_constants.h"
 #include <vespa/eval/eval/value_cache/constant_value.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * Class that provides access to a configured set of rank constant values.
@@ -28,5 +27,4 @@ public:
     virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const override;
 };
 
-}
 }

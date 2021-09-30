@@ -13,12 +13,12 @@ import com.yahoo.processing.rendering.Renderer;
 import java.util.concurrent.Executor;
 
 /**
- * A jDisc request handler which invokes a processing chain to produce the response.
+ * A request handler which invokes a processing chain to produce the response.
  *
  * @author Tony Vaagenes
- * @since 5.1.7
  */
 public class ProcessingHandler extends AbstractProcessingHandler<Processor> {
+
     public ProcessingHandler(ChainRegistry<Processor> chainRegistry,
                              ComponentRegistry<Renderer> renderers,
                              Executor executor,
@@ -51,4 +51,5 @@ public class ProcessingHandler extends AbstractProcessingHandler<Processor> {
                              Metric metric) {
         super(processingChainsConfig, chainedComponents, renderers, executor, accessLog, metric);
     }
+
 }

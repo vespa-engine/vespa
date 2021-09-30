@@ -35,12 +35,12 @@ public class EndpointCertificateMetadataStoreTest {
             ApplicationName.from("test"), InstanceName.defaultName());
 
     private MockCurator curator;
-    private MockSecretStore secretStore = new MockSecretStore();
+    private final MockSecretStore secretStore = new MockSecretStore();
     private EndpointCertificateMetadataStore endpointCertificateMetadataStore;
     private EndpointCertificateRetriever endpointCertificateRetriever;
-    private KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
-    private X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair, new X500Principal("CN=subject"),
-            Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(12345)).build();
+    private final KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
+    private final X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair, new X500Principal("CN=subject"),
+                                                                                   Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(12345)).build();
 
     @Before
     public void setUp() {
@@ -50,18 +50,6 @@ public class EndpointCertificateMetadataStoreTest {
 
         secretStore.put("vespa.tlskeys.tenant1--app1-cert", X509CertificateUtils.toPem(certificate));
         secretStore.put("vespa.tlskeys.tenant1--app1-key", KeyUtils.toPem(keyPair.getPrivate()));
-    }
-
-    @Test
-    public void reads_string_format() {
-        curator.set(endpointCertificateMetadataPath, ("\"vespa.tlskeys.tenant1--app1\"").getBytes());
-
-        // Read from zk and verify cert and key are available
-        var endpointCertificateSecrets = endpointCertificateMetadataStore.readEndpointCertificateMetadata(applicationId)
-                .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);
-        assertTrue(endpointCertificateSecrets.isPresent());
-        assertTrue(endpointCertificateSecrets.get().key().startsWith("-----BEGIN EC PRIVATE KEY"));
-        assertTrue(endpointCertificateSecrets.get().certificate().startsWith("-----BEGIN CERTIFICATE"));
     }
 
     @Test

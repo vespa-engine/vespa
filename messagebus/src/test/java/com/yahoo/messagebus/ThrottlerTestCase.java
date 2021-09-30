@@ -137,16 +137,16 @@ public class ThrottlerTestCase {
               .setResizeRate(1);
 
         double windowSize = getWindowSize(policy, timer, 100);
-        assertTrue(windowSize >= 90 && windowSize <= 110);
+        assertTrue(windowSize >= 90 && windowSize <= 105);
 
         windowSize = getWindowSize(policy, timer, 200);
-        assertTrue(windowSize >= 90 && windowSize <= 210);
+        assertTrue(windowSize >= 180 && windowSize <= 205);
 
         windowSize = getWindowSize(policy, timer, 50);
-        assertTrue(windowSize >= 9 && windowSize <= 55);
+        assertTrue(windowSize >= 45 && windowSize <= 55);
 
         windowSize = getWindowSize(policy, timer, 500);
-        assertTrue(windowSize >= 90 && windowSize <= 505);
+        assertTrue(windowSize >= 450 && windowSize <= 505);
 
         windowSize = getWindowSize(policy, timer, 100);
         assertTrue(windowSize >= 90 && windowSize <= 115);
@@ -158,6 +158,7 @@ public class ThrottlerTestCase {
         DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
 
         policy.setWindowSizeIncrement(5)
+              .setMinWindowSize(1)
               .setResizeRate(1);
 
         double windowSize = getWindowSize(policy, timer, 100);

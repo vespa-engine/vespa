@@ -4,30 +4,40 @@
 #include "i_thread_service.h"
 #include <vespa/vespalib/util/syncable.h>
 
-namespace search { class ISequencedTaskExecutor; }
+namespace vespalib { class ISequencedTaskExecutor; }
 namespace searchcorespi::index {
 
 /**
- * Interface for the thread model used for write tasks.
+ * Interface for the thread model used for write tasks for a single document database.
  *
  * We have multiple write threads:
  *
- *  1. The master write thread used for the majority of write tasks.
+ *  1. The "master" write thread used for the majority of write tasks.
  *
- *  2. The index write thread used for doing changes to the memory
+ *  2. The "index" write thread used for doing changes to the memory
  *     index, either directly (for data not bound to a field) or via
  *     index field inverter executor or index field writer executor.
  *
- *  3. The index field inverter executor is used to populate field
+ *  3. The "summary" thread is used for doing changes to the document store.
+ *
+ *  4. The "index field inverter" executor is used to populate field
  *     inverters with data from document fields.  Scheduled tasks for
  *     the same field are executed in sequence.
  *
- *  4. The index field writer executor is used to sort data in field
+ *  5. The "index field writer" executor is used to sort data in field
  *     inverters before pushing the data to the memory field indexes.
  *     Scheduled tasks for the same field are executed in sequence.
  *
- * The master write thread is always the one giving tasks to the index
- * write thread.
+ *  6. The "attribute field writer" executor is used to write data to attribute vectors.
+ *     Each attribute is always handled by the same thread,
+ *     and scheduled tasks for the same attribute are executed in sequence.
+ *
+ * The master write thread is always the one giving tasks to the other write threads above.
+ *
+ * In addition this interface exposes the "shared" executor that is used by all document databases.
+ * This is among others used for compressing / de-compressing documents in the document store,
+ * merging files as part of disk index fusion, and running the prepare step when doing two-phase
+ * puts against a tensor attribute with a HNSW index.
  *
  * The index write thread extracts fields from documents and gives
  * task to the index field inverter executor and the index field
@@ -43,21 +53,24 @@ namespace searchcorespi::index {
  * tasks to the index field writer executor, so draining logic needs
  * to sync index field inverter executor before syncing index field
  * writer executor.
+ *
+ * TODO: * indexFieldInverter and indexFieldWriter can be collapsed to one. Both need sequencing,
+ *         but they sequence on different things so efficiency will be the same and just depends on #threads
  */
 struct IThreadingService : public vespalib::Syncable
 {
     IThreadingService(const IThreadingService &) = delete;
     IThreadingService & operator = (const IThreadingService &) = delete;
     IThreadingService() = default;
-    virtual ~IThreadingService() {}
+    virtual ~IThreadingService() = default;
 
     virtual IThreadService &master() = 0;
     virtual IThreadService &index() = 0;
     virtual IThreadService &summary() = 0;
     virtual vespalib::ThreadExecutor &shared() = 0;
-    virtual search::ISequencedTaskExecutor &indexFieldInverter() = 0;
-    virtual search::ISequencedTaskExecutor &indexFieldWriter() = 0;
-    virtual search::ISequencedTaskExecutor &attributeFieldWriter() = 0;
+    virtual vespalib::ISequencedTaskExecutor &indexFieldInverter() = 0;
+    virtual vespalib::ISequencedTaskExecutor &indexFieldWriter() = 0;
+    virtual vespalib::ISequencedTaskExecutor &attributeFieldWriter() = 0;
 };
 
 }

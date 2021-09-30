@@ -3,6 +3,7 @@
 #include "sentmessagemap.h"
 #include <vespa/storage/distributor/operations/operation.h>
 #include <sstream>
+#include <set>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.map");
@@ -14,15 +15,13 @@ SentMessageMap::SentMessageMap()
 {
 }
 
-SentMessageMap::~SentMessageMap()
-{
-}
+SentMessageMap::~SentMessageMap() = default;
 
 
 std::shared_ptr<Operation>
 SentMessageMap::pop()
 {
-  std::map<api::StorageMessage::Id, std::shared_ptr<Operation> >::iterator found = _map.begin();
+  auto found = _map.begin();
 
   if (found != _map.end()) {
       std::shared_ptr<Operation> retVal = found->second;
@@ -36,11 +35,10 @@ SentMessageMap::pop()
 std::shared_ptr<Operation>
 SentMessageMap::pop(api::StorageMessage::Id id)
 {
-    std::map<api::StorageMessage::Id, std::shared_ptr<Operation> >::iterator found = _map.find(id);
+    auto found = _map.find(id);
 
     if (found != _map.end()) {
-        LOG(spam, "Found Id %" PRIu64 " in callback map: %p", id,
-            found->second.get());
+        LOG(spam, "Found Id %" PRIu64 " in callback map: %p", id, found->second.get());
 
         std::shared_ptr<Operation> retVal = found->second;
         _map.erase(found);
@@ -55,8 +53,7 @@ SentMessageMap::pop(api::StorageMessage::Id id)
 void
 SentMessageMap::insert(api::StorageMessage::Id id, const std::shared_ptr<Operation> & callback)
 {
-    LOG(spam, "Inserting callback %p for message %" PRIu64 "",
-        callback.get(), id);
+    LOG(spam, "Inserting callback %p for message %" PRIu64 "", callback.get(), id);
 
     _map[id] = callback;
 }
@@ -67,17 +64,11 @@ SentMessageMap::toString() const
     std::ostringstream ost;
     std::set<std::string> messages;
 
-    for (Map::const_iterator iter = _map.begin();
-         iter != _map.end();
-         ++iter)
-    {
-        messages.insert(iter->second.get()->toString());
+    for (const auto & entry : _map) {
+        messages.insert(entry.second.get()->toString());
     }
-    for (std::set<std::string>::const_iterator
-             it(messages.begin()), e(messages.end());
-         it != e; ++it)
-    {
-        ost << *it << "\n";
+    for (const auto & message : messages) {
+        ost << message << "\n";
     }
 
     return ost.str();

@@ -3,11 +3,11 @@ package com.yahoo.prelude.query.parser;
 
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.CharacterClasses;
+import com.yahoo.language.process.SpecialTokens;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.Substring;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -20,7 +20,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.*;
  */
 public final class Tokenizer {
 
-    private List<Token> tokens = new java.util.ArrayList<>();
+    private final List<Token> tokens = new java.util.ArrayList<>();
 
     private String source;
 
@@ -38,7 +38,7 @@ public final class Tokenizer {
 
     /** Creates a tokenizer which initializes from a given Linguistics */
     public Tokenizer(Linguistics linguistics) {
-        this.characterClasses=linguistics.getCharacterClasses();
+        this.characterClasses = linguistics.getCharacterClasses();
     }
 
     /**
@@ -108,8 +108,7 @@ public final class Tokenizer {
             if (i >= source.length()) break;
 
             int c = source.codePointAt(i);
-            if (characterClasses.isLetterOrDigit(c)
-                    || (c == '\'' && acceptApostropheAsWordCharacter(currentIndex))) {
+            if (characterClasses.isLetterOrDigit(c) || (c == '\'' && acceptApostropheAsWordCharacter(currentIndex))) {
                 i = consumeWordOrNumber(i, currentIndex);
             } else if (Character.isWhitespace(c)) {
                 addToken(SPACE, " ", i, i + 1);
@@ -187,7 +186,6 @@ public final class Tokenizer {
         return true;
     }
 
-    @SuppressWarnings({"deprecation"})
     private Index determineCurrentIndex(Index defaultIndex, IndexFacts.Session indexFacts) {
         int backtrack = tokens.size();
         int tokencnt = 0;
@@ -203,7 +201,7 @@ public final class Tokenizer {
         }
         StringBuilder tmp = new StringBuilder();
         for (int i = 0; i < tokencnt; i++) {
-            Token useToken = tokens.get(backtrack+i);
+            Token useToken = tokens.get(backtrack + i);
             tmp.append(useToken.image);
         }
         String indexName = tmp.toString();
@@ -219,22 +217,20 @@ public final class Tokenizer {
     }
 
     private int consumeSpecialToken(int start) {
-        SpecialTokens.SpecialToken specialToken=getSpecialToken(start);
-        if (specialToken==null) return start;
-        tokens.add(specialToken.toToken(start,source));
-        return start + specialToken.token().length();
+        SpecialTokens.Token token = getSpecialToken(start);
+        if (token == null) return start;
+        tokens.add(toToken(token, start, source));
+        return start + token.token().length();
     }
 
-    private SpecialTokens.SpecialToken getSpecialToken(int start) {
-        if (specialTokens == null) {
-            return null;
-        }
+    private SpecialTokens.Token getSpecialToken(int start) {
+        if (specialTokens == null) return null;
         return specialTokens.tokenize(source.substring(start), substringSpecialTokens);
     }
 
     private int consumeExact(int start,Index index) {
         if (index.getExactTerminator() == null) return consumeHeuristicExact(start);
-        return consumeToTerminator(start,index.getExactTerminator());
+        return consumeToTerminator(start, index.getExactTerminator());
     }
 
     private boolean looksLikeExactEnd(int end) {
@@ -328,7 +324,6 @@ public final class Tokenizer {
                     wantEndQuote = true;
                     actualStart = curPos+1;
                 } else if (wantEndQuote && looksLikeExactEnd(curPos+1)) {
-                    // System.err.println("seen quoted token from "+actualStart+" to "+curPos);
                     seenSome = true;
                     wantEndQuote = false;
                     isQuoted = true;
@@ -435,7 +430,7 @@ public final class Tokenizer {
         if (suffStar) {
             addToken(STAR, "*", starPos, starPos + 1);
         }
-        tokens.add(new Token(WORD, source.substring(actualStart, end), true, new Substring(actualStart, end, source))); // XXX: Unsafe?
+        tokens.add(new Token(WORD, source.substring(actualStart, end), true, new Substring(actualStart, end, source)));
 
         // skip terminating quote
         if (isQuoted) {
@@ -451,17 +446,17 @@ public final class Tokenizer {
                 break;
             end++;
         }
-        tokens.add(new Token(WORD, source.substring(start, end), true, new Substring(start, end, source))); // XXX: Unsafe start?
-        if (end>=source.length())
+        tokens.add(new Token(WORD, source.substring(start, end), true, new Substring(start, end, source)));
+        if (end >= source.length())
             return end;
         else
-            return end+terminator.length(); // Don't create a token for the terminator
+            return end + terminator.length(); // Don't create a token for the terminator
     }
 
     private boolean terminatorStartsAt(int start,String terminator) {
-        int terminatorPosition=0;
-        while ((terminatorPosition+start)<source.length()) {
-            if (source.charAt(start+terminatorPosition)!=terminator.charAt(terminatorPosition))
+        int terminatorPosition = 0;
+        while ((terminatorPosition + start) < source.length()) {
+            if (source.charAt(start+terminatorPosition) != terminator.charAt(terminatorPosition))
                 return false;
             terminatorPosition++;
             if (terminatorPosition >= terminator.length())
@@ -473,7 +468,7 @@ public final class Tokenizer {
     /** Consumes a word or number <i>and/or possibly</i> a special token starting within this word or number */
     private int consumeWordOrNumber(int start, Index currentIndex) {
         int tokenEnd = start;
-        SpecialTokens.SpecialToken substringSpecialToken = null;
+        SpecialTokens.Token substringToken = null;
         boolean digitsOnly = true;
         // int underscores = 0;
         // boolean underscoresOnly = true;
@@ -481,8 +476,8 @@ public final class Tokenizer {
 
         while (tokenEnd < source.length()) {
             if (substringSpecialTokens) {
-                substringSpecialToken=getSpecialToken(tokenEnd);
-                if (substringSpecialToken!=null) break;
+                substringToken = getSpecialToken(tokenEnd);
+                if (substringToken != null) break;
             }
 
             int c = source.codePointAt(tokenEnd);
@@ -506,7 +501,7 @@ public final class Tokenizer {
                 // underscoresOnly = false;
                 quotesOnly = false;
             } else if (c == '\'') {
-                if (!acceptApostropheAsWordCharacter(currentIndex)) {
+                if ( ! acceptApostropheAsWordCharacter(currentIndex)) {
                     break;
                 }
                 // Otherwise consume apostrophes...
@@ -530,19 +525,26 @@ public final class Tokenizer {
             }
         }
 
-        if (substringSpecialToken==null)
+        if (substringToken == null)
             return --tokenEnd;
         // TODO: test the logic around tokenEnd with friends
-        addToken(substringSpecialToken.toToken(tokenEnd,source));
-        return --tokenEnd+substringSpecialToken.token().length();
+        addToken(toToken(substringToken, tokenEnd, source));
+        return --tokenEnd + substringToken.token().length();
     }
 
     private void addToken(Token.Kind kind, String word, int start, int end) {
-        addToken(new Token(kind, word, false, new Substring(start, end, source))); // XXX: Unsafe?
+        addToken(new Token(kind, word, false, new Substring(start, end, source)));
     }
 
     private void addToken(Token token) {
         tokens.add(token);
+    }
+
+    public Token toToken(SpecialTokens.Token specialToken, int start, String rawSource) {
+        return new Token(Token.Kind.WORD,
+                         specialToken.replacement(),
+                         true,
+                         new Substring(start, start + specialToken.token().length(), rawSource)); // XXX: Unsafe?
     }
 
 }

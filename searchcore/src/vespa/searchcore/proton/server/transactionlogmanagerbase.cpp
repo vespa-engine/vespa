@@ -1,19 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "transactionlogmanagerbase.h"
+#include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.transactionlogmanagerbase");
 
-using search::transactionlog::TransLogClient;
+using search::transactionlog::client::Visitor;
 
 namespace proton {
 
 
 TransactionLogManagerBase::TransactionLogManagerBase(
         const vespalib::string &tlsSpec, const vespalib::string &domainName) :
-    _tlc(tlsSpec),
+    _tlc(std::make_unique<TransLogClient>(tlsSpec)),
     _tlcSession(),
     _domainName(domainName),
     _replayLock(),
@@ -29,31 +30,31 @@ TransactionLogManagerBase::~TransactionLogManagerBase() = default;
 TransactionLogManagerBase::StatusResult
 TransactionLogManagerBase::init()
 {
-    TransLogClient::Session::UP session = _tlc.open(_domainName);
+    std::unique_ptr<Session> session = _tlc->open(_domainName);
     if ( ! session) {
-        if (!_tlc.create(_domainName)) {
+        if (!_tlc->create(_domainName)) {
             vespalib::string str = vespalib::make_string(
                     "Failed creating domain '%s' on TLS '%s'",
-                    _domainName.c_str(), _tlc.getRPCTarget().c_str());
+                    _domainName.c_str(), _tlc->getRPCTarget().c_str());
             throw std::runtime_error(str);
         }
         LOG(debug, "Created domain '%s' on TLS '%s'",
-            _domainName.c_str(), _tlc.getRPCTarget().c_str());
-        session = _tlc.open(_domainName);
+            _domainName.c_str(), _tlc->getRPCTarget().c_str());
+        session = _tlc->open(_domainName);
         if ( ! session) {
             vespalib::string str = vespalib::make_string(
                     "Could not open session for domain '%s' on TLS '%s'",
-                    _domainName.c_str(), _tlc.getRPCTarget().c_str());
+                    _domainName.c_str(), _tlc->getRPCTarget().c_str());
             throw std::runtime_error(str);
         }
     }
     LOG(debug, "Opened domain '%s' on TLS '%s'",
-        _domainName.c_str(), _tlc.getRPCTarget().c_str());
+        _domainName.c_str(), _tlc->getRPCTarget().c_str());
     StatusResult res;
     if (!session->status(res.serialBegin, res.serialEnd, res.count)) {
         vespalib::string str = vespalib::make_string(
                 "Could not get status from session with domain '%s' on TLS '%s'",
-                _domainName.c_str(), _tlc.getRPCTarget().c_str());
+                _domainName.c_str(), _tlc->getRPCTarget().c_str());
         throw std::runtime_error(str);
     }
     LOG(debug,
@@ -72,7 +73,8 @@ TransactionLogManagerBase::internalStartReplay()
     _replayStopWatch = vespalib::Timer();
 }
 
-void TransactionLogManagerBase::changeReplayDone()
+void
+TransactionLogManagerBase::changeReplayDone()
 {
     std::lock_guard<std::mutex> guard(_replayLock);
     _replayDone = true;
@@ -101,23 +103,31 @@ TransactionLogManagerBase::close()
     }
 }
 
-TransLogClient::Visitor::UP
-TransactionLogManagerBase::createTlcVisitor(TransLogClient::Session::Callback &callback) {
-    return _tlc.createVisitor(_domainName, callback);
+std::unique_ptr<Visitor>
+TransactionLogManagerBase::createTlcVisitor(Callback &callback) {
+    return _tlc->createVisitor(_domainName, callback);
 }
 
-bool TransactionLogManagerBase::getReplayDone() const {
+bool
+TransactionLogManagerBase::getReplayDone() const {
     std::lock_guard<std::mutex> guard(_replayLock);
     return _replayDone;
 }
 
-bool TransactionLogManagerBase::isDoingReplay() const {
+bool
+TransactionLogManagerBase::isDoingReplay() const {
     std::lock_guard<std::mutex> guard(_replayLock);
     return _replayStarted && !_replayDone;
 }
 
-void TransactionLogManagerBase::logReplayComplete() const {
+void
+TransactionLogManagerBase::logReplayComplete() const {
     doLogReplayComplete(_domainName, _replayStopWatch.elapsed());
+}
+
+const vespalib::string &
+TransactionLogManagerBase::getRpcTarget() const {
+    return _tlc->getRPCTarget();
 }
 
 } // namespace proton

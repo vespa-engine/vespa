@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "test_master.h"
+#include "test_comparators.h"
 #include <vespa/fastos/app.h>
 
 #define TEST_STR(str) #str

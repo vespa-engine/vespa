@@ -13,6 +13,9 @@ FLEX_TARGET(DocSelLexer grammar/lexer.ll
 ADD_FLEX_BISON_DEPENDENCY(DocSelLexer DocSelParser)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
+vespa_add_source_target(bisongen_document_select DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/parser.cxx ${CMAKE_CURRENT_BINARY_DIR}/parser.hxx)
+vespa_add_source_target(flexgen_document_select DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/lexer.cxx ${CMAKE_CURRENT_BINARY_DIR}/lexer.hxx)
+
 vespa_add_library(document_select OBJECT
     SOURCES
     bodyfielddetector.cpp
@@ -36,10 +39,9 @@ vespa_add_library(document_select OBJECT
     parser.cpp
     parse_utils.cpp
     parsing_failed_exception.cpp
+    parser_limits.cpp
     ${BISON_DocSelParser_OUTPUTS}
     ${FLEX_DocSelLexer_OUTPUTS}
-    AFTER
-    document_documentconfig
 )
 
 #TODO Remove once we have a recently new flex compiler. At least 2.5.38/39 or 2.6

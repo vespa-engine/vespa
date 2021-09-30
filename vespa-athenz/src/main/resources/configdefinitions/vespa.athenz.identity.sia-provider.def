@@ -1,0 +1,9 @@
+# Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.athenz.identity
+
+athenzDomain string
+athenzService string
+keyPathPrefix string
+trustStorePath string
+trustStoreType enum {pem, jks} default=jks
+athenzTruststorePath string default="/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem"

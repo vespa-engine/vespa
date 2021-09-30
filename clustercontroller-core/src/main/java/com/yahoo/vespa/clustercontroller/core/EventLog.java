@@ -1,11 +1,16 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.vdslib.state.Node;
-import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class EventLog implements EventLogInterface {
@@ -15,12 +20,12 @@ public class EventLog implements EventLogInterface {
     private final Timer timer;
     private final LinkedList<Event> eventLog = new LinkedList<>();
     private final Map<Node, LinkedList<NodeEvent>> nodeLog = new TreeMap<>();
-    private MetricUpdater metricUpdater;  // may be null
+    private final MetricUpdater metricUpdater;  // may be null
     private long eventsSeen = 0;
-    private long startTime;
+    private final long startTime;
     private int maxSize = 1024;
     private int maxNodeSize = 1024;
-    private long recentTimePeriod = 7 * 24 * 60 * 60 * 1000; // millisecs - 1 week
+    private final long recentTimePeriod = 7 * 24 * 60 * 60 * 1000; // millisecs - 1 week
 
     /** Note: metricReporter may be null. */
     public EventLog(Timer timer, MetricUpdater metricUpdater) {
@@ -57,9 +62,9 @@ public class EventLog implements EventLogInterface {
         }
 
         if (e instanceof NodeEvent) {
-            addNodeOnlyEvent((NodeEvent)e, logInfo ? LogLevel.INFO: LogLevel.DEBUG);
+            addNodeOnlyEvent((NodeEvent)e, logInfo ? Level.INFO: Level.FINE);
         } else {
-            log.log(logInfo ? LogLevel.INFO : LogLevel.DEBUG, e.toString());
+            log.log(logInfo ? Level.INFO : Level.FINE, e::toString);
         }
     }
 

@@ -27,10 +27,10 @@ public class QueryProfileVariants implements Freezable, Cloneable {
     private boolean frozen = false;
 
     /** Properties indexed by name, to support fast lookup of single values */
-    private Map<String,FieldValues> fieldValuesByName = new HashMap<>();
+    private Map<String, FieldValues> fieldValuesByName = new HashMap<>();
 
     /** The inherited profiles for various dimensions settings - a set of fieldvalues of List&lt;QueryProfile&gt; */
-    private FieldValues inheritedProfiles =new FieldValues();
+    private FieldValues inheritedProfiles = new FieldValues();
 
     /**
      * Field and inherited profiles sorted by specificity used for all-value visiting.
@@ -43,10 +43,10 @@ public class QueryProfileVariants implements Freezable, Cloneable {
      * Order matters - more specific values to the left in this list are more significant than more specific values
      * to the right
      */
-    private List<String> dimensions;
+    private final List<String> dimensions;
 
     /** The query profile this variants of */
-    private QueryProfile owner;
+    private final QueryProfile owner;
 
     /**
      * Creates a set of virtual query profiles which may return varying values over the set of dimensions given.
@@ -144,7 +144,7 @@ public class QueryProfileVariants implements Freezable, Cloneable {
                 if (visitor.isDone()) return;
                 fieldIndex++;
             }
-            else if (inheritedProfileValue != null) { // Inherited is most specific at this point
+            else { // Inherited is most specific at this point
                 if (inheritedProfileValue.matches(dimensionBinding.getValues())) {
                     @SuppressWarnings("unchecked")
                     List<QueryProfile> inheritedProfileList = (List<QueryProfile>)inheritedProfileValue.getValue();
@@ -219,7 +219,7 @@ public class QueryProfileVariants implements Freezable, Cloneable {
         ensureNotFrozen();
 
         // Update variant
-        getVariant(dimensionValues, true).set(fieldName, value);
+        Object combinedValue = getVariant(dimensionValues, true).set(fieldName, value);
 
         // Update per-variable optimized structure
         FieldValues fieldValues = fieldValuesByName.get(fieldName);
@@ -228,9 +228,21 @@ public class QueryProfileVariants implements Freezable, Cloneable {
             fieldValuesByName.put(fieldName, fieldValues);
         }
 
-        Object combinedValue = QueryProfile.combineValues(value, fieldValues.getExact(dimensionValues));
         if (combinedValue != null)
             fieldValues.put(dimensionValues, combinedValue);
+    }
+
+    /**
+     * Makes a value unoverridable in a given context.
+     */
+    public void setOverridable(String fieldName, boolean overridable, DimensionValues dimensionValues) {
+        getVariant(dimensionValues, true).setOverridable(fieldName, overridable);
+    }
+
+    public Boolean isOverridable(String fieldName, DimensionValues dimensionValues) {
+        QueryProfileVariant variant = getVariant(dimensionValues, false);
+        if (variant == null) return null;
+        return variant.isOverridable(fieldName);
     }
 
     /**
@@ -257,6 +269,7 @@ public class QueryProfileVariants implements Freezable, Cloneable {
         return Collections.unmodifiableList(variants);
     }
 
+    @Override
     public QueryProfileVariants clone() {
         try {
             if (frozen) return this;
@@ -304,9 +317,12 @@ public class QueryProfileVariants implements Freezable, Cloneable {
         return variant;
     }
 
+    @Override
+    public String toString() { return "variants of " + owner; }
+
     public static class FieldValues implements Freezable, Cloneable {
 
-        private List<FieldValue> resolutionList=null;
+        private List<FieldValue> resolutionList = null;
 
         private boolean frozen = false;
 
@@ -420,7 +436,7 @@ public class QueryProfileVariants implements Freezable, Cloneable {
 
     public static class FieldValue implements Comparable<FieldValue>, Cloneable {
 
-        private DimensionValues dimensionValues;
+        private final DimensionValues dimensionValues;
         private Object value;
 
         public FieldValue(DimensionValues dimensionValues, Object value) {
@@ -458,7 +474,7 @@ public class QueryProfileVariants implements Freezable, Cloneable {
         }
 
         /** Clone by filling in the value from the given variants */
-        public FieldValue clone(String fieldName,List<QueryProfileVariant> clonedVariants) {
+        public FieldValue clone(String fieldName, List<QueryProfileVariant> clonedVariants) {
             try {
                 FieldValue clone = (FieldValue)super.clone();
                 if (this.value instanceof QueryProfile)
@@ -471,6 +487,7 @@ public class QueryProfileVariants implements Freezable, Cloneable {
             }
         }
 
+        @Override
         public FieldValue clone() {
             try {
                 FieldValue clone = (FieldValue)super.clone();
@@ -489,6 +506,9 @@ public class QueryProfileVariants implements Freezable, Cloneable {
             }
             return null;
         }
+
+        @Override
+        public String toString() { return "field value " + value + " for " + dimensionValues; }
 
     }
 

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "storagereply.h"
+#include "bucketcommand.h"
 
 namespace storage::api {
 
@@ -19,13 +20,16 @@ class BucketReply : public StorageReply {
     document::BucketId _originalBucket;
 
 protected:
-    BucketReply(const BucketCommand& cmd, const ReturnCode& code = ReturnCode(ReturnCode::OK));
+    BucketReply(const BucketCommand& cmd)
+        : StorageReply(cmd),
+          _bucket(cmd.getBucket()),
+          _originalBucket(cmd.getOriginalBucketId())
+    { }
 
 public:
     DECLARE_POINTER_TYPEDEFS(BucketReply);
 
     document::Bucket getBucket() const override { return _bucket; }
-    bool hasSingleBucketId() const override { return true; }
 
     bool hasBeenRemapped() const { return (_originalBucket.getRawId() != 0); }
     const document::BucketId& getOriginalBucketId() const { return _originalBucket; }

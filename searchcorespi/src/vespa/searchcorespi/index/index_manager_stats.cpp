@@ -3,6 +3,7 @@
 #include "index_manager_stats.h"
 #include "iindexmanager.h"
 #include "indexsearchablevisitor.h"
+#include "imemoryindex.h"
 
 namespace searchcorespi {
 
@@ -14,15 +15,12 @@ public:
     std::vector<index::DiskIndexStats> _diskIndexes;
     std::vector<index::MemoryIndexStats> _memoryIndexes;
 
-    Visitor()
-        : _diskIndexes(),
-          _memoryIndexes()
-    {
-    }
-    virtual void visit(const index::IDiskIndex &index) override {
+    Visitor();
+    ~Visitor();
+    void visit(const index::IDiskIndex &index) override {
         _diskIndexes.emplace_back(index);
     }
-    virtual void visit(const index::IMemoryIndex &index) override {
+    void visit(const index::IMemoryIndex &index) override {
         _memoryIndexes.emplace_back(index);
     }
 
@@ -31,6 +29,9 @@ public:
         std::sort(_memoryIndexes.begin(), _memoryIndexes.end());
     }
 };
+
+Visitor::Visitor() = default;
+Visitor::~Visitor() = default;
 
 }
 
@@ -52,8 +53,6 @@ IndexManagerStats::IndexManagerStats(const IIndexManager &indexManager)
     _memoryIndexes = std::move(visitor._memoryIndexes);
 }
 
-IndexManagerStats::~IndexManagerStats()
-{
-}
+IndexManagerStats::~IndexManagerStats() = default;
 
-} // namespace searchcorespi
+}

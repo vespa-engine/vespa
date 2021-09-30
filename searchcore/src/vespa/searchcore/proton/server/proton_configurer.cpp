@@ -15,6 +15,9 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <future>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.proton_configurer");
+
 using vespalib::makeLambdaTask;
 using vespa::config::search::core::ProtonConfig;
 
@@ -39,7 +42,7 @@ getBucketSpace(const BootstrapConfig &bootstrapConfig, const DocTypeName &name)
 }
 
 
-ProtonConfigurer::ProtonConfigurer(vespalib::ThreadStackExecutorBase &executor,
+ProtonConfigurer::ProtonConfigurer(vespalib::SyncableThreadExecutor &executor,
                                    IProtonConfigurerOwner &owner,
                                    const std::unique_ptr<IProtonDiskLayout> &diskLayout)
     : IProtonConfigurer(),
@@ -69,7 +72,7 @@ ProtonConfigurer::setAllowReconfig(bool allowReconfig)
         _allowReconfig = allowReconfig;
         if (allowReconfig) {
             // Ensure that pending config is applied
-            _executor.execute(makeLambdaTask([=]() { performReconfigure(); }));
+            _executor.execute(makeLambdaTask([this]() { performReconfigure(); }));
         }
     }
     if (!allowReconfig) {
@@ -99,7 +102,7 @@ ProtonConfigurer::reconfigure(std::shared_ptr<ProtonConfigSnapshot> configSnapsh
     std::lock_guard<std::mutex> guard(_mutex);
     _pendingConfigSnapshot = configSnapshot;
     if (_allowReconfig) {
-        _executor.execute(makeLambdaTask([=]() { performReconfigure(); }));
+        _executor.execute(makeLambdaTask([&]() { performReconfigure(); }));
     }
 }
 
@@ -177,6 +180,13 @@ ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot &configSnapshot
     } else {
         auto documentDB = dbitr->second.first.lock();
         assert(documentDB);
+        auto old_bucket_space = documentDB->getBucketSpace();
+        if (bucketSpace != old_bucket_space) {
+            vespalib::string old_bucket_space_name = document::FixedBucketSpaces::to_string(old_bucket_space);
+            vespalib::string bucket_space_name = document::FixedBucketSpaces::to_string(bucketSpace);
+            LOG(fatal, "Bucket space for document type %s changed from %s to %s. This triggers undefined behavior on a running system. Restarting process immediately to fix it.", docTypeName.getName().c_str(), old_bucket_space_name.c_str(), bucket_space_name.c_str());
+            std::_Exit(1);
+        }
         documentDB->reconfigure(documentDBConfig);
     }
 }

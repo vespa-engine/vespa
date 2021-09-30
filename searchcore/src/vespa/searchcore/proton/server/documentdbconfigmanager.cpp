@@ -2,12 +2,18 @@
 
 #include "documentdbconfigmanager.h"
 #include "bootstrapconfig.h"
+#include "threading_service_config.h"
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
+#include <vespa/searchcore/config/config-ranking-expressions.h>
+#include <vespa/searchcore/config/config-onnx-models.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/config/file_acquirer/file_acquirer.h>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/config/helper/legacy.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-indexschema.h>
@@ -16,6 +22,9 @@
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/time/time_box.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <thread>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.documentdbconfigmanager");
@@ -30,6 +39,8 @@ using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::index::SchemaBuilder;
 using proton::matching::RankingConstants;
+using proton::matching::RankingExpressions;
+using proton::matching::OnnxModels;
 using vespalib::compression::CompressionConfig;
 using search::LogDocumentStore;
 using search::LogDataStore;
@@ -37,6 +48,8 @@ using search::DocumentStore;
 using search::WriteableFileChunk;
 using std::make_shared;
 using std::make_unique;
+
+using vespalib::make_string_short::fmt;
 
 namespace proton {
 
@@ -46,6 +59,8 @@ DocumentDBConfigManager::createConfigKeySet() const
     ConfigKeySet set;
     set.add<RankProfilesConfig,
             RankingConstantsConfig,
+            RankingExpressionsConfig,
+            OnnxModelsConfig,
             IndexschemaConfig,
             AttributesConfig,
             SummaryConfig,
@@ -124,9 +139,8 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
         isDocumentTypeGlobal = ddbConfig.global;
     }
     return std::make_shared<DocumentDBMaintenanceConfig>(
-            DocumentDBPruneRemovedDocumentsConfig(
-                    pruneRemovedDocumentsInterval,
-                    pruneRemovedDocumentsAge),
+            DocumentDBPruneConfig(pruneRemovedDocumentsInterval,
+                                  pruneRemovedDocumentsAge),
             DocumentDBHeartBeatConfig(),
             vespalib::from_s(proton.grouping.sessionmanager.pruning.interval),
             visibilityDelay,
@@ -134,18 +148,17 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                     vespalib::from_s(proton.lidspacecompaction.interval),
                     proton.lidspacecompaction.allowedlidbloat,
                     proton.lidspacecompaction.allowedlidbloatfactor,
-                    vespalib::from_s(proton.lidspacecompaction.removebatchblockdelay),
+                    proton.lidspacecompaction.removebatchblockrate,
+                    proton.lidspacecompaction.removeblockrate,
                     isDocumentTypeGlobal),
             AttributeUsageFilterConfig(
-                    proton.writefilter.attribute.enumstorelimit,
-                    proton.writefilter.attribute.multivaluelimit),
+                    proton.writefilter.attribute.addressSpaceLimit),
             vespalib::from_s(proton.writefilter.sampleinterval),
             BlockableMaintenanceJobConfig(
                     proton.maintenancejobs.resourcelimitfactor,
                     proton.maintenancejobs.maxoutstandingmoveops),
-            DocumentDBFlushConfig(
-                    proton.index.maxflushed,
-                    proton.index.maxflushedretired));
+            DocumentDBFlushConfig(proton.index.maxflushed,proton.index.maxflushedretired),
+            BucketMoveConfig(proton.bucketmove.maxdocstomoveperbucket));
 }
 
 template<typename T>
@@ -191,6 +204,7 @@ deriveConfig(const ProtonConfig::Summary & summary, const ProtonConfig::Flush::M
     WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes);
     LogDataStore::Config logConfig;
     logConfig.setMaxFileSize(log.maxfilesize)
+            .setMaxNumLids(log.maxnumlids)
             .setMaxDiskBloatFactor(std::min(flush.diskbloatfactor, flush.each.diskbloatfactor))
             .setMaxBucketSpread(log.maxbucketspread).setMinFileSizeFactor(log.minfilesizefactor)
             .compactCompression(deriveCompression(log.compact.compression))
@@ -219,6 +233,62 @@ filterImportedAttributes(const AttributesConfigSP &attrCfg)
     return result;
 }
 
+const ProtonConfig::Documentdb default_document_db_config_entry;
+
+const ProtonConfig::Documentdb&
+find_document_db_config_entry(const ProtonConfig::DocumentdbVector& document_dbs, const vespalib::string& doc_type_name) {
+    for (const auto & db_cfg : document_dbs) {
+        if (db_cfg.inputdoctypename == doc_type_name) {
+            return db_cfg;
+        }
+    }
+    return default_document_db_config_entry;
+}
+
+std::shared_ptr<const ThreadingServiceConfig>
+build_threading_service_config(const ProtonConfig &proton_config,
+                               const HwInfo &hw_info,
+                               const vespalib::string& doc_type_name)
+{
+    auto& document_db_config_entry = find_document_db_config_entry(proton_config.documentdb, doc_type_name);
+    return std::make_shared<const ThreadingServiceConfig>
+        (ThreadingServiceConfig::make(proton_config,
+                                      document_db_config_entry.feeding.concurrency,
+                                      hw_info.cpu()));
+}
+
+std::shared_ptr<const AllocConfig>
+build_alloc_config(const ProtonConfig& proton_config, const vespalib::string& doc_type_name)
+{
+    auto& document_db_config_entry = find_document_db_config_entry(proton_config.documentdb, doc_type_name);
+    auto& alloc_config = document_db_config_entry.allocation;
+    auto& distribution_config = proton_config.distribution;
+    search::GrowStrategy grow_strategy(alloc_config.initialnumdocs, alloc_config.growfactor, alloc_config.growbias, alloc_config.multivaluegrowfactor);
+    search::CompactionStrategy compaction_strategy(alloc_config.maxDeadBytesRatio, alloc_config.maxDeadAddressSpaceRatio);
+    return std::make_shared<const AllocConfig>
+        (AllocStrategy(grow_strategy, compaction_strategy, alloc_config.amortizecount),
+         distribution_config.redundancy, distribution_config.searchablecopies);
+}
+
+vespalib::string resolve_file(config::RpcFileAcquirer &fileAcquirer, vespalib::TimeBox &timeBox,
+                              const vespalib::string &desc, const vespalib::string &fileref)
+{
+    vespalib::string filePath;
+    LOG(info, "Waiting for file acquirer (%s, ref='%s')", desc.c_str(), fileref.c_str());
+    while (timeBox.hasTimeLeft() && (filePath == "")) {
+        filePath = fileAcquirer.wait_for(fileref, timeBox.timeLeft());
+        if (filePath == "") {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+    LOG(info, "Got file path from file acquirer: '%s' (%s, ref='%s')", filePath.c_str(), desc.c_str(), fileref.c_str());
+    if (filePath == "") {
+        throw config::ConfigTimeoutException(fmt("could not get file path from file acquirer for %s (ref=%s)",
+                                                 desc.c_str(), fileref.c_str()));
+    }
+    return filePath;
+}
+
 }
 
 void
@@ -226,6 +296,8 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
 {
     using RankProfilesConfigSP = DocumentDBConfig::RankProfilesConfigSP;
     using RankingConstantsConfigSP = std::shared_ptr<vespa::config::search::core::RankingConstantsConfig>;
+    using RankingExpressionsConfigSP = std::shared_ptr<vespa::config::search::core::RankingExpressionsConfig>;
+    using OnnxModelsConfigSP = std::shared_ptr<vespa::config::search::core::OnnxModelsConfig>;
     using IndexschemaConfigSP = DocumentDBConfig::IndexschemaConfigSP;
     using SummaryConfigSP = DocumentDBConfig::SummaryConfigSP;
     using SummarymapConfigSP = DocumentDBConfig::SummarymapConfigSP;
@@ -236,9 +308,13 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     DocumentDBConfig::SP current = _pendingConfigSnapshot;
     RankProfilesConfigSP newRankProfilesConfig;
     matching::RankingConstants::SP newRankingConstants;
+    matching::RankingExpressions::SP newRankingExpressions;
+    matching::OnnxModels::SP newOnnxModels;
     IndexschemaConfigSP newIndexschemaConfig;
     MaintenanceConfigSP oldMaintenanceConfig;
     MaintenanceConfigSP newMaintenanceConfig;
+    std::shared_ptr<const ThreadingServiceConfig> old_threading_service_config;
+    std::shared_ptr<const AllocConfig> old_alloc_config;
 
     if (!_ignoreForwardedConfig) {
         if (!(_bootstrapConfig->getDocumenttypesConfigSP() &&
@@ -259,8 +335,12 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     if (current) {
         newRankProfilesConfig = current->getRankProfilesConfigSP();
         newRankingConstants = current->getRankingConstantsSP();
+        newRankingExpressions = current->getRankingExpressionsSP();
+        newOnnxModels = current->getOnnxModelsSP();
         newIndexschemaConfig = current->getIndexschemaConfigSP();
         oldMaintenanceConfig = current->getMaintenanceConfigSP();
+        old_threading_service_config = current->get_threading_service_config_shared_ptr();
+        old_alloc_config = current->get_alloc_config_shared_ptr();
         currentGeneration = current->getGeneration();
     }
 
@@ -276,21 +356,45 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
             config::RpcFileAcquirer fileAcquirer(spec);
             vespalib::TimeBox timeBox(5*60, 5);
             for (const RankingConstantsConfig::Constant &rc : newRankingConstantsConfig->constant) {
-                vespalib::string filePath;
-                LOG(info, "Waiting for file acquirer (name='%s', type='%s', ref='%s')",
-                    rc.name.c_str(), rc.type.c_str(), rc.fileref.c_str());
-                while (timeBox.hasTimeLeft() && (filePath == "")) {
-                    filePath = fileAcquirer.wait_for(rc.fileref, timeBox.timeLeft());
-                    if (filePath == "") {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                    }
-                }
-                LOG(info, "Got file path from file acquirer: '%s' (name='%s', type='%s', ref='%s')",
-                    filePath.c_str(), rc.name.c_str(), rc.type.c_str(), rc.fileref.c_str());
+                auto desc = fmt("name='%s', type='%s'", rc.name.c_str(), rc.type.c_str());
+                vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);
                 constants.emplace_back(rc.name, rc.type, filePath);
             }
         }
         newRankingConstants = std::make_shared<RankingConstants>(constants);
+    }
+    if (snapshot.isChanged<RankingExpressionsConfig>(_configId, currentGeneration)) {
+        RankingExpressionsConfigSP newRankingExpressionsConfig = RankingExpressionsConfigSP(
+            snapshot.getConfig<RankingExpressionsConfig>(_configId));
+        const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
+        RankingExpressions expressions;
+        if (spec != "") {
+            config::RpcFileAcquirer fileAcquirer(spec);
+            vespalib::TimeBox timeBox(5*60, 5);
+            for (const RankingExpressionsConfig::Expression &rc : newRankingExpressionsConfig->expression) {
+                auto desc = fmt("name='%s'", rc.name.c_str());
+                vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);
+                expressions.add(rc.name, filePath);
+            }
+        }
+        newRankingExpressions = std::make_shared<RankingExpressions>(std::move(expressions));
+    }
+    if (snapshot.isChanged<OnnxModelsConfig>(_configId, currentGeneration)) {
+        OnnxModelsConfigSP newOnnxModelsConfig = OnnxModelsConfigSP(
+                snapshot.getConfig<OnnxModelsConfig>(_configId));
+        const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
+        OnnxModels::Vector models;
+        if (spec != "") {
+            config::RpcFileAcquirer fileAcquirer(spec);
+            vespalib::TimeBox timeBox(5*60, 5);
+            for (const OnnxModelsConfig::Model &rc : newOnnxModelsConfig->model) {
+                auto desc = fmt("name='%s'", rc.name.c_str());
+                vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);
+                models.emplace_back(rc.name, filePath);
+                OnnxModels::configure(rc, models.back());
+            }
+        }
+        newOnnxModels = std::make_shared<OnnxModels>(models);
     }
     if (snapshot.isChanged<IndexschemaConfig>(_configId, currentGeneration)) {
         newIndexschemaConfig = snapshot.getConfig<IndexschemaConfig>(_configId);
@@ -313,9 +417,20 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     if (newMaintenanceConfig && oldMaintenanceConfig && (*newMaintenanceConfig == *oldMaintenanceConfig)) {
         newMaintenanceConfig = oldMaintenanceConfig;
     }
+    auto new_threading_service_config = build_threading_service_config(_bootstrapConfig->getProtonConfig(), _bootstrapConfig->getHwInfo(), _docTypeName);
+    if (new_threading_service_config && old_threading_service_config &&
+        (*new_threading_service_config == *old_threading_service_config)) {
+        new_threading_service_config = old_threading_service_config;
+    }
+    auto new_alloc_config = build_alloc_config(_bootstrapConfig->getProtonConfig(), _docTypeName);
+    if (new_alloc_config && old_alloc_config &&(*new_alloc_config == *old_alloc_config)) {
+        new_alloc_config = old_alloc_config;
+    }
     auto newSnapshot = std::make_shared<DocumentDBConfig>(generation,
                                  newRankProfilesConfig,
                                  newRankingConstants,
+                                 newRankingExpressions,
+                                 newOnnxModels,
                                  newIndexschemaConfig,
                                  filterImportedAttributes(newAttributesConfig),
                                  newSummaryConfig,
@@ -328,6 +443,8 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
                                  schema,
                                  newMaintenanceConfig,
                                  storeConfig,
+                                 new_threading_service_config,
+                                 new_alloc_config,
                                  _configId,
                                  _docTypeName);
     assert(newSnapshot->valid());

@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_equiv_test_app TEST
     equiv_test.cpp
     DEPENDS
     searchlib
+    GTest::GTest
 )
 vespa_add_test(NAME searchlib_equiv_test_app COMMAND searchlib_equiv_test_app)

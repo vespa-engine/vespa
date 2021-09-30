@@ -3,7 +3,7 @@
 #include "array_store_config.h"
 #include <cassert>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 ArrayStoreConfig::ArrayStoreConfig(size_t maxSmallArraySize, const AllocSpec &defaultSpec)
     : _allocSpecs(),

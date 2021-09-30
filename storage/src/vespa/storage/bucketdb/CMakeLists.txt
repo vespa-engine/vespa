@@ -2,19 +2,16 @@
 vespa_add_library(storage_bucketdb OBJECT
     SOURCES
     btree_bucket_database.cpp
+    btree_lockable_map.cpp
     bucketcopy.cpp
     bucketdatabase.cpp
     bucketinfo.cpp
     bucketmanager.cpp
     bucketmanagermetrics.cpp
-    judyarray.cpp
-    lockablemap.cpp
-    mapbucketdatabase.cpp
-    storagebucketdbinitializer.cpp
+    generic_btree_bucket_database.cpp
     storbucketdb.cpp
+    striped_btree_lockable_map.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )
 vespa_generate_config(storage_bucketdb stor-bucketdb.def)
 install_config_definition(stor-bucketdb.def vespa.config.content.core.stor-bucketdb.def)

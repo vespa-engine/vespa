@@ -6,6 +6,4 @@ vespa_add_library(document_repo OBJECT
     document_type_repo_factory.cpp
     fixedtyperepo.cpp
     DEPENDS
-    AFTER
-    document_documentconfig
 )

@@ -26,11 +26,6 @@ public:
     using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
 
 private:
-    friend class PostingListAttributeTest;
-    template <typename, typename, typename> 
-    friend class attribute::PostingSearchContext; // getEnumStore()
-    friend class StringAttributeTest;
-
     using LoadedVector = typename B::LoadedVector;
     using PostingParent = PostingListAttributeSubBase<AttributePosting,
                                                       LoadedVector,
@@ -40,19 +35,15 @@ private:
     using Change = StringAttribute::Change;
     using ChangeVector = StringAttribute::ChangeVector;
     using ComparatorType = typename EnumStore::ComparatorType;
-    using Dictionary = EnumPostingTree;
     using DocId = typename SingleValueStringAttributeT<B>::DocId;
     using EnumIndex = typename SingleValueStringAttributeT<B>::EnumIndex;
-    using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
-    using PostingList = typename PostingParent::PostingList;
     using PostingMap = typename PostingParent::PostingMap;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using SelfType = SingleValueStringPostingAttributeT<B>;
     using StringSingleImplSearchContext = typename SingleValueStringAttributeT<B>::StringSingleImplSearchContext;
     using StringSinglePostingSearchContext = attribute::StringPostingSearchContext<StringSingleImplSearchContext,
                                                                                    SelfType,
-                                                                                   btree::BTreeNoLeafData>;
+                                                                                   vespalib::btree::BTreeNoLeafData>;
     using ValueModifier = typename SingleValueStringAttributeT<B>::ValueModifier;
     using generation_t = typename SingleValueStringAttributeT<B>::generation_t;
 
@@ -62,6 +53,8 @@ private:
     using PostingParent::handle_load_posting_lists_and_update_enum_store;
     using PostingParent::forwardedOnAddDoc;
 public:
+    using PostingList = typename PostingParent::PostingList;
+    using Dictionary = EnumPostingTree;
     using PostingParent::getPostingList;
 
 private:
@@ -71,11 +64,10 @@ private:
                                 EnumStore & enumStore,
                                 std::map<DocId, EnumIndex> &currEnumIndices);
 
-    void
-    makePostingChange(const datastore::EntryComparator *cmp,
-                      Dictionary &dict,
-                      const std::map<DocId, EnumIndex> &currEnumIndices,
-                      PostingMap &changePost);
+    void makePostingChange(const vespalib::datastore::EntryComparator &cmp,
+                           IEnumStoreDictionary& dictionary,
+                           const std::map<DocId, EnumIndex> &currEnumIndices,
+                           PostingMap &changePost);
 
     void applyValueChanges(EnumStoreBatchUpdater& updater) override;
 public:

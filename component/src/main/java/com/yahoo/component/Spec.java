@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.component;
 
-import static com.yahoo.container.util.Util.firstNonNull;
-
 /**
  * Code common to ComponentId and ComponentSpecification
  *
@@ -28,7 +26,7 @@ final class Spec<VERSION> {
 
         this.versionHandler = versionHandler;
         this.name = name;
-        this.version = firstNonNull(version, versionHandler.emptyVersion());
+        this.version = version == null ? versionHandler.emptyVersion() : version;
         this.namespace = namespace;
     }
 

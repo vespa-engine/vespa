@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
-import static com.yahoo.container.util.Util.quote;
+import com.yahoo.processing.IllegalInputException;
 
 /**
  * Wrapper class to avoid code duplication of common parsing requirements.
@@ -25,13 +25,8 @@ public class ParameterParser {
      *         representation cannot be parsed as a number followed optionally by time unit
      */
     public static Long asMilliSeconds(Object value, Long defaultValue) {
-        if (value == null) {
-            return defaultValue;
-        }
-        if (value instanceof Number) {
-            Number n = (Number) value;
-            return Long.valueOf(n.longValue() * 1000L);
-        }
+        if (value == null) return defaultValue;
+        if (value instanceof Number) return ((Number)value).longValue() * 1000L;
         return parseTime(value.toString());
     }
 
@@ -43,7 +38,7 @@ public class ParameterParser {
             double multiplier = parseUnit(time.substring(unitOffset));
             return (long) (measure * multiplier);
         } catch (RuntimeException e) {
-            throw new IllegalArgumentException("Error parsing " + quote(time), e);
+            throw new IllegalInputException("Error parsing '" + time + "'", e);
         }
     }
 
@@ -58,7 +53,7 @@ public class ParameterParser {
             }
         }
         if (unitOffset == 0) {
-            throw new NumberFormatException("Invalid number " + quote(time));
+            throw new IllegalInputException("Invalid number '" + time + "'");
         }
         return unitOffset;
     }

@@ -10,28 +10,25 @@ LOG_SETUP(".distributor.operation.idealstate.setactive");
 
 namespace storage::distributor {
 
-SetBucketStateOperation::SetBucketStateOperation(const std::string& clusterName,
+SetBucketStateOperation::SetBucketStateOperation(const ClusterContext &cluster_ctx,
                                                  const BucketAndNodes& nodes,
                                                  const std::vector<uint16_t>& wantedActiveNodes)
     : IdealStateOperation(nodes),
-      _tracker(clusterName),
+      _tracker(cluster_ctx),
       _wantedActiveNodes(wantedActiveNodes)
 { }
 
-SetBucketStateOperation::~SetBucketStateOperation() {}
+SetBucketStateOperation::~SetBucketStateOperation() = default;
 
 void
 SetBucketStateOperation::enqueueSetBucketStateCommand(uint16_t node, bool active) {
-    std::shared_ptr<api::SetBucketStateCommand> msg(
-            new api::SetBucketStateCommand(
-                    getBucket(),
-                    active
-                    ? api::SetBucketStateCommand::ACTIVE
-                    : api::SetBucketStateCommand::INACTIVE));
+    auto msg = std::make_shared<api::SetBucketStateCommand>(getBucket(),
+                                                            active
+                                                                ? api::SetBucketStateCommand::ACTIVE
+                                                                : api::SetBucketStateCommand::INACTIVE);
     LOG(debug, "Enqueuing %s for %s to node %u",
         active ? "Activate" : "Deactivate",
-        getBucketId().toString().c_str(),
-        node);
+        getBucketId().toString().c_str(), node);
     setCommandMeta(*msg);
     _tracker.queueCommand(msg, node);
 }
@@ -46,7 +43,7 @@ SetBucketStateOperation::shouldBeActive(uint16_t node) const
 }
 
 void
-SetBucketStateOperation::activateNode(DistributorMessageSender& sender) {
+SetBucketStateOperation::activateNode(DistributorStripeMessageSender& sender) {
     for (uint32_t i=0; i<_wantedActiveNodes.size(); ++i) {
         enqueueSetBucketStateCommand(_wantedActiveNodes[i], true);
     }
@@ -56,7 +53,7 @@ SetBucketStateOperation::activateNode(DistributorMessageSender& sender) {
 
 
 void
-SetBucketStateOperation::deactivateNodes(DistributorMessageSender& sender) {
+SetBucketStateOperation::deactivateNodes(DistributorStripeMessageSender& sender) {
     const std::vector<uint16_t>& nodes(getNodes());
     for (size_t i = 0; i < nodes.size(); ++i) {
         if (!shouldBeActive(nodes[i])) {
@@ -67,13 +64,13 @@ SetBucketStateOperation::deactivateNodes(DistributorMessageSender& sender) {
 }
 
 void
-SetBucketStateOperation::onStart(DistributorMessageSender& sender)
+SetBucketStateOperation::onStart(DistributorStripeMessageSender& sender)
 {
     activateNode(sender);
 }
 
 void
-SetBucketStateOperation::onReceive(DistributorMessageSender& sender,
+SetBucketStateOperation::onReceive(DistributorStripeMessageSender& sender,
                                    const std::shared_ptr<api::StorageReply>& reply)
 {
     api::SetBucketStateReply& rep(
@@ -101,7 +98,7 @@ SetBucketStateOperation::onReceive(DistributorMessageSender& sender,
                 }
 
                 entry->updateNode(
-                        BucketCopy(_manager->getDistributorComponent().getUniqueTimestamp(),
+                        BucketCopy(_manager->operation_context().generate_unique_timestamp(),
                                    node,
                                    bInfo).setTrusted(copy->trusted()));
 

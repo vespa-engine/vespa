@@ -25,9 +25,9 @@ import java.util.logging.Logger;
  */
 public class ClusterMonitor<T> {
 
-    private final MonitorConfiguration configuration = new MonitorConfiguration();
+    private static final Logger log = Logger.getLogger(ClusterMonitor.class.getName());
 
-    private static Logger log = Logger.getLogger(ClusterMonitor.class.getName());
+    private final MonitorConfiguration configuration = new MonitorConfiguration();
 
     private final NodeManager<T> nodeManager;
 
@@ -61,6 +61,8 @@ public class ClusterMonitor<T> {
 
     /** Returns the configuration of this cluster monitor */
     public MonitorConfiguration getConfiguration() { return configuration; }
+
+    public boolean isClosed() { return closed.get(); }
 
     /**
      * Adds a new node for monitoring.

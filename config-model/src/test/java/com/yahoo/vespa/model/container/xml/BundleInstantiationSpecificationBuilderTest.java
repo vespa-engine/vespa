@@ -5,6 +5,7 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.search.grouping.GroupingValidator;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import org.junit.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -33,7 +34,7 @@ public class BundleInstantiationSpecificationBuilderTest {
     @Test
     public void bundle_is_replaced_for_internal_class() throws IOException, SAXException {
         String internalClass = GroupingValidator.class.getName();
-        verifyExpectedBundle(internalClass, null, BundleMapper.searchAndDocprocBundle);
+        verifyExpectedBundle(internalClass, null, PlatformBundles.searchAndDocprocBundle);
     }
 
     @Test

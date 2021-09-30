@@ -45,9 +45,9 @@ class Thread_JoinWait_Test : public ThreadTestBase
             break;
       }
 
-      if(rc)
+      if (rc)
       {
-         jobs[lastThreadNum].code = (((variant & 2) != 0) ? NOP : PRINT_MESSAGE_AND_WAIT3SEC);
+         jobs[lastThreadNum].code = (((variant & 2) != 0) ? NOP : PRINT_MESSAGE_AND_WAIT3MSEC);
          jobs[lastThreadNum].message = strdup("This is the thread that others wait for.");
 
          FastOS_ThreadInterface *lastThread;
@@ -59,10 +59,9 @@ class Thread_JoinWait_Test : public ThreadTestBase
          rc = (lastThread != nullptr);
          Progress(rc, "Creating last thread");
 
-         if(rc)
+         if (rc)
          {
-            for(i=0; i<lastThreadNum; i++)
-            {
+            for(i=0; i<lastThreadNum; i++) {
                jobs[i].otherThread = lastThread;
             }
          }
@@ -70,9 +69,9 @@ class Thread_JoinWait_Test : public ThreadTestBase
 
       jobMutex.unlock();
 
-      if((variant & 1) != 0)
+      if ((variant & 1) != 0)
       {
-         for(i=0; i<lastThreadNum; i++)
+         for (i=0; i<lastThreadNum; i++)
          {
             Progress(true, "Waiting for thread %d to finish using Join()", i+1);
             jobs[i].ownThread->Join();

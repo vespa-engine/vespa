@@ -2,12 +2,9 @@
 package com.yahoo.config.provision;
 
 /**
- *
- * Exception thrown when trying to activate a node that runs on a host that is not
- * yet ready to run the node.
+ * Exception thrown when trying to activate a node that runs on a host that is not yet ready to run the node.
  * 
  * @author freva
- *
  */
 public class ParentHostUnavailableException extends TransientException {
 

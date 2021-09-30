@@ -16,20 +16,22 @@
 #include <vespa/searchcore/proton/metrics/metrics_engine.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
-#include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/engine/monitorapi.h>
-#include <vespa/searchlib/transactionlog/translogserverapp.h>
 #include <vespa/vespalib/net/component_config_producer.h>
 #include <vespa/vespalib/net/generic_state_handler.h>
 #include <vespa/vespalib/net/json_get_handler.h>
 #include <vespa/vespalib/net/json_handler_repo.h>
 #include <vespa/vespalib/net/state_explorer.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <vespa/eval/eval/llvm/compile_cache.h>
 #include <mutex>
 #include <shared_mutex>
 
 namespace vespalib { class StateServer; }
+namespace search::transactionlog { class TransLogServerApp; }
+namespace metrics { class MetricLockGuard; }
+namespace storage::spi { struct PersistenceProvider; }
 
 namespace proton {
 
@@ -41,6 +43,7 @@ class SummaryEngine;
 class DocsumBySlime;
 class FlushEngine;
 class MatchEngine;
+class PersistenceEngine;
 
 class Proton : public IProtonConfigurerOwner,
                public search::engine::MonitorServer,
@@ -51,24 +54,14 @@ class Proton : public IProtonConfigurerOwner,
                public vespalib::StateExplorer
 {
 private:
-    typedef search::transactionlog::TransLogServerApp     TLS;
-    typedef search::engine::MonitorRequest                MonitorRequest;
-    typedef search::engine::MonitorReply                  MonitorReply;
-    typedef search::engine::MonitorClient                 MonitorClient;
-    typedef std::map<DocTypeName, DocumentDB::SP>         DocumentDBMap;
-    typedef BootstrapConfig::ProtonConfigSP               ProtonConfigSP;
-    using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
+    using TLS = search::transactionlog::TransLogServerApp;
+    using MonitorRequest = search::engine::MonitorRequest;
+    using MonitorReply = search::engine::MonitorReply;
+    using MonitorClient = search::engine::MonitorClient;
+    using DocumentDBMap = std::map<DocTypeName, DocumentDB::SP>;
+    using ProtonConfigSP = BootstrapConfig::ProtonConfigSP;
+    using InitializeThreads = std::shared_ptr<vespalib::SyncableThreadExecutor>;
     using BucketSpace = document::BucketSpace;
-
-    struct MetricsUpdateHook : metrics::UpdateHook
-    {
-        Proton &self;
-        MetricsUpdateHook(Proton &s)
-            : metrics::UpdateHook("proton-hook"),
-              self(s) {}
-        void updateMetrics(const vespalib::MonitorGuard &guard) override { self.updateMetrics(guard); }
-    };
-    friend struct MetricsUpdateHook;
 
     class ProtonFileHeaderContext : public search::common::FileHeaderContext
     {
@@ -78,50 +71,51 @@ private:
         pid_t _pid;
 
     public:
-        ProtonFileHeaderContext(const Proton &proton_, const vespalib::string &creator);
+        ProtonFileHeaderContext(const vespalib::string &creator);
         ~ProtonFileHeaderContext() override;
 
         void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override;
         void setClusterName(const vespalib::string &clusterName, const vespalib::string &baseDir);
     };
 
-    const config::ConfigUri         _configUri;
-    mutable std::shared_timed_mutex _mutex;
-    MetricsUpdateHook               _metricsHook;
-    std::unique_ptr<MetricsEngine>  _metricsEngine;
-    ProtonFileHeaderContext         _fileHeaderContext;
-    TLS::UP                         _tls;
-    std::unique_ptr<DiskMemUsageSampler> _diskMemUsageSampler;
-    PersistenceEngine::UP           _persistenceEngine;
-    DocumentDBMap                   _documentDBMap;
-    std::unique_ptr<MatchEngine>   _matchEngine;
-    std::unique_ptr<SummaryEngine>  _summaryEngine;
-    std::unique_ptr<DocsumBySlime>  _docsumBySlime;
-    MemoryFlushConfigUpdater::UP    _memoryFlushConfigUpdater;
-    std::unique_ptr<FlushEngine>    _flushEngine;
+    const config::ConfigUri                _configUri;
+    mutable std::shared_mutex              _mutex;
+    std::unique_ptr<metrics::UpdateHook>   _metricsHook;
+    std::unique_ptr<MetricsEngine>         _metricsEngine;
+    ProtonFileHeaderContext                _fileHeaderContext;
+    std::unique_ptr<TLS>                   _tls;
+    std::unique_ptr<DiskMemUsageSampler>   _diskMemUsageSampler;
+    std::unique_ptr<PersistenceEngine>     _persistenceEngine;
+    DocumentDBMap                          _documentDBMap;
+    std::unique_ptr<MatchEngine>           _matchEngine;
+    std::unique_ptr<SummaryEngine>         _summaryEngine;
+    std::unique_ptr<DocsumBySlime>         _docsumBySlime;
+    MemoryFlushConfigUpdater::UP           _memoryFlushConfigUpdater;
+    std::unique_ptr<FlushEngine>           _flushEngine;
     std::unique_ptr<PrepareRestartHandler> _prepareRestartHandler;
-    RPCHooks::UP                    _rpcHooks;
-    HealthAdapter                   _healthAdapter;
-    vespalib::GenericStateHandler   _genericStateHandler;
-    vespalib::JsonHandlerRepo::Token::UP _customComponentBindToken;
-    vespalib::JsonHandlerRepo::Token::UP _customComponentRootToken;
-    std::unique_ptr<vespalib::StateServer>  _stateServer;
-    vespalib::ThreadStackExecutor   _executor;
-    std::unique_ptr<IProtonDiskLayout> _protonDiskLayout;
-    ProtonConfigurer                _protonConfigurer;
-    ProtonConfigFetcher             _protonConfigFetcher;
+    RPCHooks::UP                           _rpcHooks;
+    HealthAdapter                          _healthAdapter;
+    vespalib::GenericStateHandler          _genericStateHandler;
+    vespalib::JsonHandlerRepo::Token::UP   _customComponentBindToken;
+    vespalib::JsonHandlerRepo::Token::UP   _customComponentRootToken;
+    std::unique_ptr<vespalib::StateServer> _stateServer;
+    vespalib::ThreadStackExecutor          _executor;
+    std::unique_ptr<IProtonDiskLayout>     _protonDiskLayout;
+    ProtonConfigurer                       _protonConfigurer;
+    ProtonConfigFetcher                    _protonConfigFetcher;
     std::unique_ptr<vespalib::ThreadStackExecutorBase> _warmupExecutor;
-    std::unique_ptr<vespalib::ThreadStackExecutorBase> _sharedExecutor;
+    std::shared_ptr<vespalib::ThreadStackExecutorBase> _sharedExecutor;
+    vespalib::eval::CompileCache::ExecutorBinding::UP _compile_cache_executor_binding;
     matching::QueryLimiter          _queryLimiter;
     vespalib::Clock                 _clock;
     FastOS_ThreadPool               _threadPool;
     uint32_t                        _distributionKey;
     bool                            _isInitializing;
-    bool                            _isReplayDone;
     bool                            _abortInit;
     bool                            _initStarted;
     bool                            _initComplete;
     bool                            _initDocumentDbsInSequence;
+    bool                            _has_shut_down_config_and_state_components;
     std::shared_ptr<IDocumentDBReferenceRegistry> _documentDBReferenceRegistry;
     std::mutex                      _nodeUpLock;
     std::set<BucketSpace>           _nodeUp;   // bucketspaces where node is up
@@ -134,14 +128,8 @@ private:
     void removeDocumentDB(const DocTypeName &docTypeName) override;
 
     void applyConfig(const BootstrapConfig::SP & configSnapshot) override;
-    MonitorReply::UP ping(MonitorRequest::UP request, MonitorClient &client) override;
+    std::unique_ptr<MonitorReply> ping(std::unique_ptr<MonitorRequest> request, MonitorClient &client) override;
 
-    /**
-     * Called by the metrics update hook (typically in the context of
-     * the metric manager). Do not call this function in multiple
-     * threads at once.
-     **/
-    void updateMetrics(const vespalib::MonitorGuard &guard);
     void waitForInitDone();
     void waitForOnlineState();
     uint32_t getDistributionKey() const override { return _distributionKey; }
@@ -159,6 +147,13 @@ public:
     ~Proton() override;
 
     /**
+     * Called by the metrics update hook (typically in the context of
+     * the metric manager). Do not call this function in multiple
+     * threads at once.
+     **/
+    void updateMetrics(const metrics::MetricLockGuard &guard);
+
+    /**
      * This method must be called after the constructor and before the destructor.
      * If not I will force a 'core' upon you.
      * All relevant initialization is conducted here.
@@ -166,6 +161,15 @@ public:
      * 1st phase init: start cheap clock thread and get initial config
      */
     BootstrapConfig::SP init();
+
+    /**
+     * Shuts down metric manager and state server functionality to avoid
+     * calls to these during service layer component tear-down.
+     *
+     * Explicitly noexcept to avoid consistency issues between this and the
+     * destructor if something throws during shutdown.
+     */
+    void shutdown_config_fetching_and_state_exposing_components_once() noexcept;
 
     // 2nd phase init: setup data structures.
     void init(const BootstrapConfig::SP & configSnapshot);
@@ -204,7 +208,7 @@ public:
     bool isInitializing() const override { return _isInitializing; }
 
     bool hasAbortedInit() const { return _abortInit; }
-    storage::spi::PersistenceProvider & getPersistence() { return *_persistenceEngine; }
+    storage::spi::PersistenceProvider & getPersistence();
 
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
     std::vector<vespalib::string> get_children_names() const override;

@@ -2,7 +2,11 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
+import com.yahoo.vespa.objects.ObjectOperation;
+import com.yahoo.vespa.objects.ObjectPredicate;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Simon Thoresen Hult
@@ -23,13 +27,13 @@ public abstract class OutputExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setOutputValue(this, fieldName, ctx.getValue());
+    protected void doExecute(ExecutionContext context) {
+        context.setOutputValue(this, fieldName, context.getValue());
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.tryOutputType(this, fieldName, context.getValue());
+        context.tryOutputType(this, fieldName, context.getValueType());
     }
 
     @Override
@@ -58,4 +62,23 @@ public abstract class OutputExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode() + (fieldName != null ? fieldName.hashCode() : 0);
     }
+
+    public static class OutputFieldNameExtractor implements ObjectOperation, ObjectPredicate {
+
+        private final List<String> outputFieldNames = new ArrayList<>(1);
+
+        public List<String> getOutputFieldNames() { return outputFieldNames; }
+
+        @Override
+        public void execute(Object obj) {
+            outputFieldNames.add(((OutputExpression) obj).getFieldName());
+        }
+
+        @Override
+        public boolean check(Object obj) {
+            return obj instanceof OutputExpression;
+        }
+
+    }
+
 }

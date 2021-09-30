@@ -3,7 +3,6 @@ package com.yahoo.documentmodel;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
-import com.yahoo.document.DocumentId;
 import com.yahoo.document.Field;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.StructuredDataType;
@@ -32,41 +31,11 @@ import static java.util.Collections.emptySet;
  */
 public final class NewDocumentType extends StructuredDataType implements DataTypeCollection {
 
-    public static final class Name {
-
-        // TODO: privatize
-        final String name;
-        final int id;
-
-        public Name(String name) {
-            this(name.hashCode(),name);
-        }
-
-        public Name(int id,String name) {
-            this.id = id;
-            this.name = name;
-        }
-
-        public String toString() { return name; }
-
-        public final String getName() { return name; }
-
-        public final int getId() { return id; }
-
-        public int hashCode() { return name.hashCode(); }
-
-        public boolean equals(Object other) {
-            if ( ! (other instanceof Name)) return false;
-            return name.equals(((Name)other).getName());
-        }
-    }
-
     private final Name name;
     private final DataTypeRepo dataTypes = new DataTypeRepo();
     private final Map<Integer, NewDocumentType> inherits = new LinkedHashMap<>();
     private final AnnotationTypeRegistry annotations = new AnnotationTypeRegistry();
     private final StructDataType header;
-    private final StructDataType body;
     private final Set<FieldSet> fieldSets = new LinkedHashSet<>();
     private final Set<Name> documentReferences;
     // Imported fields are virtual and therefore exist outside of the SD's document field definition
@@ -84,7 +53,6 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
         this(
                 name,
                 new StructDataType(name.getName() + ".header"),
-                new StructDataType(name.getName() + ".body"),
                 new FieldSets(),
                 documentReferences,
                 importedFieldNames);
@@ -96,14 +64,12 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
 
     public NewDocumentType(Name name,
                            StructDataType header,
-                           StructDataType body,
                            FieldSets fs,
                            Set<Name> documentReferences,
                            Set<String> importedFieldNames) {
         super(name.getName());
         this.name = name;
         this.header = header;
-        this.body = body;
         if (fs != null) {
             this.fieldSets.addAll(fs.userFieldSets().values());
             for (FieldSet f : fs.builtInFieldSets().values()) {
@@ -122,7 +88,6 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
     }
 
     public DataType getHeader() { return header; }
-    public DataType getBody() { return body; }
     public Collection<NewDocumentType> getInherited() { return inherits.values(); }
     public NewDocumentType getInherited(Name inherited) { return inherits.get(inherited.getId()); }
     public NewDocumentType removeInherited(Name inherited) { return inherits.remove(inherited.getId()); }
@@ -144,25 +109,8 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
         return ret;
     }
 
-    /**
-     * Data type of the body fields of this and all inherited document types
-     * @return merged {@link StructDataType}
-     */
-    public StructDataType allBody() {
-        StructDataType ret = new StructDataType(body.getName());
-        for (Field f : body.getFields()) {
-            ret.addField(f);
-        }
-        for (NewDocumentType inherited : getInherited()) {
-            for (Field f : ((StructDataType) inherited.getBody()).getFields()) {
-                ret.addField(f);
-            }
-        }
-        return ret;
-    }
-
     @Override
-    public Class getValueClass() {
+    public Class<Document> getValueClass() {
         return Document.class;
     }
 
@@ -171,7 +119,8 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
         if (!(value instanceof Document)) {
             return false;
         }
-        /** Temporary disabled  due to clash with document and covariant return type
+        /*
+         Temporary disabled  due to clash with document and covariant return type
          Document doc = (Document) value;
          if (((NewDocumentType) doc.getDataType()).inherits(this)) {
          //the value is of this type; or the supertype of the value is of this type, etc....
@@ -185,28 +134,31 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
         for (Field f : getFields()) {
             Field inhF = inherited.getField(f.getName());
             if (inhF != null && !inhF.equals(f)) {
-                 throw new IllegalArgumentException("Inherited document '" + inherited.toString() + "' already contains field '" +
-                         inhF.getName() + "'. Can not override with '" + f.getName() + "'.");
+                 throw new IllegalArgumentException("Inherited document '" + inherited + "' already contains field '" +
+                                                    inhF.getName() + "'. Can not override with '" + f.getName() + "'.");
             }
         }
         for (Field f : inherited.getAllFields()) {
             for (NewDocumentType side : inherits.values()) {
                 Field sideF = side.getField(f.getName());
                 if (sideF != null && !sideF.equals(f)) {
-                    throw new IllegalArgumentException("Inherited document '" + side.toString() + "' already contains field '" +
-                            sideF.getName() + "'. Document '" + inherited.toString() + "' also defines field '" + f.getName() +
-                            "'.Multiple inheritance must be disjunctive.");
+                    throw new IllegalArgumentException("Inherited document '" + side + "' already contains field '" +
+                                                       sideF.getName() + "'. Document '" + inherited +
+                                                       "' also defines field '" + f.getName() +
+                                                       "'.Multiple inheritance must be disjunctive.");
                 }
             }
         }
         return true;
     }
+
     public void inherit(NewDocumentType inherited) {
         if ( ! inherits.containsKey(inherited.getId())) {
             verifyInheritance(inherited);
             inherits.put(inherited.getId(), inherited);
         }
     }
+
     public boolean inherits(NewDocumentType superType) {
         if (getId() == superType.getId()) return true;
         for (NewDocumentType type : inherits.values()) {
@@ -218,9 +170,6 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
     @Override
     public Field getField(String name) {
         Field field = header.getField(name);
-        if (field == null) {
-            field = body.getField(name);
-        }
         if (field == null) {
             for (NewDocumentType inheritedType : inherits.values()) {
                 field = inheritedType.getField(name);
@@ -240,9 +189,6 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
     public Field getField(int id) {
         Field field = header.getField(id);
         if (field == null) {
-            field = body.getField(id);
-        }
-        if (field == null) {
             for (NewDocumentType inheritedType : inherits.values()) {
                 field = inheritedType.getField(id);
                 if (field != null) {
@@ -261,20 +207,18 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
         }
 
         collection.addAll(header.getFields());
-        collection.addAll(body.getFields());
         return Collections.unmodifiableCollection(collection);
     }
 
     public Collection<Field> getFields() {
         Collection<Field> collection = new LinkedList<>();
         collection.addAll(header.getFields());
-        collection.addAll(body.getFields());
         return Collections.unmodifiableCollection(collection);
     }
 
     @Override
     public Document createFieldValue() {
-        return new Document(null, (DocumentId)null);
+        throw new RuntimeException("Cannot create an instance of " + this);
     }
 
     @Override
@@ -404,6 +348,38 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
 
     public Set<String> getImportedFieldNames() {
         return importedFieldNames;
+    }
+
+    public static final class Name {
+
+        private final String name;
+        private final int id;
+
+        public Name(String name) {
+            this(name.hashCode(), name);
+        }
+
+        public Name(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        @Override
+        public String toString() { return name; }
+
+        public final String getName() { return name; }
+
+        public final int getId() { return id; }
+
+        @Override
+        public int hashCode() { return name.hashCode(); }
+
+        @Override
+        public boolean equals(Object other) {
+            if ( ! (other instanceof Name)) return false;
+            return name.equals(((Name)other).getName());
+        }
+
     }
 
 }

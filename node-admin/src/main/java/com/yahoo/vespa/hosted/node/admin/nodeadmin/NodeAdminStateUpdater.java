@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -15,18 +15,14 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -48,7 +44,6 @@ public class NodeAdminStateUpdater {
     private final ScheduledExecutorService metricsScheduler =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("metricsscheduler"));
 
-    private final CachedSupplier<Map<String, Acl>> cachedAclSupplier;
     private final NodeAgentContextFactory nodeAgentContextFactory;
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
@@ -65,13 +60,13 @@ public class NodeAdminStateUpdater {
             Orchestrator orchestrator,
             NodeAdmin nodeAdmin,
             HostName hostHostname,
-            Clock clock) {
+            Clock clock,
+            FlagSource flagSource) {
         this.nodeAgentContextFactory = nodeAgentContextFactory;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.nodeAdmin = nodeAdmin;
         this.hostHostname = hostHostname.value();
-        this.cachedAclSupplier = new CachedSupplier<>(clock, Duration.ofSeconds(115), () -> nodeRepository.getAcls(this.hostHostname));
     }
 
     public void start() {
@@ -107,6 +102,8 @@ public class NodeAdminStateUpdater {
      * with respect to: freeze, Orchestrator, and services running.
      */
     public void converge(State wantedState) {
+        NodeSpec node = nodeRepository.getNode(hostHostname);
+        boolean hostIsActiveInNR = node.state() == NodeState.active;
         if (wantedState == RESUMED) {
             adjustNodeAgentsToRunFromNodeRepository();
         } else if (currentState == TRANSITIONING && nodeAdmin.subsystemFreezeDuration().compareTo(FREEZE_CONVERGENCE_TIMEOUT) > 0) {
@@ -114,18 +111,19 @@ public class NodeAdminStateUpdater {
             // To avoid node agents stalling for too long, we'll force unfrozen ticks now.
             adjustNodeAgentsToRunFromNodeRepository();
             nodeAdmin.setFrozen(false);
+
+            if (hostIsActiveInNR) orchestrator.resume(hostHostname);
+
             throw new ConvergenceException("Timed out trying to freeze all nodes: will force an unfrozen tick");
         }
 
-        if (currentState == wantedState) return;
+        boolean wantFrozen = wantedState != RESUMED;
+        if (currentState == wantedState && wantFrozen == node.orchestratorStatus().isSuspended()) return;
         currentState = TRANSITIONING;
 
-        boolean wantFrozen = wantedState != RESUMED;
-        if (!nodeAdmin.setFrozen(wantFrozen)) {
+        if (!nodeAdmin.setFrozen(wantFrozen))
             throw new ConvergenceException("NodeAdmin is not yet " + (wantFrozen ? "frozen" : "unfrozen"));
-        }
 
-        boolean hostIsActiveInNR = nodeRepository.getNode(hostHostname).state() == NodeState.active;
         switch (wantedState) {
             case RESUMED:
                 if (hostIsActiveInNR) orchestrator.resume(hostHostname);
@@ -151,7 +149,7 @@ public class NodeAdminStateUpdater {
 
                 // The node agent services are stopped by this thread, which is OK only
                 // because the node agents are frozen (see above).
-                nodeAdmin.stopNodeAgentServices(nodesInActiveState);
+                nodeAdmin.stopNodeAgentServices();
                 break;
             default:
                 throw new IllegalStateException("Unknown wanted state " + wantedState);
@@ -163,22 +161,16 @@ public class NodeAdminStateUpdater {
 
     void adjustNodeAgentsToRunFromNodeRepository() {
         try {
-            Map<String, NodeSpec> nodeSpecByHostname = nodeRepository.getNodes(hostHostname).stream()
-                    .collect(Collectors.toMap(NodeSpec::hostname, Function.identity()));
-            Map<String, Acl> aclByHostname = Optional.of(cachedAclSupplier.get())
-                    .filter(acls -> acls.keySet().containsAll(nodeSpecByHostname.keySet()))
-                    .orElseGet(cachedAclSupplier::invalidateAndGet);
+            Map<String, Acl> aclByHostname = nodeRepository.getAcls(hostHostname);
 
-            Set<NodeAgentContext> nodeAgentContexts = nodeSpecByHostname.keySet().stream()
-                    .map(hostname -> nodeAgentContextFactory.create(
-                            nodeSpecByHostname.get(hostname),
-                            aclByHostname.getOrDefault(hostname, Acl.EMPTY)))
+            Set<NodeAgentContext> nodeAgentContexts = nodeRepository.getNodes(hostHostname).stream()
+                    .map(node -> nodeAgentContextFactory.create(node, aclByHostname.getOrDefault(node.hostname(), Acl.EMPTY)))
                     .collect(Collectors.toSet());
             nodeAdmin.refreshContainersToRun(nodeAgentContexts);
         } catch (ConvergenceException e) {
-            log.log(LogLevel.WARNING, "Failed to update which containers should be running: " + Exceptions.toMessageString(e));
+            log.log(Level.WARNING, "Failed to update which containers should be running: " + Exceptions.toMessageString(e));
         } catch (RuntimeException e) {
-            log.log(LogLevel.WARNING, "Failed to update which containers should be running", e);
+            log.log(Level.WARNING, "Failed to update which containers should be running", e);
         }
     }
 
@@ -188,34 +180,5 @@ public class NodeAdminStateUpdater {
                              .filter(node -> node.state() == NodeState.active)
                              .map(NodeSpec::hostname)
                              .collect(Collectors.toList());
-    }
-
-    private static class CachedSupplier<T> implements Supplier<T> {
-        private final Clock clock;
-        private final Duration expiration;
-        private final Supplier<T> supplier;
-        private Instant refreshAt;
-        private T cachedValue;
-
-        private CachedSupplier(Clock clock, Duration expiration, Supplier<T> supplier) {
-            this.clock = clock;
-            this.expiration = expiration;
-            this.supplier = supplier;
-            this.refreshAt = Instant.MIN;
-        }
-
-        @Override
-        public T get() {
-            if (! clock.instant().isBefore(refreshAt)) {
-                cachedValue = supplier.get();
-                refreshAt = clock.instant().plus(expiration);
-            }
-            return cachedValue;
-        }
-
-        private T invalidateAndGet() {
-            refreshAt = Instant.MIN;
-            return get();
-        }
     }
 }

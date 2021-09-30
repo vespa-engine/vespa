@@ -8,8 +8,10 @@ public interface ClusterPolicy {
      * There's an implicit group of nodes known to clusterApi.  This method answers whether
      * it would be fine, just looking at this cluster (and disregarding Cluster Controller/storage
      * which is handled separately), to allow all services on all the nodes in the group to go down.
+     *
+     * @return notable reasons for why this group is fine with going down.
      */
-    void verifyGroupGoingDownIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException;
+    SuspensionReasons verifyGroupGoingDownIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException;
 
     /**
      * There's an implicit group of nodes known to clusterApi.  This method answers whether

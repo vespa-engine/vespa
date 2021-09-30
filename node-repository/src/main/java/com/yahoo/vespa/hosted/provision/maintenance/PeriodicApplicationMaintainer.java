@@ -3,16 +3,18 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
+import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -26,15 +28,13 @@ import java.util.stream.Collectors;
 public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
 
     private final Duration minTimeBetweenRedeployments;
-    private final Clock clock;
-    private final Instant start;
+    private final FlagSource flagSource;
 
-    PeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository,
-                                  Duration interval, Duration minTimeBetweenRedeployments) {
-        super(deployer, nodeRepository, interval);
+    PeriodicApplicationMaintainer(Deployer deployer, Metric metric, NodeRepository nodeRepository,
+                                  Duration interval, Duration minTimeBetweenRedeployments, FlagSource flagSource) {
+        super(deployer, metric, nodeRepository, interval);
         this.minTimeBetweenRedeployments = minTimeBetweenRedeployments;
-        this.clock = nodeRepository.clock();
-        this.start = clock.instant();
+        this.flagSource = flagSource;
     }
 
     @Override
@@ -49,8 +49,8 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
 
     // Returns the applications that need to be redeployed by this config server at this point in time.
     @Override
-    protected Set<ApplicationId> applicationsNeedingMaintenance() {
-        if (waitInitially()) return Set.of();
+    protected Map<ApplicationId, String> applicationsNeedingMaintenance() {
+        if (deployer().bootstrapping()) return Map.of();
 
         // Collect all deployment times before sorting as deployments may happen while we build the set, breaking
         // the comparable contract. Stale times are fine as the time is rechecked in ApplicationMaintainer#deployWithLock
@@ -63,16 +63,18 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
         return deploymentTimes.entrySet().stream()
                               .sorted(Map.Entry.comparingByValue())
                               .map(Map.Entry::getKey)
-                              .collect(Collectors.toCollection(LinkedHashSet::new));
+                              .filter(this::shouldMaintain)
+                              .collect(Collectors.toMap(applicationId -> applicationId, applicationId -> "current deployment being too old"));
     }
 
-    // TODO: Do not start deploying until some time has gone (ideally only until bootstrap of config server is finished)
-    private boolean waitInitially() {
-        return clock.instant().isBefore(start.plus(minTimeBetweenRedeployments));
+    private boolean shouldMaintain(ApplicationId id) {
+        BooleanFlag skipMaintenanceDeployment = PermanentFlags.SKIP_MAINTENANCE_DEPLOYMENT.bindTo(flagSource)
+                .with(FetchVector.Dimension.APPLICATION_ID, id.serializedForm());
+        return ! skipMaintenanceDeployment.value();
     }
 
-    protected List<Node> nodesNeedingMaintenance() {
-        return nodeRepository().getNodes(Node.State.active);
+    protected NodeList nodesNeedingMaintenance() {
+        return nodeRepository().nodes().list(Node.State.active);
     }
 
 }

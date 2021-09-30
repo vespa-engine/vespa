@@ -20,6 +20,13 @@
         <!-- provided -->
 
         <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-apache-http-client-bundle</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>controller-api</artifactId>
           <version>${project.version}</version>
@@ -28,14 +35,14 @@
 
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container-dev</artifactId>
+            <artifactId>config-application-package</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>jdisc_http_service</artifactId>
+            <artifactId>container-dev</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -117,19 +124,25 @@
         <!-- compile -->
 
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
             <version>1.3.3</version>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
+            <groupId>com.auth0</groupId>
+            <artifactId>java-jwt</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -148,6 +161,14 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>http-utils</artifactId>
             <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <!-- required by java-jwt -->
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>${commons.codec.version}</version>
             <scope>compile</scope>
         </dependency>
 
@@ -188,6 +209,13 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-test</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 

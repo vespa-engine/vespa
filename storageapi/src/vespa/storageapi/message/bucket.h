@@ -13,11 +13,13 @@
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
 #include <vespa/storageapi/messageapi/maintenancecommand.h>
 #include <vespa/document/base/globalid.h>
-#include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/document/util/printable.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/storageapi/defs.h>
 
 namespace document { class DocumentTypeRepo; }
+
+namespace storage::lib { class ClusterState; }
 
 namespace storage::api {
 
@@ -104,10 +106,10 @@ public:
         uint16_t index;
         bool sourceOnly;
 
-        Node(uint16_t index_, bool sourceOnly_ = false)
+        Node(uint16_t index_, bool sourceOnly_ = false) noexcept
             : index(index_), sourceOnly(sourceOnly_) {}
 
-        bool operator==(const Node& n) const
+        bool operator==(const Node& n) const noexcept
             { return (index == n.index && sourceOnly == n.sourceOnly); }
     };
 
@@ -123,7 +125,7 @@ public:
                        Timestamp maxTimestamp,
                        uint32_t clusterStateVersion = 0,
                        const std::vector<uint16_t>& chain = std::vector<uint16_t>());
-    ~MergeBucketCommand();
+    ~MergeBucketCommand() override;
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     Timestamp getMaxTimestamp() const { return _maxTimestamp; }
@@ -199,7 +201,7 @@ public:
     GetBucketDiffCommand(const document::Bucket &bucket,
                          const std::vector<Node>&,
                          Timestamp maxTimestamp);
-    ~GetBucketDiffCommand();
+    ~GetBucketDiffCommand() override;
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     Timestamp getMaxTimestamp() const { return _maxTimestamp; }
@@ -274,22 +276,15 @@ public:
 private:
     std::vector<Node> _nodes;
     std::vector<Entry> _diff;
-        // We may send more metadata entries that should fit in one apply bucket
-        // diff command, to let node pick which ones it wants to fill in first.
-        // Nodes should verify that they don't fill a command up with more than
-        // this number of bytes.
-    uint32_t _maxBufferSize;
 
 public:
     ApplyBucketDiffCommand(const document::Bucket &bucket,
-                           const std::vector<Node>& nodes,
-                           uint32_t maxBufferSize);
+                           const std::vector<Node>& nodes);
     ~ApplyBucketDiffCommand() override;
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     const std::vector<Entry>& getDiff() const { return _diff; }
     std::vector<Entry>& getDiff() { return _diff; }
-    uint32_t getMaxBufferSize() const { return _maxBufferSize; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(ApplyBucketDiffCommand, onApplyBucketDiff)
@@ -309,16 +304,14 @@ public:
 private:
     std::vector<Node> _nodes;
     std::vector<Entry> _diff;
-    uint32_t _maxBufferSize;
 
 public:
     explicit ApplyBucketDiffReply(const ApplyBucketDiffCommand& cmd);
-    ~ApplyBucketDiffReply();
+    ~ApplyBucketDiffReply() override;
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     const std::vector<Entry>& getDiff() const { return _diff; }
     std::vector<Entry>& getDiff() { return _diff; }
-    uint32_t getMaxBufferSize() const { return _maxBufferSize; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
@@ -345,9 +338,8 @@ class RequestBucketInfoCommand : public StorageCommand {
     vespalib::string _distributionHash;
 
 public:
-    explicit RequestBucketInfoCommand(
-            document::BucketSpace bucketSpace,
-            const std::vector<document::BucketId>& buckets);
+    RequestBucketInfoCommand(document::BucketSpace bucketSpace,
+                             const std::vector<document::BucketId>& buckets);
     RequestBucketInfoCommand(document::BucketSpace bucketSpace,
                              uint16_t distributor,
                              const lib::ClusterState& state,
@@ -366,6 +358,7 @@ public:
     const vespalib::string& getDistributionHash() const { return _distributionHash; }
     document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     document::Bucket getBucket() const override;
+    document::BucketId super_bucket_id() const;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
@@ -395,6 +388,8 @@ public:
     typedef vespalib::Array<Entry> EntryVector;
 private:
     EntryVector _buckets;
+    bool _full_bucket_fetch;
+    document::BucketId _super_bucket_id;
 
 public:
 
@@ -402,6 +397,8 @@ public:
     ~RequestBucketInfoReply();
     const EntryVector & getBucketInfo() const { return _buckets; }
     EntryVector & getBucketInfo() { return _buckets; }
+    [[nodiscard]] bool full_bucket_fetch() const noexcept { return _full_bucket_fetch; }
+    const document::BucketId& super_bucket_id() const { return _super_bucket_id; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(RequestBucketInfoReply, onRequestBucketInfoReply)
 };

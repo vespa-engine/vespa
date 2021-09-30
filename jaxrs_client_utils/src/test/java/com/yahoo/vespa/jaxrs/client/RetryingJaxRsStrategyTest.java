@@ -20,9 +20,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
@@ -72,7 +71,7 @@ public class RetryingJaxRsStrategyTest {
         assertEquals(REST_PORT, params.uri().getPort());
         assertEquals(API_PATH, params.uri().getPath());
         assertEquals("http", params.uri().getScheme());
-        assertThat(SERVER_HOSTS, hasItem(new HostName(params.uri().getHost())));
+        assertTrue(SERVER_HOSTS.contains(new HostName(params.uri().getHost())));
     }
 
     @Test

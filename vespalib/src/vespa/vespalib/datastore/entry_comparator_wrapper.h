@@ -4,7 +4,7 @@
 
 #include "entry_comparator.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /*
  * Copyable comparator wrapper.
@@ -16,7 +16,7 @@ public:
         : _comp(comp)
     { }
     bool operator()(const EntryRef &lhs, const EntryRef &rhs) const {
-        return _comp(lhs, rhs);
+        return _comp.less(lhs, rhs);
     }
 };
 

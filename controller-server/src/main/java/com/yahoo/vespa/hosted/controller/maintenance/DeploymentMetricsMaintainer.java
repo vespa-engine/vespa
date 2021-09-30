@@ -2,21 +2,26 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -26,7 +31,7 @@ import java.util.logging.Logger;
  * @author smorgrav
  * @author mpolden
  */
-public class DeploymentMetricsMaintainer extends Maintainer {
+public class DeploymentMetricsMaintainer extends ControllerMaintainer {
 
     private static final Logger log = Logger.getLogger(DeploymentMetricsMaintainer.class.getName());
 
@@ -34,13 +39,13 @@ public class DeploymentMetricsMaintainer extends Maintainer {
 
     private final ApplicationController applications;
 
-    public DeploymentMetricsMaintainer(Controller controller, Duration duration, JobControl jobControl) {
-        super(controller, duration, jobControl, DeploymentMetricsMaintainer.class.getSimpleName(), SystemName.all());
+    public DeploymentMetricsMaintainer(Controller controller, Duration duration) {
+        super(controller, duration, DeploymentMetricsMaintainer.class.getSimpleName(), SystemName.all());
         this.applications = controller.applications();
     }
 
     @Override
-    protected void maintain() {
+    protected double maintain() {
         AtomicInteger failures = new AtomicInteger(0);
         AtomicInteger attempts = new AtomicInteger(0);
         AtomicReference<Exception> lastException = new AtomicReference<>(null);
@@ -48,28 +53,23 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         // Run parallel stream inside a custom ForkJoinPool so that we can control the number of threads used
         ForkJoinPool pool = new ForkJoinPool(applicationsToUpdateInParallel);
         pool.submit(() ->
-            applications.asList().parallelStream().forEach(application -> {
+            applications.readable().parallelStream().forEach(application -> {
                 for (Instance instance : application.instances().values())
                     for (Deployment deployment : instance.deployments().values()) {
                         attempts.incrementAndGet();
                         try {
-                            if (deployment.version().getMajor() < 7) continue;
-                            var collectedMetrics = controller().metrics().getDeploymentMetrics(instance.id(), deployment.zone());
-                            var now = controller().clock().instant();
+                            DeploymentId deploymentId = new DeploymentId(instance.id(), deployment.zone());
+                            List<ClusterMetrics> clusterMetrics = controller().serviceRegistry().configServer().getDeploymentMetrics(deploymentId);
+                            Instant now = controller().clock().instant();
                             applications.lockApplicationIfPresent(application.id(), locked -> {
                                 Deployment existingDeployment = locked.get().require(instance.name()).deployments().get(deployment.zone());
                                 if (existingDeployment == null) return; // Deployment removed since we started collecting metrics
-                                DeploymentMetrics newMetrics = existingDeployment.metrics()
-                                                                                 .withQueriesPerSecond(collectedMetrics.queriesPerSecond())
-                                                                                 .withWritesPerSecond(collectedMetrics.writesPerSecond())
-                                                                                 .withDocumentCount(collectedMetrics.documentCount())
-                                                                                 .withQueryLatencyMillis(collectedMetrics.queryLatencyMillis())
-                                                                                 .withWriteLatencyMillis(collectedMetrics.writeLatencyMillis())
-                                                                                 .at(now);
+                                DeploymentMetrics newMetrics = updateDeploymentMetrics(existingDeployment.metrics(), clusterMetrics).at(now);
                                 applications.store(locked.with(instance.name(),
                                                                lockedInstance -> lockedInstance.with(existingDeployment.zone(), newMetrics)
                                                                                                .recordActivityAt(now, existingDeployment.zone())));
 
+                                controller().notificationsDb().setDeploymentMetricsNotifications(deploymentId, clusterMetrics);
                             });
                         } catch (Exception e) {
                             failures.incrementAndGet();
@@ -80,18 +80,45 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         );
         pool.shutdown();
         try {
-            pool.awaitTermination(30, TimeUnit.MINUTES);
+            Duration timeout = Duration.ofMinutes(30);
+            if (!pool.awaitTermination(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
+                log.log(Level.WARNING, "Could not shut down metrics collection thread pool within " + timeout);
+            }
             if (lastException.get() != null) {
-                log.log(LogLevel.WARNING,
-                        String.format("Failed to gather metrics for %d/%d applications. Retrying in %s. Last error: %s",
+                log.log(Level.WARNING,
+                        Text.format("Could not gather metrics for %d/%d deployments. Retrying in %s. Last error: %s",
                                       failures.get(),
                                       attempts.get(),
-                                      maintenanceInterval(),
+                                      interval(),
                                       Exceptions.toMessageString(lastException.get())));
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        return asSuccessFactor(attempts.get(), failures.get());
+    }
+
+    static DeploymentMetrics updateDeploymentMetrics(DeploymentMetrics current, List<ClusterMetrics> metrics) {
+        return current
+                .withQueriesPerSecond(metrics.stream().flatMap(m -> m.queriesPerSecond().stream()).mapToDouble(Double::doubleValue).sum())
+                .withWritesPerSecond(metrics.stream().flatMap(m -> m.feedPerSecond().stream()).mapToDouble(Double::doubleValue).sum())
+                .withDocumentCount(metrics.stream().flatMap(m -> m.documentCount().stream()).mapToLong(Double::longValue).sum())
+                .withQueryLatencyMillis(weightedAverageLatency(metrics, ClusterMetrics::queriesPerSecond, ClusterMetrics::queryLatency))
+                .withWriteLatencyMillis(weightedAverageLatency(metrics, ClusterMetrics::feedPerSecond, ClusterMetrics::feedLatency));
+    }
+
+    private static double weightedAverageLatency(List<ClusterMetrics> metrics,
+                                                 Function<ClusterMetrics, Optional<Double>> rateExtractor,
+                                                 Function<ClusterMetrics, Optional<Double>> latencyExtractor) {
+        double rateSum = metrics.stream().flatMap(m -> rateExtractor.apply(m).stream()).mapToDouble(Double::longValue).sum();
+        if (rateSum == 0) return 0.0;
+
+        double weightedLatency = metrics.stream()
+                .flatMap(m -> latencyExtractor.apply(m).flatMap(l -> rateExtractor.apply(m).map(r -> l * r)).stream())
+                .mapToDouble(Double::doubleValue)
+                .sum();
+
+        return weightedLatency / rateSum;
     }
 
 }

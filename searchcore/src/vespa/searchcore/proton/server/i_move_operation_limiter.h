@@ -3,7 +3,7 @@
 
 #include <memory>
 
-namespace search { class IDestructorCallback; }
+namespace vespalib { class IDestructorCallback; }
 
 namespace proton {
 
@@ -11,8 +11,9 @@ namespace proton {
  * Interface used to limit the number of outstanding move operations a blockable maintenance job can have.
  */
 struct IMoveOperationLimiter {
-    virtual ~IMoveOperationLimiter() {}
-    virtual std::shared_ptr<search::IDestructorCallback> beginOperation() = 0;
+    virtual ~IMoveOperationLimiter() = default;
+    virtual std::shared_ptr<vespalib::IDestructorCallback> beginOperation() = 0;
+    virtual size_t numPending() const = 0;
 };
 
 }

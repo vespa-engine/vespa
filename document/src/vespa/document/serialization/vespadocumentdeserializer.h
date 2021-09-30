@@ -7,6 +7,7 @@
 #include <memory>
 
 namespace vespalib { class nbostream; }
+namespace vespalib::eval { struct Value; }
 
 namespace document {
 class DocumentId;
@@ -78,6 +79,7 @@ public:
     void readStructNoReset(StructFieldValue &value);
     void read(WeightedSetFieldValue &value);
     void read(TensorFieldValue &value);
+    std::unique_ptr<vespalib::eval::Value> readTensor();
     void read(ReferenceFieldValue& value);
 };
 }  // namespace document

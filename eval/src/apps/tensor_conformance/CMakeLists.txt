@@ -3,6 +3,7 @@ vespa_add_executable(vespa-tensor-conformance
     SOURCES
     generate.cpp
     tensor_conformance.cpp
+    INSTALL bin
     DEPENDS
     vespaeval
 )

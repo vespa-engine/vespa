@@ -12,8 +12,14 @@ import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.Select;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
+import com.yahoo.processing.IllegalInputException;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * This searcher is responsible for turning the "select" parameter into a corresponding {@link GroupingRequest}. It will
@@ -35,19 +41,23 @@ public class GroupingQueryParser extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
-        String reqParam = query.properties().getString(PARAM_REQUEST);
-        if (reqParam == null) {
+        try {
+            String reqParam = query.properties().getString(PARAM_REQUEST);
+            if (reqParam == null) return execution.search(query);
+
+            List<Continuation> continuations = getContinuations(query.properties().getString(PARAM_CONTINUE));
+            TimeZone zone = getTimeZone(query.properties().getString(PARAM_TIMEZONE, "utc"));
+            for (GroupingOperation op : GroupingOperation.fromStringAsList(reqParam)) {
+                GroupingRequest grpRequest = GroupingRequest.newInstance(query);
+                grpRequest.setRootOperation(op);
+                grpRequest.setTimeZone(zone);
+                grpRequest.continuations().addAll(continuations);
+            }
             return execution.search(query);
         }
-        List<Continuation> continuations = getContinuations(query.properties().getString(PARAM_CONTINUE));
-        TimeZone zone = getTimeZone(query.properties().getString(PARAM_TIMEZONE, "utc"));
-        for (GroupingOperation op : GroupingOperation.fromStringAsList(reqParam)) {
-            GroupingRequest grpRequest = GroupingRequest.newInstance(query);
-            grpRequest.setRootOperation(op);
-            grpRequest.setTimeZone(zone);
-            grpRequest.continuations().addAll(continuations);
+        catch (IllegalArgumentException e) {
+            throw new IllegalInputException(e);
         }
-        return execution.search(query);
     }
 
     private List<Continuation> getContinuations(String param) {

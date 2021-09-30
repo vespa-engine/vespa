@@ -3,12 +3,11 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchcore/proton/common/commit_time_tracker.h>
-#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/putdonecontext.h>
 #include <vespa/searchcore/proton/server/removedonecontext.h>
 #include <vespa/searchcore/proton/server/storeonlyfeedview.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
@@ -29,7 +28,7 @@ using document::DocumentUpdate;
 using document::GlobalId;
 using namespace proton;
 using search::DocumentIdT;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 using search::SerialNum;
 using search::index::DocBuilder;
 using search::index::Schema;
@@ -45,7 +44,7 @@ private:
     int &_heartbeatCount;
 
 public:
-    MySummaryAdapter(int &removeCount, int &putCount, int &heartbeatCount)
+    MySummaryAdapter(int &removeCount, int &putCount, int &heartbeatCount) noexcept
         : _rmCount(removeCount),
           _putCount(putCount),
           _heartbeatCount(heartbeatCount) {
@@ -87,19 +86,17 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
     MyMinimalFeedView(const ISummaryAdapter::SP &summaryAdapter,
                       const DocumentMetaStore::SP &metaStore,
                       searchcorespi::index::IThreadingService &writeService,
-                      documentmetastore::ILidReuseDelayer &lidReuseDelayer,
-                      CommitTimeTracker &commitTimeTracker,
                       const PersistentParams &params,
+                      std::shared_ptr<PendingLidTrackerBase> pendingLidsForCommit,
                       int &outstandingMoveOps_) :
         MyMinimalFeedViewBase(),
         StoreOnlyFeedView(StoreOnlyFeedView::Context(summaryAdapter,
-                          search::index::Schema::SP(),
-                          std::make_shared<DocumentMetaStoreContext>(metaStore),
-                                                     *gidToLidChangeHandler,
+                                                     search::index::Schema::SP(),
+                                                     std::make_shared<DocumentMetaStoreContext>(metaStore),
                                                      myGetDocumentTypeRepo(),
-                                                     writeService,
-                                                     lidReuseDelayer,
-                                                     commitTimeTracker),
+                                                     std::move(pendingLidsForCommit),
+                                                     *gidToLidChangeHandler,
+                                                     writeService),
                           params),
         removeMultiAttributesCount(0),
         removeMultiIndexFieldsCount(0),
@@ -108,12 +105,12 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
         outstandingMoveOps(outstandingMoveOps_)
     {
     }
-    void removeAttributes(SerialNum s, const LidVector &l, bool immediateCommit, OnWriteDoneType onWriteDone) override {
-        StoreOnlyFeedView::removeAttributes(s, l, immediateCommit, onWriteDone);
+    void removeAttributes(SerialNum s, const LidVector &l, OnWriteDoneType onWriteDone) override {
+        StoreOnlyFeedView::removeAttributes(s, l, onWriteDone);
         ++removeMultiAttributesCount;
     }
-    void removeIndexedFields(SerialNum s, const LidVector &l, bool immediateCommit, OnWriteDoneType onWriteDone) override {
-        StoreOnlyFeedView::removeIndexedFields(s, l, immediateCommit, onWriteDone);
+    void removeIndexedFields(SerialNum s, const LidVector &l, OnWriteDoneType onWriteDone) override {
+        StoreOnlyFeedView::removeIndexedFields(s, l, onWriteDone);
         ++removeMultiIndexFieldsCount;
     }
     void heartBeatIndexedFields(SerialNum s) override {
@@ -137,35 +134,34 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
     MoveOperationFeedView(const ISummaryAdapter::SP &summaryAdapter,
                           const DocumentMetaStore::SP &metaStore,
                           searchcorespi::index::IThreadingService &writeService,
-                          documentmetastore::ILidReuseDelayer &lidReuseDelayer,
-                          CommitTimeTracker &commitTimeTracker,
                           const PersistentParams &params,
+                          std::shared_ptr<PendingLidTrackerBase> pendingLidsForCommit,
                           int &outstandingMoveOps_) :
-            MyMinimalFeedView(summaryAdapter, metaStore, writeService, lidReuseDelayer,
-                              commitTimeTracker, params, outstandingMoveOps_),
+            MyMinimalFeedView(summaryAdapter, metaStore, writeService,
+                              params, std::move(pendingLidsForCommit), outstandingMoveOps_),
             putAttributesCount(0),
             putIndexFieldsCount(0),
             removeAttributesCount(0),
             removeIndexFieldsCount(0),
             onWriteDoneContexts()
     {}
-    void putAttributes(SerialNum, search::DocumentIdT, const document::Document &, bool, OnPutDoneType onWriteDone) override {
+    void putAttributes(SerialNum, search::DocumentIdT, const document::Document &, OnPutDoneType onWriteDone) override {
         ++putAttributesCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         onWriteDoneContexts.push_back(onWriteDone);
     }
      void putIndexedFields(SerialNum, search::DocumentIdT, const document::Document::SP &,
-                           bool, OnOperationDoneType onWriteDone) override {
+                           OnOperationDoneType onWriteDone) override {
         ++putIndexFieldsCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         onWriteDoneContexts.push_back(onWriteDone);
     }
-    void removeAttributes(SerialNum, search::DocumentIdT, bool, OnRemoveDoneType onWriteDone) override {
+    void removeAttributes(SerialNum, search::DocumentIdT, OnRemoveDoneType onWriteDone) override {
         ++removeAttributesCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         onWriteDoneContexts.push_back(onWriteDone);
     }
-    void removeIndexedFields(SerialNum, search::DocumentIdT, bool, OnRemoveDoneType onWriteDone) override {
+    void removeIndexedFields(SerialNum, search::DocumentIdT, OnRemoveDoneType onWriteDone) override {
         ++removeIndexFieldsCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         onWriteDoneContexts.push_back(onWriteDone);
@@ -175,7 +171,7 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
 
 struct MoveOperationCallback : public IDestructorCallback {
     int &outstandingMoveOps;
-    MoveOperationCallback(int &outstandingMoveOps_) : outstandingMoveOps(outstandingMoveOps_) {
+    explicit MoveOperationCallback(int &outstandingMoveOps_) noexcept : outstandingMoveOps(outstandingMoveOps_) {
         ++outstandingMoveOps;
     }
     ~MoveOperationCallback() override {
@@ -195,46 +191,45 @@ struct FixtureBase {
     DocumentMetaStore::SP metaStore;
     vespalib::ThreadStackExecutor sharedExecutor;
     ExecutorThreadingService writeService;
-    documentmetastore::LidReuseDelayer lidReuseDelayer;
-    CommitTimeTracker commitTimeTracker;
+    std::shared_ptr<PendingLidTrackerBase> pendingLidsForCommit;
     typename FeedViewType::UP feedview;
+    SerialNum serial_num;
  
-    FixtureBase(SubDbType subDbType = SubDbType::READY)
+    explicit FixtureBase(SubDbType subDbType = SubDbType::READY)
         : removeCount(0),
           putCount(0),
           heartbeatCount(0),
           outstandingMoveOps(0),
-          metaStore(new DocumentMetaStore(std::make_shared<BucketDBOwner>(),
-                                          DocumentMetaStore::getFixedName(),
-                                          search::GrowStrategy(),
-                                          std::make_shared<DocumentMetaStore::DefaultGidCompare>(),
-                                          subDbType)),
+          metaStore(std::make_shared<DocumentMetaStore>(std::make_shared<bucketdb::BucketDBOwner>(),
+                                                        DocumentMetaStore::getFixedName(),
+                                                        search::GrowStrategy(),
+                                                        subDbType)),
           sharedExecutor(1, 0x10000),
           writeService(sharedExecutor),
-          lidReuseDelayer(writeService, *metaStore),
-          commitTimeTracker(vespalib::duration::zero()),
-          feedview()
+          pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
+          feedview(),
+          serial_num(2u)
     {
         StoreOnlyFeedView::PersistentParams params(0, 0, DocTypeName("foo"), subdb_id, subDbType);
         metaStore->constructFreeList();
-        ISummaryAdapter::SP adapter = std::make_unique<MySummaryAdapter>(removeCount, putCount, heartbeatCount);
-        feedview = std::make_unique<FeedViewType>(adapter, metaStore, writeService, lidReuseDelayer,
-                                                  commitTimeTracker, params, outstandingMoveOps);
+        ISummaryAdapter::SP adapter = std::make_shared<MySummaryAdapter>(removeCount, putCount, heartbeatCount);
+        feedview = std::make_unique<FeedViewType>(adapter, metaStore, writeService,
+                                                  params, pendingLidsForCommit, outstandingMoveOps);
     }
 
     ~FixtureBase() {
-        writeService.sync();
+        this->force_commit();
     }
 
     void addSingleDocToMetaStore(uint32_t expected_lid) {
         using Result = DocumentMetaStore::Result;
         DocumentId id(make_string("id:test:foo:g=foo:%d", expected_lid));
-        Result inspect = metaStore->inspect(id.getGlobalId());
+        Result inspect = metaStore->inspect(id.getGlobalId(), 0u);
         uint32_t docSize = 1;
         EXPECT_EQUAL(expected_lid,
                      metaStore->put(id.getGlobalId(),
                                      id.getGlobalId().convertToBucketId(),
-                                     Timestamp(10), docSize, inspect.getLid()).getLid());
+                                     Timestamp(10), docSize, inspect.getLid(), 0u).getLid());
     }
 
     void addDocsToMetaStore(int count) {
@@ -249,6 +244,10 @@ struct FixtureBase {
         test::runInMaster(writeService, func);
     }
 
+    void force_commit() {
+        runInMaster([this] () { static_cast<IFeedView&>(*feedview).forceCommit(serial_num); });
+        writeService.sync();
+    }
 };
 
 using Fixture = FixtureBase<MyMinimalFeedView>;
@@ -337,11 +336,11 @@ TEST_F("require that handleMove() handles move within same subdb and propagates 
     uint32_t docSize = 1;
     f.runInMaster([&] () { f.metaStore->put(doc1id.getGlobalId(),
                       doc1id.getGlobalId().convertToBucketId(),
-                      Timestamp(9), docSize, 1); });
+                      Timestamp(9), docSize, 1, 0u); });
     f.runInMaster([&] () { f.metaStore->put(doc->getId().getGlobalId(),
                       doc->getId().getGlobalId().convertToBucketId(),
-                      Timestamp(10), docSize, 2); });
-    f.runInMaster([&] () { f.metaStore->remove(1); });
+                      Timestamp(10), docSize, 2, 0u); });
+    f.runInMaster([&] () { f.metaStore->remove(1, 0u); });
     f.metaStore->removeComplete(1);
     MoveOperation::UP op = makeMoveOp(doc, DbDocumentId(subdb_id, 2), subdb_id);
     op->setTargetLid(1);

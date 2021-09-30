@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -18,19 +20,19 @@ import java.util.logging.Logger;
  *
  * @author mpolden
  */
-public class SystemUpgrader extends InfrastructureUpgrader {
+public class SystemUpgrader extends InfrastructureUpgrader<Version> {
 
     private static final Logger log = Logger.getLogger(SystemUpgrader.class.getName());
 
     private static final Set<Node.State> upgradableNodeStates = Set.of(Node.State.active, Node.State.reserved);
 
-    public SystemUpgrader(Controller controller, Duration interval, JobControl jobControl) {
-        super(controller, interval, jobControl, controller.zoneRegistry().upgradePolicy(), null);
+    public SystemUpgrader(Controller controller, Duration interval) {
+        super(controller, interval, controller.zoneRegistry().upgradePolicy(), SystemApplication.notController(), null);
     }
 
     @Override
     protected void upgrade(Version target, SystemApplication application, ZoneApi zone) {
-        log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone.getId()));
+        log.info(Text.format("Deploying %s version %s in %s", application.id(), target, zone.getId()));
         controller().applications().deploy(application, zone.getId(), target);
     }
 
@@ -45,32 +47,29 @@ public class SystemUpgrader extends InfrastructureUpgrader {
     }
 
     @Override
-    protected boolean requireUpgradeOf(Node node, SystemApplication application, ZoneApi zone) {
+    protected boolean expectUpgradeOf(Node node, SystemApplication application, ZoneApi zone) {
         return eligibleForUpgrade(node);
     }
 
     @Override
     protected Optional<Version> targetVersion() {
-        return controller().versionStatus().controllerVersion()
+        return controller().readVersionStatus().controllerVersion()
                            .filter(vespaVersion -> !vespaVersion.isSystemVersion())
                            .filter(vespaVersion -> vespaVersion.confidence() != VespaVersion.Confidence.broken)
                            .map(VespaVersion::versionNumber);
     }
 
     @Override
-    protected boolean shouldUpgrade(Version target, SystemApplication application, ZoneApi zone) {
+    protected boolean changeTargetTo(Version target, SystemApplication application, ZoneApi zone) {
         if (application.hasApplicationPackage()) {
             // For applications with package we do not have a zone-wide version target. This means that we must check
             // the wanted version of each node.
+            boolean zoneHasSharedRouting = controller().zoneRegistry().routingMethods(zone.getId()).stream()
+                                                       .anyMatch(RoutingMethod::isShared);
             return minVersion(zone, application, Node::wantedVersion)
-                    // Upgrade if target is after any wanted version
-                    .map(target::isAfter)
-                    // Skip upgrade if there are no nodes allocated. This is overloaded to mean that the zone is not
-                    // expected to have a deployment of this application.
-                    // TODO(mpolden): Once all zones are either directly routed or not: Change this to
-                    //                always deploy proxy app and wait for convergence in zones that are not directly
-                    //                routed.
-                    .orElse(false);
+                    .map(target::isAfter)          // Upgrade if target is after any wanted version
+                    .orElse(zoneHasSharedRouting); // Always upgrade if zone uses shared routing, but has no nodes allocated yet
+
         }
         return controller().serviceRegistry().configServer().nodeRepository()
                            .targetVersionsOf(zone.getId())

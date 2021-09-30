@@ -22,7 +22,7 @@ int readTraceLevel();
 CompressionType readProtocolCompressionType();
 
 struct Payload {
-    virtual ~Payload() {}
+    virtual ~Payload() = default;
     virtual const vespalib::slime::Inspector & getSlimePayload() const = 0;
 };
 
@@ -36,7 +36,7 @@ extern const vespalib::Memory REQUEST_DEF_MD5;
 extern const vespalib::Memory REQUEST_DEF_CONTENT;
 extern const vespalib::Memory REQUEST_CLIENT_CONFIGID;
 extern const vespalib::Memory REQUEST_CLIENT_HOSTNAME;
-extern const vespalib::Memory REQUEST_CONFIG_MD5;
+extern const vespalib::Memory REQUEST_CONFIG_XXHASH64;
 extern const vespalib::Memory REQUEST_CURRENT_GENERATION;
 extern const vespalib::Memory REQUEST_TIMEOUT;
 extern const vespalib::Memory REQUEST_TRACE;
@@ -48,11 +48,11 @@ extern const vespalib::Memory RESPONSE_DEF_NAMESPACE;
 extern const vespalib::Memory RESPONSE_DEF_MD5;
 extern const vespalib::Memory RESPONSE_CONFIGID;
 extern const vespalib::Memory RESPONSE_CLIENT_HOSTNAME;
-extern const vespalib::Memory RESPONSE_CONFIG_MD5;
+extern const vespalib::Memory RESPONSE_CONFIG_XXHASH64;
 extern const vespalib::Memory RESPONSE_CONFIG_GENERATION;
 extern const vespalib::Memory RESPONSE_PAYLOAD;
 extern const vespalib::Memory RESPONSE_TRACE;
-extern const vespalib::Memory RESPONSE_INTERNAL_REDEPLOY;
+extern const vespalib::Memory RESPONSE_APPLY_ON_RESTART;
 
 const vespalib::slime::Inspector & extractPayload(const vespalib::Slime & data);
 

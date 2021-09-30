@@ -2,8 +2,9 @@
 package com.yahoo.container.standalone;
 
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.ComponentsConfig;
+import com.yahoo.container.di.config.ApplicationBundlesConfig;
+import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.vespa.config.ConfigKey;
 import org.junit.Ignore;
@@ -14,16 +15,16 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.yahoo.container.standalone.StandaloneContainer.withContainerModel;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.number.OrderingComparison.greaterThan;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Tony Vaagenes
  * @author ollivir
  */
 public class StandaloneSubscriberTest {
-    private static ConfigKey<ConfigInstance> bundlesKey = key("bundles");
+    private static ConfigKey<ConfigInstance> platformBundlesKey = key("platform-bundles");
+    private static ConfigKey<ConfigInstance> applicationBundlesKey = key("application-bundles");
     private static ConfigKey<ConfigInstance> componentsKey = key("components");
 
     private static ConfigKey<ConfigInstance> key(String name) {
@@ -35,17 +36,20 @@ public class StandaloneSubscriberTest {
     public void standalone_subscriber() throws Exception {
         withContainerModel("<container version=\"1.0\"></container>", root -> {
             Set<ConfigKey<ConfigInstance>> keys = new HashSet<>();
-            keys.add(bundlesKey);
+            keys.add(platformBundlesKey);
+            keys.add(applicationBundlesKey);
             keys.add(componentsKey);
             Subscriber subscriber = new StandaloneSubscriberFactory(root).getSubscriber(keys);
             Map<ConfigKey<ConfigInstance>, ConfigInstance> config = subscriber.config();
-            assertThat(config.size(), is(2));
+            assertEquals(2, config.size());
 
-            BundlesConfig bundlesConfig = (BundlesConfig) config.get(bundlesKey);
+            PlatformBundlesConfig platformBundlesConfig = (PlatformBundlesConfig) config.get(platformBundlesKey);
+            ApplicationBundlesConfig applicationBundlesConfig = (ApplicationBundlesConfig) config.get(applicationBundlesKey);
             ComponentsConfig componentsConfig = (ComponentsConfig) config.get(componentsKey);
 
-            assertThat(bundlesConfig.bundle().size(), is(0));
-            assertThat(componentsConfig.components().size(), greaterThan(10));
+            assertEquals(0, platformBundlesConfig.bundlePaths().size());
+            assertEquals(0, applicationBundlesConfig.bundles().size());
+            assertTrue(componentsConfig.components().size() > 10);
             return null;
         });
     }

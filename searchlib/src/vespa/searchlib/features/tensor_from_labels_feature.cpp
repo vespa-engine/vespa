@@ -8,6 +8,7 @@
 #include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_type.h>
 
 #include <vespa/log/log.h>
@@ -17,9 +18,9 @@ using namespace search::fef;
 using search::attribute::IAttributeVector;
 using search::attribute::WeightedConstCharContent;
 using search::attribute::WeightedStringContent;
-using vespalib::tensor::DirectSparseTensorBuilder;
-using vespalib::tensor::SparseTensorAddressBuilder;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::ValueType;
+using vespalib::eval::CellType;
 using search::fef::FeatureType;
 
 namespace search {
@@ -44,8 +45,8 @@ TensorFromLabelsBlueprint::setup(const search::fef::IIndexEnvironment &env,
         _dimension = _sourceParam;
     }
     describeOutput("tensor",
-                   "The tensor created from the given array source (attribute field or query parameter)",
-                   FeatureType::object(ValueType::tensor_type({{_dimension}})));
+                   "The tensor created from the given source (attribute field or query parameter)",
+                   FeatureType::object(ValueType::make_type(CellType::DOUBLE, {{_dimension}})));
     return validSource;
 }
 
@@ -60,13 +61,17 @@ createAttributeExecutor(const search::fef::IQueryEnvironment &env,
     if (attribute == NULL) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager."
                 " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}), stash);
+        return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }
-    if (attribute->getCollectionType() != search::attribute::CollectionType::ARRAY ||
-            attribute->isFloatingPointType()) {
-        LOG(warning, "The attribute vector '%s' is NOT of type array of string or integer."
-                " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}), stash);
+    if (attribute->isFloatingPointType()) {
+        LOG(warning, "The attribute vector '%s' must have basic type string or integer."
+            " Returning empty tensor.", attrName.c_str());
+        return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
+    }
+    if (attribute->getCollectionType() == search::attribute::CollectionType::WSET) {
+        LOG(warning, "The attribute vector '%s' is a weighted set - use tensorFromWeightedSet instead."
+            " Returning empty tensor.", attrName.c_str());
+        return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }
     // Note that for array attribute vectors the default weight is 1.0 for all values.
     // This means we can get the attribute content as weighted content and build
@@ -86,19 +91,21 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
                     const vespalib::string &queryKey,
                     const vespalib::string &dimension, vespalib::Stash &stash)
 {
-    ValueType type = ValueType::tensor_type({{dimension}});
+    ValueType type = ValueType::make_type(CellType::DOUBLE, {{dimension}});
     search::fef::Property prop = env.getProperties().lookup(queryKey);
     if (prop.found() && !prop.get().empty()) {
         std::vector<vespalib::string> vector;
         ArrayParser::parse(prop.get(), vector);
-        DirectSparseTensorBuilder tensorBuilder(type);
-        SparseTensorAddressBuilder address;
+        auto factory = FastValueBuilderFactory::get();
+        auto builder = factory.create_value_builder<double>(type, 1, 1, vector.size());
+        std::vector<vespalib::stringref> addr_ref;
         for (const auto &elem : vector) {
-            address.clear();
-            address.add(elem);
-            tensorBuilder.insertCell(address, 1.0, [](double, double v){ return v; });
+            addr_ref.clear();
+            addr_ref.push_back(elem);
+            auto cell_array = builder->add_subspace(addr_ref);
+            cell_array[0] = 1.0;
         }
-        return ConstantTensorExecutor::create(tensorBuilder.build(), stash);
+        return ConstantTensorExecutor::create(builder->build(std::move(builder)), stash);
     }
     return ConstantTensorExecutor::createEmpty(type, stash);
 }
@@ -113,7 +120,7 @@ TensorFromLabelsBlueprint::createExecutor(const search::fef::IQueryEnvironment &
     } else if (_sourceType == QUERY_SOURCE) {
         return createQueryExecutor(env, _sourceParam, _dimension, stash);
     }
-    return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{_dimension}}), stash);
+    return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{_dimension}}), stash);
 }
 
 } // namespace features

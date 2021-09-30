@@ -8,11 +8,10 @@
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <fstream>
 #include <future>
@@ -24,8 +23,6 @@ using namespace search;
 using namespace vespalib;
 using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
-using vespalib::makeTask;
-using vespalib::makeClosure;
 using searchcorespi::IFlushTarget;
 
 namespace proton {
@@ -65,7 +62,7 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncT
       _syncToken(syncToken),
       _flushFile("")
 {
-    fattr._attr->commit(syncToken, syncToken);
+    fattr._attr->commit(CommitParam(syncToken));
     AttributeVector &attr = *_fattr._attr;
     // Called by attribute field writer executor
     _flushFile = writer.getSnapshotDir(_syncToken) + "/" + attr.getName();
@@ -154,7 +151,7 @@ FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
                                        tuneFileAttributes,
                                        const FileHeaderContext &
                                        fileHeaderContext,
-                                       search::ISequencedTaskExecutor &
+                                       vespalib::ISequencedTaskExecutor &
                                        attributeFieldWriter,
                                        const HwInfo &hwInfo)
     : IFlushTarget(make_string("attribute.flush.%s", attr->getName().c_str()), Type::SYNC, Component::ATTRIBUTE),
@@ -165,9 +162,16 @@ FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
       _fileHeaderContext(fileHeaderContext),
       _attributeFieldWriter(attributeFieldWriter),
       _hwInfo(hwInfo),
-      _attrDir(attrDir)
+      _attrDir(attrDir),
+      _replay_operation_cost(0.0)
 {
     _lastStats.setPathElementsToLog(8);
+    auto &config = attr->getConfig();
+    if (config.basicType() == search::attribute::BasicType::Type::TENSOR &&
+        config.tensorType().is_dense() && config.hnsw_index_params().has_value())
+    {
+        _replay_operation_cost = 400.0; // replaying operations to hnsw index is 400 times more expensive than reading from tls
+    }
 }
 
 
@@ -219,12 +223,12 @@ FlushableAttribute::internalInitFlush(SerialNum currentSerial)
 
 
 IFlushTarget::Task::UP
-FlushableAttribute::initFlush(SerialNum currentSerial)
+FlushableAttribute::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>)
 {
     // Called by document db executor
     std::promise<IFlushTarget::Task::UP> promise;
     std::future<IFlushTarget::Task::UP> future = promise.get_future();
-    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(_attr->getNamePrefix()),
+    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(_attr->getNamePrefix()),
                                   [&]() { promise.set_value(internalInitFlush(currentSerial)); });
     return future.get();
 }
@@ -234,6 +238,12 @@ uint64_t
 FlushableAttribute::getApproxBytesToWriteToDisk() const
 {
     return _attr->getEstimatedSaveByteSize();
+}
+
+double
+FlushableAttribute::get_replay_operation_cost() const
+{
+    return _replay_operation_cost;
 }
 
 } // namespace proton

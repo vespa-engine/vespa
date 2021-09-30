@@ -4,10 +4,11 @@
 #include "attributedisklayout.h"
 #include "attribute_directory.h"
 #include "i_attribute_factory.h"
+#include "attribute_transient_memory_calculator.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/searchcommon/attribute/persistent_predicate_params.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
 #include <vespa/searchlib/attribute/attributevector.h>
@@ -21,6 +22,7 @@ using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::AttributeVector;
 using search::IndexMetaInfo;
+using search::CommitParam;
 
 namespace proton {
 
@@ -149,16 +151,30 @@ logAttributeWrongType(const AttributeVector::SP &attr, const AttributeHeader &he
 
 }
 
+void
+AttributeInitializer::readHeader()
+{
+    if (!_attrDir->empty()) {
+        search::SerialNum serialNum = _attrDir->getFlushedSerialNum();
+        vespalib::string attrFileName = _attrDir->getAttributeFileName(serialNum);
+        if (serialNum != 0) {
+            _header = std::make_unique<const AttributeHeader>(extractHeader(attrFileName));
+            if (_header->getCreateSerialNum() <= _currentSerialNum && headerTypeOK(*_header, _spec.getConfig()) && (serialNum >= _currentSerialNum)) {
+                _header_ok = true;
+            }
+        }
+    }
+}
+
 AttributeVector::SP
 AttributeInitializer::tryLoadAttribute() const
 {
     search::SerialNum serialNum = _attrDir->getFlushedSerialNum();
     vespalib::string attrFileName = _attrDir->getAttributeFileName(serialNum);
     AttributeVector::SP attr = _factory.create(attrFileName, _spec.getConfig());
-    if (serialNum != 0) {
-        AttributeHeader header = extractHeader(attrFileName);
-        if (header.getCreateSerialNum() > _currentSerialNum || !headerTypeOK(header, attr->getConfig()) || (serialNum < _currentSerialNum)) {
-            setupEmptyAttribute(attr, serialNum, header);
+    if (serialNum != 0 && _header) {
+        if (!_header_ok) {
+            setupEmptyAttribute(attr, serialNum, *_header);
             return attr;
         }
         if (!loadAttribute(attr, serialNum)) {
@@ -177,13 +193,13 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
     assert(attr->hasLoadData());
     vespalib::Timer timer;
     EventLogger::loadAttributeStart(_documentSubDbName, attr->getName());
-    if (!attr->load()) {
+    if (!attr->load(&_executor)) {
         LOG(warning, "Could not load attribute vector '%s' from disk. Returning empty attribute vector",
             attr->getBaseFileName().c_str());
         return false;
     } else {
-        attr->commit(serialNum, serialNum);
-        EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), vespalib::count_ms(timer.elapsed()));
+        attr->commit(CommitParam(serialNum));
+        EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), timer.elapsed());
     }
     return true;
 }
@@ -203,7 +219,7 @@ AttributeInitializer::setupEmptyAttribute(AttributeVectorSP &attr, search::Seria
     }
     LOG(info, "Returning empty attribute vector for '%s'", attr->getBaseFileName().c_str());
     _factory.setupEmpty(attr, _currentSerialNum);
-    attr->commit(serialNum, serialNum);
+    attr->commit(CommitParam(serialNum));
 }
 
 AttributeVector::SP
@@ -218,13 +234,18 @@ AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirect
                                            const vespalib::string &documentSubDbName,
                                            const AttributeSpec &spec,
                                            uint64_t currentSerialNum,
-                                           const IAttributeFactory &factory)
+                                           const IAttributeFactory &factory,
+                                           vespalib::Executor & executor)
     : _attrDir(attrDir),
       _documentSubDbName(documentSubDbName),
       _spec(spec),
       _currentSerialNum(currentSerialNum),
-      _factory(factory)
+      _factory(factory),
+      _executor(executor),
+      _header(),
+      _header_ok(false)
 {
+    readHeader();
 }
 
 AttributeInitializer::~AttributeInitializer() = default;
@@ -237,6 +258,16 @@ AttributeInitializer::init() const
     } else {
         return AttributeInitializerResult(createAndSetupEmptyAttribute());
     }
+}
+
+size_t
+AttributeInitializer::get_transient_memory_usage() const
+{
+    if (_header_ok) {
+        AttributeTransientMemoryCalculator get_transient_memory_usage;
+        return get_transient_memory_usage(*_header, _spec.getConfig());
+    }
+    return 0u;
 }
 
 } // namespace proton

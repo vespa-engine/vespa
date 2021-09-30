@@ -170,7 +170,7 @@ public class ImplicitSummaries extends Processor {
         {
             // Summary transform attribute may indicate that the ilscript was rewritten to remove summary
             // by another search that uses this same field in inheritance.
-            deployLogger.log(Level.WARNING, "Ignoring " + summaryField + ": " + sourceField +
+            deployLogger.logApplicationPackage(Level.WARNING, "Ignoring " + summaryField + ": " + sourceField +
                                            " is not creating a summary value in its indexing statement");
             return false;
         }
@@ -184,7 +184,7 @@ public class ImplicitSummaries extends Processor {
                 if (summaryField.getDestinations().size()  >0) {
                     destinations = "document summaries " + summaryField.getDestinations();
                 }
-                deployLogger.log(Level.WARNING,
+                deployLogger.logApplicationPackage(Level.WARNING,
                                  "Will fetch the disk summary value of " + sourceField + " in " + destinations +
                                  " since this summary field uses a dynamic summary value (snippet/bolding): Dynamic summaries and bolding " +
                                  "is not supported with summary values fetched from in-memory attributes yet. If you want to see partial updates " +

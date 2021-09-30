@@ -10,12 +10,10 @@ vespa_add_library(storage_teststorageserver TEST
 vespa_add_executable(storage_storageserver_gtest_runner_app TEST
     SOURCES
     bouncertest.cpp
-    bucketintegritycheckertest.cpp
     changedbucketownershiphandlertest.cpp
     communicationmanagertest.cpp
     configurable_bucket_resolver_test.cpp
     documentapiconvertertest.cpp
-    fnet_listener_test.cpp
     mergethrottlertest.cpp
     priorityconvertertest.cpp
     service_layer_error_listener_test.cpp
@@ -26,10 +24,11 @@ vespa_add_executable(storage_storageserver_gtest_runner_app TEST
     storage_storageserver
     storage_testcommon
     storage_teststorageserver
-    gtest
+    GTest::GTest
 )
 
 vespa_add_test(
     NAME storage_storageserver_gtest_runner_app
     COMMAND storage_storageserver_gtest_runner_app
+    COST 300
 )

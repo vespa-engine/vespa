@@ -9,11 +9,13 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneFilter;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -23,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +39,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private final Map<ZoneId, Duration> deploymentTimeToLive = new HashMap<>();
     private final Map<Environment, RegionName> defaultRegionForEnvironment = new HashMap<>();
     private final Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
-    private final Map<ZoneApi, Set<RoutingMethod>> zoneRoutingMethods = new HashMap<>();
+    private final Map<ZoneApi, List<RoutingMethod>> zoneRoutingMethods = new HashMap<>();
+    private final Set<ZoneApi> reprovisionToUpgradeOs = new HashSet<>();
 
     private List<? extends ZoneApi> zones;
     private SystemName system;
@@ -48,21 +52,26 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
      */
     public ZoneRegistryMock(SystemName system) {
         this.system = system;
-        this.zones = List.of(ZoneApiMock.fromId("test.us-east-1"),
-                             ZoneApiMock.fromId("staging.us-east-3"),
-                             ZoneApiMock.fromId("dev.us-east-1"),
-                             ZoneApiMock.fromId("dev.aws-us-east-2a"),
-                             ZoneApiMock.fromId("perf.us-east-3"),
-                             ZoneApiMock.fromId("prod.aws-us-east-1a"),
-                             ZoneApiMock.fromId("prod.ap-northeast-1"),
-                             ZoneApiMock.fromId("prod.ap-northeast-2"),
-                             ZoneApiMock.fromId("prod.ap-southeast-1"),
-                             ZoneApiMock.fromId("prod.us-east-3"),
-                             ZoneApiMock.fromId("prod.us-west-1"),
-                             ZoneApiMock.fromId("prod.us-central-1"),
-                             ZoneApiMock.fromId("prod.eu-west-1"));
+        this.zones = system.isPublic() ?
+                List.of(ZoneApiMock.fromId("test.aws-us-east-1c"),
+                        ZoneApiMock.fromId("staging.aws-us-east-1c"),
+                        ZoneApiMock.fromId("prod.aws-us-east-1c"),
+                        ZoneApiMock.fromId("prod.aws-eu-west-1a")) :
+                List.of(ZoneApiMock.fromId("test.us-east-1"),
+                        ZoneApiMock.fromId("staging.us-east-3"),
+                        ZoneApiMock.fromId("dev.us-east-1"),
+                        ZoneApiMock.fromId("dev.aws-us-east-2a"),
+                        ZoneApiMock.fromId("perf.us-east-3"),
+                        ZoneApiMock.fromId("prod.aws-us-east-1a"),
+                        ZoneApiMock.fromId("prod.ap-northeast-1"),
+                        ZoneApiMock.fromId("prod.ap-northeast-2"),
+                        ZoneApiMock.fromId("prod.ap-southeast-1"),
+                        ZoneApiMock.fromId("prod.us-east-3"),
+                        ZoneApiMock.fromId("prod.us-west-1"),
+                        ZoneApiMock.fromId("prod.us-central-1"),
+                        ZoneApiMock.fromId("prod.eu-west-1"));
         // All zones use a shared routing method by default
-        setRoutingMethod(this.zones, RoutingMethod.shared);
+        setRoutingMethod(this.zones, system.isPublic() ? RoutingMethod.exclusive : RoutingMethod.shared);
     }
 
     public ZoneRegistryMock setDeploymentTimeToLive(ZoneId zone, Duration duration) {
@@ -108,16 +117,28 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     public ZoneRegistryMock setRoutingMethod(ZoneApi zone, RoutingMethod... routingMethods) {
-        return setRoutingMethod(zone, Set.of(routingMethods));
+        return setRoutingMethod(zone, List.of(routingMethods));
     }
 
     public ZoneRegistryMock setRoutingMethod(List<? extends ZoneApi> zones, RoutingMethod... routingMethods) {
-        zones.forEach(zone -> setRoutingMethod(zone, Set.of(routingMethods)));
+        zones.forEach(zone -> setRoutingMethod(zone, List.of(routingMethods)));
         return this;
     }
 
-    public ZoneRegistryMock setRoutingMethod(ZoneApi zone, Set<RoutingMethod> routingMethods) {
-        this.zoneRoutingMethods.put(zone, Set.copyOf(routingMethods));
+    public ZoneRegistryMock setRoutingMethod(ZoneApi zone, List<RoutingMethod> routingMethods) {
+        if (routingMethods.stream().distinct().count() != routingMethods.size()) {
+            throw new IllegalArgumentException("Routing methods must be distinct");
+        }
+        this.zoneRoutingMethods.put(zone, List.copyOf(routingMethods));
+        return this;
+    }
+
+    public ZoneRegistryMock reprovisionToUpgradeOsIn(ZoneApi... zones) {
+        return reprovisionToUpgradeOsIn(List.of(zones));
+    }
+
+    public ZoneRegistryMock reprovisionToUpgradeOsIn(List<ZoneApi> zones) {
+        this.reprovisionToUpgradeOs.addAll(zones);
         return this;
     }
 
@@ -127,8 +148,13 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
+    public ZoneApi systemZone() {
+        return ZoneApiMock.fromId("prod.controller");
+    }
+
+    @Override
     public ZoneFilter zones() {
-        return ZoneFilterMock.from(zones, zoneRoutingMethods);
+        return ZoneFilterMock.from(zones, zoneRoutingMethods, reprovisionToUpgradeOs);
     }
 
     @Override
@@ -162,6 +188,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
+    public List<RoutingMethod> routingMethods(ZoneId zone) {
+        return List.copyOf(zoneRoutingMethods.getOrDefault(ZoneApiMock.from(zone), List.of()));
+    }
+
+    @Override
     public URI dashboardUrl() {
         return URI.create("https://dashboard.tld");
     }
@@ -182,14 +213,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public URI badgeUrl() {
-        return URI.create("https://badges.tld");
-    }
-
-    @Override
     public URI apiUrl() {
         return URI.create("https://api.tld:4443/");
     }
+
+    @Override public Optional<String> tenantDeveloperRoleArn(TenantName tenant) { return Optional.empty(); }
 
     @Override
     public boolean hasZone(ZoneId zoneId) {
@@ -197,22 +225,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public List<URI> getConfigServerUris(ZoneId zoneId) {
-        return List.of(
-                URI.create(String.format("https://cfg1.%s.test:4443/", zoneId.value())),
-                URI.create(String.format("https://cfg2.%s.test:4443/", zoneId.value())));
-    }
-
-    @Override
     public URI getConfigServerVipUri(ZoneId zoneId) {
-        return URI.create(String.format("https://cfg.%s.test.vip:4443/", zoneId.value()));
-    }
-
-    @Override
-    public List<URI> getConfigServerApiUris(ZoneId zoneId) {
-        return List.of(
-                URI.create(String.format("https://cfg.%s.test:4443/", zoneId.value())),
-                URI.create(String.format("https://cfg.%s.test.vip:4443/", zoneId.value())));
+        return URI.create(Text.format("https://cfg.%s.test.vip:4443/", zoneId.value()));
     }
 
     @Override

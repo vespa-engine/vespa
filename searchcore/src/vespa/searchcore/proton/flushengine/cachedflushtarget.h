@@ -42,16 +42,18 @@ public:
     const IFlushTarget::SP & getFlushTarget() { return _target; }
 
     // Implements IFlushTarget.
-    virtual MemoryGain getApproxMemoryGain() const override { return _memoryGain; }
-    virtual   DiskGain   getApproxDiskGain() const override { return _diskGain; }
-    virtual  SerialNum getFlushedSerialNum() const override { return _flushedSerialNum; }
-    virtual       Time    getLastFlushTime() const override { return _lastFlushTime; }
-    virtual       bool     needUrgentFlush() const override { return _needUrgentFlush; }
+    MemoryGain getApproxMemoryGain() const override { return _memoryGain; }
+    DiskGain   getApproxDiskGain() const override { return _diskGain; }
+    SerialNum getFlushedSerialNum() const override { return _flushedSerialNum; }
+    Time    getLastFlushTime() const override { return _lastFlushTime; }
+    bool     needUrgentFlush() const override { return _needUrgentFlush; }
 
-    virtual Task::UP initFlush(SerialNum currentSerial) override { return _target->initFlush(currentSerial); }
-    virtual FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override {
+        return _target->initFlush(currentSerial, std::move(flush_token));
+    }
+    FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
 
-    virtual uint64_t getApproxBytesToWriteToDisk() const override;
+    uint64_t getApproxBytesToWriteToDisk() const override;
 };
 
 } // namespace proton

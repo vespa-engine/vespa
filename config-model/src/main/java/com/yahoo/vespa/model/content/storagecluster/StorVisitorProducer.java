@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.storagecluster;
 
+import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorVisitorConfig;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 
 /**
  * Serves stor-visitor config for storage clusters.
  */
-public class StorVisitorProducer implements StorVisitorConfig.Producer {
+public class StorVisitorProducer implements StorVisitorConfig.Producer, StorFilestorConfig.Producer {
     public static class Builder {
         public StorVisitorProducer build(ModelElement element) {
             ModelElement tuning = element.child("tuning");
@@ -39,6 +40,13 @@ public class StorVisitorProducer implements StorVisitorConfig.Producer {
         this.maxQueueSize = maxQueueSize;
         this.maxConcurrentFixed = maxConcurrentFixed;
         this.maxConcurrentVariable = maxConcurrentVariable;
+    }
+
+    @Override
+    public void getConfig(StorFilestorConfig.Builder builder) {
+        if (threadCount != null) {
+            builder.num_visitor_threads(threadCount);
+        }
     }
 
     @Override

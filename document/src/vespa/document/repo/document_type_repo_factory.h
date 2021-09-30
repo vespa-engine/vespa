@@ -30,6 +30,8 @@ class DocumentTypeRepoFactory {
               config(std::move(config_in))
         {
         }
+        DocumentTypeRepoEntry(DocumentTypeRepoEntry &&) = default;
+        ~DocumentTypeRepoEntry();
     };
     using DocumentTypeRepoMap = std::map<const void *, DocumentTypeRepoEntry>;
     class Deleter;

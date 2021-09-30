@@ -7,8 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bjorncs
@@ -35,9 +34,9 @@ public class PredicateQueryParserTest {
                 (k, v, s) -> result.add(String.format("%s:%s:%#x", k, v, s)),
                 (k, v, s) -> result.add(String.format("%s:%d:%#x", k, v, s)));
 
-        assertThat(result, is(Arrays.asList(
+        assertEquals(result, Arrays.asList(
                 "k1:value1:0x1", "k2:value2:0x3",
-                "range1:123456789123:0xffff", "range2:0:0xffffffffffffffff")));
+                "range1:123456789123:0xffff", "range2:0:0xffffffffffffffff"));
     }
 
 }

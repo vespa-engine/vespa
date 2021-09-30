@@ -10,7 +10,7 @@ import com.yahoo.prelude.semantics.rule.ProductionRule;
 import java.util.*;
 
 /**
- * A particular evalutation of a particular rule.
+ * A particular evaluation of a particular rule.
  *
  * @author bratseth
  */
@@ -23,7 +23,7 @@ public class RuleEvaluation {
 
     // Remember that whenever state is added to this class, you
     // must consider whether/how to make that state backtrackable
-    // by savinginformation in choicepoint.state
+    // by saving information in choicepoint.state
 
     /** The items to match in this evaluation */
     private List<FlattenedItem> items;
@@ -41,12 +41,12 @@ public class RuleEvaluation {
     private String currentContext;
 
     /** A list of referencedMatches */
-    private List<ReferencedMatches> referencedMatchesList = new java.util.ArrayList<>();
+    private final List<ReferencedMatches> referencedMatchesList = new java.util.ArrayList<>();
 
-    private List<Match> nonreferencedMatches = new java.util.ArrayList<>();
+    private final List<Match> nonreferencedMatches = new java.util.ArrayList<>();
 
     /** The evaluation owning this */
-    private Evaluation evaluation;
+    private final Evaluation evaluation;
 
     /** The choice points saved in this evaluation */
     private Stack<Choicepoint> choicepoints = null;
@@ -82,7 +82,7 @@ public class RuleEvaluation {
             choicepoints.clear();
     }
 
-    public void setMatchReferences(Set<String> matchReferences) { this.matchReferences=matchReferences; }
+    public void setMatchReferences(Set<String> matchReferences) { this.matchReferences = matchReferences; }
 
     /**
      * <p>Calculates an id which is unique for each match (the totality of the matched terms)
@@ -96,23 +96,23 @@ public class RuleEvaluation {
      * we add other kinds of conditions.</p>
      */
     int calculateMatchDigest(ProductionRule rule) {
-        int matchDigest=rule.hashCode();
-        int matchCounter=1;
-        for (Iterator<ReferencedMatches> i=referencedMatchesList.iterator(); i.hasNext(); ) {
-            ReferencedMatches matches=i.next();
-            int termCounter=0;
-            for (Iterator<Match> j=matches.matchIterator(); j.hasNext(); ) {
-                Match match=j.next();
-                matchDigest=7*matchDigest*matchCounter+
-                            71*termCounter+
-                            match.hashCode();
+        int matchDigest = rule.hashCode();
+        int matchCounter = 1;
+        for (Iterator<ReferencedMatches> i = referencedMatchesList.iterator(); i.hasNext(); ) {
+            ReferencedMatches matches = i.next();
+            int termCounter = 0;
+            for (Iterator<Match> j = matches.matchIterator(); j.hasNext(); ) {
+                Match match = j.next();
+                matchDigest = 7 * matchDigest * matchCounter+
+                              71 * termCounter +
+                              match.hashCode();
                 termCounter++;
             }
             matchCounter++;
         }
-        for (Iterator<Match> i=nonreferencedMatches.iterator(); i.hasNext(); ) {
-            Match match=i.next();
-            matchDigest=7*matchDigest*matchCounter+match.hashCode();
+        for (Iterator<Match> i = nonreferencedMatches.iterator(); i.hasNext(); ) {
+            Match match = i.next();
+            matchDigest = 7 * matchDigest * matchCounter + match.hashCode();
             matchCounter++;
         }
         return matchDigest;
@@ -139,7 +139,7 @@ public class RuleEvaluation {
 
     /** Sets the current position */
     public void setPosition(int position) {
-        this.position=position;
+        this.position = position;
     }
 
     /** Returns the total number of items to match in this evaluation */
@@ -151,21 +151,21 @@ public class RuleEvaluation {
     public Object getValue() { return value; }
 
     /** Sets the last value returned by a condition in this evaluatiino, or null */
-    public void setValue(Object value) { this.value=value; }
+    public void setValue(Object value) { this.value = value; }
 
     /** Returns whether we are evaluating inside a condition which inverts the truth value */
     public boolean isInNegation() { return inNegation; }
 
     /** sets whether we are evaluating inside a condition which inverts the truth value */
-    public void setInNegation(boolean inNegation) { this.inNegation=inNegation; }
+    public void setInNegation(boolean inNegation) { this.inNegation = inNegation; }
 
     /** Returns the current position into the terms this evaluates over */
     public int getPosition() { return position; }
 
     /** Sets a new current label and returns the previous one */
     public String setCurrentLabel(String currentLabel) {
-        String oldLabel=currentLabel;
-        this.currentLabel=currentLabel;
+        String oldLabel = currentLabel;
+        this.currentLabel = currentLabel;
         return oldLabel;
     }
 
@@ -179,8 +179,8 @@ public class RuleEvaluation {
     public FlattenedItem next() {
         position++;
 
-        if (position>=items.size()) {
-            position=items.size();
+        if (position >= items.size()) {
+            position = items.size();
             return null;
         }
 
@@ -189,17 +189,16 @@ public class RuleEvaluation {
 
     // TODO: Simplistic yet. Nedd to support context nesting etc.
     public void entering(String context) {
-        if (context==null) return;
-        if (matchReferences!=null && matchReferences.contains(context))
-            currentContext=context;
-
+        if (context == null) return;
+        if (matchReferences != null && matchReferences.contains(context))
+            currentContext = context;
     }
 
     public void leaving(String context) {
-        if (context==null) return;
-        if (currentContext==null) return;
+        if (context == null) return;
+        if (currentContext == null) return;
         if (currentContext.equals(context))
-            currentContext=null;
+            currentContext = null;
     }
 
     /**
@@ -269,7 +268,7 @@ public class RuleEvaluation {
      * @param termType the kind of item to index, this decides the resulting structure
      */
     public void insertItem(Item item, CompositeItem parent, int index, TermType termType) {
-        evaluation.insertItem(item,parent,index,termType);
+        evaluation.insertItem(item, parent, index, termType);
     }
 
     /** Returns a read-only view of the items of this */
@@ -282,7 +281,7 @@ public class RuleEvaluation {
     }
 
     public void trace(int level,String string) {
-        evaluation.trace(level,string);
+        evaluation.trace(level, string);
     }
 
     public int getTraceLevel() {
@@ -304,24 +303,24 @@ public class RuleEvaluation {
      * @param  create true to create this choicepoint if it is missing
      * @return the choicepoint, or null if not present, and create is false
      */
-    public Choicepoint getChoicepoint(Condition condition,boolean create) {
-        if (choicepoints==null) {
-            if (!create) return null;
-            choicepoints=new java.util.Stack<>();
+    public Choicepoint getChoicepoint(Condition condition, boolean create) {
+        if (choicepoints == null) {
+            if ( ! create) return null;
+            choicepoints = new java.util.Stack<>();
         }
         Choicepoint choicepoint=lookupChoicepoint(condition);
-        if (choicepoint==null) {
-            if (!create) return null;
-            choicepoint=new Choicepoint(this,condition);
+        if (choicepoint == null) {
+            if ( ! create) return null;
+            choicepoint = new Choicepoint(this, condition);
             choicepoints.push(choicepoint);
         }
         return choicepoint;
     }
 
     private Choicepoint lookupChoicepoint(Condition condition) {
-        for (Iterator<Choicepoint> i=choicepoints.iterator(); i.hasNext(); ) {
-            Choicepoint choicepoint=i.next();
-            if (condition==choicepoint.getCondition())
+        for (Iterator<Choicepoint> i = choicepoints.iterator(); i.hasNext(); ) {
+            Choicepoint choicepoint = i.next();
+            if (condition == choicepoint.getCondition())
                 return choicepoint;
         }
         return null;
@@ -337,8 +336,8 @@ public class RuleEvaluation {
 
     /** Remove all the terms recognized by this match */
     public void removeMatches(ReferencedMatches matches) {
-        for (Iterator<Match> i=matches.matchIterator(); i.hasNext(); ) {
-            Match match=i.next();
+        for (Iterator<Match> i = matches.matchIterator(); i.hasNext(); ) {
+            Match match = i.next();
             removeItemByIdentity(match.getItem());
         }
     }

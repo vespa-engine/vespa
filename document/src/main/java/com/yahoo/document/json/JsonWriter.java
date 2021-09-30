@@ -134,15 +134,9 @@ public class JsonWriter implements DocumentWriter {
             // this makes it impossible to refeed directly, not sure what's correct
             // perhaps just change to "put"?
             generator.writeStringField("id", value.getId().toString());
-            generator.writeObjectFieldStart(FIELDS);
 
-            Iterator<Map.Entry<Field, FieldValue>> i = value.iterator();
-            while (i.hasNext()) {
-                Map.Entry<Field, FieldValue> entry = i.next();
-                entry.getValue().serialize(entry.getKey(), this);
-            }
+            writeFields(value);
 
-            generator.writeEndObject();
             generator.writeEndObject();
             generator.flush();
         } catch (IOException e) {
@@ -347,4 +341,15 @@ public class JsonWriter implements DocumentWriter {
         serializeString(generator, field, value);
         return this;
     }
+
+    public void writeFields(Document value) throws IOException {
+        generator.writeObjectFieldStart(FIELDS);
+        Iterator<Map.Entry<Field, FieldValue>> i = value.iterator();
+        while (i.hasNext()) {
+            Map.Entry<Field, FieldValue> entry = i.next();
+            entry.getValue().serialize(entry.getKey(), this);
+        }
+        generator.writeEndObject();
+    }
+
 }

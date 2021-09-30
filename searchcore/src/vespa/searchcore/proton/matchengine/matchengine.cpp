@@ -5,6 +5,7 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 
@@ -25,15 +26,14 @@ public:
         : _engine(engine),
           _request(std::move(request)),
           _client(client)
-    {
-        // empty
-    }
+    { }
 
     void run() override {
-        _engine.performSearch(std::move(_request), _client);
+        _client.searchDone(_engine.performSearch(std::move(_request)));
     }
 };
 
+VESPA_THREAD_STACK_TAG(match_engine_executor)
 
 } // namespace anon
 
@@ -41,12 +41,13 @@ namespace proton {
 
 using namespace vespalib::slime;
 
-MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t distributionKey)
+MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t distributionKey, bool async)
     : _lock(),
       _distributionKey(distributionKey),
+      _async(async),
       _closed(false),
       _handlers(),
-      _executor(std::max(size_t(1), numThreads / threadsPerSearch), 256 * 1024),
+      _executor(std::max(size_t(1), numThreads / threadsPerSearch), 256_Ki, match_engine_executor),
       _threadBundlePool(std::max(size_t(1), threadsPerSearch)),
       _nodeUp(false)
 {
@@ -104,13 +105,15 @@ MatchEngine::search(search::engine::SearchRequest::Source request,
 
         return ret;
     }
-    _executor.execute(std::make_unique<SearchTask>(*this, std::move(request), client));
-    return search::engine::SearchReply::UP();
+    if (_async) {
+        _executor.execute(std::make_unique<SearchTask>(*this, std::move(request), client));
+        return search::engine::SearchReply::UP();
+    }
+    return performSearch(std::move(request));
 }
 
-void
-MatchEngine::performSearch(search::engine::SearchRequest::Source req,
-                           search::engine::SearchClient &client)
+std::unique_ptr<search::engine::SearchReply>
+MatchEngine::performSearch(search::engine::SearchRequest::Source req)
 {
     auto ret = std::make_unique<search::engine::SearchReply>();
 
@@ -121,21 +124,20 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
         ISearchHandler::SP searchHandler;
         vespalib::SimpleThreadBundle::UP threadBundle = _threadBundlePool.obtain();
         { // try to find the match handler corresponding to the specified search doc type
-            std::lock_guard<std::mutex> guard(_lock);
             DocTypeName docTypeName(*searchRequest);
+            std::lock_guard<std::mutex> guard(_lock);
             searchHandler = _handlers.getHandler(docTypeName);
         }
         if (searchHandler) {
-            ret = searchHandler->match(searchHandler, *searchRequest, *threadBundle);
+            ret = searchHandler->match(*searchRequest, *threadBundle);
         } else {
-            HandlerMap<ISearchHandler>::Snapshot::UP snapshot;
+            HandlerMap<ISearchHandler>::Snapshot snapshot;
             {
                 std::lock_guard<std::mutex> guard(_lock);
                 snapshot = _handlers.snapshot();
             }
-            if (snapshot->valid()) {
-                ISearchHandler::SP handler = snapshot->getSP();
-                ret = handler->match(handler, *searchRequest, *threadBundle); // use the first handler
+            if (snapshot.valid()) {
+                ret = snapshot.get()->match(*searchRequest, *threadBundle); // use the first handler
             }
         }
         _threadBundlePool.release(std::move(threadBundle));
@@ -146,11 +148,11 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
         ret->request->trace().getRoot().setLong("distribution-key", _distributionKey);
         ret->request->trace().done();
         search::fef::Properties & trace = ret->propertiesMap.lookupCreate("trace");
-        vespalib::SmartBuffer output(4096);
+        vespalib::SmartBuffer output(4_Ki);
         vespalib::slime::BinaryFormat::encode(ret->request->trace().getSlime(), output);
         trace.add("slime", output.obtain().make_stringref());
     }
-    client.searchDone(std::move(ret));
+    return ret;
 }
 
 bool MatchEngine::isOnline() const {

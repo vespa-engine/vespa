@@ -7,6 +7,7 @@
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -64,16 +65,16 @@ DocsumContext::initState()
 DocsumReply::UP
 DocsumContext::createReply()
 {
-    DocsumReply::UP reply(new DocsumReply());
-    search::RawBuf buf(4096);
+    auto reply = std::make_unique<DocsumReply>();
+    search::RawBuf buf(4_Ki);
     _docsumWriter.InitState(_attrMgr, &_docsumState);
     reply->docsums.resize(_docsumState._docsumcnt);
     SymbolTable::UP symbols = std::make_unique<SymbolTable>();
     IDocsumWriter::ResolveClassInfo rci = _docsumWriter.resolveClassInfo(_docsumState._args.getResultClassName(), _docsumStore.getSummaryClassId());
+    _docsumState._omit_summary_features = rci.outputClass->omit_summary_features();
     for (uint32_t i = 0; i < _docsumState._docsumcnt; ++i) {
         buf.reset();
         uint32_t docId = _docsumState._docsumbuf[i];
-        reply->docsums[i].docid = docId;
         if (docId != search::endDocId && !rci.mustSkip) {
             Slime slime(Slime::Params(std::move(symbols)));
             vespalib::slime::SlimeInserter inserter(slime);
@@ -114,6 +115,7 @@ DocsumContext::createSlimeReply()
     const Symbol docsumSym = response->insert(DOCSUM);
     IDocsumWriter::ResolveClassInfo rci = _docsumWriter.resolveClassInfo(_docsumState._args.getResultClassName(),
                                                                          _docsumStore.getSummaryClassId());
+    _docsumState._omit_summary_features = rci.outputClass->omit_summary_features();
     uint32_t i(0);
     for (i = 0; (i < _docsumState._docsumcnt) && !_request.expired(); ++i) {
         uint32_t docId = _docsumState._docsumbuf[i];
@@ -181,43 +183,11 @@ DocsumContext::FillRankFeatures(search::docsummary::GetDocsumsState * state, sea
     state->_rankFeatures = _matcher->getRankFeatures(_request, _searchCtx, _attrCtx, _sessionMgr);
 }
 
-namespace {
-Location *getLocation(const string &loc_str, search::IAttributeManager &attrMgr)
-{
-    LOG(debug, "Filling document locations from location string: %s", loc_str.c_str());
-
-    Location *loc = new Location;
-    string location;
-    string::size_type pos = loc_str.find(':');
-    if (pos != string::npos) {
-        string view = loc_str.substr(0, pos);
-        AttributeGuard::UP vec = attrMgr.getAttribute(view);
-        if (!vec->valid()) {
-            view = PositionDataType::getZCurveFieldName(view);
-            vec = attrMgr.getAttribute(view);
-        }
-        loc->setVecGuard(std::move(vec));
-        location = loc_str.substr(pos + 1);
-    } else {
-        LOG(warning, "Location string lacks attribute vector specification. loc='%s'", loc_str.c_str());
-        location = loc_str;
-    }
-    loc->parse(location);
-    return loc;
-}
-}  // namespace
-
-void
-DocsumContext::ParseLocation(search::docsummary::GetDocsumsState *state)
-{
-    state->_parsedLocation.reset(getLocation(_request.location, _attrMgr));
-}
-
 std::unique_ptr<MatchingElements>
-DocsumContext::fill_matching_elements(const StructFieldMapper &struct_field_mapper)
+DocsumContext::fill_matching_elements(const MatchingElementsFields &fields)
 {
     if (_matcher) {
-        return _matcher->get_matching_elements(_request, _searchCtx, _attrCtx, _sessionMgr, struct_field_mapper);
+        return _matcher->get_matching_elements(_request, _searchCtx, _attrCtx, _sessionMgr, fields);
     }
     return std::make_unique<MatchingElements>();
 }

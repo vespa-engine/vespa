@@ -113,7 +113,7 @@ IndexCollection::getSearchableStats() const
 {
     search::SearchableStats stats;
     for (size_t i = 0; i < _sources.size(); ++i) {
-        stats.add(_sources[i].source_wrapper->getSearchableStats());
+        stats.merge(_sources[i].source_wrapper->getSearchableStats());
     }
     return stats;
 }

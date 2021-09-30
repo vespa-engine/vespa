@@ -11,6 +11,7 @@ vespa_add_library(searchlib_features OBJECT
     debug_attribute_wait.cpp
     debug_wait.cpp
     dense_tensor_attribute_executor.cpp
+    direct_tensor_attribute_executor.cpp
     distancefeature.cpp
     distancetopathfeature.cpp
     documenttestutils.cpp
@@ -26,6 +27,7 @@ vespa_add_library(searchlib_features OBJECT
     flow_completeness_feature.cpp
     foreachfeature.cpp
     freshnessfeature.cpp
+    global_sequence_feature.cpp
     internal_max_reduce_prod_join_feature.cpp
     item_raw_score_feature.cpp
     jarowinklerdistancefeature.cpp
@@ -33,12 +35,14 @@ vespa_add_library(searchlib_features OBJECT
     matchesfeature.cpp
     matchfeature.cpp
     max_reduce_prod_join_replacer.cpp
+    mutable_dense_value_view.cpp
     native_dot_product_feature.cpp
     nativeattributematchfeature.cpp
     nativefieldmatchfeature.cpp
     nativeproximityfeature.cpp
     nativerankfeature.cpp
     nowfeature.cpp
+    onnx_feature.cpp
     proximityfeature.cpp
     querycompletenessfeature.cpp
     queryfeature.cpp

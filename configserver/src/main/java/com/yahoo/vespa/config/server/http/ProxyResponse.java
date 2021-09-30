@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.container.jdisc.HttpResponse;
 import org.apache.http.Header;
+import org.apache.http.client.methods.CloseableHttpResponse;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -16,9 +17,9 @@ import java.util.Optional;
  */
 class ProxyResponse extends HttpResponse {
 
-    private final org.apache.http.HttpResponse clientResponse;
+    private final CloseableHttpResponse clientResponse;
 
-    ProxyResponse(org.apache.http.HttpResponse clientResponse) {
+    ProxyResponse(CloseableHttpResponse clientResponse) {
         super(clientResponse.getStatusLine().getStatusCode());
         this.clientResponse = clientResponse;
     }
@@ -32,6 +33,9 @@ class ProxyResponse extends HttpResponse {
 
     @Override
     public void render(OutputStream outputStream) throws IOException {
-        clientResponse.getEntity().writeTo(outputStream);
+        try (clientResponse) {
+            clientResponse.getEntity().writeTo(outputStream);
+        }
     }
+
 }

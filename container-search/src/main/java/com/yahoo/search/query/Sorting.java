@@ -3,6 +3,7 @@ package com.yahoo.search.query;
 
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.util.ULocale;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.text.Utf8;
 
 import java.nio.ByteBuffer;
@@ -88,7 +89,7 @@ public class Sorting implements Cloneable {
                             } else if (STRENGTH_IDENTICAL.equalsIgnoreCase(s)) {
                                 strength = UcaSorter.Strength.IDENTICAL;
                             } else {
-                                throw new IllegalArgumentException("Unknown collation strength: '" + s + "'");
+                                throw new IllegalInputException("Unknown collation strength: '" + s + "'");
                             }
                             sorter = new UcaSorter(sortString.substring(startPar+1, commaPos), sortString.substring(commaPos+1, commaopt), strength);
                         } else {
@@ -99,9 +100,9 @@ public class Sorting implements Cloneable {
                     }
                 } else {
                     if (funcName.isEmpty()) {
-                        throw new IllegalArgumentException("No sort function specified");
+                        throw new IllegalInputException("No sort function specified");
                     } else {
-                        throw new IllegalArgumentException("Unknown sort function '" + funcName + "'");
+                        throw new IllegalInputException("Unknown sort function '" + funcName + "'");
                     }
                 }
             } else {
@@ -196,7 +197,7 @@ public class Sorting implements Cloneable {
             if (legalAttributeName.matcher(fieldName).matches()) {
                 this.fieldName = fieldName;
             } else {
-                throw new IllegalArgumentException("Illegal attribute name '" + fieldName + "' for sorting. Requires '" + legalAttributeName.pattern() + "'");
+                throw new IllegalInputException("Illegal attribute name '" + fieldName + "' for sorting. Requires '" + legalAttributeName.pattern() + "'");
             }
         }
 

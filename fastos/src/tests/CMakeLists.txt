@@ -19,20 +19,6 @@ vespa_add_executable(fastos_thread_stats_test_app TEST
     fastos
 )
 vespa_add_test(NAME fastos_thread_stats_test_app NO_VALGRIND COMMAND fastos_thread_stats_test_app)
-vespa_add_executable(fastos_thread_sleep_test_app TEST
-    SOURCES
-    thread_sleep_test.cpp
-    DEPENDS
-    fastos
-)
-vespa_add_test(NAME fastos_thread_sleep_test_app NO_VALGRIND COMMAND fastos_thread_sleep_test_app)
-vespa_add_executable(fastos_thread_mutex_test_app TEST
-    SOURCES
-    thread_mutex_test.cpp
-    DEPENDS
-    fastos
-)
-vespa_add_test(NAME fastos_thread_mutex_test_app NO_VALGRIND COMMAND fastos_thread_mutex_test_app)
 vespa_add_executable(fastos_thread_joinwait_test_app TEST
     SOURCES
     thread_joinwait_test.cpp
@@ -40,13 +26,6 @@ vespa_add_executable(fastos_thread_joinwait_test_app TEST
     fastos
 )
 vespa_add_test(NAME fastos_thread_joinwait_test_app NO_VALGRIND COMMAND fastos_thread_joinwait_test_app)
-vespa_add_executable(fastos_thread_bounce_test_app TEST
-    SOURCES
-    thread_bounce_test.cpp
-    DEPENDS
-    fastos
-)
-vespa_add_test(NAME fastos_thread_bounce_test_app NO_VALGRIND COMMAND fastos_thread_bounce_test_app)
 vespa_add_executable(fastos_threadtest_app TEST
     SOURCES
     threadtest.cpp

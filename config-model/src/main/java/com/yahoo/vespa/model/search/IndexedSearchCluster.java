@@ -17,7 +17,6 @@ import com.yahoo.vespa.model.container.docproc.DocprocChain;
 import com.yahoo.vespa.model.content.DispatchSpec;
 import com.yahoo.vespa.model.content.SearchCoverage;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -44,16 +43,14 @@ public class IndexedSearchCluster extends SearchCluster
 
     // This is the document selector string as derived from the subscription tag.
     private String routingSelector = null;
-    private List<DocumentDatabase> documentDbs = new LinkedList<>();
+    private final List<DocumentDatabase> documentDbs = new LinkedList<>();
     private final UnionConfiguration unionCfg;
-    private int maxNodesDownPerFixedRow = 0;
 
     private int searchableCopies = 1;
 
     private final DispatchGroup rootDispatch;
     private DispatchSpec dispatchSpec;
-    private final boolean useAdaptiveDispatch;
-    private List<SearchNode> searchNodes = new ArrayList<>();
+    private final List<SearchNode> searchNodes = new ArrayList<>();
 
     /**
      * Returns the document selector that is able to resolve what documents are to be routed to this search cluster.
@@ -65,11 +62,10 @@ public class IndexedSearchCluster extends SearchCluster
         return routingSelector;
     }
 
-    public IndexedSearchCluster(AbstractConfigProducer parent, String clusterName, int index, DeployState deployState) {
+    public IndexedSearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index) {
         super(parent, clusterName, index);
         unionCfg = new UnionConfiguration(this, documentDbs);
         rootDispatch =  new DispatchGroup(this);
-        useAdaptiveDispatch = deployState.getProperties().useAdaptiveDispatch();
     }
 
     @Override
@@ -88,7 +84,7 @@ public class IndexedSearchCluster extends SearchCluster
      * services file on initialization, this can NOT be used at runtime to determine indexing chain. When initialization
      * is done, the {@link #getIndexingServiceName()} method holds the actual indexing docproc chain object.
      *
-     * @return The name of the docproc cluster associated with this.
+     * @return the name of the docproc cluster associated with this
      */
     public String getIndexingClusterName() {
         return hasExplicitIndexingCluster() ? indexingClusterName : getClusterName() + ".indexing";
@@ -106,7 +102,7 @@ public class IndexedSearchCluster extends SearchCluster
      * Sets the name of the docproc cluster running indexing for this search cluster. This is for initial configuration,
      * and will not reflect the actual indexing chain. See {@link #getIndexingClusterName} for more detail.
      *
-     * @param name The name of the docproc cluster associated with this.
+     * @param name the name of the docproc cluster associated with this
      */
     public void setIndexingClusterName(String name) {
         indexingClusterName = name;
@@ -120,8 +116,8 @@ public class IndexedSearchCluster extends SearchCluster
      * Sets the docproc chain that will be running indexing for this search cluster. This is set by the
      * {@link com.yahoo.vespa.model.content.Content} model during build.
      *
-     * @param chain the chain that is to run indexing for this cluster.
-     * @return this, to allow chaining.
+     * @param chain the chain that is to run indexing for this cluster
+     * @return this, to allow chaining
      */
     public AbstractSearchCluster setIndexingChain(DocprocChain chain) {
         indexingChain = chain;
@@ -154,8 +150,7 @@ public class IndexedSearchCluster extends SearchCluster
 
     private void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
         ddbB.inputdoctypename(sdoc.getInputDocType())
-            .configid(sdoc.getConfigId())
-            .visibilitydelay(getVisibilityDelay());
+            .configid(sdoc.getConfigId());
     }
 
     @Override
@@ -196,17 +191,20 @@ public class IndexedSearchCluster extends SearchCluster
             routingSelector = sb.toString();
         }
     }
+
     @Override
-    protected void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches, DeployState deployState) {
-        for (SearchDefinitionSpec spec : localSearches) {
+    protected void deriveAllSchemas(List<SchemaSpec> localSearches, DeployState deployState) {
+        for (SchemaSpec spec : localSearches) {
             com.yahoo.searchdefinition.Search search = spec.getSearchDefinition().getSearch();
             if ( ! (search instanceof DocumentOnlySearch)) {
                 DocumentDatabase db = new DocumentDatabase(this, search.getName(),
-                                                           new DerivedConfiguration(search, deployState.getDeployLogger(),
+                                                           new DerivedConfiguration(search,
+                                                                                    deployState.getDeployLogger(),
                                                                                     deployState.getProperties(),
                                                                                     deployState.rankProfileRegistry(),
                                                                                     deployState.getQueryProfiles().getRegistry(),
-                                                                                    deployState.getImportedModels()));
+                                                                                    deployState.getImportedModels(),
+                                                                                    deployState.getExecutor()));
                 // TODO: remove explicit adding of user configs when the complete content model is built using builders.
                 db.mergeUserConfigs(spec.getUserConfigs());
                 documentDbs.add(db);
@@ -253,9 +251,6 @@ public class IndexedSearchCluster extends SearchCluster
         unionCfg.getConfig(builder);
     }
 
-    @Override
-    protected void exportSdFiles(File toDir) { }
-
     boolean useFixedRowInDispatch() {
         for (SearchNode node : getSearchNodes()) {
             if (node.getNodeSpec().groupIndex() > 0) {
@@ -265,13 +260,6 @@ public class IndexedSearchCluster extends SearchCluster
         return false;
     }
 
-    int getMaxNodesDownPerFixedRow() {
-        return maxNodesDownPerFixedRow;
-    }
-
-    public void setMaxNodesDownPerFixedRow(int value) {
-        maxNodesDownPerFixedRow = value;
-    }
     public int getSearchableCopies() {
         return searchableCopies;
     }
@@ -284,7 +272,7 @@ public class IndexedSearchCluster extends SearchCluster
         if (dispatchSpec.getNumDispatchGroups() != null) {
             this.dispatchSpec = new DispatchSpec.Builder().setGroups
                     (DispatchGroupBuilder.createDispatchGroups(getSearchNodes(),
-                            dispatchSpec.getNumDispatchGroups())).build();
+                                                               dispatchSpec.getNumDispatchGroups())).build();
         } else {
             this.dispatchSpec = dispatchSpec;
         }
@@ -304,13 +292,11 @@ public class IndexedSearchCluster extends SearchCluster
             nodeBuilder.port(node.getRpcPort());
             builder.node(nodeBuilder);
         }
-        if (useAdaptiveDispatch)
-            builder.distributionPolicy(DistributionPolicy.ADAPTIVE);
-
+        if (tuning.dispatch.getTopkProbability() != null) {
+            builder.topKProbability(tuning.dispatch.getTopkProbability());
+        }
         if (tuning.dispatch.getMinActiveDocsCoverage() != null)
             builder.minActivedocsPercentage(tuning.dispatch.getMinActiveDocsCoverage());
-        if (tuning.dispatch.getMinGroupCoverage() != null)
-            builder.minGroupCoverage(tuning.dispatch.getMinGroupCoverage());
         if (tuning.dispatch.getDispatchPolicy() != null) {
             switch (tuning.dispatch.getDispatchPolicy()) {
                 case ADAPTIVE:
@@ -324,7 +310,6 @@ public class IndexedSearchCluster extends SearchCluster
         if (tuning.dispatch.getMaxHitsPerPartition() != null)
             builder.maxHitsPerNode(tuning.dispatch.getMaxHitsPerPartition());
 
-        builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());
         builder.searchableCopies(rootDispatch.getSearchableCopies());
         if (searchCoverage != null) {
             if (searchCoverage.getMinimum() != null)
@@ -334,13 +319,16 @@ public class IndexedSearchCluster extends SearchCluster
             if (searchCoverage.getMaxWaitAfterCoverageFactor() != null)
                 builder.maxWaitAfterCoverageFactor(searchCoverage.getMaxWaitAfterCoverageFactor());
         }
+        builder.warmuptime(5.0);
     }
 
     @Override
-    protected void assureSdConsistent() { }
+    public int getRowBits() { return 8; }
 
     @Override
-    public int getRowBits() { return 8; }
+    public String toString() {
+        return "Indexing cluster '" + getClusterName() + "'";
+    }
 
     /**
      * Class used to retrieve combined configuration from multiple document databases.
@@ -349,7 +337,7 @@ public class IndexedSearchCluster extends SearchCluster
      * which is the parent to this. This avoids building the config multiple times.
      */
     public static class UnionConfiguration
-            extends AbstractConfigProducer
+            extends AbstractConfigProducer<UnionConfiguration>
             implements AttributesConfig.Producer {
         private final List<DocumentDatabase> docDbs;
 
@@ -378,7 +366,7 @@ public class IndexedSearchCluster extends SearchCluster
             }
         }
 
-        private UnionConfiguration(AbstractConfigProducer parent, List<DocumentDatabase> docDbs) {
+        private UnionConfiguration(AbstractConfigProducer<?> parent, List<DocumentDatabase> docDbs) {
             super(parent, "union");
             this.docDbs = docDbs;
         }

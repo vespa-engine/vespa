@@ -25,6 +25,7 @@ protected:
     DotProductSearch() {}
 
 public:
+    // TODO: use MultiSearch::Children to pass ownership
     static SearchIterator::UP create(const std::vector<SearchIterator*> &children,
                                      search::fef::TermFieldMatchData &tmd,
                                      const std::vector<fef::TermFieldMatchData*> &childMatch,

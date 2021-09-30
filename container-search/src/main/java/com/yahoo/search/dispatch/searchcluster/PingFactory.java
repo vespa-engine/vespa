@@ -3,7 +3,9 @@ package com.yahoo.search.dispatch.searchcluster;
 
 import com.yahoo.search.cluster.ClusterMonitor;
 
-
+/**
+ * @author ollivir
+ */
 public interface PingFactory {
 
     Pinger createPinger(Node node, ClusterMonitor<Node> monitor, PongHandler pongHandler);

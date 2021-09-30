@@ -2,21 +2,24 @@
 package ai.vespa.metricsproxy.http.application;
 
 import ai.vespa.metricsproxy.http.metrics.MetricsV1Handler;
+import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import com.yahoo.test.ManualClock;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+
+import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
-import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
+import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -39,15 +42,16 @@ public class NodeMetricsClientTest {
 
     private static final String TEST_FILE = "generic-sample.json";
     private static final String RESPONSE = getFileContents(TEST_FILE);
-    private static final CloseableHttpClient httpClient = HttpClients.createDefault();
+    private static final CloseableHttpAsyncClient httpClient = ApplicationMetricsRetriever.createHttpClient();
 
     private static final String CPU_METRIC = "cpu.util";
     private static final String REPLACED_CPU_METRIC = "replaced_cpu_util";
     private static final String CUSTOM_CONSUMER = "custom-consumer";
+    private static final Duration TTL = Duration.ofSeconds(30);
+
 
     private static Node node;
 
-    private ManualClock clock;
     private NodeMetricsClient nodeMetricsClient;
 
     @ClassRule
@@ -56,12 +60,12 @@ public class NodeMetricsClientTest {
     @BeforeClass
     public static void setupWireMock() {
         node = new Node("id", "localhost", wireMockRule.port(), MetricsV1Handler.VALUES_PATH);
-        URI metricsUri = node.metricsUri(DEFAULT_PUBLIC_CONSUMER_ID);
+        URI metricsUri = node.metricsUri(defaultMetricsConsumerId);
         wireMockRule.stubFor(get(urlPathEqualTo(metricsUri.getPath()))
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         wireMockRule.stubFor(get(urlPathEqualTo(metricsUri.getPath()))
-                                     .withQueryParam("consumer", equalTo(DEFAULT_PUBLIC_CONSUMER_ID.id))
+                                     .withQueryParam("consumer", equalTo(defaultMetricsConsumerId.id))
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         // Add a slightly different response for a custom consumer.
@@ -74,8 +78,8 @@ public class NodeMetricsClientTest {
 
     @Before
     public void setupClient() {
-        clock = new ManualClock();
-        nodeMetricsClient = new NodeMetricsClient(httpClient, node, clock);
+        httpClient.start();
+        nodeMetricsClient = new NodeMetricsClient(httpClient, node, new ManualClock());
     }
 
     @Test
@@ -84,43 +88,58 @@ public class NodeMetricsClientTest {
     }
 
     @Test
-    public void metrics_are_retrieved_upon_first_request() {
-        List<MetricsPacket.Builder> metrics = nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+    public void metrics_are_retrieved_upon_first_update() throws InterruptedException, ExecutionException {
+        assertEquals(0, nodeMetricsClient.getMetrics(defaultMetricsConsumerId).size());
+        assertEquals(0, nodeMetricsClient.snapshotsRetrieved());
+        updateSnapshot(defaultMetricsConsumerId, TTL);
+        assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
+        List<MetricsPacket> metrics = nodeMetricsClient.getMetrics(defaultMetricsConsumerId);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
         assertEquals(4, metrics.size());
    }
 
     @Test
-    public void cached_metrics_are_used_when_ttl_has_not_expired() {
-        nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+    public void metrics_are_refreshed_on_every_update() {
+        assertEquals(0, nodeMetricsClient.snapshotsRetrieved());
+        updateSnapshot(defaultMetricsConsumerId, TTL);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
-
-        clock.advance(NodeMetricsClient.METRICS_TTL.minusMillis(1));
-        nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
-        assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
+        updateSnapshot(defaultMetricsConsumerId, Duration.ZERO);
+        assertEquals(2, nodeMetricsClient.snapshotsRetrieved());
     }
 
     @Test
-    public void metrics_are_refreshed_when_ttl_has_expired() {
-        nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+    public void metrics_are_not_refreshed_if_ttl_not_expired() {
+        assertEquals(0, nodeMetricsClient.snapshotsRetrieved());
+        updateSnapshot(defaultMetricsConsumerId, TTL);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
-
-        clock.advance(NodeMetricsClient.METRICS_TTL.plusMillis(1));
-        nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+        updateSnapshot(defaultMetricsConsumerId, TTL);
+        assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
+        updateSnapshot(defaultMetricsConsumerId, Duration.ZERO);
         assertEquals(2, nodeMetricsClient.snapshotsRetrieved());
     }
 
     @Test
     public void metrics_for_different_consumers_are_cached_separately() {
-        List<MetricsPacket.Builder> defaultMetrics = nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+        updateSnapshot(defaultMetricsConsumerId, TTL);
+        List<MetricsPacket> defaultMetrics = nodeMetricsClient.getMetrics(defaultMetricsConsumerId);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
         assertEquals(4, defaultMetrics.size());
 
-        List<MetricsPacket.Builder> customMetrics = nodeMetricsClient.getMetrics(toConsumerId(CUSTOM_CONSUMER));
+        updateSnapshot(toConsumerId(CUSTOM_CONSUMER), TTL);
+        List<MetricsPacket> customMetrics = nodeMetricsClient.getMetrics(toConsumerId(CUSTOM_CONSUMER));
         assertEquals(2, nodeMetricsClient.snapshotsRetrieved());
         assertEquals(4, customMetrics.size());
 
-        MetricsPacket replacedCpuMetric = customMetrics.get(0).build();
+        MetricsPacket replacedCpuMetric = customMetrics.get(0);
         assertTrue(replacedCpuMetric.metrics().containsKey(toMetricId(REPLACED_CPU_METRIC)));
+    }
+    private void updateSnapshot(ConsumerId consumerId, Duration ttl) {
+
+        var optional = nodeMetricsClient.startSnapshotUpdate(consumerId, ttl);
+        optional.ifPresent(future -> {
+            try {
+                assertTrue(future.get());
+            } catch (InterruptedException | ExecutionException e) {}
+        });
     }
 }

@@ -9,16 +9,13 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -128,12 +125,12 @@ public class LogSetupTestCase {
     public void testZooKeeperFilter() throws IOException {
         final File file = folder.newFile("zookeeper");
         LogSetup.ZooKeeperFilter filter = new LogSetup.ZooKeeperFilter(file.getAbsolutePath());
-        assertThat(filter.isLoggable(zookeeperLogRecord), is(false));
-        //assertThat(filter.isLoggable(zookeeperLogRecordError), is(true));
-        assertThat(filter.isLoggable(notzookeeperLogRecord), is(true));
+        assertFalse(filter.isLoggable(zookeeperLogRecord));
+        //assertTrue(filter.isLoggable(zookeeperLogRecordError));
+        assertTrue(filter.isLoggable(notzookeeperLogRecord));
         File actualLogFile = new File(file.getParent(), "zookeeper.0.log"); // Real file name will have .0.log appended
         String[] lines = VespaLogHandlerTestCase.readFile(actualLogFile.getAbsolutePath());
-        assertThat(lines.length, is(1));
+        assertEquals(1, lines.length);
         assertEquals(zookeeperLogRecordString, lines[0]);
     }
 
@@ -146,7 +143,7 @@ public class LogSetupTestCase {
             Logger.getLogger("TEST").log(LogLevel.DEBUG, "DEBUG");
             LevelController levelController = LogSetup.getLogHandler().getLevelControl("TST");
             assertNotNull(levelController);
-            assertThat(levelController.getOnOffString(), is(expectedOnOffString));
+            assertEquals(expectedOnOffString, levelController.getOnOffString());
             if (shouldLog != null) {
                 assertTrue(levelController.shouldLog(shouldLog));
             }

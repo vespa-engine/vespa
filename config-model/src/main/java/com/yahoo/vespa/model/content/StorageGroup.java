@@ -1,12 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
@@ -25,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 
 /**
  * A group of storage nodes/distributors.
@@ -54,7 +54,7 @@ public class StorageGroup {
      *
      * @param isHosted true if this is in a hosted setup
      * @param name the name of this group
-     * @param index the distribution-key index og this group
+     * @param index the distribution-key index of this group
      * @param partitions the distribution strategy to use to distribute content to subgroups or empty
      *        (meaning that the "*" distribution will be used) only if this is a leaf group
      *        (having nodes, not subgroups as children).
@@ -143,10 +143,10 @@ public class StorageGroup {
     }
 
     public int getNumberOfLeafGroups() {
-        int count = subgroups.isEmpty() ? 1 : 0;
-        for (StorageGroup g : subgroups) {
+        if (subgroups.isEmpty()) return 1;
+        int count = 0;
+        for (StorageGroup g : subgroups)
             count += g.getNumberOfLeafGroups();
-        }
         return count;
     }
 
@@ -162,10 +162,10 @@ public class StorageGroup {
     }
 
     /** Returns the total number of nodes below this group */
-    public int countNodes() {
-        int nodeCount = nodes.size();
+    public int countNodes(boolean includeRetired) {
+        int nodeCount = (int)nodes.stream().filter(node -> includeRetired || ! node.isRetired()).count();
         for (StorageGroup group : subgroups)
-            nodeCount += group.countNodes();
+            nodeCount += group.countNodes(includeRetired);
         return nodeCount;
     }
 
@@ -189,7 +189,7 @@ public class StorageGroup {
                                                                       HostSystem hostSystem, 
                                                                       DeployLogger logger) {
         ClusterSpec.Id clusterId = ClusterSpec.Id.from(clusterIdString);
-        return nodesSpecification.provision(hostSystem, ClusterSpec.Type.content, clusterId, logger);
+        return nodesSpecification.provision(hostSystem, ClusterSpec.Type.content, clusterId, logger, true);
     }
 
     public static class Builder {
@@ -203,24 +203,54 @@ public class StorageGroup {
         }
 
         public StorageGroup buildRootGroup(DeployState deployState, RedundancyBuilder redundancyBuilder, ContentCluster owner) {
+            Optional<Integer> maxRedundancy = Optional.empty();
+            if (owner.isHosted())
+                maxRedundancy = validateRedundancyAndGroups();
+
             Optional<ModelElement> group = Optional.ofNullable(clusterElement.child("group"));
             Optional<ModelElement> nodes = getNodes(clusterElement);
 
             if (group.isPresent() && nodes.isPresent())
                 throw new IllegalStateException("Both group and nodes exists, only one of these tags is legal");
             if (group.isPresent() && (group.get().stringAttribute("name") != null || group.get().integerAttribute("distribution-key") != null))
-                    deployState.getDeployLogger().log(LogLevel.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
+                    deployState.getDeployLogger().logApplicationPackage(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
 
             GroupBuilder groupBuilder = collectGroup(owner.isHosted(), group, nodes, null, null);
             StorageGroup storageGroup = (owner.isHosted())
                     ? groupBuilder.buildHosted(deployState, owner, Optional.empty())
                     : groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
-            Redundancy redundancy = redundancyBuilder.build(owner.getName(), owner.isHosted(), storageGroup.subgroups.size(), storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes());
+            Redundancy redundancy = redundancyBuilder.build(owner.getName(), owner.isHosted(), storageGroup.subgroups.size(),
+                                                            storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes(false),
+                                                            maxRedundancy);
             owner.setRedundancy(redundancy);
             if (storageGroup.partitions.isEmpty() && (redundancy.groups() > 1)) {
                 storageGroup.partitions = Optional.of(computePartitions(redundancy.finalRedundancy(), redundancy.groups()));
             }
             return storageGroup;
+        }
+
+        private Optional<Integer> validateRedundancyAndGroups() {
+            var redundancyElement = clusterElement.child("redundancy");
+            if (redundancyElement == null) return Optional.empty();
+            long redundancy = redundancyElement.asLong();
+
+            var nodesElement = clusterElement.child("nodes");
+            if (nodesElement == null) return Optional.empty();
+            var nodesSpec = NodesSpecification.from(nodesElement, context);
+
+            int minNodesPerGroup = (int)Math.ceil((double)nodesSpec.minResources().nodes() / nodesSpec.minResources().groups());
+
+            if (minNodesPerGroup < redundancy) { // TODO: Fail on this on Vespa 8, and simplify
+                context.getDeployLogger()
+                       .logApplicationPackage(Level.WARNING,
+                                              "Cluster '" + clusterElement.stringAttribute("id") + "' " +
+                                              "specifies redundancy " + redundancy + " but cannot be higher than " +
+                                              "the minimum nodes per group, which is " + minNodesPerGroup);
+                return Optional.of(minNodesPerGroup);
+            }
+            else {
+                return Optional.empty();
+            }
         }
 
         /** This returns a partition string which specifies equal distribution between all groups */
@@ -283,10 +313,10 @@ public class StorageGroup {
 
             private StorageNode buildSingleNode(DeployState deployState, ContentCluster parent) {
                 int distributionKey = 0;
-                StorageNode sNode = new StorageNode(parent.getStorageNodes(), 1.0, distributionKey , false);
+                StorageNode sNode = new StorageNode(deployState.getProperties(), parent.getStorageNodes(), 1.0, distributionKey , false);
                 sNode.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
                 PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, storageGroup, null);
-                new Distributor(parent.getDistributorNodes(), distributionKey, null, provider);
+                new Distributor(deployState.getProperties(), parent.getDistributorNodes(), distributionKey, null, provider);
                 return sNode;
             }
             
@@ -376,6 +406,10 @@ public class StorageGroup {
          *                            specified using a group count attribute.
          * <li>Neither element is present: Create a single node.
          * </ul>
+         *
+         * Note: DO NOT change allocation behaviour to allow version X and Y of the config-model to allocate a different
+         * set of nodes. Such changes must be guarded by a common condition (e.g. feature flag) so the behaviour can be
+         * changed simultaneously for all active config models.
          */
         private GroupBuilder collectGroup(boolean isHosted, Optional<ModelElement> groupElement, Optional<ModelElement> nodesElement, String name, String index) {
             StorageGroup group = new StorageGroup(
@@ -389,7 +423,8 @@ public class StorageGroup {
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG),
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG_STACKTRACE));
 
-            List<GroupBuilder> subGroups = groupElement.isPresent() ? collectSubGroups(isHosted, group, groupElement.get()) : Collections.emptyList();
+            List<GroupBuilder> subGroups = groupElement.isPresent() ? collectSubGroups(isHosted, group, groupElement.get())
+                                                                    : List.of();
 
             List<XmlNodeBuilder> explicitNodes = new ArrayList<>();
             explicitNodes.addAll(collectExplicitNodes(groupElement));
@@ -403,7 +438,7 @@ public class StorageGroup {
                 nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context));
             else if (nodesElement.isPresent() && context.getDeployState().isHosted() && context.getDeployState().zone().environment().isManuallyDeployed() ) // default to 1 node
                 nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context));
-            else if (! nodesElement.isPresent() && subGroups.isEmpty() && context.getDeployState().isHosted()) // request one node
+            else if (nodesElement.isEmpty() && subGroups.isEmpty() && context.getDeployState().isHosted()) // request one node
                 nodeRequirement = Optional.of(NodesSpecification.nonDedicated(1, context));
             else // Nodes or groups explicitly listed - resolve in GroupBuilder
                 nodeRequirement = Optional.empty();
@@ -459,13 +494,13 @@ public class StorageGroup {
         }
 
         private static StorageNode createStorageNode(DeployState deployState, ContentCluster parent, HostResource hostResource, StorageGroup parentGroup, ClusterMembership clusterMembership) {
-            StorageNode sNode = new StorageNode(parent.getStorageNodes(), null, clusterMembership.index(), clusterMembership.retired());
+            StorageNode sNode = new StorageNode(deployState.getProperties(), parent.getStorageNodes(), null, clusterMembership.index(), clusterMembership.retired());
             sNode.setHostResource(hostResource);
             sNode.initService(deployState.getDeployLogger());
 
             // TODO: Supplying null as XML is not very nice
             PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, parentGroup, null);
-            Distributor d = new Distributor(parent.getDistributorNodes(), clusterMembership.index(), null, provider);
+            Distributor d = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), clusterMembership.index(), null, provider);
             d.setHostResource(sNode.getHostResource());
             d.initService(deployState.getDeployLogger());
             return sNode;

@@ -1,14 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "persistencemessagetracker.h"
-#include <vespa/storage/common/vectorprinter.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
-#include <vespa/storageapi/message/persistence.h>
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/storage/common/vectorprinter.h>
+#include <vespa/storageapi/message/persistence.h>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".persistencemessagetracker");
 
 namespace storage::distributor {
@@ -16,37 +15,34 @@ namespace storage::distributor {
 PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
         PersistenceOperationMetricSet& metric,
         std::shared_ptr<api::BucketInfoReply> reply,
-        DistributorComponent& link,
+        const DistributorNodeContext& node_ctx,
+        DistributorStripeOperationContext& op_ctx,
         api::Timestamp revertTimestamp)
-    : MessageTracker(link.getClusterName()),
+    : MessageTracker(node_ctx),
       _metric(metric),
-      _reply(reply),
-      _manager(link),
+      _reply(std::move(reply)),
+      _op_ctx(op_ctx),
       _revertTimestamp(revertTimestamp),
-      _requestTimer(link.getClock()),
-      _priority(reply->getPriority()),
+      _trace(_reply->getTrace().getLevel()),
+      _requestTimer(node_ctx.clock()),
+      _n_persistence_replies_total(0),
+      _n_successful_persistence_replies(0),
+      _priority(_reply->getPriority()),
       _success(true)
 {
 }
 
-PersistenceMessageTrackerImpl::~PersistenceMessageTrackerImpl() {}
+PersistenceMessageTrackerImpl::~PersistenceMessageTrackerImpl() = default;
 
 void
 PersistenceMessageTrackerImpl::updateDB()
 {
-    for (BucketInfoMap::iterator iter = _bucketInfo.begin();
-         iter != _bucketInfo.end();
-         iter++)
-    {
-        _manager.updateBucketDatabase(iter->first, iter->second);
+    for (const auto & entry : _bucketInfo) {
+        _op_ctx.update_bucket_database(entry.first, entry.second);
     }
 
-    for (BucketInfoMap::iterator iter = _remapBucketInfo.begin();
-         iter != _remapBucketInfo.end();
-         iter++)
-    {
-        _manager.updateBucketDatabase(iter->first, iter->second,
-                                      DatabaseUpdate::CREATE_IF_NONEXISTING);
+    for (const auto & entry :  _remapBucketInfo){
+        _op_ctx.update_bucket_database(entry.first, entry.second, DatabaseUpdate::CREATE_IF_NONEXISTING);
     }
 }
 
@@ -94,11 +90,10 @@ PersistenceMessageTrackerImpl::revert(
         std::vector<api::Timestamp> reverts;
         reverts.push_back(_revertTimestamp);
 
-        for (uint32_t i = 0; i < revertNodes.size(); i++) {
-            std::shared_ptr<api::RevertCommand> toRevert(
-                    new api::RevertCommand(revertNodes[i].first, reverts));
+        for (const auto & revertNode : revertNodes) {
+            auto toRevert = std::make_shared<api::RevertCommand>(revertNode.first, reverts);
             toRevert->setPriority(_priority);
-            queueCommand(toRevert, revertNodes[i].second);
+            queueCommand(std::move(toRevert), revertNode.second);
         }
 
         flushQueue(sender);
@@ -107,14 +102,14 @@ PersistenceMessageTrackerImpl::revert(
 
 void
 PersistenceMessageTrackerImpl::queueMessageBatch(const std::vector<MessageTracker::ToSend>& messages) {
-    _messageBatches.push_back(MessageBatch());
-    for (uint32_t i = 0; i < messages.size(); i++) {
-        if (_reply.get()) {
-            messages[i]._msg->getTrace().setLevel(_reply->getTrace().getLevel());
+    _messageBatches.emplace_back();
+    for (const auto & message : messages) {
+        if (_reply) {
+            message._msg->getTrace().setLevel(_reply->getTrace().getLevel());
         }
 
-        _messageBatches.back().push_back(messages[i]._msg->getMsgId());
-        queueCommand(messages[i]._msg, messages[i]._target);
+        _messageBatches.back().push_back(message._msg->getMsgId());
+        queueCommand(message._msg, message._target);
     }
 }
 
@@ -125,7 +120,7 @@ PersistenceMessageTrackerImpl::canSendReplyEarly() const
         LOG(spam, "Can't return early because we have already replied or failed");
         return false;
     }
-    auto &bucketSpaceRepo(_manager.getBucketSpaceRepo());
+    auto &bucketSpaceRepo(_op_ctx.bucket_space_repo());
     auto &bucketSpace(bucketSpaceRepo.get(_reply->getBucket().getBucketSpace()));
     const lib::Distribution& distribution = bucketSpace.getDistribution();
 
@@ -134,13 +129,13 @@ PersistenceMessageTrackerImpl::canSendReplyEarly() const
         return false;
     }
 
-    for (uint32_t i = 0; i < _messageBatches.size(); i++) {
+    for (const MessageBatch & batch : _messageBatches) {
         uint32_t messagesDone = 0;
 
-        for (uint32_t j = 0; j < _messageBatches[i].size(); j++) {
-            if (_sentMessages.find(_messageBatches[i][j]) == _sentMessages.end()) {
+        for (uint32_t i = 0; i < batch.size(); i++) {
+            if (_sentMessages.find(batch[i]) == _sentMessages.end()) {
                 messagesDone++;
-            } else if (distribution.ensurePrimaryPersisted() && j == 0) {
+            } else if (distribution.ensurePrimaryPersisted() && i == 0) {
                 // Primary must always be written.
                 LOG(debug, "Not returning early because primary node wasn't done");
                 return false;
@@ -158,55 +153,6 @@ PersistenceMessageTrackerImpl::canSendReplyEarly() const
 }
 
 void
-PersistenceMessageTrackerImpl::checkCopiesDeleted()
-{
-    if (!_reply.get()) {
-        return;
-    }
-
-    // Don't check the buckets that have been remapped here, as we will
-    // create them.
-    const auto &bucketSpaceRepo(_manager.getBucketSpaceRepo());
-    for (BucketInfoMap::const_iterator iter = _bucketInfo.begin();
-         iter != _bucketInfo.end();
-         iter++)
-    {
-        const auto &bucketSpace(bucketSpaceRepo.get(iter->first.getBucketSpace()));
-        const auto &bucketDb(bucketSpace.getBucketDatabase());
-        BucketDatabase::Entry dbentry = bucketDb.get(iter->first.getBucketId());
-
-        if (!dbentry.valid()) {
-            continue;
-        }
-
-        std::vector<uint16_t> missing;
-        std::vector<uint16_t> total;
-
-        for (uint32_t i = 0; i < iter->second.size(); ++i) {
-            if (dbentry->getNode(iter->second[i].getNode()) == NULL) {
-                missing.push_back(iter->second[i].getNode());
-            }
-
-            total.push_back(iter->second[i].getNode());
-        }
-
-        if (!missing.empty()) {
-            std::ostringstream msg;
-            msg << iter->first.toString() << " was deleted from nodes ["
-                << commaSeparated(missing)
-                << "] after message was sent but before it was done. Sent to ["
-                << commaSeparated(total)
-                << "]";
-
-            LOG(debug, "%s", msg.str().c_str());
-            _reply->setResult(api::ReturnCode(api::ReturnCode::BUCKET_DELETED,
-                                              msg.str()));
-            break;
-        }
-    }
-}
-
-void
 PersistenceMessageTrackerImpl::addBucketInfoFromReply(
         uint16_t node,
         const api::BucketInfoReply& reply)
@@ -219,25 +165,18 @@ PersistenceMessageTrackerImpl::addBucketInfoFromReply(
             bucket.toString().c_str(),
             bucketInfo.toString().c_str(),
             node);
-        _remapBucketInfo[bucket].push_back(
-                BucketCopy(_manager.getUniqueTimestamp(),
-                           node,
-                           bucketInfo));
+        _remapBucketInfo[bucket].emplace_back(_op_ctx.generate_unique_timestamp(), node, bucketInfo);
     } else {
         LOG(debug, "Bucket %s: Received bucket info %s from node %d",
             bucket.toString().c_str(),
             bucketInfo.toString().c_str(),
             node);
-        _bucketInfo[bucket].push_back(
-                BucketCopy(_manager.getUniqueTimestamp(),
-                           node,
-                           bucketInfo));
+        _bucketInfo[bucket].emplace_back(_op_ctx.generate_unique_timestamp(), node, bucketInfo);
     }
 }
 
 void
-PersistenceMessageTrackerImpl::logSuccessfulReply(uint16_t node, 
-                                              const api::BucketInfoReply& reply) const
+PersistenceMessageTrackerImpl::logSuccessfulReply(uint16_t node, const api::BucketInfoReply& reply) const
 {
     LOG(spam, "Bucket %s: Received successful reply %s",
         reply.getBucketId().toString().c_str(),
@@ -257,16 +196,37 @@ PersistenceMessageTrackerImpl::logSuccessfulReply(uint16_t node,
 bool
 PersistenceMessageTrackerImpl::shouldRevert() const
 {
-    return _manager.getDistributorConfig().enableRevert
-            && _revertNodes.size() && !_success && _reply.get();
+    return _op_ctx.distributor_config().enable_revert()
+            &&  !_revertNodes.empty() && !_success && _reply;
+}
+
+bool PersistenceMessageTrackerImpl::has_majority_successful_replies() const noexcept {
+    // FIXME this has questionable interaction with early client ACK since we only count
+    // the number of observed replies rather than the number of total requests sent.
+    // ... but the early ACK-feature dearly needs a redesign anyway.
+    return (_n_successful_persistence_replies >= (_n_persistence_replies_total / 2 + 1));
+}
+
+bool PersistenceMessageTrackerImpl::has_minority_test_and_set_failure() const noexcept {
+    return ((_reply->getResult().getResult() == api::ReturnCode::TEST_AND_SET_CONDITION_FAILED)
+            && has_majority_successful_replies());
 }
 
 void
 PersistenceMessageTrackerImpl::sendReply(MessageSender& sender)
 {
+    // If we've observed _partial_ TaS failures but have had a majority of good ACKs,
+    // treat the reply as successful. This is because the ACKed write(s) will eventually
+    // become visible across all nodes.
+    if (has_minority_test_and_set_failure()) {
+        _reply->setResult(api::ReturnCode());
+    }
+
     updateMetrics();
-    _trace.setStrict(false);
-    _reply->getTrace().getRoot().addChild(_trace);
+    if ( ! _trace.isEmpty()) {
+        _trace.setStrict(false);
+        _reply->getTrace().addChild(std::move(_trace));
+    }
     
     sender.sendReply(_reply);
     _reply = std::shared_ptr<api::BucketInfoReply>();
@@ -299,12 +259,7 @@ PersistenceMessageTrackerImpl::handleCreateBucketReply(
         && reply.getResult().getResult() != api::ReturnCode::EXISTS)
     {
         LOG(spam, "Create bucket reply failed, so deleting it from bucket db");
-        _manager.removeNodeFromDB(reply.getBucket(), node);
-        LOG_BUCKET_OPERATION_NO_LOCK(
-                reply.getBucketId(),
-                vespalib::make_string(
-                    "Deleted bucket on node %u due to failing create bucket %s",
-                    node, reply.getResult().toString().c_str()));
+        _op_ctx.remove_node_from_bucket_database(reply.getBucket(), node);
     }
 }
 
@@ -313,12 +268,14 @@ PersistenceMessageTrackerImpl::handlePersistenceReply(
         api::BucketInfoReply& reply,
         uint16_t node)
 {
+    ++_n_persistence_replies_total;
     if (reply.getBucketInfo().valid()) {
         addBucketInfoFromReply(node, reply);
     }
     if (reply.getResult().success()) {
         logSuccessfulReply(node, reply);
         _revertNodes.emplace_back(reply.getBucket(), node);
+        ++_n_successful_persistence_replies;
     } else if (!hasSentReply()) {
         updateFailureResult(reply);
     }
@@ -330,7 +287,7 @@ PersistenceMessageTrackerImpl::updateFromReply(
         api::BucketInfoReply& reply,
         uint16_t node)
 {
-    _trace.addChild(reply.getTrace().getRoot());
+    _trace.addChild(reply.steal_trace());
 
     if (reply.getType() == api::MessageType::CREATEBUCKET_REPLY) {
         handleCreateBucketReply(reply, node);
@@ -341,7 +298,6 @@ PersistenceMessageTrackerImpl::updateFromReply(
     if (finished()) {
         bool doRevert(shouldRevert());
 
-        checkCopiesDeleted();
         updateDB();
 
         if (!hasSentReply()) {
@@ -352,7 +308,6 @@ PersistenceMessageTrackerImpl::updateFromReply(
         }
     } else if (canSendReplyEarly()) {
         LOG(debug, "Sending reply early because initial redundancy has been reached");
-        checkCopiesDeleted();
         sendReply(sender);
     }
 }

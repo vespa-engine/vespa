@@ -1,25 +1,24 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
-import com.yahoo.log.LogLevel;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * A pool of JRT connections to a config source (either a config server or a config proxy).
- * The current connection is chosen randomly when calling {#link #setNewCurrentConnection}
- * (since the connection is chosen randomly, it might end up using the same connection again,
- * and it will always do so if there is only one source).
+ * The current connection is chosen randomly when calling {#link {@link #switchConnection()}}
+ * (it will continue to use the same connection if there is only one source).
  * The current connection is available with {@link #getCurrent()}.
- * When calling {@link #setError(Connection, int)}, {#link #setNewCurrentConnection} will always be called.
+ * When calling {@link #setError(Connection, int)}, {@link #switchConnection()} will always be called.
  *
  * @author Gunnar Gauslaa Bergem
  * @author hmusum
@@ -28,8 +27,9 @@ public class JRTConnectionPool implements ConnectionPool {
 
     private static final Logger log = Logger.getLogger(JRTConnectionPool.class.getName());
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor;
     private final Map<String, JRTConnection> connections = new LinkedHashMap<>();
+    private final String poolName;
 
     // The config sources used by this connection pool.
     private ConfigSourceSet sourceSet = null;
@@ -38,10 +38,16 @@ public class JRTConnectionPool implements ConnectionPool {
     private volatile JRTConnection currentConnection;
 
     public JRTConnectionPool(ConfigSourceSet sourceSet) {
+        this(sourceSet, "config-jrt-pool" + sourceSet.hashCode());
+    }
+
+    public JRTConnectionPool(ConfigSourceSet sourceSet, String poolName) {
+        this.poolName = poolName;
+        supervisor = new Supervisor(new Transport(poolName + "-")).setDropEmptyBuffers(true);
         addSources(sourceSet);
     }
 
-    public JRTConnectionPool(List<String> addresses) {
+    JRTConnectionPool(List<String> addresses) {
         this(new ConfigSourceSet(addresses));
     }
 
@@ -52,7 +58,7 @@ public class JRTConnectionPool implements ConnectionPool {
                 connections.put(address, new JRTConnection(address, supervisor));
             }
         }
-        setNewCurrentConnection();
+        currentConnection = initialize();
     }
 
     /**
@@ -64,28 +70,43 @@ public class JRTConnectionPool implements ConnectionPool {
         return currentConnection;
     }
 
-    /**
-     * Returns and set the current JRTConnection instance by randomly choosing
-     * from the available sources (this means that you might end up using
-     * the same connection).
-     *
-     * @return a JRTConnection
-     */
-    public synchronized JRTConnection setNewCurrentConnection() {
+    @Override
+    public synchronized JRTConnection switchConnection(Connection failingConnection) {
         List<JRTConnection> sources = getSources();
-        currentConnection = sources.get(ThreadLocalRandom.current().nextInt(0, sources.size()));
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Choosing new connection: " + currentConnection);
-        }
-        return currentConnection;
+        if (sources.size() <= 1) return currentConnection;
+
+        if ( ! currentConnection.equals(failingConnection)) return currentConnection;
+
+        return switchConnection();
+    }
+
+    /**
+     * Preconditions:
+     * 1. the current connection is unhealthy and should not be selected when switching
+     * 2. There is more than 1 source.
+     */
+    synchronized JRTConnection switchConnection() {
+        if (getSources().size() <= 1) throw new IllegalStateException("Cannot switch connection, not enough sources");
+
+        List<JRTConnection> sourceCandidates = getSources();
+        sourceCandidates.remove(currentConnection);
+        JRTConnection newConnection = pickNewConnectionRandomly(sourceCandidates);
+        log.log(Level.INFO, () -> poolName + ": Switching from " + currentConnection + " to " + newConnection);
+        return currentConnection = newConnection;
+    }
+
+    public synchronized JRTConnection initialize() {
+        return pickNewConnectionRandomly(getSources());
+    }
+
+    private JRTConnection pickNewConnectionRandomly(List<JRTConnection> sources) {
+        return sources.get(ThreadLocalRandom.current().nextInt(0, sources.size()));
     }
 
     List<JRTConnection> getSources() {
-        List<JRTConnection> ret = new ArrayList<>();
+        List<JRTConnection> ret;
         synchronized (connections) {
-            for (JRTConnection source : connections.values()) {
-                ret.add(source);
-            }
+            ret = new ArrayList<>(connections.values());
         }
         return ret;
     }
@@ -96,8 +117,7 @@ public class JRTConnectionPool implements ConnectionPool {
 
     @Override
     public void setError(Connection connection, int errorCode) {
-        connection.setError(errorCode);
-        setNewCurrentConnection();
+        switchConnection(connection);
     }
 
     public JRTConnectionPool updateSources(List<String> addresses) {
@@ -116,21 +136,8 @@ public class JRTConnectionPool implements ConnectionPool {
         return this;
     }
 
-    public String getAllSourceAddresses() {
-        StringBuilder sb = new StringBuilder();
-        synchronized (connections) {
-            for (JRTConnection conn : connections.values()) {
-                sb.append(conn.getAddress());
-                sb.append(",");
-            }
-        }
-        // Remove trailing ","
-        sb.deleteCharAt(sb.length() - 1);
-        return sb.toString();
-    }
-
     public String toString() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(poolName + ": ");
         synchronized (connections) {
             for (JRTConnection conn : connections.values()) {
                 sb.append(conn.toString());

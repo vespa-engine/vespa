@@ -21,8 +21,8 @@
 #include <vespa/storageframework/generic/component/managedcomponent.h>
 #include <vespa/storageframework/generic/metric/metricregistrator.h>
 #include <vespa/storageframework/generic/status/statusreportermap.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/metrics/metricset.h>
+#include <mutex>
 
 namespace metrics {
 
@@ -43,7 +43,7 @@ class ComponentRegisterImpl : public virtual ComponentRegister,
                               public StatusReporterMap,
                               public MetricRegistrator
 {
-    vespalib::Lock _componentLock;
+    std::mutex _componentLock;
     std::vector<ManagedComponent*> _components;
 
     metrics::MetricSet _topMetricSet;
@@ -58,7 +58,7 @@ public:
     typedef std::unique_ptr<ComponentRegisterImpl> UP;
 
     ComponentRegisterImpl();
-    ~ComponentRegisterImpl();
+    ~ComponentRegisterImpl() override;
 
     bool hasMetricManager() const { return (_metricManager != 0); }
     metrics::MetricManager& getMetricManager() { return *_metricManager; }
@@ -76,7 +76,6 @@ public:
 
     void registerMetric(metrics::Metric&) override;
     void registerUpdateHook(vespalib::stringref name, MetricUpdateHook& hook, SecondTime period) override;
-    vespalib::MonitorGuard getMetricManagerLock() override;
     void registerShutdownListener(ShutdownListener&);
 
 };

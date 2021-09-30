@@ -49,11 +49,16 @@ public class ConstantTensorTransformer extends ExpressionTransformer<RankProfile
     }
 
     private ExpressionNode transformConstantReference(ReferenceNode node, RankProfileTransformContext context) {
+        String constantName = node.getName();
         Reference constantReference = node.reference();
-        if ( ! FeatureNames.isConstantFeature(constantReference) && constantReference.isIdentifier())
-            constantReference = FeatureNames.asConstantFeature(node.getName());
-
-        Value value = context.constants().get(node.getName());
+        if (FeatureNames.isConstantFeature(constantReference)) {
+            constantName = constantReference.simpleArgument().orElse(null);
+        } else if (constantReference.isIdentifier()) {
+            constantReference = FeatureNames.asConstantFeature(constantName);
+        } else {
+            return node;
+        }
+        Value value = context.constants().get(constantName);
         if (value == null || value.type().rank() == 0) return node;
 
         TensorValue tensorValue = (TensorValue)value;

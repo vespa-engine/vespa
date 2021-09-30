@@ -94,13 +94,28 @@ SingleValueEnumAttribute<B>::onCommit()
     freezeEnumDictionary();
     std::atomic_thread_fence(std::memory_order_release);
     this->removeAllOldGenerations();
-    auto remapper = this->_enumStore.consider_compact(this->getConfig().getCompactionStrategy());
+    auto remapper = this->_enumStore.consider_compact_values(this->getConfig().getCompactionStrategy());
     if (remapper) {
         remap_enum_store_refs(*remapper, *this);
         remapper->done();
         remapper.reset();
         this->incGeneration();
         this->updateStat(true);
+    }
+    if (this->_enumStore.consider_compact_dictionary(this->getConfig().getCompactionStrategy())) {
+        this->incGeneration();
+        this->updateStat(true);
+    }
+    auto *pab = this->getIPostingListAttributeBase();
+    if (pab != nullptr) {
+        if (pab->consider_compact_worst_btree_nodes(this->getConfig().getCompactionStrategy())) {
+            this->incGeneration();
+            this->updateStat(true);
+        }
+        if (pab->consider_compact_worst_buffers(this->getConfig().getCompactionStrategy())) {
+            this->incGeneration();
+            this->updateStat(true);
+        }
     }
 }
 
@@ -120,26 +135,28 @@ SingleValueEnumAttribute<B>::onUpdateStat()
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::considerUpdateAttributeChange(const Change & c, UniqueSet & newUniques)
+SingleValueEnumAttribute<B>::considerUpdateAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter)
 {
     EnumIndex idx;
     if (!this->_enumStore.find_index(c._data.raw(), idx)) {
-        newUniques.insert(c._data);
+        c._enumScratchPad = inserter.insert(c._data.raw()).ref();
+    } else {
+        c._enumScratchPad = idx.ref();
     }
     considerUpdateAttributeChange(c); // for numeric
 }
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::considerAttributeChange(const Change & c, UniqueSet & newUniques)
+SingleValueEnumAttribute<B>::considerAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter)
 {
     if (c._type == ChangeBase::UPDATE) {
-        considerUpdateAttributeChange(c, newUniques);
+        considerUpdateAttributeChange(c, inserter);
     } else if (c._type >= ChangeBase::ADD && c._type <= ChangeBase::DIV) {
-        considerArithmeticAttributeChange(c, newUniques); // for numeric
+        considerArithmeticAttributeChange(c, inserter); // for numeric
     } else if (c._type == ChangeBase::CLEARDOC) {
         this->_defaultValue._doc = c._doc;
-        considerUpdateAttributeChange(this->_defaultValue, newUniques);
+        considerUpdateAttributeChange(this->_defaultValue, inserter);
     }
 }
 
@@ -158,7 +175,7 @@ void
 SingleValueEnumAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 {
     ValueModifier valueGuard(this->getValueModifier());
-    for (const auto& change : this->_changes) {
+    for (const auto& change : this->_changes.getInsertOrder()) {
         if (change._type == ChangeBase::UPDATE) {
             applyUpdateValueChange(change, updater);
         } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {
@@ -208,8 +225,9 @@ SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase& attrReader,
                                              getGenerationHolder(),
                                              attrReader,
                                              loader.get_enum_indexes(),
+                                             loader.get_enum_value_remapping(),
                                              attribute::SaveLoadedEnum(loader.get_loaded_enums()));
-    loader.release_enum_indexes();
+    loader.free_enum_value_remapping();
     loader.sort_loaded_enums();
 }
     
@@ -223,9 +241,12 @@ SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase& attrReader,
                                              getGenerationHolder(),
                                              attrReader,
                                              loader.get_enum_indexes(),
+                                             loader.get_enum_value_remapping(),
                                              attribute::SaveEnumHist(loader.get_enums_histogram()));
-    loader.release_enum_indexes();
+    loader.free_enum_value_remapping();
     loader.set_ref_counts();
+    loader.build_dictionary();
+    loader.free_unused_values();
 }
 
 template <typename B>
@@ -264,7 +285,7 @@ SingleValueEnumAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit)
     assert(lidLow <= lidLimit);
     assert(lidLimit <= this->getNumDocs());
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
-        if (_enumIndices[lid] != datastore::EntryRef(e)) {
+        if (_enumIndices[lid] != vespalib::datastore::EntryRef(e)) {
             this->clearDoc(lid);
         }
     }
@@ -286,14 +307,14 @@ SingleValueEnumAttribute<B>::onShrinkLidSpace()
     }
     uint32_t shrink_docs = _enumIndices.size() - committedDocIdLimit;
     if (shrink_docs > 0u) {
-        datastore::EntryRef default_value_ref(e);
+        vespalib::datastore::EntryRef default_value_ref(e);
         assert(default_value_ref.valid());
         uint32_t default_value_ref_count = this->_enumStore.get_ref_count(default_value_ref);
         assert(default_value_ref_count >= shrink_docs);
         this->_enumStore.set_ref_count(default_value_ref, default_value_ref_count - shrink_docs);
-        IEnumStore::IndexSet possibly_unused;
-        possibly_unused.insert(default_value_ref);
-        this->_enumStore.free_unused_values(possibly_unused);
+        IEnumStore::IndexList possibly_unused;
+        possibly_unused.push_back(default_value_ref);
+        this->_enumStore.free_unused_values(std::move(possibly_unused));
     }
     _enumIndices.shrink(committedDocIdLimit);
     this->setNumDocs(committedDocIdLimit);

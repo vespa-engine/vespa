@@ -1,29 +1,30 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
-import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.log.LogSetup;
 import com.yahoo.log.event.Event;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.vespa.config.RawConfig;
-import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.proxy.filedistribution.FileDistributionAndUrlDownload;
 import com.yahoo.yolean.system.CatchSignals;
 
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.proxy.Mode.ModeName.DEFAULT;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A proxy server that handles RPC config requests. The proxy can run in two modes:
@@ -34,65 +35,42 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class ProxyServer implements Runnable {
 
+    private static final DaemonThreadFactory threadFactory = new DaemonThreadFactory("ProxyServer");
     private static final int DEFAULT_RPC_PORT = 19090;
     private static final int JRT_TRANSPORT_THREADS = 4;
     static final String DEFAULT_PROXY_CONFIG_SOURCES = "tcp/localhost:19070";
 
     private final static Logger log = Logger.getLogger(ProxyServer.class.getName());
     private final AtomicBoolean signalCaught = new AtomicBoolean(false);
-
-    // Scheduled executor that periodically checks for requests that have timed out and response should be returned to clients
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, new DaemonThreadFactory());
-    private final Supervisor supervisor = new Supervisor(new Transport(JRT_TRANSPORT_THREADS));
-    private ScheduledFuture<?> delayedResponseScheduler;
+    private final Supervisor supervisor;
 
     private final ConfigProxyRpcServer rpcServer;
-    final DelayedResponses delayedResponses;
     private ConfigSourceSet configSource;
 
     private volatile ConfigSourceClient configClient;
 
-    private final TimingValues timingValues;
     private final MemoryCache memoryCache;
-    private static final double timingValuesRatio = 0.8;
-    private final static TimingValues defaultTimingValues;
     private final FileDistributionAndUrlDownload fileDistributionAndUrlDownload;
 
     private volatile Mode mode = new Mode(DEFAULT);
 
-    static {
-        // Proxy should time out before clients upon subscription.
-        TimingValues tv = new TimingValues();
-        tv.setUnconfiguredDelay((long)(tv.getUnconfiguredDelay()* timingValuesRatio)).
-                setConfiguredErrorDelay((long)(tv.getConfiguredErrorDelay()* timingValuesRatio)).
-                setSubscribeTimeout((long)(tv.getSubscribeTimeout()* timingValuesRatio)).
-                setConfiguredErrorTimeout(-1);  // Never cache errors
-        defaultTimingValues = tv;
-    }
-
-    ProxyServer(Spec spec, ConfigSourceSet source, TimingValues timingValues,
-                MemoryCache memoryCache, ConfigSourceClient configClient) {
-        this.delayedResponses = new DelayedResponses();
+    ProxyServer(Spec spec, ConfigSourceSet source, MemoryCache memoryCache, ConfigSourceClient configClient) {
         this.configSource = source;
-        log.log(LogLevel.DEBUG, "Using config source '" + source);
-        this.timingValues = timingValues;
+        supervisor = new Supervisor(new Transport("proxy-server", JRT_TRANSPORT_THREADS)).setDropEmptyBuffers(true);
+        log.log(Level.FINE, () -> "Using config source '" + source);
         this.memoryCache = memoryCache;
         this.rpcServer = createRpcServer(spec);
-        this.configClient = createClient(rpcServer, delayedResponses, source, timingValues, memoryCache, configClient);
+        this.configClient = (configClient == null) ? createRpcClient(rpcServer, source, memoryCache) : configClient;
         this.fileDistributionAndUrlDownload = new FileDistributionAndUrlDownload(supervisor, source);
     }
 
+    @Override
     public void run() {
         if (rpcServer != null) {
-            Thread t = new Thread(rpcServer);
+            Thread t = threadFactory.newThread(rpcServer);
             t.setName("RpcServer");
             t.start();
         }
-        // Wait for 5 seconds initially, then run every second
-        delayedResponseScheduler = scheduler.scheduleAtFixedRate(new DelayedResponseHandler(delayedResponses,
-                                                                                            memoryCache,
-                                                                                            rpcServer),
-                                                                 5, 1, SECONDS);
     }
 
     RawConfig resolveConfig(JRTServerConfigRequest req) {
@@ -124,29 +102,21 @@ public class ProxyServer implements Runnable {
                 break;
             case DEFAULT:
                 flush();
-                configClient = createRpcClient();
+                configClient = createRpcClient(rpcServer, configSource, memoryCache);
                 this.mode = new Mode(modeName);
                 break;
             default:
                 throw new IllegalArgumentException("Cannot set invalid mode '" + modeName + "'");
         }
-        log.log(LogLevel.INFO, "Switched from '" + oldMode.name().toLowerCase() + "' mode to '" + getMode().name().toLowerCase() + "' mode");
-    }
-
-    private ConfigSourceClient createClient(RpcServer rpcServer, DelayedResponses delayedResponses,
-                                            ConfigSourceSet source, TimingValues timingValues,
-                                            MemoryCache memoryCache, ConfigSourceClient client) {
-        return (client == null)
-                ? new RpcConfigSourceClient(rpcServer, source, memoryCache, timingValues, delayedResponses)
-                : client;
+        log.log(Level.INFO, "Switched from '" + oldMode.name().toLowerCase() + "' mode to '" + getMode().name().toLowerCase() + "' mode");
     }
 
     private ConfigProxyRpcServer createRpcServer(Spec spec) {
         return  (spec == null) ? null : new ConfigProxyRpcServer(this, supervisor, spec); // TODO: Try to avoid first argument being 'this'
     }
 
-    private RpcConfigSourceClient createRpcClient() {
-        return new RpcConfigSourceClient(rpcServer, configSource, memoryCache, timingValues, delayedResponses);
+    private static RpcConfigSourceClient createRpcClient(RpcServer rpcServer, ConfigSourceSet source, MemoryCache memoryCache) {
+        return new RpcConfigSourceClient(rpcServer, source, memoryCache);
     }
 
     private void setupSignalHandler() {
@@ -163,7 +133,15 @@ public class ProxyServer implements Runnable {
                 }
             }
         }
-        stop();
+        ExecutorService executor = Executors.newSingleThreadExecutor(threadFactory);
+        Callable<String> stopper = () -> { stop(); return "clean shutdown"; };
+        Future<String> future = executor.submit(stopper);
+        try {
+            String result = future.get(5, TimeUnit.SECONDS);
+            Event.stopping("configproxy", result);
+        } catch (Exception e) {
+            System.exit(1);
+        }
         System.exit(0);
     }
 
@@ -181,11 +159,10 @@ public class ProxyServer implements Runnable {
         Event.started("configproxy");
 
         ConfigSourceSet configSources = new ConfigSourceSet(properties.configSources);
-        ProxyServer proxyServer = new ProxyServer(new Spec(null, port), configSources,
-                                                  defaultTimingValues(), new MemoryCache(), null);
+        ProxyServer proxyServer = new ProxyServer(new Spec(null, port), configSources, new MemoryCache(), null);
         // catch termination and interrupt signal
         proxyServer.setupSignalHandler();
-        Thread proxyserverThread = new Thread(proxyServer);
+        Thread proxyserverThread = threadFactory.newThread(proxyServer);
         proxyserverThread.setName("configproxy");
         proxyserverThread.start();
         proxyServer.waitForShutdown();
@@ -204,14 +181,6 @@ public class ProxyServer implements Runnable {
         }
     }
 
-    static TimingValues defaultTimingValues() {
-        return defaultTimingValues;
-    }
-
-    TimingValues getTimingValues() {
-        return timingValues;
-    }
-
     // Cancels all config instances and flushes the cache. When this method returns,
     // the cache will not be updated again before someone calls getConfig().
     private synchronized void flush() {
@@ -220,11 +189,15 @@ public class ProxyServer implements Runnable {
     }
 
     void stop() {
-        Event.stopping("configproxy", "shutdown");
+        Event.stopping("configproxy", "shutdown rpcServer");
         if (rpcServer != null) rpcServer.shutdown();
-        if (delayedResponseScheduler != null) delayedResponseScheduler.cancel(true);
+        Event.stopping("configproxy", "cancel configClient");
+        if (configClient != null) configClient.cancel();
+        Event.stopping("configproxy", "flush");
         flush();
+        Event.stopping("configproxy", "close fileDistribution");
         fileDistributionAndUrlDownload.close();
+        Event.stopping("configproxy", "stop complete");
     }
 
     MemoryCache getMemoryCache() {
@@ -242,7 +215,11 @@ public class ProxyServer implements Runnable {
     void updateSourceConnections(List<String> sources) {
         configSource = new ConfigSourceSet(sources);
         flush();
-        configClient = createRpcClient();
+        configClient = createRpcClient(rpcServer, configSource, memoryCache);
+    }
+
+    DelayedResponses delayedResponses() {
+        return configClient.delayedResponses();
     }
 
 }

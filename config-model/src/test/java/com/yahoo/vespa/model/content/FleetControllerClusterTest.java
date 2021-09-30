@@ -1,21 +1,40 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import com.yahoo.vespa.config.content.FleetcontrollerConfig;
+import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
+import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
 
 public class FleetControllerClusterTest {
-    ClusterControllerConfig parse(String xml) {
+
+    private ClusterControllerConfig parse(String xml, TestProperties props) {
         Document doc = XML.getDocument(xml);
-        MockRoot root = new MockRoot();
-        return new ClusterControllerConfig.Builder("storage", new ModelElement(doc.getDocumentElement())).build(root.getDeployState(), root,
-                new ModelElement(doc.getDocumentElement()).getXml());
+        var deployState = new DeployState.Builder().properties(props).build();
+        boolean enableFeedBlockInDistributor = deployState.getProperties().featureFlags().enableFeedBlockInDistributor();
+        MockRoot root = new MockRoot("", deployState);
+        var clusterElement = new ModelElement(doc.getDocumentElement());
+        ModelContext.FeatureFlags featureFlags = new TestProperties();
+        return new ClusterControllerConfig.Builder("storage",
+                                                   clusterElement,
+                                                   new ClusterResourceLimits.Builder(enableFeedBlockInDistributor,
+                                                                                     false,
+                                                                                     featureFlags.resourceLimitDisk(),
+                                                                                     featureFlags.resourceLimitMemory())
+                                                           .build(clusterElement).getClusterControllerLimits())
+                .build(root.getDeployState(), root, clusterElement.getXml());
+    }
+
+    private ClusterControllerConfig parse(String xml) {
+        return parse(xml, new TestProperties().enableFeedBlockInDistributor(true));
     }
 
     @Test
@@ -81,13 +100,81 @@ public class FleetControllerClusterTest {
 
     @Test
     public void min_node_ratio_per_group_is_implicitly_zero_when_omitted() {
+        var config = getConfigForBasicCluster();
+        assertEquals(0.0, config.min_node_ratio_per_group(), 0.01);
+    }
+
+
+    @Test
+    public void default_cluster_feed_block_limits_are_set() {
+        assertLimits(0.8, 0.8, getConfigForBasicCluster());
+    }
+
+    @Test
+    public void resource_limits_can_be_set_in_tuning() {
+        assertLimits(0.6, 0.7, getConfigForResourceLimitsTuning(0.6, 0.7));
+        assertLimits(0.6, 0.8, getConfigForResourceLimitsTuning(0.6, null));
+        assertLimits(0.8, 0.7, getConfigForResourceLimitsTuning(null, 0.7));
+    }
+
+    private static final double DELTA = 0.00001;
+
+    private void assertLimits(double expDisk, double expMemory, FleetcontrollerConfig config) {
+        var limits = config.cluster_feed_block_limit();
+        assertEquals(3, limits.size());
+        assertEquals(expDisk, limits.get("disk"), DELTA);
+        assertEquals(expMemory, limits.get("memory"), DELTA);
+        assertEquals(0.89, limits.get("attribute-address-space"), DELTA);
+    }
+
+    private FleetcontrollerConfig getConfigForResourceLimitsTuning(Double diskLimit, Double memoryLimit) {
         FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
+        parse(joinLines("<cluster id=\"test\">",
+                "<documents/>",
+                "<tuning>",
+                "  <resource-limits>",
+                (diskLimit != null ? ("    <disk>" + diskLimit + "</disk>") : ""),
+                (memoryLimit != null ? ("    <memory>" + memoryLimit + "</memory>") : ""),
+                "  </resource-limits>",
+                "</tuning>" +
+                "</cluster>")).
+                getConfig(builder);
+        return new FleetcontrollerConfig(builder);
+    }
+
+    @Test
+    public void feature_flag_controls_enable_cluster_feed_block() {
+        verifyThatFeatureFlagControlsEnableClusterFeedBlock(true);
+        verifyThatFeatureFlagControlsEnableClusterFeedBlock(false);
+    }
+
+    private void verifyThatFeatureFlagControlsEnableClusterFeedBlock(boolean flag) {
+        var config = getConfigForBasicCluster(new TestProperties().enableFeedBlockInDistributor(flag));
+        assertEquals(flag, config.enable_cluster_feed_block());
+    }
+
+    @Test
+    public void feature_flag_controls_min_node_ratio_per_group() {
+        verifyFeatureFlagControlsMinNodeRatioPerGroup(0.0, new TestProperties());
+        verifyFeatureFlagControlsMinNodeRatioPerGroup(0.3,
+                new TestProperties().setMinNodeRatioPerGroup(0.3));
+    }
+
+    private void verifyFeatureFlagControlsMinNodeRatioPerGroup(double expRatio, TestProperties props) {
+        var config = getConfigForBasicCluster(props);
+        assertEquals(expRatio, config.min_node_ratio_per_group(), DELTA);
+    }
+
+    private FleetcontrollerConfig getConfigForBasicCluster(TestProperties props) {
+        var builder = new FleetcontrollerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
                 "  <documents/>\n" +
-                "</cluster>").
+                "</cluster>", props).
                 getConfig(builder);
+        return new FleetcontrollerConfig(builder);
+    }
 
-        FleetcontrollerConfig config = new FleetcontrollerConfig(builder);
-        assertEquals(0.0, config.min_node_ratio_per_group(), 0.01);
+    private FleetcontrollerConfig getConfigForBasicCluster() {
+        return getConfigForBasicCluster(new TestProperties().enableFeedBlockInDistributor(true));
     }
 }

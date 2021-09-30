@@ -23,13 +23,13 @@ public class ConfigApiTest {
         ConfigSubscriber subscriber = new ConfigSubscriber();
         ConfigHandle<AppConfig> h = subscriber.subscribe(AppConfig.class, CONFIG_ID);
         assertNotNull(h);
-        subscriber.nextConfig();
+        subscriber.nextConfig(false);
         assertNotNull(h.getConfig());
         assertEquals(AppConfig.CONFIG_DEF_NAME, ConfigInstance.getDefName(h.getConfig().getClass()));
-        assertThat(h.isChanged(), is(true));
+        assertTrue(h.isChanged());
         assertTrue(h.toString().startsWith("Handle changed: true\nSub:\n"));
         subscriber.close();
-        assertThat(subscriber.state(), is(ConfigSubscriber.State.CLOSED));
+        assertEquals(ConfigSubscriber.State.CLOSED, subscriber.state());
     }
 
     /**
@@ -40,7 +40,7 @@ public class ConfigApiTest {
     public void testSubscribeAfterClose() {
         ConfigSubscriber subscriber = new ConfigSubscriber();
         subscriber.subscribe(AppConfig.class, CONFIG_ID);
-        subscriber.nextConfig();
+        subscriber.nextConfig(false);
         subscriber.close();
         subscriber.subscribe(AppConfig.class, CONFIG_ID);
     }
@@ -52,7 +52,7 @@ public class ConfigApiTest {
     public void testSubscribeAfterNextConfig() {
         ConfigSubscriber subscriber = new ConfigSubscriber();
         subscriber.subscribe(AppConfig.class, CONFIG_ID);
-        subscriber.nextConfig();
+        subscriber.nextConfig(false);
         subscriber.subscribe(AppConfig.class, CONFIG_ID);
         subscriber.close();
     }

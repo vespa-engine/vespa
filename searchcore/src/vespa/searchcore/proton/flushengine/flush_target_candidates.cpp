@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "flush_target_candidates.h"
+#include "flush_target_candidate.h"
 #include "tls_stats.h"
 
 namespace proton {
@@ -13,17 +14,17 @@ using TlsReplayCost = FlushTargetCandidates::TlsReplayCost;
 namespace {
 
 SerialNum
-calculateReplayStartSerial(const FlushContext::List &sortedFlushContexts,
-                           size_t numCandidates,
+calculateReplayStartSerial(vespalib::ConstArrayRef<FlushTargetCandidate> candidates,
+                           size_t num_candidates,
                            const flushengine::TlsStats &tlsStats)
 {
-    if (numCandidates == 0) {
+    if (num_candidates == 0) {
         return tlsStats.getFirstSerial();
     }
-    if (numCandidates == sortedFlushContexts.size()) {
+    if (num_candidates == candidates.size()) {
         return tlsStats.getLastSerial() + 1;
     }
-    return sortedFlushContexts[numCandidates]->getTarget()->getFlushedSerialNum() + 1;
+    return candidates[num_candidates].get_flushed_serial() + 1;
 }
 
 TlsReplayCost
@@ -44,43 +45,44 @@ calculateTlsReplayCost(const flushengine::TlsStats &tlsStats,
 }
 
 double
-calculateFlushTargetsWriteCost(const FlushContext::List &sortedFlushContexts,
-                               size_t numCandidates,
-                               const Config &cfg)
+calculateFlushTargetsWriteCost(vespalib::ConstArrayRef<FlushTargetCandidate> candidates,
+                               size_t num_candidates)
 {
     double result = 0;
-    for (size_t i = 0; i < numCandidates; ++i) {
-        const auto &flushContext = sortedFlushContexts[i];
-        result += (flushContext->getTarget()->getApproxBytesToWriteToDisk() *
-                cfg.flushTargetWriteCost);
+    for (size_t i = 0; i < num_candidates; ++i) {
+        result += candidates[i].get_write_cost();
     }
     return result;
 }
 
 }
 
-FlushTargetCandidates::FlushTargetCandidates(const FlushContext::List &sortedFlushContexts,
-                                             size_t numCandidates,
+FlushTargetCandidates::FlushTargetCandidates(vespalib::ConstArrayRef<FlushTargetCandidate> candidates,
+                                             size_t num_candidates,
                                              const flushengine::TlsStats &tlsStats,
                                              const Config &cfg)
-    : _sortedFlushContexts(&sortedFlushContexts),
-      _numCandidates(numCandidates),
+    : _candidates(candidates),
+      _num_candidates(std::min(num_candidates, _candidates.size())),
       _tlsReplayCost(calculateTlsReplayCost(tlsStats,
                                             cfg,
-                                            calculateReplayStartSerial(sortedFlushContexts,
-                                                                       numCandidates,
+                                            calculateReplayStartSerial(_candidates,
+                                                                       _num_candidates,
                                                                        tlsStats))),
-      _flushTargetsWriteCost(calculateFlushTargetsWriteCost(sortedFlushContexts,
-                                                            numCandidates,
-                                                            cfg))
+      _flushTargetsWriteCost(calculateFlushTargetsWriteCost(_candidates,
+                                                            _num_candidates))
 {
 }
 
 FlushContext::List
 FlushTargetCandidates::getCandidates() const
 {
-    FlushContext::List result(_sortedFlushContexts->begin(),
-            _sortedFlushContexts->begin() + _numCandidates);
+    FlushContext::List result;
+    result.reserve(_num_candidates);
+    for (const auto &candidate : _candidates) {
+        if (result.size() < _num_candidates || candidate.get_always_flush()) {
+            result.emplace_back(candidate.get_flush_context());
+        }
+    }
     return result;
 }
 

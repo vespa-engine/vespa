@@ -4,9 +4,12 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 
 import java.time.Duration;
 import java.util.Map;
@@ -16,17 +19,20 @@ import java.util.stream.Collectors;
 /**
  * @author olaa
  */
-public class ResourceTagMaintainer extends Maintainer {
+public class ResourceTagMaintainer extends ControllerMaintainer {
+
+    static final ApplicationId SHARED_HOST_APPLICATION = ApplicationId.from("hosted-vespa", "shared-host", "default");
+    static final ApplicationId INFRASTRUCTURE_APPLICATION = ApplicationId.from("hosted-vespa", "infrastructure", "default");
 
     private final ResourceTagger resourceTagger;
 
-    public ResourceTagMaintainer(Controller controller, Duration interval, JobControl jobControl, ResourceTagger resourceTagger) {
-        super(controller, interval, jobControl);
+    public ResourceTagMaintainer(Controller controller, Duration interval, ResourceTagger resourceTagger) {
+        super(controller, interval);
         this.resourceTagger = resourceTagger;
     }
 
     @Override
-    public void maintain() {
+    public double maintain() {
         controller().zoneRegistry().zones()
                 .ofCloud(CloudName.from("aws"))
                 .reachable()
@@ -36,19 +42,24 @@ public class ResourceTagMaintainer extends Maintainer {
                     if (taggedResources > 0)
                         log.log(Level.INFO, "Tagged " + taggedResources + " resources in " + zone.getId());
         });
-
-
+        return 1.0;
     }
 
     private Map<HostName, ApplicationId> getTenantOfParentHosts(ZoneId zoneId) {
         return controller().serviceRegistry().configServer().nodeRepository()
-                .list(zoneId)
+                .list(zoneId, NodeFilter.all())
                 .stream()
-                .filter(node -> node.parentHostname().isPresent() && node.owner().isPresent())
+                .filter(node -> node.type().isHost())
                 .collect(Collectors.toMap(
-                        node -> node.parentHostname().get(),
-                        node -> node.owner().get(),
+                        Node::hostname,
+                        this::getApplicationId,
                         (node1, node2) -> node1
                 ));
+    }
+
+    private ApplicationId getApplicationId(Node node) {
+        if (node.type() == NodeType.host)
+            return node.exclusiveTo().orElse(SHARED_HOST_APPLICATION);
+        return INFRASTRUCTURE_APPLICATION;
     }
 }

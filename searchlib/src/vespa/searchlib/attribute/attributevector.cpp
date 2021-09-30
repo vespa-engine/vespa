@@ -1,26 +1,30 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attributevector.h"
+#include "address_space_components.h"
 #include "attribute_read_guard.h"
 #include "attributefilesavetarget.h"
 #include "attributeiterators.hpp"
 #include "attributesaver.h"
+#include "attributevector.h"
 #include "attributevector.hpp"
 #include "floatbase.h"
 #include "interlock.h"
 #include "ipostinglistattributebase.h"
 #include "ipostinglistsearchcontext.h"
 #include "stringbase.h"
+#include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/searchlib/util/logutil.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attributevector");
@@ -28,6 +32,7 @@ LOG_SETUP(".searchlib.attribute.attributevector");
 using vespalib::getLastErrorString;
 
 using document::ValueUpdate;
+using document::AssignValueUpdate;
 using vespalib::make_string;
 using vespalib::Array;
 using vespalib::IllegalStateException;
@@ -42,15 +47,6 @@ const vespalib::string enumeratedTag = "enumerated";
 const vespalib::string dataTypeTag = "datatype";
 const vespalib::string collectionTypeTag = "collectiontype";
 const vespalib::string docIdLimitTag = "docIdLimit";
-
-constexpr size_t DIRECTIO_ALIGNMENT(4096);
-
-template <typename T>
-struct FuncMax : public std::binary_function<T, T, T> {
-    T operator() (const T & x, const T & y) const {
-        return std::max(x, y);
-    }
-};
 
 }
 
@@ -127,13 +123,15 @@ AttributeVector::AttributeVector(vespalib::stringref baseFileName, const Config 
       _createSerialNum(0u),
       _compactLidSpaceGeneration(0u),
       _hasEnum(false),
-      _loaded(false)
+      _loaded(false),
+      _isUpdateableInMemoryOnly(attribute::isUpdateableInMemoryOnly(getName(), getConfig()))
 {
 }
 
 AttributeVector::~AttributeVector() = default;
 
-void AttributeVector::updateStat(bool force) {
+void
+AttributeVector::updateStat(bool force) {
     if (force) {
         onUpdateStat();
     } else if (_nextStatUpdateTime < vespalib::steady_clock::now()) {
@@ -153,24 +151,24 @@ AttributeVector::isEnumerated(const vespalib::GenericHeader &header)
 }
 
 void
-AttributeVector::commit(bool forceUpdateStat)
+AttributeVector::commit(bool forceUpdateStats)
 {
     onCommit();
     updateCommittedDocIdLimit();
-    updateStat(forceUpdateStat);
+    updateStat(forceUpdateStats);
     _loaded = true;
 }
 
 void
-AttributeVector::commit(uint64_t firstSyncToken, uint64_t lastSyncToken)
+AttributeVector::commit(const CommitParam & param)
 {
-    if (firstSyncToken < getStatus().getLastSyncToken()) {
+    if (param.firstSerialNum() < getStatus().getLastSyncToken()) {
         LOG(error, "Expected first token to be >= %" PRIu64 ", got %" PRIu64 ".",
-            getStatus().getLastSyncToken(), firstSyncToken);
+            getStatus().getLastSyncToken(), param.firstSerialNum());
         LOG_ABORT("should not be reached");
     }
-    commit();
-    _status.setLastSyncToken(lastSyncToken);
+    commit(param.forceUpdateStats());
+    _status.setLastSyncToken(param.lastSerialNum());
 }
 
 bool
@@ -224,22 +222,20 @@ AttributeVector::getEnumStoreValuesMemoryUsage() const
     return vespalib::MemoryUsage();
 }
 
-vespalib::AddressSpace
-AttributeVector::getEnumStoreAddressSpaceUsage() const
+void
+AttributeVector::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
-    return AddressSpaceUsage::defaultEnumStoreUsage();
-}
-
-vespalib::AddressSpace
-AttributeVector::getMultiValueAddressSpaceUsage() const
-{
-    return AddressSpaceUsage::defaultMultiValueUsage();
+    // TODO: Stop inserting defaults here when code using AddressSpaceUsage no longer require these two components.
+    usage.set(AddressSpaceComponents::enum_store, AddressSpaceComponents::default_enum_store_usage());
+    usage.set(AddressSpaceComponents::multi_value, AddressSpaceComponents::default_multi_value_usage());
 }
 
 AddressSpaceUsage
 AttributeVector::getAddressSpaceUsage() const
 {
-    return AddressSpaceUsage(getEnumStoreAddressSpaceUsage(), getMultiValueAddressSpaceUsage());
+    AddressSpaceUsage usage;
+    populate_address_space_usage(usage);
+    return usage;
 }
 
 bool
@@ -265,79 +261,6 @@ void AttributeVector::onGenerationChange(generation_t generation) { (void) gener
 const IEnumStore* AttributeVector::getEnumStoreBase() const { return nullptr; }
 IEnumStore* AttributeVector::getEnumStoreBase() { return nullptr; }
 const attribute::MultiValueMappingBase * AttributeVector::getMultiValueBase() const { return nullptr; }
-
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openFile(const char *suffix)
-{
-    BaseName::string fileName(getBaseFileName());
-    fileName += suffix;
-    return FileUtil::openFile(fileName);
-}
-
-
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openDAT()
-{
-    return openFile(".dat");
-}
-
-
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openIDX()
-{
-    return openFile(".idx");
-}
-
-
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openWeight()
-{
-    return openFile(".weight");
-}
-
-
-std::unique_ptr<FastOS_FileInterface>
-AttributeVector::openUDAT()
-{
-    return openFile(".dat");
-}
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadDAT()
-{
-    return loadFile(".dat");
-}
-
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadIDX()
-{
-    return loadFile(".idx");
-}
-
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadWeight()
-{
-    return loadFile(".weight");
-}
-
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadUDAT()
-{
-    return loadFile(".udat");
-}
-
-
-fileutil::LoadedBuffer::UP
-AttributeVector::loadFile(const char *suffix)
-{
-    BaseName::string fileName(getBaseFileName());
-    fileName += suffix;
-    return FileUtil::loadFile(fileName);
-}
-
 
 bool
 AttributeVector::save(vespalib::stringref fileName)
@@ -379,19 +302,17 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget, vespalib::stringref file
 attribute::AttributeHeader
 AttributeVector::createAttributeHeader(vespalib::stringref fileName) const {
     return attribute::AttributeHeader(fileName,
-                                   getConfig().basicType(),
-                                   getConfig().collectionType(),
-                                   getConfig().basicType().type() == BasicType::Type::TENSOR
-                                      ? getConfig().tensorType()
-                                      : vespalib::eval::ValueType::error_type(),
-                                   getEnumeratedSave(),
-                                   getConfig().predicateParams(),
-                                   getCommittedDocIdLimit(),
-                                   getFixedWidth(),
-                                   getUniqueValueCount(),
-                                   getTotalValueCount(),
-                                   getCreateSerialNum(),
-                                   getVersion());
+                                      getConfig().basicType(),
+                                      getConfig().collectionType(),
+                                      getConfig().tensorType(),
+                                      getEnumeratedSave(),
+                                      getConfig().predicateParams(),
+                                      getConfig().hnsw_index_params(),
+                                      getCommittedDocIdLimit(),
+                                      getUniqueValueCount(),
+                                      getTotalValueCount(),
+                                      getCreateSerialNum(),
+                                      getVersion());
 }
 
 void AttributeVector::onSave(IAttributeSaveTarget &)
@@ -429,7 +350,7 @@ AttributeVector::isEnumeratedSaveFormat() const
 {
     vespalib::string datName(vespalib::make_string("%s.dat", getBaseFileName().c_str()));
     Fast_BufferedFile   datFile;
-    vespalib::FileHeader datHeader(DIRECTIO_ALIGNMENT);
+    vespalib::FileHeader datHeader(FileSettings::DIRECTIO_ALIGNMENT);
     if ( ! datFile.OpenReadOnly(datName.c_str()) ) {
         LOG(error, "could not open %s: %s", datFile.GetFileName(), getLastErrorString().c_str());
         throw IllegalStateException(make_string("Failed opening attribute data file '%s' for reading",
@@ -440,11 +361,15 @@ AttributeVector::isEnumeratedSaveFormat() const
     return isEnumerated(datHeader);
 }
 
-
 bool
 AttributeVector::load() {
+    return load(nullptr);
+}
+
+bool
+AttributeVector::load(vespalib::Executor * executor) {
     assert(!_loaded);
-    bool loaded = onLoad();
+    bool loaded = onLoad(executor);
     if (loaded) {
         commit();
     }
@@ -452,7 +377,7 @@ AttributeVector::load() {
     return _loaded;
 }
 
-bool AttributeVector::onLoad() { return false; }
+bool AttributeVector::onLoad(vespalib::Executor *) { return false; }
 int32_t AttributeVector::getWeight(DocId, uint32_t) const { return 1; }
 
 bool AttributeVector::findEnum(const char *, EnumHandle &) const { return false; }
@@ -540,6 +465,9 @@ AttributeVector::apply(DocId doc, const MapValueUpdate &map) {
         if (vu.inherits(ArithmeticValueUpdate::classId)) {
             const ArithmeticValueUpdate &au(static_cast<const ArithmeticValueUpdate &>(vu));
             retval = applyWeight(doc, map.getKey(), au);
+        } else if (vu.inherits(AssignValueUpdate::classId)) {
+            const AssignValueUpdate &au(static_cast<const AssignValueUpdate &>(vu));
+            retval = applyWeight(doc, map.getKey(), au);
         } else {
             retval = false;
         }
@@ -550,6 +478,7 @@ AttributeVector::apply(DocId doc, const MapValueUpdate &map) {
 
 bool AttributeVector::applyWeight(DocId, const FieldValue &, const ArithmeticValueUpdate &) { return false; }
 
+bool AttributeVector::applyWeight(DocId, const FieldValue&, const AssignValueUpdate&) { return false; }
 
 void
 AttributeVector::removeAllOldGenerations() {
@@ -702,7 +631,7 @@ AttributeVector::onInitSave(vespalib::stringref)
 bool
 AttributeVector::hasActiveEnumGuards()
 {
-    std::unique_lock<std::shared_timed_mutex> lock(_enumLock, std::defer_lock);
+    std::unique_lock<std::shared_mutex> lock(_enumLock, std::defer_lock);
     for (size_t i = 0; i < 1000; ++i) {
         // Note: Need to run this in loop as try_lock() is allowed to fail spuriously and return false
         // even if the mutex is not currently locked by any other thread.
@@ -718,7 +647,7 @@ IExtendAttribute *AttributeVector::getExtendInterface() { return nullptr; }
 uint64_t
 AttributeVector::getEstimatedSaveByteSize() const
 {
-    uint64_t headerSize = 4096;
+    uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT;
     uint64_t totalValueCount = _status.getNumValues();
     uint64_t uniqueValueCount = _status.getNumUniqueValues();
     uint64_t docIdLimit = getCommittedDocIdLimit();
@@ -802,10 +731,10 @@ class ReadGuard : public attribute::AttributeReadGuard
 {
     using GenerationHandler = vespalib::GenerationHandler;
     GenerationHandler::Guard _generationGuard;
-    using EnumGuard = std::shared_lock<std::shared_timed_mutex>;
+    using EnumGuard = std::shared_lock<std::shared_mutex>;
     EnumGuard _enumGuard;
 public:
-    ReadGuard(const attribute::IAttributeVector *attr, GenerationHandler::Guard &&generationGuard, std::shared_timed_mutex *enumLock)
+    ReadGuard(const attribute::IAttributeVector *attr, GenerationHandler::Guard &&generationGuard, std::shared_mutex *enumLock)
         : attribute::AttributeReadGuard(attr),
           _generationGuard(std::move(generationGuard)),
           _enumGuard(enumLock != nullptr ? EnumGuard(*enumLock) : EnumGuard())
@@ -836,6 +765,34 @@ AttributeVector::logEnumStoreEvent(const char *reason, const char *stage)
     jstr.endObject();
     vespalib::string eventName(make_string("%s.attribute.enumstore.%s", reason, stage));
     EV_STATE(eventName.c_str(), jstr.toString().data());
+}
+
+void
+AttributeVector::drain_hold(uint64_t hold_limit)
+{
+    incGeneration();
+    for (int retry = 0; retry < 40; ++retry) {
+        removeAllOldGenerations();
+        updateStat(true);
+        if (_status.getOnHold() <= hold_limit) {
+            return;
+        }
+        std::this_thread::sleep_for(retry < 20 ? 20ms : 100ms);
+    }
+}
+
+void
+AttributeVector::update_config(const Config& cfg)
+{
+    commit(true);
+    _config.setGrowStrategy(cfg.getGrowStrategy());
+    if (cfg.getCompactionStrategy() == _config.getCompactionStrategy()) {
+        return;
+    }
+    drain_hold(1_Mi); // Wait until 1MiB or less on hold
+    _config.setCompactionStrategy(cfg.getCompactionStrategy());
+    commit(); // might trigger compaction
+    drain_hold(1_Mi); // Wait until 1MiB or less on hold
 }
 
 template bool AttributeVector::append<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &, int32_t, bool);

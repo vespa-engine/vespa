@@ -9,7 +9,7 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
 
@@ -56,11 +56,11 @@ SingleValueStringAttributeT<B>::StringTemplSearchContext::StringTemplSearchConte
     this->_plsc = static_cast<attribute::IPostingListSearchContext *>(this);
     if (this->valid()) {
         if (this->isPrefix()) {
-            auto comp = enumStore.make_folded_comparator(queryTerm()->getTerm(), true);
+            auto comp = enumStore.make_folded_comparator_prefix(queryTerm()->getTerm());
             lookupRange(comp, comp);
         } else if (this->isRegex()) {
-            vespalib::string prefix(vespalib::Regexp::get_prefix(this->queryTerm()->getTerm()));
-            auto comp = enumStore.make_folded_comparator(prefix.c_str(), true);
+            vespalib::string prefix(vespalib::RegexpUtil::get_prefix(this->queryTerm()->getTerm()));
+            auto comp = enumStore.make_folded_comparator_prefix(prefix.c_str());
             lookupRange(comp, comp);
         } else {
             auto comp = enumStore.make_folded_comparator(queryTerm()->getTerm());

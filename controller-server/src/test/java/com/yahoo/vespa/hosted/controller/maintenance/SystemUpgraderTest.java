@@ -6,6 +6,7 @@ import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
@@ -179,10 +180,10 @@ public class SystemUpgraderTest {
         );
 
         Version version1 = Version.fromString("6.5");
-        tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId()), SystemApplication.all());
+        tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId()), SystemApplication.notController());
         tester.upgradeSystem(version1);
         systemUpgrader.maintain();
-        assertCurrentVersion(SystemApplication.all(), version1, zone1, zone2, zone3, zone4);
+        assertCurrentVersion(SystemApplication.notController(), version1, zone1, zone2, zone3, zone4);
 
         // Controller upgrades
         Version version2 = Version.fromString("6.6");
@@ -199,7 +200,7 @@ public class SystemUpgraderTest {
         systemUpgrader.maintain();
         completeUpgrade(SystemApplication.proxy, version2, zone1);
         convergeServices(SystemApplication.proxy, zone1);
-        assertWantedVersion(SystemApplication.all(), version1, zone2, zone3, zone4);
+        assertWantedVersion(SystemApplication.notController(), version1, zone2, zone3, zone4);
 
         // zone 2 and 3:
         systemUpgrader.maintain();
@@ -207,7 +208,7 @@ public class SystemUpgraderTest {
         systemUpgrader.maintain();
         completeUpgrade(SystemApplication.proxy, version2, zone2, zone3);
         convergeServices(SystemApplication.proxy, zone2, zone3);
-        assertWantedVersion(SystemApplication.all(), version1, zone4);
+        assertWantedVersion(SystemApplication.notController(), version1, zone4);
 
         // zone 4:
         systemUpgrader.maintain();
@@ -217,7 +218,7 @@ public class SystemUpgraderTest {
 
         // All done
         systemUpgrader.maintain();
-        assertWantedVersion(SystemApplication.all(), version2, zone1, zone2, zone3, zone4);
+        assertWantedVersion(SystemApplication.notController(), version2, zone1, zone2, zone3, zone4);
     }
 
     @Test
@@ -266,7 +267,7 @@ public class SystemUpgraderTest {
         convergeServices(SystemApplication.proxy, zone1);
 
         // Confidence is reduced to broken and next zone is not scheduled for upgrade
-        new Upgrader(tester.controller(), Duration.ofDays(1), new JobControl(tester.curator()), tester.curator())
+        new Upgrader(tester.controller(), Duration.ofDays(1))
                 .overrideConfidence(version2, VespaVersion.Confidence.broken);
         tester.computeVersionStatus();
         systemUpgrader.maintain();
@@ -275,11 +276,12 @@ public class SystemUpgraderTest {
     }
 
     @Test
-    public void does_not_deploy_proxy_app_in_zones_without_proxy() {
+    public void does_not_deploy_proxy_app_in_zone_without_shared_routing() {
         var applications = List.of(SystemApplication.configServerHost, SystemApplication.configServer,
                                    SystemApplication.tenantHost);
         tester.configServer().bootstrap(List.of(zone1.getId()), applications);
         tester.configServer().disallowConvergenceCheck(SystemApplication.proxy.id());
+        tester.zoneRegistry().exclusiveRoutingIn(zone1);
         var systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
 
         // System begins upgrade
@@ -294,7 +296,7 @@ public class SystemUpgraderTest {
         systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.proxy, Version.emptyVersion, zone1);
         tester.computeVersionStatus();
-        assertEquals(version1, tester.controller().systemVersion());
+        assertEquals(version1, tester.controller().readSystemVersion());
     }
 
     /** Simulate upgrade of nodes allocated to given application. In a real system this is done by the node itself */
@@ -302,9 +304,9 @@ public class SystemUpgraderTest {
         assertWantedVersion(application, version, first, rest);
         Stream.concat(Stream.of(first), Stream.of(rest)).forEach(zone -> {
             for (Node node : listNodes(zone, application)) {
-                nodeRepository().putByHostname(
+                nodeRepository().putNodes(
                         zone.getId(),
-                        new Node.Builder(node).currentVersion(node.wantedVersion()).build());
+                        Node.builder(node).currentVersion(node.wantedVersion()).build());
             }
             assertCurrentVersion(application, version, zone);
         });
@@ -321,22 +323,22 @@ public class SystemUpgraderTest {
     }
 
     private void failNodeIn(ZoneApi zone, SystemApplication application) {
-        List<Node> nodes = nodeRepository().list(zone.getId(), application.id());
+        List<Node> nodes = nodeRepository().list(zone.getId(), NodeFilter.all().applications(application.id()));
         if (nodes.isEmpty()) {
             throw new IllegalArgumentException("No nodes allocated to " + application.id());
         }
         Node node = nodes.get(0);
-        nodeRepository().putByHostname(
+        nodeRepository().putNodes(
                 zone.getId(),
-                new Node.Builder(node).state(Node.State.failed).build());
+                Node.builder(node).state(Node.State.failed).build());
     }
 
     private void assertSystemVersion(Version version) {
-        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
+        assertEquals(version, tester.controller().readSystemVersion());
     }
 
     private void assertControllerVersion(Version version) {
-        assertEquals(version, tester.controller().versionStatus().controllerVersion().get().versionNumber());
+        assertEquals(version, tester.controller().readVersionStatus().controllerVersion().get().versionNumber());
     }
 
     private void assertWantedVersion(SystemApplication application, Version version, ZoneApi first, ZoneApi... rest) {
@@ -371,7 +373,7 @@ public class SystemUpgraderTest {
     }
 
     private List<Node> listNodes(ZoneApi zone, SystemApplication application) {
-        return nodeRepository().list(zone.getId(), application.id()).stream()
+        return nodeRepository().list(zone.getId(), NodeFilter.all().applications(application.id())).stream()
                                .filter(SystemUpgrader::eligibleForUpgrade)
                                .collect(Collectors.toList());
     }
@@ -382,8 +384,7 @@ public class SystemUpgraderTest {
 
     private SystemUpgrader systemUpgrader(UpgradePolicy upgradePolicy) {
         tester.zoneRegistry().setUpgradePolicy(upgradePolicy);
-        return new SystemUpgrader(tester.controller(), Duration.ofDays(1),
-                                  new JobControl(tester.curator()));
+        return new SystemUpgrader(tester.controller(), Duration.ofDays(1));
     }
 
 }

@@ -7,6 +7,7 @@
 #include "configsubscriptionset.h"
 #include "configprovider.h"
 #include "sourcespec.h"
+#include <vespa/config/common/timingvalues.h>
 
 namespace config {
 

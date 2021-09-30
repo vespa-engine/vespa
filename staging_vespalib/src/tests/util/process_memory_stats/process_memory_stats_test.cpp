@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <iostream>
 #include <fstream>
 #include <sys/mman.h>
@@ -41,7 +42,7 @@ TEST("grow anonymous memory")
 {
     ProcessMemoryStats stats1(ProcessMemoryStats::create(SIZE_EPSILON));
     std::cout << toString(stats1) << std::endl;
-    size_t mapLen = 64 * 1024;
+    size_t mapLen = 64_Ki;
     void *mapAddr = mmap(nullptr, mapLen, PROT_READ | PROT_WRITE,
                          MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     EXPECT_NOT_EQUAL(reinterpret_cast<void *>(-1), mapAddr);
@@ -59,7 +60,7 @@ TEST("grow anonymous memory")
 TEST("grow mapped memory")
 {
     std::ofstream of("mapfile");
-    size_t mapLen = 64 * 1024;
+    size_t mapLen = 64_Ki;
     std::vector<char> buf(mapLen, 4);
     of.write(&buf[0], buf.size());
     of.close();

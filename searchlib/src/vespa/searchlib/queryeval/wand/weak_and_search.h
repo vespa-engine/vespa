@@ -16,9 +16,9 @@ struct WeakAndSearch : SearchIterator {
     virtual const Terms &getTerms() const = 0;
     virtual uint32_t getN() const = 0;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    static SearchIterator *createArrayWand(const Terms &terms, uint32_t n, bool strict);
-    static SearchIterator *createHeapWand(const Terms &terms, uint32_t n, bool strict);
-    static SearchIterator *create(const Terms &terms, uint32_t n, bool strict);
+    static SearchIterator::UP createArrayWand(const Terms &terms, uint32_t n, bool strict);
+    static SearchIterator::UP createHeapWand(const Terms &terms, uint32_t n, bool strict);
+    static SearchIterator::UP create(const Terms &terms, uint32_t n, bool strict);
 };
 
 } // namespace queryeval

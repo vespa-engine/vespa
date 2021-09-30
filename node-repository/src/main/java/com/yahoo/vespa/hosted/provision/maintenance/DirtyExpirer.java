@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 
@@ -23,17 +23,18 @@ import java.util.List;
  */
 public class DirtyExpirer extends Expirer {
 
-    private final NodeRepository nodeRepository;
+    private final boolean keepAllocationOnExpiry;
 
-    DirtyExpirer(NodeRepository nodeRepository, Clock clock, Duration dirtyTimeout) {
-        super(Node.State.dirty, History.Event.Type.deallocated, nodeRepository, clock, dirtyTimeout);
-        this.nodeRepository = nodeRepository;
+    DirtyExpirer(NodeRepository nodeRepository, Duration dirtyTimeout, Metric metric) {
+        super(Node.State.dirty, History.Event.Type.deallocated, nodeRepository, dirtyTimeout, metric);
+        // Do not keep allocation in dynamically provisioned zones so that the hosts can be deprovisioned
+        this.keepAllocationOnExpiry = ! nodeRepository.zone().getCloud().dynamicProvisioning();
     }
 
     @Override
     protected void expire(List<Node> expired) {
         for (Node expiredNode : expired)
-            nodeRepository.fail(expiredNode.hostname(), Agent.DirtyExpirer, "Node is stuck in dirty");
+            nodeRepository().nodes().fail(expiredNode.hostname(), keepAllocationOnExpiry, Agent.DirtyExpirer, "Node is stuck in dirty");
     }
 
 }

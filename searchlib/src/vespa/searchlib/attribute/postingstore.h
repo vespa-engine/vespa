@@ -19,7 +19,7 @@ class Config;
 class BitVectorEntry
 {
 public:
-    datastore::EntryRef _tree; // Daisy chained reference to tree based posting list
+    vespalib::datastore::EntryRef _tree; // Daisy chained reference to tree based posting list
     std::shared_ptr<GrowableBitVector> _bv; // bitvector
 
 public:
@@ -44,14 +44,16 @@ public:
     uint32_t _maxBvDocFreq; // Greater than or equal to this ==> create bv
 protected:
     std::set<uint32_t> _bvs; // Current bitvectors
-    EnumPostingTree   &_dict;
+    IEnumStoreDictionary& _dictionary;
     Status            &_status;
     uint64_t           _bvExtraBytes;
+    vespalib::MemoryUsage _cached_allocator_memory_usage;
+    vespalib::MemoryUsage _cached_store_memory_usage;
 
     static constexpr uint32_t BUFFERTYPE_BITVECTOR = 9u;
 
 public:
-    PostingStoreBase2(EnumPostingTree &dict, Status &status, const Config &config);
+    PostingStoreBase2(IEnumStoreDictionary& dictionary, Status &status, const Config &config);
     virtual ~PostingStoreBase2();
     bool resizeBitVectors(uint32_t newSize, uint32_t newCapacity);
     virtual bool removeSparseBitVectors() = 0;
@@ -61,7 +63,7 @@ template <typename DataT>
 class PostingStore : public PostingListTraits<DataT>::PostingStoreBase,
     public PostingStoreBase2
 {
-    datastore::BufferType<BitVectorEntry> _bvType;
+    vespalib::datastore::BufferType<BitVectorEntry> _bvType;
 public:
     typedef DataT DataType;
     typedef typename PostingListTraits<DataT>::PostingStoreBase Parent;
@@ -75,7 +77,7 @@ public:
     typedef typename Parent::AggregatedType AggregatedType;
     typedef typename Parent::BTreeTypeRefPair BTreeTypeRefPair;
     typedef typename Parent::Builder Builder;
-    typedef datastore::EntryRef EntryRef;
+    typedef vespalib::datastore::EntryRef EntryRef;
     typedef std::less<uint32_t> CompareT;
     using Parent::applyNewArray;
     using Parent::applyNewTree;
@@ -89,18 +91,21 @@ public:
     using Parent::getKeyDataEntry;
     using Parent::clusterLimit;
     using Parent::allocBTree;
+    using Parent::allocBTreeCopy;
+    using Parent::allocKeyDataCopy;
     using Parent::_builder;
     using Parent::_store;
     using Parent::_allocator;
     using Parent::_aggrCalc;
     using Parent::BUFFERTYPE_BTREE;
-    typedef datastore::Handle<BitVectorEntry> BitVectorRefPair;
+    typedef vespalib::datastore::Handle<BitVectorEntry> BitVectorRefPair;
     
 
-    PostingStore(EnumPostingTree &dict, Status &status, const Config &config);
+    PostingStore(IEnumStoreDictionary& dictionary, Status &status, const Config &config);
     ~PostingStore();
 
     bool removeSparseBitVectors() override;
+    EntryRef consider_remove_sparse_bitvector(EntryRef ref);
     static bool isBitVector(uint32_t typeId) { return typeId == BUFFERTYPE_BITVECTOR; }
     static bool isBTree(uint32_t typeId) { return typeId == BUFFERTYPE_BTREE; }
     bool isBTree(RefType ref) const { return isBTree(getTypeId(ref)); }
@@ -109,7 +114,12 @@ public:
 
     BitVectorRefPair allocBitVector() {
         return _store.template freeListAllocator<BitVectorEntry,
-            btree::DefaultReclaimer<BitVectorEntry> >(BUFFERTYPE_BITVECTOR).alloc();
+            vespalib::datastore::DefaultReclaimer<BitVectorEntry> >(BUFFERTYPE_BITVECTOR).alloc();
+    }
+
+    BitVectorRefPair allocBitVectorCopy(const BitVectorEntry& bve) {
+        return _store.template freeListAllocator<BitVectorEntry,
+            vespalib::datastore::DefaultReclaimer<BitVectorEntry> >(BUFFERTYPE_BITVECTOR).alloc(bve);
     }
 
     /*
@@ -176,17 +186,25 @@ public:
 
     static inline DataT bitVectorWeight();
     vespalib::MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage update_stat();
 
+    void move_btree_nodes(EntryRef ref);
+    EntryRef move(EntryRef ref);
+
+    void compact_worst_btree_nodes();
+    void compact_worst_buffers();
+    bool consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy);
+    bool consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy);
 private:
     size_t internalSize(uint32_t typeId, const RefType & iRef) const;
     size_t internalFrozenSize(uint32_t typeId, const RefType & iRef) const;
 };
 
 template <>
-inline btree::BTreeNoLeafData
-PostingStore<btree::BTreeNoLeafData>::bitVectorWeight()
+inline vespalib::btree::BTreeNoLeafData
+PostingStore<vespalib::btree::BTreeNoLeafData>::bitVectorWeight()
 {
-    return btree::BTreeNoLeafData();
+    return vespalib::btree::BTreeNoLeafData();
 }
 
 template <>

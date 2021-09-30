@@ -1,8 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.state;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -17,12 +16,12 @@ import static org.junit.Assert.assertEquals;
 public class CoredumpGathererTest {
 
     @Test
-    public void finds_one_coredump() throws JSONException {
-    JSONObject packet = CoredumpGatherer.gatherCoredumpMetrics(new MockFileWrapper());
+    public void finds_one_coredump()  {
+    JsonNode packet = CoredumpGatherer.gatherCoredumpMetrics(new MockFileWrapper());
 
-    assertEquals("system-coredumps-processing", packet.getString("application"));
-    assertEquals(1, packet.getInt("status_code"));
-    assertEquals("Found 1 coredump(s)", packet.getString("status_msg"));
+    assertEquals("system-coredumps-processing", packet.get("application").textValue());
+    assertEquals(1, packet.get("status_code").intValue());
+    assertEquals("Found 1 coredump(s)", packet.get("status_msg").textValue());
 
     }
 

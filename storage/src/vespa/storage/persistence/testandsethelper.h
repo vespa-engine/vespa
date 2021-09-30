@@ -2,9 +2,26 @@
 // @author Vegard Sjonfjell
 
 #pragma once
-#include <vespa/storage/persistence/persistencethread.h>
+
+#include <vespa/storageapi/message/persistence.h>
+#include <vespa/persistence/spi/result.h>
+#include <stdexcept>
+
+namespace document::select { class Node; }
+namespace document {
+    class FieldSet;
+    class BucketIdFactory;
+}
 
 namespace storage {
+
+namespace spi {
+    class Context;
+    struct PersistenceProvider;
+}
+class PersistenceThread;
+class ServiceLayerComponent;
+class PersistenceUtil;
 
 class TestAndSetException : public std::runtime_error {
     api::ReturnCode _code;
@@ -19,24 +36,25 @@ public:
 };
 
 class TestAndSetHelper {
-    PersistenceThread & _thread;
-    ServiceLayerComponent & _component;
-    const api::TestAndSetCommand & _cmd;
-
-    const document::DocumentId _docId;
-    const document::DocumentType * _docTypePtr;
+    const PersistenceUtil                  &_env;
+    const spi::PersistenceProvider         &_spi;
+    const api::TestAndSetCommand           &_cmd;
+    const document::DocumentId              _docId;
+    const document::DocumentType *          _docTypePtr;
     std::unique_ptr<document::select::Node> _docSelectionUp;
-    bool _missingDocumentImpliesMatch;
+    bool                                    _missingDocumentImpliesMatch;
 
-    void getDocumentType();
-    void parseDocumentSelection();
-    spi::GetResult retrieveDocument(const document::FieldSet & fieldSet);
+    void resolveDocumentType(const document::DocumentTypeRepo & documentTypeRepo);
+    void parseDocumentSelection(const document::DocumentTypeRepo & documentTypeRepo,
+                                const document::BucketIdFactory & bucketIdFactory);
+    spi::GetResult retrieveDocument(const document::FieldSet & fieldSet, spi::Context & context);
 
 public:
-    TestAndSetHelper(PersistenceThread & thread, const api::TestAndSetCommand & cmd,
-                     bool missingDocumentImpliesMatch = false);
+    TestAndSetHelper(const PersistenceUtil & env, const spi::PersistenceProvider & _spi,
+                     const document::BucketIdFactory & bucketIdFactory,
+                     const api::TestAndSetCommand & cmd, bool missingDocumentImpliesMatch = false);
     ~TestAndSetHelper();
-    api::ReturnCode retrieveAndMatch();
+    api::ReturnCode retrieveAndMatch(spi::Context & context);
 };
 
 } // storage

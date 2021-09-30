@@ -4,7 +4,6 @@ vespa_add_library(metrics
     countmetric.cpp
     countmetricvalues.cpp
     jsonwriter.cpp
-    loadmetric.cpp
     memoryconsumption.cpp
     metric.cpp
     metricmanager.cpp
@@ -12,14 +11,15 @@ vespa_add_library(metrics
     metricsnapshot.cpp
     metrictimer.cpp
     metricvalueset.cpp
-    printutils.cpp
     name_repo.cpp
     state_api_adapter.cpp
     summetric.cpp
     textwriter.cpp
+    updatehook.cpp
     valuemetric.cpp
     valuemetricvalues.cpp
     xmlwriter.cpp
+    $<TARGET_OBJECTS:metrics_common>
 
     INSTALL lib64
     DEPENDS

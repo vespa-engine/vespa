@@ -6,7 +6,9 @@
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_listener.h>
+#include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <map>
 #include <vespa/log/log.h>
 LOG_SETUP("gid_to_lid_change_handler_test");
@@ -38,7 +40,7 @@ class ListenerStats {
     uint32_t  _destroyedListeners;
 
 public:
-    ListenerStats()
+    ListenerStats() noexcept
         : _lock(),
           _putChanges(0u),
           _removeChanges(0u),
@@ -100,22 +102,24 @@ public:
     {
         _stats.markCreatedListener();
     }
-    virtual ~MyListener() { _stats.markDestroyedListener(); }
-    virtual void notifyPutDone(GlobalId, uint32_t) override { _stats.notifyPutDone(); }
-    virtual void notifyRemove(GlobalId) override { _stats.notifyRemove(); }
-    virtual void notifyRegistered() override { _stats.markRegisteredListener(); }
-    virtual const vespalib::string &getName() const override { return _name; }
-    virtual const vespalib::string &getDocTypeName() const override { return _docTypeName; }
+    ~MyListener() override { _stats.markDestroyedListener(); }
+    void notifyPutDone(IDestructorCallbackSP, GlobalId, uint32_t) override { _stats.notifyPutDone(); }
+    void notifyRemove(IDestructorCallbackSP, GlobalId) override { _stats.notifyRemove(); }
+    void notifyRegistered() override { _stats.markRegisteredListener(); }
+    const vespalib::string &getName() const override { return _name; }
+    const vespalib::string &getDocTypeName() const override { return _docTypeName; }
 };
 
 struct Fixture
 {
     std::vector<std::shared_ptr<ListenerStats>> _statss;
-    std::shared_ptr<GidToLidChangeHandler> _handler;
+    std::shared_ptr<GidToLidChangeHandler>  _real_handler;
+    std::shared_ptr<IGidToLidChangeHandler> _handler;
 
     Fixture()
         : _statss(),
-          _handler(std::make_shared<GidToLidChangeHandler>())
+          _real_handler(std::make_shared<GidToLidChangeHandler>()),
+          _handler(_real_handler)
     {
     }
 
@@ -126,7 +130,7 @@ struct Fixture
 
     void close()
     {
-        _handler->close();
+        _real_handler->close();
     }
 
     ListenerStats &addStats() {
@@ -138,16 +142,21 @@ struct Fixture
         _handler->addListener(std::move(listener));
     }
 
-    void notifyPutDone(GlobalId gid, uint32_t lid, SerialNum serialNum) {
-        _handler->notifyPutDone(gid, lid, serialNum);
+    void commit() {
+        auto pending = _handler->grab_pending_changes();
+        if (pending) {
+            pending->notify_done();
+        }
+    }
+
+    void notifyPut(GlobalId gid, uint32_t lid, SerialNum serial_num) {
+        _handler->notifyPut(std::shared_ptr<vespalib::IDestructorCallback>(), gid, lid, serial_num);
     }
 
     void notifyRemove(GlobalId gid, SerialNum serialNum) {
-        _handler->notifyRemove(gid, serialNum);
-    }
-
-    void notifyRemoveDone(GlobalId gid, SerialNum serialNum) {
-        _handler->notifyRemoveDone(gid, serialNum);
+        vespalib::Gate gate;
+        _handler->notifyRemove(std::make_shared<vespalib::GateCallback>(gate), gid, serialNum);
+        gate.await();
     }
 
     void removeListeners(const vespalib::string &docTypeName,
@@ -164,7 +173,8 @@ TEST_F("Test that we can register a listener", Fixture)
     TEST_DO(stats.assertListeners(1, 0, 0));
     f.addListener(std::move(listener));
     TEST_DO(stats.assertListeners(1, 1, 0));
-    f.notifyPutDone(toGid(doc1), 10, 10);
+    f.notifyPut(toGid(doc1), 10, 10);
+    f.commit();
     TEST_DO(stats.assertChanges(1, 0));
     f.removeListeners("testdoc", {});
     TEST_DO(stats.assertListeners(1, 1, 1));
@@ -187,7 +197,8 @@ TEST_F("Test that we can register multiple listeners", Fixture)
     TEST_DO(stats1.assertListeners(1, 1, 0));
     TEST_DO(stats2.assertListeners(1, 1, 0));
     TEST_DO(stats3.assertListeners(1, 1, 0));
-    f.notifyPutDone(toGid(doc1), 10, 10);
+    f.notifyPut(toGid(doc1), 10, 10);
+    f.commit();
     TEST_DO(stats1.assertChanges(1, 0));
     TEST_DO(stats2.assertChanges(1, 0));
     TEST_DO(stats3.assertChanges(1, 0));
@@ -245,62 +256,39 @@ public:
     }
 };
 
+TEST_F("Test that multiple puts are processed", StatsFixture)
+{
+    f.notifyPut(toGid(doc1), 10, 10);
+    TEST_DO(f.assertChanges(0, 0));
+    f.notifyPut(toGid(doc1), 11, 20);
+    TEST_DO(f.assertChanges(0, 0));
+    f.commit();
+    TEST_DO(f.assertChanges(2, 0));
+}
+
 TEST_F("Test that put is ignored if we have a pending remove", StatsFixture)
 {
+    f.notifyPut(toGid(doc1), 10, 10);
+    TEST_DO(f.assertChanges(0, 0));
     f.notifyRemove(toGid(doc1), 20);
     TEST_DO(f.assertChanges(0, 1));
-    f.notifyPutDone(toGid(doc1), 10, 10);
+    f.commit();
     TEST_DO(f.assertChanges(0, 1));
-    f.notifyRemoveDone(toGid(doc1), 20);
-    TEST_DO(f.assertChanges(0, 1));
-    f.notifyPutDone(toGid(doc1), 11, 30);
+    f.notifyPut(toGid(doc1), 11, 30);
+    f.commit();
     TEST_DO(f.assertChanges(1, 1));
 }
 
 TEST_F("Test that pending removes are merged", StatsFixture)
 {
+    f.notifyPut(toGid(doc1), 10, 10);
+    TEST_DO(f.assertChanges(0, 0));
     f.notifyRemove(toGid(doc1), 20);
     TEST_DO(f.assertChanges(0, 1));
     f.notifyRemove(toGid(doc1), 40);
     TEST_DO(f.assertChanges(0, 1));
-    f.notifyPutDone(toGid(doc1), 10, 10);
+    f.commit();
     TEST_DO(f.assertChanges(0, 1));
-    f.notifyRemoveDone(toGid(doc1), 20);
-    TEST_DO(f.assertChanges(0, 1));
-    f.notifyPutDone(toGid(doc1), 11, 30);
-    TEST_DO(f.assertChanges(0, 1));
-    f.notifyRemoveDone(toGid(doc1), 40);
-    TEST_DO(f.assertChanges(0, 1));
-    f.notifyPutDone(toGid(doc1), 12, 50);
-    TEST_DO(f.assertChanges(1, 1));
-}
-
-TEST_F("Test that out of order notifyRemoveDone is handled", StatsFixture)
-{
-     f.notifyRemove(toGid(doc1), 20);
-    TEST_DO(f.assertChanges(0, 1));
-    f.notifyRemove(toGid(doc1), 40);
-    TEST_DO(f.assertChanges(0, 1));
-    f.notifyRemoveDone(toGid(doc1), 40);
-    TEST_DO(f.assertChanges(0, 1));
-    f.notifyRemoveDone(toGid(doc1), 20);
-    TEST_DO(f.assertChanges(0, 1));
-    f.notifyPutDone(toGid(doc1), 12, 50);
-    TEST_DO(f.assertChanges(1, 1));
-}
-
-TEST_F("Test that out of order notifyPutDone is partially handled", StatsFixture)
-{
-     f.notifyRemove(toGid(doc1), 20);
-    TEST_DO(f.assertChanges(0, 1));
-    f.notifyPutDone(toGid(doc1), 12, 50);
-    TEST_DO(f.assertChanges(1, 1));
-    f.notifyPutDone(toGid(doc1), 11, 40);
-    TEST_DO(f.assertChanges(1, 1));
-    f.notifyPutDone(toGid(doc1), 13, 55);
-    TEST_DO(f.assertChanges(2, 1));
-    f.notifyRemoveDone(toGid(doc1), 20);
-    TEST_DO(f.assertChanges(2, 1));
 }
 
 }

@@ -37,7 +37,7 @@ public class EndpointCertificateMetadataStore {
             EndpointCertificateMetadata endpointCertificateMetadata = EndpointCertificateMetadataSerializer.fromSlime(slime.get());
             return Optional.of(endpointCertificateMetadata);
         } catch (Exception e) {
-            throw new RuntimeException("Error reading TLS secret key of " + application, e);
+            throw new RuntimeException("Error reading endpoint certificate metadata for " + application, e);
         }
     }
 
@@ -48,17 +48,17 @@ public class EndpointCertificateMetadataStore {
             EndpointCertificateMetadataSerializer.toSlime(endpointCertificateMetadata, slime.setObject());
             curator.set(endpointCertificateMetadataPathOf(application), SlimeUtils.toJsonBytes(slime));
         } catch (Exception e) {
-            throw new RuntimeException("Could not write TLS secret key of " + application, e);
+            throw new RuntimeException("Could not write endpoint certificate metadata for " + application, e);
         }
     }
 
-    /** Returns a transaction which deletes these tls secrets key if they exist */
+    /** Returns a transaction which deletes endpoint certificate metadata if it exists */
     public CuratorTransaction delete(ApplicationId application) {
         if (!curator.exists(endpointCertificateMetadataPathOf(application))) return CuratorTransaction.empty(curator);
         return CuratorTransaction.from(CuratorOperations.delete(endpointCertificateMetadataPathOf(application).getAbsolute()), curator);
     }
 
-    /** Returns the path storing the tls secrets key for an application */
+    /** Returns the path storing the endpoint certificate metadata for an application */
     private Path endpointCertificateMetadataPathOf(ApplicationId application) {
         return path.append(application.serializedForm());
     }

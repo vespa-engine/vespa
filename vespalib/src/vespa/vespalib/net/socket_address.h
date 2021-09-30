@@ -29,9 +29,9 @@ private:
     const sockaddr_un *addr_un() const { return reinterpret_cast<const sockaddr_un *>(&_addr); }
     SocketAddress(const sockaddr *addr_in, socklen_t addrlen_in);
 public:
-    SocketAddress() { memset(this, 0, sizeof(SocketAddress)); }
-    SocketAddress(const SocketAddress &rhs) { memcpy(this, &rhs, sizeof(SocketAddress)); }
-    SocketAddress &operator=(const SocketAddress &rhs) {
+    SocketAddress() noexcept { memset(this, 0, sizeof(SocketAddress)); }
+    SocketAddress(const SocketAddress &rhs) noexcept { memcpy(this, &rhs, sizeof(SocketAddress)); }
+    SocketAddress &operator=(const SocketAddress &rhs) noexcept {
         memcpy(this, &rhs, sizeof(SocketAddress));
         return *this;
     }
@@ -48,7 +48,7 @@ public:
     vespalib::string name() const;
     vespalib::string spec() const;
     SocketHandle connect(const std::function<bool(SocketHandle&)> &tweak) const;
-    SocketHandle connect() const { return connect([](SocketHandle&){ return true; }); }
+    SocketHandle connect() const { return connect([](SocketHandle&) noexcept { return true; }); }
     SocketHandle connect_async() const {
         return connect([](SocketHandle &handle){ return handle.set_blocking(false); });
     }

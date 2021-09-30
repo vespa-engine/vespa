@@ -58,7 +58,7 @@ public:
     DiskGain getApproxDiskGain() const override;
     Time getLastFlushTime() const override;
     SerialNum getFlushedSerialNum() const override;
-    Task::UP initFlush(SerialNum currentSerial) override;
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
     FlushStats getLastFlushStats() const override { return _lastStats; }
 
     static void initCleanup(const vespalib::string &baseDir);

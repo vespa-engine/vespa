@@ -77,7 +77,7 @@ public class RpcInvoker {
             if (connectspec.indexOf('/') < 0)
                 connectspec = "tcp/" + connectspec;
 
-            supervisor = new Supervisor(new Transport());
+            supervisor = new Supervisor(new Transport("invoker"));
             target = supervisor.connect(new Spec(connectspec));
             Request request = createRequest(method,arguments);
             target.invokeSync(request,10.0);

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <memory>
 
 class FRT_Supervisor;
 class FNET_Transport;

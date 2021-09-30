@@ -59,18 +59,27 @@ public:
 
 private:
     Result _result;
-    vespalib::string _message;
+    std::unique_ptr<vespalib::string> _message;
 public:
-    ReturnCode();
-    explicit ReturnCode(Result result, vespalib::stringref msg = "");
+    ReturnCode()
+        : _result(OK),
+          _message()
+      { }
+    explicit ReturnCode(Result result)
+        : _result(result),
+          _message()
+    {}
+    ReturnCode(Result result, vespalib::stringref msg);
     ReturnCode(const ReturnCode &);
     ReturnCode & operator = (const ReturnCode &);
     ReturnCode(ReturnCode &&) noexcept = default;
     ReturnCode & operator = (ReturnCode &&) noexcept;
-    ~ReturnCode();
 
-    const vespalib::string& getMessage() const { return _message; }
-    void setMessage(vespalib::stringref message) { _message = message; }
+    vespalib::stringref getMessage() const {
+        return _message
+               ? _message->operator vespalib::stringref()
+               : vespalib::stringref();
+    }
 
     Result getResult() const { return _result; }
 
@@ -85,10 +94,8 @@ public:
 
     bool operator==(Result res) const { return _result == res; }
     bool operator!=(Result res) const { return _result != res; }
-    bool operator==(const ReturnCode& code) const
-        { return _result == code._result && _message == code._message; }
-    bool operator!=(const ReturnCode& code) const
-        { return _result != code._result || _message != code._message; }
+    bool operator==(const ReturnCode& code) const;
+    bool operator!=(const ReturnCode& code) const;
 
     // To avoid lots of code matching various return codes in storage, we define
     // some functions they can use to match those codes that corresponds to what

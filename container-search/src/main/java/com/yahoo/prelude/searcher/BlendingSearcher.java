@@ -78,8 +78,7 @@ public class BlendingSearcher extends Searcher {
      * This assumes that all hits are organized into hitgroups. If not, blending will not be performed.
      */
     protected Result blendResults(Result result, Query q, int offset, int hits, Execution execution) {
-
-        //Assert that there are more than one hitgroup and that there are only hitgroups on the lowest level
+        // Assert that there are more than one hitgroup and that there are only hitgroups on the lowest level
         boolean foundNonGroup = false;
         Iterator<Hit> hitIterator = result.hits().iterator();
         List<HitGroup> groups = new ArrayList<>();

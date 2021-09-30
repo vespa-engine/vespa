@@ -53,7 +53,7 @@ public:
         GetRequest(const GetRequest &rhs) = delete;
         GetRequest &operator=(const GetRequest &rhs) = delete;
         GetRequest &operator=(GetRequest &&rhs) = delete;
-        GetRequest(GetRequest &&rhs) : _conn(rhs._conn) {
+        GetRequest(GetRequest &&rhs) noexcept : _conn(rhs._conn) {
             rhs._conn = nullptr;
         }
         bool active() const { return (_conn != nullptr); }
@@ -80,7 +80,7 @@ private:
         uint64_t handle;
         vespalib::string prefix;
         GetHandler *handler;
-        BindState(uint64_t handle_in, vespalib::string prefix_in, GetHandler &handler_in)
+        BindState(uint64_t handle_in, vespalib::string prefix_in, GetHandler &handler_in) noexcept
             : handle(handle_in), prefix(prefix_in), handler(&handler_in) {}
         bool operator<(const BindState &rhs) const {
             if (prefix.size() == rhs.prefix.size()) {

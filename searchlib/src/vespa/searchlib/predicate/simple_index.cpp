@@ -6,13 +6,12 @@
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.predicate.simple_index");
 
-namespace search::predicate {
- namespace simpleindex {
+namespace search::predicate::simpleindex {
 
 bool log_enabled() {
     return LOG_WOULD_LOG(debug);
@@ -24,7 +23,9 @@ void log_debug(vespalib::string &str) {
 
 } // namespace simpleindex
 
-template class SimpleIndex<datastore::EntryRef>;
+namespace search::predicate {
+
+template class SimpleIndex<vespalib::datastore::EntryRef>;
 
 }
 

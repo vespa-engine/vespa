@@ -111,7 +111,7 @@ public class IntItem extends TermItem {
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("'" + expression + "' is not an int item expression: " +
-                    "Expected NUMBER, '<'NUMBER, '>'NUMBER or ('['|'<')NUMBER;NUMBER(;NUMBER)?(']'|'>')", e);
+                                               "Expected NUMBER, '<'NUMBER, '>'NUMBER or ('['|'<')NUMBER;NUMBER(;NUMBER)?(']'|'>')", e);
 
         }
     }

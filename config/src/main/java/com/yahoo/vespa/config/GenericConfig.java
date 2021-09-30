@@ -5,13 +5,13 @@ import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 
 /**
- *
  * A generic config with an internal generic builder that mimics a real config builder in order to support builders
  * when we don't have the schema.
  *
  * @author Ulf Lilleengen
  */
 public class GenericConfig {
+
     public static class GenericConfigBuilder implements ConfigInstance.Builder {
 
         private final ConfigPayloadBuilder payloadBuilder;
@@ -49,6 +49,7 @@ public class GenericConfig {
         public String getDefMd5() {
             return "";
         }
+
     }
 
 }

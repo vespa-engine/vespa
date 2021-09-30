@@ -3,7 +3,6 @@
 
 #include "common.h"
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/sync.h>
 #include <chrono>
 #include <deque>
 #include <atomic>
@@ -23,14 +22,6 @@ private:
     using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 
 public:
-    class Destination {
-    public:
-        virtual ~Destination() {}
-        virtual bool send(int32_t id, const vespalib::string & domain, const Packet & packet) = 0;
-        virtual bool sendDone(int32_t id, const vespalib::string & domain) = 0;
-        virtual bool connected() const = 0;
-        virtual bool ok() const = 0;
-    };
     typedef std::shared_ptr<Session> SP;
     Session(const Session &) = delete;
     Session & operator = (const Session &) = delete;

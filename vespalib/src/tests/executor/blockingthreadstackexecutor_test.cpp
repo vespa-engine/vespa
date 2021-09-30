@@ -1,15 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-
+#include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/backtrace.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <thread>
 
 using namespace vespalib;
 
-constexpr int msWait = 30000;
+constexpr vespalib::duration waitTime = 30s;
 
 class MyTask : public Executor::Task
 {
@@ -22,8 +22,8 @@ public:
         : _entryGate(entryGate),
           _exitLatch(exitLatch)
     {}
-    virtual void run() override {
-        _entryGate.await(msWait);
+    void run() override {
+        _entryGate.await(waitTime);
         _exitLatch.countDown();
     }
     static Task::UP create(Gate &entryGate, CountDownLatch &exitLatch) {
@@ -65,14 +65,14 @@ struct Fixture
         workersEntryGate.countDown();
     }
     void waitForWorkers() {
-        workersExitLatch.await(msWait);
+        workersExitLatch.await(waitTime);
     }
     void assertExecuteIsBlocked() {
-        blockedExecuteGate.await(10);
+        blockedExecuteGate.await(10ms);
         EXPECT_EQUAL(1u, blockedExecuteGate.getCount());
     }
     void waitForExecuteIsFinished() {
-        blockedExecuteGate.await(msWait);
+        blockedExecuteGate.await(waitTime);
         EXPECT_EQUAL(0u, blockedExecuteGate.getCount());
     }
     ThreadUP blockedExecuteThread() {
@@ -123,14 +123,14 @@ vespalib::string get_worker_stack_trace(BlockingThreadStackExecutor &executor) {
 
 VESPA_THREAD_STACK_TAG(my_stack_tag);
 
-TEST_F("require that executor has appropriate default thread stack tag", BlockingThreadStackExecutor(1, 128*1024, 10)) {
+TEST_F("require that executor has appropriate default thread stack tag", BlockingThreadStackExecutor(1, 128_Ki, 10)) {
     vespalib::string trace = get_worker_stack_trace(f1);
     if (!EXPECT_TRUE(trace.find("unnamed_blocking_executor") != vespalib::string::npos)) {
         fprintf(stderr, "%s\n", trace.c_str());
     }
 }
 
-TEST_F("require that executor thread stack tag can be set", BlockingThreadStackExecutor(1, 128*1024, 10, my_stack_tag)) {
+TEST_F("require that executor thread stack tag can be set", BlockingThreadStackExecutor(1, 128_Ki, 10, my_stack_tag)) {
     vespalib::string trace = get_worker_stack_trace(f1);
     if (!EXPECT_TRUE(trace.find("my_stack_tag") != vespalib::string::npos)) {
         fprintf(stderr, "%s\n", trace.c_str());
@@ -140,7 +140,7 @@ TEST_F("require that executor thread stack tag can be set", BlockingThreadStackE
 TEST_F("require that tasks posted from internal worker thread will not block executor", TimeBomb(60)) {
     size_t cnt = 0;
     Gate fork_done;
-    BlockingThreadStackExecutor executor(1, 128*1024, 10);
+    BlockingThreadStackExecutor executor(1, 128_Ki, 10);
     struct IncTask : Executor::Task {
         size_t &cnt;
         IncTask(size_t &cnt_in) : cnt(cnt_in) {}

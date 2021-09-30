@@ -4,8 +4,7 @@
 
 #include "searchiterator.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * Creates a termwise wrapper for the given search. The wrapper will
@@ -23,5 +22,4 @@ namespace queryeval {
  **/
 SearchIterator::UP make_termwise(SearchIterator::UP search, bool strict);
 
-} // namespace queryeval
-} // namespace search
+}

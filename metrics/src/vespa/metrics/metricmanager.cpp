@@ -13,13 +13,14 @@
 #include <vespa/vespalib/stllike/hashtable.hpp>
 #include <sstream>
 #include <algorithm>
+#include <cassert>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".metrics.manager");
 
 namespace metrics {
 
-typedef MetricsmanagerConfig Config;
+using Config = MetricsmanagerConfig;
 
 MetricManager::ConsumerSpec::ConsumerSpec() = default;
 MetricManager::ConsumerSpec::~ConsumerSpec() = default;
@@ -31,9 +32,8 @@ MetricManager::Timer::getTime() const {
 
 void
 MetricManager::assertMetricLockLocked(const MetricLockGuard& g) const {
-    if (!g.monitors(_waiter)) {
-        throw vespalib::IllegalArgumentException(
-                "Given lock does not lock the metric lock.", VESPA_STRLOC);
+    if ( ! g.owns(_waiter)) {
+        throw vespalib::IllegalArgumentException("Given lock does not lock the metric lock.", VESPA_STRLOC);
     }
 }
 
@@ -68,14 +68,12 @@ MetricManager::MetricManager(std::unique_ptr<Timer> timer)
       _configHandle(),
       _config(),
       _consumerConfig(),
-      _logPeriod(5 * 60, 0),
       _snapshots(),
       _totalMetrics(std::make_shared<MetricSnapshot>(
                 "Empty metrics before init", 0, _activeMetrics.getMetrics(),
                 false)),
       _timer(std::move(timer)),
       _lastProcessedTime(0),
-      _forceEventLogging(false),
       _snapshotUnsetMetrics(false),
       _consumerConfigChanged(false),
       _metricManagerMetrics("metricmanager", {}, "Metrics for the metric manager upkeep tasks"),
@@ -96,10 +94,13 @@ MetricManager::~MetricManager()
 void
 MetricManager::stop()
 {
+    if (!running()) {
+        return; // Let stop() be idempotent.
+    }
     Runnable::stop();
     {
-        vespalib::MonitorGuard sync(_waiter);
-        sync.signal();
+        MetricLockGuard sync(_waiter);
+        _cond.notify_all();
     }
     join();
 }
@@ -108,10 +109,10 @@ void
 MetricManager::addMetricUpdateHook(UpdateHook& hook, uint32_t period)
 {
     hook._period = period;
-    vespalib::MonitorGuard sync(_waiter);
+    std::lock_guard sync(_waiter);
         // If we've already initialized manager, log period has been set.
         // In this case. Call first time after period
-    hook._nextCall = (_logPeriod.second == 0 ? 0 : _timer->getTime() + period);
+    hook._nextCall = _timer->getTime() + period;
     if (period == 0) {
         for (UpdateHook * sHook : _snapshotUpdateHooks) {
             if (sHook == &hook) {
@@ -134,7 +135,7 @@ MetricManager::addMetricUpdateHook(UpdateHook& hook, uint32_t period)
 void
 MetricManager::removeMetricUpdateHook(UpdateHook& hook)
 {
-    vespalib::MonitorGuard sync(_waiter);
+    std::lock_guard sync(_waiter);
     if (hook._period == 0) {
         for (auto it = _snapshotUpdateHooks.begin(); it != _snapshotUpdateHooks.end(); it++) {
             if (*it == &hook) {
@@ -168,7 +169,7 @@ MetricManager::init(const config::ConfigUri & uri, FastOS_ThreadPool& pool,
                 "It can only be initialized once.", VESPA_STRLOC);
     }
     LOG(debug, "Initializing metric manager.");
-    _configSubscriber.reset(new config::ConfigSubscriber(uri.getContext()));
+    _configSubscriber = std::make_unique<config::ConfigSubscriber>(uri.getContext());
     _configHandle = _configSubscriber->subscribe<Config>(uri.getConfigId());
     _configSubscriber->nextConfig();
     configure(getMetricLock(), _configHandle->getConfig());
@@ -177,159 +178,172 @@ MetricManager::init(const config::ConfigUri & uri, FastOS_ThreadPool& pool,
         Runnable::start(pool);
         // Wait for first iteration to have completed, such that it is safe
         // to access snapshots afterwards.
-        vespalib::MonitorGuard sync(_waiter);
+        MetricLockGuard sync(_waiter);
         while (_lastProcessedTime.load(std::memory_order_relaxed) == 0) {
-            sync.wait(1);
+            _cond.wait_for(sync, 1ms);
         }
     } else {
-        _configSubscriber.reset(0);
+        _configSubscriber.reset();
     }
     LOG(debug, "Metric manager completed initialization.");
 }
 
 namespace {
 
-    struct Path {
-        vespalib::StringTokenizer _path;
+struct Path {
+    vespalib::StringTokenizer _path;
 
-        Path(vespalib::stringref fullpath) : _path(fullpath, ".") { }
+    Path(vespalib::stringref fullpath) : _path(fullpath, ".") { }
 
-        vespalib::string toString() const {
-            vespalib::asciistream ost;
-            ost << _path[0];
-            for (uint32_t i=1; i<path().size(); ++i) ost << "." << _path[i];
-            return ost.str();
+    vespalib::string toString() const {
+        vespalib::asciistream ost;
+        ost << _path[0];
+        for (uint32_t i=1; i<path().size(); ++i) ost << "." << _path[i];
+        return ost.str();
+    }
+
+    bool matchesPattern(const Path& p) const {
+        if (path().size() != p.path().size()) {
+            return false;
         }
-
-        bool matchesPattern(const Path& p) const {
-            if (path().size() != p.path().size()) {
+        for (uint32_t i=0; i<p.path().size(); ++i) {
+            if (p._path[i] == "*") continue;
+            if (_path[i] != p._path[i]) {
                 return false;
             }
-            for (uint32_t i=0; i<p.path().size(); ++i) {
-                if (p._path[i] == "*") continue;
-                if (_path[i] != p._path[i]) {
-                    return false;
-                }
-            }
-            return true;
         }
-        const vespalib::StringTokenizer::TokenList& path() const { 
-            return _path.getTokens();
-        }
+        return true;
+    }
+    const vespalib::StringTokenizer::TokenList& path() const {
+        return _path.getTokens();
+    }
+};
+
+struct ConsumerMetricBuilder : public MetricVisitor {
+    const Config::Consumer& _consumer;
+    std::vector<Path> _added;
+    std::vector<Path> _removed;
+    MetricManager::ConsumerSpec _matchedMetrics;
+        // Keep a stack of matches to facilitate tree traversal.
+    struct Result {
+        bool tagAdded;
+        bool tagRemoved;
+        bool nameAdded;
+        bool nameRemoved;
+        uint32_t metricCount;
+
+        Result() : tagAdded(false), tagRemoved(false),
+                   nameAdded(false), nameRemoved(false), metricCount(0) {}
     };
+    std::list<Result> result;
 
-    struct ConsumerMetricBuilder : public MetricVisitor {
-        const Config::Consumer& _consumer;
-        MetricManager::ConsumerSpec _matchedMetrics;
-            // Keep a stack of matches to facilitate tree traversal.
-        struct Result {
-            bool tagAdded;
-            bool tagRemoved;
-            bool nameAdded;
-            bool nameRemoved;
-            uint32_t metricCount;
+    ConsumerMetricBuilder(const Config::Consumer& c) __attribute__((noinline));
+    ~ConsumerMetricBuilder() __attribute__((noinline));
 
-            Result() : tagAdded(false), tagRemoved(false),
-                       nameAdded(false), nameRemoved(false), metricCount(0) {}
-        };
-        std::list<Result> result;
-
-        ConsumerMetricBuilder(const Config::Consumer& c) __attribute__((noinline));
-        ~ConsumerMetricBuilder() __attribute__((noinline));
-
-        bool tagAdded(const Metric& metric) {
-            for (const auto& s : _consumer.tags) {
-                if ((s == "*" && !metric.getTags().empty())
-                    || metric.hasTag(s))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-        bool tagRemoved(const Metric& metric) {
-            for (const auto& s : _consumer.removedtags) {
-                if ((s == "*" && !metric.getTags().empty())
-                    || metric.hasTag(s))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-        bool nameAdded(const Metric& metric) {
-            Metric::String path(metric.getPath());
-            Path mpath(path);
-            for (const auto& s : _consumer.addedmetrics) {
-                if (mpath.matchesPattern(Path(s))) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        bool nameRemoved(const Metric& metric) {
-            Metric::String path(metric.getPath());
-            Path mpath(path);
-            for (const auto& s : _consumer.removedmetrics) {
-                if (mpath.matchesPattern(Path(s))) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        bool visitMetricSet(const MetricSet& metricSet,
-                                    bool autoGenerated) override
-        {
-            (void) autoGenerated;
-            result.push_back(Result());
-                // If current metric match anything, use that.
-                // Otherwise, copy from parent
-            if (nameRemoved(metricSet)) {
-                result.back().nameRemoved = true;
-            } else if (nameAdded(metricSet)) {
-                result.back().nameAdded = true;
-            } else if (tagRemoved(metricSet)) {
-                result.back().tagRemoved = true;
-            } else if (tagAdded(metricSet)) {
-                result.back().tagAdded = true;
-            } else if (result.size() > 1) {
-                result.back() = *++result.rbegin();
-                result.back().metricCount = 0;
-            }
-            return true;
-        }
-        void doneVisitingMetricSet(const MetricSet& metricSet) override {
-            if (result.back().metricCount > 0 && result.size() != 1) {
-                LOG(spam, "Adding metricset %s", metricSet.getPath().c_str());
-                _matchedMetrics.includedMetrics.insert(metricSet.getPath());
-            }
-            result.pop_back();
-        }
-        bool visitMetric(const Metric& metric, bool autoGenerated) override {
-            (void) autoGenerated;
-            if (result.back().nameRemoved || nameRemoved(metric)) return true;
-            bool nAdded = (result.back().nameAdded || nameAdded(metric));
-            if (!nAdded && (result.back().tagRemoved || tagRemoved(metric))) {
+    bool tagAdded(const Metric& metric) {
+        for (const auto& s : _consumer.tags) {
+            if ((s == "*" && !metric.getTags().empty())
+                || metric.hasTag(s))
+            {
                 return true;
             }
-            if (nAdded || result.back().tagAdded || tagAdded(metric)) {
-                _matchedMetrics.includedMetrics.insert(metric.getPath());
-                LOG(spam, "Adding metric %s", metric.getPath().c_str());
-                for (Result & r : result) {
-                    ++r.metricCount;
-                }
+        }
+        return false;
+    }
+    bool tagRemoved(const Metric& metric) {
+        for (const auto& s : _consumer.removedtags) {
+            if ((s == "*" && !metric.getTags().empty())
+                || metric.hasTag(s))
+            {
+                return true;
             }
+        }
+        return false;
+    }
+    bool nameAdded(const Path& mpath) {
+        for (const auto& p : _added) {
+            if (mpath.matchesPattern(p)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    bool nameRemoved(const Path & mpath) {
+        for (const auto& p : _removed) {
+            if (mpath.matchesPattern(p)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool visitMetricSet(const MetricSet& metricSet, bool autoGenerated) override
+    {
+        (void) autoGenerated;
+        result.push_back(Result());
+        // If current metric match anything, use that.
+        // Otherwise, copy from parent
+        vespalib::string fullName = metricSet.getPath();
+        Path path(fullName);
+        if (nameRemoved(path)) {
+            result.back().nameRemoved = true;
+        } else if (nameAdded(path)) {
+            result.back().nameAdded = true;
+        } else if (tagRemoved(metricSet)) {
+            result.back().tagRemoved = true;
+        } else if (tagAdded(metricSet)) {
+            result.back().tagAdded = true;
+        } else if (result.size() > 1) {
+            result.back() = *++result.rbegin();
+            result.back().metricCount = 0;
+        }
+        return true;
+    }
+    void doneVisitingMetricSet(const MetricSet& metricSet) override {
+        if (result.back().metricCount > 0 && result.size() != 1) {
+            LOG(spam, "Adding metricset %s", metricSet.getPath().c_str());
+            _matchedMetrics.includedMetrics.insert(metricSet.getPath());
+        }
+        result.pop_back();
+    }
+    bool visitMetric(const Metric& metric, bool autoGenerated) override {
+        (void) autoGenerated;
+        vespalib::string fullName = metric.getPath();
+        Path path(fullName);
+        if (result.back().nameRemoved || nameRemoved(path)) return true;
+        bool nAdded = (result.back().nameAdded || nameAdded(path));
+        if (!nAdded && (result.back().tagRemoved || tagRemoved(metric))) {
             return true;
         }
-
-    };
-    ConsumerMetricBuilder::ConsumerMetricBuilder(const Config::Consumer& c)
-        : _consumer(c), _matchedMetrics()
-    {
-        LOG(spam, "Adding metrics for consumer %s", c.name.c_str());
+        if (nAdded || result.back().tagAdded || tagAdded(metric)) {
+            _matchedMetrics.includedMetrics.insert(fullName);
+            LOG(spam, "Adding metric %s", fullName.c_str());
+            for (Result & r : result) {
+                ++r.metricCount;
+            }
+        }
+        return true;
     }
-    ConsumerMetricBuilder::~ConsumerMetricBuilder() = default;
+
+};
+
+ConsumerMetricBuilder::ConsumerMetricBuilder(const Config::Consumer& c)
+    : _consumer(c),
+      _added(),
+      _removed(),
+      _matchedMetrics()
+{
+    _added.reserve(_consumer.addedmetrics.size());
+    for (const auto& s : _consumer.addedmetrics) {
+        _added.emplace_back(s);
+    }
+    _removed.reserve(_consumer.removedmetrics.size());
+    for (const auto& s : _consumer.removedmetrics) {
+        _removed.emplace_back(s);
+    }
+    LOG(spam, "Adding metrics for consumer %s", c.name.c_str());
+}
+ConsumerMetricBuilder::~ConsumerMetricBuilder() = default;
 
 }
 
@@ -351,8 +365,8 @@ void
 MetricManager::handleMetricsAltered(const MetricLockGuard & guard)
 {
     (void) guard;
-    if (_config.get() == NULL) {
-        LOG(info, "_config is NULL -> very odd indeed.");
+    if ( ! _config ) {
+        LOG(info, "_config is not set -> very odd indeed.");
         return;
     }
     if (_consumerConfig.empty()) {
@@ -366,7 +380,7 @@ MetricManager::handleMetricsAltered(const MetricLockGuard & guard)
     for (const auto & consumer : _config->consumer) {
         ConsumerMetricBuilder consumerMetricBuilder(consumer);
         _activeMetrics.getMetrics().visit(consumerMetricBuilder);
-        configMap[consumer.name] = ConsumerSpec::SP(new ConsumerSpec(std::move(consumerMetricBuilder._matchedMetrics)));
+        configMap[consumer.name] = std::make_shared<ConsumerSpec>(std::move(consumerMetricBuilder._matchedMetrics));
     }
     LOG(debug, "Recreating snapshots to include altered metrics");
     _totalMetrics->recreateSnapshot(_activeMetrics.getMetrics(),
@@ -645,8 +659,8 @@ MetricManager::getMetricSnapshotSet(const MetricLockGuard& l,
 void
 MetricManager::timeChangedNotification() const
 {
-    vespalib::MonitorGuard sync(_waiter);
-    sync.broadcast();
+    MetricLockGuard sync(_waiter);
+    _cond.notify_all();
 }
 
 void
@@ -655,13 +669,11 @@ MetricManager::updateMetrics(bool includeSnapshotOnlyHooks)
     LOG(debug, "Calling metric update hooks%s.",
         includeSnapshotOnlyHooks ? ", including snapshot hooks" : "");
         // Ensure we're not in the way of the background thread
-    vespalib::MonitorGuard sync(_waiter);
-    LOG(debug, "Giving %zu periodic update hooks.",
-        _periodicUpdateHooks.size());
+    MetricLockGuard sync(_waiter);
+    LOG(debug, "Giving %zu periodic update hooks.", _periodicUpdateHooks.size());
     updatePeriodicMetrics(sync, 0, true);
     if (includeSnapshotOnlyHooks) {
-        LOG(debug, "Giving %zu snapshot update hooks.",
-            _snapshotUpdateHooks.size());
+        LOG(debug, "Giving %zu snapshot update hooks.", _snapshotUpdateHooks.size());
         updateSnapshotMetrics(sync);
     }
 }
@@ -718,10 +730,9 @@ void
 MetricManager::forceEventLogging()
 {
     LOG(debug, "Forcing event logging to happen.");
-        // Ensure background thread is not in a current cycle during change.
-    vespalib::MonitorGuard sync(_waiter);
-    _forceEventLogging = true;
-    sync.signal();
+    // Ensure background thread is not in a current cycle during change.
+    MetricLockGuard sync(_waiter);
+    _cond.notify_all();
 }
 
 void
@@ -730,7 +741,7 @@ MetricManager::reset(time_t currentTime)
     time_t preTime = _timer->getTimeInMilliSecs();
     // Resetting implies visiting metrics, which needs to grab metric lock
     // to avoid conflict with adding/removal of metrics
-    vespalib::LockGuard waiterLock(_waiter);
+    std::lock_guard waiterLock(_waiter);
     _activeMetrics.reset(currentTime);
     for (uint32_t i=0; i<_snapshots.size(); ++i) {
         _snapshots[i]->reset(currentTime);
@@ -740,39 +751,31 @@ MetricManager::reset(time_t currentTime)
     _resetLatency.addValue(postTime - preTime);
 }
 
-namespace {
-
-    struct LogMetricVisitor : public MetricVisitor {
-        bool _total;
-
-        LogMetricVisitor(bool totalVals) : _total(totalVals) {}
-
-        bool visitMetric(const Metric& metric, bool autoGenerated) override {
-            (void) autoGenerated;
-            if (metric.logFromTotalMetrics() ^ _total) return true;
-            Metric::String logName = metric.getPath();
-            std::replace(logName.begin(), logName.end(), '.', '_');
-            if (!metric.logEvent(logName)) {
-                LOG(spam, "Not logging event from metric %s.%s as no values "
-                          "have been added to metric.",
-                    metric.getPath().c_str(), metric.getName().c_str());
-            }
-            return true;
-        }
-    };
-
-} // End of anonymous namespace
-
 void
 MetricManager::run()
 {
+    MetricLockGuard sync(_waiter);
+    // For a slow system to still be doing metrics tasks each n'th
+    // second, rather than each n'th + time to do something seconds,
+    // we constantly add next time to do something from the last timer.
+    // For that to work, we need to initialize timers on first iteration
+    // to set them to current time.
+    time_t currentTime = _timer->getTime();
+    for (auto & snapshot : _snapshots) {
+        snapshot->setFromTime(currentTime);
+    }
+    for (auto hook : _periodicUpdateHooks) {
+        hook->_nextCall = currentTime;
+    }
+    // Ensure correct time for first snapshot
+    _snapshots[0]->getSnapshot().setToTime(currentTime);
     while (!stopping()) {
-        time_t currentTime = _timer->getTime();
-        vespalib::MonitorGuard sync(_waiter);
+        currentTime = _timer->getTime();
         time_t next = tick(sync, currentTime);
         if (currentTime < next) {
-            sync.wait((next - currentTime) * 1000);
-            _sleepTimes.addValue((next - currentTime) * 1000);
+            size_t ms = (next - currentTime) * 1000;
+            _cond.wait_for(sync, std::chrono::milliseconds(ms));
+            _sleepTimes.addValue(ms);
         } else {
             _sleepTimes.addValue(0);
         }
@@ -784,26 +787,6 @@ MetricManager::tick(const MetricLockGuard & guard, time_t currentTime)
 {
     LOG(spam, "Worker thread starting to process for time %" PRIu64 ".",
         static_cast<uint64_t>(currentTime));
-    bool firstIteration = (_logPeriod.second == 0);
-        // For a slow system to still be doing metrics tasks each n'th
-        // second, rather than each n'th + time to do something seconds,
-        // we constantly add next time to do something from the last timer.
-        // For that to work, we need to initialize timers on first iteration
-        // to set them to current time.
-    time_t nextWorkTime;
-    if (firstIteration) {
-            // Setting next log period to now, such that we log metrics
-            // straight away
-        _logPeriod.second = currentTime;
-        for (uint32_t i=0; i<_snapshots.size(); ++i) {
-            _snapshots[i]->setFromTime(currentTime);
-        }
-        for (auto hook : _periodicUpdateHooks) {
-            hook->_nextCall = currentTime;
-        }
-            // Ensure correct time for first snapshot
-        _snapshots[0]->getSnapshot().setToTime(currentTime);
-    }
 
     // Check for new config and reconfigure
     if (_configSubscriber.get() && _configSubscriber->nextConfigNow()) {
@@ -816,61 +799,28 @@ MetricManager::tick(const MetricLockGuard & guard, time_t currentTime)
     checkMetricsAltered(guard);
 
         // Set next work time to the time we want to take next snapshot.
-    nextWorkTime = _snapshots[0]->getToTime() + _snapshots[0]->getPeriod();
+    time_t nextWorkTime = _snapshots[0]->getToTime() + _snapshots[0]->getPeriod();
     time_t nextUpdateHookTime;
-    if (nextWorkTime <= currentTime || _forceEventLogging) {
-            // If taking a new snapshot or logging, force calls to all
-            // update hooks.
+    if (nextWorkTime <= currentTime) {
+        // If taking a new snapshot or logging, force calls to all
+        // update hooks.
         LOG(debug, "%s. Calling update hooks.", nextWorkTime <= currentTime
                  ? "Time to do snapshot" : "Out of sequence event logging");
         nextUpdateHookTime = updatePeriodicMetrics(guard, currentTime, true);
         updateSnapshotMetrics(guard);
     } else {
-            // If not taking a new snapshot. Only give update hooks to
-            // periodic hooks wanting it.
+        // If not taking a new snapshot. Only give update hooks to
+        // periodic hooks wanting it.
         nextUpdateHookTime = updatePeriodicMetrics(guard, currentTime, false);
     }
         // Do snapshotting if it is time
     if (nextWorkTime <= currentTime) takeSnapshots(guard, nextWorkTime);
-        // Log if it is time
-    if (_logPeriod.second <= currentTime || _forceEventLogging) {
-        LogMetricVisitor totalVisitor(true);
-        LogMetricVisitor fiveMinVisitor(false);
-        if (_logPeriod.second <= currentTime) {
-            LOG(debug, "Logging total metrics.");
-            visit(guard, *_totalMetrics, totalVisitor, "log");
-            visit(guard, _snapshots[0]->getSnapshot(), fiveMinVisitor , "log");
-            if (_logPeriod.second + _logPeriod.first < currentTime) {
-                uint64_t next = _snapshots[0]->getFromTime() + _logPeriod.first;
-                LOG(warning, "Logged events at time %" PRIu64 " for time %"
-                             PRIu64 ". Since this is more than a period %u "
-                             "in the past, next run has been set to next "
-                             "snapshot time at %" PRIu64 ".",
-                    static_cast<uint64_t>(currentTime), static_cast<uint64_t>(_logPeriod.second), _logPeriod.first, next);
-                _logPeriod.second = next;
-            } else {
-                _logPeriod.second += _logPeriod.first;
-            }
-        } else {
-            LOG(debug, "Logging total metrics out of sequence.");
-            metrics::MetricSnapshot snapshot(
-                    "Total out of sequence metrics from start until "
-                    "current time", 0, _totalMetrics->getMetrics(),
-                    _snapshotUnsetMetrics);
-            _activeMetrics.addToSnapshot(snapshot, false, currentTime);
-            snapshot.setFromTime(_totalMetrics->getFromTime());
-            visit(guard, snapshot, totalVisitor, "log");
-            visit(guard, snapshot, fiveMinVisitor, "log");
-        }
-        _forceEventLogging = false;
-    }
+
     _lastProcessedTime.store(nextWorkTime <= currentTime ? nextWorkTime : currentTime,
                              std::memory_order_relaxed);
     LOG(spam, "Worker thread done with processing for time %" PRIu64 ".",
         static_cast<uint64_t>(_lastProcessedTime.load(std::memory_order_relaxed)));
-    time_t next = std::min(
-            _logPeriod.second,
-            _snapshots[0]->getPeriod() + _snapshots[0]->getToTime());
+    time_t next = _snapshots[0]->getPeriod() + _snapshots[0]->getToTime();
     next = std::min(next, nextUpdateHookTime);
     return next;
 }

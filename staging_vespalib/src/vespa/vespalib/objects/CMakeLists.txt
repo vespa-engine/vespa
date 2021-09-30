@@ -9,7 +9,6 @@ vespa_add_library(staging_vespalib_vespalib_objects OBJECT
     visit.cpp
     objectpredicate.cpp
     objectoperation.cpp
-    fieldbase.cpp
     nboserializer.cpp
     serializer.cpp
     deserializer.cpp

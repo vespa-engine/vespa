@@ -40,7 +40,6 @@ protected:
     }
 
     void logWarning(const char* msg, const char * op) const;
-    void sendLogCountEvent(Metric::String name, uint64_t value) const;
 };
 
 template<typename T, bool SumOnAdd>
@@ -49,22 +48,15 @@ class CountMetric : public AbstractCountMetric
     using Values = CountMetricValues<T>;
     MetricValueSet<Values> _values;
 
-    enum Flag { LOG_IF_UNSET = 2 };
-
-    bool logIfUnset() const { return _values.hasFlag(LOG_IF_UNSET); }
-
 public:
     CountMetric(const String& name, Tags dimensions,
                 const String& description, MetricSet* owner = 0);
 
     CountMetric(const CountMetric<T, SumOnAdd>& other, CopyType, MetricSet* owner);
 
-    ~CountMetric();
+    ~CountMetric() override;
 
-    MetricValueClass::UP getValues() const override {
-        return MetricValueClass::UP(new Values(_values.getValues()));
-    }
-    void logOnlyIfSet() { _values.removeFlag(LOG_IF_UNSET); }
+    MetricValueClass::UP getValues() const override;
 
     void set(T value);
     void inc(T value = 1);
@@ -89,10 +81,6 @@ public:
     T getValue() const { return _values.getValues()._value; }
 
     void reset() override { _values.reset(); }
-
-    bool logFromTotalMetrics() const override { return true; }
-    bool logEvent(const String& fullName) const override;
-
     void print(std::ostream&, bool verbose,
                const std::string& indent, uint64_t secondsPassed) const override;
 
@@ -117,7 +105,7 @@ public:
     void addToSnapshot(Metric&, std::vector<Metric::UP> &) const override;
 };
 
-typedef CountMetric<uint64_t, true> LongCountMetric;
+using LongCountMetric = CountMetric<uint64_t, true>;
 
 } // metrics
 

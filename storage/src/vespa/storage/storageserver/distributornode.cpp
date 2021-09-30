@@ -5,8 +5,10 @@
 #include "communicationmanager.h"
 #include "opslogger.h"
 #include "statemanager.h"
-#include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
+#include <vespa/storage/common/i_storage_chain_builder.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
+#include <vespa/storage/distributor/distributor_stripe_pool.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
@@ -18,31 +20,29 @@ DistributorNode::DistributorNode(
         const config::ConfigUri& configUri,
         DistributorNodeContext& context,
         ApplicationGenerationFetcher& generationFetcher,
-        NeedActiveState activeState,
-        bool use_btree_database,
-        StorageLink::UP communicationManager)
+        uint32_t num_distributor_stripes,
+        StorageLink::UP communicationManager,
+        std::unique_ptr<IStorageChainBuilder> storage_chain_builder)
     : StorageNode(configUri, context, generationFetcher,
-            std::unique_ptr<HostInfo>(new HostInfo()),
-                  communicationManager.get() == 0 ? NORMAL
-                                                  : SINGLE_THREADED_TEST_MODE),
-      _threadPool(framework::TickingThreadPool::createDefault("distributor")),
+                  std::make_unique<HostInfo>(),
+                  !communicationManager ? NORMAL : SINGLE_THREADED_TEST_MODE),
+      // TODO STRIPE: Change waitTime default to 100ms when legacy mode is removed.
+      _threadPool(framework::TickingThreadPool::createDefault("distributor",
+                                                              (num_distributor_stripes > 0) ? 100ms : 5ms)),
+      _stripe_pool(std::make_unique<distributor::DistributorStripePool>()),
       _context(context),
-      _lastUniqueTimestampRequested(0),
-      _uniqueTimestampCounter(0),
-      _manageActiveBucketCopies(activeState == NEED_ACTIVE_BUCKET_STATES_SET),
-      _use_btree_database(use_btree_database),
+      _timestamp_mutex(),
+      _timestamp_second_counter(0),
+      _intra_second_pseudo_usec_counter(0),
+      _num_distributor_stripes(num_distributor_stripes),
       _retrievedCommunicationManager(std::move(communicationManager))
 {
-    try{
+    if (storage_chain_builder) {
+        set_storage_chain_builder(std::move(storage_chain_builder));
+    }
+    try {
         initialize();
-    } catch (const vespalib::NetworkSetupFailureException & e) {
-        LOG(warning, "Network failure: '%s'", e.what());
-        throw;
     } catch (const vespalib::Exception & e) {
-        LOG(error, "Caught exception %s during startup. Calling destruct "
-                   "functions in hopes of dying gracefully.",
-            e.getMessage().c_str());
-        requestShutdown("Failed to initialize: " + e.getMessage());
         shutdownDistributor();
         throw;
     }
@@ -57,6 +57,7 @@ void
 DistributorNode::shutdownDistributor()
 {
     _threadPool->stop();
+    _stripe_pool->stop_and_join();
     shutdown();
 }
 
@@ -71,12 +72,9 @@ DistributorNode::handleConfigChange(vespa::config::content::core::StorDistributo
 {
     framework::TickingLockGuard guard(_threadPool->freezeAllTicks());
     _context.getComponentRegister().setDistributorConfig(c);
-    framework::MilliSecTime ticksWaitTime(c.ticksWaitTimeMs);
-    framework::MilliSecTime maxProcessTime(c.maxProcessTimeMs);
-    _threadPool->updateParametersAllThreads(
-        ticksWaitTime,
-        maxProcessTime,
-        c.ticksBeforeWait);
+    _threadPool->updateParametersAllThreads(std::chrono::milliseconds(c.ticksWaitTimeMs),
+                                            std::chrono::milliseconds(c.maxProcessTimeMs),
+                                            c.ticksBeforeWait);
 }
 
 void
@@ -86,53 +84,61 @@ DistributorNode::handleConfigChange(vespa::config::content::core::StorVisitordis
     _context.getComponentRegister().setVisitorConfig(c);
 }
 
-StorageLink::UP
-DistributorNode::createChain()
+void
+DistributorNode::createChain(IStorageChainBuilder &builder)
 {
     DistributorComponentRegister& dcr(_context.getComponentRegister());
     // TODO: All components in this chain should use a common thread instead of
     // each having its own configfetcher.
     StorageLink::UP chain;
     if (_retrievedCommunicationManager.get()) {
-        chain = std::move(_retrievedCommunicationManager);
+        builder.add(std::move(_retrievedCommunicationManager));
     } else {
-        chain.reset(_communicationManager
-                = new CommunicationManager(dcr, _configUri));
+        auto communication_manager = std::make_unique<CommunicationManager>(dcr, _configUri);
+        _communicationManager = communication_manager.get();
+        builder.add(std::move(communication_manager));
     }
     std::unique_ptr<StateManager> stateManager(releaseStateManager());
 
-    chain->push_back(StorageLink::UP(new Bouncer(dcr, _configUri)));
-    chain->push_back(StorageLink::UP(new OpsLogger(dcr, _configUri)));
+    builder.add(std::make_unique<Bouncer>(dcr, _configUri));
+    builder.add(std::make_unique<OpsLogger>(dcr, _configUri));
     // Distributor instance registers a host info reporter with the state
     // manager, which is safe since the lifetime of said state manager
     // extends to the end of the process.
-    chain->push_back(StorageLink::UP(
-            new storage::distributor::Distributor(
-                dcr, *_threadPool, getDoneInitializeHandler(),
-                _manageActiveBucketCopies,
-                _use_btree_database,
-                stateManager->getHostInfo())));
+    builder.add(std::make_unique<storage::distributor::TopLevelDistributor>
+                (dcr, *_node_identity, *_threadPool, *_stripe_pool, getDoneInitializeHandler(),
+                 _num_distributor_stripes,
+                 stateManager->getHostInfo()));
 
-    chain->push_back(StorageLink::UP(stateManager.release()));
-    return chain;
+    builder.add(std::move(stateManager));
 }
 
 api::Timestamp
-DistributorNode::getUniqueTimestamp()
+DistributorNode::generate_unique_timestamp()
 {
-    uint64_t timeNow(_component->getClock().getTimeInSeconds().getTime());
-    if (timeNow == _lastUniqueTimestampRequested) {
-        ++_uniqueTimestampCounter;
-    } else {
-        if (timeNow < _lastUniqueTimestampRequested) {
-            LOG(error, "Time has moved backwards, from %" PRIu64 " to %" PRIu64 ".",
-                _lastUniqueTimestampRequested, timeNow);
+    uint64_t now_seconds = _component->getClock().getTimeInSeconds().getTime();
+    std::lock_guard lock(_timestamp_mutex);
+    // We explicitly handle a seemingly decreased wall clock time, as multiple threads may
+    // race with each other over a second change edge. In this case, pretend an earlier
+    // timestamp took place in the same second as the newest observed wall clock time.
+    if (now_seconds <= _timestamp_second_counter) {
+        // ... but if we're stuck too far in the past, we trigger a process restart.
+        if ((_timestamp_second_counter - now_seconds) > SanityCheckMaxWallClockSecondSkew) {
+            LOG(error, "Current wall clock time is more than %u seconds in the past "
+                       "compared to the highest observed wall clock time (%" PRIu64 " < %" PRIu64 "). "
+                       "%u timestamps were generated within this time period.",
+                SanityCheckMaxWallClockSecondSkew, now_seconds,_timestamp_second_counter,
+                _intra_second_pseudo_usec_counter);
+            std::_Exit(65);
         }
-        _lastUniqueTimestampRequested = timeNow;
-        _uniqueTimestampCounter = 0;
+        assert(_intra_second_pseudo_usec_counter < 999'999);
+        ++_intra_second_pseudo_usec_counter;
+    } else {
+        _timestamp_second_counter = now_seconds;
+        _intra_second_pseudo_usec_counter = 0;
     }
 
-    return _lastUniqueTimestampRequested * 1000000ll + _uniqueTimestampCounter;
+    return _timestamp_second_counter * 1'000'000LL + _intra_second_pseudo_usec_counter;
 }
 
 ResumeGuard

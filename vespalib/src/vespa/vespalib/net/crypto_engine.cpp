@@ -2,15 +2,16 @@
 
 #include "crypto_engine.h"
 #include <vespa/vespalib/data/smart_buffer.h>
+#include <vespa/vespalib/crypto/crypto_exception.h>
 #include <vespa/vespalib/net/tls/authorization_mode.h>
 #include <vespa/vespalib/net/tls/auto_reloading_tls_crypto_engine.h>
-#include <vespa/vespalib/net/tls/crypto_exception.h>
 #include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/statistics.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vector>
 #include <chrono>
 #include <thread>
@@ -52,12 +53,13 @@ public:
     ssize_t write(const char *buf, size_t len) override { return _socket.write(buf, len); }
     ssize_t flush() override { return 0; }
     ssize_t half_close() override { return _socket.half_close(); }
+    void drop_empty_buffers() override {}
 };
 
 class XorCryptoSocket : public CryptoSocket
 {
 private:
-    static constexpr size_t CHUNK_SIZE = 16 * 1024;
+    static constexpr size_t CHUNK_SIZE = 16_Ki;
     enum class OP { READ_KEY, WRITE_KEY };
     std::vector<OP> _op_stack;
     char            _my_key;
@@ -185,6 +187,10 @@ public:
         }
         return _socket.half_close();
     }
+    void drop_empty_buffers() override {
+        _input.drop_if_empty();
+        _output.drop_if_empty();
+    }
 };
 
 using net::tls::AuthorizationMode;
@@ -232,7 +238,7 @@ CryptoEngine::SP create_default_crypto_engine() {
 CryptoEngine::SP try_create_default_crypto_engine() {
     try {
         return create_default_crypto_engine();
-    } catch (net::tls::CryptoException &e) {
+    } catch (crypto::CryptoException &e) {
         LOG(error, "failed to create default crypto engine: %s", e.what());
         std::_Exit(78);
     }

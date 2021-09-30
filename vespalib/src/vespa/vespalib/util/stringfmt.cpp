@@ -50,4 +50,15 @@ vespalib::string make_string(const char *fmt, ...)
     return ret;
 }
 
+namespace make_string_short {
+vespalib::string fmt(const char *format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+    vespalib::string ret = make_string_va(format, ap);
+    va_end(ap);
+    return ret;
+}
+} // namespace vespalib::make_string_short
+
 } // namespace vespalib

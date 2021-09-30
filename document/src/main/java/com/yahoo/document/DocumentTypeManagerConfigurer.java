@@ -6,7 +6,7 @@ import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -72,7 +72,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         setupAnnotationTypesWithoutPayloads(config, manager);
         setupAnnotationRefTypes(config, manager);
 
-        log.log(LogLevel.DEBUG, "Configuring document manager with " + config.datatype().size() + " data types.");
+        log.log(Level.FINE, "Configuring document manager with " + config.datatype().size() + " data types.");
         ArrayList<DocumentmanagerConfig.Datatype> failed = new ArrayList<>();
         failed.addAll(config.datatype());
         while (!failed.isEmpty()) {
@@ -142,14 +142,10 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
     @SuppressWarnings("deprecation")
     private static void registerDocumentType(DocumentTypeManager manager, DocumentmanagerConfig.Datatype.Documenttype doc) {
         StructDataType header = (StructDataType) manager.getDataType(doc.headerstruct(), "");
-        StructDataType body = (StructDataType) manager.getDataType(doc.bodystruct(), "");
-        for (Field field : body.getFields()) {
-            field.setHeader(false);
-        }
         var importedFields = doc.importedfield().stream()
                 .map(f -> f.name())
                 .collect(Collectors.toUnmodifiableSet());
-        DocumentType type = new DocumentType(doc.name(), header, body, importedFields);
+        DocumentType type = new DocumentType(doc.name(), header, importedFields);
         for (Object j : doc.inherits()) {
             DocumentmanagerConfig.Datatype.Documenttype.Inherits parent =
                     (DocumentmanagerConfig.Datatype.Documenttype.Inherits) j;
@@ -226,7 +222,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         DocumentTypeManager manager = configureNewManager(config);
         int defaultTypeCount = new DocumentTypeManager().getDataTypes().size();
         if (this.managerToConfigure.getDataTypes().size() != defaultTypeCount) {
-            log.log(LogLevel.DEBUG, "Live document config overwritten with new config.");
+            log.log(Level.FINE, "Live document config overwritten with new config.");
         }
         managerToConfigure.assign(manager);
     }

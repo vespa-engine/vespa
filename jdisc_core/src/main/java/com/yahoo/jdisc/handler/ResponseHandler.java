@@ -20,11 +20,11 @@ import com.yahoo.jdisc.service.ClientProvider;
 public interface ResponseHandler {
 
     /**
-     * <p>This method will process the given {@link Response} and return a {@link ContentChannel} into which the caller
-     * can write the Response's content.</p>
+     * This method will process the given {@link Response} and return a {@link ContentChannel} into which the caller
+     * can write the Response's content.
      *
-     * @param response The Response to handle.
-     * @return The ContentChannel to write the Response content to. Notice that the ContentChannel holds a Container
+     * @param response the Response to handle
+     * @return the ContentChannel to write the Response content to. Notice that the ContentChannel holds a Container
      *         reference, so failure to close this will prevent the Container from ever shutting down.
      */
     ContentChannel handleResponse(Response response);

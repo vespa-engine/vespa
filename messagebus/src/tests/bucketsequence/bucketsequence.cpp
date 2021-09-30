@@ -11,19 +11,13 @@
 
 using namespace mbus;
 
-TEST_SETUP(Test);
-
 class MyMessage : public SimpleMessage {
 public:
     MyMessage() : SimpleMessage("foo") { }
-    bool hasBucketSequence() override { return true; }
+    bool hasBucketSequence() const override { return true; }
 };
 
-int
-Test::Main()
-{
-    TEST_INIT("bucketsequence_test");
-
+TEST("bucketsequence_test") {
     Slobrok slobrok;
     TestServer server(MessageBusParams()
                       .addProtocol(std::make_shared<SimpleProtocol>())
@@ -37,9 +31,10 @@ Test::Main()
     msg->setRoute(Route::parse("foo"));
     ASSERT_TRUE(session->send(std::move(msg)).isAccepted());
     Reply::UP reply = receptor.getReply();
-    ASSERT_TRUE(reply.get() != nullptr);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::SEQUENCE_ERROR, reply->getError(0).getCode());
 
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

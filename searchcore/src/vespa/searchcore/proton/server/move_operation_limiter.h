@@ -2,7 +2,7 @@
 #pragma once
 
 #include "i_move_operation_limiter.h"
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <memory>
 #include <mutex>
 
@@ -24,22 +24,23 @@ private:
 
     struct Callback;
 
-    mutable std::mutex _mutex;
+    mutable std::mutex        _mutex;
     IBlockableMaintenanceJob *_job;
-    uint32_t _outstandingOps;
-    const uint32_t _maxOutstandingOps;
+    uint32_t                  _outstandingOps;
+    const uint32_t            _maxOutstandingOps;
 
     bool isOnLimit(const LockGuard &guard) const;
     void endOperation();
 
 public:
     using SP = std::shared_ptr<MoveOperationLimiter>;
-    MoveOperationLimiter(IBlockableMaintenanceJob *job,
-                         uint32_t maxOutstandingOps);
-    ~MoveOperationLimiter();
+    MoveOperationLimiter(IBlockableMaintenanceJob *job, uint32_t maxOutstandingOps);
+    ~MoveOperationLimiter() override;
     void clearJob();
-    bool isAboveLimit() const;
-    virtual std::shared_ptr<search::IDestructorCallback> beginOperation() override;
+    bool isAboveLimit() const { return numPending() >= _maxOutstandingOps; }
+    bool hasPending() const { return numPending() > 0;}
+    std::shared_ptr<vespalib::IDestructorCallback> beginOperation() override;
+    size_t numPending() const override;
 };
 
 }

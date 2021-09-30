@@ -4,6 +4,9 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.metrics.documentdb_tagged_metrics");
+
 namespace proton {
 
 using matching::MatchingStats;
@@ -88,11 +91,9 @@ DocumentDBTaggedMetrics::AttributeMetrics::AttributeMetrics(MetricSet *parent)
 DocumentDBTaggedMetrics::AttributeMetrics::~AttributeMetrics() = default;
 
 DocumentDBTaggedMetrics::AttributeMetrics::ResourceUsageMetrics::ResourceUsageMetrics(MetricSet *parent)
-    : MetricSet("resource_usage", {}, "Usage metrics for various attribute vector resources", parent),
-      enumStore("enum_store", {}, "The highest relative amount of enum store address space used among "
-              "all enumerated attribute vectors in this document db (value in the range [0, 1])", this),
-      multiValue("multi_value", {}, "The highest relative amount of multi-value address space used among "
-              "all multi-value attribute vectors in this document db (value in the range [0, 1])", this),
+    : MetricSet("resource_usage", {}, "Metrics for various attribute vector resources usage", parent),
+      address_space("address_space", {}, "The max relative address space used among "
+              "components in all attribute vectors in this document db (value in the range [0, 1])", this),
       feedingBlocked("feeding_blocked", {}, "Whether feeding is blocked due to attribute resource limits being reached (value is either 0 or 1)", this)
 {
 }
@@ -167,13 +168,13 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
 
 DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::~RankProfileMetrics() = default;
 
-DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::DocIdPartition(const vespalib::string &name, MetricSet *parent) :
-    MetricSet("docid_partition", {{"docidPartition", name}}, "DocId Partition profile metrics", parent),
-    docsMatched("docs_matched", {}, "Number of documents matched", this),
-    docsRanked("docs_ranked", {}, "Number of documents ranked (first phase)", this),
-    docsReRanked("docs_reranked", {}, "Number of documents re-ranked (second phase)", this),
-    activeTime("active_time", {}, "Time (sec) spent doing actual work", this),
-    waitTime("wait_time", {}, "Time (sec) spent waiting for other external threads and resources", this)
+DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::DocIdPartition(const vespalib::string &name, MetricSet *parent)
+    : MetricSet("docid_partition", {{"docidPartition", name}}, "DocId Partition profile metrics", parent),
+      docsMatched("docs_matched", {}, "Number of documents matched", this),
+      docsRanked("docs_ranked", {}, "Number of documents ranked (first phase)", this),
+      docsReRanked("docs_reranked", {}, "Number of documents re-ranked (second phase)", this),
+      activeTime("active_time", {}, "Time (sec) spent doing actual work", this),
+      waitTime("wait_time", {}, "Time (sec) spent waiting for other external threads and resources", this)
 { }
 
 DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::~DocIdPartition() = default;
@@ -191,7 +192,8 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::up
 }
 
 void
-DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const MatchingStats &stats)
+DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const metrics::MetricLockGuard &,
+                                                                     const MatchingStats &stats)
 {
     docsMatched.inc(stats.docsMatched());
     docsRanked.inc(stats.docsRanked());
@@ -213,14 +215,15 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const Match
     queryLatency.addValueBatch(stats.queryLatencyAvg(), stats.queryLatencyCount(),
                                stats.queryLatencyMin(), stats.queryLatencyMax());
     if (stats.getNumPartitions() > 0) {
-        if (stats.getNumPartitions() <= partitions.size()) {
-            for (size_t i = 0; i < stats.getNumPartitions(); ++i) {
-                partitions[i]->update(stats.getPartition(i));
-            }
-        } else {
-            vespalib::string msg(vespalib::make_string("Num partitions used '%ld' is larger than number of partitions '%ld' configured.",
-                                             stats.getNumPartitions(), partitions.size()));
-            throw vespalib::IllegalStateException(msg, VESPA_STRLOC);
+        for (size_t i = partitions.size(); i < stats.getNumPartitions(); ++i) {
+            // This loop is to handle live reconfigs that changes how many partitions(number of threads) might be used per query.
+            vespalib::string partition(vespalib::make_string("docid_part%02ld", i));
+            partitions.push_back(std::make_unique<DocIdPartition>(partition, this));
+            LOG(info, "Number of partitions has been increased to '%ld' from '%ld' previously configured. Adding part %ld",
+                stats.getNumPartitions(), partitions.size(), i);
+        }
+        for (size_t i = 0; i < stats.getNumPartitions(); ++i) {
+            partitions[i]->update(stats.getPartition(i));
         }
     }
 }
@@ -245,6 +248,13 @@ DocumentDBTaggedMetrics::DocumentsMetrics::DocumentsMetrics(metrics::MetricSet *
 
 DocumentDBTaggedMetrics::DocumentsMetrics::~DocumentsMetrics() = default;
 
+DocumentDBTaggedMetrics::BucketMoveMetrics::BucketMoveMetrics(metrics::MetricSet *parent)
+        : metrics::MetricSet("bucket_move", {}, "Metrics for bucket move job in this document db", parent),
+          bucketsPending("buckets_pending", {}, "The number of buckets left to move", this)
+{ }
+
+DocumentDBTaggedMetrics::BucketMoveMetrics::~BucketMoveMetrics() = default;
+
 DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docTypeName, size_t maxNumThreads_)
     : MetricSet("documentdb", {{"documenttype", docTypeName}}, "Document DB metrics", nullptr),
       job(this),
@@ -257,8 +267,10 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docType
       matching(this),
       sessionCache(this),
       documents(this),
+      bucketMove(this),
       totalMemoryUsage(this),
       totalDiskUsage("disk_usage", {}, "The total disk usage (in bytes) for this document db", this),
+      heart_beat_age("heart_beat_age", {}, "How long ago (in seconds) heart beat maintenace job was run", this),
       maxNumThreads(maxNumThreads_)
 {
 }

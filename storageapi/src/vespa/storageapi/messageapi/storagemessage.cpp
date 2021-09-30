@@ -1,28 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storagemessage.h"
-
 #include <vespa/messagebus/routing/verbatimdirective.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_fun.h>
 #include <sstream>
 #include <cassert>
+#include <atomic>
 
 namespace storage::api {
 
 namespace {
 
-/**
- * TODO
- * From @vekterli
- * I have no idea why the _lastMsgId update code masks away the 8 MSB, but if we assume it's probably for no
- * overwhelmingly good reason we could replace this mutex with just a std::atomic<uint64_t> and do a relaxed
- * fetch_add (shouldn't be any need for any barriers; ID increments have no other memory dependencies). U64 overflows
- * here come under the category "never gonna happen in the real world".
- * @balder agree - @vekterli fix in separate pull request :)
- */
-vespalib::Lock _G_msgIdLock;
+std::atomic<uint64_t> _G_lastMsgId(1000);
 
 }
 
@@ -113,7 +104,7 @@ const MessageType MessageType::SETBUCKETSTATE_REPLY("SetBucketStateReply", SETBU
 const MessageType&
 MessageType::MessageType::get(Id id)
 {
-    std::map<Id, MessageType*>::const_iterator it = _codes.find(id);
+    auto it = _codes.find(id);
     if (it == _codes.end()) {
         std::ostringstream ost;
         ost << "No message type with id " << id << ".";
@@ -122,19 +113,19 @@ MessageType::MessageType::get(Id id)
     return *it->second;
 }
 MessageType::MessageType(vespalib::stringref name, Id id,
-            const MessageType* replyOf)
-        : _name(name), _id(id), _reply(NULL), _replyOf(replyOf)
+                         const MessageType* replyOf)
+    : _name(name), _id(id), _reply(nullptr), _replyOf(replyOf)
 {
     _codes[id] = this;
-    if (_replyOf != 0) {
-        assert(_replyOf->_reply == 0);
+    if (_replyOf) {
+        assert(_replyOf->_reply == nullptr);
         // Ugly cast to let initialization work
-        MessageType& type = const_cast<MessageType&>(*_replyOf);
+        auto& type = const_cast<MessageType&>(*_replyOf);
         type._reply = this;
     }
 }
 
-MessageType::~MessageType() {}
+MessageType::~MessageType() = default;
 
 void
 MessageType::print(std::ostream& out, bool verbose, const std::string& indent) const
@@ -147,81 +138,72 @@ MessageType::print(std::ostream& out, bool verbose, const std::string& indent) c
     out << ")";
 }
 
-StorageMessageAddress::StorageMessageAddress(const mbus::Route& route)
-    : _route(route),
-      _retryEnabled(false),
-      _protocol(DOCUMENT),
-      _cluster(""),
-      _type(0),
-      _index(0xFFFF)
-{ }
-
 std::ostream & operator << (std::ostream & os, const StorageMessageAddress & addr) {
     return os << addr.toString();
 }
 
-static vespalib::string
-createAddress(vespalib::stringref cluster, const lib::NodeType& type, uint16_t index)
-{
+namespace {
+
+vespalib::string
+createAddress(vespalib::stringref cluster, const lib::NodeType &type, uint16_t index) {
     vespalib::asciistream os;
     os << STORAGEADDRESS_PREFIX << cluster << '/' << type.toString() << '/' << index << "/default";
     return os.str();
 }
 
-StorageMessageAddress::StorageMessageAddress(vespalib::stringref cluster, const lib::NodeType& type,
-                                             uint16_t index, Protocol protocol)
-    : _route(),
-      _retryEnabled(false),
-      _protocol(protocol),
-      _cluster(cluster),
-      _type(&type),
-      _index(index)
-{
-    std::vector<mbus::IHopDirective::SP> directives;
-    directives.emplace_back(std::make_shared<mbus::VerbatimDirective>(createAddress(cluster, type, index)));
-    _route.addHop(mbus::Hop(std::move(directives), false));
+uint32_t
+calculate_node_hash(const lib::NodeType &type, uint16_t index) {
+    uint16_t buf[] = {type, index};
+    size_t hash =  vespalib::hashValue(&buf, sizeof(buf));
+    return uint32_t(hash & 0xffffffffl) ^ uint32_t(hash >> 32);
 }
+
+vespalib::string Empty;
+
+}
+
+// TODO we ideally want this removed. Currently just in place to support usage as map key when emplacement not available
+StorageMessageAddress::StorageMessageAddress() noexcept
+    : _cluster(&Empty),
+      _precomputed_storage_hash(0),
+      _type(lib::NodeType::Type::UNKNOWN),
+      _protocol(Protocol::STORAGE),
+      _index(0)
+{}
+
+StorageMessageAddress::StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index) noexcept
+    : StorageMessageAddress(cluster, type, index, Protocol::STORAGE)
+{ }
+
+StorageMessageAddress::StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type,
+                                             uint16_t index, Protocol protocol) noexcept
+    : _cluster(cluster),
+      _precomputed_storage_hash(calculate_node_hash(type, index)),
+      _type(type.getType()),
+      _protocol(protocol),
+      _index(index)
+{ }
 
 StorageMessageAddress::~StorageMessageAddress() = default;
 
-uint16_t
-StorageMessageAddress::getIndex() const
+mbus::Route
+StorageMessageAddress::to_mbus_route() const
 {
-    if (_type == 0) {
-        throw vespalib::IllegalStateException("Cannot retrieve node index out of external address", VESPA_STRLOC);
-    }
-    return _index;
-}
-
-const lib::NodeType&
-StorageMessageAddress::getNodeType() const
-{
-    if (_type == 0) {
-        throw vespalib::IllegalStateException("Cannot retrieve node type out of external address", VESPA_STRLOC);
-    }
-    return *_type;
-}
-
-const vespalib::string&
-StorageMessageAddress::getCluster() const
-{
-    if (_type == 0) {
-        throw vespalib::IllegalStateException("Cannot retrieve cluster out of external address", VESPA_STRLOC);
-    }
-    return _cluster;
+    mbus::Route result;
+    auto address_as_str = createAddress(getCluster(), lib::NodeType::get(_type), _index);
+    std::vector<mbus::IHopDirective::SP> directives;
+    directives.emplace_back(std::make_shared<mbus::VerbatimDirective>(std::move(address_as_str)));
+    result.addHop(mbus::Hop(std::move(directives), false));
+    return result;
 }
 
 bool
-StorageMessageAddress::operator==(const StorageMessageAddress& other) const
+StorageMessageAddress::operator==(const StorageMessageAddress& other) const noexcept
 {
     if (_protocol != other._protocol) return false;
-    if (_retryEnabled != other._retryEnabled) return false;
     if (_type != other._type) return false;
-    if (_type != 0) {
-        if (_cluster != other._cluster) return false;
-        if (_index != other._index) return false;
-        if (_type != other._type) return false;
-    }
+    if (_index != other._index) return false;
+    if (getCluster() != other.getCluster()) return false;
     return true;
 }
 
@@ -237,62 +219,53 @@ void
 StorageMessageAddress::print(vespalib::asciistream & out) const
 {
     out << "StorageMessageAddress(";
-    if (_protocol == STORAGE) {
+    if (_protocol == Protocol::STORAGE) {
         out << "Storage protocol";
     } else {
         out << "Document protocol";
     }
-    if (_retryEnabled) {
-        out << ", retry enabled";
-    }
-    if (_type == 0) {
-        out << ", " << _route.toString() << ")";
+    if (_type == lib::NodeType::Type::UNKNOWN) {
+        out << ", " << to_mbus_route().toString() << ")";
     } else {
-        out << ", cluster " << _cluster << ", nodetype " << *_type
+        out << ", cluster " << getCluster() << ", nodetype " << lib::NodeType::get(_type)
             << ", index " << _index << ")";
     }
 }
 
 TransportContext::~TransportContext() = default;
 
-StorageMessage::Id StorageMessage::_lastMsgId = 1000;
-
 StorageMessage::Id
-StorageMessage::generateMsgId()
+StorageMessage::generateMsgId() noexcept
 {
-    vespalib::LockGuard sync(_G_msgIdLock);
-    Id msgId = _lastMsgId++;
-    _lastMsgId &= ((Id(-1) << 8) >> 8);
-    return msgId;
+    return _G_lastMsgId.fetch_add(1, std::memory_order_relaxed);
 }
 
-StorageMessage::StorageMessage(const MessageType& type, Id id)
+StorageMessage::StorageMessage(const MessageType& type, Id id) noexcept
     : _type(type),
       _msgId(id),
-      _priority(NORMAL),
       _address(),
-      _loadType(documentapi::LoadType::DEFAULT),
-      _approxByteSize(50)
+      _trace(),
+      _approxByteSize(50),
+      _priority(NORMAL)
 {
 }
 
-StorageMessage::StorageMessage(const StorageMessage& other, Id id)
+StorageMessage::StorageMessage(const StorageMessage& other, Id id) noexcept
     : _type(other._type),
       _msgId(id),
-      _priority(other._priority),
       _address(),
-      _loadType(other._loadType),
-      _approxByteSize(other._approxByteSize)
+      _trace(other.getTrace().getLevel()),
+      _approxByteSize(other._approxByteSize),
+      _priority(other._priority)
 {
 }
 
 StorageMessage::~StorageMessage() = default;
 
-void StorageMessage::setNewMsgId()
+void
+StorageMessage::setNewMsgId() noexcept
 {
-    vespalib::LockGuard sync(_G_msgIdLock);
-    _msgId = _lastMsgId++;
-    _lastMsgId &= ((Id(-1) << 8) >> 8);
+    _msgId = generateMsgId();
 }
 
 vespalib::string
@@ -300,7 +273,8 @@ StorageMessage::getSummary() const {
     return toString();
 }
 
-const char* to_string(LockingRequirements req) noexcept {
+const char*
+to_string(LockingRequirements req) noexcept {
     switch (req) {
     case LockingRequirements::Exclusive: return "Exclusive";
     case LockingRequirements::Shared:    return "Shared";
@@ -308,12 +282,14 @@ const char* to_string(LockingRequirements req) noexcept {
     }
 }
 
-std::ostream& operator<<(std::ostream& os, LockingRequirements req) {
+std::ostream&
+operator<<(std::ostream& os, LockingRequirements req) {
     os << to_string(req);
     return os;
 }
 
-const char* to_string(InternalReadConsistency consistency) noexcept {
+const char*
+to_string(InternalReadConsistency consistency) noexcept {
     switch (consistency) {
     case InternalReadConsistency::Strong: return "Strong";
     case InternalReadConsistency::Weak:   return "Weak";
@@ -321,7 +297,8 @@ const char* to_string(InternalReadConsistency consistency) noexcept {
     }
 }
 
-std::ostream& operator<<(std::ostream& os, InternalReadConsistency consistency) {
+std::ostream&
+operator<<(std::ostream& os, InternalReadConsistency consistency) {
     os << to_string(consistency);
     return os;
 }

@@ -4,8 +4,6 @@ package com.yahoo.search.federation.sourceref;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 
-import static com.yahoo.container.util.Util.quote;
-
 /**
  * @author Tony Vaagenes
  */
@@ -17,6 +15,6 @@ class UnresolvedProviderException extends UnresolvedSearchChainException {
 
     static UnresolvedSearchChainException createForMissingProvider(ComponentId source,
                                                                    ComponentSpecification provider) {
-        return new UnresolvedProviderException("No provider " + quote(provider) + " for source " + quote(source) + ".");
+        return new UnresolvedProviderException("No provider '" + provider + "' for source '" + source + "'.");
     }
 }

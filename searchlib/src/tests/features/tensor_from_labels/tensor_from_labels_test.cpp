@@ -13,8 +13,10 @@
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/eval/eval/function.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/value_compare.h>
 
 using search::feature_t;
 using namespace search::fef;
@@ -26,8 +28,7 @@ using search::StringAttribute;
 using vespalib::eval::Value;
 using vespalib::eval::Function;
 using vespalib::eval::TensorSpec;
-using vespalib::tensor::DefaultTensorEngine;
-using vespalib::tensor::Tensor;
+using vespalib::eval::SimpleValue;
 
 typedef search::attribute::Config AVC;
 typedef search::attribute::BasicType AVBT;
@@ -35,12 +36,11 @@ typedef search::attribute::CollectionType AVCT;
 typedef search::AttributeVector::SP AttributePtr;
 typedef FtTestApp FTA;
 
-Tensor::UP make_tensor(const TensorSpec &spec) {
-    auto tensor = DefaultTensorEngine::ref().from_spec(spec);
-    return Tensor::UP(dynamic_cast<Tensor*>(tensor.release()));
+Value::UP make_tensor(const TensorSpec &spec) {
+    return SimpleValue::from_spec(spec);
 }
 
-Tensor::UP make_empty(const vespalib::string &type) {
+Value::UP make_empty(const vespalib::string &type) {
     return make_tensor(TensorSpec(type));
 }
 
@@ -95,6 +95,7 @@ struct ExecFixture
         attrs.push_back(AttributeFactory::createAttribute("astr", AVC(AVBT::STRING,  AVCT::ARRAY)));
         attrs.push_back(AttributeFactory::createAttribute("aint", AVC(AVBT::INT32,  AVCT::ARRAY)));
         attrs.push_back(AttributeFactory::createAttribute("wsstr", AVC(AVBT::STRING,  AVCT::WSET)));
+        attrs.push_back(AttributeFactory::createAttribute("sint", AVC(AVBT::INT32,  AVCT::SINGLE)));
 
         for (const auto &attr : attrs) {
             attr->addReservedDoc();
@@ -112,6 +113,9 @@ struct ExecFixture
         aint->append(1, 3, 0);
         aint->append(1, 5, 0);
         aint->append(1, 7, 0);
+        
+        IntegerAttribute *sint = static_cast<IntegerAttribute *>(attrs[3].get());
+        sint->update(1, 5);
 
         for (const auto &attr : attrs) {
             attr->commit();
@@ -121,12 +125,10 @@ struct ExecFixture
         test.getQueryEnv().getProperties().add("astr_query", "[d e f e]");
         test.getQueryEnv().getProperties().add("aint_query", "[11 13 17]");
     }
-    const Tensor &extractTensor(uint32_t docid) {
-        Value::CREF value = test.resolveObjectFeature(docid);
-        ASSERT_TRUE(value.get().is_tensor());
-        return static_cast<const Tensor &>(*value.get().as_tensor());
+    const Value &extractTensor(uint32_t docid) {
+        return test.resolveObjectFeature(docid);
     }
-    const Tensor &execute() {
+    const Value &execute() {
         return extractTensor(1);
     }
 };
@@ -167,6 +169,20 @@ TEST_F("require that array attribute can be converted to tensor (explicit dimens
                               .add({{"dim", "7"}}, 1)
                               .add({{"dim", "3"}}, 1)
                               .add({{"dim", "5"}}, 1)), f.execute());
+}
+
+TEST_F("require that single-value integer attribute can be converted to tensor (default dimension)",
+        ExecFixture("tensorFromLabels(attribute(sint))"))
+{
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(sint{})")
+                              .add({{"sint", "5"}}, 1)), f.execute());
+}
+
+TEST_F("require that single-value integer attribute can be converted to tensor (explicit dimension)",
+        ExecFixture("tensorFromLabels(attribute(sint),foobar)"))
+{
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(foobar{})")
+                              .add({{"foobar", "5"}}, 1)), f.execute());
 }
 
 TEST_F("require that empty tensor is created if attribute does not exists",

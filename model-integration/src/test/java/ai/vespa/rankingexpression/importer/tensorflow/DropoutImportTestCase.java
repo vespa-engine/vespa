@@ -34,7 +34,7 @@ public class DropoutImportTestCase {
 
         ImportedMlFunction function = signature.outputFunction("y", "y");
         assertNotNull(function);
-        assertEquals("join(join(imported_ml_function_test_outputs_BiasAdd, reduce(constant(test_outputs_Const), sum, d1), f(a,b)(a * b)), imported_ml_function_test_outputs_BiasAdd, f(a,b)(max(a,b)))",
+        assertEquals("join(join(reduce(constant(test_outputs_Const), sum, d1), imported_ml_function_test_outputs_BiasAdd, f(a,b)(a * b)), imported_ml_function_test_outputs_BiasAdd, f(a,b)(max(a,b)))",
                      function.expression());
         model.assertEqualResult("X", "outputs/Maximum");
         assertEquals("{X=tensor(d0[],d1[784])}", function.argumentTypes().toString());

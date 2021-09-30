@@ -160,14 +160,14 @@ public:
 
     /**
      * Find all hits in the currently searched range (specified by
-     * initRange) and OR them into the given temporary result. This
+     * initRange) and AND them into the given temporary result. This
      * function will perform term-at-a-time evaluation and should only
      * be used for terms not needed for ranking. Calling this function
      * will exhaust this iterator and no more results will be
      * available in the currently searched range after this function
      * returns.
      *
-     * @param result result to be augmented by adding hits from this
+     * @param result result to be augmented by clearing non-hits from this
      *               iterator.
      * @param begin_id the lowest document id that may be a hit
      *                 (we might not remember beginId from initRange)

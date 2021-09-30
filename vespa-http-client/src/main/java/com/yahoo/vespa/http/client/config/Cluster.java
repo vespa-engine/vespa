@@ -13,9 +13,7 @@ import java.util.List;
  */
 public final class Cluster {
 
-    /**
-     * Builder for {@link Cluster}.
-     */
+    /** Builder for {@link Cluster}. */
     public final static class Builder {
         private final List<Endpoint> endpoints = new LinkedList<>();
         private String route = null;
@@ -23,8 +21,8 @@ public final class Cluster {
         /**
          * Adds an Endpoint (a HTTP gateway) to this Cluster.
          *
-         * @param endpoint the Endpoint to add.
-         * @return this, for chaining.
+         * @param endpoint the Endpoint to add
+         * @return this, for chaining
          */
         public Builder addEndpoint(Endpoint endpoint) {
             endpoints.add(endpoint);
@@ -34,8 +32,8 @@ public final class Cluster {
         /**
          * Sets a route specific to this cluster, which overrides the route set in {@link com.yahoo.vespa.http.client.config.FeedParams#getRoute()}.
          *
-         * @param route a route specific to this cluster.
-         * @return this, for chaining.
+         * @param route a route specific to this cluster
+         * @return this, for chaining
          */
         public Builder setRoute(String route) {
             this.route = route;
@@ -68,7 +66,7 @@ public final class Cluster {
 
     @Override
     public String toString() {
-        return "Cluster " + endpoints + ", route " + route;
+        return "cluster with endpoints " + endpoints + " and route '" + route + "'";
     }
 
 }

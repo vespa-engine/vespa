@@ -22,7 +22,10 @@ class BucketInfoReply : public BucketReply {
     BucketInfo _result;
 
 protected:
-    BucketInfoReply(const BucketInfoCommand& cmd, const ReturnCode& code = ReturnCode(ReturnCode::OK));
+    BucketInfoReply(const BucketInfoCommand& cmd)
+        : BucketReply(cmd),
+          _result()
+    {}
 
 public:
     DECLARE_POINTER_TYPEDEFS(BucketInfoReply);

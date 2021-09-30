@@ -7,12 +7,15 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/vdslib/state/nodetype.h>
+#include <vespa/document/util/printable.h>
+#include <vespa/vdslib/state/node.h>
+#include <vector>
+#include <memory>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
+
+class Distribution;
+class ClusterState;
 
 /**
  * A list of ideal nodes, sorted in preferred order. Wraps a vector to hide
@@ -59,7 +62,7 @@ public:
         UP_STATE_COUNT
     };
 
-    virtual ~IdealNodeCalculator() {}
+    virtual ~IdealNodeCalculator() = default;
 
     virtual IdealNodeList getIdealNodes(const NodeType&,
                                         const document::BucketId&,
@@ -88,5 +91,4 @@ public:
     virtual void setClusterState(const ClusterState&) = 0;
 };
 
-} // lib
-} // storage
+}

@@ -5,7 +5,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/gate.h>
 
 using namespace proton;
@@ -13,6 +13,7 @@ using namespace search;
 using namespace vespalib;
 
 using ReadGuard = ExclusiveAttributeReadAccessor::Guard;
+VESPA_THREAD_STACK_TAG(test_executor)
 
 AttributeVector::SP
 createAttribute()
@@ -24,13 +25,13 @@ createAttribute()
 struct Fixture
 {
     AttributeVector::SP attribute;
-    SequencedTaskExecutor writer;
+    std::unique_ptr<ISequencedTaskExecutor> writer;
     ExclusiveAttributeReadAccessor accessor;
 
     Fixture()
         : attribute(createAttribute()),
-          writer(1),
-          accessor(attribute, writer)
+          writer(SequencedTaskExecutor::create(test_executor, 1)),
+          accessor(attribute, *writer)
     {}
 };
 
@@ -38,8 +39,8 @@ TEST_F("require that attribute write thread is blocked while guard is held", Fix
 {
     ReadGuard::UP guard = f.accessor.takeGuard();
     Gate gate;
-    f.writer.execute(f.writer.getExecutorId(f.attribute->getNamePrefix()), [&gate]() { gate.countDown(); });
-    bool reachedZero = gate.await(100);
+    f.writer->execute(f.writer->getExecutorIdFromName(f.attribute->getNamePrefix()), [&gate]() { gate.countDown(); });
+    bool reachedZero = gate.await(100ms);
     EXPECT_FALSE(reachedZero);
     EXPECT_EQUAL(1u, gate.getCount());
 

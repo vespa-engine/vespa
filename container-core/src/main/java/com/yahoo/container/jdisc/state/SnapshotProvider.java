@@ -7,7 +7,7 @@ import java.io.PrintStream;
  * An interface for components supplying a state snapshot where persistence and
  * other pre-processing has been done.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public interface SnapshotProvider {
 

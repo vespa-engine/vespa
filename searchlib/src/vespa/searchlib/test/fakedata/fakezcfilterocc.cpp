@@ -26,9 +26,7 @@ using search::bitcompression::FeatureEncodeContext;
 using search::ComprFileWriteContext;
 using namespace search::diskindex;
 
-namespace search {
-
-namespace fakedata {
+namespace search::fakedata {
 
 namespace {
 
@@ -97,8 +95,8 @@ FakeZcFilterOcc::FakeZcFilterOcc(const FakeWord &fw)
       _hitDocs(0),
       _lastDocId(0u),
       _compressedBits(0),
-      _compressed(std::make_pair(static_cast<uint64_t *>(NULL), 0)),
-      _compressedMalloc(NULL),
+      _compressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
+      _compressedAlloc(),
       _featuresSize(0),
       _fieldsParams(fw.getFieldsParams()),
       _bigEndian(true),
@@ -121,7 +119,7 @@ FakeZcFilterOcc::FakeZcFilterOcc(const FakeWord &fw,
       _hitDocs(0),
       _lastDocId(0u),
       _compressedBits(0),
-      _compressed(std::make_pair(static_cast<uint64_t *>(NULL), 0)),
+      _compressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
       _featuresSize(0),
       _fieldsParams(fw.getFieldsParams()),
       _bigEndian(bigEndian),
@@ -203,9 +201,7 @@ FakeZcFilterOcc::setupT(const FakeWord &fw)
     _lastDocId = fw._postings.back()._docId;
     writer.on_close();
 
-    std::pair<void *, size_t> ectxData = writeContext.grabComprBuffer(_compressedMalloc);
-    _compressed = std::make_pair(static_cast<uint64_t *>(ectxData.first),
-                                 ectxData.second);
+    _compressed = writeContext.grabComprBuffer(_compressedAlloc);
     read_header<bigEndian>();
 }
 
@@ -291,10 +287,7 @@ FakeZcFilterOcc::validate_read(const FakeWord &fw) const
     assert(static_cast<int32_t>(features.doc_id()) == -1);
 }
 
-FakeZcFilterOcc::~FakeZcFilterOcc()
-{
-    free(_compressedMalloc);
-}
+FakeZcFilterOcc::~FakeZcFilterOcc() = default;
 
 
 void
@@ -430,7 +423,7 @@ FakeFilterOccZCArrayIterator(const uint64_t *compressed,
                              uint32_t docIdLimit,
                              const fef::TermFieldMatchDataArray &matchData)
     : queryeval::RankedSearchIteratorBase(matchData),
-      _valI(NULL),
+      _valI(nullptr),
       _residue(0),
       _lastDocId(0),
       _decodeContext(compressed, bitOffset),
@@ -956,7 +949,4 @@ static FPFactoryInit
 initNoSkipPoslecf(std::make_pair("Zc5NoSkipPosOccLE.cf",
                                  makeFPFactory<FPFactoryT<FakeZc5NoSkipPosOccCf<false> > >));
 
-
-} // namespace fakedata
-
-} // namespace search
+}

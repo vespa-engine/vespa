@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "sync.h"
+#include <condition_variable>
 
 namespace vespalib {
 
@@ -12,10 +12,11 @@ namespace vespalib {
 class Barrier
 {
 private:
-    size_t  _n;
-    Monitor _monitor;
-    size_t  _count;
-    size_t  _next;
+    size_t                  _n;
+    std::mutex              _lock;
+    std::condition_variable _cond;
+    size_t                  _count;
+    size_t                  _next;
 
 public:
     /**
@@ -23,7 +24,8 @@ public:
      *
      * @param n number of participants
      **/
-    Barrier(size_t n) : _n(n), _monitor(), _count(0), _next(0) {}
+    Barrier(size_t n);
+    ~Barrier();
 
     /**
      * Wait for the (n - 1) other participants to call this

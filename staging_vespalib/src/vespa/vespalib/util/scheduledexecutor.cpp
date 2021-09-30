@@ -3,6 +3,7 @@
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/task.h>
 #include <vespa/fnet/transport.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace vespalib {
 
@@ -35,7 +36,7 @@ public:
 };
 
 ScheduledExecutor::ScheduledExecutor()
-    : _threadPool(128 * 1024),
+    : _threadPool(128_Ki),
       _transport(new FNET_Transport()),
       _lock(),
       _taskList()
@@ -45,7 +46,7 @@ ScheduledExecutor::ScheduledExecutor()
 
 ScheduledExecutor::~ScheduledExecutor()
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _transport->ShutDown(true);
     _threadPool.Close();
     _taskList.clear();
@@ -55,7 +56,7 @@ ScheduledExecutor::~ScheduledExecutor()
 void
 ScheduledExecutor::scheduleAtFixedRate(vespalib::Executor::Task::UP task, duration delay, duration interval)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     TimerTaskPtr tTask(new TimerTask(_transport->GetScheduler(), std::move(task), interval));
     _taskList.push_back(std::move(tTask));
     _taskList.back()->Schedule(to_s(delay));
@@ -64,10 +65,10 @@ ScheduledExecutor::scheduleAtFixedRate(vespalib::Executor::Task::UP task, durati
 void
 ScheduledExecutor::reset()
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _transport->ShutDown(true);
     _taskList.clear();
-    _transport.reset(new FNET_Transport());
+    _transport = std::make_unique<FNET_Transport>();
     _transport->Start(&_threadPool);
 }
 

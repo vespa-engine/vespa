@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_iterator.h"
+#include <vespa/searchcore/proton/common/cachedselect.h>
+#include <vespa/searchcore/proton/common/selectcontext.h>
 #include <vespa/document/select/gid_filter.h>
 #include <vespa/document/select/node.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -42,13 +44,6 @@ DocEntry *createDocEntry(Timestamp timestamp, bool removed, Document::UP doc, ss
 } // namespace proton::<unnamed>
 
 bool
-DocumentIterator::useDocumentSelection() const
-{
-    return (!_metaOnly &&
-            !_selection.getDocumentSelection().getDocumentSelection().empty());
-}
-
-bool
 DocumentIterator::checkMeta(const search::DocumentMetaData &meta) const
 {
     if (!meta.valid()) {
@@ -71,7 +66,7 @@ DocumentIterator::checkMeta(const search::DocumentMetaData &meta) const
 }
 
 DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
-                                   const document::FieldSet& fields,
+                                   document::FieldSet::SP fields,
                                    const storage::spi::Selection &selection,
                                    storage::spi::IncludedVersions versions,
                                    ssize_t defaultSerializedSize,
@@ -80,10 +75,10 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
     : _bucket(bucket),
       _selection(selection),
       _versions(versions),
-      _fields(fields.clone()),
+      _fields(std::move(fields)),
       _defaultSerializedSize((readConsistency == ReadConsistency::WEAK) ? defaultSerializedSize : -1),
       _readConsistency(readConsistency),
-      _metaOnly(fields.getType() == document::FieldSet::NONE),
+      _metaOnly(_fields->getType() == document::FieldSet::Type::NONE),
       _ignoreMaxBytes((readConsistency == ReadConsistency::WEAK) && ignoreMaxBytes),
       _fetchedData(false),
       _sources(),
@@ -95,9 +90,9 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
 DocumentIterator::~DocumentIterator() = default;
 
 void
-DocumentIterator::add(const IDocumentRetriever::SP &retriever)
+DocumentIterator::add(IDocumentRetriever::SP retriever)
 {
-    _sources.push_back(retriever);
+    _sources.push_back(std::move(retriever));
 }
 
 IterateResult
@@ -145,7 +140,7 @@ public:
                 _selectSession = _cachedSelect->createSession();
                 using document::select::GidFilter;
                 _gidFilter = GidFilter::for_selection_root_node(_selectSession->selectNode());
-                _selectCxt.reset(new SelectContext(*_cachedSelect));
+                _selectCxt = std::make_unique<SelectContext>(*_cachedSelect);
                 _selectCxt->getAttributeGuards();
             }
         } else {
@@ -221,7 +216,7 @@ public:
         }
     }
 
-    virtual bool allowVisitCaching() const override {
+    bool allowVisitCaching() const override {
         return _allowVisitCaching;
     }
 

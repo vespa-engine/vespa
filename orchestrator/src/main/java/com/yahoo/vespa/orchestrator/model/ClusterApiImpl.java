@@ -8,9 +8,16 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
+import com.yahoo.vespa.orchestrator.policy.ClusterParams;
+import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
+import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
+import com.yahoo.vespa.orchestrator.policy.SuspensionReasons;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -24,16 +31,19 @@ import java.util.stream.Stream;
  * @author hakonhall
  */
 class ClusterApiImpl implements ClusterApi {
+    static final Duration downMoratorium = Duration.ofSeconds(30);
 
     private final ApplicationApi applicationApi;
     private final ServiceCluster serviceCluster;
     private final NodeGroup nodeGroup;
     private final HostInfos hostInfos;
     private final ClusterControllerClientFactory clusterControllerClientFactory;
+    private final Clock clock;
     private final Set<ServiceInstance> servicesInGroup;
-    private final Set<ServiceInstance> servicesDownInGroup;
     private final Set<ServiceInstance> servicesNotInGroup;
-    private final Set<ServiceInstance> servicesDownAndNotInGroup;
+
+    /** Lazily initialized in servicesDownAndNotInGroup(), do not access directly. */
+    private Set<ServiceInstance> servicesDownAndNotInGroup = null;
 
     /*
      * There are two sources for the number of config servers in a cluster. The config server config and the node
@@ -53,12 +63,14 @@ class ClusterApiImpl implements ClusterApi {
                           NodeGroup nodeGroup,
                           HostInfos hostInfos,
                           ClusterControllerClientFactory clusterControllerClientFactory,
-                          int numberOfConfigServers) {
+                          ClusterParams clusterParams,
+                          Clock clock) {
         this.applicationApi = applicationApi;
         this.serviceCluster = serviceCluster;
         this.nodeGroup = nodeGroup;
         this.hostInfos = hostInfos;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
+        this.clock = clock;
 
         Map<Boolean, Set<ServiceInstance>> serviceInstancesByLocality =
                 serviceCluster.serviceInstances().stream()
@@ -69,13 +81,10 @@ class ClusterApiImpl implements ClusterApi {
         servicesInGroup = serviceInstancesByLocality.getOrDefault(true, Collections.emptySet());
         servicesNotInGroup = serviceInstancesByLocality.getOrDefault(false, Collections.emptySet());
 
-        servicesDownInGroup = servicesInGroup.stream().filter(this::serviceEffectivelyDown).collect(Collectors.toSet());
-        servicesDownAndNotInGroup = servicesNotInGroup.stream().filter(this::serviceEffectivelyDown).collect(Collectors.toSet());
-
         int serviceInstances = serviceCluster.serviceInstances().size();
-        if (serviceCluster.isConfigServerCluster() && serviceInstances < numberOfConfigServers) {
-            missingServices = numberOfConfigServers - serviceInstances;
-            descriptionOfMissingServices = missingServices + " missing config server" + (missingServices > 1 ? "s" : "");
+        if (clusterParams.size().isPresent() && serviceInstances < clusterParams.size().getAsInt()) {
+            missingServices = clusterParams.size().getAsInt() - serviceInstances;
+            descriptionOfMissingServices = missingServices + " missing " + serviceCluster.nodeDescription(missingServices > 1);
         } else {
             missingServices = 0;
             descriptionOfMissingServices = "NA";
@@ -98,6 +107,11 @@ class ClusterApiImpl implements ClusterApi {
     }
 
     @Override
+    public String serviceDescription(boolean plural) {
+        return serviceCluster.serviceDescription(plural);
+    }
+
+    @Override
     public boolean isStorageCluster() {
         return VespaModelUtil.isStorage(serviceCluster);
     }
@@ -108,48 +122,110 @@ class ClusterApiImpl implements ClusterApi {
     }
 
     @Override
-    public boolean noServicesInGroupIsUp() {
-        return servicesDownInGroup.size() == servicesInGroup.size();
+    public boolean isConfigServerLike() {
+        return serviceCluster.isConfigServerLike();
+    }
+
+    @Override
+    public Optional<SuspensionReasons> allServicesDown() {
+        SuspensionReasons reasons = new SuspensionReasons();
+
+        for (ServiceInstance service : servicesInGroup) {
+            if (hostStatus(service.hostName()).isSuspended()) {
+                reasons.mergeWith(SuspensionReasons.nothingNoteworthy());
+                continue;
+            }
+
+            if (service.serviceStatus() == ServiceStatus.DOWN) {
+                Optional<Instant> since = service.serviceStatusInfo().since();
+                if (since.isEmpty()) {
+                    reasons.mergeWith(SuspensionReasons.isDown(service));
+                    continue;
+                }
+
+                // Make sure services truly are down for some period of time before we allow suspension.
+                // On the other hand, a service coming down and up repeatedly should probably
+                // also be allowed... difficult without keeping track of history in a better way.
+                final Duration downDuration = Duration.between(since.get(), clock.instant());
+                if (downDuration.compareTo(downMoratorium) > 0) {
+                    reasons.mergeWith(SuspensionReasons.downSince(service, since.get(), downDuration));
+                    continue;
+                }
+            }
+
+            return Optional.empty();
+        }
+
+        return Optional.of(reasons);
     }
 
     int missingServices() { return missingServices; }
 
     @Override
-    public boolean noServicesOutsideGroupIsDown() {
-        return servicesDownAndNotInGroup.size() + missingServices == 0;
+    public boolean noServicesOutsideGroupIsDown() throws HostStateChangeDeniedException {
+        return servicesDownAndNotInGroup().size() + missingServices == 0;
     }
 
     @Override
-    public int percentageOfServicesDown() {
-        int numberOfServicesDown = servicesDownAndNotInGroup.size() + missingServices + servicesDownInGroup.size();
+    public int percentageOfServicesDownOutsideGroup() {
+        int numberOfServicesDown = servicesDownAndNotInGroup().size() + missingServices;
         return numberOfServicesDown * 100 / (serviceCluster.serviceInstances().size() + missingServices);
     }
 
     @Override
     public int percentageOfServicesDownIfGroupIsAllowedToBeDown() {
-        int numberOfServicesDown = servicesDownAndNotInGroup.size() + missingServices + servicesInGroup.size();
+        int numberOfServicesDown = servicesDownAndNotInGroup().size() + missingServices + servicesInGroup.size();
         return numberOfServicesDown * 100 / (serviceCluster.serviceInstances().size() + missingServices);
     }
 
+    /**
+     * A description of the hosts outside the group that are allowed to be down,
+     * and a description of the services outside the group and outside of the allowed services
+     * that are down.
+     */
     @Override
-    public String servicesDownAndNotInGroupDescription() {
-        // Sort these for readability and testing stability
-        return Stream
-                .concat(servicesDownAndNotInGroup.stream().map(ServiceInstance::toString).sorted(),
-                        missingServices > 0 ? Stream.of(descriptionOfMissingServices) : Stream.of())
-                .collect(Collectors.toList())
-                .toString();
-    }
+    public String downDescription() {
+        StringBuilder description = new StringBuilder();
 
-    @Override
-    public String nodesAllowedToBeDownNotInGroupDescription() {
-        return servicesNotInGroup.stream()
+        Set<HostName> suspended = servicesNotInGroup.stream()
                 .map(ServiceInstance::hostName)
                 .filter(hostName -> hostStatus(hostName).isSuspended())
-                .sorted()
-                .distinct()
-                .collect(Collectors.toList())
-                .toString();
+                .collect(Collectors.toSet());
+
+        if (suspended.size() > 0) {
+            description.append(" ");
+
+            final int nodeLimit = 3;
+            description.append(suspended.stream().sorted().distinct().limit(nodeLimit).collect(Collectors.toList()).toString());
+            if (suspended.size() > nodeLimit) {
+                description.append(" and " + (suspended.size() - nodeLimit) + " others");
+            }
+            description.append(" are suspended.");
+        }
+
+        Set<ServiceInstance> downElsewhere = servicesDownAndNotInGroup().stream()
+                .filter(serviceInstance -> !suspended.contains(serviceInstance.hostName()))
+                .collect(Collectors.toSet());
+
+        final int downElsewhereTotal = downElsewhere.size() + missingServices;
+        if (downElsewhereTotal > 0) {
+            description.append(" ");
+
+            final int serviceLimit = 2; // services info is verbose
+            description.append(Stream.concat(
+                    downElsewhere.stream().map(ServiceInstance::toString).sorted(),
+                    missingServices > 0 ? Stream.of(descriptionOfMissingServices) : Stream.of())
+                    .limit(serviceLimit)
+                    .collect(Collectors.toList())
+                    .toString());
+
+            if (downElsewhereTotal > serviceLimit) {
+                description.append(" and " + (downElsewhereTotal - serviceLimit) + " others");
+            }
+            description.append(" are down.");
+        }
+
+        return description.toString();
     }
 
     private Optional<StorageNode> storageNodeInGroup(Predicate<ServiceInstance> storageServicePredicate) {
@@ -206,19 +282,31 @@ class ClusterApiImpl implements ClusterApi {
         return "{ clusterId=" + clusterId() + ", serviceType=" + serviceType() + " }";
     }
 
+    private Set<ServiceInstance> servicesDownAndNotInGroup() {
+        if (servicesDownAndNotInGroup == null) {
+            servicesDownAndNotInGroup = servicesNotInGroup.stream().filter(this::serviceEffectivelyDown).collect(Collectors.toSet());
+        }
+        return servicesDownAndNotInGroup;
+    }
+
     private HostStatus hostStatus(HostName hostName) {
         return hostInfos.getOrNoRemarks(hostName).status();
     }
 
-    private boolean serviceEffectivelyDown(ServiceInstance service) {
+    private boolean serviceEffectivelyDown(ServiceInstance service) throws HostStateChangeDeniedException {
         if (hostStatus(service.hostName()).isSuspended()) {
             return true;
         }
 
-        if (service.serviceStatus() == ServiceStatus.DOWN) {
-            return true;
+        switch (service.serviceStatus()) {
+            case DOWN: return true;
+            case UNKNOWN:
+                throw new HostStateChangeDeniedException(
+                        nodeGroup,
+                        HostedVespaPolicy.UNKNOWN_SERVICE_STATUS,
+                        "Service status of " + service.descriptiveName() + " is not yet known");
+            default:
+                return false;
         }
-
-        return false;
     }
 }

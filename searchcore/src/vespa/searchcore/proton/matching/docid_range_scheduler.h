@@ -60,7 +60,7 @@ public:
     IdleObserver() : _num_idle(_always_zero) {}
     IdleObserver(const std::atomic<size_t> &num_idle) : _num_idle(num_idle) {}
     bool is_always_zero() const { return (&_num_idle == &_always_zero); }
-    size_t get() const { return _num_idle.load(std::memory_order::memory_order_relaxed); }
+    size_t get() const { return _num_idle.load(std::memory_order_relaxed); }
 };
 
 /**
@@ -71,17 +71,15 @@ public:
  * 'next_range' function. When a worker is assigned an empty range,
  * its work is done.
  * 
- * The 'total_span' function returns a range that is guaranteed to
- * contain all ranges assigned to the given worker. The 'total_size'
- * function returns the accumulated size of all ranges assigned to the
- * given worker. The 'unassigned_size' function returns the
- * accumulated size of all currently unassigned ranges.
+ * The 'total_size' function returns the accumulated size of all
+ * ranges assigned to the given worker. The 'unassigned_size' function
+ * returns the accumulated size of all currently unassigned ranges.
  *
- * Note that the return values from 'total_span', 'total_size' and
- * 'unassigned_size' may or may not account for the range returned
- * from 'first_range' since the scheduler is allowed to pre-assign
- * ranges to workers. Calling 'first_range' first ensures that all
- * other return values make sense.
+ * Note that the return values from 'total_size' and 'unassigned_size'
+ * may or may not account for the range returned from 'first_range'
+ * since the scheduler is allowed to pre-assign ranges to
+ * workers. Calling 'first_range' first ensures that all other return
+ * values make sense.
  *
  * The 'idle_observer' and 'share_range' functions are used for
  * work-sharing, where a worker thread potentially can offload some of
@@ -109,7 +107,6 @@ struct DocidRangeScheduler {
     typedef std::unique_ptr<DocidRangeScheduler> UP;
     virtual DocidRange first_range(size_t thread_id) = 0;
     virtual DocidRange next_range(size_t thread_id) = 0;
-    virtual DocidRange total_span(size_t thread_id) const = 0;
     virtual size_t total_size(size_t thread_id) const = 0;
     virtual size_t unassigned_size() const = 0;
     virtual IdleObserver make_idle_observer() const = 0;
@@ -128,9 +125,9 @@ private:
     std::vector<DocidRange> _ranges;
 public:
     PartitionDocidRangeScheduler(size_t num_threads, uint32_t docid_limit);
+    ~PartitionDocidRangeScheduler() override;
     DocidRange first_range(size_t thread_id) override { return _ranges[thread_id]; }
     DocidRange next_range(size_t) override { return DocidRange(); }
-    DocidRange total_span(size_t thread_id) const override { return _ranges[thread_id]; }
     size_t total_size(size_t thread_id) const override { return _ranges[thread_id].size(); }
     size_t unassigned_size() const override { return 0; }
     IdleObserver make_idle_observer() const override { return IdleObserver(); }
@@ -155,11 +152,11 @@ private:
     DocidRange next_task(size_t thread_id);
 public:
     TaskDocidRangeScheduler(size_t num_threads, size_t num_tasks, uint32_t docid_limit);
+    ~TaskDocidRangeScheduler() override;
     DocidRange first_range(size_t thread_id) override { return next_task(thread_id); }
     DocidRange next_range(size_t thread_id) override { return next_task(thread_id); }
-    DocidRange total_span(size_t) const override { return _splitter.full_range(); }
     size_t total_size(size_t thread_id) const override { return _assigned[thread_id]; }
-    size_t unassigned_size() const override { return _unassigned.load(std::memory_order::memory_order_relaxed); }
+    size_t unassigned_size() const override { return _unassigned.load(std::memory_order_relaxed); }
     IdleObserver make_idle_observer() const override { return IdleObserver(); }
     DocidRange share_range(size_t, DocidRange todo) override { return todo; }
 };
@@ -197,7 +194,6 @@ public:
     ~AdaptiveDocidRangeScheduler();
     DocidRange first_range(size_t thread_id) override;
     DocidRange next_range(size_t thread_id) override;
-    DocidRange total_span(size_t) const override { return _splitter.full_range(); }
     size_t total_size(size_t thread_id) const override { return _assigned[thread_id]; }
     size_t unassigned_size() const override { return 0; }
     IdleObserver make_idle_observer() const override { return IdleObserver(_num_idle); }

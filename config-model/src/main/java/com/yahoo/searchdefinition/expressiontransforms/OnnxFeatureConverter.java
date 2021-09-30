@@ -38,7 +38,7 @@ public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTrans
     }
 
     private ExpressionNode transformFeature(ReferenceNode feature, RankProfileTransformContext context) {
-        if ( ! feature.getName().equals("onnx")) return feature;
+        if ( ! feature.getName().equals("onnx_vespa")) return feature;
 
         try {
             FeatureArguments arguments = asFeatureArguments(feature.getArguments());
@@ -54,10 +54,10 @@ public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTrans
 
     private FeatureArguments asFeatureArguments(Arguments arguments) {
         if (arguments.isEmpty())
-            throw new IllegalArgumentException("An onnx node must take an argument pointing to " +
-                                               "the onnx model directory under [application]/models");
+            throw new IllegalArgumentException("An ONNX node must take an argument pointing to " +
+                                               "the ONNX model file under [application]/models");
         if (arguments.expressions().size() > 3)
-            throw new IllegalArgumentException("An onnx feature can have at most 2 arguments");
+            throw new IllegalArgumentException("An onnx feature can have at most 3 arguments");
 
         return new FeatureArguments(arguments);
     }

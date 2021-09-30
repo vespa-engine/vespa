@@ -5,22 +5,22 @@
 #include <vespa/vespalib/text/lowercase.h>
 
 using vespalib::LowerCase;
-
+using vespalib::Utf8ReaderForZTS;
 namespace search {
 
 size_t
 FoldedStringCompare::
-size(const char *key) const
+size(const char *key)
 {
-    return vespalib::Utf8ReaderForZTS::countChars(key);
+    return Utf8ReaderForZTS::countChars(key);
 }
 
 int
 FoldedStringCompare::
-compareFolded(const char *key, const char *okey) const
+compareFolded(const char *key, const char *okey)
 {
-    vespalib::Utf8ReaderForZTS kreader(key);
-    vespalib::Utf8ReaderForZTS oreader(okey);
+    Utf8ReaderForZTS kreader(key);
+    Utf8ReaderForZTS oreader(okey);
 
     for (;;) {
         uint32_t kval = LowerCase::convert(kreader.getChar());
@@ -42,10 +42,10 @@ compareFolded(const char *key, const char *okey) const
 
 int
 FoldedStringCompare::
-compareFoldedPrefix(const char *key, const char *okey, size_t prefixLen) const
+compareFoldedPrefix(const char *key, const char *okey, size_t prefixLen)
 {
-    vespalib::Utf8ReaderForZTS kreader(key);
-    vespalib::Utf8ReaderForZTS oreader(okey);
+    Utf8ReaderForZTS kreader(key);
+    Utf8ReaderForZTS oreader(okey);
 
     for (size_t j = 0; j < prefixLen; ++j ) {
         uint32_t kval = LowerCase::convert(kreader.getChar());
@@ -64,16 +64,22 @@ compareFoldedPrefix(const char *key, const char *okey, size_t prefixLen) const
     return 0;
 }
 
+int
+FoldedStringCompare::
+comparePrefix(const char *key, const char *okey, size_t prefixLen)
+{
+    int res = compareFoldedPrefix(key, okey, prefixLen);
+    if (res != 0) return res;
+    return strncmp(key, okey, prefixLen);
+}
+
 
 int
 FoldedStringCompare::
-compare(const char *key, const char *okey) const
+compare(const char *key, const char *okey)
 {
-    int res;
-
-    res = compareFolded(key, okey);
-    if (res != 0)
-        return res;
+    int res = compareFolded(key, okey);
+    if (res != 0) return res;
     return strcmp(key, okey);
 }
 

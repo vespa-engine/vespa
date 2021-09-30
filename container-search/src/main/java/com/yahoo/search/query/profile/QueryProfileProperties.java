@@ -2,12 +2,15 @@
 package com.yahoo.search.query.profile;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.language.process.Embedder;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.processing.request.properties.PropertyMap;
 import com.yahoo.protect.Validator;
 import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.DimensionalValue;
+import com.yahoo.search.query.profile.types.ConversionContext;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
@@ -27,18 +30,29 @@ import java.util.Map;
 public class QueryProfileProperties extends Properties {
 
     private final CompiledQueryProfile profile;
+    private final Embedder embedder;
 
     // Note: The priority order is: values has precedence over references
 
     /** Values which has been overridden at runtime, or null if none */
     private Map<CompoundName, Object> values = null;
-    /** Query profile references which has been overridden at runtime, or null if none. Earlier values has precedence */
+
+    /**
+     * Query profile references which has been overridden at runtime, possibly to the null value to clear values,
+     * or null if none (i.e this is lazy).
+     * Earlier values has precedence
+     */
     private List<Pair<CompoundName, CompiledQueryProfile>> references = null;
 
-    /** Creates an instance from a profile, throws an exception if the given profile is null */
     public QueryProfileProperties(CompiledQueryProfile profile) {
+        this(profile, Embedder.throwsOnUse);
+    }
+
+    /** Creates an instance from a profile, throws an exception if the given profile is null */
+    public QueryProfileProperties(CompiledQueryProfile profile, Embedder embedder) {
         Validator.ensureNotNull("The profile wrapped by this cannot be null", profile);
         this.profile = profile;
+        this.embedder = embedder;
     }
 
     /** Returns the query profile backing this, or null if none */
@@ -49,20 +63,21 @@ public class QueryProfileProperties extends Properties {
     public Object get(CompoundName name, Map<String, String> context,
                       com.yahoo.processing.request.Properties substitution) {
         name = unalias(name, context);
-        Object value = null;
-        if (values != null)
-            value = values.get(name);
-        if (value == null) {
-            Pair<CompoundName, CompiledQueryProfile> reference = findReference(name);
-            if (reference != null)
-                return reference.getSecond().get(name.rest(reference.getFirst().size()), context, substitution); // yes; even if null
+        if (values != null && values.containsKey(name))
+            return values.get(name); // Returns this value, even if null
+
+        Pair<CompoundName, CompiledQueryProfile> reference = findReference(name);
+        if (reference != null) {
+            if (reference.getSecond() == null)
+                return null; // cleared
+            else
+                return reference.getSecond().get(name.rest(reference.getFirst().size()), context, substitution); // even if null
         }
 
-        if (value == null)
-            value = profile.get(name, context, substitution);
-        if (value == null)
-            value = super.get(name, context, substitution);
-        return value;
+        Object value = profile.get(name, context, substitution);
+        if (value != null)
+            return value;
+        return super.get(name, context, substitution);
     }
 
     /**
@@ -88,28 +103,34 @@ public class QueryProfileProperties extends Properties {
 
             // Check types
             if ( ! profile.getTypes().isEmpty()) {
-                QueryProfileType type = null;
+                QueryProfileType type;
+                QueryProfileType explicitTypeFromField = null;
                 for (int i = 0; i < name.size(); i++) {
-                    if (type == null) // We're on the first iteration, or no type is explicitly specified
+                    if (explicitTypeFromField != null)
+                        type = explicitTypeFromField;
+                    else
                         type = profile.getType(name.first(i), context);
                     if (type == null) continue;
+
                     String localName = name.get(i);
                     FieldDescription fieldDescription = type.getField(localName);
                     if (fieldDescription == null && type.isStrict())
-                        throw new IllegalArgumentException("'" + localName + "' is not declared in " + type + ", and the type is strict");
+                        throw new IllegalInputException("'" + localName + "' is not declared in " + type + ", and the type is strict");
 
                     // TODO: In addition to strictness, check legality along the way
 
                     if (fieldDescription != null) {
                         if (i == name.size() - 1) { // at the end of the path, check the assignment type
-                            value = fieldDescription.getType().convertFrom(value, profile.getRegistry());
+                            value = fieldDescription.getType().convertFrom(value, new ConversionContext(profile.getRegistry(),
+                                                                                                        embedder,
+                                                                                                        context));
                             if (value == null)
-                                throw new IllegalArgumentException("'" + value + "' is not a " +
-                                                                   fieldDescription.getType().toInstanceDescription());
+                                throw new IllegalInputException("'" + value + "' is not a " +
+                                                                fieldDescription.getType().toInstanceDescription());
                         }
                         else if (fieldDescription.getType() instanceof QueryProfileFieldType) {
                             // If a type is specified, use that instead of the type implied by the name
-                            type = ((QueryProfileFieldType) fieldDescription.getType()).getQueryProfileType();
+                            explicitTypeFromField = ((QueryProfileFieldType) fieldDescription.getType()).getQueryProfileType();
                         }
                     }
 
@@ -118,12 +139,12 @@ public class QueryProfileProperties extends Properties {
 
             if (value instanceof String && value.toString().startsWith("ref:")) {
                 if (profile.getRegistry() == null)
-                    throw new IllegalArgumentException("Runtime query profile references does not work when the " +
+                    throw new IllegalInputException("Runtime query profile references does not work when the " +
                                                        "QueryProfileProperties are constructed without a registry");
                 String queryProfileId = value.toString().substring(4);
                 value = profile.getRegistry().findQueryProfile(queryProfileId);
                 if (value == null)
-                    throw new IllegalArgumentException("Query profile '" + queryProfileId + "' is not found");
+                    throw new IllegalInputException("Query profile '" + queryProfileId + "' is not found");
             }
 
             if (value instanceof CompiledQueryProfile) { // this will be due to one of the two clauses above
@@ -138,17 +159,31 @@ public class QueryProfileProperties extends Properties {
             }
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Could not set '" + name + "' to '" + value + "'", e);
+            throw new IllegalInputException("Could not set '" + name + "' to '" + value + "'", e);
         }
     }
 
     @Override
-    public Map<String, Object> listProperties(CompoundName path, Map<String,String> context,
+    public void clearAll(CompoundName name, Map<String, String> context) {
+        if (references == null)
+            references = new ArrayList<>();
+        references.add(new Pair<>(name, null));
+
+        if (values != null)
+            values.keySet().removeIf(key -> key.hasPrefix(name));
+    }
+
+    @Override
+    public Map<String, Object> listProperties(CompoundName path, Map<String, String> context,
                                               com.yahoo.processing.request.Properties substitution) {
         path = unalias(path, context);
         if (context == null) context = Collections.emptyMap();
 
-        Map<String, Object> properties = profile.listValues(path, context, substitution);
+        Map<String, Object> properties = new HashMap<>();
+        for (var entry : profile.listValues(path, context, substitution).entrySet()) {
+            if (references != null && containsNullParentOf(path, references)) continue;
+            properties.put(entry.getKey(), entry.getValue());
+        }
         properties.putAll(super.listProperties(path, context, substitution));
 
         if (references != null) {
@@ -165,8 +200,14 @@ public class QueryProfileProperties extends Properties {
                     pathInReference = path.rest(refEntry.getFirst().size());
                     prefixToReferenceKeys = CompoundName.empty;
                 }
-                for (Map.Entry<String, Object> valueEntry : refEntry.getSecond().listValues(pathInReference, context, substitution).entrySet()) {
-                    properties.put(prefixToReferenceKeys.append(new CompoundName(valueEntry.getKey())).toString(), valueEntry.getValue());
+                if (refEntry.getSecond() == null) {
+                    if (refEntry.getFirst().hasPrefix(path))
+                        properties.put(prefixToReferenceKeys.toString(), null);
+                }
+                else {
+                    for (Map.Entry<String, Object> valueEntry : refEntry.getSecond().listValues(pathInReference, context, substitution).entrySet()) {
+                        properties.put(prefixToReferenceKeys.append(new CompoundName(valueEntry.getKey())).toString(), valueEntry.getValue());
+                    }
                 }
             }
 
@@ -239,6 +280,12 @@ public class QueryProfileProperties extends Properties {
             if (name.hasPrefix(entry.getFirst())) return entry;
         }
         return null;
+    }
+
+    private boolean containsNullParentOf(CompoundName path, List<Pair<CompoundName, CompiledQueryProfile>> properties) {
+        if (properties.contains(new Pair<>(path, (CompiledQueryProfile)null))) return true;
+        if (path.size() > 0 && containsNullParentOf(path.first(path.size() - 1), properties)) return true;
+        return false;
     }
 
     CompoundName unalias(CompoundName name, Map<String,String> context) {

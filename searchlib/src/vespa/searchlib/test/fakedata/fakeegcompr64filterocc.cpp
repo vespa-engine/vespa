@@ -1,18 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fakeegcompr64filterocc.h"
+#include "bitencode64.h"
+#include "bitdecode64.h"
 #include "fpfactory.h"
 #include <vespa/searchlib/queryeval/iterators.h>
-#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.test.fake_eg_compr64_filter_occ");
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
-
-#include "bitencode64.h"
-#include "bitdecode64.h"
 
 namespace search::fakedata {
 
@@ -64,16 +62,16 @@ init(std::make_pair("EGCompr64FilterOcc",
 
 FakeEGCompr64FilterOcc::FakeEGCompr64FilterOcc(const FakeWord &fw)
     : FakePosting(fw.getName() + ".egc64filterocc"),
-      _compressed(std::make_pair(static_cast<uint64_t *>(NULL), 0)),
-      _l1SkipCompressed(std::make_pair(static_cast<uint64_t *>(NULL), 0)),
-      _l2SkipCompressed(std::make_pair(static_cast<uint64_t *>(NULL), 0)),
-      _l3SkipCompressed(std::make_pair(static_cast<uint64_t *>(NULL), 0)),
-      _l4SkipCompressed(std::make_pair(static_cast<uint64_t *>(NULL), 0)),
-      _compressedMalloc(NULL),
-      _l1SkipCompressedMalloc(NULL),
-      _l2SkipCompressedMalloc(NULL),
-      _l3SkipCompressedMalloc(NULL),
-      _l4SkipCompressedMalloc(NULL),
+      _compressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
+      _l1SkipCompressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
+      _l2SkipCompressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
+      _l3SkipCompressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
+      _l4SkipCompressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
+      _compressedAlloc(),
+      _l1SkipCompressedAlloc(),
+      _l2SkipCompressedAlloc(),
+      _l3SkipCompressedAlloc(),
+      _l4SkipCompressedAlloc(),
       _docIdLimit(0),
       _hitDocs(0),
       _lastDocId(0u),
@@ -92,16 +90,16 @@ FakeEGCompr64FilterOcc::FakeEGCompr64FilterOcc(const FakeWord &fw,
         bool bigEndian,
         const char *nameSuffix)
     : FakePosting(fw.getName() + nameSuffix),
-      _compressed(std::make_pair(static_cast<uint64_t *>(NULL), 0)),
-      _l1SkipCompressed(std::make_pair(static_cast<uint64_t *>(NULL), 0)),
-      _l2SkipCompressed(std::make_pair(static_cast<uint64_t *>(NULL), 0)),
-      _l3SkipCompressed(std::make_pair(static_cast<uint64_t *>(NULL), 0)),
-      _l4SkipCompressed(std::make_pair(static_cast<uint64_t *>(NULL), 0)),
-      _compressedMalloc(NULL),
-      _l1SkipCompressedMalloc(NULL),
-      _l2SkipCompressedMalloc(NULL),
-      _l3SkipCompressedMalloc(NULL),
-      _l4SkipCompressedMalloc(NULL),
+      _compressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
+      _l1SkipCompressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
+      _l2SkipCompressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
+      _l3SkipCompressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
+      _l4SkipCompressed(std::make_pair(static_cast<uint64_t *>(nullptr), 0)),
+      _compressedAlloc(),
+      _l1SkipCompressedAlloc(),
+      _l2SkipCompressedAlloc(),
+      _l3SkipCompressedAlloc(),
+      _l4SkipCompressedAlloc(),
       _docIdLimit(0),
       _hitDocs(0),
       _lastDocId(0u),
@@ -393,24 +391,17 @@ setupT(const FakeWord &fw)
     l4SkipBits.writeBits(static_cast<uint64_t>(-1), 64);
     l4SkipBits.flush();
     l4SkipBits.writeComprBuffer();
-    _compressed = bits.grabComprBuffer(_compressedMalloc);
-    _l1SkipCompressed = l1SkipBits.grabComprBuffer(_l1SkipCompressedMalloc);
-    _l2SkipCompressed = l2SkipBits.grabComprBuffer(_l2SkipCompressedMalloc);
-    _l3SkipCompressed = l3SkipBits.grabComprBuffer(_l3SkipCompressedMalloc);
-    _l4SkipCompressed = l4SkipBits.grabComprBuffer(_l4SkipCompressedMalloc);
+    _compressed = bits.grabComprBuffer(_compressedAlloc);
+    _l1SkipCompressed = l1SkipBits.grabComprBuffer(_l1SkipCompressedAlloc);
+    _l2SkipCompressed = l2SkipBits.grabComprBuffer(_l2SkipCompressedAlloc);
+    _l3SkipCompressed = l3SkipBits.grabComprBuffer(_l3SkipCompressedAlloc);
+    _l4SkipCompressed = l4SkipBits.grabComprBuffer(_l4SkipCompressedAlloc);
     _docIdLimit = fw._docIdLimit;
     _lastDocId = lastDocId;
 }
 
 
-FakeEGCompr64FilterOcc::~FakeEGCompr64FilterOcc()
-{
-    free(_compressedMalloc);
-    free(_l1SkipCompressedMalloc);
-    free(_l2SkipCompressedMalloc);
-    free(_l3SkipCompressedMalloc);
-    free(_l4SkipCompressedMalloc);
-}
+FakeEGCompr64FilterOcc::~FakeEGCompr64FilterOcc() = default;
 
 
 void
@@ -612,7 +603,7 @@ private:
     typedef BitDecode64<bigEndian> DC;
 
 public:
-    DC _docIdBits;
+    DC       _docIdBits;
     uint32_t _residue;
     uint32_t _lastDocId;
 
@@ -764,9 +755,7 @@ FakeEGCompr64LEFilterOcc::FakeEGCompr64LEFilterOcc(const FakeWord &fw)
 }
 
 
-FakeEGCompr64LEFilterOcc::~FakeEGCompr64LEFilterOcc()
-{
-}
+FakeEGCompr64LEFilterOcc::~FakeEGCompr64LEFilterOcc() = default;
 
 
 static FPFactoryInit

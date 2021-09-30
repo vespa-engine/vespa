@@ -13,6 +13,8 @@ import java.util.Optional;
  */
 public class TransportSecurityUtils {
 
+    private static ConfigFileBasedTlsContext systemTlsContext;
+
     public static final String CONFIG_FILE_ENVIRONMENT_VARIABLE = "VESPA_TLS_CONFIG_FILE";
     public static final String INSECURE_MIXED_MODE_ENVIRONMENT_VARIABLE = "VESPA_TLS_INSECURE_MIXED_MODE";
     public static final String INSECURE_AUTHORIZATION_MODE_ENVIRONMENT_VARIABLE = "VESPA_TLS_INSECURE_AUTHORIZATION_MODE";
@@ -64,13 +66,30 @@ public class TransportSecurityUtils {
                 .map(TransportSecurityOptions::fromJsonFile);
     }
 
-    public static Optional<TlsContext> createTlsContext() {
-        return getConfigFile()
-                .map(configFile -> new ConfigFileBasedTlsContext(configFile, getInsecureAuthorizationMode()));
+    /**
+     * @return The shared {@link TlsContext} for the Vespa system environment
+     */
+    public static Optional<TlsContext> getSystemTlsContext() {
+        synchronized (TransportSecurityUtils.class) {
+            Path configFile = getConfigFile().orElse(null);
+            if (configFile == null) return Optional.empty();
+            if (systemTlsContext == null) {
+                systemTlsContext = new SystemTlsContext(configFile);
+            }
+            return Optional.of(systemTlsContext);
+        }
     }
 
     private static Optional<String> getEnvironmentVariable(Map<String, String> environmentVariables, String variableName) {
         return Optional.ofNullable(environmentVariables.get(variableName))
                 .filter(var -> !var.isEmpty());
+    }
+
+    private static class SystemTlsContext extends ConfigFileBasedTlsContext {
+        SystemTlsContext(Path tlsOptionsConfigFile) {
+            super(tlsOptionsConfigFile, getInsecureAuthorizationMode());
+        }
+
+        @Override public void close() { throw new UnsupportedOperationException("Shared TLS context cannot be closed"); }
     }
 }

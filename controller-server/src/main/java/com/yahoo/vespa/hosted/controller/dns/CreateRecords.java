@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.dns;
 
 import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
@@ -41,7 +41,7 @@ public class CreateRecords implements NameServiceRequest {
     public void dispatchTo(NameService nameService) {
         switch (type) {
             case ALIAS:
-                var targets = records.stream().map(Record::data).map(AliasTarget::from).collect(Collectors.toSet());
+                var targets = records.stream().map(Record::data).map(AliasTarget::unpack).collect(Collectors.toSet());
                 nameService.createAlias(name, targets);
                 break;
             case TXT:

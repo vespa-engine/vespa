@@ -12,6 +12,7 @@ import java.util.List;
  * generates a new execution value without regard for the existing one.
  */
 public class ExpressionOptimizer extends ExpressionConverter {
+
     @Override
     protected boolean shouldConvert(Expression exp) {
         return exp instanceof StatementExpression;
@@ -111,4 +112,5 @@ public class ExpressionOptimizer extends ExpressionConverter {
         }
 
     }
+
 }

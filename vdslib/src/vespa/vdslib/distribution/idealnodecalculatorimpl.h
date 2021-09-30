@@ -7,8 +7,7 @@
 
 #include "idealnodecalculator.h"
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 class IdealNodeCalculatorImpl : public IdealNodeCalculatorConfigurable {
     std::vector<const char*> _upStates;
@@ -29,5 +28,4 @@ private:
     void initUpStateMapping();
 };
 
-} // lib
-} // storage
+}

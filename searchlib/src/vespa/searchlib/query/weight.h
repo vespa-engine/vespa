@@ -19,7 +19,7 @@ public:
      * constructor.
      * @param value The initial weight in percent; should be 100 unless a specific value is set.
      **/
-    explicit Weight(int32_t value) : _weight(value) {}
+    explicit Weight(int32_t value) noexcept : _weight(value) {}
 
     /**
      * change the weight value.
@@ -40,7 +40,7 @@ public:
     double multiplier() const { return 0.01 * _weight; }
 
     /** compare two weights */
-    bool operator== (const Weight& other) const { return _weight == other._weight; }
+    bool operator== (const Weight& other) const noexcept { return _weight == other._weight; }
 };
 
 }

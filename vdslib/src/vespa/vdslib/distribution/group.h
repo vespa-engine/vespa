@@ -16,20 +16,17 @@
 #include <vespa/vespalib/util/crc.h>
 #include <map>
 #include <vector>
+#include <memory>
 
 namespace vespalib { class asciistream; }
 
-namespace storage {
-namespace lib {
-
-class IdealGroup;
-class SystemState;
+namespace storage::lib {
 
 class Group : public document::Printable
 {
 public:
-    typedef std::unique_ptr<Group> UP;
-    typedef RedundancyGroupDistribution Distribution;
+    using UP = std::unique_ptr<Group>;
+    using Distribution = RedundancyGroupDistribution ;
 
 private:
     vespalib::string           _name;
@@ -101,6 +98,4 @@ public:
     vespalib::string getDistributionConfigHash() const;
 };
 
-} // lib
-} // storage
-
+}

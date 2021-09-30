@@ -3,28 +3,49 @@
 #include "field.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/document/datatype/datatype.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/bobhash.h>
+#include <algorithm>
 
 namespace document {
 
-Field::Field() : Field("", 0, *DataType::INT, false) { }
+Field::Set::Set(std::vector<CPtr> fields)
+    : _fields(std::move(fields))
+{
+    std::sort(_fields.begin(), _fields.end(), Field::FieldPtrLess());
+    _fields.erase(std::unique(_fields.begin(), _fields.end(), Field::FieldPtrEqual()), _fields.end());
+}
 
-Field::Field(vespalib::stringref name, int fieldId,
-             const DataType& dataType, bool headerField)
-    : FieldBase(name),
-      _dataType(&dataType),
-      _fieldId(fieldId),
-      _isHeaderField(headerField)
+bool
+Field::Set::contains(const Field & field) const {
+    return std::binary_search(_fields.begin(), _fields.end(), &field, Field::FieldPtrLess());
+}
+
+bool
+Field::Set::contains(const Set & fields) const {
+    return std::includes(_fields.begin(), _fields.end(),
+                         fields._fields.begin(), fields._fields.end(),
+                         Field::FieldPtrLess());
+}
+
+Field::Field()
+    : Field("", 0, *DataType::INT)
 { }
 
-Field::Field(vespalib::stringref name,
-             const DataType& dataType, bool headerField)
-    : FieldBase(name),
+Field::Field(vespalib::stringref name, int fieldId, const DataType& dataType)
+    : FieldSet(),
+      _name(name),
       _dataType(&dataType),
-      _fieldId(calculateIdV7()),
-      _isHeaderField(headerField)
+      _fieldId(fieldId)
+{ }
+
+Field::Field(vespalib::stringref name, const DataType& dataType)
+    : FieldSet(),
+      _name(name),
+      _dataType(&dataType),
+      _fieldId(calculateIdV7())
 { }
 
 FieldValue::UP
@@ -41,9 +62,6 @@ Field::toString(bool verbose) const
         out << ", id " << _fieldId;
     }
     out << ", " << _dataType->toString();
-    if (verbose) {
-        out << ", " << (_isHeaderField ? "header" : "body");
-    }
     out << ")";
     return out.str();
 }
@@ -52,19 +70,16 @@ bool
 Field::contains(const FieldSet& fields) const
 {
     switch (fields.getType()) {
-    case FIELD:
-        return static_cast<const Field&>(fields).getId() == getId();
-    case SET:
-    {
-        // Go through each.
-        return false;
-    }
-    case NONE:
-    case DOCID:
+        case Type::FIELD:
+            return static_cast<const Field&>(fields).getId() == getId();
+        case Type::SET: {
+            const auto & set = static_cast<const FieldCollection &>(fields);
+            return (set.getFields().size() == 1) && ((*set.getFields().begin())->getId() == getId());
+        }
+        case Type::NONE:
+        case Type::DOCID:
         return true;
-    case HEADER:
-    case BODY:
-    case ALL:
+        case Type::ALL:
         return false;
     }
 
@@ -94,7 +109,7 @@ Field::validateId(int newId) {
                     getName().data(), newId));
     }
 
-    if ((newId & 0x80000000) != 0) // Highest bit must not be set
+    if ((uint32_t(newId) & 0x80000000u) != 0) // Highest bit must not be set
     {
         throw vespalib::IllegalArgumentException(vespalib::make_string(
                     "Attempt to set the id of %s to %d"

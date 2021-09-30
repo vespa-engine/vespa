@@ -5,9 +5,7 @@
 #include <vespa/storageapi/messageapi/bucketcommand.h>
 #include <vespa/storageapi/messageapi/bucketreply.h>
 
-namespace storage {
-
-namespace api {
+namespace storage::api {
 
 /**
  * \class StatBucketCommand
@@ -23,7 +21,7 @@ private:
 public:
     StatBucketCommand(const document::Bucket &bucket,
                       vespalib::stringref documentSelection);
-    ~StatBucketCommand();
+    ~StatBucketCommand() override;
 
     const vespalib::string& getDocumentSelection() const { return _docSelection; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -33,8 +31,8 @@ public:
 class StatBucketReply : public BucketReply {
     vespalib::string _results;
 public:
-    StatBucketReply(const StatBucketCommand&, vespalib::stringref results = "");
-    const vespalib::string& getResults() { return _results; }
+    explicit StatBucketReply(const StatBucketCommand&, vespalib::stringref results = "");
+    const vespalib::string& getResults() const noexcept { return _results; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(StatBucketReply, onStatBucketReply)
 };
@@ -51,7 +49,7 @@ public:
  */
 class GetBucketListCommand : public BucketCommand {
 public:
-    GetBucketListCommand(const document::Bucket &bucket);
+    explicit GetBucketListCommand(const document::Bucket &bucket);
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGECOMMAND(GetBucketListCommand, onGetBucketList);
 };
@@ -78,8 +76,8 @@ private:
     std::vector<BucketInfo> _buckets;
 
 public:
-    GetBucketListReply(const GetBucketListCommand&);
-    ~GetBucketListReply();
+    explicit GetBucketListReply(const GetBucketListCommand&);
+    ~GetBucketListReply() override;
     std::vector<BucketInfo>& getBuckets() { return _buckets; }
     const std::vector<BucketInfo>& getBuckets() const { return _buckets; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -89,5 +87,4 @@ public:
 
 std::ostream& operator<<(std::ostream& out, const GetBucketListReply::BucketInfo& instance);
 
-} // api
-} // storage
+}

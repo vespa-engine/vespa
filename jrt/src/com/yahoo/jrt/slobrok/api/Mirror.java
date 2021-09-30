@@ -31,15 +31,16 @@ import java.util.logging.Level;
  */
 public class Mirror implements IMirror {
 
-    private static Logger log = Logger.getLogger(Mirror.class.getName());
+    private static final Logger log = Logger.getLogger(Mirror.class.getName());
 
     private final Supervisor  orb;
     private final SlobrokList slobroks;
-    private String            currSlobrok;
-    private final BackOffPolicy     backOff;
-    private volatile int      updates    = 0;
+    private String currSlobrok;
+    private final BackOffPolicy backOff;
+    private volatile int updates = 0;
     private boolean requestDone = false;
-    private AtomicReference<Entry[]>  specs = new AtomicReference<>(new Entry[0]);
+    private boolean logOnSuccess = true;
+    private final AtomicReference<Entry[]> specs = new AtomicReference<>(new Entry[0]);
     private int specsGeneration = 0;
     private final TransportThread transportThread;
     private final Task updateTask;
@@ -54,7 +55,7 @@ public class Mirror implements IMirror {
      * @param orb the Supervisor to use
      * @param slobroks slobrok connect spec list
      * @param bop custom backoff policy, mostly useful for testing
-     **/
+     */
     public Mirror(Supervisor orb, SlobrokList slobroks, BackOffPolicy bop) {
         this.orb = orb;
         this.slobroks = slobroks;
@@ -175,18 +176,22 @@ public class Mirror implements IMirror {
         }
 
         if (target != null && ! slobroks.contains(currSlobrok)) {
+            log.log(Level.INFO, "location broker "+currSlobrok+" removed, will disconnect and use one of: "+slobroks);
             target.close();
             target = null;
         }
         if (target == null) {
+            logOnSuccess = true;
             currSlobrok = slobroks.nextSlobrokSpec();
             if (currSlobrok == null) {
                 double delay = backOff.get();
+                Level level = Level.FINE;
+                if (backOff.shouldInform(delay)) level = Level.INFO;
+                // note: since this happens quite often during normal operation,
+                // the level is lower than the more-natural Level.WARNING:
+                if (backOff.shouldWarn(delay)) level = Level.INFO;
+                log.log(level, "no location brokers available, retrying: "+slobroks+" (in " + delay + " seconds)");
                 updateTask.schedule(delay);
-                if (backOff.shouldWarn(delay)) {
-                    log.log(Level.INFO, "no location brokers available "
-                            + "(retry in " + delay + " seconds) for: " + slobroks);
-                }
                 return;
             }
             target = orb.connect(new Spec(currSlobrok));
@@ -199,48 +204,19 @@ public class Mirror implements IMirror {
     }
     
     private void handleUpdate() {
-        if (req.errorCode() == ErrorCode.NONE &&
-            req.returnValues().satisfies("SSi") &&
-            req.returnValues().get(0).count() == req.returnValues().get(1).count())
-        {
-            Values answer = req.returnValues();
-
-            if (specsGeneration != answer.get(2).asInt32()) {
-
-                int      numNames = answer.get(0).count();
-                String[]        n = answer.get(0).asStringArray();
-                String[]        s = answer.get(1).asStringArray();
-                Entry[]  newSpecs = new Entry[numNames];
-
-                for (int idx = 0; idx < numNames; idx++) {
-                    newSpecs[idx] = new Entry(n[idx], s[idx]);
-                }
-                specs.set(newSpecs);
-
-                specsGeneration = answer.get(2).asInt32();
-                int u = (updates + 1);
-                if (u == 0) {
-                    u++;
-                }
-                updates = u;
-            }
-            backOff.reset();
-            updateTask.schedule(0.1); // be nice
-            return;
-        }
         if (!req.checkReturnTypes("iSSSi")
             || (req.returnValues().get(2).count() !=
                 req.returnValues().get(3).count()))
         {
-            log.log(Level.INFO, "Error when handling update from slobrok. Error: " + req.errorMessage() +
-                    " (error code " + req.errorCode() + ")" + ", target: " + target);
+            if (! logOnSuccess) {
+                log.log(Level.INFO, "Error with location broker "+currSlobrok+" update: " + req.errorMessage() +
+                        " (error code " + req.errorCode() + ")");
+            }
             target.close();
             target = null;
             updateTask.scheduleNow(); // try next slobrok
             return;
         }
-
-
         Values answer = req.returnValues();
 
         int diffFromGeneration = answer.get(0).asInt32();
@@ -278,7 +254,10 @@ public class Mirror implements IMirror {
                     newSpecs[idx++] = e;
                 }
             }
-
+            if (logOnSuccess) {
+                log.log(Level.INFO, "successfully connected to location broker "+currSlobrok+" (mirror initialized with "+newSpecs.length+" service names)");
+                logOnSuccess = false;
+            }
             specs.set(newSpecs);
 
             specsGeneration = diffToGeneration;

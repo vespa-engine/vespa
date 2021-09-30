@@ -46,6 +46,15 @@ public:
     void print(uint32_t idx, Cursor &cursor) override;
 };
 
+class WriteStringFieldNeverSkip : public WriteField<search::attribute::ConstCharContent>
+{
+public:
+    WriteStringFieldNeverSkip(vespalib::Memory fieldName,
+                             const IAttributeVector &attr)
+      : WriteField(fieldName, attr) {}
+    ~WriteStringFieldNeverSkip() override {}
+    void print(uint32_t idx, Cursor &cursor) override;
+};
 
 class WriteFloatField : public WriteField<search::attribute::FloatContent>
 {
@@ -104,6 +113,17 @@ WriteStringField::print(uint32_t idx, Cursor &cursor)
     }
 }
 
+void
+WriteStringFieldNeverSkip::print(uint32_t idx, Cursor &cursor)
+{
+    if (idx < _size) {
+        const char *s = _content[idx];
+        cursor.setString(_fieldName, vespalib::Memory(s));
+    } else {
+        cursor.setString(_fieldName, vespalib::Memory(""));
+    }
+}
+
 WriteFloatField::WriteFloatField(vespalib::Memory fieldName,
                                  const IAttributeVector &attr)
     : WriteField(fieldName, attr)
@@ -147,7 +167,7 @@ WriteIntField::print(uint32_t idx, Cursor &cursor)
 }
 
 std::unique_ptr<AttributeFieldWriter>
-AttributeFieldWriter::create(vespalib::Memory fieldName, const IAttributeVector &attr)
+AttributeFieldWriter::create(vespalib::Memory fieldName, const IAttributeVector &attr, bool keep_empty_strings)
 {
     switch (attr.getBasicType()) {
     case BasicType::INT8:
@@ -162,7 +182,11 @@ AttributeFieldWriter::create(vespalib::Memory fieldName, const IAttributeVector 
     case BasicType::DOUBLE:
         return std::make_unique<WriteFloatField>(fieldName, attr);
     case BasicType::STRING:
-        return std::make_unique<WriteStringField>(fieldName, attr);
+        if (keep_empty_strings) {
+            return std::make_unique<WriteStringFieldNeverSkip>(fieldName, attr);
+        } else {
+            return std::make_unique<WriteStringField>(fieldName, attr);
+        }
     default:
         assert(false);
         abort();

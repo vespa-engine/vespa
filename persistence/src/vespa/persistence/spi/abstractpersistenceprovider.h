@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/persistence/spi/persistenceprovider.h>
+#include "persistenceprovider.h"
 
 namespace storage::spi {
 
@@ -20,12 +20,6 @@ public:
     Result initialize() override { return Result(); };
 
     /**
-     * Updates the document by calling get(), updating the document,
-     * then calling put() on the result.
-     */
-    UpdateResult update(const Bucket&, Timestamp, const DocumentUpdateSP&, Context&) override;
-
-    /**
      * Default impl empty.
      */
     Result createBucket(const Bucket&, Context&) override { return Result(); }
@@ -33,22 +27,13 @@ public:
     /**
      * Default impl is empty.
      */
-    Result maintain(const Bucket&, MaintenanceLevel) override { return Result(); }
-
-    /**
-     * Default impl is empty.
-     */
     Result removeEntry(const Bucket&, Timestamp, Context&) override { return Result(); }
-
-    /**
-     * Default impl is getBucketInfo();
-     */
-    Result flush(const Bucket&, Context&) override { return Result(); }
 
     /**
      * Default impl is remove().
      */
     RemoveResult removeIfFound(const Bucket&, Timestamp, const DocumentId&, Context&) override;
+    void removeIfFoundAsync(const Bucket&, Timestamp, const DocumentId&, Context&, OperationComplete::UP) override;
 
     /**
      * Default impl empty.
@@ -63,11 +48,6 @@ public:
      * Default impl empty.
      */
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
-
-    /**
-     * Uses join by default.
-     */
-    Result move(const Bucket& source, PartitionId id, Context&) override;
 };
 
 }

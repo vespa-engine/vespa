@@ -4,21 +4,29 @@ package com.yahoo.vespa.hosted.controller.persistence;// Copyright 2018 Yahoo Ho
 import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.security.KeyUtils;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
+import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
+import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfoAddress;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
 import org.junit.Test;
 
 import java.net.URI;
 import java.security.PublicKey;
-import java.util.Collections;
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -45,13 +53,15 @@ public class TenantSerializerTest {
         AthenzTenant tenant = AthenzTenant.create(TenantName.from("athenz-tenant"),
                                                   new AthenzDomain("domain1"),
                                                   new Property("property1"),
-                                                  Optional.of(new PropertyId("1")));
+                                                  Optional.of(new PropertyId("1")),
+                                                  Instant.ofEpochMilli(1234L));
         AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.domain(), serialized.domain());
         assertEquals(tenant.property(), serialized.property());
         assertTrue(serialized.propertyId().isPresent());
         assertEquals(tenant.propertyId(), serialized.propertyId());
+        assertEquals(tenant.createdAt(), serialized.createdAt());
     }
 
     @Test
@@ -59,7 +69,8 @@ public class TenantSerializerTest {
         AthenzTenant tenant = AthenzTenant.create(TenantName.from("athenz-tenant"),
                                                              new AthenzDomain("domain1"),
                                                              new Property("property1"),
-                                                             Optional.empty());
+                                                             Optional.empty(),
+                                                             Instant.EPOCH);
         AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertFalse(serialized.propertyId().isPresent());
         assertEquals(tenant.propertyId(), serialized.propertyId());
@@ -71,43 +82,126 @@ public class TenantSerializerTest {
                                                new AthenzDomain("domain1"),
                                                new Property("property1"),
                                                Optional.of(new PropertyId("1")),
-                                               Optional.of(contact()));
+                                               Optional.of(contact()),
+                                               Instant.EPOCH,
+                                               lastLoginInfo(321L, 654L, 987L));
         AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.contact(), serialized.contact());
     }
 
     @Test
-    public void user_tenant() {
-        UserTenant tenant = UserTenant.create("by-foo", Optional.of(contact()));
-        UserTenant serialized = (UserTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+    public void cloud_tenant() {
+        CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
+                                             Instant.ofEpochMilli(1234L),
+                                             lastLoginInfo(123L, 456L, null),
+                                             Optional.of(new SimplePrincipal("foobar-user")),
+                                             ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
+                                                               otherPublicKey, new SimplePrincipal("jane")),
+                                             TenantInfo.EMPTY,
+                                             List.of(),
+                                             Optional.empty()
+        );
+        CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
-        assertEquals(contact(), serialized.contact().get());
+        assertEquals(tenant.creator(), serialized.creator());
+        assertEquals(tenant.developerKeys(), serialized.developerKeys());
+        assertEquals(tenant.createdAt(), serialized.createdAt());
     }
 
     @Test
-    public void cloud_tenant() {
+    public void cloud_tenant_with_info() {
         CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
-                                             new BillingInfo("old cat lady", "vespa"),
-                                             ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
-                                                               otherPublicKey, new SimplePrincipal("jane")));
+                Instant.EPOCH,
+                lastLoginInfo(null, 789L, 654L),
+                Optional.of(new SimplePrincipal("foobar-user")),
+                ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
+                        otherPublicKey, new SimplePrincipal("jane")),
+                TenantInfo.EMPTY.withName("Ofni Tnanet"),
+                List.of(
+                        new TenantSecretStore("ss1", "123", "role1"),
+                        new TenantSecretStore("ss2", "124", "role2")
+                ),
+                Optional.of("arn:aws:iam::123456789012:role/my-role")
+        );
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
-        assertEquals(tenant.name(), serialized.name());
-        assertEquals(tenant.billingInfo(), serialized.billingInfo());
-        assertEquals(tenant.developerKeys(), serialized.developerKeys());
+        assertEquals(tenant.info(), serialized.info());
+        assertEquals(tenant.tenantSecretStores(), serialized.tenantSecretStores());
     }
 
-    private Contact contact() {
+
+    @Test
+    public void cloud_tenant_with_tenant_info_partial() {
+        TenantInfo partialInfo = TenantInfo.EMPTY
+                .withAddress(TenantInfoAddress.EMPTY.withCity("Hønefoss"));
+
+        Slime slime = new Slime();
+        Cursor parentObject = slime.setObject();
+        serializer.toSlime(partialInfo, parentObject);
+        assertEquals("{\"info\":{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"invoiceEmail\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"address\":{\"addressLines\":\"\",\"postalCodeOrZip\":\"\",\"city\":\"Hønefoss\",\"stateRegionProvince\":\"\",\"country\":\"\"}}}", slime.toString());
+    }
+
+    @Test
+    public void cloud_tenant_with_tenant_info_full() {
+        TenantInfo fullInfo = TenantInfo.EMPTY
+                .withName("My Company")
+                .withEmail("email@mycomp.any")
+                .withWebsite("http://mycomp.any")
+                .withContactEmail("ceo@mycomp.any")
+                .withContactName("My Name")
+                .withInvoiceEmail("invoice@mycomp.any")
+                .withAddress(TenantInfoAddress.EMPTY
+                        .withCity("Hønefoss")
+                        .withAddressLines("Riperbakken 2")
+                        .withCountry("Norway")
+                        .withPostalCodeOrZip("3510")
+                        .withStateRegionProvince("Viken"))
+                .withBillingContact(TenantInfoBillingContact.EMPTY
+                        .withEmail("thomas@sodor.com")
+                        .withName("Thomas The Tank Engine")
+                        .withPhone("NA")
+                        .withAddress(TenantInfoAddress.EMPTY
+                                .withCity("Suddery")
+                                .withCountry("Sodor")
+                                .withAddressLines("Central Station")
+                                .withStateRegionProvince("Irish Sea")));
+
+        Slime slime = new Slime();
+        Cursor parentCursor = slime.setObject();
+        serializer.toSlime(fullInfo, parentCursor);
+        TenantInfo roundTripInfo = serializer.tenantInfoFromSlime(parentCursor.field("info"));
+
+        assertEquals(fullInfo, roundTripInfo);
+    }
+
+    @Test
+    public void deleted_tenant() {
+        DeletedTenant tenant = new DeletedTenant(
+                TenantName.from("tenant1"), Instant.ofEpochMilli(1234L), Instant.ofEpochMilli(2345L));
+        DeletedTenant serialized = (DeletedTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+        assertEquals(tenant.name(), serialized.name());
+        assertEquals(tenant.createdAt(), serialized.createdAt());
+        assertEquals(tenant.deletedAt(), serialized.deletedAt());
+    }
+
+    private static Contact contact() {
         return new Contact(
                 URI.create("http://contact1.test"),
                 URI.create("http://property1.test"),
                 URI.create("http://issue-tracker-1.test"),
                 List.of(
-                        Collections.singletonList("person1"),
-                        Collections.singletonList("person2")
+                        List.of("person1"),
+                        List.of("person2")
                 ),
                 "queue",
                 Optional.empty()
         );
     }
 
+    private static LastLoginInfo lastLoginInfo(Long user, Long developer, Long administrator) {
+        Map<LastLoginInfo.UserLevel, Instant> lastLogins = new HashMap<>();
+        Optional.ofNullable(user).map(Instant::ofEpochMilli).ifPresent(i -> lastLogins.put(LastLoginInfo.UserLevel.user, i));
+        Optional.ofNullable(developer).map(Instant::ofEpochMilli).ifPresent(i -> lastLogins.put(LastLoginInfo.UserLevel.developer, i));
+        Optional.ofNullable(administrator).map(Instant::ofEpochMilli).ifPresent(i -> lastLogins.put(LastLoginInfo.UserLevel.administrator, i));
+        return new LastLoginInfo(lastLogins);
+    }
 }

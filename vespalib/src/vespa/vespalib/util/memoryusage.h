@@ -1,8 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
-#include <cstddef>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib {
 
@@ -14,14 +14,14 @@ private:
     size_t _allocatedBytesOnHold;
 
 public:
-    MemoryUsage()
+    MemoryUsage() noexcept
         : _allocatedBytes(0),
           _usedBytes(0),
           _deadBytes(0),
           _allocatedBytesOnHold(0)
     { }
 
-    MemoryUsage(size_t allocated, size_t used, size_t dead, size_t onHold)
+    MemoryUsage(size_t allocated, size_t used, size_t dead, size_t onHold) noexcept
         : _allocatedBytes(allocated),
           _usedBytes(used),
           _deadBytes(dead),
@@ -35,6 +35,7 @@ public:
     void incAllocatedBytes(size_t inc) { _allocatedBytes += inc; }
     void decAllocatedBytes(size_t dec) { _allocatedBytes -= dec; }
     void incUsedBytes(size_t inc) { _usedBytes += inc; }
+    void decUsedBytes(size_t dec) { _usedBytes -= dec; }
     void incDeadBytes(size_t inc) { _deadBytes += inc; }
     void incAllocatedBytesOnHold(size_t inc) { _allocatedBytesOnHold += inc; }
     void decAllocatedBytesOnHold(size_t inc) { _allocatedBytesOnHold -= inc; }
@@ -55,6 +56,11 @@ public:
         _deadBytes += rhs._deadBytes;
         _allocatedBytesOnHold += rhs._allocatedBytesOnHold;
     }
+    string toString() const;
 };
+
+class asciistream;
+
+asciistream & operator << (asciistream & os, const MemoryUsage & usage);
 
 } // namespace vespalib

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
+import com.google.common.collect.ImmutableMap;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -8,7 +9,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.function.Function;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 import static com.yahoo.text.Utf8.calculateBytePositions;
@@ -549,6 +552,70 @@ public class Utf8TestCase {
             handEncoded[i] = buffer.get();
         }
         assertArrayEquals(stringAsUtf8, handEncoded);
+    }
+
+    @Test
+    @Ignore
+    public void benchmarkDecoding() {
+        byte[] ascii = "This is just sort of random mix.".getBytes();
+        byte[] unicode = "This is just sort of random mix. \u5370\u57df\u60c5\u5831\u53EF\u4EE5\u6709x\u00e9\u00e8".getBytes(StandardCharsets.UTF_8);
+        int iterations = 100_000; // Use 100_000+ for benchmarking
+
+        ImmutableMap.of("ascii", ascii, "unicode", unicode).forEach((type, b) -> {
+            long time1 = benchmark(() -> decode(Utf8::toString, b, iterations));
+            System.out.printf("Utf8::toString of %s string took %d ms\n", type, time1);
+            long time2 = benchmark(() -> decode((b1) -> new String(b1, StandardCharsets.UTF_8), b, iterations));
+            System.out.printf("String::new of %s string took %d ms\n", type, time2);
+            double change = ((double) time2 / (double) time1) - 1;
+            System.out.printf("Change = %.02f%%\n", change * 100);
+        });
+    }
+
+    @Test
+    @Ignore
+    public void benchmarkEncoding() {
+        String ascii = "This is just sort of random mix.";
+        String unicode = "This is just sort of random mix. \u5370\u57df\u60c5\u5831\u53EF\u4EE5\u6709x\u00e9\u00e8";
+        int iterations = 1_000_000; // Use 1_000_000+ for benchmarking
+
+        ImmutableMap.of("ascii", ascii, "unicode", unicode).forEach((type, s) -> {
+            long time1 = benchmark(() -> encode(Utf8::toBytes, s, iterations));
+            System.out.printf("Utf8::toBytes of %s string took %d ms\n", type, time1);
+            long time2 = benchmark(() -> encode((s1) -> s1.getBytes(StandardCharsets.UTF_8), s, iterations));
+            System.out.printf("String::getBytes of %s string took %d ms\n", type, time2);
+            double change = ((double) time2 / (double) time1) - 1;
+            System.out.printf("Change = %.02f%%\n", change * 100);
+        });
+    }
+
+
+    private byte[] encode(Function<String, byte[]> encoder, String s, int iterations) {
+        byte[] res = null;
+        for (int i = 0; i < iterations; i++) {
+            res = encoder.apply(s + i); // Append counter to avoid String cache
+        }
+        return res;
+    }
+
+    private String decode(Function<byte[], String> decoder, byte[] b, int iterations) {
+        String res = null;
+        for (int i = 0; i < iterations; i++) {
+            // Append counter to avoid String cache
+            byte[] counter = String.valueOf(i).getBytes();
+            byte[] result = new byte[b.length + counter.length];
+            System.arraycopy(b, 0, result, 0, b.length);
+            System.arraycopy(counter, 0, result, b.length, counter.length);
+            res = decoder.apply(result);
+        }
+        return res;
+    }
+
+    private long benchmark(Runnable r) {
+        r.run(); // Warmup
+        long start = System.currentTimeMillis();
+        r.run();
+        long end = System.currentTimeMillis();
+        return end - start;
     }
 
 }

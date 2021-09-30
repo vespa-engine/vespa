@@ -5,6 +5,6 @@ vespa_add_executable(searchlib_url_field_inverter_test_app TEST
     DEPENDS
     searchlib_test
     searchlib
-    gtest
+    GTest::GTest
 )
 vespa_add_test(NAME searchlib_url_field_inverter_test_app COMMAND searchlib_url_field_inverter_test_app)

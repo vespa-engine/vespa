@@ -46,6 +46,16 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>${protobuf.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <scope>provided</scope>
@@ -105,6 +115,10 @@
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpclient</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.velocity</groupId>
+          <artifactId>velocity</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -133,7 +147,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>documentapi</artifactId>
+      <artifactId>container-documentapi</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -187,19 +201,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>vespalog</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>statistics</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>messagebus-disc</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -212,18 +214,6 @@
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>searchlib</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>processing</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>chain</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -294,7 +284,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>jdisc_http_service</artifactId>
+      <artifactId>jdisc-security-filters</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -499,6 +489,10 @@
         <configuration>
           <updateReleaseInfo>true</updateReleaseInfo>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.github.os72</groupId>
+        <artifactId>protoc-jar-maven-plugin</artifactId>
       </plugin>
     </plugins>
   </build>

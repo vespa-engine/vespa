@@ -4,6 +4,7 @@
 #include "disk_mem_usage_state.h"
 #include "imaintenancejobrunner.h"
 #include "document_db_maintenance_config.h"
+#include "move_operation_limiter.h"
 
 namespace proton {
 
@@ -49,7 +50,7 @@ BlockableMaintenanceJob::BlockableMaintenanceJob(const vespalib::string &name,
 
 BlockableMaintenanceJob::~BlockableMaintenanceJob()
 {
-    _moveOpsLimiter->clearJob();
+    dynamic_cast<MoveOperationLimiter &>(*_moveOpsLimiter).clearJob();
 }
 
 bool
@@ -88,6 +89,13 @@ BlockableMaintenanceJob::unBlock(BlockedReason reason)
     if (_runner && considerRun) {
         _runner->run();
     }
+}
+
+void
+BlockableMaintenanceJob::onStop()
+{
+    LockGuard guard(_mutex);
+    _runner = nullptr;
 }
 
 bool

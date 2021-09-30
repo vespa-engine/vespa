@@ -3,8 +3,7 @@
 
 #include "resultnode.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class BucketResultNode : public ResultNode
 {
@@ -12,8 +11,8 @@ public:
     DECLARE_ABSTRACT_EXPRESSIONNODE(BucketResultNode);
     void set(const ResultNode & rhs) override { (void) rhs; }
 protected:
-    static vespalib::FieldBase _fromField;
-    static vespalib::FieldBase _toField;
+    static const vespalib::string _fromField;
+    static const vespalib::string _toField;
 private:
     int64_t onGetInteger(size_t index) const override { (void) index; return 0; }
     double onGetFloat(size_t index)    const override { (void) index; return 0; }
@@ -22,5 +21,4 @@ private:
     virtual size_t onGetRawByteSize() const = 0;
 };
 
-}
 }

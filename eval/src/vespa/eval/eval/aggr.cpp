@@ -11,53 +11,13 @@ namespace eval {
 
 namespace {
 
-struct Avg : Aggregator {
-    double sum = 0.0;
-    size_t cnt = 1;
-    void first(double value) override {
-        sum = value;
-        cnt = 1;
-    }
-    void next(double value) override {
-        sum += value;
-        ++cnt;
-    }
-    double result() const override { return (sum / cnt); }
-};
-
-struct Count : Aggregator {
-    size_t cnt = 0;
-    void first(double) override { cnt = 1; }
-    void next(double) override { ++cnt; }
-    double result() const override { return cnt; }
-};
-
-struct Prod : Aggregator {
-    double prod = 0.0;
-    void first(double value) override { prod = value; }
-    void next(double value) override { prod *= value; }
-    double result() const override { return prod; }
-};
-
-struct Sum : Aggregator {
-    double sum = 0.0;
-    void first(double value) override { sum = value; }
-    void next(double value) override { sum += value; }
-    double result() const override { return sum; }
-};
-
-struct Max : Aggregator {
-    double max = 0.0;
-    void first(double value) override { max = value; }
-    void next(double value) override { max = std::max(max, value); }
-    double result() const override { return max; }
-};
-
-struct Min : Aggregator {
-    double min = 0.0;
-    void first(double value) override { min = value; }
-    void next(double value) override { min = std::min(min, value); }
-    double result() const override { return min; }
+template <typename T>
+struct Wrapper : Aggregator {
+    T aggr;
+    virtual void first(double value) final override { aggr = T{value}; }
+    virtual void next(double value) final override { aggr.sample(value); }
+    virtual double result() const final override { return aggr.result(); }
+    virtual Aggr enum_value() const final override { return T::enum_value(); }
 };
 
 } // namespace vespalib::eval::<unnamed>
@@ -75,12 +35,13 @@ AggrNames::AggrNames()
     : _name_aggr_map(),
       _aggr_name_map()
 {
-    add(Aggr::AVG,   "avg");
-    add(Aggr::COUNT, "count");
-    add(Aggr::PROD,  "prod");
-    add(Aggr::SUM,   "sum");
-    add(Aggr::MAX,   "max");
-    add(Aggr::MIN,   "min");
+    add(Aggr::AVG,    "avg");
+    add(Aggr::COUNT,  "count");
+    add(Aggr::PROD,   "prod");
+    add(Aggr::SUM,    "sum");
+    add(Aggr::MAX,    "max");
+    add(Aggr::MEDIAN, "median");
+    add(Aggr::MIN,    "min");
 }
 
 const vespalib::string *
@@ -112,15 +73,19 @@ Aggregator::~Aggregator()
 Aggregator &
 Aggregator::create(Aggr aggr, Stash &stash)
 {
-    switch (aggr) {
-    case Aggr::AVG:   return stash.create<Avg>();
-    case Aggr::COUNT: return stash.create<Count>();
-    case Aggr::PROD:  return stash.create<Prod>();
-    case Aggr::SUM:   return stash.create<Sum>();
-    case Aggr::MAX:   return stash.create<Max>();
-    case Aggr::MIN:   return stash.create<Min>();
-    }
-    LOG_ABORT("should not be reached");
+    return TypifyAggr::resolve(aggr, [&stash](auto t)->Aggregator&
+                               {
+                                   using T = typename decltype(t)::template templ<double>;
+                                   return stash.create<Wrapper<T>>();
+                               });
+}
+
+std::vector<Aggr>
+Aggregator::list()
+{
+    return std::vector<Aggr>({ Aggr::AVG, Aggr::COUNT, Aggr::PROD,
+                               Aggr::SUM, Aggr::MAX,   Aggr::MEDIAN,
+                               Aggr::MIN });
 }
 
 } // namespace vespalib::eval

@@ -13,7 +13,7 @@
 #include "unique_store_comparator.h"
 #include "unique_store_entry.h"
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template <typename Allocator>
 class UniqueStoreBuilder;
@@ -35,6 +35,7 @@ public:
     using DataStoreType = DataStoreT<RefT>;
     using EntryType = EntryT;
     using RefType = RefT;
+    using CompareType = Compare;
     using Enumerator = UniqueStoreEnumerator<RefT>;
     using Builder = UniqueStoreBuilder<Allocator>;
     using Remapper = UniqueStoreRemapper<RefT>;
@@ -56,6 +57,8 @@ public:
     void remove(EntryRef ref);
     std::unique_ptr<Remapper> compact_worst(bool compact_memory, bool compact_address_space);
     vespalib::MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage get_values_memory_usage() const { return _store.getMemoryUsage(); }
+    vespalib::MemoryUsage get_dictionary_memory_usage() const { return _dict->get_memory_usage(); }
     vespalib::AddressSpace get_address_space_usage() const;
 
     // TODO: Consider exposing only the needed functions from allocator
@@ -73,7 +76,7 @@ public:
     uint32_t getNumUniques() const;
 
     Builder getBuilder(uint32_t uniqueValuesHint);
-    Enumerator getEnumerator() const;
+    Enumerator getEnumerator(bool sort_unique_values) const;
 
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref) const;

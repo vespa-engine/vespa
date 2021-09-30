@@ -4,8 +4,8 @@ package com.yahoo.vespa.config.server.http;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
-import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -21,6 +21,7 @@ import static org.junit.Assert.assertThat;
  * @author Ulf Lilleengen
  */
 public class HttpHandlerTest {
+
     @Test
     public void testResponse() throws IOException {
         final String message = "failed";
@@ -29,9 +30,8 @@ public class HttpHandlerTest {
         assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST));
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
-        Slime data = new Slime();
-        new JsonDecoder().decode(data, baos.toByteArray());
-        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.errorCodes.INVALID_APPLICATION_PACKAGE.name()));
+        Slime data = SlimeUtils.jsonToSlime(baos.toByteArray());
+        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.ErrorCode.INVALID_APPLICATION_PACKAGE.name()));
         assertThat(data.get().field("message").asString(), is(message));
     }
 
@@ -45,7 +45,7 @@ public class HttpHandlerTest {
     }
 
     private static class HttpTestHandler extends HttpHandler {
-        private RuntimeException exception;
+        private final RuntimeException exception;
         HttpTestHandler(RuntimeException exception) {
             super(HttpHandler.testOnlyContext());
             this.exception = exception;

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
@@ -15,28 +16,28 @@ import java.time.Duration;
  *
  * @author mpolden
  */
-public class OsUpgradeActivator extends Maintainer {
+public class OsUpgradeActivator extends NodeRepositoryMaintainer {
 
-    public OsUpgradeActivator(NodeRepository nodeRepository, Duration interval) {
-        super(nodeRepository, interval);
+    public OsUpgradeActivator(NodeRepository nodeRepository, Duration interval, Metric metric) {
+        super(nodeRepository, interval, metric);
     }
 
     @Override
-    protected void maintain() {
+    protected double maintain() {
         for (var nodeType : NodeType.values()) {
-            if (!nodeType.isDockerHost()) continue;
-            var active = canUpgradeOsOf(nodeType);
-            nodeRepository().osVersions().setActive(nodeType, active);
+            if (!nodeType.isHost()) continue;
+            boolean resume = canUpgradeOsOf(nodeType);
+            nodeRepository().osVersions().resumeUpgradeOf(nodeType, resume);
         }
+        return 1.0;
     }
 
     /** Returns whether to allow OS upgrade of nodes of given type */
     private boolean canUpgradeOsOf(NodeType type) {
-        return nodeRepository().list()
+        return nodeRepository().nodes()
+                               .list(Node.State.ready, Node.State.active)
                                .nodeType(type)
-                               .state(Node.State.ready, Node.State.active) // Only consider nodes in long-term states
                                .changingVersion()
-                               .asList()
                                .isEmpty();
     }
 

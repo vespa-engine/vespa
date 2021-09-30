@@ -4,6 +4,7 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storage/storageserver/statemanager.h>
 #include <tests/common/teststorageapp.h>
@@ -55,7 +56,7 @@ StateManagerTest::StateManagerTest()
 void
 StateManagerTest::SetUp() {
     vdstestlib::DirConfig config(getStandardConfig(true));
-    _node = std::make_unique<TestServiceLayerApp>(DiskCount(1), NodeIndex(2));
+    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(2));
     // Clock will increase 1 sec per call.
     _node->getClock().setAbsoluteTimeInSeconds(1);
     _metricManager = std::make_unique<metrics::MetricManager>();
@@ -314,6 +315,21 @@ TEST_F(StateManagerTest, immediate_node_state_replying_is_tracked_per_controller
     send_down_get_node_state_request(1);
     send_down_get_node_state_request(2);
     ASSERT_EQ(0, _upper->getNumReplies());
+}
+
+TEST_F(StateManagerTest, request_almost_immediate_replies_triggers_fast_reply)
+{
+    mark_reported_node_state_up();
+    mark_reply_observed_from_n_controllers(1);
+    auto before = std::chrono::steady_clock::now();
+    for (size_t pass = 0; pass < 100; ++pass) {
+        send_down_get_node_state_request(0);
+        _manager->request_almost_immediate_node_state_replies();
+        _upper->waitForMessage(api::MessageType::GETNODESTATE_REPLY, 2);
+        clear_sent_replies();
+    }
+    auto after = std::chrono::steady_clock::now();
+    ASSERT_GT(10s, after - before);
 }
 
 TEST_F(StateManagerTest, activation_command_is_bounced_with_current_cluster_state_version) {

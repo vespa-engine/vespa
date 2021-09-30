@@ -4,6 +4,7 @@
 #include "rpcnetwork.h"
 #include "rpcserviceaddress.h"
 #include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/error.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fnet/frt/reflection.h>
 
@@ -115,7 +116,7 @@ RPCSendV1::toParams(const FRT_Values &args) const
 
 
 std::unique_ptr<Reply>
-RPCSendV1::createReply(const FRT_Values & ret, const string & serviceName, Error & error, vespalib::TraceNode & rootTrace) const
+RPCSendV1::createReply(const FRT_Values & ret, const string & serviceName, Error & error, vespalib::Trace & trace) const
 {
     vespalib::Version version          = vespalib::Version(ret[0]._string._str);
     double            retryDelay       = ret[1]._double;
@@ -127,7 +128,7 @@ RPCSendV1::createReply(const FRT_Values & ret, const string & serviceName, Error
     uint32_t          errorServicesLen = ret[4]._string_array._len;
     const char       *protocolName     = ret[5]._string._str;
     BlobRef payload(ret[6]._data._buf, ret[6]._data._len);
-    const char       *trace            = ret[7]._string._str;
+    const char       *traceStr         = ret[7]._string._str;
 
     Reply::UP reply;
     if (payload.size() > 0) {
@@ -141,7 +142,7 @@ RPCSendV1::createReply(const FRT_Values & ret, const string & serviceName, Error
         reply->addError(Error(errorCodes[i], errorMessages[i]._str,
                               errorServices[i]._len > 0 ? errorServices[i]._str : serviceName.c_str()));
     }
-    rootTrace.addChild(TraceNode::decode(trace));
+    trace.addChild(TraceNode::decode(traceStr));
     return reply;
 }
 
@@ -163,7 +164,7 @@ RPCSendV1::createResponse(FRT_Values & ret, const string & version, Reply & repl
     ret.AddString(reply.getProtocol().c_str());
     ret.AddData(std::move(payload.payload()), payload.size());
     if (reply.getTrace().getLevel() > 0) {
-        ret.AddString(reply.getTrace().getRoot().encode().c_str());
+        ret.AddString(reply.getTrace().encode().c_str());
     } else {
         ret.AddString("");
     }

@@ -5,6 +5,7 @@
 #include <vespa/searchlib/features/rankingexpression/intrinsic_blueprint_adapter.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
+#include <vespa/vespalib/util/stash.h>
 #include <set>
 
 using namespace search::features::rankingexpression;
@@ -38,7 +39,7 @@ struct MyBlueprint : Blueprint {
         EXPECT_EQUAL(params[0], "foo");
         EXPECT_EQUAL(params[1], "bar");
         if (is_set(extra_input)) {
-            defineInput("my_input", AcceptInput::ANY);
+            EXPECT_TRUE(!defineInput("my_input", AcceptInput::ANY).has_value());
         }
         if (!is_set(no_output)) {
             if (is_set(error_result)) {

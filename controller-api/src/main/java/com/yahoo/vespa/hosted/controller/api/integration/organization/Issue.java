@@ -2,12 +2,10 @@
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 /**

@@ -7,21 +7,20 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
-import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
 import java.io.File;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author bratseth
@@ -65,27 +64,29 @@ public class DeploymentApiTest extends ControllerContainerTest {
         deploymentTester.upgrader().maintain();
         deploymentTester.triggerJobs();
         productionApp.runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
-        failingApp.runJob(JobType.systemTest).failDeployment(JobType.stagingTest);
+        failingApp.failDeployment(JobType.systemTest).failDeployment(JobType.stagingTest);
         deploymentTester.upgrader().maintain();
         deploymentTester.triggerJobs();
 
+        // Application fails application change
+        productionApp.submit(multiInstancePackage).failDeployment(JobType.systemTest);
+
         tester.controller().updateVersionStatus(censorConfigServers(VersionStatus.compute(tester.controller())));
-        tester.assertResponse(authenticatedRequest("http://localhost:8080/deployment/v1/"), new File("root.json"));
-        tester.assertResponse(authenticatedRequest("http://localhost:8080/api/deployment/v1/"), new File("root.json"));
+        tester.assertResponse(operatorRequest("http://localhost:8080/deployment/v1/"), new File("root.json"));
     }
 
     private VersionStatus censorConfigServers(VersionStatus versionStatus) {
         List<VespaVersion> censored = new ArrayList<>();
         for (VespaVersion version : versionStatus.versions()) {
             if (version.nodeVersions().size() > 0) {
-                version = new VespaVersion(version.statistics(),
+                version = new VespaVersion(version.versionNumber(),
                                            version.releaseCommit(),
                                            version.committedAt(),
                                            version.isControllerVersion(),
                                            version.isSystemVersion(),
                                            version.isReleased(),
-                                           NodeVersions.EMPTY.with(List.of(new NodeVersion(HostName.from("config1.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Instant.EPOCH),
-                                                                           new NodeVersion(HostName.from("config2.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Instant.EPOCH))),
+                                           List.of(new NodeVersion(HostName.from("config1.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Optional.empty()),
+                                                   new NodeVersion(HostName.from("config2.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Optional.empty())),
                                            version.confidence()
                 );
             }

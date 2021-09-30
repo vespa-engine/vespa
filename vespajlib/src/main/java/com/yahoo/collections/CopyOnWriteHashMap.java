@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.collections;
 
-import com.google.common.annotations.Beta;
-
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.HashMap;
@@ -11,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A hashmap wrapper which defers cloning of the enclosed map until it is written.
+ * A hashmap wrapper which defers cloning of the enclosed map until it is written to.
  * Use this to make clones cheap in maps which are often not further modified.
  * <p>
  * As with regular maps, this can only be used safely if the content of the map is immutable.

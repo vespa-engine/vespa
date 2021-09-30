@@ -58,7 +58,7 @@ public class SystemFlagsDeployerTest {
                 .build();
 
         SystemFlagsDeployer deployer =
-                new SystemFlagsDeployer(flagsClient, Set.of(controllerTarget, prodUsWest1Target, prodUsEast3Target));
+                new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(controllerTarget, prodUsWest1Target, prodUsEast3Target));
 
 
         SystemFlagsDeployResult result = deployer.deployFlags(archive, false);
@@ -77,13 +77,14 @@ public class SystemFlagsDeployerTest {
     public void dryrun_should_not_change_flags() throws IOException {
         FlagsClient flagsClient = mock(FlagsClient.class);
         when(flagsClient.listFlagData(controllerTarget)).thenReturn(List.of());
+        when(flagsClient.listDefinedFlags(controllerTarget)).thenReturn(List.of(new FlagId("my-flag")));
 
         FlagData defaultData = flagData("flags/my-flag/main.json");
         SystemFlagsDataArchive archive = new SystemFlagsDataArchive.Builder()
                 .addFile("main.json", defaultData)
                 .build();
 
-        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, Set.of(controllerTarget));
+        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(controllerTarget));
         SystemFlagsDeployResult result = deployer.deployFlags(archive, true);
 
         verify(flagsClient, times(1)).listFlagData(controllerTarget);
@@ -101,13 +102,14 @@ public class SystemFlagsDeployerTest {
         UncheckedIOException exception = new UncheckedIOException(new IOException("I/O error message"));
         when(flagsClient.listFlagData(prodUsWest1Target)).thenThrow(exception);
         when(flagsClient.listFlagData(prodUsEast3Target)).thenReturn(List.of());
+        when(flagsClient.listDefinedFlags(prodUsEast3Target)).thenReturn(List.of(new FlagId("my-flag")));
 
         FlagData defaultData = flagData("flags/my-flag/main.json");
         SystemFlagsDataArchive archive = new SystemFlagsDataArchive.Builder()
                 .addFile("main.json", defaultData)
                 .build();
 
-        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, Set.of(prodUsWest1Target, prodUsEast3Target));
+        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(prodUsWest1Target, prodUsEast3Target));
 
         SystemFlagsDeployResult result = deployer.deployFlags(archive, false);
 
@@ -115,6 +117,57 @@ public class SystemFlagsDeployerTest {
                 OperationError.listFailed(exception.getMessage(), prodUsWest1Target));
         assertThat(result.flagChanges()).containsOnly(
                 FlagDataChange.created(FLAG_ID, prodUsEast3Target, defaultData));
+    }
+
+    @Test
+    public void creates_error_entry_for_invalid_flag_archive() throws IOException {
+        FlagsClient flagsClient = mock(FlagsClient.class);
+        FlagData defaultData = flagData("flags/my-flag/main.json");
+        SystemFlagsDataArchive archive = new SystemFlagsDataArchive.Builder()
+                .addFile("main.prod.unknown-region.json", defaultData)
+                .build();
+        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(controllerTarget));
+        SystemFlagsDeployResult result = deployer.deployFlags(archive, false);
+        assertThat(result.flagChanges())
+                .isEmpty();
+        assertThat(result.errors())
+                .containsOnly(OperationError.archiveValidationFailed("Unknown flag file: flags/my-flag/main.prod.unknown-region.json"));
+    }
+
+    @Test
+    public void creates_error_entry_for_flag_data_of_undefined_flag() throws IOException {
+        FlagData prodUsEast3Data = flagData("flags/my-flag/main.prod.us-east-3.json");
+        FlagsClient flagsClient = mock(FlagsClient.class);
+        when(flagsClient.listFlagData(prodUsEast3Target))
+                .thenReturn(List.of());
+        when(flagsClient.listDefinedFlags(prodUsEast3Target))
+                .thenReturn(List.of());
+        SystemFlagsDataArchive archive = new SystemFlagsDataArchive.Builder()
+                .addFile("main.prod.us-east-3.json", prodUsEast3Data)
+                .build();
+        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(prodUsEast3Target));
+        SystemFlagsDeployResult result = deployer.deployFlags(archive, true);
+        String expectedErrorMessage = "Flag not defined in target zone. If zone/configserver cluster is new, " +
+                "add an empty flag data file for this zone as a temporary measure until the stale flag data files are removed.";
+        assertThat(result.errors())
+                .containsOnly(SystemFlagsDeployResult.OperationError.createFailed(expectedErrorMessage, prodUsEast3Target, prodUsEast3Data));
+    }
+
+    @Test
+    public void creates_warning_entry_for_existing_flag_data_for_undefined_flag() throws IOException {
+        FlagData prodUsEast3Data = flagData("flags/my-flag/main.prod.us-east-3.json");
+        FlagsClient flagsClient = mock(FlagsClient.class);
+        when(flagsClient.listFlagData(prodUsEast3Target))
+                .thenReturn(List.of(prodUsEast3Data));
+        when(flagsClient.listDefinedFlags(prodUsEast3Target))
+                .thenReturn(List.of());
+        SystemFlagsDataArchive archive = new SystemFlagsDataArchive.Builder()
+                .addFile("main.prod.us-east-3.json", prodUsEast3Data)
+                .build();
+        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(prodUsEast3Target));
+        SystemFlagsDeployResult result = deployer.deployFlags(archive, true);
+        assertThat(result.errors())
+                .containsOnly(OperationError.dataForUndefinedFlag(prodUsEast3Target, new FlagId("my-flag")));
     }
 
     private static FlagData flagData(String filename) throws IOException {

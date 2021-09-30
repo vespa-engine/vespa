@@ -8,7 +8,7 @@ namespace document::test {
 
 // Helper functions used by unit tests
 
-BucketSpace makeBucketSpace();
-BucketSpace makeBucketSpace(const vespalib::string &docTypeName);
+BucketSpace makeBucketSpace() noexcept;
+BucketSpace makeBucketSpace(const vespalib::string &docTypeName) noexcept;
 
 }

@@ -21,19 +21,19 @@ public:
      *
      * @param children the search objects that should be equivalent
      **/
-    EquivImpl(const MultiSearch::Children &children,
+    EquivImpl(MultiSearch::Children children,
               fef::MatchData::UP inputMatchData,
               const fef::TermMatchDataMerger::Inputs &inputs,
               const fef::TermFieldMatchDataArray &outputs);
 };
 
 template<bool strict>
-EquivImpl<strict>::EquivImpl(const MultiSearch::Children &children,
+EquivImpl<strict>::EquivImpl(MultiSearch::Children children,
                              fef::MatchData::UP inputMatchData,
                              const fef::TermMatchDataMerger::Inputs &inputs,
                              const fef::TermFieldMatchDataArray &outputs)
 
-    : OrLikeSearch<strict, NoUnpack>(children, NoUnpack()),
+    : OrLikeSearch<strict, NoUnpack>(std::move(children), NoUnpack()),
       _inputMatchData(std::move(inputMatchData)),
       _merger(inputs, outputs),
       _valid(outputs.valid())
@@ -50,17 +50,17 @@ EquivImpl<strict>::doUnpack(uint32_t docid)
     }
 }
 
-SearchIterator *
-EquivSearch::create(const Children &children,
+SearchIterator::UP
+EquivSearch::create(Children children,
                     fef::MatchData::UP inputMatchData,
                     const fef::TermMatchDataMerger::Inputs &inputs,
                     const fef::TermFieldMatchDataArray &outputs,
                     bool strict)
 {
     if (strict) {
-        return new EquivImpl<true>(children, std::move(inputMatchData), inputs, outputs);
+        return std::make_unique<EquivImpl<true>>(std::move(children), std::move(inputMatchData), inputs, outputs);
     } else {
-        return new EquivImpl<false>(children, std::move(inputMatchData), inputs, outputs);
+        return std::make_unique<EquivImpl<false>>(std::move(children), std::move(inputMatchData), inputs, outputs);
     }
 }
 

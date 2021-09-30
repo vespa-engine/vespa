@@ -24,10 +24,10 @@ void TEST_CAT(TestKitHook, __LINE__)::Test::test_entry_point()
 
 // test macro variants for 0 test fixtures BEGIN
 
-#define TEST(name) TEST_IMPL(name, false, 1)
-#define TEST_MT(name, threads) TEST_IMPL(name, false, threads)
-#define IGNORE_TEST(name) TEST_IMPL(name, true, 1)
-#define IGNORE_TEST_MT(name, threads) TEST_IMPL(name, true, threads)
+#define TEST(name) TEST_IMPL(name, false, 1) // NOLINT
+#define TEST_MT(name, threads) TEST_IMPL(name, false, threads) // NOLINT
+#define IGNORE_TEST(name) TEST_IMPL(name, true, 1) // NOLINT
+#define IGNORE_TEST_MT(name, threads) TEST_IMPL(name, true, threads) // NOLINT
 
 // test macro variants for 0 test fixtures END
 
@@ -66,10 +66,10 @@ void TEST_CAT(TestKitHook, __LINE__)::Test<F1>::test_entry_point()
 
 // test macro variants for 1 test fixtures BEGIN
 
-#define TEST_F(name, fixture1) TEST_F_IMPL(name, false, 1, fixture1)
-#define TEST_MT_F(name, threads, fixture1) TEST_F_IMPL(name, false, threads, fixture1)
-#define IGNORE_TEST_F(name, fixture1) TEST_F_IMPL(name, true, 1, fixture1)
-#define IGNORE_TEST_MT_F(name, threads, fixture1) TEST_F_IMPL(name, true, threads, fixture1)
+#define TEST_F(name, fixture1) TEST_F_IMPL(name, false, 1, fixture1) // NOLINT
+#define TEST_MT_F(name, threads, fixture1) TEST_F_IMPL(name, false, threads, fixture1) // NOLINT
+#define IGNORE_TEST_F(name, fixture1) TEST_F_IMPL(name, true, 1, fixture1) // NOLINT
+#define IGNORE_TEST_MT_F(name, threads, fixture1) TEST_F_IMPL(name, true, threads, fixture1) // NOLINT
 
 // test macro variants for 1 test fixtures END
 
@@ -115,10 +115,10 @@ void TEST_CAT(TestKitHook, __LINE__)::Test<F1, F2>::test_entry_point()
 
 // test macro variants for 2 test fixtures BEGIN
 
-#define TEST_FF(name, fixture1, fixture2) TEST_FF_IMPL(name, false, 1, fixture1, fixture2)
-#define TEST_MT_FF(name, threads, fixture1, fixture2) TEST_FF_IMPL(name, false, threads, fixture1, fixture2)
-#define IGNORE_TEST_FF(name, fixture1, fixture2) TEST_FF_IMPL(name, true, 1, fixture1, fixture2)
-#define IGNORE_TEST_MT_FF(name, threads, fixture1, fixture2) TEST_FF_IMPL(name, true, threads, fixture1, fixture2)
+#define TEST_FF(name, fixture1, fixture2) TEST_FF_IMPL(name, false, 1, fixture1, fixture2) // NOLINT
+#define TEST_MT_FF(name, threads, fixture1, fixture2) TEST_FF_IMPL(name, false, threads, fixture1, fixture2) // NOLINT
+#define IGNORE_TEST_FF(name, fixture1, fixture2) TEST_FF_IMPL(name, true, 1, fixture1, fixture2) // NOLINT
+#define IGNORE_TEST_MT_FF(name, threads, fixture1, fixture2) TEST_FF_IMPL(name, true, threads, fixture1, fixture2) // NOLINT
 
 // test macro variants for 2 test fixtures END
 
@@ -172,10 +172,10 @@ void TEST_CAT(TestKitHook, __LINE__)::Test<F1, F2, F3>::test_entry_point()
 
 // test macro variants for 3 test fixtures BEGIN
 
-#define TEST_FFF(name, fixture1, fixture2, fixture3) TEST_FFF_IMPL(name, false, 1, fixture1, fixture2, fixture3)
-#define TEST_MT_FFF(name, threads, fixture1, fixture2, fixture3) TEST_FFF_IMPL(name, false, threads, fixture1, fixture2, fixture3)
-#define IGNORE_TEST_FFF(name, fixture1, fixture2, fixture3) TEST_FFF_IMPL(name, true, 1, fixture1, fixture2, fixture3)
-#define IGNORE_TEST_MT_FFF(name, threads, fixture1, fixture2, fixture3) TEST_FFF_IMPL(name, true, threads, fixture1, fixture2, fixture3)
+#define TEST_FFF(name, fixture1, fixture2, fixture3) TEST_FFF_IMPL(name, false, 1, fixture1, fixture2, fixture3) // NOLINT
+#define TEST_MT_FFF(name, threads, fixture1, fixture2, fixture3) TEST_FFF_IMPL(name, false, threads, fixture1, fixture2, fixture3) // NOLINT
+#define IGNORE_TEST_FFF(name, fixture1, fixture2, fixture3) TEST_FFF_IMPL(name, true, 1, fixture1, fixture2, fixture3) // NOLINT
+#define IGNORE_TEST_MT_FFF(name, threads, fixture1, fixture2, fixture3) TEST_FFF_IMPL(name, true, threads, fixture1, fixture2, fixture3) // NOLINT
 
 // test macro variants for 3 test fixtures END
 
@@ -237,10 +237,10 @@ void TEST_CAT(TestKitHook, __LINE__)::Test<F1, F2, F3, F4>::test_entry_point()
 
 // test macro variants for 4 test fixtures BEGIN
 
-#define TEST_FFFF(name, fixture1, fixture2, fixture3, fixture4) TEST_FFFF_IMPL(name, false, 1, fixture1, fixture2, fixture3, fixture4)
-#define TEST_MT_FFFF(name, threads, fixture1, fixture2, fixture3, fixture4) TEST_FFFF_IMPL(name, false, threads, fixture1, fixture2, fixture3, fixture4)
-#define IGNORE_TEST_FFFF(name, fixture1, fixture2, fixture3, fixture4) TEST_FFFF_IMPL(name, true, 1, fixture1, fixture2, fixture3, fixture4)
-#define IGNORE_TEST_MT_FFFF(name, threads, fixture1, fixture2, fixture3, fixture4) TEST_FFFF_IMPL(name, true, threads, fixture1, fixture2, fixture3, fixture4)
+#define TEST_FFFF(name, fixture1, fixture2, fixture3, fixture4) TEST_FFFF_IMPL(name, false, 1, fixture1, fixture2, fixture3, fixture4) // NOLINT
+#define TEST_MT_FFFF(name, threads, fixture1, fixture2, fixture3, fixture4) TEST_FFFF_IMPL(name, false, threads, fixture1, fixture2, fixture3, fixture4) // NOLINT
+#define IGNORE_TEST_FFFF(name, fixture1, fixture2, fixture3, fixture4) TEST_FFFF_IMPL(name, true, 1, fixture1, fixture2, fixture3, fixture4) // NOLINT
+#define IGNORE_TEST_MT_FFFF(name, threads, fixture1, fixture2, fixture3, fixture4) TEST_FFFF_IMPL(name, true, threads, fixture1, fixture2, fixture3, fixture4) // NOLINT
 
 // test macro variants for 4 test fixtures END
 
@@ -310,10 +310,10 @@ void TEST_CAT(TestKitHook, __LINE__)::Test<F1, F2, F3, F4, F5>::test_entry_point
 
 // test macro variants for 5 test fixtures BEGIN
 
-#define TEST_FFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5) TEST_FFFFF_IMPL(name, false, 1, fixture1, fixture2, fixture3, fixture4, fixture5)
-#define TEST_MT_FFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5) TEST_FFFFF_IMPL(name, false, threads, fixture1, fixture2, fixture3, fixture4, fixture5)
-#define IGNORE_TEST_FFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5) TEST_FFFFF_IMPL(name, true, 1, fixture1, fixture2, fixture3, fixture4, fixture5)
-#define IGNORE_TEST_MT_FFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5) TEST_FFFFF_IMPL(name, true, threads, fixture1, fixture2, fixture3, fixture4, fixture5)
+#define TEST_FFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5) TEST_FFFFF_IMPL(name, false, 1, fixture1, fixture2, fixture3, fixture4, fixture5) // NOLINT
+#define TEST_MT_FFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5) TEST_FFFFF_IMPL(name, false, threads, fixture1, fixture2, fixture3, fixture4, fixture5) // NOLINT
+#define IGNORE_TEST_FFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5) TEST_FFFFF_IMPL(name, true, 1, fixture1, fixture2, fixture3, fixture4, fixture5) // NOLINT
+#define IGNORE_TEST_MT_FFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5) TEST_FFFFF_IMPL(name, true, threads, fixture1, fixture2, fixture3, fixture4, fixture5) // NOLINT
 
 // test macro variants for 5 test fixtures END
 
@@ -391,10 +391,10 @@ void TEST_CAT(TestKitHook, __LINE__)::Test<F1, F2, F3, F4, F5, F6>::test_entry_p
 
 // test macro variants for 6 test fixtures BEGIN
 
-#define TEST_FFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6) TEST_FFFFFF_IMPL(name, false, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6)
-#define TEST_MT_FFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6) TEST_FFFFFF_IMPL(name, false, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6)
-#define IGNORE_TEST_FFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6) TEST_FFFFFF_IMPL(name, true, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6)
-#define IGNORE_TEST_MT_FFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6) TEST_FFFFFF_IMPL(name, true, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6)
+#define TEST_FFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6) TEST_FFFFFF_IMPL(name, false, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6) // NOLINT
+#define TEST_MT_FFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6) TEST_FFFFFF_IMPL(name, false, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6) // NOLINT
+#define IGNORE_TEST_FFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6) TEST_FFFFFF_IMPL(name, true, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6) // NOLINT
+#define IGNORE_TEST_MT_FFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6) TEST_FFFFFF_IMPL(name, true, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6) // NOLINT
 
 // test macro variants for 6 test fixtures END
 
@@ -480,10 +480,10 @@ void TEST_CAT(TestKitHook, __LINE__)::Test<F1, F2, F3, F4, F5, F6, F7>::test_ent
 
 // test macro variants for 7 test fixtures BEGIN
 
-#define TEST_FFFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7) TEST_FFFFFFF_IMPL(name, false, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7)
-#define TEST_MT_FFFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7) TEST_FFFFFFF_IMPL(name, false, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7)
-#define IGNORE_TEST_FFFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7) TEST_FFFFFFF_IMPL(name, true, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7)
-#define IGNORE_TEST_MT_FFFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7) TEST_FFFFFFF_IMPL(name, true, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7)
+#define TEST_FFFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7) TEST_FFFFFFF_IMPL(name, false, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7) // NOLINT
+#define TEST_MT_FFFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7) TEST_FFFFFFF_IMPL(name, false, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7) // NOLINT
+#define IGNORE_TEST_FFFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7) TEST_FFFFFFF_IMPL(name, true, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7) // NOLINT
+#define IGNORE_TEST_MT_FFFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7) TEST_FFFFFFF_IMPL(name, true, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7) // NOLINT
 
 // test macro variants for 7 test fixtures END
 
@@ -577,10 +577,10 @@ void TEST_CAT(TestKitHook, __LINE__)::Test<F1, F2, F3, F4, F5, F6, F7, F8>::test
 
 // test macro variants for 8 test fixtures BEGIN
 
-#define TEST_FFFFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8) TEST_FFFFFFFF_IMPL(name, false, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8)
-#define TEST_MT_FFFFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8) TEST_FFFFFFFF_IMPL(name, false, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8)
-#define IGNORE_TEST_FFFFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8) TEST_FFFFFFFF_IMPL(name, true, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8)
-#define IGNORE_TEST_MT_FFFFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8) TEST_FFFFFFFF_IMPL(name, true, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8)
+#define TEST_FFFFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8) TEST_FFFFFFFF_IMPL(name, false, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8) // NOLINT
+#define TEST_MT_FFFFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8) TEST_FFFFFFFF_IMPL(name, false, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8) // NOLINT
+#define IGNORE_TEST_FFFFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8) TEST_FFFFFFFF_IMPL(name, true, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8) // NOLINT
+#define IGNORE_TEST_MT_FFFFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8) TEST_FFFFFFFF_IMPL(name, true, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8) // NOLINT
 
 // test macro variants for 8 test fixtures END
 
@@ -682,10 +682,10 @@ void TEST_CAT(TestKitHook, __LINE__)::Test<F1, F2, F3, F4, F5, F6, F7, F8, F9>::
 
 // test macro variants for 9 test fixtures BEGIN
 
-#define TEST_FFFFFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9) TEST_FFFFFFFFF_IMPL(name, false, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9)
-#define TEST_MT_FFFFFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9) TEST_FFFFFFFFF_IMPL(name, false, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9)
-#define IGNORE_TEST_FFFFFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9) TEST_FFFFFFFFF_IMPL(name, true, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9)
-#define IGNORE_TEST_MT_FFFFFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9) TEST_FFFFFFFFF_IMPL(name, true, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9)
+#define TEST_FFFFFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9) TEST_FFFFFFFFF_IMPL(name, false, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9) // NOLINT
+#define TEST_MT_FFFFFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9) TEST_FFFFFFFFF_IMPL(name, false, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9) // NOLINT
+#define IGNORE_TEST_FFFFFFFFF(name, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9) TEST_FFFFFFFFF_IMPL(name, true, 1, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9) // NOLINT
+#define IGNORE_TEST_MT_FFFFFFFFF(name, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9) TEST_FFFFFFFFF_IMPL(name, true, threads, fixture1, fixture2, fixture3, fixture4, fixture5, fixture6, fixture7, fixture8, fixture9) // NOLINT
 
 // test macro variants for 9 test fixtures END
 

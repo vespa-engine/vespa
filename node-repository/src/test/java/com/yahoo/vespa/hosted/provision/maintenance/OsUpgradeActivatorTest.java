@@ -34,16 +34,16 @@ public class OsUpgradeActivatorTest {
     @Test
     public void activates_upgrade() {
         var osVersions = tester.nodeRepository().osVersions();
-        var osUpgradeActivator = new OsUpgradeActivator(tester.nodeRepository(), Duration.ofDays(1));
+        var osUpgradeActivator = new OsUpgradeActivator(tester.nodeRepository(), Duration.ofDays(1), new TestMetric());
         var version0 = Version.fromString("7.0");
 
         // Create infrastructure nodes
         var configHostApplication = ApplicationId.from("hosted-vespa", "configserver-host", "default");
-        var configHostNodes = tester.makeReadyNodes(3, "default", NodeType.confighost);
+        var configHostNodes = tester.makeReadyNodes(3, "default", NodeType.confighost, 1);
         tester.prepareAndActivateInfraApplication(configHostApplication, NodeType.confighost, version0);
 
         var tenantHostApplication = ApplicationId.from("hosted-vespa", "tenant-host", "default");
-        var tenantHostNodes = tester.makeReadyNodes(3, "default", NodeType.host);
+        var tenantHostNodes = tester.makeReadyNodes(3, "default", NodeType.host, 1);
         tester.prepareAndActivateInfraApplication(tenantHostApplication, NodeType.host, version0);
 
         var allNodes = new ArrayList<>(configHostNodes);
@@ -57,12 +57,12 @@ public class OsUpgradeActivatorTest {
 
         // New OS target version is set
         var osVersion0 = Version.fromString("8.0");
-        osVersions.setTarget(NodeType.host, osVersion0, false);
-        osVersions.setTarget(NodeType.confighost, osVersion0, false);
+        osVersions.setTarget(NodeType.host, osVersion0, Duration.ZERO, false);
+        osVersions.setTarget(NodeType.confighost, osVersion0, Duration.ZERO, false);
 
         // New OS version is activated as there is no ongoing Vespa upgrade
         osUpgradeActivator.maintain();
-        assertTrue("OS version " + osVersion0 + " is active", isOsVersionActive(NodeType.confighost, NodeType.host));
+        assertTrue("OS version " + osVersion0 + " is active", osUpgradeActive(NodeType.confighost, NodeType.host));
 
         // Tenant hosts start upgrading to next Vespa version
         var version1 = Version.fromString("7.1");
@@ -72,11 +72,11 @@ public class OsUpgradeActivatorTest {
 
         // Activator pauses upgrade for tenant hosts only
         osUpgradeActivator.maintain();
-        assertTrue("OS version " + osVersion0 + " is active", isOsVersionActive(NodeType.confighost));
-        assertFalse("OS version " + osVersion0 + " is inactive", isOsVersionActive(NodeType.host));
+        assertTrue("OS version " + osVersion0 + " is active", osUpgradeActive(NodeType.confighost));
+        assertFalse("OS version " + osVersion0 + " is inactive", osUpgradeActive(NodeType.host));
 
         // One tenant host fails and is no longer considered
-        tester.nodeRepository().fail(tenantHostNodes.get(0).hostname(), Agent.system, this.getClass().getSimpleName());
+        tester.nodeRepository().nodes().fail(tenantHostNodes.get(0).hostname(), Agent.system, this.getClass().getSimpleName());
 
         // Remaining hosts complete their Vespa upgrade
         var healthyTenantHostNodes = tenantHostNodes.subList(1, tenantHostNodes.size());
@@ -85,33 +85,19 @@ public class OsUpgradeActivatorTest {
 
         // Activator resumes OS upgrade of tenant hosts
         osUpgradeActivator.run();
-        assertTrue("OS version " + osVersion0 + " is active", isOsVersionActive(NodeType.confighost, NodeType.host));
+        assertTrue("OS version " + osVersion0 + " is active", osUpgradeActive(NodeType.confighost, NodeType.host));
     }
 
-    private boolean isOsVersionActive(NodeType... types) {
-        var active = true;
-        for (var type : types) {
-            active &= tester.nodeRepository().list().nodeType(type).changingOsVersion().size() > 0;
-        }
-        return active;
+    private boolean osUpgradeActive(NodeType first, NodeType... rest) {
+        return tester.nodeRepository().nodes().list().nodeType(first, rest).changingOsVersion().size() > 0;
     }
 
     private void completeUpgradeOf(List<Node> nodes) {
-        for (var node : nodes) {
-            try (var lock = tester.nodeRepository().lock(node)) {
-                node =  tester.nodeRepository().getNode(node.hostname()).get();
-                node = node.with(node.status().withVespaVersion(node.allocation().get().membership().cluster().vespaVersion()));
-                tester.nodeRepository().write(node, lock);
-            }
-        }
+        tester.patchNodes(nodes, (node) -> node.with(node.status().withVespaVersion(node.allocation().get().membership().cluster().vespaVersion())));
     }
 
     private Stream<Node> streamUpdatedNodes(List<Node> nodes) {
-        Stream<Node> stream = Stream.empty();
-        for (var node : nodes) {
-            stream = Stream.concat(stream, tester.nodeRepository().getNode(node.hostname()).stream());
-        }
-        return stream;
+        return tester.nodeRepository().nodes().list().stream().filter(nodes::contains);
     }
 
     private Version minCurrentVersion(List<Node> nodes) {

@@ -15,7 +15,8 @@ void MemBlockBoundsCheckBaseTBase::verifyFill() const
     const uint8_t *c(static_cast<const uint8_t *>(ptr())), *e(c+size());
     for(;(c < e) && (*c == _fillValue); c++) { }
     if (c != e) {
-        fprintf(_logFile, "Incorrect fillvalue (%2x) instead of (%2x) at position %ld of %ld\n", *c, _fillValue, c - static_cast<const uint8_t *>(ptr()), size());
+        fprintf(_logFile, "Incorrect fillvalue (%2x) instead of (%2x) at position %ld(%p) of %ld(%p - %p)\n",
+                *c, _fillValue, c - static_cast<const uint8_t *>(ptr()), c, size(), ptr(), e);
         abort();
     }
 }

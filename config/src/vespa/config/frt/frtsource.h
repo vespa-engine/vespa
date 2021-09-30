@@ -9,8 +9,6 @@
 #include <vespa/config/common/source.h>
 #include <vespa/fnet/frt/invoker.h>
 
-#include <vespa/vespalib/util/sync.h>
-
 namespace config {
 
 /**
@@ -21,7 +19,7 @@ class FRTSource : public Source,
 {
 public:
     FRTSource(const ConnectionFactory::SP & connectionFactory, const FRTConfigRequestFactory & requestFactory, ConfigAgent::UP agent, const ConfigKey & key);
-    ~FRTSource();
+    ~FRTSource() override;
 
     void RequestDone(FRT_RPCRequest * request) override;
     void close() override;
@@ -40,7 +38,7 @@ private:
     const ConfigKey _key;
 
     std::unique_ptr<FNET_Task> _task;
-    vespalib::Lock _lock; // Protects _task and _closed
+    std::mutex _lock; // Protects _task and _closed
     bool _closed;
 };
 

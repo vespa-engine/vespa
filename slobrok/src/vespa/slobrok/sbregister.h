@@ -87,6 +87,7 @@ private:
     RPCHooks                 _hooks;
     std::mutex               _lock;
     bool                     _reqDone;
+    bool                     _logOnSuccess;
     std::atomic<bool>        _busy;
     SlobrokList              _slobrokSpecs;
     Configurator::UP         _configurator;

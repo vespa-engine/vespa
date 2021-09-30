@@ -1,11 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/exceptions.h>
+#include "exceptions.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <mutex>
-
-#include <errno.h>
+#include <cerrno>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespa.exceptions");

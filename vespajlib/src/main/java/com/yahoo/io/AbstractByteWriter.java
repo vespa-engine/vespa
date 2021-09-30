@@ -13,7 +13,7 @@ import java.nio.charset.CharsetEncoder;
 /**
  * Base class for writers needing to accept binary data.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @author baldersheim
  */
 public abstract class AbstractByteWriter extends GenericWriter implements

@@ -1,15 +1,15 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.io.IOUtils;
-import com.yahoo.net.HostName;
+import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.path.Path;
-import com.yahoo.text.Utf8;
+import com.yahoo.vespa.curator.api.VespaCurator;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
+import com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -28,10 +28,14 @@ import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -46,139 +50,93 @@ import java.util.logging.Logger;
  * @author vegardh
  * @author bratseth
  */
-public class Curator implements AutoCloseable {
+public class Curator implements VespaCurator, AutoCloseable {
 
-    private static final Logger logger = Logger.getLogger(Curator.class.getName());
+    private static final Logger LOG = Logger.getLogger(Curator.class.getName());
+    private static final File ZK_CLIENT_CONFIG_FILE = new File(Defaults.getDefaults().underVespaHome("conf/zookeeper/zookeeper-client.cfg"));
 
-    private static final int ZK_SESSION_TIMEOUT = 30000;
-    private static final int ZK_CONNECTION_TIMEOUT = 30000;
+    // Note that session timeout has min and max values are related to tickTime defined by server, see configserver.def
+    private static final Duration ZK_SESSION_TIMEOUT = Duration.ofSeconds(120);
 
-    private static final int BASE_SLEEP_TIME = 1000; //ms
+    private static final Duration ZK_CONNECTION_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration BASE_SLEEP_TIME = Duration.ofSeconds(1);
     private static final int MAX_RETRIES = 10;
+    private static final RetryPolicy DEFAULT_RETRY_POLICY = new ExponentialBackoffRetry((int) BASE_SLEEP_TIME.toMillis(), MAX_RETRIES);
 
-    private static final File zkClientConfigFile = new File(Defaults.getDefaults().underVespaHome("conf/zookeeper/zookeeper-client.cfg"));
-
-    protected final RetryPolicy retryPolicy;
+    protected final RetryPolicy retryPolicy = DEFAULT_RETRY_POLICY;
 
     private final CuratorFramework curatorFramework;
-    private final String connectionSpec; // May be a subset of the servers in the ensemble
+    private final ConnectionSpec connectionSpec;
 
-    private final String zooKeeperEnsembleConnectionSpec;
-    private final int zooKeeperEnsembleCount;
+    // All lock keys, to allow re-entrancy. This will grow forever, but this should be too slow to be a problem
+    private final ConcurrentHashMap<Path, Lock> locks = new ConcurrentHashMap<>();
 
     /** Creates a curator instance from a comma-separated string of ZooKeeper host:port strings */
     public static Curator create(String connectionSpec) {
-        return new Curator(connectionSpec, connectionSpec, Optional.of(zkClientConfigFile));
+        return new Curator(ConnectionSpec.create(connectionSpec), Optional.of(ZK_CLIENT_CONFIG_FILE));
     }
 
     // For testing only, use Optional.empty for clientConfigFile parameter to create default zookeeper client config
     public static Curator create(String connectionSpec, Optional<File> clientConfigFile) {
-        return new Curator(connectionSpec, connectionSpec, clientConfigFile);
+        return new Curator(ConnectionSpec.create(connectionSpec), clientConfigFile);
     }
 
-    // Depend on ZooKeeperServer to make sure it is started first
-    // TODO: Move zookeeperserver config out of configserverconfig (requires update of controller services.xml as well)
     @Inject
-    public Curator(ConfigserverConfig configserverConfig, VespaZooKeeperServer server) {
-        this(configserverConfig, Optional.of(zkClientConfigFile));
+    // TODO jonmv: Use a Provider for this, due to required shutdown.
+    public Curator(CuratorConfig curatorConfig, @SuppressWarnings("unused") VespaZooKeeperServer server) {
+        // Depends on ZooKeeperServer to make sure it is started first
+        this(ConnectionSpec.create(curatorConfig.server(),
+                                   CuratorConfig.Server::hostname,
+                                   CuratorConfig.Server::port,
+                                   curatorConfig.zookeeperLocalhostAffinity()),
+             Optional.of(ZK_CLIENT_CONFIG_FILE));
     }
 
-    Curator(ConfigserverConfig configserverConfig, Optional<File> clientConfigFile) {
-        this(createConnectionSpec(configserverConfig), createEnsembleConnectionSpec(configserverConfig), clientConfigFile);
+    // TODO: This can be removed when this package is no longer public API.
+    public Curator(ConfigserverConfig configserverConfig, @SuppressWarnings("unused") VespaZooKeeperServer server) {
+        this(ConnectionSpec.create(configserverConfig.zookeeperserver(),
+                                   ConfigserverConfig.Zookeeperserver::hostname,
+                                   ConfigserverConfig.Zookeeperserver::port,
+                                   configserverConfig.zookeeperLocalhostAffinity()),
+             Optional.of(ZK_CLIENT_CONFIG_FILE));
     }
 
-    private Curator(String connectionSpec, String zooKeeperEnsembleConnectionSpec, Optional<File> clientConfigFile) {
+    protected Curator(String connectionSpec, String zooKeeperEnsembleConnectionSpec, Function<RetryPolicy, CuratorFramework> curatorFactory) {
+        this(ConnectionSpec.create(connectionSpec, zooKeeperEnsembleConnectionSpec), curatorFactory.apply(DEFAULT_RETRY_POLICY));
+    }
+
+    Curator(ConnectionSpec connectionSpec, Optional<File> clientConfigFile) {
         this(connectionSpec,
-                zooKeeperEnsembleConnectionSpec,
-                (retryPolicy) -> CuratorFrameworkFactory
-                        .builder()
-                        .retryPolicy(retryPolicy)
-                        .sessionTimeoutMs(ZK_SESSION_TIMEOUT)
-                        .connectionTimeoutMs(ZK_CONNECTION_TIMEOUT)
-                        .connectString(connectionSpec)
-                        .zookeeperFactory(new VespaZooKeeperFactory(createClientConfig(clientConfigFile)))
-                        .dontUseContainerParents() // TODO: Remove when we know ZooKeeper 3.5 works fine, consider waiting until Vespa 8
-                        .build());
+             CuratorFrameworkFactory
+                     .builder()
+                     .retryPolicy(DEFAULT_RETRY_POLICY)
+                     .sessionTimeoutMs((int) ZK_SESSION_TIMEOUT.toMillis())
+                     .connectionTimeoutMs((int) ZK_CONNECTION_TIMEOUT.toMillis())
+                     .connectString(connectionSpec.local())
+                     .zookeeperFactory(new VespaZooKeeperFactory(createClientConfig(clientConfigFile)))
+                     .dontUseContainerParents() // TODO: Remove when we know ZooKeeper 3.5 works fine, consider waiting until Vespa 8
+                     .build());
     }
 
-    protected Curator(String connectionSpec,
-                      String zooKeeperEnsembleConnectionSpec,
-                      Function<RetryPolicy, CuratorFramework> curatorFactory) {
-        this(connectionSpec, zooKeeperEnsembleConnectionSpec, curatorFactory,
-                new ExponentialBackoffRetry(BASE_SLEEP_TIME, MAX_RETRIES));
-    }
-
-    private Curator(String connectionSpec,
-                    String zooKeeperEnsembleConnectionSpec,
-                    Function<RetryPolicy, CuratorFramework> curatorFactory,
-                    RetryPolicy retryPolicy) {
-        this.connectionSpec = connectionSpec;
-        this.retryPolicy = retryPolicy;
-        this.curatorFramework = curatorFactory.apply(retryPolicy);
-        if (this.curatorFramework != null) {
-            validateConnectionSpec(connectionSpec);
-            validateConnectionSpec(zooKeeperEnsembleConnectionSpec);
-            addLoggingListener();
-            curatorFramework.start();
-        }
-
-        this.zooKeeperEnsembleConnectionSpec = zooKeeperEnsembleConnectionSpec;
-        this.zooKeeperEnsembleCount = zooKeeperEnsembleConnectionSpec.split(",").length;
-    }
-
-    private static String createConnectionSpec(ConfigserverConfig configserverConfig) {
-        return configserverConfig.zookeeperLocalhostAffinity()
-                ? createConnectionSpecForLocalhost(configserverConfig)
-                : createEnsembleConnectionSpec(configserverConfig);
+    private Curator(ConnectionSpec connectionSpec, CuratorFramework curatorFramework) {
+        this.connectionSpec = Objects.requireNonNull(connectionSpec);
+        this.curatorFramework = Objects.requireNonNull(curatorFramework);
+        addLoggingListener();
+        curatorFramework.start();
     }
 
     private static ZKClientConfig createClientConfig(Optional<File> clientConfigFile) {
         if (clientConfigFile.isPresent()) {
-            boolean useSecureClient = Boolean.parseBoolean(getEnvironmentVariable("VESPA_USE_TLS_FOR_ZOOKEEPER_CLIENT").orElse("false"));
-            String config = "zookeeper.client.secure=" + useSecureClient + "\n";
-            clientConfigFile.get().getParentFile().mkdirs();
-            IOUtils.writeFile(clientConfigFile.get(), Utf8.toBytes(config));
             try {
-                return new ZKClientConfig(clientConfigFile.get());
+                return new ZkClientConfigBuilder().toConfig(clientConfigFile.get().toPath());
             } catch (QuorumPeerConfig.ConfigException e) {
                 throw new RuntimeException("Unable to create ZooKeeper client config file " + clientConfigFile.get());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
         } else {
             return new ZKClientConfig();
         }
-    }
-
-    private static String createEnsembleConnectionSpec(ConfigserverConfig config) {
-        StringBuilder connectionSpec = new StringBuilder();
-        for (int i = 0; i < config.zookeeperserver().size(); i++) {
-            if (connectionSpec.length() > 0) {
-                connectionSpec.append(',');
-            }
-            ConfigserverConfig.Zookeeperserver server = config.zookeeperserver(i);
-            connectionSpec.append(server.hostname());
-            connectionSpec.append(':');
-            connectionSpec.append(server.port());
-        }
-        return connectionSpec.toString();
-    }
-
-    static String createConnectionSpecForLocalhost(ConfigserverConfig config) {
-        String thisServer = HostName.getLocalhost();
-
-        for (int i = 0; i < config.zookeeperserver().size(); i++) {
-            ConfigserverConfig.Zookeeperserver server = config.zookeeperserver(i);
-            if (thisServer.equals(server.hostname())) {
-                return String.format("%s:%d", server.hostname(), server.port());
-            }
-        }
-
-        throw new IllegalArgumentException("Unable to create connect string to localhost: " +
-                "There is no localhost server specified in config: " + config);
-    }
-
-    private static void validateConnectionSpec(String connectionSpec) {
-        if (connectionSpec == null || connectionSpec.isEmpty())
-            throw new IllegalArgumentException(String.format("Connections spec '%s' is not valid", connectionSpec));
     }
 
     /**
@@ -189,11 +147,11 @@ public class Curator implements AutoCloseable {
      *
      * This may be empty but never null 
      */
-    public String connectionSpec() { return connectionSpec; }
+    public String connectionSpec() { return connectionSpec.local(); }
 
     /** For internal use; prefer creating a {@link CuratorCounter} */
     public DistributedAtomicLong createAtomicCounter(String path) {
-        return new DistributedAtomicLong(curatorFramework, path, new ExponentialBackoffRetry(BASE_SLEEP_TIME, MAX_RETRIES));
+        return new DistributedAtomicLong(curatorFramework, path, new ExponentialBackoffRetry((int) BASE_SLEEP_TIME.toMillis(), MAX_RETRIES));
     }
 
     /** For internal use; prefer creating a {@link com.yahoo.vespa.curator.Lock} */
@@ -204,19 +162,19 @@ public class Curator implements AutoCloseable {
     private void addLoggingListener() {
         curatorFramework.getConnectionStateListenable().addListener((curatorFramework, connectionState) -> {
             switch (connectionState) {
-                case SUSPENDED: logger.info("ZK connection state change: SUSPENDED"); break;
-                case RECONNECTED: logger.info("ZK connection state change: RECONNECTED"); break;
-                case LOST: logger.warning("ZK connection state change: LOST"); break;
+                case SUSPENDED: LOG.info("ZK connection state change: SUSPENDED"); break;
+                case RECONNECTED: LOG.info("ZK connection state change: RECONNECTED"); break;
+                case LOST: LOG.warning("ZK connection state change: LOST"); break;
             }
         });
     }
 
     public CompletionWaiter getCompletionWaiter(Path waiterPath, int numMembers, String id) {
-        return CuratorCompletionWaiter.create(curatorFramework, waiterPath, numMembers, id);
+        return CuratorCompletionWaiter.create(this, waiterPath, id);
     }
 
     public CompletionWaiter createCompletionWaiter(Path parentPath, String waiterNode, int numMembers, String id) {
-        return CuratorCompletionWaiter.createAndInitialize(this, parentPath, waiterNode, numMembers, id);
+        return CuratorCompletionWaiter.createAndInitialize(this, parentPath, waiterNode, id);
     }
 
     /** Creates a listenable cache which keeps in sync with changes to all the immediate children of a path */
@@ -243,13 +201,14 @@ public class Curator implements AutoCloseable {
      * A convenience method which sets some content at a path.
      * If the path and any of its parents does not exists they are created.
      */
+    // TODO: Use create().orSetData() in Curator 4 and later
     public void set(Path path, byte[] data) {
+        if ( ! exists(path))
+            create(path);
+
         String absolutePath = path.getAbsolute();
         try {
-            if ( ! exists(path))
-                framework().create().creatingParentsIfNeeded().forPath(absolutePath, data);
-            else
-                framework().setData().forPath(absolutePath, data);
+            framework().setData().forPath(absolutePath, data);
         } catch (Exception e) {
             throw new RuntimeException("Could not set data at " + absolutePath, e);
         }
@@ -279,7 +238,7 @@ public class Curator implements AutoCloseable {
      */
     public void createAtomically(Path... paths) {
         try {
-            CuratorTransaction transaction = framework().inTransaction();
+            @SuppressWarnings("deprecation") CuratorTransaction transaction = framework().inTransaction();
             for (Path path : paths) {
                 if ( ! exists(path)) {
                     transaction = transaction.create().forPath(path.getAbsolute(), new byte[0]).and();
@@ -313,7 +272,7 @@ public class Curator implements AutoCloseable {
         try {
             return framework().getChildren().forPath(path.getAbsolute());
         } catch (KeeperException.NoNodeException e) {
-                return List.of();
+            return List.of();
         } catch (Exception e) {
             throw new RuntimeException("Could not get children of " + path.getAbsolute(), e);
         }
@@ -349,6 +308,14 @@ public class Curator implements AutoCloseable {
         catch (Exception e) {
             throw new RuntimeException("Could not get data at " + path.getAbsolute(), e);
         }
+    }
+
+    /** Create and acquire a re-entrant lock in given path */
+    public Lock lock(Path path, Duration timeout) {
+        create(path);
+        Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), this));
+        lock.acquire(timeout);
+        return lock;
     }
 
     /** Returns the curator framework API */
@@ -424,7 +391,7 @@ public class Curator implements AutoCloseable {
      * TODO: Move method out of this class.
      */
     public String zooKeeperEnsembleConnectionSpec() {
-        return zooKeeperEnsembleConnectionSpec;
+        return connectionSpec.ensemble();
     }
 
     /**
@@ -432,11 +399,6 @@ public class Curator implements AutoCloseable {
      * WARNING: This may be different from the number of servers this Curator may connect to.
      * TODO: Move method out of this class.
      */
-    public int zooKeeperEnsembleCount() { return zooKeeperEnsembleCount; }
-
-    private static Optional<String> getEnvironmentVariable(String variableName) {
-        return Optional.ofNullable(System.getenv().get(variableName))
-                .filter(var -> !var.isEmpty());
-    }
+    public int zooKeeperEnsembleCount() { return connectionSpec.ensembleSize(); }
 
 }

@@ -99,5 +99,8 @@ public:
     const DataType *getDataType() const override;
 };
 
+extern template class LiteralFieldValue<RawFieldValue, DataType::T_RAW, false>;
+extern template class LiteralFieldValue<StringFieldValue, DataType::T_STRING, true>;
+
 } // document
 

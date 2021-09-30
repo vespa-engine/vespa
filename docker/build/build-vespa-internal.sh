@@ -21,9 +21,25 @@ fi
 yum -y install epel-release
 yum -y install centos-release-scl
 
-yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
+if ! yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo; then
+  cat << 'EOF' > /etc/yum.repos.d/vespa-release.repo
+[vespa-release]
+name=Vespa releases
+baseurl=https://verizonmedia.jfrog.io/artifactory/vespa/centos/$releasever/release/$basearch
+gpgcheck=0
+enabled=1
+EOF
+fi
 
-yum-builddep -y --setopt="centos-sclo-rh-source.skip_if_unavailable=true" ~/rpmbuild/SPECS/vespa-${VESPA_VERSION}.spec
+yum-builddep -y \
+             --setopt="base-source.skip_if_unavailable=true" \
+             --setopt="updates-source.skip_if_unavailable=true" \
+             --setopt="extras-source.skip_if_unavailable=true" \
+             --setopt="epel-source.skip_if_unavailable=true" \
+             --setopt="centos-sclo-rh-source.skip_if_unavailable=true" \
+             --setopt="centos-sclo-sclo-source.skip_if_unavailable=true" \
+             ~/rpmbuild/SPECS/vespa-${VESPA_VERSION}.spec
+
 rpmbuild -bb ~/rpmbuild/SPECS/vespa-${VESPA_VERSION}.spec
 chown ${CALLER_UID}:${CALLER_GID} ~/rpmbuild/RPMS/x86_64/*.rpm
 mv ~/rpmbuild/RPMS/x86_64/*.rpm docker

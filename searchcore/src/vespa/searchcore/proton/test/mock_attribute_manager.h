@@ -11,18 +11,31 @@ namespace proton::test {
 class MockAttributeManager : public IAttributeManager {
 private:
     search::attribute::test::MockAttributeManager _mock;
+    std::vector<search::AttributeVector*> _writables;
     std::unique_ptr<ImportedAttributesRepo> _importedAttributes;
+    vespalib::ISequencedTaskExecutor* _writer;
+    vespalib::ThreadExecutor* _shared;
 
 public:
     MockAttributeManager()
         : _mock(),
-          _importedAttributes()
+          _writables(),
+          _importedAttributes(),
+          _writer(),
+          _shared()
     {}
 
-    void addAttribute(const vespalib::string &name, const search::AttributeVector::SP &attr) {
+    search::AttributeVector::SP addAttribute(const vespalib::string &name, const search::AttributeVector::SP &attr) {
         _mock.addAttribute(name, attr);
+        _writables.push_back(attr.get());
+        return attr;
     }
-
+    void set_writer(vespalib::ISequencedTaskExecutor& writer) {
+        _writer = &writer;
+    }
+    void set_shared_executor(vespalib::ThreadExecutor& shared) {
+        _shared = &shared;
+    }
     search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override {
         return _mock.getAttribute(name);
     }
@@ -55,14 +68,23 @@ public:
     const IAttributeFactory::SP &getFactory() const override {
         HDR_ABORT("should not be reached");
     }
-    search::ISequencedTaskExecutor &getAttributeFieldWriter() const override {
-        HDR_ABORT("should not be reached");
+    vespalib::ISequencedTaskExecutor &getAttributeFieldWriter() const override {
+        assert(_writer != nullptr);
+        return *_writer;
     }
-    search::AttributeVector *getWritableAttribute(const vespalib::string &) const override {
+    vespalib::ThreadExecutor& get_shared_executor() const override {
+        assert(_shared != nullptr);
+        return *_shared;
+    }
+    search::AttributeVector *getWritableAttribute(const vespalib::string &name) const override {
+        auto attr = getAttribute(name);
+        if (attr) {
+            return attr->get();
+        }
         return nullptr;
     }
     const std::vector<search::AttributeVector *> &getWritableAttributes() const override {
-        HDR_ABORT("should not be reached");
+        return _writables;
     }
     void asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor>) const override {
     }

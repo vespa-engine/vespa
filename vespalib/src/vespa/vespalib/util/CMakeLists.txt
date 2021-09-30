@@ -10,17 +10,20 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     backtrace.cpp
     barrier.cpp
     benchmark_timer.cpp
+    bfloat16.cpp
+    binary_hamming_distance.cpp
     blockingthreadstackexecutor.cpp
     box.cpp
-    bufferwriter.cpp
+    child_process.cpp
     classname.cpp
-    closuretask.cpp
     compress.cpp
     compressor.cpp
+    destructor_callbacks.cpp
     dual_merge_director.cpp
     error.cpp
     exception.cpp
     exceptions.cpp
+    file_area_freelist.cpp
     gencnt.cpp
     generationhandler.cpp
     generationholder.cpp
@@ -31,20 +34,28 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     left_right_heap.cpp
     lz4compressor.cpp
     md5.c
+    memoryusage.cpp
+    mmap_file_allocator.cpp
+    mmap_file_allocator_factory.cpp
     printable.cpp
     priority_queue.cpp
     random.cpp
     rcuvector.cpp
     regexp.cpp
+    require.cpp
+    reusable_set.cpp
+    reusable_set_handle.cpp
+    reusable_set_pool.cpp
+    round_up_to_page_size.cpp
     runnable.cpp
     runnable_pair.cpp
-    rwlock.cpp
     sequence.cpp
     sha1.cpp
+    shared_string_repo.cpp
     sig_catch.cpp
     signalhandler.cpp
     simple_thread_bundle.cpp
-    slaveproc.cpp
+    small_vector.cpp
     stash.cpp
     string_hash.cpp
     stringfmt.cpp
@@ -53,6 +64,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     threadstackexecutor.cpp
     threadstackexecutorbase.cpp
     time.cpp
+    unwind_message.cpp
     valgrind.cpp
     zstdcompressor.cpp
     DEPENDS

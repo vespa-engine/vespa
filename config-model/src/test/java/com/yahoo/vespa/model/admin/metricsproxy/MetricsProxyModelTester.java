@@ -1,7 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/*
- * Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
- */
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package com.yahoo.vespa.model.admin.metricsproxy;
 
@@ -11,15 +8,15 @@ import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
+import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.test.VespaModelTester;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
-import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicConsumer.DEFAULT_PUBLIC_CONSUMER_ID;
-import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.VESPA_CONSUMER_ID;
 
 /**
  * @author gjoranv
@@ -41,18 +38,32 @@ class MetricsProxyModelTester {
     }
 
     static VespaModel getModel(String servicesXml, TestMode testMode) {
-        var numberOfHosts = testMode == hosted ? 2 : 1;
+        return getModel(servicesXml, testMode, new DeployState.Builder());
+    }
+
+    static VespaModel getModel(String servicesXml, TestMode testMode, DeployState.Builder builder) {
+        var numberOfHosts = testMode == hosted ? 4 : 1;
         var tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         tester.setHosted(testMode == hosted);
         if (testMode == hosted) tester.setApplicationId(MY_TENANT, MY_APPLICATION, MY_INSTANCE);
-        return tester.createModel(servicesXml, true);
+        return tester.createModel(servicesXml, true, builder);
     }
 
-    static String configId(VespaModel model, MetricsProxyModelTester.TestMode mode) {
+    static String containerConfigId(VespaModel model, MetricsProxyModelTester.TestMode mode) {
         return (mode == hosted)
                 ? CLUSTER_CONFIG_ID + "/" + model.getHosts().iterator().next().getHostname()
                 : CONTAINER_CONFIG_ID;
+    }
+
+    static String servicesWithAdminOnly() {
+        return String.join("\n",
+                           "<services>",
+                           "    <admin version='4.0'>",
+                           "        <adminserver hostalias='node1'/>",
+                           "    </admin>",
+                           "</services>"
+        );
     }
 
     static boolean checkMetric(ConsumersConfig.Consumer consumer, Metric metric) {
@@ -66,7 +77,8 @@ class MetricsProxyModelTester {
     static ConsumersConfig.Consumer getCustomConsumer(String servicesXml) {
         ConsumersConfig config = consumersConfigFromXml(servicesXml, self_hosted);
         for (ConsumersConfig.Consumer consumer : config.consumer()) {
-            if (! consumer.name().equals(VESPA_CONSUMER_ID) && ! consumer.name().equals(DEFAULT_PUBLIC_CONSUMER_ID))
+            if (! consumer.name().equals(MetricsConsumer.vespa.id()) &&
+                ! consumer.name().equals(MetricsConsumer.defaultConsumer.id()))
                 return consumer;
         }
         throw new RuntimeException("Custom consumer not found!");
@@ -77,32 +89,32 @@ class MetricsProxyModelTester {
     }
 
     static ConsumersConfig consumersConfigFromModel(VespaModel model) {
-        return new ConsumersConfig((ConsumersConfig.Builder) model.getConfig(new ConsumersConfig.Builder(), CLUSTER_CONFIG_ID));
+        return model.getConfig(ConsumersConfig.class, CLUSTER_CONFIG_ID);
     }
 
     static MetricsNodesConfig getMetricsNodesConfig(VespaModel model) {
-        return new MetricsNodesConfig((MetricsNodesConfig.Builder) model.getConfig(new MetricsNodesConfig.Builder(), CLUSTER_CONFIG_ID));
+        return model.getConfig(MetricsNodesConfig.class, CLUSTER_CONFIG_ID);
     }
 
     static ApplicationDimensionsConfig getApplicationDimensionsConfig(VespaModel model) {
-        return new ApplicationDimensionsConfig((ApplicationDimensionsConfig.Builder) model.getConfig(new ApplicationDimensionsConfig.Builder(), CLUSTER_CONFIG_ID));
+        return model.getConfig(ApplicationDimensionsConfig.class, CLUSTER_CONFIG_ID);
     }
 
-    static QrStartConfig getQrStartConfig(VespaModel model) {
-        return new QrStartConfig((QrStartConfig.Builder) model.getConfig(new QrStartConfig.Builder(), CLUSTER_CONFIG_ID));
+    static QrStartConfig getQrStartConfig(VespaModel model, String hostname) {
+        return model.getConfig(QrStartConfig.class, CLUSTER_CONFIG_ID + "/" + hostname);
     }
 
     static NodeDimensionsConfig getNodeDimensionsConfig(VespaModel model, String configId) {
-        return new NodeDimensionsConfig((NodeDimensionsConfig.Builder) model.getConfig(new NodeDimensionsConfig.Builder(), configId));
+        return model.getConfig(NodeDimensionsConfig.class, configId);
     }
 
     static VespaServicesConfig getVespaServicesConfig(String servicesXml) {
         VespaModel model = getModel(servicesXml, self_hosted);
-        return new VespaServicesConfig((VespaServicesConfig.Builder) model.getConfig(new VespaServicesConfig.Builder(), CONTAINER_CONFIG_ID));
+        return model.getConfig(VespaServicesConfig.class, CONTAINER_CONFIG_ID);
     }
 
     static RpcConnectorConfig getRpcConnectorConfig(VespaModel model) {
-        return new RpcConnectorConfig((RpcConnectorConfig.Builder) model.getConfig(new RpcConnectorConfig.Builder(), CONTAINER_CONFIG_ID));
+        return model.getConfig(RpcConnectorConfig.class, CONTAINER_CONFIG_ID);
     }
 
 }

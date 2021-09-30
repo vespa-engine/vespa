@@ -45,7 +45,7 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>vespalog</artifactId>
+            <artifactId>vespajlib</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -86,6 +86,16 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>testutil</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

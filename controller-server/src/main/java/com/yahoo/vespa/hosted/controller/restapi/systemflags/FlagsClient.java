@@ -1,7 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.systemflags;
 
-import ai.vespa.util.http.retry.DelayedConnectionLevelRetryHandler;
+import ai.vespa.util.http.hc4.retry.DelayedConnectionLevelRetryHandler;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
@@ -35,6 +36,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -65,6 +67,17 @@ class FlagsClient {
         });
     }
 
+    List<FlagId> listDefinedFlags(FlagsTarget target) {
+        HttpGet request = new HttpGet(createUri(target, "/defined", List.of()));
+        return executeRequest(request, response -> {
+            verifySuccess(response, null);
+            JsonNode json = mapper.readTree(response.getEntity().getContent());
+            List<FlagId> flagIds = new ArrayList<>();
+            json.fieldNames().forEachRemaining(fieldName -> flagIds.add(new FlagId(fieldName)));
+            return flagIds;
+        });
+    }
+
     void putFlagData(FlagsTarget target, FlagData flagData) throws FlagsException, UncheckedIOException {
         HttpPut request = new HttpPut(createUri(target, "/data/" + flagData.id().toString(), List.of()));
         request.setEntity(jsonContent(flagData.serializeToJson()));
@@ -81,7 +94,6 @@ class FlagsClient {
             return null;
         });
     }
-
 
     private static CloseableHttpClient createClient(ServiceIdentityProvider identityProvider, Set<FlagsTarget> targets) {
         DelayedConnectionLevelRetryHandler retryHandler = DelayedConnectionLevelRetryHandler.Builder

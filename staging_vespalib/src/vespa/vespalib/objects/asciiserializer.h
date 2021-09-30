@@ -11,14 +11,14 @@ class asciistream;
 class AsciiSerializer : public Serializer {
 public:
     AsciiSerializer(asciistream &stream) : _stream(stream) { }
-    AsciiSerializer &put(const IFieldBase &field, bool value) override;
-    AsciiSerializer &put(const IFieldBase &field, uint8_t value) override;
-    AsciiSerializer &put(const IFieldBase &field, uint16_t value) override;
-    AsciiSerializer &put(const IFieldBase &field, uint32_t value) override;
-    AsciiSerializer &put(const IFieldBase &field, uint64_t value) override;
-    AsciiSerializer &put(const IFieldBase &field, float value) override;
-    AsciiSerializer &put(const IFieldBase &field, double value) override;
-    AsciiSerializer &put(const IFieldBase &field, stringref val) override;
+    AsciiSerializer &put(bool value) override;
+    AsciiSerializer &put(uint8_t value) override;
+    AsciiSerializer &put(uint16_t value) override;
+    AsciiSerializer &put(uint32_t value) override;
+    AsciiSerializer &put(uint64_t value) override;
+    AsciiSerializer &put(float value) override;
+    AsciiSerializer &put(double value) override;
+    AsciiSerializer &put(stringref val) override;
 
     const asciistream &getStream() const { return _stream; }
     asciistream &getStream() { return _stream; }

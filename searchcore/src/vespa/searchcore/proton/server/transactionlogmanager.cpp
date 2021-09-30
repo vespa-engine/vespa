@@ -2,25 +2,26 @@
 
 #include "configstore.h"
 #include "transactionlogmanager.h"
+#include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.transactionlogmanager");
 
 using vespalib::IllegalStateException;
 using vespalib::make_string;
-using search::transactionlog::TransLogClient;
+using search::transactionlog::client::TransLogClient;
+using search::transactionlog::client::Session;
 
 namespace proton {
-
 
 void
 TransactionLogManager::doLogReplayComplete(const vespalib::string &domainName,
                                            vespalib::duration elapsedTime) const
 {
-    EventLogger::transactionLogReplayComplete(domainName, vespalib::count_ms(elapsedTime));
+    EventLogger::transactionLogReplayComplete(domainName, elapsedTime);
 }
 
 
@@ -33,11 +34,11 @@ TransactionLogManager::TransactionLogManager(const vespalib::string &tlsSpec, co
 TransactionLogManager::~TransactionLogManager() = default;
 
 void
-TransactionLogManager::init(SerialNum oldestConfigSerial, SerialNum &prunedSerialNum, SerialNum &serialNum)
+TransactionLogManager::init(SerialNum oldestConfigSerial, SerialNum &prunedSerialNum, SerialNum &replay_end_serial_num)
 {
     StatusResult res = TransactionLogManagerBase::init();
     prunedSerialNum = res.serialBegin > 0 ? (res.serialBegin - 1) : 0;
-    serialNum = res.serialEnd;
+    replay_end_serial_num = res.serialEnd;
     if (oldestConfigSerial != 0) {
         prunedSerialNum = std::max(prunedSerialNum, oldestConfigSerial);
     }
@@ -45,10 +46,8 @@ TransactionLogManager::init(SerialNum oldestConfigSerial, SerialNum &prunedSeria
 
 namespace {
 
-void getStatus(TransLogClient::Session & session,
-               search::SerialNum & serialBegin,
-               search::SerialNum & serialEnd,
-               size_t & count)
+void
+getStatus(Session & session, search::SerialNum & serialBegin, search::SerialNum & serialEnd, size_t & count)
 {
     if (!session.status(serialBegin, serialEnd, count)) {
         throw IllegalStateException(
@@ -66,7 +65,7 @@ void getStatus(TransLogClient & client,
                search::SerialNum & serialEnd,
                size_t & count)
 {
-    TransLogClient::Session::UP session = client.open(domainName);
+    std::unique_ptr<Session> session = client.open(domainName);
     if ( ! session) {
         throw IllegalStateException(
                 make_string(
@@ -113,11 +112,16 @@ TransactionLogManager::prepareReplay(TransLogClient &client,
     }
 }
 
+std::unique_ptr<TlsReplayProgress>
+TransactionLogManager::make_replay_progress(SerialNum first, SerialNum last)
+{
+    return std::make_unique<TlsReplayProgress>(getDomainName(), first, last);
+}
 
-TlsReplayProgress::UP
+void
 TransactionLogManager::startReplay(SerialNum first,
                                    SerialNum syncToken,
-                                   TransLogClient::Session::Callback &callback)
+                                   Callback &callback)
 {
     assert( !_visitor);
     _visitor = createTlcVisitor(callback);
@@ -142,7 +146,6 @@ TransactionLogManager::startReplay(SerialNum first,
                     getDomainName().c_str(),
                     first, syncToken, getRpcTarget().c_str()));
     }
-    return TlsReplayProgress::UP(new TlsReplayProgress(getDomainName(), first, syncToken));
 }
 
 

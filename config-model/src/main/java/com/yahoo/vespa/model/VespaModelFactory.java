@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
@@ -6,12 +6,12 @@ import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigModelPlugin;
-import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
@@ -24,6 +24,7 @@ import com.yahoo.config.provision.TransientException;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
+import com.yahoo.yolean.Exceptions;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -32,6 +33,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -101,12 +104,35 @@ public class VespaModelFactory implements ModelFactory {
         return buildModel(createDeployState(modelContext, new ValidationParameters(ValidationParameters.IgnoreValidationErrors.TRUE)));
     }
 
+    private void logReindexingReasons(List<ConfigChangeAction> changeActions,
+                                      VespaModel nextModel,
+                                      Optional<Model> currentActiveModel)
+    {
+        if (currentActiveModel.isEmpty()) {
+            return;
+        }
+        for (ConfigChangeAction action : changeActions) {
+            if (action.getType().equals(ConfigChangeAction.Type.REINDEX)) {
+                VespaModel currentModel = (VespaModel) currentActiveModel.get();
+                var currentVersion = currentModel.version();
+                var currentMeta = currentModel.applicationPackage().getMetaData();
+                var nextVersion = nextModel.version();
+                var nextMeta = nextModel.applicationPackage().getMetaData();
+                log.log(Level.INFO, String.format("Model [%s/%s] -> [%s/%s] triggers reindexing: %s",
+                                                  currentModel.version().toString(), currentMeta.toString(),
+                                                  nextModel.version().toString(), nextMeta.toString(),
+                                                  action.toString()));
+            }
+        }
+    }
+
     @Override
     public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
         validateXml(modelContext, validationParameters.ignoreValidationErrors());
         DeployState deployState = createDeployState(modelContext, validationParameters);
         VespaModel model = buildModel(deployState);
         List<ConfigChangeAction> changeActions = validateModel(model, deployState, validationParameters);
+        logReindexingReasons(changeActions, model, deployState.getPreviousModel());
         return new ModelCreateResult(model, changeActions);
     }
     
@@ -142,22 +168,21 @@ public class VespaModelFactory implements ModelFactory {
             .deployLogger(modelContext.deployLogger())
             .configDefinitionRepo(modelContext.configDefinitionRepo())
             .fileRegistry(modelContext.getFileRegistry())
+            .executor(modelContext.getExecutor())
             .permanentApplicationPackage(modelContext.permanentApplicationPackage())
             .properties(modelContext.properties())
             .vespaVersion(version())
-            .modelHostProvisioner(createHostProvisioner(modelContext))
+            .modelHostProvisioner(modelContext.getHostProvisioner())
+            .provisioned(modelContext.provisioned())
             .endpoints(modelContext.properties().endpoints())
             .modelImporters(modelImporters)
             .zone(zone)
             .now(clock.instant())
-            .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion());
+            .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion())
+            .wantedDockerImageRepo(modelContext.wantedDockerImageRepo());
         modelContext.previousModel().ifPresent(builder::previousModel);
+        modelContext.reindexing().ifPresent(builder::reindexing);
         return builder.build(validationParameters);
-    }
-
-    private static HostProvisioner createHostProvisioner(ModelContext modelContext) {
-        return modelContext.hostProvisioner().orElse(
-                DeployState.getDefaultModelHostProvisioner(modelContext.applicationPackage()));
     }
 
     private void validateXML(ApplicationPackage applicationPackage, boolean ignoreValidationErrors) {
@@ -173,6 +198,13 @@ public class VespaModelFactory implements ModelFactory {
     private List<ConfigChangeAction> validateModel(VespaModel model, DeployState deployState, ValidationParameters validationParameters) {
         try {
             return Validation.validate(model, validationParameters, deployState);
+        } catch (ValidationOverrides.ValidationException e) {
+            if (deployState.isHosted() && zone.environment().isManuallyDeployed())
+                deployState.getDeployLogger().logApplicationPackage(Level.WARNING,
+                                                                    "Auto-overriding validation which would be disallowed in production: " +
+                                                                    Exceptions.toMessageString(e));
+            else
+                rethrowUnlessIgnoreErrors(e, validationParameters.ignoreValidationErrors());
         } catch (IllegalArgumentException | TransientException e) {
             rethrowUnlessIgnoreErrors(e, validationParameters.ignoreValidationErrors());
         } catch (Exception e) {

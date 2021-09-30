@@ -18,11 +18,17 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author hakonhall
  */
 public class MockDuperModel implements DuperModelInfraApi {
+
     private final Map<ApplicationId, InfraApplicationApi> supportedInfraApps = new HashMap<>();
     private final ConcurrentHashMap<ApplicationId, List<HostName>> activeApps = new ConcurrentHashMap<>();
 
     @Inject
     public MockDuperModel() {
+    }
+
+    public MockDuperModel support(InfraApplicationApi infraApplication) {
+        supportedInfraApps.put(infraApplication.getApplicationId(), infraApplication);
+        return this;
     }
 
     @Override
@@ -40,6 +46,10 @@ public class MockDuperModel implements DuperModelInfraApi {
         return activeApps.containsKey(applicationId);
     }
 
+    public List<HostName> hostnamesOf(ApplicationId applicationId) {
+        return activeApps.getOrDefault(applicationId, List.of());
+    }
+
     @Override
     public void infraApplicationActivated(ApplicationId applicationId, List<HostName> hostnames) {
         activeApps.put(applicationId, hostnames);
@@ -48,5 +58,9 @@ public class MockDuperModel implements DuperModelInfraApi {
     @Override
     public void infraApplicationRemoved(ApplicationId applicationId) {
         activeApps.remove(applicationId);
+    }
+
+    @Override
+    public void infraApplicationsIsNowComplete() {
     }
 }

@@ -4,6 +4,8 @@
 #include <vespa/vespalib/net/socket_address.h>
 #include <memory>
 
+namespace vespalib { class SocketSpec; }
+
 namespace vespalib::net::tls {
 
 struct HandshakeResult {
@@ -179,9 +181,13 @@ public:
      *
      * Throws CryptoException if resources cannot be allocated for the codec.
      */
-    static std::unique_ptr<CryptoCodec> create_default_codec(std::shared_ptr<TlsContext> ctx,
-                                                             const SocketAddress& peer_address,
-                                                             Mode mode);
+    static std::unique_ptr<CryptoCodec>
+    create_default_client_codec(std::shared_ptr<TlsContext> ctx,
+                                const SocketSpec& peer_spec,
+                                const SocketAddress& peer_address);
+    static std::unique_ptr<CryptoCodec>
+    create_default_server_codec(std::shared_ptr<TlsContext> ctx,
+                                const SocketAddress& peer_address);
 };
 
 }

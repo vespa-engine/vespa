@@ -30,12 +30,18 @@ class MyPostingList : public PredicatePostingList {
 public:
     MyPostingList(const vector<pair<uint32_t, uint32_t>> &entries)
         : _entries(entries),
-          _index(0) {
+          _index(0),
+          _interval(0)
+    {
     }
     MyPostingList(std::initializer_list<pair<uint32_t, uint32_t>> ilist)
         : _entries(ilist.begin(), ilist.end()),
-          _index(0) {
+          _index(0),
+          _interval(0)
+    {
     }
+
+    ~MyPostingList() override;
 
     bool next(uint32_t doc_id) override {
         if (_index < _entries.size()) {
@@ -65,6 +71,8 @@ public:
     }
     uint32_t getInterval() const override { return _interval; }
 };
+
+MyPostingList::~MyPostingList() = default;
 
 template <int N>
 vector<PredicatePostingList::UP>

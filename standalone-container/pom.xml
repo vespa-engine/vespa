@@ -62,14 +62,15 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-       <groupId>org.hamcrest</groupId>
-       <artifactId>hamcrest-all</artifactId>
-       <scope>test</scope>
-     </dependency>
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>vespajlib</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
@@ -81,6 +82,7 @@
         <extensions>true</extensions>
         <configuration>
           <discApplicationClass>com.yahoo.container.standalone.StandaloneContainerApplication</discApplicationClass>
+          <buildLegacyVespaPlatformBundle>true</buildLegacyVespaPlatformBundle>
           <discPreInstallBundle>
             configdefinitions-jar-with-dependencies.jar,
             config-provisioning-jar-with-dependencies.jar,
@@ -88,10 +90,10 @@
             config-model-api-jar-with-dependencies.jar,
             config-model-jar-with-dependencies.jar,
             container-disc-jar-with-dependencies.jar,
+            model-evaluation-jar-with-dependencies.jar,
+            model-integration-jar-with-dependencies.jar,
             vespajlib.jar
           </discPreInstallBundle>
-          <bundleActivator>com.yahoo.container.standalone.StandaloneContainerActivator</bundleActivator>
-          <jdiscPrivilegedActivator>true</jdiscPrivilegedActivator>
         </configuration>
       </plugin>
       <plugin>

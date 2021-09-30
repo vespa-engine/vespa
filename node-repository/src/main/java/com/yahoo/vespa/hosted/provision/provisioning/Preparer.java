@@ -4,16 +4,19 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.lang.MutableInteger;
-import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.NodesAndHosts;
+import com.yahoo.vespa.hosted.provision.node.Nodes;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Performs preparation of node activation changes for an application.
@@ -25,22 +28,26 @@ class Preparer {
     private final NodeRepository nodeRepository;
     private final GroupPreparer groupPreparer;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
-    private final int spareCount;
 
-    public Preparer(NodeRepository nodeRepository, int spareCount, Optional<HostProvisioner> hostProvisioner,
-                    HostResourcesCalculator hostResourcesCalculator, FlagSource flagSource,
+    public Preparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner,
                     Optional<LoadBalancerProvisioner> loadBalancerProvisioner) {
         this.nodeRepository = nodeRepository;
-        this.spareCount = spareCount;
         this.loadBalancerProvisioner = loadBalancerProvisioner;
-        this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner, hostResourcesCalculator, flagSource);
+        this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner);
     }
 
     /** Prepare all required resources for the given application and cluster */
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
-        var nodes = prepareNodes(application, cluster, requestedNodes, wantedGroups);
-        prepareLoadBalancer(application, cluster, requestedNodes);
-        return nodes;
+        try {
+            var nodes = prepareNodes(application, cluster, requestedNodes, wantedGroups);
+            prepareLoadBalancer(application, cluster, requestedNodes);
+            return nodes;
+        }
+        catch (OutOfCapacityException e) {
+            throw new OutOfCapacityException("Could not satisfy " + requestedNodes +
+                                             ( wantedGroups > 1 ? " (in " + wantedGroups + " groups)" : "") +
+                                             " in " + application + " " + cluster + ": " + e.getMessage());
+        }
     }
 
     /**
@@ -52,19 +59,32 @@ class Preparer {
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
     private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
-        List<Node> surplusNodes = findNodesInRemovableGroups(application, cluster, wantedGroups);
+        NodesAndHosts<LockedNodeList> allNodesAndHosts = groupPreparer.createNodesAndHostUnlocked();
+        NodeList appNodes = allNodesAndHosts.nodes().owner(application);
+        List<Node> surplusNodes = findNodesInRemovableGroups(appNodes, cluster, wantedGroups);
 
-        MutableInteger highestIndex = new MutableInteger(findHighestIndex(application, cluster));
+        List<Integer> usedIndices = appNodes.cluster(cluster.id()).mapToList(node -> node.allocation().get().membership().index());
+        NodeIndices indices = new NodeIndices(usedIndices, ! cluster.type().isContent());
         List<Node> acceptedNodes = new ArrayList<>();
+
         for (int groupIndex = 0; groupIndex < wantedGroups; groupIndex++) {
             ClusterSpec clusterGroup = cluster.with(Optional.of(ClusterSpec.Group.from(groupIndex)));
-            List<Node> accepted = groupPreparer.prepare(application, clusterGroup,
-                                                        requestedNodes.fraction(wantedGroups), surplusNodes,
-                                                        highestIndex, spareCount, wantedGroups);
+            GroupPreparer.PrepareResult result = groupPreparer.prepare(
+                    application, clusterGroup, requestedNodes.fraction(wantedGroups),
+                    surplusNodes, indices, wantedGroups, allNodesAndHosts);
+            allNodesAndHosts = result.allNodesAndHosts; // Might have changed
+            List<Node> accepted = result.prepared;
+            if (requestedNodes.rejectNonActiveParent()) {
+                NodeList activeHosts = allNodesAndHosts.nodes().state(Node.State.active).parents().nodeType(requestedNodes.type().hostType());
+                accepted = accepted.stream()
+                        .filter(node -> node.parentHostname().isEmpty() || activeHosts.parentOf(node).isPresent())
+                        .collect(Collectors.toList());
+            }
+
             replace(acceptedNodes, accepted);
         }
         moveToActiveGroup(surplusNodes, wantedGroups, cluster.group());
-        replace(acceptedNodes, retire(surplusNodes));
+        acceptedNodes.removeAll(surplusNodes);
         return acceptedNodes;
     }
 
@@ -77,9 +97,9 @@ class Preparer {
      * Returns a list of the nodes which are
      * in groups with index number above or equal the group count
      */
-    private List<Node> findNodesInRemovableGroups(ApplicationId application, ClusterSpec requestedCluster, int wantedGroups) {
+    private List<Node> findNodesInRemovableGroups(NodeList appNodes, ClusterSpec requestedCluster, int wantedGroups) {
         List<Node> surplusNodes = new ArrayList<>(0);
-        for (Node node : nodeRepository.getNodes(application, Node.State.active)) {
+        for (Node node : appNodes.state(Node.State.active)) {
             ClusterSpec nodeCluster = node.allocation().get().membership().cluster();
             if ( ! nodeCluster.id().equals(requestedCluster.id())) continue;
             if ( ! nodeCluster.type().equals(requestedCluster.type())) continue;
@@ -114,31 +134,4 @@ class Preparer {
         return list;
     }
 
-    /**
-     * Returns the highest index number of all active and failed nodes in this cluster, or -1 if there are no nodes.
-     * We include failed nodes to avoid reusing the index of the failed node in the case where the failed node is the
-     * node with the highest index.
-     */
-    private int findHighestIndex(ApplicationId application, ClusterSpec cluster) {
-        int highestIndex = -1;
-        for (Node node : nodeRepository.getNodes(application,
-                                                 Node.State.active, Node.State.inactive, Node.State.parked, Node.State.failed)) {
-            ClusterSpec nodeCluster = node.allocation().get().membership().cluster();
-            if ( ! nodeCluster.id().equals(cluster.id())) continue;
-            if ( ! nodeCluster.type().equals(cluster.type())) continue;
-
-            highestIndex = Math.max(node.allocation().get().membership().index(), highestIndex);
-        }
-        return highestIndex;
-    }
-
-    /** Returns retired copies of the given nodes, unless they are removable */
-    private List<Node> retire(List<Node> nodes) {
-        List<Node> retired = new ArrayList<>(nodes.size());
-        for (Node node : nodes) {
-            if ( ! node.allocation().get().isRemovable())
-                retired.add(node.retire(Agent.application, nodeRepository.clock().instant()));
-        }
-        return retired;
-    }
 }

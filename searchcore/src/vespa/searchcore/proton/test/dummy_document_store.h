@@ -17,8 +17,8 @@ struct DummyDocumentStore : public search::IDocumentStore
         : _baseDir(baseDir)
     {}
     ~DummyDocumentStore() {}
-    document::Document::UP read(search::DocumentIdT, const document::DocumentTypeRepo &) const override {
-        return document::Document::UP();
+    DocumentUP read(search::DocumentIdT, const document::DocumentTypeRepo &) const override {
+        return DocumentUP();
     }
     void write(uint64_t, search::DocumentIdT, const document::Document &) override {}
     void write(uint64_t, search::DocumentIdT, const vespalib::nbostream &) override {}

@@ -2,7 +2,6 @@
 vespa_add_library(searchlib_parsequery OBJECT
     SOURCES
     parse.cpp
-    simplequerystack.cpp
     stackdumpiterator.cpp
     DEPENDS
 )

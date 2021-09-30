@@ -9,7 +9,7 @@
 #include "noaggrcalc.h"
 #include "minmaxaggrcalc.h"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename, typename, typename, size_t, size_t>
 class BTreeNodeAllocator;
@@ -61,9 +61,10 @@ public:
     class FrozenView {
     private:
         BTreeNode::Ref _frozenRoot;
-        const NodeAllocatorType & _allocator;
+        const NodeAllocatorType *const _allocator;
     public:
         typedef ConstIterator Iterator;
+        FrozenView();
         FrozenView(BTreeNode::Ref frozenRoot,
                    const NodeAllocatorType & allocator);
         ConstIterator find(const KeyType& key,
@@ -73,24 +74,30 @@ public:
         ConstIterator upperBound(const KeyType &key,
                                  CompareT comp = CompareT()) const;
         ConstIterator begin() const {
-            return ConstIterator(_frozenRoot, _allocator);
+            return ConstIterator(_frozenRoot, *_allocator);
         }
         void begin(std::vector<ConstIterator> &where) const {
-            where.emplace_back(_frozenRoot, _allocator);
+            where.emplace_back(_frozenRoot, *_allocator);
         }
 
         BTreeNode::Ref getRoot() const { return _frozenRoot; }
         size_t size() const;
-        const NodeAllocatorType &getAllocator() const { return _allocator; }
+        const NodeAllocatorType &getAllocator() const { return *_allocator; }
+
+        const AggrT &getAggregated() const {
+            return _allocator->getAggregated(_frozenRoot);
+        }
+
+        bool empty() const { return !_frozenRoot.valid(); }
 
         template <typename FunctionType>
         void foreach_key(FunctionType func) const {
-            _allocator.getNodeStore().foreach_key(_frozenRoot, func);
+            _allocator->getNodeStore().foreach_key(_frozenRoot, func);
         }
 
         template <typename FunctionType>
         void foreach(FunctionType func) const {
-            _allocator.getNodeStore().foreach(_frozenRoot, func);
+            _allocator->getNodeStore().foreach(_frozenRoot, func);
         }
     };
 
@@ -202,6 +209,8 @@ public:
     bool isValid(const NodeAllocatorType &allocator, CompareT comp = CompareT()) const;
 
     bool isValidFrozen(const NodeAllocatorType &allocator, CompareT comp = CompareT()) const;
+
+    void move_nodes(NodeAllocatorType &allocator);
 };
 
 

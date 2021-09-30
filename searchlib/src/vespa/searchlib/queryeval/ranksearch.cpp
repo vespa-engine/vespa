@@ -32,7 +32,7 @@ public:
      *
      * @param children the search objects we are rank'ing
      **/
-    RankSearchStrict(const Children & children) : RankSearch(children) { }
+    RankSearchStrict(Children children) : RankSearch(std::move(children)) { }
 };
 
 SearchIterator::UP
@@ -49,12 +49,12 @@ RankSearchStrict::doSeek(uint32_t docid)
 }
 }  // namespace
 
-SearchIterator *
-RankSearch::create(const RankSearch::Children &children, bool strict) {
+SearchIterator::UP
+RankSearch::create(ChildrenIterators children, bool strict) {
     if (strict) {
-        return new RankSearchStrict(children);
+        return UP(new RankSearchStrict(std::move(children)));
     } else {
-        return new RankSearch(children);
+        return UP(new RankSearch(std::move(children)));
     }
 }
 

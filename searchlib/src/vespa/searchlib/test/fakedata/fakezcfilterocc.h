@@ -7,9 +7,7 @@
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/diskindex/zc4_posting_params.h>
 
-namespace search {
-
-namespace fakedata {
+namespace search::fakedata {
 
 /*
  * YST style compression of docid list.
@@ -17,21 +15,21 @@ namespace fakedata {
 class FakeZcFilterOcc : public FakePosting
 {
 protected:
-    size_t _docIdsSize;
-    size_t _l1SkipSize;
-    size_t _l2SkipSize;
-    size_t _l3SkipSize;
-    size_t _l4SkipSize;
+    size_t       _docIdsSize;
+    size_t       _l1SkipSize;
+    size_t       _l2SkipSize;
+    size_t       _l3SkipSize;
+    size_t       _l4SkipSize;
     unsigned int _hitDocs;
-    uint32_t _lastDocId;
+    uint32_t     _lastDocId;
 
-    uint64_t _compressedBits;
+    uint64_t                      _compressedBits;
     std::pair<uint64_t *, size_t> _compressed;
-    void *_compressedMalloc;
-    uint64_t _featuresSize;
-    const search::bitcompression::PosOccFieldsParams &_fieldsParams;
-    bool _bigEndian;
-    diskindex::Zc4PostingParams _posting_params;
+    vespalib::alloc::Alloc        _compressedAlloc;
+    uint64_t                      _featuresSize;
+    const bitcompression::PosOccFieldsParams &_fieldsParams;
+    bool                          _bigEndian;
+    diskindex::Zc4PostingParams   _posting_params;
 protected:
     void setup(const FakeWord &fw);
 
@@ -46,7 +44,7 @@ protected:
     void validate_read(const FakeWord &fw) const;
 
 public:
-    FakeZcFilterOcc(const FakeWord &fw);
+    explicit FakeZcFilterOcc(const FakeWord &fw);
     FakeZcFilterOcc(const FakeWord &fw,
                     bool bigEndian,
                     const diskindex::Zc4PostingParams &posting_params,
@@ -70,6 +68,4 @@ public:
     queryeval::SearchIterator *createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
-} // namespace fakedata
-
-} // namespace search
+}

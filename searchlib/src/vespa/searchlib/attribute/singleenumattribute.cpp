@@ -2,6 +2,9 @@
 
 #include "singleenumattribute.h"
 #include "singleenumattribute.hpp"
+#include "stringbase.h"
+#include "integerbase.h"
+#include "floatbase.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.single_enum_attribute");
@@ -63,5 +66,13 @@ SingleValueEnumAttributeBase::remap_enum_store_refs(const EnumIndexRemapper& rem
     v.logEnumStoreEvent("compactfixup", "complete");
     v.logEnumStoreEvent("reenumerate", "complete");
 }
+
+template class SingleValueEnumAttribute<EnumAttribute<StringAttribute>>;
+template class SingleValueEnumAttribute<EnumAttribute<IntegerAttributeTemplate<int8_t>>>;
+template class SingleValueEnumAttribute<EnumAttribute<IntegerAttributeTemplate<int16_t>>>;
+template class SingleValueEnumAttribute<EnumAttribute<IntegerAttributeTemplate<int32_t>>>;
+template class SingleValueEnumAttribute<EnumAttribute<IntegerAttributeTemplate<int64_t>>>;
+template class SingleValueEnumAttribute<EnumAttribute<FloatingPointAttributeTemplate<float>>>;
+template class SingleValueEnumAttribute<EnumAttribute<FloatingPointAttributeTemplate<double>>>;
 
 }

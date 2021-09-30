@@ -32,7 +32,7 @@ public:
     vespalib::string toString() const;
 
     struct hash {
-        size_t operator () (const Bucket& b) const {
+        size_t operator () (const Bucket& b) const noexcept {
             size_t hash1 = BucketId::hash()(b.getBucketId());
             size_t hash2 = BucketSpace::hash()(b.getBucketSpace());
             // Formula taken from std::hash_combine proposal

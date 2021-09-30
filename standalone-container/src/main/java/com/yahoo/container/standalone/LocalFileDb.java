@@ -4,16 +4,16 @@ package com.yahoo.container.standalone;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
-import com.yahoo.net.HostName;
+import net.jpountz.lz4.LZ4FrameOutputStream;
 
 import java.io.File;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -24,8 +24,6 @@ import java.util.stream.Collectors;
  * @author ollivir
  */
 public class LocalFileDb implements FileAcquirer, FileRegistry {
-
-    private static final Constructor<FileReference> fileReferenceConstructor = createFileReferenceConstructor();
 
     private final Map<FileReference, File> fileReferenceToFile = new HashMap<>();
     private final Path appPath;
@@ -40,7 +38,7 @@ public class LocalFileDb implements FileAcquirer, FileRegistry {
         synchronized (this) {
             File file = fileReferenceToFile.get(reference);
             if (file == null) {
-                throw new RuntimeException("Invalid file reference " + reference);
+                return new File(reference.value()); // Downloaded file reference: Will (hopefully) be resolved client side
             }
             return file;
         }
@@ -51,18 +49,14 @@ public class LocalFileDb implements FileAcquirer, FileRegistry {
     }
 
     /* FileRegistry overrides */
+    @Override
     public FileReference addFile(String relativePath) {
         File file = appPath.resolve(relativePath).toFile();
         if (!file.exists()) {
             throw new RuntimeException("The file does not exist: " + file.getPath());
         }
 
-        FileReference fileReference = null;
-        try {
-            fileReference = fileReferenceConstructor.newInstance("LocalFileDb:" + relativePath);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException("Unable to create new FileReference", e);
-        }
+        FileReference fileReference = new FileReference("LocalFileDb:" + relativePath);
         fileReferenceToFile.put(fileReference, file);
         return fileReference;
     }
@@ -78,21 +72,26 @@ public class LocalFileDb implements FileAcquirer, FileRegistry {
         throw new RuntimeException("addUri(String uri) is not implemented here.");
     }
 
-    public String fileSourceHost() {
-        return HostName.getLocalhost();
+    @Override
+    public FileReference addBlob(String name, ByteBuffer blob) {
+        writeBlob(blob, name);
+        File file = appPath.resolve(name).toFile();
+        FileReference fileReference = new FileReference("LocalFileDb:" + name);
+        fileReferenceToFile.put(fileReference, file);
+        return fileReference;
     }
 
-    public Set<String> allRelativePaths() {
-        return fileReferenceToFile.values().stream().map(File::getPath).collect(Collectors.toSet());
-    }
-
-    private static Constructor<FileReference> createFileReferenceConstructor() {
-        try {
-            Constructor<FileReference> method = FileReference.class.getDeclaredConstructor(String.class);
-            method.setAccessible(true);
-            return method;
-        } catch (NoSuchMethodException ex) {
-            throw new IllegalStateException(ex);
+    private void writeBlob(ByteBuffer blob, String relativePath) {
+        try (FileOutputStream fos = new FileOutputStream(new File(appPath.toFile(), relativePath))) {
+            if (relativePath.endsWith(".lz4")) {
+                LZ4FrameOutputStream lz4 = new LZ4FrameOutputStream(fos);
+                lz4.write(blob.array(), blob.arrayOffset(), blob.remaining());
+                lz4.close();
+            } else {
+                fos.write(blob.array(), blob.arrayOffset(), blob.remaining());
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed writing temp file", e);
         }
     }
 

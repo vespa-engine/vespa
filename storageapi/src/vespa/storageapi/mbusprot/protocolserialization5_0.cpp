@@ -6,6 +6,7 @@
 #include "storagereply.h"
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/visitor.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <sstream>
@@ -92,7 +93,7 @@ ProtocolSerialization5_0::onEncodeCommand(GBBuf& buf, const api::StorageCommand&
     buf.putLong(msg.getMsgId());
     buf.putByte(msg.getPriority());
     buf.putShort(msg.getSourceIndex());
-    buf.putInt(msg.getLoadType().getId());
+    buf.putInt(0); // LoadType 'default'
 }
 
 void
@@ -102,15 +103,12 @@ ProtocolSerialization5_0::onDecodeCommand(BBuf& buf, api::StorageCommand& msg) c
     uint8_t priority = SH::getByte(buf);
     msg.setPriority(priority);
     msg.setSourceIndex(SH::getShort(buf));
-    msg.setLoadType(_loadTypes[SH::getInt(buf)]);
+    (void)SH::getInt(buf); // LoadType
 }
 
 
-ProtocolSerialization5_0::ProtocolSerialization5_0(
-        const std::shared_ptr<const document::DocumentTypeRepo>& repo,
-        const documentapi::LoadTypeSet& loadTypes)
-    : ProtocolSerialization4_2(repo),
-      _loadTypes(loadTypes)
+ProtocolSerialization5_0::ProtocolSerialization5_0(const std::shared_ptr<const document::DocumentTypeRepo>& repo)
+    : ProtocolSerialization4_2(repo)
 {
 }
 
@@ -168,7 +166,8 @@ ProtocolSerialization5_0::onDecodeUpdateReply(const SCmd& cmd, BBuf& buf) const
 void ProtocolSerialization5_0::onEncode(GBBuf& buf, const api::GetReply& msg) const
 {
     SH::putDocument(msg.getDocument().get(), buf);
-    buf.putLong(msg.getLastModifiedTimestamp());
+    // Old protocol version doesn't understand tombstones. Make it appear as Not Found.
+    buf.putLong(msg.is_tombstone() ? api::Timestamp(0) : msg.getLastModifiedTimestamp());
     onEncodeBucketInfoReply(buf, msg);
 }
 

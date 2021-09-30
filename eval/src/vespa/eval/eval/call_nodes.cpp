@@ -42,6 +42,9 @@ CallRepo::CallRepo() : _map() {
     add(nodes::Relu());
     add(nodes::Sigmoid());
     add(nodes::Elu());
+    add(nodes::Erf());
+    add(nodes::Bit());
+    add(nodes::Hamming());
 }
 
 } // namespace vespalib::eval::nodes

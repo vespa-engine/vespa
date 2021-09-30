@@ -9,11 +9,11 @@ package com.yahoo.language.process;
 public interface Normalizer {
 
     /**
-     * <p>NFKC normalizes a String.</p>
+     * NFKC normalizes a String.
      *
-     * @param input String to normalize.
-     * @return The normalized String.
-     * @throws ProcessingException If underlying library throws an Exception.
+     * @param input the string to normalize
+     * @return the normalized string
+     * @throws ProcessingException if underlying library throws an Exception
      */
     String normalize(String input);
 

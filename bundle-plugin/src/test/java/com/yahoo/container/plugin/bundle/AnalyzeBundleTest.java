@@ -1,8 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.bundle;
 
-import com.yahoo.container.plugin.bundle.AnalyzeBundle.PublicPackages;
 import com.yahoo.container.plugin.osgi.ExportPackages;
+import com.yahoo.container.plugin.osgi.ExportPackages.Export;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.Rule;
@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.yahoo.container.plugin.classanalysis.TestUtilities.throwableMessage;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -29,19 +28,16 @@ import static org.junit.Assert.assertThat;
  * @author ollivir
  */
 public class AnalyzeBundleTest {
-    private final List<ExportPackages.Export> exports;
-    private final Set<String> exportedPackageNames;
-    private final Map<String, ExportPackages.Export> exportsByPackageName;
+    private final List<Export> exports;
+    private final Map<String, Export> exportsByPackageName;
 
     File jarDir = new File("src/test/resources/jar");
 
     public AnalyzeBundleTest() {
         File notOsgi = new File(jarDir, "notAOsgiBundle.jar");
         File simple = new File(jarDir, "simple1.jar");
-        PublicPackages pp = AnalyzeBundle.publicPackagesAggregated(Arrays.asList(notOsgi, simple));
-        this.exports = pp.exports;
-        this.exportedPackageNames = pp.exportedPackageNames();
-        this.exportsByPackageName = ExportPackages.exportsByPackageName(exports);
+        exports = AnalyzeBundle.exportedPackagesAggregated(Arrays.asList(notOsgi, simple));
+        exportsByPackageName = ExportPackages.exportsByPackageName(this.exports);
     }
 
     private File jarFile(String name) {
@@ -61,7 +57,7 @@ public class AnalyzeBundleTest {
 
     @Test
     public void exported_class_names_can_be_retrieved() {
-        assertThat(exportedPackageNames, is(new HashSet<>(exports.get(0).getPackageNames())));
+        assertThat(ExportPackages.packageNames(exports), is(new HashSet<>(exports.get(0).getPackageNames())));
     }
 
     @Rule
@@ -75,7 +71,7 @@ public class AnalyzeBundleTest {
         exception.expectMessage(matchesPattern("Invalid manifest in bundle '.*errorExport.jar'"));
         exception.expectCause(throwableMessage(startsWith("Failed parsing Export-Package")));
 
-        AnalyzeBundle.publicPackages(jarFile("errorExport.jar"));
+        AnalyzeBundle.exportedPackages(jarFile("errorExport.jar"));
     }
 
     private TypeSafeMatcher<String> matchesPattern(String pattern) {

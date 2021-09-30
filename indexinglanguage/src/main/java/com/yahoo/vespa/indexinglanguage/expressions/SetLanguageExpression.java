@@ -15,8 +15,8 @@ public final class SetLanguageExpression extends Expression {
         super(DataType.STRING);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setLanguage(Language.fromLanguageTag(String.valueOf(ctx.getValue())));
+    protected void doExecute(ExecutionContext context) {
+        context.setLanguage(Language.fromLanguageTag(String.valueOf(context.getValue())));
     }
 
     @Override

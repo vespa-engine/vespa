@@ -64,12 +64,8 @@ get_var() {
    ret_val=$2
 
    env_var_name=`echo $arg | tr '[:lower:]' '[:upper:]'`
-   prefixed_var_name1=services__${arg}
-   prefixed_var_name2=vespa_base__${arg}
 
    if   varhasvalue $env_var_name       ; then eval "ret_val=\${$env_var_name}"
-   elif varhasvalue $prefixed_var_name1 ; then eval "ret_val=\${$prefixed_var_name1}"
-   elif varhasvalue $prefixed_var_name2 ; then eval "ret_val=\${$prefixed_var_name2}"
    fi
    echo "$ret_val"
 }
@@ -125,6 +121,9 @@ populate_environment
 
 export LD_LIBRARY_PATH=$VESPA_HOME/lib64
 export MALLOC_ARENA_MAX=1
+
+# Prefer newer gdb and pstack
+prepend_path /opt/rh/gcc-toolset-10/root/usr/bin
 
 # Maven is needed for tester applications
 prepend_path "$VESPA_HOME/local/maven/bin"
@@ -205,7 +204,7 @@ checkjava () {
 }
 
 runvalidation() {
-    run=$vespa_base__validationscript
+    run=$VESPA_VALIDATIONSCRIPT
     if [ "$run" ]; then
 	if [ -x "$run" ]; then
 	    if $run ; then
@@ -293,3 +292,31 @@ log_debug_message () {
 log_warning_message () {
     log_message "warning" "$*" 1>&2
 }
+
+get_numa_ctl_cmd () {
+    if ! type numactl &> /dev/null; then
+        echo "FATAL: Could not find required program numactl."
+        exit 1
+    fi
+
+    if numactl --interleave all echo &> /dev/null; then
+        # We are allowed to use numactl
+        numnodes=$(numactl --hardware 2>/dev/null |
+                   grep available |
+                   awk '$3 == "nodes" { print $2 }')
+
+        if [ "$VESPA_AFFINITY_CPU_SOCKET" ] &&
+           [ "$numnodes" -gt 1 ]
+        then
+            node=$(($VESPA_AFFINITY_CPU_SOCKET % $numnodes))
+            numactlcmd="numactl --cpunodebind=$node --membind=$node"
+        else
+            numactlcmd="numactl --interleave all"
+        fi
+    else
+        numactlcmd=""
+    fi
+
+    echo $numactlcmd
+}
+

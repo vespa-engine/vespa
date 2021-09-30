@@ -2,14 +2,11 @@
 
 #include "reverseproximityfeature.h"
 #include "utils.h"
-#include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
-#include <vespa/searchlib/fef/fieldtype.h>
 #include <vespa/searchlib/fef/itermdata.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/stash.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 ReverseProximityConfig::ReverseProximityConfig() :
     fieldId(search::fef::IllegalHandle),
@@ -126,7 +123,7 @@ ReverseProximityBlueprint::setup(const search::fef::IIndexEnvironment &env,
 search::fef::Blueprint::UP
 ReverseProximityBlueprint::createInstance() const
 {
-    return search::fef::Blueprint::UP(new ReverseProximityBlueprint());
+    return std::make_unique<ReverseProximityBlueprint>();
 }
 
 search::fef::FeatureExecutor &
@@ -135,4 +132,4 @@ ReverseProximityBlueprint::createExecutor(const search::fef::IQueryEnvironment &
     return stash.create<ReverseProximityExecutor>(env, _config);
 }
 
-}}
+}

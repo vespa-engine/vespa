@@ -5,12 +5,13 @@
 #include "weighted_set_parser.h"
 #include "dotproductfeature.h"
 
-#include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_read_guard.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchcommon/common/datatype.h>
+#include <vespa/vespalib/util/stash.h>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.internalmaxreduceprodjoin");

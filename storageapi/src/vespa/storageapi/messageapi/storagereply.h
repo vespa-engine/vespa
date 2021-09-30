@@ -23,14 +23,14 @@ class StorageReply : public StorageMessage {
     ReturnCode _result;
 
 protected:
-    explicit StorageReply(const StorageCommand& cmd,
-                          ReturnCode code = ReturnCode(ReturnCode::OK));
+    explicit StorageReply(const StorageCommand& cmd);
+    StorageReply(const StorageCommand& cmd, ReturnCode code);
 
 public:
     ~StorageReply() override;
     DECLARE_POINTER_TYPEDEFS(StorageReply);
 
-    void setResult(const ReturnCode& r) { _result = r; }
+    void setResult(ReturnCode r) { _result = std::move(r); }
     void setResult(ReturnCode::Result r) { _result = ReturnCode(r); }
     const ReturnCode& getResult() const { return _result; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

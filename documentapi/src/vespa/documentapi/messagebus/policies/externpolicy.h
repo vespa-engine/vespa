@@ -4,9 +4,8 @@
 #include <vespa/messagebus/routing/hop.h>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
 #include <vespa/slobrok/imirrorapi.h>
-#include <vector>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/documentapi/common.h>
+#include <mutex>
 
 class FRT_Supervisor;
 class FNET_Transport;
@@ -21,7 +20,7 @@ namespace documentapi {
 class ExternPolicy : public mbus::IRoutingPolicy {
 private:
     using IMirrorAPI = slobrok::api::IMirrorAPI;
-    vespalib::Lock                      _lock;
+    std::mutex                          _lock;
     std::unique_ptr<FastOS_ThreadPool>  _threadPool;
     std::unique_ptr<FNET_Transport>     _transport;
     std::unique_ptr<FRT_Supervisor>     _orb;

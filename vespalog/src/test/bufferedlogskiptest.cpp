@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
+#include <cstdlib>
 
 LOG_SETUP("bufferedlogskiptest");
 
@@ -53,10 +54,9 @@ void testSkipBufferOnDebug(const std::string& file, uint64_t & timer)
         [[maybe_unused]] int system_result =
         system(("diff -u " + file
                     + " bufferedlogskiptest.skipped.log").c_str());
-        exit(EXIT_FAILURE);
+        std::_Exit(EXIT_FAILURE);
     }
     unlink(file.c_str());
-
 }
 
 void reset(uint64_t & timer) {
@@ -71,7 +71,7 @@ main(int argc, char **argv)
 {
     if (argc != 2) {
         std::cerr << "bufferedlogskiptest must be called with one argument\n";
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
     ns_log::Logger::fakePid = true;
     uint64_t timer;
@@ -81,5 +81,5 @@ main(int argc, char **argv)
     reset(timer);
     testSkipBufferOnDebug(argv[1], timer);
 
-    exit(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
 }

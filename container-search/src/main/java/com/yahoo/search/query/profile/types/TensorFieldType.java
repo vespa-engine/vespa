@@ -1,8 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.types;
 
+import com.yahoo.language.Language;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -38,14 +39,26 @@ public class TensorFieldType extends FieldType {
 
     @Override
     public Object convertFrom(Object o, QueryProfileRegistry registry) {
+        return convertFrom(o, ConversionContext.empty());
+    }
+
+    @Override
+    public Object convertFrom(Object o, ConversionContext context) {
+        return convertFrom(o, context.getEncoder(), context.getLanguage());
+    }
+
+    private Object convertFrom(Object o, Embedder embedder, Language language) {
         if (o instanceof Tensor) return o;
+        if (o instanceof String && ((String)o).startsWith("embed(")) return encode((String)o, embedder, language);
         if (o instanceof String) return Tensor.from(type, (String)o);
         return null;
     }
 
-    @Override
-    public Object convertFrom(Object o, CompiledQueryProfileRegistry registry) {
-        return convertFrom(o, (QueryProfileRegistry)null);
+    private Tensor encode(String s, Embedder embedder, Language language) {
+        if ( ! s.endsWith(")"))
+            throw new IllegalArgumentException("Expected any string enclosed in embed(), but the argument does not end by ')'");
+        String text = s.substring("embed(".length(), s.length() - 1);
+        return embedder.embed(text, language, type);
     }
 
     public static TensorFieldType fromTypeString(String s) {

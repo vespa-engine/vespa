@@ -1,17 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "idealnodecalculatorimpl.h"
+#include "distribution.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <ostream>
 #include <cassert>
 
 namespace storage::lib {
 
-IdealNodeList::IdealNodeList() :
-    _idealNodes()
-{ }
-
-IdealNodeList::~IdealNodeList() { }
+IdealNodeList::IdealNodeList() = default;
+IdealNodeList::~IdealNodeList() = default;
 
 void
 IdealNodeList::print(std::ostream& out, bool , const std::string &) const
@@ -31,7 +29,7 @@ IdealNodeCalculatorImpl::IdealNodeCalculatorImpl()
     initUpStateMapping();
 }
 
-IdealNodeCalculatorImpl::~IdealNodeCalculatorImpl() { }
+IdealNodeCalculatorImpl::~IdealNodeCalculatorImpl() = default;
 
 void
 IdealNodeCalculatorImpl::setDistribution(const Distribution& d) {

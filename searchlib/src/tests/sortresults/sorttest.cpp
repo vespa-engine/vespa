@@ -2,6 +2,7 @@
 
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/sortresults.h>
+#include <cassert>
 
 using search::RankedHit;
 

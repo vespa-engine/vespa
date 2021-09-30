@@ -1,4 +1,4 @@
-// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.deploy;
 
 import com.google.common.collect.ImmutableList;
@@ -6,12 +6,16 @@ import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.api.TlsSecrets;
+import com.yahoo.config.model.api.Quota;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 
 import java.net.URI;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -24,48 +28,146 @@ import java.util.Set;
  *
  * @author hakonhall
  */
-public class TestProperties implements ModelContext.Properties {
+public class TestProperties implements ModelContext.Properties, ModelContext.FeatureFlags {
 
     private boolean multitenant = false;
     private ApplicationId applicationId = ApplicationId.defaultId();
     private List<ConfigServerSpec> configServerSpecs = Collections.emptyList();
-    private HostName loadBalancerName = null;
-    private URI ztsUrl = null;
-    private String athenzDnsSuffix = null;
     private boolean hostedVespa = false;
     private Zone zone;
-    private Set<ContainerEndpoint> endpoints = Collections.emptySet();
-    private boolean isBootstrap = false;
-    private boolean isFirstTimeDeployment = false;
+    private final Set<ContainerEndpoint> endpoints = Collections.emptySet();
     private boolean useDedicatedNodeForLogserver = false;
-    private boolean useAdaptiveDispatch = false;
+    private boolean useThreePhaseUpdates = false;
     private double defaultTermwiseLimit = 1.0;
+    private String jvmGCOptions = null;
+    private String sequencerType = "LATENCY";
+    private boolean firstTimeDeployment = false;
+    private String responseSequencerType = "ADAPTIVE";
+    private int responseNumThreads = 2;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
-    private boolean useNewAthenzFilter = false;
+    private AthenzDomain athenzDomain;
+    private Quota quota = Quota.unlimited();
+    private boolean useAsyncMessageHandlingOnSchedule = false;
+    private double feedConcurrency = 0.5;
+    private boolean enableFeedBlockInDistributor = true;
+    private boolean enforceRankProfileInheritance = true;
+    private int maxActivationInhibitedOutOfSyncGroups = 0;
+    private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
+    private String jvmOmitStackTraceInFastThrowOption;
+    private int numDistributorStripes = 0;
+    private int maxConcurrentMergesPerNode = 16;
+    private int maxMergeQueueSize = 1024;
+    private int largeRankExpressionLimit = 8192;
+    private boolean allowDisableMtls = true;
+    private List<X509Certificate> operatorCertificates = Collections.emptyList();
+    private double resourceLimitDisk = 0.8;
+    private double resourceLimitMemory = 0.8;
+    private double minNodeRatioPerGroup = 0.0;
+    private boolean containerDumpHeapOnShutdownTimeout = false;
+    private double containerShutdownTimeout = 50.0;
 
-
+    @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
     @Override public List<ConfigServerSpec> configServerSpecs() { return configServerSpecs; }
-    @Override public HostName loadBalancerName() { return loadBalancerName; }
-    @Override public URI ztsUrl() { return ztsUrl; }
-    @Override public String athenzDnsSuffix() { return athenzDnsSuffix; }
+    @Override public HostName loadBalancerName() { return null; }
+    @Override public URI ztsUrl() { return null; }
+    @Override public String athenzDnsSuffix() { return null; }
     @Override public boolean hostedVespa() { return hostedVespa; }
     @Override public Zone zone() { return zone; }
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
-
-    @Override public boolean isBootstrap() { return isBootstrap; }
-    @Override public boolean isFirstTimeDeployment() { return isFirstTimeDeployment; }
-    @Override public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
+    @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType) { return jvmGCOptions; }
+    @Override public String feedSequencerType() { return sequencerType; }
+    @Override public boolean isBootstrap() { return false; }
+    @Override public boolean isFirstTimeDeployment() { return firstTimeDeployment; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
-    @Override public Optional<TlsSecrets> tlsSecrets() { return endpointCertificateSecrets.map(TlsSecrets::new); }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
-    @Override public boolean useBucketSpaceMetric() { return true; }
-    @Override public boolean useNewAthenzFilter() { return useNewAthenzFilter; }
+    @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
+    @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
+    @Override public String responseSequencerType() { return responseSequencerType; }
+    @Override public int defaultNumResponseThreads() { return responseNumThreads; }
+    @Override public boolean skipCommunicationManagerThread() { return false; }
+    @Override public boolean skipMbusRequestThread() { return false; }
+    @Override public boolean skipMbusReplyThread() { return false; }
+    @Override public Quota quota() { return quota; }
+    @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
+    @Override public double feedConcurrency() { return feedConcurrency; }
+    @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
+    @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
+    @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
+    @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
+    @Override public int numDistributorStripes() { return numDistributorStripes; }
+    @Override public boolean allowDisableMtls() { return allowDisableMtls; }
+    @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
+    @Override public int largeRankExpressionLimit() { return largeRankExpressionLimit; }
+    @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerNode; }
+    @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
+    @Override public double resourceLimitDisk() { return resourceLimitDisk; }
+    @Override public double resourceLimitMemory() { return resourceLimitMemory; }
+    @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
+    @Override public int metricsproxyNumThreads() { return 1; }
+    @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
+    @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
+    public TestProperties containerDumpHeapOnShutdownTimeout(boolean value) {
+        containerDumpHeapOnShutdownTimeout = value;
+        return this;
+    }
+    public TestProperties containerShutdownTimeout(double value) {
+        containerShutdownTimeout = value;
+        return this;
+    }
+    public TestProperties largeRankExpressionLimit(int value) {
+        largeRankExpressionLimit = value;
+        return this;
+    }
+    public TestProperties setFeedConcurrency(double feedConcurrency) {
+        this.feedConcurrency = feedConcurrency;
+        return this;
+    }
+
+    public TestProperties setAsyncMessageHandlingOnSchedule(boolean value) {
+        useAsyncMessageHandlingOnSchedule = value;
+        return this;
+    }
+
+    public TestProperties setJvmGCOptions(String gcOptions) {
+        jvmGCOptions = gcOptions;
+        return this;
+    }
+    public TestProperties setFeedSequencerType(String type) {
+        sequencerType = type;
+        return this;
+    }
+    public TestProperties setResponseSequencerType(String type) {
+        responseSequencerType = type;
+        return this;
+    }
+    public TestProperties setFirstTimeDeployment(boolean firstTimeDeployment) {
+        this.firstTimeDeployment = firstTimeDeployment;
+        return this;
+    }
+    public TestProperties setResponseNumThreads(int numThreads) {
+        responseNumThreads = numThreads;
+        return this;
+    }
+
+    public TestProperties setMaxConcurrentMergesPerNode(int maxConcurrentMergesPerNode) {
+        this.maxConcurrentMergesPerNode = maxConcurrentMergesPerNode;
+        return this;
+    }
+    public TestProperties setMaxMergeQueueSize(int maxMergeQueueSize) {
+        this.maxMergeQueueSize = maxMergeQueueSize;
+        return this;
+    }
 
     public TestProperties setDefaultTermwiseLimit(double limit) {
         defaultTermwiseLimit = limit;
+        return this;
+    }
+
+    public TestProperties setUseThreePhaseUpdates(boolean useThreePhaseUpdates) {
+        this.useThreePhaseUpdates = useThreePhaseUpdates;
         return this;
     }
 
@@ -76,11 +178,6 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setHostedVespa(boolean hostedVespa) {
         this.hostedVespa = hostedVespa;
-        return this;
-    }
-
-    public TestProperties setUseAdaptiveDispatch(boolean useAdaptiveDispatch) {
-        this.useAdaptiveDispatch = useAdaptiveDispatch;
         return this;
     }
 
@@ -104,13 +201,68 @@ public class TestProperties implements ModelContext.Properties {
         return this;
     }
 
-    public TestProperties setUseNewAthenzFilter(boolean useNewAthenzFilter) {
-        this.useNewAthenzFilter = useNewAthenzFilter;
+    public TestProperties setZone(Zone zone) {
+        this.zone = zone;
         return this;
     }
 
-    public TestProperties setZone(Zone zone) {
-        this.zone = zone;
+    public TestProperties setAthenzDomain(AthenzDomain domain) {
+        this.athenzDomain = domain;
+        return this;
+    }
+
+    public TestProperties setQuota(Quota quota) {
+        this.quota = quota;
+        return this;
+    }
+
+    public TestProperties enableFeedBlockInDistributor(boolean enabled) {
+        enableFeedBlockInDistributor = enabled;
+        return this;
+    }
+
+    public TestProperties maxActivationInhibitedOutOfSyncGroups(int nGroups) {
+        maxActivationInhibitedOutOfSyncGroups = nGroups;
+        return this;
+    }
+
+    public TestProperties setTenantSecretStores(List<TenantSecretStore> secretStores) {
+        this.tenantSecretStores = List.copyOf(secretStores);
+        return this;
+    }
+
+    public TestProperties setJvmOmitStackTraceInFastThrowOption(String value) {
+        this.jvmOmitStackTraceInFastThrowOption = value;
+        return this;
+    }
+
+    public TestProperties setNumDistributorStripes(int value) {
+        this.numDistributorStripes = value;
+        return this;
+    }
+
+    public TestProperties allowDisableMtls(boolean value) {
+        this.allowDisableMtls = value;
+        return this;
+    }
+
+    public TestProperties setOperatorCertificates(List<X509Certificate> operatorCertificates) {
+        this.operatorCertificates = List.copyOf(operatorCertificates);
+        return this;
+    }
+
+    public TestProperties setResourceLimitDisk(double value) {
+        this.resourceLimitDisk = value;
+        return this;
+    }
+
+    public TestProperties setResourceLimitMemory(double value) {
+        this.resourceLimitMemory = value;
+        return this;
+    }
+
+    public TestProperties setMinNodeRatioPerGroup(double value) {
+        this.minNodeRatioPerGroup = value;
         return this;
     }
 

@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.zpe;
 
+import com.yahoo.athenz.auth.token.AccessToken;
 import com.yahoo.athenz.zpe.AuthZpeClient;
 import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
@@ -20,6 +21,8 @@ public class DefaultZpe implements Zpe {
 
     public DefaultZpe() {
         AuthZpeClient.init();
+        // Disable access token cert offset validation to allow existing tokens with refreshed certs
+        AccessToken.setAccessTokenCertOffset(-1);
     }
 
     @Override
@@ -42,10 +45,19 @@ public class DefaultZpe implements Zpe {
     public AuthorizationResult checkAccessAllowed(
             AthenzAccessToken accessToken, X509Certificate identityCertificate, AthenzResourceName resourceName, String action) {
         StringBuilder returnedMatchedRole = new StringBuilder();
-        AuthZpeClient.AccessCheckStatus rawResult =
-                AuthZpeClient.allowAccess(
-                        accessToken.value(), identityCertificate, /*certHash*/null, resourceName.toResourceNameString(), action, returnedMatchedRole);
+        AuthZpeClient.AccessCheckStatus rawResult;
+        if (identityCertificate == null) {
+            rawResult = AuthZpeClient.allowAccess(accessToken.value(), resourceName.toResourceNameString(), action, returnedMatchedRole);
+        } else {
+            rawResult = AuthZpeClient.allowAccess(
+                    accessToken.value(), identityCertificate, /*certHash*/null, resourceName.toResourceNameString(), action, returnedMatchedRole);
+        }
         return createResult(returnedMatchedRole, rawResult, resourceName);
+    }
+
+    @Override
+    public AuthorizationResult checkAccessAllowed(AthenzAccessToken accessToken, AthenzResourceName resourceName, String action) {
+        return checkAccessAllowed(accessToken, null, resourceName, action);
     }
 
     private static AuthorizationResult createResult(

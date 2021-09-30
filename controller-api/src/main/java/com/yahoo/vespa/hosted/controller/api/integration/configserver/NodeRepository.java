@@ -4,76 +4,61 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMembership;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 
-import java.time.Instant;
-import java.util.Collection;
+import java.net.URI;
+import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 /**
- * A minimal interface to the node repository, providing only the operations used by the controller.
+ * Node repository interface intended for use by the controller.
  *
  * @author mpolden
  */
 public interface NodeRepository {
 
-    void addNodes(ZoneId zone, Collection<NodeRepositoryNode> nodes);
+    /** Add new nodes to the node repository */
+    void addNodes(ZoneId zone, List<Node> nodes);
 
+    /** Delete node */
     void deleteNode(ZoneId zone, String hostname);
 
-    void setState(ZoneId zone, NodeState nodeState, String nodename);
+    /** Move node to given state */
+    void setState(ZoneId zone, Node.State state, String hostname);
 
-    NodeRepositoryNode getNode(ZoneId zone, String hostname);
+    /** Get node from zone */
+    Node getNode(ZoneId zone, String hostname);
 
-    NodeList listNodes(ZoneId zone);
+    /** List nodes in given zone matching given filter */
+    List<Node> list(ZoneId zone, NodeFilter filter);
 
-    NodeList listNodes(ZoneId zone, ApplicationId application);
+    /** Get node repository's view of given application */
+    Application getApplication(ZoneId zone, ApplicationId application);
 
-    NodeList listNodes(ZoneId zone, List<HostName> hostnames);
+    /** Update application */
+    void patchApplication(ZoneId zone, ApplicationId application,
+                          double currentReadShare, double maxReadShare);
 
-    /** List all nodes in given zone */
-    default List<Node> list(ZoneId zone) {
-        return listNodes(zone).nodes().stream()
-                              .map(NodeRepository::toNode)
-                              .collect(Collectors.toUnmodifiableList());
-    }
+    /** Get node statistics such as cost and load from given zone */
+    NodeRepoStats getStats(ZoneId zone);
 
-    /** List all nodes in zone owned by given application */
-    default List<Node> list(ZoneId zone, List<HostName> hostnames) {
-        return listNodes(zone, hostnames).nodes().stream()
-                                         .map(NodeRepository::toNode)
-                                         .collect(Collectors.toUnmodifiableList());
-    }
+    /** Get all archive URLs found in zone */
+    Map<TenantName, URI> getArchiveUris(ZoneId zone);
 
-    /** List all nodes in zone owned by given application */
-    default List<Node> list(ZoneId zone, ApplicationId application) {
-        return listNodes(zone, application).nodes().stream()
-                                           .map(NodeRepository::toNode)
-                                           .collect(Collectors.toUnmodifiableList());
-    }
+    /** Update archive URL for given tenant */
+    void setArchiveUri(ZoneId zone, TenantName tenantName, URI archiveUri);
 
-    /** List all nodes in states, in zone owned by given application */
-    default List<Node> list(ZoneId zone, ApplicationId application, Set<Node.State> states) {
-        return list(zone, application).stream()
-                                      .filter(node -> states.contains(node.state()))
-                                      .collect(Collectors.toList());
-    }
+    /** Remove archive URL for given tenant */
+    void removeArchiveUri(ZoneId zone, TenantName tenantName);
 
     /** Upgrade all nodes of given type to a new version */
     void upgrade(ZoneId zone, NodeType type, Version version);
 
     /** Upgrade OS for all nodes of given type to a new version */
-    void upgradeOs(ZoneId zone, NodeType type, Version version);
+    void upgradeOs(ZoneId zone, NodeType type, Version version, Duration upgradeBudget);
 
     /** Get target versions for upgrades in given zone */
     TargetVersions targetVersionsOf(ZoneId zone);
@@ -84,125 +69,22 @@ public interface NodeRepository {
     /** Cancels firmware checks on all hosts in the given zone. */
     void cancelFirmwareCheck(ZoneId zone);
 
-    void retireAndDeprovision(ZoneId zoneId, String hostName);
+    /** Retire given node */
+    void retire(ZoneId zone, String hostname, boolean wantToRetire, boolean wantToDeprovision);
 
-    private static Node toNode(NodeRepositoryNode node) {
-        var application = Optional.ofNullable(node.getOwner())
-                                  .map(owner -> ApplicationId.from(owner.getTenant(), owner.getApplication(),
-                                                                   owner.getInstance()));
-        var parentHostname = Optional.ofNullable(node.getParentHostname()).map(HostName::from);
-        var resources = new NodeResources(
-                toDouble(node.getResources().getVcpu()),
-                toDouble(node.getResources().getMemoryGb()),
-                toDouble(node.getResources().getDiskGb()),
-                toDouble(node.getResources().getBandwidthGbps()),
-                diskSpeedFromString(node.getResources().getDiskSpeed()),
-                storageTypeFromString(node.getResources().getStorageType()));
-        return new Node(HostName.from(node.getHostname()),
-                        parentHostname,
-                        fromJacksonState(node.getState()),
-                        fromJacksonType(node.getType()),
-                        resources,
-                        application,
-                        versionFrom(node.getVespaVersion()),
-                        versionFrom(node.getWantedVespaVersion()),
-                        versionFrom(node.getCurrentOsVersion()),
-                        versionFrom(node.getWantedOsVersion()),
-                        Optional.ofNullable(node.getCurrentFirmwareCheck()).map(Instant::ofEpochMilli),
-                        Optional.ofNullable(node.getWantedFirmwareCheck()).map(Instant::ofEpochMilli),
-                        fromBoolean(node.getAllowedToBeDown()),
-                        Optional.ofNullable(node.suspendedSinceMillis()).map(Instant::ofEpochMilli),
-                        toInt(node.getCurrentRestartGeneration()),
-                        toInt(node.getRestartGeneration()),
-                        toInt(node.getCurrentRebootGeneration()),
-                        toInt(node.getRebootGeneration()),
-                        toInt(node.getCost()),
-                        node.getFlavor(),
-                        clusterIdOf(node.getMembership()),
-                        clusterTypeOf(node.getMembership()),
-                        node.getWantToRetire(),
-                        node.getWantToDeprovision(),
-                        Optional.ofNullable(node.getReservedTo()).map(name -> TenantName.from(name)));
-    }
+    /** Update reports for given node. A key with null value clears that report */
+    void updateReports(ZoneId zone, String hostname, Map<String, String> reports);
 
-    private static String clusterIdOf(NodeMembership nodeMembership) {
-        return nodeMembership == null ? "" : nodeMembership.clusterid;
-    }
+    /** Update hardware model */
+    void updateModel(ZoneId zone, String hostname, String modelName);
 
-    private static Node.ClusterType clusterTypeOf(NodeMembership nodeMembership) {
-        if (nodeMembership == null) return Node.ClusterType.unknown;
-        switch (nodeMembership.clustertype) {
-            case "admin": return Node.ClusterType.admin;
-            case "content": return Node.ClusterType.content;
-            case "container": return Node.ClusterType.container;
-            case "combined": return Node.ClusterType.combined;
-        }
-        return Node.ClusterType.unknown;
-    }
+    /** Update switch hostname */
+    void updateSwitchHostname(ZoneId zone, String hostname, String switchHostname);
 
-    // Convert Jackson type to config.provision type
-    private static NodeType fromJacksonType(com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeType nodeType) {
-        switch (nodeType) {
-            case tenant: return NodeType.tenant;
-            case host: return NodeType.host;
-            case proxy: return NodeType.proxy;
-            case proxyhost: return NodeType.proxyhost;
-            case config: return NodeType.config;
-            case confighost: return NodeType.confighost;
-            default: throw new IllegalArgumentException("Unknown type: " + nodeType);
-        }
-    }
+    /** Schedule reboot of given node */
+    void reboot(ZoneId zone, String hostname);
 
-    private static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State fromJacksonState(NodeState state) {
-        switch (state) {
-            case provisioned: return Node.State.provisioned;
-            case ready: return Node.State.ready;
-            case reserved: return Node.State.reserved;
-            case active: return Node.State.active;
-            case inactive: return Node.State.inactive;
-            case dirty: return Node.State.dirty;
-            case failed: return Node.State.failed;
-            case parked: return Node.State.parked;
-        }
-        return Node.State.unknown;
-    }
-
-    private static NodeResources.DiskSpeed diskSpeedFromString(String diskSpeed) {
-        if (diskSpeed == null) return NodeResources.DiskSpeed.getDefault();
-        switch (diskSpeed) {
-            case "fast": return NodeResources.DiskSpeed.fast;
-            case "slow": return NodeResources.DiskSpeed.slow;
-            case "any": return NodeResources.DiskSpeed.any;
-            default: throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed + "'");
-        }
-    }
-
-    private static NodeResources.StorageType storageTypeFromString(String storageType) {
-        if (storageType == null) return NodeResources.StorageType.getDefault();
-        switch (storageType) {
-            case "remote": return NodeResources.StorageType.remote;
-            case "local": return NodeResources.StorageType.local;
-            case "any": return NodeResources.StorageType.any;
-            default: throw new IllegalArgumentException("Unknown storage type '" + storageType + "'");
-        }
-    }
-
-    private static Node.ServiceState fromBoolean(Boolean allowedDown) {
-        return (allowedDown == null)
-                ? Node.ServiceState.unorchestrated
-                : allowedDown ? Node.ServiceState.allowedDown : Node.ServiceState.expectedUp;
-    }
-
-    private static double toDouble(Double d) {
-        return d == null ? 0 : d;
-    }
-
-    private static int toInt(Integer i) {
-        return i == null ? 0 : i;
-    }
-
-    private static Version versionFrom(String s) {
-        return s == null ? Version.emptyVersion : Version.fromString(s);
-    }
+    /** Checks whether the zone has the spare capacity to remove the given hosts */
+    boolean isReplaceable(ZoneId zone, List<HostName> hostnames);
 
 }

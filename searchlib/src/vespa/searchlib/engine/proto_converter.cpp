@@ -5,6 +5,10 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/smart_buffer.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/log/log.h>
+
+LOG_SETUP(".searchlib.engine.proto_converter");
 
 namespace search::engine {
 
@@ -90,6 +94,15 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
     proto.set_degraded_by_soft_timeout(reply.coverage.wasDegradedByTimeout());
     bool has_sort_data = (reply.sortIndex.size() > 0);
     assert(!has_sort_data || (reply.sortIndex.size() == (reply.hits.size() + 1)));
+    if (reply.request) {
+        uint32_t asked_offset = reply.request->offset;
+        uint32_t asked_hits = reply.request->maxhits;
+        size_t got_hits = reply.hits.size();
+        if (got_hits < asked_hits && asked_offset + got_hits < reply.totalHitCount) {
+            LOG(warning, "asked for %u hits [at offset %u] but only returning %zu hits from %" PRIu64 " available",
+                asked_hits, asked_offset, got_hits, reply.totalHitCount);
+        }
+    }
     for (size_t i = 0; i < reply.hits.size(); ++i) {
         auto *hit = proto.add_hits();
         hit->set_global_id(reply.hits[i].gid.get(), document::GlobalId::LENGTH);
@@ -149,7 +162,7 @@ void
 ProtoConverter::docsum_reply_to_proto(const DocsumReply &reply, ProtoDocsumReply &proto)
 {
     if (reply._root) {
-        vespalib::SmartBuffer buf(4096);
+        vespalib::SmartBuffer buf(4_Ki);
         vespalib::slime::BinaryFormat::encode(*reply._root, buf);
         proto.set_slime_summaries(buf.obtain().data, buf.obtain().size);
     }
@@ -158,10 +171,8 @@ ProtoConverter::docsum_reply_to_proto(const DocsumReply &reply, ProtoDocsumReply
 //-----------------------------------------------------------------------------
 
 void
-ProtoConverter::monitor_request_from_proto(const ProtoMonitorRequest &proto, MonitorRequest &request)
+ProtoConverter::monitor_request_from_proto(const ProtoMonitorRequest &, MonitorRequest &)
 {
-    (void) proto;
-    request.reportActiveDocs = true;
 }
 
 void
@@ -170,6 +181,7 @@ ProtoConverter::monitor_reply_to_proto(const MonitorReply &reply, ProtoMonitorRe
     proto.set_online(reply.timestamp != 0);
     proto.set_active_docs(reply.activeDocs);
     proto.set_distribution_key(reply.distribution_key);
+    proto.set_is_blocking_writes(reply.is_blocking_writes);
 }
 
 //-----------------------------------------------------------------------------

@@ -6,6 +6,9 @@
 #include "i_proton_configurer.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <thread>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton_config_fetcher");
@@ -23,7 +26,7 @@ ProtonConfigFetcher::ProtonConfigFetcher(const config::ConfigUri & configUri, IP
       _owner(owner),
       _mutex(),
       _dbManagerMap(),
-      _threadPool(128 * 1024, 1),
+      _threadPool(128_Ki, 1),
       _oldDocumentTypeRepos(),
       _currentDocumentTypeRepo()
 {

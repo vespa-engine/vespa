@@ -4,8 +4,7 @@
 #include <vespa/storage/distributor/maintenance/maintenanceoperation.h>
 #include <vespa/storage/distributor/maintenance/maintenancepriority.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class MaintenancePriorityAndType
 {
@@ -32,5 +31,4 @@ public:
     }
 };
 
-} // distributor
-} // storage
+} // storage::distributor

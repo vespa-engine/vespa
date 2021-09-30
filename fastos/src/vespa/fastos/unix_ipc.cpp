@@ -3,35 +3,27 @@
 #include "ringbuffer.h"
 #include <cassert>
 #include <cstring>
+#include <cstdlib>
 #include <unistd.h>
 #include <fcntl.h>
 #include <memory>
 #include <future>
 
 FastOS_UNIX_IPCHelper::
-FastOS_UNIX_IPCHelper (FastOS_ApplicationInterface *app, int descriptor)
+FastOS_UNIX_IPCHelper (FastOS_ApplicationInterface *app, int)
     : _lock(),
       _exitFlag(false),
-      _app(app),
-      _appParentIPCDescriptor()
+      _app(app)
 {
-    _appParentIPCDescriptor._fd = descriptor;
     _wakeupPipe[0] = -1;
     _wakeupPipe[1] = -1;
 
     if(pipe(_wakeupPipe) != 0) {
         perror("pipe wakeuppipe");
-        exit(1);
+        std::_Exit(1);
     } else {
         SetBlocking(_wakeupPipe[0], false);
         SetBlocking(_wakeupPipe[1], true);
-    }
-
-    if(_appParentIPCDescriptor._fd != -1) {
-        _appParentIPCDescriptor._readBuffer.reset(new FastOS_RingBuffer(16384));
-        _appParentIPCDescriptor._writeBuffer.reset(new FastOS_RingBuffer(16384));
-
-        SetBlocking(_appParentIPCDescriptor._fd, false);
     }
 }
 
@@ -43,11 +35,6 @@ FastOS_UNIX_IPCHelper::~FastOS_UNIX_IPCHelper ()
     if(_wakeupPipe[1] != -1) {
         close(_wakeupPipe[1]);
     }
-    if(_appParentIPCDescriptor._fd != -1) {
-        close(_appParentIPCDescriptor._fd);
-    }
-    _appParentIPCDescriptor._readBuffer.reset();
-    _appParentIPCDescriptor._writeBuffer.reset();
 }
 
 
@@ -171,16 +158,6 @@ PerformAsyncIO()
     }
 }
 
-void FastOS_UNIX_IPCHelper::
-PerformAsyncIPCIO()
-{
-    FastOS_UNIX_Process::DescriptorHandle &desc = _appParentIPCDescriptor;
-    if (desc._canRead)
-        (void) DoRead(desc);
-    if (desc._canWrite)
-        (void) DoWrite(desc);
-}
-
 
 void FastOS_UNIX_IPCHelper::
 BuildPollChecks()
@@ -200,15 +177,6 @@ BuildPollChecks()
             BuildPollCheck(true,  desc._fd, desc._readBuffer.get(), &desc._wantRead);
         }
     }
-
-    if(_appParentIPCDescriptor._writeBuffer.get() != nullptr)
-        BuildPollCheck(false, _appParentIPCDescriptor._fd,
-                       _appParentIPCDescriptor._writeBuffer.get(),
-                       &_appParentIPCDescriptor._wantWrite);
-    if(_appParentIPCDescriptor._readBuffer.get() != nullptr)
-        BuildPollCheck(true, _appParentIPCDescriptor._fd,
-                       _appParentIPCDescriptor._readBuffer.get(),
-                       &_appParentIPCDescriptor._wantRead);
 }
 
 
@@ -296,30 +264,6 @@ BuildPollArray(pollfd **fds, unsigned int *nfds, unsigned int *allocnfds)
         }
     }
 
-    FastOS_UNIX_Process::DescriptorHandle &desc2 = _appParentIPCDescriptor;
-
-    if (desc2._fd >= 0 &&
-        (desc2._wantRead || desc2._wantWrite)) {
-        if (rfds >= rfdsEnd) {
-            rfds = ResizePollArray(fds,
-                                   allocnfds);
-            rfdsEnd = *fds + *allocnfds;
-        }
-        rfds->fd = desc2._fd;
-        rfds->events = 0;
-        if (desc2._wantRead)
-            rfds->events |= POLLRDNORM;
-        if (desc2._wantWrite)
-            rfds->events |= POLLWRNORM;
-        rfds->revents = 0;
-        desc2._pollIdx = pollIdx;
-        rfds++;
-        pollIdx++;
-    } else {
-        desc2._pollIdx = -1;
-        desc2._canRead = false;
-        desc2._canWrite = false;
-    }
     *nfds = rfds - *fds;
 }
 
@@ -360,25 +304,6 @@ SavePollArray(pollfd *fds, unsigned int nfds)
                     desc._canWrite = false;
             }
         }
-    }
-
-    FastOS_UNIX_Process::DescriptorHandle &desc2 = _appParentIPCDescriptor;
-
-    if (desc2._fd >= 0 &&
-        static_cast<unsigned int>(desc2._pollIdx) < nfds) {
-        int revents = fds[desc2._pollIdx].revents;
-
-        if ((revents &
-             (POLLIN | POLLRDNORM | POLLERR | POLLHUP | POLLNVAL)) != 0)
-            desc2._canRead = true;
-        else
-            desc2._canRead = false;
-        if ((revents &
-             (POLLOUT | POLLWRNORM | POLLWRBAND | POLLERR | POLLHUP |
-              POLLNVAL)) != 0)
-            desc2._canWrite = true;
-        else
-            desc2._canWrite = false;
     }
 
     if ((fds[0].revents & (POLLIN | POLLERR | POLLHUP)) != 0)
@@ -497,20 +422,7 @@ Run(FastOS_ThreadInterface *thisThread, void *arg)
         }
         if (exitFlag)
         {
-            if (_appParentIPCDescriptor._fd != -1)
-            {
-                if(_appParentIPCDescriptor._wantWrite)
-                {
-                    //               printf("still data to write\n");
-                }
-                else
-                {
-                    //               printf("no more data to write, exitting\n");
-                    break;
-                }
-            }
-            else
-                break;
+            break;
         }
 
         for (;;)
@@ -536,10 +448,10 @@ Run(FastOS_ThreadInterface *thisThread, void *arg)
                     if ((fds[i].events & POLLOUT) != 0)
                         printf("Write %d\n", fds[i].fd);
                 }
-                exit(1);
-            }
-            else
+                std::_Exit(1);
+            } else {
                 break;
+            }
         }
 
         bool woken = false;
@@ -549,7 +461,6 @@ Run(FastOS_ThreadInterface *thisThread, void *arg)
             // Do actual IO (based on file descriptor sets and buffer contents)
             PerformAsyncIO();
         }
-        PerformAsyncIPCIO();
 
         // Did someone want to wake us up from the poll() call?
         if (woken) {

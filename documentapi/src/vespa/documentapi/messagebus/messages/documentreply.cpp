@@ -9,9 +9,9 @@ DocumentReply::DocumentReply(uint32_t type) :
     mbus::Reply(),
     _type(type),
     _priority(Priority::PRI_NORMAL_3)
-{
-    // empty
-}
+{ }
+
+DocumentReply::~DocumentReply() = default;
 
 const mbus::string&
 DocumentReply::getProtocol() const

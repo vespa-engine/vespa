@@ -1,9 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/persistence/bucketownershipnotifier.h>
 #include <tests/common/message_sender_stub.h>
 #include <tests/common/teststorageapp.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/storage/persistence/bucketownershipnotifier.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;

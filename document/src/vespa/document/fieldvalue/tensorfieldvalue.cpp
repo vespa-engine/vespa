@@ -4,16 +4,16 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/eval/value.h>
 #include <ostream>
 #include <cassert>
 
-using vespalib::tensor::Tensor;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
-using Engine = vespalib::tensor::DefaultTensorEngine;
 using namespace vespalib::xml;
 
 namespace document {
@@ -51,7 +51,7 @@ TensorFieldValue::TensorFieldValue(const TensorFieldValue &rhs)
       _altered(true)
 {
     if (rhs._tensor) {
-        _tensor = rhs._tensor->clone();
+        _tensor = FastValueBuilderFactory::get().copy(*rhs._tensor);
     }
 }
 
@@ -78,7 +78,7 @@ TensorFieldValue::operator=(const TensorFieldValue &rhs)
         if (&_dataType == &rhs._dataType || !rhs._tensor ||
             _dataType.isAssignableType(rhs._tensor->type())) {
             if (rhs._tensor) {
-                _tensor = rhs._tensor->clone();
+                _tensor = FastValueBuilderFactory::get().copy(*rhs._tensor);
             } else {
                 _tensor.reset();
             }
@@ -92,7 +92,7 @@ TensorFieldValue::operator=(const TensorFieldValue &rhs)
 
 
 TensorFieldValue &
-TensorFieldValue::operator=(std::unique_ptr<Tensor> rhs)
+TensorFieldValue::operator=(std::unique_ptr<vespalib::eval::Value> rhs)
 {
     if (!rhs || _dataType.isAssignableType(rhs->type())) {
         _tensor = std::move(rhs);
@@ -109,11 +109,7 @@ TensorFieldValue::make_empty_if_not_existing()
 {
     if (!_tensor) {
         TensorSpec empty_spec(_dataType.getTensorType().to_spec());
-        auto empty_value = Engine::ref().from_spec(empty_spec);
-        auto tensor_ptr = dynamic_cast<Tensor*>(empty_value.get());
-        assert(tensor_ptr != nullptr);
-        _tensor.reset(tensor_ptr);
-        empty_value.release();
+        _tensor = value_from_spec(empty_spec, FastValueBuilderFactory::get());
     }
 }
 
@@ -161,7 +157,7 @@ TensorFieldValue::print(std::ostream& out, bool verbose,
     (void) indent;
     out << "{TensorFieldValue: ";
     if (_tensor) {
-        out << Engine::ref().to_spec(*_tensor).to_string();
+        out << spec_from_value(*_tensor).to_string();
     } else {
         out << "null";
     }
@@ -190,7 +186,7 @@ TensorFieldValue::assign(const FieldValue &value)
 
 
 void
-TensorFieldValue::assignDeserialized(std::unique_ptr<Tensor> rhs)
+TensorFieldValue::assignDeserialized(std::unique_ptr<vespalib::eval::Value> rhs)
 {
     if (!rhs || _dataType.isAssignableType(rhs->type())) {
         _tensor = std::move(rhs);
@@ -218,13 +214,23 @@ TensorFieldValue::compare(const FieldValue &other) const
     if (!rhs._tensor) {
         return 1;
     }
-    if (_tensor->equals(*rhs._tensor)) {
+    // equal pointers always means identical
+    if (_tensor.get() == rhs._tensor.get()) {
         return 0;
     }
-    assert(_tensor.get() != rhs._tensor.get());
-    // XXX: Wrong, compares identity of tensors instead of values
-    // Note: sorting can be dangerous due to this.
-    return ((_tensor.get()  < rhs._tensor.get()) ? -1 : 1);
+    // compare just the type first:
+    auto lhs_type = _tensor->type().to_spec();
+    auto rhs_type = rhs._tensor->type().to_spec();
+    int type_cmp = lhs_type.compare(rhs_type);
+    if (type_cmp != 0) {
+        return type_cmp;
+    }
+    // Compare the actual tensors by converting to TensorSpec strings.
+    // TODO: this can be very slow, check if it might be used for anything
+    // performance-critical.
+    auto lhs_spec = spec_from_value(*_tensor).to_string();
+    auto rhs_spec = spec_from_value(*rhs._tensor).to_string();
+    return lhs_spec.compare(rhs_spec);
 }
 
 IMPLEMENT_IDENTIFIABLE(TensorFieldValue, FieldValue);

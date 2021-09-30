@@ -1,5 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/fastos/app.h>
 #include <vespa/vespalib/locale/c.h>
@@ -59,7 +61,7 @@ public:
         int retCode = 0;
         fnet::frt::StandaloneFRT supervisor;
 
-        slobrok::ConfiguratorFactory sbcfg("admin/slobrok.0");
+        slobrok::ConfiguratorFactory sbcfg("client");
         slobrok::api::MirrorAPI mirror(supervisor.supervisor(), sbcfg);
 
         while (!mirror.ready()) {

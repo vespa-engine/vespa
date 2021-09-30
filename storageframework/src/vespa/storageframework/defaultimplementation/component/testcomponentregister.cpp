@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "testcomponentregister.h"
+#include <cassert>
 
 namespace storage::framework::defaultimplementation {
 
@@ -23,6 +24,6 @@ TestComponentRegister::TestComponentRegister(ComponentRegisterImpl::UP compReg)
     // register status pages without a server
 }
 
-TestComponentRegister::~TestComponentRegister() {}
+TestComponentRegister::~TestComponentRegister() = default;
 
 }

@@ -5,5 +5,4 @@ vespa_add_executable(searchlib_tensorattribute_test_app TEST
     DEPENDS
     searchlib
 )
-vespa_add_test(NAME searchlib_tensorattribute_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tensorattribute_test.sh
-               DEPENDS searchlib_tensorattribute_test_app)
+vespa_add_test(NAME searchlib_tensorattribute_test_app COMMAND searchlib_tensorattribute_test_app)

@@ -6,6 +6,6 @@ vespa_add_executable(searchlib_features_bm25_test_app TEST
     DEPENDS
     searchlib
     searchlib_test
-    gtest
+    GTest::GTest
 )
 vespa_add_test(NAME searchlib_features_bm25_test_app COMMAND searchlib_features_bm25_test_app)

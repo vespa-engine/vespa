@@ -7,7 +7,7 @@
 #include "btreenode.hpp"
 #include <vespa/vespalib/util/hdr_abort.h>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
@@ -427,7 +427,7 @@ BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
 BTreeIteratorBase(const KeyDataType *shortArray,
                   uint32_t arraySize,
                   const NodeAllocatorType &allocator,
-                  const AggrCalcT &aggrCalc)
+                  [[maybe_unused]] const AggrCalcT &aggrCalc)
     : _leaf(nullptr, 0u),
       _path(),
       _pathSize(0),
@@ -439,11 +439,9 @@ BTreeIteratorBase(const KeyDataType *shortArray,
         _compatLeafNode.reset(new LeafNodeTempType(shortArray, arraySize));
         _leaf.setNode(_compatLeafNode.get());
         _leafRoot = _leaf.getNode();
-        typedef BTreeAggregator<KeyT, DataT, AggrT,
-            INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT> Aggregator;
-        if (AggrCalcT::hasAggregated()) {
-            Aggregator::recalc(const_cast<LeafNodeType &>(*_leaf.getNode()),
-                               aggrCalc);
+        if constexpr (AggrCalcT::hasAggregated()) {
+            using Aggregator = BTreeAggregator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>;
+            Aggregator::recalc(const_cast<LeafNodeType &>(*_leaf.getNode()), aggrCalc);
         }
     }
 }
@@ -517,15 +515,12 @@ operator-(const BTreeIteratorBase &rhs) const
     if (_pathSize != 0) {
         uint32_t pidx = _pathSize;
         while (pidx > 0) {
-            assert(_path[pidx - 1].getNode() == rhs._path[pidx - 1].getNode());
             if (_path[pidx - 1].getIdx() != rhs._path[pidx - 1].getIdx())
                 break;
             --pidx;
         }
         return position(pidx) - rhs.position(pidx);
     } else {
-        assert(_leaf.getNode() == nullptr || rhs._leaf.getNode() == nullptr ||
-               _leaf.getNode() == rhs._leaf.getNode());
         return position(0) - rhs.position(0);
     }
 }
@@ -1088,15 +1083,15 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
 template <class AggrCalcT>
 void
 BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-updateData(const DataType & data, const AggrCalcT &aggrCalc)
+updateData(const DataType & data, [[maybe_unused]] const AggrCalcT &aggrCalc)
 {
     LeafNodeType * lnode = getLeafNode();
-    if (AggrCalcT::hasAggregated()) {
+    if constexpr (AggrCalcT::hasAggregated() && AggrCalcT::aggregate_over_values()) {
         AggrT oldca(lnode->getAggregated());
-        typedef BTreeAggregator<KeyT, DataT, AggrT,
-            TraitsT::INTERNAL_SLOTS,
-            TraitsT::LEAF_SLOTS,
-            AggrCalcT> Aggregator;
+        using Aggregator = BTreeAggregator<KeyT, DataT, AggrT,
+                                           TraitsT::INTERNAL_SLOTS,
+                                           TraitsT::LEAF_SLOTS,
+                                           AggrCalcT>;
         if (aggrCalc.update(lnode->getAggregated(),
                             aggrCalc.getVal(lnode->getData(_leaf.getIdx())),
                             aggrCalc.getVal(data))) {
@@ -1186,16 +1181,20 @@ template <class AggrCalcT>
 BTreeNode::Ref
 BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
 insertFirst(const KeyType &key, const DataType &data,
-            const AggrCalcT &aggrCalc)
+            [[maybe_unused]] const AggrCalcT &aggrCalc)
 {
     assert(_pathSize == 0);
     assert(_leafRoot == nullptr);
     NodeAllocatorType &allocator = getAllocator();
     LeafNodeTypeRefPair lnode = allocator.allocLeafNode();
     lnode.data->insert(0, key, data);
-    if (AggrCalcT::hasAggregated()) {
+    if constexpr (AggrCalcT::hasAggregated()) {
         AggrT a;
-        aggrCalc.add(a, aggrCalc.getVal(data));
+        if constexpr (AggrCalcT::aggregate_over_values()) {
+            aggrCalc.add(a, aggrCalc.getVal(data));
+        } else {
+            aggrCalc.add(a, aggrCalc.getVal(key));
+        }
         lnode.data->getAggregated() = a;
     }
     _leafRoot = lnode.data;
@@ -1231,12 +1230,12 @@ template <class AggrCalcT>
 BTreeNode::Ref
 BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
 addLevel(BTreeNode::Ref rootRef, BTreeNode::Ref splitNodeRef,
-         bool inRightSplit, const AggrCalcT &aggrCalc)
+         bool inRightSplit, [[maybe_unused]] const AggrCalcT &aggrCalc)
 {
-    typedef BTreeAggregator<KeyT, DataT, AggrT,
-                            TraitsT::INTERNAL_SLOTS,
-                            TraitsT::LEAF_SLOTS,
-                            AggrCalcT> Aggregator;
+    using Aggregator = BTreeAggregator<KeyT, DataT, AggrT,
+                                       TraitsT::INTERNAL_SLOTS,
+                                       TraitsT::LEAF_SLOTS,
+                                       AggrCalcT>;
 
     NodeAllocatorType &allocator(getAllocator());
     
@@ -1246,7 +1245,7 @@ addLevel(BTreeNode::Ref rootRef, BTreeNode::Ref splitNodeRef,
                           allocator.validLeaves(splitNodeRef));
     inode->insert(0, allocator.getLastKey(rootRef), rootRef);
     inode->insert(1, allocator.getLastKey(splitNodeRef), splitNodeRef);
-    if (AggrCalcT::hasAggregated()) {
+    if constexpr (AggrCalcT::hasAggregated()) {
         Aggregator::recalc(*inode, allocator, aggrCalc);
     }
     _path[_pathSize].setNodeAndIdx(inode, inRightSplit ? 1u : 0u);

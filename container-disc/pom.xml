@@ -32,6 +32,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-lib</artifactId>
       <version>${project.version}</version>
@@ -51,16 +56,11 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>component</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>javax.servlet-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-servlet</artifactId>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-apache-http-client-bundle</artifactId>
+      <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -87,17 +87,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>messagebus-disc</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>config</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -106,13 +95,13 @@
       <artifactId>vespalog</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!-- WARNING: These are only here to make bundlification work -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>simplemetrics</artifactId>
+      <artifactId>hosted-zone-api</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+    <!-- WARNING: These are only here to make bundlification work -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-bundle</artifactId>
@@ -125,19 +114,18 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>jdisc_jetty</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
     <!-- end WARNING -->
-
-    <!-- dependencies used by container-core -->
-    <dependency>
-        <groupId>com.fasterxml.jackson.datatype</groupId>
-        <artifactId>jackson-datatype-jsr310</artifactId>
-        <scope>provided</scope>
-    </dependency>
-    <dependency>
-        <groupId>com.fasterxml.jackson.datatype</groupId>
-        <artifactId>jackson-datatype-jdk8</artifactId>
-        <scope>provided</scope>
-    </dependency>
 
     <!-- ensure that transitive Jackson dependencies are not included in compile scope -->
     <dependency>
@@ -175,30 +163,55 @@
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
         <configuration>
-          <discApplicationClass>com.yahoo.container.jdisc.ConfiguredApplication</discApplicationClass>
+            <discApplicationClass>com.yahoo.container.jdisc.ConfiguredApplication</discApplicationClass>
+            <buildLegacyVespaPlatformBundle>true</buildLegacyVespaPlatformBundle>
             <discPreInstallBundle>
                 <!-- Vespa bundles -->
                 config-bundle-jar-with-dependencies.jar,
                 configdefinitions-jar-with-dependencies.jar,
-                container-jersey2-jar-with-dependencies.jar,
                 container-search-and-docproc-jar-with-dependencies.jar,
                 container-search-gui-jar-with-dependencies.jar,
                 docprocs-jar-with-dependencies.jar,
+                hosted-zone-api-jar-with-dependencies.jar,
                 jdisc-security-filters-jar-with-dependencies.jar,
-                jdisc_http_service-jar-with-dependencies.jar,
-                model-evaluation-jar-with-dependencies.jar,
-                model-integration-jar-with-dependencies.jar,
+                linguistics-components-jar-with-dependencies.jar,
                 vespaclient-container-plugin-jar-with-dependencies.jar,
                 vespa-athenz-jar-with-dependencies.jar,
-                security-utils-jar-with-dependencies.jar,
-                simplemetrics-jar-with-dependencies.jar,
-                defaults-jar-with-dependencies.jar,
-                component-jar-with-dependencies.jar,
-                zkfacade-jar-with-dependencies.jar,
-                zookeeper-server-jar-with-dependencies.jar,
-                <!-- Misc 3rd party bundles -->
+                container-apache-http-client-bundle-jar-with-dependencies.jar, <!-- Apache http client repackaged as bundle -->
+
+                <!-- Vespa security utils with necessary 3rd party bundles -->
+                security-utils.jar,
                 bcpkix-jdk15on-${bouncycastle.version}.jar,
                 bcprov-jdk15on-${bouncycastle.version}.jar,
+
+               <!-- Jetty -->
+                alpn-api-${jetty-alpn.version}.jar,
+                http2-server-${jetty.version}.jar,
+                http2-common-${jetty.version}.jar,
+                http2-hpack-${jetty.version}.jar,
+                jetty-alpn-java-server-${jetty.version}.jar,
+                jetty-alpn-server-${jetty.version}.jar,
+                jetty-continuation-${jetty.version}.jar,
+                jetty-http-${jetty.version}.jar,
+                jetty-io-${jetty.version}.jar,
+                jetty-jmx-${jetty.version}.jar,
+                jetty-security-${jetty.version}.jar,
+                jetty-server-${jetty.version}.jar,
+                jetty-servlet-${jetty.version}.jar,
+                jetty-servlets-${jetty.version}.jar,
+                jetty-util-${jetty.version}.jar,
+                jetty-util-ajax-${jetty.version}.jar,
+                javax.servlet-api-3.1.0.jar,
+
+                <!-- Spifly (required for OSGi service loader used by Jetty)  -->
+                org.apache.aries.spifly.dynamic.bundle-${spifly.version}.jar,
+                asm-${asm.version}.jar,
+                asm-analysis-${asm.version}.jar,
+                asm-commons-${asm.version}.jar,
+                asm-tree-${asm.version}.jar,
+                asm-util-${asm.version}.jar,
+                <!-- Spifly end -->
+
                 <!-- Jersey 2 + Jackson 2 -->
                 aopalliance-repackaged-${hk2.version}.jar,
                 hk2-api-${hk2.version}.jar,
@@ -216,11 +229,8 @@
                 javax.ws.rs-api-${javax.ws.rs-api.version}.jar,
                 jersey-client-${jersey2.version}.jar,
                 jersey-common-${jersey2.version}.jar,
-                jersey-container-servlet-${jersey2.version}.jar,
-                jersey-container-servlet-core-${jersey2.version}.jar,
-                jersey-entity-filtering-${jersey2.version}.jar, <!-- new feature from 2.16, provided for convenience -->
+                jersey-entity-filtering-${jersey2.version}.jar, <!-- needed by jersey-media-json-jackson -->
                 jersey-guava-${jersey2.version}.jar,
-                jersey-media-jaxb-${jersey2.version}.jar,
                 jersey-media-json-jackson-${jersey2.version}.jar,
                 jersey-media-multipart-${jersey2.version}.jar,
                 mimepull-${mimepull.version}.jar, <!-- needed by media-multipart -->

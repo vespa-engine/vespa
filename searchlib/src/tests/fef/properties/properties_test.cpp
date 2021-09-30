@@ -216,15 +216,23 @@ TEST("test stuff") {
     { // test index properties known by the framework
         { // vespa.eval.lazy_expressions
             EXPECT_EQUAL(eval::LazyExpressions::NAME, vespalib::string("vespa.eval.lazy_expressions"));
-            Properties p;
-            EXPECT_TRUE(eval::LazyExpressions::check(p, true));
-            EXPECT_TRUE(!eval::LazyExpressions::check(p, false));
-            p = Properties().add("vespa.eval.lazy_expressions", "true");
-            EXPECT_TRUE(eval::LazyExpressions::check(p, true));
-            EXPECT_TRUE(eval::LazyExpressions::check(p, false));
-            p = Properties().add("vespa.eval.lazy_expressions", "false");
-            EXPECT_TRUE(!eval::LazyExpressions::check(p, true));
-            EXPECT_TRUE(!eval::LazyExpressions::check(p, false));
+            {
+                Properties p;
+                EXPECT_TRUE(eval::LazyExpressions::check(p, true));
+                EXPECT_TRUE(!eval::LazyExpressions::check(p, false));
+            }
+            {
+                Properties p;
+                p.add("vespa.eval.lazy_expressions", "true");
+                EXPECT_TRUE(eval::LazyExpressions::check(p, true));
+                EXPECT_TRUE(eval::LazyExpressions::check(p, false));
+            }
+            {
+                Properties p;
+                p.add("vespa.eval.lazy_expressions", "false");
+                EXPECT_TRUE(!eval::LazyExpressions::check(p, true));
+                EXPECT_TRUE(!eval::LazyExpressions::check(p, false));
+            }
         }
         { // vespa.eval.use_fast_forest
             EXPECT_EQUAL(eval::UseFastForest::NAME, vespalib::string("vespa.eval.use_fast_forest"));

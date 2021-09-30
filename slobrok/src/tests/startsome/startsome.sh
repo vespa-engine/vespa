@@ -24,15 +24,16 @@ listall () {
 }
 
 
-${SLOBROK} -p 18481 &
-${SLOBROK} -p 18482 &
-${SLOBROK} -p 18483 &
-${SLOBROK} -p 18484 &
+${VALGRIND} ${SLOBROK} -p 18481 > log.s1.txt 2>&1 &
+${VALGRIND} ${SLOBROK} -p 18482 > log.s2.txt 2>&1 &
+${VALGRIND} ${SLOBROK} -p 18483 > log.s3.txt 2>&1 &
+${VALGRIND} ${SLOBROK} -p 18484 > log.s4.txt 2>&1 &
 
 sleep 1
+[ "${VALGRIND}" ] && sleep 9
 
 ./slobrok_rpc_info_app \
-	tcp/localhost:18481 verbose > rpc-method-list
+        tcp/localhost:18481 verbose > rpc-method-list
 
 echo port 18481:
 ${SBCMD} 18481 slobrok.callback.listNamesServed

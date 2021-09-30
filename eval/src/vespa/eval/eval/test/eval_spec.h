@@ -7,9 +7,7 @@
 #include <cassert>
 #include <vector>
 
-namespace vespalib {
-namespace eval {
-namespace test {
+namespace vespalib::eval::test {
 
 /**
  * A collection of expressions with parameter bindings and their
@@ -123,7 +121,4 @@ public:
     }
 };
 
-} // namespace vespalib::eval::test
-} // namespace vespalib::eval
-} // namespace vespalib
-
+} // namespace

@@ -4,7 +4,7 @@ package com.yahoo.config.provision;
 import java.util.Objects;
 
 /**
- * Represents a host name
+ * A host name
  *
  * @author mortent
  */
@@ -18,12 +18,7 @@ public class HostName implements Comparable<HostName> {
 
     public String value() { return name; }
 
-    /**
-     * Create a {@link HostName} with a given name.
-     *
-     * @param name Name
-     * @return instance of {@link HostName}.
-     */
+    /** Create a {@link HostName} with a given name */
     public static HostName from(String name) {
         return new HostName(name);
     }

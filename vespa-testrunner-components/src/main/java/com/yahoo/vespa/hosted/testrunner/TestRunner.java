@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.testrunner;
 
 import com.google.inject.Inject;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
+import com.yahoo.vespa.testrunner.legacy.TestProfile;
 import org.fusesource.jansi.AnsiOutputStream;
 import org.fusesource.jansi.HtmlAnsiOutputStream;
 
@@ -29,15 +31,14 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.log.LogLevel.ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.logging.Level.INFO;
+import static java.util.logging.Level.SEVERE;
 
 /**
  * @author valerijf
  * @author jvenstad
  */
-public class TestRunner {
+public class TestRunner implements LegacyTestRunner {
 
     private static final Logger logger = Logger.getLogger(TestRunner.class.getName());
     private static final Level HTML = new Level("html", 1) { };
@@ -104,6 +105,7 @@ public class TestRunner {
         else if (config.useTesterCertificate())
             command.add("-Dvespa.test.credentials.root=" + config.artifactsPath());
         command.add(String.format("-DargLine=-Xms%1$dm -Xmx%1$dm", config.surefireMemoryMb()));
+        command.add("-Dmaven.repo.local=" + vespaHome.resolve("tmp/.m2/repository"));
 
         ProcessBuilder builder = new ProcessBuilder(command);
         builder.environment().merge("MAVEN_OPTS", " -Djansi.force=true", String::concat);
@@ -134,9 +136,10 @@ public class TestRunner {
         ProcessBuilder builder = testBuilder.apply(testProfile);
         {
             LogRecord record = new LogRecord(Level.INFO,
-                                             String.format("Starting %s. Artifacts directory: %s Config file: %s\nCommand to run: %s\n",
+                                             String.format("Starting %s. Artifacts directory: %s Config file: %s\nCommand to run: %s\nEnv: %s\n",
                                                            testProfile.name(), artifactsPath, configFile,
-                                                           String.join(" ", builder.command())));
+                                                           String.join(" ", builder.command()),
+                                                           builder.environment()));
             log.put(record.getSequenceNumber(), record);
             logger.log(record);
             log.put(record.getSequenceNumber(), record);
@@ -167,7 +170,7 @@ public class TestRunner {
             success = mavenProcess.waitFor() == 0;
         }
         catch (Exception exception) {
-            LogRecord record = new LogRecord(ERROR, "Failed to execute maven command: " + String.join(" ", builder.command()));
+            LogRecord record = new LogRecord(SEVERE, "Failed to execute maven command: " + String.join(" ", builder.command()));
             record.setThrown(exception);
             logger.log(record);
             log.put(record.getSequenceNumber(), record);
@@ -176,7 +179,7 @@ public class TestRunner {
                 exception.printStackTrace(file);
             }
             catch (IOException ignored) { }
-            status = Status.ERROR;
+            status = exception instanceof NoTestsException ? Status.FAILURE : Status.ERROR;
             return;
         }
         status = success ? Status.SUCCESS : Status.FAILURE;
@@ -185,7 +188,7 @@ public class TestRunner {
     private void writeTestApplicationPom(TestProfile testProfile) throws IOException {
         List<Path> files = listFiles(artifactsPath);
         Path testJar = files.stream().filter(file -> file.toString().endsWith("tests.jar")).findFirst()
-                       .orElseThrow(() -> new IllegalStateException("No file ending with 'tests.jar' found under '" + artifactsPath + "'!"));
+                       .orElseThrow(() -> new NoTestsException("No file ending with 'tests.jar' found under '" + artifactsPath + "'!"));
         String pomXml = PomXmlGenerator.generatePomXml(testProfile, files, testJar);
         testPath.toFile().mkdirs();
         Files.write(testPath.resolve("pom.xml"), pomXml.getBytes());
@@ -203,8 +206,8 @@ public class TestRunner {
     }
 
 
-    public enum Status {
-        NOT_STARTED, RUNNING, FAILURE, ERROR, SUCCESS
+    static class NoTestsException extends RuntimeException {
+        private NoTestsException(String message) { super(message); }
     }
 
 }

@@ -9,9 +9,11 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/fastos/file.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
+#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
@@ -24,6 +26,8 @@
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/persistencehandlerproxy.h>
+#include <vespa/searchcore/proton/server/threading_service_config.h>
+#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
@@ -32,6 +36,7 @@
 #include <vespa/config-indexschema.h>
 #include <vespa/config-summary.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("persistenceconformance_test");
@@ -75,19 +80,19 @@ storeDocType(DocTypeVector *types, const DocumentType &type)
 struct SchemaConfigFactory {
     typedef DocumentDBConfig CS;
     typedef std::shared_ptr<SchemaConfigFactory> SP;
-    virtual ~SchemaConfigFactory() {}
-    static SchemaConfigFactory::SP get() { return SchemaConfigFactory::SP(new SchemaConfigFactory()); }
+    virtual ~SchemaConfigFactory() = default;
+    static SchemaConfigFactory::SP get() { return std::make_shared<SchemaConfigFactory>(); }
     virtual CS::IndexschemaConfigSP createIndexSchema(const DocumentType &docType) {
         (void) docType;
-        return CS::IndexschemaConfigSP(new IndexschemaConfig());
+        return std::make_shared<IndexschemaConfig>();
     }
     virtual CS::AttributesConfigSP createAttributes(const DocumentType &docType) {
         (void) docType;
-        return CS::AttributesConfigSP(new AttributesConfig());
+        return std::make_shared<AttributesConfig>();
     }
     virtual CS::SummaryConfigSP createSummary(const DocumentType &docType) {
         (void) docType;
-        return CS::SummaryConfigSP(new SummaryConfig());
+        return std::make_shared<SummaryConfig>();
     }
 };
 
@@ -98,21 +103,22 @@ private:
     SchemaConfigFactory::SP _schemaFactory;
 
 public:
-    ConfigFactory(const std::shared_ptr<const DocumentTypeRepo> &repo,
-                  const DocumenttypesConfigSP &typeCfg,
-                  const SchemaConfigFactory::SP &schemaFactory);
+    ConfigFactory(std::shared_ptr<const DocumentTypeRepo> repo,
+                  DocumenttypesConfigSP typeCfg,
+                  SchemaConfigFactory::SP schemaFactory);
     ~ConfigFactory();
-    const std::shared_ptr<const DocumentTypeRepo> getTypeRepo() const { return _repo; }
-    const DocumenttypesConfigSP getTypeCfg() const { return _typeCfg; }
+    std::shared_ptr<const DocumentTypeRepo> getTypeRepo() const { return _repo; }
+    DocumenttypesConfigSP getTypeCfg() const { return _typeCfg; }
     DocTypeVector getDocTypes() const {
         DocTypeVector types;
-        _repo->forEachDocumentType(*makeClosure(storeDocType, &types));
+        _repo->forEachDocumentType(*DocumentTypeRepo::makeLambda([&types](const DocumentType &type) {
+            types.push_back(DocTypeName(type.getName()));
+        }));
         return types;
     }
     DocumentDBConfig::SP create(const DocTypeName &docTypeName) const {
-        const DocumentType *docType =
-            _repo->getDocumentType(docTypeName.getName());
-        if (docType == NULL) {
+        const DocumentType *docType = _repo->getDocumentType(docTypeName.getName());
+        if (docType == nullptr) {
             return DocumentDBConfig::SP();
         }
         typedef DocumentDBConfig CS;
@@ -123,10 +129,12 @@ public:
         SchemaBuilder::build(*indexschema, *schema);
         SchemaBuilder::build(*attributes, *schema);
         SchemaBuilder::build(*summary, *schema);
-        return DocumentDBConfig::SP(new DocumentDBConfig(
+        return std::make_shared<DocumentDBConfig>(
                         1,
                         std::make_shared<RankProfilesConfig>(),
                         std::make_shared<matching::RankingConstants>(),
+                        std::make_shared<matching::RankingExpressions>(),
+                        std::make_shared<matching::OnnxModels>(),
                         indexschema,
                         attributes,
                         summary,
@@ -139,19 +147,21 @@ public:
                         schema,
                         std::make_shared<DocumentDBMaintenanceConfig>(),
                         search::LogDocumentStore::Config(),
+                        std::make_shared<const ThreadingServiceConfig>(ThreadingServiceConfig::make(1)),
+                        std::make_shared<const AllocConfig>(),
                         "client",
-                        docTypeName.getName()));
+                        docTypeName.getName());
     }
 };
 
 
-ConfigFactory::ConfigFactory(const std::shared_ptr<const DocumentTypeRepo> &repo, const DocumenttypesConfigSP &typeCfg,
-                             const SchemaConfigFactory::SP &schemaFactory)
-    : _repo(repo),
-      _typeCfg(typeCfg),
-      _schemaFactory(schemaFactory)
+ConfigFactory::ConfigFactory(std::shared_ptr<const DocumentTypeRepo> repo, DocumenttypesConfigSP typeCfg,
+                             SchemaConfigFactory::SP schemaFactory)
+    : _repo(std::move(repo)),
+      _typeCfg(std::move(typeCfg)),
+      _schemaFactory(std::move(schemaFactory))
 {}
-ConfigFactory::~ConfigFactory() {}
+ConfigFactory::~ConfigFactory() = default;
 
 class DocumentDBFactory : public DummyDBOwner {
 private:
@@ -164,10 +174,11 @@ private:
     mutable DummyWireService  _metricsWireService;
     mutable MemoryConfigStores _config_stores;
     vespalib::ThreadStackExecutor _summaryExecutor;
+    storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
 
 public:
     DocumentDBFactory(const vespalib::string &baseDir, int tlsListenPort);
-    ~DocumentDBFactory();
+    ~DocumentDBFactory() override;
     DocumentDB::SP create(BucketSpace bucketSpace,
                           const DocTypeName &docType,
                           const ConfigFactory &factory) {
@@ -182,34 +193,18 @@ public:
         config::DirSpec spec(inputCfg + "/config-1");
         TuneFileDocumentDB::SP tuneFileDocDB(new TuneFileDocumentDB());
         DocumentDBConfigHelper mgr(spec, docType.getName());
-        BootstrapConfig::SP b(new BootstrapConfig(1,
-                                                  factory.getTypeCfg(),
-                                                  factory.getTypeRepo(),
+        auto b = std::make_shared<BootstrapConfig>(1, factory.getTypeCfg(), factory.getTypeRepo(),
                                                   std::make_shared<ProtonConfig>(),
                                                   std::make_shared<FiledistributorrpcConfig>(),
                                                   std::make_shared<BucketspacesConfig>(),
-                                                  tuneFileDocDB, HwInfo()));
+                                                  tuneFileDocDB, HwInfo());
         mgr.forwardConfig(b);
         mgr.nextGeneration(0ms);
-        return DocumentDB::SP(
-                new DocumentDB(_baseDir,
-                               mgr.getConfig(),
-                               _tlsSpec,
-                               _queryLimiter,
-                               _clock,
-                               docType,
-                               bucketSpace,
-                               *b->getProtonConfigSP(),
-                               const_cast<DocumentDBFactory &>(*this),
-                               _summaryExecutor,
-                               _summaryExecutor,
-                               _tls,
-                               _metricsWireService,
-                               _fileHeaderContext,
-                               _config_stores.getConfigStore(docType.toString()),
-                               std::make_shared<vespalib::ThreadStackExecutor>
-                               (16, 128 * 1024),
-                               HwInfo()));
+        return DocumentDB::create(_baseDir, mgr.getConfig(), _tlsSpec, _queryLimiter, _clock, docType, bucketSpace,
+                                  *b->getProtonConfigSP(), const_cast<DocumentDBFactory &>(*this),
+                                  _summaryExecutor, _summaryExecutor, _bucketExecutor, _tls, _metricsWireService,
+                                  _fileHeaderContext, _config_stores.getConfigStore(docType.toString()),
+                                  std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), HwInfo());
     }
 };
 
@@ -222,42 +217,36 @@ DocumentDBFactory::DocumentDBFactory(const vespalib::string &baseDir, int tlsLis
       _queryLimiter(),
       _clock(),
       _metricsWireService(),
-      _summaryExecutor(8, 128 * 1024)
+      _summaryExecutor(8, 128_Ki),
+      _bucketExecutor(2)
 {}
-DocumentDBFactory::~DocumentDBFactory() {}
+DocumentDBFactory::~DocumentDBFactory()  = default;
 
 class DocumentDBRepo {
 private:
     DocumentDBMap _docDbs;
 public:
     typedef std::unique_ptr<DocumentDBRepo> UP;
-    DocumentDBRepo(const ConfigFactory &cfgFactory,
-                   DocumentDBFactory &docDbFactory) :
-        _docDbs()
+    DocumentDBRepo(const ConfigFactory &cfgFactory, DocumentDBFactory &docDbFactory)
+        : _docDbs()
     {
         DocTypeVector types = cfgFactory.getDocTypes();
-        for (size_t i = 0; i < types.size(); ++i) {
-            BucketSpace bucketSpace(makeBucketSpace(types[i].getName()));
-            DocumentDB::SP docDb = docDbFactory.create(bucketSpace,
-                                                       types[i],
-                                                       cfgFactory);
+        for (const auto & type : types) {
+            BucketSpace bucketSpace(makeBucketSpace(type.getName()));
+            DocumentDB::SP docDb = docDbFactory.create(bucketSpace, type, cfgFactory);
             docDb->start();
             docDb->waitForOnlineState();
-            _docDbs[types[i]] = docDb;
+            _docDbs[type] = docDb;
         }
     }
 
-    void
-    close()
-    {
-        for (DocumentDBMap::iterator itr = _docDbs.begin();
-             itr != _docDbs.end(); ++itr) {
-            itr->second->close();
+    void close() {
+        for (auto & dbEntry : _docDbs) {
+            dbEntry.second->close();
         }
     }
 
-    ~DocumentDBRepo()
-    {
+    ~DocumentDBRepo() {
         close();
     }
     const DocumentDBMap &getDocDbs() const { return _docDbs; }
@@ -269,20 +258,15 @@ class DocDBRepoHolder
 protected:
     DocumentDBRepo::UP      _docDbRepo;
 
-    DocDBRepoHolder(DocumentDBRepo::UP docDbRepo)
+    explicit DocDBRepoHolder(DocumentDBRepo::UP docDbRepo)
         : _docDbRepo(std::move(docDbRepo))
     {
     }
 
-    virtual
-    ~DocDBRepoHolder()
-    {
-    }
+    virtual ~DocDBRepoHolder() = default;
 
-    void
-    close()
-    {
-        if (_docDbRepo.get() != NULL)
+    void close() {
+        if (_docDbRepo)
             _docDbRepo->close();
     }
 };
@@ -290,17 +274,13 @@ protected:
 
 class MyPersistenceEngineOwner : public IPersistenceEngineOwner
 {
-    virtual void
-    setClusterState(BucketSpace, const storage::spi::ClusterState &calc) override
-    {
-        (void) calc;
-    }
+    void setClusterState(BucketSpace, const storage::spi::ClusterState &) override { }
 };
 
 struct MyResourceWriteFilter : public IResourceWriteFilter
 {
-    virtual bool acceptWriteOperation() const override { return true; }
-    virtual State getAcceptState() const override { return IResourceWriteFilter::State(); }
+    bool acceptWriteOperation() const override { return true; }
+    State getAcceptState() const override { return IResourceWriteFilter::State(); }
 };
 
 class MyPersistenceEngine : public DocDBRepoHolder,
@@ -309,10 +289,11 @@ class MyPersistenceEngine : public DocDBRepoHolder,
 public:
     MyPersistenceEngine(MyPersistenceEngineOwner &owner,
                         MyResourceWriteFilter &writeFilter,
+                        IDiskMemUsageNotifier& disk_mem_usage_notifier,
                         DocumentDBRepo::UP docDbRepo,
                         const vespalib::string &docType = "")
         : DocDBRepoHolder(std::move(docDbRepo)),
-          PersistenceEngine(owner, writeFilter, -1, false)
+          PersistenceEngine(owner, writeFilter, disk_mem_usage_notifier, -1, false)
     {
         addHandlers(docType);
     }
@@ -320,35 +301,32 @@ public:
     void
     addHandlers(const vespalib::string &docType)
     {
-        if (_docDbRepo.get() == NULL)
+        if (!_docDbRepo)
             return;
         const DocumentDBMap &docDbs = _docDbRepo->getDocDbs();
-        for (DocumentDBMap::const_iterator itr = docDbs.begin();
-             itr != docDbs.end(); ++itr) {
-            if (!docType.empty() && docType != itr->first.getName()) {
+        for (const auto & dbEntry : docDbs) {
+            if (!docType.empty() && docType != dbEntry.first.getName()) {
                 continue;
             }
-            LOG(info, "putHandler(%s)", itr->first.toString().c_str());
-            IPersistenceHandler::SP proxy(
-                    new PersistenceHandlerProxy(itr->second));
-            putHandler(itr->second->getBucketSpace(), itr->first, proxy);
+            LOG(info, "putHandler(%s)", dbEntry.first.toString().c_str());
+            auto proxy = std::make_shared<PersistenceHandlerProxy>(dbEntry.second);
+            putHandler(getWLock(), dbEntry.second->getBucketSpace(), dbEntry.first, proxy);
         }
     }
 
     void
     removeHandlers()
     {
-        if (_docDbRepo.get() == NULL)
+        if ( ! _docDbRepo)
             return;
         const DocumentDBMap &docDbs = _docDbRepo->getDocDbs();
-        for (DocumentDBMap::const_iterator itr = docDbs.begin();
-             itr != docDbs.end(); ++itr) {
-            IPersistenceHandler::SP proxy(removeHandler(itr->second->getBucketSpace(), itr->first));
+        for (const auto & dbEntry : docDbs) {
+            IPersistenceHandler::SP proxy(removeHandler(getWLock(), dbEntry.second->getBucketSpace(), dbEntry.first));
+            (void) proxy;
         }
     }
 
-    virtual
-    ~MyPersistenceEngine()
+    ~MyPersistenceEngine() override
     {
         destroyIterators();
         removeHandlers(); // Block calls to document db from engine
@@ -365,42 +343,41 @@ private:
     vespalib::string        _docType;
     MyPersistenceEngineOwner _engineOwner;
     MyResourceWriteFilter    _writeFilter;
+    test::DiskMemUsageNotifier   _disk_mem_usage_notifier;
 public:
     MyPersistenceFactory(const vespalib::string &baseDir, int tlsListenPort,
-                         const SchemaConfigFactory::SP &schemaFactory,
-                         const vespalib::string &docType = "")
+                         SchemaConfigFactory::SP schemaFactory,
+                         const vespalib::string & docType = "")
         : _baseDir(baseDir),
           _docDbFactory(baseDir, tlsListenPort),
-          _schemaFactory(schemaFactory),
+          _schemaFactory(std::move(schemaFactory)),
           _docDbRepo(),
           _docType(docType),
           _engineOwner(),
-          _writeFilter()
+          _writeFilter(),
+          _disk_mem_usage_notifier(DiskMemUsageState({ 0.8, 0.5 }, { 0.8, 0.4 }))
     {
         clear();
     }
     ~MyPersistenceFactory() override {
         clear();
     }
-    virtual PersistenceProvider::UP getPersistenceImplementation(const std::shared_ptr<const DocumentTypeRepo> &repo,
-                                                                 const DocumenttypesConfig &typesCfg) override {
-        ConfigFactory cfgFactory(repo, DocumenttypesConfigSP(new DocumenttypesConfig(typesCfg)), _schemaFactory);
-        _docDbRepo.reset(new DocumentDBRepo(cfgFactory, _docDbFactory));
-        PersistenceEngine::UP engine(new MyPersistenceEngine(_engineOwner,
-                                                             _writeFilter,
-                                                             std::move(_docDbRepo),
-                                                             _docType));
-        assert(_docDbRepo.get() == NULL); // Repo should be handed over
-        return PersistenceProvider::UP(engine.release());
+    std::unique_ptr<PersistenceProvider> getPersistenceImplementation(const std::shared_ptr<const DocumentTypeRepo> &repo,
+                                                         const DocumenttypesConfig &typesCfg) override {
+        ConfigFactory cfgFactory(repo, std::make_shared<DocumenttypesConfig>(typesCfg), _schemaFactory);
+        _docDbRepo = std::make_unique<DocumentDBRepo>(cfgFactory, _docDbFactory);
+        auto engine = std::make_unique<MyPersistenceEngine>(_engineOwner,_writeFilter, _disk_mem_usage_notifier, std::move(_docDbRepo), _docType);
+        assert( ! _docDbRepo); // Repo should be handed over
+        return engine;
     }
 
-    virtual void clear() override {
+    void clear() override {
         FastOS_FileInterface::EmptyAndRemoveDirectory(_baseDir.c_str());
     }
 
-    virtual bool hasPersistence() const override { return true; }
-    virtual bool supportsActiveState() const override { return true; }
-    virtual bool supportsBucketSpaces() const override { return true; }
+    bool hasPersistence() const override { return true; }
+    bool supportsActiveState() const override { return true; }
+    bool supportsBucketSpaces() const override { return true; }
 };
 
 

@@ -2,7 +2,7 @@
 
 #include "removebucketoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 
 #include <vespa/log/log.h>
@@ -12,7 +12,7 @@ LOG_SETUP(".distributor.operation.idealstate.remove");
 using namespace storage::distributor;
 
 bool
-RemoveBucketOperation::onStartInternal(DistributorMessageSender& sender)
+RemoveBucketOperation::onStartInternal(DistributorStripeMessageSender& sender)
 {
     std::vector<std::pair<uint16_t, std::shared_ptr<api::DeleteBucketCommand> > > msgs;
 
@@ -39,7 +39,7 @@ RemoveBucketOperation::onStartInternal(DistributorMessageSender& sender)
 
     _ok = true;
     if (!getNodes().empty()) {
-        _manager->getDistributorComponent().removeNodesFromDB(getBucket(), getNodes());
+        _manager->operation_context().remove_nodes_from_bucket_database(getBucket(), getNodes());
         for (uint32_t i = 0; i < msgs.size(); ++i) {
             _tracker.queueCommand(msgs[i].second, msgs[i].first);
         }
@@ -51,7 +51,7 @@ RemoveBucketOperation::onStartInternal(DistributorMessageSender& sender)
 
 
 void
-RemoveBucketOperation::onStart(DistributorMessageSender& sender)
+RemoveBucketOperation::onStart(DistributorStripeMessageSender& sender)
 {
     if (onStartInternal(sender)) {
         done();
@@ -78,12 +78,12 @@ RemoveBucketOperation::onReceiveInternal(const std::shared_ptr<api::StorageReply
                 "%s on node %u: %s. Reinserting node into bucket db with %s",
                 getBucketId().toString().c_str(),
                 node,
-                rep->getResult().getMessage().c_str(),
+                vespalib::string(rep->getResult().getMessage()).c_str(),
                 rep->getBucketInfo().toString().c_str());
 
-            _manager->getDistributorComponent().updateBucketDatabase(
+            _manager->operation_context().update_bucket_database(
                     getBucket(),
-                    BucketCopy(_manager->getDistributorComponent().getUniqueTimestamp(),
+                    BucketCopy(_manager->operation_context().generate_unique_timestamp(),
                                node,
                                rep->getBucketInfo()),
                     DatabaseUpdate::CREATE_IF_NONEXISTING);
@@ -104,8 +104,7 @@ RemoveBucketOperation::onReceiveInternal(const std::shared_ptr<api::StorageReply
 
 
 void
-RemoveBucketOperation::onReceive(DistributorMessageSender&,
-                           const std::shared_ptr<api::StorageReply> &msg)
+RemoveBucketOperation::onReceive(DistributorStripeMessageSender&, const std::shared_ptr<api::StorageReply> &msg)
 {
     if (onReceiveInternal(msg)) {
         done();

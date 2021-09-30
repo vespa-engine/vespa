@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
+import com.yahoo.config.ConfigurationRuntimeException;
+import com.yahoo.foo.AppConfig;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import com.yahoo.foo.AppConfig;
-import com.yahoo.config.ConfigurationRuntimeException;
-import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -52,7 +52,6 @@ public class ConfigKeyTest {
         assertEquals("Name is set correctly from class", name, classKey.getName());
         assertEquals("Namespace is set correctly from class", namespace, classKey.getNamespace());
         assertEquals(configId, classKey.getConfigId());
-        assertEquals("Md5 is set correctly from class", md5, classKey.getMd5());
 
         ConfigKey<?> stringKey = new ConfigKey<>(name, configId, namespace);
         assertEquals("Key created from class equals key created from strings", stringKey, classKey);

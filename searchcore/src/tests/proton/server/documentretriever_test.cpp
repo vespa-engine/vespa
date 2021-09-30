@@ -17,15 +17,19 @@
 #include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/test/test_utils.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/server/documentretriever.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/test/dummy_document_store.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -81,16 +85,14 @@ using search::index::Schema;
 using search::index::schema::DataType;
 using search::tensor::TensorAttribute;
 using storage::spi::Bucket;
-using storage::spi::GetResult;
-using storage::spi::PartitionId;
 using storage::spi::Timestamp;
 using storage::spi::test::makeSpiBucket;
 using vespalib::make_string;
 using vespalib::string;
+using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
-using vespalib::tensor::test::makeTensor;
-using vespalib::tensor::Tensor;
+using vespalib::eval::Value;
 using namespace document::config_builder;
 using namespace search::index;
 
@@ -109,8 +111,8 @@ const char dyn_field_nas[] = "dynamic null attr string field"; // in document, n
 const char position_field[] = "position_field";
 vespalib::string dyn_field_tensor("dynamic_tensor_field");
 vespalib::string tensor_spec("tensor(x{})");
-std::unique_ptr<Tensor> static_tensor = makeTensor<Tensor>(TensorSpec(tensor_spec).add({{"x", "1"}}, 1.5));
-std::unique_ptr<Tensor> dynamic_tensor = makeTensor<Tensor>(TensorSpec(tensor_spec).add({{"x", "2"}}, 3.5));
+std::unique_ptr<Value> static_tensor = SimpleValue::from_spec(TensorSpec(tensor_spec).add({{"x", "1"}}, 1.5));
+std::unique_ptr<Value> dynamic_tensor = SimpleValue::from_spec(TensorSpec(tensor_spec).add({{"x", "2"}}, 3.5));
 const char zcurve_field[] = "position_field_zcurve";
 const char position_array_field[] = "position_array";
 const char zcurve_array_field[] = "position_array_zcurve";
@@ -157,7 +159,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         }
         const DocumentType *doc_type = r.getDocumentType(doc_type_name);
         auto doc = std::make_unique<Document>(*doc_type, doc_id);
-        ASSERT_TRUE(doc.get());
+        ASSERT_TRUE(doc);
         doc->set(static_field, static_value);
         doc->set(dyn_field_i, static_value);
         doc->set(dyn_field_s, static_value_s);
@@ -166,11 +168,11 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         doc->set(zcurve_field, static_zcurve_value);
         doc->setValue(dyn_field_p, static_value_p);
         TensorFieldValue tensorFieldValue(tensorDataType);
-        tensorFieldValue = static_tensor->clone();
+        tensorFieldValue = SimpleValue::from_value(*static_tensor);
         doc->setValue(dyn_field_tensor, tensorFieldValue);
         if (_set_position_struct_field) {
             FieldValue::UP fv = PositionDataType::getInstance().createFieldValue();
-            StructFieldValue &pos = static_cast<StructFieldValue &>(*fv);
+            auto &pos = dynamic_cast<StructFieldValue &>(*fv);
             pos.set(PositionDataType::FIELD_X, 42);
             pos.set(PositionDataType::FIELD_Y, 21);
             doc->setValue(doc->getField(position_field), *fv);
@@ -179,7 +181,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         return doc;
     }
     
-    virtual uint64_t
+    uint64_t
     initFlush(uint64_t syncToken) override
     {
         return syncToken;
@@ -278,11 +280,10 @@ struct Fixture {
     search::AttributeManager attr_manager;
     Schema schema;
     DocTypeName _dtName;
-    std::unique_ptr<DocumentRetriever> _retriever;
+    std::unique_ptr<IDocumentRetriever> _retriever;
 
     template <typename T>
-    T *addAttribute(const char *name,
-                      Schema::DataType t, Schema::CollectionType ct) {
+    T *addAttribute(const char *name, Schema::DataType t, Schema::CollectionType ct) {
         AttributeVector::SP attrPtr = AttributeFactory::createAttribute(name, convertConfig(t, ct));
         T *attr = dynamic_cast<T *>(attrPtr.get());
         AttributeVector::DocId id;
@@ -297,8 +298,7 @@ struct Fixture {
     }
 
     template <typename T, typename U>
-    void addAttribute(const char *name, U val,
-                      Schema::DataType t, Schema::CollectionType ct) {
+    void addAttribute(const char *name, U val, Schema::DataType t, Schema::CollectionType ct) {
         T *attr = addAttribute<T>(name, t, ct);
         if (ct == schema::CollectionType::SINGLE) {
             attr->update(lid, val);
@@ -308,15 +308,26 @@ struct Fixture {
         }
         attr->commit();
     }
-    void addTensorAttribute(const char *name, const Tensor &val) {
-        TensorAttribute *attr = addAttribute<TensorAttribute>(name, schema::DataType::TENSOR, schema::CollectionType::SINGLE);
+    void addTensorAttribute(const char *name, const Value &val) {
+        auto * attr = addAttribute<TensorAttribute>(name, schema::DataType::TENSOR, schema::CollectionType::SINGLE);
         attr->setTensor(lid, val);
         attr->commit();
     }
 
+    Fixture &
+    addIndexField(const Schema::IndexField &field) {
+        schema.addIndexField(field);
+        return *this;
+    }
+
+    void
+    build() {
+        _retriever = std::make_unique<DocumentRetriever>(_dtName, repo, schema, meta_store, attr_manager, doc_store);
+    }
+
     Fixture()
         : repo(getRepoConfig()),
-          meta_store(std::make_shared<BucketDBOwner>()),
+          meta_store(std::make_shared<bucketdb::BucketDBOwner>()),
           gid(doc_id.getGlobalId()),
           bucket_id(gid.convertToBucketId()),
           timestamp(21),
@@ -329,55 +340,38 @@ struct Fixture {
     {
         typedef DocumentMetaStore::Result Result;
         meta_store.constructFreeList();
-        Result inspect = meta_store.get().inspect(gid);
+        Result inspect = meta_store.get().inspect(gid, 0u);
         uint32_t docSize = 1;
-        Result putRes(meta_store.get().put(gid, bucket_id, timestamp, docSize, inspect.getLid()));
+        Result putRes(meta_store.get().put(gid, bucket_id, timestamp, docSize, inspect.getLid(), 0u));
         lid = putRes.getLid();
         ASSERT_TRUE(putRes.ok());
         schema::CollectionType ct = schema::CollectionType::SINGLE;
-        addAttribute<IntegerAttribute>(
-                dyn_field_i, dyn_value_i, DataType::INT32, ct);
-        addAttribute<FloatingPointAttribute>(
-                dyn_field_d, dyn_value_d, DataType::DOUBLE, ct);
-        addAttribute<StringAttribute>(
-                dyn_field_s, dyn_value_s, DataType::STRING, ct);
-        addAttribute<FloatingPointAttribute>(
-                dyn_field_n, DataType::FLOAT, ct);
-        addAttribute<IntegerAttribute>(
-                dyn_field_nai, DataType::INT32, ct);
-        addAttribute<StringAttribute>(
-                dyn_field_nas, DataType::STRING, ct);
-        addAttribute<IntegerAttribute>(
-                zcurve_field, dynamic_zcurve_value, DataType::INT64, ct);
+        addAttribute<IntegerAttribute>(dyn_field_i, dyn_value_i, DataType::INT32, ct);
+        addAttribute<FloatingPointAttribute>(dyn_field_d, dyn_value_d, DataType::DOUBLE, ct);
+        addAttribute<StringAttribute>(dyn_field_s, dyn_value_s, DataType::STRING, ct);
+        addAttribute<FloatingPointAttribute>(dyn_field_n, DataType::FLOAT, ct);
+        addAttribute<IntegerAttribute>(dyn_field_nai, DataType::INT32, ct);
+        addAttribute<StringAttribute>(dyn_field_nas, DataType::STRING, ct);
+        addAttribute<IntegerAttribute>(zcurve_field, dynamic_zcurve_value, DataType::INT64, ct);
         addTensorAttribute(dyn_field_tensor.c_str(), *dynamic_tensor);
-        PredicateAttribute *attr = addAttribute<PredicateAttribute>(
-                dyn_field_p, DataType::BOOLEANTREE, ct);
+        auto * attr = addAttribute<PredicateAttribute>(dyn_field_p, DataType::BOOLEANTREE, ct);
         attr->getIndex().indexEmptyDocument(lid);
         attr->commit();
         ct = schema::CollectionType::ARRAY;
-        addAttribute<IntegerAttribute>(
-                dyn_arr_field_i, dyn_value_i, DataType::INT32, ct);
-        addAttribute<FloatingPointAttribute>(
-                dyn_arr_field_d, dyn_value_d, DataType::DOUBLE, ct);
-        addAttribute<StringAttribute>(
-                dyn_arr_field_s, dyn_value_s, DataType::STRING, ct);
-        addAttribute<FloatingPointAttribute>(
-                dyn_arr_field_n, DataType::FLOAT, ct);
-        addAttribute<IntegerAttribute>(
-                zcurve_array_field, dynamic_zcurve_value, DataType::INT64, ct);
+        addAttribute<IntegerAttribute>(dyn_arr_field_i, dyn_value_i, DataType::INT32, ct);
+        addAttribute<FloatingPointAttribute>(dyn_arr_field_d, dyn_value_d, DataType::DOUBLE, ct);
+        addAttribute<StringAttribute>(dyn_arr_field_s, dyn_value_s, DataType::STRING, ct);
+        addAttribute<FloatingPointAttribute>(dyn_arr_field_n, DataType::FLOAT, ct);
+        addAttribute<IntegerAttribute>(zcurve_array_field, dynamic_zcurve_value, DataType::INT64, ct);
         ct = schema::CollectionType::WEIGHTEDSET;
-        addAttribute<IntegerAttribute>(
-                dyn_wset_field_i, dyn_value_i, DataType::INT32, ct);
-        addAttribute<FloatingPointAttribute>(
-                dyn_wset_field_d, dyn_value_d, DataType::DOUBLE, ct);
-        addAttribute<StringAttribute>(
-                dyn_wset_field_s, dyn_value_s, DataType::STRING, ct);
-        addAttribute<FloatingPointAttribute>(
-                dyn_wset_field_n, DataType::FLOAT, ct);
-        _retriever = std::make_unique<DocumentRetriever>(_dtName, repo, schema, meta_store, attr_manager, doc_store);
+        addAttribute<IntegerAttribute>(dyn_wset_field_i, dyn_value_i, DataType::INT32, ct);
+        addAttribute<FloatingPointAttribute>(dyn_wset_field_d, dyn_value_d, DataType::DOUBLE, ct);
+        addAttribute<StringAttribute>(dyn_wset_field_s, dyn_value_s, DataType::STRING, ct);
+        addAttribute<FloatingPointAttribute>(dyn_wset_field_n, DataType::FLOAT, ct);
+        build();
     }
 
-    void clearAttributes(std::vector<vespalib::string> names) {
+    void clearAttributes(const std::vector<vespalib::string> & names) const {
         for (const auto &name : names) {
             auto guard = *attr_manager.getAttribute(name);
             guard->clearDoc(lid);
@@ -386,36 +380,33 @@ struct Fixture {
     }
 };
 
-TEST_F("require that document retriever can retrieve document meta data",
-       Fixture) {
+TEST_F("require that document retriever can retrieve document meta data", Fixture) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
     EXPECT_EQUAL(f.lid, meta_data.lid);
     EXPECT_EQUAL(f.timestamp, meta_data.timestamp);
 }
 
-TEST_F("require that document retriever can retrieve bucket meta data",
-       Fixture) {
+TEST_F("require that document retriever can retrieve bucket meta data", Fixture) {
     DocumentMetaData::Vector result;
-    f._retriever->getBucketMetaData(makeSpiBucket(f.bucket_id, PartitionId(0)), result);
+    f._retriever->getBucketMetaData(makeSpiBucket(f.bucket_id), result);
     ASSERT_EQUAL(1u, result.size());
     EXPECT_EQUAL(f.lid, result[0].lid);
     EXPECT_EQUAL(f.timestamp, result[0].timestamp);
     result.clear();
-    f._retriever->getBucketMetaData(makeSpiBucket(BucketId(f.bucket_id.getId() + 1),
-                                         PartitionId(0)), result);
+    f._retriever->getBucketMetaData(makeSpiBucket(BucketId(f.bucket_id.getId() + 1)), result);
     EXPECT_EQUAL(0u, result.size());
 }
 
 TEST_F("require that document retriever can retrieve document", Fixture) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
-    Document::UP doc = f._retriever->getDocument(meta_data.lid);
-    ASSERT_TRUE(doc.get());
+    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
+    ASSERT_TRUE(doc);
     EXPECT_EQUAL(doc_id, doc->getId());
 }
 
 template <typename T>
 bool checkFieldValue(FieldValue::UP field_value, typename T::value_type v) {
-    ASSERT_TRUE(field_value.get());
+    ASSERT_TRUE(field_value);
     T *t_value = dynamic_cast<T *>(field_value.get());
     ASSERT_TRUE(t_value);
     return EXPECT_EQUAL(v, t_value->getValue());
@@ -423,8 +414,8 @@ bool checkFieldValue(FieldValue::UP field_value, typename T::value_type v) {
 
 template <typename T>
 void checkArray(FieldValue::UP array, typename T::value_type v) {
-    ASSERT_TRUE(array.get());
-    ArrayFieldValue *array_val = dynamic_cast<ArrayFieldValue *>(array.get());
+    ASSERT_TRUE(array);
+    auto *array_val = dynamic_cast<ArrayFieldValue *>(array.get());
     ASSERT_TRUE(array_val);
     ASSERT_EQUAL(2u, array_val->size());
     T *t_value = dynamic_cast<T *>(&(*array_val)[0]);
@@ -436,9 +427,8 @@ void checkArray(FieldValue::UP array, typename T::value_type v) {
 
 template <typename T>
 void checkWset(FieldValue::UP wset, T v) {
-    ASSERT_TRUE(wset.get());
-    WeightedSetFieldValue *wset_val =
-        dynamic_cast<WeightedSetFieldValue *>(wset.get());
+    ASSERT_TRUE(wset);
+    auto *wset_val = dynamic_cast<WeightedSetFieldValue *>(wset.get());
     ASSERT_TRUE(wset_val);
     ASSERT_EQUAL(2u, wset_val->size());
     EXPECT_EQUAL(dyn_weight, wset_val->get(v));
@@ -447,12 +437,12 @@ void checkWset(FieldValue::UP wset, T v) {
 
 TEST_F("require that attributes are patched into stored document", Fixture) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
-    Document::UP doc = f._retriever->getDocument(meta_data.lid);
-    ASSERT_TRUE(doc.get());
+    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
+    ASSERT_TRUE(doc);
 
     FieldValue::UP value = doc->getValue(static_field);
-    ASSERT_TRUE(value.get());
-    IntFieldValue *int_value = dynamic_cast<IntFieldValue *>(value.get());
+    ASSERT_TRUE(value);
+    auto *int_value = dynamic_cast<IntFieldValue *>(value.get());
     ASSERT_TRUE(int_value);
     EXPECT_EQUAL(static_value, int_value->getValue());
 
@@ -475,21 +465,31 @@ TEST_F("require that attributes are patched into stored document", Fixture) {
     EXPECT_FALSE(doc->getValue(dyn_wset_field_n));
 }
 
+TEST_F("require that we can look up NONE and DOCIDONLY field sets", Fixture) {
+        DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+        Document::UP doc = f._retriever->getPartialDocument(meta_data.lid, doc_id, document::NoFields());
+        ASSERT_TRUE(doc);
+        EXPECT_TRUE(doc->getFields().empty());
+        doc = f._retriever->getPartialDocument(meta_data.lid, doc_id, document::DocIdOnly());
+        ASSERT_TRUE(doc);
+        EXPECT_TRUE(doc->getFields().empty());
+}
+
 TEST_F("require that attributes are patched into stored document unless also index field", Fixture) {
-    f.schema.addIndexField(Schema::IndexField(dyn_field_s, DataType::STRING));
+    f.addIndexField(Schema::IndexField(dyn_field_s, DataType::STRING)).build();
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
-    Document::UP doc = f._retriever->getDocument(meta_data.lid);
-    ASSERT_TRUE(doc.get());
+    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
+    ASSERT_TRUE(doc);
     checkFieldValue<StringFieldValue>(doc->getValue(dyn_field_s), static_value_s);
 }
 
 void verify_position_field_has_expected_values(Fixture& f) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
-    Document::UP doc = f._retriever->getDocument(meta_data.lid);
-    ASSERT_TRUE(doc.get());
+    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
+    ASSERT_TRUE(doc);
 
     FieldValue::UP value = doc->getValue(position_field);
-    ASSERT_TRUE(value.get());
+    ASSERT_TRUE(value);
     const auto *position = dynamic_cast<StructFieldValue *>(value.get());
     ASSERT_TRUE(position);
     FieldValue::UP x = position->getValue(PositionDataType::FIELD_X);
@@ -511,10 +511,10 @@ TEST_F("zcurve attribute is authoritative for single value position field existe
 
 TEST_F("require that array position field value is generated from zcurve array attribute", Fixture) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
-    Document::UP doc = f._retriever->getDocument(meta_data.lid);
-    ASSERT_TRUE(doc.get());
+    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
+    ASSERT_TRUE(doc);
     FieldValue::UP value = doc->getValue(position_array_field);
-    ASSERT_TRUE(value.get());
+    ASSERT_TRUE(value);
     const auto* array_value = dynamic_cast<const document::ArrayFieldValue*>(value.get());
     ASSERT_TRUE(array_value != nullptr);
     ASSERT_EQUAL(array_value->getNestedType(), document::PositionDataType::getInstance());
@@ -536,33 +536,32 @@ TEST_F("require that array position field value is generated from zcurve array a
 }
 
 TEST_F("require that non-existing lid returns null pointer", Fixture) {
-    Document::UP doc = f._retriever->getDocument(0);
-    ASSERT_FALSE(doc.get());
+    Document::UP doc = f._retriever->getDocument(0, DocumentId("id:ns:document::1"));
+    ASSERT_FALSE(doc);
 }
 
 TEST_F("require that predicate attributes can be retrieved", Fixture) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
-    Document::UP doc = f._retriever->getDocument(meta_data.lid);
-    ASSERT_TRUE(doc.get());
+    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
+    ASSERT_TRUE(doc);
 
     FieldValue::UP value = doc->getValue(dyn_field_p);
-    ASSERT_TRUE(value.get());
-    PredicateFieldValue *predicate_value =
-        dynamic_cast<PredicateFieldValue *>(value.get());
+    ASSERT_TRUE(value);
+    auto *predicate_value = dynamic_cast<PredicateFieldValue *>(value.get());
     ASSERT_TRUE(predicate_value);
 }
 
 TEST_F("require that zero values in multivalue attribute removes fields", Fixture)
 {
     auto meta_data = f._retriever->getDocumentMetaData(doc_id);
-    auto doc = f._retriever->getDocument(meta_data.lid);
+    auto doc = f._retriever->getDocument(meta_data.lid, doc_id);
     ASSERT_TRUE(doc);
     const Document *docPtr = doc.get();
     ASSERT_TRUE(doc->hasValue(dyn_arr_field_i));
     ASSERT_TRUE(doc->hasValue(dyn_wset_field_i));
     f.doc_store._testDoc = std::move(doc);
     f.clearAttributes({ dyn_arr_field_i, dyn_wset_field_i });
-    doc = f._retriever->getDocument(meta_data.lid);
+    doc = f._retriever->getDocument(meta_data.lid, doc_id);
     EXPECT_EQUAL(docPtr, doc.get());
     ASSERT_FALSE(doc->hasValue(dyn_arr_field_i));
     ASSERT_FALSE(doc->hasValue(dyn_wset_field_i));
@@ -570,14 +569,54 @@ TEST_F("require that zero values in multivalue attribute removes fields", Fixtur
 
 TEST_F("require that tensor attribute can be retrieved", Fixture) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
-    Document::UP doc = f._retriever->getDocument(meta_data.lid);
-    ASSERT_TRUE(doc.get());
+    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
+    ASSERT_TRUE(doc);
 
     FieldValue::UP value = doc->getValue(dyn_field_tensor);
-    ASSERT_TRUE(value.get());
-    TensorFieldValue *tensor_value =
-        dynamic_cast<TensorFieldValue *>(value.get());
-    ASSERT_TRUE(tensor_value->getAsTensorPtr()->equals(*dynamic_tensor));
+    ASSERT_TRUE(value);
+    auto * tensor_value = dynamic_cast<TensorFieldValue *>(value.get());
+    ASSERT_EQUAL(*tensor_value->getAsTensorPtr(), *dynamic_tensor);
+}
+
+struct Lookup : public IFieldInfo
+{
+    Lookup() : _count(0) {}
+    bool isFieldAttribute(const document::Field & field) const override {
+        _count++;
+        return ((field.getName()[0] % 2) == 1); // a, c, e... are attributes
+    }
+    mutable unsigned _count;
+};
+
+TEST("require that fieldset can figure out their attributeness and rember it") {
+    Lookup lookup;
+    FieldSetAttributeDB fsDB(lookup);
+    document::Field attr1("attr1", 1, *document::DataType::LONG);
+    document::Field attr2("cttr2", 2, *document::DataType::LONG);
+    document::Field not_attr1("b_not_attr1", 3, *document::DataType::LONG);
+    document::Field::Set allAttr = document::Field::Set::Builder().add(&attr1).build();
+    EXPECT_TRUE(fsDB.areAllFieldsAttributes(13, allAttr));
+    EXPECT_EQUAL(1u, lookup._count);
+    EXPECT_TRUE(fsDB.areAllFieldsAttributes(13, allAttr));
+    EXPECT_EQUAL(1u, lookup._count);
+
+    allAttr = document::Field::Set::Builder().add(&attr1).add(&attr2).build();
+    EXPECT_TRUE(fsDB.areAllFieldsAttributes(17, allAttr));
+    EXPECT_EQUAL(3u, lookup._count);
+    EXPECT_TRUE(fsDB.areAllFieldsAttributes(17, allAttr));
+    EXPECT_EQUAL(3u, lookup._count);
+
+    document::Field::Set notAllAttr = document::Field::Set::Builder().add(&not_attr1).build();
+    EXPECT_FALSE(fsDB.areAllFieldsAttributes(33, notAllAttr));
+    EXPECT_EQUAL(4u, lookup._count);
+    EXPECT_FALSE(fsDB.areAllFieldsAttributes(33, notAllAttr));
+    EXPECT_EQUAL(4u, lookup._count);
+
+    notAllAttr = document::Field::Set::Builder().add(&attr1).add(&not_attr1).add(&attr2).build();
+    EXPECT_FALSE(fsDB.areAllFieldsAttributes(39, notAllAttr));
+    EXPECT_EQUAL(6u, lookup._count);
+    EXPECT_FALSE(fsDB.areAllFieldsAttributes(39, notAllAttr));
+    EXPECT_EQUAL(6u, lookup._count);
 }
 
 }  // namespace

@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <cstdlib>
 
 using std::string;
 using namespace std::chrono_literals;
@@ -44,18 +45,18 @@ FileThread::Run(FastOS_ThreadInterface *, void *)
         int fd = open(_file.c_str(), O_RDWR | O_CREAT | O_APPEND, 0644);
         if (fd == -1) {
             fprintf(stderr, "open failed: %s\n", strerror(errno));
-            exit(1);
+            std::_Exit(1);
         }
         std::this_thread::sleep_for(5ms);
         struct stat buf;
         fstat(fd, &buf);
         if (buf.st_size != 0) {
             fprintf(stderr, "%s isn't empty anymore\n", _file.c_str());
-            exit(1);
+            std::_Exit(1);
         }
         if (close(fd) != 0) {
             fprintf(stderr, "close of %d failed: %s\n", fd, strerror(errno));
-            exit(1);
+            std::_Exit(1);
         }
     }
 }
@@ -84,7 +85,7 @@ public:
 int
 ThreadTester::Main()
 {
-    std::cerr << "Testing that logging is threadsafe. 30 sec test.\n";
+    std::cerr << "Testing that logging is threadsafe. 5 sec test.\n";
     FastOS_ThreadPool pool(128 * 1024);
 
     const int numWriters = 30;
@@ -106,8 +107,8 @@ ThreadTester::Main()
 
     steady_clock::time_point start = steady_clock::now();
     // Reduced runtime to half as the test now repeats itself to test with
-    // buffering. (To avoid test taking a minute)
-    while ((steady_clock::now() - start) < 15s) {
+    // buffering. (To avoid test taking 5 seconds)
+    while ((steady_clock::now() - start) < 2.5s) {
         unlink(_argv[1]);
         std::this_thread::sleep_for(1ms);
     }
@@ -116,7 +117,7 @@ ThreadTester::Main()
         loggers[i]->_useLogBuffer = true;
     }
     start = steady_clock::now();
-    while ((steady_clock::now() - start) < 15s) {
+    while ((steady_clock::now() - start) < 2.5s) {
         unlink(_argv[1]);
         std::this_thread::sleep_for(1ms);
     }

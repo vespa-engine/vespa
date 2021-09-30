@@ -12,9 +12,10 @@ import com.yahoo.tensor.TensorType;
 import java.util.Objects;
 
 /**
- *  An update used to remove cells from a sparse tensor (has only mapped dimensions).
+ * An update used to remove cells from a sparse tensor or dense sub-spaces from a mixed tensor.
  *
- *  The cells to remove are contained in a sparse tensor where cell values are set to 1.0
+ * The specification of which cells to remove contains addresses using a subset or all of the sparse dimensions of the tensor type.
+ * This is represented as a sparse tensor where cell values are set to 1.0.
  */
 public class TensorRemoveUpdate extends ValueUpdate<TensorFieldValue> {
 
@@ -23,17 +24,20 @@ public class TensorRemoveUpdate extends ValueUpdate<TensorFieldValue> {
     public TensorRemoveUpdate(TensorFieldValue value) {
         super(ValueUpdateClassID.TENSORREMOVE);
         this.tensor = value;
-        verifyCompatibleType();
-    }
-
-    private void verifyCompatibleType() {
-        if ( ! tensor.getTensor().isPresent()) {
+        if (!tensor.getTensor().isPresent()) {
             throw new IllegalArgumentException("Tensor must be present in remove update");
         }
-        TensorType tensorType = tensor.getTensor().get().type();
-        TensorType expectedType = extractSparseDimensions(tensor.getDataType().getTensorType());
-        if ( ! tensorType.equals(expectedType)) {
-            throw new IllegalArgumentException("Unexpected type '" + tensorType + "' in remove update. Expected is '" + expectedType + "'");
+        verifyCompatibleType(tensor.getTensorType().get());
+    }
+
+    public void verifyCompatibleType(TensorType originalType) {
+        TensorType sparseType = extractSparseDimensions(originalType);
+        TensorType thisType = tensor.getTensorType().get();
+        for (var dim : thisType.dimensions()) {
+            if (sparseType.dimension(dim.name()).isEmpty()) {
+                throw new IllegalArgumentException("Unexpected type '" + thisType + "' in remove update. "
+                        + "Expected dimensions to be a subset of '" + sparseType + "'");
+            }
         }
     }
 
@@ -63,6 +67,7 @@ public class TensorRemoveUpdate extends ValueUpdate<TensorFieldValue> {
 
         Tensor old = ((TensorFieldValue) oldValue).getTensor().get();
         Tensor update = tensor.getTensor().get();
+        // TODO: handle the case where this tensor only contains a subset of the sparse dimensions of the input tensor.
         Tensor result = old.remove(update.cells().keySet());
         return new TensorFieldValue(result);
     }
@@ -101,6 +106,5 @@ public class TensorRemoveUpdate extends ValueUpdate<TensorFieldValue> {
         type.dimensions().stream().filter(dim -> ! dim.isIndexed()).forEach(dim -> builder.mapped(dim.name()));
         return builder.build();
     }
-
 
 }

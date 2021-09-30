@@ -1,29 +1,39 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.curator.stats.LatencyMetrics;
+import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
+import com.yahoo.vespa.hosted.provision.node.ClusterId;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.persistence.CacheStats;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import com.yahoo.vespa.orchestrator.status.HostInfo;
+import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
-import java.time.Clock;
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -33,61 +43,126 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed.any;
 /**
  * @author oyving
  */
-public class MetricsReporter extends Maintainer {
+public class MetricsReporter extends NodeRepositoryMaintainer {
 
+    private final Set<Pair<Metric.Context, String>> nonZeroMetrics = new HashSet<>();
     private final Metric metric;
-    private final Function<HostName, Optional<HostInfo>> orchestrator;
+    private final Orchestrator orchestrator;
     private final ServiceMonitor serviceMonitor;
     private final Map<Map<String, String>, Metric.Context> contextMap = new HashMap<>();
     private final Supplier<Integer> pendingRedeploymentsSupplier;
-    private final Clock clock;
 
     MetricsReporter(NodeRepository nodeRepository,
                     Metric metric,
                     Orchestrator orchestrator,
                     ServiceMonitor serviceMonitor,
                     Supplier<Integer> pendingRedeploymentsSupplier,
-                    Duration interval,
-                    Clock clock) {
-        super(nodeRepository, interval);
+                    Duration interval) {
+        super(nodeRepository, interval, metric);
         this.metric = metric;
-        this.orchestrator = orchestrator.getHostResolver();
+        this.orchestrator = orchestrator;
         this.serviceMonitor = serviceMonitor;
         this.pendingRedeploymentsSupplier = pendingRedeploymentsSupplier;
-        this.clock = clock;
     }
 
     @Override
-    public void maintain() {
-        NodeList nodes = nodeRepository().list();
-        Map<HostName, List<ServiceInstance>> servicesByHost =
-                serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName();
+    public double maintain() {
+        // Sort by hostname to get deterministic metric reporting order (and hopefully avoid changes
+        // to metric reporting time so we get double reporting or no reporting within a minute)
+        NodeList nodes = nodeRepository().nodes().list().sortedBy(Comparator.comparing(Node::hostname));
+        ServiceModel serviceModel = serviceMonitor.getServiceModelSnapshot();
 
-        nodes.forEach(node -> updateNodeMetrics(node, servicesByHost));
-        updateStateMetrics(nodes);
+        updateZoneMetrics();
+        updateCacheMetrics();
         updateMaintenanceMetrics();
-        updateDockerMetrics(nodes);
+        nodes.forEach(node -> updateNodeMetrics(node, serviceModel));
+        updateNodeCountMetrics(nodes);
+        updateLockMetrics();
+        updateContainerMetrics(nodes);
         updateTenantUsageMetrics(nodes);
+        updateRepairTicketMetrics(nodes);
+        updateAllocationMetrics(nodes);
+        updateExclusiveSwitchMetrics(nodes);
+        return 1.0;
+    }
+
+    private void updateAllocationMetrics(NodeList nodes) {
+        Map<ClusterId, List<Node>> byCluster = nodes.stream()
+                                                    .filter(node -> node.allocation().isPresent())
+                                                    .filter(node -> !node.allocation().get().owner().instance().isTester())
+                                                    .collect(Collectors.groupingBy(node -> new ClusterId(node.allocation().get().owner(), node.allocation().get().membership().cluster().id())));
+        byCluster.forEach((clusterId, allocatedNodes) -> {
+            int activeNodes = 0;
+            int nonActiveNodes = 0;
+            for (var node : allocatedNodes) {
+                if (node.state() == State.active) {
+                    activeNodes++;
+                } else {
+                    nonActiveNodes++;
+                }
+            }
+            double nonActiveFraction;
+            if (activeNodes == 0) { // Cluster has been removed
+                nonActiveFraction = 1;
+            } else {
+                nonActiveFraction = (double) nonActiveNodes / ((double) activeNodes + (double) nonActiveNodes);
+            }
+            Metric.Context context = getContext(dimensions(clusterId.application(), clusterId.cluster()));
+            metric.set("nodes.active", activeNodes, context);
+            metric.set("nodes.nonActive", nonActiveNodes, context);
+            metric.set("nodes.nonActiveFraction", nonActiveFraction, context);
+        });
+    }
+
+    private void updateExclusiveSwitchMetrics(NodeList nodes) {
+        Map<ClusterId, List<Node>> byCluster = nodes.stream()
+                                                     .filter(node -> node.type() == NodeType.tenant)
+                                                     .filter(node -> node.state() == State.active)
+                                                     .filter(node -> node.allocation().isPresent())
+                                                     .collect(Collectors.groupingBy(node -> new ClusterId(node.allocation().get().owner(), node.allocation().get().membership().cluster().id())));
+        byCluster.forEach((clusterId, clusterNodes) -> {
+            NodeList clusterHosts = nodes.parentsOf(NodeList.copyOf(clusterNodes));
+            long nodesOnExclusiveSwitch = NodeList.copyOf(clusterNodes).onExclusiveSwitch(clusterHosts).size();
+            double exclusiveSwitchRatio = nodesOnExclusiveSwitch / (double) clusterNodes.size();
+            metric.set("nodes.exclusiveSwitchFraction", exclusiveSwitchRatio, getContext(dimensions(clusterId.application(), clusterId.cluster())));
+        });
+    }
+
+    private void updateZoneMetrics() {
+        metric.set("zone.working", nodeRepository().nodes().isWorking() ? 1 : 0, null);
+    }
+
+    private void updateCacheMetrics() {
+        CacheStats nodeCacheStats = nodeRepository().database().nodeSerializerCacheStats();
+        metric.set("cache.nodeObject.hitRate", nodeCacheStats.hitRate(), null);
+        metric.set("cache.nodeObject.evictionCount", nodeCacheStats.evictionCount(), null);
+        metric.set("cache.nodeObject.size", nodeCacheStats.size(), null);
+
+        CacheStats curatorCacheStats = nodeRepository().database().cacheStats();
+        metric.set("cache.curator.hitRate", curatorCacheStats.hitRate(), null);
+        metric.set("cache.curator.evictionCount", curatorCacheStats.evictionCount(), null);
+        metric.set("cache.curator.size", curatorCacheStats.size(), null);
     }
 
     private void updateMaintenanceMetrics() {
         metric.set("hostedVespa.pendingRedeployments", pendingRedeploymentsSupplier.get(), null);
     }
 
-    private void updateNodeMetrics(Node node, Map<HostName, List<ServiceInstance>> servicesByHost) {
+    /**
+     * NB: Keep this metric set in sync with internal configserver metric pre-aggregation
+     */
+    private void updateNodeMetrics(Node node, ServiceModel serviceModel) {
         Metric.Context context;
 
         Optional<Allocation> allocation = node.allocation();
         if (allocation.isPresent()) {
             ApplicationId applicationId = allocation.get().owner();
-            context = getContextAt(
-                    "state", node.state().name(),
-                    "host", node.hostname(),
-                    "tenantName", applicationId.tenant().value(),
-                    "applicationId", applicationId.serializedForm().replace(':', '.'),
-                    "app", toApp(applicationId),
-                    "clustertype", allocation.get().membership().cluster().type().name(),
-                    "clusterid", allocation.get().membership().cluster().id().value());
+            Map<String, String> dimensions = new HashMap<>(dimensions(applicationId));
+            dimensions.put("state", node.state().name());
+            dimensions.put("host", node.hostname());
+            dimensions.put("clustertype", allocation.get().membership().cluster().type().name());
+            dimensions.put("clusterid", allocation.get().membership().cluster().id().value());
+            context = getContext(dimensions);
 
             long wantedRestartGeneration = allocation.get().restartGeneration().wanted();
             metric.set("wantedRestartGeneration", wantedRestartGeneration, context);
@@ -107,9 +182,8 @@ public class MetricsReporter extends Maintainer {
                     currentVersion.get().equals(wantedVersion);
             metric.set("wantToChangeVespaVersion", converged ? 0 : 1, context);
         } else {
-            context = getContextAt(
-                    "state", node.state().name(),
-                    "host", node.hostname());
+            context = getContext(Map.of("state", node.state().name(),
+                                        "host", node.hostname()));
         }
 
         Optional<Version> currentVersion = node.status().vespaVersion();
@@ -129,19 +203,28 @@ public class MetricsReporter extends Maintainer {
         metric.set("wantToDeprovision", node.status().wantToDeprovision() ? 1 : 0, context);
         metric.set("failReport", NodeFailer.reasonsToFailParentHost(node).isEmpty() ? 0 : 1, context);
 
-        orchestrator.apply(new HostName(node.hostname())).ifPresent(info -> {
-            int suspended = info.status().isSuspended() ? 1 : 0;
-            metric.set("suspended", suspended, context);
-            metric.set("allowedToBeDown", suspended, context); // remove summer 2020.
-            long suspendedSeconds = info.suspendedSince()
-                    .map(suspendedSince -> Duration.between(suspendedSince, clock.instant()).getSeconds())
-                    .orElse(0L);
-            metric.set("suspendedSeconds", suspendedSeconds, context);
-        });
+        if (node.type().isHost()) {
+            metric.set("wantToEncrypt", node.reports().getReport("wantToEncrypt").isPresent() ? 1 : 0, context);
+            metric.set("diskEncrypted", node.reports().getReport("diskEncrypted").isPresent() ? 1 : 0, context);
+        }
+
+        HostName hostname = new HostName(node.hostname());
+
+        serviceModel.getApplication(hostname)
+                .map(ApplicationInstance::reference)
+                .map(reference -> orchestrator.getHostInfo(reference, hostname))
+                .ifPresent(info -> {
+                    int suspended = info.status().isSuspended() ? 1 : 0;
+                    metric.set("suspended", suspended, context);
+                    metric.set("allowedToBeDown", suspended, context); // remove summer 2020.
+                    long suspendedSeconds = info.suspendedSince()
+                            .map(suspendedSince -> Duration.between(suspendedSince, clock().instant()).getSeconds())
+                            .orElse(0L);
+                    metric.set("suspendedSeconds", suspendedSeconds, context);
+                });
 
         long numberOfServices;
-        HostName hostName = new HostName(node.hostname());
-        List<ServiceInstance> services = servicesByHost.get(hostName);
+        List<ServiceInstance> services = serviceModel.getServiceInstancesByHostName().get(hostname);
         if (services == null) {
             numberOfServices = 0;
         } else {
@@ -165,8 +248,10 @@ public class MetricsReporter extends Maintainer {
 
             metric.set("someServicesDown", (numberOfServicesDown > 0 ? 1 : 0), context);
 
-            boolean badNode = NodeFailer.badNode(services);
-            metric.set("nodeFailerBadNode", (badNode ? 1 : 0), context);
+            metric.set("numberOfServicesUnknown", servicesCount.getOrDefault(ServiceStatus.UNKNOWN, 0L), context);
+
+            boolean down = NodeHealthTracker.allDown(services);
+            metric.set("nodeFailerBadNode", (down ? 1 : 0), context);
 
             boolean nodeDownInNodeRepo = node.history().event(History.Event.Type.down).isPresent();
             metric.set("downInNodeRepo", (nodeDownInNodeRepo ? 1 : 0), context);
@@ -188,30 +273,62 @@ public class MetricsReporter extends Maintainer {
         return version.getMinor() + version.getMicro() / 1000.0;
     }
 
-    private Metric.Context getContextAt(String... point) {
-        if (point.length % 2 != 0)
-            throw new IllegalArgumentException("Dimension specification comes in pairs");
-
-        Map<String, String> dimensions = new HashMap<>();
-        for (int i = 0; i < point.length; i += 2) {
-            dimensions.put(point[i], point[i + 1]);
-        }
-
+    private Metric.Context getContext(Map<String, String> dimensions) {
         return contextMap.computeIfAbsent(dimensions, metric::createContext);
     }
 
-    private void updateStateMetrics(NodeList nodes) {
-        Map<Node.State, List<Node>> nodesByState = nodes.nodeType(NodeType.tenant).asList().stream()
-                .collect(Collectors.groupingBy(Node::state));
+    private void updateNodeCountMetrics(NodeList nodes) {
+        Map<State, List<Node>> nodesByState = nodes.nodeType(NodeType.tenant).asList().stream()
+                                                   .collect(Collectors.groupingBy(Node::state));
 
-        // Metrics pr state
-        for (Node.State state : Node.State.values()) {
+        // Count per state
+        for (State state : State.values()) {
             List<Node> nodesInState = nodesByState.getOrDefault(state, List.of());
             metric.set("hostedVespa." + state.name() + "Hosts", nodesInState.size(), null);
         }
     }
 
-    private void updateDockerMetrics(NodeList nodes) {
+    private void updateLockMetrics() {
+        LockStats.getGlobal().getLockMetricsByPath()
+                .forEach((lockPath, lockMetrics) -> {
+                    Metric.Context context = getContext(Map.of("lockPath", lockPath));
+
+                    LatencyMetrics acquireLatencyMetrics = lockMetrics.getAndResetAcquireLatencyMetrics();
+                    setNonZero("lockAttempt.acquireMaxActiveLatency", acquireLatencyMetrics.maxActiveLatencySeconds(), context);
+                    setNonZero("lockAttempt.acquireHz", acquireLatencyMetrics.startHz(), context);
+                    setNonZero("lockAttempt.acquireLoad", acquireLatencyMetrics.load(), context);
+
+                    LatencyMetrics lockedLatencyMetrics = lockMetrics.getAndResetLockedLatencyMetrics();
+                    setNonZero("lockAttempt.lockedLatency", lockedLatencyMetrics.maxLatencySeconds(), context);
+                    setNonZero("lockAttempt.lockedLoad", lockedLatencyMetrics.load(), context);
+
+                    setNonZero("lockAttempt.acquireTimedOut", lockMetrics.getAndResetAcquireTimedOutCount(), context);
+                    setNonZero("lockAttempt.deadlock", lockMetrics.getAndResetDeadlockCount(), context);
+
+                    // bucket for various rare errors - to reduce #metrics
+                    setNonZero("lockAttempt.errors",
+                            lockMetrics.getAndResetAcquireFailedCount() +
+                                    lockMetrics.getAndResetReleaseFailedCount() +
+                                    lockMetrics.getAndResetNakedReleaseCount() +
+                                    lockMetrics.getAndResetAcquireWithoutReleaseCount() +
+                                    lockMetrics.getAndResetForeignReleaseCount(),
+                            context);
+                });
+    }
+
+    private void setNonZero(String key, Number value, Metric.Context context) {
+        var metricKey = new Pair<>(context, key);
+        if (Double.compare(value.doubleValue(), 0.0) != 0) {
+            metric.set(key, value, context);
+            nonZeroMetrics.add(metricKey);
+        } else if (nonZeroMetrics.remove(metricKey)) {
+            // Need to set the metric to 0 after it has been set to non-zero, to avoid carrying
+            // a non-zero 'last' from earlier periods.
+            metric.set(key, value, context);
+        }
+    }
+
+    private void updateContainerMetrics(NodeList nodes) {
         NodeResources totalCapacity = getCapacityTotal(nodes);
         metric.set("hostedVespa.docker.totalCapacityCpu", totalCapacity.vcpu(), null);
         metric.set("hostedVespa.docker.totalCapacityMem", totalCapacity.memoryGb(), null);
@@ -233,10 +350,7 @@ public class MetricsReporter extends Maintainer {
                                     .map(node -> node.allocation().get().requestedResources().justNumbers())
                                     .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
 
-                            var context = getContextAt(
-                                    "tenantName", applicationId.tenant().value(),
-                                    "applicationId", applicationId.serializedForm().replace(':', '.'),
-                                    "app", toApp(applicationId));
+                            var context = getContext(dimensions(applicationId));
 
                             metric.set("hostedVespa.docker.allocatedCapacityCpu", allocatedCapacity.vcpu(), context);
                             metric.set("hostedVespa.docker.allocatedCapacityMem", allocatedCapacity.memoryGb(), context);
@@ -245,23 +359,45 @@ public class MetricsReporter extends Maintainer {
                 );
     }
 
+    private void updateRepairTicketMetrics(NodeList nodes) {
+        nodes.nodeType(NodeType.host).stream()
+             .map(node -> node.reports().getReport("repairTicket"))
+             .flatMap(Optional::stream)
+             .map(report -> report.getInspector().field("status").asString())
+             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+             .forEach((status, number) -> metric.set("hostedVespa.breakfixedHosts", number, getContext(Map.of("status", status))));
+    }
+
+    static Map<String, String> dimensions(ApplicationId application, ClusterSpec.Id cluster) {
+        Map<String, String> dimensions = new HashMap<>(dimensions(application));
+        dimensions.put("clusterId", cluster.value());
+        return dimensions;
+    }
+
+    private static Map<String, String> dimensions(ApplicationId application) {
+        return Map.of("tenantName", application.tenant().value(),
+                      "applicationId", application.serializedForm().replace(':', '.'),
+                      "app", toApp(application));
+    }
+
     private static NodeResources getCapacityTotal(NodeList nodes) {
-        return nodes.nodeType(NodeType.host).asList().stream()
-                .map(host -> host.flavor().resources())
-                .map(resources -> resources.justNumbers())
-                .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
+        return nodes.hosts().state(State.active).asList().stream()
+                    .map(host -> host.flavor().resources())
+                    .map(NodeResources::justNumbers)
+                    .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
     }
 
     private static NodeResources getFreeCapacityTotal(NodeList nodes) {
-        return nodes.nodeType(NodeType.host).asList().stream()
-                .map(n -> freeCapacityOf(nodes, n))
-                .map(resources -> resources.justNumbers())
-                .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
+        return nodes.hosts().state(State.active).asList().stream()
+                    .map(n -> freeCapacityOf(nodes, n))
+                    .map(NodeResources::justNumbers)
+                    .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
     }
 
-    private static NodeResources freeCapacityOf(NodeList nodes, Node dockerHost) {
-        return nodes.childrenOf(dockerHost).asList().stream()
-                .map(node -> node.flavor().resources().justNumbers())
-                .reduce(dockerHost.flavor().resources().justNumbers(), NodeResources::subtract);
+    private static NodeResources freeCapacityOf(NodeList nodes, Node host) {
+        return nodes.childrenOf(host).asList().stream()
+                    .map(node -> node.flavor().resources().justNumbers())
+                    .reduce(host.flavor().resources().justNumbers(), NodeResources::subtract);
     }
+
 }

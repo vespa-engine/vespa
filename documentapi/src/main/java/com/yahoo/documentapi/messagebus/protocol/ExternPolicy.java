@@ -58,7 +58,8 @@ public class ExternPolicy implements DocumentProtocolRoutingPolicy {
         slobroks.setup(args[0].split(","));
         pattern = args[1];
         session = pattern.substring(pos);
-        orb = new Supervisor(new Transport());
+        orb = new Supervisor(new Transport("externpolicy"));
+        orb.setDropEmptyBuffers(true);
         mirror = new Mirror(orb, slobroks);
         error = null;
     }

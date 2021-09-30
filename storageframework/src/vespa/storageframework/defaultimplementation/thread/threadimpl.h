@@ -26,10 +26,16 @@ class ThreadImpl : public Thread
      * on code using it.
      */
     struct AtomicThreadTickData {
+        AtomicThreadTickData() noexcept
+            : _lastTickType(),
+              _lastTick(vespalib::steady_time(vespalib::duration::zero())),
+              _maxProcessingTimeSeen(),
+              _maxWaitTimeSeen()
+        {}
         std::atomic<CycleType> _lastTickType;
-        std::atomic<uint64_t> _lastTickMs;
-        std::atomic<uint64_t> _maxProcessingTimeSeenMs;
-        std::atomic<uint64_t> _maxWaitTimeSeenMs;
+        std::atomic<vespalib::steady_time> _lastTick;
+        std::atomic<vespalib::duration> _maxProcessingTimeSeen;
+        std::atomic<vespalib::duration> _maxWaitTimeSeen;
         // struct stores and loads are both data race free with relaxed
         // memory semantics. This means it's possible to observe stale/partial
         // state in a case with concurrent readers/writers.
@@ -49,26 +55,23 @@ class ThreadImpl : public Thread
     void run();
 
 public:
-    ThreadImpl(ThreadPoolImpl&, Runnable&, vespalib::stringref id, uint64_t waitTimeMs,
-               uint64_t maxProcessTimeMs, int ticksBeforeWait);
+    ThreadImpl(ThreadPoolImpl&, Runnable&, vespalib::stringref id, vespalib::duration waitTime,
+               vespalib::duration maxProcessTime, int ticksBeforeWait);
     ~ThreadImpl();
 
     bool interrupted() const override;
     bool joined() const override;
     void interrupt() override;
     void join() override;
-    void registerTick(CycleType, MilliSecTime) override;
-    uint64_t getWaitTime() const override {
+    void registerTick(CycleType, vespalib::steady_time) override;
+    vespalib::duration getWaitTime() const override {
         return _properties.getWaitTime();
     }
     int getTicksBeforeWait() const override {
         return _properties.getTicksBeforeWait();
     }
-    uint64_t getMaxProcessTime() const override {
-        return _properties.getMaxProcessTime();
-    }
 
-    void updateParameters(uint64_t waitTime, uint64_t maxProcessTime, int ticksBeforeWait) override;
+    void updateParameters(vespalib::duration waitTime, vespalib::duration maxProcessTime, int ticksBeforeWait) override;
 
     void setTickData(const ThreadTickData&);
     ThreadTickData getTickData() const;

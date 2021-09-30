@@ -3,8 +3,7 @@
 
 #include <vespa/vespalib/util/executor.h>
 
-namespace proton {
-namespace test {
+namespace proton::test {
 
 class ExecutorObserver : public vespalib::Executor
 {
@@ -27,7 +26,6 @@ public:
     }
 };
 
-} // namespace test
-} // namespace proton
+}
 
 

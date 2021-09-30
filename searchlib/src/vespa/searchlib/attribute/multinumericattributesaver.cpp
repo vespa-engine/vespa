@@ -3,7 +3,7 @@
 #include "multinumericattributesaver.h"
 #include "multivalueattributesaverutils.h"
 #include "multivalue.h"
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 
 using vespalib::GenerationHandler;
 using search::multivalueattributesaver::CountWriter;
@@ -67,7 +67,7 @@ onSave(IAttributeSaveTarget &saveTarget)
     DatWriter datWriter(saveTarget);
 
     for (uint32_t docId = 0; docId < _frozenIndices.size(); ++docId) {
-        datastore::EntryRef idx = _frozenIndices[docId];
+        vespalib::datastore::EntryRef idx = _frozenIndices[docId];
         vespalib::ConstArrayRef<MultiValueType> values(_mvMapping.getDataForIdx(idx));
         countWriter.writeCount(values.size());
         weightWriter.writeWeights(values);

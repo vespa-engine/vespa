@@ -5,6 +5,7 @@
 #include "values.h"
 #include "error.h"
 #include <vespa/fnet/context.h>
+#include <vespa/vespalib/util/stash.h>
 #include <atomic>
 
 class FNETConnection;

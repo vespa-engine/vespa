@@ -8,9 +8,10 @@ import com.yahoo.component.chain.Chain;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.container.logging.AccessLogEntry;
-import com.yahoo.container.logging.AccessLogInterface;
 import com.yahoo.container.protect.Error;
+import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
+import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.execution.Execution;
@@ -23,11 +24,11 @@ import com.yahoo.processing.test.ProcessorLibrary;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,17 +38,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import static com.yahoo.jdisc.http.server.jetty.AccessLoggingRequestHandler.CONTEXT_KEY_ACCESS_LOG_ENTRY;
 import static com.yahoo.processing.test.ProcessorLibrary.MapData;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.times;
 
 /**
  * Tests processing handler scenarios end to end.
@@ -83,18 +83,18 @@ public class ProcessingHandlerTestCase {
     }
 
     @Test
-    public void processing_handler_stores_trace_log_values_in_the_access_log_entry() throws InterruptedException {
-        ArgumentCaptor<AccessLogEntry> accessLogEntryCaptor = ArgumentCaptor.forClass(AccessLogEntry.class);
-        AccessLogInterface accessLog = Mockito.mock(AccessLogInterface.class);
-
-        driver = new ProcessingTestDriver(logValueChain, accessLog);
-        driver.sendRequest("http://localhost/?chain=log-value").readAll();
-
-        Mockito.verify(accessLog, times(1)).log(accessLogEntryCaptor.capture());
-
-        AccessLogEntry entry = accessLogEntryCaptor.getValue();
-        assertNotNull(entry);
-        assertThat(entry.getKeyValues().get(LOG_KEY), is(Collections.singletonList(LOG_VALUE)));
+    public void processing_handler_stores_trace_log_values_in_the_access_log_entry() {
+        driver = new ProcessingTestDriver(logValueChain);
+        Request request = HttpRequest.newServerRequest(driver.jDiscDriver(), URI.create("http://localhost/?chain=log-value"), HttpRequest.Method.GET);
+        AccessLogEntry entry = new AccessLogEntry();
+        request.context().put(CONTEXT_KEY_ACCESS_LOG_ENTRY, entry);
+        RequestHandlerTestDriver.MockResponseHandler responseHandler = new RequestHandlerTestDriver.MockResponseHandler();
+        ContentChannel requestContent = request.connect(responseHandler);
+        requestContent.write(ByteBuffer.allocate(0), null);
+        requestContent.close(null);
+        request.release();
+        responseHandler.readAll();
+        assertThat(entry.getKeyValues().get(LOG_KEY), is(List.of(LOG_VALUE)));
     }
 
     @Test

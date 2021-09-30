@@ -4,7 +4,7 @@
 
 #include "btreeaggregator.h"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
@@ -13,7 +13,11 @@ BTreeAggregator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::aggr
 {
     AggrT a;
     for (uint32_t i = 0, ie = node.validSlots(); i < ie; ++i) {
-        aggrCalc.add(a, aggrCalc.getVal(node.getData(i)));
+        if constexpr (AggrCalcT::aggregate_over_values()) {
+            aggrCalc.add(a, aggrCalc.getVal(node.getData(i)));
+        } else {
+            aggrCalc.add(a, aggrCalc.getVal(node.getKey(i)));
+        }
     }
     return a;
 }

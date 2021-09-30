@@ -158,10 +158,6 @@ class Identifiable {
     };
 public:
     typedef std::unique_ptr<Identifiable> UP;
-    static FieldBase hasObjectField;
-    static FieldBase sizeField;
-    static FieldBase classIdField;
-    static FieldBase objectField;
     class ILoader
     {
     public:
@@ -171,7 +167,7 @@ public:
         virtual void loadClass(unsigned classId) = 0;
         virtual void loadClass(const char * className) = 0;
     };
-    struct RuntimeClass final : public IFieldBase {
+    struct RuntimeClass {
     public:
         RuntimeClass(RuntimeInfo * info);
         ~RuntimeClass();
@@ -186,7 +182,6 @@ public:
         bool equal(unsigned cid) const { return id() == cid; }
         int compare(const RuntimeClass& other) const { return (id() - other.id()); }
     private:
-        stringref getName() const override { return stringref(_rt->_name); }
         RuntimeInfo * _rt;
     };
     DECLARE_IDENTIFIABLE_ROOT(Identifiable);

@@ -53,6 +53,7 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
                      .addField("rawarray", Array(DataType::T_RAW))
                      .addField("structarray", structarray_id)
                      .addTensorField("sparse_tensor", "tensor(x{})")
+                     .addTensorField("sparse_xy_tensor", "tensor(x{},y{})")
                      .addTensorField("sparse_float_tensor", "tensor<float>(x{})")
                      .addTensorField("dense_tensor", "tensor(x[2])"));
     builder.document(type2_id, "testdoctype2",

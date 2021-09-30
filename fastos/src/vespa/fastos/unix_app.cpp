@@ -75,10 +75,6 @@ bool FastOS_UNIX_Application::PreThreadInit ()
 
         if (useProcessStarter()) {
             _processStarter = new FastOS_UNIX_ProcessStarter(this);
-            if (!_processStarter->Start()) {
-                rc = false;
-                fprintf(stderr, "could not start FastOS_UNIX_ProcessStarter\n");
-            }
         }
     } else {
         rc = false;
@@ -95,32 +91,6 @@ bool FastOS_UNIX_Application::Init ()
     {
         int ipcDescriptor = -1;
 
-        char *env = getenv("FASTOS_IPC_PARENT");
-        if(env != nullptr)
-        {
-            int commaCount=0;
-            int notDigitCount=0;
-            char *p = env;
-            while(*p != '\0')
-            {
-                if(*p == ',')
-                    commaCount++;
-                else if((*p < '0') || (*p > '9'))
-                    notDigitCount++;
-                p++;
-            }
-
-            if((commaCount == 2) && (notDigitCount == 0))
-            {
-                int ppid, gppid, descriptor;
-                sscanf(env, "%d,%d,%d", &ppid, &gppid, &descriptor);
-
-                if(ppid == getppid() && (descriptor != -1))
-                {
-                    ipcDescriptor = descriptor;
-                }
-            }
-        }
         if (useIPCHelper()) {
             _ipcHelper = new FastOS_UNIX_IPCHelper(this, ipcDescriptor);
             GetThreadPool()->NewThread(_ipcHelper);
@@ -143,7 +113,6 @@ void FastOS_UNIX_Application::Cleanup ()
             if (_processListMutex) {
                 guard = getProcessGuard();
             }
-            _processStarter->Stop();
         }
         delete _processStarter;
         _processStarter = nullptr;

@@ -16,14 +16,14 @@ public class CostInfo {
     private final BigDecimal cpuHours;
     private final BigDecimal memoryHours;
     private final BigDecimal diskHours;
-    private final int cpuCost;
-    private final int memoryCost;
-    private final int diskCost;
+    private final BigDecimal cpuCost;
+    private final BigDecimal memoryCost;
+    private final BigDecimal diskCost;
 
 
     public CostInfo(ApplicationId applicationId, ZoneId zoneId,
                     BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours,
-                        int cpuCost, int memoryCost, int diskCost) {
+                    BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost) {
         this.applicationId = applicationId;
         this.zoneId = zoneId;
         this.cpuHours = cpuHours;
@@ -54,16 +54,20 @@ public class CostInfo {
         return diskHours;
     }
 
-    public int getCpuCost() {
+    public BigDecimal getCpuCost() {
         return cpuCost;
     }
 
-    public int getMemoryCost() {
+    public BigDecimal getMemoryCost() {
         return memoryCost;
     }
 
-    public int getDiskCost() {
+    public BigDecimal getDiskCost() {
         return diskCost;
+    }
+
+    public BigDecimal getTotalCost() {
+        return cpuCost.add(memoryCost).add(diskCost);
     }
 
 }

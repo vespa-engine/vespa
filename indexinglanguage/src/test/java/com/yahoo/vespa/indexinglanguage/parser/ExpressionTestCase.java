@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage.parser;
 
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import org.junit.Test;
@@ -73,6 +74,7 @@ public class ExpressionTestCase {
         assertExpression(ToPositionExpression.class, "to_pos");
         assertExpression(ToStringExpression.class, "to_string");
         assertExpression(ToWsetExpression.class, "to_wset");
+        assertExpression(ToBoolExpression.class, "to_bool");
         assertExpression(ToWsetExpression.class, "to_wset create_if_non_existent");
         assertExpression(ToWsetExpression.class, "to_wset remove_if_zero");
         assertExpression(ToWsetExpression.class, "to_wset create_if_non_existent remove_if_zero");
@@ -83,10 +85,11 @@ public class ExpressionTestCase {
 
     private static void assertExpression(Class expectedClass, String str) throws ParseException {
         Linguistics linguistics = new SimpleLinguistics();
-        Expression foo = Expression.fromString(str, linguistics);
+        Expression foo = Expression.fromString(str, linguistics, Embedder.throwsOnUse);
         assertEquals(expectedClass, foo.getClass());
-        Expression bar = Expression.fromString(foo.toString(), linguistics);
+        Expression bar = Expression.fromString(foo.toString(), linguistics, Embedder.throwsOnUse);
         assertEquals(foo.hashCode(), bar.hashCode());
         assertEquals(foo, bar);
     }
+
 }

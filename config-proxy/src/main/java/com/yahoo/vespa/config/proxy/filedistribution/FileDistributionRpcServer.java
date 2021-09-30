@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy.filedistribution;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
@@ -10,7 +10,7 @@ import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 
@@ -41,7 +41,7 @@ class FileDistributionRpcServer {
     FileDistributionRpcServer(Supervisor supervisor, FileDownloader downloader) {
         this.supervisor = supervisor;
         this.downloader = downloader;
-        declareFileDistributionMethods();
+        declareMethods();
     }
 
     void close() {
@@ -53,7 +53,7 @@ class FileDistributionRpcServer {
         }
     }
 
-    private void declareFileDistributionMethods() {
+    private void declareMethods() {
         // Legacy method, needs to be the same name as used in filedistributor
         supervisor.addMethod(new Method("waitFor", "s", "s", this::getFile)
                                      .methodDesc("get path to file reference")
@@ -106,7 +106,7 @@ class FileDistributionRpcServer {
     }
 
     private void setFileReferencesToDownload(Request req) {
-        log.log(LogLevel.DEBUG, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        log.log(Level.FINE, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         Arrays.stream(req.parameters().get(0).asStringArray())
                 .map(FileReference::new)
                 .forEach(fileReference -> downloader.downloadIfNeeded(new FileReferenceDownload(fileReference)));
@@ -115,14 +115,14 @@ class FileDistributionRpcServer {
 
     private void downloadFile(Request req) {
         FileReference fileReference = new FileReference(req.parameters().get(0).asString());
-        log.log(LogLevel.DEBUG, () -> "getFile() called for file reference '" + fileReference.value() + "'");
+        log.log(Level.FINE, () -> "getFile() called for file reference '" + fileReference.value() + "'");
         Optional<File> file = downloader.getFile(fileReference);
         if (file.isPresent()) {
             new RequestTracker().trackRequest(file.get().getParentFile());
             req.returnValues().add(new StringValue(file.get().getAbsolutePath()));
-            log.log(LogLevel.DEBUG, () -> "File reference '" + fileReference.value() + "' available at " + file.get());
+            log.log(Level.FINE, () -> "File reference '" + fileReference.value() + "' available at " + file.get());
         } else {
-            log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
+            log.log(Level.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
             req.setError(fileReferenceDoesNotExists, "File reference '" + fileReference.value() + "' not found");
         }
 

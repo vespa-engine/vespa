@@ -13,9 +13,7 @@ PriorityConverter::PriorityConverter(const config::ConfigUri & configUri)
     _configFetcher.start();
 }
 
-PriorityConverter::~PriorityConverter()
-{
-}
+PriorityConverter::~PriorityConverter() = default;
 
 uint8_t
 PriorityConverter::toStoragePriority(documentapi::Priority::Value documentApiPriority) const
@@ -31,7 +29,7 @@ PriorityConverter::toStoragePriority(documentapi::Priority::Value documentApiPri
 documentapi::Priority::Value
 PriorityConverter::toDocumentPriority(uint8_t storagePriority) const
 {
-    vespalib::LockGuard guard(_mutex);
+    std::lock_guard guard(_mutex);
     std::map<uint8_t, documentapi::Priority::Value>::const_iterator iter =
         _reverseMapping.lower_bound(storagePriority);
 
@@ -63,7 +61,7 @@ PriorityConverter::configure(std::unique_ptr<vespa::config::content::core::StorP
     _mapping[documentapi::Priority::PRI_VERY_LOW] = config->veryLow;
     _mapping[documentapi::Priority::PRI_LOWEST] = config->lowest;
 
-    vespalib::LockGuard guard(_mutex);
+    std::lock_guard guard(_mutex);
     _reverseMapping.clear();
     _reverseMapping[config->highest] = documentapi::Priority::PRI_HIGHEST;
     _reverseMapping[config->veryHigh] = documentapi::Priority::PRI_VERY_HIGH;

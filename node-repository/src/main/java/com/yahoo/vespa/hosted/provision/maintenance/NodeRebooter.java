@@ -1,16 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.config.provision.Flavor;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -26,29 +25,28 @@ import java.util.stream.Collectors;
  * 
  * @author bratseth
  */
-public class NodeRebooter extends Maintainer {
+public class NodeRebooter extends NodeRepositoryMaintainer {
 
     private final IntFlag rebootIntervalInDays;
-    private final Clock clock;
     private final Random random;
 
-    NodeRebooter(NodeRepository nodeRepository, Clock clock, FlagSource flagSource) {
-        super(nodeRepository, Duration.ofMinutes(25));
-        this.rebootIntervalInDays = Flags.REBOOT_INTERVAL_IN_DAYS.bindTo(flagSource);
-        this.clock = clock;
-        this.random = new Random(clock.millis()); // seed with clock for test determinism   
+    NodeRebooter(NodeRepository nodeRepository, FlagSource flagSource, Metric metric) {
+        super(nodeRepository, Duration.ofMinutes(25), metric);
+        this.rebootIntervalInDays = PermanentFlags.REBOOT_INTERVAL_IN_DAYS.bindTo(flagSource);
+        this.random = new Random(nodeRepository.clock().millis()); // seed with clock for test determinism
     }
 
     @Override
-    protected void maintain() {
+    protected double maintain() {
         // Reboot candidates: Nodes in long-term states, where we know we can safely orchestrate a reboot
-        List<Node> nodesToReboot = nodeRepository().getNodes(Node.State.active, Node.State.ready).stream()
-                .filter(node -> node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
+        List<Node> nodesToReboot = nodeRepository().nodes().list(Node.State.active, Node.State.ready).stream()
+                .filter(node -> node.type().isHost())
                 .filter(this::shouldReboot)
                 .collect(Collectors.toList());
 
         if (!nodesToReboot.isEmpty())
-            nodeRepository().reboot(NodeListFilter.from(nodesToReboot));
+            nodeRepository().nodes().reboot(NodeListFilter.from(nodesToReboot));
+        return 1.0;
     }
     
     private boolean shouldReboot(Node node) {
@@ -61,9 +59,9 @@ public class NodeRebooter extends Maintainer {
                 .filter(event -> rebootEvents.contains(event.type()))
                 .map(History.Event::at)
                 .max(Comparator.naturalOrder())
-                .map(lastReboot -> Duration.between(lastReboot, clock.instant()).minus(rebootInterval));
+                .map(lastReboot -> Duration.between(lastReboot, clock().instant()).minus(rebootInterval));
 
-        if (overdue.isEmpty()) // should never happen as all !docker-container should have provisioned timestamp
+        if (overdue.isEmpty()) // should never happen as all hosts should have provisioned timestamp
             return random.nextDouble() < interval().getSeconds() / (double) rebootInterval.getSeconds();
 
         if (overdue.get().isNegative()) return false;

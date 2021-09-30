@@ -13,11 +13,11 @@ import java.util.Map;
  */
 final class AllValuesQueryProfileVisitor extends PrefixQueryProfileVisitor {
 
-    private Map<String, ValueWithSource> values = new HashMap<>();
+    private final Map<String, ValueWithSource> values = new HashMap<>();
 
     /* Lists all values starting at prefix */
-    public AllValuesQueryProfileVisitor(CompoundName prefix) {
-        super(prefix);
+    public AllValuesQueryProfileVisitor(CompoundName prefix, CompoundNameChildCache pathCache) {
+        super(prefix, pathCache);
     }
 
     @Override
@@ -26,7 +26,7 @@ final class AllValuesQueryProfileVisitor extends PrefixQueryProfileVisitor {
                         DimensionBinding binding,
                         QueryProfile owner,
                         DimensionValues variant) {
-        putValue(localName, value, owner, variant);
+        putValue(localName, value, null, owner, variant, binding);
     }
 
     @Override
@@ -34,17 +34,29 @@ final class AllValuesQueryProfileVisitor extends PrefixQueryProfileVisitor {
                                            DimensionBinding binding,
                                            QueryProfile owner,
                                            DimensionValues variant) {
-        putValue("", profile.getValue(), owner, variant);
+        putValue("", profile.getValue(), profile, owner, variant, binding);
     }
 
-    private void putValue(String key, Object value, QueryProfile owner, DimensionValues variant) {
-        if (value == null) return;
-        CompoundName fullName = currentPrefix.append(key);
-        if (fullName.isEmpty()) return; // Avoid putting a non-leaf (subtree) root in the list
-        if (values.containsKey(fullName.toString())) return; // The first value encountered has priority
+    private void putValue(String key,
+                          Object value,
+                          QueryProfile profile,
+                          QueryProfile owner,
+                          DimensionValues variant,
+                          DimensionBinding binding) {
+        CompoundName fullName = cache.append(currentPrefix, key);
+
+        ValueWithSource existing = values.get(fullName.toString());
+
+        // The first value encountered has priority and values have priority over profiles
+        if (existing != null && (existing.value() != null || value == null)) return;
+
+        Boolean isOverridable = owner != null ? owner.isLocalOverridable(key, binding) : null;
 
         values.put(fullName.toString(), new ValueWithSource(value,
                                                             owner == null ? "anonymous" : owner.getSource(),
+                                                            isOverridable != null &&  ! isOverridable,
+                                                            profile != null,
+                                                            profile == null ? null : profile.getType(),
                                                             variant));
     }
 

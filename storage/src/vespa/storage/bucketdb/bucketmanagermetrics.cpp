@@ -18,14 +18,16 @@ DataStoredMetrics::DataStoredMetrics(const std::string& name, metrics::MetricSet
       bytes("bytes", {}, "bytes stored", this),
       active("activebuckets", {}, "Number of active buckets on the node", this),
       ready("readybuckets", {}, "Number of ready buckets on the node", this)
-{
-    docs.logOnlyIfSet();
-    bytes.logOnlyIfSet();
-    active.logOnlyIfSet();
-    ready.logOnlyIfSet();
-}
+{}
 
 DataStoredMetrics::~DataStoredMetrics() = default;
+
+ContentBucketDbMetrics::ContentBucketDbMetrics(metrics::MetricSet* owner)
+    : metrics::MetricSet("bucket_db", {}, "", owner),
+      memory_usage(this)
+{}
+
+ContentBucketDbMetrics::~ContentBucketDbMetrics() = default;
 
 BucketSpaceMetrics::BucketSpaceMetrics(const vespalib::string& space_name, metrics::MetricSet* owner)
         : metrics::MetricSet("bucket_space", {{"bucketSpace", space_name}}, "", owner),
@@ -33,19 +35,15 @@ BucketSpaceMetrics::BucketSpaceMetrics(const vespalib::string& space_name, metri
           docs("docs", {}, "Documents stored in the bucket space", this),
           bytes("bytes", {}, "Bytes stored across all documents in the bucket space", this),
           active_buckets("active_buckets", {}, "Number of active buckets in the bucket space", this),
-          ready_buckets("ready_buckets", {}, "Number of ready buckets in the bucket space", this)
-{
-    docs.logOnlyIfSet();
-    bytes.logOnlyIfSet();
-    active_buckets.logOnlyIfSet();
-    ready_buckets.logOnlyIfSet();
-}
+          ready_buckets("ready_buckets", {}, "Number of ready buckets in the bucket space", this),
+          bucket_db_metrics(this)
+{}
 
 BucketSpaceMetrics::~BucketSpaceMetrics() = default;
 
 BucketManagerMetrics::BucketManagerMetrics(const ContentBucketSpaceRepo& repo)
     : metrics::MetricSet("datastored", {}, ""),
-      disks(),
+      disk(std::make_shared<DataStoredMetrics>("disk0", this)),
       bucket_spaces(),
       total("alldisks", {{"sum"}}, "Sum of data stored metrics for all disks", this),
       simpleBucketInfoRequestSize("simplebucketinforeqsize", {},
@@ -60,20 +58,9 @@ BucketManagerMetrics::BucketManagerMetrics(const ContentBucketSpaceRepo& repo)
         bucket_spaces.emplace(space.first, std::make_unique<BucketSpaceMetrics>(
                 document::FixedBucketSpaces::to_string(space.first), this));
     }
+    total.addMetricToSum(*disk);
 }
 
 BucketManagerMetrics::~BucketManagerMetrics() = default;
-
-void
-BucketManagerMetrics::setDisks(uint16_t numDisks) {
-    assert(numDisks > 0);
-    if (!disks.empty()) {
-        throw IllegalStateException("Cannot initialize disks twice", VESPA_STRLOC);
-    }
-    for (uint16_t i = 0; i<numDisks; i++) {
-        disks.push_back(std::make_shared<DataStoredMetrics>(make_string("disk%d", i), this));
-        total.addMetricToSum(*disks.back());
-    }
-}
 
 }

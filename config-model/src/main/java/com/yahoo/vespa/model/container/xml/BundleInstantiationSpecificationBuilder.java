@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import org.w3c.dom.Element;
 
 import java.util.Arrays;
@@ -24,19 +25,20 @@ public class BundleInstantiationSpecificationBuilder {
         BundleInstantiationSpecification instSpec = new BundleInstantiationSpecification(id, classId, bundle);
         validate(instSpec);
 
-        return bundle == null ? setBundleForKnownClass(instSpec) : instSpec;
+        return bundle == null ? setBundleForSearchAndDocprocComponents(instSpec) : instSpec;
     }
 
-    private static BundleInstantiationSpecification setBundleForKnownClass(BundleInstantiationSpecification spec) {
-        return BundleMapper.getBundle(spec.getClassName()).
-                map(spec::inBundle).
-                orElse(spec);
+    private static BundleInstantiationSpecification setBundleForSearchAndDocprocComponents(BundleInstantiationSpecification spec) {
+        if (PlatformBundles.isSearchAndDocprocClass(spec.getClassName()))
+            return spec.inBundle(PlatformBundles.searchAndDocprocBundle);
+        else
+            return spec;
     }
 
 
     private static void validate(BundleInstantiationSpecification instSpec) {
         List<String> forbiddenClasses = Arrays.asList(
-                "com.yahoo.search.handler.SearchHandler",
+                SearchHandler.HANDLER_CLASS,
                 "com.yahoo.processing.handler.ProcessingHandler");
 
         for (String forbiddenClass: forbiddenClasses) {

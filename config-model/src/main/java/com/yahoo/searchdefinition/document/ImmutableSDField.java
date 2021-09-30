@@ -37,6 +37,14 @@ public interface ImmutableSDField {
 
     boolean usesStructOrMap();
 
+    /**
+     * Whether this field at some time was configured to do attributing.
+     *
+     * This function can typically return a different value than doesAttributing(),
+     * which uses the final state of the underlying indexing script instead.
+     */
+    boolean wasConfiguredToDoAttributing();
+
     DataType getDataType();
 
     Index getIndex(String name);

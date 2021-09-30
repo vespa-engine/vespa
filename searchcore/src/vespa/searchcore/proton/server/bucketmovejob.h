@@ -5,144 +5,88 @@
 #include "blockable_maintenance_job.h"
 #include "documentbucketmover.h"
 #include "i_disk_mem_usage_listener.h"
-#include "ibucketfreezelistener.h"
-#include "ibucketmodifiedhandler.h"
-#include "ibucketstatecalculator.h"
 #include "ibucketstatechangedhandler.h"
 #include "iclusterstatechangedhandler.h"
-#include "ifrozenbuckethandler.h"
-#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include "maintenancedocumentsubdb.h"
+#include <vespa/searchcore/proton/bucketdb/bucketscaniterator.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
-#include <set>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
 
-namespace proton
-{
+
+namespace storage::spi { struct BucketExecutor; }
+namespace searchcorespi::index { struct IThreadService; }
+
+namespace proton {
 
 class BlockableMaintenanceJobConfig;
 class IBucketStateChangedNotifier;
 class IClusterStateChangedNotifier;
 class IDiskMemUsageNotifier;
+class IBucketModifiedHandler;
+
 namespace bucketdb { class IBucketCreateNotifier; }
 
 /**
  * Class used to control the moving of buckets between the ready and
  * not ready sub databases based on the readiness of buckets according to the cluster state.
+ * It will first compute the set of buckets to be moved. Then N of these buckets will be iterated in parallel and
+ * the documents scheduled for move. The movment will happen in 3 phases.
+ * 1 - Collect meta info for documents. Must happend in master thread
+ * 2 - Acquire bucket lock and fetch documents and very against meta data. This is done in BucketExecutor threads.
+ * 3 - Actual movement is then done in master thread while still holding bucket lock. Once bucket has fully moved
+ *     bucket modified notification is sent.
  */
 class BucketMoveJob : public BlockableMaintenanceJob,
                       public IClusterStateChangedHandler,
-                      public IBucketFreezeListener,
                       public bucketdb::IBucketCreateListener,
                       public IBucketStateChangedHandler,
-                      public IDiskMemUsageListener
+                      public IDiskMemUsageListener,
+                      public std::enable_shared_from_this<BucketMoveJob>
 {
-public:
-    struct ScanPosition
-    {
-        document::BucketId _lastBucket;
-
-        ScanPosition() : _lastBucket() { }
-        ScanPosition(document::BucketId lastBucket) : _lastBucket(lastBucket) { }
-        bool validBucket() const { return _lastBucket.isSet(); }
-    };
-
-    typedef BucketDB::ConstMapIterator BucketIterator;
-
-    class ScanIterator
-    {
-    private:
-        BucketDBOwner::Guard _db;
-        BucketIterator       _itr;
-        BucketIterator       _end;
-
-    public:
-        ScanIterator(BucketDBOwner::Guard db,
-                     uint32_t pass,
-                     document::BucketId lastBucket,
-                     document::BucketId endBucket);
-
-        ScanIterator(BucketDBOwner::Guard db, document::BucketId bucket);
-
-        ScanIterator(const ScanIterator &) = delete;
-        ScanIterator(ScanIterator &&rhs);
-        ScanIterator &operator=(const ScanIterator &) = delete;
-        ScanIterator &operator=(ScanIterator &&rhs) = delete;
-
-        bool                   valid() const { return _itr != _end; }
-        bool                isActive() const { return _itr->second.isActive(); }
-        document::BucketId getBucket() const { return _itr->first; }
-        bool      hasReadyBucketDocs() const { return _itr->second.getReadyCount() != 0; }
-        bool   hasNotReadyBucketDocs() const { return _itr->second.getNotReadyCount() != 0; }
-
-        ScanIterator & operator++() {
-            ++_itr;
-            return *this;
-        }
-    };
-
 private:
-    typedef std::pair<size_t, bool> ScanResult;
-    IBucketStateCalculator::SP         _calc;
-    IDocumentMoveHandler              &_moveHandler;
-    IBucketModifiedHandler            &_modifiedHandler;
-    const MaintenanceDocumentSubDB    &_ready;
-    const MaintenanceDocumentSubDB    &_notReady;
-    DocumentBucketMover                _mover;
-    bool                               _doneScan;
-    ScanPosition                       _scanPos;
-    uint32_t                           _scanPass;
-    ScanPosition                       _endPos;
-    document::BucketSpace              _bucketSpace;
+    using BucketExecutor = storage::spi::BucketExecutor;
+    using IDestructorCallback = vespalib::IDestructorCallback;
+    using IDestructorCallbackSP = std::shared_ptr<IDestructorCallback>;
+    using IThreadService = searchcorespi::index::IThreadService;
+    using BucketId = document::BucketId;
+    using ScanIterator = bucketdb::ScanIterator;
+    using BucketMoveSet = std::map<BucketId, bool>;
+    using NeedResult = std::pair<bool, bool>;
+    using ActiveState = storage::spi::BucketInfo::ActiveState;
+    using BucketMover = bucketdb::BucketMover;
+    using BucketMoverSP = std::shared_ptr<BucketMover>;
+    using Bucket2Mover = std::map<BucketId, BucketMoverSP>;
+    using Movers = std::vector<BucketMoverSP>;
+    using GuardedMoveOps = BucketMover::GuardedMoveOps;
+    std::shared_ptr<IBucketStateCalculator>   _calc;
+    RetainGuard                               _dbRetainer;
+    IDocumentMoveHandler                     &_moveHandler;
+    IBucketModifiedHandler                   &_modifiedHandler;
+    IThreadService                           &_master;
+    BucketExecutor                           &_bucketExecutor;
+    const MaintenanceDocumentSubDB            _ready;
+    const MaintenanceDocumentSubDB            _notReady;
+    const document::BucketSpace               _bucketSpace;
+    size_t                                    _iterateCount;
+    Movers                                    _movers;
+    Bucket2Mover                              _bucketsInFlight;
+    BucketMoveSet                             _buckets2Move;
 
-    typedef std::set<document::BucketId>    DelayedBucketSet;
+    std::atomic<size_t>                       _bucketsPending;
 
-    // Delayed buckets that are no longer frozen or active that can be considered for moving.
-    DelayedBucketSet                   _delayedBuckets;
-    // Frozen buckets that cannot be moved at all.
-    DelayedBucketSet                   _delayedBucketsFrozen;
-    IFrozenBucketHandler              &_frozenBuckets;
     bucketdb::IBucketCreateNotifier   &_bucketCreateNotifier;
-    DocumentBucketMover                _delayedMover;
     IClusterStateChangedNotifier      &_clusterStateChangedNotifier;
     IBucketStateChangedNotifier       &_bucketStateChangedNotifier;
     IDiskMemUsageNotifier             &_diskMemUsageNotifier;
 
-    ScanResult
-    scanBuckets(size_t maxBucketsToScan,
-                IFrozenBucketHandler::ExclusiveBucketGuard::UP & bucketGuard);
-
-    void maybeCancelMover(DocumentBucketMover &mover);
-    void maybeDelayMover(DocumentBucketMover &mover, document::BucketId bucket);
-
-    void
-    moveDocuments(DocumentBucketMover &mover,
-                  size_t maxDocsToMove,
-                  IFrozenBucketHandler::ExclusiveBucketGuard::UP & bucketGuard);
-
-    void
-    checkBucket(const document::BucketId &bucket,
-                ScanIterator &itr,
-                DocumentBucketMover &mover,
-                IFrozenBucketHandler::ExclusiveBucketGuard::UP & bucketGuard);
-
-    /**
-     * Signal that the given bucket should be de-activated.
-     * An active bucket is not considered for moving from ready to not ready sub database.
-     * A de-activated bucket can be considered for moving.
-     **/
-    void deactivateBucket(document::BucketId bucket);
-
-    /**
-     * Signal that the given bucket should be activated.
-     */
-    void activateBucket(document::BucketId bucket);
-
-public:
-    BucketMoveJob(const IBucketStateCalculator::SP &calc,
+    BucketMoveJob(const std::shared_ptr<IBucketStateCalculator> &calc,
+                  RetainGuard dbRetainer,
                   IDocumentMoveHandler &moveHandler,
                   IBucketModifiedHandler &modifiedHandler,
+                  IThreadService & master,
+                  BucketExecutor & bucketExecutor,
                   const MaintenanceDocumentSubDB &ready,
                   const MaintenanceDocumentSubDB &notReady,
-                  IFrozenBucketHandler &frozenBuckets,
                   bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                   IClusterStateChangedNotifier &clusterStateChangedNotifier,
                   IBucketStateChangedNotifier &bucketStateChangedNotifier,
@@ -151,38 +95,53 @@ public:
                   const vespalib::string &docTypeName,
                   document::BucketSpace bucketSpace);
 
-    virtual ~BucketMoveJob();
+    void startMove(BucketMover & mover, size_t maxDocsToMove);
+    static void prepareMove(std::shared_ptr<BucketMoveJob> job, BucketMover::MoveKeys keys, IDestructorCallbackSP context);
+    void completeMove(GuardedMoveOps moveOps, IDestructorCallbackSP context);
+    bool checkIfMoverComplete(const BucketMover & mover);
+    void considerBucket(const bucketdb::Guard & guard, BucketId bucket);
+    void reconsiderBucket(const bucketdb::Guard & guard, BucketId bucket);
+    void updatePending();
+    void cancelBucket(BucketId bucket); // True if something to cancel
+    NeedResult needMove(const ScanIterator &itr) const;
+    BucketMoveSet computeBuckets2Move(const bucketdb::Guard & guard);
+    BucketMoverSP createMover(BucketId bucket, bool wantReady);
+    BucketMoverSP greedyCreateMover();
+    void backFillMovers();
+    void moveDocs(size_t maxDocsToMove);
+    static void failOperation(std::shared_ptr<BucketMoveJob> job, BucketId bucket);
+    void recompute(const bucketdb::Guard & guard);
+    class StartMove;
+public:
+    static std::shared_ptr<BucketMoveJob>
+    create(const std::shared_ptr<IBucketStateCalculator> &calc,
+           RetainGuard dbRetainer,
+           IDocumentMoveHandler &moveHandler,
+           IBucketModifiedHandler &modifiedHandler,
+           IThreadService & master,
+           BucketExecutor & bucketExecutor,
+           const MaintenanceDocumentSubDB &ready,
+           const MaintenanceDocumentSubDB &notReady,
+           bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
+           IClusterStateChangedNotifier &clusterStateChangedNotifier,
+           IBucketStateChangedNotifier &bucketStateChangedNotifier,
+           IDiskMemUsageNotifier &diskMemUsageNotifier,
+           const BlockableMaintenanceJobConfig &blockableConfig,
+           const vespalib::string &docTypeName,
+           document::BucketSpace bucketSpace);
 
-    void changedCalculator();
-    void scanAndMove(size_t maxBucketsToScan, size_t maxDocsToMove);
+    ~BucketMoveJob() override;
 
-    bool done() const {
-        // Ignores _delayedBucketsFrozen, since no work can be done there yet
-        return
-            _doneScan &&
-            _mover.bucketDone() &&
-            _delayedMover.bucketDone() &&
-            _delayedBuckets.empty();
-    }
+    bool scanAndMove(size_t maxBuckets2Move, size_t maxDocsToMovePerBucket);
+    bool done() const;
+    void recompute(); // Only for testing
 
-    // IMaintenanceJob API
-    virtual bool run() override;
-
-    // IClusterStateChangedHandler API
-    virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
-
-    // IBucketFreezeListener API
-    virtual void notifyThawedBucket(const document::BucketId &bucket) override;
-
-    // IBucketStateChangedHandler API
-    virtual void notifyBucketStateChanged(const document::BucketId &bucketId,
-                                          storage::spi::BucketInfo::ActiveState newState) override;
-
-    virtual void notifyDiskMemUsage(DiskMemUsageState state) override;
-
-    // bucketdb::IBucketCreateListener API
-    virtual void notifyCreateBucket(const document::BucketId &bucket) override;
+    bool run() override;
+    void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override;
+    void notifyBucketStateChanged(const BucketId &bucketId, ActiveState newState) override;
+    void notifyDiskMemUsage(DiskMemUsageState state) override;
+    void notifyCreateBucket(const bucketdb::Guard & guard, const BucketId &bucket) override;
+    void updateMetrics(DocumentDBTaggedMetrics & metrics) const override;
 };
 
 } // namespace proton
-

@@ -1,6 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.lang.MutableBoolean;
+import com.yahoo.lang.SettableOptional;
+import com.yahoo.vdslib.distribution.ConfiguredNode;
+import com.yahoo.vdslib.distribution.Group;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
@@ -13,6 +17,7 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStat
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -21,27 +26,24 @@ import java.util.Optional;
  * @author Haakon Dybdahl
  */
 public class NodeStateChangeChecker {
-    public static final String LEGACY_BUCKETS_METRIC_NAME = "vds.datastored.alldisks.buckets";
+
     public static final String BUCKETS_METRIC_NAME = "vds.datastored.bucket_space.buckets_total";
     public static final Map<String, String> BUCKETS_METRIC_DIMENSIONS = Map.of("bucketSpace", "default");
 
-    private final int minStorageNodesUp;
-    private double minRatioOfStorageNodesUp;
     private final int requiredRedundancy;
+    private final HierarchicalGroupVisiting groupVisiting;
     private final ClusterInfo clusterInfo;
-    private final boolean determineBucketsFromBucketSpaceMetric;
+    private final boolean inMoratorium;
 
     public NodeStateChangeChecker(
-            int minStorageNodesUp,
-            double minRatioOfStorageNodesUp,
             int requiredRedundancy,
+            HierarchicalGroupVisiting groupVisiting,
             ClusterInfo clusterInfo,
-            boolean determineBucketsFromBucketSpaceMetric) {
-        this.minStorageNodesUp = minStorageNodesUp;
-        this.minRatioOfStorageNodesUp = minRatioOfStorageNodesUp;
+            boolean inMoratorium) {
         this.requiredRedundancy = requiredRedundancy;
+        this.groupVisiting = groupVisiting;
         this.clusterInfo = clusterInfo;
-        this.determineBucketsFromBucketSpaceMetric = determineBucketsFromBucketSpaceMetric;
+        this.inMoratorium = inMoratorium;
     }
 
     public static class Result {
@@ -91,9 +93,13 @@ public class NodeStateChangeChecker {
 
     public Result evaluateTransition(
             Node node, ClusterState clusterState, SetUnitStateRequest.Condition condition,
-            NodeState oldState, NodeState newState) {
+            NodeState oldWantedState, NodeState newWantedState) {
         if (condition == SetUnitStateRequest.Condition.FORCE) {
             return Result.allowSettingOfWantedState();
+        }
+
+        if (inMoratorium) {
+            return Result.createDisallowed("Master cluster controller is bootstrapping and in moratorium");
         }
 
         if (condition != SetUnitStateRequest.Condition.SAFE) {
@@ -105,7 +111,7 @@ public class NodeStateChangeChecker {
                     "Requested node type: " + node.getType().toString());
         }
 
-        NodeInfo nodeInfo = clusterInfo.getStorageNodeInfo(node.getIndex());
+        StorageNodeInfo nodeInfo = clusterInfo.getStorageNodeInfo(node.getIndex());
         if (nodeInfo == null) {
             return Result.createDisallowed("Unknown node " + node);
         }
@@ -115,23 +121,34 @@ public class NodeStateChangeChecker {
         // - We ensure that clients that have previously set the wanted state, continue
         //   to see the same conclusion, even though they possibly would have been denied
         //   MUST_SET_WANTED_STATE if re-evaluated. This is important for implementing idempotent clients.
-        if (newState.getState().equals(oldState.getState())) {
+        if (newWantedState.getState().equals(oldWantedState.getState()) &&
+            Objects.equals(newWantedState.getDescription(), oldWantedState.getDescription())) {
             return Result.createAlreadySet();
         }
 
-        switch (newState.getState()) {
+        switch (newWantedState.getState()) {
             case UP:
-                return canSetStateUp(nodeInfo);
+                return canSetStateUp(nodeInfo, oldWantedState);
             case MAINTENANCE:
-                return canSetStateMaintenanceTemporarily(node, clusterState);
+                return canSetStateMaintenanceTemporarily(nodeInfo, clusterState, newWantedState.getDescription());
             case DOWN:
-                return canSetStateDownPermanently(nodeInfo, clusterState);
+                return canSetStateDownPermanently(nodeInfo, clusterState, newWantedState.getDescription());
             default:
-                return Result.createDisallowed("Destination node state unsupported in safe mode: " + newState);
+                return Result.createDisallowed("Destination node state unsupported in safe mode: " + newWantedState);
         }
     }
 
-    private Result canSetStateDownPermanently(NodeInfo nodeInfo, ClusterState clusterState) {
+    private Result canSetStateDownPermanently(NodeInfo nodeInfo, ClusterState clusterState, String newDescription) {
+        NodeState oldWantedState = nodeInfo.getUserWantedState();
+        if (oldWantedState.getState() != State.UP && !oldWantedState.getDescription().equals(newDescription)) {
+            // Refuse to override whatever an operator or unknown entity is doing.
+            //
+            // Note:  The new state&description is NOT equal to the old state&description:
+            // that would have been short-circuited prior to this.
+            return Result.createDisallowed("A conflicting wanted state is already set: " +
+                    oldWantedState.getState() + ": " + oldWantedState.getDescription());
+        }
+
         State reportedState = nodeInfo.getReportedState().getState();
         if (reportedState != State.UP) {
             return Result.createDisallowed("Reported state (" + reportedState
@@ -144,11 +161,6 @@ public class NodeStateChangeChecker {
                     + currentState);
         }
 
-        Result thresholdCheckResult = checkUpThresholds(clusterState);
-        if (!thresholdCheckResult.settingWantedStateIsAllowed()) {
-            return thresholdCheckResult;
-        }
-
         HostInfo hostInfo = nodeInfo.getHostInfo();
         Integer hostInfoNodeVersion = hostInfo.getClusterStateVersionOrNull();
         int clusterControllerVersion = clusterState.getVersion();
@@ -159,18 +171,10 @@ public class NodeStateChangeChecker {
         }
 
         Optional<Metrics.Value> bucketsMetric;
-        if (determineBucketsFromBucketSpaceMetric) {
-            bucketsMetric = hostInfo.getMetrics().getValueAt(BUCKETS_METRIC_NAME, BUCKETS_METRIC_DIMENSIONS);
-            if (!bucketsMetric.isPresent() || bucketsMetric.get().getLast() == null) {
-                return Result.createDisallowed("Missing last value of the " + BUCKETS_METRIC_NAME +
-                        " metric for storage node " + nodeInfo.getNodeIndex());
-            }
-        } else {
-            bucketsMetric = hostInfo.getMetrics().getValue(LEGACY_BUCKETS_METRIC_NAME);
-            if (!bucketsMetric.isPresent() || bucketsMetric.get().getLast() == null) {
-                return Result.createDisallowed("Missing last value of the " + LEGACY_BUCKETS_METRIC_NAME +
-                        " metric for storage node " + nodeInfo.getNodeIndex());
-            }
+        bucketsMetric = hostInfo.getMetrics().getValueAt(BUCKETS_METRIC_NAME, BUCKETS_METRIC_DIMENSIONS);
+        if (bucketsMetric.isEmpty() || bucketsMetric.get().getLast() == null) {
+            return Result.createDisallowed("Missing last value of the " + BUCKETS_METRIC_NAME +
+                    " metric for storage node " + nodeInfo.getNodeIndex());
         }
 
         long lastBuckets = bucketsMetric.get().getLast();
@@ -181,7 +185,12 @@ public class NodeStateChangeChecker {
         return Result.allowSettingOfWantedState();
     }
 
-    private Result canSetStateUp(NodeInfo nodeInfo) {
+    private Result canSetStateUp(NodeInfo nodeInfo, NodeState oldWantedState) {
+        if (oldWantedState.getState() == State.UP) {
+            // The description is not significant when setting wanting to set the state to UP
+            return Result.createAlreadySet();
+        }
+
         if (nodeInfo.getReportedState().getState() != State.UP) {
             return Result.createDisallowed("Refuse to set wanted state to UP, " +
                     "since the reported state is not UP (" +
@@ -191,68 +200,193 @@ public class NodeStateChangeChecker {
         return Result.allowSettingOfWantedState();
     }
 
-    private Result canSetStateMaintenanceTemporarily(Node node, ClusterState clusterState) {
-        if (clusterState.getNodeState(node).getState() == State.DOWN) {
+    private Result canSetStateMaintenanceTemporarily(StorageNodeInfo nodeInfo, ClusterState clusterState,
+                                                     String newDescription) {
+        NodeState oldWantedState = nodeInfo.getUserWantedState();
+        if (oldWantedState.getState() != State.UP && !oldWantedState.getDescription().equals(newDescription)) {
+            // Refuse to override whatever an operator or unknown entity is doing.  If the description is
+            // identical, we assume it is the same operator.
+            //
+            // Note:  The new state&description is NOT equal to the old state&description:
+            // that would have been short-circuited prior to this.
+            return Result.createDisallowed("A conflicting wanted state is already set: " +
+                    oldWantedState.getState() + ": " + oldWantedState.getDescription());
+        }
+
+        Result otherGroupCheck = anotherNodeInAnotherGroupHasWantedState(nodeInfo);
+        if (!otherGroupCheck.settingWantedStateIsAllowed()) {
+            return otherGroupCheck;
+        }
+
+        if (clusterState.getNodeState(nodeInfo.getNode()).getState() == State.DOWN) {
             return Result.allowSettingOfWantedState();
         }
 
-        Result checkDistributorsResult = checkDistributors(node, clusterState.getVersion());
+        if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription)) {
+            return Result.allowSettingOfWantedState();
+        }
+
+        Result allNodesAreUpCheck = checkAllNodesAreUp(clusterState);
+        if (!allNodesAreUpCheck.settingWantedStateIsAllowed()) {
+            return allNodesAreUpCheck;
+        }
+
+        Result checkDistributorsResult = checkDistributors(nodeInfo.getNode(), clusterState.getVersion());
         if (!checkDistributorsResult.settingWantedStateIsAllowed()) {
             return checkDistributorsResult;
         }
 
-        Result ongoingChanges = anyNodeSetToMaintenance();
-        if (!ongoingChanges.settingWantedStateIsAllowed()) {
-            return ongoingChanges;
-        }
+        return Result.allowSettingOfWantedState();
+    }
 
-        Result thresholdCheckResult = checkUpThresholds(clusterState);
-        if (!thresholdCheckResult.settingWantedStateIsAllowed()) {
-            return thresholdCheckResult;
+    /**
+     * Returns a disallow-result if there is another node (in another group, if hierarchical)
+     * that has a wanted state != UP.  We disallow more than 1 suspended node/group at a time.
+     */
+    private Result anotherNodeInAnotherGroupHasWantedState(StorageNodeInfo nodeInfo) {
+        if (groupVisiting.isHierarchical()) {
+            SettableOptional<Result> anotherNodeHasWantedState = new SettableOptional<>();
+
+            groupVisiting.visit(group -> {
+                if (!groupContainsNode(group, nodeInfo.getNode())) {
+                    Result result = otherNodeInGroupHasWantedState(group);
+                    if (!result.settingWantedStateIsAllowed()) {
+                        anotherNodeHasWantedState.set(result);
+                        // Have found a node that is suspended, halt the visiting
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            return anotherNodeHasWantedState.asOptional().orElseGet(Result::allowSettingOfWantedState);
+        } else {
+            // Return a disallow-result if there is another node with a wanted state
+            return otherNodeHasWantedState(nodeInfo);
+        }
+    }
+
+    /** Returns a disallow-result, if there is a node in the group with wanted state != UP. */
+    private Result otherNodeInGroupHasWantedState(Group group) {
+        for (var configuredNode : group.getNodes()) {
+            StorageNodeInfo storageNodeInfo = clusterInfo.getStorageNodeInfo(configuredNode.index());
+            if (storageNodeInfo == null) continue;  // needed for tests only
+            State storageNodeWantedState = storageNodeInfo
+                    .getUserWantedState().getState();
+            if (storageNodeWantedState != State.UP) {
+                return Result.createDisallowed(
+                        "At most one group can have wanted state: Other storage node " + configuredNode.index() +
+                        " in group " + group.getIndex() + " has wanted state " + storageNodeWantedState);
+            }
+
+            State distributorWantedState = clusterInfo.getDistributorNodeInfo(configuredNode.index())
+                    .getUserWantedState().getState();
+            if (distributorWantedState != State.UP) {
+                return Result.createDisallowed(
+                        "At most one group can have wanted state: Other distributor " + configuredNode.index() +
+                        " in group " + group.getIndex() + " has wanted state " + distributorWantedState);
+            }
         }
 
         return Result.allowSettingOfWantedState();
     }
 
-    private Result anyNodeSetToMaintenance() {
-        for (NodeInfo nodeInfo : clusterInfo.getAllNodeInfo()) {
-            if (nodeInfo.getWantedState().getState() == State.MAINTENANCE) {
-                return Result.createDisallowed("There is a node already in maintenance:" + nodeInfo.getNodeIndex());
+    private Result otherNodeHasWantedState(StorageNodeInfo nodeInfo) {
+        for (var configuredNode : clusterInfo.getConfiguredNodes().values()) {
+            if (configuredNode.index() == nodeInfo.getNodeIndex()) {
+                continue;
+            }
+
+            State storageNodeWantedState = clusterInfo.getStorageNodeInfo(configuredNode.index())
+                    .getUserWantedState().getState();
+            if (storageNodeWantedState != State.UP) {
+                return Result.createDisallowed(
+                        "At most one node can have a wanted state when #groups = 1: Other storage node " +
+                                configuredNode.index() + " has wanted state " + storageNodeWantedState);
+            }
+
+            State distributorWantedState = clusterInfo.getDistributorNodeInfo(configuredNode.index())
+                    .getUserWantedState().getState();
+            if (distributorWantedState != State.UP) {
+                return Result.createDisallowed(
+                        "At most one node can have a wanted state when #groups = 1: Other distributor " +
+                                configuredNode.index() + " has wanted state " + distributorWantedState);
             }
         }
+
         return Result.allowSettingOfWantedState();
     }
 
-    private int contentNodesWithAvailableNodeState(ClusterState clusterState) {
-        final int nodeCount = clusterState.getNodeCount(NodeType.STORAGE);
-        int upNodesCount = 0;
-        for (int i = 0; i < nodeCount; ++i) {
-            final Node node = new Node(NodeType.STORAGE, i);
-            final State state = clusterState.getNodeState(node).getState();
-            if (state == State.UP || state == State.RETIRED || state == State.INITIALIZING) {
-                upNodesCount++;
+    private boolean anotherNodeInGroupAlreadyAllowed(StorageNodeInfo nodeInfo, String newDescription) {
+        MutableBoolean alreadyAllowed = new MutableBoolean(false);
+
+        groupVisiting.visit(group -> {
+            if (!groupContainsNode(group, nodeInfo.getNode())) {
+                return true;
             }
-        }
-        return upNodesCount;
+
+            alreadyAllowed.set(anotherNodeInGroupAlreadyAllowed(group, nodeInfo.getNode(), newDescription));
+
+            // Have found the leaf group we were looking for, halt the visiting.
+            return false;
+        });
+
+        return alreadyAllowed.get();
     }
 
-    private Result checkUpThresholds(ClusterState clusterState) {
-        if (clusterInfo.getStorageNodeInfo().size() < minStorageNodesUp) {
-            return Result.createDisallowed("There are only " + clusterInfo.getStorageNodeInfo().size() +
-                    " storage nodes up, while config requires at least " + minStorageNodesUp);
+    private boolean anotherNodeInGroupAlreadyAllowed(Group group, Node node, String newDescription) {
+        return group.getNodes().stream()
+                .filter(configuredNode -> configuredNode.index() != node.getIndex())
+                .map(configuredNode -> clusterInfo.getStorageNodeInfo(configuredNode.index()))
+                .filter(Objects::nonNull)  // needed for tests only
+                .map(NodeInfo::getUserWantedState)
+                .anyMatch(userWantedState -> userWantedState.getState() == State.MAINTENANCE &&
+                          Objects.equals(userWantedState.getDescription(), newDescription));
+    }
+
+    private static boolean groupContainsNode(Group group, Node node) {
+        for (ConfiguredNode configuredNode : group.getNodes()) {
+            if (configuredNode.index() == node.getIndex()) {
+                return true;
+            }
         }
 
-        final int nodesCount = clusterInfo.getStorageNodeInfo().size();
-        final int upNodesCount = contentNodesWithAvailableNodeState(clusterState);
+        return false;
+    }
 
-        if (nodesCount == 0) {
-            return Result.createDisallowed("No storage nodes in cluster state");
+    private Result checkAllNodesAreUp(ClusterState clusterState) {
+        // This method verifies both storage nodes and distributors are up (or retired).
+        // The complicated part is making a summary error message.
+
+        for (NodeInfo storageNodeInfo : clusterInfo.getStorageNodeInfo()) {
+            State wantedState = storageNodeInfo.getUserWantedState().getState();
+            if (wantedState != State.UP && wantedState != State.RETIRED) {
+                return Result.createDisallowed("Another storage node wants state " +
+                        wantedState.toString().toUpperCase() + ": " + storageNodeInfo.getNodeIndex());
+            }
+
+            State state = clusterState.getNodeState(storageNodeInfo.getNode()).getState();
+            if (state != State.UP && state != State.RETIRED) {
+                return Result.createDisallowed("Another storage node has state " + state.toString().toUpperCase() +
+                        ": " + storageNodeInfo.getNodeIndex());
+            }
         }
-        if (((double)upNodesCount) / nodesCount < minRatioOfStorageNodesUp) {
-            return Result.createDisallowed("Not enough storage nodes running: " + upNodesCount
-                    + " of " +  nodesCount + " storage nodes are up which is less that the required fraction of "
-                    + minRatioOfStorageNodesUp);
+
+        for (NodeInfo distributorNodeInfo : clusterInfo.getDistributorNodeInfo()) {
+            State wantedState = distributorNodeInfo.getUserWantedState().getState();
+            if (wantedState != State.UP && wantedState != State.RETIRED) {
+                return Result.createDisallowed("Another distributor wants state " + wantedState.toString().toUpperCase() +
+                        ": " + distributorNodeInfo.getNodeIndex());
+            }
+
+            State state = clusterState.getNodeState(distributorNodeInfo.getNode()).getState();
+            if (state != State.UP && state != State.RETIRED) {
+                return Result.createDisallowed("Another distributor has state " + state.toString().toUpperCase() +
+                        ": " + distributorNodeInfo.getNodeIndex());
+            }
         }
+
         return Result.allowSettingOfWantedState();
     }
 
@@ -290,13 +424,13 @@ public class NodeStateChangeChecker {
         for (DistributorNodeInfo distributorNodeInfo : clusterInfo.getDistributorNodeInfo()) {
             Integer distributorClusterStateVersion = distributorNodeInfo.getHostInfo().getClusterStateVersionOrNull();
             if (distributorClusterStateVersion == null) {
-                return Result.createDisallowed("Distributor node (" + distributorNodeInfo.getNodeIndex()
-                        + ") has not reported any cluster state version yet.");
+                return Result.createDisallowed("Distributor node " + distributorNodeInfo.getNodeIndex()
+                                               + " has not reported any cluster state version yet.");
             } else if (distributorClusterStateVersion != clusterStateVersion) {
-                return Result.createDisallowed("Distributor node (" + distributorNodeInfo.getNodeIndex()
-                        + ") does not report same version ("
-                        + distributorNodeInfo.getHostInfo().getClusterStateVersionOrNull()
-                        + ") as fleetcontroller has (" + clusterStateVersion + ")");
+                return Result.createDisallowed("Distributor node " + distributorNodeInfo.getNodeIndex()
+                                               + " does not report same version ("
+                                               + distributorNodeInfo.getHostInfo().getClusterStateVersionOrNull()
+                                               + ") as fleetcontroller (" + clusterStateVersion + ")");
             }
 
             List<StorageNode> storageNodes = distributorNodeInfo.getHostInfo().getDistributor().getStorageNodes();
@@ -308,4 +442,5 @@ public class NodeStateChangeChecker {
 
         return Result.allowSettingOfWantedState();
     }
+
 }

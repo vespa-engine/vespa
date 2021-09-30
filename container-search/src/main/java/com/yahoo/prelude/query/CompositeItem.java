@@ -46,7 +46,7 @@ public abstract class CompositeItem extends Item {
             Item possibleCycle = i.next();
 
             if (this == possibleCycle) {
-                throw new QueryException("Cannot add " + item + " to " + this + " as it would create a cycle");
+                throw new IllegalArgumentException("Cannot add " + item + " to " + this + " as it would create a cycle");
             } else if (possibleCycle instanceof CompositeItem) {
                 ensureNotInSubtree((CompositeItem) possibleCycle);
             }

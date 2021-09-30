@@ -18,7 +18,7 @@ class ThreadedFlushTarget : public FlushTargetProxy
 {
 private:
     using IFlushTarget = searchcorespi::IFlushTarget;
-    vespalib::Executor &_executor;
+    vespalib::Executor  &_executor;
     const IGetSerialNum &_getSerialNum;
 
 public:
@@ -48,9 +48,7 @@ public:
                         const IFlushTarget::SP &target,
                         const vespalib::string & prefix);
 
-    // Implements IFlushTarget.
-    virtual Task::UP
-    initFlush(SerialNum currentSerial) override;
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
 };
 
 } // namespace proton

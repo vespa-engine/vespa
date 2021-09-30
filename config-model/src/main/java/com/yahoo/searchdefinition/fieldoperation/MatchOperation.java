@@ -1,14 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.fieldoperation;
 
+import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.SDField;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class MatchOperation implements FieldOperation {
+
     private Matching.Type matchingType;
+    private Case casing;
     private Integer gramSize;
     private Integer maxLength;
     private Matching.Algorithm matchingAlgorithm;
@@ -33,9 +36,16 @@ public class MatchOperation implements FieldOperation {
         this.exactMatchTerminator = exactMatchTerminator;
     }
 
+    public void setCase(Case casing) {
+        this.casing = casing;
+    }
+
     public void apply(SDField field) {
         if (matchingType != null) {
             field.setMatchingType(matchingType);
+        }
+        if (casing != null) {
+            field.setMatchingCase(casing);
         }
         if (gramSize != null) {
             field.getMatching().setGramSize(gramSize);
@@ -50,4 +60,5 @@ public class MatchOperation implements FieldOperation {
             field.getMatching().setExactMatchTerminator(exactMatchTerminator);
         }
     }
+
 }

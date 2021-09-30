@@ -5,11 +5,12 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
-import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
@@ -20,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import static com.yahoo.vespa.model.container.PlatformBundles.searchAndDocprocBundle;
 
 /**
  * @author gjoranv
@@ -34,6 +37,8 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         SemanticRulesConfig.Producer,
     	PageTemplatesConfig.Producer {
 
+    public static final String QUERY_PROFILE_REGISTRY_CLASS = CompiledQueryProfileRegistry.class.getName();
+
     private ApplicationContainerCluster owningCluster;
     private final List<AbstractSearchCluster> searchClusters = new LinkedList<>();
     private final Options options;
@@ -46,6 +51,8 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         super(chains);
         this.owningCluster = cluster;
         this.options = options;
+
+        owningCluster.addComponent(Component.fromClassAndBundle(QUERY_PROFILE_REGISTRY_CLASS, searchAndDocprocBundle));
     }
 
     public void connectSearchClusters(Map<String, AbstractSearchCluster> searchClusters) {
@@ -58,28 +65,14 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private void initializeDispatchers(Collection<AbstractSearchCluster> searchClusters) {
         for (AbstractSearchCluster searchCluster : searchClusters) {
             if ( ! ( searchCluster instanceof IndexedSearchCluster)) continue;
-            owningCluster.addComponent(new DispatcherComponent((IndexedSearchCluster)searchCluster));
-            owningCluster.addComponent(new RpcResourcePoolComponent((IndexedSearchCluster)searchCluster));
+            var dispatcher = new DispatcherComponent((IndexedSearchCluster)searchCluster);
+            owningCluster.addComponent(dispatcher);
         }
     }
 
     // public for testing
     public void initializeSearchChains(Map<String, ? extends AbstractSearchCluster> searchClusters) {
         getChains().initialize(searchClusters);
-
-        QrsCache defaultCacheOptions = getOptions().cacheSettings.get("");
-        if (defaultCacheOptions != null) {
-            for (LocalProvider localProvider : getChains().localProviders()) {
-                localProvider.setCacheSize(defaultCacheOptions.size);
-            }
-        }
-
-        for (LocalProvider localProvider : getChains().localProviders()) {
-            QrsCache cacheOptions = getOptions().cacheSettings.get(localProvider.getClusterName());
-            if (cacheOptions != null) {
-                localProvider.setCacheSize(cacheOptions.size);
-            }
-        }
     }
 
     public void setQueryProfiles(QueryProfiles queryProfiles) {
@@ -131,7 +124,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     	    AbstractSearchCluster sys = findClusterWithId(searchClusters, i);
     		QrSearchersConfig.Searchcluster.Builder scB = new QrSearchersConfig.Searchcluster.Builder().
     				name(sys.getClusterName());
-    		for (AbstractSearchCluster.SearchDefinitionSpec spec : sys.getLocalSDS()) {
+    		for (AbstractSearchCluster.SchemaSpec spec : sys.getLocalSDS()) {
     			scB.searchdef(spec.getSearchDefinition().getName());
     		}
     		scB.rankprofiles(new QrSearchersConfig.Searchcluster.Rankprofiles.Builder().configid(sys.getConfigId()));

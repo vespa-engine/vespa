@@ -1,1 +1,4 @@
 This package contains the config library osgi bundle.
+Vespa internal container plugins using the config library can depend on this
+module in scope 'provided' to ensure that all necessary packages are imported
+in the container plugin bundle's OSGi manifest.

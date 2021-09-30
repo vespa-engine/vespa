@@ -24,7 +24,6 @@ import static org.junit.Assert.assertEquals;
  *
  * @author bratseth
  */
-@SuppressWarnings("deprecation")
 public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
 
     public SemanticSearcherTestCase() {
@@ -35,6 +34,8 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
     public void testSingleShopping() {
         assertSemantics("brand:sony",
                                "sony");
+        assertSemantics("brand:sony!150",
+                        "sony!150");
     }
 
     @Test
@@ -63,7 +64,7 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
 
     @Test
     public void testLiteralReplacing() {
-        assertSemantics("AND lord of rings","lotr");
+        assertSemantics("AND lord of rings", "lotr");
     }
 
     @Test
@@ -151,7 +152,7 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
 
     @Test
     public void testOrProduction() {
-        assertSemantics("OR something somethingelse","something");
+        assertSemantics("OR something somethingelse", "something");
     }
 
     // This test is order dependent. Fix it!!
@@ -159,15 +160,15 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
     public void testWeightedSetItem() {
         Query q = new Query();
         WeightedSetItem weightedSet=new WeightedSetItem("fieldName");
-        weightedSet.addToken("a",1);
-        weightedSet.addToken("b",2);
+        weightedSet.addToken("a", 1);
+        weightedSet.addToken("b", 2);
         q.getModel().getQueryTree().setRoot(weightedSet);
-        assertSemantics("WEIGHTEDSET fieldName{[1]:\"a\",[2]:\"b\"}",q);
+        assertSemantics("WEIGHTEDSET fieldName{[1]:\"a\",[2]:\"b\"}", q);
     }
 
     @Test
     public void testNullQuery() {
-        Query query=new Query(""); // Causes a query containing a NullItem
+        Query query = new Query(""); // Causes a query containing a NullItem
         doSearch(searcher, query, 0, 10);
         assertEquals(NullItem.class, query.getModel().getQueryTree().getRoot().getClass()); // Still a NullItem
     }

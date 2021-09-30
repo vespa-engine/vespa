@@ -54,9 +54,9 @@ public:
      * signature. If this method returns true, the task to complete the flush is
      * available through getTask().
      *
-     * @param True if a flush was initiated.
+     * @return True if a flush was initiated.
      */
-    bool initFlush();
+    bool initFlush(std::shared_ptr<search::IFlushToken> flush_token);
 
     /**
      * Returns the unique name of this context. This is the concatenation of the

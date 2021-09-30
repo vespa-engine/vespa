@@ -5,6 +5,7 @@ package com.yahoo.vespa.http.client;
 import com.yahoo.vespa.http.client.config.SessionParams;
 import com.yahoo.vespa.http.client.core.api.FeedClientImpl;
 
+import java.time.Clock;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -24,7 +25,7 @@ public class FeedClientFactory {
      * @return newly created FeedClient API object.
      */
     public static FeedClient create(SessionParams sessionParams, FeedClient.ResultCallback resultCallback) {
-        return new FeedClientImpl(sessionParams, resultCallback, createTimeoutExecutor());
+        return new FeedClientImpl(sessionParams, resultCallback, createTimeoutExecutor(), Clock.systemUTC());
     }
 
     static ScheduledThreadPoolExecutor createTimeoutExecutor() {

@@ -5,15 +5,10 @@
 #include "floatbase.h"
 #include "defines.h"
 #include "singlestringattribute.h"
+#include "singleboolattribute.h"
 #include "singlestringpostattribute.hpp"
-#include "singlenumericenumattribute.hpp"
 #include "singlenumericpostattribute.hpp"
-#include "enumstore.hpp"
-#include "enumattribute.hpp"
-#include "singleenumattribute.hpp"
-
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.create_single_fast_search");
+#include <vespa/searchlib/tensor/direct_tensor_attribute.h>
 
 #define INTPOSTING(T)   SingleValueNumericPostingAttribute< ENUM_ATTRIBUTE(IntegerAttributeTemplate<T>) >
 #define FLOATPOSTING(T) SingleValueNumericPostingAttribute< ENUM_ATTRIBUTE(FloatingPointAttributeTemplate<T>) >
@@ -27,37 +22,35 @@ AttributeFactory::createSingleFastSearch(stringref name, const Config & info)
 {
     assert(info.collectionType().type() == attribute::CollectionType::SINGLE);
     assert(info.fastSearch());
-    AttributeVector::SP ret;
     switch(info.basicType().type()) {
     case BasicType::BOOL:
+        return std::make_shared<SingleBoolAttribute>(name, info.getGrowStrategy());
     case BasicType::UINT2:
     case BasicType::UINT4:
         break;
     case BasicType::INT8:
-        ret.reset(new INTPOSTING(int8_t)(name, info));
-        break;
+        return std::make_shared<INTPOSTING(int8_t)>(name, info);
     case BasicType::INT16:
-        ret.reset(new INTPOSTING(int16_t)(name, info));
-        break;
+        return std::make_shared<INTPOSTING(int16_t)>(name, info);
     case BasicType::INT32:
-        ret.reset(new INTPOSTING(int32_t)(name, info));
-        break;
+        return std::make_shared<INTPOSTING(int32_t)>(name, info);
     case BasicType::INT64:
-        ret.reset(new INTPOSTING(int64_t)(name, info));
-        break;
+        return std::make_shared<INTPOSTING(int64_t)>(name, info);
     case BasicType::FLOAT:
-        ret.reset(new FLOATPOSTING(float)(name, info));
-        break;
+        return std::make_shared<FLOATPOSTING(float)>(name, info);
     case BasicType::DOUBLE:
-        ret.reset(new FLOATPOSTING(double)(name, info));
-        break;
+        return std::make_shared<FLOATPOSTING(double)>(name, info);
     case BasicType::STRING:
-        ret.reset(new SingleValueStringPostingAttribute(name, info));
+        return std::make_shared<SingleValueStringPostingAttribute>(name, info);
+    case BasicType::TENSOR:
+        if (!info.tensorType().is_dense()) {
+            return std::make_shared<tensor::DirectTensorAttribute>(name, info);
+        }
         break;
     default:
         break;
     }
-    return ret;
+    return AttributeVector::SP();
 }
 
 }

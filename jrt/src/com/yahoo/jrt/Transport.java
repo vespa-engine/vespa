@@ -4,7 +4,6 @@ package com.yahoo.jrt;
 
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -19,16 +18,19 @@ import java.util.logging.Logger;
  **/
 public class Transport {
 
-    private static Logger log = Logger.getLogger(Transport.class.getName());
+    private static final Logger log = Logger.getLogger(Transport.class.getName());
 
+    private final String name;
     private final FatalErrorHandler fatalHandler; // NB: this must be set first
     private final CryptoEngine      cryptoEngine;
     private final Connector         connector;
     private final Worker            worker;
     private final AtomicInteger     runCnt;
+    private final boolean tcpNoDelay;
+    private final int eventsBeforeWakeup;
 
     private final TransportMetrics metrics = TransportMetrics.getInstance();
-    private final ArrayList<TransportThread> threads = new ArrayList<TransportThread>();
+    private final ArrayList<TransportThread> threads = new ArrayList<>();
     private final Random rnd = new Random();
 
     /**
@@ -37,26 +39,44 @@ public class Transport {
      * error handler is registered, the default action is to log the
      * error and exit with exit code 1.
      *
+     * @param name used for identifying threads
      * @param fatalHandler fatal error handler
      * @param cryptoEngine crypto engine to use
      * @param numThreads number of {@link TransportThread}s.
+     * @param eventsBeforeWakeup number write events in Q before waking thread up
      **/
-    public Transport(FatalErrorHandler fatalHandler, CryptoEngine cryptoEngine, int numThreads) {
-        synchronized (this) {
-            this.fatalHandler = fatalHandler; // NB: this must be set first
-        }
+    public Transport(String name, FatalErrorHandler fatalHandler, CryptoEngine cryptoEngine, int numThreads, boolean tcpNoDelay, int eventsBeforeWakeup) {
+        this.name = name;
+        this.fatalHandler = fatalHandler; // NB: this must be set first
         this.cryptoEngine = cryptoEngine;
+        this.tcpNoDelay = tcpNoDelay;
+        this.eventsBeforeWakeup = Math.max(1, eventsBeforeWakeup);
         connector = new Connector();
         worker = new Worker(this);
         runCnt = new AtomicInteger(numThreads);
         for (int i = 0; i < numThreads; ++i) {
-            threads.add(new TransportThread(this));
+            threads.add(new TransportThread(this, i));
         }
     }
-    public Transport(CryptoEngine cryptoEngine, int numThreads) { this(null, cryptoEngine, numThreads); }
-    public Transport(FatalErrorHandler fatalHandler, int numThreads) { this(fatalHandler, CryptoEngine.createDefault(), numThreads); }
-    public Transport(int numThreads) { this(null, CryptoEngine.createDefault(), numThreads); }
-    public Transport() { this(null, CryptoEngine.createDefault(), 1); }
+    public Transport(String name, CryptoEngine cryptoEngine, int numThreads, int eventsBeforeWakeup) {
+        this(name, null, cryptoEngine, numThreads, true, eventsBeforeWakeup);
+    }
+    public Transport(String name, CryptoEngine cryptoEngine, int numThreads) {
+        this(name, null, cryptoEngine, numThreads, true, 1);
+    }
+    public Transport(String name, int numThreads, int eventsBeforeWakeup) {
+        this(name, null, CryptoEngine.createDefault(), numThreads, true, eventsBeforeWakeup);
+    }
+    public Transport(String name, int numThreads, boolean tcpNoDelay, int eventsBeforeWakeup) {
+        this(name, null, CryptoEngine.createDefault(), numThreads, tcpNoDelay, eventsBeforeWakeup); }
+    public Transport(String name, int numThreads) {
+        this(name, null, CryptoEngine.createDefault(), numThreads, true, 1);
+    }
+    public Transport(String name) {
+        this(name, null, CryptoEngine.createDefault(), 1, true, 1);
+    }
+    // Only for testing
+    public Transport() { this("default"); }
 
     /**
      * Select a random transport thread
@@ -66,6 +86,11 @@ public class Transport {
     public TransportThread selectThread() {
         return threads.get(rnd.nextInt(threads.size()));
     }
+
+    boolean getTcpNoDelay() { return tcpNoDelay; }
+    int getEventsBeforeWakeup() { return eventsBeforeWakeup; }
+
+    String getName() { return name; }
 
     /**
      * Use the underlying CryptoEngine to create a CryptoSocket for
@@ -131,7 +156,7 @@ public class Transport {
      * @param context application context for the new connection
      */
     Connection connect(Supervisor owner, Spec spec, Object context) {
-        Connection conn = new Connection(selectThread(), owner, spec, context);
+        Connection conn = new Connection(selectThread(), owner, spec, context, getTcpNoDelay());
         connector.connectLater(conn);
         return conn;
     }
@@ -174,7 +199,7 @@ public class Transport {
      * @return this object, to enable chaining with join
      **/
     public Transport shutdown() {
-        connector.shutdown().join();
+        connector.close();
         for (TransportThread thread: threads) {
             thread.shutdown();
         }

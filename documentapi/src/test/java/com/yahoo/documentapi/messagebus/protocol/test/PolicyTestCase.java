@@ -7,6 +7,7 @@ import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.documentapi.messagebus.protocol.ANDPolicy;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.DocumentRouteSelectorPolicy;
@@ -368,7 +369,7 @@ public class PolicyTestCase {
         PolicyTestFrame frame = new PolicyTestFrame(manager);
         frame.setHop(new HopSpec("test", getDocumentRouteSelectorRawConfig())
                 .addRecipient("foo").addRecipient("bar"));
-        frame.setMessage(new GetDocumentMessage(new DocumentId("id:ns:testdoc::yarn"), "[all]"));
+        frame.setMessage(new GetDocumentMessage(new DocumentId("id:ns:testdoc::yarn"), AllFields.NAME));
         List<RoutingNode> selected = frame.select(2);
         for (int i = 0, len = selected.size(); i < len; ++i) {
             Document doc = null;
@@ -451,11 +452,12 @@ public class PolicyTestCase {
         PolicyTestFrame frame = new PolicyTestFrame("docproc/cluster.default", manager);
         frame.setMessage(new PutDocumentMessage(new DocumentPut(new DocumentPut(new Document(manager.getDocumentType("testdoc"),
                                                              new DocumentId("id:ns:testdoc::"))))));
+        int numberOfServices = 4;
 
-        // Test requerying for adding nodes.
+        // Test re-querying for adding nodes.
         frame.setHop(new HopSpec("test", "docproc/cluster.default/[SubsetService:2]/chain.default"));
         Set<String> lst = new HashSet<>();
-        for (int i = 1; i <= 10; ++i) {
+        for (int i = 1; i <= numberOfServices; ++i) {
             frame.getNetwork().registerSession(i + "/chain.default");
             assertTrue(frame.waitSlobrok("docproc/cluster.default/*/chain.default", i));
 
@@ -464,11 +466,11 @@ public class PolicyTestCase {
             leaf.handleReply(new EmptyReply());
             assertNotNull(frame.getReceptor().getReply(TIMEOUT));
         }
-        assertTrue(lst.size() > 1); // must have requeried
+        assertTrue(lst.size() > 1); // must have re-queried
 
         // Test load balancing.
         String prev = null;
-        for (int i = 1; i <= 10; ++i) {
+        for (int i = 1; i <= numberOfServices; ++i) {
             RoutingNode leaf = frame.select(1).get(0);
             String next = leaf.getRoute().toString();
             if (prev == null) {
@@ -481,25 +483,25 @@ public class PolicyTestCase {
             assertNotNull(frame.getReceptor().getReply(TIMEOUT));
         }
 
-        // Test requerying for dropping nodes.
+        // Test re-querying for dropping nodes.
         lst.clear();
-        for (int i = 1; i <= 10; ++i) {
+        for (int i = 1; i <= numberOfServices; ++i) {
             RoutingNode leaf = frame.select(1).get(0);
             String route = leaf.getRoute().toString();
             lst.add(route);
 
             frame.getNetwork().unregisterSession(route.substring(frame.getIdentity().length() + 1));
-            assertTrue(frame.waitSlobrok("docproc/cluster.default/*/chain.default", 10 - i));
+            assertTrue(frame.waitSlobrok("docproc/cluster.default/*/chain.default", numberOfServices - i));
 
             Reply reply = new EmptyReply();
             reply.addError(new Error(ErrorCode.NO_ADDRESS_FOR_SERVICE, route));
             leaf.handleReply(reply);
             assertNotNull(frame.getReceptor().getReply(TIMEOUT));
         }
-        assertEquals(10, lst.size());
+        assertEquals(numberOfServices, lst.size());
 
         // Test merge behavior.
-        frame.setHop(new HopSpec("test", "[SubsetService]"));
+        frame.setHop(new HopSpec("test", "[SubsetService:2]"));
         frame.assertMergeOneReply("*");
 
         frame.destroy();

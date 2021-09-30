@@ -9,9 +9,9 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/vespalib/stllike/allocator.h>
 #include <limits>
 #include <map>
-#include <set>
 
 namespace search::index { class FieldLengthCalculator; }
 
@@ -39,7 +39,7 @@ public:
         static constexpr uint32_t _elemRemoved =
             std::numeric_limits<uint32_t>::max();
 
-        PosInfo()
+        PosInfo() noexcept
             : _wordNum(0),
               _docId(0),
               _elemId(0),
@@ -51,7 +51,7 @@ public:
         PosInfo(uint32_t wordRef,
                 uint32_t docId,
                 uint32_t elemId,
-                uint32_t wordPos, uint32_t elemRef)
+                uint32_t wordPos, uint32_t elemRef) noexcept
             : _wordNum(wordRef),
               _docId(docId),
               _elemId(elemId),
@@ -60,8 +60,7 @@ public:
         {
         }
 
-        PosInfo(uint32_t wordRef,
-                uint32_t docId)
+        PosInfo(uint32_t wordRef, uint32_t docId) noexcept
             : _wordNum(wordRef),
               _docId(docId),
               _elemId(_elemRemoved),
@@ -115,8 +114,8 @@ private:
         void set_field_length(uint32_t field_length) { _field_length = field_length; }
     };
 
-    using ElemInfoVec = std::vector<ElemInfo>;
-    using PosInfoVec = std::vector<PosInfo>;
+    using ElemInfoVec = std::vector<ElemInfo, vespalib::allocator_large<ElemInfo>>;
+    using PosInfoVec = std::vector<PosInfo, vespalib::allocator_large<PosInfo>>;
 
     class CompareWordRef {
         const char *const _wordBuffer;
@@ -161,6 +160,7 @@ private:
         uint32_t getLen() const   { return _len; }
     };
 
+    using UInt32Vector = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
     // Current field state.
     uint32_t                       _fieldId;   // current field id
     uint32_t                       _elem;      // current element
@@ -174,28 +174,26 @@ private:
     ElemInfoVec                    _elems;
     PosInfoVec                     _positions;
     index::DocIdAndPosOccFeatures  _features;
-    std::vector<uint32_t>          _elementWordRefs;
-    std::vector<uint32_t>          _wordRefs;
+    UInt32Vector                   _elementWordRefs;
+    UInt32Vector                   _wordRefs;
 
     using SpanTerm = std::pair<document::Span, const document::FieldValue *>;
     using SpanTermVector = std::vector<SpanTerm>;
     SpanTermVector                      _terms;
 
     // Info about aborted and pending documents.
-    std::vector<PositionRange>      _abortedDocs;
+    std::vector<PositionRange>        _abortedDocs;
     std::map<uint32_t, PositionRange> _pendingDocs;
-    std::vector<uint32_t>             _removeDocs;
+    UInt32Vector                      _removeDocs;
 
     FieldIndexRemover                &_remover;
     IOrderedFieldIndexInserter       &_inserter;
     index::FieldLengthCalculator     &_calculator;
 
-    void
-    invertNormalDocTextField(const document::FieldValue &val);
+    void invertNormalDocTextField(const document::FieldValue &val);
 
 public:
     void startElement(int32_t weight);
-
     void endElement();
 
 private:
@@ -253,14 +251,9 @@ public:
     processAnnotations(const document::StringFieldValue &value);
 
 private:
-    void
-    processNormalDocTextField(const document::StringFieldValue &field);
-
-    void
-    processNormalDocArrayTextField(const document::ArrayFieldValue &field);
-
-    void
-    processNormalDocWeightedSetTextField(const document::WeightedSetFieldValue &field);
+    void processNormalDocTextField(const document::StringFieldValue &field);
+    void processNormalDocArrayTextField(const document::ArrayFieldValue &field);
+    void processNormalDocWeightedSetTextField(const document::WeightedSetFieldValue &field);
 
     const index::Schema &getSchema() const { return _schema; }
 
@@ -313,7 +306,7 @@ public:
     /**
      * Setup remove of word in old version of document.
      */
-    virtual void remove(const vespalib::stringref word, uint32_t docId) override;
+    void remove(const vespalib::stringref word, uint32_t docId) override;
 
     void removeDocument(uint32_t docId) {
         abortPendingDoc(docId);

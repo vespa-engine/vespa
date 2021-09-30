@@ -13,7 +13,6 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
-import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.prelude.fastsearch.test.MockMetric;
@@ -528,8 +527,9 @@ public class ClusterSearcherTestCase {
                                    clusterConfig.build(),
                                    documentDbConfig.build(),
                                    dispatchers,
-                                   new FS4ResourcePool(new QrConfig.Builder().build()),
-                                   vipStatus);
+                                   new QrConfig.Builder().build(),
+                                   vipStatus,
+                                   null);
     }
 
     private static class QueryTimeoutFixture {

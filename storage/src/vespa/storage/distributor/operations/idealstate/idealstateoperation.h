@@ -114,7 +114,7 @@ public:
 
     virtual ~IdealStateOperation();
 
-    void onClose(DistributorMessageSender&) override {}
+    void onClose(DistributorStripeMessageSender&) override {}
 
     /**
        Returns true if the operation was performed successfully.
@@ -182,7 +182,7 @@ public:
      * Returns true if we are blocked to start this operation given
      * the pending messages.
      */
-    bool isBlocked(const PendingMessageTracker& pendingMessages) const override;
+    bool isBlocked(const DistributorStripeOperationContext& ctx, const OperationSequencer&) const override;
 
     /**
        Returns the priority we should send messages with.
@@ -207,8 +207,6 @@ public:
      * is common for all ideal state operations.
      */
     void setCommandMeta(api::MaintenanceCommand& cmd) const;
-
-    std::string toXML(framework::Clock& clock) const;
 
     std::string toString() const override;
 
@@ -235,8 +233,12 @@ protected:
      * operations to other nodes for this bucket, these will not be part of
      * the set of messages checked.
      */
-    bool checkBlock(const document::Bucket &bucket, const PendingMessageTracker& tracker) const;
-    bool checkBlockForAllNodes(const document::Bucket &bucket, const PendingMessageTracker& tracker) const;
+    bool checkBlock(const document::Bucket& bucket,
+                    const DistributorStripeOperationContext& ctx,
+                    const OperationSequencer&) const;
+    bool checkBlockForAllNodes(const document::Bucket& bucket,
+                               const DistributorStripeOperationContext& ctx,
+                               const OperationSequencer&) const;
 
 };
 

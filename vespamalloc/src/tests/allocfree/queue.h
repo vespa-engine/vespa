@@ -2,8 +2,9 @@
 #pragma once
 
 #include <vespa/vespalib/util/guard.h>
-#include <vespa/vespalib/util/sync.h>
 #include <queue>
+#include <condition_variable>
+
 
 namespace vespalib {
 
@@ -11,7 +12,8 @@ template <typename T>
 class Queue {
 private:
     std::queue<T> _q;
-    Monitor       _cond;
+    std::mutex    _lock;
+    std::condition_variable _cond;
     int           _waitRead;
     int           _waitWrite;
     uint32_t      _maxSize;
@@ -30,6 +32,7 @@ public:
 template <typename T>
 Queue<T>::Queue(const T &nil, uint32_t maxSize) :
     _q(),
+    _lock(),
     _cond(),
     _waitRead(0),
     _waitWrite(0),
@@ -40,36 +43,34 @@ Queue<T>::Queue(const T &nil, uint32_t maxSize) :
 }
 
 template <typename T>
-Queue<T>::~Queue()
-{
-}
+Queue<T>::~Queue() = default;
 
 template <typename T>
 void Queue<T>::enqueue(const T &entry) {
-    MonitorGuard guard(_cond);
+    std::unique_lock guard(_lock);
     while (_q.size() >= _maxSize) {
         CounterGuard cntGuard(_waitWrite);
-        guard.wait();
+        _cond.wait(guard);
     }
     _q.push(entry);
     if (_waitRead > 0) {
-        guard.signal();
+        _cond.notify_one();
     }
 }
 template <typename T>
 void Queue<T>::close() {
-    MonitorGuard guard(_cond);
+    std::unique_lock guard(_lock);
     _closed = true;
     if (_waitRead > 0) {
-        guard.signal();
+        _cond.notify_one();
     }
 }
 template <typename T>
 T Queue<T>::dequeue() {
-    MonitorGuard guard(_cond);
+    std::unique_lock guard(_lock);
     while (_q.empty() && !_closed) {
         CounterGuard cntGuard(_waitRead);
-        guard.wait();
+        _cond.wait(guard);
     }
     if (_q.empty()) {
         return _nil;
@@ -77,7 +78,7 @@ T Queue<T>::dequeue() {
     T tmp = _q.front();
     _q.pop();
     if (_waitWrite > 0) {
-        guard.signal();
+        _cond.notify_one();
     }
     return tmp;
 }

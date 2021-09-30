@@ -2,8 +2,6 @@
 
 #include "process_memory_stats.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <fstream>
-#include <sstream>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -14,6 +12,7 @@ namespace vespalib {
 
 namespace {
 
+#ifdef __linux__
 /*
  * Check if line specifies an address range.
  *
@@ -22,7 +21,8 @@ namespace {
  * 00400000-00420000 r-xp 00000000 fd:04 16545041                           /usr/bin/less
  */
 
-bool isRange(const std::string &line) {
+bool
+isRange(vespalib::stringref line) {
     for (char c : line) {
         if (c == ' ') {
             return true;
@@ -48,7 +48,8 @@ bool isRange(const std::string &line) {
  * The range starting at 00625000 is anonymous.
  */
 
-bool isAnonymous(const std::string &line) {
+bool
+isAnonymous(vespalib::stringref line) {
     int delims = 0;
     for (char c : line) {
         if (delims >= 4) {
@@ -75,17 +76,12 @@ bool isAnonymous(const std::string &line) {
  * mapped pages.
  */
 
-std::string getLineHeader(const std::string &line)
+vespalib::stringref
+getLineHeader(vespalib::stringref line)
 {
-    size_t len = 0;
-    for (char c : line) {
-        if (c == ':') {
-            return line.substr(0, len);
-        }
-        ++len;
-    }
-    LOG_ABORT("should not be reached");
+    return line.substr(0, line.find(':'));
 }
+#endif
 
 }
 
@@ -93,27 +89,29 @@ ProcessMemoryStats
 ProcessMemoryStats::createStatsFromSmaps()
 {
     ProcessMemoryStats ret;
-    std::ifstream smaps("/proc/self/smaps");
-    std::string line;
-    std::string lineHeader;
+#ifdef __linux__
+    asciistream smaps = asciistream::createFromDevice("/proc/self/smaps");
     bool anonymous = true;
     uint64_t lineVal = 0;
-    while (smaps.good()) {
-        std::getline(smaps, line);
+    while (!smaps.eof()) {
+        string backedLine = smaps.getline();
+        stringref line(backedLine);
         if (isRange(line)) {
             ret._mappings_count += 1;
             anonymous = isAnonymous(line);
         } else if (!line.empty()) {
-            lineHeader = getLineHeader(line);
-            std::istringstream is(line.substr(lineHeader.size() + 1));
-            is >> lineVal;
+            stringref lineHeader = getLineHeader(line);
             if (lineHeader == "Size") {
+                asciistream is(line.substr(lineHeader.size() + 1));
+                is >> lineVal;
                 if (anonymous) {
                     ret._anonymous_virt += lineVal * 1024;
                 } else {
                     ret._mapped_virt += lineVal * 1024;
                 }
             } else if (lineHeader == "Rss") {
+                asciistream is(line.substr(lineHeader.size() + 1));
+                is >> lineVal;
                 if (anonymous) {
                     ret._anonymous_rss += lineVal * 1024;
                 } else {
@@ -122,6 +120,7 @@ ProcessMemoryStats::createStatsFromSmaps()
             }
         }
     }
+#endif
     return ret;
 }
 
@@ -196,7 +195,7 @@ ProcessMemoryStats::create(uint64_t sizeEpsilon)
             i, (samples.rbegin()+1)->toString().c_str(), samples.back().toString().c_str());
     }
     std::sort(samples.begin(), samples.end());
-    LOG(warning, "We failed to find 2 consecutive samples that where similar with epsilon of %" PRIu64 ".\nSmallest is '%s',\n median is '%s',\n largest is '%s'",
+    LOG(info, "We failed to find 2 consecutive samples that where similar with epsilon of %" PRIu64 ".\nSmallest is '%s',\n median is '%s',\n largest is '%s'",
                  sizeEpsilon, samples.front().toString().c_str(), samples[samples.size()/2].toString().c_str(), samples.back().toString().c_str());
     return samples[samples.size()/2];
 }

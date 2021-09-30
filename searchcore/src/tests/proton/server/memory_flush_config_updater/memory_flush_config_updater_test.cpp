@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/server/memory_flush_config_updater.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using namespace proton;
 using vespa::config::search::core::ProtonConfig;
@@ -41,7 +42,7 @@ belowLimit()
     return ResourceUsageState(0.7, 0.6);
 }
 
-const HwInfo::Memory defaultMemory(8ul * 1024ul * 1024ul * 1024ul);
+const HwInfo::Memory defaultMemory(8_Gi);
 
 struct Fixture
 {
@@ -72,6 +73,68 @@ TEST_F("require that strategy is updated when setting new config", Fixture)
 {
     f.updater.setConfig(getConfig(6, 3, 30));
     TEST_DO(f.assertStrategyConfig(6, 3, 30));
+}
+
+void
+expectEqual(const MemoryFlush::Config & a, const MemoryFlush::Config & b) {
+    EXPECT_TRUE(a.equal(b));
+    EXPECT_TRUE(a == b);
+    EXPECT_FALSE( a != b);
+    EXPECT_TRUE(b.equal(a));
+    EXPECT_TRUE(b == a);
+    EXPECT_FALSE( b != a);
+}
+
+void
+expectNotEqual(const MemoryFlush::Config & a, const MemoryFlush::Config & b) {
+    EXPECT_FALSE(a.equal(b));
+    EXPECT_FALSE(a == b);
+    EXPECT_TRUE( a != b);
+    EXPECT_FALSE(b.equal(a));
+    EXPECT_FALSE(b == a);
+    EXPECT_TRUE( b != a);
+}
+
+TEST("require that MemoryFlush::Config equal is correct") {
+    MemoryFlush::Config a, b;
+    expectEqual(a, b);
+    a.maxGlobalMemory = 7;
+    expectNotEqual(a, b);
+    b.maxGlobalMemory = 7;
+    expectEqual(a, b);
+    a.maxMemoryGain = 8;
+    expectNotEqual(a, b);
+    b.maxMemoryGain = 8;
+    expectEqual(a, b);
+    a.maxGlobalTlsSize = 9;
+    expectNotEqual(a, b);
+    b.maxGlobalTlsSize = 9;
+    expectEqual(a, b);
+    a.maxTimeGain = 10us;
+    expectNotEqual(a, b);
+    b.maxTimeGain = 10us;
+    expectEqual(a, b);
+    a.globalDiskBloatFactor = 11;
+    expectNotEqual(a, b);
+    b.globalDiskBloatFactor = 11;
+    expectEqual(a, b);
+    a.diskBloatFactor = 12;
+    expectNotEqual(a, b);
+    b.diskBloatFactor = 12;
+    expectEqual(a, b);
+}
+
+TEST("require that we use configured memory limits") {
+    auto cfg = MemoryFlushConfigUpdater::convertConfig(getConfig(6, 3, 30), defaultMemory);
+    EXPECT_EQUAL(cfg.maxGlobalMemory, 6u);
+    EXPECT_EQUAL(cfg.maxMemoryGain, 3);
+}
+
+TEST("require that we cap configured limits based on available memory") {
+    const uint64_t LIMIT = defaultMemory.sizeBytes()/4;
+    auto cfg = MemoryFlushConfigUpdater::convertConfig(getConfig(4_Gi, 4_Gi, 30), defaultMemory);
+    EXPECT_EQUAL(cfg.maxGlobalMemory, LIMIT);
+    EXPECT_EQUAL(uint64_t(cfg.maxMemoryGain), LIMIT);
 }
 
 TEST_F("require that strategy is updated with normal values if no limits are reached", Fixture)
@@ -145,7 +208,7 @@ TEST_F("require that more disk bloat is allowed while node state is retired", Fi
     f.notifyDiskMemUsage(ResourceUsageState(0.7, 0.3), belowLimit());
     TEST_DO(f.assertStrategyDiskConfig(0.2, 0.2));
     f.setNodeRetired(true);
-    TEST_DO(f.assertStrategyDiskConfig((0.8 - 0.3 / 0.7) * 0.8, 1.0));
+    TEST_DO(f.assertStrategyDiskConfig((0.8 - ((0.3/0.7)*(1 - 0.2))) / 0.8, 1.0));
     f.notifyDiskMemUsage(belowLimit(), belowLimit());
     TEST_DO(f.assertStrategyDiskConfig(0.2, 0.2));
 }

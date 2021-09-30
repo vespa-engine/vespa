@@ -17,7 +17,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentSummaryMessage;
 import com.yahoo.documentapi.messagebus.protocol.QueryResultMessage;
 import com.yahoo.documentapi.messagebus.protocol.SearchResultMessage;
 import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.routing.Route;
@@ -64,6 +64,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     private static final CompoundName streamingPriority=new CompoundName("streaming.priority");
     private static final CompoundName streamingMaxbucketspervisitor=new CompoundName("streaming.maxbucketspervisitor");
 
+    protected static final int MAX_BUCKETS_PER_VISITOR = 1024;
+
     private static final Logger log = Logger.getLogger(VdsVisitor.class.getName());
     private final VisitorParameters params = new VisitorParameters("");
     private List<SearchResult.Hit> hits = new ArrayList<>();
@@ -81,55 +83,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         LoadTypeSet getLoadTypeSet();
     }
 
-    private static class MessageBusVisitorSessionFactory implements VisitorSessionFactory {
-        private static final Object initMonitor = new Object();
-        private static final AtomicReference<MessageBusVisitorSessionFactory> instance = new AtomicReference<>();
-
-        private final LoadTypeSet loadTypes;
-        private final DocumentAccess access;
-
-        private MessageBusVisitorSessionFactory() {
-            loadTypes = new LoadTypeSet("client");
-            access = new MessageBusDocumentAccess(new MessageBusParams(loadTypes));
-        }
-
-        @Override
-        public VisitorSession createVisitorSession(VisitorParameters params) throws ParseException {
-            return access.createVisitorSession(params);
-        }
-
-        @Override
-        public LoadTypeSet getLoadTypeSet() {
-            return loadTypes;
-        }
-
-        /**
-         * Returns a single, shared instance of this class which is lazily created in a thread-safe
-         * manner the first time this method is invoked.
-         *
-         * May throw any config-related exception if subscription fails.
-         */
-        static MessageBusVisitorSessionFactory sharedInstance() {
-            var ref = instance.getAcquire();
-            if (ref != null) {
-                return ref;
-            }
-            synchronized (initMonitor) {
-                ref = instance.getAcquire();
-                if (ref != null) {
-                    return ref;
-                }
-                ref = new MessageBusVisitorSessionFactory();
-                instance.setRelease(ref);
-            }
-            return ref;
-        }
-    }
-
-    public VdsVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride) {
-        this(query, searchCluster, route, documentType, MessageBusVisitorSessionFactory.sharedInstance(), traceLevelOverride);
-    }
-
     public VdsVisitor(Query query, String searchCluster, Route route,
                       String documentType, VisitorSessionFactory visitorSessionFactory,
                       int traceLevelOverride)
@@ -142,9 +95,9 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
 
     private int inferSessionTraceLevel(Query query) {
         int implicitLevel = traceLevelOverride;
-        if (log.isLoggable(LogLevel.SPAM)) {
+        if (log.isLoggable(Level.FINEST)) {
             implicitLevel = 9;
-        } else if (log.isLoggable(LogLevel.DEBUG)) {
+        } else if (log.isLoggable(Level.FINE)) {
             implicitLevel = 7;
         }
         return Math.max(query.getTraceLevel(), implicitLevel);
@@ -199,7 +152,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         }
 
         params.setMaxPending(Integer.MAX_VALUE);
-        params.setMaxBucketsPerVisitor(Integer.MAX_VALUE);
+        params.setMaxBucketsPerVisitor(MAX_BUCKETS_PER_VISITOR);
         params.setTraceLevel(inferSessionTraceLevel(query));
 
 
@@ -262,9 +215,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     static int getQueryFlags(Query query) {
         int flags = 0;
 
-        boolean requestCoverage=true; // Always request coverage information
+        boolean requestCoverage = true; // Always request coverage information
 
-        flags |= 0; // was collapse
         flags |= query.properties().getBoolean(Model.ESTIMATE) ? 0x00000080 : 0;
         flags |= (query.getRanking().getFreshness() != null) ? 0x00002000 : 0;
         flags |= requestCoverage ? 0x00008000 : 0;
@@ -329,26 +281,24 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     public void doSearch() throws InterruptedException, ParseException, TimeoutException {
         VisitorSession session = visitorSessionFactory.createVisitorSession(params);
         try {
-            if ( !session.waitUntilDone(query.getTimeout())) {
-                log.log(LogLevel.DEBUG, "Visitor returned from waitUntilDone without being completed for " + query + " with selection " + params.getDocumentSelection());
+            if ( ! session.waitUntilDone(query.getTimeout())) {
+                log.log(Level.FINE, () -> "Visitor returned from waitUntilDone without being completed for " + query + " with selection " + params.getDocumentSelection());
                 session.abort();
                 throw new TimeoutException("Query timed out in " + VdsStreamingSearcher.class.getName());
             }
         } finally {
             session.destroy();
             sessionTrace = session.getTrace();
-            log.log(LogLevel.DEBUG, () -> sessionTrace.toString());
+            log.log(Level.FINE, () -> sessionTrace.toString());
             query.trace(sessionTrace.toString(), false, 9);
         }
 
         if (params.getControlHandler().getResult().code == VisitorControlHandler.CompletionCode.SUCCESS) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "VdsVisitor completed successfully for " + query + " with selection " + params.getDocumentSelection());
-            }
+            log.log(Level.FINE, () -> "VdsVisitor completed successfully for " + query + " with selection " + params.getDocumentSelection());
         } else {
-            throw new IllegalArgumentException("Query failed: " // TODO: Is it necessary to use a runtime exception?
-                    + params.getControlHandler().getResult().code + ": "
-                    + params.getControlHandler().getResult().message);
+            throw new IllegalArgumentException("Query failed: " +
+                                               params.getControlHandler().getResult().code + ": " +
+                                               params.getControlHandler().getResult().message);
         }
     }
 
@@ -384,8 +334,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     }
 
     public void onSearchResult(SearchResult sr) {
-        if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, "Got SearchResult for query with selection " + params.getDocumentSelection());
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "Got SearchResult for query with selection " + params.getDocumentSelection());
         }
         handleSearchResult(sr);
     }
@@ -393,8 +343,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     private void handleSearchResult(SearchResult sr) {
         final int hitCountTotal = sr.getTotalHitCount();
         final int hitCount = sr.getHitCount();
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Got SearchResult with " + hitCountTotal + " in total and " + hitCount + " hits in real for query with selection " + params.getDocumentSelection());
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Got SearchResult with " + hitCountTotal + " in total and " + hitCount + " hits in real for query with selection " + params.getDocumentSelection());
         }
 
         List<SearchResult.Hit> newHits = new ArrayList<>(hitCount);
@@ -412,20 +362,21 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     }
 
     private void mergeGroupingMaps(Map<Integer, byte []> newGroupingMap) {
-        if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, "mergeGroupingMaps: newGroupingMap = " + newGroupingMap);
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "mergeGroupingMaps: newGroupingMap = " + newGroupingMap);
         }
         for(Integer key : newGroupingMap.keySet()) {
             byte [] value = newGroupingMap.get(key);
 
             Grouping newGrouping = new Grouping();
-            if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Received group with key " + key + " and size " + value.length);
+            if (log.isLoggable(Level.FINEST)) {
+                log.log(Level.FINEST, "Received group with key " + key + " and size " + value.length);
             }
             BufferSerializer buf = new BufferSerializer( new GrowableByteBuffer(ByteBuffer.wrap(value)) );
             newGrouping.deserialize(buf);
             if (buf.getBuf().hasRemaining()) {
-                throw new IllegalArgumentException("Failed deserializing grouping. There are still data left. Position = " + buf.position() + ", limit = " + buf.getBuf().limit());
+                throw new IllegalArgumentException("Failed deserializing grouping. There is still data left. " +
+                                                   "Position = " + buf.position() + ", limit = " + buf.getBuf().limit());
             }
 
             synchronized (groupingMap) {
@@ -440,16 +391,16 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     }
 
     public void onDocumentSummary(DocumentSummary ds) {
-        if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, "Got DocumentSummary for query with selection " + params.getDocumentSelection());
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "Got DocumentSummary for query with selection " + params.getDocumentSelection());
         }
         handleSummary(ds);
     }
 
     private void handleSummary(DocumentSummary ds) {
         int summaryCount = ds.getSummaryCount();
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Got DocumentSummary with " + summaryCount + " summaries for query with selection " + params.getDocumentSelection());
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Got DocumentSummary with " + summaryCount + " summaries for query with selection " + params.getDocumentSelection());
         }
         synchronized (summaryMap) {
             for (int i = 0; i < summaryCount; i++) {

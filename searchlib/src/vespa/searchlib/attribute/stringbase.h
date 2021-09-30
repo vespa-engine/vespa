@@ -8,21 +8,47 @@
 #include <vespa/searchlib/attribute/changevector.h>
 #include <vespa/searchlib/attribute/i_enum_store.h>
 #include <vespa/searchlib/attribute/loadedenumvalue.h>
-#include <vespa/searchlib/util/foldedstringcompare.h>
+#include <vespa/vespalib/regex/regex.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <optional>
-#include <regex>
 
 namespace search {
 
+/**
+ * Helper class for search context when scanning string fields
+ * It handles different search settings like prefix, regex and cased/uncased.
+ */
+class StringSearchHelper {
+public:
+    StringSearchHelper(QueryTermUCS4 & qTerm, bool cased);
+    ~StringSearchHelper();
+    bool isMatch(const char *src) const;
+    bool isPrefix() const { return _isPrefix; }
+    bool isRegex() const { return _isRegex; }
+    bool isCased() const { return _isCased; }
+    const vespalib::Regex & getRegex() const { return _regex; }
+private:
+    vespalib::Regex                _regex;
+    union {
+        const ucs4_t *_ucs4;
+        const char   *_char;
+    }                              _term;
+    uint32_t                       _termLen;
+    bool                           _isPrefix;
+    bool                           _isRegex;
+    bool                           _isCased;
+};
+
 class ReaderBase;
 
+/**
+ * Base class for all string attributes.
+ */
 class StringAttribute : public AttributeVector
 {
 public:
     using EnumIndex = IEnumStore::Index;
-    using EnumIndexVector = IEnumStore::IndexVector;
     using EnumVector = IEnumStore::EnumVector;
     using LoadedValueType = const char*;
     using LoadedVector = NoLoadedVector;
@@ -44,6 +70,7 @@ public:
     }
     bool apply(DocId doc, const ArithmeticValueUpdate & op);
     bool applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust) override;
+    bool applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust) override;
     bool findEnum(const char * value, EnumHandle & e) const override = 0;
     std::vector<EnumHandle> findFoldedEnums(const char *value) const override = 0;
     uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override;
@@ -59,20 +86,20 @@ public:
 protected:
     StringAttribute(const vespalib::string & name);
     StringAttribute(const vespalib::string & name, const Config & c);
-    ~StringAttribute();
+    ~StringAttribute() override;
     static const char * defaultValue() { return ""; }
     using Change = ChangeTemplate<StringChangeData>;
     using ChangeVector = ChangeVectorT<Change>;
     using EnumEntryType = const char*;
     ChangeVector _changes;
     Change _defaultValue;
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 
-    virtual bool onAddDoc(DocId doc) override;
+    bool onAddDoc(DocId doc) override;
 
-    virtual vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
+    vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
 private:
     virtual void load_posting_lists(LoadedVector& loaded);
     virtual void load_enum_store(LoadedVector& loaded);
@@ -82,7 +109,7 @@ private:
     virtual void load_enumerated_data(ReaderBase &attrReader, enumstore::EnumeratedLoader& loader);
     virtual void load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader& loader);
 
-    largeint_t getInt(DocId doc)  const override { return strtoll(get(doc), NULL, 0); }
+    largeint_t getInt(DocId doc)  const override { return strtoll(get(doc), nullptr, 0); }
     double getFloat(DocId doc)    const override;
     const char * getString(DocId doc, char * v, size_t sz) const override { (void) v; (void) sz; return get(doc); }
 
@@ -94,29 +121,15 @@ protected:
     public:
         StringSearchContext(QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched);
         ~StringSearchContext() override;
-    private:
-        bool                        _isPrefix;
-        bool                        _isRegex;
     protected:
         bool valid() const override;
-
         const QueryTermUCS4 * queryTerm() const override;
-        bool isMatch(const char *src) const {
-            if (__builtin_expect(isRegex(), false)) {
-                return _regex ? std::regex_search(src, *_regex) : false;
-            }
-            vespalib::Utf8ReaderForZTS u8reader(src);
-            uint32_t j = 0;
-            uint32_t val;
-            for (;; ++j) {
-                val = u8reader.getChar();
-                val = vespalib::LowerCase::convert(val);
-                if (_termUCS4[j] == 0 || _termUCS4[j] != val) {
-                    break;
-                }
-            }
-            return (_termUCS4[j] == 0 && (val == 0 || isPrefix()));
-        }
+        bool isMatch(const char *src) const { return _helper.isMatch(src); }
+        bool isPrefix() const { return _helper.isPrefix(); }
+        bool isRegex() const { return _helper.isRegex(); }
+        bool isCased() const { return _helper.isCased(); }
+        const vespalib::Regex & getRegex() const { return _helper.getRegex(); }
+
         class CollectHitCount {
         public:
             CollectHitCount() : _hitCount(0) { }
@@ -153,29 +166,10 @@ protected:
             }
             return -1;
         }
-
-
-        int32_t onFind(DocId docId, int32_t elementId, int32_t &weight) const override;
-        int32_t onFind(DocId docId, int32_t elementId) const override;
-
-        bool isPrefix() const { return _isPrefix; }
-        bool  isRegex() const { return _isRegex; }
-        QueryTermSimpleUP         _queryTerm;
-        std::vector<ucs4_t>       _termUCS4;
-        const std::optional<std::regex>& getRegex() const { return _regex; }
     private:
-        WeightedConstChar * getBuffer() const {
-            if (_buffer == nullptr) {
-                _buffer = new WeightedConstChar[_bufferLen];
-            }
-            return _buffer;
-        }
-        unsigned                    _bufferLen;
-        mutable WeightedConstChar * _buffer;
-        std::optional<std::regex>   _regex;
+        std::unique_ptr<QueryTermUCS4> _queryTerm;
+        StringSearchHelper             _helper;
     };
-private:
-    SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 };
 
 }

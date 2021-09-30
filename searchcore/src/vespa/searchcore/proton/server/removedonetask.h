@@ -29,12 +29,10 @@ class RemoveDoneTask : public vespalib::Executor::Task
 
 
 public:
-    RemoveDoneTask(IDocumentMetaStore &documentMetaStore,
-                   uint32_t lid);
+    RemoveDoneTask(IDocumentMetaStore &documentMetaStore, uint32_t lid);
+    ~RemoveDoneTask() override;
 
-    virtual ~RemoveDoneTask();
-
-    virtual void run() override;
+    void run() override;
 };
 
 

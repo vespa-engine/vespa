@@ -1,7 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
-
-import com.yahoo.vdslib.state.ClusterState;
 
 /**
  * Remote interface between the fleet controller and controlled nodes.

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.config.core.StateserverConfig;
 import com.yahoo.vespa.model.AbstractService;
@@ -9,9 +10,10 @@ import com.yahoo.vespa.model.PortAllocBridge;
 /**
  * Represents a Slobrok service.
  *
- * @author  gjoranv
+ * @author gjoranv
  */
 public class Slobrok extends AbstractService implements StateserverConfig.Producer {
+
     private static final long serialVersionUID = 1L;
 
     public final static int BASEPORT = 19099;
@@ -22,10 +24,12 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
     }
 
     /**
-     * @param parent The parent ConfigProducer.
+     * @param parent the parent ConfigProducer.
      * @param index  unique index for all slobroks
      */
-    public Slobrok(AbstractConfigProducer parent, int index) {
+    public Slobrok(AbstractConfigProducer<?> parent, int index,
+                   ModelContext.FeatureFlags featureFlags)
+    {
         super(parent, "slobrok." + index);
         portsMeta.on(0).tag("rpc").tag("admin").tag("status");
         portsMeta.on(1).tag("http").tag("state");
@@ -44,7 +48,7 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
     }
 
     public String getStartupCommand() {
-        return "exec $ROOT/sbin/vespa-slobrok -p " + getRpcPort() + " -c " + getConfigId();
+        return "exec $ROOT/sbin/vespa-slobrok -N -p " + getRpcPort() + " -c " + getConfigId();
     }
 
     @Override

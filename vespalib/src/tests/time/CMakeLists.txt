@@ -11,6 +11,6 @@ vespa_add_executable(vespalib_time_test_app TEST
     time_test.cpp
     DEPENDS
     vespalib
-    gtest
+    GTest::GTest
 )
 vespa_add_test(NAME vespalib_time_test_app COMMAND vespalib_time_test_app)

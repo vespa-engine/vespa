@@ -1,8 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.google.inject.Inject;
+import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
@@ -10,6 +12,9 @@ import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeMutex;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 
 import java.time.Clock;
@@ -27,18 +32,23 @@ import java.util.stream.Collectors;
  */
 public class MockDeployer implements Deployer {
 
+    // For actual deploy mode
     private final NodeRepositoryProvisioner provisioner;
     private final Map<ApplicationId, ApplicationContext> applications;
-    private final Map<ApplicationId, Instant> lastDeployTimes = new HashMap<>();
+    // For mock deploy anything, changing wantToRetire to retired only
+    private final NodeRepository nodeRepository;
 
-    /** The number of redeployments done to this */
+    /** The number of redeployments done to this, which is also the config generation */
     public int redeployments = 0;
 
+    private final Map<ApplicationId, Instant> lastDeployTimes = new HashMap<>();
     private final Clock clock;
     private final ReentrantLock lock = new ReentrantLock();
 
     private boolean failActivate = false;
+    private boolean bootstrapping = true;
 
+    /** Create a mock deployer which returns empty on every deploy request. */
     @Inject
     @SuppressWarnings("unused")
     public MockDeployer() {
@@ -46,20 +56,37 @@ public class MockDeployer implements Deployer {
     }
 
     /**
-     * Create a mock deployer which contains a substitute for an application repository, fullfilled to
+     * Create a mock deployer which returns a deployment on every request,
+     * and fulfills it by not actually deploying but only changing any wantToRetire nodes
+     * for the application to retired.
+     */
+    public MockDeployer(NodeRepository nodeRepository) {
+        this.provisioner = null;
+        this.applications = Map.of();
+        this.nodeRepository = nodeRepository;
+
+        this.clock = nodeRepository.clock();
+    }
+
+    /**
+     * Create a mock deployer which contains a substitute for an application repository, filled to
      * be able to call provision with the right parameters.
      */
     public MockDeployer(NodeRepositoryProvisioner provisioner,
                         Clock clock,
                         Map<ApplicationId, ApplicationContext> applications) {
         this.provisioner = provisioner;
-        this.clock = clock;
         this.applications = new HashMap<>(applications);
+        this.nodeRepository = null;
+
+        this.clock = clock;
     }
 
     public ReentrantLock lock() { return lock; }
 
     public void setFailActivate(boolean failActivate) { this.failActivate = failActivate; }
+
+    public void setBootstrapping(boolean bootstrapping) { this.bootstrapping = bootstrapping; }
 
     @Override
     public Optional<Deployment> deployFromLocalActive(ApplicationId id, boolean bootstrap) {
@@ -74,9 +101,13 @@ public class MockDeployer implements Deployer {
             throw new RuntimeException(e);
         }
         try {
-            return Optional.ofNullable(applications.get(id))
-                           .map(application -> new MockDeployment(provisioner, application));
-        } finally {
+            if (provisioner != null)
+                return Optional.ofNullable(applications.get(id))
+                                .map(application -> new MockDeployment(provisioner, application));
+            else
+                return Optional.of(new RetiringOnlyMockDeployment(nodeRepository, id));
+        }
+        finally {
             lock.unlock();
         }
     }
@@ -90,6 +121,14 @@ public class MockDeployer implements Deployer {
     public Optional<Instant> lastDeployTime(ApplicationId application) {
         return Optional.ofNullable(lastDeployTimes.get(application));
     }
+
+    @Override
+    public boolean bootstrapping() {
+        return bootstrapping;
+    }
+
+    @Override
+    public Duration serverDeployTimeout() { return Duration.ofSeconds(60); }
 
     public void removeApplication(ApplicationId applicationId) {
         new MockDeployment(provisioner, new ApplicationContext(applicationId, List.of())).activate();
@@ -117,17 +156,51 @@ public class MockDeployer implements Deployer {
         }
 
         @Override
-        public void activate() {
+        public long activate() {
             if (preparedHosts == null)
                 prepare();
-            redeployments++;
             if (failActivate)
                 throw new IllegalStateException("failActivate is true");
-            try (NestedTransaction t = new NestedTransaction()) {
-                provisioner.activate(t, application.id(), preparedHosts);
-                t.commit();
-                lastDeployTimes.put(application.id, clock.instant());
+
+            redeployments++;
+            try (var lock = provisioner.lock(application.id)) {
+                try (NestedTransaction t = new NestedTransaction()) {
+                    provisioner.activate(preparedHosts, new ActivationContext(redeployments), new ApplicationTransaction(lock, t));
+                    t.commit();
+                    lastDeployTimes.put(application.id, clock.instant());
+                }
             }
+            return redeployments;
+        }
+
+        @Override
+        public void restart(HostFilter filter) {}
+
+    }
+
+    public class RetiringOnlyMockDeployment implements Deployment {
+
+        private final NodeRepository nodeRepository;
+        private final ApplicationId applicationId;
+
+        private RetiringOnlyMockDeployment(NodeRepository nodeRepository, ApplicationId applicationId) {
+            this.nodeRepository = nodeRepository;
+            this.applicationId = applicationId;
+        }
+
+        @Override
+        public void prepare() { }
+
+        @Override
+        public long activate() {
+            lastDeployTimes.put(applicationId, clock.instant());
+
+            for (Node node : nodeRepository.nodes().list().owner(applicationId).state(Node.State.active).retiring()) {
+                try (NodeMutex lock = nodeRepository.nodes().lockAndGetRequired(node)) {
+                    nodeRepository.nodes().write(lock.node().retire(nodeRepository.clock().instant()), lock);
+                }
+            }
+            return redeployments++;
         }
 
         @Override
@@ -146,8 +219,8 @@ public class MockDeployer implements Deployer {
             this.clusterContexts = clusterContexts;
         }
 
-        public ApplicationContext(ApplicationId id, ClusterSpec cluster, Capacity capacity, int groups) {
-            this(id, List.of(new ClusterContext(id, cluster, capacity, groups)));
+        public ApplicationContext(ApplicationId id, ClusterSpec cluster, Capacity capacity) {
+            this(id, List.of(new ClusterContext(id, cluster, capacity)));
         }
 
         public ApplicationId id() { return id; }
@@ -169,13 +242,11 @@ public class MockDeployer implements Deployer {
         private final ApplicationId id;
         private final ClusterSpec cluster;
         private final Capacity capacity;
-        private final int groups;
 
-        public ClusterContext(ApplicationId id, ClusterSpec cluster, Capacity capacity, int groups) {
+        public ClusterContext(ApplicationId id, ClusterSpec cluster, Capacity capacity) {
             this.id = id;
             this.cluster = cluster;
             this.capacity = capacity;
-            this.groups = groups;
         }
 
         public ApplicationId id() { return id; }
@@ -183,7 +254,7 @@ public class MockDeployer implements Deployer {
         public ClusterSpec cluster() { return cluster; }
 
         private List<HostSpec> prepare(NodeRepositoryProvisioner provisioner) {
-            return provisioner.prepare(id, cluster, capacity, groups, null);
+            return provisioner.prepare(id, cluster, capacity, null);
         }
 
     }

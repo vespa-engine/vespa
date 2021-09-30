@@ -3,7 +3,6 @@ package com.yahoo.container.handler.test;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import org.junit.Test;
 
@@ -75,7 +74,7 @@ public class MockServiceTest {
     private HttpResponse runHandlerWithFile(com.yahoo.jdisc.http.HttpRequest.Method method, String path, File file) throws InterruptedException, IOException {
         MockserviceConfig.Builder builder = new MockserviceConfig.Builder();
         builder.file(file.getPath());
-        MockService handler = new MockService(new MockExecutor(), AccessLog.voidAccessLog(), MockFileAcquirer.returnFile(file), new MockserviceConfig(builder), null);
+        MockService handler = new MockService(new MockExecutor(), MockFileAcquirer.returnFile(file), new MockserviceConfig(builder), null);
         return handler.handle(HttpRequest.createTestRequest(path, method));
     }
 

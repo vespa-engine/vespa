@@ -23,12 +23,12 @@ struct TraceVisitor;
  */
 class TraceNode {
 private:
-    TraceNode             *_parent;
-    bool                   _strict;
-    bool                   _hasNote;
     string                 _note;
     std::vector<TraceNode> _children;
+    TraceNode             *_parent;
     system_time            _timestamp;
+    bool                   _strict;
+    bool                   _hasNote;
 
 public:
     /**
@@ -252,6 +252,8 @@ public:
      * @return The visitor parameter.
      */
     TraceVisitor & accept(TraceVisitor & visitor) const;
+
+    size_t computeMemoryUsage() const;
 
 };
 

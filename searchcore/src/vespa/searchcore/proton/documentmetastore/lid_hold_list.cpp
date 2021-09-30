@@ -2,6 +2,7 @@
 
 #include "lid_hold_list.h"
 #include "lidstatevector.h"
+#include <cassert>
 
 namespace proton {
 

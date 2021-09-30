@@ -2,8 +2,6 @@
 
 #include "symbol_inserter.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 } // namespace vespalib::slime
-} // namespace vespalib

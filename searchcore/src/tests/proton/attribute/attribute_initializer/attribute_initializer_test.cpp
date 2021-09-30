@@ -8,6 +8,7 @@
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_initializer_test");
@@ -27,6 +28,7 @@ namespace {
 const Config int32_sv(BasicType::Type::INT32);
 const Config int16_sv(BasicType::Type::INT16);
 const Config int32_array(BasicType::Type::INT32, CollectionType::Type::ARRAY);
+const Config int32_wset(BasicType::Type::INT32, CollectionType::Type::WSET);
 const Config string_wset(BasicType::Type::STRING, CollectionType::Type::WSET);
 const Config predicate(BasicType::Type::PREDICATE);
 const CollectionType wset2(CollectionType::Type::WSET, false, true);
@@ -48,6 +50,13 @@ Config getTensor(const vespalib::string &spec)
     return ret;
 }
 
+Config get_int32_wset_fs()
+{
+    Config ret(int32_wset);
+    ret.setFastSearch(true);
+    return ret;
+}
+
 void
 saveAttr(const vespalib::string &name, const Config &cfg, SerialNum serialNum, SerialNum createSerialNum)
 {
@@ -64,6 +73,12 @@ saveAttr(const vespalib::string &name, const Config &cfg, SerialNum serialNum, S
     av->addDoc(docId);
     assert(docId == 1u);
     av->clearDoc(docId);
+    if (cfg.basicType().type() == BasicType::Type::INT32 &&
+        cfg.collectionType().type() == CollectionType::Type::WSET) {
+        auto &iav = dynamic_cast<search::IntegerAttribute &>(*av);
+        iav.append(docId, 10, 1);
+        iav.append(docId, 11, 1);
+    }
     av->save();
     writer->markValidSnapshot(serialNum);
 }
@@ -75,6 +90,7 @@ struct Fixture
     DirectoryHandler _dirHandler;
     std::shared_ptr<AttributeDiskLayout> _diskLayout;
     AttributeFactory       _factory;
+    vespalib::ThreadStackExecutor _executor;
     Fixture();
     ~Fixture();
     std::unique_ptr<AttributeInitializer> createInitializer(const AttributeSpec &spec, SerialNum serialNum);
@@ -83,7 +99,8 @@ struct Fixture
 Fixture::Fixture()
     : _dirHandler(test_dir),
       _diskLayout(AttributeDiskLayout::create(test_dir)),
-      _factory()
+      _factory(),
+      _executor(1, 0x10000)
 {
 }
 
@@ -92,7 +109,7 @@ Fixture::~Fixture() = default;
 std::unique_ptr<AttributeInitializer>
 Fixture::createInitializer(const AttributeSpec &spec, SerialNum serialNum)
 {
-    return std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(spec.getName()), "test.subdb", spec, serialNum, _factory);
+    return std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(spec.getName()), "test.subdb", spec, serialNum, _factory, _executor);
 }
 
 TEST("require that integer attribute can be initialized")
@@ -196,6 +213,30 @@ TEST("require that too old attribute is not loaded")
     auto av = f.createInitializer({"a", int32_sv}, 5)->init().getAttribute();
     EXPECT_EQUAL(5u, av->getCreateSerialNum());
     EXPECT_EQUAL(1u, av->getNumDocs());
+}
+
+TEST("require that transient memory usage is reported for first time posting list attribute load after enabling posting lists")
+{
+    saveAttr("a", int32_wset, 10, 2);
+    Fixture f;
+    auto avi = f.createInitializer({"a", get_int32_wset_fs()}, 5);
+    EXPECT_EQUAL(40u, avi->get_transient_memory_usage());
+}
+
+TEST("require that transient memory usage is reported for normal posting list attribute load")
+{
+    saveAttr("a", get_int32_wset_fs(), 10, 2);
+    Fixture f;
+    auto avi = f.createInitializer({"a", get_int32_wset_fs()}, 5);
+    EXPECT_EQUAL(24u, avi->get_transient_memory_usage());
+}
+
+TEST("require that transient memory usage is reported for attribute load without posting list")
+{
+    saveAttr("a", int32_wset, 10, 2);
+    Fixture f;
+    auto avi = f.createInitializer({"a", int32_wset}, 5);
+    EXPECT_EQUAL(0u, avi->get_transient_memory_usage());
 }
 
 }

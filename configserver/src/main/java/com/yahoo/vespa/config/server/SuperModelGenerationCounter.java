@@ -1,18 +1,15 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.path.Path;
-import com.yahoo.transaction.AbstractTransaction;
-import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.GenerationCounter;
-import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.recipes.CuratorCounter;
 
 /**
  * Distributed global generation counter for the super model.
  *
  * @author Ulf Lilleengen
- * @since 5.9
  */
 public class SuperModelGenerationCounter implements GenerationCounter {
 
@@ -20,7 +17,7 @@ public class SuperModelGenerationCounter implements GenerationCounter {
     private final CuratorCounter counter;
 
     public SuperModelGenerationCounter(Curator curator) {
-        this.counter =  new CuratorCounter(curator, counterPath.getAbsolute());
+        this.counter = new CuratorCounter(curator, counterPath);
     }
 
     /**

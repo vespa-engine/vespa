@@ -3,8 +3,10 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.provision.ClusterSpec;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -12,19 +14,23 @@ import java.util.stream.Collectors;
  * between the current active vespa model and the next vespa model to prepare.
  *
  * @author geirst
- * @since 2014-11-18
  */
 public abstract class VespaConfigChangeAction implements ConfigChangeAction {
 
+    private final ClusterSpec.Id id;
     private final String message;
     private final List<ServiceInfo> services;
 
-    protected VespaConfigChangeAction(String message, List<ServiceInfo> services) {
+    protected VespaConfigChangeAction(ClusterSpec.Id id, String message, List<ServiceInfo> services) {
+        this.id = id;
         this.message = message;
         this.services = services;
     }
 
     public abstract VespaConfigChangeAction modifyAction(String newMessage, List<ServiceInfo> newServices, String documentType);
+
+    @Override
+    public ClusterSpec.Id clusterId() { return id; }
 
     @Override
     public String getMessage() {
@@ -63,4 +69,5 @@ public abstract class VespaConfigChangeAction implements ConfigChangeAction {
         result = 31 * result + services.hashCode();
         return result;
     }
+
 }

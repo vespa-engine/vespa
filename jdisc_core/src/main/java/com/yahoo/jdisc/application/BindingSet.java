@@ -1,16 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.application;
 
-import com.google.common.collect.ImmutableList;
-
 import java.net.URI;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * <p>This is an immutable set of ordered bindings from {@link UriPattern}s to some target type T. To create an instance
@@ -22,10 +18,11 @@ import java.util.Map;
 public class BindingSet<T> implements Iterable<Map.Entry<UriPattern, T>>  {
 
     public static final String DEFAULT = "default";
+
     private final Collection<Map.Entry<UriPattern, T>> bindings;
 
     BindingSet(Collection<Map.Entry<UriPattern, T>> bindings) {
-        this.bindings = sort(bindings);
+        this.bindings = sorted(bindings);
     }
 
     /**
@@ -71,15 +68,8 @@ public class BindingSet<T> implements Iterable<Map.Entry<UriPattern, T>>  {
         return bindings.iterator();
     }
 
-    private static <T> Collection<Map.Entry<UriPattern, T>> sort(Collection<Map.Entry<UriPattern, T>> unsorted) {
-        List<Map.Entry<UriPattern, T>> ret = new LinkedList<>(unsorted);
-        Collections.sort(ret, new Comparator<Map.Entry<UriPattern, ?>>() {
-
-            @Override
-            public int compare(Map.Entry<UriPattern, ?> lhs, Map.Entry<UriPattern, ?> rhs) {
-                return lhs.getKey().compareTo(rhs.getKey());
-            }
-        });
-        return ImmutableList.copyOf(ret);
+    private static <T> Collection<Map.Entry<UriPattern, T>> sorted(Collection<Map.Entry<UriPattern, T>> unsorted) {
+        return unsorted.stream().sorted(Map.Entry.comparingByKey()).collect(toUnmodifiableList());
     }
+
 }

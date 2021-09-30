@@ -20,7 +20,6 @@ import java.util.TimerTask;
  *
  * @author bjorncs
  * @author vegardh
- *
  */
 public class MetricUpdater extends AbstractComponent {
 
@@ -97,7 +96,6 @@ public class MetricUpdater extends AbstractComponent {
             this.jrtMetrics = new JrtMetrics(metric);
         }
 
-        @SuppressWarnings("deprecation")
         @Override
         public void run() {
             long freeMemory = runtime.freeMemory();
@@ -140,5 +138,6 @@ public class MetricUpdater extends AbstractComponent {
         void schedule(Runnable runnable, Duration frequency);
         void cancel();
     }
+
 }
 

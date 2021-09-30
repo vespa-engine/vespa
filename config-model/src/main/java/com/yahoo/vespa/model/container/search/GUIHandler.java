@@ -14,7 +14,7 @@ public class GUIHandler extends Handler<AbstractConfigProducer<?>> {
 
     public static final String BUNDLE = "container-search-gui";
     public static final String CLASS = "com.yahoo.search.query.gui.GUIHandler";
-    public static final String BINDING = "*/querybuilder/*";
+    public static final String BINDING_PATH = "/querybuilder/*";
 
     public GUIHandler() {
         super(new ComponentModel(bundleSpec(CLASS, BUNDLE)));

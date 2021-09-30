@@ -1,7 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
-import com.yahoo.config.provision.*;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionLogger;
 
 import java.util.List;
 
@@ -23,10 +26,9 @@ public interface HostProvisioner {
      *
      * @param  cluster the cluster to allocate nodes to
      * @param  capacity the capacity describing the capacity requested
-     * @param  groups the number of groups to divide the nodes into
      * @param  logger a logger to which messages to the deployer may be written
      * @return the specification of the allocated hosts
      */
-    List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger);
+    List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger);
 
 }

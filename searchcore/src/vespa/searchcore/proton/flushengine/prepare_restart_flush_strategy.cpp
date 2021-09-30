@@ -2,6 +2,7 @@
 
 #include "prepare_restart_flush_strategy.h"
 #include "flush_target_candidates.h"
+#include "flush_target_candidate.h"
 #include "tls_stats_map.h"
 #include <sstream>
 #include <algorithm>
@@ -70,17 +71,15 @@ flatten(const FlushContextsMap &flushContextsPerHandler)
 }
 
 void
-sortByOldestFlushedSerialNumber(FlushContext::List &flushContexts)
+sortByOldestFlushedSerialNumber(std::vector<FlushTargetCandidate>& candidates)
 {
-    std::sort(flushContexts.begin(), flushContexts.end(),
-            [](const auto &lhs, const auto &rhs) {
-        if (lhs->getTarget()->getFlushedSerialNum() ==
-                rhs->getTarget()->getFlushedSerialNum()) {
-            return lhs->getName() < rhs->getName();
-        }
-        return lhs->getTarget()->getFlushedSerialNum() <
-                rhs->getTarget()->getFlushedSerialNum();
-    });
+    std::sort(candidates.begin(), candidates.end(),
+              [](const auto &lhs, const auto &rhs) {
+                  if (lhs.get_flushed_serial() == rhs.get_flushed_serial()) {
+                      return lhs.get_flush_context()->getName() < rhs.get_flush_context()->getName();
+                  }
+                  return lhs.get_flushed_serial() < rhs.get_flushed_serial();
+              });
 }
 
 vespalib::string
@@ -103,12 +102,16 @@ findBestTargetsToFlush(const FlushContext::List &unsortedFlushContexts,
                        const flushengine::TlsStats &tlsStats,
                        const Config &cfg)
 {
-    FlushContext::List sortedFlushContexts = unsortedFlushContexts;
-    sortByOldestFlushedSerialNumber(sortedFlushContexts);
+    std::vector<FlushTargetCandidate> candidates;
+    candidates.reserve(unsortedFlushContexts.size());
+    for (const auto &flush_context : unsortedFlushContexts) {
+        candidates.emplace_back(flush_context, tlsStats.getLastSerial(), cfg);
+    }
+    sortByOldestFlushedSerialNumber(candidates);
 
-    FlushTargetCandidates bestSet(sortedFlushContexts, 0, tlsStats, cfg);
-    for (size_t numCandidates = 1; numCandidates <= sortedFlushContexts.size(); ++numCandidates) {
-        FlushTargetCandidates nextSet(sortedFlushContexts, numCandidates, tlsStats, cfg);
+    FlushTargetCandidates bestSet(candidates, 0, tlsStats, cfg);
+    for (size_t numCandidates = 1; numCandidates <= candidates.size(); ++numCandidates) {
+        FlushTargetCandidates nextSet(candidates, numCandidates, tlsStats, cfg);
         LOG(debug, "findBestTargetsToFlush(): Created candidate set: "
                 "flushTargets=[%s], tlsReplayBytesCost=%f, tlsReplayOperationsCost=%f, flushTargetsWriteCost=%f, totalCost=%f",
                 toString(nextSet.getCandidates()).c_str(),

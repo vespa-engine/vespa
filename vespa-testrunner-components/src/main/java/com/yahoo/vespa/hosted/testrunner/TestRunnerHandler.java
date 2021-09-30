@@ -7,12 +7,11 @@ import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.testrunner.legacy.TestProfile;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
@@ -37,8 +36,8 @@ public class TestRunnerHandler extends LoggingRequestHandler {
     private final TestRunner testRunner;
 
     @Inject
-    public TestRunnerHandler(Executor executor, AccessLog accessLog, TestRunner testRunner) {
-        super(executor, accessLog);
+    public TestRunnerHandler(Executor executor, TestRunner testRunner) {
+        super(executor);
         this.testRunner = testRunner;
     }
 
@@ -61,8 +60,7 @@ public class TestRunnerHandler extends LoggingRequestHandler {
 
     private HttpResponse handleGET(HttpRequest request) {
         String path = request.getUri().getPath();
-        // TODO: Migrate to /tester/v1/log when /tester/v1/log2 is not in use anymore (and remove /tester/v1/log2)
-        if (path.equals("/tester/v1/log") || path.equals("/tester/v1/log2")) {
+        if (path.equals("/tester/v1/log")) {
             return new SlimeJsonResponse(logToSlime(testRunner.getLog(request.hasProperty("after")
                                                                                ? Long.parseLong(request.getProperty("after"))
                                                                                : -1)));
@@ -91,7 +89,7 @@ public class TestRunnerHandler extends LoggingRequestHandler {
             path = path.substring(0, path.length() - 1);
         int lastSlash = path.lastIndexOf("/");
         if (lastSlash < 0) return path;
-        return path.substring(lastSlash + 1, path.length());
+        return path.substring(lastSlash + 1);
     }
 
     static Slime logToSlime(Collection<LogRecord> log) {
@@ -120,9 +118,9 @@ public class TestRunnerHandler extends LoggingRequestHandler {
 
     public static String typeOf(Level level) {
         return    level.getName().equals("html") ? "html"
-                : level.intValue() < LogLevel.INFO.intValue() ? "debug"
-                : level.intValue() < LogLevel.WARNING.intValue() ? "info"
-                : level.intValue() < LogLevel.ERROR.intValue() ? "warning"
+                : level.intValue() < Level.INFO.intValue() ? "debug"
+                : level.intValue() < Level.WARNING.intValue() ? "info"
+                : level.intValue() < Level.SEVERE.intValue() ? "warning"
                 : "error";
     }
 

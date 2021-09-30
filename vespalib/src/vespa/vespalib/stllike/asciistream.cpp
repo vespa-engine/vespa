@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/memory.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/fastos/file.h>
 #include <algorithm>
@@ -614,7 +615,7 @@ asciistream asciistream::createFromDevice(stringref fileName)
     FastOS_File file(vespalib::string(fileName).c_str());
     asciistream is;
     if (file.OpenReadOnly()) {
-        char buf[8192];
+        char buf[8_Ki];
         for (ssize_t actual = file.Read(buf, sizeof(buf)); actual > 0; actual = file.Read(buf, sizeof(buf))) {
             is << stringref(buf, actual);
         }

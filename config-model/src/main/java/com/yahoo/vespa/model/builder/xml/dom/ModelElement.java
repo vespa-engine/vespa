@@ -172,7 +172,12 @@ public class ModelElement {
 
     /** Returns the content of the attribute with the given name, or null if none */
     public String stringAttribute(String name) {
-        if ( ! xml.hasAttribute(name)) return null;
+        return stringAttribute(name, null);
+    }
+
+    /** Returns the content of the attribute with the given name, or the default value if none */
+    public String stringAttribute(String name, String defaultValue) {
+        if ( ! xml.hasAttribute(name)) return defaultValue;
         return xml.getAttribute(name);
     }
 

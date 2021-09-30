@@ -124,10 +124,10 @@ public class GroupingRequestTestCase {
         assertEquals(Collections.emptyList(), query.getSelect().getGrouping());
 
         GroupingRequest foo = GroupingRequest.newInstance(query);
-        assertEquals(Arrays.asList(foo), query.getSelect().getGrouping());
+        assertEquals(List.of(foo), query.getSelect().getGrouping());
 
         GroupingRequest bar = GroupingRequest.newInstance(query);
-        assertEquals(Arrays.asList(foo, bar), query.getSelect().getGrouping());
+        assertEquals(List.of(foo, bar), query.getSelect().getGrouping());
     }
     
 

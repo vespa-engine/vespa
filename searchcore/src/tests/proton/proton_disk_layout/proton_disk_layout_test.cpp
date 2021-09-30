@@ -11,7 +11,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 using search::index::DummyFileHeaderContext;
-using search::transactionlog::TransLogClient;
+using search::transactionlog::client::TransLogClient;
 using search::transactionlog::TransLogServer;
 using proton::DocTypeName;
 using proton::ProtonDiskLayout;

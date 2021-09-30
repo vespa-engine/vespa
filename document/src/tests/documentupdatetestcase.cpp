@@ -21,8 +21,10 @@
 #include <vespa/document/update/tensor_remove_update.h>
 #include <vespa/document/update/valueupdate.h>
 #include <vespa/document/util/bytebuffer.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -33,10 +35,10 @@
 #include <unistd.h>
 
 using namespace document::config_builder;
+
+using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
-using vespalib::tensor::DefaultTensorEngine;
-using vespalib::tensor::Tensor;
 using vespalib::nbostream;
 
 namespace document {
@@ -466,28 +468,28 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
     EXPECT_EQ(*type, upd.getType());
 
     // Verify assign value update.
-    FieldUpdate serField = upd.getUpdates()[1];
-    EXPECT_EQ(serField.getField().getId(), type->getField("intfield").getId());
+    const FieldUpdate & serField1 = upd.getUpdates()[1];
+    EXPECT_EQ(serField1.getField().getId(), type->getField("intfield").getId());
 
-    const ValueUpdate* serValue = &serField[0];
+    const ValueUpdate* serValue = &serField1[0];
     ASSERT_EQ(serValue->getType(), ValueUpdate::Assign);
 
     const AssignValueUpdate* assign(static_cast<const AssignValueUpdate*>(serValue));
     EXPECT_EQ(IntFieldValue(4), static_cast<const IntFieldValue&>(assign->getValue()));
 
     // Verify clear field update.
-    serField = upd.getUpdates()[2];
-    EXPECT_EQ(serField.getField().getId(), type->getField("floatfield").getId());
+    const FieldUpdate & serField2 = upd.getUpdates()[2];
+    EXPECT_EQ(serField2.getField().getId(), type->getField("floatfield").getId());
 
-    serValue = &serField[0];
+    serValue = &serField2[0];
     EXPECT_EQ(serValue->getType(), ValueUpdate::Clear);
     EXPECT_TRUE(serValue->inherits(ClearValueUpdate::classId));
 
     // Verify add value update.
-    serField = upd.getUpdates()[0];
-    EXPECT_EQ(serField.getField().getId(), type->getField("arrayoffloatfield").getId());
+    const FieldUpdate & serField3 = upd.getUpdates()[0];
+    EXPECT_EQ(serField3.getField().getId(), type->getField("arrayoffloatfield").getId());
 
-    serValue = &serField[0];
+    serValue = &serField3[0];
     ASSERT_EQ(serValue->getType(), ValueUpdate::Add);
 
     const AddValueUpdate* add = static_cast<const AddValueUpdate*>(serValue);
@@ -495,7 +497,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
     EXPECT_TRUE(value->inherits(FloatFieldValue::classId));
     EXPECT_FLOAT_EQ(value->getAsFloat(), 5.00f);
 
-    serValue = &serField[1];
+    serValue = &serField3[1];
     ASSERT_EQ(serValue->getType(), ValueUpdate::Add);
 
     add = static_cast<const AddValueUpdate*>(serValue);
@@ -503,7 +505,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
     EXPECT_TRUE(value->inherits(FloatFieldValue::classId));
     EXPECT_FLOAT_EQ(value->getAsFloat(), 4.23f);
 
-    serValue = &serField[2];
+    serValue = &serField3[2];
     ASSERT_EQ(serValue->getType(), ValueUpdate::Add);
 
     add = static_cast<const AddValueUpdate*>(serValue);
@@ -771,11 +773,10 @@ TEST(DocumentUpdateTest, testMapValueUpdate)
     EXPECT_EQ(fv4->find(StringFieldValue("apple")), fv4->end());
 }
 
-std::unique_ptr<Tensor>
+std::unique_ptr<vespalib::eval::Value>
 makeTensor(const TensorSpec &spec)
 {
-    auto result = DefaultTensorEngine::ref().from_spec(spec);
-    return std::unique_ptr<Tensor>(dynamic_cast<Tensor*>(result.release()));
+    return SimpleValue::from_spec(spec);
 }
 
 std::unique_ptr<TensorFieldValue>
@@ -787,9 +788,9 @@ makeTensorFieldValue(const TensorSpec &spec, const TensorDataType &dataType)
     return result;
 }
 
-const Tensor &asTensor(const FieldValue &fieldValue) {
+const vespalib::eval::Value &asTensor(const FieldValue &fieldValue) {
     auto &tensorFieldValue = dynamic_cast<const TensorFieldValue &>(fieldValue);
-    auto &tensor = tensorFieldValue.getAsTensorPtr();
+    auto tensor = tensorFieldValue.getAsTensorPtr();
     assert(tensor);
     return *tensor;
 }
@@ -876,7 +877,7 @@ struct TensorUpdateFixture {
         auto field = getTensor();
         auto tensor_field = dynamic_cast<TensorFieldValue*>(field.get());
         ASSERT_TRUE(tensor_field);
-        EXPECT_TRUE(tensor_field->getAsTensorPtr().get() == nullptr);
+        EXPECT_TRUE(tensor_field->getAsTensorPtr() == nullptr);
     }
 
     void assertTensor(const TensorSpec &expSpec) {
@@ -1031,6 +1032,13 @@ TEST(DocumentUpdateTest, tensor_remove_update_can_be_roundtrip_serialized)
     f.assertRoundtripSerialize(TensorRemoveUpdate(f.makeBaselineTensor()));
 }
 
+TEST(DocumentUpdateTest, tensor_remove_update_with_not_fully_specified_address_can_be_roundtrip_serialized)
+{
+    TensorUpdateFixture f("sparse_xy_tensor");
+    TensorDataType type(ValueType::from_spec("tensor(y{})"));
+    f.assertRoundtripSerialize(TensorRemoveUpdate(
+            makeTensorFieldValue(TensorSpec("tensor(y{})").add({{"y", "a"}}, 1), type)));
+}
 
 TEST(DocumentUpdateTest, tensor_remove_update_on_float_tensor_can_be_roundtrip_serialized)
 {
@@ -1087,7 +1095,7 @@ TEST(DocumentUpdateTest, tensor_remove_update_throws_if_address_tensor_is_not_sp
     auto addressTensor = f.makeTensor(f.spec().add({{"x", 0}}, 2)); // creates a dense address tensor
     ASSERT_THROW(
             f.assertRoundtripSerialize(TensorRemoveUpdate(std::move(addressTensor))),
-            document::WrongTensorTypeException);
+            vespalib::IllegalStateException);
 }
 
 TEST(DocumentUpdateTest, tensor_modify_update_throws_if_cells_tensor_is_not_sparse)

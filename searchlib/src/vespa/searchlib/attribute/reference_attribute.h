@@ -7,6 +7,7 @@
 #include "reference_mappings.h"
 #include <vespa/vespalib/datastore/unique_store.h>
 #include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/stllike/allocator.h>
 
 namespace search { class IGidToLidMapperFactory; }
 
@@ -24,38 +25,40 @@ namespace search::attribute {
 class ReferenceAttribute : public NotImplementedAttribute
 {
 public:
-    using EntryRef = search::datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     using GlobalId = document::GlobalId;
-    using ReferenceStore = datastore::UniqueStore<Reference>;
+    using ReferenceStore = vespalib::datastore::UniqueStore<Reference>;
     using ReferenceStoreIndices = vespalib::RcuVectorBase<EntryRef>;
-    using IndicesCopyVector = vespalib::Array<EntryRef>;
+    using IndicesCopyVector = std::vector<EntryRef, vespalib::allocator_large<EntryRef>>;
     // Class used to map from target lid to source lids
-    using ReverseMapping = btree::BTreeStore<uint32_t, btree::BTreeNoLeafData,
-                                             btree::NoAggregated,
+    using ReverseMapping = vespalib::btree::BTreeStore<uint32_t, vespalib::btree::BTreeNoLeafData,
+                                             vespalib::btree::NoAggregated,
                                              std::less<uint32_t>,
-                                             btree::BTreeDefaultTraits,
-                                             btree::NoAggrCalc>;
+                                             vespalib::btree::BTreeDefaultTraits,
+                                             vespalib::btree::NoAggrCalc>;
     using TargetLids = ReferenceMappings::TargetLids;
     // Class used to map from target lid to source lids
     using ReverseMappingRefs = ReferenceMappings::ReverseMappingRefs;
 private:
     ReferenceStore _store;
     ReferenceStoreIndices _indices;
-    vespalib::MemoryUsage _cachedUniqueStoreMemoryUsage;
+    vespalib::MemoryUsage _cached_unique_store_values_memory_usage;
+    vespalib::MemoryUsage _cached_unique_store_dictionary_memory_usage;
     std::shared_ptr<IGidToLidMapperFactory> _gidToLidMapperFactory;
     ReferenceMappings _referenceMappings;
 
-    virtual void onAddDocs(DocId docIdLimit) override;
-    virtual void removeOldGenerations(generation_t firstUsed) override;
-    virtual void onGenerationChange(generation_t generation) override;
-    virtual void onCommit() override;
-    virtual void onUpdateStat() override;
-    virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
-    virtual bool onLoad() override;
-    virtual uint64_t getUniqueValueCount() const override;
+    void onAddDocs(DocId docIdLimit) override;
+    void removeOldGenerations(generation_t firstUsed) override;
+    void onGenerationChange(generation_t generation) override;
+    void onCommit() override;
+    void onUpdateStat() override;
+    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
+    bool onLoad(vespalib::Executor *executor) override;
+    uint64_t getUniqueValueCount() const override;
 
-    bool considerCompact(const CompactionStrategy &compactionStrategy);
-    void compactWorst();
+    bool consider_compact_values(const CompactionStrategy &compactionStrategy);
+    void compact_worst_values();
+    bool consider_compact_dictionary(const CompactionStrategy& compaction_strategy);
     IndicesCopyVector getIndicesCopy(uint32_t size) const;
     void removeReverseMapping(EntryRef oldRef, uint32_t lid);
     void addReverseMapping(EntryRef newRef, uint32_t lid);

@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/shutdownguard.h>
+#include <thread>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <cstdlib>
 
 using namespace vespalib;
 
@@ -23,7 +25,7 @@ Test::Main()
         for (int i = 0; i < 1000; ++i) {
             std::this_thread::sleep_for(20ms);
         }
-        exit(0);
+        std::_Exit(0);
     }
     for (int i = 0; i < 1000; ++i) {
         std::this_thread::sleep_for(20ms);

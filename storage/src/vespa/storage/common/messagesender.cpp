@@ -16,4 +16,9 @@ MessageSender::send(const std::shared_ptr<api::StorageMessage>& msg)
     }
 }
 
+void
+MessageSender::sendReplyDirectly(const std::shared_ptr<api::StorageReply>& reply) {
+    sendReply(reply);
+}
+
 }

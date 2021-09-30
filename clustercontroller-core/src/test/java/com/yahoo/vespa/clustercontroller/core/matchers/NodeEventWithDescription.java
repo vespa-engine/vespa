@@ -28,6 +28,9 @@ public class NodeEventWithDescription extends BaseMatcher<NodeEvent> {
 
     @Override
     public void describeMismatch(Object item, Description description) {
+        if (!(item instanceof NodeEvent)) {
+            return;
+        }
         NodeEvent other = (NodeEvent)item;
         description.appendText(String.format("got description '%s'", other.getDescription()));
     }

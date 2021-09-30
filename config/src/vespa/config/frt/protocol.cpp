@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <sstream>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.protocol");
@@ -24,6 +25,7 @@ const Memory REQUEST_DEF_CONTENT = "defContent";
 const Memory REQUEST_CLIENT_CONFIGID = "configId";
 const Memory REQUEST_CLIENT_HOSTNAME = "clientHostname";
 const Memory REQUEST_CONFIG_MD5 = "configMD5";
+const Memory REQUEST_CONFIG_XXHASH64 = "configXxhash64";
 const Memory REQUEST_CURRENT_GENERATION = "currentGeneration";
 const Memory REQUEST_TIMEOUT = "timeout";
 const Memory REQUEST_TRACE = "trace";
@@ -35,11 +37,11 @@ const Memory RESPONSE_DEF_NAMESPACE = "defNamespace";
 const Memory RESPONSE_DEF_MD5 = "defMD5";
 const Memory RESPONSE_CONFIGID = "configId";
 const Memory RESPONSE_CLIENT_HOSTNAME = "clientHostname";
-const Memory RESPONSE_CONFIG_MD5 = "configMD5";
+const Memory RESPONSE_CONFIG_XXHASH64 = "configXxhash64";
 const Memory RESPONSE_CONFIG_GENERATION = "generation";
 const Memory RESPONSE_PAYLOAD = "payload";
 const Memory RESPONSE_TRACE = "trace";
-const Memory RESPONSE_INTERNAL_REDEPLOY = "internalRedeploy";
+const Memory RESPONSE_APPLY_ON_RESTART = "applyOnRestart";
 
 const Inspector &
 extractPayload(const Slime & data)
@@ -114,9 +116,6 @@ readProtocolVersion()
 {
     int protocolVersion = DEFAULT_PROTOCOL_VERSION;
     char *versionStringPtr = getenv("VESPA_CONFIG_PROTOCOL_VERSION");
-    if (versionStringPtr == NULL) {
-        versionStringPtr = getenv("services__config_protocol_version_override");
-    }
     if (versionStringPtr != NULL) {
         std::stringstream versionString(versionStringPtr);
         versionString >> protocolVersion;
@@ -129,9 +128,6 @@ readTraceLevel()
 {
     int traceLevel = DEFAULT_TRACE_LEVEL;
     char *traceLevelStringPtr = getenv("VESPA_CONFIG_PROTOCOL_TRACELEVEL");
-    if (traceLevelStringPtr == NULL) {
-        traceLevelStringPtr = getenv("services__config_protocol_tracelevel");
-    }
     if (traceLevelStringPtr != NULL) {
         std::stringstream traceLevelString(traceLevelStringPtr);
         traceLevelString >> traceLevel;
@@ -144,9 +140,6 @@ readProtocolCompressionType()
 {
     CompressionType type = CompressionType::LZ4;
     char *compressionTypeStringPtr = getenv("VESPA_CONFIG_PROTOCOL_COMPRESSION");
-    if (compressionTypeStringPtr == NULL) {
-        compressionTypeStringPtr = getenv("services__config_protocol_compression");
-    }
     if (compressionTypeStringPtr != NULL) {
         type = stringToCompressionType(vespalib::string(compressionTypeStringPtr));
     }

@@ -34,8 +34,7 @@ DocumentDBMetricsUpdater::DocumentDBMetricsUpdater(const DocumentSubDBCollection
                                                    ExecutorThreadingService &writeService,
                                                    DocumentDBJobTrackers &jobTrackers,
                                                    matching::SessionManager &sessionManager,
-                                                   const AttributeUsageFilter &writeFilter,
-                                                   [[maybe_unused]] const DDBState &state)
+                                                   const AttributeUsageFilter &writeFilter)
     : _subDBs(subDBs),
       _writeService(writeService),
       _jobTrackers(jobTrackers),
@@ -170,12 +169,12 @@ updateAttributeMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBColl
 }
 
 void
-updateMatchingMetrics(DocumentDBTaggedMetrics &metrics, const IDocumentSubDB &ready)
+updateMatchingMetrics(const metrics::MetricLockGuard & guard, DocumentDBTaggedMetrics &metrics, const IDocumentSubDB &ready)
 {
     MatchingStats totalStats;
     for (const auto &rankProfile : metrics.matching.rank_profiles) {
         MatchingStats matchingStats = ready.getMatcherStats(rankProfile.first);
-        rankProfile.second->update(matchingStats);
+        rankProfile.second->update(guard, matchingStats);
 
         totalStats.add(matchingStats);
     }
@@ -284,13 +283,13 @@ updateLidSpaceMetrics(MetricSetType &metrics, const search::IDocumentMetaStore &
 }
 
 void
-DocumentDBMetricsUpdater::updateMetrics(DocumentDBTaggedMetrics &metrics)
+DocumentDBMetricsUpdater::updateMetrics(const metrics::MetricLockGuard & guard, DocumentDBTaggedMetrics &metrics)
 {
     TotalStats totalStats;
     ExecutorThreadingServiceStats threadingServiceStats = _writeService.getStats();
     updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats(), totalStats);
     updateAttributeMetrics(metrics, _subDBs, totalStats);
-    updateMatchingMetrics(metrics, *_subDBs.getReadySubDB());
+    updateMatchingMetrics(guard, metrics, *_subDBs.getReadySubDB());
     updateSessionCacheMetrics(metrics, _sessionManager);
     updateDocumentsMetrics(metrics, _subDBs);
     updateDocumentStoreMetrics(metrics, _subDBs, _lastDocStoreCacheStats, totalStats);
@@ -303,12 +302,10 @@ DocumentDBMetricsUpdater::updateMetrics(DocumentDBTaggedMetrics &metrics)
 void
 DocumentDBMetricsUpdater::updateAttributeResourceUsageMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics)
 {
-    AttributeUsageStats attributeUsageStats = _writeFilter.getAttributeUsageStats();
+    AttributeUsageStats stats = _writeFilter.getAttributeUsageStats();
     bool feedBlocked = !_writeFilter.acceptWriteOperation();
-    double enumStoreUsed = attributeUsageStats.enumStoreUsage().getUsage().usage();
-    double multiValueUsed = attributeUsageStats.multiValueUsage().getUsage().usage();
-    metrics.resourceUsage.enumStore.set(enumStoreUsed);
-    metrics.resourceUsage.multiValue.set(multiValueUsed);
+    double address_space_used = stats.max_address_space_usage().getUsage().usage();
+    metrics.resourceUsage.address_space.set(address_space_used);
     metrics.resourceUsage.feedingBlocked.set(feedBlocked ? 1 : 0);
 }
 

@@ -106,7 +106,7 @@ public abstract class IndexedTensor implements Tensor {
         return getFloat((int)toValueIndex(indexes, dimensionSizes));
     }
 
-    /** Returns the value at this address, or NaN if there is no value at this address */
+    /** Returns the value at this address, or 0.0 if there is no value at this address */
     @Override
     public double get(TensorAddress address) {
         // optimize for fast lookup within bounds:
@@ -114,7 +114,18 @@ public abstract class IndexedTensor implements Tensor {
             return get((int)toValueIndex(address, dimensionSizes, type));
         }
         catch (IllegalArgumentException e) {
-            return Double.NaN;
+            return 0.0;
+        }
+    }
+
+    @Override
+    public boolean has(TensorAddress address) {
+        try {
+            long index = toValueIndex(address, dimensionSizes, type);
+            if (index < 0) return false;
+            return (index < size());
+        } catch (IllegalArgumentException e) {
+            return false;
         }
     }
 
@@ -178,8 +189,14 @@ public abstract class IndexedTensor implements Tensor {
     @Override
     public abstract IndexedTensor withType(TensorType type);
 
-    public DimensionSizes dimensionSizes() {
-        return dimensionSizes;
+    public DimensionSizes dimensionSizes() { return dimensionSizes; }
+
+    public long[] shape() {
+        long[] result = new long[dimensionSizes.dimensions()];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = dimensionSizes.size(i);
+        }
+        return result;
     }
 
     @Override
@@ -223,12 +240,14 @@ public abstract class IndexedTensor implements Tensor {
                 b.append("[");
 
             // value
-            if (tensor.type().valueType() == TensorType.Value.DOUBLE)
-                b.append(tensor.get(index));
-            else if (tensor.type().valueType() == TensorType.Value.FLOAT)
-                b.append(tensor.getFloat(index));
-            else
-                throw new IllegalStateException("Unexpected value type " + tensor.type().valueType());
+            switch (tensor.type().valueType()) {
+                case DOUBLE:   b.append(tensor.get(index)); break;
+                case FLOAT:    b.append(tensor.getFloat(index)); break;
+                case BFLOAT16: b.append(tensor.getFloat(index)); break;
+                case INT8:     b.append((byte)tensor.getFloat(index)); break;
+                default:
+                    throw new IllegalStateException("Unexpected value type " + tensor.type().valueType());
+            }
 
             // end bracket and comma
             for (int i = 0; i < indexes.nextDimensionsAtEnd(); i++)
@@ -294,13 +313,14 @@ public abstract class IndexedTensor implements Tensor {
          */
         public static Builder of(TensorType type, DimensionSizes sizes) {
             validate(type, sizes);
-
-            if (type.valueType() == TensorType.Value.FLOAT)
-                return new IndexedFloatTensor.BoundFloatBuilder(type, sizes);
-            else if (type.valueType() == TensorType.Value.DOUBLE)
-                return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes);
-            else
-                return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes); // Default
+            switch (type.valueType()) {
+                case DOUBLE: return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes);
+                case FLOAT: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes);
+                case BFLOAT16: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes);
+                case INT8: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes);
+                default:
+                    throw new IllegalStateException("Unexpected value type " + type.valueType());
+            }
         }
 
         /**
@@ -314,13 +334,14 @@ public abstract class IndexedTensor implements Tensor {
         public static Builder of(TensorType type, DimensionSizes sizes, float[] values) {
             validate(type, sizes);
             validateSizes(sizes, values.length);
-
-            if (type.valueType() == TensorType.Value.FLOAT)
-                return new IndexedFloatTensor.BoundFloatBuilder(type, sizes, values);
-            else if (type.valueType() == TensorType.Value.DOUBLE)
-                return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes).fill(values);
-            else
-                return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes).fill(values); // Default
+            switch (type.valueType()) {
+                case DOUBLE: return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes).fill(values);
+                case FLOAT: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes, values);
+                case BFLOAT16: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes, values);
+                case INT8: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes, values);
+                default:
+                    throw new IllegalStateException("Unexpected value type " + type.valueType());
+            }
         }
 
         /**
@@ -334,13 +355,14 @@ public abstract class IndexedTensor implements Tensor {
         public static Builder of(TensorType type, DimensionSizes sizes, double[] values) {
             validate(type, sizes);
             validateSizes(sizes, values.length);
-
-            if (type.valueType() == TensorType.Value.FLOAT)
-                return new IndexedFloatTensor.BoundFloatBuilder(type, sizes).fill(values);
-            else if (type.valueType() == TensorType.Value.DOUBLE)
-                return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes, values);
-            else
-                return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes, values); // Default
+            switch (type.valueType()) {
+                case DOUBLE: return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes, values);
+                case FLOAT: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes).fill(values);
+                case BFLOAT16: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes).fill(values);
+                case INT8: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes).fill(values);
+                default:
+                    throw new IllegalStateException("Unexpected value type " + type.valueType());
+            }
         }
 
         private static void validateSizes(DimensionSizes sizes, int length) {
@@ -379,8 +401,6 @@ public abstract class IndexedTensor implements Tensor {
 
         TensorType type();
 
-
-
         /** Sets a value by its <i>standard value order</i> index */
         void cellByDirectIndex(long index, double value);
 
@@ -392,7 +412,7 @@ public abstract class IndexedTensor implements Tensor {
     /** A bound builder can create the double array directly */
     public static abstract class BoundBuilder extends Builder implements DirectIndexBuilder {
 
-        private DimensionSizes sizes;
+        private final DimensionSizes sizes;
 
         private static DimensionSizes dimensionSizesOf(TensorType type) {
             DimensionSizes.Builder b = new DimensionSizes.Builder(type.dimensions().size());

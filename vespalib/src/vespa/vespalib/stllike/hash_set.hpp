@@ -8,6 +8,11 @@
 namespace vespalib {
 
 template<typename K, typename H, typename EQ, typename M>
+hash_set<K, H, EQ, M>::hash_set()
+    : _ht(0)
+{ }
+
+template<typename K, typename H, typename EQ, typename M>
 hash_set<K, H, EQ, M>::hash_set(size_t reserveSize)
     : _ht(reserveSize)
 { }
@@ -85,11 +90,11 @@ hash_set<K, H, EQ, M>::insert(K &&value) {
 
 #define VESPALIB_HASH_SET_INSTANTIATE(K) \
     template class vespalib::hash_set<K>; \
-    template class vespalib::hashtable<K, K, vespalib::hash<K>, std::equal_to<>, vespalib::Identity>; \
+    template class vespalib::hashtable<K, K, vespalib::hash<K>, std::equal_to<>, vespalib::Identity, vespalib::hashtable_base::and_modulator>; \
     template class vespalib::Array<vespalib::hash_node<K>>;
 
 #define VESPALIB_HASH_SET_INSTANTIATE_H(K, H) \
     template class vespalib::hash_set<K, H>; \
-    template class vespalib::hashtable<K, K, H, std::equal_to<>, vespalib::Identity>; \
+    template class vespalib::hashtable<K, K, H, std::equal_to<>, vespalib::Identity, vespalib::hashtable_base::and_modulator>; \
     template class vespalib::Array<vespalib::hash_node<K>>;
 

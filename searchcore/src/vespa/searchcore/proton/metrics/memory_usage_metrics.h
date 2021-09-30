@@ -2,27 +2,12 @@
 
 #pragma once
 
-#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/common/memory_usage_metrics.h>
 
 namespace vespalib { class MemoryUsage; }
 
 namespace proton {
 
-/**
- * Metric set for memory usage metrics.
- */
-class MemoryUsageMetrics : public metrics::MetricSet
-{
-private:
-    metrics::LongValueMetric _allocatedBytes;
-    metrics::LongValueMetric _usedBytes;
-    metrics::LongValueMetric _deadBytes;
-    metrics::LongValueMetric _onHoldBytes;
-
-public:
-    MemoryUsageMetrics(metrics::MetricSet *parent);
-    ~MemoryUsageMetrics();
-    void update(const vespalib::MemoryUsage &usage);
-};
+using MemoryUsageMetrics = metrics::MemoryUsageMetrics;
 
 } // namespace proton

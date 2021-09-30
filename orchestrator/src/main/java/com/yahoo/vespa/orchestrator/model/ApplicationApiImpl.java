@@ -9,12 +9,13 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
+import com.yahoo.vespa.orchestrator.policy.ApplicationParams;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 
-import java.util.Collection;
+import java.time.Clock;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -23,8 +24,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.orchestrator.OrchestratorUtil.getHostsUsedByApplicationInstance;
-
 /**
  * @author hakonhall
  */
@@ -32,20 +31,21 @@ public class ApplicationApiImpl implements ApplicationApi {
 
     private final ApplicationInstance applicationInstance;
     private final NodeGroup nodeGroup;
-    private final MutableStatusRegistry hostStatusService;
+    private final ApplicationLock lock;
+    private final Clock clock;
     private final List<ClusterApi> clusterInOrder;
     private final HostInfos hostInfos;
 
     public ApplicationApiImpl(NodeGroup nodeGroup,
-                              MutableStatusRegistry hostStatusService,
+                              ApplicationLock lock,
                               ClusterControllerClientFactory clusterControllerClientFactory,
-                              int numberOfConfigServers) {
+                              ApplicationParams params, Clock clock) {
         this.applicationInstance = nodeGroup.getApplication();
         this.nodeGroup = nodeGroup;
-        this.hostStatusService = hostStatusService;
-        Collection<HostName> hosts = getHostsUsedByApplicationInstance(applicationInstance);
-        this.hostInfos = hostStatusService.getHostInfos();
-        this.clusterInOrder = makeClustersInOrder(nodeGroup, hostInfos, clusterControllerClientFactory, numberOfConfigServers);
+        this.lock = lock;
+        this.clock = clock;
+        this.hostInfos = lock.getHostInfos();
+        this.clusterInOrder = makeClustersInOrder(nodeGroup, hostInfos, clusterControllerClientFactory, params);
     }
 
     @Override
@@ -85,22 +85,23 @@ public class ApplicationApiImpl implements ApplicationApi {
     }
 
     @Override
-    public List<StorageNode> getUpStorageNodesInGroupInClusterOrder() {
+    public List<StorageNode> getNoRemarksStorageNodesInGroupInClusterOrder() {
         return clusterInOrder.stream()
-                .map(ClusterApi::upStorageNodeInGroup)
+                .map(ClusterApi::storageNodeInGroup)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
+                .filter(x -> hostInfos.getOrNoRemarks(x.hostName()).status() == HostStatus.NO_REMARKS)
                 .collect(Collectors.toList());
     }
 
     @Override
     public ApplicationInstanceStatus getApplicationStatus() {
-        return hostStatusService.getStatus();
+        return lock.getApplicationInstanceStatus();
     }
 
     @Override
     public void setHostState(OrchestratorContext context, HostName hostName, HostStatus status) {
-        hostStatusService.setHostState(hostName, status);
+        lock.setHostState(hostName, status);
     }
 
     @Override
@@ -113,7 +114,7 @@ public class ApplicationApiImpl implements ApplicationApi {
     private List<ClusterApi> makeClustersInOrder(NodeGroup nodeGroup,
                                                  HostInfos hostInfos,
                                                  ClusterControllerClientFactory clusterControllerClientFactory,
-                                                 int numberOfConfigServers) {
+                                                 ApplicationParams params) {
         Set<ServiceCluster> clustersInGroup = getServiceClustersInGroup(nodeGroup);
         return clustersInGroup.stream()
                 .map(serviceCluster -> new ClusterApiImpl(
@@ -122,7 +123,8 @@ public class ApplicationApiImpl implements ApplicationApi {
                         nodeGroup,
                         hostInfos,
                         clusterControllerClientFactory,
-                        numberOfConfigServers))
+                        params.clusterParamsFor(serviceCluster.clusterId(), serviceCluster.serviceType()),
+                        clock))
                 .sorted(ApplicationApiImpl::compareClusters)
                 .collect(Collectors.toList());
     }

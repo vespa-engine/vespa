@@ -2,13 +2,14 @@
 #pragma once
 
 #include "named_service.h"
-#include "rpc_server_map.h"
-#include "rpc_server_manager.h"
+#include "rpc_mapping_monitor.h"
 #include "remote_slobrok.h"
 #include "exchange_manager.h"
 #include "configshim.h"
 #include "ok_state.h"
+#include "local_rpc_monitor_map.h"
 #include "metrics_producer.h"
+#include "union_service_map.h"
 #include <vespa/config-slobroks.h>
 #include <vespa/slobrok/cfg.h>
 #include <vespa/vespalib/net/simple_health_producer.h>
@@ -24,7 +25,6 @@ namespace slobrok {
 class NamedService;
 class ManagedRpcServer;
 class RPCHooks;
-class SelfCheck;
 class RemoteCheck;
 
 /**
@@ -49,13 +49,21 @@ private:
     void setup(const std::vector<std::string> &cfg) override;
 
     std::vector<std::string>                   _partnerList;
-    std::unique_ptr<ManagedRpcServer>          _me;
+    std::string                                _me;
     RPCHooks                                   _rpcHooks;
-    std::unique_ptr<SelfCheck>                 _selfchecktask;
     std::unique_ptr<RemoteCheck>               _remotechecktask;
     vespalib::SimpleHealthProducer             _health;
     MetricsProducer                            _metrics;
     vespalib::SimpleComponentConfigProducer    _components;
+    LocalRpcMonitorMap                         _localRpcMonitorMap;
+    UnionServiceMap                            _consensusMap;
+    ServiceMapHistory                          _globalVisibleHistory;
+
+    ExchangeManager                            _exchanger;
+
+    std::unique_ptr<MapSubscription>           _localMonitorSubscription;
+    std::unique_ptr<MapSubscription>           _consensusSubscription;
+    std::unique_ptr<MapSubscription>           _globalHistorySubscription;
 
 public:
     explicit SBEnv(const ConfigShim &shim);
@@ -69,19 +77,33 @@ public:
     void suspend();
     void resume();
 
-    RpcServerManager         _rpcsrvmanager;
-    ExchangeManager          _exchanger;
-    RpcServerMap             _rpcsrvmap;
+    ExchangeManager& exchangeManager() { return _exchanger; }
 
-    const std::string & mySpec() const { return _me->getSpec(); }
+    ServiceMapHistory& globalHistory() {
+        return _globalVisibleHistory;
+    }
+
+    LocalRpcMonitorMap& localMonitorMap() {
+        return _localRpcMonitorMap;
+    }
+
+    ServiceMapHistory& localHistory() {
+        return _localRpcMonitorMap.history();
+    }
+
+    UnionServiceMap& consensusMap() {
+        return _consensusMap;
+    }
+
+    const std::string & mySpec() const { return _me; }
 
     bool isSuspended() const { return false; }
     bool isShuttingDown() const { return _shuttingDown; }
 
     int MainLoop();
 
-    OkState addPeer(const std::string& name, const std::string &spec);
-    OkState removePeer(const std::string& name, const std::string &spec);
+    OkState addPeer(const std::string& name, const std::string& spec);
+    OkState removePeer(const std::string& name, const std::string& spec);
 
     void countFailedHeartbeat() { _rpcHooks.countFailedHeartbeat(); }
 };

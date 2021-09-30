@@ -1,16 +1,17 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
+#include <vespa/vespalib/stllike/string.h>
 #include <utility>
 #include <map>
 #include <vector>
-#include <vespa/vespalib/stllike/string.h>
+#include <memory>
 
 namespace search {
 
 /**
- * Keeps track of which elements matched the query for a set of struct
- * fields across multiple documents.
+ * Keeps track of which elements matched the query for a set of fields
+ * across multiple documents.
  **/
 class MatchingElements
 {
@@ -26,8 +27,8 @@ public:
 
     using UP = std::unique_ptr<MatchingElements>;
 
-    void add_matching_elements(uint32_t docid, const vespalib::string &struct_field_name, const std::vector<uint32_t> &elements);
-    const std::vector<uint32_t> &get_matching_elements(uint32_t docid, const vespalib::string &struct_field_name) const;
+    void add_matching_elements(uint32_t docid, const vespalib::string &field_name, const std::vector<uint32_t> &elements);
+    const std::vector<uint32_t> &get_matching_elements(uint32_t docid, const vespalib::string &field_name) const;
 };
 
 } // namespace search

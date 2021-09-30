@@ -2,13 +2,13 @@
 
 #include "reference_attribute_saver.h"
 #include <vespa/vespalib/util/array.hpp>
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include "iattributesavetarget.h"
 
 
 using vespalib::GenerationHandler;
 using document::GlobalId;
-using search::datastore::EntryRef;
+using vespalib::datastore::EntryRef;
 
 namespace search {
 namespace attribute {
@@ -21,7 +21,7 @@ ReferenceAttributeSaver(GenerationHandler::Guard &&guard,
     : AttributeSaver(std::move(guard), header),
       _indices(std::move(indices)),
       _store(store),
-      _enumerator(store.getEnumerator())
+      _enumerator(store.getEnumerator(true))
 {
 }
 

@@ -1,15 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/fnet/fnet.h>
+#include <vespa/vespalib/testkit/time_bomb.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fnet/transport_thread.h>
+#include <vespa/fnet/simplepacketstreamer.h>
+#include <vespa/fnet/ipackethandler.h>
+#include <vespa/fnet/connection.h>
+#include <vespa/fnet/controlpacket.h>
 #include <vespa/vespalib/net/server_socket.h>
 #include <vespa/vespalib/net/crypto_engine.h>
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace vespalib;
 
-int short_time = 20; // ms
+constexpr vespalib::duration short_time = 20ms;
 
 struct BlockingHostResolver : public AsyncResolver::HostResolver {
     AsyncResolver::SimpleHostResolver resolver;
@@ -59,12 +65,15 @@ struct BlockingCryptoSocket : public CryptoSocket {
     ssize_t write(const char *buf, size_t len) override { return socket.write(buf, len); }
     ssize_t flush() override { return 0; }
     ssize_t half_close() override { return socket.half_close(); }
+    void drop_empty_buffers() override {}
 };
 
 struct BlockingCryptoEngine : public CryptoEngine {
     Gate handshake_work_enter;
     Gate handshake_work_exit;
     Gate handshake_socket_deleted;
+    bool use_tls_when_client() const override { return false; }
+    bool always_use_tls_when_server() const override { return false; }
     CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &) override {
         return std::make_unique<BlockingCryptoSocket>(std::move(socket),
                 handshake_work_enter, handshake_work_exit, handshake_socket_deleted);
@@ -83,19 +92,19 @@ struct TransportFixture : FNET_IPacketHandler, FNET_IConnectionCleanupHandler {
     FNET_Transport transport;
     Gate conn_lost;
     Gate conn_deleted;
-    TransportFixture() : streamer(nullptr), pool(128 * 1024), transport(),
+    TransportFixture() : streamer(nullptr), pool(128_Ki), transport(),
                          conn_lost(), conn_deleted()
     {
         transport.Start(&pool);
     }
     TransportFixture(AsyncResolver::HostResolver::SP host_resolver)
-        : streamer(nullptr), pool(128 * 1024), transport(make_resolver(std::move(host_resolver)), 1),
+        : streamer(nullptr), pool(128_Ki), transport(TransportConfig().resolver(make_resolver(std::move(host_resolver)))),
           conn_lost(), conn_deleted()
     {
         transport.Start(&pool);
     }
     TransportFixture(CryptoEngine::SP crypto)
-        : streamer(nullptr), pool(128 * 1024), transport(crypto, 1),
+        : streamer(nullptr), pool(128_Ki), transport(TransportConfig().crypto(std::move(crypto))),
           conn_lost(), conn_deleted()
     {
         transport.Start(&pool);
@@ -113,7 +122,7 @@ struct TransportFixture : FNET_IPacketHandler, FNET_IConnectionCleanupHandler {
         conn->SetCleanupHandler(this);
         return conn;
     }
-    ~TransportFixture() {
+    ~TransportFixture() override {
         transport.ShutDown(true);
         pool.Close();
     }

@@ -3,13 +3,14 @@
 #include "rpcsendv2.h"
 #include "rpcnetwork.h"
 #include "rpcserviceaddress.h"
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/tracelevel.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/data/databuffer.h>
-#include <vespa/vespalib/util/compressor.h>
 #include <vespa/fnet/frt/reflection.h>
+#include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/error.h>
+#include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/compressor.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string;
 using vespalib::compression::CompressionConfig;
@@ -49,7 +50,8 @@ Memory SERVICE_F("service");
 
 }
 
-bool RPCSendV2::isCompatible(stringref method, stringref request, stringref response)
+bool
+RPCSendV2::isCompatible(stringref method, stringref request, stringref response)
 {
     return  (method == METHOD_NAME) &&
             (request == METHOD_PARAMS) &&
@@ -123,7 +125,7 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
     root.setLong(TRACELEVEL_F, traceLevel);
     filler.fill(BLOB_F, root);
 
-    OutputBuf rBuf(8192);
+    OutputBuf rBuf(8_Ki);
     BinaryFormat::encode(slime, rBuf);
     ConstBufferRef toCompress(rBuf.getBuf().getData(), rBuf.getBuf().getDataLen());
     DataBuffer buf(vespalib::roundUp2inN(rBuf.getBuf().getDataLen()));
@@ -133,7 +135,7 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
     args.AddInt32(toCompress.size());
     const auto bufferLength = buf.getDataLen();
     assert(bufferLength <= INT32_MAX);
-    args.AddData(buf.stealBuffer(), bufferLength);
+    args.AddData(std::move(buf).stealBuffer(), bufferLength);
 }
 
 namespace {
@@ -141,7 +143,7 @@ namespace {
 class ParamsV2 : public RPCSend::Params
 {
 public:
-    ParamsV2(const FRT_Values &arg)
+    explicit ParamsV2(const FRT_Values &arg)
         : _slime()
     {
         uint8_t encoding = arg[3]._intval8;
@@ -188,7 +190,7 @@ RPCSendV2::toParams(const FRT_Values &args) const
 
 std::unique_ptr<Reply>
 RPCSendV2::createReply(const FRT_Values & ret, const string & serviceName,
-                       Error & error, vespalib::TraceNode & rootTrace) const
+                       Error & error, vespalib::Trace & rootTrace) const
 {
     uint8_t encoding = ret[3]._intval8;
     uint32_t uncompressedSize = ret[4]._intval32;
@@ -207,7 +209,7 @@ RPCSendV2::createReply(const FRT_Values & ret, const string & serviceName,
         reply = decode(root[PROTOCOL_F].asString().make_stringref(), version, BlobRef(payload.data, payload.size), error);
     }
     if ( ! reply ) {
-        reply.reset(new EmptyReply());
+        reply = std::make_unique<EmptyReply>();
     }
     reply->setRetryDelay(root[RETRYDELAY_F].asDouble());
     Inspector & errors = root[ERRORS_F];
@@ -217,7 +219,10 @@ RPCSendV2::createReply(const FRT_Values & ret, const string & serviceName,
         reply->addError(Error(e[CODE_F].asLong(), e[MSG_F].asString().make_string(),
                               (service.size > 0) ? service.make_string() : serviceName));
     }
-    rootTrace.addChild(TraceNode::decode(root[TRACE_F].asString().make_string()));
+    Inspector & trace = root[TRACE_F];
+    if (trace.valid() && (trace.asString().size > 0)) {
+        rootTrace.addChild(TraceNode::decode(trace.asString().make_string()));
+    }
     return reply;
 }
 
@@ -237,7 +242,7 @@ RPCSendV2::createResponse(FRT_Values & ret, const string & version, Reply & repl
     root.setString(PROTOCOL_F, reply.getProtocol());
     root.setData(BLOB_F, vespalib::Memory(payload.data(), payload.size()));
     if (reply.getTrace().getLevel() > 0) {
-        root.setString(TRACE_F, reply.getTrace().getRoot().encode());
+        root.setString(TRACE_F, reply.getTrace().encode());
     }
 
     if (reply.getNumErrors() > 0) {
@@ -246,11 +251,11 @@ RPCSendV2::createResponse(FRT_Values & ret, const string & version, Reply & repl
             Cursor & error = array.addObject();
             error.setLong(CODE_F, reply.getError(i).getCode());
             error.setString(MSG_F, reply.getError(i).getMessage());
-            error.setString(SERVICE_F, reply.getError(i).getService().c_str());
+            error.setString(SERVICE_F, reply.getError(i).getService());
         }
     }
 
-    OutputBuf rBuf(8192);
+    OutputBuf rBuf(8_Ki);
     BinaryFormat::encode(slime, rBuf);
     ConstBufferRef toCompress(rBuf.getBuf().getData(), rBuf.getBuf().getDataLen());
     DataBuffer buf(vespalib::roundUp2inN(rBuf.getBuf().getDataLen()));
@@ -258,10 +263,8 @@ RPCSendV2::createResponse(FRT_Values & ret, const string & version, Reply & repl
 
     ret.AddInt8(type);
     ret.AddInt32(toCompress.size());
-    const auto bufferLength = buf.getDataLen();
-    assert(bufferLength <= INT32_MAX);
-    ret.AddData(buf.stealBuffer(), bufferLength);
-
+    assert(buf.getDataLen() <= INT32_MAX);
+    ret.AddData(std::move(buf));
 }
 
 } // namespace mbus

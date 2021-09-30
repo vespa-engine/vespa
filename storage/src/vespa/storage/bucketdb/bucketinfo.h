@@ -7,7 +7,10 @@
 
 namespace storage {
 
-namespace distributor { class DistributorTestUtil; }
+namespace distributor {
+    class DistributorStripeTestUtil;
+    class TopLevelDistributorTestUtil;
+}
 
 enum class TrustedUpdate {
     UPDATE,
@@ -106,6 +109,11 @@ public:
         return _nodes;
     }
 
+    // If there is a valid majority of replicas that have the same metadata
+    // (checksum and document count), return that bucket info.
+    // Otherwise, return default-constructed info with valid() == false.
+    api::BucketInfo majority_consistent_bucket_info() const noexcept;
+
     std::string toString() const;
 
     uint32_t getHighestDocumentCount() const;
@@ -195,7 +203,8 @@ public:
     void clear() { _nodes.clear(); }
 
 private:
-    friend class distributor::DistributorTestUtil;
+    friend class distributor::DistributorStripeTestUtil;
+    friend class distributor::TopLevelDistributorTestUtil;
 
     /**
      * Returns the bucket copy struct for the given node, null if nonexisting

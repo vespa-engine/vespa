@@ -8,10 +8,11 @@
 namespace search {
 
 ComprBuffer::ComprBuffer(uint32_t unitSize)
-    : _comprBuf(NULL),
+    : _unitSize(unitSize),
+      _padBefore(false),
+      _comprBuf(nullptr),
       _comprBufSize(0),
-      _unitSize(unitSize),
-      _comprBufMalloc(NULL)
+      _comprAlloc()
 { }
 
 
@@ -24,9 +25,7 @@ ComprBuffer::~ComprBuffer()
 void
 ComprBuffer::dropComprBuf()
 {
-    free(_comprBufMalloc);
-    _comprBuf = NULL;
-    _comprBufMalloc = NULL;
+    _comprBuf = nullptr;
 }
 
 
@@ -58,6 +57,7 @@ ComprBuffer::allocComprBuf()
      */
     size_t paddingAfter = minimumPadding() * _unitSize;
     size_t paddingBefore = 0;
+    size_t memalign = FastOS_File::getMaxDirectIOMemAlign();
     if (_padBefore) {
         /*
          * Add padding before normal buffer, to allow last data at end of
@@ -67,21 +67,21 @@ ComprBuffer::allocComprBuf()
          * buffers.
          */
         paddingBefore = paddingAfter + 2 * _unitSize;
-        size_t memalign = FastOS_File::getMaxDirectIOMemAlign();
+
         if (paddingBefore < memalign)
             paddingBefore = memalign;
     }
     size_t fullpadding = paddingAfter + paddingBefore;
     size_t allocLen = _comprBufSize * _unitSize + fullpadding;
-    void *alignedBuf = FastOS_File::allocateGenericDirectIOBuffer(allocLen,
-            _comprBufMalloc);
+    _comprAlloc = Alloc::alloc_aligned(allocLen, memalign);
+    void *alignedBuf = _comprAlloc.get();
     memset(alignedBuf, 0, allocLen);
     /*
      * Set pointer to the start of normal buffer, which should be properly
      * aligned in memory for direct IO.
      */
-    _comprBuf = reinterpret_cast<void *>
-                (static_cast<char *>(alignedBuf) + paddingBefore);
+    _comprBuf = (static_cast<char *>(alignedBuf) + paddingBefore);
+    _comprBufSize = (_comprAlloc.size() - fullpadding) / _unitSize;
 }
 
 
@@ -94,14 +94,14 @@ ComprBuffer::expandComprBuf(uint32_t overflowUnits)
         newSize = 16;
     size_t paddingAfter = minimumPadding() * _unitSize;
     assert(overflowUnits <= minimumPadding());
-    void *newBuf = malloc(newSize * _unitSize + paddingAfter);
-    size_t oldLen = (static_cast<size_t>(_comprBufSize) + overflowUnits) *
-                    _unitSize;
-    if (oldLen > 0)
-        memcpy(newBuf, _comprBuf, oldLen);
-    free(_comprBufMalloc);
-    _comprBuf = _comprBufMalloc = newBuf;
-    _comprBufSize = newSize;
+    Alloc newBuf = Alloc::alloc(newSize * _unitSize + paddingAfter);
+    size_t oldLen = (static_cast<size_t>(_comprBufSize) + overflowUnits) * _unitSize;
+    if (oldLen > 0) {
+        memcpy(newBuf.get(), _comprBuf, oldLen);
+    }
+    _comprAlloc = std::move(newBuf);
+    _comprBuf = _comprAlloc.get();
+    _comprBufSize = (_comprAlloc.size() - paddingAfter) / _unitSize;
 }
 
 

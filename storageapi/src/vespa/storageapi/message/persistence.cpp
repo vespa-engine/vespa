@@ -43,6 +43,11 @@ PutCommand::getDocumentId() const {
     return _doc->getId();
 }
 
+const document::DocumentType *
+PutCommand::getDocumentType() const {
+    return &_doc->getType();
+}
+
 vespalib::string
 PutCommand::getSummary() const
 {
@@ -107,6 +112,11 @@ UpdateCommand::UpdateCommand(const document::Bucket &bucket, const document::Doc
     if ( ! _update) {
         throw vespalib::IllegalArgumentException("Cannot update a null update", VESPA_STRLOC);
     }
+}
+
+const document::DocumentType *
+UpdateCommand::getDocumentType() const {
+    return &_update->getType();
 }
 
 UpdateCommand::~UpdateCommand() = default;
@@ -211,14 +221,16 @@ GetCommand::print(std::ostream& out, bool verbose, const std::string& indent) co
 GetReply::GetReply(const GetCommand& cmd,
                    const DocumentSP& doc,
                    Timestamp lastModified,
-                   bool had_consistent_replicas)
+                   bool had_consistent_replicas,
+                   bool is_tombstone)
     : BucketInfoReply(cmd),
       _docId(cmd.getDocumentId()),
       _fieldSet(cmd.getFieldSet()),
       _doc(doc),
       _beforeTimestamp(cmd.getBeforeTimestamp()),
       _lastModifiedTime(lastModified),
-      _had_consistent_replicas(had_consistent_replicas)
+      _had_consistent_replicas(had_consistent_replicas),
+      _is_tombstone(is_tombstone)
 {
 }
 

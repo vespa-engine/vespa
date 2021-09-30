@@ -8,6 +8,7 @@
 #include <vespa/fnet/transport_thread.h>
 #include <vespa/fnet/connector.h>
 #include <vespa/fastos/thread.h>
+#include <vespa/vespalib/util/require.h>
 
 FRT_Supervisor::FRT_Supervisor(FNET_Transport *transport)
     : _transport(transport),
@@ -157,7 +158,8 @@ FRT_Supervisor::InvokeAsync(SchedulerPtr scheduler, FNET_Connection *conn, FRT_R
         adapter->ScheduleNow();
         return;
     }
-    if (timeout > 0.0) {
+    constexpr double ONE_YEAR_S = 3600*24*365;
+    if (timeout > 0.0 && timeout < ONE_YEAR_S) {
         adapter->Schedule(timeout);
     }
     conn->PostPacket(packet, chid);
@@ -408,24 +410,26 @@ FRT_Supervisor::SchedulerPtr::SchedulerPtr(FNET_TransportThread *transport_threa
 
 namespace fnet::frt {
 
-StandaloneFRT::StandaloneFRT()
-    : _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
-      _transport(std::make_unique<FNET_Transport>()),
+StandaloneFRT::StandaloneFRT(const TransportConfig &config)
+    : _threadPool(std::make_unique<FastOS_ThreadPool>(1024*128)),
+      _transport(std::make_unique<FNET_Transport>(config)),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get()))
 {
-    _transport->Start(_threadPool.get());
+    REQUIRE(_transport->Start(_threadPool.get()));
 }
 
-StandaloneFRT::StandaloneFRT(vespalib::CryptoEngine::SP crypto)
-    : _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
-      _transport(std::make_unique<FNET_Transport>(std::move(crypto), 1)),
-      _supervisor(std::make_unique<FRT_Supervisor>(_transport.get()))
-{
-    _transport->Start(_threadPool.get());
-}
+StandaloneFRT::StandaloneFRT()
+  : StandaloneFRT(TransportConfig()) {}
+
+StandaloneFRT::StandaloneFRT(std::shared_ptr<vespalib::CryptoEngine> crypto)
+  : StandaloneFRT(TransportConfig().crypto(std::move(crypto))) {}
 
 StandaloneFRT::~StandaloneFRT()
 {
+    _transport->ShutDown(true);
+}
+
+void StandaloneFRT::shutdown() {
     _transport->ShutDown(true);
 }
 

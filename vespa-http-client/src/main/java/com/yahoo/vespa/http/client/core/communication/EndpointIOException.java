@@ -20,8 +20,7 @@ public class EndpointIOException extends IOException {
         this.endpoint = endpoint;
     }
 
-    public Endpoint getEndpoint() {
-        return endpoint;
-    }
+    /** Returns the endpoint, or null if the failure occurred before this was assigned to a unique endpoint */
+    public Endpoint getEndpoint() { return endpoint; }
 
 }

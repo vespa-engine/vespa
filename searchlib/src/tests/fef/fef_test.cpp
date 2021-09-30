@@ -67,12 +67,11 @@ TEST("test TermFieldMatchDataAppend")
     EXPECT_EQUAL(1u, tmd.capacity());
     tmd.appendPosition(pos);
     EXPECT_EQUAL(2u, tmd.size());
-    EXPECT_EQUAL(2u, tmd.capacity());
+    EXPECT_EQUAL(42u, tmd.capacity());
     uint32_t resizeCount(0);
     const TermFieldMatchDataPosition * prev = tmd.begin();
     for (size_t i(2); i < std::numeric_limits<uint16_t>::max(); i++) {
         EXPECT_EQUAL(i, tmd.size());
-        EXPECT_EQUAL(std::min(size_t(std::numeric_limits<uint16_t>::max()), vespalib::roundUp2inN(i)), tmd.capacity());
         tmd.appendPosition(pos);
         const TermFieldMatchDataPosition * cur = tmd.begin();
         if (cur != prev) {
@@ -80,13 +79,15 @@ TEST("test TermFieldMatchDataAppend")
             resizeCount++;
         }
     }
-    EXPECT_EQUAL(15u, resizeCount);
+    EXPECT_EQUAL(11u, resizeCount);
     EXPECT_EQUAL(std::numeric_limits<uint16_t>::max(), tmd.size());
     EXPECT_EQUAL(std::numeric_limits<uint16_t>::max(), tmd.capacity());
-    tmd.appendPosition(pos);
-    EXPECT_EQUAL(prev, tmd.begin());
-    EXPECT_EQUAL(std::numeric_limits<uint16_t>::max(), tmd.size());
-    EXPECT_EQUAL(std::numeric_limits<uint16_t>::max(), tmd.capacity());
+    for (size_t i(0); i < 10; i++) {
+        tmd.appendPosition(pos);
+        EXPECT_EQUAL(prev, tmd.begin());
+        EXPECT_EQUAL(std::numeric_limits<uint16_t>::max(), tmd.size());
+        EXPECT_EQUAL(std::numeric_limits<uint16_t>::max(), tmd.capacity());
+    }
 }
 
 TEST("verify size of essential fef classes") {

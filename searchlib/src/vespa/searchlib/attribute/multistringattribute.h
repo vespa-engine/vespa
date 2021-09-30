@@ -26,20 +26,17 @@ template <typename B, typename M>
 class MultiValueStringAttributeT : public MultiValueEnumAttribute<B, M> {
 protected:
     using DocIndices = typename MultiValueAttribute<B, M>::DocumentValues;
-    using EnumHintSearchContext = attribute::EnumHintSearchContext;
     using EnumIndex = typename MultiValueAttribute<B, M>::ValueType;
     using EnumStore = typename B::EnumStore;
     using MultiValueMapping = typename MultiValueAttribute<B, M>::MultiValueMapping;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using WeightedIndex = typename MultiValueAttribute<B, M>::MultiValueType;
     using WeightedIndexArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
-    using WeightedIndexVector = typename MultiValueAttribute<B, M>::ValueVector;
 
     using Change = StringAttribute::Change;
     using ChangeVector = StringAttribute::ChangeVector;
     using DocId = StringAttribute::DocId;
     using EnumHandle = StringAttribute::EnumHandle;
-    using EnumModifier = StringAttribute::EnumModifier;
     using LoadedVector = StringAttribute::LoadedVector;
     using SearchContext = StringAttribute::SearchContext;
     using ValueModifier = StringAttribute::ValueModifier;
@@ -47,9 +44,6 @@ protected:
     using WeightedEnum = StringAttribute::WeightedEnum;
     using WeightedString = StringAttribute::WeightedString;
     using generation_t = StringAttribute::generation_t;
-
-private:
-    friend class StringAttributeTest;
 
 public:
     MultiValueStringAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
@@ -155,11 +149,10 @@ public:
 
     template <typename BT>
     class StringTemplSearchContext : public BT,
-                                     public EnumHintSearchContext
+                                     public attribute::EnumHintSearchContext
     {
         using BT::queryTerm;
         using AttrType = MultiValueStringAttributeT<B, M>;
-        using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
     public:
         StringTemplSearchContext(SearchContext::QueryTermSimpleUP qTerm, const AttrType & toBeSearched);
     };

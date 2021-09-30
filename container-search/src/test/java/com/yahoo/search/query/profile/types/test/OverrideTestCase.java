@@ -5,6 +5,7 @@ import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.component.ComponentId;
 import com.yahoo.search.Query;
+import com.yahoo.search.query.profile.DimensionValues;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
@@ -168,7 +169,7 @@ public class OverrideTestCase {
         QueryProfile test = new QueryProfile("test");
         test.setType(type);
         test.set("myInteger", 1, registry);
-        test.setOverridable("myInteger", false, null);
+        test.setOverridable("myInteger", false, DimensionValues.empty);
         registry.register(test);
 
         QueryProfile profile=new QueryProfile("profile");

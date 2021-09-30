@@ -2,19 +2,16 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
-import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
+import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -82,24 +79,21 @@ public class VersionStatusSerializer {
         object.setBool(isControllerVersionField, version.isControllerVersion());
         object.setBool(isSystemVersionField, version.isSystemVersion());
         object.setBool(isReleasedField, version.isReleased());
-        deploymentStatisticsToSlime(version.statistics(), object.setObject(deploymentStatisticsField));
+        deploymentStatisticsToSlime(version.versionNumber(), object.setObject(deploymentStatisticsField));
         object.setString(confidenceField, version.confidence().name());
         nodeVersionsToSlime(version.nodeVersions(), object.setArray(nodeVersionsField));
     }
 
-    private void nodeVersionsToSlime(NodeVersions nodeVersions, Cursor array) {
+    private void nodeVersionsToSlime(List<NodeVersion> nodeVersions, Cursor array) {
         nodeVersionSerializer.nodeVersionsToSlime(nodeVersions, array);
     }
 
-    private void deploymentStatisticsToSlime(DeploymentStatistics statistics, Cursor object) {
-        object.setString(versionField, statistics.version().toString());
-        applicationsToSlime(statistics.failing(), object.setArray(failingField));
-        applicationsToSlime(statistics.production(), object.setArray(productionField));
-        applicationsToSlime(statistics.deploying(), object.setArray(deployingField));
-    }
-
-    private void applicationsToSlime(Collection<ApplicationId> applications, Cursor array) {
-        applications.forEach(application -> array.addString(application.serializedForm()));
+    private void deploymentStatisticsToSlime(Version version, Cursor object) {
+        object.setString(versionField, version.toString());
+        // TODO jonmv: Remove the below.
+        object.setArray(failingField);
+        object.setArray(productionField);
+        object.setArray(deployingField);
     }
 
     private List<VespaVersion> vespaVersionsFromSlime(Inspector array) {
@@ -109,31 +103,16 @@ public class VersionStatusSerializer {
     }
 
     private VespaVersion vespaVersionFromSlime(Inspector object) {
-        var deploymentStatistics = deploymentStatisticsFromSlime(object.field(deploymentStatisticsField));
-        return new VespaVersion(deploymentStatistics,
+        var version = Version.fromString(object.field(deploymentStatisticsField).field(versionField).asString());
+        return new VespaVersion(version,
                                 object.field(releaseCommitField).asString(),
-                                Instant.ofEpochMilli(object.field(committedAtField).asLong()),
+                                SlimeUtils.instant(object.field(committedAtField)),
                                 object.field(isControllerVersionField).asBool(),
                                 object.field(isSystemVersionField).asBool(),
                                 object.field(isReleasedField).asBool(),
-                                nodeVersionSerializer.nodeVersionsFromSlime(object.field(nodeVersionsField), deploymentStatistics.version()),
+                                nodeVersionSerializer.nodeVersionsFromSlime(object.field(nodeVersionsField), version),
                                 VespaVersion.Confidence.valueOf(object.field(confidenceField).asString())
         );
-    }
-
-    private DeploymentStatistics deploymentStatisticsFromSlime(Inspector object) {
-        return new DeploymentStatistics(Version.fromString(object.field(versionField).asString()),
-                                        applicationsFromSlime(object.field(failingField)),
-                                        applicationsFromSlime(object.field(productionField)),
-                                        applicationsFromSlime(object.field(deployingField)));
-    }
-
-    private List<ApplicationId> applicationsFromSlime(Inspector array) {
-        List<ApplicationId> applications = new ArrayList<>();
-        array.traverse((ArrayTraverser) (i, entry) -> applications.add(
-                ApplicationId.fromSerializedForm(entry.asString()))
-        );
-        return Collections.unmodifiableList(applications);
     }
 
 }

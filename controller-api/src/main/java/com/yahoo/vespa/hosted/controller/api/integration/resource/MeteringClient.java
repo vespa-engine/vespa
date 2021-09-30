@@ -21,4 +21,6 @@ public interface MeteringClient {
 
     List<ResourceSnapshot> getSnapshotHistoryForTenant(TenantName tenantName, YearMonth yearMonth);
 
+    void refresh();
+
 }

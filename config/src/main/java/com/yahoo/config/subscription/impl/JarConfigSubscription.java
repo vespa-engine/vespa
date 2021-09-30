@@ -1,14 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.CfgConfigPayloadBuilder;
@@ -17,6 +9,15 @@ import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.PayloadChecksums;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 /**
  * Subscription to use when config id is jar:.../foo.jar[!/pathInJar/]
@@ -63,7 +64,7 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             } catch (IOException e) {
                 throw new ConfigurationRuntimeException(e);
             }
-            setConfig(0L, false, config);
+            setConfig(0L, false, config, PayloadChecksums.empty());
             try {
                 jarFile.close();
             } catch (IOException e) {
@@ -81,16 +82,15 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     }
 
     /**
-     * Returns the entry corresponding to the ConfigInstance's defName/Version in the given directory in
-     * the given JarFile.
-     * If the file with correct version number does not exist, returns the filename without version number.
+     * Returns the entry corresponding to the ConfigInstance's defName in the given directory in
+     * the given jar file.
      * The file's existence is checked elsewhere.
      */
     private ZipEntry getEntry(JarFile jarFile, String dir) {
         if (!dir.endsWith("/")) {
             dir = dir + '/';
         }
-        return jarFile.getEntry(dir + getConfigFilenameNoVersion(key));
+        return jarFile.getEntry(dir + getConfigFilename(key));
     }
 
     @Override

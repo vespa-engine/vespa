@@ -7,6 +7,7 @@ import com.yahoo.container.jdisc.config.SessionConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.Chains;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 
@@ -38,12 +39,12 @@ public class DocprocChains extends Chains<DocprocChain> {
     }
 
     private void addServerAndClientForChain(ApplicationContainerCluster cluster, DocprocChain docprocChain) {
-        docprocHandler.addServerBindings("mbus://*/" + docprocChain.getSessionName());
+        docprocHandler.addServerBindings(SystemBindingPattern.fromPattern("mbus://*/" + docprocChain.getSessionName()));
 
         cluster.addMbusServer(ComponentId.fromString(docprocChain.getSessionName()));
 
         MbusClient client = new MbusClient(docprocChain.getSessionName(), SessionConfig.Type.INTERMEDIATE);
-        client.addClientBindings("mbus://*/" + client.getSessionName());
+        client.addClientBindings(SystemBindingPattern.fromPattern("mbus://*/" + client.getSessionName()));
         addComponent(client);
     }
 }

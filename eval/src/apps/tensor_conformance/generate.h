@@ -4,16 +4,20 @@
 
 #include <vespa/eval/eval/tensor_spec.h>
 #include <map>
+#include <set>
 
 struct TestBuilder {
+    bool full;
+    TestBuilder(bool full_in) : full(full_in) {}
     using TensorSpec = vespalib::eval::TensorSpec;
-    // add test with pre-defined expected result
     virtual void add(const vespalib::string &expression,
                      const std::map<vespalib::string,TensorSpec> &inputs,
-                     const TensorSpec &expect) = 0;
-    // add test with undefined expected result
-    virtual void add(const vespalib::string &expression,
-                     const std::map<vespalib::string,TensorSpec> &inputs) = 0;
+                     const std::set<vespalib::string> &ignore) = 0;
+    void add(const vespalib::string &expression,
+             const std::map<vespalib::string,TensorSpec> &inputs)
+    {
+        add(expression, inputs, {});
+    }
     virtual ~TestBuilder() {}
 };
 

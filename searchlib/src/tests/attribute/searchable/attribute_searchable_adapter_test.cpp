@@ -8,12 +8,10 @@
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
-#include <vespa/searchlib/attribute/extendableattributes.h>
+#include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
-#include <vespa/searchlib/attribute/singlenumericpostattribute.hpp>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/tree/location.h>
@@ -27,7 +25,7 @@
 #include <vespa/searchlib/queryeval/field_spec.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
-#include <memory>
+#include <vespa/searchlib/attribute/singlenumericpostattribute.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_searchable_adapter_test");
@@ -37,7 +35,6 @@ using search::AttributeGuard;
 using search::AttributeVector;
 using search::IAttributeManager;
 using search::IntegerAttribute;
-using search::SingleStringExtAttribute;
 using search::attribute::IAttributeContext;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
@@ -76,7 +73,6 @@ namespace {
 
 const string field = "field";
 const string other = "other";
-const int32_t weight = 1;
 const uint32_t num_docs = 1000;
 
 class MyAttributeManager : public IAttributeManager {
@@ -140,8 +136,9 @@ struct Result {
         uint32_t docid;
         double raw_score;
         int32_t match_weight;
-        Hit(uint32_t id, double raw, int32_t match_weight_in)
-            : docid(id), raw_score(raw), match_weight(match_weight_in) {}
+        Hit(uint32_t id, double raw, int32_t match_weight_in) noexcept
+            : docid(id), raw_score(raw), match_weight(match_weight_in)
+        {}
     };
     size_t est_hits;
     bool est_empty;
@@ -267,9 +264,11 @@ bool search(const string &term, IAttributeManager &attribute_manager,
 }
 
 template <typename T> struct AttributeVectorTypeFinder {
-    //typedef search::SingleValueStringAttribute Type;
-    typedef SingleStringExtAttribute Type;
-    static void add(Type & a, const T & v) { a.add(v, weight); }
+    typedef search::SingleValueStringAttribute Type;
+    static void add(Type & a, const T & v) {
+        a.update(a.getNumDocs()-1, v);
+        a.commit();
+    }
 };
 template <> struct AttributeVectorTypeFinder<int64_t> {
     typedef search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int64_t> > Type;
@@ -339,29 +338,43 @@ TEST("requireThatPrefixTermsWork") {
 TEST("requireThatLocationTermsWork") {
     // 0xcc is z-curve for (10, 10).
     MyAttributeManager attribute_manager = makeAttributeManager(int64_t(0xcc));
-
-    SimpleLocationTerm node(Location(Point(10, 10), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(100, 100), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(!search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(13, 13), 4, 0), field, 0, Weight(0));
-    EXPECT_TRUE(!search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(10, 13), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(search(node, attribute_manager));
+    {
+        SimpleLocationTerm node(Location(Point{10, 10}, 3, 0), field, 0, Weight(0));
+        EXPECT_TRUE(search(node, attribute_manager));
+    }
+    {
+        SimpleLocationTerm node(Location(Point{100, 100}, 3, 0), field, 0, Weight(0));
+        EXPECT_TRUE(!search(node, attribute_manager));
+    }
+    {
+        SimpleLocationTerm node(Location(Point{13, 13}, 4, 0), field, 0, Weight(0));
+        EXPECT_TRUE(!search(node, attribute_manager));
+    }
+    {
+        SimpleLocationTerm node(Location(Point{10, 13}, 3, 0), field, 0, Weight(0));
+        EXPECT_TRUE(search(node, attribute_manager));
+    }
 }
 
 TEST("requireThatOptimizedLocationTermsWork") {
     // 0xcc is z-curve for (10, 10).
     MyAttributeManager attribute_manager = makeFastSearchLongAttributeManager(int64_t(0xcc));
-
-    SimpleLocationTerm node(Location(Point(10, 10), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(search(node, attribute_manager, true));
-    node = SimpleLocationTerm(Location(Point(100, 100), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(!search(node, attribute_manager, true));
-    node = SimpleLocationTerm(Location(Point(13, 13), 4, 0), field, 0, Weight(0));
-    EXPECT_TRUE(!search(node, attribute_manager, true));
-    node = SimpleLocationTerm(Location(Point(10, 13), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(search(node, attribute_manager, true));
+    {
+        SimpleLocationTerm node(Location(Point{10, 10}, 3, 0), field, 0, Weight(0));
+        EXPECT_TRUE(search(node, attribute_manager, true));
+    }
+    {
+        SimpleLocationTerm node(Location(Point{100, 100}, 3, 0), field, 0, Weight(0));
+        EXPECT_TRUE(!search(node, attribute_manager, true));
+    }
+    {
+        SimpleLocationTerm node(Location(Point{13, 13}, 4, 0), field, 0, Weight(0));
+        EXPECT_TRUE(!search(node, attribute_manager, true));
+    }
+    {
+        SimpleLocationTerm node(Location(Point{10, 13}, 3, 0), field, 0, Weight(0));
+        EXPECT_TRUE(search(node, attribute_manager, true));
+    }
 }
 
 TEST("require that optimized location search works with wrapped bounding box (no hits)") {
@@ -412,11 +425,11 @@ TEST("require that attribute dot product works") {
         bool fast_search = ((i & 0x1) != 0);
         bool strict = ((i & 0x2) != 0);
         MyAttributeManager attribute_manager = make_weighted_string_attribute_manager(fast_search);
-        SimpleDotProduct node(field, 0, Weight(1));
-        node.append(Node::UP(new SimpleStringTerm("foo", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("bar", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("baz", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("fox", "", 0, Weight(1))));
+        SimpleDotProduct node(4, field, 0, Weight(1));
+        node.addTerm("foo", Weight(1));
+        node.addTerm("bar", Weight(1));
+        node.addTerm("baz", Weight(1));
+        node.addTerm("fox", Weight(1));
         Result result = do_search(attribute_manager, node, strict);
         ASSERT_EQUAL(5u, result.hits.size());
         if (fast_search) {
@@ -444,11 +457,11 @@ TEST("require that attribute dot product can produce no hits") {
         bool fast_search = ((i & 0x1) != 0);
         bool strict = ((i & 0x2) != 0);
         MyAttributeManager attribute_manager = make_weighted_string_attribute_manager(fast_search);
-        SimpleDotProduct node(field, 0, Weight(1));
-        node.append(Node::UP(new SimpleStringTerm("notfoo", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("notbar", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("notbaz", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("notfox", "", 0, Weight(1))));
+        SimpleDotProduct node(4, field, 0, Weight(1));
+        node.addTerm("notfoo", Weight(1));
+        node.addTerm("notbar", Weight(1));
+        node.addTerm("notbaz", Weight(1));
+        node.addTerm("notfox", Weight(1));
         Result result = do_search(attribute_manager, node, strict);
         ASSERT_EQUAL(0u, result.hits.size());
         EXPECT_EQUAL(0u, result.est_hits);
@@ -512,11 +525,11 @@ TEST("require that attribute parallel wand works") {
         bool fast_search = ((i & 0x1) != 0);
         bool strict = ((i & 0x2) != 0);
         MyAttributeManager attribute_manager = make_weighted_string_attribute_manager(fast_search);
-        SimpleWandTerm node(field, 0, Weight(1), 10, 500, 1.5);
-        node.append(Node::UP(new SimpleStringTerm("foo", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("bar", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("baz", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("fox", "", 0, Weight(1))));
+        SimpleWandTerm node(4, field, 0, Weight(1), 10, 500, 1.5);
+        node.addTerm("foo", Weight(1));
+        node.addTerm("bar", Weight(1));
+        node.addTerm("baz", Weight(1));
+        node.addTerm("fox", Weight(1));
         Result result = do_search(attribute_manager, node, strict);
         EXPECT_FALSE(result.est_empty);
         if (fast_search) {
@@ -548,11 +561,11 @@ TEST("require that attribute weighted set term works") {
         bool fast_search = ((i & 0x1) != 0);
         bool strict = ((i & 0x2) != 0);
         MyAttributeManager attribute_manager = make_weighted_string_attribute_manager(fast_search);
-        SimpleWeightedSetTerm node(field, 0, Weight(1));
-        node.append(Node::UP(new SimpleStringTerm("foo", "", 0, Weight(10))));
-        node.append(Node::UP(new SimpleStringTerm("bar", "", 0, Weight(20))));
-        node.append(Node::UP(new SimpleStringTerm("baz", "", 0, Weight(30))));
-        node.append(Node::UP(new SimpleStringTerm("fox", "", 0, Weight(40))));
+        SimpleWeightedSetTerm node(4, field, 0, Weight(1));
+        node.addTerm("foo", Weight(10));
+        node.addTerm("bar", Weight(20));
+        node.addTerm("baz", Weight(30));
+        node.addTerm("fox", Weight(40));
         Result result = do_search(attribute_manager, node, strict);
         EXPECT_FALSE(result.est_empty);
         ASSERT_EQUAL(5u, result.hits.size());
@@ -576,7 +589,7 @@ TEST("require that attribute weighted set term works") {
 TEST("require that predicate query in non-predicate field yields empty.") {
     MyAttributeManager attribute_manager = makeAttributeManager("foo");
 
-    PredicateQueryTerm::UP term(new PredicateQueryTerm);
+    auto term = std::make_unique<PredicateQueryTerm>();
     SimplePredicateQuery node(std::move(term), field, 0, Weight(1));
     Result result = do_search(attribute_manager, node, true);
     EXPECT_TRUE(result.est_empty);
@@ -591,7 +604,7 @@ TEST("require that predicate query in predicate field yields results.") {
     const_cast<PredicateAttribute::IntervalRange *>(attr->getIntervalRangeVector())[2] = 1u;
     MyAttributeManager attribute_manager(attr);
 
-    PredicateQueryTerm::UP term(new PredicateQueryTerm);
+    auto term = std::make_unique<PredicateQueryTerm>();
     SimplePredicateQuery node(std::move(term), field, 0, Weight(1));
     Result result = do_search(attribute_manager, node, true);
     EXPECT_FALSE(result.est_empty);

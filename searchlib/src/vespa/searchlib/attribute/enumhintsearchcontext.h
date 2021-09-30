@@ -6,11 +6,12 @@
 #include "ipostinglistsearchcontext.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
-namespace search {
+namespace vespalib::datastore {
+class EntryComparator;
+class IUniqueStoreDictionaryReadSnapshot;
+}
 
-namespace datastore { class EntryComparator; }
-
-namespace attribute {
+namespace search::attribute {
 
 /**
  * Search context helper for enumerated attributes, used to eliminate
@@ -19,7 +20,7 @@ namespace attribute {
 
 class EnumHintSearchContext : public IPostingListSearchContext
 {
-    const IEnumStoreDictionary::ReadSnapshot::UP _dict_snapshot;
+    const std::unique_ptr<vespalib::datastore::IUniqueStoreDictionaryReadSnapshot> _dict_snapshot;
     uint32_t                _uniqueValues;
     uint32_t                _docIdLimit;
     uint64_t                _numValues; // attr.getStatus().getNumValues();
@@ -30,8 +31,8 @@ protected:
                           uint64_t numValues);
     ~EnumHintSearchContext() override;
 
-    void lookupTerm(const datastore::EntryComparator &comp);
-    void lookupRange(const datastore::EntryComparator &low, const datastore::EntryComparator &high);
+    void lookupTerm(const vespalib::datastore::EntryComparator &comp);
+    void lookupRange(const vespalib::datastore::EntryComparator &low, const vespalib::datastore::EntryComparator &high);
 
     queryeval::SearchIterator::UP
     createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
@@ -40,5 +41,4 @@ protected:
     unsigned int approximateHits() const override;
 };
 
-}
 }

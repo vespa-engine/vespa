@@ -2,14 +2,18 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.collections.Tuple2;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.Reply;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
 
-@SuppressWarnings("deprecation")
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 public class ReplyMergerTestCase {
 
     private ReplyMerger merger;
@@ -29,25 +33,25 @@ public class ReplyMergerTestCase {
         merger.merge(2, r3);
         Tuple2<Integer, Reply> ret = merger.mergedReply();
 
-        assertThat(ret.first, is(0));
-        assertThat(ret.second, sameInstance(r1));
+        assertEquals(0, ret.first.intValue());
+        assertSame(r1, ret.second);
     }
 
     @Test
-    public void mergingSingleReplyWithOneErrorReturnsEmptyReplyWithError() {
+    public void mergingSingleReplyWithOneErrorReturnsSameReplyWithError() {
         Reply r1 = new EmptyReply();
         Error error = new Error(1234, "oh no!");
         r1.addError(error);
         merger.merge(0, r1);
         Tuple2<Integer, Reply> ret = merger.mergedReply();
 
-        assertThat(ret.first, nullValue());
-        assertThat(ret.second, not(sameInstance(r1)));
+        assertNull(ret.first);
+        assertSame(r1, ret.second);
         assertThatErrorsMatch(new Error[] { error }, ret);
     }
 
     @Test
-    public void mergingSingleReplyWithMultipleErrorsReturnsEmptyReplyWithAllErrors() {
+    public void mergingSingleReplyWithMultipleErrorsReturnsSameReplyWithAllErrors() {
         Reply r1 = new EmptyReply();
         Error errors[] = new Error[] {
                 new Error(1234, "oh no!"), new Error(4567, "oh dear!"),
@@ -57,13 +61,13 @@ public class ReplyMergerTestCase {
         merger.merge(0, r1);
         Tuple2<Integer, Reply> ret = merger.mergedReply();
 
-        assertThat(ret.first, nullValue());
-        assertThat(ret.second, not(sameInstance(r1)));
+        assertNull(ret.first);
+        assertSame(r1, ret.second);
         assertThatErrorsMatch(errors, ret);
     }
 
     @Test
-    public void mergingMultipleRepliesWithMultipleErrorsReturnsEmptyReplyWithAllErrors() {
+    public void mergingMultipleRepliesWithMultipleErrorsReturnsMostSevereReplyWithAllErrors() {
         Reply r1 = new EmptyReply();
         Reply r2 = new EmptyReply();
         Error errors[] = new Error[] {
@@ -76,9 +80,9 @@ public class ReplyMergerTestCase {
         merger.merge(1, r2);
         Tuple2<Integer, Reply> ret = merger.mergedReply();
 
-        assertThat(ret.first, nullValue());
-        assertThat(ret.second, not(sameInstance(r1)));
-        assertThat(ret.second, not(sameInstance(r2)));
+        assertNull(ret.first);
+        assertSame(r1, ret.second);
+        assertNotSame(r2, ret.second);
         assertThatErrorsMatch(errors, ret);
     }
 
@@ -98,9 +102,9 @@ public class ReplyMergerTestCase {
         merger.merge(0, r1);
         merger.merge(1, r2);
         Tuple2<Integer, Reply> ret = merger.mergedReply();
-        assertThat(ret.first, nullValue());
-        assertThat(ret.second, not(sameInstance(r1)));
-        assertThat(ret.second, not(sameInstance(r2)));
+        assertNull(ret.first);
+        assertNotSame(r1, ret.second);
+        assertNotSame(r2, ret.second);
         // Only first ignore error from each reply
         assertThatErrorsMatch(new Error[]{ errors[0], errors[2] }, ret);
     }
@@ -116,8 +120,8 @@ public class ReplyMergerTestCase {
         merger.merge(0, r1);
         merger.merge(1, r2);
         Tuple2<Integer, Reply> ret = merger.mergedReply();
-        assertThat(ret.first, is(1));
-        assertThat(ret.second, sameInstance(r2));
+        assertEquals(1, ret.first.intValue());
+        assertSame(r2, ret.second);
         // Only first ignore error from each reply
         assertThatErrorsMatch(new Error[]{ }, ret);
     }
@@ -138,9 +142,9 @@ public class ReplyMergerTestCase {
         merger.merge(0, r1);
         merger.merge(1, r2);
         Tuple2<Integer, Reply> ret = merger.mergedReply();
-        assertThat(ret.first, nullValue());
-        assertThat(ret.second, not(sameInstance(r1)));
-        assertThat(ret.second, not(sameInstance(r2)));
+        assertNull(ret.first);
+        assertSame(r1, ret.second);
+        assertNotSame(r2, ret.second);
         // All errors from replies with errors are included, not those that
         // are fully ignored.
         assertThatErrorsMatch(new Error[]{ errors[0], errors[1] }, ret);
@@ -159,8 +163,8 @@ public class ReplyMergerTestCase {
         merger.merge(1, r2);
         merger.merge(2, r3);
         Tuple2<Integer, Reply> ret = merger.mergedReply();
-        assertThat(ret.first, is(1));
-        assertThat(ret.second, sameInstance((Reply) r2));
+        assertEquals(1, ret.first.intValue());
+        assertSame(r2, ret.second);
     }
 
     @Test
@@ -173,8 +177,28 @@ public class ReplyMergerTestCase {
         merger.merge(0, r1);
         merger.merge(1, r2);
         Tuple2<Integer, Reply> ret = merger.mergedReply();
-        assertThat(ret.first, is(0));
-        assertThat(ret.second, sameInstance((Reply)r1));
+        assertEquals(0, ret.first.intValue());
+        assertSame(r1, ret.second);
+    }
+
+    @Test
+    // TODO jonmv: This seems wrong, and is probably a consequence of TAS being implemented after reply merging.
+    public void returnErrorDocumentReplyWhereDocWasFoundWhichIsProbablyWrong() {
+        Error e1 = new Error(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED, "fail");
+        UpdateDocumentReply r1 = new UpdateDocumentReply();
+        UpdateDocumentReply r2 = new UpdateDocumentReply();
+        UpdateDocumentReply r3 = new UpdateDocumentReply();
+        r1.addError(e1); // return error
+        r2.setWasFound(true);
+        r3.setWasFound(true);
+
+        merger.merge(0, r1);
+        merger.merge(1, r2);
+        merger.merge(2, r3);
+        Tuple2<Integer, Reply> ret = merger.mergedReply();
+        assertNull(ret.first);
+        assertSame(r1, ret.second);
+        assertThatErrorsMatch(new Error[] { e1 }, ret);
     }
 
     @Test
@@ -190,8 +214,8 @@ public class ReplyMergerTestCase {
         merger.merge(1, r2);
         merger.merge(2, r3);
         Tuple2<Integer, Reply> ret = merger.mergedReply();
-        assertThat(ret.first, is(1));
-        assertThat(ret.second, sameInstance((Reply)r2));
+        assertEquals(1, ret.first.intValue());
+        assertSame(r2, ret.second);
     }
 
     @Test
@@ -205,23 +229,23 @@ public class ReplyMergerTestCase {
         merger.merge(1, r2);
         merger.merge(2, r3);
         Tuple2<Integer, Reply> ret = merger.mergedReply();
-        assertThat(ret.first, is(1));
-        assertThat(ret.second, sameInstance((Reply)r2));
+        assertEquals(1, ret.first.intValue());
+        assertSame(r2, ret.second);
     }
 
     @Test
     public void mergingZeroRepliesReturnsDefaultEmptyReply() {
         Tuple2<Integer, Reply> ret = merger.mergedReply();
-        assertThat(ret.first, nullValue());
-        assertThat(ret.second, instanceOf(EmptyReply.class));
+        assertNull(ret.first);
+        assertTrue(ret.second instanceof EmptyReply);
         assertThatErrorsMatch(new Error[]{}, ret);
     }
 
     private void assertThatErrorsMatch(Error[] errors, Tuple2<Integer, Reply> ret) {
-        assertThat(ret.second.getNumErrors(), is(errors.length));
+        assertEquals(errors.length, ret.second.getNumErrors());
         for (int i = 0; i < ret.second.getNumErrors(); ++i) {
-            assertThat(ret.second.getError(i).getCode(), is(errors[i].getCode()));
-            assertThat(ret.second.getError(i).getMessage(), is(errors[i].getMessage()));
+            assertEquals(errors[i].getCode(), ret.second.getError(i).getCode());
+            assertEquals(errors[i].getMessage(), ret.second.getError(i).getMessage());
         }
     }
 

@@ -26,6 +26,11 @@ public class Component<CHILD extends AbstractConfigProducer<?>, MODEL extends Co
         this.model = model;
     }
 
+    /** Returns a component that uses its class name as id. */
+    public static Component<?,?> fromClassAndBundle(String className, String bundle) {
+        return new Component<>(new ComponentModel(className, null, bundle));
+    }
+
     public ComponentId getGlobalComponentId() {
         return model.getComponentId();
     }
@@ -62,6 +67,12 @@ public class Component<CHILD extends AbstractConfigProducer<?>, MODEL extends Co
     @Override
     public int compareTo(Component<?, ?> other) {
         return getComponentId().compareTo(other.getComponentId());
+    }
+
+    @Override
+    public String toString() {
+        return "component " + getClassId() +
+               (getClassId().toString().equals(getComponentId().toString()) ? "" : ": " + getComponentId());
     }
 
 }

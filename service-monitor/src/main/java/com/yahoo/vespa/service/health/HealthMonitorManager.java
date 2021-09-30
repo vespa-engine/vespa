@@ -55,12 +55,10 @@ public class HealthMonitorManager implements MonitorManager, HealthMonitorApi {
 
     @Inject
     public HealthMonitorManager(DuperModelManager duperModel) {
-        this(duperModel,
-                new StateV1HealthModel(
-                        TARGET_HEALTH_STALENESS,
-                        HEALTH_REQUEST_TIMEOUT,
-                        KEEP_ALIVE,
-                        new RunletExecutorImpl(THREAD_POOL_SIZE)));
+        this(duperModel, new StateV1HealthModel(TARGET_HEALTH_STALENESS,
+                                                HEALTH_REQUEST_TIMEOUT,
+                                                KEEP_ALIVE,
+                                                new RunletExecutorImpl(THREAD_POOL_SIZE)));
     }
 
     private HealthMonitorManager(DuperModelManager duperModel, StateV1HealthModel healthModel) {
@@ -89,6 +87,10 @@ public class HealthMonitorManager implements MonitorManager, HealthMonitorApi {
         if (monitor != null) {
             monitor.close();
         }
+    }
+
+    @Override
+    public void bootstrapComplete() {
     }
 
     @Override

@@ -22,10 +22,7 @@ protected:
     using ChangeVector = StringAttribute::ChangeVector;
     using DocId = StringAttribute::DocId;
     using EnumHandle = StringAttribute::EnumHandle;
-    using EnumHintSearchContext = attribute::EnumHintSearchContext;
     using EnumIndex = typename SingleValueEnumAttributeBase::EnumIndex;
-    using EnumIndexVector = typename SingleValueEnumAttributeBase::EnumIndexVector;
-    using EnumModifier = StringAttribute::EnumModifier;
     using EnumStore = typename SingleValueEnumAttribute<B>::EnumStore;
     using LoadedVector = StringAttribute::LoadedVector;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
@@ -104,10 +101,9 @@ public:
     };
 
     class StringTemplSearchContext : public StringSingleImplSearchContext,
-                                     public EnumHintSearchContext
+                                     public attribute::EnumHintSearchContext
     {
         using AttrType = SingleValueStringAttributeT<B>;
-        using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
         using StringSingleImplSearchContext::queryTerm;
     public:
         StringTemplSearchContext(QueryTermSimpleUP qTerm, const AttrType & toBeSearched);

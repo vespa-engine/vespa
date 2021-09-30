@@ -16,9 +16,10 @@ import java.util.Collections;
  * that type are allowed to have a {@link com.yahoo.document.datatypes.FieldValue} of the given
  * {@link com.yahoo.document.DataType} as an optional payload.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class AnnotationType implements Comparable<AnnotationType> {
+
     private final int id;
     private final String name;
     private DataType dataType;
@@ -60,7 +61,7 @@ public class AnnotationType implements Comparable<AnnotationType> {
     }
 
     /**
-     * Creates a new annotation type, with the specified ID.&nbsp;WARNING! Only to be used by configuration
+     * Creates a new annotation type, with the specified ID. WARNING! Only to be used by configuration
      * system, do not use!!
      *
      * @param name the name of the new annotation type
@@ -71,26 +72,18 @@ public class AnnotationType implements Comparable<AnnotationType> {
         this.name = name;
     }
 
-    /**
-     * Returns the name of this annotation.
-     *
-     * @return the name of this annotation.
-     */
+    /** Returns the name of this annotation. */
     public String getName() {
         return name;
     }
 
-    /**
-     * Returns the data type of this annotation, if any.
-     *
-     * @return the data type of this annotation, or null.
-     */
+    /** Returns the data type of this annotation, if any. */
     public DataType getDataType() {
         return dataType;
     }
 
     /**
-     * Sets the data type of this annotation.&nbsp;WARNING! Only to be used by configuration
+     * Sets the data type of this annotation. WARNING! Only to be used by configuration
      * system, do not use!!
      *
      * @param dataType the data type of the annotation value
@@ -99,11 +92,7 @@ public class AnnotationType implements Comparable<AnnotationType> {
         this.dataType = dataType;
     }
 
-    /**
-     * Returns the ID of this annotation.
-     *
-     * @return the ID of this annotation.
-     */
+    /** Returns the ID of this annotation. */
     public int getId() {
         return id;
     }
@@ -121,13 +110,14 @@ public class AnnotationType implements Comparable<AnnotationType> {
     }
 
     /**
-     * WARNING!&nbsp;Only to be used by the configuration system and in unit tests.&nbsp;Not to be used in production code.
+     * WARNING! Only to be used by the configuration system and in unit tests. Not to be used in production code.
      *
      * @param type the type to inherit from
      */
     public void inherit(AnnotationType type) {
         if (superType != null) {
-            throw new IllegalArgumentException("Already inherits type " + superType + ", multiple inheritance not currently supported.");
+            throw new IllegalArgumentException("Already inherits type " + superType +
+                                               ", multiple inheritance not currently supported.");
         }
         superType = type;
     }
@@ -183,4 +173,5 @@ public class AnnotationType implements Comparable<AnnotationType> {
         }
         return 0;
     }
+
 }

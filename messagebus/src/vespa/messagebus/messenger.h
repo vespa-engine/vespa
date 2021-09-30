@@ -6,7 +6,6 @@
 #include "message.h"
 #include "reply.h"
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/fastos/thread.h>
 
@@ -40,25 +39,25 @@ public:
     };
 
 private:
-    vespalib::Monitor   _monitor;
-    FastOS_ThreadPool   _pool;
+    mutable std::mutex      _lock;
+    std::condition_variable _cond;
+    FastOS_ThreadPool       _pool;
     std::vector<ITask*> _children;
     vespalib::ArrayQueue<ITask*>  _queue;
     bool                _closed;
+    const bool          _skip_request_thread;
+    const bool          _skip_reply_thread;
 
 protected:
     void Run(FastOS_ThreadInterface *thread, void *arg) override;
 
 public:
-    /**
-     * Constructs a new messenger object.
-     */
-    Messenger();
+    Messenger(bool skip_request_thread, bool skip_reply_thread);
 
     /**
      * Frees any allocated resources. Also destroys all queued tasks.
      */
-    ~Messenger();
+    ~Messenger() override;
 
     /**
      * Adds a recurrent task to this that is to be run for every iteration of

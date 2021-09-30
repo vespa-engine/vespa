@@ -2,6 +2,7 @@
 
 #include "test_hook.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <regex>
 #include <vespa/fastos/thread.h>
 
@@ -18,7 +19,7 @@ struct FastOSTestThreadRunner : FastOS_Runnable {
 
 struct FastOSTestThreadFactory : TestThreadFactory {
     FastOS_ThreadPool threadPool;
-    FastOSTestThreadFactory() : threadPool(256 * 1024) {}
+    FastOSTestThreadFactory() : threadPool(256_Ki) {}
     void createThread(TestThreadEntry &entry) override {
         threadPool.NewThread(new FastOSTestThreadRunner(entry), 0);
     }

@@ -8,46 +8,40 @@ import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Represents the http servers and filters of a container cluster.
  *
  * @author Tony Vaagenes
+ * @author bjorncs
  */
 public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> implements ServerConfig.Producer {
 
-    private FilterChains filterChains;
-    private JettyHttpServer httpServer;
-    private List<Binding> bindings;
-    private final Optional<AccessControl> accessControl;
+    private final FilterChains filterChains;
+    private final List<FilterBinding> bindings = new CopyOnWriteArrayList<>();
+    private volatile JettyHttpServer httpServer;
+    private volatile AccessControl accessControl;
+    private volatile boolean strictFiltering = false; // TODO Vespa 8: Enable strict filtering by default if filtering is enabled
 
-    public Http(List<Binding> bindings) {
-        this(bindings, null);
+    public Http(FilterChains chains) {
+        super("http");
+        this.filterChains = chains;
     }
 
-    public Http(List<Binding> bindings, AccessControl accessControl) {
-        super( "http");
-        this.bindings = Collections.unmodifiableList(bindings);
-        this.accessControl = Optional.ofNullable(accessControl);
-    }
-
-    public void setFilterChains(FilterChains filterChains) {
-        this.filterChains = filterChains;
-    }
-
-    public void setBindings(List<Binding> bindings) {
-        this.bindings = Collections.unmodifiableList(bindings);
+    public void setAccessControl(AccessControl accessControl) {
+            if (this.accessControl != null) throw new IllegalStateException("Access control already assigned");
+            this.accessControl = accessControl;
     }
 
     public FilterChains getFilterChains() {
         return filterChains;
     }
 
-    public JettyHttpServer getHttpServer() {
-        return httpServer;
+    public Optional<JettyHttpServer> getHttpServer() {
+        return Optional.ofNullable(httpServer);
     }
 
     public void setHttpServer(JettyHttpServer newServer) {
@@ -71,30 +65,30 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
         setHttpServer(null);
     }
 
-    public List<Binding> getBindings() {
+    public List<FilterBinding> getBindings() {
         return bindings;
     }
 
     public Optional<AccessControl> getAccessControl() {
-        return accessControl;
+        return Optional.ofNullable(accessControl);
     }
+
+    public void setStrictFiltering(boolean enabled) { this.strictFiltering = enabled; }
 
     @Override
     public void getConfig(ServerConfig.Builder builder) {
-        for (Binding binding : bindings) {
+        for (FilterBinding binding : bindings) {
             builder.filter(new ServerConfig.Filter.Builder()
-                                   .id(binding.filterId().stringValue())
-                                   .binding(binding.binding()));
+                    .id(binding.chainId().stringValue())
+                    .binding(binding.binding().patternString()));
         }
+        populateDefaultFiltersConfig(builder, httpServer);
+        builder.strictFiltering(strictFiltering);
     }
 
     @Override
     public void validate() {
-        validate(bindings);
-    }
-
-    void validate(Collection<Binding> bindings) {
-        if (bindings.isEmpty()) return;
+        if (((Collection<FilterBinding>) bindings).isEmpty()) return;
 
         if (filterChains == null)
             throw new IllegalArgumentException("Null FilterChains are not allowed when there are filter bindings");
@@ -102,10 +96,24 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
         ComponentRegistry<ChainedComponent<?>> filters = filterChains.componentsRegistry();
         ComponentRegistry<Chain<Filter>> chains = filterChains.allChains();
 
-        for (Binding binding: bindings) {
-            if (filters.getComponent(binding.filterId()) == null && chains.getComponent(binding.filterId()) == null)
-                throw new RuntimeException("Can't find filter " + binding.filterId() + " for binding " + binding.binding());
+        for (FilterBinding binding: bindings) {
+            if (filters.getComponent(binding.chainId()) == null && chains.getComponent(binding.chainId()) == null)
+                throw new RuntimeException("Can't find filter " + binding.chainId() + " for binding " + binding.binding());
         }
     }
 
+    private static void populateDefaultFiltersConfig(ServerConfig.Builder builder, JettyHttpServer httpServer) {
+        if (httpServer != null) {
+            for (ConnectorFactory connector : httpServer.getConnectorFactories()) {
+                connector.getDefaultRequestFilterChain().ifPresent(
+                        filterChain -> builder.defaultFilters(new ServerConfig.DefaultFilters.Builder()
+                                .filterId(filterChain.stringValue())
+                                .localPort(connector.getListenPort())));
+                connector.getDefaultResponseFilterChain().ifPresent(
+                        filterChain -> builder.defaultFilters(new ServerConfig.DefaultFilters.Builder()
+                                .filterId(filterChain.stringValue())
+                                .localPort(connector.getListenPort())));
+            }
+        }
+    }
 }

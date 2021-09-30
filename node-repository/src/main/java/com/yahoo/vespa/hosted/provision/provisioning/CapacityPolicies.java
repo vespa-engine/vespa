@@ -8,88 +8,70 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 
-import java.util.Locale;
+import java.util.function.Function;
 
 /**
  * Defines the policies for assigning cluster capacity in various environments
  *
  * @author bratseth
+ * @see NodeResourceLimits
  */
 public class CapacityPolicies {
 
     private final Zone zone;
-    /* Deployments must match 1-to-1 the advertised resources of a physical host */
-    private final boolean isUsingAdvertisedResources;
+    private final Function<ClusterSpec.Type, Boolean> sharedHosts;
 
-    public CapacityPolicies(Zone zone) {
-        this.zone = zone;
-        this.isUsingAdvertisedResources = zone.cloud().value().equals("aws");
+    public CapacityPolicies(NodeRepository nodeRepository) {
+        this.zone = nodeRepository.zone();
+        this.sharedHosts = type -> PermanentFlags.SHARED_HOST.bindTo(nodeRepository.flagSource()).value().isEnabled(type.name());
     }
 
-    public int decideSize(Capacity capacity, ClusterSpec.Type clusterType, ApplicationId application) {
-        int requestedNodes = capacity.nodeCount();
-
+    public int decideSize(int requested, Capacity capacity, ClusterSpec cluster, ApplicationId application) {
         if (application.instance().isTester()) return 1;
 
-        ensureRedundancy(requestedNodes, clusterType, capacity.canFail());
-
-        if (capacity.isRequired()) return requestedNodes;
-
+        ensureRedundancy(requested, cluster, capacity.canFail());
+        if (capacity.isRequired()) return requested;
         switch(zone.environment()) {
             case dev : case test : return 1;
-            case perf : return Math.min(capacity.nodeCount(), 3);
-            case staging: return requestedNodes <= 1 ? requestedNodes : Math.max(2, requestedNodes / 10);
-            case prod : return requestedNodes;
+            case perf : return Math.min(requested, 3);
+            case staging: return requested <= 1 ? requested : Math.max(2, requested / 10);
+            case prod : return requested;
             default : throw new IllegalArgumentException("Unsupported environment " + zone.environment());
         }
     }
 
-    public NodeResources decideNodeResources(Capacity capacity, ClusterSpec cluster) {
-        NodeResources resources = capacity.nodeResources().orElse(defaultNodeResources(cluster.type()));
-        ensureSufficientResources(resources, cluster);
+    public NodeResources decideNodeResources(NodeResources target, Capacity capacity, ClusterSpec cluster) {
+        if (target.isUnspecified())
+            target = defaultNodeResources(cluster.type());
 
-        if (capacity.isRequired()) return resources;
+        if (capacity.isRequired()) return target;
+
+        // Dev does not cap the cpu or network of containers since usage is spotty: Allocate just a small amount exclusively
+        if (zone.environment() == Environment.dev && !zone.getCloud().dynamicProvisioning())
+            target = target.withVcpu(0.1).withBandwidthGbps(0.1);
 
         // Allow slow storage in zones which are not performance sensitive
         if (zone.system().isCd() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
-            resources = resources.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any);
+            target = target.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any).withBandwidthGbps(0.1);
 
-        // Dev does not cap the cpu of containers since usage is spotty: Allocate just a small amount exclusively
-        // Do not cap in AWS as hosts are allocated on demand and 1-to-1, so the node can use the entire host
-        if (zone.environment() == Environment.dev && !zone.region().value().contains("aws-"))
-            resources = resources.withVcpu(0.1);
-
-        return resources;
+        return target;
     }
 
-    private void ensureSufficientResources(NodeResources resources, ClusterSpec cluster) {
-        double minMemoryGb = minMemoryGb(cluster.type());
-        if (resources.memoryGb() >= minMemoryGb) return;
-
-        throw new IllegalArgumentException(String.format(Locale.ENGLISH,
-                "Must specify at least %.2f Gb of memory for %s cluster '%s', was: %.2f Gb",
-                minMemoryGb, cluster.type().name(), cluster.id().value(), resources.memoryGb()));
-    }
-
-    private int minMemoryGb(ClusterSpec.Type clusterType) {
-        if (zone.system() == SystemName.dev) return 1; // Allow small containers in dev system
-        if (clusterType == ClusterSpec.Type.admin) return 2;
-        return 4;
-    }
-
-    private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
+    public NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
         if (clusterType == ClusterSpec.Type.admin) {
             if (zone.system() == SystemName.dev) {
                 // Use small logserver in dev system
                 return new NodeResources(0.1, 1, 10, 0.3);
             }
-            return isUsingAdvertisedResources ?
-                    new NodeResources(0.5, 4, 50, 0.3) :
-                    new NodeResources(0.5, 2, 50, 0.3);
+            return zone.getCloud().dynamicProvisioning() && ! sharedHosts.apply(clusterType) ?
+                   new NodeResources(0.5, 4, 50, 0.3) :
+                   new NodeResources(0.5, 2, 50, 0.3);
         }
 
-        return isUsingAdvertisedResources ?
+        return zone.getCloud().dynamicProvisioning() ?
                 new NodeResources(2.0, 8, 50, 0.3) :
                 new NodeResources(1.5, 8, 50, 0.3);
     }
@@ -98,22 +80,21 @@ public class CapacityPolicies {
      * Whether or not the nodes requested can share physical host with other applications.
      * A security feature which only makes sense for prod.
      */
-    public boolean decideExclusivity(boolean requestedExclusivity) {
-        return requestedExclusivity && zone.environment() == Environment.prod;
+    public boolean decideExclusivity(Capacity capacity, boolean requestedExclusivity) {
+        return requestedExclusivity && (capacity.isRequired() || zone.environment() == Environment.prod);
     }
 
     /**
      * Throw if the node count is 1 for container and content clusters and we're in a production zone
      *
-     * @return the argument node count
      * @throws IllegalArgumentException if only one node is requested and we can fail
      */
-    private void ensureRedundancy(int nodeCount, ClusterSpec.Type clusterType, boolean canFail) {
+    private void ensureRedundancy(int nodeCount, ClusterSpec cluster, boolean canFail) {
         if (canFail &&
             nodeCount == 1 &&
-            requiresRedundancy(clusterType) &&
+            requiresRedundancy(cluster.type()) &&
             zone.environment().isProduction())
-            throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy");
+            throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy. Not fulfilled for " + cluster);
     }
 
     private static boolean requiresRedundancy(ClusterSpec.Type clusterType) {

@@ -168,21 +168,26 @@ vespa-run-as-vespa-user vespa-runserver -s configserver -r 30 -p $pidfile -- \
 	-XX:HeapDumpPath="${VESPA_HOME}/var/crash" \
 	-XX:ErrorFile="${VESPA_HOME}/var/crash/hs_err_pid%p.log" \
 	-XX:+ExitOnOutOfMemoryError \
+	-XX:-OmitStackTraceInFastThrow \
+	-XX:MaxJavaStackTraceDepth=1000000 \
 	$jvmargs \
     --illegal-access=warn \
     --add-opens=java.base/java.io=ALL-UNNAMED \
     --add-opens=java.base/java.lang=ALL-UNNAMED \
     --add-opens=java.base/java.net=ALL-UNNAMED \
+    --add-opens=java.base/java.nio=ALL-UNNAMED \
     --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED \
+    --add-opens=java.base/sun.security.ssl=ALL-UNNAMED  \
+	-Djava.io.tmpdir=${VESPA_HOME}/tmp \
 	-Djava.library.path=${VESPA_HOME}/lib64 \
 	-Djava.awt.headless=true \
 	-Dsun.rmi.dgc.client.gcInterval=3600000 \
 	-Dsun.net.client.defaultConnectTimeout=5000 -Dsun.net.client.defaultReadTimeout=60000 \
 	-Djavax.net.ssl.keyStoreType=JKS \
+	-Djdk.tls.rejectClientInitiatedRenegotiation=true \
 	-Djdisc.config.file=$cfpfile \
 	-Djdisc.export.packages= \
 	-Djdisc.cache.path=$bundlecachedir \
-	-Djdisc.debug.resources=false \
 	-Djdisc.bundle.path=${VESPA_HOME}/lib/jars \
 	-Djdisc.logger.enabled=true \
 	-Djdisc.logger.level=ALL \

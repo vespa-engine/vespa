@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.http;
 /**
  * @author hmusum
  */
-public class InvalidApplicationException extends RuntimeException {
+public class InvalidApplicationException extends IllegalArgumentException {
 
     public InvalidApplicationException(String message) {
         super(message);

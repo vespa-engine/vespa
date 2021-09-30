@@ -10,6 +10,7 @@
 #include <sstream>
 #include <cstring>
 #include <fcntl.h>
+#include <cstdlib>
 
 DirectIOException::DirectIOException(const char * fileName, const void * buffer, size_t length, int64_t offset) :
     std::exception(),
@@ -27,7 +28,6 @@ DirectIOException::DirectIOException(const char * fileName, const void * buffer,
 
 DirectIOException::~DirectIOException() {}
 
-FastOS_FileInterface::FailedHandler FastOS_FileInterface::_failedHandler = nullptr;
 #ifdef __linux__
 int FastOS_FileInterface::_defaultFAdviseOptions = POSIX_FADV_NORMAL;
 #else
@@ -184,12 +184,23 @@ FastOS_FileInterface::DirectIOPadding(int64_t offset,
 
 
 void *
-FastOS_FileInterface::AllocateDirectIOBuffer(size_t byteSize, void *&realPtr)
+FastOS_FileInterface::allocateGenericDirectIOBuffer(size_t byteSize, void *&realPtr)
 {
     realPtr = malloc(byteSize);    // Default - use malloc allignment
     return realPtr;
 }
 
+size_t
+FastOS_FileInterface::getMaxDirectIOMemAlign()
+{
+    return 1u;
+}
+
+void *
+FastOS_FileInterface::AllocateDirectIOBuffer(size_t byteSize, void *&realPtr)
+{
+    return allocateGenericDirectIOBuffer(byteSize, realPtr);
+}
 
 void
 FastOS_FileInterface::enableMemoryMap(int mmapFlags)
@@ -328,19 +339,19 @@ FastOS_FileInterface::MakeDirIfNotPresentOrExit(const char *name)
             return;
 
         fprintf(stderr, "%s is not a directory\n", name);
-        exit(1);
+        std::_Exit(1);
     }
 
     if (statInfo._error != FastOS_StatInfo::FileNotFound) {
         std::error_code ec(errno, std::system_category());
         fprintf(stderr, "Could not stat %s: %s\n", name, ec.message().c_str());
-        exit(1);
+        std::_Exit(1);
     }
 
     if (!FastOS_File::MakeDirectory(name)) {
         std::error_code ec(errno, std::system_category());
         fprintf(stderr, "Could not mkdir(\"%s\", 0775): %s\n", name, ec.message().c_str());
-        exit(1);
+        std::_Exit(1);
     }
 }
 

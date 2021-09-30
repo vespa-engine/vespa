@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyUtils;
@@ -21,9 +20,10 @@ import com.yahoo.vespa.athenz.identityprovider.client.CsrGenerator;
 import com.yahoo.vespa.athenz.identityprovider.client.DefaultIdentityDocumentClient;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentTask;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 
@@ -46,6 +46,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -108,8 +109,10 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     }
 
     public boolean converge(NodeAgentContext context) {
+        if (context.isDisabled(NodeAgentTask.CredentialsMaintainer)) return false;
+
         try {
-            context.log(logger, LogLevel.DEBUG, "Checking certificate");
+            context.log(logger, Level.FINE, "Checking certificate");
             Path containerSiaDirectory = context.pathOnHostFromPathInNode(CONTAINER_SIA_DIRECTORY);
             Path privateKeyFile = SiaUtils.getPrivateKeyFile(containerSiaDirectory, context.identity());
             Path certificateFile = SiaUtils.getCertificateFile(containerSiaDirectory, context.identity());
@@ -136,7 +139,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             if (shouldRefreshCredentials(age)) {
                 context.log(logger, "Certificate is ready to be refreshed (age=%s)", age.toString());
                 if (shouldThrottleRefreshAttempts(context.containerName(), now)) {
-                    context.log(logger, LogLevel.WARNING, String.format(
+                    context.log(logger, Level.WARNING, String.format(
                             "Skipping refresh attempt as last refresh was on %s (less than %s ago)",
                             lastRefreshAttempt.get(context.containerName()).toString(), REFRESH_BACKOFF.toString()));
                     return false;
@@ -146,7 +149,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                     return true;
                 }
             }
-            context.log(logger, LogLevel.DEBUG, "Certificate is still valid");
+            context.log(logger, Level.FINE, "Certificate is still valid");
             return false;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -169,9 +172,14 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             Instant expiry = certificate.getNotAfter().toInstant();
             return Duration.between(now, expiry);
         } catch (IOException e) {
-            context.log(logger, LogLevel.ERROR, "Unable to read certificate at " + certificateFile, e);
+            context.log(logger, Level.SEVERE, "Unable to read certificate at " + certificateFile, e);
             return Duration.ZERO;
         }
+    }
+
+    @Override
+    public String name() {
+        return "node-certificate";
     }
 
     private boolean shouldRefreshCredentials(Duration age) {
@@ -195,7 +203,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         HostnameVerifier ztsHostNameVerifier = useInternalZts
                 ? new AthenzIdentityVerifier(Set.of(configserverIdentity))
                 : null;
-        try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, hostIdentityProvider, ztsHostNameVerifier)) {
+        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint).withIdentityProvider(hostIdentityProvider).withHostnameVerifier(ztsHostNameVerifier).build()) {
             InstanceIdentity instanceIdentity =
                     ztsClient.registerInstance(
                             configserverIdentity,
@@ -224,7 +232,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             HostnameVerifier ztsHostNameVerifier = useInternalZts
                     ? new AthenzIdentityVerifier(Set.of(configserverIdentity))
                     : null;
-            try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, containerIdentitySslContext, ztsHostNameVerifier)) {
+            try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint).withSslContext(containerIdentitySslContext).withHostnameVerifier(ztsHostNameVerifier).build()) {
                 InstanceIdentity instanceIdentity =
                         ztsClient.refreshInstance(
                                 configserverIdentity,
@@ -236,14 +244,14 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 context.log(logger, "Instance successfully refreshed and credentials written to file");
             } catch (ZtsClientException e) {
                 if (e.getErrorCode() == 403 && e.getDescription().startsWith("Certificate revoked")) {
-                    context.log(logger, LogLevel.ERROR, "Certificate cannot be refreshed as it is revoked by ZTS - re-registering the instance now", e);
+                    context.log(logger, Level.SEVERE, "Certificate cannot be refreshed as it is revoked by ZTS - re-registering the instance now", e);
                     registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile);
                 } else {
                     throw e;
                 }
             }
         } catch (Exception e) {
-            context.log(logger, LogLevel.ERROR, "Certificate refresh failed: " + e.getMessage(), e);
+            context.log(logger, Level.SEVERE, "Certificate refresh failed: " + e.getMessage(), e);
         }
     }
 

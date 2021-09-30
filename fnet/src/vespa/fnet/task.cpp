@@ -14,9 +14,7 @@ FNET_Task::FNET_Task(FNET_Scheduler *scheduler)
 }
 
 
-FNET_Task::~FNET_Task()
-{
-}
+FNET_Task::~FNET_Task() = default;
 
 
 void

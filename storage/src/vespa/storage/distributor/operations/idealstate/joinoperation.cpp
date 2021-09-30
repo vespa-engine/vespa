@@ -3,14 +3,25 @@
 #include "joinoperation.h"
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storage/distributor/idealstatemanager.h>
 #include <climits>
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.operation.idealstate.join");
 
 using namespace storage::distributor;
 
+JoinOperation::JoinOperation(const ClusterContext &clusterName,
+                             const BucketAndNodes& nodes,
+                             const std::vector<document::BucketId>& bucketsToJoin)
+    : IdealStateOperation(nodes),
+      _tracker(clusterName),
+      _bucketsToJoin(bucketsToJoin)
+{}
+
+JoinOperation::~JoinOperation() = default;
+
 void
-JoinOperation::onStart(DistributorMessageSender& sender)
+JoinOperation::onStart(DistributorStripeMessageSender& sender)
 {
     _ok = false;
 
@@ -85,7 +96,7 @@ JoinOperation::enqueueJoinMessagePerTargetNode(
 }
 
 void
-JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP& msg)
+JoinOperation::onReceive(DistributorStripeMessageSender&, const api::StorageReply::SP& msg)
 {
     api::JoinBucketsReply& rep = static_cast<api::JoinBucketsReply&>(*msg);
     uint16_t node = _tracker.handleReply(rep);
@@ -99,7 +110,7 @@ JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP&
                 rep.getSourceBuckets());
         for (uint32_t i = 0; i < sourceBuckets.size(); i++) {
             document::Bucket sourceBucket(msg->getBucket().getBucketSpace(), sourceBuckets[i]);
-            _manager->getDistributorComponent().removeNodeFromDB(sourceBucket, node);
+            _manager->operation_context().remove_node_from_bucket_database(sourceBucket, node);
         }
 
         // Add new buckets.
@@ -107,9 +118,9 @@ JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP&
             LOG(debug, "Invalid bucketinfo for bucket %s returned in join",
                 getBucketId().toString().c_str());
         } else {
-            _manager->getDistributorComponent().updateBucketDatabase(
+            _manager->operation_context().update_bucket_database(
                     getBucket(),
-                    BucketCopy(_manager->getDistributorComponent().getUniqueTimestamp(),
+                    BucketCopy(_manager->operation_context().generate_unique_timestamp(),
                                node,
                                rep.getBucketInfo()),
                     DatabaseUpdate::CREATE_IF_NONEXISTING);
@@ -119,7 +130,7 @@ JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP&
     } else if (rep.getResult().getResult() == api::ReturnCode::BUCKET_NOT_FOUND
             && _bucketSpace->getBucketDatabase().get(getBucketId())->getNode(node) != 0)
     {
-        _manager->getDistributorComponent().recheckBucketInfo(node, getBucket());
+        _manager->operation_context().recheck_bucket_info(node, getBucket());
         LOGBP(warning, "Join failed to find %s: %s",
               getBucketId().toString().c_str(),
               rep.getResult().toString().c_str());
@@ -150,10 +161,10 @@ JoinOperation::getJoinBucket(size_t idx) const
 }
 
 bool
-JoinOperation::isBlocked(const PendingMessageTracker& tracker) const
+JoinOperation::isBlocked(const DistributorStripeOperationContext& ctx, const OperationSequencer& op_seq) const
 {
-    return (checkBlock(getBucket(), tracker) ||
-            checkBlock(getJoinBucket(0), tracker) ||
-            (_bucketsToJoin.size() > 1 && checkBlock(getJoinBucket(1), tracker)));
+    return (checkBlock(getBucket(), ctx, op_seq) ||
+            checkBlock(getJoinBucket(0), ctx, op_seq) ||
+            (_bucketsToJoin.size() > 1 && checkBlock(getJoinBucket(1), ctx, op_seq)));
 }
 

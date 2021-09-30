@@ -6,12 +6,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": "Deploying platform version 6.1 and application version unknown ..."
-      },
-      {
-        "at": 0,
-        "type": "info",
-        "message": "No services requiring restart."
+        "message": "Deploying platform version 6.1 and application version 1.0.1 ..."
       },
       {
         "at": 0,
@@ -28,12 +23,17 @@
       {
         "at": 0,
         "type": "info",
+        "message": "######## Details for all nodes ########"
+      },
+      {
+        "at": 0,
+        "type": "info",
         "message": "host-tenant:application:default-dev.us-east-1: unorchestrated"
       },
       {
         "at": 0,
         "type": "info",
-        "message": "--- platform 6.1"
+        "message": "--- platform vespa/vespa:6.1"
       },
       {
         "at": 0,
@@ -70,7 +70,8 @@
         "upgradingOs": 0,
         "upgradingFirmware": 0,
         "services": 1,
-        "needNewConfig": 1
+        "needNewConfig": 1,
+        "retiring": 0
       }
     },
     "copyVespaLogs": {

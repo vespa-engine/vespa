@@ -73,7 +73,7 @@ private:
         BitVector::swap(rhs);
     }
 
-    AllocatedBitVector(const BitVector &other, Index capacity);
+    AllocatedBitVector(const BitVector &other, std::pair<Index, Index> size_capacity);
 
     /**
      * Prepare for potential reuse where new value might be filled in by

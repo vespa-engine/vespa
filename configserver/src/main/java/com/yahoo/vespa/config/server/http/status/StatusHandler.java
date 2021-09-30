@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.http.status;
 
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -9,9 +10,9 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
+import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 
 import static com.yahoo.jdisc.http.HttpResponse.Status.OK;
 
@@ -22,33 +23,35 @@ import static com.yahoo.jdisc.http.HttpResponse.Status.OK;
  */
 public class StatusHandler extends HttpHandler {
 
-    private final GlobalComponentRegistry componentRegistry;
+    private final ModelFactoryRegistry modelFactoryRegistry;
+    private final ConfigserverConfig configserverConfig;
 
     @Inject
-    public StatusHandler(Context ctx, GlobalComponentRegistry componentRegistry) {
+    public StatusHandler(Context ctx, ModelFactoryRegistry modelFactoryRegistry, ConfigserverConfig configserverConfig) {
         super(ctx);
-        this.componentRegistry = componentRegistry;
+        this.modelFactoryRegistry = modelFactoryRegistry;
+        this.configserverConfig = configserverConfig;
     }
 
     @Override
     public HttpResponse handleGET(HttpRequest req) {
-        return new StatusResponse(OK, componentRegistry);
+        return new StatusResponse(OK, modelFactoryRegistry, configserverConfig);
     }
 
     private static class StatusResponse extends JSONResponse {
 
-        StatusResponse(int status, GlobalComponentRegistry componentRegistry) {
+        StatusResponse(int status, ModelFactoryRegistry modelFactoryRegistry, ConfigserverConfig configserverConfig) {
             super(status);
 
             Cursor configCursor = object.setObject("configserverConfig");
-            SlimeUtils.copyObject(ConfigPayload.fromInstance(componentRegistry.getConfigserverConfig()).getSlime().get(),
+            SlimeUtils.copyObject(ConfigPayload.fromInstance(configserverConfig).getSlime().get(),
                                   configCursor);
 
             Cursor modelVersionsCursor = object.setArray("modelVersions");
-            componentRegistry.getModelFactoryRegistry().getFactories().stream()
-                    .map(ModelFactory::version)
-                    .map(Version::toFullString)
-                    .forEach(modelVersionsCursor::addString);
+            modelFactoryRegistry.getFactories().stream()
+                                .map(ModelFactory::version)
+                                .map(Version::toFullString)
+                                .forEach(modelVersionsCursor::addString);
         }
 
     }

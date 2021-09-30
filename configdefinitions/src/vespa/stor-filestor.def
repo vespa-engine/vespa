@@ -3,28 +3,34 @@ namespace=vespa.config.content
 
 ## DETECT FAILURE PARAMETERS
 
-## After seeing given number of errors on a disk, storage will disable the
-## disk and restart. If set to 0, storage will never disable disks. Note
-## that if you get disk errors, which arent automatically fixed, this will
-## make storage keep failing all operations towards this disk, and all
-## retries will use the same disk and same file, so you might end up with a
-## lot of operations that can never succeed. Thus, it is not recommended to
-## turn this off.
+## Deprecated and unused - will soon go away
 fail_disk_after_error_count int default=1 restart
 
-## If a disk operation takes more time in seconds than the disk operation
-## timeout, storage will consider that a disk failure, and mark the disk
-## bad, restart and not use the disk anymore. Note that currently, this
-## includes CPU time too, so if used, this parameter should be set fairly
-## high as we still sometimes have some operations that might take a few
-## seconds. Disabled by default as we currently have these long operations
-## during normal load.
+## Deprecated and unused - will soon go away
 disk_operation_timeout int default=0 restart
 
 ## PERFORMANCE PARAMETERS
 
 ## Number of threads to use for each mountpoint.
-num_threads int default=6 restart
+num_threads int default=8 restart
+
+## Number of threads for response processing and delivery
+## 0 will give legacy sync behavior.
+## Negative number will choose a good number based on # cores.
+num_response_threads int default=2 restart
+
+## Number of handler objects that might be created by visitor threads
+## This is a temporary setting that only skilled vespa developers should modify
+## This must be kept in line with stor-visitor:visitorthreads
+num_visitor_threads int default=16 restart
+
+## Number of handler objects that might be created by network threads
+## This is a temporary setting that only skilled vespa developers should modify
+## This must be kept in line with stor-communicationmanager:rpc.num_network_threads
+num_network_threads int default=1 restart
+
+## Type of sequenced thread executor use for persistence replies.
+response_sequencer_type enum {LATENCY, THROUGHPUT, ADAPTIVE} default=ADAPTIVE restart
 
 ## When merging, if we find more than this number of documents that exist on all
 ## of the same copies, send a separate apply bucket diff with these entries
@@ -33,10 +39,9 @@ common_merge_chain_optimalization_minimum_size int default=64 restart
 
 ## Chunksize to use while merging buckets between nodes.
 ##
-## Default is set to 4 MB - 4k. This is to allow for malloc to waste some bytes
-## with tracking info or to align to 512b without passing allocation limit,
-## while still reading 4k blocks from disk.
-bucket_merge_chunk_size int default=4190208 restart
+## Default is set to 4 MB.
+## Note that this will gradually be increased to reach stor-distributormanager:splitsize which is currently at 32M
+bucket_merge_chunk_size int default=33554432 restart
 
 ## When merging, it is possible to send more metadata than needed in order to
 ## let local nodes in merge decide which entries fits best to add this time
@@ -44,9 +49,25 @@ bucket_merge_chunk_size int default=4190208 restart
 ## consumption might increase in a 4.1 to 4.2 upgrade due to this, as 4.1
 ## dont support to only fill in part of the metadata provided and will always
 ## fill all.
+## NB unused and will be removed shortly.
 enable_merge_local_node_choose_docs_optimalization bool default=true restart
 
 ## Whether or not to enable the multibit split optimalization. This is useful
 ## if splitting is expensive, but listing document identifiers is fairly cheap.
 ## This is true for memfile persistence layer, but not for vespa search.
 enable_multibit_split_optimalization bool default=true restart
+
+## Whether or not to use async message handling when scheduling storage messages from FileStorManager.
+##
+## When turned on, the calling thread (e.g. FNET network thread when using Storage API RPC)
+## gets the next async message to handle (if any) as part of scheduling a storage message.
+## This async message is then handled by the calling thread immediately,
+## instead of going via a persistence thread.
+use_async_message_handling_on_schedule bool default=false restart
+
+## The noise level used when deciding whether a resource usage sample should be reported to the cluster controller.
+##
+## If one of the resource categories (e.g. disk or memory) has a usage delta that is larger than the noise level,
+## the entire resource usage sample is immediately reported to the cluster controller (via host info).
+## This config can be live updated (doesn't require restart).
+resource_usage_reporter_noise_level double default=0.001

@@ -30,7 +30,7 @@ public class StripedExecutor<Key> {
 
     /** Creates a new StripedExecutor which delegates to a {@link Executors#newCachedThreadPool(ThreadFactory)}. */
     public StripedExecutor() {
-        this(Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(StripedExecutor.class.getName())));
+        this(Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(StripedExecutor.class.getSimpleName())));
     }
 
     /** Creates a new StripedExecutor which delegates to the given executor service. */
@@ -68,7 +68,7 @@ public class StripedExecutor<Key> {
                 command.run();
             }
             catch (RuntimeException e) {
-                logger.log(Level.WARNING, () -> "Exception caught: " + Exceptions.toMessageString(e));
+                logger.log(Level.WARNING, e, () -> "Exception caught: " + Exceptions.toMessageString(e));
             }
         }
     }

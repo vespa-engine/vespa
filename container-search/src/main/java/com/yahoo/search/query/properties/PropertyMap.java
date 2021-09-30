@@ -26,7 +26,10 @@ public class PropertyMap extends Properties {
     /** The properties of this */
     private Map<CompoundName, Object> properties = new LinkedHashMap<>();
 
-    public void set(CompoundName name, Object value, Map<String,String> context) {
+    public void set(CompoundName name, Object value, Map<String, String> context) {
+        if (value == null) // Both clear and forward
+            properties.remove(name);
+
         if (shouldSet(name, value))
             properties.put(name, value);
         else

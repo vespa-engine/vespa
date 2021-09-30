@@ -22,7 +22,6 @@ import java.util.Map;
  *
  * @author Steinar Knutsen
  */
-@SuppressWarnings("deprecation")
 @After(PhaseNames.RAW_QUERY)
 @Before(PhaseNames.TRANSFORMED_QUERY)
 public class FieldCollapsingSearcher extends Searcher {
@@ -33,7 +32,7 @@ public class FieldCollapsingSearcher extends Searcher {
     private static final CompoundName collapseSummaryName = new CompoundName("collapse.summary");
 
     /** Maximum number of queries to send next searcher */
-    private int maxQueries = 4;
+    private final int maxQueries = 4;
 
     /**
      * The max number of hits that will be preserved per unique

@@ -189,21 +189,11 @@ bool QueryVisitor::VisitANDNOT(const QueryItem*, int arity)
     return true;
 }
 
-bool QueryVisitor::VisitTHRESHOLD(const QueryItem*, int arity, int threshold)
-{
-    LOG(debug, "juniper: VisitTHRESHOLD[%d,%d]", arity, threshold);
-    QueryNode* node = new QueryNode(arity, threshold);
-    node->_options = _qhandle->_options;
-
-    insert(node);
-    return true;
-}
-
 
 bool QueryVisitor::VisitOther(const QueryItem*, int arity)
 {
     LOG(debug, "juniper: VisitOther[%d]", arity);
-    insert(NULL);
+    insert(nullptr);
     return false;
 }
 

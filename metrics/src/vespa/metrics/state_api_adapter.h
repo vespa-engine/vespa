@@ -25,6 +25,4 @@ public:
     vespalib::string getTotalMetrics(const vespalib::string &consumer) override;
 };
 
-
 } // namespace metrics
-

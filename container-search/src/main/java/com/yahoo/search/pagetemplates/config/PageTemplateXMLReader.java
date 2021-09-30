@@ -38,18 +38,18 @@ public class PageTemplateXMLReader {
      * @throws RuntimeException if <code>directory</code> is not a readable directory, or if there is some error in the XML
      */
     public PageTemplateRegistry read(String directory) {
-        List<NamedReader> pageReaders=new ArrayList<>();
+        List<NamedReader> pageReaders = new ArrayList<>();
         try {
-            File dir=new File(directory);
-            if ( !dir.isDirectory() ) throw new IllegalArgumentException("Could not read page templates: '" +
-                    directory + "' is not a valid directory.");
+            File dir = new File(directory);
+            if ( ! dir.isDirectory() ) throw new IllegalArgumentException("Could not read page templates: '" +
+                                                                          directory + "' is not a valid directory.");
 
             for (File file : sortFiles(dir)) {
                 if ( ! file.getName().endsWith(".xml")) continue;
-                pageReaders.add(new NamedReader(file.getName(),new FileReader(file)));
+                pageReaders.add(new NamedReader(file.getName(), new FileReader(file)));
             }
 
-            return read(pageReaders,true);
+            return read(pageReaders, true);
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Could not read page templates from '" + directory + "'",e);
@@ -67,18 +67,18 @@ public class PageTemplateXMLReader {
      * @throws RuntimeException if <code>fileName</code> is not a readable file, or if there is some error in the XML
      */
     public PageTemplate readFile(String fileName) {
-        NamedReader pageReader=null;
+        NamedReader pageReader = null;
         try {
-            File file=new File(fileName);
-            pageReader=new NamedReader(fileName,new FileReader(file));
-            String firstName=file.getName().substring(0,file.getName().length()-4);
-            return read(Collections.singletonList(pageReader),true).getComponent(firstName);
+            File file = new File(fileName);
+            pageReader = new NamedReader(fileName,new FileReader(file));
+            String firstName = file.getName().substring(0, file.getName().length() - 4);
+            return read(Collections.singletonList(pageReader), true).getComponent(firstName);
         }
         catch (IOException e) {
-            throw new IllegalArgumentException("Could not read the page template '" + fileName + "'",e);
+            throw new IllegalArgumentException("Could not read the page template '" + fileName + "'", e);
         }
         finally {
-            if (pageReader!=null)
+            if (pageReader != null)
                 try { pageReader.close(); } catch (IOException e) { }
         }
     }
@@ -130,11 +130,11 @@ public class PageTemplateXMLReader {
     }
 
     /** Throws an exception if the name is not corresponding to the id */
-    private void validateFileName(final String actualName,ComponentId id,String artifactName) {
-        String expectedCanonicalFileName=id.toFileName();
-        String fileName=new File(actualName).getName();
-        fileName=stripXmlEnding(fileName);
-        String canonicalFileName=ComponentId.fromFileName(fileName).toFileName();
+    private void validateFileName(String actualName, ComponentId id, String artifactName) {
+        String expectedCanonicalFileName = id.toFileName();
+        String fileName = new File(actualName).getName();
+        fileName = stripXmlEnding(fileName);
+        String canonicalFileName = ComponentId.fromFileName(fileName).toFileName();
         if ( ! canonicalFileName.equals(expectedCanonicalFileName))
             throw new IllegalArgumentException("The file name of " + artifactName + " '" + id +
                                                "' must be '" + expectedCanonicalFileName + ".xml' but was '" + actualName + "'");
@@ -144,14 +144,14 @@ public class PageTemplateXMLReader {
         if (!fileName.endsWith(".xml"))
             throw new IllegalArgumentException("'" + fileName + "' should have a .xml ending");
         else
-            return fileName.substring(0,fileName.length()-4);
+            return fileName.substring(0, fileName.length() - 4);
     }
 
     private void readPages() {
         for (Map.Entry<ComponentId,Element> pageElement : pageElementsByPageId.entrySet()) {
             try {
-                PageTemplate page=registry.getComponent(pageElement.getValue().getAttribute("id"));
-                readPageContent(pageElement.getValue(),page);
+                PageTemplate page = registry.getComponent(pageElement.getValue().getAttribute("id"));
+                readPageContent(pageElement.getValue(), page);
             }
             catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Could not read page template '" + pageElement.getKey() + "'",e);
@@ -159,16 +159,16 @@ public class PageTemplateXMLReader {
         }
     }
 
-    private void readPageContent(Element pageElement,PageTemplate page) {
+    private void readPageContent(Element pageElement, PageTemplate page) {
         if (page.isFrozen()) return; // Already read
-        Section rootSection=new Section(page.getId().toString());
-        readSection(pageElement,rootSection);
+        Section rootSection = new Section(page.getId().toString());
+        readSection(pageElement, rootSection);
         page.setSection(rootSection);
         page.freeze();
     }
 
     /** Fills a section with attributes and sub-elements from a "section" or "page" element */
-    private Section readSection(Element sectionElement,Section section) {
+    private Section readSection(Element sectionElement, Section section) {
         section.setLayout(Layout.fromString(sectionElement.getAttribute("layout")));
         section.setRegion(sectionElement.getAttribute("region"));
         section.setOrder(Sorting.fromString(sectionElement.getAttribute("order")));
@@ -198,10 +198,10 @@ public class PageTemplateXMLReader {
 
     /** Reads the direct descendant elements of an include */
     private List<PageElement> readInclude(Element element) {
-        PageTemplate included=registry.getComponent(element.getAttribute("idref"));
-        if (included==null)
+        PageTemplate included = registry.getComponent(element.getAttribute("idref"));
+        if (included == null)
             throw new IllegalArgumentException("Could not find page template '" + element.getAttribute("idref"));
-        readPageContent(pageElementsByPageId.get(included.getId()),included);
+        readPageContent(pageElementsByPageId.get(included.getId()), included);
         return included.getSection().elements(Section.class);
     }
 
@@ -223,9 +223,9 @@ public class PageTemplateXMLReader {
     }
 
     private List<Source> readSourceAttribute(Element sectionElement) {
-        List<Source> sources=new ArrayList<>();
-        String sourceAttributeString=sectionElement.getAttribute("source");
-        if (sourceAttributeString!=null) {
+        List<Source> sources = new ArrayList<>();
+        String sourceAttributeString = sectionElement.getAttribute("source");
+        if (sourceAttributeString != null) {
             for (String sourceName : sourceAttributeString.split(" ")) {
                 if (sourceName.isEmpty()) continue;
                 if ("*".equals(sourceName))

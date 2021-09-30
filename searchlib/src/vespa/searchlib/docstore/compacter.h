@@ -51,7 +51,7 @@ private:
     uint64_t                   _writeCount;
     vespalib::duration         _maxBucketGuardDuration;
     vespalib::steady_time      _lastSample;
-    vespalib::Lock             _lock;
+    std::mutex                 _lock;
     vespalib::MemoryDataStore  _backingMemory;
     std::vector<StoreByBucket> _tmpStore;
     GenerationHandler::Guard   _lidGuard;

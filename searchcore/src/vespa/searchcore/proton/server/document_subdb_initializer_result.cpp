@@ -12,16 +12,8 @@ DocumentSubDbInitializerResult::DocumentSubDbInitializerResult()
       _summaryManager(std::make_shared<SummaryManager::SP>()),
       _attributeManager(std::make_shared<AttributeManager::SP>()),
       _indexManager(std::make_shared<IIndexManager::SP>()),
-      _lidReuseDelayerConfig(),
       _flushConfig()
 {
-}
-
-void
-DocumentSubDbInitializerResult::
-setLidReuseDelayerConfig(LidReuseDelayerConfig lidReuseDelayerConfig_in)
-{
-    _lidReuseDelayerConfig = lidReuseDelayerConfig_in;
 }
 
 void

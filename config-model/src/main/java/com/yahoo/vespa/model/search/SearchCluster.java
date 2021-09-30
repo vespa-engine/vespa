@@ -29,9 +29,7 @@ public abstract class SearchCluster extends AbstractSearchCluster
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer {
 
-    private static final long serialVersionUID = 1L;
-
-    protected SearchCluster(AbstractConfigProducer parent, String clusterName, int index) {
+    protected SearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index) {
         super(parent, clusterName, index);
     }
 
@@ -41,8 +39,8 @@ public abstract class SearchCluster extends AbstractSearchCluster
      * Also stores the document names contained in the search
      * definitions.
      */
-    public void deriveSearchDefinitions(DeployState deployState) {
-        deriveAllSearchDefinitions(getLocalSDS(), deployState);
+    public void deriveSchemas(DeployState deployState) {
+        deriveAllSchemas(getLocalSDS(), deployState);
     }
 
     @Override
@@ -132,14 +130,9 @@ public abstract class SearchCluster extends AbstractSearchCluster
         return false;
     }
 
-    protected abstract void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches, DeployState deployState);
+    protected abstract void deriveAllSchemas(List<SchemaSpec> localSearches, DeployState deployState);
 
     public abstract void defaultDocumentsConfig();
     public abstract DerivedConfiguration getSdConfig();
-    protected abstract void exportSdFiles(File toDir) throws IOException;
-    protected final void writeSdFiles(File toDir) throws IOException {
-        assureSdConsistent();
-        exportSdFiles(toDir);
-    }
 
 }

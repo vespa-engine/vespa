@@ -1,7 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/config-attributes.h>
 #include <vespa/fastos/file.h>
-#include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
@@ -10,33 +11,31 @@
 #include <vespa/searchcore/proton/attribute/exclusive_attribute_read_accessor.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
-#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
+#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcore/proton/test/attribute_vectors.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchcommon/attribute/i_attribute_functor.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
-#include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
-#include <vespa/searchlib/common/foregroundtaskexecutor.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
-#include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/foreground_thread_executor.h>
+#include <vespa/vespalib/util/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
@@ -55,7 +54,8 @@ using proton::initializer::InitializerTask;
 using proton::test::AttributeUtils;
 using proton::test::createInt32Attribute;
 using proton::test::Int32Attribute;
-using search::ForegroundTaskExecutor;
+using vespalib::ForegroundTaskExecutor;
+using vespalib::ForegroundThreadExecutor;
 using search::TuneFileAttributes;
 using search::attribute::BasicType;
 using search::attribute::IAttributeContext;
@@ -141,7 +141,7 @@ struct ImportedAttributesRepoBuilder {
         refAttr->setGidToLidMapperFactory(std::make_shared<MockGidToLidMapperFactory>());
         auto targetAttr = search::AttributeFactory::createAttribute(name + "_target", INT32_SINGLE);
         auto documentMetaStore = std::shared_ptr<search::IDocumentMetaStoreContext>();
-        auto targetDocumentMetaStore = std::make_shared<const DocumentMetaStoreContext>(std::make_shared<BucketDBOwner>());
+        auto targetDocumentMetaStore = std::make_shared<const DocumentMetaStoreContext>(std::make_shared<bucketdb::BucketDBOwner>());
         auto importedAttr = ImportedAttributeVectorFactory::create(name, refAttr, documentMetaStore, targetAttr, targetDocumentMetaStore, false);
         _repo->add(name, importedAttr);
     }
@@ -155,15 +155,21 @@ struct BaseFixture
     DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
+    ForegroundThreadExecutor _shared;
     HwInfo                 _hwInfo;
     BaseFixture();
     ~BaseFixture();
+    proton::AttributeManager::SP make_manager() {
+        return std::make_shared<proton::AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(),
+                                                          _fileHeaderContext, _attributeFieldWriter, _shared, _hwInfo);
+    }
 };
 
 BaseFixture::BaseFixture()
     : _dirHandler(test_dir),
       _fileHeaderContext(),
       _attributeFieldWriter(),
+      _shared(),
       _hwInfo()
 {
 }
@@ -188,8 +194,7 @@ struct AttributeManagerFixture
 };
 
 AttributeManagerFixture::AttributeManagerFixture(BaseFixture &bf)
-    : _msp(std::make_shared<proton::AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(),
-                                                      bf._fileHeaderContext, bf._attributeFieldWriter, bf._hwInfo)),
+    : _msp(bf.make_manager()),
       _m(*_msp),
       _builder()
 {}
@@ -226,10 +231,9 @@ struct DummyInitializerTask : public InitializerTask
 struct ParallelAttributeManager
 {
     InitializerTask::SP documentMetaStoreInitTask;
-    BucketDBOwner::SP bucketDbOwner;
+    std::shared_ptr<bucketdb::BucketDBOwner> bucketDbOwner;
     DocumentMetaStore::SP documentMetaStore;
-    search::GrowStrategy attributeGrow;
-    size_t attributeGrowNumDocs;
+    AllocStrategy        alloc_strategy;
     bool fastAccessAttributesOnly;
     std::shared_ptr<AttributeManager::SP> mgr;
     vespalib::ThreadStackExecutor masterExecutor;
@@ -244,21 +248,20 @@ struct ParallelAttributeManager
 ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSerialNum, AttributeManager::SP baseAttrMgr,
                                                    const AttributesConfig &attrCfg, uint32_t docIdLimit)
     : documentMetaStoreInitTask(std::make_shared<DummyInitializerTask>()),
-      bucketDbOwner(std::make_shared<BucketDBOwner>()),
+      bucketDbOwner(std::make_shared<bucketdb::BucketDBOwner>()),
       documentMetaStore(std::make_shared<DocumentMetaStore>(bucketDbOwner)),
-      attributeGrow(),
-      attributeGrowNumDocs(1),
+      alloc_strategy(),
       fastAccessAttributesOnly(false),
       mgr(std::make_shared<AttributeManager::SP>()),
-      masterExecutor(1, 128 * 1024),
+      masterExecutor(1, 128_Ki),
       master(masterExecutor),
       initializer(std::make_shared<AttributeManagerInitializer>(configSerialNum, documentMetaStoreInitTask,
                                                                 documentMetaStore, baseAttrMgr, attrCfg,
-                                                                attributeGrow, attributeGrowNumDocs,
+                                                                alloc_strategy,
                                                                 fastAccessAttributesOnly, master, mgr))
 {
     documentMetaStore->setCommittedDocIdLimit(docIdLimit);
-    vespalib::ThreadStackExecutor executor(3, 128 * 1024);
+    vespalib::ThreadStackExecutor executor(3, 128_Ki);
     initializer::TaskRunner taskRunner(executor);
     taskRunner.runTask(initializer);
 }
@@ -391,7 +394,7 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
         uint32_t doc_id;
         a1->addDoc(doc_id);
         index.indexEmptyDocument(doc_id);
-        pa.commit(100, 100);
+        pa.commit(CommitParam(100));
 
         EXPECT_EQUAL(2u, a1->getNumDocs());
 
@@ -413,7 +416,7 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
         PredicateTreeAnnotations annotations(3);
         annotations.interval_map[123] = {{ 0x0001ffff }};
         index.indexDocument(1, annotations);
-        pa.commit(200, 200);
+        pa.commit(CommitParam(200));
 
         EXPECT_EQUAL(3u, a1->getNumDocs());
         EXPECT_TRUE(ia1.load());
@@ -506,11 +509,7 @@ TEST_F("require that new attributes after reconfig are initialized", Fixture)
 
 TEST_F("require that removed attributes cannot resurrect", BaseFixture)
 {
-    proton::AttributeManager::SP am1(
-            new proton::AttributeManager(test_dir, "test.subdb",
-                                         TuneFileAttributes(),
-                                         f._fileHeaderContext,
-                                         f._attributeFieldWriter, f._hwInfo));
+    auto am1 = f.make_manager();
     {
         AttributeVector::SP a1 = am1->addAttribute({"a1", INT32_SINGLE}, 0);
         fillAttribute(a1, 2, 10, 15);
@@ -541,7 +540,7 @@ TEST_F("require that extra attribute is not treated as removed", Fixture)
 {
     AttributeVector::SP ex(createInt32Attribute("ex"));
     f._m.addExtraAttribute(ex);
-    ex->commit(1,1);
+    ex->commit(CommitParam(1));
 
     AttrSpecList ns;
     SequentialAttributeManager am2(f._m, AttrMgrSpec(ns, 2, 1));
@@ -804,9 +803,7 @@ TEST_F("require that attribute vector of wrong type is dropped", BaseFixture)
     predicateParams2.setArity(4);
     predicate2.setPredicateParams(predicateParams2);
 
-    auto am1(std::make_shared<proton::AttributeManager>
-             (test_dir, "test.subdb", TuneFileAttributes(),
-              f._fileHeaderContext, f._attributeFieldWriter, f._hwInfo));
+    auto am1 = f.make_manager();
     am1->addAttribute({"a1", INT32_SINGLE}, 1);
     am1->addAttribute({"a2", INT32_SINGLE}, 2);
     am1->addAttribute({"a3", generic_tensor}, 3);
@@ -843,17 +840,13 @@ void assertShrinkTargetSerial(proton::AttributeManager &mgr, const vespalib::str
 
 TEST_F("require that we can guess flushed serial number for shrink flushtarget", BaseFixture)
 {
-    auto am1(std::make_shared<proton::AttributeManager>
-             (test_dir, "test.subdb", TuneFileAttributes(),
-              f._fileHeaderContext, f._attributeFieldWriter, f._hwInfo));
+    auto am1 = f.make_manager();
     am1->addAttribute({"a1", INT32_SINGLE}, 1);
     am1->addAttribute({"a2", INT32_SINGLE}, 2);
     TEST_DO(assertShrinkTargetSerial(*am1, "a1", 0));
     TEST_DO(assertShrinkTargetSerial(*am1, "a2", 1));
     am1->flushAll(10);
-    am1 = std::make_shared<proton::AttributeManager>
-          (test_dir, "test.subdb", TuneFileAttributes(),
-           f._fileHeaderContext, f._attributeFieldWriter, f._hwInfo);
+    am1 = f.make_manager();
     am1->addAttribute({"a1", INT32_SINGLE}, 1);
     am1->addAttribute({"a2", INT32_SINGLE}, 2);
     TEST_DO(assertShrinkTargetSerial(*am1, "a1", 10));
@@ -862,9 +855,7 @@ TEST_F("require that we can guess flushed serial number for shrink flushtarget",
 
 TEST_F("require that shrink flushtarget is handed over to new attribute manager", BaseFixture)
 {
-    auto am1(std::make_shared<proton::AttributeManager>
-             (test_dir, "test.subdb", TuneFileAttributes(),
-              f._fileHeaderContext, f._attributeFieldWriter, f._hwInfo));
+    auto am1 = f.make_manager();
     am1->addAttribute({"a1", INT32_SINGLE}, 4);
     AttrSpecList newSpec;
     newSpec.push_back(AttributeSpec("a1", INT32_SINGLE));

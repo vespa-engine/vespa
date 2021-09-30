@@ -32,7 +32,7 @@ public abstract class Item implements Cloneable {
 
     /**
      * The definitions in Item.ItemType must match the ones in
-     * searchlib/src/searchlib/parsequery/parse.h
+     * searchlib/src/vespa/searchlib/parsequery/parse.h
      */
     public static enum ItemType {
         OR(0),
@@ -42,7 +42,7 @@ public abstract class Item implements Cloneable {
         WORD(4),
         INT(5),
         PHRASE(6),
-        PAREN(7),
+        PAREN(7), // TODO not used - remove on Vespa 8
         PREFIX(8),
         SUBSTRING(9),
         NEAR(11),
@@ -60,11 +60,12 @@ public abstract class Item implements Cloneable {
         PREDICATE_QUERY(23),
         REGEXP(24),
         WORD_ALTERNATIVES(25),
-        NEAREST_NEIGHBOR(26);
+        NEAREST_NEIGHBOR(26),
+        GEO_LOCATION_TERM(27);
 
         public final int code;
 
-        private ItemType(int code) {
+        ItemType(int code) {
             this.code = code;
         }
 

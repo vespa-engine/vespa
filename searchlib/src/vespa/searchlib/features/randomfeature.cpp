@@ -3,7 +3,9 @@
 #include "randomfeature.h"
 #include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 #include <chrono>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".features.randomfeature");
 
@@ -74,6 +76,5 @@ RandomBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::Sta
 
     return stash.create<RandomExecutor>(seed, matchSeed);
 }
-
 
 }

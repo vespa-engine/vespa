@@ -4,7 +4,7 @@
 
 #include <memory>
 
-namespace search { class IDestructorCallback; }
+namespace vespalib { class IDestructorCallback; }
 
 namespace proton {
 
@@ -15,10 +15,9 @@ class MoveOperation;
  */
 struct IDocumentMoveHandler
 {
-    virtual void handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCallback> moveDoneCtx) = 0;
-    virtual ~IDocumentMoveHandler() {}
+    virtual void handleMove(MoveOperation &op, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx) = 0;
+    virtual ~IDocumentMoveHandler() = default;
 };
-
 
 } // namespace proton
 

@@ -4,70 +4,34 @@ package com.yahoo.vespa.hosted.controller.integration;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.StableOsVersion;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * @author mpolden
  */
 public class ArtifactRepositoryMock extends AbstractComponent implements ArtifactRepository {
 
-    private final Map<Integer, Artifact> repository = new HashMap<>();
-
-    public ArtifactRepositoryMock put(ApplicationId applicationId, ApplicationPackage applicationPackage,
-                                      String applicationVersion) {
-        repository.put(artifactHash(applicationId, applicationVersion),
-                       new Artifact(applicationPackage.zippedContent()));
-        return this;
-    }
-
-    public int hits(ApplicationId applicationId, String applicationVersion) {
-        Artifact artifact = repository.get(artifactHash(applicationId, applicationVersion));
-        return artifact == null ? 0 : artifact.hits;
-    }
-
-    public boolean contains(ApplicationId applicationId, String applicationVersion) {
-        return repository.containsKey(artifactHash(applicationId, applicationVersion));
-    }
-
-    @Override
-    public byte[] getApplicationPackage(ApplicationId applicationId, String applicationVersion) {
-        Artifact artifact = repository.get(artifactHash(applicationId, applicationVersion));
-        if (artifact == null) {
-            throw new IllegalArgumentException("No application package found for " + applicationId + " with version "
-                                               + applicationVersion);
-        }
-        artifact.recordHit();
-        return artifact.data;
-    }
+    private final Map<Integer, StableOsVersion> stableOsVersions = new HashMap<>();
 
     @Override
     public byte[] getSystemApplicationPackage(ApplicationId application, ZoneId zone, Version version) {
         return new byte[0];
     }
 
-    private static int artifactHash(ApplicationId applicationId, String applicationVersion) {
-        return Objects.hash(applicationId, applicationVersion);
+    @Override
+    public StableOsVersion stableOsVersion(int major) {
+        StableOsVersion version = stableOsVersions.get(major);
+        if (version == null) throw new IllegalArgumentException("No version set for major " + major);
+        return version;
     }
 
-    private class Artifact {
-
-        private final byte[] data;
-        private int hits = 0;
-
-        private Artifact(byte[] data) {
-            this.data = data;
-        }
-
-        private void recordHit() {
-            hits++;
-        }
-
+    public void promoteOsVersion(StableOsVersion stableOsVersion) {
+        stableOsVersions.put(stableOsVersion.version().getMajor(), stableOsVersion);
     }
 
 }

@@ -33,7 +33,7 @@ public class FieldDescription implements Comparable<FieldDescription> {
     }
 
     public FieldDescription(String name, String type) {
-        this(name,FieldType.fromString(type,null));
+        this(name,FieldType.fromString(type, null));
     }
 
     public FieldDescription(String name, FieldType type, boolean mandatory) {
@@ -60,7 +60,7 @@ public class FieldDescription implements Comparable<FieldDescription> {
      * @param overridable whether this can be overridden when first set in a profile. Default: true
      */
     public FieldDescription(String name, String typeString, String aliases, boolean mandatory, boolean overridable) {
-        this(name,FieldType.fromString(typeString,null),aliases,mandatory,overridable);
+        this(name,FieldType.fromString(typeString, null), aliases, mandatory, overridable);
     }
 
     public FieldDescription(String name, FieldType type, boolean mandatory, boolean overridable) {
@@ -97,7 +97,8 @@ public class FieldDescription implements Comparable<FieldDescription> {
         this.type = type;
 
         // Forbidden until we can figure out the right semantics
-        if (name.isCompound() && ! aliases.isEmpty()) throw new IllegalArgumentException("Aliases are not allowed with compound names");
+        if (name.isCompound() && ! aliases.isEmpty())
+            throw new IllegalArgumentException("Aliases are not allowed with compound names");
 
         this.aliases = ImmutableList.copyOf(aliases);
         this.mandatory = mandatory;

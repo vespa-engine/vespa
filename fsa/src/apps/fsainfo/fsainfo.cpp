@@ -41,26 +41,26 @@ int main(int argc, char** argv)
 {
   const char *fsa_file;
 
-  char         opt;
+  int          opt;
   extern int   optind;
 
   while((opt=getopt(argc,argv,"hV")) != -1){
     switch(opt){
     case 'h':
       usage(argv[0]);
-      exit(0);
+      return 0;
     case 'V':
       version();
-      exit(0);
+      return 0;
     case '?':
       usage(argv[0],"unrecognized option");
-      exit(1);
+      return 1;
     }
   }
 
   if(optind!=argc-1){
     usage(argv[0],"required parameter fsa is missing");
-    exit(1);
+    return 1;
   }
 
   fsa_file = argv[optind];

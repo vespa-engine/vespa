@@ -1,10 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.Node;
-import com.yahoo.vdslib.state.NodeType;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -32,11 +31,11 @@ public class ClusterInfo {
     /** Information about the current state of all nodes - always consists of both sets of nodes in the two maps above */
     private final Map<Node, NodeInfo> allNodeInfo = new TreeMap<>(); // TODO: Remove
 
+    /** Returns non-null iff index is a configured nodes (except perhaps in tests). */
     DistributorNodeInfo getDistributorNodeInfo(int index) { return distributorNodeInfo.get(index); }
 
+    /** Returns non-null iff index is a configured nodes (except perhaps in tests). */
     StorageNodeInfo getStorageNodeInfo(int index) { return storageNodeInfo.get(index); }
-
-    NodeInfo getNodeInfo(NodeType type, int index) { return getNodeInfo(new Node(type, index)); }
 
     /** Returns information about the given node id, or null if this node does not exist */
     public NodeInfo getNodeInfo(Node node) { return allNodeInfo.get(node); }

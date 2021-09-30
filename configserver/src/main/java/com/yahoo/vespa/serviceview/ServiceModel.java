@@ -212,7 +212,7 @@ public final class ServiceModel {
      *             if no matching service is found
      */
     public Service resolve(String host, int port, Service self) {
-        Integer portAsObject = Integer.valueOf(port);
+        Integer portAsObject = port;
         String realHost;
         if ("localhost".equals(host)) {
             realHost = self.host;

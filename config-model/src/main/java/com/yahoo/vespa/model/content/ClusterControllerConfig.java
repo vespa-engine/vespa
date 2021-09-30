@@ -16,31 +16,32 @@ import org.w3c.dom.Element;
  *
  * TODO: Author
  */
-public class ClusterControllerConfig extends AbstractConfigProducer implements FleetcontrollerConfig.Producer {
+public class ClusterControllerConfig extends AbstractConfigProducer<ClusterControllerConfig> implements FleetcontrollerConfig.Producer {
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ClusterControllerConfig> {
-        String clusterName;
-        ModelElement clusterElement;
+        private final String clusterName;
+        private final ModelElement clusterElement;
+        private final ResourceLimits resourceLimits;
 
-        public Builder(String clusterName, ModelElement clusterElement) {
+        public Builder(String clusterName, ModelElement clusterElement, ResourceLimits resourceLimits) {
             this.clusterName = clusterName;
             this.clusterElement = clusterElement;
+            this.resourceLimits = resourceLimits;
         }
 
         @Override
-        protected ClusterControllerConfig doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+        protected ClusterControllerConfig doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
             ModelElement tuning = null;
 
             ModelElement clusterTuning = clusterElement.child("tuning");
             Integer bucketSplittingMinimumBits = null;
-            Double minNodeRatioPerGroup = null;
+            Double minNodeRatioPerGroup = deployState.getProperties().featureFlags().minNodeRatioPerGroup();
             if (clusterTuning != null) {
                 tuning = clusterTuning.child("cluster-controller");
                 minNodeRatioPerGroup = clusterTuning.childAsDouble("min-node-ratio-per-group");
                 bucketSplittingMinimumBits = clusterTuning.childAsInteger("bucket-splitting.minimum-bits");
             }
-
-            boolean useBucketSpaceMetric = deployState.getProperties().useBucketSpaceMetric();
+            boolean enableClusterFeedBlock = deployState.getProperties().featureFlags().enableFeedBlockInDistributor();
 
             if (tuning != null) {
                 return new ClusterControllerConfig(ancestor, clusterName,
@@ -52,24 +53,29 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
                         tuning.childAsDouble("min-storage-up-ratio"),
                         bucketSplittingMinimumBits,
                         minNodeRatioPerGroup,
-                        useBucketSpaceMetric);
+                        enableClusterFeedBlock,
+                        resourceLimits);
             } else {
-                return new ClusterControllerConfig(ancestor, clusterName, null, null, null, null, null, null,
-                        bucketSplittingMinimumBits, minNodeRatioPerGroup, useBucketSpaceMetric);
+                return new ClusterControllerConfig(ancestor, clusterName,
+                        null, null, null, null, null, null,
+                        bucketSplittingMinimumBits,
+                        minNodeRatioPerGroup,
+                        enableClusterFeedBlock, resourceLimits);
             }
         }
     }
 
-    String clusterName;
-    Duration initProgressTime;
-    Duration transitionTime;
-    Long maxPrematureCrashes;
-    Duration stableStateTimePeriod;
-    Double minDistributorUpRatio;
-    Double minStorageUpRatio;
-    Integer minSplitBits;
-    private Double minNodeRatioPerGroup;
-    private boolean useBucketSpaceMetric;
+    private final String clusterName;
+    private final Duration initProgressTime;
+    private final Duration transitionTime;
+    private final Long maxPrematureCrashes;
+    private final Duration stableStateTimePeriod;
+    private final Double minDistributorUpRatio;
+    private final Double minStorageUpRatio;
+    private final Integer minSplitBits;
+    private final Double minNodeRatioPerGroup;
+    private final boolean enableClusterFeedBlock;
+    private final ResourceLimits resourceLimits;
 
     // TODO refactor; too many args
     private ClusterControllerConfig(AbstractConfigProducer parent,
@@ -82,7 +88,8 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
                                     Double minStorageUpRatio,
                                     Integer minSplitBits,
                                     Double minNodeRatioPerGroup,
-                                    boolean useBucketSpaceMetric) {
+                                    boolean enableClusterFeedBlock,
+                                    ResourceLimits resourceLimits) {
         super(parent, "fleetcontroller");
 
         this.clusterName = clusterName;
@@ -94,7 +101,8 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
         this.minStorageUpRatio = minStorageUpRatio;
         this.minSplitBits = minSplitBits;
         this.minNodeRatioPerGroup = minNodeRatioPerGroup;
-        this.useBucketSpaceMetric = useBucketSpaceMetric;
+        this.enableClusterFeedBlock = enableClusterFeedBlock;
+        this.resourceLimits = resourceLimits;
     }
 
     @Override
@@ -111,7 +119,6 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
         builder.index(0);
         builder.cluster_name(clusterName);
         builder.fleet_controller_count(getChildren().size());
-        builder.determine_buckets_from_bucket_space_metric(useBucketSpaceMetric);
 
         if (initProgressTime != null) {
             builder.init_progress_time((int) initProgressTime.getMilliSeconds());
@@ -137,5 +144,8 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
         if (minNodeRatioPerGroup != null) {
             builder.min_node_ratio_per_group(minNodeRatioPerGroup);
         }
+        builder.enable_cluster_feed_block(enableClusterFeedBlock);
+        resourceLimits.getConfig(builder);
     }
+
 }

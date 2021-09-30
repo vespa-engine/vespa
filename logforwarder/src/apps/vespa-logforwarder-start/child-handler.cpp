@@ -8,6 +8,7 @@
 #include <sys/wait.h>
 #include <vector>
 #include <string>
+#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".child-handler");
@@ -27,7 +28,7 @@ runSplunk(const vespalib::string &prefix, std::vector<const char *> args)
         dbg.append(arg);
         dbg.append("'");
     }
-    LOG(debug, "starting splunk forwarder with command: %s", dbg.c_str());
+    LOG(info, "trigger splunk with command: %s", dbg.c_str());
     args.push_back(nullptr);
     fflush(stdout);
     pid_t child = fork();
@@ -44,7 +45,7 @@ runSplunk(const vespalib::string &prefix, std::vector<const char *> args)
         execv(cargv[0], cargv);
         // if execv fails:
         perror(cargv[0]);
-        exit(1);
+        std::_Exit(1);
     }
     LOG(debug, "child running with pid %d", (int)child);
     int waitStatus = 0;
@@ -58,13 +59,13 @@ runSplunk(const vespalib::string &prefix, std::vector<const char *> args)
         return;
     }
     if (WIFEXITED(waitStatus)) {
-        LOG(warning, "failed starting splunk forwarder (exit status %d)",
+        LOG(warning, "failed triggering splunk (exit status %d)",
             WEXITSTATUS(waitStatus));
     } else if (WIFSIGNALED(waitStatus)) {
-        LOG(warning, "failed starting splunk forwarder (exit on signal %d)",
+        LOG(warning, "failed triggering splunk (exit on signal %d)",
             WTERMSIG(waitStatus));
     } else {
-        LOG(warning, "failed starting splunk forwarder (abnormal exit status %d)",
+        LOG(warning, "failed triggering splunk (abnormal exit status %d)",
             waitStatus);
     }
 }
@@ -76,14 +77,15 @@ void
 ChildHandler::startChild(const vespalib::string &prefix)
 {
     if (! _childRunning) {
+        // it is possible that splunk was already running anyway, so
+        // make sure we restart it to get new config activated:
+        runSplunk(prefix, {"stop"});
+        sleep(1);
         runSplunk(prefix, {"start", "--answer-yes", "--no-prompt", "--accept-license"});
         _childRunning = true;
-        // it is possible that splunk was already running, and
-        // then the above won't do anything, so we need to
-        // *also* do the restart below, after a small delay.
-        sleep(1);
+    } else {
+        runSplunk(prefix, {"restart"});
     }
-    runSplunk(prefix, {"restart"});
 }
 
 void

@@ -1,7 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fnet/fnet.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fnet/signalshutdown.h>
+#include <vespa/fnet/packetqueue.h>
+#include <vespa/fnet/controlpacket.h>
 #include <vespa/fastos/app.h>
+#include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/time.h>
 #include <thread>
 
@@ -56,16 +60,16 @@ MyApp::Main()
   transport.Start(&pool);
 
   // stable-state operation
-  std::this_thread::sleep_for(500ms);
+  std::this_thread::sleep_for(100ms);
 
   FNET_Packet  *packet;
   FNET_Context  context;
 
-  fprintf(stderr, "scheduling timeout in 2 seconds...\n");
+  fprintf(stderr, "scheduling timeout in 1 seconds...\n");
   t = clock::now();
-  timeout.Schedule(2.0); // timeout in 2 seconds
+  timeout.Schedule(1.0); // timeout in 1 seconds
 
-  std::this_thread::sleep_for(1s);
+  std::this_thread::sleep_for(100ms);
 
   timeout.Unschedule(); // cancel timeout
   ms = (clock::now() - t);
@@ -74,9 +78,9 @@ MyApp::Main()
     fprintf(stderr, "timeout canceled; no timeout packet delivered\n");
   fprintf(stderr, "time since timeout was scheduled: %f ms\n", ms.count());
 
-  fprintf(stderr, "scheduling timeout in 2 seconds...\n");
+  fprintf(stderr, "scheduling timeout in 1 seconds...\n");
   t = clock::now();
-  timeout.Schedule(2.0); // timeout in 2 seconds
+  timeout.Schedule(1.0); // timeout in 1 seconds
 
   packet = queue.DequeuePacket(&context); // wait for timeout
   ms = (clock::now() - t);

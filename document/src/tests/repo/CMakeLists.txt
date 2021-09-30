@@ -4,7 +4,5 @@ vespa_add_executable(document_documenttyperepo_test_app TEST
     documenttyperepo_test.cpp
     DEPENDS
     document
-    AFTER
-    document_documentconfig
 )
 vespa_add_test(NAME document_documenttyperepo_test_app COMMAND document_documenttyperepo_test_app)

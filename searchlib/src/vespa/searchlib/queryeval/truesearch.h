@@ -2,12 +2,15 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include "searchiterator.h"
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
+/**
+ * Search iterator for testing, yielding a hit on all documents.
+ * Unpacks (sets docid) to the given TermFieldMatchData.
+ **/
 class TrueSearch : public SearchIterator
 {
 private:
@@ -21,5 +24,4 @@ public:
     ~TrueSearch();
 };
 
-} // namespace queryeval
-} // namespace search
+}

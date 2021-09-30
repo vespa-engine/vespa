@@ -7,6 +7,7 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/removelocation.h>
+#include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 
@@ -120,6 +121,12 @@ ProtocolSerialization::encode(const api::StorageMessage& msg) const
     case api::MessageType::VISITOR_DESTROY_REPLY_ID:
         onEncode(buf, static_cast<const api::DestroyVisitorReply&>(msg));
         break;
+    case api::MessageType::STATBUCKET_ID:
+        onEncode(buf, static_cast<const api::StatBucketCommand&>(msg));
+        break;
+    case api::MessageType::STATBUCKET_REPLY_ID:
+        onEncode(buf, static_cast<const api::StatBucketReply&>(msg));
+        break;
     case api::MessageType::REMOVELOCATION_ID:
         onEncode(buf, static_cast<const api::RemoveLocationCommand&>(msg));
         break;
@@ -191,6 +198,8 @@ ProtocolSerialization::decodeCommand(mbus::BlobRef data) const
         cmd = onDecodeCreateVisitorCommand(buf); break;
     case api::MessageType::VISITOR_DESTROY_ID:
         cmd = onDecodeDestroyVisitorCommand(buf); break;
+    case api::MessageType::STATBUCKET_ID:
+        cmd = onDecodeStatBucketCommand(buf); break;
     case api::MessageType::REMOVELOCATION_ID:
         cmd = onDecodeRemoveLocationCommand(buf); break;
     case api::MessageType::SETBUCKETSTATE_ID:
@@ -253,6 +262,8 @@ ProtocolSerialization::decodeReply(mbus::BlobRef data, const api::StorageCommand
         reply = onDecodeCreateVisitorReply(cmd, buf); break;
     case api::MessageType::VISITOR_DESTROY_REPLY_ID:
         reply = onDecodeDestroyVisitorReply(cmd, buf); break;
+    case api::MessageType::STATBUCKET_REPLY_ID:
+        reply = onDecodeStatBucketReply(cmd, buf); break;
     case api::MessageType::REMOVELOCATION_REPLY_ID:
         reply = onDecodeRemoveLocationReply(cmd, buf); break;
     case api::MessageType::SETBUCKETSTATE_REPLY_ID:

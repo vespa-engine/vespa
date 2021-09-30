@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <vector>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Config specifying layout and buffer allocation strategy for an array store.
@@ -28,7 +28,7 @@ public:
         AllocSpec(size_t minArraysInBuffer_,
                   size_t maxArraysInBuffer_,
                   size_t numArraysForNewBuffer_,
-                  float allocGrowFactor_)
+                  float allocGrowFactor_) noexcept
             : minArraysInBuffer(minArraysInBuffer_),
               maxArraysInBuffer(maxArraysInBuffer_),
               numArraysForNewBuffer(numArraysForNewBuffer_),

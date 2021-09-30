@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition.fieldoperation;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Index.Type;
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
+import com.yahoo.searchdefinition.document.HnswIndexParams;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
 
@@ -30,6 +31,8 @@ public class IndexOperation implements FieldOperation {
     private OptionalLong upperBound = OptionalLong.empty();
     private OptionalDouble densePostingListThreshold = OptionalDouble.empty();
     private Optional<Boolean> enableBm25 = Optional.empty();
+
+    private Optional<HnswIndexParams.Builder> hnswIndexParams = Optional.empty();
 
     public String getIndexName() {
         return indexName;
@@ -91,6 +94,9 @@ public class IndexOperation implements FieldOperation {
         if (enableBm25.isPresent()) {
             index.setInterleavedFeatures(enableBm25.get());
         }
+        if (hnswIndexParams.isPresent()) {
+            index.setHnswIndexParams(hnswIndexParams.get().build());
+        }
     }
 
     public Type getType() {
@@ -116,8 +122,13 @@ public class IndexOperation implements FieldOperation {
     public void setDensePostingListThreshold(double densePostingListThreshold) {
         this.densePostingListThreshold = OptionalDouble.of(densePostingListThreshold);
     }
+
     public void setEnableBm25(boolean value) {
         enableBm25 = Optional.of(value);
+    }
+
+    public void setHnswIndexParams(HnswIndexParams.Builder params) {
+        this.hnswIndexParams = Optional.of(params);
     }
 
 }

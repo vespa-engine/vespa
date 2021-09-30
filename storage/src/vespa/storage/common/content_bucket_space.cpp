@@ -4,9 +4,10 @@
 
 namespace storage {
 
-ContentBucketSpace::ContentBucketSpace(document::BucketSpace bucketSpace)
+ContentBucketSpace::ContentBucketSpace(document::BucketSpace bucketSpace,
+                                       const ContentBucketDbOptions& db_opts)
     : _bucketSpace(bucketSpace),
-      _bucketDatabase(),
+      _bucketDatabase(db_opts),
       _lock(),
       _clusterState(),
       _distribution(),

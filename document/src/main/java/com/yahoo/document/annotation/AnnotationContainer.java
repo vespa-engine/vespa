@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 abstract class AnnotationContainer {
 
@@ -46,6 +46,6 @@ abstract class AnnotationContainer {
      */
     abstract Iterator<Annotation> iteratorRecursive(SpanNode node);
 
+    // TODO: remember equals and hashcode in subclasses!
 
-    //TODO: remember equals and hashcode in subclasses!
 }

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
-import com.yahoo.vdslib.state.DiskState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
@@ -266,7 +265,7 @@ public class GroupAutoTakedownTest {
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
 
         final NodeState newState = new NodeState(NodeType.STORAGE, State.INITIALIZING);
-        newState.setInitProgress(0.5);
+        newState.setInitProgress(0.5f);
 
         fixture.reportStorageNodeState(4, newState);
 
@@ -275,25 +274,6 @@ public class GroupAutoTakedownTest {
         assertEquals("distributor:6 storage:4",
                 stateAfterStorageTransition(fixture, 5, State.DOWN));
         assertEquals("distributor:6 storage:6 .4.s:i .4.i:0.5",
-                stateAfterStorageTransition(fixture, 5, State.UP));
-    }
-
-    @Test
-    public void disk_states_are_preserved_across_group_down_up_edge() {
-        ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
-                DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
-
-        final NodeState newState = new NodeState(NodeType.STORAGE, State.UP);
-        newState.setDiskCount(7);
-        newState.setDiskState(5, new DiskState(State.DOWN));
-
-        fixture.reportStorageNodeState(4, newState);
-
-        assertEquals("distributor:6 storage:6 .4.d:7 .4.d.5.s:d", fixture.generatedClusterState());
-
-        assertEquals("distributor:6 storage:4",
-                stateAfterStorageTransition(fixture, 5, State.DOWN));
-        assertEquals("distributor:6 storage:6 .4.d:7 .4.d.5.s:d",
                 stateAfterStorageTransition(fixture, 5, State.UP));
     }
 

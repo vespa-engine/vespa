@@ -50,14 +50,12 @@ convertBucketsToSlime(const BucketDB &bucketDb, Cursor &array)
 
 }
 
-BucketDBExplorer::BucketDBExplorer(BucketDBOwner::Guard bucketDb)
+BucketDBExplorer::BucketDBExplorer(bucketdb::Guard bucketDb)
     : _bucketDb(std::move(bucketDb))
 {
 }
 
-BucketDBExplorer::~BucketDBExplorer()
-{
-}
+BucketDBExplorer::~BucketDBExplorer() = default;
 
 void
 BucketDBExplorer::get_state(const Inserter &inserter, bool full) const

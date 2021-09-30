@@ -12,7 +12,11 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+/**
+ * @author hakonhall
+ */
 public class YumPackageNameTest {
+
     @Test
     public void testBuilder() {
         YumPackageName yumPackage = new YumPackageName.Builder("docker")
@@ -21,7 +25,7 @@ public class YumPackageNameTest {
                 .setRelease("71.git3e8e77d.el7.centos.1")
                 .setArchitecture("x86_64")
                 .build();
-        assertEquals("2:docker-1.12.6-71.git3e8e77d.el7.centos.1.x86_64", yumPackage.toName());
+        assertEquals("docker-2:1.12.6-71.git3e8e77d.el7.centos.1.x86_64", yumPackage.toName());
     }
 
     @Test
@@ -37,6 +41,17 @@ public class YumPackageNameTest {
                 "docker-engine-selinux",
                 null);
 
+        // name with parenthesis
+        verifyPackageName(
+                "dnf-command(versionlock)",
+                null,
+                "dnf-command(versionlock)",
+                null,
+                null,
+                null,
+                "dnf-command(versionlock)",
+                null);
+
         // name.arch
         verifyPackageName(
                 "docker-engine-selinux.x86_64",
@@ -48,6 +63,16 @@ public class YumPackageNameTest {
                 "docker-engine-selinux.x86_64",
                 null);
 
+        // name-ver
+        verifyPackageName("docker-engine-selinux-1.12.6",
+                          null,
+                          "docker-engine-selinux",
+                          "1.12.6",
+                          null,
+                          null,
+                          "docker-engine-selinux-0:1.12.6",
+                          null);
+
         // name-ver-rel
         verifyPackageName("docker-engine-selinux-1.12.6-1.el7",
                 null,
@@ -55,8 +80,8 @@ public class YumPackageNameTest {
                 "1.12.6",
                 "1.el7",
                 null,
-                "docker-engine-selinux-1.12.6-1.el7",
-                null);
+                "docker-engine-selinux-0:1.12.6-1.el7",
+                "docker-engine-selinux-0:1.12.6-1.el7.*");
 
         // name-ver-rel.arch
         verifyPackageName("docker-engine-selinux-1.12.6-1.el7.x86_64",
@@ -65,8 +90,8 @@ public class YumPackageNameTest {
                 "1.12.6",
                 "1.el7",
                 "x86_64",
-                "docker-engine-selinux-1.12.6-1.el7.x86_64",
-                null);
+                "docker-engine-selinux-0:1.12.6-1.el7.x86_64",
+                "docker-engine-selinux-0:1.12.6-1.el7.*");
 
         // name-epoch:ver-rel.arch
         verifyPackageName(
@@ -76,8 +101,8 @@ public class YumPackageNameTest {
                 "1.12.6",
                 "71.git3e8e77d.el7.centos.1",
                 "x86_64",
-                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
-                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.*");
+                "docker-2:1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
+                "docker-2:1.12.6-71.git3e8e77d.el7.centos.1.*");
 
         // epoch:name-ver-rel.arch
         verifyPackageName(
@@ -87,11 +112,11 @@ public class YumPackageNameTest {
                 "1.12.6",
                 "71.git3e8e77d.el7.centos.1",
                 "x86_64",
-                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
-                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.*");
+                "docker-2:1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
+                "docker-2:1.12.6-71.git3e8e77d.el7.centos.1.*");
     }
 
-    private void verifyPackageName(String packageName,
+    private void verifyPackageName(String input,
                                    String epoch,
                                    String name,
                                    String version,
@@ -99,31 +124,33 @@ public class YumPackageNameTest {
                                    String architecture,
                                    String toName,
                                    String toVersionName) {
-        YumPackageName yumPackageName = YumPackageName.fromString(packageName);
-        verifyValue(epoch, yumPackageName.getEpoch());
-        verifyValue(name, Optional.of(yumPackageName.getName()));
-        verifyValue(version, yumPackageName.getVersion());
-        verifyValue(release, yumPackageName.getRelease());
-        verifyValue(architecture, yumPackageName.getArchitecture());
-        verifyValue(toName, Optional.of(yumPackageName.toName()));
+        YumPackageName yumPackageName = YumPackageName.fromString(input);
+        assertPackageField("epoch", epoch, yumPackageName.getEpoch());
+        assertPackageField("name", name, Optional.of(yumPackageName.getName()));
+        assertPackageField("version", version, yumPackageName.getVersion());
+        assertPackageField("release", release, yumPackageName.getRelease());
+        assertPackageField("architecture", architecture, yumPackageName.getArchitecture());
+        assertPackageField("toName()", toName, Optional.of(yumPackageName.toName()));
 
         if (toVersionName == null) {
             try {
                 yumPackageName.toVersionLockName();
                 fail();
             } catch (IllegalStateException e) {
-                assertThat(e.getMessage(), containsStringIgnoringCase("epoch is missing"));
+                assertTrue("Exception message contains expected substring: " + e.getMessage(),
+                           e.getMessage().contains("Version is missing ") ||
+                           e.getMessage().contains("Release is missing "));
             }
         } else {
             assertEquals(toVersionName, yumPackageName.toVersionLockName());
         }
     }
 
-    private void verifyValue(String value, Optional<String> actual) {
-        if (value == null) {
-            assertFalse(actual.isPresent());
+    private void assertPackageField(String field, String expected, Optional<String> actual) {
+        if (expected == null) {
+            assertFalse(field + " is not present", actual.isPresent());
         } else {
-            assertEquals(value, actual.get());
+            assertEquals(field + " has expected value", expected, actual.get());
         }
     }
 
@@ -168,4 +195,5 @@ public class YumPackageNameTest {
                 .setVersion("1.13.1")
                 .build()));
     }
+
 }

@@ -1,9 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 /**
@@ -21,10 +20,6 @@ public class GetConfigContext {
         this.app = app;
         this.requestHandler = handler;
         this.trace = trace;
-    }
-
-    public TenantName tenant() {
-        return app.tenant();
     }
 
     public ApplicationId applicationId() {
@@ -54,4 +49,10 @@ public class GetConfigContext {
     public String logPre() {
         return TenantRepository.logPre(app);
     }
+
+    @Override
+    public String toString() {
+        return "get config context for application " + app + ", having handler " + requestHandler;
+    }
+
 }

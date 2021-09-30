@@ -4,6 +4,7 @@
 #include "numericresultnode.h"
 #include <vespa/vespalib/util/sort.h>
 #include <limits>
+#include <type_traits>
 
 namespace search::expression {
 
@@ -29,7 +30,13 @@ public:
     }
     void add(const ResultNode & b) override { _value += b.getInteger(); }
     void negate() override { _value = - _value; }
-    void multiply(const ResultNode & b) override { _value *= b.getInteger(); }
+    void multiply(const ResultNode & b) override {
+        if constexpr (std::is_same_v<T, bool>) {
+         _value = (_value && (b.getInteger() != 0));
+       } else {
+         _value *= b.getInteger();
+       }
+    }
     void divide(const ResultNode & b) override {
         int64_t val = b.getInteger();
         _value = (val == 0) ? 0 : (_value / val);

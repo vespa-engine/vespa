@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<services>
+  <config name='standard'>
+    <basicStruct>
+      <stringVal>default</stringVal>
+    </basicStruct>
+  </confih>
+  <admin version='2.0'>
+    <adminserver hostalias='node1'>
+  </admin>
+</services>

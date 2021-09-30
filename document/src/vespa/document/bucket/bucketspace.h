@@ -29,7 +29,7 @@ public:
     vespalib::string toString() const;
 
     struct hash {
-        size_t operator () (const BucketSpace& bs) const {
+        size_t operator () (const BucketSpace& bs) const noexcept {
             return std::hash<Type>()(bs.getId());
         }
     };

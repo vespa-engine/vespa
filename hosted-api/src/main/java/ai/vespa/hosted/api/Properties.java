@@ -24,7 +24,7 @@ public class Properties {
     public static ApplicationId application() {
         return ApplicationId.from(requireNonBlankProperty("tenant"),
                                   requireNonBlankProperty("application"),
-                                  getNonBlankProperty("instance").orElse(user()));
+                                  requireNonBlankProperty("instance"));
     }
 
     /** Returns the relevant environment, if this is set with the 'environment' property */
@@ -52,7 +52,7 @@ public class Properties {
         return getNonBlankProperty("apiCertificateFile").map(Paths::get);
     }
 
-    /** Returns the actual private key as a string */
+    /** Returns the actual private key as a string. */
     public static Optional<String> apiKey() {
         return getNonBlankProperty("apiKey");
     }

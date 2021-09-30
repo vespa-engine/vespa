@@ -79,4 +79,4 @@ export ROOT
 
 echo "# Using CLASSPATH=$CLASSPATH, args=$@"
 
-java -cp $CLASSPATH:$ROOT/lib/jars/config-proxy-jar-with-dependencies.jar com.yahoo.vespa.config.benchmark.LoadTester "$@"
+java -Xms1g -Xmx1g -cp $CLASSPATH:$ROOT/lib/jars/config-proxy-jar-with-dependencies.jar com.yahoo.vespa.config.benchmark.LoadTester "$@"

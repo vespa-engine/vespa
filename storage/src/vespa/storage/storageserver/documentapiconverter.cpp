@@ -14,6 +14,7 @@
 #include <vespa/storageapi/message/searchresult.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/message/visitor.h>
+#include <vespa/messagebus/error.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".documentapiconverter");
@@ -67,8 +68,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
     case DocumentProtocol::MESSAGE_GETDOCUMENT:
     {
         documentapi::GetDocumentMessage& from(static_cast<documentapi::GetDocumentMessage&>(fromMsg));
-        auto to = std::make_unique<api::GetCommand>(bucketResolver()->bucketFromId(from.getDocumentId()), from.getDocumentId(), from.getFieldSet());
-        toMsg.reset(to.release());
+        toMsg = std::make_unique<api::GetCommand>(bucketResolver()->bucketFromId(from.getDocumentId()), from.getDocumentId(), from.getFieldSet());
         break;
     }
     case DocumentProtocol::MESSAGE_CREATEVISITOR:
@@ -130,8 +130,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
     {
         documentapi::RemoveLocationMessage& from(static_cast<documentapi::RemoveLocationMessage&>(fromMsg));
         document::Bucket bucket(bucketResolver()->bucketSpaceFromName(from.getBucketSpace()), document::BucketId(0));
-        api::RemoveLocationCommand::UP to(new api::RemoveLocationCommand(from.getDocumentSelection(), bucket));
-        toMsg.reset(to.release());
+        toMsg = std::make_unique<api::RemoveLocationCommand>(from.getDocumentSelection(), bucket);
         break;
     }
     default:
@@ -145,10 +144,9 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
                 : 1ms*INT_MAX;
         toMsg->setTimeout(cappedTimeout);
         toMsg->setPriority(_priConverter->toStoragePriority(fromMsg.getPriority()));
-        toMsg->setLoadType(fromMsg.getLoadType());
 
-        LOG(spam, "Converted command %s, loadtype %d, mapped priority %d to %d",
-            toMsg->toString().c_str(), toMsg->getLoadType().getId(),
+        LOG(spam, "Converted command %s, mapped priority %d to %d",
+            toMsg->toString().c_str(),
             fromMsg.getPriority(), toMsg->getPriority());
     }
     return toMsg;
@@ -187,7 +185,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentReply& fromReply,
         break;
     }
 
-    if (toMsg.get()) {
+    if (toMsg) {
         if (fromReply.hasErrors()) {
             toMsg->setResult(api::ReturnCode((api::ReturnCode::Result) fromReply.getError(0).getCode(),
                                              fromReply.getError(0).getMessage()));

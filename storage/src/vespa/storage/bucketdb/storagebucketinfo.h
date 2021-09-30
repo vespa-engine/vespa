@@ -4,14 +4,12 @@
 
 #include <vespa/storageapi/buckets/bucketinfo.h>
 
-namespace storage {
-namespace bucketdb {
+namespace storage::bucketdb {
 
 struct StorageBucketInfo {
     api::BucketInfo info;
-    unsigned disk : 8; // The disk containing the bucket
 
-    StorageBucketInfo() : info(), disk(0xff) {}
+    StorageBucketInfo() : info() {}
     static bool mayContain(const StorageBucketInfo&) { return true; }
     void print(std::ostream&, bool verbose, const std::string& indent) const;
     bool valid() const { return info.valid(); }
@@ -23,8 +21,8 @@ struct StorageBucketInfo {
         info.setDocumentCount(0);
         info.setTotalDocumentSize(0);
     }
-    bool verifyLegal() const { return (disk != 0xff); }
-    uint32_t getMetaCount() { return info.getMetaCount(); }
+    bool verifyLegal() const { return true; }
+    uint32_t getMetaCount() const { return info.getMetaCount(); }
     void setChecksum(uint32_t crc) { info.setChecksum(crc); }
     bool operator == (const StorageBucketInfo & b) const;
     bool operator != (const StorageBucketInfo & b) const;
@@ -33,5 +31,4 @@ struct StorageBucketInfo {
 
 std::ostream& operator<<(std::ostream& out, const StorageBucketInfo& info);
 
-}
 }

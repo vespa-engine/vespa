@@ -42,6 +42,7 @@ public class AthenzDbMock {
         public final Set<AthenzIdentity> tenantAdmins = new HashSet<>();
         public final Map<ApplicationId, Application> applications = new HashMap<>();
         public final Map<String, Service> services = new HashMap<>();
+        public final List<Role> roles = new ArrayList<>();
         public final List<Policy> policies = new ArrayList<>();
         public boolean isVespaTenant = false;
 
@@ -51,7 +52,7 @@ public class AthenzDbMock {
 
         public Domain admin(AthenzIdentity identity) {
             admins.add(identity);
-            policies.add(new Policy(identity.getFullName(), ".*", ".*"));
+            policies.add(new Policy("admin", identity.getFullName(), ".*", ".*"));
             return this;
         }
 
@@ -66,7 +67,7 @@ public class AthenzDbMock {
         }
 
         public Domain withPolicy(String principalRegex, String operation, String resource) {
-            policies.add(new Policy(principalRegex, operation, resource));
+            policies.add(new Policy("admin", principalRegex, operation, resource));
             return this;
         }
 
@@ -105,14 +106,20 @@ public class AthenzDbMock {
     }
 
     public static class Policy {
+        private final String name;
         private final Pattern principal;
         private final Pattern action;
         private final Pattern resource;
 
-        public Policy(String principal, String action, String resource) {
+        public Policy(String name, String principal, String action, String resource) {
+            this.name = name;
             this.principal = Pattern.compile(principal);
             this.action = Pattern.compile(action);
             this.resource = Pattern.compile(resource);
+        }
+
+        public String name() {
+            return name;
         }
 
         public boolean principalMatches(AthenzIdentity athenzIdentity) {
@@ -125,6 +132,18 @@ public class AthenzDbMock {
 
         public boolean resourceMatches(String resource) {
             return this.resource.matcher(resource).matches();
+        }
+    }
+
+    public static class Role {
+        private final String name;
+
+        public Role(String name) {
+            this.name = name;
+        }
+
+        public String name() {
+            return name;
         }
     }
 }

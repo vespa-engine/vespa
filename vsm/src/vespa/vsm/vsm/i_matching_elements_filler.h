@@ -6,7 +6,7 @@
 
 namespace search {
 class MatchingElements;
-class StructFieldMapper;
+class MatchingElementsFields;
 }
 
 namespace vsm {
@@ -17,7 +17,7 @@ namespace vsm {
  */
 class IMatchingElementsFiller {
 public:
-    virtual std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::StructFieldMapper& struct_field_mapper) = 0;
+    virtual std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::MatchingElementsFields& fields) = 0;
     virtual ~IMatchingElementsFiller() = default;
 };
     

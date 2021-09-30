@@ -38,6 +38,7 @@ import static java.util.stream.Collectors.toSet;
  * @author bjorncs
  */
 public class FilterChainRepository extends AbstractComponent {
+
     private static final Logger log = Logger.getLogger(FilterChainRepository.class.getName());
 
     private final ComponentRegistry<Object> filterAndChains;
@@ -198,4 +199,5 @@ public class FilterChainRepository extends AbstractComponent {
             throw new IllegalArgumentException("Unsupported filter type: " + filter.getClass().getName());
         }
     }
+
 }

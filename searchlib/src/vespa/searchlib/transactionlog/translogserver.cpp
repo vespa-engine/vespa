@@ -1,12 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "translogserver.h"
+#include "domain.h"
+#include "client_common.h"
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
-#include <vespa/fnet/task.h>
 #include <vespa/fnet/transport.h>
 #include <fstream>
 #include <thread>
@@ -18,30 +21,33 @@ using vespalib::make_string;
 using vespalib::stringref;
 using vespalib::IllegalArgumentException;
 using search::common::FileHeaderContext;
+using std::make_shared;
+using std::runtime_error;
+using namespace std::chrono_literals;
 
 namespace search::transactionlog {
 
 namespace {
 
-class SyncHandler : public FNET_Task
+class SyncHandler : public std::enable_shared_from_this<SyncHandler>
 {
+    std::atomic<bool>         & _closed;
     FRT_RPCRequest            & _req;
     Domain::SP                  _domain;
     TransLogServer::Session::SP _session; 
     SerialNum                   _syncTo;
     
 public:
-    SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req,const Domain::SP &domain,
-                const TransLogServer::Session::SP &session, SerialNum syncTo);
+    SyncHandler(std::atomic<bool>& closed, FRT_RPCRequest *req, const Domain::SP &domain,
+                const TransLogServer::Session::SP &session, SerialNum syncTo) noexcept;
 
     ~SyncHandler();
-    void PerformTask() override;
+    void poll();
 };
 
-
-SyncHandler::SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req, const Domain::SP &domain,
-                         const TransLogServer::Session::SP &session, SerialNum syncTo)
-    : FNET_Task(supervisor->GetScheduler()),
+SyncHandler::SyncHandler(std::atomic<bool>& closed, FRT_RPCRequest *req, const Domain::SP &domain,
+                         const TransLogServer::Session::SP &session, SerialNum syncTo) noexcept
+    : _closed(closed),
       _req(*req),
       _domain(domain),
       _session(session),
@@ -49,56 +55,56 @@ SyncHandler::SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req, const 
 {
 }
 
-
 SyncHandler::~SyncHandler() = default;
 
-
 void
-SyncHandler::PerformTask()
+SyncHandler::poll()
 {
     SerialNum synced(_domain->getSynced());
     if (_session->getDown() ||
         _domain->getMarkedDeleted() ||
-        synced >= _syncTo) {
+        _closed.load(std::memory_order_acquire) ||
+        synced >= _syncTo)
+    {
         FRT_Values &rvals = *_req.GetReturn();
         rvals.AddInt32(0);
         rvals.AddInt64(synced);
         _req.Return();
-        delete this;
     } else {
-        _domain->triggerSyncNow();
-        Schedule(0.05); // Retry in 0.05 seconds
+        _domain->triggerSyncNow(vespalib::makeLambdaTask([self = shared_from_this()]() { self->poll(); }));
     }
 }
+
+VESPA_THREAD_STACK_TAG(tls_executor);
 
 }
 
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                                const FileHeaderContext &fileHeaderContext)
-    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, 0x10000000)
+    : TransLogServer(name, listenPort, baseDir, fileHeaderContext,
+                     DomainConfig().setEncoding(Encoding(Encoding::xxh64, Encoding::Compression::none))
+                                        .setPartSizeLimit(0x10000000).setChunkSizeLimit(0x40000))
 {}
 
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
-                               const FileHeaderContext &fileHeaderContext, uint64_t domainPartSize)
-    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, domainPartSize, 4, DomainPart::Crc::xxh64)
+                               const FileHeaderContext &fileHeaderContext, const DomainConfig &  cfg)
+    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, cfg, 4)
 {}
 
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
-                               const FileHeaderContext &fileHeaderContext, uint64_t domainPartSize,
-                               size_t maxThreads, DomainPart::Crc defaultCrcType)
+                               const FileHeaderContext &fileHeaderContext, const DomainConfig & cfg, size_t maxThreads)
     : FRT_Invokable(),
       _name(name),
       _baseDir(baseDir),
-      _domainPartSize(domainPartSize),
-      _defaultCrcType(defaultCrcType),
-      _commitExecutor(maxThreads, 128*1024),
-      _sessionExecutor(maxThreads, 128*1024),
-      _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+      _domainConfig(cfg),
+      _executor(maxThreads, 128_Ki, tls_executor),
+      _threadPool(std::make_unique<FastOS_ThreadPool>(120_Ki)),
       _transport(std::make_unique<FNET_Transport>()),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
       _domains(),
       _reqQ(),
-      _fileHeaderContext(fileHeaderContext)
+      _fileHeaderContext(fileHeaderContext),
+      _closed(false)
 {
     int retval(0);
     if ((retval = makeDirectory(_baseDir.c_str())) == 0) {
@@ -109,8 +115,7 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
                 domainDir >> domainName;
                 if ( ! domainName.empty()) {
                     try {
-                        auto domain = std::make_shared<Domain>(domainName, dir(), _commitExecutor, _sessionExecutor,
-                                                               _domainPartSize, _defaultCrcType,_fileHeaderContext);
+                        auto domain = make_shared<Domain>(domainName, dir(), _executor, cfg, _fileHeaderContext);
                         _domains[domain->name()] = domain;
                     } catch (const std::exception & e) {
                         LOG(warning, "Failed creating %s domain on startup. Exception = %s", domainName.c_str(), e.what());
@@ -144,12 +149,12 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
 
 TransLogServer::~TransLogServer()
 {
+    _closed = true;
     stop();
     join();
-    _commitExecutor.shutdown();
-    _commitExecutor.sync();
-    _sessionExecutor.shutdown();
-    _sessionExecutor.sync();
+    _executor.sync();
+    _executor.shutdown();
+    _executor.sync();
     _transport->ShutDown(true);
 }
 
@@ -157,17 +162,17 @@ bool
 TransLogServer::onStop()
 {
     LOG(info, "Stopping TLS");
-    _reqQ.push(NULL);
+    _reqQ.push(nullptr);
     return true;
 }
 
 void
 TransLogServer::run()
 {
-    FRT_RPCRequest *req(NULL);
+    FRT_RPCRequest *req(nullptr);
     bool hasPacket(false);
     do {
-        for (req = NULL; (hasPacket = _reqQ.pop(req, 60000)) && (req != NULL); req = NULL) {
+        for (req = nullptr; (hasPacket = _reqQ.pop(req, 60000)) && (req != nullptr); req = nullptr) {
             bool immediate = true;
             if (strcmp(req->GetMethodName(), "domainSessionClose") == 0) {
                 domainSessionClose(req);
@@ -199,15 +204,25 @@ TransLogServer::run()
                 req->Return();
             }
         }
-    } while (running() && !(hasPacket && (req == NULL)));
+    } while (running() && !(hasPacket && (req == nullptr)));
     LOG(info, "TLS Stopped");
+}
+
+TransLogServer &
+TransLogServer::setDomainConfig(const DomainConfig & cfg) {
+    WriteGuard domainGuard(_domainMutex);
+    _domainConfig = cfg;
+    for(auto &domain: _domains) {
+        domain.second->setConfig(cfg);
+    }
+    return *this;
 }
 
 DomainStats
 TransLogServer::getDomainStats() const
 {
     DomainStats retval;
-    Guard domainGuard(_lock);
+    ReadGuard domainGuard(_domainMutex);
     for (const auto &elem : _domains) {
         retval[elem.first] = elem.second->getDomainInfo();
     }
@@ -218,7 +233,7 @@ std::vector<vespalib::string>
 TransLogServer::getDomainNames()
 {
     std::vector<vespalib::string> names;
-    Guard guard(_lock);
+    ReadGuard guard(_domainMutex);
     for(const auto &domain: _domains) {
         names.push_back(domain.first);
     }
@@ -226,15 +241,14 @@ TransLogServer::getDomainNames()
 }
 
 Domain::SP
-TransLogServer::findDomain(stringref domainName)
+TransLogServer::findDomain(stringref domainName) const
 {
-    Guard domainGuard(_lock);
-    Domain::SP domain;
-    DomainList::iterator found(_domains.find(domainName));
+    ReadGuard domainGuard(_domainMutex);
+    auto found(_domains.find(domainName));
     if (found != _domains.end()) {
-        domain = found->second;
+        return found->second;
     }
-    return domain;
+    return DomainSP();
 }
 
 void
@@ -330,10 +344,10 @@ namespace {
 constexpr double NEVER(-1.0);
 
 void
-writeDomainDir(std::lock_guard<std::mutex> &guard,
+writeDomainDir(std::shared_lock<std::shared_mutex> &guard,
                vespalib::string dir,
                vespalib::string domainList,
-               std::map<vespalib::string, std::shared_ptr<Domain>> &domains)
+               const std::map<vespalib::string, std::shared_ptr<Domain>> &domains)
 {
     (void) guard;
     vespalib::string domainListTmp(domainList + ".tmp");
@@ -348,7 +362,7 @@ writeDomainDir(std::lock_guard<std::mutex> &guard,
     vespalib::File::sync(dir);
 }
 
-class RPCDestination : public Session::Destination {
+class RPCDestination : public Destination {
 public:
     RPCDestination(FRT_Supervisor & supervisor, FNET_Connection * connection)
         : _supervisor(supervisor), _connection(connection), _ok(true)
@@ -384,12 +398,12 @@ public:
 private:
     bool send(FRT_RPCRequest * req) {
         int32_t retval = rpc(req);
-        if ( ! ((retval == RPC::OK) || (retval == FRTE_RPC_CONNECTION)) ) {
+        if ( ! ((retval == client::RPC::OK) || (retval == FRTE_RPC_CONNECTION)) ) {
             LOG(error, "Return value != OK(%d) in send for method 'visitCallback'.", retval);
         }
         req->SubRef();
 
-        return (retval == RPC::OK);
+        return (retval == client::RPC::OK);
     }
     int32_t rpc(FRT_RPCRequest * req) {
         int32_t retval(-7);
@@ -427,14 +441,16 @@ TransLogServer::createDomain(FRT_RPCRequest *req)
     const char * domainName = params[0]._string._str;
     LOG(debug, "createDomain(%s)", domainName);
 
-    Guard createDeleteGuard(_fileLock);
+    std::lock_guard createDeleteGuard(_fileLock);
     Domain::SP domain(findDomain(domainName));
     if ( !domain ) {
         try {
-            domain = std::make_shared<Domain>(domainName, dir(), _commitExecutor, _sessionExecutor,
-                                              _domainPartSize, _defaultCrcType, _fileHeaderContext);
-            Guard domainGuard(_lock);
-            _domains[domain->name()] = domain;
+            domain = std::make_shared<Domain>(domainName, dir(), _executor, _domainConfig, _fileHeaderContext);
+            {
+                WriteGuard domainGuard(_domainMutex);
+                _domains[domain->name()] = domain;
+            }
+            ReadGuard domainGuard(_domainMutex);
             writeDomainDir(domainGuard, dir(), domainList(), _domains);
         } catch (const std::exception & e) {
             LOG(warning, "Failed creating %s domain. Exception = %s", domainName, e.what());
@@ -456,18 +472,18 @@ TransLogServer::deleteDomain(FRT_RPCRequest *req)
     const char * domainName = params[0]._string._str;
     LOG(debug, "deleteDomain(%s)", domainName);
 
-    Guard createDeleteGuard(_fileLock);
+    std::lock_guard createDeleteGuard(_fileLock);
     Domain::SP domain(findDomain(domainName));
     if ( !domain || (domain->getNumSessions() == 0)) {
         try {
             if (domain) {
                 domain->markDeleted();
-                Guard domainGuard(_lock);
+                WriteGuard domainGuard(_domainMutex);
                 _domains.erase(domainName);
             }
             vespalib::rmdir(Domain::getDir(dir(), domainName), true);
             vespalib::File::sync(dir());
-            Guard domainGuard(_lock);
+            ReadGuard domainGuard(_domainMutex);
             writeDomainDir(domainGuard, dir(), domainList(), _domains);
         } catch (const std::exception & e) {
             msg = make_string("Failed deleting %s domain. Exception = %s", domainName, e.what());
@@ -508,7 +524,7 @@ TransLogServer::listDomains(FRT_RPCRequest *req)
     LOG(debug, "listDomains()");
 
     vespalib::string domains;
-    Guard domainGuard(_lock);
+    ReadGuard domainGuard(_domainMutex);
     for(DomainList::const_iterator it(_domains.begin()), mt(_domains.end()); it != mt; it++) {
         domains += it->second->name();
         domains += "\n";
@@ -538,13 +554,12 @@ TransLogServer::domainStatus(FRT_RPCRequest *req)
     }
 }
 
-void
-TransLogServer::commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done)
+std::shared_ptr<Writer>
+TransLogServer::getWriter(const vespalib::string & domainName) const
 {
-    (void) done;
     Domain::SP domain(findDomain(domainName));
     if (domain) {
-        domain->commit(packet);
+        return domain;
     } else {
         throw IllegalArgumentException("Could not find domain " + domainName);
     }
@@ -561,7 +576,13 @@ TransLogServer::domainCommit(FRT_RPCRequest *req)
     if (domain) {
         Packet packet(params[1]._data._buf, params[1]._data._len);
         try {
-            domain->commit(packet);
+            vespalib::Gate gate;
+            {
+                // Need to scope in order to drain out all the callbacks.
+                domain->append(packet, make_shared<vespalib::GateCallback>(gate));
+                auto keep = domain->startCommit(make_shared<vespalib::IgnoreCallback>());
+            }
+            gate.await();
             ret.AddInt32(0);
             ret.AddString("ok");
         } catch (const std::exception & e) {
@@ -675,7 +696,7 @@ TransLogServer::finiSession(FRT_RPCRequest *req)
 {
     FNET_Connection *conn = req->GetConnection();
     void *vctx = conn->GetContext()._value.VOIDP;
-    conn->GetContextPT()->_value.VOIDP = NULL;
+    conn->GetContextPT()->_value.VOIDP = nullptr;
     Session::SP *sessionspp = static_cast<Session::SP *>(vctx);
     delete sessionspp;
 }
@@ -696,17 +717,16 @@ TransLogServer::domainSync(FRT_RPCRequest *req)
     Domain::SP domain(findDomain(domainName));
     Session::SP session(getSession(req));
 
-    if (domain.get() == nullptr) {
+    if ( ! domain) {
         FRT_Values &rvals = *req->GetReturn();
         rvals.AddInt32(0);
         rvals.AddInt64(0);
         req->Return();
         return;
     }
-    
-    SyncHandler *syncHandler = new SyncHandler(_supervisor.get(), req, domain, session, syncTo);
-    
-    syncHandler->ScheduleNow();
+
+    auto syncHandler = std::make_shared<SyncHandler>(_closed, req, domain, session, syncTo);
+    syncHandler->poll();
 }
 
 }

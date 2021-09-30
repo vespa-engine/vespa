@@ -2,7 +2,6 @@
 package com.yahoo.vespa.http.server;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -12,7 +11,6 @@ import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
-import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.shared.SharedSourceSession;
@@ -22,9 +20,10 @@ import com.yahoo.yolean.Exceptions;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -43,28 +42,20 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
     protected final ReplyHandler feedReplyHandler;
     private final Metric metric;
     private final Object monitor = new Object();
-    private final AtomicInteger threadsAvailableForFeeding;
     private static final Logger log = Logger.getLogger(FeedHandlerV3.class.getName());
 
-    public FeedHandlerV3(LoggingRequestHandler.Context parentCtx,
+    public FeedHandlerV3(Executor executor,
+                         Metric metric,
                          DocumentmanagerConfig documentManagerConfig,
                          SessionCache sessionCache,
-                         ThreadpoolConfig threadpoolConfig,
                          DocumentApiMetrics metricsHelper) {
-        super(parentCtx);
+        super(executor, metric);
         docTypeManager = new DocumentTypeManager(documentManagerConfig);
         this.sessionCache = sessionCache;
-        feedReplyHandler = new FeedReplyReader(parentCtx.getMetric(), metricsHelper);
+        feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
         cron = new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("feedhandlerv3.cron"));
         cron.scheduleWithFixedDelay(this::removeOldClients, 16, 11, TimeUnit.MINUTES);
-        this.metric = parentCtx.getMetric();
-        // 40% of the threads can be blocking on feeding before we deny requests.
-        if (threadpoolConfig != null) {
-            threadsAvailableForFeeding = new AtomicInteger(Math.max((int) (0.4 * threadpoolConfig.maxthreads()), 1));
-        } else {
-            log.warning("No config for threadpool, using 200 for max blocking threads for feeding.");
-            threadsAvailableForFeeding = new AtomicInteger(200);
-        }
+        this.metric = metric;
     }
 
     public void injectDocumentManangerForTests(DocumentTypeManager docTypeManager) {
@@ -82,12 +73,11 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
                 SourceSessionParams sourceSessionParams = sourceSessionParams(request);
                 clientFeederByClientId.put(clientId,
                                            new ClientFeederV3(retainSource(sessionCache, sourceSessionParams),
-                                                              new FeedReaderFactory(),
+                                                              new FeedReaderFactory(true), //TODO make error debugging configurable
                                                               docTypeManager,
                                                               clientId,
                                                               metric,
-                                                              feedReplyHandler,
-                                                              threadsAvailableForFeeding));
+                                                              feedReplyHandler));
             }
             clientFeederV3 = clientFeederByClientId.get(clientId);
         }
@@ -95,11 +85,11 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
             return clientFeederV3.handleRequest(request);
         } catch (UnknownClientException uce) {
             String msg = Exceptions.toMessageString(uce);
-            log.log(LogLevel.WARNING, msg);
+            log.log(Level.WARNING, msg);
             return new ErrorHttpResponse(com.yahoo.jdisc.http.HttpResponse.Status.BAD_REQUEST, msg);
         } catch (Exception e) {
             String msg = "Could not initialize document parsing: " + Exceptions.toMessageString(e);
-            log.log(LogLevel.WARNING, msg);
+            log.log(Level.WARNING, msg);
             return new ErrorHttpResponse(com.yahoo.jdisc.http.HttpResponse.Status.INTERNAL_SERVER_ERROR, msg);
         }
     }

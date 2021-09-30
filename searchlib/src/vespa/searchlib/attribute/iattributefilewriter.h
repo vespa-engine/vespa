@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/data/databuffer.h>
+#include <memory>
 
+namespace vespalib { class DataBuffer; }
 namespace search {
 
 class BufferWriter;

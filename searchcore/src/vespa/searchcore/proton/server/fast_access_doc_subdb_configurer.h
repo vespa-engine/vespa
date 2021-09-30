@@ -15,17 +15,17 @@ namespace proton {
 class FastAccessDocSubDBConfigurer
 {
 public:
-    typedef vespalib::VarHolder<FastAccessFeedView::SP> FeedViewVarHolder;
+    using FeedViewVarHolder = vespalib::VarHolder<FastAccessFeedView::SP>;
 
 private:
     FeedViewVarHolder           &_feedView;
     IAttributeWriterFactory::UP _factory;
     vespalib::string             _subDbName;
 
-    void reconfigureFeedView(const FastAccessFeedView::SP &curr,
-                             const search::index::Schema::SP &schema,
-                             const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                             const IAttributeWriter::SP &attrWriter);
+    void reconfigureFeedView(FastAccessFeedView & curr,
+                             search::index::Schema::SP schema,
+                             std::shared_ptr<const document::DocumentTypeRepo> repo,
+                             IAttributeWriter::SP attrWriter);
 
 public:
     FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,

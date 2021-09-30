@@ -154,7 +154,7 @@ my $command = shift;
 $command ||= "help";
 
 # The '--insecure' parameter is sadly required as it is not possible to disable or alter hostname verification with curl
-my $curl_command = $VESPA_HOME . '/libexec/vespa/vespa-curl-wrapper --insecure -A vespa-deploy --silent --show-error --connect-timeout 30 --max-time 1200';
+my $curl_command = $VESPA_HOME . '/libexec/vespa/vespa-curl-wrapper -A vespa-deploy --silent --show-error --connect-timeout 30 --max-time 1200';
 
 my $CURL_PUT = $curl_command . ' --write-out \%{http_code} --request PUT';
 my $CURL_GET = $curl_command . ' --request GET';
@@ -412,6 +412,7 @@ sub http_upload {
         debug("output=$output\n");
         $configsource_url = shift(@configsources);
         if ($configsource_url) {
+          $configsource_url =~ s/\/$//; # Remove last / from configsource_url
           $configsource_url_used = $configsource_url;
           $retry = 1;
           print_request_failed($exitcode, $configsource_url_used);
@@ -460,7 +461,7 @@ sub http_prepare {
 
   my $url = $source . $pathPrefix . "/$session_id/prepared";
   $url = add_url_property_from_flag($url, $opt_f, "ignoreValidationErrors");
-  $url = add_url_property_from_flag($url, $opt_n, "dryrun");
+  $url = add_url_property_from_flag($url, $opt_n, "dryRun");
   $url = add_url_property_from_flag($url, $opt_v, "verbose");
   $url = add_url_property_from_flag($url, $opt_H, "hostedVespa");
   $url = add_url_property_from_option($url, $opt_a, "applicationName");

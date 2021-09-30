@@ -3,7 +3,10 @@
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/latch.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/frt/invoker.h>
 #include <mutex>
 #include <condition_variable>
 
@@ -25,7 +28,7 @@ private:
     vespalib::Latch<FRT_RPCRequest*> _latch;
 public:
     RequestLatch() : _latch() {}
-    ~RequestLatch() { ASSERT_TRUE(!has_req()); }
+    ~RequestLatch() override { ASSERT_TRUE(!has_req()); }
     bool has_req() { return _latch.has_value(); }
     FRT_RPCRequest *read() { return _latch.read(); }
     void write(FRT_RPCRequest *req) { _latch.write(req); }
@@ -38,8 +41,8 @@ class MyReq {
 private:
     FRT_RPCRequest *_req;
 public:
-    MyReq(FRT_RPCRequest *req) : _req(req) {}
-    MyReq(const char *method_name)
+    explicit MyReq(FRT_RPCRequest *req) : _req(req) {}
+    explicit MyReq(const char *method_name)
         : _req(new FRT_RPCRequest())
     {
         _req->SetMethodName(method_name);
@@ -270,8 +273,6 @@ public:
           _testRPC(&_server.supervisor()),
           _echoTest(&_server.supervisor())
     {
-        _client.supervisor().GetTransport()->SetTCPNoDelay(true);
-        _server.supervisor().GetTransport()->SetTCPNoDelay(true);
         ASSERT_TRUE(_server.supervisor().Listen("tcp/0"));
         _peerSpec = SocketSpec::from_host_port("localhost", _server.supervisor().GetListenPort()).spec();
         _target = _client.supervisor().GetTarget(_peerSpec.c_str());

@@ -18,7 +18,7 @@ import java.util.List;
  *
  * @author Peter Boros
  */
-public abstract class AbstractSearchCluster extends AbstractConfigProducer
+public abstract class AbstractSearchCluster extends AbstractConfigProducer<AbstractSearchCluster>
     implements
         DocumentdbInfoConfig.Producer,
         IndexInfoConfig.Producer,
@@ -28,21 +28,22 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
     protected String clusterName;
     protected int index;
     private Double visibilityDelay = 0.0;
-    private List<String> documentNames = new ArrayList<>();
-    private List<SearchDefinitionSpec> localSDS = new LinkedList<>();
+    private final List<String> documentNames = new ArrayList<>();
+    private final List<SchemaSpec> localSDS = new LinkedList<>();
 
-    public AbstractSearchCluster(AbstractConfigProducer parent, String clusterName, int index) {
+    public AbstractSearchCluster(AbstractConfigProducer<?> parent, String clusterName, int index) {
         super(parent, "cluster." + clusterName);
         this.clusterName = clusterName;
         this.index = index;
     }
 
     public void prepareToDistributeFiles(List<SearchNode> backends) {
-        for (SearchDefinitionSpec sds : localSDS)
-            sds.getSearchDefinition().getSearch().rankingConstants().sendTo(backends);
+        for (SchemaSpec sds : localSDS) {
+            sds.getSearchDefinition().getSearch().sendTo(backends);
+        }
     }
 
-    public void addDocumentNames(SearchDefinition searchDefinition) {
+    public void addDocumentNames(NamedSchema searchDefinition) {
         String dName = searchDefinition.getSearch().getDocument().getDocumentName().getName();
         documentNames.add(dName);
     }
@@ -50,7 +51,7 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
     /** Returns a List with document names used in this search cluster */
     public List<String> getDocumentNames() { return documentNames; }
 
-    public List<SearchDefinitionSpec> getLocalSDS() {
+    public List<SchemaSpec> getLocalSDS() {
         return localSDS;
     }
 
@@ -75,7 +76,6 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
     public abstract int getRowBits();
     public final void setClusterIndex(int index) { this.index = index; }
     public final int getClusterIndex() { return index; }
-    protected abstract void assureSdConsistent();
 
     @Override
     public abstract void getConfig(DocumentdbInfoConfig.Builder builder);
@@ -107,18 +107,17 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
         }
     }
 
-    public static final class SearchDefinitionSpec {
+    public static final class SchemaSpec {
 
-        private final SearchDefinition searchDefinition;
+        private final NamedSchema searchDefinition;
         private final UserConfigRepo userConfigRepo;
 
-        public SearchDefinitionSpec(SearchDefinition searchDefinition,
-                                    UserConfigRepo userConfigRepo) {
+        public SchemaSpec(NamedSchema searchDefinition, UserConfigRepo userConfigRepo) {
             this.searchDefinition = searchDefinition;
             this.userConfigRepo = userConfigRepo;
         }
 
-        public SearchDefinition getSearchDefinition() {
+        public NamedSchema getSearchDefinition() {
             return searchDefinition;
         }
 

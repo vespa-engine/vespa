@@ -5,10 +5,7 @@
 #include <vespa/vespalib/websocket/acceptor.h>
 #include <vespa/vespalib/websocket/key.h>
 #include <vespa/vespalib/websocket/buffer.h>
-#include <vespa/vespalib/util/sync.h>
-#include <thread>
-#include <functional>
-#include <chrono>
+#include <vespa/vespalib/util/gate.h>
 
 using namespace vespalib;
 using namespace vespalib::ws;
@@ -25,7 +22,7 @@ struct Receptor : vespalib::ws::Handler<T> {
 };
 
 template <typename T>
-Receptor<T>::~Receptor() { }
+Receptor<T>::~Receptor() = default;
 
 vespalib::string read_bytes(Socket &socket, size_t wanted_bytes) {
     char tmp[64];
@@ -105,7 +102,7 @@ TEST("require that an acceptor can accept connections asynchronously") {
     Receptor<Socket> server;
     Acceptor acceptor(0, server);
     Socket::UP client = SimpleSocket::connect(SocketSpec::from_port(acceptor.port()));
-    server.gate.await(60000);
+    server.gate.await(60s);
     ASSERT_TRUE(server.obj.get() != nullptr);
     ASSERT_TRUE(client.get() != nullptr);
     TEST_DO(verify_socket_io_async(*server.obj, *client));

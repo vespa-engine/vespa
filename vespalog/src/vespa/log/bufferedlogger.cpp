@@ -38,6 +38,10 @@ public:
         uint64_t _timestamp;
         Logger* _logger;
 
+        Entry(const Entry &);
+        Entry & operator=(const Entry &);
+        Entry(Entry &&) noexcept;
+        Entry & operator=(Entry &&) noexcept;
         Entry(Logger::LogLevel level, const char* file, int line,
               const std::string& token, const std::string& message,
               uint64_t timestamp, Logger&);
@@ -137,7 +141,11 @@ BackingBuffer::Entry::Entry(Logger::LogLevel level, const char* file, int line,
 {
 }
 
-BackingBuffer::Entry::~Entry() { }
+BackingBuffer::Entry::Entry(const Entry &) = default;
+BackingBuffer::Entry & BackingBuffer::Entry::operator =(const Entry &) = default;
+BackingBuffer::Entry::Entry(Entry &&) noexcept = default;
+BackingBuffer::Entry & BackingBuffer::Entry::operator=(Entry &&) noexcept = default;
+BackingBuffer::Entry::~Entry() = default;
 
 bool
 BackingBuffer::Entry::operator==(const Entry& entry) const

@@ -12,8 +12,8 @@ namespace vespalib {
 class ThreadStackExecutor : public ThreadStackExecutorBase
 {
 public:
-    bool acceptNewTask(MonitorGuard &) override;
-    void wakeup(MonitorGuard &) override;
+    bool acceptNewTask(unique_lock &, std::condition_variable &) override;
+    void wakeup(unique_lock &, std::condition_variable &) override;
 
 public:
     /**
@@ -38,7 +38,7 @@ public:
     /**
      * Will invoke cleanup.
      **/
-    ~ThreadStackExecutor();
+    ~ThreadStackExecutor() override;
 };
 
 } // namespace vespalib

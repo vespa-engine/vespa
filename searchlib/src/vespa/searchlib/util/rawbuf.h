@@ -38,7 +38,7 @@ public:
 
     void    operator+=(const char *src);
     void    operator+=(const RawBuf& buffer);
-    bool    operator==(const RawBuf &buffer);
+    bool    operator==(const RawBuf &buffer) const;
     void    addNum(size_t num, size_t fieldw, char fill);
     void    addNum32(int32_t num, size_t fieldw, char fill);
     void    addNum64(int64_t num, size_t fieldw, char fill);

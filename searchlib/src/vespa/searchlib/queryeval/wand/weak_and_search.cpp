@@ -106,27 +106,27 @@ WeakAndSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
 
 //-----------------------------------------------------------------------------
 
-SearchIterator *
+SearchIterator::UP
 WeakAndSearch::createArrayWand(const Terms &terms, uint32_t n, bool strict)
 {
     if (strict) {
-        return new wand::WeakAndSearchLR<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, true>(terms, n);
+        return SearchIterator::UP(new wand::WeakAndSearchLR<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, true>(terms, n));
     } else {
-        return new wand::WeakAndSearchLR<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, false>(terms, n);
+        return SearchIterator::UP(new wand::WeakAndSearchLR<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, false>(terms, n));
     }
 }
 
-SearchIterator *
+SearchIterator::UP
 WeakAndSearch::createHeapWand(const Terms &terms, uint32_t n, bool strict)
 {
     if (strict) {
-        return new wand::WeakAndSearchLR<vespalib::LeftHeap, vespalib::RightHeap, true>(terms, n);
+        return SearchIterator::UP(new wand::WeakAndSearchLR<vespalib::LeftHeap, vespalib::RightHeap, true>(terms, n));
     } else {
-        return new wand::WeakAndSearchLR<vespalib::LeftHeap, vespalib::RightHeap, false>(terms, n);
+        return SearchIterator::UP(new wand::WeakAndSearchLR<vespalib::LeftHeap, vespalib::RightHeap, false>(terms, n));
     }
 }
 
-SearchIterator *
+SearchIterator::UP
 WeakAndSearch::create(const Terms &terms, uint32_t n, bool strict)
 {
     if (terms.size() < 128) {

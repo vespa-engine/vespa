@@ -27,18 +27,18 @@ ThreadInit::Run(FastOS_ThreadInterface *, void *) {
 void
 ThreadStackExecutorBase::BlockedThread::wait() const
 {
-    MonitorGuard guard(monitor);
+    unique_lock guard(lock);
     while (blocked) {
-        guard.wait();
+        cond.wait(guard);
     }
 }
 
 void
 ThreadStackExecutorBase::BlockedThread::unblock()
 {
-    MonitorGuard guard(monitor);
+    unique_lock guard(lock);
     blocked = false;
-    guard.signal();
+    cond.notify_one();
 }
 
 //-----------------------------------------------------------------------------
@@ -48,7 +48,7 @@ thread_local ThreadStackExecutorBase *ThreadStackExecutorBase::_master = nullptr
 //-----------------------------------------------------------------------------
 
 void
-ThreadStackExecutorBase::block_thread(const LockGuard &, BlockedThread &blocked_thread)
+ThreadStackExecutorBase::block_thread(const unique_lock &, BlockedThread &blocked_thread)
 {
     auto pos = _blocked.begin();
     while ((pos != _blocked.end()) &&
@@ -60,7 +60,7 @@ ThreadStackExecutorBase::block_thread(const LockGuard &, BlockedThread &blocked_
 }
 
 void
-ThreadStackExecutorBase::unblock_threads(const MonitorGuard &)
+ThreadStackExecutorBase::unblock_threads(const unique_lock &)
 {
     while (!_blocked.empty() && (_taskCount <= _blocked.back()->wait_task_count)) {
         BlockedThread &blocked_thread = *(_blocked.back());
@@ -72,31 +72,31 @@ ThreadStackExecutorBase::unblock_threads(const MonitorGuard &)
 void
 ThreadStackExecutorBase::assignTask(TaggedTask task, Worker &worker)
 {
-    MonitorGuard monitor(worker.monitor);
+    unique_lock guard(worker.lock);
     worker.verify(/* idle: */ true);
     worker.idle = false;
     worker.task = std::move(task);
-    monitor.signal();
+    worker.cond.notify_one();
 }
 
 bool
 ThreadStackExecutorBase::obtainTask(Worker &worker)
 {
     {
-        MonitorGuard monitor(_monitor);
+        unique_lock guard(_lock);
         if (!worker.idle) {
             assert(_taskCount != 0);
             --_taskCount;
+            wakeup(guard, _cond);
             _barrier.completeEvent(worker.task.token);
             worker.idle = true;
         }
         worker.verify(/* idle: */ true);
-        unblock_threads(monitor);
+        unblock_threads(guard);
         if (!_tasks.empty()) {
             worker.task = std::move(_tasks.front());
             worker.idle = false;
             _tasks.pop();
-            wakeup(monitor);
             return true;
         }
         if (_closed) {
@@ -105,9 +105,9 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
         _workers.push(&worker);
     }
     {
-        MonitorGuard monitor(worker.monitor);
+        unique_lock guard(worker.lock);
         while (worker.idle) {
-            monitor.wait();
+            worker.cond.wait(guard);
         }
     }
     worker.idle = !worker.task.task;
@@ -138,7 +138,8 @@ ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t stackSize,
     : SyncableThreadExecutor(),
       Runnable(),
       _pool(std::make_unique<FastOS_ThreadPool>(stackSize)),
-      _monitor(),
+      _lock(),
+      _cond(),
       _stats(),
       _executorCompletion(),
       _tasks(),
@@ -168,46 +169,63 @@ size_t ThreadStackExecutorBase::getNumThreads() const {
 }
 
 void
+ThreadStackExecutorBase::setTaskLimit(uint32_t taskLimit)
+{
+    internalSetTaskLimit(taskLimit);
+}
+
+uint32_t
+ThreadStackExecutorBase::getTaskLimit() const
+{
+    unique_lock guard(_lock);
+    return _taskLimit;
+}
+
+void
+ThreadStackExecutorBase::wakeup() {
+    // Nothing to do here as workers are always attentive.
+}
+
+void
 ThreadStackExecutorBase::internalSetTaskLimit(uint32_t taskLimit)
 {
-    MonitorGuard monitor(_monitor);
+    unique_lock guard(_lock);
     if (!_closed) {
         _taskLimit = taskLimit;
-        wakeup(monitor);
+        wakeup(guard, _cond);
     }
 }
 
 size_t
 ThreadStackExecutorBase::num_idle_workers() const
 {
-    LockGuard lock(_monitor);
+    std::unique_lock guard(_lock);
     return _workers.size();
 }
 
 ThreadStackExecutorBase::Stats
 ThreadStackExecutorBase::getStats()
 {
-    LockGuard lock(_monitor);
+    std::unique_lock guard(_lock);
     Stats stats = _stats;
     _stats = Stats();
-    _stats.maxPendingTasks = _taskCount;
+    _stats.queueSize.add(_taskCount);
     return stats;
 }
 
 ThreadStackExecutorBase::Task::UP
 ThreadStackExecutorBase::execute(Task::UP task)
 {
-    MonitorGuard monitor(_monitor);
-    if (acceptNewTask(monitor)) {
+    unique_lock guard(_lock);
+    if (acceptNewTask(guard, _cond)) {
         TaggedTask taggedTask(std::move(task), _barrier.startEvent());
         ++_taskCount;
         ++_stats.acceptedTasks;
-        _stats.maxPendingTasks = (_taskCount > _stats.maxPendingTasks)
-                                 ?_taskCount : _stats.maxPendingTasks;
+        _stats.queueSize.add(_taskCount);
         if (!_workers.empty()) {
             Worker *worker = _workers.back();
             _workers.popBack();
-            monitor.unlock(); // <- UNLOCK
+            guard.unlock(); // <- UNLOCK
             assignTask(std::move(taggedTask), *worker);
         } else {
             _tasks.push(std::move(taggedTask));
@@ -223,12 +241,12 @@ ThreadStackExecutorBase::shutdown()
 {
     ArrayQueue<Worker*> idle;
     {
-        MonitorGuard monitor(_monitor);
+        unique_lock guard(_lock);
         _closed = true;
         _taskLimit = 0;
         idle.swap(_workers);
         assert(idle.empty() || _tasks.empty()); // idle -> empty queue
-        wakeup(monitor);
+        wakeup(guard, _cond);
     }
     while (!idle.empty()) {
         assignTask(TaggedTask(), *idle.back());
@@ -242,7 +260,7 @@ ThreadStackExecutorBase::sync()
 {
     BarrierCompletion barrierCompletion;
     {
-        LockGuard lock(_monitor);
+        std::unique_lock guard(_lock);
         if (!_barrier.startBarrier(barrierCompletion)) {
             return *this;
         }
@@ -254,13 +272,13 @@ ThreadStackExecutorBase::sync()
 void
 ThreadStackExecutorBase::wait_for_task_count(uint32_t task_count)
 {
-    LockGuard lock(_monitor);
+    std::unique_lock guard(_lock);
     if (_taskCount <= task_count) {
         return;
     }
     BlockedThread self(task_count);
-    block_thread(lock, self);
-    lock.unlock(); // <- UNLOCK
+    block_thread(guard, self);
+    guard.unlock(); // <- UNLOCK
     self.wait();
 }
 

@@ -74,7 +74,7 @@ private:
                                       std::shared_ptr<AttributeManager::SP> attrMgrResult) const;
 
     void setupAttributeManager(AttributeManager::SP attrMgrResult);
-    void initFeedView(const IAttributeWriter::SP &writer, const DocumentDBConfig &configSnapshot);
+    void initFeedView(IAttributeWriter::SP writer, const DocumentDBConfig &configSnapshot);
 
 protected:
     using Parent = StoreOnlyDocSubDB;
@@ -84,7 +84,7 @@ protected:
     MetricsWireService  &_metricsWireService;
     DocIdLimit           _docIdLimit;
 
-    AttributeCollectionSpec::UP createAttributeSpec(const AttributesConfig &attrCfg, SerialNum serialNum) const;
+    AttributeCollectionSpec::UP createAttributeSpec(const AttributesConfig &attrCfg, const AllocStrategy& alloc_strategy, SerialNum serialNum) const;
     AttributeManager::SP getAndResetInitAttributeManager();
     virtual IFlushTargetList getFlushTargetsInternal() override;
     void reconfigureAttributeMetrics(const IAttributeManager &newMgr, const IAttributeManager &oldMgr);

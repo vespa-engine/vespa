@@ -7,7 +7,6 @@
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/messagebus/testlib/receptor.h>
-#include <vespa/vespalib/util/time.h>
 #include <thread>
 #include <vespa/fastos/app.h>
 
@@ -34,11 +33,11 @@ App::Main()
 
     SourceSession::UP ss = mb.getMessageBus().createSourceSession(src, SourceSessionParams().setTimeout(300s));
     for (int i = 0; i < 10; ++i) {
-        msg.reset(new SimpleMessage("test"));
+        msg = std::make_unique<SimpleMessage>("test");
         msg->getTrace().setLevel(9);
         ss->send(std::move(msg), "test");
         reply = src.getReply(600s); // 10 minutes timeout
-        if (reply.get() == 0) {
+        if ( ! reply) {
             fprintf(stderr, "CPP-CLIENT: no reply\n");
         } else {
             fprintf(stderr, "CPP-CLIENT:\n%s\n",
@@ -49,7 +48,7 @@ App::Main()
         }
         std::this_thread::sleep_for(1s);
     }
-    if (reply.get() == 0) {
+    if ( ! reply) {
         fprintf(stderr, "CPP-CLIENT: no reply\n");
         return 1;
     }

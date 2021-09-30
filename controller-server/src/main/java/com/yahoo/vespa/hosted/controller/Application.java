@@ -1,18 +1,18 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
-import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import java.security.PublicKey;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -28,11 +29,12 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * An application. Belongs to a {@link Tenant}, and may have many {@link Instance}s.
+ * An application. Belongs to a {@link Tenant}, and may have multiple {@link Instance}s.
  *
  * This is immutable.
  *
@@ -78,7 +80,15 @@ public class Application {
         this.deployKeys = Objects.requireNonNull(deployKeys, "deployKeys cannot be null");
         this.projectId = Objects.requireNonNull(projectId, "projectId cannot be null");
         this.latestVersion = requireNotUnknown(latestVersion);
-        this.instances = ImmutableSortedMap.copyOf(instances.stream().collect(Collectors.toMap(Instance::name, Function.identity())));
+        this.instances = instances.stream().collect(
+                Collectors.collectingAndThen(Collectors.toMap(Instance::name,
+                                                              Function.identity(),
+                                                              (i1, i2) -> {
+                                                                  throw new IllegalArgumentException("Duplicate key " + i1);
+                                                              },
+                                                              TreeMap::new),
+                                             Collections::unmodifiableMap)
+        );
     }
 
     public TenantAndApplicationId id() { return id; }
@@ -106,6 +116,12 @@ public class Application {
 
     /** Returns the instances of this application */
     public Map<InstanceName, Instance> instances() { return instances; }
+
+    /** Returns the instances of this application which are defined in its deployment spec. */
+    public Map<InstanceName, Instance> productionInstances() {
+        return deploymentSpec.instanceNames().stream()
+                .collect(Collectors.toUnmodifiableMap(Function.identity(), instances::get));
+    }
 
     /** Returns the instance with the given name, if it exists. */
     public Optional<Instance> get(InstanceName instance) { return Optional.ofNullable(instances.get(instance)); }
@@ -173,6 +189,19 @@ public class Application {
         return productionDeployments().values().stream().flatMap(List::stream)
                                       .map(Deployment::applicationVersion)
                                       .min(Comparator.naturalOrder());
+    }
+
+    /** Returns the total quota usage for this application, excluding temporary deployments */
+    public QuotaUsage quotaUsage() {
+        return instances().values().stream()
+                          .map(Instance::quotaUsage).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
+    }
+
+    /** Returns the total quota usage for this application, excluding one specific deployment (and temporary deployments) */
+    public QuotaUsage quotaUsage(ApplicationId application, ZoneId zone) {
+        return instances().values().stream()
+                          .map(instance -> instance.quotaUsageExcluding(application, zone))
+                          .reduce(QuotaUsage::add).orElse(QuotaUsage.none);
     }
 
     /** Returns the set of deploy keys for this application. */

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # BEGIN environment bootstrap section
 # Do not edit between here and END as this section should stay identical in all scripts
@@ -92,7 +92,6 @@ cp="libexec/vespa/patches/configproxy:lib/jars/config-proxy-jar-with-dependencie
 VESPA_LOG_LEVEL="all -debug -spam"
 
 export VESPA_LOG_TARGET VESPA_LOG_LEVEL VESPA_LOG_CONTROL_DIR
-export VESPA_SENTINEL_PORT
 
 mkdir -p "$LOGDIR"
 mkdir -p "$VESPA_LOG_CONTROL_DIR"
@@ -110,36 +109,51 @@ case $1 in
         nohup sbin/vespa-retention-enforcer > ${LOGDIR}/vre-start.log 2>&1 </dev/null &
         configsources=`bin/vespa-print-default configservers_rpc`
         userargs=$VESPA_CONFIGPROXY_JVMARGS
-        if [ "$userargs" == "" ]; then
-            userargs=$services__jvmargs_configproxy
-        fi
-        jvmopts="-Xms32M -Xmx256M -XX:CompressedClassSpaceSize=32m -XX:MaxDirectMemorySize=32m -XX:ThreadStackSize=256 -XX:MaxJavaStackTraceDepth=1000"
+        jvmopts="-Xms32M -Xmx256M -XX:CompressedClassSpaceSize=32m -XX:MaxDirectMemorySize=32m -XX:ThreadStackSize=256 -XX:MaxJavaStackTraceDepth=1000 -XX:-OmitStackTraceInFastThrow"
 
         VESPA_SERVICE_NAME=configproxy
         export VESPA_SERVICE_NAME
+        start_seconds=$SECONDS
         echo "Starting config proxy using $configsources as config source(s)"
         vespa-runserver -r 10 -s configproxy -p $P_CONFIG_PROXY -- \
             java ${jvmopts} \
                  -XX:+ExitOnOutOfMemoryError $(getJavaOptionsIPV46) \
-                 -Dproxyconfigsources="${configsources}" ${userargs} \
+                 -Dproxyconfigsources="${configsources}" \
+		 -Djava.io.tmpdir=${VESPA_HOME}/tmp \
+		 ${userargs} \
                  -XX:ActiveProcessorCount=2 \
                  -cp $cp com.yahoo.vespa.config.proxy.ProxyServer 19090
 
         echo "Waiting for config proxy to start"
         fail=true
-        for ((sleepcount=0;$sleepcount<600;sleepcount=$sleepcount+1)) ; do
+        for ((sleepcount=0;$sleepcount<1800;sleepcount=$sleepcount+1)) ; do
             sleep 0.1
             if [ -f $P_CONFIG_PROXY ] && kill -0 `cat $P_CONFIG_PROXY` && vespa-ping-configproxy -s $hname 2>/dev/null
             then
-                echo "config proxy started (runserver pid `cat $P_CONFIG_PROXY`)"
+                startup_seconds=$(( SECONDS - start_seconds ))
+                echo "config proxy started after ${startup_seconds}s (runserver pid `cat $P_CONFIG_PROXY`)"
                 fail=false
                 break
             fi
         done
         if $fail ; then
-            echo "Failed to start config proxy!" 1>&2
-            echo "look for reason in vespa.log, last part follows..."
-            tail -n 15 $LOGFILE | vespa-logfmt -
+            startup_seconds=$(( SECONDS - start_seconds ))
+            echo "Config proxy failed to start in ${startup_seconds}S!" 1>&2
+
+            if ! [ -f $P_CONFIG_PROXY ]
+            then
+                echo "pid file $P_CONFIG_PROXY was not created" 1>&2
+            elif ! kill -0 `cat $P_CONFIG_PROXY`
+            then
+                echo "config proxy process `cat $P_CONFIG_PROXY` has terminated" 1>&2
+            elif ! vespa-ping-configproxy -s $hname
+            then
+                echo "failed to ping config proxy $hname" 1>&2
+                kill -3 `pgrep -f -n configproxy`
+            fi
+
+            echo "look for reason in vespa.log, last part follows..." 1>&2
+            tail -n 15 $LOGFILE | vespa-logfmt -  1>&2
             exit 1
         fi
 

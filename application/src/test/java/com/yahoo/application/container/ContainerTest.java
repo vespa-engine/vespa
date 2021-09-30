@@ -35,7 +35,7 @@ import static org.junit.Assert.fail;
 public class ContainerTest {
 
     @Test
-    public void jdisc_can_be_used_as_top_level_element() {
+    public void container_can_be_used_as_top_level_element() {
         try (JDisc container = fromServicesXml("<container version=\"1.0\">" + //
                 "<search />" + //
                 "</container>", Networking.disable)) {
@@ -44,7 +44,7 @@ public class ContainerTest {
     }
 
     @Test
-    public void jdisc_id_can_be_set() {
+    public void container_id_can_be_set() {
         try (JDisc container = fromServicesXml("<container version=\"1.0\" id=\"my-service-id\">" + //
                 "<search />" + //
                 "</container>", Networking.disable)) {
@@ -53,7 +53,7 @@ public class ContainerTest {
     }
 
     @Test
-    public void jdisc_can_be_embedded_in_services_tag() {
+    public void container_can_be_embedded_in_services_tag() {
         try (JDisc container = fromServicesXml("<services>" + //
                 "<container version=\"1.0\" id=\"my-service-id\">" + //
                 "<search />" + //
@@ -65,7 +65,7 @@ public class ContainerTest {
 
     @Test
     @SuppressWarnings("try") // container is unused inside the try block
-    public void multiple_jdisc_elements_gives_exception() {
+    public void multiple_container_elements_gives_exception() {
         try (JDisc container = fromServicesXml("<services>" + //
                 "<container version=\"1.0\" id=\"id1\" />" + //
                 "<container version=\"1.0\" />" + //

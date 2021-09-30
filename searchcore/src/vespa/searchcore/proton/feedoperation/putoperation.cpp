@@ -17,16 +17,12 @@ PutOperation::PutOperation()
 { }
 
 
-PutOperation::PutOperation(const BucketId &bucketId,
-                           const Timestamp &timestamp,
-                           const Document::SP &doc)
-    : DocumentOperation(FeedOperation::PUT,
-                        bucketId,
-                        timestamp),
-      _doc(doc)
+PutOperation::PutOperation(BucketId bucketId, Timestamp timestamp, Document::SP doc)
+    : DocumentOperation(FeedOperation::PUT, bucketId, timestamp),
+      _doc(std::move(doc))
 { }
 
-PutOperation::~PutOperation() { }
+PutOperation::~PutOperation() = default;
 
 void
 PutOperation::serialize(vespalib::nbostream &os) const
@@ -40,8 +36,7 @@ PutOperation::serialize(vespalib::nbostream &os) const
 
 
 void
-PutOperation::deserialize(vespalib::nbostream &is,
-                          const DocumentTypeRepo &repo)
+PutOperation::deserialize(vespalib::nbostream &is, const DocumentTypeRepo &repo)
 {
     DocumentOperation::deserialize(is, repo);
     size_t oldSize = is.size();

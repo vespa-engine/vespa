@@ -1,14 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vdslib/distribution/redundancygroupdistribution.h>
-
-#include <algorithm>
-#include <boost/lexical_cast.hpp>
+#include "redundancygroupdistribution.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <boost/lexical_cast.hpp>
+#include <algorithm>
+#include <cassert>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 namespace {
     void verifyLegal(vespalib::StringTokenizer& st,
@@ -96,6 +95,8 @@ RedundancyGroupDistribution::RedundancyGroupDistribution(
     assert(_values.front() >= _values.back());
 }
 
+RedundancyGroupDistribution::~RedundancyGroupDistribution() = default;
+
 void
 RedundancyGroupDistribution::print(std::ostream& out,
                                    bool, const std::string&) const
@@ -144,6 +145,4 @@ RedundancyGroupDistribution::divideSpecifiedCopies(
     return redundancy;
 }
 
-} // lib
-} // storage
-
+}

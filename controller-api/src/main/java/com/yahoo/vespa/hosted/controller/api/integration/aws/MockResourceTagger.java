@@ -8,6 +8,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author olaa
@@ -17,8 +18,8 @@ public class MockResourceTagger implements ResourceTagger {
     Map<ZoneId, Map<HostName, ApplicationId>> values = new HashMap<>();
 
     @Override
-    public int tagResources(ZoneApi zone, Map<HostName, ApplicationId> tenantOfHosts) {
-        values.put(zone.getId(), tenantOfHosts);
+    public int tagResources(ZoneApi zone, Map<HostName, ApplicationId> ownerOfHosts) {
+        values.put(zone.getId(), ownerOfHosts);
         return 0;
     }
 

@@ -2,6 +2,7 @@
 
 #include "configfetcher.h"
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/vespalib/util/thread.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".config.helper.configfetcher");

@@ -50,6 +50,11 @@ public class LoadBalancerId {
         return Objects.hash(application, cluster);
     }
 
+    @Override
+    public String toString() {
+        return "load balancer " + serializedForm;
+    }
+
     /** Create an instance from a serialized value on the form tenant:application:instance:cluster-id */
     public static LoadBalancerId fromSerializedForm(String value) {
         int lastSeparator = value.lastIndexOf(":");

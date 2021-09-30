@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.jrt.Acceptor;
@@ -12,22 +12,18 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.TargetWatcher;
-import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.JRTMethods;
 import com.yahoo.vespa.config.RawConfig;
-import com.yahoo.vespa.config.protocol.JRTConfigRequestFactory;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-
 
 /**
  * An RPC server that handles config and file distribution requests.
@@ -54,7 +50,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     public void run() {
         try {
             Acceptor acceptor = supervisor.listen(spec);
-            log.log(LogLevel.DEBUG, "Ready for requests on " + spec);
+            log.log(Level.FINE, () -> "Ready for requests on " + spec);
             supervisor.transport().join();
             acceptor.shutdown().join();
         } catch (ListenFailedException e) {
@@ -64,13 +60,13 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     }
 
     void shutdown() {
-        supervisor.transport().shutdown();
         try {
             rpcExecutor.shutdownNow();
             rpcExecutor.awaitTermination(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        supervisor.transport().shutdown();
     }
 
     Spec getSpec() {
@@ -132,12 +128,8 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     private void getConfigV3(Request req) {
         dispatchRpcRequest(req, () -> {
             JRTServerConfigRequest request = JRTServerConfigRequestV3.createFromRequest(req);
-            if (isProtocolVersionSupported(request)) {
-                req.target().addWatcher(this);
-                getConfigImpl(request);
-                return;
-            }
-            req.returnRequest();
+            req.target().addWatcher(this);
+            getConfigImpl(request);
         });
     }
 
@@ -162,9 +154,9 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         dispatchRpcRequest(req, () -> {
             StringBuilder sb = new StringBuilder();
             sb.append("\nDelayed responses queue size: ");
-            sb.append(proxyServer.delayedResponses.size());
+            sb.append(proxyServer.delayedResponses().size());
             sb.append("\nContents: ");
-            for (DelayedResponse delayed : proxyServer.delayedResponses.responses()) {
+            for (DelayedResponse delayed : proxyServer.delayedResponses().responses()) {
                 sb.append(delayed.getRequest().toString()).append("\n");
             }
 
@@ -255,13 +247,13 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
 
     private void dispatchRpcRequest(Request request, Runnable handler) {
         request.detach();
-        log.log(LogLevel.SPAM, () -> String.format("Dispatching RPC request %s", requestLogId(request)));
+        log.log(Level.FINEST, () -> String.format("Dispatching RPC request %s", requestLogId(request)));
         rpcExecutor.execute(() -> {
             try {
-                log.log(LogLevel.SPAM, () -> String.format("Executing RPC request %s.", requestLogId(request)));
+                log.log(Level.FINEST, () -> String.format("Executing RPC request %s.", requestLogId(request)));
                 handler.run();
             } catch (Exception e) {
-                log.log(LogLevel.WARNING,
+                log.log(Level.WARNING,
                         String.format("Exception thrown during execution of RPC request %s: %s", requestLogId(request), e.getMessage()), e);
             }
         });
@@ -271,19 +263,6 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         return String.format("%s/%08X", request.methodName(), request.hashCode());
     }
 
-    private boolean isProtocolVersionSupported(JRTServerConfigRequest request) {
-        Set<Long> supportedProtocolVersions = JRTConfigRequestFactory.supportedProtocolVersions();
-        if (supportedProtocolVersions.contains(request.getProtocolVersion())) {
-            return true;
-        } else {
-            String message = "Illegal protocol version " + request.getProtocolVersion() +
-                    " in request " + request.getShortDescription() + ", only protocol versions " + supportedProtocolVersions + " are supported";
-            log.log(LogLevel.ERROR, message);
-            request.addErrorResponse(ErrorCode.ILLEGAL_PROTOCOL_VERSION, message);
-        }
-        return false;
-    }
-
     /**
      * Handles all versions of "getConfig" requests.
      *
@@ -291,21 +270,21 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      */
     private void getConfigImpl(JRTServerConfigRequest request) {
         request.getRequestTrace().trace(TRACELEVEL, "Config proxy getConfig()");
-        log.log(LogLevel.DEBUG, () ->"getConfig: " + request.getShortDescription() + ",configmd5=" + request.getRequestConfigMd5());
+        log.log(Level.FINE, () ->"getConfig: " + request.getShortDescription() + ",config checksums=" + request.getRequestConfigChecksums());
         if (!request.validateParameters()) {
             // Error code is set in verifyParameters if parameters are not OK.
-            log.log(LogLevel.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
+            log.log(Level.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
             returnErrorResponse(request, request.errorCode(), "Parameters for request " + request.getShortDescription() + " did not validate: " + request.errorMessage());
             return;
         }
         try {
             RawConfig config = proxyServer.resolveConfig(request);
             if (config == null) {
-                log.log(LogLevel.SPAM, () -> "No config received yet for " + request.getShortDescription() + ", not sending response");
+                log.log(Level.FINEST, () -> "No config received yet for " + request.getShortDescription() + ", not sending response");
             } else if (ProxyServer.configOrGenerationHasChanged(config, request)) {
                 returnOkResponse(request, config);
             } else {
-                log.log(LogLevel.SPAM, "No new config for " + request.getShortDescription() + ", not sending response");
+                log.log(Level.FINEST, () -> "No new config for " + request.getShortDescription() + ", not sending response");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -336,7 +315,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
             sb.append(",");
             sb.append(config.getGeneration());
             sb.append(",");
-            sb.append(config.getConfigMd5());
+            sb.append(config.getPayloadChecksums());
             if (full) {
                 sb.append(",");
                 sb.append(config.getPayload());
@@ -356,12 +335,12 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      */
     @Override
     public void notifyTargetInvalid(Target target) {
-        log.log(LogLevel.DEBUG, () -> "Target invalid " + target);
-        for (Iterator<DelayedResponse> it = proxyServer.delayedResponses.responses().iterator(); it.hasNext(); ) {
+        log.log(Level.FINE, () -> "Target invalid " + target);
+        for (Iterator<DelayedResponse> it = proxyServer.delayedResponses().responses().iterator(); it.hasNext(); ) {
             DelayedResponse delayed = it.next();
             JRTServerConfigRequest request = delayed.getRequest();
             if (request.getRequest().target().equals(target)) {
-                log.log(LogLevel.DEBUG, () -> "Removing " + request.getShortDescription());
+                log.log(Level.FINE, () -> "Removing " + request.getShortDescription());
                 it.remove();
             }
         }
@@ -371,10 +350,13 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
 
     public void returnOkResponse(JRTServerConfigRequest request, RawConfig config) {
         request.getRequestTrace().trace(TRACELEVEL, "Config proxy returnOkResponse()");
-        request.addOkResponse(config.getPayload(), config.getGeneration(), config.isInternalRedeploy(), config.getConfigMd5());
-        log.log(LogLevel.DEBUG, () -> "Return response: " + request.getShortDescription() + ",configMd5=" + config.getConfigMd5() +
+        request.addOkResponse(config.getPayload(),
+                              config.getGeneration(),
+                              config.applyOnRestart(),
+                              config.getPayloadChecksums());
+        log.log(Level.FINE, () -> "Return response: " + request.getShortDescription() + ",config checksums=" + config.getPayloadChecksums() +
                 ",generation=" + config.getGeneration());
-        log.log(LogLevel.SPAM, () -> "Config payload in response for " + request.getShortDescription() + ":" + config.getPayload());
+        log.log(Level.FINEST, () -> "Config payload in response for " + request.getShortDescription() + ":" + config.getPayload());
 
 
         // TODO Catch exception for now, since the request might have been returned in CheckDelayedResponse
@@ -382,7 +364,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         try {
             request.getRequest().returnRequest();
         } catch (IllegalStateException e) {
-            log.log(LogLevel.DEBUG, () -> "Something bad happened when sending response for '" + request.getShortDescription() + "':" + e.getMessage());
+            log.log(Level.FINE, () -> "Something bad happened when sending response for '" + request.getShortDescription() + "':" + e.getMessage());
         }
     }
 

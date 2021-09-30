@@ -6,7 +6,6 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
@@ -22,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -36,8 +36,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
     public DomAdminV4Builder(ConfigModelContext context, boolean multitenant, List<ConfigServerSpec> configServerSpecs,
                              Collection<ContainerModel> containerModels) {
-        super(context.getApplicationType(), context.getDeployState().getFileRegistry(), multitenant,
-              configServerSpecs);
+        super(context.getApplicationType(), multitenant, configServerSpecs);
         this.containerModels = containerModels;
         this.context = context;
     }
@@ -54,23 +53,27 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         Optional<NodesSpecification> requestedLogservers = 
                 NodesSpecification.optionalDedicatedFromParent(adminElement.child("logservers"), context);
 
-        assignSlobroks(deployState.getDeployLogger(), requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
+        assignSlobroks(deployState, requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
         assignLogserver(deployState, requestedLogservers.orElse(createNodesSpecificationForLogserver()), admin);
 
         addLogForwarders(adminElement.child("logforwarding"), admin);
     }
 
-    private void assignSlobroks(DeployLogger deployLogger, NodesSpecification nodesSpecification, Admin admin) {
+    private void assignSlobroks(DeployState deployState, NodesSpecification nodesSpecification, Admin admin) {
         if (nodesSpecification.isDedicated()) {
-            createSlobroks(deployLogger, admin, allocateHosts(admin.hostSystem(), "slobroks", nodesSpecification));
+            createSlobroks(deployState,
+                           admin,
+                           allocateHosts(admin.hostSystem(), "slobroks", nodesSpecification));
         }
-        else {
-            createSlobroks(deployLogger, admin, pickContainerHostsForSlobrok(nodesSpecification.count(), 2));
+        else { // These will be removed later, if an admin cluster (for cluster controllers) is assigned
+            createSlobroks(deployState,
+                           admin,
+                           pickContainerHostsForSlobrok(nodesSpecification.minResources().nodes(), 2));
         }
     }
 
     private void assignLogserver(DeployState deployState, NodesSpecification nodesSpecification, Admin admin) {
-        if (nodesSpecification.count() > 1) throw new IllegalArgumentException("You can only request a single log server");
+        if (nodesSpecification.minResources().nodes() > 1) throw new IllegalArgumentException("You can only request a single log server");
         if (deployState.getProperties().applicationId().instance().isTester()) return; // No logserver is needed on tester applications
         if (nodesSpecification.isDedicated()) {
             Collection<HostResource> hosts = allocateHosts(admin.hostSystem(), "logserver", nodesSpecification);
@@ -79,20 +82,20 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
             Logserver logserver = createLogserver(deployState.getDeployLogger(), admin, hosts);
             createContainerOnLogserverHost(deployState, admin, logserver.getHostResource());
         } else if (containerModels.iterator().hasNext()) {
-            List<HostResource> hosts = sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.count(), false);
+            List<HostResource> hosts = sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.minResources().nodes(), false);
             if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
 
             createLogserver(deployState.getDeployLogger(), admin, hosts);
         } else {
-            context.getDeployLogger().log(LogLevel.INFO, "No container host available to use for running logserver");
+            context.getDeployLogger().logApplicationPackage(Level.INFO, "No container host available to use for running logserver");
         }
     }
 
     private NodesSpecification createNodesSpecificationForLogserver() {
         DeployState deployState = context.getDeployState();
         if (deployState.getProperties().useDedicatedNodeForLogserver() &&
-                context.getApplicationType() == ConfigModelContext.ApplicationType.DEFAULT &&
-                deployState.isHosted())
+            context.getApplicationType() == ConfigModelContext.ApplicationType.DEFAULT &&
+            deployState.isHosted())
             return NodesSpecification.dedicated(1, context);
         else
             return NodesSpecification.nonDedicated(1, context);
@@ -105,7 +108,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         ContainerModel logserverClusterModel = new ContainerModel(context.withParent(admin).withId(logServerCluster.getSubId()));
         logserverClusterModel.setCluster(logServerCluster);
 
-        LogserverContainer container = new LogserverContainer(logServerCluster);
+        LogserverContainer container = new LogserverContainer(logServerCluster, deployState);
         container.setHostResource(hostResource);
         container.initService(deployState.getDeployLogger());
         logServerCluster.addContainer(container);
@@ -118,7 +121,9 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         return nodesSpecification.provision(hostSystem, 
                                             ClusterSpec.Type.admin, 
                                             ClusterSpec.Id.from(clusterId), 
-                                            context.getDeployLogger()).keySet();
+                                            context.getDeployLogger(),
+                                            false)
+                                 .keySet();
     }
 
     /**
@@ -146,8 +151,8 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         List<HostResource> picked = sortedContainerHostsFrom(model, count, !retired);
 
         // if we can return multiple hosts, include retired nodes which would have been picked before
-        // (probably - assuming all previous nodes were retired, which is always true for a single cluster
-        // at the moment (Sept 2015)) to ensure a smoother transition between the old and new topology
+        // (probably - assuming all previous nodes were retired, which is always true for a single cluster,
+        // to ensure a smoother transition between the old and new topology
         // by including both new and old nodes during the retirement period
         picked.addAll(sortedContainerHostsFrom(model, count, retired));
 
@@ -159,6 +164,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         List<HostResource> hosts = model.getCluster().getContainers().stream()
                                                                      .filter(container -> retired == container.isRetired())
                                                                      .map(Container::getHostResource)
+                                                                     .sorted(HostResource::comparePrimarilyByIndexTo)
                                                                      .collect(Collectors.toList());
         return hosts.subList(0, Math.min(count, hosts.size()));
     }
@@ -171,15 +177,15 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         return logserver;
     }
 
-    private void createSlobroks(DeployLogger deployLogger, Admin admin, Collection<HostResource> hosts) {
+    private void createSlobroks(DeployState deployState, Admin admin, Collection<HostResource> hosts) {
         if (hosts.isEmpty()) return; // No slobroks can be created (and none are needed)
         List<Slobrok> slobroks = new ArrayList<>();
         int index = 0;
         for (HostResource host : hosts) {
-            Slobrok slobrok = new Slobrok(admin, index++);
+            Slobrok slobrok = new Slobrok(admin, index++, deployState.featureFlags());
             slobrok.setHostResource(host);
             slobroks.add(slobrok);
-            slobrok.initService(deployLogger);
+            slobrok.initService(deployState.getDeployLogger());
         }
         admin.addSlobroks(slobroks);
     }

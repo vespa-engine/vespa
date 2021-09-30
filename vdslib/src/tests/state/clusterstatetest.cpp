@@ -78,13 +78,6 @@ TEST(ClusterStateTest, test_basic_functionality)
     VERIFYNEW("storage:10 .1.s:i .2.s:u .3.s:d .4.s:m .5.s:r",
               "storage:10 .1.s:i .1.i:0 .3.s:d .4.s:m .5.s:r");
 
-    // Test legal disk states
-    VERIFYNEW("storage:10 .1.d:4 .1.d.0.s:u .1.d.1.s:d",
-              "storage:10 .1.d:4 .1.d.1.s:d");
-
-    // Test other disk properties
-    VERIFYSAMENEW("storage:10 .1.d:4 .1.d.0.c:1.4");
-
     // Test other distributor node propertise
     // (Messages is excluded from system states to not make them too long as
     // most nodes have no use for them)
@@ -94,8 +87,8 @@ TEST(ClusterStateTest, test_basic_functionality)
     // Test other storage node propertise
     // (Messages is excluded from system states to not make them too long as
     // most nodes have no use for them)
-    VERIFYNEW("storage:9 .3.c:2.3 .4.r:8 .7.m:foo\\x20bar",
-              "storage:9 .3.c:2.3 .4.r:8");
+    VERIFYNEW("storage:9 .3.c:2.3 .7.m:foo\\x20bar",
+              "storage:9 .3.c:2.3");
 
     // Test that messages are kept in verbose mode, even if last index
     {
@@ -143,20 +136,10 @@ TEST(ClusterStateTest, test_error_behaviour)
 //    VERIFY_FAIL("distributor:4 .2.s:r",
 //                "Retired is not a legal distributor state");
 
-    // Test illegal storage states
-    VERIFY_FAIL("storage:4 .2.d:2 .2.d.5.s:d", "Cannot index disk 5 of 2");
-
     // Test blatantly illegal values for known attributes:
     VERIFY_FAIL("distributor:4 .2.s:z", "Unknown state z given.*");
     VERIFY_FAIL("distributor:4 .2.i:foobar",
                 ".*Init progress must be a floating point number from .*");
-    VERIFY_FAIL("storage:4 .2.d:foobar", "Invalid disk count 'foobar'. Need.*");
-    VERIFY_FAIL("storage:4 .2.d:2 .2.d.1.s:foobar",
-                "Unknown state foobar given.*");
-    VERIFY_FAIL("storage:4 .2.d:2 .2.d.1.c:foobar",
-                "Illegal disk capacity 'foobar'. Capacity must be a .*");
-    VERIFY_FAIL("storage:4 .2.d:2 .2.d.a.s:d",
-                "Invalid disk index 'a'. Need a positive integer .*");
 
     // Lacking absolute path first
     VERIFY_FAIL(".2.s:d distributor:4", "The first path in system state.*");
@@ -168,34 +151,7 @@ TEST(ClusterStateTest, test_error_behaviour)
     VERIFYNEW("distributor:4 .2:foo storage:5 .4:d", "distributor:4 storage:5");
     VERIFYNEW("ballalaika:true distributor:4 .2.urk:oj .2.z:foo .2.s:s "
               ".2.j:foo storage:10 .3.d:4 .3.d.2.a:boo .3.s:s",
-              "distributor:4 .2.s:s storage:10 .3.s:s .3.d:4");
-}
-
-TEST(ClusterStateTest, test_backwards_compability)
-{
-    // 4.1 and older nodes do not support some features, and the java parser
-    // do not allow unknown elements as it was supposed to do, thus we should
-    // avoid using new features when talking to 4.1 nodes.
-
-    //  - 4.1 nodes should not see new cluster, version, initializing and
-    //    description tags.
-    VERIFYOLD("version:4 cluster:i storage:2 .0.s:i .0.i:0.5 .1.m:foobar",
-              "distributor:0 storage:2 .0.s:i");
-
-    //  - 4.1 nodes have only one disk property being state, so in 4.1, a
-    //    disk state is typically set as .4.d.2:d while in new format it
-    //    specifies that this is the state .4.d.2.s:d
-    VERIFYSAMEOLD("distributor:0 storage:3 .2.d:10 .2.d.4:d");
-    VERIFYOLD("distributor:0 storage:3 .2.d:10 .2.d.4.s:d",
-              "distributor:0 storage:3 .2.d:10 .2.d.4:d");
-
-    //  - 4.1 nodes should always have distributor and storage tags with counts.
-    VERIFYOLD("storage:4", "distributor:0 storage:4");
-    VERIFYOLD("distributor:4", "distributor:4 storage:0");
-
-    //  - 4.1 nodes should not see the state stopping
-    VERIFYOLD("storage:4 .2.s:s", "distributor:0 storage:4 .2.s:d");
-
+              "distributor:4 .2.s:s storage:10 .3.s:s");
 }
 
 TEST(ClusterStateTest, test_detailed)
@@ -203,7 +159,7 @@ TEST(ClusterStateTest, test_detailed)
     ClusterState state(
             "version:314 cluster:i "
             "distributor:8 .1.s:i .3.s:i .3.i:0.5 .5.s:d .7.m:foo\\x20bar "
-            "storage:10 .2.d:16 .2.d.3:d .4.s:d .5.c:1.3 .5.r:4"
+            "storage:10 .2.d:16 .2.d.3:d .4.s:d .5.c:1.3 "
             " .6.m:bar\\tfoo .7.s:m .8.d:10 .8.d.4.c:0.6 .8.d.4.m:small"
     );
     EXPECT_EQ(314u, state.getVersion());
@@ -214,7 +170,7 @@ TEST(ClusterStateTest, test_detailed)
     // Testing distributor node states
     for (uint16_t i = 0; i <= 20; ++i) {
         const NodeState& ns(state.getNodeState(Node(NodeType::DISTRIBUTOR, i)));
-            // Test node states
+        // Test node states
         if (i == 1 || i == 3) {
             EXPECT_EQ(State::INITIALIZING, ns.getState());
         } else if (i == 5 || i >= 8) {
@@ -222,7 +178,7 @@ TEST(ClusterStateTest, test_detailed)
         } else {
             EXPECT_EQ(State::UP, ns.getState());
         }
-            // Test initialize progress
+        // Test initialize progress
         if (i == 1) {
             EXPECT_EQ(vespalib::Double(0.0), ns.getInitProgress());
         } else if (i == 3) {
@@ -230,7 +186,7 @@ TEST(ClusterStateTest, test_detailed)
         } else {
             EXPECT_EQ(vespalib::Double(0.0), ns.getInitProgress());
         }
-            // Test message
+        // Test message
         if (i == 7) {
             EXPECT_EQ(string("foo bar"), ns.getDescription());
         } else {
@@ -241,7 +197,7 @@ TEST(ClusterStateTest, test_detailed)
     // Testing storage node states
     for (uint16_t i = 0; i <= 20; ++i) {
         const NodeState& ns(state.getNodeState(Node(NodeType::STORAGE, i)));
-            // Test node states
+        // Test node states
         if (i == 4 || i >= 10) {
             EXPECT_EQ(State::DOWN, ns.getState());
         } else if (i == 7) {
@@ -249,53 +205,13 @@ TEST(ClusterStateTest, test_detailed)
         } else {
             EXPECT_EQ(State::UP, ns.getState());
         }
-            // Test disk states
-        if (i == 2) {
-            EXPECT_EQ(uint16_t(16), ns.getDiskCount());
-        } else if (i == 8) {
-            EXPECT_EQ(uint16_t(10), ns.getDiskCount());
-        } else {
-            EXPECT_EQ(uint16_t(0), ns.getDiskCount());
-        }
-        if (i == 2) {
-            for (uint16_t j = 0; j < 16; ++j) {
-                if (j == 3) {
-                    EXPECT_EQ(State::DOWN,
-                              ns.getDiskState(j).getState());
-                } else {
-                    EXPECT_EQ(State::UP,
-                              ns.getDiskState(j).getState());
-                }
-            }
-        } else if (i == 8) {
-            for (uint16_t j = 0; j < 10; ++j) {
-                if (j == 4) {
-                    EXPECT_DOUBLE_EQ(0.6, ns.getDiskState(j).getCapacity().getValue());
-                    EXPECT_EQ(
-                            string("small"),
-                            ns.getDiskState(j).getDescription());
-                } else {
-                    EXPECT_DOUBLE_EQ(
-                            1.0, ns.getDiskState(j).getCapacity().getValue());
-                    EXPECT_EQ(
-                            string(""),
-                            ns.getDiskState(j).getDescription());
-                }
-            }
-        }
-            // Test message
+        // Test message
         if (i == 6) {
             EXPECT_EQ(string("bar\tfoo"), ns.getDescription());
         } else {
             EXPECT_EQ(string(""), ns.getDescription());
         }
-            // Test reliability
-        if (i == 5) {
-            EXPECT_EQ(uint16_t(4), ns.getReliability());
-        } else {
-            EXPECT_EQ(uint16_t(1), ns.getReliability());
-        }
-            // Test capacity
+        // Test capacity
         if (i == 5) {
             EXPECT_EQ(vespalib::Double(1.3), ns.getCapacity());
         } else {

@@ -42,7 +42,7 @@ public class FastHit extends Hit {
     private byte [] globalId;
 
     private transient byte[] sortData = null;
-    // TODO I supect this one can be dropped.
+    // TODO I suspect this one can be dropped.
     private transient Sorting sortDataSorting = null;
 
     /**
@@ -188,9 +188,14 @@ public class FastHit extends Hit {
         summaries.add(0, new SummaryData(this, docsumDef, value, 1 + summaries.size()));
     }
 
+    /** Returns the raw summary data available in this as an unmodifiable list */
+    public List<SummaryData> summaryData() {
+        return Collections.unmodifiableList(summaries);
+    }
+
     /**
      * Returns values for the features listed in
-     * <a href="https://docs.vespa.ai/documentation/reference/search-definitions-reference.html#summary-features">summary-features</a>
+     * <a href="https://docs.vespa.ai/en/reference/schema-reference.html#summary-features">summary-features</a>
      * in the rank profile specified in the query producing this.
      */
     public FeatureData features() {

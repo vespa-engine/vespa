@@ -46,19 +46,4 @@ public class PartitionTest extends StateRestApiTest {
                 "}";
         assertEquals(expected, jsonWriter.createJson(response).toString(2));
     }
-
-    @Test
-    public void testRecursiveStorageClusterDoesNotIncludePartitionMetrics() throws Exception {
-        setUp(true);
-        UnitResponse response = restAPI.getState(new StateRequest("music/storage", 2));
-        String expected =
-                "{\"state\": {\"generated\": {\n" +
-                "  \"state\": \"up\",\n" +
-                "  \"reason\": \"\"\n" +
-                "}}}";
-        JSONObject json = jsonWriter.createJson(response);
-        assertEquals(expected, json.getJSONObject("node").getJSONObject("1").
-                               getJSONObject("partition").getJSONObject("0").
-                               toString(2));
-    }
 }

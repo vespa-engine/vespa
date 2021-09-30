@@ -2,24 +2,18 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
-import com.yahoo.vespa.config.server.tenant.TenantListener;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.8
  */
 public class MockTenantListener implements TenantListener {
+
     TenantName tenantCreatedName;
-    TenantHandlerProvider provider;
     TenantName tenantDeletedName;
     boolean tenantsLoaded;
 
     @Override
-    public void onTenantCreate(TenantName tenantName, TenantHandlerProvider provider) {
-        this.tenantCreatedName = tenantName;
-        this.provider = provider;
-    }
+    public void onTenantCreate(Tenant tenant) { this.tenantCreatedName = tenant.getName(); }
 
     @Override
     public void onTenantDelete(TenantName tenantName) {
@@ -30,4 +24,5 @@ public class MockTenantListener implements TenantListener {
     public void onTenantsLoaded() {
         tenantsLoaded = true;
     }
+
 }

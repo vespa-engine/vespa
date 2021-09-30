@@ -34,44 +34,27 @@ private:
 
     bool hasIndexedFields() const { return _hasIndexedFields; }
 
-    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const document::Document &doc,
-                         bool immediateCommit, OnOperationDoneType onWriteDone);
-
-    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &doc,
-                         bool immediateCommit, OnOperationDoneType onWriteDone);
-    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, FutureDoc doc,
-                         bool immediateCommit, OnOperationDoneType onWriteDone);
-
-    void performIndexRemove(SerialNum serialNum, search::DocumentIdT lid,
-                            bool immediateCommit, OnRemoveDoneType onWriteDone);
-
-    void performIndexRemove(SerialNum serialNum, const LidVector &lidsToRemove,
-                            bool immediateCommit, OnWriteDoneType onWriteDone);
-
+    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const Document &doc, OnOperationDoneType onWriteDone);
+    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &doc, OnOperationDoneType onWriteDone);
+    void performIndexPut(SerialNum serialNum, search::DocumentIdT lid, FutureDoc doc, OnOperationDoneType onWriteDone);
+    void performIndexRemove(SerialNum serialNum, search::DocumentIdT lid, OnRemoveDoneType onWriteDone);
+    void performIndexRemove(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone);
     void performIndexHeartBeat(SerialNum serialNum);
-
 
     void internalDeleteBucket(const DeleteBucketOperation &delOp) override;
     void performSync();
     void heartBeatIndexedFields(SerialNum serialNum) override;
 
-    void putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &newDoc,
-                          bool immediateCommit, OnOperationDoneType onWriteDone) override;
-
-    void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc newDoc,
-                             bool immediateCommit, OnOperationDoneType onWriteDone) override;
-
-    void removeIndexedFields(SerialNum serialNum, search::DocumentIdT lid,
-                             bool immediateCommit, OnRemoveDoneType onWriteDone) override;
-
-    void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove,
-                             bool immediateCommit, OnWriteDoneType onWriteDone) override;
+    void putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &newDoc, OnOperationDoneType onWriteDone) override;
+    void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc newDoc, OnOperationDoneType onWriteDone) override;
+    void removeIndexedFields(SerialNum serialNum, search::DocumentIdT lid, OnRemoveDoneType onWriteDone) override;
+    void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone) override;
 
     void performIndexForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
-    void forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
+    void internalForceCommit(const CommitParam & param, OnForceCommitDoneType onCommitDone) override;
 
 public:
-    SearchableFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx, const PersistentParams &params,
+    SearchableFeedView(StoreOnlyFeedView::Context storeOnlyCtx, const PersistentParams &params,
                        const FastAccessFeedView::Context &fastUpdateCtx, Context ctx);
 
     ~SearchableFeedView() override;

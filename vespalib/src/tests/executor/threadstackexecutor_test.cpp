@@ -2,8 +2,8 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/backtrace.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <atomic>
 
 using namespace vespalib;
@@ -78,10 +78,10 @@ struct MyState {
         EXPECT_EQUAL(expect_rejected, stats.rejectedTasks);
         EXPECT_TRUE(!(gate.getCount() == 1) || (expect_deleted == 0));
         if (expect_deleted == 0) {
-            EXPECT_EQUAL(expect_queue + expect_running, stats.maxPendingTasks);
+            EXPECT_EQUAL(expect_queue + expect_running, stats.queueSize.max());
         }
         stats = executor.getStats();
-        EXPECT_EQUAL(expect_queue + expect_running, stats.maxPendingTasks);
+        EXPECT_EQUAL(expect_queue + expect_running, stats.queueSize.max());
         EXPECT_EQUAL(0u, stats.acceptedTasks);
         EXPECT_EQUAL(0u, stats.rejectedTasks);
         return *this;
@@ -148,9 +148,9 @@ TEST_MT_F("require that threads can wait for a specific task count", 7, WaitStat
             if (next_done < f1.block_task.size()) {
                 f1.block_task[f1.block_task.size() - 1 - next_done].countDown();
             }
-            EXPECT_TRUE(f1.wait_done[next_done].await(25000));
+            EXPECT_TRUE(f1.wait_done[next_done].await(25s));
             for (size_t i = 0; i < next_done; ++i) {
-                EXPECT_TRUE(!f1.wait_done[i].await(20));
+                EXPECT_TRUE(!f1.wait_done[i].await(20ms));
             }
         }
     } else {
@@ -172,18 +172,36 @@ vespalib::string get_worker_stack_trace(ThreadStackExecutor &executor) {
 
 VESPA_THREAD_STACK_TAG(my_stack_tag);
 
-TEST_F("require that executor has appropriate default thread stack tag", ThreadStackExecutor(1, 128*1024)) {
+TEST_F("require that executor has appropriate default thread stack tag", ThreadStackExecutor(1, 128_Ki)) {
     vespalib::string trace = get_worker_stack_trace(f1);
     if (!EXPECT_TRUE(trace.find("unnamed_nonblocking_executor") != vespalib::string::npos)) {
         fprintf(stderr, "%s\n", trace.c_str());
     }
 }
 
-TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(1, 128*1024, my_stack_tag)) {
+TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(1, 128_Ki, my_stack_tag)) {
     vespalib::string trace = get_worker_stack_trace(f1);
     if (!EXPECT_TRUE(trace.find("my_stack_tag") != vespalib::string::npos)) {
         fprintf(stderr, "%s\n", trace.c_str());
     }
+}
+
+TEST("require that stats can be accumulated") {
+    ThreadStackExecutor::Stats stats(ThreadExecutor::Stats::QueueSizeT(1) ,2,3);
+    EXPECT_EQUAL(1u, stats.queueSize.max());
+    EXPECT_EQUAL(2u, stats.acceptedTasks);
+    EXPECT_EQUAL(3u, stats.rejectedTasks);
+    stats += ThreadStackExecutor::Stats(ThreadExecutor::Stats::QueueSizeT(7),8,9);
+    EXPECT_EQUAL(2u, stats.queueSize.count());
+    EXPECT_EQUAL(8u, stats.queueSize.total());
+    EXPECT_EQUAL(8u, stats.queueSize.max());
+    EXPECT_EQUAL(8u, stats.queueSize.min());
+    EXPECT_EQUAL(8u, stats.queueSize.max());
+    EXPECT_EQUAL(4.0, stats.queueSize.average());
+
+    EXPECT_EQUAL(10u, stats.acceptedTasks);
+    EXPECT_EQUAL(12u, stats.rejectedTasks);
+
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

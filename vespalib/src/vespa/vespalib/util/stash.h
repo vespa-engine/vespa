@@ -4,6 +4,7 @@
 
 #include "traits.h"
 #include "arrayref.h"
+#include "memoryusage.h"
 #include <cstdlib>
 
 namespace vespalib {
@@ -14,19 +15,20 @@ struct Cleanup {
     explicit Cleanup(Cleanup *next_in) noexcept : next(next_in) {}
     virtual void cleanup() = 0;
 protected:
-    virtual ~Cleanup() {}
+    virtual ~Cleanup() = default;
 };
 
 // used as header for memory allocated outside the stash
 struct DeleteMemory : public Cleanup {
-    explicit DeleteMemory(Cleanup *next_in) noexcept : Cleanup(next_in) {}
-    virtual void cleanup() override { free((void*)this); }
+    explicit DeleteMemory(size_t sz, Cleanup *next_in) noexcept : Cleanup(next_in), allocated(sz) {}
+    void cleanup() override { free((void*)this); }
+    size_t allocated;
 };
 
 // used as prefix for objects to be destructed
 template<typename T> struct DestructObject : public Cleanup {
     explicit DestructObject(Cleanup *next_in) noexcept : Cleanup(next_in) {}
-    virtual void cleanup() override { reinterpret_cast<T*>(this + 1)->~T(); }
+    void cleanup() override { reinterpret_cast<T*>(this + 1)->~T(); }
 };
 
 // used as prefix for arrays to be destructed
@@ -34,7 +36,7 @@ template<typename T> struct DestructArray : public Cleanup {
     size_t size;
     explicit DestructArray(Cleanup *next_in, size_t size_in) noexcept
         : Cleanup(next_in), size(size_in) {}
-    virtual void cleanup() override {
+    void cleanup() override {
         T *array = reinterpret_cast<T*>(this + 1);
         for (size_t i = size; i-- > 0;) {
             array[i].~T();
@@ -46,7 +48,7 @@ struct Chunk {
     Chunk  *next;
     size_t  used;
     Chunk(const Chunk &) = delete;
-    Chunk(Chunk *next_in) : next(next_in), used(sizeof(Chunk)) {}
+    explicit Chunk(Chunk *next_in) : next(next_in), used(sizeof(Chunk)) {}
     void clear() { used = sizeof(Chunk); }
     char *alloc(size_t size, size_t chunk_size) {
         size_t aligned_size = ((size + (sizeof(char *) - 1))
@@ -124,14 +126,14 @@ public:
     };
 
     typedef std::unique_ptr<Stash> UP;
-    explicit Stash(size_t chunk_size);
-    Stash() : Stash(4096) {}
-    Stash(Stash &&rhs);
+    explicit Stash(size_t chunk_size) noexcept ;
+    Stash() noexcept : Stash(4096) {}
+    Stash(Stash &&rhs) noexcept;
     Stash(const Stash &) = delete;
     Stash & operator = (const Stash &) = delete;
     ~Stash();
 
-    Stash &operator=(Stash &&rhs);
+    Stash &operator=(Stash &&rhs) noexcept;
 
     void clear();
 
@@ -140,6 +142,7 @@ public:
 
     size_t count_used() const;
     size_t get_chunk_size() const { return _chunk_size; }
+    MemoryUsage get_memory_usage() const;
 
     char *alloc(size_t size) {
         char *ret = __builtin_expect(is_small(size) && _chunks != nullptr, true)
@@ -169,6 +172,13 @@ public:
         T *ret = init_array<T, Args...>(mem + sizeof(DeleteHook), size, std::forward<Args>(args)...);
         _cleanup = new (mem) DeleteHook(_cleanup, size);
         return ArrayRef<T>(ret, size);
+    }
+
+    template <typename T>
+    ArrayRef<T> create_uninitialized_array(size_t size) {
+        static_assert(std::is_trivially_copyable_v<T>);
+        static_assert(can_skip_destruction<T>::value);
+        return ArrayRef<T>(reinterpret_cast<T*>(alloc(size * sizeof(T))), size);
     }
 
     template <typename T>

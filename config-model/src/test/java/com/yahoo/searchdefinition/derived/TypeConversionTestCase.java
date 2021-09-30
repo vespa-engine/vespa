@@ -3,14 +3,12 @@ package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.document.DataType;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
+import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.processing.Processing;
-import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
 
@@ -20,12 +18,12 @@ import static org.junit.Assert.assertFalse;
  *
  * @author bratseth
  */
-public class TypeConversionTestCase extends SearchDefinitionTestCase {
+public class TypeConversionTestCase extends SchemaTestCase {
 
     /** Tests that exact-string stuff is not spilled over to the default index */
     @Test
     public void testExactStringToStringTypeConversion() {
-        Search search = new Search("test", null);
+        Search search = new Search("test");
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
         SDDocumentType document = new SDDocumentType("test");
         search.addDocument(document);
@@ -34,7 +32,7 @@ public class TypeConversionTestCase extends SearchDefinitionTestCase {
         document.addField(a);
 
         new Processing().process(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(), true, false);
-        DerivedConfiguration derived = new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry(), new ImportedMlModels());
+        DerivedConfiguration derived = new DerivedConfiguration(search, rankProfileRegistry);
         IndexInfo indexInfo = derived.getIndexInfo();
         assertFalse(indexInfo.hasCommand("default", "compact-to-term"));
     }

@@ -5,6 +5,10 @@ import com.google.inject.Inject;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
+import com.yahoo.jdisc.Metric;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A component which keeps track of whether or not this container instance should receive traffic
@@ -17,12 +21,16 @@ import com.yahoo.container.jdisc.state.StateMonitor;
  */
 public class VipStatus {
 
+    private final Metric metric;
+
     private final ClustersStatus clustersStatus;
 
     private final StateMonitor healthState;
 
     /** If this is non-null, its value decides whether this container is in rotation */
     private Boolean rotationOverride = null;
+
+    private final boolean initiallyInRotation;
 
     /** The current state of this */
     private boolean currentlyInRotation;
@@ -44,20 +52,38 @@ public class VipStatus {
         this(new QrSearchersConfig.Builder().build(), clustersStatus);
     }
 
+    /** For testing */
     public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus) {
-        this(dispatchers, clustersStatus, new StateMonitor());
+        this(dispatchers, new VipStatusConfig.Builder().build(), clustersStatus, StateMonitor.createForTesting());
     }
 
     @Inject
-    public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus, StateMonitor healthState) {
+    public VipStatus(QrSearchersConfig dispatchers,
+                     VipStatusConfig vipStatusConfig,
+                     ClustersStatus clustersStatus,
+                     StateMonitor healthState,
+                     Metric metric) {
         this.clustersStatus = clustersStatus;
         this.healthState = healthState;
-        healthState.status(StateMonitor.Status.initializing);
-        clustersStatus.setContainerHasClusters(! dispatchers.searchcluster().isEmpty());
+        this.metric = metric;
+        initiallyInRotation = vipStatusConfig.initiallyInRotation();
+        clustersStatus.setClusters(dispatchers.searchcluster().stream().map(c -> c.name()).collect(Collectors.toSet()));
         updateCurrentlyInRotation();
     }
 
-    /** @deprecated don't pass VipStatusConfig */
+    @Deprecated // TODO: Remove on Vespa 8
+    public VipStatus(QrSearchersConfig dispatchers,
+                     VipStatusConfig vipStatusConfig,
+                     ClustersStatus clustersStatus,
+                     StateMonitor healthState) {
+        this(dispatchers, vipStatusConfig, clustersStatus, healthState, new NullMetric());
+    }
+
+    @Deprecated // TODO: Remove on Vespa 8
+    public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus, StateMonitor healthState) {
+        this(dispatchers, new VipStatusConfig.Builder().build(), clustersStatus, healthState);
+    }
+
     @Deprecated // TODO: Remove on Vespa 8
     public VipStatus(QrSearchersConfig dispatchers, VipStatusConfig ignored, ClustersStatus clustersStatus) {
         this(dispatchers, clustersStatus);
@@ -107,7 +133,12 @@ public class VipStatus {
             } else {
                 if (healthState.status() == StateMonitor.Status.up) {
                     currentlyInRotation = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ONE);
-                } else {
+                }
+                else if (healthState.status() == StateMonitor.Status.initializing) {
+                    currentlyInRotation = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ALL)
+                                          && initiallyInRotation;
+                }
+                else {
                     currentlyInRotation = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ALL);
                 }
             }
@@ -117,6 +148,8 @@ public class VipStatus {
                 healthState.status(StateMonitor.Status.up);
             else if (healthState.status() == StateMonitor.Status.up)
                 healthState.status(StateMonitor.Status.down);
+
+            metric.set("in_service", currentlyInRotation ? 1 : 0, metric.createContext(Map.of()));
         }
     }
 
@@ -125,6 +158,24 @@ public class VipStatus {
         synchronized (mutex) {
             return currentlyInRotation;
         }
+    }
+
+    private static class NullMetric implements Metric {
+
+        @Override
+        public void set(String key, Number val, Context ctx) { }
+
+        @Override
+        public void add(String key, Number val, Context ctx) { }
+
+        @Override
+        public Context createContext(Map<String, ?> properties) {
+            return new NullContext();
+        }
+
+        private static class NullContext implements Context {
+        }
+
     }
 
 }

@@ -32,6 +32,7 @@ private:
     };
 
     std::mutex                    _lock;
+    bool                          _async;
     bool                          _closed;
     HandlerMap<ISearchHandler>    _handlers;
     vespalib::ThreadStackExecutor _executor;
@@ -49,7 +50,10 @@ public:
      *
      * @param numThreads Number of threads allocated for handling summary requests.
      */
-    SummaryEngine(size_t numThreads);
+    SummaryEngine(size_t numThreads, bool async);
+    SummaryEngine(size_t numThreads)
+        : SummaryEngine(numThreads, true)
+    { }
 
     /**
      * Frees any allocated resources. This will also stop all internal threads
@@ -63,6 +67,11 @@ public:
      * @return executor stats
      **/
     vespalib::ThreadStackExecutor::Stats getExecutorStats() { return _executor.getStats(); }
+
+    /**
+     * Returns the underlying executor. Only used for state explorers.
+     */
+    const vespalib::SyncableThreadExecutor& get_executor() const { return _executor; }
 
     /**
      * Starts the underlying threads. This will throw a vespalib::Exception if

@@ -15,40 +15,35 @@ template <typename MemBlockPtrT, typename ThreadStatT>
 class ThreadListT
 {
 public:
-    typedef ThreadPoolT<MemBlockPtrT, ThreadStatT > ThreadPool;
-    typedef AllocPoolT<MemBlockPtrT> AllocPool;
+    using ThreadPool = ThreadPoolT<MemBlockPtrT, ThreadStatT >;
+    using AllocPool = AllocPoolT<MemBlockPtrT>;
     ThreadListT(AllocPool & pool);
     ~ThreadListT();
-    void setParams(size_t alwayReuseLimit, size_t threadCacheLimit) {
-        ThreadPool::setParams(alwayReuseLimit, threadCacheLimit);
+    void setParams(size_t threadCacheLimit) {
+        ThreadPool::setParams(threadCacheLimit);
     }
     bool quitThisThread();
     bool initThisThread();
     ThreadPool & getCurrent()  { return *_myPool; }
     size_t getThreadId() const { return (_myPool - _threadVector); }
     void enableThreadSupport() {
-        if ( ! _isThreaded ) {
-            _isThreaded = true;
-        }
+        _isThreaded.test_and_set();
     }
 
     void info(FILE * os, size_t level=0);
     size_t getMaxNumThreads() const { return NELEMS(_threadVector); }
 private:
-    size_t getThreadCount()        const { return _threadCount; }
-    size_t getThreadCountAccum()   const { return _threadCountAccum; }
     ThreadListT(const ThreadListT & tl);
     ThreadListT & operator = (const ThreadListT & tl);
-    enum {ThreadStackSize=2048*1024};
-    volatile bool              _isThreaded;
-    std::atomic<size_t>        _threadCount;
-    std::atomic<size_t>        _threadCountAccum;
+    std::atomic_flag           _isThreaded;
+    std::atomic<uint32_t>      _threadCount;
+    std::atomic<uint32_t>      _threadCountAccum;
     ThreadPool                 _threadVector[NUM_THREADS];
     AllocPoolT<MemBlockPtrT> & _allocPool;
-    static __thread ThreadPool * _myPool TLS_LINKAGE;
+    static thread_local ThreadPool * _myPool TLS_LINKAGE;
 };
 
 template <typename MemBlockPtrT, typename ThreadStatT>
-__thread ThreadPoolT<MemBlockPtrT, ThreadStatT> * ThreadListT<MemBlockPtrT, ThreadStatT>::_myPool TLS_LINKAGE = nullptr;
+thread_local ThreadPoolT<MemBlockPtrT, ThreadStatT> * ThreadListT<MemBlockPtrT, ThreadStatT>::_myPool TLS_LINKAGE = nullptr;
 
 }

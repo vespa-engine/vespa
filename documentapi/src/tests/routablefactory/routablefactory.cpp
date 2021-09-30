@@ -6,7 +6,6 @@
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 using document::DocumentTypeRepo;
 using namespace documentapi;
@@ -87,7 +86,6 @@ class TestData {
 
 public:
     mbus::Slobrok                _slobrok;
-    LoadTypeSet                  _loadTypes;
     DocumentProtocol::SP         _srcProtocol;
     mbus::TestServer             _srcServer;
     mbus::SourceSession::UP      _srcSession;
@@ -116,13 +114,12 @@ TEST_APPHOOK(Test);
 TestData::TestData() :
     _repo(std::make_shared<DocumentTypeRepo>()),
     _slobrok(),
-    _loadTypes(),
-    _srcProtocol(std::make_shared<DocumentProtocol>(_loadTypes, _repo)),
+    _srcProtocol(std::make_shared<DocumentProtocol>(_repo)),
     _srcServer(mbus::MessageBusParams().addProtocol(_srcProtocol),
                mbus::RPCNetworkParams(_slobrok.config())),
     _srcSession(),
     _srcHandler(),
-    _dstProtocol(std::make_shared<DocumentProtocol>(_loadTypes, _repo)),
+    _dstProtocol(std::make_shared<DocumentProtocol>(_repo)),
     _dstServer(mbus::MessageBusParams().addProtocol(_dstProtocol),
                mbus::RPCNetworkParams(_slobrok.config()).setIdentity(mbus::Identity("dst"))),
     _dstSession(),

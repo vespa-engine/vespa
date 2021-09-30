@@ -15,8 +15,7 @@
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 /**
  * @class InternalCommand
@@ -33,7 +32,7 @@ class InternalCommand : public StorageCommand {
 
 public:
     InternalCommand(uint32_t type);
-    ~InternalCommand();
+    ~InternalCommand() override;
 
     uint32_t getType() const { return _type; }
 
@@ -55,7 +54,7 @@ class InternalReply : public StorageReply {
 
 public:
     InternalReply(uint32_t type, const InternalCommand& cmd);
-    ~InternalReply();
+    ~InternalReply() override;
 
     uint32_t getType() const { return _type; }
 
@@ -66,6 +65,5 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
-} // api
-} // storage
+}
 

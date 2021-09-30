@@ -12,6 +12,11 @@ public class BooleanFlag extends FlagImpl<Boolean, BooleanFlag> {
         super(id, defaultValue, vector, serializer, source, BooleanFlag::new);
     }
 
+    @Override
+    public BooleanFlag self() {
+        return this;
+    }
+
     public boolean value() {
         return boxedValue();
     }

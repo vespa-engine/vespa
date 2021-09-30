@@ -13,19 +13,27 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
-import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
+import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfoAddress;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
 
 import java.net.URI;
 import java.security.Principal;
 import java.security.PublicKey;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -47,6 +55,9 @@ public class TenantSerializer {
     private static final String athenzDomainField = "athenzDomain";
     private static final String propertyField = "property";
     private static final String propertyIdField = "propertyId";
+    private static final String creatorField = "creator";
+    private static final String createdAtField = "createdAt";
+    private static final String deletedAtField = "deletedAt";
     private static final String contactField = "contact";
     private static final String contactUrlField = "contactUrl";
     private static final String propertyUrlField = "propertyUrl";
@@ -59,18 +70,26 @@ public class TenantSerializer {
     private static final String customerIdField = "customerId";
     private static final String productCodeField = "productCode";
     private static final String pemDeveloperKeysField = "pemDeveloperKeys";
+    private static final String tenantInfoField = "info";
+    private static final String lastLoginInfoField = "lastLoginInfo";
+    private static final String secretStoresField = "secretStores";
+    private static final String archiveAccessRoleField = "archiveAccessRole";
+    private static final String awsIdField = "awsId";
+    private static final String roleField = "role";
 
     public Slime toSlime(Tenant tenant) {
         Slime slime = new Slime();
         Cursor tenantObject = slime.setObject();
         tenantObject.setString(nameField, tenant.name().value());
         tenantObject.setString(typeField, valueOf(tenant.type()));
+        tenantObject.setLong(createdAtField, tenant.createdAt().toEpochMilli());
+        toSlime(tenant.lastLoginInfo(), tenantObject.setObject(lastLoginInfoField));
 
         switch (tenant.type()) {
-            case athenz: toSlime((AthenzTenant) tenant, tenantObject); break;
-            case user:   toSlime((UserTenant) tenant, tenantObject);   break;
-            case cloud:  toSlime((CloudTenant) tenant, tenantObject);  break;
-            default:     throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
+            case athenz:  toSlime((AthenzTenant) tenant, tenantObject); break;
+            case cloud:   toSlime((CloudTenant) tenant, tenantObject);  break;
+            case deleted: toSlime((DeletedTenant) tenant, tenantObject);  break;
+            default:      throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
         return slime;
     }
@@ -85,16 +104,21 @@ public class TenantSerializer {
         });
     }
 
-    private void toSlime(UserTenant tenant, Cursor tenantObject) {
-        tenant.contact().ifPresent(contact -> {
-            Cursor contactCursor = tenantObject.setObject(contactField);
-            writeContact(contact, contactCursor);
-        });
+    private void toSlime(CloudTenant tenant, Cursor root) {
+        // BillingInfo was never used and always just a static default value.  To retire this
+        // field we continue to write the default value and stop reading it.
+        // TODO(ogronnesby, 2020-08-05): Remove when a version where we do not read the field has propagated.
+        var legacyBillingInfo = new BillingInfo("customer", "Vespa");
+        tenant.creator().ifPresent(creator -> root.setString(creatorField, creator.getName()));
+        developerKeysToSlime(tenant.developerKeys(), root.setArray(pemDeveloperKeysField));
+        toSlime(legacyBillingInfo, root.setObject(billingInfoField));
+        toSlime(tenant.info(), root);
+        toSlime(tenant.tenantSecretStores(), root);
+        tenant.archiveAccessRole().ifPresent(role -> root.setString(archiveAccessRoleField, role));
     }
 
-    private void toSlime(CloudTenant tenant, Cursor root) {
-        developerKeysToSlime(tenant.developerKeys(), root.setArray(pemDeveloperKeysField));
-        toSlime(tenant.billingInfo(), root.setObject(billingInfoField));
+    private void toSlime(DeletedTenant tenant, Cursor root) {
+        root.setLong(deletedAtField, tenant.deletedAt().toEpochMilli());
     }
 
     private void developerKeysToSlime(BiMap<PublicKey, Principal> keys, Cursor array) {
@@ -110,16 +134,22 @@ public class TenantSerializer {
         billingInfoObject.setString(productCodeField, billingInfo.productCode());
     }
 
+    private void toSlime(LastLoginInfo lastLoginInfo, Cursor lastLoginInfoObject) {
+        for (LastLoginInfo.UserLevel userLevel: LastLoginInfo.UserLevel.values()) {
+            lastLoginInfo.get(userLevel).ifPresent(lastLoginAt ->
+                    lastLoginInfoObject.setLong(valueOf(userLevel), lastLoginAt.toEpochMilli()));
+        }
+    }
+
     public Tenant tenantFrom(Slime slime) {
         Inspector tenantObject = slime.get();
-        Tenant.Type type;
-        type = typeOf(tenantObject.field(typeField).asString());
+        Tenant.Type type = typeOf(tenantObject.field(typeField).asString());
 
         switch (type) {
-            case athenz: return athenzTenantFrom(tenantObject);
-            case user:   return userTenantFrom(tenantObject);
-            case cloud:  return cloudTenantFrom(tenantObject);
-            default:     throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
+            case athenz:  return athenzTenantFrom(tenantObject);
+            case cloud:   return cloudTenantFrom(tenantObject);
+            case deleted: return deletedTenantFrom(tenantObject);
+            default:      throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
         }
     }
 
@@ -129,20 +159,28 @@ public class TenantSerializer {
         Property property = new Property(tenantObject.field(propertyField).asString());
         Optional<PropertyId> propertyId = SlimeUtils.optionalString(tenantObject.field(propertyIdField)).map(PropertyId::new);
         Optional<Contact> contact = contactFrom(tenantObject.field(contactField));
-        return new AthenzTenant(name, domain, property, propertyId, contact);
-    }
-
-    private UserTenant userTenantFrom(Inspector tenantObject) {
-        TenantName name = TenantName.from(tenantObject.field(nameField).asString());
-        Optional<Contact> contact = contactFrom(tenantObject.field(contactField));
-        return new UserTenant(name, contact);
+        Instant createdAt = SlimeUtils.instant(tenantObject.field(createdAtField));
+        LastLoginInfo lastLoginInfo = lastLoginInfoFromSlime(tenantObject.field(lastLoginInfoField));
+        return new AthenzTenant(name, domain, property, propertyId, contact, createdAt, lastLoginInfo);
     }
 
     private CloudTenant cloudTenantFrom(Inspector tenantObject) {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
-        BillingInfo billingInfo = billingInfoFrom(tenantObject.field(billingInfoField));
+        Instant createdAt = SlimeUtils.instant(tenantObject.field(createdAtField));
+        LastLoginInfo lastLoginInfo = lastLoginInfoFromSlime(tenantObject.field(lastLoginInfoField));
+        Optional<Principal> creator = SlimeUtils.optionalString(tenantObject.field(creatorField)).map(SimplePrincipal::new);
         BiMap<PublicKey, Principal> developerKeys = developerKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
-        return new CloudTenant(name, billingInfo, developerKeys);
+        TenantInfo info = tenantInfoFromSlime(tenantObject.field(tenantInfoField));
+        List<TenantSecretStore> tenantSecretStores = secretStoresFromSlime(tenantObject.field(secretStoresField));
+        Optional<String> archiveAccessRole = SlimeUtils.optionalString(tenantObject.field(archiveAccessRoleField));
+        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccessRole);
+    }
+
+    private DeletedTenant deletedTenantFrom(Inspector tenantObject) {
+        TenantName name = TenantName.from(tenantObject.field(nameField).asString());
+        Instant createdAt = SlimeUtils.instant(tenantObject.field(createdAtField));
+        Instant deletedAt = SlimeUtils.instant(tenantObject.field(deletedAtField));
+        return new DeletedTenant(name, createdAt, deletedAt);
     }
 
     private BiMap<PublicKey, Principal> developerKeysFromSlime(Inspector array) {
@@ -152,6 +190,107 @@ public class TenantSerializer {
                          new SimplePrincipal(keyObject.field("user").asString())));
 
         return keys.build();
+    }
+
+    TenantInfo tenantInfoFromSlime(Inspector infoObject) {
+        if (!infoObject.valid()) return TenantInfo.EMPTY;
+
+        return TenantInfo.EMPTY
+                .withName(infoObject.field("name").asString())
+                .withEmail(infoObject.field("email").asString())
+                .withWebsite(infoObject.field("website").asString())
+                .withContactName(infoObject.field("contactName").asString())
+                .withContactEmail(infoObject.field("contactEmail").asString())
+                .withInvoiceEmail(infoObject.field("invoiceEmail").asString())
+                .withAddress(tenantInfoAddressFromSlime(infoObject.field("address")))
+                .withBillingContact(tenantInfoBillingContactFromSlime(infoObject.field("billingContact")));
+    }
+
+    private TenantInfoAddress tenantInfoAddressFromSlime(Inspector addressObject) {
+        return TenantInfoAddress.EMPTY
+                .withAddressLines(addressObject.field("addressLines").asString())
+                .withPostalCodeOrZip(addressObject.field("postalCodeOrZip").asString())
+                .withCity(addressObject.field("city").asString())
+                .withStateRegionProvince(addressObject.field("stateRegionProvince").asString())
+                .withCountry(addressObject.field("country").asString());
+    }
+
+    private TenantInfoBillingContact tenantInfoBillingContactFromSlime(Inspector billingObject) {
+        return TenantInfoBillingContact.EMPTY
+                .withName(billingObject.field("name").asString())
+                .withEmail(billingObject.field("email").asString())
+                .withPhone(billingObject.field("phone").asString())
+                .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")));
+    }
+
+    private List<TenantSecretStore> secretStoresFromSlime(Inspector secretStoresObject) {
+        List<TenantSecretStore> secretStores = new ArrayList<>();
+        if (!secretStoresObject.valid()) return secretStores;
+
+        secretStoresObject.traverse((ArrayTraverser) (index, inspector) -> {
+            secretStores.add(
+                    new TenantSecretStore(
+                            inspector.field(nameField).asString(),
+                            inspector.field(awsIdField).asString(),
+                            inspector.field(roleField).asString()
+                    )
+            );
+        });
+        return secretStores;
+    }
+
+    private LastLoginInfo lastLoginInfoFromSlime(Inspector lastLoginInfoObject) {
+        Map<LastLoginInfo.UserLevel, Instant> lastLoginByUserLevel = new HashMap<>();
+        lastLoginInfoObject.traverse((String name, Inspector value) ->
+                lastLoginByUserLevel.put(userLevelOf(name), SlimeUtils.instant(value)));
+        return new LastLoginInfo(lastLoginByUserLevel);
+    }
+
+    void toSlime(TenantInfo info, Cursor parentCursor) {
+        if (info.isEmpty()) return;
+        Cursor infoCursor = parentCursor.setObject("info");
+        infoCursor.setString("name", info.name());
+        infoCursor.setString("email", info.email());
+        infoCursor.setString("website", info.website());
+        infoCursor.setString("invoiceEmail", info.invoiceEmail());
+        infoCursor.setString("contactName", info.contactName());
+        infoCursor.setString("contactEmail", info.contactEmail());
+        toSlime(info.address(), infoCursor);
+        toSlime(info.billingContact(), infoCursor);
+    }
+
+    private void toSlime(TenantInfoAddress address, Cursor parentCursor) {
+        if (address.isEmpty()) return;
+
+        Cursor addressCursor = parentCursor.setObject("address");
+        addressCursor.setString("addressLines", address.addressLines());
+        addressCursor.setString("postalCodeOrZip", address.postalCodeOrZip());
+        addressCursor.setString("city", address.city());
+        addressCursor.setString("stateRegionProvince", address.stateRegionProvince());
+        addressCursor.setString("country", address.country());
+    }
+
+    private void toSlime(TenantInfoBillingContact billingContact, Cursor parentCursor) {
+        if (billingContact.isEmpty()) return;
+
+        Cursor addressCursor = parentCursor.setObject("billingContact");
+        addressCursor.setString("name", billingContact.name());
+        addressCursor.setString("email", billingContact.email());
+        addressCursor.setString("phone", billingContact.phone());
+        toSlime(billingContact.address(), addressCursor);
+    }
+
+    private void toSlime(List<TenantSecretStore> tenantSecretStores, Cursor parentCursor) {
+        if (tenantSecretStores.isEmpty()) return;
+
+        Cursor secretStoresCursor = parentCursor.setArray(secretStoresField);
+        tenantSecretStores.forEach(tenantSecretStore -> {
+            Cursor secretStoreCursor = secretStoresCursor.addObject();
+            secretStoreCursor.setString(nameField, tenantSecretStore.getName());
+            secretStoreCursor.setString(awsIdField, tenantSecretStore.getAwsId());
+            secretStoreCursor.setString(roleField, tenantSecretStore.getRole());
+        });
+
     }
 
     private Optional<Contact> contactFrom(Inspector object) {
@@ -197,27 +336,39 @@ public class TenantSerializer {
         return personLists;
     }
 
-    private BillingInfo billingInfoFrom(Inspector billingInfoObject) {
-        return new BillingInfo(billingInfoObject.field(customerIdField).asString(),
-                               billingInfoObject.field(productCodeField).asString());
-    }
-
     private static Tenant.Type typeOf(String value) {
         switch (value) {
-            case "athenz": return Tenant.Type.athenz;
-            case "user":   return Tenant.Type.user;
-            case "cloud":  return Tenant.Type.cloud;
+            case "athenz":  return Tenant.Type.athenz;
+            case "cloud":   return Tenant.Type.cloud;
+            case "deleted": return Tenant.Type.deleted;
             default: throw new IllegalArgumentException("Unknown tenant type '" + value + "'.");
         }
     }
 
     private static String valueOf(Tenant.Type type) {
         switch (type) {
-            case athenz: return "athenz";
-            case user:   return "user";
-            case cloud:  return "cloud";
+            case athenz:  return "athenz";
+            case cloud:   return "cloud";
+            case deleted: return "deleted";
             default: throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
         }
     }
 
+    private static LastLoginInfo.UserLevel userLevelOf(String value) {
+        switch (value) {
+            case "user": return LastLoginInfo.UserLevel.user;
+            case "developer": return LastLoginInfo.UserLevel.developer;
+            case "administrator": return LastLoginInfo.UserLevel.administrator;
+            default: throw new IllegalArgumentException("Unknown user level '" + value + "'.");
+        }
+    }
+
+    private static String valueOf(LastLoginInfo.UserLevel userLevel) {
+        switch (userLevel) {
+            case user: return "user";
+            case developer: return "developer";
+            case administrator: return "administrator";
+            default: throw new IllegalArgumentException("Unexpected user level '" + userLevel + "'.");
+        }
+    }
 }

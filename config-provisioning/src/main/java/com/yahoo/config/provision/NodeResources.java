@@ -2,6 +2,7 @@
 package com.yahoo.config.provision;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * The node resources required by an application cluster
@@ -9,6 +10,13 @@ import java.util.Objects;
  * @author bratseth
  */
 public class NodeResources {
+
+    // Standard unit cost in dollars per hour
+    private static final double cpuUnitCost =    0.09;
+    private static final double memoryUnitCost = 0.009;
+    private static final double diskUnitCost =   0.0003;
+
+    private static final NodeResources zero = new NodeResources(0, 0, 0, 0);
 
     public enum DiskSpeed {
 
@@ -96,10 +104,10 @@ public class NodeResources {
     }
 
     public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed, StorageType storageType) {
-        this.vcpu = vcpu;
-        this.memoryGb = memoryGb;
-        this.diskGb = diskGb;
-        this.bandwidthGbps = bandwidthGbps;
+        this.vcpu = validate(vcpu, "vcpu");
+        this.memoryGb = validate(memoryGb, "memory");
+        this.diskGb = validate(diskGb, "disk");
+        this.bandwidthGbps = validate(bandwidthGbps, "bandwith");
         this.diskSpeed = diskSpeed;
         this.storageType = storageType;
     }
@@ -111,38 +119,49 @@ public class NodeResources {
     public DiskSpeed diskSpeed() { return diskSpeed; }
     public StorageType storageType() { return storageType; }
 
+    /** Returns the standard cost of these resources, in dollars per hour */
+    public double cost() {
+        return vcpu * cpuUnitCost + memoryGb * memoryUnitCost + diskGb * diskUnitCost;
+    }
+
     public NodeResources withVcpu(double vcpu) {
+        if (vcpu == this.vcpu) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withMemoryGb(double memoryGb) {
+        if (memoryGb == this.memoryGb) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withDiskGb(double diskGb) {
+        if (diskGb == this.diskGb) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withBandwidthGbps(double bandwidthGbps) {
+        if (bandwidthGbps == this.bandwidthGbps) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
-    // TODO: Remove after November 2019
-    public NodeResources withDiskSpeed(DiskSpeed speed) {
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, speed, storageType);
-    }
-
-    public NodeResources with(DiskSpeed speed) {
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, speed, storageType);
+    public NodeResources with(DiskSpeed diskSpeed) {
+        if (diskSpeed == this.diskSpeed) return this;
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources with(StorageType storageType) {
+        if (storageType == this.storageType) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     /** Returns this with disk speed and storage type set to any */
     public NodeResources justNumbers() {
         return with(NodeResources.DiskSpeed.any).with(StorageType.any);
+    }
+
+    /** Returns this with all numbers set to 0 */
+    public NodeResources justNonNumbers() {
+        return withVcpu(0).withMemoryGb(0).withDiskGb(0).withBandwidthGbps(0);
     }
 
     public NodeResources subtract(NodeResources other) {
@@ -180,10 +199,10 @@ public class NodeResources {
         if (o == this) return true;
         if ( ! (o instanceof NodeResources)) return false;
         NodeResources other = (NodeResources)o;
-        if (this.vcpu != other.vcpu) return false;
-        if (this.memoryGb != other.memoryGb) return false;
-        if (this.diskGb != other.diskGb) return false;
-        if (this.bandwidthGbps != other.bandwidthGbps) return false;
+        if ( ! equal(this.vcpu, other.vcpu)) return false;
+        if ( ! equal(this.memoryGb, other.memoryGb)) return false;
+        if ( ! equal(this.diskGb, other.diskGb)) return false;
+        if ( ! equal(this.bandwidthGbps, other.bandwidthGbps)) return false;
         if (this.diskSpeed != other.diskSpeed) return false;
         if (this.storageType != other.storageType) return false;
         return true;
@@ -194,12 +213,37 @@ public class NodeResources {
         return Objects.hash(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
+    private static StringBuilder appendDouble(StringBuilder sb, double d) {
+        long x10 = Math.round(d * 10);
+        sb.append(x10 / 10).append('.').append(x10 % 10);
+        return sb;
+    }
+
     @Override
     public String toString() {
-        return "[vcpu: " + vcpu + ", memory: " + memoryGb + " Gb, disk " + diskGb + " Gb" +
-               (bandwidthGbps > 0 ? ", bandwidth: " + bandwidthGbps + " Gbps" : "") +
-               ( ! diskSpeed.isDefault() ? ", disk speed: " + diskSpeed : "") +
-               ( ! storageType.isDefault() ? ", storage type: " + storageType : "") + "]";
+        if (isUnspecified())
+            return "unspecified resources";
+
+        StringBuilder sb = new StringBuilder("[vcpu: ");
+        appendDouble(sb, vcpu);
+        sb.append(", memory: ");
+        appendDouble(sb, memoryGb);
+        sb.append(" Gb, disk ");
+        appendDouble(sb, diskGb);
+        sb.append(" Gb");
+        if (bandwidthGbps > 0) {
+            sb.append(", bandwidth: ");
+            appendDouble(sb, bandwidthGbps);
+            sb.append(" Gbps");
+        }
+        if ( !diskSpeed.isDefault()) {
+            sb.append(", disk speed: ").append(diskSpeed);
+        }
+        if ( !storageType.isDefault()) {
+            sb.append(", storage type: ").append(storageType);
+        }
+        sb.append(']');
+        return sb.toString();
     }
 
     /** Returns true if all the resources of this are the same or larger than the given resources */
@@ -222,14 +266,38 @@ public class NodeResources {
 
     /** Returns true if all the resources of this are the same as or compatible with the given resources */
     public boolean compatibleWith(NodeResources other) {
-        if (this.vcpu != other.vcpu) return false;
-        if (this.memoryGb != other.memoryGb) return false;
-        if (this.diskGb != other.diskGb) return false;
-        if (this.bandwidthGbps != other.bandwidthGbps) return false;
+        if ( ! equal(this.vcpu, other.vcpu)) return false;
+        if ( ! equal(this.memoryGb, other.memoryGb)) return false;
+        if ( ! equal(this.diskGb, other.diskGb)) return false;
+        if ( ! equal(this.bandwidthGbps, other.bandwidthGbps)) return false;
         if ( ! this.diskSpeed.compatibleWith(other.diskSpeed)) return false;
         if ( ! this.storageType.compatibleWith(other.storageType)) return false;
 
         return true;
+    }
+
+    public static NodeResources unspecified() { return zero; }
+
+    public boolean isUnspecified() { return this.equals(zero); }
+
+    // Returns squared euclidean distance of the relevant numerical values of two node resources
+    public double distanceTo(NodeResources other) {
+        if ( ! this.diskSpeed().compatibleWith(other.diskSpeed())) return Double.MAX_VALUE;
+        if ( ! this.storageType().compatibleWith(other.storageType())) return Double.MAX_VALUE;
+
+        double distance =  Math.pow(this.vcpu() - other.vcpu(), 2) + Math.pow(this.memoryGb() - other.memoryGb(), 2);
+        if (this.storageType() == StorageType.local || other.storageType() == StorageType.local)
+            distance += Math.pow(this.diskGb() - other.diskGb(), 2);
+        return distance;
+    }
+
+    /** Returns this.isUnspecified() ? Optional.empty() : Optional.of(this) */
+    public Optional<NodeResources> asOptional() {
+        return this.isUnspecified() ? Optional.empty() : Optional.of(this);
+    }
+
+    private boolean equal(double a, double b) {
+        return Math.abs(a - b) < 0.00000001;
     }
 
     /**
@@ -252,5 +320,13 @@ public class NodeResources {
         if (cpu == 2 && mem == 12 ) cpu = 2.3;
         return new NodeResources(cpu, mem, dsk, 0.3, DiskSpeed.getDefault(), StorageType.getDefault());
     }
+
+    private double validate(double value, String  valueName) {
+        if (Double.isNaN(value)) throw new IllegalArgumentException(valueName + " cannot be NaN");
+        if (Double.isInfinite(value)) throw new IllegalArgumentException(valueName + " cannot be infinite");
+        return value;
+    }
+
+    public static NodeResources zero() { return zero; }
 
 }

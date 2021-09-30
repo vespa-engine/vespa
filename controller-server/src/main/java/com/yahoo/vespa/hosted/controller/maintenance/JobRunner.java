@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.log.LogLevel;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner;
@@ -18,6 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -25,7 +26,7 @@ import java.util.logging.Logger;
  *
  * @author jonmv
  */
-public class JobRunner extends Maintainer {
+public class JobRunner extends ControllerMaintainer {
 
     public static final Duration jobTimeout = Duration.ofDays(1).plusHours(1);
     private static final Logger log = Logger.getLogger(JobRunner.class.getName());
@@ -34,14 +35,13 @@ public class JobRunner extends Maintainer {
     private final ExecutorService executors;
     private final StepRunner runner;
 
-    public JobRunner(Controller controller, Duration duration, JobControl jobControl) {
-        this(controller, duration, jobControl, Executors.newFixedThreadPool(32), new InternalStepRunner(controller));
+    public JobRunner(Controller controller, Duration duration) {
+        this(controller, duration, Executors.newFixedThreadPool(32, new DaemonThreadFactory("job-runner-")), new InternalStepRunner(controller));
     }
 
     @TestOnly
-    public JobRunner(Controller controller, Duration duration, JobControl jobControl, ExecutorService executors,
-                     StepRunner runner) {
-        super(controller, duration, jobControl);
+    public JobRunner(Controller controller, Duration duration, ExecutorService executors, StepRunner runner) {
+        super(controller, duration);
         this.jobs = controller.jobController();
         this.jobs.setRunner(this::advance);
         this.executors = executors;
@@ -49,19 +49,30 @@ public class JobRunner extends Maintainer {
     }
 
     @Override
-    protected void maintain() {
+    protected double maintain() {
         jobs.active().forEach(this::advance);
         jobs.collectGarbage();
+        return 1.0;
     }
 
     @Override
-    public void deconstruct() {
-        super.deconstruct();
+    public void shutdown() {
+        super.shutdown();
         executors.shutdown();
+    }
+
+    @Override
+    public void awaitShutdown() {
+        super.awaitShutdown();
         try {
-            executors.awaitTermination(50, TimeUnit.SECONDS);
+            if ( ! executors.awaitTermination(10, TimeUnit.SECONDS)) {
+                executors.shutdownNow();
+                if ( ! executors.awaitTermination(40, TimeUnit.SECONDS))
+                    throw new IllegalStateException("Failed shutting down " + JobRunner.class.getName());
+            }
         }
         catch (InterruptedException e) {
+            log.log(Level.WARNING, "Interrupted during shutdown of " + JobRunner.class.getName(), e);
             Thread.currentThread().interrupt();
         }
     }
@@ -69,10 +80,12 @@ public class JobRunner extends Maintainer {
     /** Advances each of the ready steps for the given run, or marks it as finished, and stashes it. Public for testing. */
     public void advance(Run run) {
         if (   ! run.hasFailed()
-            &&   run.start().isBefore(controller().clock().instant().minus(jobTimeout))) {
-            jobs.abort(run.id());
-            advance(jobs.run(run.id()).get());
-        }
+            &&   controller().clock().instant().isAfter(run.start().plus(jobTimeout)))
+            executors.execute(() -> {
+                jobs.abort(run.id());
+                advance(jobs.run(run.id()).get());
+            });
+
         else if (run.readySteps().isEmpty())
             executors.execute(() -> finish(run.id()));
         else
@@ -85,8 +98,11 @@ public class JobRunner extends Maintainer {
             controller().jobController().run(id)
                         .ifPresent(run -> controller().applications().deploymentTrigger().notifyOfCompletion(id.application()));
         }
+        catch (TimeoutException e) {
+            // One of the steps are still being run — that's ok, we'll try to finish the run again later.
+        }
         catch (Exception e) {
-            log.log(LogLevel.WARNING, "Exception finishing " + id, e);
+            log.log(Level.WARNING, "Exception finishing " + id, e);
         }
     }
 
@@ -97,8 +113,10 @@ public class JobRunner extends Maintainer {
             jobs.locked(id.application(), id.type(), step, lockedStep -> {
                 jobs.locked(id, run -> run); // Memory visibility.
                 jobs.active(id).ifPresent(run -> { // The run may have become inactive, so we bail out.
-                    if ( ! run.readySteps().contains(step))
+                    if ( ! run.readySteps().contains(step)) {
+                        changed.set(true);
                         return; // Someone may have updated the run status, making this step obsolete, so we bail out.
+                    }
 
                     StepInfo stepInfo = run.stepInfo(lockedStep.get()).orElseThrow();
                     if (stepInfo.startTime().isEmpty()) {
@@ -118,7 +136,7 @@ public class JobRunner extends Maintainer {
             // Something else is already advancing this step, or a prerequisite -- try again later!
         }
         catch (RuntimeException e) {
-            log.log(LogLevel.WARNING, "Exception attempting to advance " + step + " of " + id, e);
+            log.log(Level.WARNING, "Exception attempting to advance " + step + " of " + id, e);
         }
     }
 

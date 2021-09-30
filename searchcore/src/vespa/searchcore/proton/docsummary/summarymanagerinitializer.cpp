@@ -43,7 +43,7 @@ SummaryManagerInitializer::run()
     *_result = std::make_shared<SummaryManager>
                (_summaryExecutor, _storeCfg, _grow, _baseDir, _docTypeName,
                 _tuneFile, _fileHeaderContext, _tlSyncer, _bucketizer);
-    EventLogger::loadDocumentStoreComplete(_subDbName, vespalib::count_ms(timer.elapsed()));
+    EventLogger::loadDocumentStoreComplete(_subDbName, timer.elapsed());
 }
 
 } // namespace proton

@@ -74,4 +74,5 @@ public final class FilterConfigProvider implements Provider<FilterConfig> {
 
     @Override
     public void deconstruct() {}
+
 }

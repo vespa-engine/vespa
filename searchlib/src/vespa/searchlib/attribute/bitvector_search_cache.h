@@ -8,11 +8,8 @@
 #include <memory>
 #include <mutex>
 
-namespace search {
-
-class BitVector;
-
-namespace attribute {
+namespace search { class BitVector; }
+namespace search::attribute {
 
 /**
  * Class that caches posting lists (as bit vectors) for a set of search terms.
@@ -31,7 +28,7 @@ public:
         ReadGuardUP dmsReadGuard;
         BitVectorSP bitVector;
         uint32_t docIdLimit;
-        Entry(ReadGuardUP dmsReadGuard_, BitVectorSP bitVector_, uint32_t docIdLimit_)
+        Entry(ReadGuardUP dmsReadGuard_, BitVectorSP bitVector_, uint32_t docIdLimit_) noexcept
             : dmsReadGuard(std::move(dmsReadGuard_)), bitVector(std::move(bitVector_)), docIdLimit(docIdLimit_) {}
     };
 
@@ -51,5 +48,4 @@ public:
     void clear();
 };
 
-}
 }

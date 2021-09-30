@@ -6,6 +6,9 @@ import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.component.Version;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
@@ -55,23 +58,23 @@ public class MockApplicationPackage implements ApplicationPackage {
     private final File root;
     private final String hostsS;
     private final String servicesS;
-    private final List<String> searchDefinitions;
-    private final String searchDefinitionDir;
+    private final List<String> schemas;
+    private final String schemaDir;
     private final Optional<String> deploymentSpec;
     private final Optional<String> validationOverrides;
     private final boolean failOnValidateXml;
     private final QueryProfileRegistry queryProfileRegistry;
     private final ApplicationMetaData applicationMetaData;
 
-    protected MockApplicationPackage(File root, String hosts, String services, List<String> searchDefinitions,
-                                     String searchDefinitionDir,
+    protected MockApplicationPackage(File root, String hosts, String services, List<String> schemas,
+                                     String schemaDir,
                                      String deploymentSpec, String validationOverrides, boolean failOnValidateXml,
                                      String queryProfile, String queryProfileType) {
         this.root = root;
         this.hostsS = hosts;
         this.servicesS = services;
-        this.searchDefinitions = searchDefinitions;
-        this.searchDefinitionDir = searchDefinitionDir;
+        this.schemas = schemas;
+        this.schemaDir = schemaDir;
         this.deploymentSpec = Optional.ofNullable(deploymentSpec);
         this.validationOverrides = Optional.ofNullable(validationOverrides);
         this.failOnValidateXml = failOnValidateXml;
@@ -108,17 +111,20 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     @Override
     public Reader getHosts() {
-        if (hostsS==null) return null;
+        if (hostsS == null) return null;
         return new StringReader(hostsS);
     }
 
     @Override
-    public List<NamedReader> getSearchDefinitions() {
+    public List<NamedReader> getSchemas() {
         ArrayList<NamedReader> readers = new ArrayList<>();
         SearchBuilder searchBuilder = new SearchBuilder(this,
+                                                        new MockFileRegistry(),
+                                                        new BaseDeployLogger(),
+                                                        new TestProperties(),
                                                         new RankProfileRegistry(),
                                                         queryProfileRegistry);
-        for (String sd : searchDefinitions) {
+        for (String sd : schemas) {
             try  {
                 String name = searchBuilder.importString(sd);
                 readers.add(new NamedReader(name + ApplicationPackage.SD_NAME_SUFFIX, new StringReader(sd)));
@@ -130,17 +136,12 @@ public class MockApplicationPackage implements ApplicationPackage {
     }
 
     @Override
-    public List<NamedReader> searchDefinitionContents() {
-        return new ArrayList<>();
-    }
-
-    @Override
     public Map<ConfigDefinitionKey, UnparsedConfigDefinition> getAllExistingConfigDefs() {
         return Collections.emptyMap();
     }
 
     @Override
-    public List<NamedReader> getFiles(Path dir,String fileSuffix,boolean recurse) {
+    public List<NamedReader> getFiles(Path dir, String fileSuffix, boolean recurse) {
         return new ArrayList<>();
     }
 
@@ -184,7 +185,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     @Override
     public Reader getRankingExpression(String name) {
-        File expressionFile = new File(searchDefinitionDir, name);
+        File expressionFile = new File(schemaDir, name);
         try {
             return IOUtils.createReader(expressionFile, "utf-8");
         }
@@ -200,9 +201,9 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     public static ApplicationPackage fromSearchDefinitionDirectory(String dir) {
         return new MockApplicationPackage.Builder()
-                .withEmptyHosts()
-                .withEmptyServices()
-                .withSearchDefinitionDir(dir).build();
+                       .withEmptyHosts()
+                       .withEmptyServices()
+                       .withSchemaDir(dir).build();
     }
 
     public static class Builder {
@@ -210,8 +211,8 @@ public class MockApplicationPackage implements ApplicationPackage {
         private File root = new File("nonexisting");
         private String hosts = null;
         private String services = null;
-        private List<String> searchDefinitions = Collections.emptyList();
-        private String searchDefinitionDir = null;
+        private List<String> schemas = Collections.emptyList();
+        private String schemaDir = null;
         private String deploymentSpec = null;
         private String validationOverrides = null;
         private boolean failOnValidateXml = false;
@@ -245,17 +246,17 @@ public class MockApplicationPackage implements ApplicationPackage {
         }
 
         public Builder withSearchDefinition(String searchDefinition) {
-            this.searchDefinitions = Collections.singletonList(searchDefinition);
+            this.schemas = Collections.singletonList(searchDefinition);
             return this;
         }
 
-        public Builder withSearchDefinitions(List<String> searchDefinition) {
-            this.searchDefinitions = Collections.unmodifiableList(searchDefinition);
+        public Builder withSchemas(List<String> searchDefinition) {
+            this.schemas = Collections.unmodifiableList(searchDefinition);
             return this;
         }
 
-        public Builder withSearchDefinitionDir(String searchDefinitionDir) {
-            this.searchDefinitionDir = searchDefinitionDir;
+        public Builder withSchemaDir(String schemaDir) {
+            this.schemaDir = schemaDir;
             return this;
         }
 
@@ -285,7 +286,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         }
 
         public ApplicationPackage build() {
-                return new MockApplicationPackage(root, hosts, services, searchDefinitions, searchDefinitionDir,
+                return new MockApplicationPackage(root, hosts, services, schemas, schemaDir,
                                                   deploymentSpec, validationOverrides, failOnValidateXml,
                                                   queryProfile, queryProfileType);
         }

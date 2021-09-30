@@ -38,9 +38,9 @@ public class AddFunction extends FunctionNode {
     /**
      * Constructs a new instance of this class from a list of arguments.
      *
-     * @param args The arguments to pass to the constructor.
-     * @return The created instance.
-     * @throws IllegalArgumentException Thrown if the number of arguments is less than 2.
+     * @param args the arguments to pass to the constructor.
+     * @return the created instance.
+     * @throws IllegalArgumentException thrown if the number of arguments is less than 2.
      */
     public static AddFunction newInstance(List<GroupingExpression> args) {
         if (args.size() < 2) {

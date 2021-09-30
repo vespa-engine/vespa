@@ -399,6 +399,8 @@
       "public com.yahoo.document.DocumentId getId()",
       "public void <init>(com.yahoo.document.DocumentPut)",
       "public void <init>(com.yahoo.document.DocumentPut, com.yahoo.document.Document)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public java.lang.String toString()"
     ],
     "fields": []
@@ -426,7 +428,9 @@
     ],
     "methods": [
       "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, com.yahoo.document.StructDataType)",
       "public void <init>(java.lang.String, com.yahoo.document.StructDataType, com.yahoo.document.StructDataType)",
+      "public void <init>(java.lang.String, com.yahoo.document.StructDataType, java.util.Set)",
       "public void <init>(java.lang.String, com.yahoo.document.StructDataType, com.yahoo.document.StructDataType, java.util.Set)",
       "public void <init>(java.lang.String, java.util.Set)",
       "public com.yahoo.document.DocumentType clone()",
@@ -435,7 +439,6 @@
       "public boolean isValueCompatible(com.yahoo.document.datatypes.FieldValue)",
       "public com.yahoo.document.StructDataType contentStruct()",
       "public com.yahoo.document.StructDataType getHeaderType()",
-      "public com.yahoo.document.StructDataType getBodyType()",
       "protected void register(com.yahoo.document.DocumentTypeManager, java.util.List)",
       "public boolean isA(java.lang.String)",
       "public void addField(com.yahoo.document.Field)",
@@ -549,6 +552,7 @@
     "methods": [
       "public void <init>(com.yahoo.document.DocumentType, com.yahoo.document.DocumentId)",
       "public void <init>(com.yahoo.document.serialization.DocumentUpdateReader)",
+      "public void <init>(com.yahoo.document.DocumentUpdate)",
       "public void <init>(com.yahoo.document.DocumentType, java.lang.String)",
       "public com.yahoo.document.DocumentId getId()",
       "public void setId(com.yahoo.document.DocumentId)",
@@ -616,6 +620,8 @@
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
       "public final java.lang.String getDefNamespace()",
+      "public final boolean getApplyOnRestart()",
+      "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.document.DocumenttypesConfig build()"
     ],
     "fields": [
@@ -1908,6 +1914,8 @@
       "public java.lang.Class getValueClass()",
       "public boolean isValueCompatible(com.yahoo.document.datatypes.FieldValue)",
       "public com.yahoo.tensor.TensorType getTensorType()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public bridge synthetic com.yahoo.document.DataType clone()",
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
@@ -1927,7 +1935,10 @@
       "public void <init>(java.lang.String)",
       "public java.lang.String getSelection()",
       "public boolean isPresent()",
-      "public static com.yahoo.document.TestAndSetCondition fromConditionString(java.util.Optional)"
+      "public static com.yahoo.document.TestAndSetCondition fromConditionString(java.util.Optional)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
     ],
     "fields": [
       "public static final com.yahoo.document.TestAndSetCondition NOT_PRESENT_CONDITION"
@@ -3144,14 +3155,18 @@
       "public"
     ],
     "methods": [
+      "public void <init>()",
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public void <init>(com.yahoo.tensor.Tensor)",
       "public java.util.Optional getTensor()",
+      "public java.util.Optional getTensorType()",
       "public com.yahoo.document.TensorDataType getDataType()",
       "public java.lang.String toString()",
       "public void printXml(com.yahoo.document.serialization.XmlStream)",
       "public void clear()",
       "public void assign(java.lang.Object)",
+      "public void assignSerializedTensor(byte[])",
+      "public java.util.Optional getSerializedTensor()",
       "public void assignTensor(java.util.Optional)",
       "public void serialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldWriter)",
       "public void deserialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldReader)",
@@ -3372,23 +3387,9 @@
       "public com.yahoo.document.fieldset.FieldSet clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
-  },
-  "com.yahoo.document.fieldset.BodyFields": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.document.fieldset.FieldSet"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public boolean contains(com.yahoo.document.fieldset.FieldSet)",
-      "public com.yahoo.document.fieldset.FieldSet clone()",
-      "public bridge synthetic java.lang.Object clone()"
-    ],
-    "fields": []
+    "fields": [
+      "public static final java.lang.String NAME"
+    ]
   },
   "com.yahoo.document.fieldset.DocIdOnly": {
     "superClass": "java.lang.Object",
@@ -3404,7 +3405,9 @@
       "public com.yahoo.document.fieldset.FieldSet clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields": [
+      "public static final java.lang.String NAME"
+    ]
   },
   "com.yahoo.document.fieldset.FieldCollection": {
     "superClass": "java.util.ArrayList",
@@ -3452,22 +3455,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.document.fieldset.HeaderFields": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.document.fieldset.FieldSet"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public boolean contains(com.yahoo.document.fieldset.FieldSet)",
-      "public com.yahoo.document.fieldset.FieldSet clone()",
-      "public bridge synthetic java.lang.Object clone()"
-    ],
-    "fields": []
-  },
   "com.yahoo.document.fieldset.NoFields": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -3482,7 +3469,9 @@
       "public com.yahoo.document.fieldset.FieldSet clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields": [
+      "public static final java.lang.String NAME"
+    ]
   },
   "com.yahoo.document.idstring.IdIdString": {
     "superClass": "com.yahoo.document.idstring.IdString",
@@ -3491,7 +3480,6 @@
       "public"
     ],
     "methods": [
-      "public static java.lang.String replaceType(java.lang.String, java.lang.String)",
       "public static long makeLocation(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.String, java.lang.String, java.lang.String)",
       "public long getLocation()",
@@ -3536,6 +3524,7 @@
       "public long getNumber()",
       "public java.lang.String getGroup()",
       "public static com.yahoo.document.idstring.IdString createIdString(java.lang.String)",
+      "public static com.yahoo.document.idstring.IdString createIdStringLessStrict(java.lang.String)",
       "public static com.yahoo.document.idstring.IdString createFromSerialized(java.lang.String)",
       "protected void <init>(com.yahoo.document.idstring.IdString$Scheme, java.lang.String, java.lang.String)",
       "public com.yahoo.document.idstring.IdString$Scheme getType()",
@@ -3549,7 +3538,9 @@
       "public java.lang.String toString()",
       "public com.yahoo.text.Utf8String toUtf8()"
     ],
-    "fields": []
+    "fields": [
+      "public static final int MAX_LENGTH"
+    ]
   },
   "com.yahoo.document.serialization.AnnotationReader": {
     "superClass": "java.lang.Object",
@@ -4399,6 +4390,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.document.datatypes.TensorFieldValue)",
+      "public void verifyCompatibleType(com.yahoo.tensor.TensorType)",
       "protected void checkCompatibility(com.yahoo.document.DataType)",
       "public void serialize(com.yahoo.document.serialization.DocumentUpdateWriter, com.yahoo.document.DataType)",
       "public com.yahoo.document.datatypes.FieldValue applyTo(com.yahoo.document.datatypes.FieldValue)",

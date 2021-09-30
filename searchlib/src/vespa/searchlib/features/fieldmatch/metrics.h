@@ -4,10 +4,9 @@
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
+#include <memory>
 
-namespace search {
-namespace features {
-namespace fieldmatch {
+namespace search::features::fieldmatch {
 
 class Computer;
 
@@ -557,7 +556,4 @@ private:
     uint32_t              _queryLength; // num terms searching this field
 };
 
-} // fieldmatch
-} // features
-} // search
-
+}

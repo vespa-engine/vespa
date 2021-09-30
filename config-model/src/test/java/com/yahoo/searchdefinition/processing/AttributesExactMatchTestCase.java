@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
+import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertFalse;
  * @author vegardh
  *
  */
-public class AttributesExactMatchTestCase extends SearchDefinitionTestCase {
+public class AttributesExactMatchTestCase extends SchemaTestCase {
     @Test
     public void testAttributesExactMatch() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/examples/attributesexactmatch.sd");

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
@@ -33,41 +34,41 @@ import java.util.stream.Collectors;
  */
 public class StructFieldAttributeChangeValidator {
 
+    private final ClusterSpec.Id id;
     private final NewDocumentType currentDocType;
     private final AttributeFields currentAttributes;
     private final NewDocumentType nextDocType;
     private final AttributeFields nextAttributes;
 
-    public StructFieldAttributeChangeValidator(NewDocumentType currentDocType,
+    public StructFieldAttributeChangeValidator(ClusterSpec.Id id,
+                                               NewDocumentType currentDocType,
                                                AttributeFields currentAttributes,
                                                NewDocumentType nextDocType,
                                                AttributeFields nextAttributes) {
+        this.id = id;
         this.currentDocType = currentDocType;
         this.currentAttributes = currentAttributes;
         this.nextDocType = nextDocType;
         this.nextAttributes = nextAttributes;
     }
 
-    public List<VespaConfigChangeAction> validate(ValidationOverrides overrides, Instant now) {
+    public List<VespaConfigChangeAction> validate() {
         List<VespaConfigChangeAction> result = new ArrayList();
         for (Field currentField : currentDocType.getAllFields()) {
             Field nextField = nextDocType.getField(currentField.getName());
             if (nextField != null) {
                 result.addAll(validateAddAttributeAspect(new Context(currentField, currentAttributes),
-                        new Context(nextField, nextAttributes),
-                        overrides, now));
+                                                         new Context(nextField, nextAttributes)));
             }
         }
         return result;
     }
 
-    private List<VespaConfigChangeAction> validateAddAttributeAspect(Context current, Context next, ValidationOverrides overrides, Instant now) {
+    private List<VespaConfigChangeAction> validateAddAttributeAspect(Context current, Context next) {
         return next.structFieldAttributes.stream()
                 .filter(nextAttr -> current.hasFieldForStructFieldAttribute(nextAttr) &&
-                        !current.hasStructFieldAttribute(nextAttr))
-                .map(nextAttr -> new VespaRestartAction(
-                        new ChangeMessageBuilder(nextAttr.getName())
-                                .addChange("add attribute aspect").build()))
+                                    !current.hasStructFieldAttribute(nextAttr))
+                .map(nextAttr -> new VespaRestartAction(id, new ChangeMessageBuilder(nextAttr.getName()).addChange("add attribute aspect").build()))
                 .collect(Collectors.toList());
     }
 

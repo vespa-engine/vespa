@@ -14,7 +14,11 @@ import org.junit.rules.TemporaryFolder;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author hmusum
@@ -23,16 +27,16 @@ public class ProxyServerTest {
 
     private final MemoryCache memoryCache = new MemoryCache();
     private final MockConfigSource source = new MockConfigSource();
-    private MockConfigSourceClient client = new MockConfigSourceClient(source, memoryCache);
+    private final MockConfigSourceClient client = new MockConfigSourceClient(source, memoryCache);
     private ProxyServer proxy;
 
     static final RawConfig fooConfig = ConfigTester.fooConfig;
 
     // errorConfig based on fooConfig
     private static final ConfigKey<?> errorConfigKey = new ConfigKey<>("error", fooConfig.getConfigId(), fooConfig.getNamespace());
-    static final RawConfig errorConfig = new RawConfig(errorConfigKey, fooConfig.getDefMd5(),
-            fooConfig.getPayload(), fooConfig.getConfigMd5(),
-            fooConfig.getGeneration(), false, ErrorCode.UNKNOWN_DEFINITION, fooConfig.getDefContent(), Optional.empty());
+    static final RawConfig errorConfig = new RawConfig(errorConfigKey, fooConfig.getDefMd5(), fooConfig.getPayload(),
+                                                       fooConfig.getPayloadChecksums(), fooConfig.getGeneration(), false,
+                                                       ErrorCode.UNKNOWN_DEFINITION, fooConfig.getDefContent(), Optional.empty());
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -54,7 +58,6 @@ public class ProxyServerTest {
     public void basic() {
         assertTrue(proxy.getMode().isDefault());
         assertThat(proxy.getMemoryCache().size(), is(0));
-        assertThat(proxy.getTimingValues(), is(ProxyServer.defaultTimingValues()));
 
         ConfigTester tester = new ConfigTester();
         final MemoryCache memoryCache = proxy.getMemoryCache();
@@ -175,9 +178,9 @@ public class ProxyServerTest {
         assertEquals(1, cache.size());
 
         // Simulate an empty response
-        RawConfig emptyConfig = new RawConfig(fooConfig.getKey(), fooConfig.getDefMd5(),
-                      Payload.from("{}"), fooConfig.getConfigMd5(),
-                      0, false, 0, fooConfig.getDefContent(), Optional.empty());
+        RawConfig emptyConfig = new RawConfig(fooConfig.getKey(), fooConfig.getDefMd5(), Payload.from("{}"),
+                                              fooConfig.getPayloadChecksums(), 0, false,
+                                              0, fooConfig.getDefContent(), Optional.empty());
         source.put(fooConfig.getKey(), emptyConfig);
 
         res = proxy.resolveConfig(tester.createRequest(fooConfig));
@@ -222,7 +225,7 @@ public class ProxyServerTest {
     private static ProxyServer createTestServer(ConfigSourceSet source,
                                                 ConfigSourceClient configSourceClient,
                                                 MemoryCache memoryCache) {
-        return new ProxyServer(null, source, ProxyServer.defaultTimingValues(), memoryCache, configSourceClient);
+        return new ProxyServer(null, source, memoryCache, configSourceClient);
     }
 
     static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode) {
@@ -235,7 +238,7 @@ public class ProxyServerTest {
 
     static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode, Payload payload, long configGeneration) {
         return new RawConfig(config.getKey(), config.getDefMd5(),
-                             payload, config.getConfigMd5(),
+                             payload, config.getPayloadChecksums(),
                              configGeneration, false,
                              errorCode, config.getDefContent(), Optional.empty());
     }

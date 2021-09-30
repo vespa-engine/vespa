@@ -1,8 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.google.common.annotations.Beta;
-
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -14,7 +13,6 @@ import java.util.Optional;
  *
  * @author Vegard Sjonfjell
  */
-@Beta
 public class TestAndSetCondition {
 
     public static final TestAndSetCondition NOT_PRESENT_CONDITION = new TestAndSetCondition();
@@ -45,4 +43,26 @@ public class TestAndSetCondition {
                 .orElse(TestAndSetCondition.NOT_PRESENT_CONDITION);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TestAndSetCondition that = (TestAndSetCondition) o;
+        return conditionStr.equals(that.conditionStr);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(conditionStr);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder string = new StringBuilder();
+        string.append("condition '");
+        string.append(conditionStr);
+        string.append("'");
+
+        return string.toString();
+    }
 }

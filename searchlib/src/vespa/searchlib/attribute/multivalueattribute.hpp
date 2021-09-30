@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include "address_space_components.h"
 #include <vespa/searchlib/attribute/multivalueattribute.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/memory_allocator.h>
 
 namespace search {
 
@@ -48,9 +50,9 @@ struct HashFn {
 };
 
 template <>
-struct HashFn<search::datastore::EntryRef> {
+struct HashFn<vespalib::datastore::EntryRef> {
     struct EntryRefHasher {
-        size_t operator() (const search::datastore::EntryRef& v) const noexcept {
+        size_t operator() (const vespalib::datastore::EntryRef& v) const noexcept {
             return v.ref();
         }
     };
@@ -77,11 +79,12 @@ void
 MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docValues)
 {
     // compute new values for each document with changes
-    for (ChangeVectorIterator current(this->_changes.begin()), end(this->_changes.end()); (current != end); ) {
+    auto iterable = this->_changes.getDocIdInsertOrder();
+    for (auto current(iterable.begin()), end(iterable.end()); (current != end); ) {
         DocId doc = current->_doc;
         // find last clear doc
-        ChangeVectorIterator last_clear_doc = end;
-        for (ChangeVectorIterator iter = current; (iter != end) && (iter->_doc == doc); ++iter) {
+        auto last_clear_doc = end;
+        for (auto iter = current; (iter != end) && (iter->_doc == doc); ++iter) {
             if (iter->_type == ChangeBase::CLEARDOC) {
                 last_clear_doc = iter;
             }
@@ -136,12 +139,13 @@ void
 MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docValues)
 {
     // compute new values for each document with changes
-    for (ChangeVectorIterator current(this->_changes.begin()), end(this->_changes.end()); (current != end); ) {
+    auto iterable = this->_changes.getDocIdInsertOrder();
+    for (auto current(iterable.begin()), end(iterable.end()); (current != end); ) {
         const DocId doc = current->_doc;
         // find last clear doc
-        ChangeVectorIterator last_clear_doc = end;
+        auto last_clear_doc = end;
         size_t max_elems_inserted = 0;
-        for (ChangeVectorIterator iter = current; (iter != end) && (iter->_doc == doc); ++iter) {
+        for (auto iter = current; (iter != end) && (iter->_doc == doc); ++iter) {
             if (iter->_type == ChangeBase::CLEARDOC) {
                 last_clear_doc = iter;
             }
@@ -172,7 +176,7 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docVa
                 wset_inserted[data] = current->_weight;
             } else if (current->_type == ChangeBase::REMOVE) {
                 wset_inserted.erase(data);
-            } else if ((current->_type >= ChangeBase::INCREASEWEIGHT) && (current->_type <= ChangeBase::DIVWEIGHT)) {
+            } else if ((current->_type >= ChangeBase::INCREASEWEIGHT) && (current->_type <= ChangeBase::SETWEIGHT)) {
                 auto existing = wset_inserted.find(data);
                 if (existing != wset_inserted.end()) {
                     existing->second = this->applyWeightChange(existing->second, *current);
@@ -197,12 +201,12 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docVa
 }
 
 template <typename B, typename M>
-vespalib::AddressSpace
-MultiValueAttribute<B, M>::getMultiValueAddressSpaceUsage() const
+void
+MultiValueAttribute<B, M>::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
-    return _mvMapping.getAddressSpaceUsage();
+    B::populate_address_space_usage(usage);
+    usage.set(AddressSpaceComponents::multi_value, _mvMapping.getAddressSpaceUsage());
 }
-
 
 template <typename B, typename M>
 bool
@@ -251,7 +255,7 @@ template <typename B, typename M>
 void
 MultiValueAttribute<B, M>::clearDocs(DocId lidLow, DocId lidLimit)
 {
-    _mvMapping.clearDocs(lidLow, lidLimit, [=](uint32_t docId) { this->clearDoc(docId); });
+    _mvMapping.clearDocs(lidLow, lidLimit, [this](uint32_t docId) { this->clearDoc(docId); });
 }
 
 

@@ -4,37 +4,35 @@
 #include "indexmaintainer.h"
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 /**
  * Flush target for flushing a memory index in an IndexMaintainer.
  **/
 class IndexFlushTarget : public IFlushTarget {
 private:
-    IndexMaintainer &_indexMaintainer;
-    IndexMaintainer::FlushStats _flushStats;
-    uint32_t _numFrozenMemoryIndexes;
-    uint32_t _maxFrozenMemoryIndexes;
-    FlushStats _lastStats;
+    IndexMaintainer                   &_indexMaintainer;
+    const IndexMaintainer::FlushStats  _flushStats;
+    uint32_t                           _numFrozenMemoryIndexes;
+    uint32_t                           _maxFrozenMemoryIndexes;
+    FlushStats                         _lastStats;
 
 public:
-    IndexFlushTarget(IndexMaintainer &indexMaintainer);
-    ~IndexFlushTarget();
+    explicit IndexFlushTarget(IndexMaintainer &indexMaintainer);
+    IndexFlushTarget(IndexMaintainer &indexMaintainer, IndexMaintainer::FlushStats flushStats);
+    ~IndexFlushTarget() override;
 
     // Implements IFlushTarget
-    virtual MemoryGain getApproxMemoryGain() const override;
-    virtual   DiskGain   getApproxDiskGain() const override;
-    virtual  SerialNum getFlushedSerialNum() const override;
-    virtual       Time    getLastFlushTime() const override;
+    MemoryGain getApproxMemoryGain() const override;
+    DiskGain   getApproxDiskGain() const override;
+    SerialNum getFlushedSerialNum() const override;
+    Time    getLastFlushTime() const override;
 
-    virtual bool needUrgentFlush() const override;
+    bool needUrgentFlush() const override;
 
-    virtual Task::UP initFlush(SerialNum currentSerial) override;
-    virtual FlushStats getLastFlushStats() const override { return _lastStats; }
-    virtual uint64_t getApproxBytesToWriteToDisk() const override;
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    FlushStats getLastFlushStats() const override { return _lastStats; }
+    uint64_t getApproxBytesToWriteToDisk() const override;
 };
 
-}  // namespace index
-}  // namespace searchcorespi
-
+}

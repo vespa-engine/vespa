@@ -8,6 +8,7 @@ using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using vespalib::eval::ValueType;
 using search::GrowStrategy;
+using search::DictionaryConfig;
 
 
 struct Fixture
@@ -15,16 +16,14 @@ struct Fixture
     Config _config;
     Fixture()
         : _config()
-    {
-    }
+    { }
 
     Fixture(BasicType bt,
             CollectionType ct = CollectionType::SINGLE,
             bool fastSearch_ = false,
             bool huge_ = false)
         : _config(bt, ct, fastSearch_, huge_)
-    {
-    }
+    { }
 };
 
 TEST_F("test default attribute config", Fixture)
@@ -108,6 +107,35 @@ TEST("Test GrowStrategy consistency") {
     EXPECT_EQUAL(0.5, g.getDocsGrowFactor());
     EXPECT_EQUAL(17u, g.getDocsGrowDelta());
     EXPECT_EQUAL(0.4f, g.getMultiValueAllocGrowFactor());
+}
+
+TEST("DictionaryConfig") {
+    using Type = DictionaryConfig::Type;
+    using Match = DictionaryConfig::Match;
+    EXPECT_EQUAL(Type::BTREE, DictionaryConfig().getType());
+    EXPECT_EQUAL(Match::UNCASED, DictionaryConfig().getMatch());
+
+    EXPECT_EQUAL(Type::BTREE, DictionaryConfig(Type::BTREE).getType());
+    EXPECT_EQUAL(Match::UNCASED, DictionaryConfig(Type::BTREE).getMatch());
+    EXPECT_EQUAL(Match::UNCASED, DictionaryConfig(Type::BTREE, Match::UNCASED).getMatch());
+    EXPECT_EQUAL(Match::CASED, DictionaryConfig(Type::BTREE, Match::CASED).getMatch());
+
+    EXPECT_EQUAL(Type::HASH, DictionaryConfig(Type::HASH).getType());
+    EXPECT_EQUAL(Type::BTREE_AND_HASH, DictionaryConfig(Type::BTREE_AND_HASH).getType());
+
+    EXPECT_EQUAL(DictionaryConfig(Type::BTREE), DictionaryConfig(Type::BTREE));
+    EXPECT_EQUAL(DictionaryConfig(Type::HASH), DictionaryConfig(Type::HASH));
+    EXPECT_EQUAL(DictionaryConfig(Type::BTREE_AND_HASH), DictionaryConfig(Type::BTREE_AND_HASH));
+    EXPECT_NOT_EQUAL(DictionaryConfig(Type::HASH), DictionaryConfig(Type::BTREE));
+    EXPECT_NOT_EQUAL(DictionaryConfig(Type::BTREE), DictionaryConfig(Type::HASH));
+    EXPECT_TRUE(Config().set_dictionary_config(DictionaryConfig(Type::HASH)) ==
+                Config().set_dictionary_config(DictionaryConfig(Type::HASH)));
+    EXPECT_FALSE(Config().set_dictionary_config(DictionaryConfig(Type::HASH)) ==
+                 Config().set_dictionary_config(DictionaryConfig(Type::BTREE)));
+    EXPECT_FALSE(Config().set_dictionary_config(DictionaryConfig(Type::HASH)) !=
+                 Config().set_dictionary_config(DictionaryConfig(Type::HASH)));
+    EXPECT_TRUE(Config().set_dictionary_config(DictionaryConfig(Type::HASH)) !=
+                Config().set_dictionary_config(DictionaryConfig(Type::BTREE)));
 }
 
 

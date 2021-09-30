@@ -9,7 +9,7 @@
 namespace search::attribute {
 
 template <typename EntryT, typename RefT>
-MultiValueMapping<EntryT,RefT>::MultiValueMapping(const datastore::ArrayStoreConfig &storeCfg,
+MultiValueMapping<EntryT,RefT>::MultiValueMapping(const vespalib::datastore::ArrayStoreConfig &storeCfg,
                                                   const vespalib::GrowStrategy &gs)
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -55,7 +55,7 @@ template <typename EntryT, typename RefT>
 void
 MultiValueMapping<EntryT,RefT>::compactWorst(bool compactMemory, bool compactAddressSpace)
 {
-    datastore::ICompactionContext::UP compactionContext(_store.compactWorst(compactMemory, compactAddressSpace));
+    vespalib::datastore::ICompactionContext::UP compactionContext(_store.compactWorst(compactMemory, compactAddressSpace));
     if (compactionContext) {
         compactionContext->compact(vespalib::ArrayRef<EntryRef>(&_indices[0], _indices.size()));
     }
@@ -75,7 +75,7 @@ MultiValueMapping<EntryT, RefT>::getAddressSpaceUsage() const {
 }
 
 template <typename EntryT, typename RefT>
-datastore::ArrayStoreConfig
+vespalib::datastore::ArrayStoreConfig
 MultiValueMapping<EntryT, RefT>::optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                              size_t hugePageSize,
                                                              size_t smallPageSize,

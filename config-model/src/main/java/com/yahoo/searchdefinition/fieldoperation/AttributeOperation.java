@@ -5,6 +5,7 @@ import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.tensor.TensorType;
 
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -17,13 +18,15 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
     private Boolean fastSearch;
     private Boolean fastAccess;
     private Boolean mutable;
+    private Boolean paged;
     private Boolean enableBitVectors;
     private Boolean enableOnlyBitVector;
-    //TODO: Husk sorting!!
+    //TODO: Remember sorting!!
     private boolean doAlias = false;
     private String alias;
     private String aliasedName;
     private Optional<TensorType> tensorType = Optional.empty();
+    private Optional<String> distanceMetric = Optional.empty();
 
     public AttributeOperation(String name) {
         this.name = name;
@@ -71,6 +74,9 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
     public void setMutable(Boolean mutable) {
         this.mutable = mutable;
     }
+    public void setPaged(Boolean paged) {
+        this.paged = paged;
+    }
 
     public Boolean getEnableBitVectors() {
         return enableBitVectors;
@@ -88,10 +94,6 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
         this.enableOnlyBitVector = enableOnlyBitVector;
     }
 
-    public boolean isDoAlias() {
-        return doAlias;
-    }
-
     public void setDoAlias(boolean doAlias) {
         this.doAlias = doAlias;
     }
@@ -104,9 +106,6 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
         this.alias = alias;
     }
 
-    public String getAliasedName() {
-        return aliasedName;
-    }
 
     public void setAliasedName(String aliasedName) {
         this.aliasedName = aliasedName;
@@ -114,6 +113,10 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
 
     public void setTensorType(TensorType tensorType) {
         this.tensorType = Optional.of(tensorType);
+    }
+
+    public void setDistanceMetric(String value) {
+        this.distanceMetric = Optional.of(value);
     }
 
     public void apply(SDField field) {
@@ -131,6 +134,9 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
 
         if (huge != null) {
             attribute.setHuge(huge);
+        }
+        if (paged != null) {
+            attribute.setPaged(paged);
         }
         if (fastSearch != null) {
             attribute.setFastSearch(fastSearch);
@@ -152,6 +158,10 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
         }
         if (tensorType.isPresent()) {
             attribute.setTensorType(tensorType.get());
+        }
+        if (distanceMetric.isPresent()) {
+            String upper = distanceMetric.get().toUpperCase(Locale.ENGLISH);
+            attribute.setDistanceMetric(Attribute.DistanceMetric.valueOf(upper));
         }
     }
 

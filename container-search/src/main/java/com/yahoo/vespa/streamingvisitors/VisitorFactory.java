@@ -7,7 +7,7 @@ import com.yahoo.search.Query;
 /**
  * A factory that creates Visitors.
  *
- * @author <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
+ * @author Ulf Carlin
  */
 interface VisitorFactory {
 

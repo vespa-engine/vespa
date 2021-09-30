@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/defaults.h>
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/slobrok/sbmirror.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
+#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/programoptions.h>
@@ -15,6 +17,7 @@
 #include <sstream>
 #include <iostream>
 #include <thread>
+#include <cstdlib>
 #include <sys/time.h>
 
 #include <vespa/log/log.h>
@@ -128,7 +131,7 @@ struct Options : public vespalib::ProgramOptions {
             _clusterName = _cluster.getName();
         } catch (const vespaclient::ClusterList::ClusterNotFoundException& e) {
             std::cerr << e.getMessage() << "\n";
-            exit(1);
+            std::_Exit(1);
         }
         return true;
     }
@@ -206,8 +209,8 @@ Options::Options(Mode mode)
     }
     addOptionHeader("Advanced options. Not needed for most usecases");
     addOption("l slobrokconfig", _slobrokConfigId,
-              std::string("admin/slobrok.0"),
-              "Config id of slobrok. Will use the default config id of admin/slobrok.0 if not specified.");
+              std::string("client"),
+              "Config id of slobrok. Will use the default config id of client if not specified.");
     addOption("p slobrokspec", _slobrokConnectionSpec, std::string(""),
               "Slobrok connection spec. By setting this, this application "
               "will not need config at all, but will use the given "
@@ -253,11 +256,11 @@ struct StateApp : public FastOS_Application {
         std::unique_ptr<slobrok::api::MirrorAPI> slobrok;
         if (_options._slobrokConnectionSpec == "") {
             config::ConfigUri config(_options._slobrokConfigId);
-            slobrok.reset(new slobrok::api::MirrorAPI(supervisor.supervisor(), config));
+            slobrok = std::make_unique<slobrok::api::MirrorAPI>(supervisor.supervisor(), slobrok::ConfiguratorFactory(config));
         } else {
             std::vector<std::string> specList;
             specList.push_back(_options._slobrokConnectionSpec);
-            slobrok.reset(new slobrok::api::MirrorAPI(supervisor.supervisor(), specList));
+            slobrok = std::make_unique<slobrok::api::MirrorAPI>(supervisor.supervisor(), slobrok::ConfiguratorFactory(specList));
         }
         LOG(debug, "Waiting for slobrok data to be available.");
         uint64_t startTime = getTimeInMillis();

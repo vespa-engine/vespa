@@ -32,7 +32,7 @@ public:
     /**
      * Virtual destructor required for inheritance.
      */
-    ~DocumentReply() { }
+    ~DocumentReply() override;
 
     /**
      * Returns the priority tag for this message. This is an optional tag added for VDS that is not interpreted by the

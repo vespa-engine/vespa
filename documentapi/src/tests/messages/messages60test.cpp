@@ -89,16 +89,13 @@ bool
 Messages60Test::testGetBucketListMessage()
 {
     GetBucketListMessage msg(document::BucketId(16, 123));
-    msg.setLoadType(_loadTypes["foo"]);
     msg.setBucketSpace("beartato");
-    EXPECT_EQUAL(string("foo"), msg.getLoadType().getName());
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 12u + serializedLength("beartato"), serialize("GetBucketListMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("GetBucketListMessage", DocumentProtocol::MESSAGE_GETBUCKETLIST, lang);
         if (EXPECT_TRUE(obj)) {
             GetBucketListMessage &ref = static_cast<GetBucketListMessage&>(*obj);
-            EXPECT_EQUAL(string("foo"), ref.getLoadType().getName());
             EXPECT_EQUAL(document::BucketId(16, 123), ref.getBucketId());
             EXPECT_EQUAL("beartato", ref.getBucketSpace());
         }
@@ -323,6 +320,7 @@ Messages60Test::testGetDocumentMessage()
 {
     GetDocumentMessage tmp(document::DocumentId("id:ns:testdoc::"), "foo bar");
 
+    EXPECT_EQUAL(280u, sizeof(GetDocumentMessage));
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + (size_t)31, serialize("GetDocumentMessage", tmp));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
@@ -400,6 +398,11 @@ Messages60Test::testPutDocumentMessage()
     msg.setTimestamp(666);
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
+    EXPECT_EQUAL(64u, sizeof(vespalib::string));
+    EXPECT_EQUAL(sizeof(std::string), sizeof(TestAndSetCondition));
+    EXPECT_EQUAL(112u, sizeof(DocumentMessage));
+    EXPECT_EQUAL(sizeof(TestAndSetCondition) + sizeof(DocumentMessage), sizeof(TestAndSetMessage));
+    EXPECT_EQUAL(sizeof(TestAndSetMessage) + 24, sizeof(PutDocumentMessage));
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH +
                  45u +
                  serializedLength(msg.getCondition().getSelection()),
@@ -447,6 +450,7 @@ Messages60Test::testPutDocumentReply()
     reply.setHighestModificationTimestamp(30);
 
     EXPECT_EQUAL(13u, serialize("PutDocumentReply", reply));
+    EXPECT_EQUAL(112u, sizeof(WriteDocumentReply));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("PutDocumentReply", DocumentProtocol::REPLY_PUTDOCUMENT, lang);
@@ -466,6 +470,7 @@ Messages60Test::testUpdateDocumentReply()
     reply.setHighestModificationTimestamp(30);
 
     EXPECT_EQUAL(14u, serialize("UpdateDocumentReply", reply));
+    EXPECT_EQUAL(120u, sizeof(UpdateDocumentReply));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("UpdateDocumentReply", DocumentProtocol::REPLY_UPDATEDOCUMENT, lang);
@@ -485,12 +490,13 @@ Messages60Test::testRemoveDocumentMessage()
 
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
+    EXPECT_EQUAL(sizeof(TestAndSetMessage) + 104, sizeof(RemoveDocumentMessage));
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + size_t(20) + serializedLength(msg.getCondition().getSelection()), serialize("RemoveDocumentMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         auto routablePtr = deserialize("RemoveDocumentMessage", DocumentProtocol::MESSAGE_REMOVEDOCUMENT, lang);
 
-        if (EXPECT_TRUE(routablePtr.get() != nullptr)) {
+        if (EXPECT_TRUE(routablePtr)) {
             auto & ref = static_cast<RemoveDocumentMessage &>(*routablePtr);
             EXPECT_EQUAL(string("id:ns:testdoc::"), ref.getDocumentId().toString());
             EXPECT_EQUAL(msg.getCondition().getSelection(), ref.getCondition().getSelection());
@@ -506,6 +512,7 @@ Messages60Test::testRemoveDocumentReply()
     std::vector<uint64_t> ts;
     reply.setWasFound(false);
     reply.setHighestModificationTimestamp(30);
+    EXPECT_EQUAL(120u, sizeof(RemoveDocumentReply));
 
     EXPECT_EQUAL(14u, serialize("RemoveDocumentReply", reply));
 
@@ -663,12 +670,13 @@ Messages60Test::testUpdateDocumentMessage()
     msg.setNewTimestamp(777u);
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
+    EXPECT_EQUAL(sizeof(TestAndSetMessage) + 32, sizeof(UpdateDocumentMessage));
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 93u + serializedLength(msg.getCondition().getSelection()), serialize("UpdateDocumentMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         auto routableUp = deserialize("UpdateDocumentMessage", DocumentProtocol::MESSAGE_UPDATEDOCUMENT, lang);
 
-        if (EXPECT_TRUE(routableUp.get() != nullptr)) {
+        if (EXPECT_TRUE(routableUp)) {
             auto & deserializedMsg = static_cast<UpdateDocumentMessage &>(*routableUp);
             EXPECT_EQUAL(msg.getDocumentUpdate(), deserializedMsg.getDocumentUpdate());
             EXPECT_EQUAL(msg.getOldTimestamp(), deserializedMsg.getOldTimestamp());
@@ -885,6 +893,7 @@ Messages60Test::testGetDocumentReply()
         createDoc(getTypeRepo(), "testdoc", "id:ns:testdoc::");
     GetDocumentReply tmp(doc);
 
+    EXPECT_EQUAL(128u, sizeof(GetDocumentReply));
     EXPECT_EQUAL((size_t)47, serialize("GetDocumentReply", tmp));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {

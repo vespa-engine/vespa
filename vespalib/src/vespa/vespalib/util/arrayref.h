@@ -2,6 +2,7 @@
 #pragma once
 
 #include "array.h"
+#include "small_vector.h"
 #include <vector>
 
 namespace vespalib {
@@ -13,13 +14,17 @@ namespace vespalib {
 template <typename T>
 class ArrayRef {
 public:
-    ArrayRef() : _v(nullptr), _sz(0) { }
-    ArrayRef(T * v, size_t sz) : _v(v), _sz(sz) { }
-    ArrayRef(std::vector<T> & v) : _v(&v[0]), _sz(v.size()) { }
-    ArrayRef(Array<T> &v) : _v(&v[0]), _sz(v.size()) { }
+    ArrayRef() noexcept : _v(nullptr), _sz(0) { }
+    ArrayRef(T * v, size_t sz) noexcept : _v(v), _sz(sz) { }
+    template<typename A=std::allocator<T>>
+    ArrayRef(std::vector<T, A> & v) noexcept : _v(&v[0]), _sz(v.size()) { }
+    template<size_t N>
+    ArrayRef(SmallVector<T, N> &v) noexcept :  _v(&v[0]), _sz(v.size()) { }
+    ArrayRef(Array<T> &v) noexcept : _v(&v[0]), _sz(v.size()) { }
     T & operator [] (size_t i) { return _v[i]; }
     const T & operator [] (size_t i) const { return _v[i]; }
     size_t size() const { return _sz; }
+    bool empty() const { return _sz == 0; }
     T *begin() { return _v; }
     T *end() { return _v + _sz; }
 private:
@@ -30,13 +35,17 @@ private:
 template <typename T>
 class ConstArrayRef {
 public:
-    ConstArrayRef(const T *v, size_t sz) : _v(v), _sz(sz) { }
-    ConstArrayRef(const std::vector<T> & v) : _v(&v[0]), _sz(v.size()) { }
-    ConstArrayRef(const ArrayRef<T> & v) : _v(&v[0]), _sz(v.size()) { }
-    ConstArrayRef(const Array<T> &v) : _v(&v[0]), _sz(v.size()) { }
-    ConstArrayRef() : _v(nullptr), _sz(0) {}
+    ConstArrayRef(const T *v, size_t sz) noexcept : _v(v), _sz(sz) { }
+    template<typename A=std::allocator<T>>
+    ConstArrayRef(const std::vector<T, A> & v) noexcept : _v(&v[0]), _sz(v.size()) { }
+    template<size_t N>
+    ConstArrayRef(const SmallVector<T, N> &v) noexcept :  _v(&v[0]), _sz(v.size()) { }
+    ConstArrayRef(const ArrayRef<T> & v) noexcept : _v(&v[0]), _sz(v.size()) { }
+    ConstArrayRef(const Array<T> &v) noexcept : _v(&v[0]), _sz(v.size()) { }
+    ConstArrayRef() noexcept : _v(nullptr), _sz(0) {}
     const T & operator [] (size_t i) const { return _v[i]; }
     size_t size() const { return _sz; }
+    bool empty() const { return _sz == 0; }
     const T *cbegin() const { return _v; }
     const T *cend() const { return _v + _sz; }
     const T *begin() const { return _v; }

@@ -2,7 +2,8 @@
 #pragma once
 
 #include "iconfigholder.h"
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
+#include <condition_variable>
 
 namespace config {
 
@@ -21,8 +22,9 @@ public:
     bool poll() override;
     void interrupt() override;
 public:
-    vespalib::Monitor _monitor;
-    ConfigUpdate::UP _current;
+    std::mutex              _lock;
+    std::condition_variable _cond;
+    ConfigUpdate::UP        _current;
 };
 
 } // namespace config

@@ -2,18 +2,18 @@
 
 #pragma once
 
+#include "value.h"
 #include "function.h"
 #include "node_types.h"
 #include "lazy_params.h"
 #include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 namespace nodes { struct Node; }
-struct TensorEngine;
 struct TensorFunction;
 class TensorSpec;
+struct CTFMetaData;
 
 /**
  * A Function that has been prepared for execution. This will
@@ -29,14 +29,14 @@ class InterpretedFunction
 {
 public:
     struct State {
-        const TensorEngine      &engine;
-        const LazyParams        *params;
-        Stash                    stash;
-        std::vector<Value::CREF> stack;
-        uint32_t                 program_offset;
-        uint32_t                 if_cnt;
+        const ValueBuilderFactory &factory;
+        const LazyParams          *params;
+        Stash                      stash;
+        std::vector<Value::CREF>   stack;
+        uint32_t                   program_offset;
+        uint32_t                   if_cnt;
 
-        State(const TensorEngine &engine_in);
+        State(const ValueBuilderFactory &factory_in);
         ~State();
 
         void init(const LazyParams &params_in);
@@ -69,10 +69,11 @@ public:
         op_function function;
         uint64_t    param;
     public:
-        explicit Instruction(op_function function_in)
+        explicit Instruction(op_function function_in) noexcept
             : function(function_in), param(0) {}
-        Instruction(op_function function_in, uint64_t param_in)
+        Instruction(op_function function_in, uint64_t param_in) noexcept
             : function(function_in), param(param_in) {}
+        vespalib::string resolve_symbol() const;
         void perform(State &state) const {
             if (function == nullptr) {
                 state.stack.push_back(state.params->resolve(param, state.stash));
@@ -83,29 +84,47 @@ public:
         static Instruction fetch_param(size_t param_idx) {
             return Instruction(nullptr, param_idx);
         }
+        static Instruction nop();
     };
 
 private:
-    std::vector<Instruction> _program;
-    Stash                    _stash;
-    size_t                   _num_params;
-    const TensorEngine      &_tensor_engine;
+    std::vector<Instruction>   _program;
+    Stash                      _stash;
+    const ValueBuilderFactory &_factory;
 
 public:
     typedef std::unique_ptr<InterpretedFunction> UP;
     // for testing; use with care; the tensor function must be kept alive
-    InterpretedFunction(const TensorEngine &engine, const TensorFunction &function);
-    InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, size_t num_params_in, const NodeTypes &types);
-    InterpretedFunction(const TensorEngine &engine, const Function &function, const NodeTypes &types)
-        : InterpretedFunction(engine, function.root(), function.num_params(), types) {}
+    InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function, CTFMetaData *meta);
+    InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function)
+      : InterpretedFunction(factory, function, nullptr) {}
+    InterpretedFunction(const ValueBuilderFactory &factory, const nodes::Node &root, const NodeTypes &types);
+    InterpretedFunction(const ValueBuilderFactory &factory, const Function &function, const NodeTypes &types)
+        : InterpretedFunction(factory, function.root(), types) {}
     InterpretedFunction(InterpretedFunction &&rhs) = default;
     ~InterpretedFunction();
     size_t program_size() const { return _program.size(); }
-    size_t num_params() const { return _num_params; }
     const Value &eval(Context &ctx, const LazyParams &params) const;
     double estimate_cost_us(const std::vector<double> &params, double budget = 5.0) const;
     static Function::Issues detect_issues(const Function &function);
+
+    /**
+     * This inner class is used for testing and benchmarking. It runs
+     * a single interpreted instruction in isolation. Note that
+     * instructions manipulating the program counter may not be run in
+     * this way. Also note that the stack must contain exactly one
+     * value after the instruction is executed. The params object must
+     * be kept alive externally.
+     **/
+    class EvalSingle {
+    private:
+        State _state;
+        Instruction _op;
+    public:
+        EvalSingle(const ValueBuilderFactory &factory, Instruction op, const LazyParams &params);
+        EvalSingle(const ValueBuilderFactory &factory, Instruction op) : EvalSingle(factory, op, NoParams::params) {}
+        const Value &eval(const std::vector<Value::CREF> &stack);
+    };
 };
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

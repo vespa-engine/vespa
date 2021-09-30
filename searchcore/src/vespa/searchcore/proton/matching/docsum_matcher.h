@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/searchlib/common/featureset.h>
-#include <vespa/searchlib/common/struct_field_mapper.h>
 #include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vector>
 #include <memory>
 
@@ -22,7 +22,7 @@ class DocsumMatcher
 {
 private:
     using FeatureSet = search::FeatureSet;
-    using StructFieldMapper = search::StructFieldMapper;
+    using MatchingElementsFields = search::MatchingElementsFields;
     using MatchingElements = search::MatchingElements;
 
     std::shared_ptr<SearchSession>     _from_session;
@@ -40,7 +40,7 @@ public:
 
     FeatureSet::UP get_summary_features() const;
     FeatureSet::UP get_rank_features() const;
-    MatchingElements::UP get_matching_elements(const StructFieldMapper &field_mapper) const;
+    MatchingElements::UP get_matching_elements(const MatchingElementsFields &fields) const;
 };
 
 }

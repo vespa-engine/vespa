@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/pagedict4.h>
@@ -15,8 +16,8 @@ LOG_SETUP("pagedict4_hugeword_cornercase_test");
 using search::index::PostingListCounts;
 using search::ComprFileWriteContext;
 
-constexpr uint32_t minChunkDocs = 262144;
-constexpr uint32_t numWordIds = 65536;
+constexpr uint32_t minChunkDocs = 256_Ki;
+constexpr uint32_t numWordIds = 64_Ki;
 
 struct BitBuffer
 {
@@ -141,7 +142,7 @@ using SeqReader = search::diskindex::test::PageDict4MemSeqReader;
  */
 void testPageSizedCounts()
 {
-    uint32_t pageBitSize = 32768;
+    uint32_t pageBitSize = 32_Ki;
     uint32_t startBits = 15 * 3 + 12;
 
     uint32_t ssPad = 64;

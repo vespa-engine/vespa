@@ -12,7 +12,7 @@ public:
     virtual ~StorageMessage() {}
 
     virtual api::StorageMessage::SP getInternalMessage() = 0;
-    virtual storage::api::StorageMessage::CSP getInternalMessage() const = 0;
+    virtual api::StorageMessage::CSP getInternalMessage() const = 0;
 
 };
 

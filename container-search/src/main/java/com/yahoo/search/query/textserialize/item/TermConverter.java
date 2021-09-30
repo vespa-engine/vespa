@@ -10,6 +10,7 @@ import com.yahoo.search.query.textserialize.serializer.ItemIdMapper;
  * @author Tony Vaagenes
  */
 public abstract class TermConverter implements ItemFormConverter {
+
     @Override
     public Object formToItem(String name, ItemArguments arguments, ItemContext context) {
         ensureOnlyOneChild(arguments);
@@ -21,7 +22,6 @@ public abstract class TermConverter implements ItemFormConverter {
     }
 
     abstract TermItem newTermItem(String word);
-
 
     private void ensureOnlyOneChild(ItemArguments arguments) {
         if (arguments.children.size() != 1) {
@@ -50,4 +50,5 @@ public abstract class TermConverter implements ItemFormConverter {
     }
 
     protected abstract String getValue(TermItem item);
+
 }

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.server;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.time.TimeBudget;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequest;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequestHandler;
@@ -103,7 +103,7 @@ public class RestApiHandler implements HttpRequestHandler {
                 return new JsonHttpResult().setJson(jsonWriter.createJson(setResponse));
             }
         } catch (OtherMasterException exception) {
-            logRequestException(request, exception, LogLevel.DEBUG);
+            logRequestException(request, exception, Level.FINE);
             JsonHttpResult result = new JsonHttpResult();
             result.setHttpCode(307, "Temporary Redirect");
             result.addHeader("Location", getMasterLocationUrl(request, exception.getHost(), exception.getPort()));
@@ -130,7 +130,7 @@ public class RestApiHandler implements HttpRequestHandler {
             result.setJson(jsonWriter.createErrorJson(exception.getMessage()));
             return result;
         } catch (Exception exception) {
-            logRequestException(request, exception, LogLevel.ERROR);
+            logRequestException(request, exception, Level.SEVERE);
             JsonHttpResult result = new JsonHttpResult();
             result.setHttpCode(500, "Failed to process request");
             result.setJson(jsonWriter.createErrorJson(exception.getClass().getName() + ": " + exception.getMessage()));

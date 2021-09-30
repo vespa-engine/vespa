@@ -21,13 +21,14 @@ using search::streaming::HitList;
 using search::streaming::QueryNodeResultFactory;
 using search::streaming::QueryTerm;
 using search::streaming::QueryTermList;
+using TermType = QueryTerm::Type;
 using namespace vsm;
 
 template <typename T>
 class Vector : public std::vector<T>
 {
 public:
-    Vector<T>() : std::vector<T>() {}
+    Vector() : std::vector<T>() {}
     Vector<T> & add(T v) { this->push_back(v); return *this; }
 };
 
@@ -58,17 +59,17 @@ private:
         for (size_t i = 0; i < terms.size(); ++i) {
             ParsedQueryTerm pqt = parseQueryTerm(terms[i]);
             ParsedTerm pt = parseTerm(pqt.second);
-            qtv.push_back(QueryTerm(eqnr.create(), pt.first, pqt.first.empty() ? "index" : pqt.first, pt.second));
+            qtv.push_back(std::make_unique<QueryTerm>(eqnr.create(), pt.first, pqt.first.empty() ? "index" : pqt.first, pt.second));
         }
         for (size_t i = 0; i < qtv.size(); ++i) {
-            qtl.push_back(&qtv[i]);
+            qtl.push_back(qtv[i].get());
         }
     }
 public:
     typedef std::pair<std::string, std::string> ParsedQueryTerm;
-    typedef std::pair<std::string, QueryTerm::SearchTerm> ParsedTerm;
+    typedef std::pair<std::string, TermType> ParsedTerm;
     QueryNodeResultFactory   eqnr;
-    std::vector<QueryTerm> qtv;
+    std::vector<QueryTerm::UP> qtv;
     QueryTermList          qtl;
     Query(const StringList & terms);
     ~Query();
@@ -81,13 +82,13 @@ public:
     }
     static ParsedTerm parseTerm(const std::string & term) {
         if (term[0] == '*' && term[term.size() - 1] == '*') {
-            return std::make_pair(term.substr(1, term.size() - 2), QueryTerm::SUBSTRINGTERM);
+            return std::make_pair(term.substr(1, term.size() - 2), TermType::SUBSTRINGTERM);
         } else if (term[0] == '*') {
-            return std::make_pair(term.substr(1, term.size() - 1), QueryTerm::SUFFIXTERM);
+            return std::make_pair(term.substr(1, term.size() - 1), TermType::SUFFIXTERM);
         } else if (term[term.size() - 1] == '*') {
-            return std::make_pair(term.substr(0, term.size() - 1), QueryTerm::PREFIXTERM);
+            return std::make_pair(term.substr(0, term.size() - 1), TermType::PREFIXTERM);
         } else {
-            return std::make_pair(term, QueryTerm::WORD);
+            return std::make_pair(term, TermType::WORD);
         }
     }
 };
@@ -95,7 +96,7 @@ public:
 Query::Query(const StringList & terms) : eqnr(), qtv(), qtl() {
     setupQuery(terms);
 }
-Query::~Query() {}
+Query::~Query() = default;
 
 struct SnippetModifierSetup
 {
@@ -127,7 +128,7 @@ void assertSnippetModifier(const StringList &query, const std::string &fv, const
 void assertSnippetModifier(SnippetModifierSetup &setup, const FieldValue &fv, const std::string &exp);
 void assertQueryTerms(const SnippetModifierManager &man, FieldIdT fId, const StringList &terms);
 void assertNumeric(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const BoolList &exp);
-std::vector<QueryTerm> performSearch(FieldSearcher &fs, const StringList &query, const FieldValue &fv);
+std::vector<QueryTerm::UP> performSearch(FieldSearcher &fs, const StringList &query, const FieldValue &fv);
 void assertSearch(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const HitsList &exp);
 bool assertCountWords(size_t numWords, const std::string &field);
 bool assertFieldInfo(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const FieldInfoList &exp);
@@ -284,8 +285,8 @@ bool
 assertMatchTermSuffix(const std::string & term, const std::string & word)
 {
     QueryNodeResultFactory eqnr;
-    QueryTerm qa(eqnr.create(), term, "index", QueryTerm::WORD);
-    QueryTerm qb(eqnr.create(), word, "index", QueryTerm::WORD);
+    QueryTerm qa(eqnr.create(), term, "index", TermType::WORD);
+    QueryTerm qb(eqnr.create(), word, "index", TermType::WORD);
     const ucs4_t * a;
     size_t alen = qa.term(a);
     const ucs4_t * b;
@@ -303,7 +304,7 @@ assertNumeric(FieldSearcher & fs, const StringList & query, const FieldValue & f
     assertSearch(fs, query, fv, hl);
 }
 
-std::vector<QueryTerm>
+std::vector<QueryTerm::UP>
 performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv)
 {
     Query q(query);
@@ -319,17 +320,17 @@ performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & f
     doc.setField(0, document::FieldValue::UP(fv.clone()));
 
     fs.search(doc);
-    return q.qtv;
+    return std::move(q.qtv);
 }
 
 void
 assertSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const HitsList & exp)
 {
-    std::vector<QueryTerm> qtv = performSearch(fs, query, fv);
+    auto qtv = performSearch(fs, query, fv);
     EXPECT_EQUAL(qtv.size(), exp.size());
     ASSERT_TRUE(qtv.size() == exp.size());
     for (size_t i = 0; i < qtv.size(); ++i) {
-        const HitList & hl = qtv[i].getHitList();
+        const HitList & hl = qtv[i]->getHitList();
         EXPECT_EQUAL(hl.size(), exp[i].size());
         ASSERT_TRUE(hl.size() == exp[i].size());
         for (size_t j = 0; j < hl.size(); ++j) {
@@ -342,13 +343,13 @@ bool
 assertFieldInfo(FieldSearcher & fs, const StringList & query,
                               const FieldValue & fv, const FieldInfoList & exp)
 {
-    std::vector<QueryTerm> qtv = performSearch(fs, query, fv);
+    auto qtv = performSearch(fs, query, fv);
     if (!EXPECT_EQUAL(qtv.size(), exp.size())) return false;
     bool retval = true;
     for (size_t i = 0; i < qtv.size(); ++i) {
-        if (!EXPECT_EQUAL(qtv[i].getFieldInfo(0).getHitOffset(), exp[i].getHitOffset())) retval = false;
-        if (!EXPECT_EQUAL(qtv[i].getFieldInfo(0).getHitCount(), exp[i].getHitCount())) retval = false;
-        if (!EXPECT_EQUAL(qtv[i].getFieldInfo(0).getFieldLength(), exp[i].getFieldLength())) retval = false;
+        if (!EXPECT_EQUAL(qtv[i]->getFieldInfo(0).getHitOffset(), exp[i].getHitOffset())) retval = false;
+        if (!EXPECT_EQUAL(qtv[i]->getFieldInfo(0).getHitCount(), exp[i].getHitCount())) retval = false;
+        if (!EXPECT_EQUAL(qtv[i]->getFieldInfo(0).getFieldLength(), exp[i].getFieldLength())) retval = false;
     }
     return retval;
 }
@@ -467,13 +468,13 @@ testStrChrFieldSearcher(StrChrFieldSearcher & fs)
         ASSERT_TRUE(Query::parseQueryTerm("term").first == "");
         ASSERT_TRUE(Query::parseQueryTerm("term").second == "term");
         ASSERT_TRUE(Query::parseTerm("*substr*").first == "substr");
-        ASSERT_TRUE(Query::parseTerm("*substr*").second == QueryTerm::SUBSTRINGTERM);
+        ASSERT_TRUE(Query::parseTerm("*substr*").second == TermType::SUBSTRINGTERM);
         ASSERT_TRUE(Query::parseTerm("*suffix").first == "suffix");
-        ASSERT_TRUE(Query::parseTerm("*suffix").second == QueryTerm::SUFFIXTERM);
+        ASSERT_TRUE(Query::parseTerm("*suffix").second == TermType::SUFFIXTERM);
         ASSERT_TRUE(Query::parseTerm("prefix*").first == "prefix");
-        ASSERT_TRUE(Query::parseTerm("prefix*").second == QueryTerm::PREFIXTERM);
+        ASSERT_TRUE(Query::parseTerm("prefix*").second == TermType::PREFIXTERM);
         ASSERT_TRUE(Query::parseTerm("term").first == "term");
-        ASSERT_TRUE(Query::parseTerm("term").second == QueryTerm::WORD);
+        ASSERT_TRUE(Query::parseTerm("term").second == TermType::WORD);
     }
 
     TEST("suffix matching") {

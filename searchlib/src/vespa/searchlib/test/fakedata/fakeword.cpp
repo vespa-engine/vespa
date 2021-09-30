@@ -8,6 +8,7 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
@@ -31,7 +32,7 @@ namespace fakedata
 static void
 fillbitset(search::BitVector *bitvector,
            unsigned int size,
-           search::Rand48 &rnd)
+           vespalib::Rand48 &rnd)
 {
     unsigned int range;
     unsigned int idx;
@@ -70,7 +71,7 @@ static void
 fillcorrelatedbitset(search::BitVector &bitvector,
                      unsigned int size,
                      const FakeWord &otherword,
-                     search::Rand48 &rnd)
+                     vespalib::Rand48 &rnd)
 {
     const FakeWord::DocWordFeatureList &opostings = otherword._postings;
 
@@ -145,7 +146,7 @@ FakeWord::FakeWord(uint32_t docIdLimit,
     for (uint32_t docId : docIds) {
         bitmap->setBit(docId);
     }
-    search::Rand48 rnd;
+    vespalib::Rand48 rnd;
     fakeup(*bitmap, rnd, _postings, _wordPosFeatures);
 }
 
@@ -153,7 +154,7 @@ FakeWord::FakeWord(uint32_t docIdLimit,
                    uint32_t wordDocs,
                    uint32_t tempWordDocs,
                    const std::string &name,
-                   search::Rand48 &rnd,
+                   vespalib::Rand48 &rnd,
                    const PosOccFieldsParams &fieldsParams,
                    uint32_t packedIndex)
     : _postings(),
@@ -181,7 +182,7 @@ FakeWord::FakeWord(uint32_t docIdLimit,
                    const std::string &name,
                    const FakeWord &otherWord,
                    size_t overlapDocs,
-                   search::Rand48 &rnd,
+                   vespalib::Rand48 &rnd,
                    const PosOccFieldsParams &fieldsParams,
                    uint32_t packedIndex)
     : _postings(),
@@ -211,7 +212,7 @@ FakeWord::~FakeWord()
 
 void
 FakeWord::fakeup(search::BitVector &bitmap,
-                 search::Rand48 &rnd,
+                 vespalib::Rand48 &rnd,
                  DocWordFeatureList &postings,
                  DocWordPosFeatureList &wordPosFeatures)
 {
@@ -232,7 +233,7 @@ FakeWord::fakeup(search::BitVector &bitmap,
         wpf.clear();
         for (unsigned int j = 0; j < positions; ++j) {
             DocWordPosFeature dwpf;
-            dwpf._wordPos = rnd.lrand48() % 8192;
+            dwpf._wordPos = rnd.lrand48() % 8_Ki;
             dwpf._elementId = 0;
             if (_fieldsParams.getFieldParams()[0]._hasElements) {
                 dwpf._elementId = rnd.lrand48() % 4;
@@ -258,7 +259,7 @@ FakeWord::fakeup(search::BitVector &bitmap,
                     lastwordpos = i->_wordPos;
                     ++i;
                 }
-                uint32_t elementLen = (rnd.lrand48() % 8192) + 1 + lastwordpos;
+                uint32_t elementLen = (rnd.lrand48() % 8_Ki) + 1 + lastwordpos;
                 int32_t elementWeight = 1;
                 if (_fieldsParams.getFieldParams()[0].
                     _hasElementWeights) {
@@ -301,7 +302,7 @@ FakeWord::fakeup(search::BitVector &bitmap,
 
 
 void
-FakeWord::fakeupTemps(search::Rand48 &rnd,
+FakeWord::fakeupTemps(vespalib::Rand48 &rnd,
                       uint32_t docIdLimit,
                       uint32_t tempWordDocs)
 {
@@ -315,7 +316,7 @@ FakeWord::fakeupTemps(search::Rand48 &rnd,
 }
 
 void
-FakeWord::setupRandomizer(search::Rand48 &rnd)
+FakeWord::setupRandomizer(vespalib::Rand48 &rnd)
 {
     typedef DocWordFeatureList DWFL;
     Randomizer randomAdd;

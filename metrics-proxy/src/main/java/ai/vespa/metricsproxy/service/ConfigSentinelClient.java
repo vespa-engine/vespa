@@ -2,11 +2,18 @@
 package ai.vespa.metricsproxy.service;
 
 import com.google.inject.Inject;
-import com.yahoo.log.LogLevel;
+import com.yahoo.component.AbstractComponent;
+import java.util.logging.Level;
+
+import com.yahoo.jrt.ErrorCode;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.Transport;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -14,14 +21,28 @@ import java.util.logging.Logger;
 /**
  * Connects to the config sentinel and gets information like pid for the services on the node
  */
-public class ConfigSentinelClient {
+public class ConfigSentinelClient extends AbstractComponent {
     private final static Logger log = Logger.getLogger(ConfigSentinelClient.class.getName());
 
-    private final CmdClient client;
+    private static final Spec SPEC = new Spec("localhost", 19097);
+    private final Supervisor supervisor;
+    private Target connection = null;
 
     @Inject
     public ConfigSentinelClient() {
-        this.client = new CmdClient();
+        supervisor = new Supervisor(new Transport("sentinel-client")).setDropEmptyBuffers(true);
+    }
+
+    @Override
+    public void deconstruct() {
+        synchronized (this) {
+            if (connection != null) {
+                connection.close();
+                connection = null;
+            }
+        }
+        supervisor.transport().shutdown().join();
+        super.deconstruct();
     }
 
     /**
@@ -33,7 +54,7 @@ public class ConfigSentinelClient {
         try {
             setStatus(services);
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Unable to update service pids from sentinel", e);
+            log.log(Level.SEVERE, "Unable to update service pids from sentinel", e);
         }
     }
 
@@ -46,11 +67,11 @@ public class ConfigSentinelClient {
     synchronized void ping(VespaService s) {
         List<VespaService> services = new ArrayList<>();
         services.add(s);
-        log.log(LogLevel.DEBUG, "Ping for service " + s);
+        log.log(Level.FINE, () -> "Ping for service " + s);
         try {
             setStatus(services);
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Unable to update service pids from sentinel", e);
+            log.log(Level.SEVERE, "Unable to update service pids from sentinel", e);
         }
     }
 
@@ -61,11 +82,8 @@ public class ConfigSentinelClient {
      * @throws Exception if something went wrong
      */
     protected synchronized void setStatus(List<VespaService> services) throws Exception {
-        InputStream in;
-        client.connect();
-
-        in = client.getInputStream();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        String in = sentinelLs();
+        BufferedReader reader = new BufferedReader(new StringReader(in));
         String line;
         List<VespaService> updatedServices = new ArrayList<>();
         while ((line = reader.readLine()) != null) {
@@ -83,14 +101,13 @@ public class ConfigSentinelClient {
         //from the sentinel
         for (VespaService s : services) {
             if ((!s.getServiceName().equals("configserver")) && !updatedServices.contains(s)) {
-                log.log(LogLevel.DEBUG,"Service " + s +  " is no longer found with sentinel - setting alive = false");
+                log.log(Level.FINE, () -> "Service " + s +  " is no longer found with sentinel - setting alive = false");
                 s.setAlive(false);
             }
         }
 
         //Close streams
         reader.close();
-        client.disconnect();
     }
 
     static VespaService parseServiceString(String line, List<VespaService> services) {
@@ -117,7 +134,7 @@ public class ConfigSentinelClient {
         }
 
         for (int i = 1; i < parts.length; i++) {
-            String keyValue[] = parts[i].split("=");
+            String [] keyValue = parts[i].split("=");
 
             String key = keyValue[0];
             String value = keyValue[1];
@@ -144,28 +161,26 @@ public class ConfigSentinelClient {
         return service;
     }
 
-    static class CmdClient {
-        Process proc;
-        // NOTE: hostname/port not used yet
-        void connect() {
-            String[] args = new String[]{"vespa-sentinel-cmd", "list"};
-            try {
-                proc = Runtime.getRuntime().exec(args);
-            } catch (Exception e) {
-                log.log(LogLevel.WARNING, "could not run vespa-sentinel-cmd: "+e);
-                proc = null;
+    String sentinelLs() {
+        String servicelist = "";
+        synchronized (this) {
+            if (connection == null || ! connection.isValid()) {
+                connection = supervisor.connect(SPEC);
             }
         }
-        void disconnect() {
-            if (proc.isAlive()) {
-                proc.destroy();
+        if (connection.isValid()) {
+            Request req = new Request("sentinel.ls");
+            connection.invokeSync(req, 5.0);
+            if (req.errorCode() == ErrorCode.NONE &&
+                req.checkReturnTypes("s"))
+            {
+                servicelist = req.returnValues().get(0).asString();
+            } else {
+                log.log(Level.WARNING, "Bad answer to RPC request: " + req.errorMessage());
             }
-            proc = null;
+        } else {
+            log.log(Level.WARNING, "Could not connect to sentinel at: " + SPEC);
         }
-        InputStream getInputStream() {
-            return (proc != null)
-                    ? proc.getInputStream()
-                    : new java.io.ByteArrayInputStream(new byte[0]);
-        }
+        return servicelist;
     }
 }

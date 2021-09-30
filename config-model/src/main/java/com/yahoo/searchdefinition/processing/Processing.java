@@ -27,7 +27,6 @@ public class Processing {
                 IndexFieldNames::new,
                 IntegerIndex2Attribute::new,
                 MakeAliases::new,
-                SetLanguage::new,
                 UriHack::new,
                 LiteralBoost::new,
                 TagType::new,
@@ -38,6 +37,7 @@ public class Processing {
                 AttributesImplicitWord::new,
                 MutableAttributes::new,
                 CreatePositionZCurve::new,
+                DictionaryProcessor::new,
                 WordMatch::new,
                 ImportedFieldsResolver::new,
                 ImplicitSummaries::new,
@@ -75,7 +75,11 @@ public class Processing {
                 ReferenceFieldsProcessor::new,
                 FastAccessValidator::new,
                 ReservedFunctionNames::new,
+                OnnxModelConfigGenerator::new,
+                OnnxModelTypeResolver::new,
                 RankingExpressionTypeResolver::new,
+                BoolAttributeValidator::new,
+                PagedAttributeValidator::new,
                 // These should be last:
                 IndexingValidation::new,
                 IndexingValues::new);

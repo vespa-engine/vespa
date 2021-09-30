@@ -34,6 +34,7 @@ import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.language.process.StemMode;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.Linguistics;
 
 /**
@@ -44,6 +45,7 @@ public class IndexingParser {
 
     private String defaultFieldName;
     private Linguistics linguistics;
+    private Embedder embedder;
     private AnnotatorConfig annotatorCfg;
 
     public IndexingParser(String str) {
@@ -57,6 +59,11 @@ public class IndexingParser {
 
     public IndexingParser setLinguistics(Linguistics linguistics) {
         this.linguistics = linguistics;
+        return this;
+    }
+
+    public IndexingParser setEmbedder(Embedder embedder) {
+        this.embedder = embedder;
         return this;
     }
 
@@ -150,6 +157,7 @@ TOKEN :
     <CREATE_IF_NON_EXISTENT: "create_if_non_existent"> |
     <ECHO: "echo"> |
     <ELSE: "else"> |
+    <EMBED: "embed"> |
     <EXACT: "exact"> |
     <FLATTEN: "flatten"> |
     <FOR_EACH: "for_each"> |
@@ -191,8 +199,11 @@ TOKEN :
     <TO_POS: "to_pos"> |
     <TO_STRING: "to_string"> |
     <TO_WSET: "to_wset"> |
+    <TO_BOOL: "to_bool"> |
     <TRIM: "trim"> |
     <ZCURVE: "zcurve"> |
+    <TRUE: "true" > |
+    <FALSE: "false" > |
     <IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])*>
 }
 
@@ -272,6 +283,7 @@ Expression value() :
       val = base64EncodeExp()       |
       val = clearStateExp()         |
       val = echoExp()               |
+      val = embedExp()             |
       val = exactExp()              |
       val = flattenExp()            |
       val = forEachExp()            |
@@ -312,7 +324,9 @@ Expression value() :
       val = toPosExp()              |
       val = toStringExp()           |
       val = toWsetExp()             |
+      val = toBoolExp()             |
       val = trimExp()               |
+      val = literalBoolExp()        |
       val = zcurveExp()             |
       ( <LPAREN> val = statement() <RPAREN> { val = new ParenthesisExpression(val); } ) )
     { return val; }
@@ -349,6 +363,12 @@ Expression echoExp() : { }
 {
     ( <ECHO> )
     { return new EchoExpression(); }
+}
+
+Expression embedExp() : { }
+{
+    ( <EMBED> )
+    { return new EmbedExpression(embedder); }
 }
 
 Expression exactExp() : { }
@@ -684,10 +704,22 @@ Expression toWsetExp() :
     { return new ToWsetExpression(createIfNonExistent, removeIfZero); }
 }
 
+Expression toBoolExp() : { }
+{
+    ( <TO_BOOL> )
+    { return new ToBoolExpression(); }
+}
+
 Expression trimExp() : { }
 {
     ( <TRIM> )
     { return new TrimExpression(); }
+}
+
+Expression literalBoolExp() : { }
+{
+    ( <TRUE> | <FALSE> )
+    { return new LiteralBoolExpression(Boolean.parseBoolean(token.image)); }
 }
 
 Expression zcurveExp() : { }
@@ -712,6 +744,7 @@ String identifier() :
         <ECHO>                   |
         <EXACT>                  |
         <ELSE>                   |
+        <EMBED>                 |
         <FLATTEN>                |
         <FOR_EACH>               |
         <GET_FIELD>              |
@@ -751,8 +784,11 @@ String identifier() :
         <TO_POS>                 |
         <TO_STRING>              |
         <TO_WSET>                |
+        <TO_BOOL>                |
         <TOKENIZE>               |
         <TRIM>                   |
+        <TRUE>                   |
+        <FALSE>                  |
         <ZCURVE>                 ) { val = token.image; } )
     { return val; }
 }

@@ -21,10 +21,6 @@ public interface RequestContext {
 
     boolean isProcessable();
 
-    int getApproxSize();
-
-    int getPriority();
-
     void processingDone(List<Processing> processing);
 
     void processingFailed(ErrorCode error, String msg);
@@ -44,9 +40,8 @@ public interface RequestContext {
         //fatal:
         ERROR_PROCESSING_FAILURE(Response.Status.INTERNAL_SERVER_ERROR, DocumentProtocol.ERROR_PROCESSING_FAILURE);
 
-
-        private int discStatus;
-        private int documentProtocolStatus;
+        private final int discStatus;
+        private final int documentProtocolStatus;
 
         ErrorCode(int discStatus, int documentProtocolStatus) {
             this.discStatus = discStatus;

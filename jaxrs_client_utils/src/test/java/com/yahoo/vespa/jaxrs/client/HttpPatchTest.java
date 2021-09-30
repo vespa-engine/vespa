@@ -21,8 +21,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bakksjo
@@ -57,8 +56,8 @@ public class HttpPatchTest extends JerseyTest {
         final Response response = target(TestResourceApi.PATH)
                 .request()
                 .method("PATCH", Entity.text(REQUEST_BODY));
-        assertThat(testResourceSingleton.invocation.get(60, TimeUnit.SECONDS), is(REQUEST_BODY));
-        assertThat(response.readEntity(String.class), is(REQUEST_BODY));
+        assertEquals(REQUEST_BODY, testResourceSingleton.invocation.get(60, TimeUnit.SECONDS));
+        assertEquals(REQUEST_BODY, response.readEntity(String.class));
     }
 
     @Test
@@ -76,8 +75,8 @@ public class HttpPatchTest extends JerseyTest {
         final String responseBody;
         responseBody = client.apply(api -> api.doPatch(REQUEST_BODY));
 
-        assertThat(testResourceSingleton.invocation.get(60, TimeUnit.SECONDS), is(REQUEST_BODY));
-        assertThat(responseBody, is(REQUEST_BODY));
+        assertEquals(REQUEST_BODY, testResourceSingleton.invocation.get(60, TimeUnit.SECONDS));
+        assertEquals(REQUEST_BODY, responseBody);
     }
 
     public interface TestResourceApi {

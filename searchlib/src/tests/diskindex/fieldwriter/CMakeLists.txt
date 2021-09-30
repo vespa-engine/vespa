@@ -6,4 +6,4 @@ vespa_add_executable(searchlib_fieldwriter_test_app TEST
     searchlib_test
     searchlib
 )
-vespa_add_test(NAME searchlib_fieldwriter_test_app COMMAND searchlib_fieldwriter_test_app)
+vespa_add_test(NAME searchlib_fieldwriter_test_app COMMAND searchlib_fieldwriter_test_app COST 200)

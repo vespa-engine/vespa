@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
@@ -6,29 +6,27 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.application.ConfigDefinitionDir;
 import com.yahoo.config.application.Xml;
 import com.yahoo.config.application.XmlPreProcessor;
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.codegen.DefParser;
-import com.yahoo.config.application.api.ApplicationFile;
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.path.Path;
 import com.yahoo.io.HexDump;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
-import com.yahoo.log.LogLevel;
+import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.util.ConfigUtils;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -36,18 +34,32 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.*;
-import java.net.JarURLConnection;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
 import java.security.MessageDigest;
-import java.util.*;
-import java.util.jar.JarFile;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
@@ -66,7 +78,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
      * The name of the subdirectory (below the original application package root)
      * where a preprocessed version of this application package is stored.
      * As it happens, the config model is first created with an application package in this subdirectory,
-     * and later used backed by an application package which is not in this subdirectory.
+     * and later backed by an application package which is not in this subdirectory.
      * To enable model code to correct for this, this constant must be publicly known.
      *
      * All of this stuff is Very Unfortunate and should be fixed. -Jon
@@ -84,6 +96,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
     private final List<String> userIncludeDirs = new ArrayList<>();
     private final ApplicationMetaData metaData;
     private final boolean includeSourceFiles;
+    private final TransformerFactory transformerFactory;
 
     /** Creates from a directory with source files included */
     public static FilesApplicationPackage fromFile(File appDir) {
@@ -136,16 +149,16 @@ public class FilesApplicationPackage implements ApplicationPackage {
      * @param metaData metadata for this application package
      * @param includeSourceFiles include files from source dirs
      */
-    @SuppressWarnings("deprecation")
     private FilesApplicationPackage(File appDir, File preprocessedDir, ApplicationMetaData metaData, boolean includeSourceFiles) {
         verifyAppDir(appDir);
         this.includeSourceFiles = includeSourceFiles;
         this.appDir = appDir;
         this.preprocessedDir = preprocessedDir;
         appSubDirs = new AppSubDirs(appDir);
-        configDefsDir = new File(appDir, ApplicationPackage.CONFIG_DEFINITIONS_DIR);
+        configDefsDir = new File(appDir, CONFIG_DEFINITIONS_DIR);
         addUserIncludeDirs();
         this.metaData = metaData;
+        transformerFactory = TransformerFactory.newInstance();
     }
 
     @Override
@@ -199,8 +212,12 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     private void verifyAppDir(File appDir) {
-        if (appDir==null || !appDir.isDirectory()) {
-            throw new IllegalArgumentException("Path '" + appDir + "' is not a directory.");
+        Objects.requireNonNull(appDir, "Path cannot be null");
+        if ( ! appDir.exists()) {
+            throw new IllegalArgumentException("Path '" + appDir + "' does not exist");
+        }
+        if ( ! appDir.isDirectory()) {
+            throw new IllegalArgumentException("Path '" + appDir + "' is not a directory");
         }
         if (! appDir.canRead()){
             throw new IllegalArgumentException("Cannot read from application directory '" + appDir + "'");
@@ -223,9 +240,8 @@ public class FilesApplicationPackage implements ApplicationPackage {
         return getHostsFile().getPath();
     }
 
-    @SuppressWarnings("deprecation")
     private File getHostsFile() {
-        return new File(appDir, ApplicationPackage.HOSTS);
+        return new File(appDir, HOSTS);
     }
 
     @Override
@@ -233,9 +249,8 @@ public class FilesApplicationPackage implements ApplicationPackage {
         return getServicesFile().getPath();
     }
 
-    @SuppressWarnings("deprecation")
     private File getServicesFile() {
-        return new File(appDir, ApplicationPackage.SERVICES);
+        return new File(appDir, SERVICES);
     }
 
     @Override
@@ -281,7 +296,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         String dir = include.getAttribute(IncludeDirs.DIR);
         validateIncludeDir(dir);
         IncludeDirs.validateFilesInIncludedDir(dir, include.getParentNode(), this);
-        log.log(LogLevel.DEBUG, "Adding user include dir '" + dir + "'");
+        log.log(Level.FINE, () -> "Adding user include dir '" + dir + "'");
         userIncludeDirs.add(dir);
     }
 
@@ -291,123 +306,17 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     @Override
-    public Collection<NamedReader> searchDefinitionContents() {
-        Map<String, NamedReader> ret = new LinkedHashMap<>();
-        Set<String> fileSds = new LinkedHashSet<>();
-        Set<String> bundleSds = new LinkedHashSet<>();
+    public Collection<NamedReader> getSchemas() {
+        Set<NamedReader> ret = new LinkedHashSet<>();
         try {
             for (File f : getSearchDefinitionFiles()) {
-                fileSds.add(f.getName());
-                ret.put(f.getName(), new NamedReader(f.getName(), new FileReader(f)));
-            }
-            for (Map.Entry<String, String> e : allSdsFromDocprocBundlesAndClasspath(appDir).entrySet()) {
-                bundleSds.add(e.getKey());
-                ret.put(e.getKey(), new NamedReader(e.getKey(), new StringReader(e.getValue())));
+                ret.add(new NamedReader(f.getName(), new FileReader(f)));
             }
         } catch (Exception e) {
-            throw new IllegalArgumentException("Couldn't get search definition contents.", e);
-        }
-        verifySdsDisjoint(fileSds, bundleSds);
-        return ret.values();
-    }
-
-    /**
-     * Verify that two sets of search definitions are disjoint (TODO: everything except error message is very generic).
-     *
-     * @param  fileSds Set of search definitions from file
-     * @param  bundleSds Set of search definitions from bundles
-     */
-    private void verifySdsDisjoint(Set<String> fileSds, Set<String> bundleSds) {
-        if (!Collections.disjoint(fileSds, bundleSds)) {
-            Collection<String> disjoint = new ArrayList<>(fileSds);
-            disjoint.retainAll(bundleSds);
-            throw new IllegalArgumentException("For the following search definitions names there are collisions between those specified inside " +
-            		                           "docproc bundles and those in searchdefinitions/ in application package: "+disjoint);
-        }
-    }
-
-    /**
-     * Returns sdName→payload for all SDs in all docproc bundles and on local classpath.
-     * Throws {@link IllegalArgumentException} if there are multiple sd files of same name.
-     * @param appDir application package directory
-     * @return a map from search definition name to search definition content
-     * @throws IOException if reading a search definition fails
-     */
-    public static Map<String, String> allSdsFromDocprocBundlesAndClasspath(File appDir) throws IOException {
-        File dpChains = new File(appDir, ApplicationPackage.COMPONENT_DIR);
-        if (!dpChains.exists() || !dpChains.isDirectory()) return Collections.emptyMap();
-        List<String> usedNames = new ArrayList<>();
-        Map<String, String> ret = new LinkedHashMap<>();
-
-        // try classpath first
-        allSdsOnClassPath(usedNames, ret);
-
-        for (File bundle : dpChains.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".jar");
-            }})) {
-            for(Map.Entry<String, String> entry : ApplicationPackage.getBundleSdFiles("", new JarFile(bundle)).entrySet()) {
-                String sdName = entry.getKey();
-                if (usedNames.contains(sdName)) {
-                    throw new IllegalArgumentException("The search definition name '"+sdName+"' used in bundle '"+
-                                                       bundle.getName()+"' is already used in classpath or previous bundle.");
-                }
-                usedNames.add(sdName);
-                String sdPayload = entry.getValue();
-                ret.put(sdName, sdPayload);
-            }
+            throw new IllegalArgumentException("Couldn't get schema contents.", e);
         }
         return ret;
     }
-
-	private static void allSdsOnClassPath(List<String> usedNames, Map<String, String> ret) throws IOException {
-		Enumeration<java.net.URL> resources = FilesApplicationPackage.class.getClassLoader().getResources(ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative());
-
-        while(resources.hasMoreElements()) {
-            URL resource = resources.nextElement();
-
-            String protocol = resource.getProtocol();
-
-            if ("file".equals(protocol)) {
-                File file;
-                try {
-                    file = new File(resource.toURI());
-                } catch (URISyntaxException e) {
-                    continue;
-                }
-                // only interested in directories
-                if (file.isDirectory()) {
-                    List<File> sdFiles = getSearchDefinitionFiles(file);
-                    for (File sdFile : sdFiles) {
-                        String sdName = sdFile.getName();
-                        if (usedNames.contains(sdName)) {
-                            throw new IllegalArgumentException("The search definition name '"+sdName+
-                                                               "' found in classpath already used earlier in classpath.");
-                        }
-                        usedNames.add(sdName);
-                        String contents = IOUtils.readAll(new FileReader(sdFile));
-                        ret.put(sdFile.getName(), contents);
-                    }
-                }
-            }
-            else if ("jar".equals(protocol)) {
-                JarURLConnection jarConnection = (JarURLConnection) resource.openConnection();
-                JarFile jarFile = jarConnection.getJarFile();
-                for(Map.Entry<String, String> entry : ApplicationPackage.getBundleSdFiles("", jarFile).entrySet()) {
-                    String sdName = entry.getKey();
-                    if (usedNames.contains(sdName)) {
-                        throw new IllegalArgumentException("The search definitions name '"+sdName+
-                                                           "' used in bundle '"+jarFile.getName()+"' " +
-                                                           "is already used in classpath or previous bundle.");
-                    }
-                    usedNames.add(sdName);
-                    String sdPayload = entry.getValue();
-                    ret.put(sdName, sdPayload);
-                }
-            }
-        }
-	}
 
     /**
      * Creates a reader for a config definition
@@ -431,7 +340,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
             addAllDefsFromConfigDir(defs, new File("src/main/resources/configdefinitions"));
             addAllDefsFromConfigDir(defs, new File("src/test/resources/configdefinitions"));
         }
-        addAllDefsFromBundles(defs, FilesApplicationPackage.getComponents(appDir));
+        addAllDefsFromBundles(defs, getComponents(appDir));
         return defs;
     }
 
@@ -461,12 +370,8 @@ public class FilesApplicationPackage implements ApplicationPackage {
     private void addAllDefsFromConfigDir(Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs, File configDefsDir) {
         if (! configDefsDir.isDirectory()) return;
 
-        log.log(LogLevel.DEBUG, "Getting all config definitions from '" + configDefsDir + "'");
-        for (File def : configDefsDir.listFiles(
-                new FilenameFilter() { @Override public boolean accept(File dir, String name) { // TODO: Fix
-                    return name.matches(".*\\.def");}})) {
-
-            log.log(LogLevel.DEBUG, "Processing config definition '" + def + "'");
+        log.log(Level.FINE, () -> "Getting all config definitions from '" + configDefsDir + "'");
+        for (File def : configDefsDir.listFiles((File dir, String name) -> name.matches(".*\\.def"))) {
             String[] nv = def.getName().split("\\.def");
             ConfigDefinitionKey key;
             try {
@@ -480,10 +385,10 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
             if (defs.containsKey(key)) {
                 if (nv[0].contains(".")) {
-                    log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key +
+                    log.log(Level.INFO, "Two config definitions found for the same name and namespace: " + key +
                                            ". The file '" + def + "' will take precedence");
                 } else {
-                    log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key +
+                    log.log(Level.INFO, "Two config definitions found for the same name and namespace: " + key +
                                            ". Skipping '" + def + "', as it does not contain namespace in filename");
                     continue; // skip
                 }
@@ -521,42 +426,37 @@ public class FilesApplicationPackage implements ApplicationPackage {
         }
     }
 
-    //Only intended for DeployProcessor, others should use the member version
     static List<File> getSearchDefinitionFiles(File appDir) {
-        //The dot is escaped later in this method:
-        assert (ApplicationPackage.SD_NAME_SUFFIX.charAt(0) == '.');
+        List<File> schemaFiles = new ArrayList<>();
 
-        List<File> ret = new ArrayList<>();
-        File sdDir;
+        File sdDir = new File(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
+        if (sdDir.isDirectory())
+            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + SD_NAME_SUFFIX))));
 
-        sdDir = new File(appDir, ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative());
-        if (!sdDir.isDirectory()) {
-            return ret;
-        }
-        ret.addAll(Arrays.asList(
-                sdDir.listFiles(
-                        new FilenameFilter() { @Override public boolean accept(File dir, String name) {
-                            return name.matches(".*\\" + ApplicationPackage.SD_NAME_SUFFIX);}})));
-        return ret;
+        sdDir = new File(appDir, SCHEMAS_DIR.getRelative());
+        if (sdDir.isDirectory())
+            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + SD_NAME_SUFFIX))));
+
+        return schemaFiles;
     }
 
     public List<File> getSearchDefinitionFiles() {
         return getSearchDefinitionFiles(appDir);
     }
 
-    //Only for use by deploy processor
+    // Only for use by deploy processor
     public static List<Component> getComponents(File appDir) {
         List<Component> components = new ArrayList<>();
-        for (Bundle bundle : Bundle.getBundles(new File(appDir, ApplicationPackage.COMPONENT_DIR))) {
-            components.add(new Component(bundle, new ComponentInfo(new File(ApplicationPackage.COMPONENT_DIR, bundle.getFile().getName()).getPath())));
+        for (Bundle bundle : Bundle.getBundles(new File(appDir, COMPONENT_DIR))) {
+            components.add(new Component(bundle, new ComponentInfo(new File(COMPONENT_DIR, bundle.getFile().getName()).getPath())));
         }
         return components;
     }
 
     private static List<ComponentInfo> getComponentsInfo(File appDir) {
         List<ComponentInfo> components = new ArrayList<>();
-        for (Bundle bundle : Bundle.getBundles(new File(appDir, ApplicationPackage.COMPONENT_DIR))) {
-            components.add(new ComponentInfo(new File(ApplicationPackage.COMPONENT_DIR, bundle.getFile().getName()).getPath()));
+        for (Bundle bundle : Bundle.getBundles(new File(appDir, COMPONENT_DIR))) {
+            components.add(new ComponentInfo(new File(COMPONENT_DIR, bundle.getFile().getName()).getPath()));
         }
         return components;
     }
@@ -622,7 +522,8 @@ public class FilesApplicationPackage implements ApplicationPackage {
         public Bundle getBundle() {
             return bundle;
         }
-    } // class Component
+
+    }
 
     /**
      * Reads a ranking expression from file to a string and returns it.
@@ -643,12 +544,16 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     private File expressionFileNameToFile(String name) {
-        File expressionFile = new File(name);
-        if (expressionFile.isAbsolute()) {
+        if (new File(name).isAbsolute())
             throw new IllegalArgumentException("Absolute path to ranking expression file is not allowed: " + name);
+
+        File sdDir = new File(appDir, SCHEMAS_DIR.getRelative());
+        File expressionFile = new File(sdDir, name);
+        if ( ! expressionFile.exists()) {
+            sdDir = new File(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
+            expressionFile = new File(sdDir, name);
         }
-        File sdDir = new File(appDir, ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative());
-        return new File(sdDir, name);
+        return expressionFile;
     }
 
     @Override
@@ -672,40 +577,47 @@ public class FilesApplicationPackage implements ApplicationPackage {
     @Override
     public void writeMetaData() throws IOException {
         File metaFile = new File(appDir, META_FILE_NAME);
-        IOUtils.writeFile(metaFile, metaData.asJsonString(), false);
+        IOUtils.writeFile(metaFile, metaData.asJsonBytes());
     }
 
-    @Override
-    public Collection<NamedReader> getSearchDefinitions() {
-        return searchDefinitionContents();
-    }
+    private void preprocessXML(File destination, File inputXml, Zone zone) throws IOException {
+        if ( ! inputXml.exists()) return;
+        try {
+            Document document = new XmlPreProcessor(appDir,
+                                                    inputXml,
+                                                    metaData.getApplicationId().instance(),
+                                                    zone.environment(),
+                                                    zone.region())
+                    .run();
 
-    private void preprocessXML(File destination, File inputXml, Zone zone) throws ParserConfigurationException, TransformerException, SAXException, IOException {
-        Document document = new XmlPreProcessor(appDir,
-                                                inputXml,
-                                                metaData.getApplicationId().instance(),
-                                                zone.environment(),
-                                                zone.region()).run();
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        try (FileOutputStream outputStream = new FileOutputStream(destination)) {
-            transformer.transform(new DOMSource(document), new StreamResult(outputStream));
+            try (FileOutputStream outputStream = new FileOutputStream(destination)) {
+                transformerFactory.newTransformer().transform(new DOMSource(document), new StreamResult(outputStream));
+            }
+        } catch (TransformerException | ParserConfigurationException | SAXException e) {
+            throw new RuntimeException("Error preprocessing " + inputXml.getAbsolutePath() + ": " + e.getMessage(), e);
         }
     }
 
     @Override
-    public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException, TransformerException, ParserConfigurationException, SAXException {
+    public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
         IOUtils.recursiveDeleteDir(preprocessedDir);
         IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> ! name.equals(preprocessed) &&
                                                                                          ! name.equals(SERVICES) &&
                                                                                          ! name.equals(HOSTS) &&
                                                                                          ! name.equals(CONFIG_DEFINITIONS_DIR));
-        preprocessXML(new File(preprocessedDir, SERVICES), getServicesFile(), zone);
-        if (getHostsFile().exists()) {
-            preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);
-        }
-        FilesApplicationPackage preprocessed = FilesApplicationPackage.fromFile(preprocessedDir, includeSourceFiles);
+        File servicesFile = validateServicesFile();
+        preprocessXML(new File(preprocessedDir, SERVICES), servicesFile, zone);
+        preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);
+        FilesApplicationPackage preprocessed = fromFile(preprocessedDir, includeSourceFiles);
         preprocessed.copyUserDefsIntoApplication();
         return preprocessed;
+    }
+
+    private File validateServicesFile() throws IOException {
+        File servicesFile = getServicesFile();
+        if ( ! servicesFile.exists() || IOUtils.readFile(servicesFile).isEmpty())
+            throw new IllegalArgumentException(SERVICES + " in application package is empty");
+        return servicesFile;
     }
 
     private void copyUserDefsIntoApplication() {
@@ -714,7 +626,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         ConfigDefinitionDir defDir = new ConfigDefinitionDir(destination);
         // Copy the user's def files from components.
         List<Bundle> bundlesAdded = new ArrayList<>();
-        for (FilesApplicationPackage.Component component : FilesApplicationPackage.getComponents(appSubDirs.root())) {
+        for (Component component : getComponents(appSubDirs.root())) {
             Bundle bundle = component.getBundle();
             defDir.addConfigDefinitionsFromBundle(bundle, bundlesAdded);
             bundlesAdded.add(bundle);
@@ -730,7 +642,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         MessageDigest md5;
         try {
             md5 = MessageDigest.getInstance("MD5");
-            for (File file : appDir.listFiles((dir, name) -> !name.equals(ApplicationPackage.EXT_DIR) && !name.startsWith("."))) {
+            for (File file : appDir.listFiles((dir, name) -> !name.equals(EXT_DIR) && !name.startsWith("."))) {
                 addPathToDigest(file, "", md5, true, false);
             }
             return toLowerCase(HexDump.toHexString(md5.digest()));
@@ -742,11 +654,12 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     /**
      * Adds the given path to the digest, or does nothing if path is neither file nor dir
+     *
      * @param path path to add to message digest
      * @param suffix only files with this suffix are considered
      * @param digest the {link @MessageDigest} to add the file paths to
      * @param recursive whether to recursively find children in the paths
-     * @param fullPathNames Whether to include the full paths in checksum or only the names
+     * @param fullPathNames whether to include the full paths in checksum or only the names
      * @throws java.io.IOException if adding path to digest fails when reading files from path
      */
     private static void addPathToDigest(File path, String suffix, MessageDigest digest, boolean recursive, boolean fullPathNames) throws IOException {
@@ -773,16 +686,17 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     private static final int MD5_BUFFER_SIZE = 65536;
+
     private static void addToDigest(InputStream is, MessageDigest digest) throws IOException {
-        if (is==null) return;
+        if (is == null) return;
         byte[] buffer = new byte[MD5_BUFFER_SIZE];
         int i;
         do {
-            i=is.read(buffer);
+            i = is.read(buffer);
             if (i > 0) {
                 digest.update(buffer, 0, i);
             }
-        } while(i!=-1);
+        } while(i != -1);
     }
 
     /**

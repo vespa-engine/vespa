@@ -6,7 +6,6 @@
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/searchlib/util/postingpriorityqueue.h>
 #include "wordnummapper.h"
 #include "docidmapper.h"
 #include "fieldwriter.h"

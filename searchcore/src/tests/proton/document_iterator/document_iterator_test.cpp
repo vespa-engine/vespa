@@ -9,8 +9,9 @@
 #include <vespa/persistence/spi/result.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/searchcore/proton/persistenceengine/document_iterator.h>
-#include <vespa/searchcore/proton/server/commit_and_wait_document_retriever.h>
+#include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
@@ -45,7 +46,6 @@ using storage::spi::DocEntry;
 using storage::spi::DocumentSelection;
 using storage::spi::IncludedVersions;
 using storage::spi::IterateResult;
-using storage::spi::PartitionId;
 using storage::spi::Selection;
 using storage::spi::Timestamp;
 using storage::spi::test::makeSpiBucket;
@@ -116,7 +116,7 @@ struct UnitDR : DocumentRetrieverBaseForTest {
     UnitDR();
     UnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r);
     UnitDR(const document::DocumentType &dt, document::Document::UP d, Timestamp t, Bucket b, bool r);
-    ~UnitDR();
+    ~UnitDR() override;
 
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return repo;
@@ -133,8 +133,8 @@ struct UnitDR : DocumentRetrieverBaseForTest {
         }
         return DocumentMetaData();
     }
-    document::Document::UP getDocument(DocumentIdT lid) const override {
-        return Document::UP((lid == docid) ? document->clone() : 0);
+    document::Document::UP getFullDocument(DocumentIdT lid) const override {
+        return Document::UP((lid == docid) ? document->clone() : nullptr);
     }
 
     uint32_t getDocIdLimit() const override {
@@ -145,7 +145,7 @@ struct UnitDR : DocumentRetrieverBaseForTest {
     }
 
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
-        CachedSelect::SP res(new CachedSelect);
+        auto res = std::make_shared<CachedSelect>();
         res->set(selection, repo);
         return res;
     }
@@ -154,7 +154,7 @@ struct UnitDR : DocumentRetrieverBaseForTest {
 };
 
 UnitDR::UnitDR()
-    : repo(), document(new Document(*DataType::DOCUMENT, DocumentId())), timestamp(0),
+    : repo(), document(std::make_unique<Document>(*DataType::DOCUMENT, DocumentId())), timestamp(0),
       bucket(), removed(false), docid(0), docIdLimit(std::numeric_limits<uint32_t>::max())
 {}
 UnitDR::UnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r)
@@ -165,7 +165,7 @@ UnitDR::UnitDR(const document::DocumentType &dt, document::Document::UP d, Times
     : repo(dt), document(std::move(d)), timestamp(t), bucket(b), removed(r), docid(++_docidCnt),
       docIdLimit(std::numeric_limits<uint32_t>::max())
 {}
-UnitDR::~UnitDR() {}
+UnitDR::~UnitDR() = default;
 
 
 struct VisitRecordingUnitDR : UnitDR {
@@ -179,11 +179,11 @@ struct VisitRecordingUnitDR : UnitDR {
     {
     }
 
-    document::Document::UP getDocument(DocumentIdT lid) const override {
+    document::Document::UP getFullDocument(DocumentIdT lid) const override {
         if (lid == docid) {
             visited_lids.insert(lid);
         }
-        return UnitDR::getDocument(lid);
+        return UnitDR::getFullDocument(lid);
     }
 };
 
@@ -238,7 +238,7 @@ struct AttrUnitDR : public UnitDR
     }
 
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
-        CachedSelect::SP res(new CachedSelect);
+        auto res = std::make_shared<CachedSelect>();
         res->set(selection, "foo", Document(document->getType(), DocumentId()), repo, &_amgr, true);
         return res;
     }
@@ -250,7 +250,7 @@ struct PairDR : DocumentRetrieverBaseForTest {
     IDocumentRetriever::SP first;
     IDocumentRetriever::SP second;
     PairDR(IDocumentRetriever::SP f, IDocumentRetriever::SP s)
-        : first(f), second(s) {}
+        : first(std::move(f)), second(std::move(s)) {}
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return first->getDocumentTypeRepo();
     }
@@ -262,24 +262,16 @@ struct PairDR : DocumentRetrieverBaseForTest {
         DocumentMetaData ret = first->getDocumentMetaData(id);
         return (ret.valid()) ? ret : second->getDocumentMetaData(id);
     }
-    document::Document::UP getDocument(DocumentIdT lid) const override {
-        Document::UP ret = first->getDocument(lid);
-        return (ret.get() != 0) ? std::move(ret) : second->getDocument(lid);
+    document::Document::UP getFullDocument(DocumentIdT lid) const override {
+        Document::UP ret = first->getFullDocument(lid);
+        return ret ? std::move(ret) : second->getFullDocument(lid);
     }
 
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
-        CachedSelect::SP res(new CachedSelect);
+        auto res = std::make_shared<CachedSelect>();
         res->set(selection, getDocumentTypeRepo());
         return res;
     }
-};
-
-struct Committer : public ICommitable {
-    size_t _commitCount;
-    size_t _commitAndWaitCount;
-    Committer() : _commitCount(0), _commitAndWaitCount(0) { }
-    void commit() override { _commitCount++; }
-    void commitAndWait() override { _commitAndWaitCount++; }
 };
 
 size_t getSize() {
@@ -296,56 +288,65 @@ size_t getSize(const document::DocumentId &id) {
     return id.getSerializedSize() + getSize();
 }
 
-IDocumentRetriever::SP nil() { return IDocumentRetriever::SP(new UnitDR()); }
+IDocumentRetriever::SP nil() { return std::make_unique<UnitDR>(); }
 
-IDocumentRetriever::SP doc(const std::string &id, Timestamp t, Bucket b) {
-    Document::UP d(new Document(*DataType::DOCUMENT, DocumentId(id)));
-    return IDocumentRetriever::SP(new UnitDR(std::move(d), t, b, false));
+IDocumentRetriever::SP
+doc(const DocumentId &id, Timestamp t, Bucket b) {
+    return std::make_shared<UnitDR>(std::make_unique<Document>(*DataType::DOCUMENT, id), t, b, false);
 }
 
-IDocumentRetriever::SP rem(const std::string &id, Timestamp t, Bucket b) {
-    Document::UP d(new Document(*DataType::DOCUMENT, DocumentId(id)));
-    return IDocumentRetriever::SP(new UnitDR(std::move(d), t, b, true));
+IDocumentRetriever::SP
+doc(const std::string &id, Timestamp t, Bucket b) {
+    return doc(DocumentId(id), t, b);
+}
+
+IDocumentRetriever::SP
+rem(const DocumentId &id, Timestamp t, Bucket b) {
+    return std::make_shared<UnitDR>(std::make_unique<Document>(*DataType::DOCUMENT, id), t, b, true);
+}
+
+IDocumentRetriever::SP
+rem(const std::string &id, Timestamp t, Bucket b) {
+    return rem(DocumentId(id), t, b);
 }
 
 IDocumentRetriever::SP cat(IDocumentRetriever::SP first, IDocumentRetriever::SP second) {
-    return IDocumentRetriever::SP(new PairDR(first, second));
+    return std::make_unique<PairDR>(std::move(first), std::move(second));
 }
 
 const DocumentType &getDocType() {
     static DocumentType::UP doc_type;
-    if (!doc_type.get()) {
-        doc_type.reset(new DocumentType("foo", 42));
-        doc_type->addField(Field("header", 43, *DataType::STRING, true));
-        doc_type->addField(Field("body", 44, *DataType::STRING, false));
+    if (!doc_type) {
+        doc_type = std::make_unique<DocumentType>("foo", 42);
+        doc_type->addField(Field("header", 43, *DataType::STRING));
+        doc_type->addField(Field("body", 44, *DataType::STRING));
     }
     return *doc_type;
 }
 
 const DocumentType &getAttrDocType() {
     static DocumentType::UP doc_type;
-    if (!doc_type.get()) {
-        doc_type.reset(new DocumentType("foo", 42));
-        doc_type->addField(Field("header", 43, *DataType::STRING, true));
-        doc_type->addField(Field("body", 44, *DataType::STRING, false));
-        doc_type->addField(Field("aa", 45, *DataType::INT, false));
-        doc_type->addField(Field("ab", 46, *DataType::INT, false));
-        doc_type->addField(Field("dd", 47, *DataType::DOUBLE, false));
-        doc_type->addField(Field("ss", 48, *DataType::STRING, false));
+    if (!doc_type) {
+        doc_type = std::make_unique<DocumentType>("foo", 42);
+        doc_type->addField(Field("header", 43, *DataType::STRING));
+        doc_type->addField(Field("body", 44, *DataType::STRING));
+        doc_type->addField(Field("aa", 45, *DataType::INT));
+        doc_type->addField(Field("ab", 46, *DataType::INT));
+        doc_type->addField(Field("dd", 47, *DataType::DOUBLE));
+        doc_type->addField(Field("ss", 48, *DataType::STRING));
     }
     return *doc_type;
 }
 
 IDocumentRetriever::SP doc_with_fields(const std::string &id, Timestamp t, Bucket b) {
-    Document::UP d(new Document(getDocType(), DocumentId(id)));
+    auto d = std::make_unique<Document>(getDocType(), DocumentId(id));
     d->set("header", "foo");
     d->set("body", "bar");
-    return IDocumentRetriever::SP(new UnitDR(getDocType(), std::move(d), t, b, false));
+    return std::make_shared<UnitDR>(getDocType(), std::move(d), t, b, false);
 }
 
 IDocumentRetriever::SP doc_with_null_fields(const std::string &id, Timestamp t, Bucket b) {
-    Document::UP d(new Document(getAttrDocType(), DocumentId(id)));
-    return IDocumentRetriever::SP(new AttrUnitDR(std::move(d), t, b, false));
+    return std::make_unique<AttrUnitDR>(std::make_unique<Document>(getAttrDocType(), DocumentId(id)), t, b, false);
 }
 
 IDocumentRetriever::SP doc_with_attr_fields(const vespalib::string &id,
@@ -355,36 +356,33 @@ IDocumentRetriever::SP doc_with_attr_fields(const vespalib::string &id,
                                             const vespalib::string &ss,
                                             const vespalib::string &attr_ss)
 {
-    Document::UP d(new Document(getAttrDocType(), DocumentId(id)));
+    auto d = std::make_unique<Document>(getAttrDocType(), DocumentId(id));
     d->set("header", "foo");
     d->set("body", "bar");
     d->set("aa", aa);
     d->set("ab", ab);
     d->set("dd", dd);
     d->set("ss", ss);
-    return IDocumentRetriever::SP(new AttrUnitDR(std::move(d), t, b, false,
-                                                 attr_aa, attr_dd, attr_ss));
+    return std::make_shared<AttrUnitDR>(std::move(d), t, b, false, attr_aa, attr_dd, attr_ss);
 }
 
-auto doc_rec(VisitRecordingUnitDR::VisitedLIDs& visited_lids,
-             const std::string &id, Timestamp t, Bucket b)
+auto doc_rec(VisitRecordingUnitDR::VisitedLIDs& visited_lids, const std::string &id, Timestamp t, Bucket b)
 {
-    Document::UP d(new Document(getDocType(), DocumentId(id)));
-    return std::make_shared<VisitRecordingUnitDR>(
-            visited_lids, std::move(d), t, b, false);
+    return std::make_shared<VisitRecordingUnitDR>(visited_lids, std::make_unique<Document>(getAttrDocType(), DocumentId(id)), t, b, false);
 }
 
 void checkDoc(const IDocumentRetriever &dr, const std::string &id,
               size_t timestamp, size_t bucket, bool removed)
 {
-    DocumentMetaData dmd = dr.getDocumentMetaData(DocumentId(id));
+    DocumentId documentId(id);
+    DocumentMetaData dmd = dr.getDocumentMetaData(documentId);
     EXPECT_TRUE(dmd.valid());
     EXPECT_EQUAL(timestamp, dmd.timestamp);
     EXPECT_EQUAL(bucket, dmd.bucketId.getId());
     EXPECT_EQUAL(DocumentId(id).getGlobalId(), dmd.gid);
     EXPECT_EQUAL(removed, dmd.removed);
-    Document::UP doc = dr.getDocument(dmd.lid);
-    ASSERT_TRUE(doc.get() != 0);
+    Document::UP doc = dr.getDocument(dmd.lid, documentId);
+    ASSERT_TRUE(doc);
     EXPECT_TRUE(DocumentId(id) == doc->getId());
 }
 
@@ -415,15 +413,18 @@ void checkEntry(const IterateResult &res, size_t idx, const Document &doc, const
 }
 
 TEST("require that custom retrievers work as expected") {
+    DocumentId id1("id:ns:document::1");
+    DocumentId id2("id:ns:document::2");
+    DocumentId id3("id:ns:document::3");
     IDocumentRetriever::SP dr =
-        cat(cat(doc("id:ns:document::1", Timestamp(2), bucket(5)),
-                rem("id:ns:document::2", Timestamp(3), bucket(5))),
-            cat(doc("id:ns:document::3", Timestamp(7), bucket(6)),
+        cat(cat(doc(id1, Timestamp(2), bucket(5)),
+                rem(id2, Timestamp(3), bucket(5))),
+            cat(doc(id3, Timestamp(7), bucket(6)),
                 nil()));
     EXPECT_FALSE(dr->getDocumentMetaData(DocumentId("id:ns:document::bogus")).valid());
-    EXPECT_TRUE(dr->getDocument(1).get() == 0);
-    EXPECT_TRUE(dr->getDocument(2).get() == 0);
-    EXPECT_TRUE(dr->getDocument(3).get() != 0);
+    EXPECT_FALSE(dr->getDocument(1, id1));
+    EXPECT_FALSE(dr->getDocument(2, id2));
+    EXPECT_TRUE(dr->getDocument(3, id3));
     TEST_DO(checkDoc(*dr, "id:ns:document::1", 2, 5, false));
     TEST_DO(checkDoc(*dr, "id:ns:document::2", 3, 5, true));
     TEST_DO(checkDoc(*dr, "id:ns:document::3", 7, 6, false));
@@ -438,14 +439,14 @@ TEST("require that custom retrievers work as expected") {
 }
 
 TEST("require that an empty list of retrievers can be iterated") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     IterateResult res = itr.iterate(largeNum);
     EXPECT_EQUAL(0u, res.getEntries().size());
     EXPECT_TRUE(res.isCompleted());
 }
 
 TEST("require that a list of empty retrievers can be iterated") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     itr.add(nil());
     itr.add(nil());
     itr.add(nil());
@@ -455,7 +456,7 @@ TEST("require that a list of empty retrievers can be iterated") {
 }
 
 TEST("require that normal documents can be iterated") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
                 doc("id:ns:document::3", Timestamp(4), bucket(5))));
@@ -478,48 +479,76 @@ void verifyIterateIgnoringStopSignal(DocumentIterator & itr) {
 }
 
 TEST("require that iterator stops at the end, and does not auto rewind") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     TEST_DO(verifyIterateIgnoringStopSignal(itr));
 }
 
 TEST("require that iterator ignoring maxbytes stops at the end, and does not auto rewind") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, true);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, true);
     TEST_DO(verifyIterateIgnoringStopSignal(itr));
 }
 
-void verifyReadConsistency(DocumentIterator & itr, Committer & committer) {
+void verifyReadConsistency(DocumentIterator & itr, ILidCommitState & lidCommitState) {
     IDocumentRetriever::SP retriever = doc("id:ns:document::1", Timestamp(2), bucket(5));
-    IDocumentRetriever::SP commitAndWaitRetriever(new CommitAndWaitDocumentRetriever(retriever, committer));
+    auto commitAndWaitRetriever = std::make_shared<CommitAndWaitDocumentRetriever>(retriever, lidCommitState);
     itr.add(commitAndWaitRetriever);
 
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(1u, res.getEntries().size());
     TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1")), Timestamp(2)));
-    EXPECT_EQUAL(0u, committer._commitCount);
 }
 
+class ILidCommitStateProxy : public ILidCommitState {
+public:
+    explicit ILidCommitStateProxy(ILidCommitState & lidState)
+        : _waitCompleteCount(0),
+          _lidState(lidState)
+    {}
+private:
+    State waitState(State state, uint32_t lid) const override {
+        assert(state == State::COMPLETED);
+        _lidState.waitComplete(lid);
+        _waitCompleteCount++;
+        return state;
+    }
+
+    State waitState(State state, const LidList &lids) const override {
+        assert(state == State::COMPLETED);
+        _lidState.waitComplete(lids);
+        _waitCompleteCount++;
+        return state;
+    }
+
+public:
+    mutable size_t _waitCompleteCount;
+private:
+    ILidCommitState & _lidState;
+};
+
 void verifyStrongReadConsistency(DocumentIterator & itr) {
-    Committer committer;
-    TEST_DO(verifyReadConsistency(itr, committer));
-    EXPECT_EQUAL(1u, committer._commitAndWaitCount);
+    PendingLidTracker lidTracker;
+
+    ILidCommitStateProxy lidCommitState(lidTracker);
+    TEST_DO(verifyReadConsistency(itr, lidCommitState));
+    EXPECT_EQUAL(1u, lidCommitState._waitCompleteCount);
 }
 
 TEST("require that default readconsistency does commit") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     TEST_DO(verifyStrongReadConsistency(itr));
 }
 
 TEST("require that readconsistency::strong does commit") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false, storage::spi::ReadConsistency::STRONG);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false, storage::spi::ReadConsistency::STRONG);
     TEST_DO(verifyStrongReadConsistency(itr));
 }
 
 TEST("require that docid limit is honoured") {
     IDocumentRetriever::SP retriever = doc("id:ns:document::1", Timestamp(2), bucket(5));
-    UnitDR & udr = dynamic_cast<UnitDR &>(*retriever);
+    auto & udr = dynamic_cast<UnitDR &>(*retriever);
     udr.docid = 7;
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     itr.add(retriever);
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
@@ -527,7 +556,7 @@ TEST("require that docid limit is honoured") {
     TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1")), Timestamp(2)));
 
     udr.setDocIdLimit(7);
-    DocumentIterator limited(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
+    DocumentIterator limited(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     limited.add(retriever);
     res = limited.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
@@ -535,7 +564,7 @@ TEST("require that docid limit is honoured") {
 }
 
 TEST("require that remove entries can be iterated") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     itr.add(rem("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
                 rem("id:ns:document::3", Timestamp(4), bucket(5))));
@@ -548,7 +577,7 @@ TEST("require that remove entries can be iterated") {
 }
 
 TEST("require that remove entries can be ignored") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), docV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), docV(), -1, false);
     itr.add(rem("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
                 rem("id:ns:document::3", Timestamp(4), bucket(5))));
@@ -559,7 +588,7 @@ TEST("require that remove entries can be ignored") {
 }
 
 TEST("require that iterating all versions returns both documents and removes") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), allV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), allV(), -1, false);
     itr.add(rem("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
                 rem("id:ns:document::3", Timestamp(4), bucket(5))));
@@ -572,7 +601,7 @@ TEST("require that iterating all versions returns both documents and removes") {
 }
 
 TEST("require that using an empty field set returns meta-data only") {
-    DocumentIterator itr(bucket(5), document::NoFields(), selectAll(), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::NoFields>(), selectAll(), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
                 rem("id:ns:document::3", Timestamp(4), bucket(5))));
@@ -585,7 +614,7 @@ TEST("require that using an empty field set returns meta-data only") {
 }
 
 TEST("require that entries in other buckets are skipped") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     itr.add(rem("id:ns:document::1", Timestamp(2), bucket(6)));
     itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
                 doc("id:ns:document::3", Timestamp(4), bucket(6))));
@@ -596,7 +625,7 @@ TEST("require that entries in other buckets are skipped") {
 }
 
 TEST("require that maxBytes splits iteration results") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
                 doc("id:ns:document::3", Timestamp(4), bucket(5))));
@@ -617,7 +646,7 @@ TEST("require that maxBytes splits iteration results") {
 }
 
 TEST("require that maxBytes splits iteration results for meta-data only iteration") {
-    DocumentIterator itr(bucket(5), document::NoFields(), selectAll(), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::NoFields>(), selectAll(), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
                 doc("id:ns:document::3", Timestamp(4), bucket(5))));
@@ -637,17 +666,17 @@ TEST("require that maxBytes splits iteration results for meta-data only iteratio
 }
 
 TEST("require that at least one document is returned by visit") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectAll(), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
                 doc("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res1 = itr.iterate(0);
-    EXPECT_TRUE(1u <= res1.getEntries().size());
+    EXPECT_TRUE( ! res1.getEntries().empty());
     TEST_DO(checkEntry(res1, 0, Document(*DataType::DOCUMENT,DocumentId("id:ns:document::1")), Timestamp(2)));
 }
 
 TEST("require that documents outside the timestamp limits are ignored") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectTimestampRange(100, 200), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectTimestampRange(100, 200), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(99),  bucket(5)));
     itr.add(doc("id:ns:document::2", Timestamp(100), bucket(5)));
     itr.add(doc("id:ns:document::3", Timestamp(200), bucket(5)));
@@ -666,7 +695,7 @@ TEST("require that documents outside the timestamp limits are ignored") {
 }
 
 TEST("require that timestamp subset returns the appropriate documents") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectTimestampSet(200, 350, 400), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectTimestampSet(200, 350, 400), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(500),  bucket(5)));
     itr.add(doc("id:ns:document::2", Timestamp(400), bucket(5)));
     itr.add(doc("id:ns:document::3", Timestamp(300), bucket(5)));
@@ -684,7 +713,7 @@ TEST("require that timestamp subset returns the appropriate documents") {
 }
 
 TEST("require that document selection will filter results") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectDocs("id=\"id:ns:document::xxx*\""), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectDocs("id=\"id:ns:document::xxx*\""), newestV(), -1, false);
     itr.add(doc("id:ns:document::xxx1", Timestamp(99),  bucket(5)));
     itr.add(doc("id:ns:document::yyy1", Timestamp(100), bucket(5)));
     itr.add(doc("id:ns:document::xxx2", Timestamp(200), bucket(5)));
@@ -703,7 +732,7 @@ TEST("require that document selection will filter results") {
 }
 
 TEST("require that document selection handles 'field == null'") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectDocs("foo.aa == null"), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectDocs("foo.aa == null"), newestV(), -1, false);
     itr.add(doc_with_null_fields("id:ns:foo::xxx1", Timestamp(99),  bucket(5)));
     itr.add(doc_with_null_fields("id:ns:foo::xxx2", Timestamp(100),  bucket(5)));
     IterateResult res = itr.iterate(largeNum);
@@ -716,7 +745,7 @@ TEST("require that document selection handles 'field == null'") {
 }
 
 TEST("require that invalid document selection returns no documents") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectDocs("=="), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectDocs("=="), newestV(), -1, false);
     itr.add(doc("id:ns:document::xxx1", Timestamp(99),  bucket(5)));
     itr.add(doc("id:ns:document::yyy1", Timestamp(100), bucket(5)));
     itr.add(doc("id:ns:document::xxx2", Timestamp(200), bucket(5)));
@@ -731,7 +760,7 @@ TEST("require that invalid document selection returns no documents") {
 }
 
 TEST("require that document selection and timestamp range works together") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectDocsWithinRange("id=\"id:ns:document::xxx*\"", 100, 200), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectDocsWithinRange("id=\"id:ns:document::xxx*\"", 100, 200), newestV(), -1, false);
     itr.add(doc("id:ns:document::xxx1", Timestamp(99),  bucket(5)));
     itr.add(doc("id:ns:document::yyy1", Timestamp(100), bucket(5)));
     itr.add(doc("id:ns:document::xxx2", Timestamp(200), bucket(5)));
@@ -748,7 +777,8 @@ TEST("require that document selection and timestamp range works together") {
 }
 
 TEST("require that fieldset limits fields returned") {
-    DocumentIterator itr(bucket(5), document::HeaderFields(), selectAll(), newestV(), -1, false);
+    auto limited = std::make_shared<document::FieldCollection>(getDocType(),document::Field::Set::Builder().add(&getDocType().getField("header")).build());
+    DocumentIterator itr(bucket(5), std::move(limited), selectAll(), newestV(), -1, false);
     itr.add(doc_with_fields("id:ns:foo::xxx1", Timestamp(1),  bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
@@ -766,8 +796,7 @@ bool contains(const Container& c, const T& value) {
 }
 
 TEST("require that userdoc-constrained selections pre-filter on GIDs") {
-    DocumentIterator itr(bucket(5), document::AllFields(),
-                         selectDocs("id.user=1234"), newestV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectDocs("id.user=1234"), newestV(), -1, false);
     VisitRecordingUnitDR::VisitedLIDs visited_lids;
     // Even though GID filtering is probabilistic when it comes to filtering
     // user IDs that cover the 64-bit range, it's fully deterministic when the
@@ -797,7 +826,7 @@ TEST("require that userdoc-constrained selections pre-filter on GIDs") {
 TEST("require that attributes are used")
 {
     UnitDR::reset();
-    DocumentIterator itr(bucket(5), document::AllFields(), selectDocs("foo.aa == 45"), docV(), -1, false);
+    DocumentIterator itr(bucket(5), std::make_shared<document::AllFields>(), selectDocs("foo.aa == 45"), docV(), -1, false);
     itr.add(doc_with_attr_fields("id:ns:foo::xx1", Timestamp(1), bucket(5),
                                  27, 28, 27, 2.7, 2.8, "x27", "x28"));
     itr.add(doc_with_attr_fields("id:ns:foo::xx2", Timestamp(2), bucket(5),
@@ -827,7 +856,7 @@ TEST("require that attributes are used")
     TEST_DO(checkEntry(res, 0, expected1, Timestamp(2)));
     TEST_DO(checkEntry(res, 1, expected2, Timestamp(4)));
 
-    DocumentIterator itr2(bucket(5), document::AllFields(), selectDocs("foo.dd == 4.5"), docV(), -1, false);
+    DocumentIterator itr2(bucket(5), std::make_shared<document::AllFields>(), selectDocs("foo.dd == 4.5"), docV(), -1, false);
     itr2.add(doc_with_attr_fields("id:ns:foo::xx5", Timestamp(5), bucket(5),
                                   27, 28, 27, 2.7, 2.8, "x27", "x28"));
     itr2.add(doc_with_attr_fields("id:ns:foo::xx6", Timestamp(6), bucket(5),
@@ -857,7 +886,7 @@ TEST("require that attributes are used")
     TEST_DO(checkEntry(res2, 0, expected3, Timestamp(6)));
     TEST_DO(checkEntry(res2, 1, expected4, Timestamp(8)));
 
-    DocumentIterator itr3(bucket(5), document::AllFields(), selectDocs("foo.ss == \"x45\""), docV(), -1, false);
+    DocumentIterator itr3(bucket(5), std::make_shared<document::AllFields>(), selectDocs("foo.ss == \"x45\""), docV(), -1, false);
     itr3.add(doc_with_attr_fields("id:ns:foo::xx9", Timestamp(9), bucket(5),
                                   27, 28, 27, 2.7, 2.8, "x27", "x28"));
     itr3.add(doc_with_attr_fields("id:ns:foo::xx10", Timestamp(10), bucket(5),

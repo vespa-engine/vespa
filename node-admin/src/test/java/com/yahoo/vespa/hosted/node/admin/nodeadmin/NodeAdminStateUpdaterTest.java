@@ -4,11 +4,13 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.OrchestratorStatus;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.integration.NodeRepoMock;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextFactory;
 import org.junit.Test;
 
@@ -16,7 +18,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -45,14 +46,15 @@ import static org.mockito.Mockito.when;
  */
 public class NodeAdminStateUpdaterTest {
     private final NodeAgentContextFactory nodeAgentContextFactory = mock(NodeAgentContextFactory.class);
-    private final NodeRepository nodeRepository = mock(NodeRepository.class);
+    private final NodeRepoMock nodeRepository = spy(new NodeRepoMock());
     private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
     private final HostName hostHostname = HostName.from("basehost1.test.yahoo.com");
     private final ManualClock clock = new ManualClock();
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     private final NodeAdminStateUpdater updater = spy(new NodeAdminStateUpdater(
-            nodeAgentContextFactory, nodeRepository, orchestrator, nodeAdmin, hostHostname, clock));
+            nodeAgentContextFactory, nodeRepository, orchestrator, nodeAdmin, hostHostname, clock, flagSource));
 
 
     @Test
@@ -77,10 +79,17 @@ public class NodeAdminStateUpdaterTest {
             verify(orchestrator, times(1)).resume(hostHostname.value());
             verify(nodeAdmin, times(2)).setFrozen(eq(false));
 
+            // Host is externally suspended in orchestrator, should be resumed by node-admin
+            setHostOrchestratorStatus(hostHostname, OrchestratorStatus.ALLOWED_TO_BE_DOWN);
+            updater.converge(RESUMED);
+            verify(orchestrator, times(2)).resume(hostHostname.value());
+            verify(nodeAdmin, times(3)).setFrozen(eq(false));
+            setHostOrchestratorStatus(hostHostname, OrchestratorStatus.NO_REMARKS);
+
             // Lets try to suspend node admin only
             when(nodeAdmin.setFrozen(eq(true))).thenReturn(false);
             assertConvergeError(SUSPENDED_NODE_ADMIN, "NodeAdmin is not yet frozen");
-            verify(nodeAdmin, times(2)).setFrozen(eq(false));
+            verify(nodeAdmin, times(3)).setFrozen(eq(false));
         }
 
         {
@@ -91,21 +100,35 @@ public class NodeAdminStateUpdaterTest {
             doThrow(new RuntimeException(exceptionMessage)).doNothing()
                     .when(orchestrator).suspend(eq(hostHostname.value()));
             assertConvergeError(SUSPENDED_NODE_ADMIN, exceptionMessage);
-            verify(nodeAdmin, times(2)).setFrozen(eq(false));
+            verify(nodeAdmin, times(3)).setFrozen(eq(false));
 
             updater.converge(SUSPENDED_NODE_ADMIN);
-            verify(nodeAdmin, times(2)).setFrozen(eq(false));
+            verify(nodeAdmin, times(3)).setFrozen(eq(false));
+            verify(orchestrator, times(2)).suspend(hostHostname.value());
+            setHostOrchestratorStatus(hostHostname, OrchestratorStatus.ALLOWED_TO_BE_DOWN);
+
+            // Already suspended, no changes
+            updater.converge(SUSPENDED_NODE_ADMIN);
+            verify(nodeAdmin, times(3)).setFrozen(eq(false));
+            verify(orchestrator, times(2)).suspend(hostHostname.value());
+
+            // Host is externally resumed
+            setHostOrchestratorStatus(hostHostname, OrchestratorStatus.NO_REMARKS);
+            updater.converge(SUSPENDED_NODE_ADMIN);
+            verify(nodeAdmin, times(3)).setFrozen(eq(false));
+            verify(orchestrator, times(3)).suspend(hostHostname.value());
+            setHostOrchestratorStatus(hostHostname, OrchestratorStatus.ALLOWED_TO_BE_DOWN);
         }
 
         {
             // At this point orchestrator will say its OK to suspend, but something goes wrong when we try to stop services
             final String exceptionMessage = "Failed to stop services";
             verify(orchestrator, times(0)).suspend(eq(hostHostname.value()), eq(suspendHostnames));
-            doThrow(new RuntimeException(exceptionMessage)).doNothing().when(nodeAdmin).stopNodeAgentServices(eq(activeHostnames));
+            doThrow(new RuntimeException(exceptionMessage)).doNothing().when(nodeAdmin).stopNodeAgentServices();
             assertConvergeError(SUSPENDED, exceptionMessage);
             verify(orchestrator, times(1)).suspend(eq(hostHostname.value()), eq(suspendHostnames));
             // Make sure we dont roll back if we fail to stop services - we will try to stop again next tick
-            verify(nodeAdmin, times(2)).setFrozen(eq(false));
+            verify(nodeAdmin, times(3)).setFrozen(eq(false));
 
             // Finally we are successful in transitioning to frozen
             updater.converge(SUSPENDED);
@@ -177,26 +200,6 @@ public class NodeAdminStateUpdaterTest {
     }
 
     @Test
-    public void uses_cached_acl() {
-        mockNodeRepo(NodeState.active, 1);
-        mockAcl(Acl.EMPTY, 1);
-
-        updater.adjustNodeAgentsToRunFromNodeRepository();
-        verify(nodeRepository, times(1)).getAcls(any());
-        clock.advance(Duration.ofSeconds(30));
-
-        updater.adjustNodeAgentsToRunFromNodeRepository();
-        clock.advance(Duration.ofSeconds(30));
-        updater.adjustNodeAgentsToRunFromNodeRepository();
-        clock.advance(Duration.ofSeconds(30));
-        verify(nodeRepository, times(1)).getAcls(any());
-
-        clock.advance(Duration.ofSeconds(30));
-        updater.adjustNodeAgentsToRunFromNodeRepository();
-        verify(nodeRepository, times(2)).getAcls(any());
-    }
-
-    @Test
     public void node_spec_and_acl_aligned() {
         Acl acl = new Acl.Builder().withTrustedPorts(22).build();
         mockNodeRepo(NodeState.active, 3);
@@ -210,7 +213,7 @@ public class NodeAdminStateUpdaterTest {
         verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host2.yahoo.com")), eq(acl));
         verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host3.yahoo.com")), eq(acl));
         verify(nodeRepository, times(3)).getNodes(eq(hostHostname.value()));
-        verify(nodeRepository, times(1)).getAcls(eq(hostHostname.value()));
+        verify(nodeRepository, times(3)).getAcls(eq(hostHostname.value()));
     }
 
     @Test
@@ -228,7 +231,7 @@ public class NodeAdminStateUpdaterTest {
         verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host2.yahoo.com")), eq(acl));
         verify(nodeAgentContextFactory, times(1)).create(argThat(spec -> spec.hostname().equals("host3.yahoo.com")), eq(Acl.EMPTY));
         verify(nodeRepository, times(3)).getNodes(eq(hostHostname.value()));
-        verify(nodeRepository, times(2)).getAcls(eq(hostHostname.value())); // During the first tick, the cache is invalidated and retried
+        verify(nodeRepository, times(3)).getAcls(eq(hostHostname.value()));
     }
 
     @Test
@@ -244,7 +247,7 @@ public class NodeAdminStateUpdaterTest {
         verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host1.yahoo.com")), eq(acl));
         verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host2.yahoo.com")), eq(acl));
         verify(nodeRepository, times(3)).getNodes(eq(hostHostname.value()));
-        verify(nodeRepository, times(1)).getAcls(eq(hostHostname.value()));
+        verify(nodeRepository, times(3)).getAcls(eq(hostHostname.value()));
     }
 
     private void assertConvergeError(NodeAdminStateUpdater.State targetState, String reason) {
@@ -257,36 +260,22 @@ public class NodeAdminStateUpdaterTest {
     }
 
     private void mockNodeRepo(NodeState hostState, int numberOfNodes) {
-        List<NodeSpec> containersToRun = IntStream.range(1, numberOfNodes + 1)
-                .mapToObj(i -> new NodeSpec.Builder()
-                        .hostname("host" + i + ".yahoo.com")
-                        .state(NodeState.active)
-                        .type(NodeType.tenant)
-                        .flavor("docker")
-                        .vcpu(1)
-                        .memoryGb(1)
-                        .diskGb(1)
-                        .build())
-                .collect(Collectors.toList());
+        nodeRepository.resetNodeSpecs();
 
-        when(nodeRepository.getNodes(eq(hostHostname.value()))).thenReturn(containersToRun);
+        IntStream.rangeClosed(1, numberOfNodes)
+                .mapToObj(i -> NodeSpec.Builder.testSpec("host" + i + ".yahoo.com").parentHostname(hostHostname.value()).build())
+                .forEach(nodeRepository::updateNodeSpec);
 
-        when(nodeRepository.getNode(eq(hostHostname.value()))).thenReturn(new NodeSpec.Builder()
-                .hostname(hostHostname.value())
-                .state(hostState)
-                .type(NodeType.tenant)
-                .flavor("default")
-                .vcpu(1)
-                .memoryGb(1)
-                .diskGb(1)
-                .build());
+        nodeRepository.updateNodeSpec(NodeSpec.Builder.testSpec(hostHostname.value(), hostState).type(NodeType.host).build());
     }
 
     private void mockAcl(Acl acl, int... nodeIds) {
-        Map<String, Acl> aclByHostname = Arrays.stream(nodeIds)
+        nodeRepository.setAcl(Arrays.stream(nodeIds)
                 .mapToObj(i -> "host" + i + ".yahoo.com")
-                .collect(Collectors.toMap(Function.identity(), h -> acl));
+                .collect(Collectors.toMap(Function.identity(), h -> acl)));
+    }
 
-        when(nodeRepository.getAcls(eq(hostHostname.value()))).thenReturn(aclByHostname);
+    private void setHostOrchestratorStatus(HostName hostname, OrchestratorStatus orchestratorStatus) {
+        nodeRepository.updateNodeSpec(hostname.value(), node -> node.orchestratorStatus(orchestratorStatus));
     }
 }

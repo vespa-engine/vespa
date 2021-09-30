@@ -9,9 +9,11 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Responsible for inferring the difference between two cluster states and their
@@ -62,6 +64,8 @@ public class EventDiffCalculator {
         final Optional<String> bucketSpace;
         final AnnotatedClusterState fromState;
         final AnnotatedClusterState toState;
+        final ClusterStateBundle.FeedBlock feedBlockFrom;
+        final ClusterStateBundle.FeedBlock feedBlockTo;
         final long currentTime;
         final long maxMaintenanceGracePeriodTimeMs;
 
@@ -69,12 +73,16 @@ public class EventDiffCalculator {
                        Optional<String> bucketSpace,
                        AnnotatedClusterState fromState,
                        AnnotatedClusterState toState,
+                       ClusterStateBundle.FeedBlock feedBlockFrom,
+                       ClusterStateBundle.FeedBlock feedBlockTo,
                        long currentTime,
                        long maxMaintenanceGracePeriodTimeMs) {
             this.cluster = cluster;
             this.bucketSpace = bucketSpace;
             this.fromState = fromState;
             this.toState = toState;
+            this.feedBlockFrom = feedBlockFrom;
+            this.feedBlockTo = feedBlockTo;
             this.currentTime = currentTime;
             this.maxMaintenanceGracePeriodTimeMs = maxMaintenanceGracePeriodTimeMs;
         }
@@ -94,6 +102,8 @@ public class EventDiffCalculator {
                 Optional.empty(),
                 params.fromState.getBaselineAnnotatedState(),
                 params.toState.getBaselineAnnotatedState(),
+                params.fromState.getFeedBlockOrNull(),
+                params.toState.getFeedBlockOrNull(),
                 params.currentTime,
                 params.maxMaintenanceGracePeriodTimeMs);
     }
@@ -117,6 +127,19 @@ public class EventDiffCalculator {
                 events.add(createClusterEvent("Cluster is down", params));
             }
         }
+        // TODO should we emit any events when description changes?
+        if (feedBlockStateHasChanged(params)) {
+            if (params.feedBlockTo != null) {
+                events.add(createClusterEvent(String.format("Cluster feed blocked due to resource exhaustion: %s",
+                        params.feedBlockTo.getDescription()), params));
+            } else {
+                events.add(createClusterEvent("Cluster feed no longer blocked", params));
+            }
+        }
+    }
+
+    private static boolean feedBlockStateHasChanged(PerStateParams params) {
+        return ((params.feedBlockFrom == null) != (params.feedBlockTo == null));
     }
 
     private static ClusterEvent createClusterEvent(String description, PerStateParams params) {
@@ -138,6 +161,29 @@ public class EventDiffCalculator {
                 final Node n = new Node(nodeType, node.index());
                 emitSingleNodeEvents(params, events, cluster, fromState, toState, n);
             }
+        }
+        emitNodeResourceExhaustionEvents(params, events, cluster);
+    }
+
+    // Returns a - b as a set operation
+    private static <T> Set<T> setSubtraction(Set<T> a, Set<T> b) {
+        var ret = new HashSet<>(a);
+        ret.removeAll(b);
+        return ret;
+    }
+
+    private static void emitNodeResourceExhaustionEvents(PerStateParams params, List<Event> events, ContentCluster cluster) {
+        // Feed block events are not ordered by node
+        Set<NodeResourceExhaustion> fromBlockSet = params.feedBlockFrom != null ? params.feedBlockFrom.getConcreteExhaustions() : Collections.emptySet();
+        Set<NodeResourceExhaustion> toBlockSet   = params.feedBlockTo   != null ? params.feedBlockTo.getConcreteExhaustions()   : Collections.emptySet();
+
+        for (var ex : setSubtraction(fromBlockSet, toBlockSet)) {
+            var info = cluster.getNodeInfo(ex.node);
+            events.add(createNodeEvent(info, String.format("Removed resource exhaustion: %s", ex.toExhaustionRemovedDescription()), params));
+        }
+        for (var ex : setSubtraction(toBlockSet, fromBlockSet)) {
+            var info = cluster.getNodeInfo(ex.node);
+            events.add(createNodeEvent(info, String.format("Added resource exhaustion: %s", ex.toExhaustionAddedDescription()), params));
         }
     }
 
@@ -228,6 +274,8 @@ public class EventDiffCalculator {
                 Optional.of(bucketSpace),
                 fromDerivedState,
                 toDerivedState,
+                null, // Not used in per-space event derivation
+                null, // Ditto
                 params.currentTime,
                 params.maxMaintenanceGracePeriodTimeMs);
     }

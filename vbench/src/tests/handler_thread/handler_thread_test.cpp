@@ -6,11 +6,14 @@ using namespace vbench;
 
 struct MyHandler : Handler<int> {
     std::vector<int> values;
+    ~MyHandler() override;
     void handle(std::unique_ptr<int> value) override {
         values.push_back(*value);
         vespalib::Thread::sleep(10); // for improved coverage
     }
 };
+
+MyHandler::~MyHandler() = default;
 
 TEST("handler thread") {
     MyHandler handler;

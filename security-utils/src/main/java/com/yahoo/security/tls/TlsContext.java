@@ -5,6 +5,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
@@ -23,7 +25,7 @@ public interface TlsContext extends AutoCloseable {
      * For TLSv1.3 we allow the DEFAULT group ciphers.
      * Note that we _only_ allow AEAD ciphers for either TLS version.
      */
-    Set<String> ALLOWED_CIPHER_SUITES = com.yahoo.vespa.jdk8compat.Set.of(
+    Set<String> ALLOWED_CIPHER_SUITES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
             "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
             "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256", // Java 12
@@ -32,9 +34,10 @@ public interface TlsContext extends AutoCloseable {
             "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
             "TLS_AES_128_GCM_SHA256", // TLSv1.3
             "TLS_AES_256_GCM_SHA384", // TLSv1.3
-            "TLS_CHACHA20_POLY1305_SHA256"); // TLSv1.3, Java 12
+            "TLS_CHACHA20_POLY1305_SHA256"))); // TLSv1.3, Java 12
 
-    Set<String> ALLOWED_PROTOCOLS = com.yahoo.vespa.jdk8compat.Set.of("TLSv1.2"); // TODO Enable TLSv1.3
+    // TODO Enable TLSv1.3 after upgrading to JDK 17
+    Set<String> ALLOWED_PROTOCOLS = Collections.singleton("TLSv1.2");
     String SSL_CONTEXT_VERSION = "TLS"; // Use SSLContext implementations that supports all TLS versions
 
     /**

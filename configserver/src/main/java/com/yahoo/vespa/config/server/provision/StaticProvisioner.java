@@ -34,7 +34,7 @@ public class StaticProvisioner implements HostProvisioner {
     }
 
     @Override
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
+    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
         List<HostSpec> hostsAlreadyAllocatedToCluster = 
                 allocatedHosts.getHosts().stream()
                                          .filter(host -> host.membership().isPresent() && matches(host.membership().get().cluster(), cluster))
@@ -42,7 +42,7 @@ public class StaticProvisioner implements HostProvisioner {
         if ( ! hostsAlreadyAllocatedToCluster.isEmpty()) 
             return hostsAlreadyAllocatedToCluster;
         else
-            return fallback.prepare(cluster, capacity, groups, logger);
+            return fallback.prepare(cluster, capacity, logger);
     }
 
     private boolean matches(ClusterSpec nodeCluster, ClusterSpec requestedCluster) {

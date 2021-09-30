@@ -1,18 +1,32 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
-import com.yahoo.vdslib.state.*;
-import com.yahoo.vespa.clustercontroller.core.*;
+import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.AnnotatedClusterState;
+import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
+import com.yahoo.vespa.clustercontroller.core.ContentCluster;
+import com.yahoo.vespa.clustercontroller.core.FleetControllerTest;
+import com.yahoo.vespa.clustercontroller.core.NodeInfo;
+import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskScheduler;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.StateRestAPI;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.UnitStateRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.server.JsonWriter;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
-// TODO: Author
 public abstract class StateRestApiTest {
 
     private ClusterControllerMock books;
@@ -22,8 +36,8 @@ public abstract class StateRestApiTest {
     Map<Integer, ClusterControllerStateRestAPI.Socket> ccSockets;
 
     public static class StateRequest implements UnitStateRequest {
-        private String[] path;
-        private int recursive;
+        private final String[] path;
+        private final int recursive;
 
         StateRequest(String req, int recursive) {
             path = req.isEmpty() ? new String[0] : req.split("/");
@@ -41,9 +55,7 @@ public abstract class StateRestApiTest {
         jsonWriter.setDefaultPathPrefix("/cluster/v2");
         {
             Set<ConfiguredNode> nodes = FleetControllerTest.toNodes(0, 1, 2, 3);
-            ContentCluster cluster = new ContentCluster(
-                    "books", nodes, distribution, 6 /* minStorageNodesUp*/, 0.9 /* minRatioOfStorageNodesUp */,
-                    true /* determineBucketsFromBucketSpaceMetric */);
+            ContentCluster cluster = new ContentCluster("books", nodes, distribution);
             initializeCluster(cluster, nodes);
             AnnotatedClusterState baselineState = AnnotatedClusterState.withoutAnnotations(ClusterState.stateFromString("distributor:4 storage:4"));
             Map<String, AnnotatedClusterState> bucketSpaceStates = new HashMap<>();
@@ -56,9 +68,7 @@ public abstract class StateRestApiTest {
             Set<ConfiguredNode> nodes = FleetControllerTest.toNodes(1, 2, 3, 5, 7);
             Set<ConfiguredNode> nodesInSlobrok = FleetControllerTest.toNodes(1, 3, 5, 7);
 
-            ContentCluster cluster = new ContentCluster(
-                    "music", nodes, distribution, 4 /* minStorageNodesUp*/, 0.0 /* minRatioOfStorageNodesUp */,
-                    true /* determineBucketsFromBucketSpaceMetric */);
+            ContentCluster cluster = new ContentCluster("music", nodes, distribution);
             if (dontInitializeNode2) {
                 // TODO: this skips initialization of node 2 to fake that it is not answering
                 // which really leaves us in an illegal state
@@ -74,14 +84,34 @@ public abstract class StateRestApiTest {
         }
         ccSockets = new TreeMap<>();
         ccSockets.put(0, new ClusterControllerStateRestAPI.Socket("localhost", 80));
-        restAPI = new ClusterControllerStateRestAPI(new ClusterControllerStateRestAPI.FleetControllerResolver() {
-            @Override
-            public Map<String, RemoteClusterControllerTaskScheduler> getFleetControllers() {
-                Map<String, RemoteClusterControllerTaskScheduler> fleetControllers = new LinkedHashMap<>();
-                fleetControllers.put(books.context.cluster.getName(), books);
-                fleetControllers.put(music.context.cluster.getName(), music);
-                return fleetControllers;
-            }
+        restAPI = new ClusterControllerStateRestAPI(() -> {
+            Map<String, RemoteClusterControllerTaskScheduler> fleetControllers = new LinkedHashMap<>();
+            fleetControllers.put(books.context.cluster.getName(), books);
+            fleetControllers.put(music.context.cluster.getName(), music);
+            return fleetControllers;
+        }, ccSockets);
+    }
+
+    protected void setUpMusicGroup(int nodeCount, String node1StateString) {
+        books = null;
+        Distribution distribution = new Distribution(Distribution.getSimpleGroupConfig(2, nodeCount));
+        jsonWriter.setDefaultPathPrefix("/cluster/v2");
+        ContentCluster cluster = new ContentCluster("music", distribution.getNodes(), distribution);
+        initializeCluster(cluster, distribution.getNodes());
+        AnnotatedClusterState baselineState = AnnotatedClusterState
+                .withoutAnnotations(ClusterState.stateFromString("distributor:" + nodeCount + " storage:" + nodeCount + node1StateString));
+        Map<String, AnnotatedClusterState> bucketSpaceStates = new HashMap<>();
+        bucketSpaceStates.put("default", AnnotatedClusterState
+                .withoutAnnotations(ClusterState.stateFromString("distributor:" + nodeCount + " storage:" + nodeCount)));
+        bucketSpaceStates.put("global", baselineState);
+        music = new ClusterControllerMock(cluster, baselineState.getClusterState(),
+                ClusterStateBundle.of(baselineState, bucketSpaceStates), 0, 0);
+        ccSockets = new TreeMap<>();
+        ccSockets.put(0, new ClusterControllerStateRestAPI.Socket("localhost", 80));
+        restAPI = new ClusterControllerStateRestAPI(() -> {
+            Map<String, RemoteClusterControllerTaskScheduler> fleetControllers = new LinkedHashMap<>();
+            fleetControllers.put(music.context.cluster.getName(), music);
+            return fleetControllers;
         }, ccSockets);
     }
 
@@ -89,18 +119,15 @@ public abstract class StateRestApiTest {
         for (ConfiguredNode configuredNode : nodes) {
             for (NodeType type : NodeType.getTypes()) {
                 NodeState reported = new NodeState(type, State.UP);
-                if (type.equals(NodeType.STORAGE)) {
-                    reported.setDiskCount(2);
-                }
 
                 NodeInfo nodeInfo = cluster.clusterInfo().setRpcAddress(new Node(type, configuredNode.index()), "rpc:" + type + "/" + configuredNode);
                 nodeInfo.setReportedState(reported, 10);
-                nodeInfo.setHostInfo(HostInfo.createHostInfo(getHostInfo()));
+                nodeInfo.setHostInfo(HostInfo.createHostInfo(getHostInfo(nodes)));
             }
         }
     }
 
-    private String getHostInfo() {
+    private String getHostInfo(Collection<ConfiguredNode> nodes) {
         return "{\n" +
                 "    \"cluster-state-version\": 0,\n" +
                 "    \"metrics\": {\n" +
@@ -127,22 +154,15 @@ public abstract class StateRestApiTest {
                 "    },\n" +
                 "    \"distributor\": {\n" +
                 "        \"storage-nodes\": [\n" +
+
+                nodes.stream()
+                        .map(configuredNode ->
                 "            {\n" +
-                "                \"node-index\": 1,\n" +
+                "                \"node-index\": " + configuredNode.index() + ",\n" +
                 "                \"min-current-replication-factor\": 2\n" +
-                "            },\n" +
-                "            {\n" +
-                "                \"node-index\": 3,\n" +
-                "                \"min-current-replication-factor\": 2\n" +
-                "            },\n" +
-                "            {\n" +
-                "                \"node-index\": 5,\n" +
-                "                \"min-current-replication-factor\": 2\n" +
-                "            },\n" +
-                "            {\n" +
-                "                \"node-index\": 7,\n" +
-                "                \"min-current-replication-factor\": 2\n" +
-                "            }\n" +
+                "            }")
+                        .collect(Collectors.joining(",\n")) + "\n" +
+
                 "        ]\n" +
                 "    }\n" +
                 "}";

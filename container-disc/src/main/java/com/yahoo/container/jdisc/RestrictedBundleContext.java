@@ -22,25 +22,19 @@ public class RestrictedBundleContext implements BundleContext {
 
     @Override
     public ServiceRegistration<?> registerService(String[] strings, Object o, Dictionary<String, ?> stringDictionary) {
-        if (wrapped == null) {
-            return null;
-        }
+        if (wrapped == null) return null;
         return wrapped.registerService(strings, o, stringDictionary);
     }
 
     @Override
     public ServiceRegistration<?> registerService(String localHostname, Object o, Dictionary<String, ?> stringDictionary) {
-        if (wrapped == null) {
-            return null;
-        }
+        if (wrapped == null) return null;
         return wrapped.registerService(localHostname, o, stringDictionary);
     }
 
     @Override
     public <S> ServiceRegistration<S> registerService(Class<S> sClass, S s, Dictionary<String, ?> stringDictionary) {
-        if (wrapped == null) {
-            return null;
-        }
+        if (wrapped == null) return null;
         return wrapped.registerService(sClass, s, stringDictionary);
     }
 
@@ -51,57 +45,43 @@ public class RestrictedBundleContext implements BundleContext {
 
     @Override
     public ServiceReference<?>[] getServiceReferences(String localHostname, String localHostname2) throws InvalidSyntaxException {
-        if (wrapped == null) {
-            return new ServiceReference<?>[0];
-        }
+        if (wrapped == null) return new ServiceReference<?>[0];
         return wrapped.getServiceReferences(localHostname, localHostname2);
     }
 
     @Override
     public ServiceReference<?>[] getAllServiceReferences(String localHostname, String localHostname2) throws InvalidSyntaxException {
-        if (wrapped == null) {
-            return new ServiceReference<?>[0];
-        }
+        if (wrapped == null) return new ServiceReference<?>[0];
         return wrapped.getAllServiceReferences(localHostname, localHostname2);
     }
 
     @Override
     public ServiceReference<?> getServiceReference(String localHostname) {
-        if (wrapped == null) {
-            return null;
-        }
+        if (wrapped == null) return null;
         return wrapped.getServiceReference(localHostname);
     }
 
     @Override
     public <S> ServiceReference<S> getServiceReference(Class<S> sClass) {
-        if (wrapped == null) {
-            return null;
-        }
+        if (wrapped == null) return null;
         return wrapped.getServiceReference(sClass);
     }
 
     @Override
     public <S> Collection<ServiceReference<S>> getServiceReferences(Class<S> sClass, String localHostname) throws InvalidSyntaxException {
-        if (wrapped == null) {
-            return Collections.<ServiceReference<S>>emptyList();
-        }
+        if (wrapped == null) return Collections.<ServiceReference<S>>emptyList();
         return wrapped.getServiceReferences(sClass, localHostname);
     }
 
     @Override
     public <S> S getService(ServiceReference<S> sServiceReference) {
-        if (wrapped == null) {
-            return null;
-        }
+        if (wrapped == null) return null;
         return wrapped.getService(sServiceReference);
     }
 
     @Override
     public boolean ungetService(ServiceReference<?> serviceReference) {
-        if (wrapped == null) {
-            return false;
-        }
+        if (wrapped == null) return false;
         return wrapped.ungetService(serviceReference);
     }
 
@@ -109,10 +89,6 @@ public class RestrictedBundleContext implements BundleContext {
     public <S> ServiceObjects<S> getServiceObjects(ServiceReference<S> serviceReference) {
         return null;
     }
-
-
-    //---------------------
-
 
     @Override
     public String getProperty(String localHostname) {

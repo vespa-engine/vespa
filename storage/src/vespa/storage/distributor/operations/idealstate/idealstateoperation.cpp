@@ -4,13 +4,13 @@
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
+#include <vespa/storage/distributor/operation_sequencer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation");
 
-using namespace storage;
-using namespace storage::distributor;
+namespace storage::distributor {
+
 using document::BucketSpace;
 
 const uint32_t IdealStateOperation::MAINTENANCE_MESSAGE_TYPES[] =
@@ -85,7 +85,7 @@ IdealStateOperation::setIdealStateManager(IdealStateManager* manager) {
 void
 IdealStateOperation::done()
 {
-    if (_manager != NULL) {
+    if (_manager) {
         if (ok()) {
             _manager->getMetrics().operations[getType()]->ok.inc(1);
         } else {
@@ -105,36 +105,6 @@ IdealStateOperation::setCommandMeta(api::MaintenanceCommand& cmd) const
 {
     cmd.setPriority(_priority);
     cmd.setReason(_detailedReason);
-    cmd.setLoadType((*_manager->getLoadTypes())["maintenance"]);
-}
-
-std::string
-IdealStateOperation::toXML(framework::Clock& clock) const
-{
-    std::ostringstream ost;
-
-    ost << "<operation bucketid=\"" << getBucketId()
-        << "\" reason=\"" << _detailedReason << "\" operations=\"";
-
-    ost << getName() << "[";
-    for (uint32_t j = 0; j < getNodes().size(); j++) {
-        if (j != 0) {
-            ost << ",";
-        }
-        ost << getNodes()[j];
-    }
-    ost << "]";
-
-    if (getStartTime().isSet()) {
-        uint64_t timeSpent(
-                (clock.getTimeInMillis() - getStartTime()).getTime());
-        ost << "\" runtime_secs=\"" << timeSpent << "\"";
-    } else {
-        ost << "\"";
-    }
-
-    ost << "/>";
-    return ost.str();
 }
 
 namespace {
@@ -186,32 +156,24 @@ public:
     }
 };
 
-bool
-checkNullBucketRequestBucketInfoMessage(uint16_t node,
-                                        document::BucketSpace bucketSpace,
-                                        const PendingMessageTracker& tracker)
-{
-    RequestBucketInfoChecker rchk;
-    // Check messages sent to null-bucket (i.e. any bucket) for the node.
-    document::Bucket nullBucket(bucketSpace, document::BucketId());
-    tracker.checkPendingMessages(node, nullBucket, rchk);
-    return rchk.blocked;
-}
-
 }
 
 bool
 IdealStateOperation::checkBlock(const document::Bucket &bucket,
-                                const PendingMessageTracker& tracker) const
+                                const DistributorStripeOperationContext& ctx,
+                                const OperationSequencer& seq) const
 {
+    if (seq.is_blocked(bucket)) {
+        return true;
+    }
+    if (ctx.pending_cluster_state_or_null(bucket.getBucketSpace())) {
+        return true;
+    }
     IdealStateOpChecker ichk(*this);
     const std::vector<uint16_t>& nodes(getNodes());
     for (auto node : nodes) {
-        tracker.checkPendingMessages(node, bucket, ichk);
+        ctx.pending_message_tracker().checkPendingMessages(node, bucket, ichk);
         if (ichk.blocked) {
-            return true;
-        }
-        if (checkNullBucketRequestBucketInfoMessage(node, bucket.getBucketSpace(), tracker)) {
             return true;
         }
     }
@@ -221,28 +183,25 @@ IdealStateOperation::checkBlock(const document::Bucket &bucket,
 bool
 IdealStateOperation::checkBlockForAllNodes(
         const document::Bucket &bucket,
-        const PendingMessageTracker& tracker) const
+        const DistributorStripeOperationContext& ctx,
+        const OperationSequencer& seq) const
 {
-    IdealStateOpChecker ichk(*this);
-    // Check messages sent to _any node_ for _this_ particular bucket.
-    tracker.checkPendingMessages(bucket, ichk);
-    if (ichk.blocked) {
+    if (seq.is_blocked(bucket)) {
         return true;
     }
-    const std::vector<uint16_t>& nodes(getNodes());
-    for (auto node : nodes) {
-        if (checkNullBucketRequestBucketInfoMessage(node, bucket.getBucketSpace(), tracker)) {
-            return true;
-        }
+    if (ctx.pending_cluster_state_or_null(bucket.getBucketSpace())) {
+        return true;
     }
-    return false;
+    IdealStateOpChecker ichk(*this);
+    // Check messages sent to _any node_ for _this_ particular bucket.
+    ctx.pending_message_tracker().checkPendingMessages(bucket, ichk);
+    return ichk.blocked;
 }
 
-
 bool
-IdealStateOperation::isBlocked(const PendingMessageTracker& tracker) const
+IdealStateOperation::isBlocked(const DistributorStripeOperationContext& ctx, const OperationSequencer& op_seq) const
 {
-    return checkBlock(getBucket(), tracker);
+    return checkBlock(getBucket(), ctx, op_seq);
 }
 
 std::string
@@ -264,6 +223,14 @@ IdealStateOperation::shouldBlockThisOperation(uint32_t messageType,
             return true;
         }
     }
+    // Also block on pending bucket-specific RequestBucketInfo since this usually
+    // means there's a semi-completed merge being processed for the bucket, but
+    // there will not be a pending merge command for it at the time.
+    if (messageType == api::MessageType::REQUESTBUCKETINFO_ID) {
+        return true;
+    }
 
     return false;
+}
+
 }

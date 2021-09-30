@@ -2,6 +2,8 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
@@ -19,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author lesters
  */
-public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase {
+public class RankingExpressionShadowingTestCase extends SchemaTestCase {
 
     @Test
     public void testBasicFunctionShadowing() throws ParseException {
@@ -46,15 +48,12 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
         builder.build();
         Search s = builder.getSearch();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
-        List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
-                                                                           new QueryProfileRegistry(),
-                                                                           new ImportedMlModels(),
-                                                                           new AttributeFields(s)).configProperties();
-        assertEquals("(rankingExpression(sin).rankingScript,x * x)",
-                     testRankProperties.get(0).toString());
-        assertEquals("(rankingExpression(sin@).rankingScript,2 * 2)",
-                     censorBindingHash(testRankProperties.get(1).toString()));
-        assertEquals("(vespa.rank.firstphase,rankingExpression(sin@))",
+        List<Pair<String, String>> testRankProperties = createRawRankProfile(test, new QueryProfileRegistry(), s).configProperties();
+        assertEquals("(rankingExpression(sin@).rankingScript, 2 * 2)",
+                censorBindingHash(testRankProperties.get(0).toString()));
+        assertEquals("(rankingExpression(sin).rankingScript, x * x)",
+                     testRankProperties.get(1).toString());
+        assertEquals("(vespa.rank.firstphase, rankingExpression(sin@))",
                      censorBindingHash(testRankProperties.get(2).toString()));
     }
 
@@ -90,30 +89,26 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
         builder.build();
         Search s = builder.getSearch();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
-        List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
-                                                                           new QueryProfileRegistry(),
-                                                                           new ImportedMlModels(),
-                                                                           new AttributeFields(s)).configProperties();
-        assertEquals("(rankingExpression(tan).rankingScript,x * x)",
-                     testRankProperties.get(0).toString());
-        assertEquals("(rankingExpression(tan@).rankingScript,x * x)",
-                     censorBindingHash(testRankProperties.get(1).toString()));
-        assertEquals("(rankingExpression(cos).rankingScript,rankingExpression(tan@))",
-                     censorBindingHash(testRankProperties.get(2).toString()));
-        assertEquals("(rankingExpression(cos@).rankingScript,rankingExpression(tan@))",
-                     censorBindingHash(testRankProperties.get(3).toString()));
-        assertEquals("(rankingExpression(sin).rankingScript,rankingExpression(cos@))",
+        List<Pair<String, String>> testRankProperties = createRawRankProfile(test, new QueryProfileRegistry(), s).configProperties();
+        assertEquals("(rankingExpression(tan@).rankingScript, 2 * 2)",
+                censorBindingHash(testRankProperties.get(0).toString()));
+        assertEquals("(rankingExpression(cos@).rankingScript, rankingExpression(tan@))",
+                censorBindingHash(testRankProperties.get(1).toString()));
+        assertEquals("(rankingExpression(sin@).rankingScript, rankingExpression(cos@))",
+                censorBindingHash(testRankProperties.get(2).toString()));
+        assertEquals("(rankingExpression(tan).rankingScript, x * x)",
+                     testRankProperties.get(3).toString());
+        assertEquals("(rankingExpression(tan@).rankingScript, x * x)",
                      censorBindingHash(testRankProperties.get(4).toString()));
-        assertEquals("(rankingExpression(tan@).rankingScript,2 * 2)",
+        assertEquals("(rankingExpression(cos).rankingScript, rankingExpression(tan@))",
                      censorBindingHash(testRankProperties.get(5).toString()));
-        assertEquals("(rankingExpression(cos@).rankingScript,rankingExpression(tan@))",
-                     censorBindingHash(testRankProperties.get(6).toString()));
-        assertEquals("(rankingExpression(sin@).rankingScript,rankingExpression(cos@))",
+        assertEquals("(rankingExpression(cos@).rankingScript, rankingExpression(tan@))",
+                censorBindingHash(testRankProperties.get(6).toString()));
+        assertEquals("(rankingExpression(sin).rankingScript, rankingExpression(cos@))",
                      censorBindingHash(testRankProperties.get(7).toString()));
-        assertEquals("(vespa.rank.firstphase,rankingExpression(sin@))",
+        assertEquals("(vespa.rank.firstphase, rankingExpression(sin@))",
                      censorBindingHash(testRankProperties.get(8).toString()));
     }
-
 
     @Test
     public void testFunctionShadowingArguments() throws ParseException {
@@ -140,19 +135,16 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
         builder.build();
         Search s = builder.getSearch();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
-        List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
-                                                                           new QueryProfileRegistry(),
-                                                                           new ImportedMlModels(),
-                                                                           new AttributeFields(s)).configProperties();
-        assertEquals("(rankingExpression(sin).rankingScript,x * x)",
-                     testRankProperties.get(0).toString());
-        assertEquals("(rankingExpression(sin@).rankingScript,4.0 * 4.0)",
-                     censorBindingHash(testRankProperties.get(1).toString()));
-        assertEquals("(rankingExpression(sin@).rankingScript,cos(5.0) * cos(5.0))",
-                     censorBindingHash(testRankProperties.get(2).toString()));
-        assertEquals("(vespa.rank.firstphase,rankingExpression(firstphase))",
+        List<Pair<String, String>> testRankProperties = createRawRankProfile(test, new QueryProfileRegistry(), s).configProperties();
+        assertEquals("(rankingExpression(sin@).rankingScript, 4.0 * 4.0)",
+                censorBindingHash(testRankProperties.get(0).toString()));
+        assertEquals("(rankingExpression(sin@).rankingScript, cos(5.0) * cos(5.0))",
+                censorBindingHash(testRankProperties.get(1).toString()));
+        assertEquals("(rankingExpression(sin).rankingScript, x * x)",
+                     testRankProperties.get(2).toString());
+        assertEquals("(vespa.rank.firstphase, rankingExpression(firstphase))",
                      censorBindingHash(testRankProperties.get(3).toString()));
-        assertEquals("(rankingExpression(firstphase).rankingScript,cos(rankingExpression(sin@)) + rankingExpression(sin@))",
+        assertEquals("(rankingExpression(firstphase).rankingScript, cos(rankingExpression(sin@)) + rankingExpression(sin@))",
                      censorBindingHash(testRankProperties.get(4).toString()));
     }
 
@@ -160,7 +152,7 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
     public void testNeuralNetworkSetup() throws ParseException {
         // Note: the type assigned to query profile and constant tensors here is not the correct type
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        QueryProfileRegistry queryProfiles = queryProfileWith("query(q)", "tensor(x[])");
+        QueryProfileRegistry queryProfiles = queryProfileWith("query(q)", "tensor(input[1])");
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry, queryProfiles);
         builder.importString(
                 "search test {\n" +
@@ -185,45 +177,49 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "        }\n" +
                         "    }\n" +
                         "    constant W_hidden {\n" +
-                        "        type: tensor(x[])\n" +
+                        "        type: tensor(hidden[1])\n" +
                         "        file: ignored.json\n" +
                         "    }\n" +
                         "    constant b_input {\n" +
-                        "        type: tensor(x[])\n" +
+                        "        type: tensor(hidden[1])\n" +
                         "        file: ignored.json\n" +
                         "    }\n" +
                         "    constant W_final {\n" +
-                        "        type: tensor(x[])\n" +
+                        "        type: tensor(final[1])\n" +
                         "        file: ignored.json\n" +
                         "    }\n" +
                         "    constant b_final {\n" +
-                        "        type: tensor(x[])\n" +
+                        "        type: tensor(final[1])\n" +
                         "        file: ignored.json\n" +
                         "    }\n" +
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(queryProfiles, new ImportedMlModels());
-        List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
-                                                                           queryProfiles,
-                                                                           new ImportedMlModels(),
-                                                                           new AttributeFields(s)).configProperties();
-        assertEquals("(rankingExpression(relu).rankingScript,max(1.0,x))",
-                     testRankProperties.get(0).toString());
-        assertEquals("(rankingExpression(relu@).rankingScript,max(1.0,reduce(query(q) * constant(W_hidden), sum, input) + constant(b_input)))",
-                     censorBindingHash(testRankProperties.get(1).toString()));
-        assertEquals("(rankingExpression(hidden_layer).rankingScript,rankingExpression(relu@))",
-                     censorBindingHash(testRankProperties.get(2).toString()));
-        assertEquals("(rankingExpression(hidden_layer).type,tensor(x[]))",
-                     censorBindingHash(testRankProperties.get(3).toString()));
-        assertEquals("(rankingExpression(final_layer).rankingScript,sigmoid(reduce(rankingExpression(hidden_layer) * constant(W_final), sum, hidden) + constant(b_final)))",
-                     testRankProperties.get(4).toString());
-        assertEquals("(rankingExpression(final_layer).type,tensor(x[]))",
-                     testRankProperties.get(5).toString());
-        assertEquals("(vespa.rank.secondphase,rankingExpression(secondphase))",
-                     testRankProperties.get(6).toString());
-        assertEquals("(rankingExpression(secondphase).rankingScript,reduce(rankingExpression(final_layer), sum))",
-                     testRankProperties.get(7).toString());
+        List<Pair<String, String>> testRankProperties = createRawRankProfile(test, queryProfiles, s).configProperties();
+        assertEquals("(rankingExpression(autogenerated_ranking_feature@).rankingScript, reduce(query(q) * constant(W_hidden), sum, input) + constant(b_input))",
+                censorBindingHash(testRankProperties.get(0).toString()));
+        assertEquals("(rankingExpression(relu@).rankingScript, max(1.0,rankingExpression(autogenerated_ranking_feature@)))",
+                censorBindingHash(testRankProperties.get(1).toString()));
+        assertEquals("(rankingExpression(hidden_layer).rankingScript, rankingExpression(relu@))",
+                censorBindingHash(testRankProperties.get(2).toString()));
+        assertEquals("(rankingExpression(final_layer).rankingScript, sigmoid(reduce(rankingExpression(hidden_layer) * constant(W_final), sum, hidden) + constant(b_final)))",
+                testRankProperties.get(4).toString());
+        assertEquals("(rankingExpression(relu).rankingScript, max(1.0,x))",
+                testRankProperties.get(6).toString());
+        assertEquals("(vespa.rank.secondphase, rankingExpression(secondphase))",
+                testRankProperties.get(7).toString());
+        assertEquals("(rankingExpression(secondphase).rankingScript, reduce(rankingExpression(final_layer), sum))",
+                testRankProperties.get(8).toString());
+    }
+
+    private static RawRankProfile createRawRankProfile(RankProfile profile, QueryProfileRegistry queryProfiles, Search search) {
+        return new RawRankProfile(profile,
+                new LargeRankExpressions(new MockFileRegistry()),
+                queryProfiles,
+                new ImportedMlModels(),
+                new AttributeFields(search),
+                new TestProperties());
     }
 
     private QueryProfileRegistry queryProfileWith(String field, String type) {

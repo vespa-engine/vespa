@@ -8,11 +8,12 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.Pkcs10CsrUtils;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.client.ErrorHandler;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
-import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.ca.CertificateTester;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -224,7 +225,7 @@ public class CertificateAuthorityApiTest extends ContainerTester {
         private final X509Certificate certificate;
 
         public TestZtsClient(Principal principal, X509Certificate certificate, URI ztsUrl, SSLContext sslContext) {
-            super(ztsUrl, sslContext);
+            super(ztsUrl, () -> sslContext, null, ErrorHandler.empty());
             this.principal = principal;
             this.certificate = certificate;
         }

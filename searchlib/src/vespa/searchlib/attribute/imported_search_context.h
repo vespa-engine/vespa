@@ -37,11 +37,11 @@ class ImportedSearchContext : public ISearchContext {
     std::unique_ptr<ISearchContext>                 _target_search_context;
     TargetLids                                      _targetLids;
     PostingListMerger<int32_t>                      _merger;
-    bool                                            _fetchPostingsDone;
     SearchContextParams                             _params;
 
     uint32_t getTargetLid(uint32_t lid) const {
-        return _targetLids[lid];
+        // Check range to avoid reading memory beyond end of mapping array
+        return lid < _targetLids.size() ? _targetLids[lid] : 0u;
     }
 
     void makeMergedPostings(bool isFilter);

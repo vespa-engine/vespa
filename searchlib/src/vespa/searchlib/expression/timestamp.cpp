@@ -4,7 +4,6 @@
 
 namespace search::expression {
 
-using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
 
@@ -19,7 +18,7 @@ TimeStampFunctionNode::TimeStampFunctionNode(ExpressionNode::UP arg, TimePart ti
       _timePart(timePart),
       _isGmt(gmt)
 { }
-TimeStampFunctionNode::~TimeStampFunctionNode() {}
+TimeStampFunctionNode::~TimeStampFunctionNode() = default;
 
 TimeStampFunctionNode::TimeStampFunctionNode(const TimeStampFunctionNode & rhs) :
     UnaryFunctionNode(rhs),

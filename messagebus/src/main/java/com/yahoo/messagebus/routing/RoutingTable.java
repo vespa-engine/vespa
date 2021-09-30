@@ -13,8 +13,8 @@ import java.util.Map;
  */
 public class RoutingTable {
 
-    private final Map<String, HopBlueprint> hops = new LinkedHashMap<String, HopBlueprint>();
-    private final Map<String, Route> routes = new LinkedHashMap<String, Route>();
+    private final Map<String, HopBlueprint> hops = new LinkedHashMap<>();
+    private final Map<String, Route> routes = new LinkedHashMap<>();
 
     /**
      * Creates a new routing table based on a given specification. This also verifies the integrity of the table.

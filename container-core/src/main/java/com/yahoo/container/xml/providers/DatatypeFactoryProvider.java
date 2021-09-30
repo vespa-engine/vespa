@@ -10,8 +10,9 @@ import javax.xml.datatype.DatatypeFactory;
  * @author Einar M R Rosenvinge
  * @deprecated Do not use!
  */
-@Deprecated
+@Deprecated // TODO: Remove on Vespa 8
 public class DatatypeFactoryProvider implements Provider<DatatypeFactory> {
+
     public static final String FACTORY_CLASS = DatatypeFactory.DATATYPEFACTORY_IMPLEMENTATION_CLASS;
 
     @Override
@@ -25,4 +26,5 @@ public class DatatypeFactoryProvider implements Provider<DatatypeFactory> {
 
     @Override
     public void deconstruct() { }
+
 }

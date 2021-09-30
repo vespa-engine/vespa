@@ -2,6 +2,7 @@
 namespace=vespa.config.content.core
 
 ## Number of separate threads that runs visitors.
+## Keep in sync with #stor-filestor:num_visitor_threads
 visitorthreads int default=16 restart
 
 ## Default timeout of visitors that loses contact with client (in seconds)

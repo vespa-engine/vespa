@@ -8,21 +8,26 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * @author olaa
  */
 public class MockContactRetriever implements ContactRetriever{
 
-    private final Map<PropertyId, Contact> contacts = new HashMap<>();
+    private final Map<PropertyId, Supplier<Contact>> contacts = new HashMap<>();
 
     @Override
     public Contact getContact(Optional<PropertyId> propertyId) {
-        return contacts.getOrDefault(propertyId.get(), contact());
+        return contacts.getOrDefault(propertyId.get(), this::contact).get();
+    }
+
+    public void addContact(PropertyId propertyId, Supplier<Contact> contact) {
+        contacts.put(propertyId, contact);
     }
 
     public void addContact(PropertyId propertyId, Contact contact) {
-        contacts.put(propertyId, contact);
+        contacts.put(propertyId, () -> contact);
     }
 
     public Contact contact() {

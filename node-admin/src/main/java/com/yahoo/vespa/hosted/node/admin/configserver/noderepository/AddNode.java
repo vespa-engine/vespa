@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.host.FlavorOverrides;
 
 import java.util.Objects;
@@ -16,34 +15,33 @@ import java.util.Set;
 public class AddNode {
 
     public final String hostname;
+    public final Optional<String> id;
     public final Optional<String> parentHostname;
     public final Optional<String> nodeFlavor;
     public final Optional<FlavorOverrides> flavorOverrides;
     public final Optional<NodeResources> nodeResources;
-    public final Optional<TenantName> reservedTo;
     public final NodeType nodeType;
     public final Set<String> ipAddresses;
     public final Set<String> additionalIpAddresses;
 
-    public static AddNode forHost(String hostname, String nodeFlavor, Optional<FlavorOverrides> flavorOverrides, Optional<TenantName> reservedTo, NodeType nodeType, Set<String> ipAddresses, Set<String> additionalIpAddresses) {
-        return new AddNode(hostname, Optional.empty(), Optional.of(nodeFlavor), flavorOverrides, Optional.empty(), reservedTo, nodeType, ipAddresses, additionalIpAddresses);
+    public static AddNode forHost(String hostname, Optional<String> id, String nodeFlavor, Optional<FlavorOverrides> flavorOverrides, NodeType nodeType, Set<String> ipAddresses, Set<String> additionalIpAddresses) {
+        return new AddNode(hostname, id, Optional.empty(), Optional.of(nodeFlavor), flavorOverrides, Optional.empty(), nodeType, ipAddresses, additionalIpAddresses);
     }
 
     public static AddNode forNode(String hostname, String parentHostname, NodeResources nodeResources, NodeType nodeType, Set<String> ipAddresses) {
-        return new AddNode(hostname, Optional.of(parentHostname), Optional.empty(), Optional.empty(), Optional.of(nodeResources), Optional.empty(), nodeType, ipAddresses, Set.of());
+        return new AddNode(hostname, Optional.empty(), Optional.of(parentHostname), Optional.empty(), Optional.empty(), Optional.of(nodeResources), nodeType, ipAddresses, Set.of());
     }
 
-    private AddNode(String hostname, Optional<String> parentHostname,
+    private AddNode(String hostname, Optional<String> id, Optional<String> parentHostname,
                     Optional<String> nodeFlavor, Optional<FlavorOverrides> flavorOverrides,
                     Optional<NodeResources> nodeResources,
-                    Optional<TenantName> reservedTo,
                     NodeType nodeType, Set<String> ipAddresses, Set<String> additionalIpAddresses) {
         this.hostname = hostname;
+        this.id = id;
         this.parentHostname = parentHostname;
         this.nodeFlavor = nodeFlavor;
         this.flavorOverrides = flavorOverrides;
         this.nodeResources = nodeResources;
-        this.reservedTo = reservedTo;
         this.nodeType = nodeType;
         this.ipAddresses = ipAddresses;
         this.additionalIpAddresses = additionalIpAddresses;
@@ -55,9 +53,11 @@ public class AddNode {
         if (o == null || getClass() != o.getClass()) return false;
         AddNode addNode = (AddNode) o;
         return Objects.equals(hostname, addNode.hostname) &&
+                Objects.equals(id, addNode.id) &&
                 Objects.equals(parentHostname, addNode.parentHostname) &&
                 Objects.equals(nodeFlavor, addNode.nodeFlavor) &&
-                Objects.equals(reservedTo, addNode.reservedTo) &&
+                Objects.equals(flavorOverrides, addNode.flavorOverrides) &&
+                Objects.equals(nodeResources, addNode.nodeResources) &&
                 nodeType == addNode.nodeType &&
                 Objects.equals(ipAddresses, addNode.ipAddresses) &&
                 Objects.equals(additionalIpAddresses, addNode.additionalIpAddresses);
@@ -65,16 +65,18 @@ public class AddNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(hostname, parentHostname, nodeFlavor, reservedTo, nodeType, ipAddresses, additionalIpAddresses);
+        return Objects.hash(hostname, id, parentHostname, nodeFlavor, flavorOverrides, nodeResources, nodeType, ipAddresses, additionalIpAddresses);
     }
 
     @Override
     public String toString() {
         return "AddNode{" +
                 "hostname='" + hostname + '\'' +
+                ", id=" + id +
                 ", parentHostname=" + parentHostname +
                 ", nodeFlavor='" + nodeFlavor + '\'' +
-               (reservedTo.isPresent() ? ", reservedTo='" + reservedTo.get().value() + "'" : "") +
+                ", flavorOverrides='" + flavorOverrides + '\'' +
+                ", nodeResources='" + nodeResources + '\'' +
                 ", nodeType=" + nodeType +
                 ", ipAddresses=" + ipAddresses +
                 ", additionalIpAddresses=" + additionalIpAddresses +

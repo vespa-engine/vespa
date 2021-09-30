@@ -15,7 +15,7 @@ public class MissingIdException extends MissingUnitException {
     }
 
     public MissingIdException(String cluster, Node n) {
-        super(createPath(cluster, n), 1);
+        super(createPath(cluster, n), 2);
     }
 
 }

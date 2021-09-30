@@ -17,7 +17,7 @@ import static org.junit.Assert.fail;
  */
 public class ContentClusterRemovalValidatorTest {
 
-    private final ValidationTester tester = new ValidationTester(2);
+    private final ValidationTester tester = new ValidationTester(5);
 
     @Test
     public void testContentRemovalValidation() {

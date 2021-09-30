@@ -4,6 +4,7 @@
 #include <vespa/searchcore/config/config-hwinfo.h>
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using proton::HwInfoSampler;
@@ -17,7 +18,7 @@ using Config = HwInfoSampler::Config;
 namespace {
 
 const vespalib::string test_dir = "temp";
-constexpr uint64_t sampleLen = 1024 * 1024 * 40;
+constexpr uint64_t sampleLen = 40_Mi;
 constexpr bool sharedDisk = false;
 
 long time_point_to_long(Clock::time_point tp)

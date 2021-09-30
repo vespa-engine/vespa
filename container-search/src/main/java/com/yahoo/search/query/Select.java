@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
-import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.query.parser.ParserEnvironment;
@@ -12,13 +11,12 @@ import com.yahoo.search.yql.VespaGroupingStep;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 
 
 /**
- * The parameters defining the where-clause and groping of a query
+ * The parameters defining the where-clause and grouping of a query
  *
  * @author henrhoi
  */
@@ -26,7 +24,6 @@ public class Select implements Cloneable {
 
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
-    private static final CompoundName argumentTypeName;
 
     public static final String SELECT = "select";
     public static final String WHERE = "where";
@@ -46,7 +43,6 @@ public class Select implements Cloneable {
         argumentType.addField(new FieldDescription(WHERE, "string"));
         argumentType.addField(new FieldDescription(GROUPING, "string"));
         argumentType.freeze();
-        argumentTypeName = new CompoundName(argumentType.getId().getName());
     }
 
     public static QueryProfileType getArgumentType() { return argumentType; }
@@ -57,12 +53,13 @@ public class Select implements Cloneable {
     }
 
     public Select(String where, String grouping, Query query) {
-        this(where, grouping, query, Collections.emptyList());
+        this(where, grouping, null, query, Collections.emptyList());
     }
 
-    private Select(String where, String grouping, Query query, List<GroupingRequest> groupingRequests) {
+    private Select(String where, String grouping, String groupingExpressionString, Query query, List<GroupingRequest> groupingRequests) {
         this.where = Objects.requireNonNull(where, "A Select must have a where string (possibly the empty string)");
         this.grouping = Objects.requireNonNull(grouping, "A Select must have a select string (possibly the empty string)");
+        this.groupingExpressionString = groupingExpressionString;
         this.parent = Objects.requireNonNull(query, "A Select must have a parent query");
         this.groupingRequests = deepCopy(groupingRequests, this);
     }
@@ -78,7 +75,7 @@ public class Select implements Cloneable {
      * Sets the document selection criterion of the query.
      *
      * @param where the documents to select as a JSON string on the format specified in
-     *        <a href="https://docs.vespa.ai/documentation/reference/select-reference.html">the select reference doc</a>
+     *        <a href="https://docs.vespa.ai/en/reference/select-reference.html">the select reference doc</a>
      */
     public void setWhereString(String where) {
         this.where = where;
@@ -95,7 +92,7 @@ public class Select implements Cloneable {
      * Sets the grouping operation of the query.
      *
      * @param grouping the grouping to perform as a JSON string on the format specified in
-     *        <a href="https://docs.vespa.ai/documentation/reference/select-reference.html">the select reference doc</a>
+     *        <a href="https://docs.vespa.ai/en/reference/select-reference.html">the select reference doc</a>
      */
     public void setGroupingString(String grouping) {
         groupingRequests.clear();
@@ -131,16 +128,16 @@ public class Select implements Cloneable {
 
     @Override
     public String toString() {
-        return "where: [" + where + "], grouping: [" + grouping+ "]";
+        return "where: [" + where + "], grouping: [" + grouping + "]";
     }
 
     @Override
     public Object clone() {
-        return new Select(where, grouping, parent, groupingRequests);
+        return new Select(where, grouping, groupingExpressionString, parent, groupingRequests);
     }
 
     public Select cloneFor(Query parent)  {
-        return new Select(where, grouping, parent, groupingRequests);
+        return new Select(where, grouping, groupingExpressionString, parent, groupingRequests);
     }
 
 }

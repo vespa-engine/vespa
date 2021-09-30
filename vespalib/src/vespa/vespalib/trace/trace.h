@@ -2,6 +2,7 @@
 #pragma once
 
 #include "tracenode.h"
+#include <memory>
 
 namespace vespalib {
 
@@ -18,31 +19,23 @@ namespace vespalib {
  * information will be traced.
  */
 class Trace {
-private:
-    uint32_t  _level;
-    TraceNode _root;
-
 public:
 
     /**
      * Create an empty Trace with level set to 0 (no tracing)
      */
-    Trace();
-    ~Trace();
-
-    /**
-     * Create an empty trace with given level.
-     *
-     * @param level Level to set.
-     */
-    explicit Trace(uint32_t level);
+    Trace() : Trace(0) {}
+    explicit Trace(uint32_t level) : _root(), _level(level) { }
+    Trace & operator = (Trace &&) = default;
+    Trace(Trace &&) = default;
+    Trace(const Trace &);
+    Trace & operator = (const Trace &) = delete;
+    ~Trace() = default;
 
     /**
      * Remove all trace information and set the trace level to 0.
-     *
-     * @return This, to allow chaining.
      */
-    Trace &clear();
+    void clear();
 
     /**
      * Swap the internals of this with another.
@@ -50,21 +43,16 @@ public:
      * @param other The trace to swap internals with.
      * @return This, to allow chaining.
      */
-    Trace &swap(Trace &other);
+    Trace &swap(Trace &other) {
+        std::swap(_level, other._level);
+        _root.swap(other._root);
+        return *this;
+    }
 
-    /**
-     * Set the trace level. 0 means no tracing, 9 means enable all tracing.
-     *
-     * @param level The level to set.
-     * @return This, to allow chaining.
-     */
-    Trace &setLevel(uint32_t level);
+    void setLevel(uint32_t level) {
+        _level = std::min(level, 9u);
+    }
 
-    /**
-     * Returns the trace level.
-     *
-     * @return The trace level.
-     */
     uint32_t getLevel() const { return _level; }
 
     /**
@@ -91,19 +79,29 @@ public:
      */
     bool trace(uint32_t level, const string &note, bool addTime = true);
 
-    /**
-     * Returns the root of the trace tree.
-     *
-     * @return The root.
-     */
-    TraceNode &getRoot() { return _root; }
+    void normalize() {
+        if (_root) {
+            _root->normalize();
+        }
+    }
 
-    /**
-     * Returns a const reference to the root of the trace tree.
-     *
-     * @return The root.
-     */
-    const TraceNode &getRoot() const { return _root; }
+    void setStrict(bool strict) {
+        ensureRoot().setStrict(strict);
+    }
+    void addChild(TraceNode && child) {
+        ensureRoot().addChild(std::move(child));
+    }
+    void addChild(Trace && child) {
+        if (!child.isEmpty()) {
+            addChild(std::move(*child._root));
+        }
+    }
+
+    bool isEmpty() const { return !_root || _root->isEmpty(); }
+
+    uint32_t getNumChildren() const { return _root ? _root->getNumChildren() : 0; }
+    const TraceNode & getChild(uint32_t child) const { return getRoot().getChild(child); }
+    string encode() const;
 
     /**
      * Returns a string representation of the contained trace tree. This is a
@@ -111,7 +109,16 @@ public:
      *
      * @return Readable trace string.
      */
-    string toString() const { return _root.toString(31337); }
+    string toString(size_t limit=31337) const;
+    size_t computeMemoryUsage() const {
+        return _root ? _root->computeMemoryUsage() : 0;
+    }
+private:
+    const TraceNode &getRoot() const { return *_root; }
+    TraceNode &ensureRoot();
+
+    std::unique_ptr<TraceNode> _root;
+    uint32_t  _level;
 };
 
 #define VESPALIB_TRACE2(ttrace, level, note, addTime) \

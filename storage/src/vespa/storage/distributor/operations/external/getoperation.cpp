@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "getoperation.h"
-#include <vespa/storage/distributor/distributorcomponent.h>
+#include <vespa/storage/distributor/distributor_node_context.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.get");
@@ -44,29 +45,30 @@ GetOperation::GroupId::operator==(const GroupId& other) const
             && _node == other._node);
 }
 
-GetOperation::GetOperation(DistributorComponent& manager,
+GetOperation::GetOperation(const DistributorNodeContext& node_ctx,
                            const DistributorBucketSpace &bucketSpace,
                            std::shared_ptr<BucketDatabase::ReadGuard> read_guard,
                            std::shared_ptr<api::GetCommand> msg,
                            PersistenceOperationMetricSet& metric,
                            api::InternalReadConsistency desired_read_consistency)
     : Operation(),
-      _manager(manager),
+      _node_ctx(node_ctx),
       _bucketSpace(bucketSpace),
       _msg(std::move(msg)),
       _returnCode(api::ReturnCode::OK),
       _doc(),
-      _lastModified(),
+      _newest_replica(),
       _metric(metric),
-      _operationTimer(manager.getClock()),
+      _operationTimer(node_ctx.clock()),
       _desired_read_consistency(desired_read_consistency),
-      _has_replica_inconsistency(false)
+      _has_replica_inconsistency(false),
+      _any_replicas_failed(false)
 {
     assignTargetNodeGroups(*read_guard);
 }
 
 void
-GetOperation::onClose(DistributorMessageSender& sender)
+GetOperation::onClose(DistributorStripeMessageSender& sender)
 {
     _returnCode = api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down");
     sendReply(sender);
@@ -75,7 +77,7 @@ GetOperation::onClose(DistributorMessageSender& sender)
 bool
 GetOperation::copyIsOnLocalNode(const BucketCopy& copy) const
 {
-    return (copy.getNode() == _manager.getIndex());
+    return (copy.getNode() == _node_ctx.node_index());
 }
 
 int
@@ -97,7 +99,7 @@ GetOperation::findBestUnsentTarget(const GroupVector& candidates) const
 }
 
 bool
-GetOperation::sendForChecksum(DistributorMessageSender& sender, const document::BucketId& id, GroupVector& res)
+GetOperation::sendForChecksum(DistributorStripeMessageSender& sender, const document::BucketId& id, GroupVector& res)
 {
     const int best = findBestUnsentTarget(res);
 
@@ -110,7 +112,9 @@ GetOperation::sendForChecksum(DistributorMessageSender& sender, const document::
 
         LOG(spam, "Sending %s to node %d", command->toString(true).c_str(), res[best].copy.getNode());
 
-        res[best].sent = sender.sendToNode(lib::NodeType::STORAGE, res[best].copy.getNode(), command);
+        const auto target_node = res[best].copy.getNode();
+        res[best].sent = sender.sendToNode(lib::NodeType::STORAGE, target_node, command);
+        res[best].to_node = target_node;
         return true;
     }
 
@@ -118,7 +122,7 @@ GetOperation::sendForChecksum(DistributorMessageSender& sender, const document::
 }
 
 void
-GetOperation::onStart(DistributorMessageSender& sender)
+GetOperation::onStart(DistributorStripeMessageSender& sender)
 {
     // Send one request for each unique group (BucketId/checksum)
     bool sent = false;
@@ -134,38 +138,43 @@ GetOperation::onStart(DistributorMessageSender& sender)
 };
 
 void
-GetOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg)
+GetOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg)
 {
     auto* getreply = dynamic_cast<api::GetReply*>(msg.get());
     assert(getreply != nullptr);
 
     LOG(debug, "Received %s", msg->toString(true).c_str());
 
-    _msg->getTrace().getRoot().addChild(getreply->getTrace().getRoot());
+    _msg->getTrace().addChild(getreply->steal_trace());
     bool allDone = true;
     for (auto& response : _responses) {
         for (uint32_t i = 0; i < response.second.size(); i++) {
-            if (response.second[i].sent == getreply->getMsgId()) {
+            const auto& bucket_id = response.first.getBucketId();
+            auto& send_state = response.second[i];
+            if (send_state.sent == getreply->getMsgId()) {
                 LOG(debug, "Get on %s returned %s",
                     _msg->getDocumentId().toString().c_str(),
                     getreply->getResult().toString().c_str());
 
-                response.second[i].received = true;
-                response.second[i].returnCode = getreply->getResult();
+                send_state.received = true;
+                send_state.returnCode = getreply->getResult();
 
                 if (getreply->getResult().success()) {
-                    if (_lastModified.has_value() && (getreply->getLastModifiedTimestamp() != *_lastModified)) {
+                    if (_newest_replica.has_value() && (getreply->getLastModifiedTimestamp() != _newest_replica->timestamp)) {
                         // At least two document versions returned had different timestamps.
                         _has_replica_inconsistency = true; // This is a one-way toggle.
                     }
-                    if (!_lastModified.has_value() || getreply->getLastModifiedTimestamp() > *_lastModified) {
+                    if (!_newest_replica.has_value() || getreply->getLastModifiedTimestamp() > _newest_replica->timestamp) {
                         _returnCode = getreply->getResult();
-                        _lastModified = getreply->getLastModifiedTimestamp();
-                        _doc = getreply->getDocument();
+                        assert(response.second[i].to_node != UINT16_MAX);
+                        _newest_replica = NewestReplica::of(getreply->getLastModifiedTimestamp(), bucket_id,
+                                                            send_state.to_node, getreply->is_tombstone());
+                        _doc = getreply->getDocument(); // May be empty (tombstones).
                     }
                 } else {
-                    if (!_lastModified.has_value()) {
-                        _returnCode = getreply->getResult();
+                    _any_replicas_failed = true;
+                    if (!_newest_replica.has_value()) {
+                        _returnCode = getreply->getResult(); // Don't overwrite if we have a good response.
                     }
                     if (!all_bucket_metadata_initially_consistent()) {
                         // If we're sending to more than a single group of replicas it means our replica set is
@@ -175,7 +184,7 @@ GetOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<
                     }
 
                     // Try to send to another node in this checksum group.
-                    bool sent = sendForChecksum(sender, response.first.getBucketId(), response.second);
+                    bool sent = sendForChecksum(sender, bucket_id, response.second);
                     if (sent) {
                         allDone = false;
                     }
@@ -216,10 +225,16 @@ void GetOperation::update_internal_metrics() {
 }
 
 void
-GetOperation::sendReply(DistributorMessageSender& sender)
+GetOperation::sendReply(DistributorStripeMessageSender& sender)
 {
     if (_msg.get()) {
-        auto repl = std::make_shared<api::GetReply>(*_msg, _doc, _lastModified.value_or(0), !_has_replica_inconsistency);
+        const auto newest = _newest_replica.value_or(NewestReplica::make_empty());
+        // If the newest entry is a tombstone (remove entry), the externally visible
+        // behavior is as if the document was not found. In this case _doc will also
+        // be empty. This means we also currently don't propagate tombstone status outside
+        // of this operation (except via the newest_replica() functionality).
+        const auto timestamp = (newest.is_tombstone ? api::Timestamp(0) : newest.timestamp);
+        auto repl = std::make_shared<api::GetReply>(*_msg, _doc, timestamp, !_has_replica_inconsistency);
         repl->setResult(_returnCode);
         update_internal_metrics();
         sender.sendReply(repl);
@@ -234,8 +249,7 @@ GetOperation::assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard
     document::BucketIdFactory bucketIdFactory;
     document::BucketId bid = bucketIdFactory.getBucketId(_msg->getDocumentId());
 
-    std::vector<BucketDatabase::Entry> entries;
-    read_guard.find_parents_and_self(bid, entries);
+    auto entries = read_guard.find_parents_and_self(bid);
 
     for (uint32_t j = 0; j < entries.size(); ++j) {
         const BucketDatabase::Entry& e = entries[j];
@@ -250,9 +264,9 @@ GetOperation::assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard
             _replicas_in_db.emplace_back(e.getBucketId(), copy.getNode());
 
             if (!copy.valid()) {
-                _responses[GroupId(e.getBucketId(), copy.getChecksum(), copy.getNode())].push_back(copy);
+                _responses[GroupId(e.getBucketId(), copy.getChecksum(), copy.getNode())].emplace_back(copy);
             } else if (!copy.empty()) {
-                _responses[GroupId(e.getBucketId(), copy.getChecksum(), -1)].push_back(copy);
+                _responses[GroupId(e.getBucketId(), copy.getChecksum(), -1)].emplace_back(copy);
             }
         }
     }

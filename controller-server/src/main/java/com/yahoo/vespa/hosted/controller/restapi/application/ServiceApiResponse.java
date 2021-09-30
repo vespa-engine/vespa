@@ -7,7 +7,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
-import com.yahoo.restapi.Uri;
+import com.yahoo.restapi.UriBuilder;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
@@ -34,7 +34,7 @@ class ServiceApiResponse extends HttpResponse {
     private final ApplicationId application;
     private final List<URI> configServerURIs;
     private final Slime slime;
-    private final Uri requestUri;
+    private final UriBuilder requestUri;
 
     // Only set for one of the setResponse calls
     private String serviceName = null;
@@ -46,7 +46,7 @@ class ServiceApiResponse extends HttpResponse {
         this.application = application;
         this.configServerURIs = configServerURIs;
         this.slime = new Slime();
-        this.requestUri = new Uri(requestUri).withoutParameters();
+        this.requestUri = new UriBuilder(requestUri).withoutParameters();
     }
     
     public void setResponse(ApplicationView applicationView) {
@@ -138,7 +138,7 @@ class ServiceApiResponse extends HttpResponse {
             mapToSlime((Map)entry, array.addObject());
     }
 
-    private String rewriteIfUrl(String urlOrAnyString, Uri requestUri) {
+    private String rewriteIfUrl(String urlOrAnyString, UriBuilder requestUri) {
         if (urlOrAnyString == null) return null;
 
         String hostPattern = "(" +
@@ -169,11 +169,11 @@ class ServiceApiResponse extends HttpResponse {
         }
     }
 
-    private Uri generateLocalLinkPrefix(String identifier, String restPath) {
+    private UriBuilder generateLocalLinkPrefix(String identifier, String restPath) {
         String proxiedPath = identifier + "/" + restPath;
 
         if (this.requestUri.toString().endsWith(proxiedPath)) {
-            return new Uri(this.requestUri.toString().substring(0, this.requestUri.toString().length() - proxiedPath.length()));
+            return new UriBuilder(this.requestUri.toString().substring(0, this.requestUri.toString().length() - proxiedPath.length()));
         } else {
             throw new IllegalStateException("Expected the resource path '" + this.requestUri + "' to end with '" + proxiedPath + "'");
         }

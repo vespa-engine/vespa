@@ -4,6 +4,4 @@ vespa_add_library(document_fieldset OBJECT
     fieldsetrepo.cpp
     fieldsets.cpp
     DEPENDS
-    AFTER
-    document_documentconfig
 )

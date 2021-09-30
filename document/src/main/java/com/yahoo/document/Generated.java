@@ -9,7 +9,7 @@ import java.lang.annotation.RetentionPolicy;
  * differs from <code>javax.annotation.Generated</code> in that the retention
  * policy is Runtime.
  *
- * @author <a href="mailto:vegardh@yahoo-inc.com">Vegard Havdal</a>
+ * @author Vegard Havdal
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Generated {

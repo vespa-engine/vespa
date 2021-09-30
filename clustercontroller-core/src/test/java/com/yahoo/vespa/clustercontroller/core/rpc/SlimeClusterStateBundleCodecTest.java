@@ -88,4 +88,12 @@ public class SlimeClusterStateBundleCodecTest {
         assertThat(roundtripEncode(stateBundle), equalTo(stateBundle));
     }
 
+    @Test
+    public void can_roundtrip_encode_bundle_with_feed_block_state() {
+        var stateBundle = ClusterStateBundleUtil.makeBundleBuilder("distributor:2 storage:2")
+                .feedBlock(ClusterStateBundle.FeedBlock.blockedWithDescription("more cake needed"))
+                .deriveAndBuild();
+        assertThat(roundtripEncode(stateBundle), equalTo(stateBundle));
+    }
+
 }

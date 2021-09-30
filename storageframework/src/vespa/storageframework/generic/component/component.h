@@ -71,7 +71,6 @@
 #include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/storageframework/generic/clock/clock.h>
-#include <vespa/vespalib/util/sync.h>
 #include <atomic>
 
 namespace storage::framework {
@@ -94,7 +93,7 @@ class Component : private ManagedComponent
     ThreadPool* _threadPool;
     MetricRegistrator* _metricReg;
     std::pair<MetricUpdateHook*, SecondTime> _metricUpdateHook;
-    Clock* _clock;
+    const Clock* _clock;
     ComponentStateListener* _listener;
     std::atomic<UpgradeFlags> _upgradeFlag;
 
@@ -110,7 +109,6 @@ class Component : private ManagedComponent
     void setClock(Clock& c) override { _clock = &c; }
     void setThreadPool(ThreadPool& tp) override { _threadPool = &tp; }
     void setUpgradeFlag(UpgradeFlags flag) override {
-        assert(_upgradeFlag.is_lock_free());
         _upgradeFlag.store(flag, std::memory_order_relaxed);
     }
     void open() override;
@@ -154,12 +152,6 @@ public:
      */
     void registerMetricUpdateHook(MetricUpdateHook&, SecondTime period);
 
-    /**
-     * If you need to modify the metric sets that have been registered, you need
-     * to hold the metric manager lock while you do it.
-     */
-    vespalib::MonitorGuard getMetricManagerLock();
-
     /** Get the name of the component. Must be a unique name. */
     const vespalib::string& getName() const override { return _name; }
 
@@ -177,7 +169,7 @@ public:
      * encourated to register a clock implementation before adding components to
      * avoid needing components to delay using it.
      */
-    Clock& getClock() const { return *_clock; }
+    const Clock& getClock() const { return *_clock; }
 
     /**
      * Helper functions for components wanting to start a single thread.
@@ -186,8 +178,8 @@ public:
      * in this thread. (Thus one is not required to call registerTick())
      */
     Thread::UP startThread(Runnable&,
-                           MilliSecTime maxProcessTime = MilliSecTime(0),
-                           MilliSecTime waitTime = MilliSecTime(0),
+                           vespalib::duration maxProcessTime = vespalib::duration::zero(),
+                           vespalib::duration waitTime = vespalib::duration::zero(),
                            int ticksBeforeWait = 1);
 
     // Check upgrade flag settings. Note that this flag may change at any time.

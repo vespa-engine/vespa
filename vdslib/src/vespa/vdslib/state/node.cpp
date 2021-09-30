@@ -2,21 +2,20 @@
 
 #include "node.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <ostream>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
-Node::Node(const NodeType& type, uint16_t index)
-    : _type(&type),
-      _index(index)
+std::ostream &
+operator << (std::ostream & os, const Node & node)
 {
+    return os << node.getType() << '.' << node.getIndex();
 }
 
-void
-Node::print(vespalib::asciistream& as, const PrintProperties&) const
+vespalib::asciistream &
+operator << (vespalib::asciistream & os, const Node & node)
 {
-    as << *_type << '.' << _index;
+    return os << node.getType() << '.' << node.getIndex();
 }
 
-} // lib
-} // storage
+}

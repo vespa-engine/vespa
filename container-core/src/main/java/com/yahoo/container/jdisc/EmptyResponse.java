@@ -5,8 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * Placeholder response when no content, only headers and status is to be
- * returned.
+ * Placeholder response when no content, only headers and status is to be returned.
  *
  * @author Steinar Knutsen
  */
@@ -19,4 +18,5 @@ public class EmptyResponse extends HttpResponse {
     public void render(OutputStream outputStream) throws IOException {
         // NOP
     }
+
 }

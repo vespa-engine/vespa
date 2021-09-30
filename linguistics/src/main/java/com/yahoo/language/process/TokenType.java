@@ -4,7 +4,7 @@ package com.yahoo.language.process;
 /**
  * An enumeration of token types.
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
+ * @author Mathias Mølster Lidal
  */
 public enum TokenType {
 

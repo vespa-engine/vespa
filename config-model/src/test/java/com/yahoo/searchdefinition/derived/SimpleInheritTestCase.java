@@ -1,11 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
-import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import org.junit.Test;
 
 import java.io.File;
@@ -33,10 +31,7 @@ public class SimpleInheritTestCase extends AbstractExportingTestCase {
         toDir.mkdirs();
         deleteContent(toDir);
 
-        DerivedConfiguration config = new DerivedConfiguration(search,
-                                                               builder.getRankProfileRegistry(),
-                                                               new QueryProfileRegistry(),
-                                                               new ImportedMlModels());
+        DerivedConfiguration config = new DerivedConfiguration(search, builder.getRankProfileRegistry());
         config.export(toDirName);
 
         checkDir(toDirName, expectedResultsDirName);
@@ -45,10 +40,8 @@ public class SimpleInheritTestCase extends AbstractExportingTestCase {
     private void checkDir(String toDirName, String expectedResultsDirName) throws IOException {
         File[] files = new File(expectedResultsDirName).listFiles();
         for (File file : files) {
-            if (!file.getName().endsWith(".cfg")) {
-                continue;
-            }
-            assertEqualFiles(file.getPath(), toDirName + "/" + file.getName());
+            if ( ! file.getName().endsWith(".cfg")) continue;
+            assertEqualFiles(file.getPath(), toDirName + "/" + file.getName(), false);
         }
     }
 }

@@ -37,8 +37,8 @@ public class FileDistributionStatusTest {
 
     private final Duration timeout = Duration.ofMillis(100);
 
-    private TenantName tenant = TenantName.from("mytenant");
-    private ApplicationId appId = ApplicationId.from(tenant, ApplicationName.from("myapp"), InstanceName.from("myinstance"));
+    private final TenantName tenant = TenantName.from("mytenant");
+    private final ApplicationId appId = ApplicationId.from(tenant, ApplicationName.from("myapp"), InstanceName.from("myinstance"));
     private Application application;
 
     @Rule
@@ -164,7 +164,6 @@ public class FileDistributionStatusTest {
         return new Application(mockModel,
                                new ServerCache(),
                                3,
-                               false,
                                new Version(0, 0, 0),
                                MetricUpdater.createTestUpdater(),
                                appId);

@@ -1,15 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt.slobrok.api;
 
-
 class BackOff implements BackOffPolicy
 {
-    private double time = 0.50;
+    private static final double initialTime = 0.50;
 
+    private double time = initialTime;
+
+    @Override
     public void reset() {
-        time = 0.50;
+        time = initialTime;
     }
 
+    @Override
     public double get() {
         double ret = time;
         if (time < 5.0) {
@@ -24,7 +27,13 @@ class BackOff implements BackOffPolicy
         return ret;
     }
 
+    @Override
     public boolean shouldWarn(double t) {
         return ((t > 8.1 && t < 9.9) || (t > 29.9));
+    }
+
+    @Override
+    public boolean shouldInform(double t) {
+        return (t == initialTime);
     }
 }

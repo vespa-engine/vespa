@@ -6,7 +6,6 @@
 #include <vespa/messagebus/routing/hopblueprint.h>
 #include "mynetwork.h"
 #include "params.h"
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 namespace vesparoute {
 
@@ -15,7 +14,6 @@ namespace vesparoute {
  */
 class Application : public FastOS_Application {
 private:
-    documentapi::LoadTypeSet        _loadTypes;
     std::unique_ptr<MyNetwork>        _net;
     std::unique_ptr<mbus::MessageBus> _mbus;
     Params                          _params;

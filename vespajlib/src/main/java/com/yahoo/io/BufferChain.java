@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * Data store for AbstractByteWriter. Tested in unit tests for ByteWriter.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class BufferChain {
     // refer to the revision history of ByteWriter for more information about

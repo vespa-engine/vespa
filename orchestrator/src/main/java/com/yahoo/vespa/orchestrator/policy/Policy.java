@@ -5,8 +5,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
-import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
-import com.yahoo.vespa.orchestrator.status.StatusService;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 
 /**
  * @author oyving
@@ -16,7 +15,7 @@ public interface Policy {
     /**
      * Decide whether to grant a request for temporarily suspending the services on all hosts in the group.
      */
-    void grantSuspensionRequest(OrchestratorContext context, ApplicationApi applicationApi) throws HostStateChangeDeniedException;
+    SuspensionReasons grantSuspensionRequest(OrchestratorContext context, ApplicationApi applicationApi) throws HostStateChangeDeniedException;
 
     void releaseSuspensionGrant(OrchestratorContext context, ApplicationApi application) throws HostStateChangeDeniedException;
 
@@ -33,6 +32,6 @@ public interface Policy {
     void releaseSuspensionGrant(
             OrchestratorContext context, ApplicationInstance applicationInstance,
             HostName hostName,
-            MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException;
+            ApplicationLock hostStatusService) throws HostStateChangeDeniedException;
 
 }

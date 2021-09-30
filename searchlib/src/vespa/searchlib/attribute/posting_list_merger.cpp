@@ -80,7 +80,7 @@ PostingListMerger<DataT>::merge(PostingVector &v, PostingVector &temp, const Sta
 }
 
 
-template class PostingListMerger<btree::BTreeNoLeafData>;
+template class PostingListMerger<vespalib::btree::BTreeNoLeafData>;
 template class PostingListMerger<int32_t>;
 
 }

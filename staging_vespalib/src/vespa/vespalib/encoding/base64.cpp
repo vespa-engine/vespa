@@ -19,7 +19,7 @@ static const char base64Chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 // Set -1 for illegal chars that will cause an error.
 // Set -2 for illegal chars that will be ignored. (whitespace " \r\t\f\n")
-static const char base64Backwards[] = {
+static const signed char base64Backwards[] = {
   -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -2,  -2,  -1,  -2,  -2,  -1,  -1,
   -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
   -2,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  62,  -1,  -1,  -1,  63,
@@ -119,7 +119,7 @@ Base64::decode(const char* inBuffer, int inLen, char* outBuffer, int outLen)
     int readbytes = 0;
     int num_valid_chars = 0;
     const char* thischar = inBuffer;
-    char curchar;
+    signed char curchar;
     int curOut = 0;
     char tmp = 0;
 

@@ -4,7 +4,6 @@ package com.yahoo.config.application;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.log.LogLevel;
 import com.yahoo.text.XML;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -19,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -47,11 +47,6 @@ class OverrideProcessor implements PreProcessor {
     private static final String ENVIRONMENT_ATTRIBUTE = "environment";
     private static final String REGION_ATTRIBUTE = "region";
 
-    // TODO: Remove after September 2019
-    public OverrideProcessor(Environment environment, RegionName region) {
-        this(InstanceName.from("default"), environment, region);
-    }
-
     public OverrideProcessor(InstanceName instance, Environment environment, RegionName region) {
         this.instance = instance;
         this.environment = environment;
@@ -59,7 +54,7 @@ class OverrideProcessor implements PreProcessor {
     }
 
     public Document process(Document input) throws TransformerException {
-        log.log(LogLevel.DEBUG, "Preprocessing overrides with " + environment + "." + region);
+        log.log(Level.FINE, () -> "Preprocessing overrides with " + environment + "." + region);
         Document ret = Xml.copyDocument(input);
         Element root = ret.getDocumentElement();
         applyOverrides(root, Context.empty());
@@ -224,11 +219,20 @@ class OverrideProcessor implements PreProcessor {
         // if node capacity is specified explicitly for some combination we should require that capacity
         elements.forEach(element -> {
             if (element.getTagName().equals("nodes"))
-                if (element.getChildNodes().getLength() == 0) // specifies capacity, not a list of nodes
+                if (!hasChildWithTagName(element, "node")) // specifies capacity, not a list of nodes
                     element.setAttribute("required", "true");
         });
     }
-    
+
+    private static boolean hasChildWithTagName(Element element, String childName) {
+        for (var child : XML.getChildren(element)) {
+            if (child.getTagName().equals(childName))
+                return true;
+        }
+
+        return false;
+    }
+
     /**
      * Retains all elements where at least one element is overridden. Removes non-overridden elements from map.
      */

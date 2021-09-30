@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa;
 
 import com.yahoo.collections.Pair;
@@ -30,13 +30,11 @@ import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,10 +42,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-
 /**
- * Goal which generates Vespa document classes from SD files.
- * @author vegardh
+ * Generates Vespa document classes from schema files.
+ *
+ * @author Vegard Balgaard Havdal
  */
 @Mojo(name = "document-gen", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
 public class DocumentGenMojo extends AbstractMojo {
@@ -60,10 +58,20 @@ public class DocumentGenMojo extends AbstractMojo {
     private MavenProject project;
 
     /**
-     * Directory containing the SD files
+     * Directory containing the searchdefinition files
+     * @deprecated use {@link #schemasDirectory} instead
      */
-    @Parameter(defaultValue = ".", required = true)
+    // TODO: Remove in Vespa 8
+    @Deprecated
+    @Parameter(defaultValue = ".", required = false)
     private File sdDirectory;
+
+    /**
+     * Directory containing the schema files
+     */
+    // TODO: Make this required and with defaultValue "." when sdDirectory is removed in Vespa 8
+    @Parameter
+    private File schemasDirectory;
 
     /**
      * Java package for generated classes
@@ -98,7 +106,7 @@ public class DocumentGenMojo extends AbstractMojo {
     private Map<String, String> structTypes;
     private Map<String, String> annotationTypes;
 
-    void execute(File sdDir, File outputDir, String packageName) {
+    void execute(File schemasDir, File outputDir, String packageName) {
         if ("".equals(packageName)) throw new IllegalArgumentException("You may not use empty package for generated types.");
         searches = new HashMap<>();
         docTypes = new HashMap<>();
@@ -106,7 +114,7 @@ public class DocumentGenMojo extends AbstractMojo {
         annotationTypes = new HashMap<>();
 
         outputDir.mkdirs();
-        SearchBuilder builder = buildSearches(sdDir);
+        SearchBuilder builder = buildSearches(schemasDir);
 
         boolean annotationsExported=false;
         for (NewDocumentType docType : builder.getModel().getDocumentManager().getTypes()) {
@@ -127,10 +135,7 @@ public class DocumentGenMojo extends AbstractMojo {
     }
 
     private SearchBuilder buildSearches(File sdDir) {
-        File[] sdFiles = sdDir.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".sd");
-            }});
+        File[] sdFiles = sdDir.listFiles((dir, name) -> name.endsWith(".sd"));
         SearchBuilder builder = new SearchBuilder(true);
         for (File f : sdFiles) {
             try {
@@ -441,7 +446,6 @@ public class DocumentGenMojo extends AbstractMojo {
                 ind(1)+"/** The doc type of this.*/\n" +
                 ind(1)+"public static final com.yahoo.document.DocumentType type = getDocumentType();\n\n"+
                 ind(1)+"/** Struct type view of the type of the body of this.*/\n" +
-                ind(1)+"private static final com.yahoo.document.StructDataType bodyStructType = getBodyStructType();\n\n" +
                 ind(1)+"/** Struct type view of the type of the header of this.*/\n" +
                 ind(1)+"private static final com.yahoo.document.StructDataType headerStructType = getHeaderStructType();\n\n");
 
@@ -460,12 +464,11 @@ public class DocumentGenMojo extends AbstractMojo {
         // Mimic header and body to make serialization work.
         // This can be improved by generating a method to serialize the document _here_, and use that in serialization.
         exportOverriddenStructGetter(docType.allHeader().getFields(), out, 1, "getHeader", className+".headerStructType");
-        exportOverriddenStructGetter(docType.allBody().getFields(), out, 1, "getBody", className+".bodyStructType");
         exportStructTypeGetter(docType.getName()+".header", docType.allHeader().getFields(), out, 1, "getHeaderStructType", "com.yahoo.document.StructDataType");
-        exportStructTypeGetter(docType.getName()+".body", docType.allBody().getFields(), out, 1, "getBodyStructType", "com.yahoo.document.StructDataType");
 
         Collection<Field> allUniqueFields = getAllUniqueFields(multiExtends, docType.getAllFields());
-        exportExtendedStructTypeGetter(className, docType.getName(), allUniqueFields, docType.getFieldSets(),out, 1, "getDocumentType", "com.yahoo.document.DocumentType");
+        exportExtendedStructTypeGetter(className, docType.getName(), allUniqueFields, docType.getFieldSets(),
+                docType.getImportedFieldNames(), out, 1, "getDocumentType", "com.yahoo.document.DocumentType");
         exportCopyConstructor(className, out, 1, true);
 
         exportFieldsAndAccessors(className, "com.yahoo.document.Document".equals(superType) ? allUniqueFields : docType.getFields(), out, 1, true);
@@ -627,10 +630,21 @@ public class DocumentGenMojo extends AbstractMojo {
         }
         out.write(ind(ind) + "ret.addFieldSets(fieldSets);\n");
     }
+    private static void exportImportedFields(Set<String> importedFieldNames, Writer out, int ind) throws IOException {
+        out.write(ind(ind) + "java.util.Set<java.lang.String> importedFieldNames = new java.util.HashSet<>();\n");
+        for (String importedField : importedFieldNames) {
+            out.write(ind(ind) + "importedFieldNames.add(\"" + importedField + "\");\n");
+        }
+    }
     private static void exportExtendedStructTypeGetter(String className, String name, Collection<Field> fields, Set<FieldSet> fieldSets,
-                                                       Writer out, int ind, String methodName, String retType) throws IOException {
+                                                       Set<String> importedFieldNames, Writer out, int ind, String methodName, String retType) throws IOException {
         out.write(ind(ind)+"private static "+retType+" "+methodName+"() {\n");
-        out.write(ind(ind+1)+retType+" ret = new "+retType+"(\""+name+"\");\n");
+        if (importedFieldNames != null) {
+            exportImportedFields(importedFieldNames, out, ind + 1);
+            out.write(ind(ind+1)+retType+" ret = new "+retType+"(\"" + name + "\", importedFieldNames);\n");
+        } else {
+            out.write(ind(ind+1)+retType+" ret = new "+retType+"(\""+name+"\");\n");
+        }
         for (Field f : fields) {
             if (f.getDataType().equals(DataType.STRING)) {
                 addExtendedStringField(className, f, out, ind + 1);
@@ -783,7 +797,7 @@ public class DocumentGenMojo extends AbstractMojo {
                 ind(ind+2)+"super("+structClassName+".type);\n" +
                 ind(ind+1)+"}\n\n");
                 exportCopyConstructor(structClassName, out, ind+1, false);
-                exportExtendedStructTypeGetter(structClassName, structType.getName(), structType.getFields(), null, out, ind+1, "getStructType", "com.yahoo.document.StructDataType");
+                exportExtendedStructTypeGetter(structClassName, structType.getName(), structType.getFields(), null, null, out, ind+1, "getStructType", "com.yahoo.document.StructDataType");
                 exportAssign(structType, structClassName, out, ind+1);
                 exportFieldsAndAccessors(structClassName, structType.getFields(), out, ind+1, true);
 
@@ -948,7 +962,7 @@ public class DocumentGenMojo extends AbstractMojo {
         if (DataType.BYTE.equals(dt)) return "com.yahoo.document.DataType.BYTE";
         if (DataType.BOOL.equals(dt)) return "com.yahoo.document.DataType.BOOL";
         if (DataType.TAG.equals(dt)) return "com.yahoo.document.DataType.TAG";
-        if (dt instanceof StructDataType) return "new com.yahoo.document.StructDataType(\""+dt.getName()+"\")";
+        if (dt instanceof StructDataType) return  className(dt.getName()) +".type";
         if (dt instanceof WeightedSetDataType) return "new com.yahoo.document.WeightedSetDataType("+toJavaReference(((WeightedSetDataType)dt).getNestedType())+", "+
             ((WeightedSetDataType)dt).createIfNonExistent()+", "+ ((WeightedSetDataType)dt).removeIfZero()+","+dt.getId()+")";
         if (dt instanceof ArrayDataType) return "new com.yahoo.document.ArrayDataType("+toJavaReference(((ArrayDataType)dt).getNestedType())+")";
@@ -971,7 +985,12 @@ public class DocumentGenMojo extends AbstractMojo {
 
     @Override
     public void execute() {
-        execute(this.sdDirectory, this.outputDirectory, this.packageName);
+        File dir = sdDirectory;
+        // Prefer schemasDirectory if set
+        if (this.schemasDirectory != null)
+            dir = this.schemasDirectory;
+
+        execute(dir, this.outputDirectory, packageName);
     }
 
     Map<String, Search> getSearches() {
@@ -981,4 +1000,5 @@ public class DocumentGenMojo extends AbstractMojo {
     private static String upperCaseFirstChar(String s) {
         return s.substring(0, 1).toUpperCase()+s.substring(1);
     }
+
 }

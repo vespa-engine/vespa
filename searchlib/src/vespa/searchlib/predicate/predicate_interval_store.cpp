@@ -4,8 +4,8 @@
 #include "predicate_interval.h"
 #include <vespa/vespalib/datastore/datastore.hpp>
 
-using search::datastore::BufferState;
-using search::datastore::EntryRef;
+using vespalib::datastore::BufferState;
+using vespalib::datastore::EntryRef;
 using std::vector;
 
 namespace search::predicate {
@@ -21,12 +21,13 @@ PredicateIntervalStore::PredicateIntervalStore()
     : _store(),
       _size1Type(1, 1024u, RefType::offsetSize()),
       _store_adapter(_store),
-      _ref_cache(_store_adapter) {
+      _ref_cache(_store_adapter)
+{
 
     // This order determines type ids.
     _store.addType(&_size1Type);
 
-    _store.initActiveBuffers();
+    _store.init_primary_buffers();
 }
 
 PredicateIntervalStore::~PredicateIntervalStore() {
@@ -46,7 +47,8 @@ PredicateIntervalStore::~PredicateIntervalStore() {
 // anyway.
 //
 template <typename IntervalT>
-EntryRef PredicateIntervalStore::insert(const vector<IntervalT> &intervals) {
+EntryRef
+PredicateIntervalStore::insert(const vector<IntervalT> &intervals) {
     const uint32_t size = entrySize<IntervalT>() * intervals.size();
     if (size == 0) {
         return EntryRef();
@@ -81,7 +83,8 @@ EntryRef PredicateIntervalStore::insert(const vector<Interval> &);
 template
 EntryRef PredicateIntervalStore::insert(const vector<IntervalWithBounds> &);
 
-void PredicateIntervalStore::remove(EntryRef ref) {
+void
+PredicateIntervalStore::remove(EntryRef ref) {
     if (ref.valid()) {
         uint32_t buffer_id = RefType(ref).bufferId();
         if (buffer_id == 0) {  // single interval optimization.
@@ -96,11 +99,13 @@ void PredicateIntervalStore::remove(EntryRef ref) {
     }
 }
 
-void PredicateIntervalStore::trimHoldLists(generation_t used_generation) {
+void
+PredicateIntervalStore::trimHoldLists(generation_t used_generation) {
     _store.trimHoldLists(used_generation);
 }
 
-void PredicateIntervalStore::transferHoldLists(generation_t generation) {
+void
+PredicateIntervalStore::transferHoldLists(generation_t generation) {
     _store.transferHoldLists(generation);
 }
 

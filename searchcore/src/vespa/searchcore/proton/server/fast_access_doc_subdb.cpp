@@ -13,6 +13,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/reprocessing/document_reprocessing_handler.h>
@@ -62,6 +63,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                       DocumentMetaStore::SP documentMetaStore,
                                                       std::shared_ptr<AttributeManager::SP> attrMgrResult) const
 {
+    AllocStrategy alloc_strategy = configSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     IAttributeFactory::SP attrFactory = std::make_shared<AttributeFactory>();
     AttributeManager::SP baseAttrMgr =
             std::make_shared<AttributeManager>(_baseDir + "/attribute",
@@ -69,6 +71,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                configSnapshot.getTuneFileDocumentDBSP()->_attr,
                                                _fileHeaderContext,
                                                _writeService.attributeFieldWriter(),
+                                               _writeService.shared(),
                                                attrFactory,
                                                _hwInfo);
     return std::make_shared<AttributeManagerInitializer>(configSerialNum,
@@ -76,8 +79,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                          documentMetaStore,
                                                          baseAttrMgr,
                                                          (_hasAttributes ? configSnapshot.getAttributesConfig() : AttributesConfig()),
-                                                         _attributeGrow,
-                                                         _attributeGrowNumDocs,
+                                                         alloc_strategy,
                                                          _fastAccessAttributesOnly,
                                                          _writeService.master(),
                                                          attrMgrResult);
@@ -100,22 +102,21 @@ FastAccessDocSubDB::setupAttributeManager(AttributeManager::SP attrMgrResult)
 
 
 AttributeCollectionSpec::UP
-FastAccessDocSubDB::createAttributeSpec(const AttributesConfig &attrCfg, SerialNum serialNum) const
+FastAccessDocSubDB::createAttributeSpec(const AttributesConfig &attrCfg, const AllocStrategy& alloc_strategy, SerialNum serialNum) const
 {
     uint32_t docIdLimit(_dms->getCommittedDocIdLimit());
-    AttributeCollectionSpecFactory factory(_attributeGrow,
-            _attributeGrowNumDocs, _fastAccessAttributesOnly);
+    AttributeCollectionSpecFactory factory(alloc_strategy, _fastAccessAttributesOnly);
     return factory.create(attrCfg, docIdLimit, serialNum);
 }
 
 void
-FastAccessDocSubDB::initFeedView(const IAttributeWriter::SP &writer, const DocumentDBConfig &configSnapshot)
+FastAccessDocSubDB::initFeedView(IAttributeWriter::SP writer, const DocumentDBConfig &configSnapshot)
 {
     // Called by executor thread
     auto feedView = std::make_shared<FastAccessFeedView>(
             getStoreOnlyFeedViewContext(configSnapshot),
             getFeedViewPersistentParams(),
-            FastAccessFeedView::Context(writer, _docIdLimit));
+            FastAccessFeedView::Context(std::move(writer), _docIdLimit));
 
     _fastAccessFeedView.set(feedView);
     _iFeedView.set(_fastAccessFeedView.get());
@@ -186,11 +187,8 @@ FastAccessDocSubDB::createReprocessingTask(IReprocessingInitializer &initializer
 {
     uint32_t docIdLimit = _metaStoreCtx->get().getCommittedDocIdLimit();
     assert(docIdLimit > 0);
-    return IReprocessingTask::UP(new ReprocessDocumentsTask(initializer,
-            getSummaryManager(),
-            docTypeRepo,
-            getSubDbName(),
-            docIdLimit));
+    return std::make_unique<ReprocessDocumentsTask>(initializer, getSummaryManager(), docTypeRepo,
+                                                    getSubDbName(), docIdLimit);
 }
 
 FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg, const Context &ctx)
@@ -234,11 +232,11 @@ FastAccessDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
 {
     // Called by executor thread
     (void) sessionManager;
-    _iSearchView.set(ISearchHandler::SP(new EmptySearchView));
-    IAttributeWriter::SP writer(new AttributeWriter(getAndResetInitAttributeManager()));
+    _iSearchView.set(std::make_shared<EmptySearchView>());
+    auto writer = std::make_shared<AttributeWriter>(getAndResetInitAttributeManager());
     {
         std::lock_guard<std::mutex> guard(_configMutex);
-        initFeedView(writer, configSnapshot);
+        initFeedView(std::move(writer), configSnapshot);
     }
 }
 
@@ -248,9 +246,9 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
 {
     (void) resolver;
 
-    reconfigure(newConfigSnapshot.getStoreConfig());
+    AllocStrategy alloc_strategy = newConfigSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
+    reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);
     IReprocessingTask::List tasks;
-    updateLidReuseDelayer(&newConfigSnapshot);
     /*
      * If attribute manager should change then document retriever
      * might have to rewrite a different set of fields.  If document
@@ -265,7 +263,7 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
                 std::make_unique<AttributeWriterFactory>(), getSubDbName());
         proton::IAttributeManager::SP oldMgr = extractAttributeManager(_fastAccessFeedView.get());
         AttributeCollectionSpec::UP attrSpec =
-            createAttributeSpec(newConfigSnapshot.getAttributesConfig(), serialNum);
+            createAttributeSpec(newConfigSnapshot.getAttributesConfig(), alloc_strategy, serialNum);
         IReprocessingInitializer::UP initializer =
                 configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, *attrSpec);
         if (initializer->hasReprocessors()) {
@@ -277,7 +275,6 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
             reconfigureAttributeMetrics(*newMgr, *oldMgr);
         }
         _iFeedView.set(_fastAccessFeedView.get());
-        _owner.syncFeedView();
     }
     return tasks;
 }
@@ -304,6 +301,7 @@ FastAccessDocSubDB::onReplayDone()
     // Normalize attribute vector sizes
     uint32_t docIdLimit = _metaStoreCtx->get().getCommittedDocIdLimit();
     assert(docIdLimit > 0);
+    _docIdLimit.set(docIdLimit);
     IFeedView::SP feedView = _iFeedView.get();
     IAttributeWriter::SP attrWriter = static_cast<FastAccessFeedView &>(*feedView).getAttributeWriter();
     attrWriter->onReplayDone(docIdLimit);
@@ -315,7 +313,7 @@ FastAccessDocSubDB::onReprocessDone(SerialNum serialNum)
 {
     IFeedView::SP feedView = _iFeedView.get();
     IAttributeWriter::SP attrWriter = static_cast<FastAccessFeedView &>(*feedView).getAttributeWriter();
-    attrWriter->forceCommit(serialNum, std::shared_ptr<search::IDestructorCallback>());
+    attrWriter->forceCommit(serialNum, std::shared_ptr<vespalib::IDestructorCallback>());
     _writeService.attributeFieldWriter().sync();
     _writeService.summary().sync();
     Parent::onReprocessDone(serialNum);

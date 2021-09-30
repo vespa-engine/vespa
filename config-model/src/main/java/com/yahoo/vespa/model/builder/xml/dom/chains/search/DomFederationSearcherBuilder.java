@@ -23,10 +23,13 @@ import java.util.Optional;
 
 /**
  * Builds a federation searcher config producer from an element.
+ *
  * @author Tony Vaagenes
  */
 public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Searcher<?>> {
+
     static class FederationSearcherModelBuilder extends GenericChainedComponentModelBuilder {
+
         private final List<FederationSearcherModel.TargetSpec> sources;
         private final boolean inheritDefaultSources;
 
@@ -39,7 +42,6 @@ public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProdu
         private boolean readSourceSet(Element searcherSpec) {
             return XML.getChild(searcherSpec, "source-set") != null;
         }
-
 
         private List<FederationSearcherModel.TargetSpec> readSources(Element searcherSpec) {
             List<FederationSearcherModel.TargetSpec> sources = new ArrayList<>();
@@ -69,21 +71,23 @@ public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProdu
         protected FederationSearcherModel build() {
             return new FederationSearcherModel(componentId, dependencies, sources, inheritDefaultSources);
         }
+
     }
 
     @Override
-    protected FederationSearcher doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element searcherElement) {
+    protected FederationSearcher doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element searcherElement) {
         FederationSearcherModel model = new FederationSearcherModelBuilder(searcherElement).build();
         Optional<Component> targetSelector = buildTargetSelector(deployState, ancestor, searcherElement, model.getComponentId());
 
         return new FederationSearcher(model, targetSelector);
     }
 
-    private Optional<Component> buildTargetSelector(DeployState deployState, AbstractConfigProducer ancestor, Element searcherElement, ComponentId namespace) {
+    private Optional<Component> buildTargetSelector(DeployState deployState, AbstractConfigProducer<?> ancestor, Element searcherElement, ComponentId namespace) {
         Element targetSelectorElement = XML.getChild(searcherElement, "target-selector");
         if (targetSelectorElement == null)
             return Optional.empty();
 
         return Optional.of(new DomComponentBuilder(namespace).build(deployState, ancestor, targetSelectorElement));
     }
+
 }

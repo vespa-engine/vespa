@@ -166,7 +166,5 @@ main(int argc, char **argv)
     file.Close();
 
     DumpCase();
-
-    exit(0);
     return 0;
 }

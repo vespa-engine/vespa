@@ -3,134 +3,61 @@
 #include "fieldsets.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <algorithm>
+#include <xxhash.h>
 
 namespace document {
 
-bool
-HeaderFields::contains(const FieldSet& fields) const
-{
-    switch (fields.getType()) {
-    case FIELD:
-        return static_cast<const Field&>(fields).isHeaderField();
-    case SET:
-    {
-        const FieldCollection& coll = static_cast<const FieldCollection&>(fields);
-        for (Field::Set::const_iterator iter = coll.getFields().begin();
-             iter != coll.getFields().end();
-             ++iter) {
-            if (!(*iter)->isHeaderField()) {
-                return false;
-            }
-        }
+namespace {
 
-        return true;
-    }
-    case NONE:
-    case DOCID:
-    case HEADER:
-        return true;
-    case BODY:
-    case ALL:
-        return false;
-    }
+uint64_t
+computeHash(const Field::Set & set) {
+    if (set.empty()) return 0ul;
 
-    return false;
+    vespalib::asciistream os;
+    for (const Field * field : set) {
+        os << field->getName() << ':';
+    }
+    return XXH64(os.c_str(), os.size(), 0);
 }
 
-bool
-BodyFields::contains(const FieldSet& fields) const
-{
-    switch (fields.getType()) {
-    case FIELD:
-        return !static_cast<const Field&>(fields).isHeaderField();
-    case SET:
-    {
-        const FieldCollection& coll = static_cast<const FieldCollection&>(fields);
-        for (Field::Set::const_iterator iter = coll.getFields().begin();
-             iter != coll.getFields().end();
-             ++iter) {
-            if ((*iter)->isHeaderField()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-    case NONE:
-    case DOCID:
-    case BODY:
-        return true;
-    case HEADER:
-    case ALL:
-        return false;
-    }
-
-    return false;
 }
 
-FieldCollection::FieldCollection(const DocumentType& type,
-                                 const Field::Set& s)
-    : _set(s),
+FieldCollection::FieldCollection(const DocumentType& type, Field::Set set)
+    : _set(std::move(set)),
+      _hash(computeHash(_set)),
       _docType(type)
-{
-}
+{ }
+
+FieldCollection::FieldCollection(const FieldCollection&) = default;
+
+FieldCollection::~FieldCollection() = default;
 
 bool
 FieldCollection::contains(const FieldSet& fields) const
 {
     switch (fields.getType()) {
-    case FIELD:
-        return _set.find(static_cast<const Field*>(&fields)) != _set.end();
-    case SET:
-    {
-        const FieldCollection& coll = static_cast<const FieldCollection&>(fields);
-
-        if (_set.size() < coll._set.size()) {
+        case Type::FIELD:
+            return _set.contains(static_cast<const Field &>(fields));
+        case Type::SET: {
+            const auto & coll = static_cast<const FieldCollection&>(fields);
+            return _set.contains(coll.getFields());
+        }
+        case Type::NONE:
+        case Type::DOCID:
+            return true;
+        case Type::ALL:
             return false;
-        }
-
-        Field::Set::const_iterator iter = coll.getFields().begin();
-
-        while (iter != coll.getFields().end()) {
-            if (_set.find(*iter) == _set.end()) {
-                return false;
-            }
-
-            ++iter;
-        }
-
-        return true;
-    }
-    case NONE:
-    case DOCID:
-        return true;
-    case BODY:
-    case HEADER:
-    case ALL:
-        return false;
     }
 
     return false;
 }
 
 void
-FieldCollection::insert(const Field& f)
+FieldSet::copyFields(Document& dest, const Document& src, const FieldSet& fields)
 {
-    _set.insert(&f);
-}
-
-void
-FieldCollection::insert(const Field::Set& c)
-{
-    _set.insert(c.begin(), c.end());
-}
-
-void
-FieldSet::copyFields(Document& dest,
-                     const Document& src,
-                     const FieldSet& fields)
-{
-    if (fields.getType() == ALL) {
+    if (fields.getType() == Type::ALL) {
         dest.getFields() = src.getFields();
         return;
     }
@@ -146,8 +73,7 @@ FieldSet::copyFields(Document& dest,
 }
 
 Document::UP
-FieldSet::createDocumentSubsetCopy(const Document& src,
-                                   const FieldSet& fields)
+FieldSet::createDocumentSubsetCopy(const Document& src, const FieldSet& fields)
 {
     auto ret = std::make_unique<Document>(src.getType(), src.getId());
     copyFields(*ret, src, fields);
@@ -155,13 +81,12 @@ FieldSet::createDocumentSubsetCopy(const Document& src,
 }
 
 void
-FieldSet::stripFields(Document& doc,
-                      const FieldSet& fieldsToKeep)
+FieldSet::stripFields(Document& doc, const FieldSet& fieldsToKeep)
 {
-    if (fieldsToKeep.getType() == ALL) {
+    if (fieldsToKeep.getType() == Type::ALL) {
         return;
-    } else if (fieldsToKeep.getType() == DOCID
-               || fieldsToKeep.getType() == NONE)
+    } else if (fieldsToKeep.getType() == Type::DOCID
+               || fieldsToKeep.getType() == Type::NONE)
     {
         doc.clear();
         return;
@@ -175,8 +100,8 @@ FieldSet::stripFields(Document& doc,
             fieldsToRemove.push_back(&f);
         }
     }
-    for (size_t i = 0; i < fieldsToRemove.size(); ++i) {
-        doc.remove(*fieldsToRemove[i]);
+    for (const Field * field : fieldsToRemove) {
+        doc.remove(*field);
     }
 }
 

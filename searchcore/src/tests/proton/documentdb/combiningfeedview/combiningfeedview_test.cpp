@@ -3,8 +3,10 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/server/combiningfeedview.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/test/test.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -14,7 +16,7 @@ LOG_SETUP("combiningfeedview_test");
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using document::test::makeBucketSpace;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 using search::SerialNum;
 using storage::spi::Timestamp;
 using namespace proton;
@@ -47,14 +49,12 @@ struct MyFeedView : public test::DummyFeedView
     uint32_t             _handlePrune;
     uint32_t             _wantedLidLimit;
     MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &repo,
-               std::shared_ptr<BucketDBOwner> bucketDB,
+               std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
                SubDbType subDbType) :
         test::DummyFeedView(repo),
         _metaStore(bucketDB,
                    DocumentMetaStore::getFixedName(),
                    search::GrowStrategy(),
-                   documentmetastore::IGidCompare::SP(
-                           new documentmetastore::DefaultGidCompare),
                    subDbType),
         _streamHandler(),
         _preparePut(0),
@@ -97,16 +97,16 @@ struct MySubDb
 {
     MyFeedView::SP _view;
     MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo,
-            std::shared_ptr<BucketDBOwner> bucketDB,
+            std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
             SubDbType subDbType)
-        : _view(new MyFeedView(repo, bucketDB, subDbType))
+        : _view(std::make_shared<MyFeedView>(repo, std::move(bucketDB), subDbType))
     {
     }
     void insertDocs(const test::BucketDocuments &docs) {
         for (size_t i = 0; i < docs.getDocs().size(); ++i) {
             const test::Document &testDoc = docs.getDocs()[i];
             _view->_metaStore.put(testDoc.getGid(), testDoc.getBucket(),
-                                  testDoc.getTimestamp(), testDoc.getDocSize(), testDoc.getLid());
+                                  testDoc.getTimestamp(), testDoc.getDocSize(), testDoc.getLid(), 0u);
         }
     }
 };
@@ -131,7 +131,7 @@ const uint32_t NOT_READY = 2;
 struct Fixture
 {
     test::UserDocumentsBuilder      _builder;
-    std::shared_ptr<BucketDBOwner>  _bucketDB;
+    std::shared_ptr<bucketdb::BucketDBOwner>  _bucketDB;
     MySubDb                         _ready;
     MySubDb                         _removed;
     MySubDb                         _notReady;
@@ -139,7 +139,7 @@ struct Fixture
     CombiningFeedView               _view;
     Fixture() :
         _builder(),
-        _bucketDB(std::make_shared<BucketDBOwner>()),
+        _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
         _ready(_builder.getRepo(), _bucketDB, SubDbType::READY),
         _removed(_builder.getRepo(), _bucketDB, SubDbType::REMOVED),
         _notReady(_builder.getRepo(), _bucketDB, SubDbType::NOTREADY),
@@ -155,9 +155,9 @@ struct Fixture
         const test::Document &doc = userDocs().getDocs(userId)[0];
         return PutOperation(doc.getBucket(), doc.getTimestamp(), doc.getDoc());
     }
-    RemoveOperation remove(uint32_t userId) {
+    RemoveOperationWithDocId remove(uint32_t userId) {
         const test::Document &doc = userDocs().getDocs(userId)[0];
-        return RemoveOperation(doc.getBucket(), doc.getTimestamp(), doc.getDoc()->getId());
+        return RemoveOperationWithDocId(doc.getBucket(), doc.getTimestamp(), doc.getDoc()->getId());
     }
     UpdateOperation update(uint32_t userId) {
         const test::Document &doc = userDocs().getDocs(userId)[0];
@@ -234,7 +234,7 @@ TEST_F("require that handlePut() sends to 2 feed views", Fixture)
 
 TEST_F("require that prepareRemove() sends to removed view", Fixture)
 {
-    RemoveOperation op = f.remove(1);
+    RemoveOperationWithDocId op = f.remove(1);
     f._view.prepareRemove(op);
     EXPECT_EQUAL(0u, f._ready._view->_prepareRemove);
     EXPECT_EQUAL(1u, f._removed._view->_prepareRemove);
@@ -246,7 +246,7 @@ TEST_F("require that prepareRemove() sends to removed view", Fixture)
 TEST_F("require that prepareRemove() can fill previous dbdId", Fixture)
 {
     f._ready.insertDocs(f.userDocs(1));
-    RemoveOperation op = f.remove(1);
+    RemoveOperationWithDocId op = f.remove(1);
     f._view.prepareRemove(op);
     EXPECT_EQUAL(1u, op.getPrevLid());
     EXPECT_EQUAL(READY, op.getPrevSubDbId());
@@ -257,7 +257,7 @@ TEST_F("require that prepareRemove() can fill previous dbdId", Fixture)
 
 TEST_F("require that handleRemove() sends op with valid dbdId to 1 feed view", Fixture)
 {
-    RemoveOperation op = f.remove(1);
+    RemoveOperationWithDocId op = f.remove(1);
     op.setDbDocumentId(DbDocumentId(REMOVED, 1));
     f._view.handleRemove(FeedToken(), op);
     EXPECT_EQUAL(0u, f._ready._view->_handleRemove);
@@ -268,7 +268,7 @@ TEST_F("require that handleRemove() sends op with valid dbdId to 1 feed view", F
 
 TEST_F("require that handleRemove() sends op with valid dbdId to 2 feed views", Fixture)
 {
-    RemoveOperation op = f.remove(1);
+    RemoveOperationWithDocId op = f.remove(1);
     op.setDbDocumentId(DbDocumentId(REMOVED, 1));
     op.setPrevDbDocumentId(DbDocumentId(READY, 1));
     f._view.handleRemove(FeedToken(), op);
@@ -280,7 +280,7 @@ TEST_F("require that handleRemove() sends op with valid dbdId to 2 feed views", 
 
 TEST_F("require that handleRemove() sends op with invalid dbdId to prev view", Fixture)
 {
-    RemoveOperation op = f.remove(1);
+    RemoveOperationWithDocId op = f.remove(1);
     // can be used in the case where removed feed view does not remember removes.
     op.setPrevDbDocumentId(DbDocumentId(READY, 1));
     f._view.handleRemove(FeedToken(), op);

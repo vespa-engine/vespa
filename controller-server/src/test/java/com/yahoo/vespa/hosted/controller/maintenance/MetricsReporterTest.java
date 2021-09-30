@@ -4,30 +4,42 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
-import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author mortent
@@ -37,10 +49,67 @@ public class MetricsReporterTest {
     private final MetricsMock metrics = new MetricsMock();
 
     @Test
+    public void audit_log_metric() {
+        var tester = new ControllerTester();
+
+        MetricsReporter metricsReporter = createReporter(tester.controller());
+        // Log some operator actions
+        HttpRequest req1 = HttpRequest.createTestRequest(
+                "http://localhost:8080/zone/v2/prod/some_region/nodes/v2/state/dirty/hostname",
+                com.yahoo.jdisc.http.HttpRequest.Method.PUT
+        );
+        req1.getJDiscRequest().setUserPrincipal(() -> "user.janedoe");
+        tester.controller().auditLogger().log((req1));
+        HttpRequest req2 = HttpRequest.createTestRequest(
+                "http://localhost:8080/routing/v1/inactive/tenant/some_tenant/application/some_app/instance/default/environment/prod/region/some-region",
+                com.yahoo.jdisc.http.HttpRequest.Method.POST
+        );
+        req2.getJDiscRequest().setUserPrincipal(() -> "user.johndoe");
+        tester.controller().auditLogger().log((req2));
+
+        // Report metrics
+        metricsReporter.maintain();
+        assertEquals(1, getMetric(MetricsReporter.OPERATION_PREFIX + "zone", "user.janedoe"));
+        assertEquals(1, getMetric(MetricsReporter.OPERATION_PREFIX + "routing", "user.johndoe"));
+
+        // Log some more operator actions
+        HttpRequest req3 = HttpRequest.createTestRequest(
+                "http://localhost:8080/zone/v2/prod/us-northeast-1/nodes/v2/state/dirty/le04614.ostk.bm2.prod.ca1.yahoo.com",
+                com.yahoo.jdisc.http.HttpRequest.Method.PUT
+        );
+        req3.getJDiscRequest().setUserPrincipal(() -> "user.janedoe");
+        tester.controller().auditLogger().log((req3));
+        HttpRequest req4 = HttpRequest.createTestRequest(
+                "http://localhost:8080/routing/v1/inactive/tenant/some_publishing/application/someindexing/instance/default/environment/prod/region/us-northeast-1",
+                com.yahoo.jdisc.http.HttpRequest.Method.POST
+        );
+        req4.getJDiscRequest().setUserPrincipal(() -> "user.johndoe");
+        tester.controller().auditLogger().log((req4));
+        HttpRequest req5 = HttpRequest.createTestRequest(
+                "http://localhost:8080/zone/v2/prod/us-northeast-1/nodes/v2/state/dirty/le04614.ostk.bm2.prod.ca1.yahoo.com",
+                com.yahoo.jdisc.http.HttpRequest.Method.PUT
+        );
+        req5.getJDiscRequest().setUserPrincipal(() -> "user.johndoe");
+        tester.controller().auditLogger().log((req5));
+        HttpRequest req6 = HttpRequest.createTestRequest(
+                "http://localhost:8080/routing/v1/inactive/tenant/some_publishing/application/someindexing/instance/default/environment/prod/region/us-northeast-1",
+                com.yahoo.jdisc.http.HttpRequest.Method.POST
+        );
+        req6.getJDiscRequest().setUserPrincipal(() -> "user.janedoe");
+        tester.controller().auditLogger().log((req6));
+
+        // Report metrics
+        metricsReporter.maintain();
+        assertEquals(2, getMetric(MetricsReporter.OPERATION_PREFIX + "zone", "user.janedoe"));
+        assertEquals(2, getMetric(MetricsReporter.OPERATION_PREFIX + "routing", "user.johndoe"));
+        assertEquals(1, getMetric(MetricsReporter.OPERATION_PREFIX + "zone", "user.johndoe"));
+        assertEquals(1, getMetric(MetricsReporter.OPERATION_PREFIX + "routing", "user.janedoe"));
+    }
+
+    @Test
     public void deployment_fail_ratio() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
         MetricsReporter metricsReporter = createReporter(tester.controller());
@@ -74,7 +143,6 @@ public class MetricsReporterTest {
     public void deployment_average_duration() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
 
@@ -120,7 +188,6 @@ public class MetricsReporterTest {
     public void deployments_failing_upgrade() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
 
@@ -170,7 +237,6 @@ public class MetricsReporterTest {
     public void deployment_warnings_metric() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
@@ -202,7 +268,6 @@ public class MetricsReporterTest {
     public void name_service_queue_size_metric() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .globalServiceId("default")
                 .region("us-west-1")
                 .region("us-east-3")
@@ -223,113 +288,267 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void nodes_failing_system_upgrade() {
+    public void platform_change_duration() {
         var tester = new ControllerTester();
         var reporter = createReporter(tester.controller());
-        var zone1 = ZoneApiMock.fromId("prod.eu-west-1");
-        tester.zoneRegistry().setUpgradePolicy(UpgradePolicy.create().upgrade(zone1));
-        var systemUpgrader = new SystemUpgrader(tester.controller(), Duration.ofDays(1),
-                                                new JobControl(tester.curator()));
-        tester.configServer().bootstrap(List.of(zone1.getId()), SystemApplication.configServer);
+        var zone = ZoneId.from("prod.eu-west-1");
+        tester.zoneRegistry().setUpgradePolicy(UpgradePolicy.create().upgrade(ZoneApiMock.from(zone)));
+        var systemUpgrader = new SystemUpgrader(tester.controller(), Duration.ofDays(1)
+        );
+        tester.configServer().bootstrap(List.of(zone), SystemApplication.configServer);
 
         // System on initial version
         var version0 = Version.fromString("7.0");
         tester.upgradeSystem(version0);
         reporter.maintain();
-        assertEquals(0, getNodesFailingUpgrade());
+        var hosts = tester.configServer().nodeRepository().list(zone, NodeFilter.all().applications(SystemApplication.configServer.id()));
+        assertPlatformChangeDuration(Duration.ZERO, hosts);
 
-        for (var version : List.of(Version.fromString("7.1"), Version.fromString("7.2"))) {
+        var targets = List.of(Version.fromString("7.1"), Version.fromString("7.2"));
+        for (int i = 0; i < targets.size(); i++) {
+            var version = targets.get(i);
             // System starts upgrading to next version
             tester.upgradeController(version);
             reporter.maintain();
-            assertEquals(0, getNodesFailingUpgrade());
+            assertPlatformChangeDuration(Duration.ZERO, hosts);
             systemUpgrader.maintain();
 
             // 30 minutes pass and nothing happens
             tester.clock().advance(Duration.ofMinutes(30));
-            tester.computeVersionStatus();
-            reporter.maintain();
-            assertEquals(0, getNodesFailingUpgrade());
+            runAll(tester::computeVersionStatus, reporter);
+            assertPlatformChangeDuration(Duration.ZERO, hosts);
 
             // 1/3 nodes upgrade within timeout
             assertEquals("Wanted version is raised for all nodes", version,
-                         tester.configServer().nodeRepository().list(zone1.getId(), SystemApplication.configServer.id()).stream()
-                               .map(Node::wantedVersion).min(Comparator.naturalOrder()).get());
-            tester.configServer().setVersion(SystemApplication.configServer.id(), zone1.getId(), version, 1);
-            tester.clock().advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
-            tester.computeVersionStatus();
-            reporter.maintain();
-            assertEquals(2, getNodesFailingUpgrade());
+                         getNodes(zone, hosts, tester).stream()
+                                                      .map(Node::wantedVersion)
+                                                      .min(Comparator.naturalOrder())
+                                                      .get());
+            suspend(hosts, zone, tester);
+            var firstHost = hosts.get(0);
+            upgradeTo(version, List.of(firstHost), zone, tester);
 
-            // 3/3 nodes upgrade
-            tester.configServer().setVersion(SystemApplication.configServer.id(), zone1.getId(), version);
-            tester.computeVersionStatus();
-            reporter.maintain();
-            assertEquals(0, getNodesFailingUpgrade());
-            assertEquals(version, tester.controller().systemVersion());
+            // 2/3 spend their budget and are reported as failures
+            tester.clock().advance(Duration.ofHours(1));
+            runAll(tester::computeVersionStatus, reporter);
+            assertPlatformChangeDuration(Duration.ZERO, List.of(firstHost));
+            assertPlatformChangeDuration(Duration.ofHours(1), hosts.subList(1, hosts.size()));
+
+            // Remaining nodes eventually upgrade
+            upgradeTo(version, hosts.subList(1, hosts.size()), zone, tester);
+            runAll(tester::computeVersionStatus, reporter);
+            assertPlatformChangeDuration(Duration.ZERO, hosts);
+            assertEquals(version, tester.controller().readSystemVersion());
+            assertPlatformNodeCount(hosts.size(), version);
         }
     }
 
     @Test
-    public void nodes_failing_os_upgrade() {
+    public void os_change_duration() {
         var tester = new ControllerTester();
         var reporter = createReporter(tester.controller());
-        var zone = ZoneApiMock.fromId("prod.eu-west-1");
+        var zone = ZoneId.from("prod.eu-west-1");
         var cloud = CloudName.defaultName();
-        tester.zoneRegistry().setOsUpgradePolicy(cloud, UpgradePolicy.create().upgrade(zone));
-        var osUpgrader = new OsUpgrader(tester.controller(), Duration.ofDays(1),
-                                        new JobControl(tester.curator()), CloudName.defaultName());;
-        var statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1),
-                                                       new JobControl(tester.controller().curator()));
-        tester.configServer().bootstrap(List.of(zone.getId()), SystemApplication.configServerHost, SystemApplication.tenantHost);
+        tester.zoneRegistry().setOsUpgradePolicy(cloud, UpgradePolicy.create().upgrade(ZoneApiMock.from(zone)));
+        var osUpgrader = new OsUpgrader(tester.controller(), Duration.ofDays(1), CloudName.defaultName());
+        var statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1)
+        );
+        tester.configServer().bootstrap(List.of(zone), SystemApplication.configServerHost, SystemApplication.tenantHost);
 
         // All nodes upgrade to initial OS version
         var version0 = Version.fromString("8.0");
-        tester.controller().upgradeOsIn(cloud, version0, false);
+        tester.controller().upgradeOsIn(cloud, version0, Duration.ZERO, false);
         osUpgrader.maintain();
-        tester.configServer().setOsVersion(SystemApplication.tenantHost.id(), zone.getId(), version0);
-        tester.configServer().setOsVersion(SystemApplication.configServerHost.id(), zone.getId(), version0);
-        statusUpdater.maintain();
-        reporter.maintain();
-        assertEquals(0, getNodesFailingOsUpgrade());
+        tester.configServer().setOsVersion(version0, SystemApplication.tenantHost.id(), zone);
+        tester.configServer().setOsVersion(version0, SystemApplication.configServerHost.id(), zone);
+        runAll(statusUpdater, reporter);
+        List<Node> hosts = tester.configServer().nodeRepository().list(zone, NodeFilter.all());
+        assertOsChangeDuration(Duration.ZERO, hosts);
 
-        for (var version : List.of(Version.fromString("8.1"), Version.fromString("8.2"))) {
+        var targets = List.of(Version.fromString("8.1"), Version.fromString("8.2"));
+        var allVersions = Stream.concat(Stream.of(version0), targets.stream()).collect(Collectors.toSet());
+        for (int i = 0; i < targets.size(); i++) {
+            var currentVersion = i == 0 ? version0 : targets.get(i - 1);
+            var nextVersion = targets.get(i);
             // System starts upgrading to next OS version
-            tester.controller().upgradeOsIn(cloud, version, false);
-            osUpgrader.maintain();
-            statusUpdater.maintain();
-            reporter.maintain();
-            assertEquals(0, getNodesFailingOsUpgrade());
+            tester.controller().upgradeOsIn(cloud, nextVersion, Duration.ZERO, false);
+            runAll(osUpgrader, statusUpdater, reporter);
+            assertOsChangeDuration(Duration.ZERO, hosts);
+            assertOsNodeCount(hosts.size(), currentVersion);
 
-            // 30 minutes pass and nothing happens
-            tester.clock().advance(Duration.ofMinutes(30));
-            statusUpdater.maintain();
-            reporter.maintain();
-            assertEquals(0, getNodesFailingOsUpgrade());
+            // Over 30 minutes pass and nothing happens
+            tester.clock().advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+            runAll(statusUpdater, reporter);
+            assertOsChangeDuration(Duration.ZERO, hosts);
 
-            // 2/6 nodes upgrade within timeout
-            assertEquals("Wanted OS version is raised for all nodes", version,
-                         tester.configServer().nodeRepository().list(zone.getId(), SystemApplication.tenantHost.id()).stream()
+            // Nodes are told to upgrade, but do not suspend yet
+            assertEquals("Wanted OS version is raised for all nodes", nextVersion,
+                         tester.configServer().nodeRepository().list(zone, NodeFilter.all().applications(SystemApplication.tenantHost.id())).stream()
                                .map(Node::wantedOsVersion).min(Comparator.naturalOrder()).get());
-            tester.configServer().setOsVersion(SystemApplication.tenantHost.id(), zone.getId(), version, 2);
-            tester.clock().advance(Duration.ofMinutes(30 * 3 /* time allowance * node count */).plus(Duration.ofSeconds(1)));
-            statusUpdater.maintain();
-            reporter.maintain();
-            assertEquals(4, getNodesFailingOsUpgrade());
+            assertTrue("No nodes are suspended", tester.controller().serviceRegistry().configServer()
+                                                       .nodeRepository().list(zone, NodeFilter.all()).stream()
+                                                       .noneMatch(node -> node.serviceState() == Node.ServiceState.allowedDown));
 
-            // 5/6 nodes upgrade
-            tester.configServer().setOsVersion(SystemApplication.tenantHost.id(), zone.getId(), version);
-            tester.configServer().setOsVersion(SystemApplication.configServerHost.id(), zone.getId(), version, 2);
-            statusUpdater.maintain();
-            reporter.maintain();
-            assertEquals(1, getNodesFailingOsUpgrade());
+            // Another 30 minutes pass
+            tester.clock().advance(Duration.ofMinutes(30));
+            runAll(statusUpdater, reporter);
+            assertOsChangeDuration(Duration.ZERO, hosts);
 
-            // Final node upgrades
-            tester.configServer().setOsVersion(SystemApplication.configServerHost.id(), zone.getId(), version);
-            statusUpdater.maintain();
-            reporter.maintain();
-            assertEquals(0, getNodesFailingOsUpgrade());
+            // 3/6 hosts suspend
+            var suspendedHosts = hosts.subList(0, 3);
+            suspend(suspendedHosts, zone, tester);
+            runAll(statusUpdater, reporter);
+            assertOsChangeDuration(Duration.ZERO, hosts);
+
+            // Two hosts spend 20 minutes upgrading
+            var hostsUpgraded = suspendedHosts.subList(0, 2);
+            tester.clock().advance(Duration.ofMinutes(20));
+            runAll(statusUpdater, reporter);
+            assertOsChangeDuration(Duration.ofMinutes(20), hostsUpgraded);
+            upgradeOsTo(nextVersion, hostsUpgraded, zone, tester);
+            runAll(statusUpdater, reporter);
+            assertOsChangeDuration(Duration.ZERO, hostsUpgraded);
+            assertOsNodeCount(hostsUpgraded.size(), nextVersion);
+
+            // One host consumes budget without upgrading
+            var brokenHost = suspendedHosts.get(2);
+            tester.clock().advance(Duration.ofMinutes(15));
+            runAll(statusUpdater, reporter);
+            assertOsChangeDuration(Duration.ofMinutes(35), List.of(brokenHost));
+
+            // Host eventually upgrades and is no longer reported
+            upgradeOsTo(nextVersion, List.of(brokenHost), zone, tester);
+            runAll(statusUpdater, reporter);
+            assertOsChangeDuration(Duration.ZERO, List.of(brokenHost));
+            assertOsNodeCount(hostsUpgraded.size() + 1, nextVersion);
+
+            // Remaining hosts suspend and upgrade successfully
+            var remainingHosts = hosts.subList(3, hosts.size());
+            suspend(remainingHosts, zone, tester);
+            upgradeOsTo(nextVersion, remainingHosts, zone, tester);
+            runAll(statusUpdater, reporter);
+            assertOsChangeDuration(Duration.ZERO, hosts);
+            assertOsNodeCount(hosts.size(), nextVersion);
+            assertOsNodeCount(0, currentVersion);
+
+            // Dimensions used for node count metric are only known OS versions
+            Set<Version> versionDimensions = metrics.getMetrics((dimensions) -> true)
+                                                    .entrySet()
+                                                    .stream()
+                                                    .filter(kv -> kv.getValue().containsKey(MetricsReporter.OS_NODE_COUNT))
+                                                    .map(kv -> kv.getKey().getDimensions())
+                                                    .map(dimensions -> dimensions.get("currentVersion"))
+                                                    .map(Version::fromString)
+                                                    .collect(Collectors.toSet());
+            assertTrue("Reports only OS versions", allVersions.containsAll(versionDimensions));
         }
+    }
+
+    @Test
+    public void broken_system_version() {
+        var tester = new DeploymentTester().atMondayMorning();
+        var ctx = tester.newDeploymentContext();
+        var applicationPackage = new ApplicationPackageBuilder().upgradePolicy("canary").region("us-west-1").build();
+
+        // Application deploys successfully on current system version
+        ctx.submit(applicationPackage).deploy();
+        tester.controllerTester().computeVersionStatus();
+        var reporter = createReporter(tester.controller());
+        reporter.maintain();
+        assertEquals(VespaVersion.Confidence.high, tester.controller().readVersionStatus().systemVersion().get().confidence());
+        assertEquals(0, metrics.getMetric(MetricsReporter.BROKEN_SYSTEM_VERSION));
+
+        // System upgrades. Canary upgrade fails
+        Version version0 = Version.fromString("6.2");
+        tester.controllerTester().upgradeSystem(version0);
+        tester.upgrader().maintain();
+        assertEquals(Change.of(version0), ctx.instance().change());
+        ctx.failDeployment(stagingTest);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(VespaVersion.Confidence.broken, tester.controller().readVersionStatus().systemVersion().get().confidence());
+        reporter.maintain();
+        assertEquals(1, metrics.getMetric(MetricsReporter.BROKEN_SYSTEM_VERSION));
+
+        // Canary is healed and confidence is raised
+        ctx.deployPlatform(version0);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(VespaVersion.Confidence.high, tester.controller().readVersionStatus().systemVersion().get().confidence());
+        reporter.maintain();
+        assertEquals(0, metrics.getMetric(MetricsReporter.BROKEN_SYSTEM_VERSION));
+    }
+
+    @Test
+    public void tenant_counter() {
+        var tester = new ControllerTester(SystemName.Public);
+        tester.zoneRegistry().setSystemName(SystemName.Public);
+        tester.createTenant("foo", Tenant.Type.cloud);
+        tester.createTenant("bar", Tenant.Type.cloud);
+        tester.createTenant("fix", Tenant.Type.cloud);
+        tester.controller().serviceRegistry().billingController().setPlan(TenantName.from("foo"), PlanId.from("pay-as-you-go"), false);
+        tester.controller().serviceRegistry().billingController().setPlan(TenantName.from("bar"), PlanId.from("pay-as-you-go"), false);
+
+        var reporter = createReporter(tester.controller());
+        reporter.maintain();
+
+        assertEquals(2, metrics.getMetric(d -> "pay-as-you-go".equals(d.get("plan")), MetricsReporter.TENANT_METRIC).get());
+        assertEquals(1, metrics.getMetric(d -> "trial".equals(d.get("plan")), MetricsReporter.TENANT_METRIC).get());
+    }
+
+    private void assertNodeCount(String metric, int n, Version version) {
+        long nodeCount = metrics.getMetric((dimensions) -> version.toFullString().equals(dimensions.get("currentVersion")), metric)
+                                .stream()
+                                .map(Number::longValue)
+                                .findFirst()
+                                .orElseThrow(() -> new IllegalArgumentException("Expected to find metric for version " + version));
+        assertEquals("Expected number of nodes are on " + version.toFullString(), n, nodeCount);
+    }
+
+    private void assertPlatformNodeCount(int n, Version version) {
+        assertNodeCount(MetricsReporter.PLATFORM_NODE_COUNT, n, version);
+    }
+
+    private void assertOsNodeCount(int n, Version version) {
+        assertNodeCount(MetricsReporter.OS_NODE_COUNT, n, version);
+    }
+
+    private void runAll(Runnable... runnables) {
+        for (var r : runnables) r.run();
+    }
+
+    private void upgradeTo(Version version, List<Node> nodes, ZoneId zone, ControllerTester tester) {
+        tester.configServer().setVersion(version, nodes, zone);
+        resume(nodes, zone, tester);
+    }
+
+    private void upgradeOsTo(Version version, List<Node> nodes, ZoneId zone, ControllerTester tester) {
+        tester.configServer().setOsVersion(version, nodes, zone);
+        resume(nodes, zone, tester);
+    }
+
+    private void resume(List<Node> nodes, ZoneId zone, ControllerTester tester) {
+        updateNodes(nodes, (builder) -> builder.serviceState(Node.ServiceState.expectedUp).suspendedSince(null),
+                    zone, tester);
+    }
+
+    private void suspend(List<Node> nodes, ZoneId zone, ControllerTester tester) {
+        var now = tester.clock().instant();
+        updateNodes(nodes, (builder) -> builder.serviceState(Node.ServiceState.allowedDown).suspendedSince(now),
+                    zone, tester);
+    }
+
+    private List<Node> getNodes(ZoneId zone, List<Node> nodes, ControllerTester tester) {
+        return tester.configServer().nodeRepository().list(zone, NodeFilter.all().hostnames(nodes.stream()
+                                                                                                 .map(Node::hostname)
+                                                                                                 .collect(Collectors.toSet())));
+    }
+
+    private void updateNodes(List<Node> nodes, UnaryOperator<Node.Builder> builderOps, ZoneId zone,
+                             ControllerTester tester) {
+        var currentNodes = getNodes(zone, nodes, tester);
+        var updatedNodes = currentNodes.stream()
+                                       .map(node -> builderOps.apply(Node.builder(node)).build())
+                                       .collect(Collectors.toList());
+        tester.configServer().nodeRepository().putNodes(zone, updatedNodes);
     }
 
     private Duration getAverageDeploymentDuration(ApplicationId id) {
@@ -344,12 +563,24 @@ public class MetricsReporterTest {
         return getMetric(MetricsReporter.DEPLOYMENT_WARNINGS, id).intValue();
     }
 
-    private int getNodesFailingUpgrade() {
-        return metrics.getMetric(MetricsReporter.NODES_FAILING_SYSTEM_UPGRADE).intValue();
+    private Duration getChangeDuration(String metric, HostName hostname) {
+        return metrics.getMetric((dimensions) -> hostname.value().equals(dimensions.get("host")), metric)
+                      .map(n -> Duration.ofSeconds(n.longValue()))
+                      .orElseThrow(() -> new IllegalArgumentException("Expected to find metric for " + hostname));
     }
 
-    private int getNodesFailingOsUpgrade() {
-        return metrics.getMetric(MetricsReporter.NODES_FAILING_OS_UPGRADE).intValue();
+    private void assertPlatformChangeDuration(Duration duration, List<Node> nodes) {
+        for (var node : nodes) {
+            assertEquals("Platform change duration of " + node.hostname(),
+                         duration, getChangeDuration(MetricsReporter.PLATFORM_CHANGE_DURATION, node.hostname()));
+        }
+    }
+
+    private void assertOsChangeDuration(Duration duration, List<Node> nodes) {
+        for (var node : nodes) {
+            assertEquals("OS change duration of " + node.hostname(),
+                         duration, getChangeDuration(MetricsReporter.OS_CHANGE_DURATION, node.hostname()));
+        }
     }
 
     private Number getMetric(String name, ApplicationId id) {
@@ -359,8 +590,14 @@ public class MetricsReporterTest {
                       .orElseThrow(() -> new RuntimeException("Expected metric to exist for " + id));
     }
 
+    private Number getMetric(String name, String operator) {
+        return metrics.getMetric((dimensions) -> operator.equals(dimensions.get("operator")),
+                name)
+                .orElseThrow(() -> new RuntimeException("Expected metric to exist for " + operator));
+    }
+
     private MetricsReporter createReporter(Controller controller) {
-        return new MetricsReporter(controller, metrics, new JobControl(new MockCuratorDb()));
+        return new MetricsReporter(controller, metrics);
     }
 
     private static String appDimension(ApplicationId id) {

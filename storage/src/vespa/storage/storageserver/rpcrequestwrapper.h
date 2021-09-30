@@ -50,6 +50,8 @@ public:
      **/
     void returnError(uint32_t errorCode, const char *errorMessage);
 
+    FRT_RPCRequest* raw_request() noexcept { return _req; }
+
     const char *getMethodName() const;
     void addReturnString(const char *str, uint32_t len=0);
     void addReturnInt(uint32_t value);
@@ -66,7 +68,7 @@ private:
     RPCRequestWrapper(const RPCRequestWrapper &);
     RPCRequestWrapper &operator=(const RPCRequestWrapper &);
 
-    FRT_RPCRequest      *_req;             // underlying RPC request
+    FRT_RPCRequest* _req;             // underlying RPC request
 };
 
 } // namespace storage

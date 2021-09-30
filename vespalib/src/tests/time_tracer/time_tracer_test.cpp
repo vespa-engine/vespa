@@ -67,8 +67,8 @@ TEST("require that records are extracted inversely ordered by end time per threa
 }
 
 TEST("benchmark time sampling") {
-    double min_stamp_us = 1000000.0 * BenchmarkTimer::benchmark([](){ (void) TimeTracer::now(); }, 1.0);
-    double min_sample_us = 1000000.0 * BenchmarkTimer::benchmark([](){ TT_Sample my_sample(my_tag); }, 1.0);
+    double min_stamp_us = 1000000.0 * BenchmarkTimer::benchmark([]() noexcept { (void) TimeTracer::now(); }, 1.0);
+    double min_sample_us = 1000000.0 * BenchmarkTimer::benchmark([]() noexcept { TT_Sample my_sample(my_tag); }, 1.0);
     fprintf(stderr, "min timestamp time: %g us\n", min_stamp_us);
     fprintf(stderr, "min sample time: %g us\n", min_sample_us);
     fprintf(stderr, "estimated non-clock overhead: %g us\n", (min_sample_us - (min_stamp_us * 2.0)));

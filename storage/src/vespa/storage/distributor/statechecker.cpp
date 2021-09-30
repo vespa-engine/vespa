@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "statechecker.h"
-#include "distributorcomponent.h"
 #include "distributor_bucket_space.h"
+#include "distributor_stripe_component.h"
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.statechecker");
@@ -56,26 +58,28 @@ StateChecker::Result::createStoredResult(
         IdealStateOperation::UP operation,
         MaintenancePriority::Priority priority)
 {
-    return Result(std::unique_ptr<ResultImpl>(new StoredResultImpl(std::move(operation), MaintenancePriority(priority))));
+    return Result(std::make_unique<StoredResultImpl>(std::move(operation), MaintenancePriority(priority)));
 }
 
-StateChecker::Context::Context(const DistributorComponent& c,
+StateChecker::Context::Context(const DistributorNodeContext& node_ctx_in,
+                               const DistributorStripeOperationContext& op_ctx_in,
                                const DistributorBucketSpace &distributorBucketSpace,
                                NodeMaintenanceStatsTracker& statsTracker,
                                const document::Bucket &bucket_)
     : bucket(bucket_),
-      siblingBucket(c.getSibling(bucket.getBucketId())),
+      siblingBucket(op_ctx_in.get_sibling(bucket.getBucketId())),
       systemState(distributorBucketSpace.getClusterState()),
-      pending_cluster_state(c.getDistributor().pendingClusterStateOrNull(bucket_.getBucketSpace())),
-      distributorConfig(c.getDistributor().getConfig()),
+      pending_cluster_state(op_ctx_in.pending_cluster_state_or_null(bucket_.getBucketSpace())),
+      distributorConfig(op_ctx_in.distributor_config()),
       distribution(distributorBucketSpace.getDistribution()),
-      gcTimeCalculator(c.getDistributor().getBucketIdHasher(),
+      gcTimeCalculator(op_ctx_in.bucket_id_hasher(),
                        std::chrono::duration_cast<std::chrono::seconds>(distributorConfig.getGarbageCollectionInterval())),
-      component(c),
+      node_ctx(node_ctx_in),
+      op_ctx(op_ctx_in),
       db(distributorBucketSpace.getBucketDatabase()),
       stats(statsTracker)
 {
-    idealState = distribution.getIdealStorageNodes(systemState, bucket.getBucketId());
+    idealState = distributorBucketSpace.get_ideal_service_layer_nodes_bundle(bucket.getBucketId()).get_available_nonretired_or_maintenance_nodes();
     unorderedIdealState.insert(idealState.begin(), idealState.end());
 }
 

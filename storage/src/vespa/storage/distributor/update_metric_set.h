@@ -2,8 +2,6 @@
 #pragma once
 
 #include "persistence_operation_metric_set.h"
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
-#include <vespa/metrics/metrics.h>
 
 namespace storage {
 

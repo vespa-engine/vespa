@@ -1,18 +1,25 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.collections;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Random;
+import java.util.Set;
+import java.util.Spliterator;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
@@ -20,7 +27,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  *
  * @author jonmv
  */
-public abstract class AbstractFilteringList<Type, ListType extends AbstractFilteringList<Type, ListType>> {
+public abstract class AbstractFilteringList<Type, ListType extends AbstractFilteringList<Type, ListType>> implements Iterable<Type> {
 
     private final List<Type> items;
     private final boolean negate;
@@ -62,6 +69,12 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
         return matching(new HashSet<>(others.asList())::contains);
     }
 
+    /** @deprecated use and(others) */
+    @Deprecated // TODO: Remove on Vespa 8
+    public ListType concat(ListType others) {
+        return and(others);
+    }
+
     /** Returns the union of the two lists. */
     public ListType and(ListType others) {
         return constructor.apply(Stream.concat(items.stream(), others.asList().stream()).collect(toUnmodifiableList()), false);
@@ -69,6 +82,9 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
 
     /** Returns the items in this as an immutable list. */
     public final List<Type> asList() { return items; }
+
+    /** Returns the items in this as a set. */
+    public final Set<Type> asSet() { return new HashSet<>(items); }
 
     /** Returns the items in this as an immutable list after mapping with the given function. */
     public final <OtherType> List<OtherType> mapToList(Function<Type, OtherType> mapper) {
@@ -80,8 +96,33 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
         return constructor.apply(items.stream().sorted(comparator).collect(toUnmodifiableList()), false);
     }
 
+    /** Returns the items grouped by the given classifier. */
+    public final <OtherType> Map<OtherType, ListType> groupingBy(Function<Type, OtherType> classifier) {
+        return items.stream().collect(Collectors.groupingBy(classifier,
+                                                            HashMap::new,
+                                                            Collectors.collectingAndThen(toUnmodifiableList(),
+                                                                                         (list) -> constructor.apply(list, false))));
+    }
+
     public final boolean isEmpty() { return items.isEmpty(); }
 
     public final int size() { return items.size(); }
+
+    @Override
+    public Iterator<Type> iterator() {
+        return items.iterator();
+    }
+
+    @Override
+    public Spliterator<Type> spliterator() {
+        return items.spliterator();
+    }
+
+    /** Returns the items in this shuffled using random as source of randomness */
+    public final ListType shuffle(Random random) {
+        ArrayList<Type> shuffled = new ArrayList<>(items);
+        Collections.shuffle(shuffled, random);
+        return constructor.apply(shuffled, false);
+    }
 
 }

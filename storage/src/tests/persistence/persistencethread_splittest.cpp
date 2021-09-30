@@ -1,19 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storage/persistence/persistencethread.h>
+#include <vespa/storage/persistence/persistencehandler.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/persistence/spi/test.h>
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
 using namespace ::testing;
 
 namespace storage {
-namespace {
-spi::LoadType defaultLoadType(0, "default");
-}
 
 struct PersistenceThreadSplitTest : public SingleDiskPersistenceTestUtils {
     enum SplitCase {
@@ -182,8 +181,7 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
 
     uint64_t location = 0;
     uint64_t splitMask = 1ULL << (splitLevelToDivide - 1);
-    spi::Context context(defaultLoadType, spi::Priority(0),
-                         spi::Trace::TraceLevel(0));
+    spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
     spi::Bucket bucket(makeSpiBucket(document::BucketId(currentSplitLevel, 1)));
     spi::PersistenceProvider& spi(getPersistenceProvider());
     spi.deleteBucket(bucket, context);
@@ -201,29 +199,28 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
         }
         document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(
                 docloc, seed, docSize, docSize));
-        spi.put(bucket, spi::Timestamp(1000 + i), doc, context);
+        spi.put(bucket, spi::Timestamp(1000 + i), std::move(doc), context);
     }
 
-    std::unique_ptr<PersistenceThread> thread(createPersistenceThread(0));
     getNode().getStateUpdater().setClusterState(
             std::make_shared<lib::ClusterState>("distributor:1 storage:1"));
-    api::SplitBucketCommand cmd(makeDocumentBucket(document::BucketId(currentSplitLevel, 1)));
-    cmd.setMaxSplitBits(maxBits);
-    cmd.setMinSplitBits(minBits);
-    cmd.setMinByteSize(maxSize);
-    cmd.setMinDocCount(maxCount);
-    cmd.setSourceIndex(0);
-    MessageTracker::UP result(thread->handleSplitBucket(cmd));
+    document::Bucket docBucket = makeDocumentBucket(document::BucketId(currentSplitLevel, 1));
+    auto cmd = std::make_shared<api::SplitBucketCommand>(docBucket);
+    cmd->setMaxSplitBits(maxBits);
+    cmd->setMinSplitBits(minBits);
+    cmd->setMinByteSize(maxSize);
+    cmd->setMinDocCount(maxCount);
+    cmd->setSourceIndex(0);
+    MessageTracker::UP result = _persistenceHandler->splitjoinHandler().handleSplitBucket(*cmd, createTracker(cmd, docBucket));
     api::ReturnCode code(result->getResult());
     EXPECT_EQ(error, code);
     if (!code.success()) {
         return;
     }
-    auto& reply = dynamic_cast<api::SplitBucketReply&>(*result->getReply());
+    auto& reply = dynamic_cast<api::SplitBucketReply&>(result->getReply());
     std::set<std::string> expected;
     for (uint32_t i=0; i<resultBuckets; ++i) {
-        document::BucketId b(resultSplitLevel,
-                             location | (i == 0 ? 0 : splitMask));
+        document::BucketId b(resultSplitLevel, location | (i == 0 ? 0 : splitMask));
         std::ostringstream ost;
         ost << b << " - " << b.getUsedBits();
         expected.insert(ost.str());

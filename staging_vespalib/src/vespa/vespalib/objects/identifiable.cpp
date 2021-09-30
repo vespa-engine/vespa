@@ -94,10 +94,6 @@ Register * _register = nullptr;
 }
 
 Identifiable::ILoader  * Identifiable::_classLoader = nullptr;
-FieldBase Identifiable::hasObjectField("hasObject");
-FieldBase Identifiable::sizeField("size");
-FieldBase Identifiable::classIdField("classId");
-FieldBase Identifiable::objectField("object");
 
 IMPLEMENT_IDENTIFIABLE(Identifiable, Identifiable);
 
@@ -155,7 +151,7 @@ bool Identifiable::RuntimeClass::inherits(unsigned cid) const
 
 Serializer & operator << (Serializer & os, const Identifiable & obj)
 {
-    os.put(Identifiable::classIdField, obj.getClass().id());
+    os.put(obj.getClass().id());
     obj.serialize(os);
     return os;
 }
@@ -177,7 +173,7 @@ nbostream & operator >> (nbostream & is, Identifiable & obj)
 Deserializer & operator >> (Deserializer & os, Identifiable & obj)
 {
     uint32_t cid(0);
-    os.get(Identifiable::classIdField, cid);
+    os.get(cid);
     if (cid == obj.getClass().id()) {
         obj.deserialize(os);
     } else {
@@ -193,7 +189,7 @@ Deserializer & operator >> (Deserializer & os, Identifiable & obj)
 Identifiable::UP Identifiable::create(Deserializer & is)
 {
     uint32_t cid(0);
-    is.get(classIdField, cid);
+    is.get(cid);
     UP obj;
     const Identifiable::RuntimeClass *rtc = Identifiable::classFromId(cid);
     if (rtc == nullptr) {
@@ -277,12 +273,12 @@ Identifiable::selectMembers(const ObjectPredicate &predicate, ObjectOperation &o
 
 Serializer & Identifiable::serialize(Serializer & os) const
 {
-    return os.put(objectField, *this);
+    return os.put(*this);
 }
 
 Deserializer & Identifiable::deserialize(Deserializer & is)
 {
-    return is.get(objectField, *this);
+    return is.get(*this);
 }
 
 Serializer & Identifiable::onSerialize(Serializer & os) const

@@ -56,7 +56,8 @@ public:
         bool runFusion(const Schema &schema, const vespalib::string &outputDir,
                        const std::vector<vespalib::string> &sources,
                        const SelectorArray &docIdSelector,
-                       search::SerialNum lastSerialNum) override;
+                       search::SerialNum lastSerialNum,
+                       std::shared_ptr<search::IFlushToken> flush_token) override;
     };
 
 private:
@@ -76,7 +77,7 @@ public:
                  const search::TuneFileIndexManager &tuneFileIndexManager,
                  const search::TuneFileAttributes &tuneFileAttributes,
                  const search::common::FileHeaderContext &fileHeaderContext);
-    ~IndexManager();
+    ~IndexManager() override;
 
     searchcorespi::index::IndexMaintainer &getMaintainer() {
         return _maintainer;

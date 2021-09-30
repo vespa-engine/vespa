@@ -5,7 +5,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("word_store_test");
 
-using namespace search::datastore;
+using namespace vespalib::datastore;
 
 namespace search::memoryindex {
 

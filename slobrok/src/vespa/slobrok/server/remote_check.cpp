@@ -2,23 +2,18 @@
 
 #include "remote_check.h"
 #include "named_service.h"
-#include "rpc_server_map.h"
-#include "rpc_server_manager.h"
 #include "remote_slobrok.h"
 #include "random.h"
 #include "exchange_manager.h"
 
 #include <vespa/log/log.h>
-LOG_SETUP(".remcheck");
+LOG_SETUP(".slobrok.server.remote_check");
 
 namespace slobrok {
 
-RemoteCheck::RemoteCheck(FNET_Scheduler *sched,
-                         RpcServerMap& rpcsrvmap,
-                         RpcServerManager& rpcsrvman,
-                         ExchangeManager& exch)
+RemoteCheck::RemoteCheck(FNET_Scheduler *sched, ExchangeManager& exch)
     : FNET_Task(sched),
-      _rpcsrvmap(rpcsrvmap), _rpcsrvmanager(rpcsrvman), _exchanger(exch)
+      _exchanger(exch)
 {
     double seconds = randomIn(15.3, 27.9);
     Schedule(seconds);

@@ -3,7 +3,7 @@
 #include "btreeiterator.hpp"
 #include "btreenode.hpp"
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template class BTreeIteratorBase<uint32_t, uint32_t, NoAggregated>;
 template class BTreeIteratorBase<uint32_t, BTreeNoLeafData, NoAggregated>;

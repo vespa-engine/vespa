@@ -22,6 +22,7 @@ public class NormalSketch extends Sketch<NormalSketch>  {
 
     private final byte[] data;
     private final int bucketMask;
+    private static final LZ4Factory lz4Factory = LZ4Factory.safeInstance();
 
     /**
      * Create a sketch with the default precision given by {@link HyperLogLog#DEFAULT_PRECISION}.
@@ -100,7 +101,7 @@ public class NormalSketch extends Sketch<NormalSketch>  {
         super.onSerialize(buf);
         buf.putInt(null, data.length);
         try {
-            LZ4Compressor c = LZ4Factory.safeInstance().highCompressor();
+            LZ4Compressor c = lz4Factory.highCompressor();
             byte[] compressedData = new byte[data.length];
             int compressedSize = c.compress(data, compressedData);
             serializeDataArray(compressedData, compressedSize, buf);
@@ -129,7 +130,7 @@ public class NormalSketch extends Sketch<NormalSketch>  {
         if (length == compressedLength) {
             deserializeDataArray(data, length, buf);
         } else {
-            LZ4FastDecompressor c = LZ4Factory.safeInstance().fastDecompressor();
+            LZ4FastDecompressor c = lz4Factory.fastDecompressor();
             byte[] compressedData = buf.getBytes(null, compressedLength);
             c.decompress(compressedData, data);
         }

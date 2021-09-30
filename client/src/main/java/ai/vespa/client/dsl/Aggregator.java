@@ -17,6 +17,6 @@ public class Aggregator {
 
     @Override
     public String toString() {
-        return String.format("%s(%s)", type, value);
+        return Text.format("%s(%s)", type, value);
     }
 }

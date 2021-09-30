@@ -62,12 +62,14 @@ public class VespaLevelControllerRepoTest {
 
             RandomAccessFile lcfile = new RandomAccessFile(lcf, "rw");
 
-            lcfile.seek(VespaLevelControllerRepo.controlFileHeaderLength);
+            lcfile.seek(VespaLevelControllerRepo.controlFileHeaderLength+1);
+            assertEquals(lcfile.readByte(), '\n');
+            lcfile.seek(VespaLevelControllerRepo.controlFileHeaderLength+2);
             assertEquals(lcfile.readByte(), 'd');
-            lcfile.seek(VespaLevelControllerRepo.controlFileHeaderLength + 7);
+            lcfile.seek(VespaLevelControllerRepo.controlFileHeaderLength+2 + 7);
             assertEquals(lcfile.readByte(), ':');
-            assertEquals(0, (VespaLevelControllerRepo.controlFileHeaderLength+9) % 4);
-            lcfile.seek(VespaLevelControllerRepo.controlFileHeaderLength + 9);
+            assertEquals(0, (VespaLevelControllerRepo.controlFileHeaderLength+13) % 4);
+            lcfile.seek(VespaLevelControllerRepo.controlFileHeaderLength + 13);
             assertEquals(0x20204f4e, lcfile.readInt());
 
             int off = findControlString(lcfile, "com.yahoo.log.test");

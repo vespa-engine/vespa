@@ -7,6 +7,10 @@
 
 namespace search::test {
 
+#ifdef ENABLE_GTEST_MIGRATION
+#define SearchIteratorVerifier SearchIteratorVerifierForGTest
+#endif
+
 class SearchIteratorVerifier {
 public:
     typedef queryeval::SearchIterator SearchIterator;

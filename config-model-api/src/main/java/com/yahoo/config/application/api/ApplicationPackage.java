@@ -1,33 +1,25 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
-import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 /**
  * Represents an application package, that is, used as input when creating a VespaModel and as
@@ -35,8 +27,6 @@ import java.util.jar.JarFile;
  *
  * The class hides detail as to whether the source is local files or ZooKeeper
  * data in config server.
- *
- * Anyone wanting to access application data should use this interface.
  *
  * @author Vegard Havdal
  */
@@ -47,7 +37,8 @@ public interface ApplicationPackage {
     String HOSTS = "hosts.xml";
     String SERVICES = "services.xml";
 
-    Path SEARCH_DEFINITIONS_DIR = Path.fromString("searchdefinitions");
+    Path SCHEMAS_DIR = Path.fromString("schemas");
+    Path SEARCH_DEFINITIONS_DIR = Path.fromString("searchdefinitions"); // Legacy addition to schemas
     String COMPONENT_DIR = "components";
     String SEARCHCHAINS_DIR = "search/chains";
     String DOCPROCCHAINS_DIR = "docproc/chains";
@@ -88,7 +79,7 @@ public interface ApplicationPackage {
      * @return the name of the application (i.e the directory where the application package was deployed from)
      * @deprecated do not use
      */
-    @Deprecated // TODO: Remove on Vespa 8
+    @Deprecated // TODO: Remove in Vespa 8
     String getApplicationName();
 
     ApplicationId getApplicationId();
@@ -96,14 +87,14 @@ public interface ApplicationPackage {
     /**
      * Contents of services.xml. Caller must close reader after use.
      *
-     * @return a Reader, or null if no services.xml/vespa-services.xml present
+     * @return a Reader, or null if no services.xml present
      */
     Reader getServices();
 
     /**
      * Contents of hosts.xml. Caller must close reader after use.
      *
-     * @return a Reader, or null if no hosts.xml/vespa-hosts.xml present
+     * @return a Reader, or null if no hosts.xml present
      */
     Reader getHosts();
 
@@ -122,9 +113,12 @@ public interface ApplicationPackage {
 
     /**
      * Readers for all the search definition files for this.
+     * @deprecated use {@link #getSchemas()} instead
      * @return a list of readers for search definitions
      */
-    Collection<NamedReader> searchDefinitionContents();
+    @Deprecated
+    // TODO: Remove in Vespa 8
+    default Collection<NamedReader> searchDefinitionContents() { return getSchemas(); }
 
     /**
      * Returns all the config definitions available in this package as unparsed data.
@@ -152,10 +146,11 @@ public interface ApplicationPackage {
 
     /** Returns the major version this application is valid for, or empty if it is valid for all versions */
     default Optional<Integer> getMajorVersion() {
-        if ( ! getDeployment().isPresent()) return Optional.empty();
+        if (getDeployment().isEmpty()) return Optional.empty();
 
         Element deployElement = XML.getDocument(getDeployment().get()).getDocumentElement();
         if (deployElement == null) return Optional.empty();
+
         String majorVersionString = deployElement.getAttribute("major-version");
         if (majorVersionString == null || majorVersionString.isEmpty())
             return Optional.empty();
@@ -168,7 +163,7 @@ public interface ApplicationPackage {
     }
 
     /**
-     * Returns inforamtion about a file
+     * Returns information about a file
      *
      * @param relativePath the relative path of the file within this application package.
      * @return information abut the file, returned whether or not the file exists
@@ -187,7 +182,6 @@ public interface ApplicationPackage {
     /** Returns handle for the file containing client certificate authorities */
     default ApplicationFile getClientSecurityFile() { return getFile(SECURITY_DIR.append("clients.pem")); }
 
-    //For generating error messages
     String getHostSource();
     String getServicesSource();
 
@@ -204,26 +198,6 @@ public interface ApplicationPackage {
      * @throws IllegalArgumentException if the file was not found or could not be read
      */
     Reader getRankingExpression(String name);
-
-    /**
-     * Returns the name-payload pairs of any sd files under path/searchdefinitions/ in the given jar bundle
-     * @param bundle The jar file, which will be closed afterwards by this method.
-     * @param path For example 'complex/'
-     * @return map of the SD payloads
-     * @throws IOException if it is reading sd files fails
-     */
-    static Map<String, String> getBundleSdFiles(String path, JarFile bundle) throws IOException {
-        Map<String,String> ret = new LinkedHashMap<>();
-        for (Enumeration<JarEntry> e = bundle.entries(); e.hasMoreElements();) {
-            JarEntry je=e.nextElement();
-            if (je.getName().startsWith(path+SEARCH_DEFINITIONS_DIR+"/") && je.getName().endsWith(SD_NAME_SUFFIX)) {
-                String contents = IOUtils.readAll(new InputStreamReader(bundle.getInputStream(je)));
-                ret.put(getFileName(je), contents);
-            }
-        }
-        bundle.close();
-        return ret;
-    }
 
     /**
      * The name of an SD in a JarEntry
@@ -264,7 +238,18 @@ public interface ApplicationPackage {
         return Collections.emptyMap();
     }
 
-    Collection<NamedReader> getSearchDefinitions();
+    /**
+     * @deprecated use {@link #getSchemas()} instead
+     */
+    @Deprecated
+    // TODO: Remove in Vespa 8
+    default Collection<NamedReader> getSearchDefinitions() { return getSchemas(); }
+
+    /**
+     * Readers for all the schema files.
+     * @return a collection of readers for schemas
+     */
+    Collection<NamedReader> getSchemas();
 
     /**
      * Preprocess an application for a given zone and return a new application package pointing to the preprocessed
@@ -276,8 +261,7 @@ public interface ApplicationPackage {
      *
      * @return A new application package instance pointing to a new location
      */
-    default ApplicationPackage preprocess(Zone zone, DeployLogger logger)
-            throws IOException, TransformerException, ParserConfigurationException, SAXException {
+    default ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
         throw new UnsupportedOperationException("This application package does not support preprocessing");
     }
 

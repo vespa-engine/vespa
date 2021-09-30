@@ -19,7 +19,9 @@ import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.language.Linguistics;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
+
+import com.yahoo.language.process.Embedder;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.AdapterFactory;
 import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
@@ -52,9 +54,10 @@ public class IndexingProcessor extends DocumentProcessor {
     @Inject
     public IndexingProcessor(DocumentmanagerConfig documentmanagerConfig,
                              IlscriptsConfig ilscriptsConfig,
-                             Linguistics linguistics) {
+                             Linguistics linguistics,
+                             Embedder embedder) {
         docTypeMgr = DocumentTypeManagerConfigurer.configureNewManager(documentmanagerConfig);
-        scriptMgr = new ScriptManager(docTypeMgr, ilscriptsConfig, linguistics);
+        scriptMgr = new ScriptManager(docTypeMgr, ilscriptsConfig, linguistics, embedder);
         adapterFactory = new SimpleAdapterFactory(new ExpressionSelector());
     }
 
@@ -89,14 +92,14 @@ public class IndexingProcessor extends DocumentProcessor {
     private void processDocument(DocumentPut prev, List<DocumentOperation> out) {
         DocumentScript script = scriptMgr.getScript(prev.getDocument().getDataType());
         if (script == null) {
-            log.log(LogLevel.DEBUG, "No indexing script for document '%s'.", prev.getId());
+            log.log(Level.FINE, "No indexing script for document '%s'.", prev.getId());
             out.add(prev);
             return;
         }
-        log.log(LogLevel.DEBUG, "Processing document '%s'.", prev.getId());
+        log.log(Level.FINE, "Processing document '%s'.", prev.getId());
         Document next = script.execute(adapterFactory, prev.getDocument());
         if (next == null) {
-            log.log(LogLevel.DEBUG, "Document '" + prev.getId() + "' produced no output.");
+            log.log(Level.FINE, "Document '%s' produced no output.", prev.getId());
             return;
         }
 
@@ -106,14 +109,14 @@ public class IndexingProcessor extends DocumentProcessor {
     private void processUpdate(DocumentUpdate prev, List<DocumentOperation> out) {
         DocumentScript script = scriptMgr.getScript(prev.getType());
         if (script == null) {
-            log.log(LogLevel.DEBUG, "No indexing script for update '%s'.", prev.getId());
+            log.log(Level.FINE, "No indexing script for update '%s'.", prev.getId());
             out.add(prev);
             return;
         }
-        log.log(LogLevel.DEBUG, "Processing update '%s'.", prev.getId());
+        log.log(Level.FINE, "Processing update '%s'.", prev.getId());
         DocumentUpdate next = script.execute(adapterFactory, prev);
         if (next == null) {
-            log.log(LogLevel.DEBUG, "Update '" + prev.getId() + "' produced no output.");
+            log.log(Level.FINE, "Update '%s' produced no output.", prev.getId());
             return;
         }
         next.setCondition(prev.getCondition());
@@ -121,7 +124,7 @@ public class IndexingProcessor extends DocumentProcessor {
     }
 
     private void processRemove(DocumentRemove prev, List<DocumentOperation> out) {
-        log.log(LogLevel.DEBUG, "Not processing remove '%s'.", prev.getId());
+        log.log(Level.FINE, "Not processing remove '%s'.", prev.getId());
         out.add(prev);
     }
 

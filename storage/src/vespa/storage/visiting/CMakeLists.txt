@@ -6,14 +6,14 @@ vespa_add_library(storage_visitor OBJECT
     dumpvisitorsingle.cpp
     memory_bounded_trace.cpp
     recoveryvisitor.cpp
+    reindexing_visitor.cpp
     testvisitor.cpp
     visitor.cpp
     visitormanager.cpp
     visitormetrics.cpp
+    visitorthreadmetrics.cpp
     visitorthread.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )
 vespa_generate_config(storage_visitor stor-visitor.def)
 install_config_definition(stor-visitor.def vespa.config.content.core.stor-visitor.def)

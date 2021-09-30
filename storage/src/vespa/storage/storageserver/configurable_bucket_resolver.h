@@ -21,7 +21,7 @@ public:
     using BucketSpaceMapping = std::unordered_map<vespalib::string, document::BucketSpace, vespalib::hash<vespalib::string>>;
     const BucketSpaceMapping _type_to_space;
 public:
-    explicit ConfigurableBucketResolver(BucketSpaceMapping type_to_space)
+    explicit ConfigurableBucketResolver(BucketSpaceMapping type_to_space) noexcept
         : _type_to_space(std::move(type_to_space))
     {}
 

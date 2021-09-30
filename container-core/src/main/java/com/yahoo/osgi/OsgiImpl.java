@@ -16,8 +16,10 @@ import java.util.logging.Logger;
 /**
  * @author Tony Vaagenes
  * @author bratseth
+ * @author gjoranv
  */
 public class OsgiImpl implements Osgi {
+
     private static final Logger log = Logger.getLogger(OsgiImpl.class.getName());
 
     private final OsgiFramework jdiscOsgi;
@@ -39,11 +41,6 @@ public class OsgiImpl implements Osgi {
         if (alwaysCurrentBundle == null)
             throw new IllegalStateException("The initial bundles only contained the framework bundle!");
         log.info("Using " + alwaysCurrentBundle + " to lookup current bundles.");
-    }
-
-    @Override
-    public List<Bundle> getInitialBundles() {
-        return initialBundles;
     }
 
     @Override
@@ -153,6 +150,11 @@ public class OsgiImpl implements Osgi {
     @Override
     public void allowDuplicateBundles(Collection<Bundle> bundles) {
         jdiscOsgi.allowDuplicateBundles(bundles);
+    }
+
+    @Override
+    public boolean hasFelixFramework() {
+        return jdiscOsgi.isFelixFramework();
     }
 
     private static Bundle firstNonFrameworkBundle(List<Bundle> bundles) {

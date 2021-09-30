@@ -1,10 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("slime_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/slime/object_value.h>
+#include <vespa/vespalib/data/slime/array_value.h>
 #include <vespa/vespalib/data/slime/strfmt.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 #include <type_traits>
+
+#include <vespa/log/log.h>
+LOG_SETUP("slime_test");
 
 using namespace vespalib::slime::convenience;
 

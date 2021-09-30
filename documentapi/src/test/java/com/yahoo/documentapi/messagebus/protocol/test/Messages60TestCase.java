@@ -145,14 +145,13 @@ public class Messages60TestCase extends MessagesTestBase {
         @Override
         public void run() {
             GetBucketListMessage msg = new GetBucketListMessage(new BucketId(16, 123));
-            msg.setLoadType(loadTypes.getNameMap().get("foo"));
             msg.setBucketSpace(BUCKET_SPACE);
             assertEquals(BASE_MESSAGE_LENGTH + 12 + serializedLength(BUCKET_SPACE), serialize("GetBucketListMessage", msg));
 
             for (Language lang : LANGUAGES) {
                 msg = (GetBucketListMessage)deserialize("GetBucketListMessage", DocumentProtocol.MESSAGE_GETBUCKETLIST, lang);
                 assertEquals(new BucketId(16, 123), msg.getBucketId());
-                assertEquals("foo", msg.getLoadType().getName());
+                assertEquals("default", msg.getLoadType().getName());
                 assertEquals(BUCKET_SPACE, msg.getBucketSpace());
             }
         }

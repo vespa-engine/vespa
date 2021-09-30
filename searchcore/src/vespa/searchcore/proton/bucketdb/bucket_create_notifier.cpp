@@ -20,10 +20,10 @@ BucketCreateNotifier::~BucketCreateNotifier()
 }
 
 void
-BucketCreateNotifier::notifyCreateBucket(const BucketId &bucket)
+BucketCreateNotifier::notifyCreateBucket(const Guard & guard, const BucketId &bucket)
 {
     for (const auto &listener : _listeners) {
-        listener->notifyCreateBucket(bucket);
+        listener->notifyCreateBucket(guard, bucket);
     }
 }
 

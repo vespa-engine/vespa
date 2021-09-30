@@ -9,10 +9,15 @@ import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.UnsafeContentInputStream;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import com.yahoo.log.LogLevel;
+
+import java.io.InterruptedIOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -27,10 +32,11 @@ import java.util.logging.Logger;
  * @author Steinar Knutsen
  * @author bratseth
  */
-public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler {
+public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler implements HttpRequestHandler  {
 
     public static final String CONTENT_TYPE = "Content-Type";
     private static final String RENDERING_ERRORS = "rendering_errors";
+    private static final String UNHANDLED_EXCEPTIONS_METRIC = "jdisc.http.handler.unhandled_exceptions";
 
     /** Logger for subclasses */
     protected final Logger log;
@@ -67,9 +73,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
 
     @Override
     public final void handleRequest(Request request, BufferedContentChannel requestContent, ResponseHandler responseHandler) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "In " + this.getClass() + ".handleRequest()");
-        }
+        log.log(Level.FINE, () -> "In " + this.getClass() + ".handleRequest()");
         com.yahoo.jdisc.http.HttpRequest jdiscRequest = asHttpRequest(request);
         HttpRequest httpRequest = new HttpRequest(jdiscRequest, new UnsafeContentInputStream(requestContent.toReadable()));
         LazyContentChannel channel = null;
@@ -79,8 +83,9 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
             channel.setHttpResponse(httpResponse); // may or may not have already been done
             render(httpRequest, httpResponse, channel, jdiscRequest.creationTime(TimeUnit.MILLISECONDS));
         } catch (Exception e) {
+            metric.add(UNHANDLED_EXCEPTIONS_METRIC, 1L, contextFor(request, Map.of("exception", e.getClass().getSimpleName())));
             metric.add(RENDERING_ERRORS, 1, null);
-            log.log(LogLevel.ERROR, "Uncaught exception handling request", e);
+            log.log(Level.SEVERE, "Uncaught exception handling request", e);
             if (channel != null) {
                 channel.setHttpResponse(null);
                 channel.close(null);
@@ -92,12 +97,12 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
     }
 
     /** Render and return whether the channel was closed */
-    private void render(HttpRequest request, HttpResponse httpResponse,
-                        LazyContentChannel channel, long startTime) {
+    private void render(HttpRequest request, HttpResponse httpResponse, LazyContentChannel channel, long startTime) {
         LoggingCompletionHandler logOnCompletion = null;
         ContentChannelOutputStream output = null;
         try {
-            output = new ContentChannelOutputStream(channel);
+            output = httpResponse.maxPendingBytes() > 0 ? new MaxPendingContentChannelOutputStream(channel, httpResponse.maxPendingBytes())
+                                                        : new ContentChannelOutputStream(channel);
             logOnCompletion = createLoggingCompletionHandler(startTime, System.currentTimeMillis(),
                                                              httpResponse, request, output);
 
@@ -115,13 +120,11 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         catch (IOException e) {
             metric.add(RENDERING_ERRORS, 1, null);
             long time = System.currentTimeMillis() - startTime;
-            log.log(time < 900 ? LogLevel.INFO : LogLevel.WARNING,
-                    "IO error while responding to " + " ["
-                            + request.getUri() + "] " + "(total time "
-                            + time + " ms) ", e);
-            try { if (output != null) output.flush(); } catch (Exception ignored) { } // TODO: Shouldn't this be channel.close()?
+            log.log(time < 900 ? Level.INFO : Level.WARNING,
+                    "IO error while responding to  [" + request.getUri() + "] (total time " + time + " ms) ", e);
+            try { output.flush(); } catch (Exception ignored) { }
         } finally {
-            if (channel != null && !(httpResponse instanceof AsyncHttpResponse)) {
+            if (channel != null && ! (httpResponse instanceof AsyncHttpResponse)) {
                 channel.close(logOnCompletion);
             }
         }
@@ -138,7 +141,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         private boolean closed = false;
 
         // Fields needed to lazily create or close the channel */
-        private HttpRequest httpRequest;
+        private final HttpRequest httpRequest;
         private HttpResponse httpResponse;
         private final ResponseHandler responseHandler;
         private final Metric metric;
@@ -188,8 +191,8 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
                 return responseHandler.handleResponse(httpResponse.getJdiscResponse());
             } catch (Exception e) {
                 metric.add(RENDERING_ERRORS, 1, null);
-                if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "Error writing response to client - connection probably terminated " +
+                if (log.isLoggable(Level.FINE)) {
+                    log.log(Level.FINE, "Error writing response to client - connection probably terminated " +
                                             "from client side.", e);
                 }
                 return new DevNullChannel(); // Ignore further operations on this
@@ -226,29 +229,105 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
     /**
      * Override this to implement custom access logging.
      *
-     * @param startTime
-     *            execution start
-     * @param renderStartTime
-     *            start of output rendering
-     * @param response
-     *            the response which the log entry regards
-     * @param httpRequest
-     *            the incoming HTTP request
-     * @param rendererWiring
-     *            the stream the rendered response is written to, used for
-     *            fetching length of rendered response
+     * @param startTime execution start
+     * @param renderStartTime start of output rendering
+     * @param response the response which the log entry regards
+     * @param httpRequest the incoming HTTP request
+     * @param rendererWiring the stream the rendered response is written to, used for
+     *                       fetching length of rendered response
      */
-    protected LoggingCompletionHandler createLoggingCompletionHandler(
-            long startTime, long renderStartTime, HttpResponse response,
-            HttpRequest httpRequest, ContentChannelOutputStream rendererWiring) {
+    protected LoggingCompletionHandler createLoggingCompletionHandler(long startTime,
+                                                                      long renderStartTime,
+                                                                      HttpResponse response,
+                                                                      HttpRequest httpRequest,
+                                                                      ContentChannelOutputStream rendererWiring) {
         return null;
     }
 
     protected com.yahoo.jdisc.http.HttpRequest asHttpRequest(Request request) {
         if (!(request instanceof com.yahoo.jdisc.http.HttpRequest)) {
-            throw new IllegalArgumentException("Expected "
-                    + com.yahoo.jdisc.http.HttpRequest.class.getName() + ", got " + request.getClass().getName());
+            throw new IllegalArgumentException("Expected " + com.yahoo.jdisc.http.HttpRequest.class.getName() +
+                                               ", got " + request.getClass().getName());
         }
         return (com.yahoo.jdisc.http.HttpRequest) request;
     }
+
+
+    /**
+     * @author baldersheim
+     */
+    static class MaxPendingContentChannelOutputStream extends ContentChannelOutputStream {
+        private final long maxPending;
+        private final AtomicLong sent = new AtomicLong(0);
+        private final AtomicLong acked = new AtomicLong(0);
+
+        public MaxPendingContentChannelOutputStream(ContentChannel endpoint, long maxPending) {
+            super(endpoint);
+            this.maxPending = maxPending;
+        }
+
+        private long pendingBytes() {
+            return sent.get() - acked.get();
+        }
+
+        private class TrackCompletion implements CompletionHandler {
+
+            private final long written;
+            private final AtomicBoolean replied = new AtomicBoolean(false);
+
+            TrackCompletion(long written) {
+                this.written = written;
+                sent.addAndGet(written);
+            }
+
+            @Override
+            public void completed() {
+                if ( ! replied.getAndSet(true)) {
+                    acked.addAndGet(written);
+                }
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                if ( ! replied.getAndSet(true)) {
+                    acked.addAndGet(written);
+                }
+            }
+        }
+
+        @Override
+        public void send(ByteBuffer src) throws IOException {
+            try {
+                stallWhilePendingAbove(maxPending);
+            } catch (InterruptedException ignored) {
+                throw new InterruptedIOException("Interrupted waiting for IO");
+            }
+            CompletionHandler pendingTracker = new TrackCompletion(src.remaining());
+            try {
+                send(src, pendingTracker);
+            } catch (Throwable throwable) {
+                pendingTracker.failed(throwable);
+                throw throwable;
+            }
+        }
+
+        private void stallWhilePendingAbove(long pending) throws InterruptedException {
+            while (pendingBytes() > pending) {
+                Thread.sleep(1);
+            }
+        }
+
+        @Override
+        public void flush() throws IOException {
+            super.flush();
+            try {
+                stallWhilePendingAbove(0);
+            }
+            catch (InterruptedException e) {
+                throw new InterruptedIOException("Interrupted waiting for IO");
+            }
+        }
+
+    }
+
 }

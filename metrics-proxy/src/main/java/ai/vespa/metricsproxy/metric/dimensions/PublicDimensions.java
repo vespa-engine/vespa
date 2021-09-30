@@ -1,3 +1,4 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric.dimensions;
 
 import java.util.List;
@@ -23,6 +24,10 @@ public final class PublicDimensions {
     public static final String INTERNAL_CLUSTER_TYPE = "clustertype";
     public static final String INTERNAL_CLUSTER_ID = "clusterid";
     public static final String CLUSTER_ID = "clusterId";
+
+    // This dimension is not currently (March 2021) added to the 'commonDimensions' allow-list below, due to the
+    // limit of 10 total dimensions in public http apis. See e.g. MetricsV2Handler#MAX_DIMENSIONS.
+    public static final String GROUP_ID = "groupId";
 
     // Internal name (instance) is confusing, so renamed to 'serviceId' for public use.
     // This is added by the metrics-proxy.

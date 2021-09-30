@@ -2,6 +2,7 @@
 package com.yahoo.config.model;
 
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
@@ -9,17 +10,20 @@ import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.application.provider.StaticConfigDefinitionRepo;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 
 /**
-* @author hmusum
-*/
+ * @author hmusum
+ */
 public class MockModelContext implements ModelContext {
 
     private final ApplicationPackage applicationPackage;
@@ -48,9 +52,12 @@ public class MockModelContext implements ModelContext {
     }
 
     @Override
-    public Optional<HostProvisioner> hostProvisioner() {
-        return Optional.empty();
+    public HostProvisioner getHostProvisioner() {
+        return DeployState.getDefaultModelHostProvisioner(applicationPackage);
     }
+
+    @Override
+    public Provisioned provisioned() { return new Provisioned(); }
 
     @Override
     public DeployLogger deployLogger() {
@@ -76,5 +83,10 @@ public class MockModelContext implements ModelContext {
     @Override
     public Properties properties() {
         return new TestProperties();
+    }
+
+    @Override
+    public ExecutorService getExecutor() {
+        return new InThreadExecutorService();
     }
 }

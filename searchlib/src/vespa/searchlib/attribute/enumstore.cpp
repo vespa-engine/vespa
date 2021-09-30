@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "enumstore.hpp"
+#include <vespa/vespalib/datastore/sharded_hash_map.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
 #include <iomanip>
 
@@ -20,9 +21,7 @@ EnumStoreT<const char*>::write_value(BufferWriter& writer, Index idx) const
 
 template <>
 ssize_t
-EnumStoreT<const char*>::load_unique_value(const void* src,
-                                           size_t available,
-                                           Index& idx)
+EnumStoreT<const char*>::load_unique_value(const void* src, size_t available, Index& idx)
 {
     const char* value = static_cast<const char*>(src);
     size_t slen = strlen(value);
@@ -30,40 +29,56 @@ EnumStoreT<const char*>::load_unique_value(const void* src,
     if (available < sz) {
         return -1;
     }
-    Index prev_idx = idx;
     idx = _store.get_allocator().allocate(value);
-
-    if (prev_idx.valid()) {
-        auto cmp = make_comparator(value);
-        assert(cmp(prev_idx, Index()));
-    }
     return sz;
 }
 
-std::unique_ptr<datastore::IUniqueStoreDictionary>
-make_enum_store_dictionary(IEnumStore &store, bool has_postings, std::unique_ptr<datastore::EntryComparator> folded_compare)
+std::unique_ptr<vespalib::datastore::IUniqueStoreDictionary>
+make_enum_store_dictionary(IEnumStore &store, bool has_postings, const DictionaryConfig & dict_cfg,
+                           std::unique_ptr<EntryComparator> compare,
+                           std::unique_ptr<EntryComparator> folded_compare)
 {
+    using NoBTreeDictionary = vespalib::datastore::NoBTreeDictionary;
+    using ShardedHashMap = vespalib::datastore::ShardedHashMap;
     if (has_postings) {
         if (folded_compare) {
-            return std::make_unique<EnumStoreFoldedDictionary>(store, std::move(folded_compare));
+            return std::make_unique<EnumStoreFoldedDictionary>(store, std::move(compare), std::move(folded_compare));
         } else {
-            return std::make_unique<EnumStoreDictionary<EnumPostingTree>>(store);
+            switch (dict_cfg.getType()) {
+            case DictionaryConfig::Type::HASH:
+                return std::make_unique<EnumStoreDictionary<NoBTreeDictionary, ShardedHashMap>>(store, std::move(compare));
+            case DictionaryConfig::Type::BTREE_AND_HASH:
+                return std::make_unique<EnumStoreDictionary<EnumPostingTree, ShardedHashMap>>(store, std::move(compare));
+            default:
+                return std::make_unique<EnumStoreDictionary<EnumPostingTree>>(store, std::move(compare));
+            }
         }
     } else {
-        return std::make_unique<EnumStoreDictionary<EnumTree>>(store);
+        return std::make_unique<EnumStoreDictionary<EnumTree>>(store, std::move(compare));
     }
 }
 
+}
 
-template class datastore::DataStoreT<IEnumStore::InternalIndex>;
+namespace vespalib::datastore {
+
+template class DataStoreT<search::IEnumStore::InternalIndex>;
+
+}
+
+namespace vespalib::btree {
 
 template
-class btree::BTreeBuilder<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                          EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeBuilder<search::IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                   search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeBuilder<IEnumStore::Index, datastore::EntryRef, btree::NoAggregated,
-                          EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeBuilder<search::IEnumStore::Index, vespalib::datastore::EntryRef, NoAggregated,
+                   search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
+
+}
+
+namespace search {
 
 template class EnumStoreT<const char*>;
 template class EnumStoreT<int8_t>;
@@ -78,4 +93,3 @@ template class EnumStoreT<double>;
 namespace vespalib {
     template class RcuVectorBase<search::IEnumStore::Index>;
 }
-

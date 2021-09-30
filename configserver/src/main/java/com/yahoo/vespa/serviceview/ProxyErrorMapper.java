@@ -9,7 +9,7 @@ import javax.ws.rs.ext.Provider;
 /**
  * Convert exceptions thrown by the internal REST client into a little more helpful responses.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @Provider
 public class ProxyErrorMapper implements ExceptionMapper<WebApplicationException> {

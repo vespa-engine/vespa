@@ -6,9 +6,10 @@ import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.Index;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class RankTypeOperation implements FieldOperation {
+
     private String indexName;
     private RankType type;
 
@@ -38,4 +39,5 @@ public class RankTypeOperation implements FieldOperation {
             index.setRankType(type);
         }
     }
+
 }

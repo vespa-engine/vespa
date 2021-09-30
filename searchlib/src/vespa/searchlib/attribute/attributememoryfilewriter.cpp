@@ -1,15 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attributememoryfilewriter.h"
 #include "attributememoryfilebufferwriter.h"
+#include "attributememoryfilewriter.h"
+#include <vespa/searchlib/util/file_settings.h>
+#include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace search {
-
-namespace {
-
-const uint32_t MIN_ALIGNMENT = 4096;
-
-}
 
 AttributeMemoryFileWriter::AttributeMemoryFileWriter()
     : IAttributeFileWriter(),
@@ -18,15 +15,13 @@ AttributeMemoryFileWriter::AttributeMemoryFileWriter()
 }
 
 
-AttributeMemoryFileWriter::~AttributeMemoryFileWriter()
-{
-}
+AttributeMemoryFileWriter::~AttributeMemoryFileWriter() = default;
 
 
 AttributeMemoryFileWriter::Buffer
 AttributeMemoryFileWriter::allocBuf(size_t size)
 {
-    return std::make_unique<BufferBuf>(size, MIN_ALIGNMENT);
+    return std::make_unique<BufferBuf>(size, FileSettings::DIRECTIO_ALIGNMENT);
 }
 
 

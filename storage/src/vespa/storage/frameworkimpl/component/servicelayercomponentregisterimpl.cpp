@@ -9,37 +9,21 @@ namespace storage {
 
 using vespalib::IllegalStateException;
 
-ServiceLayerComponentRegisterImpl::ServiceLayerComponentRegisterImpl()
-    : _diskCount(0),
-      _bucketSpaceRepo()
+ServiceLayerComponentRegisterImpl::ServiceLayerComponentRegisterImpl(const ContentBucketDbOptions& db_opts)
+    : _bucketSpaceRepo(db_opts)
 { }
 
 void
-ServiceLayerComponentRegisterImpl::registerServiceLayerComponent(
-        ServiceLayerManagedComponent& smc)
+ServiceLayerComponentRegisterImpl::registerServiceLayerComponent(ServiceLayerManagedComponent& smc)
 {
-    vespalib::LockGuard lock(_componentLock);
+    std::lock_guard lock(_componentLock);
     _components.push_back(&smc);
-    smc.setDiskCount(_diskCount);
     smc.setBucketSpaceRepo(_bucketSpaceRepo);
     smc.setMinUsedBitsTracker(_minUsedBitsTracker);
 }
 
 void
-ServiceLayerComponentRegisterImpl::setDiskCount(uint16_t count)
-{
-    vespalib::LockGuard lock(_componentLock);
-    if (_diskCount != 0) {
-        throw IllegalStateException("Disk count already set. Cannot be updated live", VESPA_STRLOC);
-    }
-    _diskCount = count;
-    for (uint32_t i=0; i<_components.size(); ++i) {
-        _components[i]->setDiskCount(count);
-    }
-}
-
-void
-ServiceLayerComponentRegisterImpl::setDistribution(lib::Distribution::SP distribution)
+ServiceLayerComponentRegisterImpl::setDistribution(std::shared_ptr<lib::Distribution> distribution)
 {
     _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
     auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);

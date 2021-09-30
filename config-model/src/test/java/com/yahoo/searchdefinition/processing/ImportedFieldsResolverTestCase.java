@@ -114,7 +114,7 @@ public class ImportedFieldsResolverTestCase {
             parentSearch.getDocument().addField(createField("attribute_field", DataType.INT, "{ attribute }"));
             parentSearch.getDocument().addField(createField("attribute_and_index", DataType.INT, "{ attribute | index }"));
             parentSearch.getDocument().addField(new TemporarySDField("not_attribute", DataType.INT));
-            parentSearch.getDocument().addField(createField("tensor_field", new TensorDataType(TensorType.fromSpec("tensor(x[])")), "{ attribute }"));
+            parentSearch.getDocument().addField(createField("tensor_field", new TensorDataType(TensorType.fromSpec("tensor(x[5])")), "{ attribute }"));
             parentSearch.getDocument().addField(createField("predicate_field", DataType.PREDICATE, "{ attribute }"));
             addRefField(parentSearch, grandParentSearch, "ref");
             addImportedField(parentSearch, "ancient_field", "ref", "ancient_field");

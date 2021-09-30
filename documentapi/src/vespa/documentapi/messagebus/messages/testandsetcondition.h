@@ -6,7 +6,7 @@ namespace documentapi {
 
 class TestAndSetCondition {
 private:
-    string _selection;
+    std::string _selection;
 
 public:
     TestAndSetCondition()
@@ -23,7 +23,7 @@ public:
     TestAndSetCondition(TestAndSetCondition &&) = default;
     TestAndSetCondition & operator=(TestAndSetCondition &&) = default;
 
-    const string & getSelection() const { return _selection; }
+    const std::string & getSelection() const { return _selection; }
     bool isPresent() const { return !_selection.empty(); }
 };
 

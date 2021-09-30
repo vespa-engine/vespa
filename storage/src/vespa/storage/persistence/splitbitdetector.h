@@ -17,10 +17,13 @@
  */
 #pragma once
 
-#include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/bucket.h>
+#include <vespa/persistence/spi/context.h>
 #include <vespa/vespalib/util/printable.h>
 
 namespace storage {
+
+namespace spi { struct PersistenceProvider; }
 
 struct SplitBitDetector
 {

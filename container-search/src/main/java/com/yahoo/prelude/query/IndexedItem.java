@@ -3,7 +3,7 @@ package com.yahoo.prelude.query;
 
 
 /**
- * Interface for Items that is indexed
+ * Interface for Items that are indexed
  *
  * @author Lars Christian Jensen
  */

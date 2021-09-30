@@ -12,8 +12,6 @@ import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.config.search.SummarymapConfig;
 import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
 import com.yahoo.vespa.config.search.vsm.VsmsummaryConfig;
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -31,8 +29,8 @@ public class StreamingSearchCluster extends SearchCluster implements
         SummaryConfig.Producer
 {
 
-    private class AttributesProducer extends AbstractConfigProducer implements AttributesConfig.Producer {
-        AttributesProducer(AbstractConfigProducer parent, String docType) {
+    private class AttributesProducer extends AbstractConfigProducer<AttributesProducer> implements AttributesConfig.Producer {
+        AttributesProducer(AbstractConfigProducer<?> parent, String docType) {
             super(parent, docType);
         }
 
@@ -49,7 +47,7 @@ public class StreamingSearchCluster extends SearchCluster implements
     private final String docTypeName;
     private DerivedConfiguration sdConfig = null;
 
-    public StreamingSearchCluster(AbstractConfigProducer parent, String clusterName, int index, String docTypeName, String storageRouteSpec) {
+    public StreamingSearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index, String docTypeName, String storageRouteSpec) {
         super(parent, clusterName, index);
         attributesConfig = new AttributesProducer(parent, docTypeName);
         this.docTypeName = docTypeName;
@@ -84,14 +82,7 @@ public class StreamingSearchCluster extends SearchCluster implements
     }
 
     @Override
-    protected void assureSdConsistent() {
-        if (sdConfig == null) {
-            throw new IllegalStateException("Search cluster '" + getClusterName() + "' does not have any search definitions");
-        }
-    }
-
-    @Override
-    protected void deriveAllSearchDefinitions(List<SearchDefinitionSpec> local, DeployState deployState) {
+    protected void deriveAllSchemas(List<SchemaSpec> local, DeployState deployState) {
         if (local.size() == 1) {
             deriveSingleSearchDefinition(local.get(0).getSearchDefinition().getSearch(), deployState);
         } else if (local.size() > 1){
@@ -106,18 +97,14 @@ public class StreamingSearchCluster extends SearchCluster implements
                                                  deployState.getProperties(),
                                                  deployState.rankProfileRegistry(),
                                                  deployState.getQueryProfiles().getRegistry(),
-                                                 deployState.getImportedModels());
+                                                 deployState.getImportedModels(),
+                                                 deployState.getExecutor());
     }
     @Override
     public DerivedConfiguration getSdConfig() {
         return sdConfig;
     }
-    @Override
-    protected void exportSdFiles(File toDir) throws IOException {
-        if (sdConfig!=null) {
-            sdConfig.export(toDir.getCanonicalPath());
-        }
-    }
+
     @Override
     public void defaultDocumentsConfig() { }
 

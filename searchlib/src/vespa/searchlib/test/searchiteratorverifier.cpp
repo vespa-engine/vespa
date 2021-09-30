@@ -2,7 +2,14 @@
 
 #include "searchiteratorverifier.h"
 #include "initrange.h"
+#ifdef ENABLE_GTEST_MIGRATION
+#include <vespa/vespalib/gtest/gtest.h>
+#define TEST_DO(x) x
+#define EXPECT_EQUAL EXPECT_EQ
+#define ASSERT_EQUAL ASSERT_EQ
+#else
 #include <vespa/vespalib/testkit/test_kit.h>
+#endif
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/truesearch.h>
 #include <vespa/searchlib/queryeval/termwise_search.h>
@@ -170,9 +177,9 @@ void
 SearchIteratorVerifier::verifyAnd(bool strict) const {
     fef::TermFieldMatchData tfmd;
     MultiSearch::Children children;
-    children.emplace_back(create(strict).release());
-    children.emplace_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, false).release());
-    SearchIterator::UP search(AndSearch::create(children, strict, UnpackInfo()));
+    children.push_back(create(strict));
+    children.push_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, false));
+    auto search = AndSearch::create(std::move(children), strict, UnpackInfo());
     TEST_DO(verify(*search, strict, _expectedAnd));
     TEST_DO(verifyTermwise(std::move(search), strict, _expectedAnd));
 }
@@ -183,18 +190,18 @@ SearchIteratorVerifier::verifyAndNot(bool strict) const {
     {
         for (bool notStrictness : {false, true}) {
             MultiSearch::Children children;
-            children.emplace_back(create(strict).release());
-            children.emplace_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, notStrictness).release());
-            SearchIterator::UP search(AndNotSearch::create(children, strict));
+            children.push_back(create(strict));
+            children.push_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, notStrictness));
+            auto search = AndNotSearch::create(std::move(children), strict);
             TEST_DO(verify(*search, strict, _expectedAndNotPositive));
             TEST_DO(verifyTermwise(std::move(search), strict, _expectedAndNotPositive));
         }
     }
     {
         MultiSearch::Children children;
-        children.emplace_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, true).release());
-        children.emplace_back(create(strict).release());
-        SearchIterator::UP search(AndNotSearch::create(children, strict));
+        children.push_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, true));
+        children.push_back(create(strict));
+        auto search = AndNotSearch::create(std::move(children), strict);
         TEST_DO(verify(*search, strict, _expectedAndNotNegative));
         TEST_DO(verifyTermwise(std::move(search), strict, _expectedAndNotNegative));
     }
@@ -205,9 +212,9 @@ void
 SearchIteratorVerifier::verifyOr(bool strict) const {
     fef::TermFieldMatchData tfmd;
     MultiSearch::Children children;
-    children.emplace_back(create(strict).release());
-    children.emplace_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, strict).release());
-    SearchIterator::UP search(OrSearch::create(children, strict, UnpackInfo()));
+    children.push_back(create(strict));
+    children.push_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, strict));
+    SearchIterator::UP search(OrSearch::create(std::move(children), strict, UnpackInfo()));
     TEST_DO(verify(*search, strict, _expectedOr));
     TEST_DO(verifyTermwise(std::move(search), strict, _expectedOr));
 }

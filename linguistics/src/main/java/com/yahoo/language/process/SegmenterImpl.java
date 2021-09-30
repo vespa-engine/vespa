@@ -33,7 +33,10 @@ public class SegmenterImpl implements Segmenter {
         int len;
         if (token.isSpecialToken() || (len = token.getNumComponents()) == 0) {
             if (token.isIndexable()) {
-                out.add(token.getOrig());
+                String orig = token.getOrig();
+                if (! orig.isEmpty()) {
+                    out.add(orig);
+                }
             }
         } else {
             for (int i = 0; i < len; ++i) {

@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.yahoo.vespa</groupId>
+    <artifactId>hosted-tenant-base</artifactId>
+    <version>7-SNAPSHOT</version>
+    <name>Base pom for all tenant base poms</name>
+    <description>Parent POM for all Vespa base poms.</description>
+    <url>https://github.com/vespa-engine</url>
+    <packaging>pom</packaging>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Vespa</name>
+            <url>https://github.com/vespa-engine</url>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git@github.com:vespa-engine/vespa.git</connection>
+        <developerConnection>scm:git:git@github.com:vespa-engine/vespa.git</developerConnection>
+        <url>git@github.com:vespa-engine/vespa.git</url>
+    </scm>
+
+    <properties>
+        <vespaversion>${project.version}</vespaversion>
+        <target_jdk_version>11</target_jdk_version>
+        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>2.22.0</maven-surefire-plugin.version>
+        <junit.version>5.7.0</junit.version> <!-- NOTE: this must be in sync with junit version specified in 'tenant-cd-api' -->
+        <test.categories>!integration</test.categories>
+
+        <!-- To allow specialized base pom to include additional "test provided" dependencies -->
+        <extraTestBundleScopeOverrides/>
+
+        <!-- Must be specified by specialized base pom. Can also be overriden by application -->
+        <endpoint/>
+
+        <!-- Properties that are specified by application pom -->
+        <tenant/>
+        <application/>
+        <instance/>
+        <environment/>
+        <region/>
+        <apiKeyFile/>
+        <apiCertificateFile/>
+        <dataPlaneKeyFile/>
+        <dataPlaneCertificateFile/>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>container-dependency-versions</artifactId>
+                <version>${vespaversion}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>2.3.2</version> <!-- 2.3.3 has BROKEN manifest -->
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container</artifactId>
+            <version>${vespaversion}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-test</artifactId>
+            <version>${vespaversion}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>tenant-cd-api</artifactId>
+            <version>${vespaversion}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <!-- Allow applications to use Junit4 in unit tests -->
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>hosted-build-vespa-application</id>
+            <activation>
+                <file>
+                    <!-- don't run this profile when building this module -->
+                    <missing>is-base-pom-module.txt</missing>
+                </file>
+            </activation>
+            <build>
+                <finalName>${project.artifactId}</finalName>
+                <plugins>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
+                        <configuration>
+                            <groups>${test.categories}</groups>
+                            <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                            <trimStackTrace>false</trimStackTrace>
+                            <systemPropertyVariables>
+                                <application>${application}</application>
+                                <tenant>${tenant}</tenant>
+                                <instance>${instance}</instance>
+                                <environment>${environment}</environment>
+                                <region>${region}</region>
+                                <endpoint>${endpoint}</endpoint>
+                                <apiKeyFile>${apiKeyFile}</apiKeyFile>
+                                <apiCertificateFile>${apiCertificateFile}</apiCertificateFile>
+                                <dataPlaneKeyFile>${dataPlaneKeyFile}</dataPlaneKeyFile>
+                                <dataPlaneCertificateFile>${dataPlaneCertificateFile}</dataPlaneCertificateFile>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-report-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
+                        <configuration>
+                            <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                        </configuration>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <version>3.0.0-M2</version>
+                        <executions>
+                            <execution>
+                                <id>enforce-java</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireJavaVersion>
+                                            <version>[11, )</version>
+                                        </requireJavaVersion>
+                                        <requireMavenVersion>
+                                            <version>[3.5, )</version>
+                                        </requireMavenVersion>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>com.yahoo.vespa</groupId>
+                        <artifactId>bundle-plugin</artifactId>
+                        <version>${vespaversion}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <!-- override default test bundle scope translation which translates 'test' to 'compile' -->
+                            <!-- note: ordering affects how overrides are evaluated! -->
+                            <testBundleScopeOverrides>
+                                ${extraTestBundleScopeOverrides},
+                                com.yahoo.vespa:application:test,
+                                com.yahoo.vespa:container-test:runtime,
+                                org.junit.jupiter:junit-jupiter-api:provided,
+                                org.junit.jupiter:junit-jupiter-engine:test,
+                                org.junit.vintage:junit-vintage-engine:test,
+                                com.yahoo.vespa:tenant-cd-api:provided
+                            </testBundleScopeOverrides>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>generate-test-bundle-osgi-manifest</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>generate-test-bundle-osgi-manifest</goal>
+                                </goals>
+                                <configuration>
+                                    <Bundle-SymbolicName>${project.artifactId}-test</Bundle-SymbolicName>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>assemble-test-bundle</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>assemble-test-bundle</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>com.yahoo.vespa</groupId>
+                        <artifactId>vespa-maven-plugin</artifactId>
+                        <version>${vespaversion}</version>
+                        <executions>
+                            <execution>
+                                <id>generate-test-descriptor</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>generateTestDescriptor</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>com.yahoo.vespa</groupId>
+                        <artifactId>vespa-application-maven-plugin</artifactId>
+                        <version>${vespaversion}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>packageApplication</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.3</version>
+                        <executions>
+                            <execution>
+                                <id>attach-artifact</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <!-- Creating a dummy file to support running tests with old test runner. Remove when it is no longer in use -->
+                                        <mkdir dir="target/application-test/artifacts" />
+                                        <touch file="target/application-test/artifacts/.ignore" />
+                                        <copy file="target/${project.artifactId}-tests.jar" todir="target/application-test/components/" />
+                                        <zip destfile="target/application-test.zip" basedir="target/application-test/" />
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile> <!-- Alias vespaversion with a more descriptive vespa.compile.version -->
+            <id>set-vespa-compile-version</id>
+            <activation>
+                <property>
+                    <name>vespa.compile.version</name>
+                </property>
+            </activation>
+            <properties>
+                <vespaversion>${vespa.compile.version}</vespaversion>
+            </properties>
+        </profile>
+
+        <profile> <!-- Alias vespaVersion with a more descriptive vespa.runtime.version -->
+            <id>set-vespa-runtime-version</id>
+            <activation>
+                <property>
+                    <name>vespa.runtime.version</name>
+                </property>
+            </activation>
+            <properties>
+                <vespaVersion>${vespa.runtime.version}</vespaVersion>
+            </properties>
+        </profile>
+        <profile>
+            <id>ossrh-deploy-vespa</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven.gpg.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>${nexus.staging.maven.plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>ossrh</id>
+                    <url>${snapshotDeploymentRepository}</url>
+                </snapshotRepository>
+                <repository>
+                    <id>ossrh</id>
+                    <url>${releaseDeploymentRepository}</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+    </profiles>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <source>${target_jdk_version}</source>
+                    <target>${target_jdk_version}</target>
+                    <showWarnings>true</showWarnings>
+                    <showDeprecation>true</showDeprecation>
+                    <compilerArgs>
+                        <arg>-Xlint:all</arg>
+                        <arg>-Werror</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

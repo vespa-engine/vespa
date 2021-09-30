@@ -118,7 +118,7 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
             const Field & field = fpe.getFieldRef();
             FieldValue::UP value = getValue(field, FieldValue::UP());
             LOG(spam, "fieldRef = %s", field.toString().c_str());
-            LOG(spam, "fieldValueToSet = %s", value->toString().c_str());
+            LOG(spam, "fieldValueToSet = %s", value ? value->toString().c_str() : "<null>");
             ModificationStatus status = ModificationStatus::NOT_MODIFIED;
             if (value) {
                 status = value->iterateNested(nested.next(), handler);
@@ -173,6 +173,12 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
 }
 
 using ConstCharP = const char *;
+template void StructuredFieldValue::set(const Field& field, int32_t value);
+template void StructuredFieldValue::set(const Field& field, int64_t value);
+template void StructuredFieldValue::set(const Field& field, double value);
+template void StructuredFieldValue::set(const Field& field, ConstCharP value);
+template void StructuredFieldValue::set(const Field& field, vespalib::stringref value);
+template void StructuredFieldValue::set(const Field& field, vespalib::string value);
 template void StructuredFieldValue::set(vespalib::stringref field, int32_t value);
 template void StructuredFieldValue::set(vespalib::stringref field, int64_t value);
 template void StructuredFieldValue::set(vespalib::stringref field, double value);

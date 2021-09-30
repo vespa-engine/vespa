@@ -135,7 +135,7 @@ TEST("require that interval refs are reused for identical data.") {
     PredicateIntervalStore store;
     auto ref = store.insert<Interval>({{0x00010001}, {0x0002ffff}});
     ASSERT_TRUE(ref.valid());
-    ASSERT_EQUAL(0x02000040u, ref.ref());
+    ASSERT_EQUAL(0x02000001u, ref.ref());
 
     auto ref2 = store.insert<Interval>({{0x00010001}, {0x0002ffff}});
     EXPECT_EQUAL(ref.ref(), ref2.ref());

@@ -7,6 +7,7 @@
 #include "i_document_subdb_owner.h"
 #include "ibucketstatecalculator.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
@@ -15,8 +16,7 @@
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/vespalib/util/closuretask.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/eval/fast_value.h>
 
 using vespa::config::search::RankProfilesConfig;
 using proton::matching::MatchingStats;
@@ -28,6 +28,7 @@ using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::SerialNum;
 using vespalib::ThreadStackExecutorBase;
+using vespalib::eval::FastValueBuilderFactory;
 using namespace searchcorespi;
 
 namespace proton {
@@ -39,7 +40,7 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
       _indexWriter(),
       _rSearchView(),
       _rFeedView(),
-      _tensorLoader(vespalib::tensor::DefaultTensorEngine::ref()),
+      _tensorLoader(FastValueBuilderFactory::get()),
       _constantValueCache(_tensorLoader),
       _constantValueRepo(_constantValueCache),
       _configurer(_iSummaryMgr, _rSearchView, _rFeedView, ctx._queryLimiter, _constantValueRepo, ctx._clock,
@@ -64,7 +65,6 @@ SearchableDocSubDB::syncViews()
 {
     _iSearchView.set(_rSearchView.get());
     _iFeedView.set(_rFeedView.get());
-    _owner.syncFeedView();
 }
 
 SerialNum
@@ -144,9 +144,9 @@ IReprocessingTask::List
 SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
 {
-    StoreOnlyDocSubDB::reconfigure(newConfigSnapshot.getStoreConfig());
+    AllocStrategy alloc_strategy = newConfigSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
+    StoreOnlyDocSubDB::reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);
     IReprocessingTask::List tasks;
-    updateLidReuseDelayer(&newConfigSnapshot);
     applyFlushConfig(newConfigSnapshot.getMaintenanceConfigSP()->getFlushConfig());
     if (params.shouldMatchersChange() && _addMetrics) {
         reconfigureMatchingMetrics(newConfigSnapshot.getRankProfilesConfig());
@@ -154,12 +154,11 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
     if (params.shouldAttributeManagerChange()) {
         proton::IAttributeManager::SP oldMgr = getAttributeManager();
         AttributeCollectionSpec::UP attrSpec =
-            createAttributeSpec(newConfigSnapshot.getAttributesConfig(), serialNum);
+            createAttributeSpec(newConfigSnapshot.getAttributesConfig(), alloc_strategy, serialNum);
         IReprocessingInitializer::UP initializer =
                 _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, *attrSpec, params, resolver);
-        if (initializer.get() != nullptr && initializer->hasReprocessors()) {
-            tasks.push_back(IReprocessingTask::SP(createReprocessingTask(*initializer,
-                    newConfigSnapshot.getDocumentTypeRepoSP()).release()));
+        if (initializer && initializer->hasReprocessors()) {
+            tasks.emplace_back(createReprocessingTask(*initializer, newConfigSnapshot.getDocumentTypeRepoSP()));
         }
         proton::IAttributeManager::SP newMgr = getAttributeManager();
         if (_addMetrics) {
@@ -202,22 +201,23 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const Sess
     const Schema::SP &schema = configSnapshot.getSchemaSP();
     const IIndexManager::SP &indexMgr = getIndexManager();
     _constantValueRepo.reconfigure(configSnapshot.getRankingConstants());
-    Matchers::SP matchers(_configurer.createMatchers(schema, configSnapshot.getRankProfilesConfig()).release());
-    auto matchView = std::make_shared<MatchView>(matchers, indexMgr->getSearchable(), attrMgr,
+    Matchers::SP matchers = _configurer.createMatchers(schema, configSnapshot.getRankProfilesConfig(),
+                                                       configSnapshot.getRankingExpressions(), configSnapshot.getOnnxModels());
+    auto matchView = std::make_shared<MatchView>(std::move(matchers), indexMgr->getSearchable(), attrMgr,
                                                  sessionManager, _metaStoreCtx, _docIdLimit);
-    _rSearchView.set(std::make_shared<SearchView>(
+    _rSearchView.set(SearchView::create(
                                       getSummaryManager()->createSummarySetup(
                                               configSnapshot.getSummaryConfig(),
                                               configSnapshot.getSummarymapConfig(),
                                               configSnapshot.getJuniperrcConfig(),
                                               configSnapshot.getDocumentTypeRepoSP(),
-                                              matchView->getAttributeManager()),
-                                      matchView));
+                                              attrMgr),
+                                      std::move(matchView)));
 
     auto attrWriter = std::make_shared<AttributeWriter>(attrMgr);
     {
         std::lock_guard<std::mutex> guard(_configMutex);
-        initFeedView(attrWriter, configSnapshot);
+        initFeedView(std::move(attrWriter), configSnapshot);
     }
     if (_addMetrics) {
         reconfigureMatchingMetrics(configSnapshot.getRankProfilesConfig());
@@ -225,13 +225,13 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const Sess
 }
 
 void
-SearchableDocSubDB::initFeedView(const IAttributeWriter::SP &attrWriter,
+SearchableDocSubDB::initFeedView(IAttributeWriter::SP attrWriter,
                                  const DocumentDBConfig &configSnapshot)
 {
     assert(_writeService.master().isCurrentThread());
     auto feedView = std::make_shared<SearchableFeedView>(getStoreOnlyFeedViewContext(configSnapshot),
             getFeedViewPersistentParams(),
-            FastAccessFeedView::Context(attrWriter, _docIdLimit),
+            FastAccessFeedView::Context(std::move(attrWriter), _docIdLimit),
             SearchableFeedView::Context(getIndexWriter()));
 
     // XXX: Not exception safe.
@@ -242,13 +242,11 @@ SearchableDocSubDB::initFeedView(const IAttributeWriter::SP &attrWriter,
 /**
  * Handle reconfigure caused by index manager changing state.
  *
- * Flush engine is disabled (for all document dbs) during initial replay and
- * recovery feed modes, the flush engine has not started.  For a resurrected
- * document type, flushing might occur during replay.
+ * Flush engine is disabled (for all document dbs) during initial replay, the
+ * flush engine has not started.
  */
 bool
-SearchableDocSubDB::
-reconfigure(vespalib::Closure0<bool>::UP closure)
+SearchableDocSubDB::reconfigure(std::unique_ptr<Configure> configure)
 {
     assert(_writeService.master().isCurrentThread());
 
@@ -257,12 +255,11 @@ reconfigure(vespalib::Closure0<bool>::UP closure)
     // Everything should be quiet now.
 
     SearchView::SP oldSearchView = _rSearchView.get();
-    IFeedView::SP oldFeedView = _iFeedView.get();
 
     bool ret = true;
 
-    if (closure.get() != nullptr)
-        ret = closure->call();  // Perform index manager reconfiguration now
+    if (configure)
+        ret = configure->configure();  // Perform index manager reconfiguration now
     reconfigureIndexSearchable();
     return ret;
 }
@@ -273,8 +270,8 @@ SearchableDocSubDB::reconfigureIndexSearchable()
     std::lock_guard<std::mutex> guard(_configMutex);
     // Create new views as needed.
     _configurer.reconfigureIndexSearchable();
-    // Activate new feed view at once
-    syncViews();
+    // Activate new search view at once
+    _iSearchView.set(_rSearchView.get());
 }
 
 IFlushTarget::List
@@ -323,18 +320,6 @@ MatchingStats
 SearchableDocSubDB::getMatcherStats(const vespalib::string &rankProfile) const
 {
     return _rSearchView.get()->getMatcherStats(rankProfile);
-}
-
-void
-SearchableDocSubDB::updateLidReuseDelayer(const LidReuseDelayerConfig &config)
-{
-    Parent::updateLidReuseDelayer(config);
-    /*
-     * The lid reuse delayer should not have any pending lids stored at this
-     * time, since DocumentDB::applyConfig() calls forceCommit() on the
-     * feed view before applying the new config to the sub dbs.
-     */
-    _lidReuseDelayer->setHasIndexedOrAttributeFields(config.hasIndexedOrAttributeFields());
 }
 
 void

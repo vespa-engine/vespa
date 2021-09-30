@@ -3,7 +3,6 @@ vespa_add_library(storage_thread OBJECT
     SOURCES
     appkiller.cpp
     deadlockdetector.cpp
+    htmltable.cpp
     DEPENDS
-    AFTER
-    storage_storageconfig
 )

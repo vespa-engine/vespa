@@ -6,8 +6,7 @@
 #include "termfieldmatchdata.h"
 #include <vector>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 class TermMatchDataMerger
 {
@@ -16,8 +15,8 @@ public:
         const TermFieldMatchData *matchData;
         double exactness;
 
-        Input() : matchData(NULL), exactness(0.0) {}
-        Input(const TermFieldMatchData *arg_matchData, double arg_exactness)
+        Input() : matchData(nullptr), exactness(0.0) {}
+        Input(const TermFieldMatchData *arg_matchData, double arg_exactness) noexcept
             : matchData(arg_matchData), exactness(arg_exactness)
         {}
     };
@@ -27,21 +26,16 @@ private:
     const TermFieldMatchDataArray           _output;
     std::vector<TermFieldMatchDataPosition> _scratch;
 
-    TermMatchDataMerger(const TermMatchDataMerger &);
-    TermMatchDataMerger &operator=(const TermMatchDataMerger &);
-
-    void merge(uint32_t docid,
-               const Inputs &in,
-               TermFieldMatchData &out);
+    void merge(uint32_t docid, const Inputs &in, TermFieldMatchData &out);
 public:
+    TermMatchDataMerger(const TermMatchDataMerger &) = delete;
+    TermMatchDataMerger &operator=(const TermMatchDataMerger &) = delete;
 
-    TermMatchDataMerger(const Inputs &allinputs,
-                        const TermFieldMatchDataArray &outputs);
+    TermMatchDataMerger(const Inputs &allinputs, const TermFieldMatchDataArray &outputs);
     ~TermMatchDataMerger();
 
     void merge(uint32_t docid);
 };
 
-} // namespace fef
-} // namespace search
+}
 

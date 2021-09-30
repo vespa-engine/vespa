@@ -4,43 +4,42 @@
 
 namespace vespalib {
 
-Deserializer & Deserializer::get(const IFieldBase & field, Identifiable & value)
+Deserializer & Deserializer::get(Identifiable & value)
 {
-    (void) field;
     return value.deserializeDirect(*this);
 }
-Deserializer & Deserializer::get(const IFieldBase & field, int8_t & value)
+Deserializer & Deserializer::get(int8_t & value)
 {
     uint8_t v(0);
-    get(field, v);
+    get(v);
     value = v;
     return *this;
 }
-Deserializer & Deserializer::get(const IFieldBase & field, int16_t & value)
+Deserializer & Deserializer::get(int16_t & value)
 {
     uint16_t v(0);
-    get(field, v);
+    get(v);
     value = v;
     return *this;
 }
-Deserializer & Deserializer::get(const IFieldBase & field, int32_t & value)
+Deserializer & Deserializer::get(int32_t & value)
 {
     uint32_t v(0);
-    get(field, v);
+    get(v);
     value = v;
     return *this;
 }
-Deserializer & Deserializer::get(const IFieldBase & field, int64_t & value)
+Deserializer & Deserializer::get(int64_t & value)
 {
     uint64_t v(0);
-    get(field, v);
+    get(v);
     value = v;
     return *this;
 }
-Deserializer & Deserializer::get(const IFieldBase & field, std::string & value)
+Deserializer & Deserializer::get(std::string & value)
 {
     string v;
-    get(field, v);
+    get(v);
     value = v;
     return *this;
 }

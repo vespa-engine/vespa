@@ -8,15 +8,16 @@ import org.apache.zookeeper.server.ZooKeeperServer;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 
 /**
  * This class sets up a zookeeper server, such that we can test fleetcontroller zookeeper parts without stubbing in the client.
  */
 public class ZooKeeperTestServer {
-    private File zooKeeperDir;
-    private ZooKeeperServer server;
-    private static final int tickTime = 100;
-    private NIOServerCnxnFactory factory;
+    private final File zooKeeperDir;
+    private final ZooKeeperServer server;
+    private static final Duration tickTime = Duration.ofMillis(2000);
+    private final NIOServerCnxnFactory factory;
     private static final String DIR_PREFIX = "test_fltctrl_zk";
     private static final String DIR_POSTFIX = "sdir";
 
@@ -31,14 +32,14 @@ public class ZooKeeperTestServer {
             throw new IllegalStateException("Failed to create directory " + zooKeeperDir);
         }
         zooKeeperDir.deleteOnExit();
-        server = new ZooKeeperServer(zooKeeperDir, zooKeeperDir, tickTime);
+        server = new ZooKeeperServer(zooKeeperDir, zooKeeperDir, (int)tickTime.toMillis());
         final int maxcc = 10000; // max number of connections from the same client
         factory = new NIOServerCnxnFactory();
         factory.configure(new InetSocketAddress(port), maxcc); // Use any port
         try{
             factory.startup(server);
         } catch (InterruptedException e) {
-            throw (RuntimeException) new IllegalStateException("Interrupted during test startup: ").initCause(e);
+            throw new IllegalStateException("Interrupted during test startup: ", e);
         }
     }
 

@@ -2,7 +2,6 @@
 
 #include "splitoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <climits>
@@ -12,10 +11,10 @@ LOG_SETUP(".distributor.operation.idealstate.split");
 
 using namespace storage::distributor;
 
-SplitOperation::SplitOperation(const std::string& clusterName, const BucketAndNodes& nodes,
+SplitOperation::SplitOperation(const ClusterContext &cluster_ctx, const BucketAndNodes& nodes,
                                uint32_t maxBits, uint32_t splitCount, uint32_t splitSize)
     : IdealStateOperation(nodes),
-      _tracker(clusterName),
+      _tracker(cluster_ctx),
       _maxBits(maxBits),
       _splitCount(splitCount),
       _splitSize(splitSize)
@@ -23,7 +22,7 @@ SplitOperation::SplitOperation(const std::string& clusterName, const BucketAndNo
 SplitOperation::~SplitOperation() = default;
 
 void
-SplitOperation::onStart(DistributorMessageSender& sender)
+SplitOperation::onStart(DistributorStripeMessageSender& sender)
 {
     _ok = false;
 
@@ -50,7 +49,7 @@ SplitOperation::onStart(DistributorMessageSender& sender)
 }
 
 void
-SplitOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP& msg)
+SplitOperation::onReceive(DistributorStripeMessageSender&, const api::StorageReply::SP& msg)
 {
     api::SplitBucketReply& rep = static_cast<api::SplitBucketReply&>(*msg);
 
@@ -95,33 +94,28 @@ SplitOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP
             ost << sinfo.first << ",";
 
             BucketCopy copy(
-                    BucketCopy(_manager->getDistributorComponent().getUniqueTimestamp(),
+                    BucketCopy(_manager->operation_context().generate_unique_timestamp(),
                         node,
                         sinfo.second));
 
             // Must reset trusted since otherwise trustedness of inconsistent
             // copies would be arbitrarily determined by which copy managed
             // to finish its split first.
-            _manager->getDistributorComponent().updateBucketDatabase(
+            _manager->operation_context().update_bucket_database(
                     document::Bucket(msg->getBucket().getBucketSpace(), sinfo.first), copy,
                     (DatabaseUpdate::CREATE_IF_NONEXISTING
                      | DatabaseUpdate::RESET_TRUSTED));
 
-            LOG_BUCKET_OPERATION_NO_LOCK(
-                    sinfo.first, vespalib::make_string(
-                        "Split from bucket %s: %s",
-                        getBucketId().toString().c_str(),
-                        copy.toString().c_str()));
         }
     } else if (
             rep.getResult().getResult() == api::ReturnCode::BUCKET_NOT_FOUND
             && _bucketSpace->getBucketDatabase().get(rep.getBucketId())->getNode(node) != 0)
     {
-        _manager->getDistributorComponent().recheckBucketInfo(node, getBucket());
+        _manager->operation_context().recheck_bucket_info(node, getBucket());
         LOGBP(debug, "Split failed for %s: bucket not found. Storage and "
                      "distributor bucket databases might be out of sync: %s",
               getBucketId().toString().c_str(),
-              rep.getResult().getMessage().c_str());
+              vespalib::string(rep.getResult().getMessage()).c_str());
         _ok = false;
     } else if (rep.getResult().isBusy()) {
         LOG(debug, "Split failed for %s, node was busy. Will retry later",
@@ -137,21 +131,6 @@ SplitOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP
             getBucketId().toString().c_str(),
             rep.getResult().toString().c_str());
     }
-#ifdef ENABLE_BUCKET_OPERATION_LOGGING
-    if (_ok) {
-        LOG_BUCKET_OPERATION_NO_LOCK(
-                getBucketId(), vespalib::make_string(
-                        "Split OK on node %d: %s. Finished: %s",
-                        node, ost.str().c_str(),
-                        _tracker.finished() ? "yes" : "no"));
-    } else {
-        LOG_BUCKET_OPERATION_NO_LOCK(
-                getBucketId(), vespalib::make_string(
-                        "Split FAILED on node %d: %s. Finished: %s",
-                        node, rep.getResult().toString().c_str(),
-                        _tracker.finished() ? "yes" : "no"));
-    }
-#endif
 
     if (_tracker.finished()) {
         LOG(debug, "Split done on node %d: %s completed operation",
@@ -164,9 +143,9 @@ SplitOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP
 }
 
 bool
-SplitOperation::isBlocked(const PendingMessageTracker& tracker) const
+SplitOperation::isBlocked(const DistributorStripeOperationContext& ctx, const OperationSequencer& op_seq) const
 {
-    return checkBlockForAllNodes(getBucket(), tracker);
+    return checkBlockForAllNodes(getBucket(), ctx, op_seq);
 }
 
 bool

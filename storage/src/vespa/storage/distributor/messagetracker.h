@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/storage/common/cluster_context.h>
 #include <vespa/storage/common/messagesender.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <map>
-#include <string>
 
 namespace storage::api {
     class BucketCommand;
@@ -17,16 +18,18 @@ class MessageTracker {
 public:
     class ToSend {
     public:
-        ToSend(std::shared_ptr<api::BucketCommand> msg, uint16_t target) :
+        ToSend(std::shared_ptr<api::BucketCommand> msg, uint16_t target) noexcept :
             _msg(std::move(msg)), _target(target) {};
 
         std::shared_ptr<api::BucketCommand> _msg;
         uint16_t _target;
     };
 
-    MessageTracker(const std::string& clusterName);
+    MessageTracker(const ClusterContext &cluster_context);
     MessageTracker(MessageTracker &&) = default;
-    MessageTracker & operator = (MessageTracker &&) = default;
+    MessageTracker & operator = (MessageTracker &&) = delete;
+    MessageTracker(const MessageTracker &) = delete;
+    MessageTracker & operator = (const MessageTracker &) = delete;
     ~MessageTracker();
 
     void queueCommand(std::shared_ptr<api::BucketCommand> msg, uint16_t target) {
@@ -50,7 +53,7 @@ protected:
 
     // Keeps track of which node a message was sent to.
     std::map<uint64_t, uint16_t> _sentMessages;
-    std::string _clusterName;
+    const ClusterContext &_cluster_ctx;
 };
 
 }

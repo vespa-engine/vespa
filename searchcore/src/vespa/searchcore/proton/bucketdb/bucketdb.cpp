@@ -119,6 +119,19 @@ BucketDB::cachedGet(const BucketId &bucketId) const
     return get(bucketId);
 }
 
+storage::spi::BucketInfo
+BucketDB::cachedGetBucketInfo(const BucketId &bucketId) const
+{
+    if (isCachedBucket(bucketId)) {
+        return _cachedBucketState;
+    }
+    auto itr = _map.find(bucketId);
+    if (itr != _map.end()) {
+        return itr->second;
+    }
+    return BucketState();
+}
+
 bool
 BucketDB::hasBucket(const BucketId &bucketId) const
 {
@@ -211,8 +224,8 @@ BucketDB::populateActiveBuckets(const BucketId::List &buckets, BucketId::List &f
     BIV sorted(buckets);
     BIV toAdd;
     std::sort(sorted.begin(), sorted.end());
-    BIV::const_iterator si(sorted.begin());
-    BIV::const_iterator se(sorted.end());
+    auto si = sorted.begin();
+    auto se = sorted.end();
     for (const auto & entry : _map) {
         for (; si != se && !(entry.first < *si); ++si) {
             if (*si < entry.first) {

@@ -12,6 +12,7 @@ import java.util.function.BiConsumer;
  * @author ollivir
  */
 public abstract class CloseableInvoker implements Closeable {
+
     protected abstract void release();
 
     private BiConsumer<Boolean, Long> teardown = null;
@@ -35,4 +36,5 @@ public abstract class CloseableInvoker implements Closeable {
         }
         release();
     }
+
 }

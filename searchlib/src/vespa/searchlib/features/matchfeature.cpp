@@ -2,17 +2,16 @@
 
 #include "matchfeature.h"
 #include "utils.h"
-#include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/stash.h>
+
 
 using namespace search::fef;
 using CollectionType = FieldInfo::CollectionType;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 MatchExecutor::MatchExecutor(const MatchParams & params) :
     FeatureExecutor(),
@@ -46,9 +45,7 @@ MatchBlueprint::MatchBlueprint() :
 {
 }
 
-MatchBlueprint::~MatchBlueprint()
-{
-}
+MatchBlueprint::~MatchBlueprint() = default;
 
 void
 MatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
@@ -61,7 +58,7 @@ MatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
 Blueprint::UP
 MatchBlueprint::createInstance() const
 {
-    return Blueprint::UP(new MatchBlueprint());
+    return std::make_unique<MatchBlueprint>();
 }
 
 bool
@@ -70,6 +67,10 @@ MatchBlueprint::setup(const IIndexEnvironment & env,
 {
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
         const FieldInfo * info = env.getField(i);
+        if (info->get_data_type() == FieldInfo::DataType::TENSOR) {
+            // not matchable
+            continue;
+        }
         if ((info->type() == FieldType::INDEX) || (info->type() == FieldType::ATTRIBUTE)) {
             _params.weights.push_back(indexproperties::FieldWeight::lookup(env.getProperties(), info->name()));
             if (info->type() == FieldType::INDEX) {
@@ -101,6 +102,4 @@ MatchBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &st
     return stash.create<MatchExecutor>(_params);
 }
 
-
-} // namespace features
-} // namespace search
+}

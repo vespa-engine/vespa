@@ -9,6 +9,7 @@ import com.yahoo.search.query.profile.SubstituteString;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
+import com.yahoo.tensor.TensorType;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ import java.util.logging.Level;
  */
 public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer {
 
-    private QueryProfileRegistry registry;
+    private final QueryProfileRegistry registry;
 
     /**
      * Creates a new set of query profiles for which the config can be returned at request
@@ -56,21 +57,29 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
         Set<String> tensorFields = new HashSet<>();
         for (QueryProfileType type : registry.getTypeRegistry().allComponents()) {
             for (var fieldEntry : type.fields().entrySet()) {
+                validateTensorField(fieldEntry.getKey(), fieldEntry.getValue().getType().asTensorType());
                 if (fieldEntry.getValue().getType().asTensorType().rank() > 0)
                     tensorFields.add(fieldEntry.getKey());
             }
         }
 
         if ( registry.getTypeRegistry().hasApplicationTypes() && registry.allComponents().isEmpty()) {
-            logger.log(Level.WARNING, "This application define query profile types, but has " +
-                                      "no query profiles referencing them so they have no effect. "  +
-                                      (tensorFields.isEmpty()
-                                       ? ""
-                                       : "In particular, the tensors (" + String.join(", ", tensorFields) +
-                                         ") will be interpreted as strings, not tensors if sent in requests. ") +
-                                      "See https://docs.vespa.ai/documentation/query-profiles.html");
+            logger.logApplicationPackage(Level.WARNING, "This application define query profile types, but has " +
+                                                        "no query profiles referencing them so they have no effect. "  +
+                                                        (tensorFields.isEmpty() ? ""
+                                                                                : "In particular, the tensors (" +
+                                                                                  String.join(", ", tensorFields) +
+                                                                                  ") will be interpreted as strings, " +
+                                                                                  "not tensors if sent in requests. ") +
+                                                        "See https://docs.vespa.ai/en/query-profiles.html");
         }
 
+    }
+
+    private void validateTensorField(String fieldName, TensorType type) {
+        if (type.dimensions().stream().anyMatch(d -> d.isIndexed() && d.size().isEmpty()))
+            throw new IllegalArgumentException("Illegal type in field " + fieldName + " type " + type +
+                                               ": Dense tensor dimensions must have a size");
     }
 
     @Override
@@ -92,7 +101,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
         for (QueryProfile inherited : profile.inherited())
             qB.inherit(inherited.getId().stringValue());
 
-        if (profile.getVariants()!=null) {
+        if (profile.getVariants() != null) {
             for (String dimension : profile.getVariants().getDimensions())
                 qB.dimensions(dimension);            
         }
@@ -102,16 +111,16 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
     }
 
     private void addFieldChildren(QueryProfilesConfig.Queryprofile.Builder qpB, QueryProfile profile, String namePrefix) {
-        List<Map.Entry<String,Object>> content=new ArrayList<>(profile.declaredContent().entrySet());
-        Collections.sort(content,new MapEntryKeyComparator());
-        if (profile.getValue()!=null) { // Add "prefix with dot removed"=value:
+        List<Map.Entry<String, Object>> content = new ArrayList<>(profile.declaredContent().entrySet());
+        Collections.sort(content, new MapEntryKeyComparator());
+        if (profile.getValue() != null) { // Add "prefix with dot removed"=value:
             QueryProfilesConfig.Queryprofile.Property.Builder propB = new QueryProfilesConfig.Queryprofile.Property.Builder();
             String fullName = namePrefix.substring(0, namePrefix.length() - 1);
             Object value = profile.getValue();
             if (value instanceof SubstituteString)
-                value=value.toString(); // Send only types understood by configBuilder downwards
+                value = value.toString(); // Send only types understood by configBuilder downwards
             propB.name(fullName);
-            if (value!=null) propB.value(value.toString());
+            if (value != null) propB.value(value.toString());
             qpB.property(propB);
         }
         for (Map.Entry<String,Object> field : content) {
@@ -120,21 +129,23 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
     }
 
     private void addVariantFieldChildren(QueryProfilesConfig.Queryprofile.Queryprofilevariant.Builder qpB,
-            QueryProfile profile, String namePrefix) {
-        List<Map.Entry<String,Object>> content=new ArrayList<>(profile.declaredContent().entrySet());
+                                         QueryProfile profile,
+                                         String namePrefix) {
+        List<Map.Entry<String, Object>> content = new ArrayList<>(profile.declaredContent().entrySet());
         Collections.sort(content,new MapEntryKeyComparator());
-        if (profile.getValue()!=null) { // Add "prefix with dot removed"=value:
+        if (profile.getValue() != null) { // Add "prefix with dot removed"=value:
             QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder propB = new QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder();
             String fullName = namePrefix.substring(0, namePrefix.length() - 1);
             Object value = profile.getValue();
             if (value instanceof SubstituteString)
-                value=value.toString(); // Send only types understood by configBuilder downwards
+                value = value.toString(); // Send only types understood by configBuilder downwards
             propB.name(fullName);
-            if (value!=null) propB.value(value.toString());
+            if (value != null)
+                propB.value(value.toString());
             qpB.property(propB);
         }
-        for (Map.Entry<String,Object> field : content) {
-            addVariantField(qpB, field, namePrefix);
+        for (Map.Entry<String, Object> entry : content) {
+            addVariantField(qpB, entry, profile.isDeclaredOverridable(entry.getKey(), Map.of()), namePrefix);
         }
     }
 
@@ -159,10 +170,10 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
     }
 
     private void addVariantField(QueryProfilesConfig.Queryprofile.Queryprofilevariant.Builder qpB,
-                                 Entry<String, Object> field, String namePrefix) {
-        String fullName=namePrefix + field.getKey();
+                                 Entry<String, Object> field, Boolean overridable, String namePrefix) {
+        String fullName = namePrefix + field.getKey();
         if (field.getValue() instanceof QueryProfile) {
-            QueryProfile subProfile=(QueryProfile)field.getValue();
+            QueryProfile subProfile = (QueryProfile)field.getValue();
             if ( ! subProfile.isExplicit()) { // Implicitly defined profile - add content
                 addVariantFieldChildren(qpB, subProfile,fullName + ".");
             }
@@ -170,35 +181,35 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
                 QueryProfilesConfig.Queryprofile.Queryprofilevariant.Reference.Builder refB = new QueryProfilesConfig.Queryprofile.Queryprofilevariant.Reference.Builder();
                 createVariantReferenceFieldConfig(refB, fullName, ((BackedOverridableQueryProfile) subProfile).getBacking().getId().stringValue());
                 qpB.reference(refB);
-                addVariantFieldChildren(qpB, subProfile,fullName + ".");
+                addVariantFieldChildren(qpB, subProfile, fullName + ".");
             }
         }
         else { // a primitive
-            qpB.property(createVariantPropertyFieldConfig(fullName, field.getValue()));
+            qpB.property(createVariantPropertyFieldConfig(fullName, field.getValue(), overridable));
         }
     }
 
     private void addVariants(QueryProfilesConfig.Queryprofile.Builder qB, QueryProfile profile) {
-        if (profile.getVariants()==null) return;
-        DeclaredQueryProfileVariants declaredVariants=new DeclaredQueryProfileVariants(profile);
+        if (profile.getVariants() == null) return;
+        DeclaredQueryProfileVariants declaredVariants = new DeclaredQueryProfileVariants(profile);
         for (DeclaredQueryProfileVariants.VariantQueryProfile variant : declaredVariants.getVariantQueryProfiles().values()) {
             QueryProfilesConfig.Queryprofile.Queryprofilevariant.Builder varB = new QueryProfilesConfig.Queryprofile.Queryprofilevariant.Builder();
             for (String dimensionValue : variant.getDimensionValues()) {
-                if (dimensionValue==null)
-                    dimensionValue="*";
+                if (dimensionValue == null)
+                    dimensionValue = "*";
                 varB.fordimensionvalues(dimensionValue);
             }
             for (QueryProfile inherited : variant.inherited())
                 varB.inherit(inherited.getId().stringValue());
 
-            List<Map.Entry<String,Object>> content=new ArrayList<>(variant.getValues().entrySet());
-            Collections.sort(content,new MapEntryKeyComparator());
-            for (Map.Entry<String,Object> value : content) {
-                addVariantField(varB, value,"");
+            List<Map.Entry<String,Object>> content = new ArrayList<>(variant.getValues().entrySet());
+            Collections.sort(content, new MapEntryKeyComparator());
+            for (Map.Entry<String, Object> entry : content) {
+                addVariantField(varB, entry, variant.getOverriable().get(entry.getKey()), "");
             }
             qB.queryprofilevariant(varB);
         }
-    }    
+    }
 
     private void createReferenceFieldConfig(QueryProfilesConfig.Queryprofile.Reference.Builder refB, QueryProfile profile,
             String fullName, String localName, String stringValue) {
@@ -232,12 +243,18 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
         return propB;
     }
 
-    private QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder createVariantPropertyFieldConfig(String fullName, Object value) {
+    private QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder createVariantPropertyFieldConfig(String fullName,
+                                                                                                                   Object value,
+                                                                                                                   Boolean overridable) {
         QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder propB = new QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder();
         if (value instanceof SubstituteString)
-            value=value.toString(); // Send only types understood by configBuilder downwards
-        propB.name(fullName);        
-        if (value!=null) propB.value(value.toString());
+            value = value.toString(); // Send only types understood by configBuilder downwards
+
+        propB.name(fullName);
+        if (value != null)
+            propB.value(value.toString());
+        if (overridable != null)
+            propB.overridable(overridable.toString());
         return propB;
     }
 

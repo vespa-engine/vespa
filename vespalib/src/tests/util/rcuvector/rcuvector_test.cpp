@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using namespace vespalib;
 
@@ -241,13 +242,13 @@ struct ShrinkFixture {
     GenerationHolder g;
     RcuVectorBase<int> vec;
     int *oldPtr;
-    ShrinkFixture() : g(), vec(4096, 50, 0, g, alloc::Alloc::allocMMap()), oldPtr()
+    ShrinkFixture() : g(), vec(4_Ki, 50, 0, g, alloc::Alloc::allocMMap()), oldPtr()
     {
         for (size_t i = 0; i < 4000; ++i) {
             vec.push_back(7);
         }
         EXPECT_EQUAL(4000u, vec.size());
-        EXPECT_EQUAL(4096u, vec.capacity());
+        EXPECT_EQUAL(4_Ki, vec.capacity());
         assertEmptyHoldList();
         oldPtr = &vec[0];
     }
@@ -263,7 +264,7 @@ TEST_F("require that shrink() does not increase allocated memory", ShrinkFixture
 {
     f.vec.shrink(2732);
     EXPECT_EQUAL(2732u, f.vec.size());
-    EXPECT_EQUAL(4096u, f.vec.capacity());
+    EXPECT_EQUAL(4_Ki, f.vec.capacity());
     TEST_DO(f.assertOldEqualNewBuffer());
     TEST_DO(f.assertEmptyHoldList());
 }

@@ -1,8 +1,0 @@
-{
-  "nodes": [
-    @include(node6.json),
-    @include(docker-container1.json),
-    @include(node2.json),
-    @include(node4.json)
-  ]
-}

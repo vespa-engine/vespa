@@ -17,10 +17,12 @@
 #include <vespa/storageserver/app/dummyservicelayerprocess.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/shutdownguard.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/fastos/app.h>
 #include <iostream>
 #include <csignal>
+#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vds.application");
@@ -35,7 +37,7 @@ Process::UP createProcess(vespalib::stringref configId) {
     config::ConfigUri uri(configId);
     std::unique_ptr<vespa::config::content::core::StorServerConfig> serverConfig = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext());
     if (serverConfig->isDistributor) {
-        return Process::UP(new DistributorProcess(configId));
+        return std::make_unique<DistributorProcess>(configId);
     } else switch (serverConfig->persistenceProvider.type) {
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::STORAGE:
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::DUMMY:
@@ -50,24 +52,22 @@ Process::UP createProcess(vespalib::stringref configId) {
 class StorageApp : public FastOS_Application,
                    private vespalib::ProgramOptions
 {
-    std::string       _configId;
-    bool              _showSyntax;
-    uint32_t          _maxShutdownTime;
-    int               _lastSignal;
-    vespalib::Monitor _signalLock;
-    Process::UP       _process;
+    std::string             _configId;
+    bool                    _showSyntax;
+    uint32_t                _maxShutdownTime;
+    int                     _lastSignal;
+    std::mutex              _signalLock;
+    std::condition_variable _signalCond;
+    Process::UP             _process;
 
 public:
     StorageApp();
     ~StorageApp() override;
 
     void handleSignal(int signal) {
-        LOG(info, "Got signal %d, waiting for lock", signal);
-        vespalib::MonitorGuard sync(_signalLock);
-
-        LOG(info, "Got lock for signal %d", signal);
+        LOG(info, "Got signal %d", signal);
         _lastSignal = signal;
-        sync.signal();
+        _signalCond.notify_one();
     }
     void handleSignals();
 
@@ -102,18 +102,17 @@ StorageApp::~StorageApp() = default;
 bool StorageApp::Init()
 {
     FastOS_Application::Init();
-    setCommandLineArguments(
-            FastOS_Application::_argc, FastOS_Application::_argv);
+    setCommandLineArguments(FastOS_Application::_argc, FastOS_Application::_argv);
     try{
         parse();
     } catch (vespalib::InvalidCommandLineArgumentsException& e) {
         std::cerr << e.getMessage() << "\n\n";
         writeSyntaxPage(std::cerr);
-        exit(EXIT_FAILURE);
+        std::_Exit(EXIT_FAILURE);
     }
     if (_showSyntax) {
         writeSyntaxPage(std::cerr);
-        exit(0);
+        std::_Exit(0);
     }
     return true;
 }
@@ -187,17 +186,17 @@ int StorageApp::Main()
     // main loop - wait for termination signal
     while (!_process->getNode().attemptedStopped()) {
         if (_process->configUpdated()) {
-            LOG(debug, "Config updated. Progagating config updates");
+            LOG(debug, "Config updated. Propagating config updates");
             ResumeGuard guard(_process->getNode().pause());
             _process->updateConfig();
         }
-            // Wait until we get a kill signal.
-        vespalib::MonitorGuard lock(_signalLock);
-        lock.wait(1000ms);
+        // Wait until we get a kill signal.
+        std::unique_lock guard(_signalLock);
+        _signalCond.wait_for(guard, 1000ms);
         handleSignals();
     }
     LOG(debug, "Server was attempted stopped, shutting down");
-    // Create guard that will forcifully kill storage if destruction takes longer
+    // Create guard that will forcefully kill storage if destruction takes longer
     // time than given timeout.
     vespalib::ShutdownGuard shutdownGuard(getMaxShutDownTime());
     LOG(debug, "Attempting proper shutdown");

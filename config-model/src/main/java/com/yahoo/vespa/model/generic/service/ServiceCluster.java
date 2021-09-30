@@ -12,14 +12,14 @@ import java.util.Collection;
  * @author vegardh
  *
  */
-public class ServiceCluster extends AbstractConfigProducer {
+public class ServiceCluster extends AbstractConfigProducer<ServiceCluster> {
 
     private static final long serialVersionUID = 1L;
-    private String command;
-    private String name;
+    private final String command;
+    private final String name;
     private HostSystem hostSystem; // A generic cluster can resolve hosts for its nodes
 
-    public ServiceCluster(AbstractConfigProducer parent, String name, String command) {
+    public ServiceCluster(AbstractConfigProducer<?> parent, String name, String command) {
         super(parent, name);
         this.command=command;
         this.name=name;

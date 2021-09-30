@@ -2,41 +2,39 @@
 
 #include "threadpool.h"
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
-ThreadProperties::ThreadProperties(uint64_t waitTimeMs,
-                                   uint64_t maxProcessTimeMs,
+ThreadProperties::ThreadProperties(vespalib::duration waitTime,
+                                   vespalib::duration maxProcessTime,
                                    int ticksBeforeWait)
 {
-    _waitTimeMs.store(waitTimeMs);
-    _maxProcessTimeMs.store(maxProcessTimeMs);
-    _ticksBeforeWait.store(ticksBeforeWait);
+    setWaitTime(waitTime);
+    setMaxProcessTime(maxProcessTime);
+    setTicksBeforeWait(ticksBeforeWait);
 }
 
-uint64_t ThreadProperties::getMaxProcessTime() const {
-    return _maxProcessTimeMs.load(std::memory_order_relaxed);
+    vespalib::duration ThreadProperties::getMaxProcessTime() const {
+    return _maxProcessTime.load(std::memory_order_relaxed);
 }
 
-uint64_t ThreadProperties::getWaitTime() const {
-    return _waitTimeMs.load(std::memory_order_relaxed);
+vespalib::duration ThreadProperties::getWaitTime() const {
+    return _waitTime.load(std::memory_order_relaxed);
 }
 
 int ThreadProperties::getTicksBeforeWait() const {
     return _ticksBeforeWait.load(std::memory_order_relaxed);
 }
 
-void ThreadProperties::setMaxProcessTime(uint64_t maxProcessingTimeMs) {
-    _maxProcessTimeMs.store(maxProcessingTimeMs);
+void ThreadProperties::setMaxProcessTime(vespalib::duration maxProcessingTime) {
+    _maxProcessTime.store(maxProcessingTime);
 }
 
-void ThreadProperties::setWaitTime(uint64_t waitTimeMs) {
-    _waitTimeMs.store(waitTimeMs);
+void ThreadProperties::setWaitTime(vespalib::duration waitTime) {
+    _waitTime.store(waitTime);
 }
 
 void ThreadProperties::setTicksBeforeWait(int ticksBeforeWait) {
     _ticksBeforeWait.store(ticksBeforeWait);
 }
 
-} // framework
-} // storage
+}

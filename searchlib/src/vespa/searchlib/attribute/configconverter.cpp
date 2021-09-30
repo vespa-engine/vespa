@@ -3,14 +3,13 @@
 #include "configconverter.h"
 
 using namespace vespa::config::search;
-using namespace search;
 
+namespace search::attribute {
 
 namespace {
 
-using search::attribute::CollectionType;
-using search::attribute::BasicType;
 using vespalib::eval::ValueType;
+using vespalib::eval::CellType;
 
 typedef std::map<AttributesConfig::Attribute::Datatype, BasicType::Type> DataTypeMap;
 typedef std::map<AttributesConfig::Attribute::Collectiontype, CollectionType::Type> CollectionTypeMap;
@@ -49,9 +48,49 @@ getCollectionTypeMap()
 static DataTypeMap _dataTypeMap = getDataTypeMap();
 static CollectionTypeMap _collectionTypeMap = getCollectionTypeMap();
 
+DictionaryConfig::Type
+convert(AttributesConfig::Attribute::Dictionary::Type type_cfg) {
+    switch (type_cfg) {
+    case AttributesConfig::Attribute::Dictionary::Type::BTREE:
+        return DictionaryConfig::Type::BTREE;
+    case AttributesConfig::Attribute::Dictionary::Type::HASH:
+        return DictionaryConfig::Type::HASH;
+    case AttributesConfig::Attribute::Dictionary::Type::BTREE_AND_HASH:
+        return DictionaryConfig::Type::BTREE_AND_HASH;
+    }
+    assert(false);
 }
 
-namespace search::attribute {
+DictionaryConfig::Match
+convert(AttributesConfig::Attribute::Dictionary::Match match_cfg) {
+    switch (match_cfg) {
+    case AttributesConfig::Attribute::Dictionary::Match::CASE_SENSITIVE:
+    case AttributesConfig::Attribute::Dictionary::Match::CASED:
+        return DictionaryConfig::Match::CASED;
+    case AttributesConfig::Attribute::Dictionary::Match::CASE_INSENSITIVE:
+    case AttributesConfig::Attribute::Dictionary::Match::UNCASED:
+        return DictionaryConfig::Match::UNCASED;
+    }
+    assert(false);
+}
+
+DictionaryConfig
+convert_dictionary(const AttributesConfig::Attribute::Dictionary & dictionary) {
+    return DictionaryConfig(convert(dictionary.type), convert(dictionary.match));
+}
+
+Config::Match
+convertMatch(AttributesConfig::Attribute::Match match_cfg) {
+    switch (match_cfg) {
+        case AttributesConfig::Attribute::Match::CASED:
+            return Config::Match::CASED;
+        case AttributesConfig::Attribute::Match::UNCASED:
+            return Config::Match::UNCASED;
+    }
+    assert(false);
+}
+
+}
 
 Config
 ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
@@ -69,15 +108,43 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     retval.setIsFilter(cfg.enableonlybitvector);
     retval.setFastAccess(cfg.fastaccess);
     retval.setMutable(cfg.ismutable);
+    retval.setPaged(cfg.paged);
     predicateParams.setArity(cfg.arity);
     predicateParams.setBounds(cfg.lowerbound, cfg.upperbound);
     predicateParams.setDensePostingListThreshold(cfg.densepostinglistthreshold);
     retval.setPredicateParams(predicateParams);
+    retval.set_dictionary_config(convert_dictionary(cfg.dictionary));
+    retval.set_match(convertMatch(cfg.match));
+    using CfgDm = AttributesConfig::Attribute::Distancemetric;
+    DistanceMetric dm(DistanceMetric::Euclidean);
+    switch (cfg.distancemetric) {
+        case CfgDm::EUCLIDEAN:
+            dm = DistanceMetric::Euclidean;
+            break;
+        case CfgDm::ANGULAR:
+            dm = DistanceMetric::Angular;
+            break;
+        case CfgDm::GEODEGREES:
+            dm = DistanceMetric::GeoDegrees;
+            break;
+        case CfgDm::INNERPRODUCT:
+            dm = DistanceMetric::InnerProduct;
+            break;
+        case CfgDm::HAMMING:
+            dm = DistanceMetric::Hamming;
+            break;
+    }
+    retval.set_distance_metric(dm);
+    if (cfg.index.hnsw.enabled) {
+        retval.set_hnsw_index_params(HnswIndexParams(cfg.index.hnsw.maxlinkspernode,
+                                                     cfg.index.hnsw.neighborstoexploreatinsert,
+                                                     dm, cfg.index.hnsw.multithreadedindexing));
+    }
     if (retval.basicType().type() == BasicType::Type::TENSOR) {
         if (!cfg.tensortype.empty()) {
             retval.setTensorType(ValueType::from_spec(cfg.tensortype));
         } else {
-            retval.setTensorType(ValueType::tensor_type({}));
+            retval.setTensorType(ValueType::double_type());
         }
     }
     return retval;

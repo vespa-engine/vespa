@@ -15,17 +15,16 @@ namespace storage::mbusprot {
 
 mbus::string StorageProtocol::NAME = "StorageProtocol";
 
-StorageProtocol::StorageProtocol(const std::shared_ptr<const document::DocumentTypeRepo> repo,
-                                 const documentapi::LoadTypeSet& loadTypes)
-    : _serializer5_0(repo, loadTypes),
-      _serializer5_1(repo, loadTypes),
-      _serializer5_2(repo, loadTypes),
-      _serializer6_0(repo, loadTypes),
-      _serializer7_0(repo, loadTypes)
+StorageProtocol::StorageProtocol(const std::shared_ptr<const document::DocumentTypeRepo> repo)
+    : _serializer5_0(repo),
+      _serializer5_1(repo),
+      _serializer5_2(repo),
+      _serializer6_0(repo),
+      _serializer7_0(repo)
 {
 }
 
-StorageProtocol::~StorageProtocol() {}
+StorageProtocol::~StorageProtocol() = default;
 
 mbus::IRoutingPolicy::UP
 StorageProtocol::createPolicy(const mbus::string&, const mbus::string&) const

@@ -11,9 +11,8 @@ import java.util.stream.Collectors;
 import static com.yahoo.container.standalone.CloudConfigInstallVariables.toConfigModelsPluginDir;
 import static com.yahoo.container.standalone.CloudConfigInstallVariables.toConfigServer;
 import static com.yahoo.container.standalone.CloudConfigInstallVariables.toConfigServers;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.contains;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -24,23 +23,23 @@ public class CloudConfigInstallVariablesTest {
     @Test
     public void test_configserver_parsing() {
         CloudConfigOptions.ConfigServer[] parsed = toConfigServers("myhost.mydomain.com");
-        assertThat(parsed.length, is(1));
+        assertEquals(1, parsed.length);
     }
 
     @Test
     public void port_can_be_configured() {
         CloudConfigOptions.ConfigServer[] parsed = toConfigServers("myhost:123");
         int port = parsed[0].port.get();
-        assertThat(port, is(123));
+        assertEquals(123, port);
     }
 
     @Test
     public void multiple_spaces_are_supported() {
         CloudConfigOptions.ConfigServer[] parsed = toConfigServers("test1     test2");
-        assertThat(parsed.length, is(2));
+        assertEquals(2, parsed.length);
 
         List<String> hostNames = Arrays.stream(parsed).map(cs -> cs.hostName).collect(Collectors.toList());
-        assertThat(hostNames, contains("test1", "test2"));
+        assertTrue(hostNames.containsAll(Arrays.asList("test1", "test2")));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -56,12 +55,12 @@ public class CloudConfigInstallVariablesTest {
     @Test
     public void string_arrays_are_split_on_spaces() {
         String[] parsed = toConfigModelsPluginDir("/home/vespa/foo /home/vespa/bar ");
-        assertThat(parsed.length, is(2));
+        assertEquals(2, parsed.length);
     }
 
     @Test
     public void string_arrays_are_split_on_comma() {
         String[] parsed = toConfigModelsPluginDir("/home/vespa/foo,/home/vespa/bar,");
-        assertThat(parsed.length, is(2));
+        assertEquals(2, parsed.length);
     }
 }

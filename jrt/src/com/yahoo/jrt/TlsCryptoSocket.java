@@ -6,6 +6,7 @@ import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -21,7 +22,6 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import static java.util.stream.Collectors.toList;
-import static javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import static javax.net.ssl.SSLEngineResult.Status;
 
 /**
@@ -51,11 +51,13 @@ public class TlsCryptoSocket implements CryptoSocket {
     public TlsCryptoSocket(SocketChannel channel, SSLEngine sslEngine) {
         this.channel = channel;
         this.sslEngine = sslEngine;
+        this.wrapBuffer = new Buffer(0);
+        this.unwrapBuffer = new Buffer(0);
         SSLSession nullSession = sslEngine.getSession();
-        this.wrapBuffer = new Buffer(Math.max(0x10000, nullSession.getPacketBufferSize() * 2));
-        this.unwrapBuffer = new Buffer(Math.max(0x10000, nullSession.getPacketBufferSize() * 2));
+        sessionApplicationBufferSize = nullSession.getApplicationBufferSize();
+        sessionPacketBufferSize = nullSession.getPacketBufferSize();
         // Note: Dummy buffer as unwrap requires a full size application buffer even though no application data is unwrapped
-        this.handshakeDummyBuffer = ByteBuffer.allocate(nullSession.getApplicationBufferSize());
+        this.handshakeDummyBuffer = ByteBuffer.allocate(sessionApplicationBufferSize);
         this.handshakeState = HandshakeState.NOT_STARTED;
         log.fine(() -> "Initialized with " + sslEngine.toString());
     }
@@ -189,12 +191,11 @@ public class TlsCryptoSocket implements CryptoSocket {
     public int drain(ByteBuffer dst) throws IOException {
         verifyHandshakeCompleted();
         int totalBytesUnwrapped = 0;
-        int bytesUnwrapped;
-        do {
-            bytesUnwrapped = applicationDataUnwrap(dst);
-            totalBytesUnwrapped += bytesUnwrapped;
-        } while (bytesUnwrapped > 0);
-        return totalBytesUnwrapped;
+        while (true) {
+            int result = applicationDataUnwrap(dst);
+            if (result < 0) return totalBytesUnwrapped;
+            totalBytesUnwrapped += result;
+        }
     }
 
     @Override
@@ -215,6 +216,11 @@ public class TlsCryptoSocket implements CryptoSocket {
         verifyHandshakeCompleted();
         channelWrite();
         return wrapBuffer.bytes() > 0 ? FlushResult.NEED_WRITE : FlushResult.DONE;
+    }
+
+    @Override public void dropEmptyBuffers() {
+        wrapBuffer.shrink(0);
+        unwrapBuffer.shrink(0);
     }
 
     @Override
@@ -249,7 +255,7 @@ public class TlsCryptoSocket implements CryptoSocket {
 
     private int applicationDataWrap(ByteBuffer src) throws IOException {
         SSLEngineResult result = sslEngineWrap(src);
-        if (result.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING) throw new SSLException("Renegotiation detected");
+        failIfRenegotiationDetected(result);
         switch (result.getStatus()) {
             case OK:
                 return result.bytesConsumed();
@@ -262,7 +268,7 @@ public class TlsCryptoSocket implements CryptoSocket {
 
     private SSLEngineResult sslEngineWrap(ByteBuffer src) throws IOException {
         SSLEngineResult result = sslEngine.wrap(src, wrapBuffer.getWritable(sessionPacketBufferSize));
-        if (result.getStatus() == Status.CLOSED) throw new ClosedChannelException();
+        failIfCloseSignalDetected(result);
         return result;
     }
 
@@ -281,13 +287,13 @@ public class TlsCryptoSocket implements CryptoSocket {
 
     private int applicationDataUnwrap(ByteBuffer dst) throws IOException {
         SSLEngineResult result = sslEngineUnwrap(dst);
-        if (result.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING) throw new SSLException("Renegotiation detected");
+        failIfRenegotiationDetected(result);
         switch (result.getStatus()) {
             case OK:
                 return result.bytesProduced();
             case BUFFER_OVERFLOW:
             case BUFFER_UNDERFLOW:
-                return 0;
+                return -1;
             default:
                 throw unexpectedStatusException(result.getStatus());
         }
@@ -295,7 +301,7 @@ public class TlsCryptoSocket implements CryptoSocket {
 
     private SSLEngineResult sslEngineUnwrap(ByteBuffer dst) throws IOException {
         SSLEngineResult result = sslEngine.unwrap(unwrapBuffer.getReadable(), dst);
-        if (result.getStatus() == Status.CLOSED) throw new ClosedChannelException();
+        failIfCloseSignalDetected(result);
         return result;
     }
 
@@ -309,6 +315,17 @@ public class TlsCryptoSocket implements CryptoSocket {
     // returns number of bytes written
     private int channelWrite() throws IOException {
         return channel.write(wrapBuffer.getReadable());
+    }
+
+    private static void failIfCloseSignalDetected(SSLEngineResult result) throws ClosedChannelException {
+        if (result.getStatus() == Status.CLOSED) throw new ClosedChannelException();
+    }
+
+    private static void failIfRenegotiationDetected(SSLEngineResult result) throws SSLException {
+        if (result.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING
+                && result.getHandshakeStatus() != HandshakeStatus.FINISHED) {
+            throw new SSLException("Renegotiation detected");
+        }
     }
 
     private static IllegalStateException unhandledStateException(HandshakeState state) {

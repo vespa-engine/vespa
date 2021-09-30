@@ -2,10 +2,10 @@
 #include "valuenodes.h"
 #include "visitor.h"
 #include "parser.h"
-#include <vespa/document/bucket/bucketdistribution.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/md5.h>
@@ -19,10 +19,6 @@
 LOG_SETUP(".document.select.valuenode");
 
 namespace document::select {
-
-namespace {
-    static const std::regex FIELD_NAME_REGEX("^([_A-Za-z][_A-Za-z0-9]*).*");
-}
 
 namespace {
     bool documentTypeEqualsName(const DocumentType& type, vespalib::stringref name)
@@ -40,7 +36,7 @@ namespace {
 
 InvalidValueNode::InvalidValueNode(vespalib::stringref name)
     : _name(name)
-{ }
+{}
 
 
 void
@@ -194,15 +190,33 @@ FieldValueNode::FieldValueNode(const vespalib::string& doctype,
 
 FieldValueNode::~FieldValueNode() = default;
 
-vespalib::string
-FieldValueNode::extractFieldName(const std::string & fieldExpression) {
-    std::smatch match;
+namespace {
 
-    if (std::regex_match(fieldExpression, match, FIELD_NAME_REGEX) && match[1].matched) {
-        return vespalib::string(match[1].first, match[1].second);
+size_t first_ident_length_or_npos(const vespalib::string& expr) {
+    for (size_t i = 0; i < expr.size(); ++i) {
+        switch (expr[i]) {
+        case '.':
+        case '{':
+        case '[':
+        case ' ':
+        case '\n':
+        case '\t':
+            return i;
+        default:
+            continue;
+        }
     }
+    return vespalib::string::npos;
+}
 
-    throw ParsingFailedException("Fatal: could not extract field name from field expression '" + fieldExpression + "'");
+}
+
+// TODO remove this pile of fun in favor of actually parsed AST nodes...!
+vespalib::string
+FieldValueNode::extractFieldName(const vespalib::string & fieldExpression) {
+    // When we get here the actual contents of the field expression shall already
+    // have been structurally and syntactically verified by the parser.
+    return fieldExpression.substr(0, first_ident_length_or_npos(fieldExpression));
 }
 
 namespace {
@@ -288,6 +302,15 @@ IteratorHandler::getInternalValue(const FieldValue& fval) const
         {
             const StringFieldValue& val(dynamic_cast<const StringFieldValue&>(fval));
             return std::make_unique<StringValue>(val.getAsString());
+        }
+        case ReferenceFieldValue::classId:
+        {
+            const ReferenceFieldValue& val(dynamic_cast<const ReferenceFieldValue&>(fval));
+            if (val.hasValidDocumentId()) {
+                return std::make_unique<StringValue>(val.getDocumentId().toString());
+            } else {
+                return std::make_unique<InvalidValue>();
+            }
         }
         case ArrayFieldValue::classId:
         {
@@ -844,7 +867,8 @@ FunctionValueNode::print(std::ostream& out, bool verbose,
 ArithmeticValueNode::ArithmeticValueNode(
         std::unique_ptr<ValueNode> left, vespalib::stringref op,
         std::unique_ptr<ValueNode> right)
-    : _operator(),
+    : ValueNode(std::max(left->max_depth(), right->max_depth()) + 1),
+      _operator(),
       _left(std::move(left)),
       _right(std::move(right))
 {

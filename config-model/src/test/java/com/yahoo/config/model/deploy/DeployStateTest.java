@@ -38,7 +38,7 @@ public class DeployStateTest {
     @Test
     public void testProvisionerIsSet() {
         DeployState.Builder builder = new DeployState.Builder();
-        HostProvisioner provisioner = new InMemoryProvisioner(true, "foo.yahoo.com");
+        HostProvisioner provisioner = new InMemoryProvisioner(true, false, "foo.yahoo.com");
         builder.modelHostProvisioner(provisioner);
         DeployState state = builder.build();
         assertThat(state.getProvisioner(), is(provisioner));

@@ -4,8 +4,6 @@ package com.yahoo.vespa.defaults;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-
-
 /**
  * The defaults of basic Vespa configuration variables.
  * Use Defaults.getDefaults() to access the defaults of this runtime environment.
@@ -39,6 +37,7 @@ public class Defaults {
         vespaPortConfigServerHttp = vespaPortConfigServerRpc + 1;
         vespaPortConfigProxyRpc = findConfigProxyPort(vespaPortBase + 90);
     }
+
     static private String findVespaHome(String defHome) {
         Optional<String> vespaHomeEnv = Optional.ofNullable(System.getenv("VESPA_HOME"));
         if ( ! vespaHomeEnv.isPresent() || vespaHomeEnv.get().trim().isEmpty()) {
@@ -125,6 +124,7 @@ public class Defaults {
     /**
      * Returns the path to the root under which Vespa should read and write files.
      * Will not end with a "/".
+     *
      * @return the vespa home directory
      */
     public String vespaHome() { return vespaHome; }

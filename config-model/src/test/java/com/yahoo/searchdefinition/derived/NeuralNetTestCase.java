@@ -2,7 +2,6 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.search.Query;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
 import com.yahoo.searchdefinition.parser.ParseException;

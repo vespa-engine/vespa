@@ -1,37 +1,42 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
-import com.yahoo.component.Version;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.jdisc.Metric;
-import com.yahoo.log.LogLevel;
+import com.yahoo.config.provision.TransientException;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.transaction.Transaction;
-import com.yahoo.vespa.config.server.ActivationConflictException;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
+import com.yahoo.vespa.config.server.ApplicationRepository.Activation;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.http.InternalServerException;
-import com.yahoo.vespa.config.server.session.LocalSession;
+import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
+import com.yahoo.vespa.config.server.configchange.ReindexActions;
+import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
-import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.curator.Lock;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * The process of deploying an application.
- * Deployments are created by a {@link ApplicationRepository}.
+ * Deployments are created by an {@link ApplicationRepository}.
  * Instances of this are not multithread safe.
  *
  * @author Ulf Lilleengen
@@ -40,117 +45,125 @@ import java.util.logging.Logger;
 public class Deployment implements com.yahoo.config.provision.Deployment {
 
     private static final Logger log = Logger.getLogger(Deployment.class.getName());
+    private static final Duration durationBetweenResourceReadyChecks = Duration.ofSeconds(60);
 
     /** The session containing the application instance to activate */
-    private final LocalSession session;
+    private final Session session;
     private final ApplicationRepository applicationRepository;
-    private final Optional<Provisioner> hostProvisioner;
+    private final Supplier<PrepareParams> params;
+    private final Optional<Provisioner> provisioner;
     private final Tenant tenant;
-    private final Duration timeout;
+    private final DeployLogger deployLogger;
     private final Clock clock;
-    private final DeployLogger logger = new SilentDeployLogger();
-    
-    /** The Vespa version this application should run on */
-    private final Version version;
+    private final boolean internalRedeploy;
 
-    /** True if this deployment is done to bootstrap the config server */
-    private final boolean isBootstrap;
+    private boolean prepared;
+    private ConfigChangeActions configChangeActions;
 
-    private boolean prepared = false;
-    
-    /** Whether this model should be validated (only takes effect if prepared=false) */
-    private boolean validate;
-
-    private boolean ignoreSessionStaleFailure = false;
-
-    private Deployment(LocalSession session, ApplicationRepository applicationRepository,
-                       Optional<Provisioner> hostProvisioner, Tenant tenant,
-                       Duration timeout, Clock clock, boolean prepared, boolean validate, Version version,
-                       boolean isBootstrap) {
+    private Deployment(Session session, ApplicationRepository applicationRepository, Supplier<PrepareParams> params,
+                       Optional<Provisioner> provisioner, Tenant tenant, DeployLogger deployLogger, Clock clock,
+                       boolean internalRedeploy, boolean prepared) {
         this.session = session;
         this.applicationRepository = applicationRepository;
-        this.hostProvisioner = hostProvisioner;
+        this.params = params;
+        this.provisioner = provisioner;
         this.tenant = tenant;
-        this.timeout = timeout;
+        this.deployLogger = deployLogger;
         this.clock = clock;
+        this.internalRedeploy = internalRedeploy;
         this.prepared = prepared;
-        this.validate = validate;
-        this.version = version;
-        this.isBootstrap = isBootstrap;
     }
 
-    public static Deployment unprepared(LocalSession session, ApplicationRepository applicationRepository,
-                                        Optional<Provisioner> hostProvisioner, Tenant tenant,
-                                        Duration timeout, Clock clock, boolean validate, Version version,
-                                        boolean isBootstrap) {
-        return new Deployment(session, applicationRepository, hostProvisioner, tenant,
-                              timeout, clock, false, validate, version, isBootstrap);
+    public static Deployment unprepared(Session session, ApplicationRepository applicationRepository,
+                                        Optional<Provisioner> provisioner, Tenant tenant, PrepareParams params, DeployLogger logger, Clock clock) {
+        return new Deployment(session, applicationRepository, () -> params, provisioner, tenant, logger, clock, false, false);
     }
 
-    public static Deployment prepared(LocalSession session, ApplicationRepository applicationRepository,
-                                      Optional<Provisioner> hostProvisioner, Tenant tenant,
-                                      Duration timeout, Clock clock, boolean isBootstrap) {
-        return new Deployment(session, applicationRepository, hostProvisioner, tenant,
-                              timeout, clock, true, true, session.getVespaVersion(), isBootstrap);
+    public static Deployment unprepared(Session session, ApplicationRepository applicationRepository,
+                                        Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
+                                        Duration timeout, Clock clock, boolean validate, boolean isBootstrap) {
+        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, !validate, false, true);
+        return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, true, false);
     }
 
-    public void setIgnoreSessionStaleFailure(boolean ignoreSessionStaleFailure) {
-        this.ignoreSessionStaleFailure = ignoreSessionStaleFailure;
+    public static Deployment prepared(Session session, ApplicationRepository applicationRepository,
+                                      Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
+                                      Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
+        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, false, force, false);
+        return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, false, true);
     }
 
     /** Prepares this. This does nothing if this is already prepared */
     @Override
     public void prepare() {
         if (prepared) return;
-        try (ActionTimer timer = applicationRepository.timerFor(session.getApplicationId(), "deployment.prepareMillis")) {
-            TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
-
-            session.prepare(logger,
-                            new PrepareParams.Builder().applicationId(session.getApplicationId())
-                                                       .timeoutBudget(timeoutBudget)
-                                                       .ignoreValidationErrors(!validate)
-                                                       .vespaVersion(version.toString())
-                                                       .isBootstrap(isBootstrap)
-                                                       .build(),
-                            Optional.empty(),
-                            tenant.getPath(),
-                            clock.instant());
+        PrepareParams params = this.params.get();
+        ApplicationId applicationId = params.getApplicationId();
+        try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.prepareMillis")) {
+            this.configChangeActions = tenant.getSessionRepository().prepareLocalSession(session, deployLogger, params, clock.instant());
             this.prepared = true;
         }
+
+        waitForResourcesOrTimeout(params, session, provisioner);
     }
 
     /** Activates this. If it is not already prepared, this will call prepare first. */
     @Override
-    public void activate() {
-        if ( ! prepared)
-            prepare();
+    public long activate() {
+        prepare();
 
-        try (ActionTimer timer = applicationRepository.timerFor(session.getApplicationId(), "deployment.activateMillis")) {
-            TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
+        validateSessionStatus(session);
+        PrepareParams params = this.params.get();
+        ApplicationId applicationId = session.getApplicationId();
+        try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.activateMillis")) {
+            TimeoutBudget timeoutBudget = params.getTimeoutBudget();
+            timeoutBudget.assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
-            ApplicationId applicationId = session.getApplicationId();
-            try (Lock lock = tenant.getApplicationRepo().lock(applicationId)) {
-                validateSessionStatus(session);
-                NestedTransaction transaction = new NestedTransaction();
-                transaction.add(deactivateCurrentActivateNew(applicationRepository.getActiveSession(applicationId), session, ignoreSessionStaleFailure));
-                hostProvisioner.ifPresent(provisioner -> provisioner.activate(transaction, applicationId, session.getAllocatedHosts().getHosts()));
-                transaction.commit();
-            }
-            catch (RuntimeException e) {
-                throw e;
-            }
-            catch (Exception e) {
-                throw new InternalServerException("Error activating application", e);
-            }
+            Activation activation = applicationRepository.activate(session, applicationId, tenant, params.force());
+            activation.awaitCompletion(timeoutBudget.timeLeft());
+            log.log(Level.INFO, session.logPre() + "Session " + session.getSessionId() + " activated successfully using " +
+                                provisioner.map(provisioner -> provisioner.getClass().getSimpleName()).orElse("no host provisioner") +
+                                ". Config generation " + session.getMetaData().getGeneration() +
+                                activation.sourceSessionId().stream().mapToObj(id -> ". Based on session " + id).findFirst().orElse("") +
+                                ". File references: " + applicationRepository.getFileReferences(applicationId));
 
-            session.waitUntilActivated(timeoutBudget);
+            if (provisioner.isPresent() && configChangeActions != null)
+                restartServices(applicationId);
 
-            log.log(LogLevel.INFO, session.logPre() + "Session " + session.getSessionId() +
-                                   " activated successfully using " +
-                                   (hostProvisioner.isPresent() ? hostProvisioner.get() : "no host provisioner") +
-                                   ". Config generation " + session.getMetaData().getGeneration() +
-                                   ". File references used: " + applicationRepository.getFileReferences(applicationId));
+            storeReindexing(applicationId, session.getMetaData().getGeneration());
+
+            return session.getMetaData().getGeneration();
         }
+    }
+
+    private void restartServices(ApplicationId applicationId) {
+        RestartActions restartActions = configChangeActions.getRestartActions().useForInternalRestart(internalRedeploy);
+
+        if ( ! restartActions.isEmpty()) {
+            Set<String> hostnames = restartActions.getEntries().stream()
+                                                  .flatMap(entry -> entry.getServices().stream())
+                                                  .map(ServiceInfo::getHostName)
+                                                  .collect(Collectors.toUnmodifiableSet());
+
+            provisioner.get().restart(applicationId, HostFilter.from(hostnames, Set.of(), Set.of(), Set.of()));
+            deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
+                                                       hostnames.size(), hostnames.stream().sorted().collect(Collectors.joining(", "))));
+            log.info(String.format("%sScheduled service restart of %d nodes: %s",
+                                   session.logPre(), hostnames.size(), restartActions.format()));
+
+            this.configChangeActions = new ConfigChangeActions(
+                    new RestartActions(), configChangeActions.getRefeedActions(), configChangeActions.getReindexActions());
+        }
+    }
+
+    private void storeReindexing(ApplicationId applicationId, long requiredSession) {
+        applicationRepository.modifyReindexing(applicationId, reindexing -> {
+            if (configChangeActions != null)
+                for (ReindexActions.Entry entry : configChangeActions.getReindexActions().getEntries())
+                    reindexing = reindexing.withPending(entry.getClusterName(), entry.getDocumentType(), requiredSession);
+
+            return reindexing;
+        });
     }
 
     /**
@@ -160,66 +173,89 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
      */
     @Override
     public void restart(HostFilter filter) {
-        hostProvisioner.get().restart(session.getApplicationId(), filter);
+        provisioner.get().restart(session.getApplicationId(), filter);
     }
 
     /** Exposes the session of this for testing only */
-    public LocalSession session() { return session; }
+    public Session session() { return session; }
 
-    private long validateSessionStatus(LocalSession localSession) {
-        long sessionId = localSession.getSessionId();
-        if (Session.Status.NEW.equals(localSession.getStatus())) {
-            throw new IllegalStateException(localSession.logPre() + "Session " + sessionId + " is not prepared");
-        } else if (Session.Status.ACTIVATE.equals(localSession.getStatus())) {
-            throw new IllegalStateException(localSession.logPre() + "Session " + sessionId + " is already active");
-        }
-        return sessionId;
+    /**
+     * @return config change actions that need to be performed as result of prepare
+     * @throws IllegalArgumentException if called without being prepared by this
+     */
+    public ConfigChangeActions configChangeActions() {
+        if (configChangeActions != null) return configChangeActions;
+        throw new IllegalArgumentException("No config change actions: " + (prepared ? "was already prepared" : "not yet prepared"));
     }
 
-    private Transaction deactivateCurrentActivateNew(LocalSession active, LocalSession prepared, boolean ignoreStaleSessionFailure) {
-        Transaction transaction = prepared.createActivateTransaction();
-        if (isValidSession(active)) {
-            checkIfActiveHasChanged(prepared, active, ignoreStaleSessionFailure);
-            checkIfActiveIsNewerThanSessionToBeActivated(prepared.getSessionId(), active.getSessionId());
-            transaction.add(active.createDeactivateTransaction().operations());
-        }
-        return transaction;
-    }
-
-    private boolean isValidSession(LocalSession session) {
-        return session != null;
-    }
-
-    private void checkIfActiveHasChanged(LocalSession session, LocalSession currentActiveSession, boolean ignoreStaleSessionFailure) {
-        long activeSessionAtCreate = session.getActiveSessionAtCreate();
-        log.log(LogLevel.DEBUG, currentActiveSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
-        if (activeSessionAtCreate == 0) return; // No active session at create
-
+    private void validateSessionStatus(Session session) {
         long sessionId = session.getSessionId();
-        long currentActiveSessionSessionId = currentActiveSession.getSessionId();
-        log.log(LogLevel.DEBUG, currentActiveSession.logPre() + "sessionId=" + sessionId + 
-                                ", current active session=" + currentActiveSessionSessionId);
-        if (currentActiveSession.isNewerThan(activeSessionAtCreate) &&
-                currentActiveSessionSessionId != sessionId) {
-            String errMsg = currentActiveSession.logPre() + "Cannot activate session " +
-                            sessionId + " because the currently active session (" +
-                            currentActiveSessionSessionId + ") has changed since session " + sessionId +
-                            " was created (was " + activeSessionAtCreate + " at creation time)";
-            if (ignoreStaleSessionFailure) {
-                log.warning(errMsg + " (Continuing because of force.)");
-            } else {
-                throw new ActivationConflictException(errMsg);
-            }
+        if (Session.Status.NEW.equals(session.getStatus())) {
+            throw new IllegalArgumentException(session.logPre() + "Session " + sessionId + " is not prepared");
+        } else if (Session.Status.ACTIVATE.equals(session.getStatus())) {
+            throw new IllegalArgumentException(session.logPre() + "Session " + sessionId + " is already active");
         }
     }
 
-    // As of now, config generation is based on session id, and config generation must be a monotonically
-    // increasing number
-    private void checkIfActiveIsNewerThanSessionToBeActivated(long sessionId, long currentActiveSessionId) {
-        if (sessionId < currentActiveSessionId) {
-            throw new ActivationConflictException("It is not possible to activate session " + sessionId +
-                                          ", because it is older than current active session (" +
-                                          currentActiveSessionId + ")");
+    /**
+     * @param clock system clock
+     * @param timeout total timeout duration of prepare + activate
+     * @param session the local session for this deployment
+     * @param isBootstrap true if this deployment is done to bootstrap the config server
+     * @param ignoreValidationErrors whether this model should be validated
+     * @param force whether activation of this model should be forced
+     */
+    private static Supplier<PrepareParams> createPrepareParams(
+            Clock clock, Duration timeout, Session session,
+            boolean isBootstrap, boolean ignoreValidationErrors, boolean force, boolean waitForResourcesInPrepare) {
+
+        // Supplier because shouldn't/cant create this before validateSessionStatus() for prepared deployments
+        // memoized because we want to create this once for unprepared deployments
+        return Suppliers.memoize(() -> {
+            TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
+
+            PrepareParams.Builder params = new PrepareParams.Builder()
+                    .applicationId(session.getApplicationId())
+                    .vespaVersion(session.getVespaVersion().toString())
+                    .timeoutBudget(timeoutBudget)
+                    .ignoreValidationErrors(ignoreValidationErrors)
+                    .isBootstrap(isBootstrap)
+                    .force(force)
+                    .waitForResourcesInPrepare(waitForResourcesInPrepare)
+                    .tenantSecretStores(session.getTenantSecretStores());
+            session.getDockerImageRepository().ifPresent(params::dockerImageRepository);
+            session.getAthenzDomain().ifPresent(params::athenzDomain);
+
+            return params.build();
+        });
+    }
+
+    private static void waitForResourcesOrTimeout(PrepareParams params, Session session, Optional<Provisioner> provisioner) {
+        if (!params.waitForResourcesInPrepare() || provisioner.isEmpty()) return;
+
+        Set<HostSpec> preparedHosts = session.getAllocatedHosts().getHosts();
+        ActivationContext context = new ActivationContext(session.getSessionId());
+        ProvisionLock lock = new ProvisionLock(session.getApplicationId(), () -> {});
+        AtomicReference<TransientException> lastException = new AtomicReference<>();
+
+        while (true) {
+            params.getTimeoutBudget().assertNotTimedOut(
+                    () -> "Timeout exceeded while waiting for application resources of '" + session.getApplicationId() + "'" +
+                            Optional.ofNullable(lastException.get()).map(e -> ". Last exception: " + e.getMessage()).orElse(""));
+
+            try {
+                // Call to activate to make sure that everything is ready, but do not commit the transaction
+                ApplicationTransaction transaction = new ApplicationTransaction(lock, new NestedTransaction());
+                provisioner.get().activate(preparedHosts, context, transaction);
+                return;
+            } catch (TransientException e) {
+                lastException.set(e);
+                try {
+                    Thread.sleep(durationBetweenResourceReadyChecks.toMillis());
+                } catch (InterruptedException e1) {
+                    throw new RuntimeException(e1);
+                }
+            }
         }
     }
 

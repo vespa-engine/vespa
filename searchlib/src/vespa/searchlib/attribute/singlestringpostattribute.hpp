@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/singlestringpostattribute.h>
+#include "singlestringpostattribute.h"
 #include <vespa/searchlib/query/query_term_ucs4.h>
 
 namespace search {
@@ -34,7 +34,7 @@ template <typename B>
 void
 SingleValueStringPostingAttributeT<B>::mergeMemoryStats(vespalib::MemoryUsage & total)
 {
-    total.merge(this->_postingList.getMemoryUsage());
+    total.merge(this->_postingList.update_stat());
 }
 
 template <typename B>
@@ -52,8 +52,8 @@ SingleValueStringPostingAttributeT<B>::applyUpdateValueChange(const Change & c,
 template <typename B>
 void
 SingleValueStringPostingAttributeT<B>::
-makePostingChange(const datastore::EntryComparator *cmpa,
-                  Dictionary &dict,
+makePostingChange(const vespalib::datastore::EntryComparator &cmpa,
+                  IEnumStoreDictionary& dictionary,
                   const std::map<DocId, EnumIndex> &currEnumIndices,
                   PostingMap &changePost)
 {
@@ -63,13 +63,13 @@ makePostingChange(const datastore::EntryComparator *cmpa,
         EnumIndex newIdx = elem.second;
 
         // add new posting
-        auto addItr = dict.find(newIdx, *cmpa);
-        changePost[EnumPostingPair(addItr.getKey(), cmpa)].add(docId, 1);
+        auto remapped_new_idx = dictionary.remap_index(newIdx);
+        changePost[EnumPostingPair(remapped_new_idx, &cmpa)].add(docId, 1);
 
         // remove old posting
         if ( oldIdx.valid()) {
-            auto rmItr = dict.find(oldIdx, *cmpa);
-            changePost[EnumPostingPair(rmItr.getKey(), cmpa)].remove(docId);
+            auto remapped_old_idx = dictionary.remap_index(oldIdx);
+            changePost[EnumPostingPair(remapped_old_idx, &cmpa)].remove(docId);
         }
     }
 }
@@ -79,14 +79,13 @@ void
 SingleValueStringPostingAttributeT<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 {
     EnumStore & enumStore = this->getEnumStore();
-    Dictionary & dict = enumStore.get_posting_dictionary();
-    auto cmp = enumStore.make_folded_comparator();
+    IEnumStoreDictionary& dictionary = enumStore.get_dictionary();
     PostingMap changePost;
 
     // used to make sure several arithmetic operations on the same document in a single commit works
     std::map<DocId, EnumIndex> currEnumIndices;
 
-    for (const auto& change : this->_changes) {
+    for (const auto& change : this->_changes.getInsertOrder()) {
         auto enumIter = currEnumIndices.find(change._doc);
         EnumIndex oldIdx;
         if (enumIter != currEnumIndices.end()) {
@@ -95,16 +94,14 @@ SingleValueStringPostingAttributeT<B>::applyValueChanges(EnumStoreBatchUpdater& 
             oldIdx = this->_enumIndices[change._doc];
         }
         if (change._type == ChangeBase::UPDATE) {
-            applyUpdateValueChange(change, enumStore,
-                                   currEnumIndices);
+            applyUpdateValueChange(change, enumStore, currEnumIndices);
         } else if (change._type == ChangeBase::CLEARDOC) {
             this->_defaultValue._doc = change._doc;
-            applyUpdateValueChange(this->_defaultValue, enumStore,
-                                   currEnumIndices);
+            applyUpdateValueChange(this->_defaultValue, enumStore, currEnumIndices);
         }
     }
 
-    makePostingChange(&cmp, dict, currEnumIndices, changePost);
+    makePostingChange(enumStore.get_folded_comparator(), dictionary, currEnumIndices, changePost);
 
     this->updatePostings(changePost);
 

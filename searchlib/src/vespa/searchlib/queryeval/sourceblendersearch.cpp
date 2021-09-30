@@ -6,10 +6,17 @@
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/util/array.hpp>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 EmptySearch SourceBlenderSearch::_emptySearch;
+
+class SourceBlenderSearchNonStrict : public SourceBlenderSearch
+{
+public:
+    SourceBlenderSearchNonStrict(std::unique_ptr<Iterator> sourceSelector, const Children &children)
+        : SourceBlenderSearch(std::move(sourceSelector), children)
+    {}
+};
 
 class SourceBlenderSearchStrict : public SourceBlenderSearch
 {
@@ -91,13 +98,13 @@ SourceBlenderSearchStrict::advance()
             return;
         }
         search = getSearch(_sourceSelector->getSource(minNextId));
-        for (uint32_t i = 0; i < _nextChildren.size(); ++i) {
-            if (_nextChildren[i] == search) {
+        for (SearchIterator * child : _nextChildren) {
+            if (child == search) {
                 _matchedChild = search;
                 setDocId(minNextId);
                 return;
             }
-            _nextChildren[i]->seek(minNextId + 1);
+            child->seek(minNextId + 1);
         }
     }
 }
@@ -111,7 +118,7 @@ SourceBlenderSearch::doUnpack(uint32_t docid)
 SourceBlenderSearch::SourceBlenderSearch(
         std::unique_ptr<sourceselector::Iterator> sourceSelector,
         const Children &children) :
-    _matchedChild(NULL),
+    _matchedChild(nullptr),
     _sourceSelector(std::move(sourceSelector)),
     _children(),
     _docIdLimit(_sourceSelector->getDocIdLimit())
@@ -155,24 +162,22 @@ SourceBlenderSearch::~SourceBlenderSearch()
 
 void
 SourceBlenderSearch::setChild(size_t index, SearchIterator::UP child) {
-    assert(_sources[_children[index]] == NULL);
+    assert(_sources[_children[index]] == nullptr);
     _sources[_children[index]] = child.release();
 }
 
-SourceBlenderSearch *
+SearchIterator::UP
 SourceBlenderSearch::create(std::unique_ptr<sourceselector::Iterator> sourceSelector,
                             const Children &children, bool strict)
 {
     if (strict) {
-        return new SourceBlenderSearchStrict(std::move(sourceSelector), children);
+        return std::make_unique<SourceBlenderSearchStrict>(std::move(sourceSelector), children);
     } else {
-        return new SourceBlenderSearch(std::move(sourceSelector), children);
+        return std::make_unique<SourceBlenderSearchNonStrict>(std::move(sourceSelector), children);
     }
 }
 
-
-} // namespace queryeval
-} // namespace search
+}
 
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
            const search::queryeval::SourceBlenderSearch::Child &obj)

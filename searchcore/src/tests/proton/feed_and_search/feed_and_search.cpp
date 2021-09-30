@@ -4,7 +4,8 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchlib/common/documentsummary.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
@@ -29,6 +30,7 @@ using document::DataType;
 using document::Document;
 using document::FieldValue;
 using search::DocumentIdT;
+using search::FlushToken;
 using search::TuneFileIndexing;
 using search::TuneFileSearch;
 using search::diskindex::DiskIndex;
@@ -143,15 +145,17 @@ void Test::testSearch(Searchable &source,
     EXPECT_TRUE(search_iterator->isAtEnd());
 }
 
+VESPA_THREAD_STACK_TAG(invert_executor)
+VESPA_THREAD_STACK_TAG(write_executor)
 // Creates a memory index, inserts documents, performs a few
 // searches, dumps the index to disk, and performs the searches
 // again.
 void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     Schema schema = getSchema();
     vespalib::ThreadStackExecutor sharedExecutor(2, 0x10000);
-    search::SequencedTaskExecutor indexFieldInverter(2);
-    search::SequencedTaskExecutor indexFieldWriter(2);
-    MemoryIndex memory_index(schema, MockFieldLengthInspector(), indexFieldInverter, indexFieldWriter);
+    auto indexFieldInverter = vespalib::SequencedTaskExecutor::create(invert_executor, 2);
+    auto indexFieldWriter = vespalib::SequencedTaskExecutor::create(write_executor, 2);
+    MemoryIndex memory_index(schema, MockFieldLengthInspector(), *indexFieldInverter, *indexFieldWriter);
     DocBuilder doc_builder(schema);
 
     Document::UP doc = buildDocument(doc_builder, doc_id1, word1);
@@ -159,8 +163,8 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
 
     doc = buildDocument(doc_builder, doc_id2, word2);
     memory_index.insertDocument(doc_id2, *doc.get());
-    memory_index.commit(std::shared_ptr<search::IDestructorCallback>());
-    indexFieldWriter.sync();
+    memory_index.commit(std::shared_ptr<vespalib::IDestructorCallback>());
+    indexFieldWriter->sync();
 
     testSearch(memory_index, word1, doc_id1);
     testSearch(memory_index, word2, doc_id2);
@@ -192,7 +196,8 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
                               false /* dynamicKPosOccFormat */,
                               tuneFileIndexing,
                               fileHeaderContext,
-                              sharedExecutor);
+                              sharedExecutor,
+                              std::make_shared<FlushToken>());
     ASSERT_TRUE(fret2);
 
     // Fusion test with all docs removed in output (doesn't affect word list)
@@ -210,7 +215,8 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
                               false /* dynamicKPosOccFormat */,
                               tuneFileIndexing,
                               fileHeaderContext,
-                              sharedExecutor);
+                              sharedExecutor,
+                              std::make_shared<FlushToken>());
     ASSERT_TRUE(fret4);
 
     // Fusion test with all docs removed in input (affects word list)
@@ -228,7 +234,8 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
                               false /* dynamicKPosOccFormat */,
                               tuneFileIndexing,
                               fileHeaderContext,
-                              sharedExecutor);
+                              sharedExecutor,
+                              std::make_shared<FlushToken>());
     ASSERT_TRUE(fret6);
 
     DiskIndex disk_index(index_dir);

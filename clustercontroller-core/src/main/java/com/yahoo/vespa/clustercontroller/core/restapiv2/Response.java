@@ -1,12 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
-import com.yahoo.vdslib.state.DiskState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InternalFailure;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
-import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.*;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.CurrentUnitState;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.DistributionState;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.DistributionStates;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SubUnitList;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitAttributes;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitMetrics;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitResponse;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -24,10 +30,6 @@ public class Response {
         public UnitStateImpl(NodeState ns) throws StateRestApiException {
             this.id = parseId(ns.getState());
             this.reason = ns.getDescription();
-        }
-        public UnitStateImpl(DiskState ds) throws StateRestApiException {
-            this.id = parseId(ds.getState());
-            this.reason = ds.getDescription();
         }
 
         public String parseId(State id) throws StateRestApiException {

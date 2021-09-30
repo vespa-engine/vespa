@@ -45,8 +45,6 @@ vespalib::string doc1("id:test:music::1");
 vespalib::string doc2("id:test:music::2");
 vespalib::string doc3("id:test:music::3");
 
-constexpr size_t DEAD_BYTES_SLACK = 0x10000u;
-
 }
 
 struct MyGidToLidMapperFactory : public search::attribute::test::MockGidToLidMapperFactory {
@@ -178,7 +176,7 @@ struct ReferenceAttributeTest : public ::testing::Test {
         search::attribute::Status newStatus = oldStatus;
         uint64_t iter = 0;
         AttributeGuard guard(_attr);
-        uint64_t dropCount = DEAD_BYTES_SLACK / sizeof(Reference);
+        uint64_t dropCount = search::CompactionStrategy::DEAD_BYTES_SLACK / sizeof(Reference);
         for (; iter < iterLimit; ++iter) {
             clear(2);
             set(2, toGid(doc2));
@@ -254,6 +252,18 @@ TEST_F(ReferenceAttributeTest, reference_for_a_document_can_be_cleared)
     clear(2);
     commit();
     assertNoRef(2);
+}
+
+TEST_F(ReferenceAttributeTest, lid_beyond_range_is_mapped_to_zero)
+{
+    auto factory = std::make_shared<MyGidToLidMapperFactory>();
+    setGidToLidMapperFactory(factory);
+    ensureDocIdLimit(5);
+    _attr->addDocs(1);
+    set(5, toGid(doc2));
+    EXPECT_EQ(0, _attr->getTargetLid(5));
+    _attr->commit();
+    EXPECT_EQ(17, _attr->getTargetLid(5));
 }
 
 TEST_F(ReferenceAttributeTest, read_guard_protects_references)
@@ -464,7 +474,7 @@ struct ReferenceAttributeSearchTest : public ReferenceAttributeTest {
     }
 
     void expect_search_result(const std::string& term, const FakeResult& expected) {
-        auto ctx = _attr->getSearch(std::make_unique<QueryTermSimple>(term, QueryTermSimple::WORD),
+        auto ctx = _attr->getSearch(std::make_unique<QueryTermSimple>(term, QueryTermSimple::Type::WORD),
                                     SearchContextParams());
         TermFieldMatchData tfmd;
         auto itr = ctx->createIterator(&tfmd, false);

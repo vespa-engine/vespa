@@ -2,8 +2,7 @@
 
 #pragma once
 
-namespace proton
-{
+namespace proton {
 
 class IBucketStateChangedHandler;
 
@@ -13,14 +12,10 @@ class IBucketStateChangedHandler;
 class IBucketStateChangedNotifier
 {
 public:
-    virtual void
-    addBucketStateChangedHandler(IBucketStateChangedHandler *handler) = 0;
-
-    virtual void
-    removeBucketStateChangedHandler(IBucketStateChangedHandler *handler) = 0;
+    virtual void addBucketStateChangedHandler(IBucketStateChangedHandler *handler) = 0;
+    virtual void removeBucketStateChangedHandler(IBucketStateChangedHandler *handler) = 0;
     
-    virtual ~IBucketStateChangedNotifier() {}
+    virtual ~IBucketStateChangedNotifier() = default;
 };
 
-
-} // namespace proton
+}

@@ -19,6 +19,7 @@ namespace queryeval {
 
 namespace {
 
+#ifdef __x86_64__
 class SkipMinFeatureSSE2 : public SkipMinFeature
 {
 public:
@@ -83,13 +84,49 @@ SkipMinFeatureSSE2::next()
         return -1;
     }
 }
+#else
+class SkipMinFeatureGeneric : public SkipMinFeature
+{
+    const uint8_t* _min_feature;
+    const uint8_t* _kv;
+    const uint32_t _sz;
+    uint32_t       _cur;
+public:
+    SkipMinFeatureGeneric(const uint8_t* min_feature, const uint8_t* kv, size_t sz);
+    uint32_t next() override;
+};
+
+SkipMinFeatureGeneric::SkipMinFeatureGeneric(const uint8_t* min_feature, const uint8_t* kv, size_t sz)
+    : _min_feature(min_feature),
+      _kv(kv),
+      _sz(sz),
+      _cur(0)
+{
+}
+
+uint32_t
+SkipMinFeatureGeneric::next()
+{
+    while (_cur < _sz) {
+        if (_kv[_cur] >= _min_feature[_cur]) {
+            return _cur++;
+        }
+        ++_cur;
+    }
+    return -1;
+}
+#endif
 
 }
 
 SkipMinFeature::UP
 SkipMinFeature::create(const uint8_t * min_feature, const uint8_t * kv, size_t sz)
 {
-    return UP(new SkipMinFeatureSSE2(min_feature, kv, sz));
+#ifdef __x86_64__
+    return std::make_unique<SkipMinFeatureSSE2>(min_feature, kv, sz);
+#else
+    return std::make_unique<SkipMinFeatureGeneric>(min_feature, kv, sz);
+#endif
 }
 
 PredicateSearch::PredicateSearch(const uint8_t * minFeatureVector,

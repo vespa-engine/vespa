@@ -9,6 +9,8 @@
 #include <vespa/metrics/valuemetric.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 
+namespace metrics { class MetricLockGuard; }
+
 namespace proton {
 
 /**
@@ -84,8 +86,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     {
         struct ResourceUsageMetrics : metrics::MetricSet
         {
-            metrics::DoubleValueMetric enumStore;
-            metrics::DoubleValueMetric multiValue;
+            metrics::DoubleValueMetric address_space;
             metrics::LongValueMetric   feedingBlocked;
 
             ResourceUsageMetrics(metrics::MetricSet *parent);
@@ -154,7 +155,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
                                size_t numDocIdPartitions,
                                metrics::MetricSet *parent);
             ~RankProfileMetrics() override;
-            void update(const matching::MatchingStats &stats);
+            void update(const metrics::MetricLockGuard & guard, const matching::MatchingStats &stats);
 
         };
         using  RankProfileMap = std::map<vespalib::string, RankProfileMetrics::UP>;
@@ -183,6 +184,13 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         ~DocumentsMetrics() override;
     };
 
+    struct BucketMoveMetrics : metrics::MetricSet {
+        metrics::LongValueMetric bucketsPending;
+
+        BucketMoveMetrics(metrics::MetricSet *parent);
+        ~BucketMoveMetrics() override;
+    };
+
     JobMetrics job;
     AttributeMetrics attribute;
     IndexMetrics index;
@@ -193,8 +201,10 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     MatchingMetrics matching;
     SessionCacheMetrics sessionCache;
     DocumentsMetrics documents;
+    BucketMoveMetrics bucketMove;
     MemoryUsageMetrics totalMemoryUsage;
     metrics::LongValueMetric totalDiskUsage;
+    metrics::DoubleValueMetric heart_beat_age;
     size_t maxNumThreads;
 
     DocumentDBTaggedMetrics(const vespalib::string &docTypeName, size_t maxNumThreads_);

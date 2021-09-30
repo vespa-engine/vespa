@@ -2,14 +2,15 @@
 
 #pragma once
 
-#include "singlenumericenumattribute.h"
-#include <vespa/searchlib/common/sort.h>
-#include "singleenumattribute.hpp"
+#include "attributeiterators.hpp"
+#include "load_utils.h"
 #include "loadednumericvalue.h"
 #include "primitivereader.h"
-#include "attributeiterators.hpp"
-#include <vespa/searchlib/queryeval/emptysearch.h>
+#include "singleenumattribute.hpp"
+#include "singlenumericenumattribute.h"
+#include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/query/query_term_simple.h>
+#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/util/fileutil.hpp>
 
 namespace search {
@@ -23,7 +24,7 @@ SingleValueNumericEnumAttribute<B>::considerUpdateAttributeChange(const Change &
 
 template <typename B>
 void
-SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Change & c, UniqueSet & newUniques)
+SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter)
 {
     T oldValue;
     auto iter = _currDocValues.find(c._doc);
@@ -37,7 +38,9 @@ SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Chan
 
     EnumIndex idx;
     if (!this->_enumStore.find_index(newValue, idx)) {
-        newUniques.insert(newValue);
+        c._enumScratchPad = inserter.insert(newValue).ref();
+    } else {
+        c._enumScratchPad = idx.ref();
     }
 
     _currDocValues[c._doc] = newValue;
@@ -79,7 +82,7 @@ template <typename B>
 bool
 SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
 {
-    fileutil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
+    auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
 
     uint64_t numValues = attrReader.getEnumCount();
     uint32_t numDocs = numValues;
@@ -89,6 +92,7 @@ SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
     if (this->hasPostings()) {
         auto loader = this->getEnumStore().make_enumerated_postings_loader();
         loader.load_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        loader.build_enum_value_remapping();
         this->load_enumerated_data(attrReader, loader, numValues);
         if (numDocs > 0) {
             this->onAddDoc(numDocs - 1);
@@ -97,6 +101,7 @@ SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
     } else {
         auto loader = this->getEnumStore().make_enumerated_loader();
         loader.load_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        loader.build_enum_value_remapping();
         this->load_enumerated_data(attrReader, loader);
     }
     return true;
@@ -105,7 +110,7 @@ SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
 
 template <typename B>
 bool
-SingleValueNumericEnumAttribute<B>::onLoad()
+SingleValueNumericEnumAttribute<B>::onLoad(vespalib::Executor *)
 {
     PrimitiveReader<T> attrReader(*this);
     bool ok(attrReader.getHasLoadData());
@@ -155,9 +160,9 @@ SingleValueNumericEnumAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
     (void) params;
     QueryTermSimple::RangeResult<T> res = qTerm->getRange<T>();
     if (res.isEqual()) {
-        return AttributeVector::SearchContext::UP (new SingleSearchContext(std::move(qTerm), *this));
+        return std::make_unique<SingleSearchContext>(std::move(qTerm), *this);
     } else {
-        return AttributeVector::SearchContext::UP (new SingleSearchContext(std::move(qTerm), *this));
+        return std::make_unique<SingleSearchContext>(std::move(qTerm), *this);
     }
 }
 

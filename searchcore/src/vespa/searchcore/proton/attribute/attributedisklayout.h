@@ -8,6 +8,7 @@
 #include <shared_mutex>
 #include <map>
 #include <vector>
+#include <memory>
 
 namespace proton {
 
@@ -19,7 +20,7 @@ class AttributeDiskLayout : public std::enable_shared_from_this<AttributeDiskLay
 {
 private:
     const vespalib::string _baseDir;
-    mutable std::shared_timed_mutex _mutex;
+    mutable std::shared_mutex _mutex;
     std::map<vespalib::string, std::shared_ptr<AttributeDirectory>> _dirs;
 
     void scanDir();

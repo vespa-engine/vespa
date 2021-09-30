@@ -10,8 +10,10 @@
  */
 #pragma once
 
-#include "diskstate.h"
+#include "state.h"
 #include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/vespalib/objects/floatingpointtype.h>
+#include <memory>
 
 namespace storage::lib {
 
@@ -21,14 +23,9 @@ class NodeState : public document::Printable
     const State* _state;
     vespalib::string _description;
     vespalib::Double _capacity;
-    uint16_t _reliability;
     vespalib::Double _initProgress;
     uint32_t _minUsedBits;
-    std::vector<DiskState> _diskStates;
-    bool _anyDiskDown;
     uint64_t _startTimestamp;
-
-    void updateAnyDiskDownFlag();
 
 public:
     typedef std::shared_ptr<const NodeState> CSP;
@@ -44,7 +41,7 @@ public:
     NodeState & operator = (NodeState &&) noexcept;
     NodeState(const NodeType& nodeType, const State&,
               vespalib::stringref description = "",
-              double capacity = 1.0, uint16_t reliability = 1);
+              double capacity = 1.0);
     /** Set type if you want to verify that content fit with the given type. */
     NodeState(vespalib::stringref serialized, const NodeType* nodeType = 0);
     ~NodeState();
@@ -55,32 +52,21 @@ public:
      * recreate the nodestate with NodeState(string) function.
      */
     void serialize(vespalib::asciistream & out, vespalib::stringref prefix = "",
-                   bool includeDescription = true,
-                   bool includeDiskDescription = false,
-                   bool useOldFormat = false) const;
+                   bool includeDescription = true) const;
 
     const State& getState() const { return *_state; }
     vespalib::Double getCapacity() const { return _capacity; }
     uint32_t getMinUsedBits() const { return _minUsedBits; }
-    uint16_t getReliability() const { return _reliability; }
     vespalib::Double getInitProgress() const { return _initProgress; }
     const vespalib::string& getDescription() const { return _description; }
     uint64_t getStartTimestamp() const { return _startTimestamp; }
 
-    bool isAnyDiskDown() const { return _anyDiskDown; }
-    uint16_t getDiskCount() const { return _diskStates.size(); }
-    const DiskState& getDiskState(uint16_t index) const;
-
     void setState(const State& state);
     void setCapacity(vespalib::Double capacity);
     void setMinUsedBits(uint32_t usedBits);
-    void setReliability(uint16_t reliability);
     void setInitProgress(vespalib::Double initProgress);
     void setStartTimestamp(uint64_t startTimestamp);
     void setDescription(vespalib::stringref desc) { _description = desc; }
-
-    void setDiskCount(uint16_t count);
-    void setDiskState(uint16_t index, const DiskState&);
 
     void print(std::ostream& out, bool verbose,
                const std::string& indent) const override;

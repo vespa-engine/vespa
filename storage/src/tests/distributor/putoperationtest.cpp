@@ -1,16 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/operations/external/putoperation.h>
-#include <vespa/storage/distributor/distributor.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
-#include <tests/distributor/distributortestutil.h>
-#include <tests/common/dummystoragelink.h>
-#include <vespa/document/test/make_document_bucket.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 
 using std::shared_ptr;
 using config::ConfigGetter;
@@ -29,7 +30,7 @@ using namespace ::testing;
 namespace storage::distributor {
 
 class PutOperationTest : public Test,
-                         public DistributorTestUtil
+                         public DistributorStripeTestUtil
 {
 public:
     document::TestDocMan _testDocMan;
@@ -65,18 +66,18 @@ public:
 
         std::shared_ptr<api::StorageCommand> msg =  _sender.command(idx);
         api::StorageReply::SP reply(msg->makeReply().release());
-        dynamic_cast<api::BucketInfoReply*>(reply.get())->setBucketInfo(info);
+        dynamic_cast<api::BucketInfoReply&>(*reply).setBucketInfo(info);
         reply->setResult(result);
 
         op->receive(_sender, reply);
     }
 
     void sendPut(std::shared_ptr<api::PutCommand> msg) {
-        op.reset(new PutOperation(getExternalOperationHandler(),
-                                  getDistributorBucketSpace(),
-                                  msg,
-                                  getDistributor().getMetrics().
-                                  puts[msg->getLoadType()]));
+        op = std::make_unique<PutOperation>(node_context(),
+                                            operation_context(),
+                                            getDistributorBucketSpace(),
+                                            msg,
+                                            metrics().puts);
         op->start(_sender, framework::MilliSecTime(0));
     }
 
@@ -88,9 +89,11 @@ public:
         return std::make_shared<Document>(doc_type(), DocumentId(vespalib::make_string("id:%s:testdoctype1::%s", ns, id)));
     }
 
-    std::shared_ptr<api::PutCommand> createPut(Document::SP doc) const {
+    static std::shared_ptr<api::PutCommand> createPut(Document::SP doc) {
         return std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(0)), std::move(doc), 100);
     }
+
+    void set_up_3_nodes_and_send_put_with_create_bucket_acks();
 };
 
 PutOperationTest::~PutOperationTest() = default;
@@ -99,7 +102,7 @@ document::BucketId
 PutOperationTest::createAndSendSampleDocument(vespalib::duration timeout) {
     auto doc = std::make_shared<Document>(doc_type(), DocumentId("id:test:testdoctype1::"));
 
-    document::BucketId id = getExternalOperationHandler().getBucketId(doc->getId());
+    document::BucketId id = operation_context().make_split_bit_constrained_bucket_id(doc->getId());
     addIdealNodes(id);
 
     auto msg = std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(0)), doc, 0);
@@ -122,7 +125,7 @@ using RequirePrimaryWritten = bool;
 const vespalib::duration TIMEOUT = 180ms;
 
 TEST_F(PutOperationTest, simple) {
-    setupDistributor(1, 1, "storage:1 distributor:1");
+    setup_stripe(1, 1, "storage:1 distributor:1");
     createAndSendSampleDocument(TIMEOUT);
 
     ASSERT_EQ("Put(BucketId(0x4000000000001dd4), "
@@ -137,7 +140,7 @@ TEST_F(PutOperationTest, simple) {
 }
 
 TEST_F(PutOperationTest, bucket_database_gets_special_entry_when_CreateBucket_sent) {
-    setupDistributor(2, 1, "storage:1 distributor:1");
+    setup_stripe(2, 1, "storage:1 distributor:1");
 
     Document::SP doc(createDummyDocument("test", "test"));
     sendPut(createPut(doc));
@@ -145,15 +148,17 @@ TEST_F(PutOperationTest, bucket_database_gets_special_entry_when_CreateBucket_se
     // Database updated before CreateBucket is sent
     ASSERT_EQ("BucketId(0x4000000000008f09) : "
               "node(idx=0,crc=0x1,docs=0/0,bytes=0/0,trusted=true,active=true,ready=false)",
-              dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
+              dumpBucket(operation_context().make_split_bit_constrained_bucket_id(doc->getId())));
 
     ASSERT_EQ("Create bucket => 0,Put => 0", _sender.getCommands(true));
 }
 
 TEST_F(PutOperationTest, send_inline_split_before_put_if_bucket_too_large) {
-    setupDistributor(1, 1, "storage:1 distributor:1");
-    getConfig().setSplitCount(1024);
-    getConfig().setSplitSize(1000000);
+    setup_stripe(1, 1, "storage:1 distributor:1");
+    auto cfg = make_config();
+    cfg->setSplitCount(1024);
+    cfg->setSplitSize(1000000);
+    configure_stripe(cfg);
 
     addNodesToBucketDB(document::BucketId(0x4000000000000593), "0=10000/10000/10000/t");
 
@@ -169,9 +174,11 @@ TEST_F(PutOperationTest, send_inline_split_before_put_if_bucket_too_large) {
 }
 
 TEST_F(PutOperationTest, do_not_send_inline_split_if_not_configured) {
-    setupDistributor(1, 1, "storage:1 distributor:1");
-    getConfig().setSplitCount(1024);
-    getConfig().setDoInlineSplit(false);
+    setup_stripe(1, 1, "storage:1 distributor:1");
+    auto cfg = make_config();
+    cfg->setSplitCount(1024);
+    cfg->setDoInlineSplit(false);
+    configure_stripe(cfg);
 
     addNodesToBucketDB(document::BucketId(0x4000000000000593), "0=10000/10000/10000/t");
 
@@ -182,8 +189,8 @@ TEST_F(PutOperationTest, do_not_send_inline_split_if_not_configured) {
               _sender.getCommands(true, true));
 }
 
-TEST_F(PutOperationTest, node_removed_on_reply) {
-    setupDistributor(2, 2, "storage:2 distributor:1");
+TEST_F(PutOperationTest, return_success_if_op_acked_on_all_replicas_even_if_bucket_concurrently_removed_from_db) {
+    setup_stripe(2, 2, "storage:2 distributor:1");
     createAndSendSampleDocument(TIMEOUT);
 
     ASSERT_EQ("Put(BucketId(0x4000000000001dd4), "
@@ -192,21 +199,26 @@ TEST_F(PutOperationTest, node_removed_on_reply) {
               "id:test:testdoctype1::, timestamp 100, size 45) => 1",
               _sender.getCommands(true, true));
 
-    getExternalOperationHandler().removeNodeFromDB(makeDocumentBucket(document::BucketId(16, 0x1dd4)), 0);
+    operation_context().remove_node_from_bucket_database(makeDocumentBucket(document::BucketId(16, 0x1dd4)), 0);
 
+    // If we get an ACK from the backend nodes, the operation has been persisted OK.
+    // Even if the bucket has been removed from the DB in the meantime (usually would
+    // happen due to ownership changes) there is no reason for us to trigger a client
+    // resend in this scenario.
+    // If a node goes down (as opposed to distributor ownership transfer) and therefore
+    // has its replicas removed from the DB, this by definition has happened-after
+    // the ACK was sent from the node, so returning OK here still maintains the
+    // backend persistence property.
     sendReply(0);
     sendReply(1);
 
     ASSERT_EQ("PutReply(id:test:testdoctype1::, BucketId(0x0000000000000000), "
-              "timestamp 100) ReturnCode(BUCKET_DELETED, "
-              "Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000001dd4)) was deleted from nodes [0] "
-              "after message was sent but before it was done. "
-              "Sent to [0,1])",
+              "timestamp 100) ReturnCode(NONE)",
               _sender.getLastReply());
 }
 
 TEST_F(PutOperationTest, storage_failed) {
-    setupDistributor(2, 1, "storage:1 distributor:1");
+    setup_stripe(2, 1, "storage:1 distributor:1");
 
     createAndSendSampleDocument(TIMEOUT);
 
@@ -218,7 +230,7 @@ TEST_F(PutOperationTest, storage_failed) {
 }
 
 TEST_F(PutOperationTest, multiple_copies) {
-    setupDistributor(3, 4, "storage:4 distributor:1");
+    setup_stripe(3, 4, "storage:4 distributor:1");
 
     Document::SP doc(createDummyDocument("test", "test"));
     sendPut(createPut(doc));
@@ -239,11 +251,11 @@ TEST_F(PutOperationTest, multiple_copies) {
               "node(idx=3,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
               "node(idx=2,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
               "node(idx=1,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)",
-              dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
+              dumpBucket(operation_context().make_split_bit_constrained_bucket_id(doc->getId())));
 }
 
 TEST_F(PutOperationTest, multiple_copies_early_return_primary_required) {
-    setupDistributor(3, 4, "storage:4 distributor:1", 2, true);
+    setup_stripe(3, 4, "storage:4 distributor:1", 2, true);
 
     sendPut(createPut(createDummyDocument("test", "test")));
 
@@ -266,7 +278,7 @@ TEST_F(PutOperationTest, multiple_copies_early_return_primary_required) {
 }
 
 TEST_F(PutOperationTest, multiple_copies_early_return_primary_not_required) {
-    setupDistributor(3, 4, "storage:4 distributor:1", 2, false);
+    setup_stripe(3, 4, "storage:4 distributor:1", 2, false);
 
     sendPut(createPut(createDummyDocument("test", "test")));
 
@@ -288,7 +300,7 @@ TEST_F(PutOperationTest, multiple_copies_early_return_primary_not_required) {
 }
 
 TEST_F(PutOperationTest, multiple_copies_early_return_primary_required_not_done) {
-    setupDistributor(3, 4, "storage:4 distributor:1", 2, true);
+    setup_stripe(3, 4, "storage:4 distributor:1", 2, true);
 
     sendPut(createPut(createDummyDocument("test", "test")));
 
@@ -306,7 +318,7 @@ TEST_F(PutOperationTest, multiple_copies_early_return_primary_required_not_done)
 }
 
 TEST_F(PutOperationTest, do_not_revert_on_failure_after_early_return) {
-    setupDistributor(Redundancy(3),NodeCount(4), "storage:4 distributor:1",
+    setup_stripe(Redundancy(3),NodeCount(4), "storage:4 distributor:1",
                      ReturnAfter(2), RequirePrimaryWritten(false));
 
     sendPut(createPut(createDummyDocument("test", "test")));
@@ -334,7 +346,7 @@ TEST_F(PutOperationTest, do_not_revert_on_failure_after_early_return) {
 }
 
 TEST_F(PutOperationTest, revert_successful_copies_when_one_fails) {
-    setupDistributor(3, 4, "storage:4 distributor:1");
+    setup_stripe(3, 4, "storage:4 distributor:1");
 
     createAndSendSampleDocument(TIMEOUT);
 
@@ -359,7 +371,7 @@ TEST_F(PutOperationTest, no_revert_if_revert_disabled) {
     getDirConfig().getConfig("stor-distributormanager")
                   .set("enable_revert", "false");
     SetUp();
-    setupDistributor(3, 4, "storage:4 distributor:1");
+    setup_stripe(3, 4, "storage:4 distributor:1");
 
     createAndSendSampleDocument(TIMEOUT);
 
@@ -380,7 +392,7 @@ TEST_F(PutOperationTest, no_revert_if_revert_disabled) {
 }
 
 TEST_F(PutOperationTest, do_not_send_CreateBucket_if_already_pending) {
-    setupDistributor(2, 2, "storage:2 distributor:1");
+    setup_stripe(2, 2, "storage:2 distributor:1");
 
     Document::SP doc(createDummyDocument("test", "uri"));
     sendPut(createPut(doc));
@@ -392,7 +404,7 @@ TEST_F(PutOperationTest, do_not_send_CreateBucket_if_already_pending) {
     // Manually shove sent messages into pending message tracker, since
     // this isn't done automatically.
     for (size_t i = 0; i < _sender.commands().size(); ++i) {
-        getExternalOperationHandler().getDistributor().getPendingMessageTracker()
+        operation_context().pending_message_tracker()
             .insert(_sender.command(i));
     }
 
@@ -405,7 +417,7 @@ TEST_F(PutOperationTest, do_not_send_CreateBucket_if_already_pending) {
 }
 
 TEST_F(PutOperationTest, no_storage_nodes) {
-    setupDistributor(2, 1, "storage:0 distributor:1");
+    setup_stripe(2, 1, "storage:0 distributor:1");
     createAndSendSampleDocument(TIMEOUT);
     ASSERT_EQ("PutReply(id:test:testdoctype1::, BucketId(0x0000000000000000), "
               "timestamp 100) ReturnCode(NOT_CONNECTED, "
@@ -414,7 +426,7 @@ TEST_F(PutOperationTest, no_storage_nodes) {
 }
 
 TEST_F(PutOperationTest, update_correct_bucket_on_remapped_put) {
-    setupDistributor(2, 2, "storage:2 distributor:1");
+    setup_stripe(2, 2, "storage:2 distributor:1");
 
     auto doc = std::make_shared<Document>(doc_type(), DocumentId("id:test:testdoctype1:n=13:uri"));
     addNodesToBucketDB(document::BucketId(16,13), "0=0,1=0");
@@ -467,7 +479,7 @@ parseBucketInfoString(const std::string& nodeList) {
 std::string
 PutOperationTest::getNodes(const std::string& infoString) {
     Document::SP doc(createDummyDocument("test", "uri"));
-    document::BucketId bid(getExternalOperationHandler().getBucketId(doc->getId()));
+    document::BucketId bid(operation_context().make_split_bit_constrained_bucket_id(doc->getId()));
 
     BucketInfo entry = parseBucketInfoString(infoString);
 
@@ -475,7 +487,7 @@ PutOperationTest::getNodes(const std::string& infoString) {
 
     std::vector<uint16_t> targetNodes;
     std::vector<uint16_t> createNodes;
-    PutOperation::getTargetNodes(getExternalOperationHandler().getIdealNodes(makeDocumentBucket(bid)),
+    PutOperation::getTargetNodes(getDistributorBucketSpace().get_ideal_service_layer_nodes_bundle(bid).get_available_nodes(),
                                  targetNodes, createNodes, entry, 2);
 
     ost << "target( ";
@@ -492,7 +504,7 @@ PutOperationTest::getNodes(const std::string& infoString) {
 }
 
 TEST_F(PutOperationTest, target_nodes) {
-    setupDistributor(2, 6, "storage:6 distributor:1");
+    setup_stripe(2, 6, "storage:6 distributor:1");
 
     // Ideal state of bucket is 1,2.
     ASSERT_EQ("target( 1 2 ) create( 1 2 )", getNodes(""));
@@ -506,10 +518,10 @@ TEST_F(PutOperationTest, target_nodes) {
 }
 
 TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_active_state) {
-    setupDistributor(Redundancy(3), NodeCount(3), "distributor:1 storage:3");
+    setup_stripe(Redundancy(3), NodeCount(3), "distributor:1 storage:3");
 
     Document::SP doc(createDummyDocument("test", "uri"));
-    document::BucketId bId = getExternalOperationHandler().getBucketId(doc->getId());
+    document::BucketId bId = operation_context().make_split_bit_constrained_bucket_id(doc->getId());
 
     addNodesToBucketDB(bId, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
 
@@ -517,7 +529,7 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_active_
 
     ASSERT_EQ("Put => 1,Put => 2,Put => 0", _sender.getCommands(true));
 
-    enableDistributorClusterState("distributor:1 storage:3 .1.s:d .2.s:m");
+    enable_cluster_state("distributor:1 storage:3 .1.s:d .2.s:m");
     addNodesToBucketDB(bId, "0=1/2/3/t"); // This will actually remove node #1.
 
     sendReply(0, api::ReturnCode::OK, api::BucketInfo(9, 9, 9));
@@ -526,14 +538,14 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_active_
 
     ASSERT_EQ("BucketId(0x4000000000000593) : "
               "node(idx=0,crc=0x7,docs=8/8,bytes=9/9,trusted=true,active=false,ready=false)",
-              dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
+              dumpBucket(operation_context().make_split_bit_constrained_bucket_id(doc->getId())));
 }
 
 TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_pending_state) {
-    setupDistributor(Redundancy(3), NodeCount(4), "version:1 distributor:1 storage:3");
+    setup_stripe(Redundancy(3), NodeCount(4), "version:1 distributor:1 storage:3");
 
     auto doc = createDummyDocument("test", "uri");
-    auto bucket = getExternalOperationHandler().getBucketId(doc->getId());
+    auto bucket = operation_context().make_split_bit_constrained_bucket_id(doc->getId());
     addNodesToBucketDB(bucket, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
     sendPut(createPut(doc));
 
@@ -549,9 +561,7 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_pending
     // fetch here; if we just set a node down the cluster state would be immediately applied
     // and the distributor's "clear pending messages for downed nodes" logic would kick in
     // and hide the problem.
-    getBucketDBUpdater().onSetSystemState(
-            std::make_shared<api::SetSystemStateCommand>(
-                    lib::ClusterState("version:2 distributor:1 storage:4 .0.s:d .2.s:m")));
+    simulate_set_pending_cluster_state("version:2 distributor:1 storage:4 .0.s:d .2.s:m");
 
     sendReply(0, api::ReturnCode::OK, api::BucketInfo(5, 6, 7));
     sendReply(1, api::ReturnCode::OK, api::BucketInfo(6, 7, 8));
@@ -565,13 +575,11 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_pending
 // TODO probably also do this for updates and removes
 // TODO consider if we should use the pending state verbatim for computing targets if it exists
 TEST_F(PutOperationTest, put_is_failed_with_busy_if_target_down_in_pending_state) {
-    setupDistributor(Redundancy(3), NodeCount(4), "version:1 distributor:1 storage:3");
+    setup_stripe(Redundancy(3), NodeCount(4), "version:1 distributor:1 storage:3");
     auto doc = createDummyDocument("test", "test");
-    auto bucket = getExternalOperationHandler().getBucketId(doc->getId());
+    auto bucket = operation_context().make_split_bit_constrained_bucket_id(doc->getId());
     addNodesToBucketDB(bucket, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
-    getBucketDBUpdater().onSetSystemState(
-            std::make_shared<api::SetSystemStateCommand>(
-                    lib::ClusterState("version:2 distributor:1 storage:4 .0.s:d .2.s:m")));
+    simulate_set_pending_cluster_state("version:2 distributor:1 storage:4 .0.s:d .2.s:m");
     _sender.clear();
 
     sendPut(createPut(doc));
@@ -583,11 +591,11 @@ TEST_F(PutOperationTest, put_is_failed_with_busy_if_target_down_in_pending_state
 }
 
 TEST_F(PutOperationTest, send_to_retired_nodes_if_no_up_nodes_available) {
-    setupDistributor(Redundancy(2), NodeCount(2),
+    setup_stripe(Redundancy(2), NodeCount(2),
                      "distributor:1 storage:2 .0.s:r .1.s:r");
     Document::SP doc(createDummyDocument("test", "uri"));
     document::BucketId bucket(
-            getExternalOperationHandler().getBucketId(doc->getId()));
+            operation_context().make_split_bit_constrained_bucket_id(doc->getId()));
     addNodesToBucketDB(bucket, "0=1/2/3/t,1=1/2/3/t");
 
     sendPut(createPut(doc));
@@ -596,7 +604,7 @@ TEST_F(PutOperationTest, send_to_retired_nodes_if_no_up_nodes_available) {
 }
 
 void PutOperationTest::do_test_creation_with_bucket_activation_disabled(bool disabled) {
-    setupDistributor(Redundancy(2), NodeCount(2), "distributor:1 storage:1");
+    setup_stripe(Redundancy(2), NodeCount(2), "distributor:1 storage:1");
     disableBucketActivationInConfig(disabled);
 
     Document::SP doc(createDummyDocument("test", "uri"));
@@ -617,6 +625,62 @@ TEST_F(PutOperationTest, replica_implicitly_activated_when_activation_is_not_dis
 
 TEST_F(PutOperationTest, replica_not_implicitly_activated_when_activation_is_disabled) {
     do_test_creation_with_bucket_activation_disabled(true);
+}
+
+void PutOperationTest::set_up_3_nodes_and_send_put_with_create_bucket_acks() {
+    setup_stripe(3, 3, "storage:3 distributor:1");
+
+    Document::SP doc(createDummyDocument("test", "test"));
+    sendPut(createPut(doc));
+
+    // Include CreateBucket to ensure we don't count it towards Put ACK majorities
+    ASSERT_EQ("Create bucket => 2,Create bucket => 1,Create bucket => 0,"
+              "Put => 2,Put => 1,Put => 0",
+              _sender.getCommands(true));
+
+    // ACK all CreateBuckets
+    for (uint32_t i = 0;  i < 3; ++i) {
+        sendReply(i);
+    }
+}
+
+TEST_F(PutOperationTest, majority_ack_with_minority_tas_failure_returns_success) {
+    ASSERT_NO_FATAL_FAILURE(set_up_3_nodes_and_send_put_with_create_bucket_acks());
+    // Majority ACK, minority NACK
+    sendReply(3);
+    sendReply(4, api::ReturnCode::TEST_AND_SET_CONDITION_FAILED);
+    sendReply(5);
+
+    ASSERT_EQ("PutReply(id:test:testdoctype1::test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(NONE)",
+              _sender.getLastReply());
+}
+
+TEST_F(PutOperationTest, minority_ack_with_majority_tas_failure_returns_tas_failure) {
+    ASSERT_NO_FATAL_FAILURE(set_up_3_nodes_and_send_put_with_create_bucket_acks());
+    // Minority ACK, majority NACK
+    sendReply(3);
+    sendReply(4, api::ReturnCode::TEST_AND_SET_CONDITION_FAILED);
+    sendReply(5, api::ReturnCode::TEST_AND_SET_CONDITION_FAILED);
+
+    ASSERT_EQ("PutReply(id:test:testdoctype1::test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(TEST_AND_SET_CONDITION_FAILED)",
+              _sender.getLastReply());
+}
+
+TEST_F(PutOperationTest, minority_failure_override_not_in_effect_for_non_tas_errors) {
+    ASSERT_NO_FATAL_FAILURE(set_up_3_nodes_and_send_put_with_create_bucket_acks());
+    // Minority ACK, majority NACK. But non-TaS failure.
+    sendReply(3);
+    sendReply(4, api::ReturnCode::ABORTED);
+    sendReply(5);
+
+    ASSERT_EQ("PutReply(id:test:testdoctype1::test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(ABORTED)",
+              _sender.getLastReply());
 }
 
 }

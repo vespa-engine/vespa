@@ -2,7 +2,6 @@
 package com.yahoo.search.query.profile.types;
 
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.yql.YqlQuery;
 
 /**
@@ -32,7 +31,7 @@ public class QueryFieldType extends FieldType {
     }
 
     @Override
-    public Object convertFrom(Object o, CompiledQueryProfileRegistry registry) {
+    public Object convertFrom(Object o, ConversionContext context) {
         return convertFrom(o, (QueryProfileRegistry)null);
     }
 

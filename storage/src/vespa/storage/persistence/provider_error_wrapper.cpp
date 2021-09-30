@@ -2,6 +2,7 @@
 
 #include "provider_error_wrapper.h"
 #include "persistenceutil.h"
+#include <vespa/vespalib/util/idestructorcallback.h>
 
 namespace storage {
 
@@ -9,12 +10,17 @@ template <typename ResultType>
 ResultType
 ProviderErrorWrapper::checkResult(ResultType&& result) const
 {
+    handle(result);
+    return std::forward<ResultType>(result);
+}
+
+void
+ProviderErrorWrapper::handle(const spi::Result & result) const {
     if (result.getErrorCode() == spi::Result::ErrorType::FATAL_ERROR) {
         trigger_shutdown_listeners(result.getErrorMessage());
     } else if (result.getErrorCode() == spi::Result::ErrorType::RESOURCE_EXHAUSTED) {
         trigger_resource_exhaustion_listeners(result.getErrorMessage());
     }
-    return std::forward<ResultType>(result);
 }
 
 void ProviderErrorWrapper::trigger_shutdown_listeners(vespalib::stringref reason) const {
@@ -42,16 +48,10 @@ ProviderErrorWrapper::initialize()
     return checkResult(_impl.initialize());
 }
 
-spi::PartitionStateListResult
-ProviderErrorWrapper::getPartitionStates() const
-{
-    return checkResult(_impl.getPartitionStates());
-}
-
 spi::BucketIdListResult
-ProviderErrorWrapper::listBuckets(BucketSpace bucketSpace, spi::PartitionId partitionId) const
+ProviderErrorWrapper::listBuckets(BucketSpace bucketSpace) const
 {
-    return checkResult(_impl.listBuckets(bucketSpace, partitionId));
+    return checkResult(_impl.listBuckets(bucketSpace));
 }
 
 spi::Result
@@ -61,8 +61,7 @@ ProviderErrorWrapper::setClusterState(BucketSpace bucketSpace, const spi::Cluste
 }
 
 spi::Result
-ProviderErrorWrapper::setActiveState(const spi::Bucket& bucket,
-                                        spi::BucketInfo::ActiveState newState)
+ProviderErrorWrapper::setActiveState(const spi::Bucket& bucket, spi::BucketInfo::ActiveState newState)
 {
     return checkResult(_impl.setActiveState(bucket, newState));
 }
@@ -74,91 +73,65 @@ ProviderErrorWrapper::getBucketInfo(const spi::Bucket& bucket) const
 }
 
 spi::Result
-ProviderErrorWrapper::put(const spi::Bucket& bucket,
-                             spi::Timestamp ts,
-                             const spi::DocumentSP& doc,
-                             spi::Context& context)
+ProviderErrorWrapper::put(const spi::Bucket& bucket, spi::Timestamp ts, spi::DocumentSP doc, spi::Context& context)
 {
-    return checkResult(_impl.put(bucket, ts, doc, context));
+    return checkResult(_impl.put(bucket, ts, std::move(doc), context));
 }
 
 spi::RemoveResult
-ProviderErrorWrapper::remove(const spi::Bucket& bucket,
-                                spi::Timestamp ts,
-                                const document::DocumentId& docId,
-                                spi::Context& context)
+ProviderErrorWrapper::remove(const spi::Bucket& bucket, spi::Timestamp ts, const document::DocumentId& docId, spi::Context& context)
 {
     return checkResult(_impl.remove(bucket, ts, docId, context));
 }
 
 spi::RemoveResult
-ProviderErrorWrapper::removeIfFound(const spi::Bucket& bucket,
-                                       spi::Timestamp ts,
-                                       const document::DocumentId& docId,
-                                       spi::Context& context)
+ProviderErrorWrapper::removeIfFound(const spi::Bucket& bucket, spi::Timestamp ts,
+                                    const document::DocumentId& docId, spi::Context& context)
 {
     return checkResult(_impl.removeIfFound(bucket, ts, docId, context));
 }
 
 spi::UpdateResult
-ProviderErrorWrapper::update(const spi::Bucket& bucket,
-                                spi::Timestamp ts,
-                                const spi::DocumentUpdateSP& docUpdate,
-                                spi::Context& context)
+ProviderErrorWrapper::update(const spi::Bucket& bucket, spi::Timestamp ts,
+                             spi::DocumentUpdateSP docUpdate, spi::Context& context)
 {
-    return checkResult(_impl.update(bucket, ts, docUpdate, context));
+    return checkResult(_impl.update(bucket, ts, std::move(docUpdate), context));
 }
 
 spi::GetResult
-ProviderErrorWrapper::get(const spi::Bucket& bucket,
-                             const document::FieldSet& fieldSet,
-                             const document::DocumentId& docId,
-                             spi::Context& context) const
+ProviderErrorWrapper::get(const spi::Bucket& bucket, const document::FieldSet& fieldSet,
+                          const document::DocumentId& docId, spi::Context& context) const
 {
     return checkResult(_impl.get(bucket, fieldSet, docId, context));
 }
 
-spi::Result
-ProviderErrorWrapper::flush(const spi::Bucket& bucket, spi::Context& context)
-{
-    return checkResult(_impl.flush(bucket, context));
-}
-
 spi::CreateIteratorResult
-ProviderErrorWrapper::createIterator(const spi::Bucket& bucket,
-                                        const document::FieldSet& fieldSet,
-                                        const spi::Selection& selection,
-                                        spi::IncludedVersions versions,
-                                        spi::Context& context)
+ProviderErrorWrapper::createIterator(const spi::Bucket &bucket, FieldSetSP fieldSet, const spi::Selection &selection,
+                                     spi::IncludedVersions versions, spi::Context &context)
 {
     return checkResult(_impl.createIterator(bucket, fieldSet, selection, versions, context));
 }
 
 spi::IterateResult
-ProviderErrorWrapper::iterate(spi::IteratorId iteratorId,
-                                 uint64_t maxByteSize,
-                                 spi::Context& context) const
+ProviderErrorWrapper::iterate(spi::IteratorId iteratorId, uint64_t maxByteSize, spi::Context& context) const
 {
     return checkResult(_impl.iterate(iteratorId, maxByteSize, context));
 }
 
 spi::Result
-ProviderErrorWrapper::destroyIterator(spi::IteratorId iteratorId,
-                                         spi::Context& context)
+ProviderErrorWrapper::destroyIterator(spi::IteratorId iteratorId, spi::Context& context)
 {
     return checkResult(_impl.destroyIterator(iteratorId, context));
 }
 
 spi::Result
-ProviderErrorWrapper::createBucket(const spi::Bucket& bucket,
-                                      spi::Context& context)
+ProviderErrorWrapper::createBucket(const spi::Bucket& bucket, spi::Context& context)
 {
     return checkResult(_impl.createBucket(bucket, context));
 }
 
 spi::Result
-ProviderErrorWrapper::deleteBucket(const spi::Bucket& bucket,
-                                      spi::Context& context)
+ProviderErrorWrapper::deleteBucket(const spi::Bucket& bucket, spi::Context& context)
 {
     return checkResult(_impl.deleteBucket(bucket, context));
 }
@@ -170,41 +143,67 @@ ProviderErrorWrapper::getModifiedBuckets(BucketSpace bucketSpace) const
 }
 
 spi::Result
-ProviderErrorWrapper::maintain(const spi::Bucket& bucket,
-                                  spi::MaintenanceLevel level)
-{
-    return checkResult(_impl.maintain(bucket, level));
-}
-
-spi::Result
-ProviderErrorWrapper::split(const spi::Bucket& source,
-                               const spi::Bucket& target1,
-                               const spi::Bucket& target2,
-                               spi::Context& context)
+ProviderErrorWrapper::split(const spi::Bucket& source, const spi::Bucket& target1,
+                            const spi::Bucket& target2, spi::Context& context)
 {
     return checkResult(_impl.split(source, target1, target2, context));
 }
 
 spi::Result
-ProviderErrorWrapper::join(const spi::Bucket& source1,
-                              const spi::Bucket& source2,
-                              const spi::Bucket& target, spi::Context& context)
+ProviderErrorWrapper::join(const spi::Bucket& source1, const spi::Bucket& source2,
+                           const spi::Bucket& target, spi::Context& context)
 {
     return checkResult(_impl.join(source1, source2, target, context));
 }
 
-spi::Result
-ProviderErrorWrapper::move(const spi::Bucket& source,
-                              spi::PartitionId target, spi::Context& context)
+std::unique_ptr<vespalib::IDestructorCallback>
+ProviderErrorWrapper::register_resource_usage_listener(spi::IResourceUsageListener& listener)
 {
-    return checkResult(_impl.move(source, target, context));
+    return _impl.register_resource_usage_listener(listener);
 }
 
 spi::Result
-ProviderErrorWrapper::removeEntry(const spi::Bucket& bucket,
-                                spi::Timestamp ts, spi::Context& context)
+ProviderErrorWrapper::removeEntry(const spi::Bucket& bucket, spi::Timestamp ts, spi::Context& context)
 {
     return checkResult(_impl.removeEntry(bucket, ts, context));
+}
+
+void
+ProviderErrorWrapper::putAsync(const spi::Bucket &bucket, spi::Timestamp ts, spi::DocumentSP doc,
+                               spi::Context &context, spi::OperationComplete::UP onComplete)
+{
+    onComplete->addResultHandler(this);
+    _impl.putAsync(bucket, ts, std::move(doc), context, std::move(onComplete));
+}
+
+void
+ProviderErrorWrapper::removeAsync(const spi::Bucket &bucket, spi::Timestamp ts, const document::DocumentId &docId,
+                                  spi::Context & context, spi::OperationComplete::UP onComplete)
+{
+    onComplete->addResultHandler(this);
+    _impl.removeAsync(bucket, ts, docId, context, std::move(onComplete));
+}
+
+void
+ProviderErrorWrapper::removeIfFoundAsync(const spi::Bucket &bucket, spi::Timestamp ts, const document::DocumentId &docId,
+                                         spi::Context & context, spi::OperationComplete::UP onComplete)
+{
+    onComplete->addResultHandler(this);
+    _impl.removeIfFoundAsync(bucket, ts, docId, context, std::move(onComplete));
+}
+
+void
+ProviderErrorWrapper::updateAsync(const spi::Bucket &bucket, spi::Timestamp ts, spi::DocumentUpdateSP upd,
+                                  spi::Context &context, spi::OperationComplete::UP onComplete)
+{
+    onComplete->addResultHandler(this);
+    _impl.updateAsync(bucket, ts, std::move(upd), context, std::move(onComplete));
+}
+
+std::unique_ptr<vespalib::IDestructorCallback>
+ProviderErrorWrapper::register_executor(std::shared_ptr<spi::BucketExecutor> executor)
+{
+    return _impl.register_executor(std::move(executor));
 }
 
 } // ns storage

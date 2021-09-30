@@ -3,23 +3,35 @@ vespa_add_library(storage_distributor
     SOURCES
     activecopy.cpp
     blockingoperationstarter.cpp
-    bucketdbupdater.cpp
     bucket_db_prune_elision.cpp
+    bucket_space_distribution_configs.cpp
+    bucket_space_distribution_context.cpp
+    bucket_space_state_map.cpp
+    bucket_spaces_stats_provider.cpp
     bucketgctimecalculator.cpp
     bucketlistmerger.cpp
-    bucket_space_distribution_context.cpp
     clusterinformation.cpp
+    crypto_uuid_generator.cpp
     distributor_bucket_space.cpp
     distributor_bucket_space_repo.cpp
-    distributor.cpp
+    distributor_component.cpp
     distributor_host_info_reporter.cpp
-    distributorcomponent.cpp
+    distributor_status.cpp
+    distributor_stripe.cpp
+    distributor_stripe_component.cpp
+    distributor_stripe_pool.cpp
+    distributor_stripe_thread.cpp
+    distributor_total_metrics.cpp
     distributormessagesender.cpp
     distributormetricsset.cpp
     externaloperationhandler.cpp
+    ideal_service_layer_nodes_bundle.cpp
+    ideal_state_total_metrics.cpp
     idealstatemanager.cpp
     idealstatemetricsset.cpp
     messagetracker.cpp
+    min_replica_provider.cpp
+    multi_threaded_stripe_access_guard.cpp
     nodeinfo.cpp
     operation_routing_snapshot.cpp
     operation_sequencer.cpp
@@ -27,8 +39,8 @@ vespa_add_library(storage_distributor
     operationtargetresolver.cpp
     operationtargetresolverimpl.cpp
     ownership_transfer_safe_time_point_calculator.cpp
-    pendingclusterstate.cpp
     pending_bucket_space_db_transition.cpp
+    pendingclusterstate.cpp
     pendingmessagetracker.cpp
     persistence_operation_metric_set.cpp
     persistencemessagetracker.cpp
@@ -36,7 +48,10 @@ vespa_add_library(storage_distributor
     statechecker.cpp
     statecheckers.cpp
     statusreporterdelegate.cpp
+    stripe_bucket_db_updater.cpp
     throttlingoperationstarter.cpp
+    top_level_bucket_db_updater.cpp
+    top_level_distributor.cpp
     update_metric_set.cpp
     visitormetricsset.cpp
     $<TARGET_OBJECTS:storage_distributoroperation>
@@ -47,6 +62,4 @@ vespa_add_library(storage_distributor
     INSTALL lib64
     DEPENDS
     storage
-    AFTER
-    storage_storageconfig
 )

@@ -13,8 +13,8 @@ namespace simpleindex {
 }
 
 template <typename Posting, typename Key, typename DocId>
-void SimpleIndex<Posting, Key, DocId>::insertIntoPosting(
-        datastore::EntryRef &ref, Key key, DocId doc_id, const Posting &posting) {
+void
+SimpleIndex<Posting, Key, DocId>::insertIntoPosting(vespalib::datastore::EntryRef &ref, Key key, DocId doc_id, const Posting &posting) {
     bool ok = _btree_posting_lists.insert(ref, doc_id, posting);
     if (!ok) {
         _btree_posting_lists.remove(ref, doc_id);
@@ -26,8 +26,8 @@ void SimpleIndex<Posting, Key, DocId>::insertIntoPosting(
 }
 
 template <typename Posting, typename Key, typename DocId>
-void SimpleIndex<Posting, Key, DocId>::insertIntoVectorPosting(
-        datastore::EntryRef ref, Key key, DocId doc_id, const Posting &posting) {
+void
+SimpleIndex<Posting, Key, DocId>::insertIntoVectorPosting(vespalib::datastore::EntryRef ref, Key key, DocId doc_id, const Posting &posting) {
     assert(doc_id < _limit_provider.getDocIdLimit());
     auto it = _vector_posting_lists.find(key);
     if (it.valid()) {
@@ -45,7 +45,7 @@ SimpleIndex<Posting, Key, DocId>::~SimpleIndex() {
     _btree_posting_lists.disableElemHoldList();
 
     for (auto it = _dictionary.begin(); it.valid(); ++it) {
-        datastore::EntryRef ref(it.getData());
+        vespalib::datastore::EntryRef ref(it.getData());
         if (ref.valid()) {
             _btree_posting_lists.clear(ref);
         }
@@ -69,14 +69,13 @@ SimpleIndex<Posting, Key, DocId>::~SimpleIndex() {
 }
 
 template <typename Posting, typename Key, typename DocId>
-void SimpleIndex<Posting, Key, DocId>::serialize(
-        vespalib::DataBuffer &buffer,
-        const PostingSerializer<Posting> &serializer) const {
+void
+SimpleIndex<Posting, Key, DocId>::serialize(vespalib::DataBuffer &buffer, const PostingSerializer<Posting> &serializer) const {
     assert(sizeof(Key) <= sizeof(uint64_t));
     assert(sizeof(DocId) <= sizeof(uint32_t));
     buffer.writeInt32(_dictionary.size());
     for (auto it = _dictionary.begin(); it.valid(); ++it) {
-        datastore::EntryRef ref = it.getData();
+        vespalib::datastore::EntryRef ref = it.getData();
         buffer.writeInt32(_btree_posting_lists.size(ref));  // 0 if !valid()
         auto posting_it = _btree_posting_lists.begin(ref);
         if (!posting_it.valid())
@@ -90,13 +89,13 @@ void SimpleIndex<Posting, Key, DocId>::serialize(
 }
 
 template <typename Posting, typename Key, typename DocId>
-void SimpleIndex<Posting, Key, DocId>::deserialize(
-        vespalib::DataBuffer &buffer,
-        PostingDeserializer<Posting> &deserializer,
-        SimpleIndexDeserializeObserver<Key, DocId> &observer, uint32_t version) {
+void
+SimpleIndex<Posting, Key, DocId>::deserialize(vespalib::DataBuffer &buffer, PostingDeserializer<Posting> &deserializer,
+                                              SimpleIndexDeserializeObserver<Key, DocId> &observer, uint32_t version)
+{
     typename Dictionary::Builder builder(_dictionary.getAllocator());
     uint32_t size = buffer.readInt32();
-    std::vector<btree::BTreeKeyData<DocId, Posting>> postings;
+    std::vector<vespalib::btree::BTreeKeyData<DocId, Posting>> postings;
     for (size_t i = 0; i < size; ++i) {
         uint32_t posting_size = buffer.readInt32();
         if (!posting_size)
@@ -118,9 +117,8 @@ void SimpleIndex<Posting, Key, DocId>::deserialize(
             }
             postings.emplace_back(doc_id, deserializer.deserialize(buffer));
         }
-        datastore::EntryRef ref;
-        _btree_posting_lists.apply(ref, &postings[0], &postings[postings.size()],
-                                   0, 0);
+        vespalib::datastore::EntryRef ref;
+        _btree_posting_lists.apply(ref, &postings[0], &postings[postings.size()], 0, 0);
         builder.insert(key, ref);
     }
     _dictionary.assign(builder);
@@ -128,10 +126,10 @@ void SimpleIndex<Posting, Key, DocId>::deserialize(
 }
 
 template <typename Posting, typename Key, typename DocId>
-void SimpleIndex<Posting, Key, DocId>::addPosting(Key key, DocId doc_id,
-                                                  const Posting &posting) {
+void
+SimpleIndex<Posting, Key, DocId>::addPosting(Key key, DocId doc_id, const Posting &posting) {
     auto iter = _dictionary.find(key);
-    datastore::EntryRef ref;
+    vespalib::datastore::EntryRef ref;
     if (iter.valid()) {
         ref = iter.getData();
         insertIntoPosting(ref, key, doc_id, posting);
@@ -165,7 +163,7 @@ SimpleIndex<Posting, Key, DocId>::removeFromPostingList(Key key, DocId doc_id) {
     }
 
     Posting posting = posting_it.getData();
-    datastore::EntryRef original_ref(ref);
+    vespalib::datastore::EntryRef original_ref(ref);
     _btree_posting_lists.remove(ref, doc_id);
     removeFromVectorPostingList(ref, key, doc_id);
     if (!ref.valid()) { // last posting was removed
@@ -178,8 +176,8 @@ SimpleIndex<Posting, Key, DocId>::removeFromPostingList(Key key, DocId doc_id) {
 }
 
 template <typename Posting, typename Key, typename DocId>
-void SimpleIndex<Posting, Key, DocId>::removeFromVectorPostingList(
-        datastore::EntryRef ref, Key key, DocId doc_id) {
+void
+SimpleIndex<Posting, Key, DocId>::removeFromVectorPostingList(vespalib::datastore::EntryRef ref, Key key, DocId doc_id) {
     auto it = _vector_posting_lists.find(key);
     if (it.valid()) {
         if (!removeVectorIfBelowThreshold(ref, it)) {
@@ -189,7 +187,8 @@ void SimpleIndex<Posting, Key, DocId>::removeFromVectorPostingList(
 };
 
 template <typename Posting, typename Key, typename DocId>
-void SimpleIndex<Posting, Key, DocId>::pruneBelowThresholdVectors() {
+void
+SimpleIndex<Posting, Key, DocId>::pruneBelowThresholdVectors() {
     //  Check if it is time to prune any vector postings
     if (++_insert_remove_counter % _config.vector_prune_frequency > 0) return;
 
@@ -204,7 +203,8 @@ void SimpleIndex<Posting, Key, DocId>::pruneBelowThresholdVectors() {
 };
 
 template <typename Posting, typename Key, typename DocId>
-void SimpleIndex<Posting, Key, DocId>::promoteOverThresholdVectors() {
+void
+SimpleIndex<Posting, Key, DocId>::promoteOverThresholdVectors() {
     for (auto it = _dictionary.begin(); it.valid(); ++it) {
         Key key = it.getKey();
         if (!_vector_posting_lists.find(key).valid()) {
@@ -214,8 +214,8 @@ void SimpleIndex<Posting, Key, DocId>::promoteOverThresholdVectors() {
 }
 
 template <typename Posting, typename Key, typename DocId>
-void SimpleIndex<Posting, Key, DocId>::logVector(
-        const char *action, Key key, size_t document_count, double ratio, size_t vector_length) const {
+void
+SimpleIndex<Posting, Key, DocId>::logVector(const char *action, Key key, size_t document_count, double ratio, size_t vector_length) const {
     if (!simpleindex::log_enabled()) return;
     auto msg = vespalib::make_string(
             "%s vector for key '%016" PRIx64 "' with length %zu. Contains %zu documents "
@@ -227,7 +227,8 @@ void SimpleIndex<Posting, Key, DocId>::logVector(
 }
 
 template <typename Posting, typename Key, typename DocId>
-void SimpleIndex<Posting, Key, DocId>::createVectorIfOverThreshold(datastore::EntryRef ref, Key key) {
+void
+SimpleIndex<Posting, Key, DocId>::createVectorIfOverThreshold(vespalib::datastore::EntryRef ref, Key key) {
     uint32_t doc_id_limit = _limit_provider.getDocIdLimit();
     size_t size = getDocumentCount(ref);
     double ratio = getDocumentRatio(size, doc_id_limit);
@@ -242,8 +243,8 @@ void SimpleIndex<Posting, Key, DocId>::createVectorIfOverThreshold(datastore::En
 }
 
 template <typename Posting, typename Key, typename DocId>
-bool SimpleIndex<Posting, Key, DocId>::removeVectorIfBelowThreshold(
-        datastore::EntryRef ref, typename VectorStore::Iterator &it) {
+bool
+SimpleIndex<Posting, Key, DocId>::removeVectorIfBelowThreshold(vespalib::datastore::EntryRef ref, typename VectorStore::Iterator &it) {
     size_t size = getDocumentCount(ref);
     double ratio = getDocumentRatio(size, _limit_provider.getDocIdLimit());
     if (shouldRemoveVectorPosting(size, ratio)) {
@@ -257,36 +258,41 @@ bool SimpleIndex<Posting, Key, DocId>::removeVectorIfBelowThreshold(
 }
 
 template <typename Posting, typename Key, typename DocId>
-double SimpleIndex<Posting, Key, DocId>::getDocumentRatio(size_t document_count,
-                                                          uint32_t doc_id_limit) const {
+double
+SimpleIndex<Posting, Key, DocId>::getDocumentRatio(size_t document_count, uint32_t doc_id_limit) const {
     assert(doc_id_limit > 1);
     return document_count / static_cast<double>(doc_id_limit - 1);
 };
 
 template <typename Posting, typename Key, typename DocId>
-size_t SimpleIndex<Posting, Key, DocId>::getDocumentCount(datastore::EntryRef ref) const {
+size_t
+SimpleIndex<Posting, Key, DocId>::getDocumentCount(vespalib::datastore::EntryRef ref) const {
     return _btree_posting_lists.size(ref);
 };
 
 template <typename Posting, typename Key, typename DocId>
-bool SimpleIndex<Posting, Key, DocId>::shouldRemoveVectorPosting(size_t size, double ratio) const {
+bool
+SimpleIndex<Posting, Key, DocId>::shouldRemoveVectorPosting(size_t size, double ratio) const {
     return size < _config.lower_vector_size_threshold || ratio < _config.lower_docid_freq_threshold;
 };
 
 template <typename Posting, typename Key, typename DocId>
-bool SimpleIndex<Posting, Key, DocId>::shouldCreateVectorPosting(size_t size, double ratio) const {
+bool
+SimpleIndex<Posting, Key, DocId>::shouldCreateVectorPosting(size_t size, double ratio) const {
     return size >= _config.upper_vector_size_threshold && ratio >= _config.upper_docid_freq_threshold;
 };
 
 template <typename Posting, typename Key, typename DocId>
-void SimpleIndex<Posting, Key, DocId>::commit() {
+void
+SimpleIndex<Posting, Key, DocId>::commit() {
     _dictionary.getAllocator().freeze();
     _btree_posting_lists.freeze();
     _vector_posting_lists.getAllocator().freeze();
 }
 
 template <typename Posting, typename Key, typename DocId>
-void SimpleIndex<Posting, Key, DocId>::trimHoldLists(generation_t used_generation) {
+void
+SimpleIndex<Posting, Key, DocId>::trimHoldLists(generation_t used_generation) {
     _btree_posting_lists.trimHoldLists(used_generation);
     _dictionary.getAllocator().trimHoldLists(used_generation);
     _vector_posting_lists.getAllocator().trimHoldLists(used_generation);
@@ -294,14 +300,16 @@ void SimpleIndex<Posting, Key, DocId>::trimHoldLists(generation_t used_generatio
 }
 
 template <typename Posting, typename Key, typename DocId>
-void SimpleIndex<Posting, Key, DocId>::transferHoldLists(generation_t generation) {
+void
+SimpleIndex<Posting, Key, DocId>::transferHoldLists(generation_t generation) {
     _dictionary.getAllocator().transferHoldLists(generation);
     _btree_posting_lists.transferHoldLists(generation);
     _vector_posting_lists.getAllocator().transferHoldLists(generation);
 }
 
 template <typename Posting, typename Key, typename DocId>
-vespalib::MemoryUsage SimpleIndex<Posting, Key, DocId>::getMemoryUsage() const {
+vespalib::MemoryUsage
+SimpleIndex<Posting, Key, DocId>::getMemoryUsage() const {
     vespalib::MemoryUsage combined;
     combined.merge(_dictionary.getMemoryUsage());
     combined.merge(_btree_posting_lists.getMemoryUsage());

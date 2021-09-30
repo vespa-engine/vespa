@@ -4,22 +4,23 @@ vespa_add_executable(vespalib_btree_test_app TEST
     btree_test.cpp
     DEPENDS
     vespalib
+    GTest::GTest
 )
-vespa_add_test(NAME vespalib_btree_test_app COMMAND vespalib_btree_test_app)
+vespa_add_test(NAME vespalib_btree_test_app COMMAND vespalib_btree_test_app COST 30)
 vespa_add_executable(vespalib_frozenbtree_test_app TEST
     SOURCES
     frozenbtree_test.cpp
     DEPENDS
     vespalib
 )
-vespa_add_test(NAME vespalib_frozenbtree_test_app COMMAND vespalib_frozenbtree_test_app)
+vespa_add_test(NAME vespalib_frozenbtree_test_app COMMAND vespalib_frozenbtree_test_app COST 30)
 vespa_add_executable(vespalib_btreeaggregation_test_app TEST
     SOURCES
     btreeaggregation_test.cpp
     DEPENDS
     vespalib
 )
-vespa_add_test(NAME vespalib_btreeaggregation_test_app COMMAND vespalib_btreeaggregation_test_app)
+vespa_add_test(NAME vespalib_btreeaggregation_test_app COMMAND vespalib_btreeaggregation_test_app COST 30)
 vespa_add_executable(vespalib_iteratespeed_app
     SOURCES
     iteratespeed.cpp

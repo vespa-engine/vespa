@@ -5,11 +5,7 @@
 #include <vespa/searchlib/util/comprfile.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 
-namespace search
-{
-
-namespace fakedata
-{
+namespace search::fakedata {
 
 template <bool bigEndian>
 class BitDecode64 : public bitcompression::DecodeContext64<bigEndian>
@@ -26,8 +22,7 @@ public:
     using ParentClass::_cacheInt;
     typedef typename bitcompression::DecodeContext64<bigEndian>::EC EC;
 
-    BitDecode64(const uint64_t *compr,
-                  int bitOffset)
+    BitDecode64(const uint64_t *compr, int bitOffset)
         : bitcompression::DecodeContext64<bigEndian>(compr, bitOffset),
           _comprBase(compr),
           _bitOffsetBase(bitOffset)
@@ -36,9 +31,7 @@ public:
 
     typedef bitcompression::DecodeContext64<bigEndian> DC;
 
-    void
-    seek(uint64_t offset)
-    {
+    void seek(uint64_t offset) {
         offset += _bitOffsetBase;
         const uint64_t *compr = _comprBase + (offset / 64);
         int bitOffset = offset & 63;
@@ -50,42 +43,22 @@ public:
         UC64_READBITS(_val, _valI, _preRead, _cacheInt, EC);
     }
 
-    uint64_t
-    getOffset() const
-    {
-        return 64 * (_valI - _comprBase - 1) - this->_preRead -
-            _bitOffsetBase;
+    uint64_t getOffset() const {
+        return 64 * (_valI - _comprBase - 1) - this->_preRead - _bitOffsetBase;
     }
 
-    uint64_t
-    getOffset(const uint64_t *valI, int preRead) const
-    {
+    uint64_t getOffset(const uint64_t *valI, int preRead) const {
         return 64 * (valI - _comprBase - 1) - preRead - _bitOffsetBase;
     }
 
-    const uint64_t *
-    getComprBase() const
-    {
-        return _comprBase;
-    }
-
-    int
-    getBitOffsetBase() const
-    {
-        return _bitOffsetBase;
-    }
+    const uint64_t * getComprBase() const { return _comprBase; }
+    int getBitOffsetBase() const { return _bitOffsetBase; }
 };
 
 
 extern template class BitDecode64<true>;
-
 extern template class BitDecode64<false>;
 
 typedef BitDecode64<true> BitDecode64BE;
 
-typedef BitDecode64<false> BitDecode64LE;
-
-} // namespace fakedata
-
-} // namespace search
-
+}

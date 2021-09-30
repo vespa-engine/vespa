@@ -3,32 +3,9 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/features/fieldmatch/computer.h>
 #include <vespa/searchlib/features/fieldmatch/params.h>
 
 namespace search::features {
-
-/**
- * Implements the executor for THE field match feature.
- */
-class FieldMatchExecutor : public fef::FeatureExecutor {
-private:
-    fef::PhraseSplitter             _splitter;
-    const fef::FieldInfo          & _field;
-    fieldmatch::Computer                    _cmp;
-
-    void handle_bind_match_data(const fef::MatchData &md) override;
-
-public:
-    /**
-     * Constructs an executor.
-     */
-    FieldMatchExecutor(const fef::IQueryEnvironment & queryEnv,
-                       const fef::FieldInfo & field,
-                       const fieldmatch::Params & params);
-    void execute(uint32_t docId) override;
-};
-
 
 /**
  * Implements the blueprint for THE field match feature.
@@ -36,6 +13,7 @@ public:
 class FieldMatchBlueprint : public fef::Blueprint {
 private:
     const fef::FieldInfo * _field;
+    vespalib::string _shared_state_key;
     fieldmatch::Params _params;
 
 public:
@@ -49,6 +27,8 @@ public:
 
     bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+
+    void prepareSharedState(const fef::IQueryEnvironment &queryEnv, fef::IObjectStore &objectStore) const override;
 };
 
 }

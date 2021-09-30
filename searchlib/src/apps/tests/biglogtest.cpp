@@ -5,6 +5,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/data/databuffer.h>
 
@@ -134,7 +135,7 @@ factory<LogDataStore>::factory(std::string dir)
     : DioTune(),
       _fileHeaderContext(),
       _config(),
-      _executor(1, 128*1024),
+      _executor(1, 128_Ki),
       _noTlSyncer(),
       _datastore(_executor, dir, _config, GrowStrategy(), tuning, _fileHeaderContext, _noTlSyncer, NULL)
 {}

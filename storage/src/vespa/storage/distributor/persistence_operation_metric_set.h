@@ -2,8 +2,10 @@
 
 #pragma once
 
-#include <vespa/metrics/metrics.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
+#include <vespa/metrics/metricset.h>
+#include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/valuemetric.h>
+#include <vespa/metrics/summetric.h>
 #include <mutex>
 
 namespace storage {
@@ -16,7 +18,7 @@ class PersistenceFailuresMetricSet : public metrics::MetricSet
 {
 public:
     explicit PersistenceFailuresMetricSet(metrics::MetricSet* owner);
-    ~PersistenceFailuresMetricSet();
+    ~PersistenceFailuresMetricSet() override;
 
     metrics::SumMetric<metrics::LongCountMetric> sum;
     metrics::LongCountMetric notready;
@@ -44,7 +46,7 @@ public:
     PersistenceFailuresMetricSet failures;
 
     PersistenceOperationMetricSet(const std::string& name, metrics::MetricSet* owner = nullptr);
-    ~PersistenceOperationMetricSet();
+    ~PersistenceOperationMetricSet() override;
 
     MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                       metrics::MetricSet* owner, bool includeUnused) const override;

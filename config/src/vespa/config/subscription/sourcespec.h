@@ -5,6 +5,7 @@
 #include <vespa/config/common/compressiontype.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
+#include <memory>
 
 namespace config {
 

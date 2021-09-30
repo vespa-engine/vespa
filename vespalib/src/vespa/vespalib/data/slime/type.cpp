@@ -2,8 +2,7 @@
 
 #include "type.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 template<int T> const uint32_t TypeType<T>::ID;
 template<int T> const TypeType<T> TypeType<T>::instance;
@@ -18,4 +17,3 @@ template struct TypeType<ARRAY::ID>;
 template struct TypeType<OBJECT::ID>;
 
 } // namespace vespalib::slime
-} // namespace vespalib

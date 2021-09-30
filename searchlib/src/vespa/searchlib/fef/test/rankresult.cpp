@@ -6,9 +6,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.rankresult");
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 RankResult::RankResult() :
     _rankScores(),
@@ -107,6 +105,4 @@ std::ostream & operator<<(std::ostream & os, const RankResult & rhs) {
     return os << "]";
 }
 
-} // namespace test
-} // namespace fef
-} // namespace search
+}

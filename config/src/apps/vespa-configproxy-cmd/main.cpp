@@ -19,7 +19,7 @@ public:
 bool
 Application::parseOpts()
 {
-    char c = '?';
+    int c = '?';
     const char *optArg = NULL;
     int optInd = 0;
     while ((c = GetOpt("m:s:p:h", optArg, optInd)) != -1) {

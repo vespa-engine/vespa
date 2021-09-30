@@ -9,6 +9,7 @@ import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.application.BindingSet;
 import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.handler.DelegatedRequestHandler;
 import com.yahoo.jdisc.handler.NullContent;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
@@ -71,7 +72,7 @@ class ContainerSnapshot extends AbstractResource implements Container {
         return timeoutMgr.timer().currentTimeMillis();
     }
 
-    private static class NullContentRequestHandler implements RequestHandler {
+    private static class NullContentRequestHandler implements DelegatedRequestHandler {
 
         final RequestHandler delegate;
 
@@ -107,6 +108,11 @@ class ContainerSnapshot extends AbstractResource implements Container {
         @Override
         public String toString() {
             return delegate.toString();
+        }
+
+        @Override
+        public RequestHandler getDelegate() {
+            return delegate;
         }
     }
 }

@@ -37,25 +37,31 @@ struct Cmp {
     }
 };
 
+void sortChildren(std::vector<TraceNode> & children) __attribute((noinline));
+void
+sortChildren(std::vector<TraceNode> & children) {
+    std::sort(children.begin(), children.end(), Cmp());
+}
+
 } // namespace <unnamed>
 
 
-TraceNode::TraceNode() :
-    _parent(nullptr),
-    _strict(true),
-    _hasNote(false),
-    _note(""),
-    _children(),
-    _timestamp()
+TraceNode::TraceNode()
+    : _note(""),
+      _children(),
+      _parent(nullptr),
+      _timestamp(),
+      _strict(true),
+      _hasNote(false)
 { }
 
-TraceNode::TraceNode(const TraceNode &rhs) :
-    _parent(nullptr),
-    _strict(rhs._strict),
-    _hasNote(rhs._hasNote),
-    _note(rhs._note),
-    _children(),
-    _timestamp(rhs._timestamp)
+TraceNode::TraceNode(const TraceNode &rhs)
+    : _note(rhs._note),
+      _children(),
+      _parent(nullptr),
+      _timestamp(rhs._timestamp),
+      _strict(rhs._strict),
+      _hasNote(rhs._hasNote)
 {
     addChildren(rhs._children);
 }
@@ -65,22 +71,22 @@ TraceNode & TraceNode::operator =(const TraceNode &) = default;
 
 TraceNode::~TraceNode() = default;
 
-TraceNode::TraceNode(const string &note, system_time timestamp) :
-    _parent(nullptr),
-    _strict(true),
-    _hasNote(true),
-    _note(note),
-    _children(),
-    _timestamp(timestamp)
+TraceNode::TraceNode(const string &note, system_time timestamp)
+    : _note(note),
+      _children(),
+      _parent(nullptr),
+      _timestamp(timestamp),
+      _strict(true),
+      _hasNote(true)
 { }
 
-TraceNode::TraceNode(system_time timestamp) :
-    _parent(nullptr),
-    _strict(true),
-    _hasNote(false),
-    _note(""),
-    _children(),
-    _timestamp(timestamp)
+TraceNode::TraceNode(system_time timestamp)
+    : _note(""),
+      _children(),
+      _parent(nullptr),
+      _timestamp(timestamp),
+      _strict(true),
+      _hasNote(false)
 { }
 
 TraceNode &
@@ -121,7 +127,7 @@ TraceNode::sort()
             child.sort();
         }
         if (!isStrict()) {
-            std::sort(_children.begin(), _children.end(), Cmp());
+            sortChildren(_children);
         }
     }
     return *this;
@@ -340,6 +346,19 @@ TraceNode::accept(TraceVisitor & visitor) const
     }
     visitor.leaving(*this);
     return visitor;
+}
+
+size_t
+TraceNode::computeMemoryUsage() const
+{
+    if (isLeaf()) {
+        return getNote().size();
+    }
+    size_t childSum = 0;
+    for (const TraceNode & child : _children) {
+        childSum += child.computeMemoryUsage();
+    }
+    return childSum;
 }
 
 } // namespace vespalib

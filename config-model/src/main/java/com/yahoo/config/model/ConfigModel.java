@@ -40,7 +40,7 @@ public abstract class ConfigModel {
      *
      * @param configModelRepo The ConfigModelRepo of the VespaModel
      */
-    public void initialize(ConfigModelRepo configModelRepo) { return; }
+    public void initialize(ConfigModelRepo configModelRepo) { }
 
     /**
      * Prepares this model to start serving config requests, possibly using properties of other models.

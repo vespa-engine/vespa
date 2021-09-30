@@ -7,8 +7,7 @@
 #include "node_maintenance_stats_tracker.h"
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class SimpleMaintenanceScanner : public MaintenanceScanner
 {
@@ -19,6 +18,9 @@ public:
         GlobalMaintenanceStats()
             : pending(MaintenanceOperation::OPERATION_COUNT)
         { }
+
+        bool operator==(const GlobalMaintenanceStats& rhs) const;
+        void merge(const GlobalMaintenanceStats& rhs);
     };
     struct PendingMaintenanceStats {
         PendingMaintenanceStats();
@@ -27,11 +29,13 @@ public:
         ~PendingMaintenanceStats();
         GlobalMaintenanceStats global;
         NodeMaintenanceStatsTracker perNodeStats;
+
+        void merge(const PendingMaintenanceStats& rhs);
     };
 private:
     BucketPriorityDatabase& _bucketPriorityDb;
     const MaintenancePriorityGenerator& _priorityGenerator;
-    const DistributorBucketSpaceRepo &_bucketSpaceRepo;
+    const DistributorBucketSpaceRepo& _bucketSpaceRepo;
     DistributorBucketSpaceRepo::BucketSpaceMap::const_iterator _bucketSpaceItr;
     document::BucketId _bucketCursor;
     PendingMaintenanceStats _pendingMaintenance;
@@ -59,5 +63,4 @@ public:
 std::ostream&
 operator<<(std::ostream&, const SimpleMaintenanceScanner::GlobalMaintenanceStats&);
 
-}
 }

@@ -10,43 +10,27 @@ class DocumentType;
 class AllFields final : public FieldSet
 {
 public:
+    static constexpr const char * NAME = "[all]";
     bool contains(const FieldSet&) const override { return true; }
-    Type getType() const override { return ALL; }
-    FieldSet* clone() const override { return new AllFields(); }
+    Type getType() const override { return Type::ALL; }
 };
 
 class NoFields final : public FieldSet
 {
 public:
-    bool contains(const FieldSet& f) const override { return f.getType() == NONE; }
-    Type getType() const override { return NONE; }
-    FieldSet* clone() const override { return new NoFields(); }
+    static constexpr const char * NAME = "[none]";
+    bool contains(const FieldSet& f) const override { return f.getType() == Type::NONE; }
+    Type getType() const override { return Type::NONE; }
 };
 
 class DocIdOnly final : public FieldSet
 {
 public:
+    static constexpr const char * NAME = "[id]";
     bool contains(const FieldSet& fields) const override {
-        return fields.getType() == DOCID || fields.getType() == NONE;
+        return fields.getType() == Type::DOCID || fields.getType() == Type::NONE;
     }
-    Type getType() const override { return DOCID; }
-    FieldSet* clone() const override { return new DocIdOnly(); }
-};
-
-class HeaderFields final : public FieldSet
-{
-public:
-    bool contains(const FieldSet& fields) const override;
-    Type getType() const override { return HEADER; }
-    FieldSet* clone() const override { return new HeaderFields(); }
-};
-
-class BodyFields final : public FieldSet
-{
-public:
-    bool contains(const FieldSet& fields) const override;
-    Type getType() const override { return BODY; }
-    FieldSet* clone() const override { return new BodyFields(); }
+    Type getType() const override { return Type::DOCID; }
 };
 
 class FieldCollection : public FieldSet
@@ -54,38 +38,20 @@ class FieldCollection : public FieldSet
 public:
     typedef std::unique_ptr<FieldCollection> UP;
 
-    FieldCollection(const DocumentType& docType) : _docType(docType) {};
-    FieldCollection(const DocumentType& docType, const Field::Set& set);
+    FieldCollection(const DocumentType& docType, Field::Set set);
+    FieldCollection(const FieldCollection &);
+    FieldCollection(FieldCollection&&) = default;
+    ~FieldCollection() override;
 
     bool contains(const FieldSet& fields) const override;
-    Type getType() const override { return SET; }
+    Type getType() const override { return Type::SET; }
 
-    /**
-     * @return Returns the document type the collection is associated with.
-     */
-    const DocumentType& getDocumentType() const {
-        return _docType;
-    }
-
-    /**
-     * Inserts the given field into the collection.
-     */
-    void insert(const Field& f);
-
-    /**
-     * Inserts all the field in the given collection into this collection.
-     */
-    void insert(const Field::Set& f);
-
-    /**
-     * Returns all the fields contained in this collection.
-     */
+    const DocumentType& getDocumentType() const { return _docType; }
     const Field::Set& getFields() const { return _set; }
-
-    FieldSet* clone() const override { return new FieldCollection(*this); }
-
+    uint64_t hash() const { return _hash; }
 private:
-    Field::Set _set;
+    Field::Set          _set;
+    uint64_t            _hash;
     const DocumentType& _docType;
 };
 

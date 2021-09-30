@@ -15,11 +15,13 @@ import java.util.List;
  */
 @SuppressWarnings("rawtypes")
 public class SimpleAdapterFactory implements AdapterFactory {
+
     public static class SelectExpression {
         public Expression selectExpression(DocumentType documentType, String fieldName) {
             return null;
         }
     }
+
     private final SelectExpression expressionSelector;
 
     public SimpleAdapterFactory() {
@@ -79,4 +81,5 @@ public class SimpleAdapterFactory implements AdapterFactory {
         ret.add(FieldUpdateAdapter.fromCompleteUpdate(newDocumentAdapter(complete, true)));
         return ret;
     }
+
 }

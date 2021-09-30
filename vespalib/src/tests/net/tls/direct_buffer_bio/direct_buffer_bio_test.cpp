@@ -5,6 +5,7 @@
 #include <cassert>
 
 using namespace vespalib;
+using namespace vespalib::crypto;
 using namespace vespalib::net::tls::impl;
 
 struct Fixture {

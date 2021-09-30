@@ -2,16 +2,15 @@
 
 #include <vespa/searchcore/proton/server/proton.h>
 #include <vespa/storage/storageserver/storagenode.h>
-#include <vespa/searchlib/util/statefile.h>
-#include <vespa/searchlib/util/sigbushandler.h>
-#include <vespa/searchlib/util/ioerrorhandler.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("proton");
@@ -52,25 +51,6 @@ App::setupSignals()
     SIG::TERM.hook();
 }
 
-namespace {
-
-vespalib::string
-getStateString(search::StateFile &stateFile)
-{
-    std::vector<char> buf;
-    stateFile.readState(buf);
-    if (!buf.empty() && buf[buf.size() - 1] == '\n')
-        buf.resize(buf.size() - 1);
-    return vespalib::string(buf.begin(), buf.end());
-}
-
-bool stateIsDown(const vespalib::string &stateString)
-{
-    return strstr(stateString.c_str(), "state=down") != nullptr;
-}
-
-}
-
 Params
 App::parseParams()
 {
@@ -91,22 +71,17 @@ App::parseParams()
 }
 
 
-#include "downpersistence.h"
-
 using storage::spi::PersistenceProvider;
-using storage::spi::DownPersistence;
 
 #include <vespa/storageserver/app/servicelayerprocess.h>
 
 class ProtonServiceLayerProcess : public storage::ServiceLayerProcess {
     proton::Proton & _proton;
     metrics::MetricManager* _metricManager;
-    PersistenceProvider *_downPersistence;
 
 public:
     ProtonServiceLayerProcess(const config::ConfigUri & configUri,
-                              proton::Proton & proton,
-                              PersistenceProvider *downPersistence);
+                              proton::Proton & proton);
     ~ProtonServiceLayerProcess() override { shutdown(); }
 
     void shutdown() override;
@@ -124,19 +99,13 @@ public:
     int64_t getGeneration() const override;
 };
 
-ProtonServiceLayerProcess::ProtonServiceLayerProcess(const config::ConfigUri &
-                                                     configUri,
-                                                     proton::Proton & proton,
-                                                     PersistenceProvider *
-                                                     downPersistence)
+ProtonServiceLayerProcess::ProtonServiceLayerProcess(const config::ConfigUri & configUri,
+                                                     proton::Proton & proton)
     : ServiceLayerProcess(configUri),
       _proton(proton),
-      _metricManager(nullptr),
-      _downPersistence(downPersistence)
+      _metricManager(nullptr)
 {
-    if (!downPersistence) {
-        setMetricManager(_proton.getMetricManager());
-    }
+    setMetricManager(_proton.getMetricManager());
 }
 
 void
@@ -156,7 +125,7 @@ ProtonServiceLayerProcess::setupProvider()
 storage::spi::PersistenceProvider &
 ProtonServiceLayerProcess::getProvider()
 {
-    return _downPersistence ? *_downPersistence : _proton.getPersistence();
+    return _proton.getPersistence();
 }
 
 int64_t
@@ -165,6 +134,45 @@ ProtonServiceLayerProcess::getGeneration() const
     int64_t slGen = storage::ServiceLayerProcess::getGeneration();
     int64_t protonGen = _proton.getConfigGeneration();
     return std::min(slGen, protonGen);
+}
+
+namespace {
+
+class ExitOnSignal {
+    std::atomic<bool> _stop;
+    std::thread       _thread;
+    
+public:
+    ExitOnSignal();
+    ~ExitOnSignal();
+    void operator()();
+};
+
+ExitOnSignal::ExitOnSignal()
+    : _stop(false),
+      _thread()
+{
+    _thread = std::thread(std::ref(*this));
+}
+
+ExitOnSignal::~ExitOnSignal()
+{
+    _stop.store(true, std::memory_order_relaxed);
+    _thread.join();
+}
+
+void
+ExitOnSignal::operator()()
+{
+    while (!_stop.load(std::memory_order_relaxed)) {
+        if (SIG::INT.check() || SIG::TERM.check()) {
+            EV_STOPPING("proton", "unclean shutdown after interrupted init");
+            std::_Exit(0);
+        }
+        std::this_thread::sleep_for(100ms);
+    }
+}
+
 }
 
 int
@@ -177,9 +185,6 @@ App::Main()
         LOG(debug, "identity: '%s'", params.identity.c_str());
         LOG(debug, "serviceidentity: '%s'", params.serviceidentity.c_str());
         LOG(debug, "subscribeTimeout: '%" PRIu64 "'", params.subscribeTimeout);
-        std::unique_ptr<search::StateFile> stateFile;
-        std::unique_ptr<search::SigBusHandler> sigBusHandler;
-        std::unique_ptr<search::IOErrorHandler> ioErrorHandler;
         protonUP = std::make_unique<proton::Proton>(params.identity, _argc > 0 ? _argv[0] : "proton", std::chrono::milliseconds(params.subscribeTimeout));
         proton::Proton & proton = *protonUP;
         proton::BootstrapConfig::SP configSnapshot = proton.init();
@@ -188,47 +193,20 @@ App::Main()
         } else {
             const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
             vespalib::string basedir = protonConfig.basedir;
-            bool stopOnIOErrors = protonConfig.stoponioerrors;
             vespalib::mkdir(basedir, true);
-            // TODO: Test that we can write to new file in directory
-            stateFile = std::make_unique<search::StateFile>(basedir + "/state");
-            int stateGen = stateFile->getGen();
-            vespalib::string stateString = getStateString(*stateFile);
-            std::unique_ptr<PersistenceProvider> downPersistence;
-            if (stateIsDown(stateString)) {
-                LOG(error, "proton state string is %s", stateString.c_str());
-                if (stopOnIOErrors) {
-                    if ( !params.serviceidentity.empty()) {
-                        downPersistence = std::make_unique<DownPersistence>("proton state string is " + stateString);
-                    } else {
-                        LOG(info, "Sleeping 900 seconds due to proton state");
-                        int sleepLeft = 900;
-                        while (!(SIG::INT.check() || SIG::TERM.check()) && sleepLeft > 0) {
-                            std::this_thread::sleep_for(1000ms);
-                            --sleepLeft;
-                        }
-                        EV_STOPPING("proton", "shutdown after stop on io errors");
-                        return 1;
-                    }
-                }
-            }
-            sigBusHandler = std::make_unique<search::SigBusHandler>(stateFile.get());
-            ioErrorHandler = std::make_unique<search::IOErrorHandler>(stateFile.get());
-            if ( ! params.serviceidentity.empty()) {
-                proton.getMetricManager().init(params.serviceidentity, proton.getThreadPool());
-            } else {
-                proton.getMetricManager().init(params.identity, proton.getThreadPool());
-            }
-            if (!downPersistence) {
+            {
+                ExitOnSignal exit_on_signal;
                 proton.init(configSnapshot);
             }
             configSnapshot.reset();
             std::unique_ptr<ProtonServiceLayerProcess> spiProton;
             if ( ! params.serviceidentity.empty()) {
-                spiProton = std::make_unique<ProtonServiceLayerProcess>(params.serviceidentity, proton, downPersistence.get());
+                spiProton = std::make_unique<ProtonServiceLayerProcess>(params.serviceidentity, proton);
                 spiProton->setupConfig(std::chrono::milliseconds(params.subscribeTimeout));
                 spiProton->createNode();
                 EV_STARTED("servicelayer");
+            } else {
+                proton.getMetricManager().init(params.identity, proton.getThreadPool());
             }
             EV_STARTED("proton");
             while (!(SIG::INT.check() || SIG::TERM.check() || (spiProton && spiProton->getNode().attemptedStopped()))) {
@@ -237,23 +215,10 @@ App::Main()
                     storage::ResumeGuard guard(spiProton->getNode().pause());
                     spiProton->updateConfig();
                 }
-                if (stateGen != stateFile->getGen()) {
-                    stateGen = stateFile->getGen();
-                    stateString = getStateString(*stateFile);
-                    if (stateIsDown(stateString)) {
-                        LOG(error, "proton state string is %s", stateString.c_str());
-                        if (stopOnIOErrors) {
-                            if (spiProton) {
-                                // report down state to cluster controller.
-                                spiProton->getNode().notifyPartitionDown(0, "proton state string is " + stateString);
-                                std::this_thread::sleep_for(1000ms);
-                            }
-                            EV_STOPPING("proton", "shutdown after new stop on io errors");
-                            return 1;
-                        }
-                    }
-                }
             }
+            // Ensure metric manager and state server are shut down before we start tearing
+            // down any service layer components that they may end up transitively using.
+            protonUP->shutdown_config_fetching_and_state_exposing_components_once();
             if (spiProton) {
                 spiProton->getNode().requestShutdown("controlled shutdown");
                 spiProton->shutdown();

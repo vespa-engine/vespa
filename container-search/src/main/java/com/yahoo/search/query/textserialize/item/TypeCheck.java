@@ -7,6 +7,7 @@ import com.yahoo.protect.Validator;
  * @author Tony Vaagenes
  */
 public class TypeCheck {
+
     public static void ensureInstanceOf(Object object, Class<?> c) {
         Validator.ensureInstanceOf(expectationString(c.getName(), object.getClass().getSimpleName()),
                 object, c);
@@ -24,4 +25,5 @@ public class TypeCheck {
     private static String expectationString(String expected, String got) {
         return "Expected " + expected + ", but got " + got;
     }
+
 }

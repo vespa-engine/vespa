@@ -10,7 +10,7 @@
 #include <deque>
 #include <atomic>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 /**
  * Abstract class used to store data of potential different types in underlying memory buffers.
@@ -20,43 +20,50 @@ namespace search::datastore {
 class DataStoreBase
 {
 public:
-    // Hold list before freeze, before knowing how long elements must be held
+    /**
+     * Hold list before freeze, before knowing how long elements must be held.
+     */
     class ElemHold1ListElem
     {
     public:
         EntryRef _ref;
-        size_t _len;  // Aligned length
+        size_t   _len;  // Aligned length
 
         ElemHold1ListElem(EntryRef ref, size_t len)
-                : _ref(ref),
-                  _len(len)
+            : _ref(ref),
+              _len(len)
         { }
     };
 
 protected:
-    typedef vespalib::GenerationHandler::generation_t generation_t;
-    typedef vespalib::GenerationHandler::sgeneration_t sgeneration_t;
+    using generation_t = vespalib::GenerationHandler::generation_t;
+    using sgeneration_t = vespalib::GenerationHandler::sgeneration_t;
 
 private:
     class BufferAndTypeId {
     public:
-        using B = void *;
+        using MemPtr = void *;
         BufferAndTypeId() : BufferAndTypeId(nullptr, 0) { }
-        BufferAndTypeId(B buffer, uint32_t typeId) : _buffer(buffer), _typeId(typeId) { }
-        B getBuffer() const { return _buffer; }
-        B & getBuffer() { return _buffer; }
+        BufferAndTypeId(MemPtr buffer, uint32_t typeId) : _buffer(buffer), _typeId(typeId) { }
+        MemPtr getBuffer() const { return _buffer; }
+        MemPtr & getBuffer() { return _buffer; }
         uint32_t getTypeId() const { return _typeId; }
         void setTypeId(uint32_t typeId) { _typeId = typeId; }
     private:
-        B          _buffer;
+        MemPtr     _buffer;
         uint32_t   _typeId;
     };
     std::vector<BufferAndTypeId> _buffers; // For fast mapping with known types
 protected:
-    std::vector<uint32_t> _activeBufferIds; // typeId -> active buffer
+    // Provides a mapping from typeId -> primary buffer for that type.
+    // The primary buffer is used for allocations of new element(s) if no available slots are found in free lists.
+    std::vector<uint32_t> _primary_buffer_ids;
 
     void * getBuffer(uint32_t bufferId) { return _buffers[bufferId].getBuffer(); }
-    // Hold list at freeze, when knowing how long elements must be held
+
+    /**
+     * Hold list at freeze, when knowing how long elements must be held
+     */
     class ElemHold2ListElem : public ElemHold1ListElem
     {
     public:
@@ -68,9 +75,12 @@ protected:
         { }
     };
 
-    typedef vespalib::Array<ElemHold1ListElem> ElemHold1List;
-    typedef std::deque<ElemHold2ListElem> ElemHold2List;
+    using ElemHold1List = vespalib::Array<ElemHold1ListElem>;
+    using ElemHold2List = std::deque<ElemHold2ListElem>;
 
+    /**
+     * Class used to hold the old buffer as part of fallbackResize().
+     */
     class FallbackHold : public vespalib::GenerationHeldBase
     {
     public:
@@ -117,9 +127,7 @@ public:
               _holdBuffers(0)
         { }
 
-        MemStats &
-        operator+=(const MemStats &rhs)
-        {
+        MemStats& operator+=(const MemStats &rhs) {
             _allocElems += rhs._allocElems;
             _usedElems += rhs._usedElems;
             _deadElems += rhs._deadElems;
@@ -148,6 +156,7 @@ protected:
     ElemHold2List _elemHold2List;
 
     const uint32_t _numBuffers;
+    uint32_t       _hold_buffer_count;
     const size_t   _maxArrays;
     mutable std::atomic<uint64_t> _compaction_count;
 
@@ -160,10 +169,7 @@ protected:
     virtual ~DataStoreBase();
 
     /**
-     * Get next buffer id
-     *
-     * @param bufferId current buffer id
-     * @return         next buffer id
+     * Get the next buffer id after the given buffer id.
      */
     uint32_t nextBufferId(uint32_t bufferId) {
         uint32_t ret = bufferId + 1;
@@ -173,12 +179,10 @@ protected:
     }
 
     /**
-     * Get active buffer
-     *
-     * @return          active buffer
+     * Get the primary buffer for the given type id.
      */
-    void *activeBuffer(uint32_t typeId) {
-        return _buffers[_activeBufferIds[typeId]].getBuffer();
+    void* primary_buffer(uint32_t typeId) {
+        return _buffers[_primary_buffer_ids[typeId]].getBuffer();
     }
 
     /**
@@ -195,20 +199,20 @@ protected:
     void markCompacting(uint32_t bufferId);
 public:
     uint32_t addType(BufferTypeBase *typeHandler);
-    void initActiveBuffers();
+    void init_primary_buffers();
 
     /**
-     * Ensure that active buffer has a given number of elements free at end.
+     * Ensure that the primary buffer for the given type has a given number of elements free at end.
      * Switch to new buffer if current buffer is too full.
      *
-     * @param typeId      registered data type for buffer.
-     * @param elemsNeeded Number of elements needed to be free
+     * @param typeId      Registered data type for buffer.
+     * @param elemsNeeded Number of elements needed to be free.
      */
     void ensureBufferCapacity(uint32_t typeId, size_t elemsNeeded) {
         if (__builtin_expect(elemsNeeded >
-                             _states[_activeBufferIds[typeId]].remaining(),
+                             _states[_primary_buffer_ids[typeId]].remaining(),
                              false)) {
-            switchOrGrowActiveBuffer(typeId, elemsNeeded);
+            switch_or_grow_primary_buffer(typeId, elemsNeeded);
         }
     }
 
@@ -220,24 +224,25 @@ public:
     void holdBuffer(uint32_t bufferId);
 
     /**
-     * Switch to new active buffer, typically in preparation for compaction
-     * or when current active buffer no longer has free space.
+     * Switch to a new primary buffer, typically in preparation for compaction
+     * or when the current primary buffer no longer has free space.
      *
-     * @param typeId      registered data type for buffer.
-     * @param elemsNeeded Number of elements needed to be free
+     * @param typeId      Registered data type for buffer.
+     * @param elemsNeeded Number of elements needed to be free.
      */
-    void switchActiveBuffer(uint32_t typeId, size_t elemsNeeded);
+    void switch_primary_buffer(uint32_t typeId, size_t elemsNeeded);
 
-    void switchOrGrowActiveBuffer(uint32_t typeId, size_t elemsNeeded);
+    bool consider_grow_active_buffer(uint32_t type_id, size_t elems_needed);
+    void switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded);
 
     vespalib::MemoryUsage getMemoryUsage() const;
 
     vespalib::AddressSpace getAddressSpaceUsage() const;
 
     /**
-     * Get active buffer id for the given type id.
+     * Get the primary buffer id for the given type id.
      */
-    uint32_t getActiveBufferId(uint32_t typeId) const { return _activeBufferIds[typeId]; }
+    uint32_t get_primary_buffer_id(uint32_t typeId) const { return _primary_buffer_ids[typeId]; }
     const BufferState &getBufferState(uint32_t bufferId) const { return _states[bufferId]; }
     BufferState &getBufferState(uint32_t bufferId) { return _states[bufferId]; }
     uint32_t getNumBuffers() const { return _numBuffers; }
@@ -296,7 +301,8 @@ public:
     }
 
     /**
-     * Enable free list management.  This only works for fixed size elements.
+     * Enable free list management.
+     * This only works for fixed size elements.
      */
     void enableFreeLists();
 
@@ -306,7 +312,8 @@ public:
     void disableFreeLists();
 
     /**
-     * Enable free list management.  This only works for fixed size elements.
+     * Enable free list management.
+     * This only works for fixed size elements.
      */
     void enableFreeList(uint32_t bufferId);
 
@@ -325,24 +332,27 @@ public:
         return _freeListLists[typeId];
     }
 
+    /**
+     * Returns aggregated memory statistics for all buffers in this data store.
+     */
     MemStats getMemStats() const;
 
-    /*
-     * Assume that no readers are present while data structure is being
-     * intialized.
+    /**
+     * Assume that no readers are present while data structure is being initialized.
      */
     void setInitializing(bool initializing) { _initializing = initializing; }
 
 private:
     /**
-     * Switch buffer state to active.
+     * Switch buffer state to active for the given buffer.
      *
      * @param bufferId    Id of buffer to be active.
-     * @param typeId      registered data type for buffer.
-     * @param elemsNeeded Number of elements needed to be free
+     * @param typeId      Registered data type for buffer.
+     * @param elemsNeeded Number of elements needed to be free.
      */
     void onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded);
 
+    void inc_hold_buffer_count();
 public:
     uint32_t getTypeId(uint32_t bufferId) const {
         return _buffers[bufferId].getTypeId();
@@ -361,6 +371,7 @@ public:
     std::vector<uint32_t> startCompactWorstBuffers(bool compactMemory, bool compactAddressSpace);
     uint64_t get_compaction_count() const { return _compaction_count.load(std::memory_order_relaxed); }
     void inc_compaction_count() const { ++_compaction_count; }
+    bool has_held_buffers() const noexcept { return _hold_buffer_count != 0u; }
 };
 
 }

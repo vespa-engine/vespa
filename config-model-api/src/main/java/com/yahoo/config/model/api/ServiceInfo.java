@@ -85,4 +85,9 @@ public class ServiceInfo {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "service '" + serviceName + "' of type " + serviceType + " on " + hostName;
+    }
+
 }

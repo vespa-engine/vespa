@@ -1,13 +1,18 @@
 {
   "isPublic": (ignore),
+  "isCd": (ignore),
+  "hasTrialCapacity": (ignore),
   "user": {
     "name": "Joe Developer",
     "email": "dev@domail",
-    "nickname": "dev"
+    "nickname": "dev",
+    "verified":false
   },
   "tenants": {},
   "operator": [
     "hostedOperator",
-    "hostedSupporter"
-  ]
+    "hostedSupporter",
+    "hostedAccountant"
+  ],
+  "flags": [{"id":"enable-public-signup-flow","rules":[{"value":false}]}]
 }

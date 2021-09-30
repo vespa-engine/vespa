@@ -4,10 +4,20 @@ package com.yahoo.vespa.model.routing;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRepo;
-import com.yahoo.messagebus.routing.*;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
-import java.util.*;
+import com.yahoo.messagebus.routing.ApplicationSpec;
+import com.yahoo.messagebus.routing.HopSpec;
+import com.yahoo.messagebus.routing.RouteSpec;
+import com.yahoo.messagebus.routing.RoutingSpec;
+import com.yahoo.messagebus.routing.RoutingTableSpec;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * This is the routing plugin of the Vespa model. This class is responsible for parsing all routing information given
@@ -32,7 +42,7 @@ public class Routing extends ConfigModel {
      * Sets the application specification to include when verifying the complete routing config. This needs to be
      * invoked before {@link #deriveCommonSettings(com.yahoo.config.model.ConfigModelRepo)} to be included.
      *
-     * @param app The application specification to include.
+     * @param app the application specification to include
      */
     public void setExplicitApplicationSpec(ApplicationSpec app) {
         explicitApplication = app;
@@ -42,7 +52,7 @@ public class Routing extends ConfigModel {
      * Sets the routing specification to include in the derived routing config. This needs to be invoked before
      * {@link #deriveCommonSettings(com.yahoo.config.model.ConfigModelRepo)} to be included.
      *
-     * @param routing The routing specification to include.
+     * @param routing the routing specification to include
      */
     public void setExplicitRoutingSpec(RoutingSpec routing) {
         explicitRouting = routing;
@@ -53,7 +63,7 @@ public class Routing extends ConfigModel {
     /**
      * Derives all routing settings that can be found by inspecting the given plugin container.
      *
-     * @param plugins All initialized plugins of the vespa model.
+     * @param plugins all initialized plugins of the vespa model
      */
     public void deriveCommonSettings(ConfigModelRepo plugins) {
         // Combine explicit routing with protocol derived routing.
@@ -79,6 +89,14 @@ public class Routing extends ConfigModel {
         errors.clear();
         if (routing.verify(app, errors)) {
             this.derivedRouting=routing;
+        }
+    }
+
+    public void getConfig(DocumentProtocolPoliciesConfig.Builder builder) {
+        for (Protocol protocol : protocols) {
+            if (protocol instanceof DocumentProtocol) {
+                ((DocumentProtocol) protocol).getConfig(builder);
+            }
         }
     }
 
@@ -141,8 +159,8 @@ public class Routing extends ConfigModel {
      * Adds the given routing table to the given routing spec. This method will not copy hops or routes that are already
      * defined in the target table.
      *
-     * @param routing The routing spec to add to.
-     * @param from    The table to copy content from.
+     * @param routing the routing spec to add to
+     * @param from    the table to copy content from
      */
     private static void addRoutingTable(RoutingSpec routing, RoutingTableSpec from) {
         RoutingTableSpec to = getRoutingTable(routing, from.getProtocol());
@@ -176,9 +194,9 @@ public class Routing extends ConfigModel {
     /**
      * Returns the routing table from the given routing spec that belongs to the named protocol.
      *
-     * @param routing  The routing whose tables to search through.
-     * @param protocol The name of the protocol whose table to return.
-     * @return The routing table found, or null.
+     * @param routing  the routing whose tables to search through
+     * @param protocol the name of the protocol whose table to return
+     * @return the routing table found, or null
      */
     private static RoutingTableSpec getRoutingTable(RoutingSpec routing, String protocol) {
         for (int i = 0, len = routing.getNumTables(); i < len; ++i) {
@@ -190,11 +208,7 @@ public class Routing extends ConfigModel {
         return null;
     }
 
-    /**
-     * Returns a list of errors found when preparing the routing configuration.
-     *
-     * @return The error list.
-     */
+    /** Returns a list of errors found when preparing the routing configuration. */
     public List<String> getErrors() {
         return Collections.unmodifiableList(errors);
     }

@@ -8,7 +8,6 @@ AdminV2 =
    GenericConfig* &
    LogServer? &
    (ConfigServer | ConfigServers)? &
-   FileDistribution? &
    AdminSlobroks? &
    AdminMonitoring? &
    Metrics? &
@@ -70,11 +69,6 @@ LogServer = element logserver {
    service.attlist
 }
 
-FileDistribution = element filedistribution {
-   element uploadbitrate { xsd:string {   pattern = "\d+(\.\d*)?\s*[kmgKMG]?" } }? &
-   element downloadbitrate { xsd:string { pattern = "\d+(\.\d*)?\s*[kmgKMG]?" } }?
-}
-
 Metrics = element metrics {
     element consumer {
         attribute id { xsd:Name } &
@@ -82,8 +76,25 @@ Metrics = element metrics {
         element metric {
             attribute id { xsd:Name } &
             attribute display-name { xsd:Name }?
-        }*
+        }* &
+        Cloudwatch?
     }+
+}
+
+Cloudwatch = element cloudwatch {
+    attribute region { xsd:Name } &
+    attribute namespace { xsd:string { pattern = "[\w_\-/#:\.]+" } } &
+    (
+      element credentials {
+            attribute access-key-name { xsd:Name } &
+            attribute secret-key-name { xsd:Name }
+      }
+      |
+      element shared-credentials {
+          attribute file { string } &
+          attribute profile { xsd:Name }?
+      }
+    )?
 }
 
 ClusterControllers = element cluster-controllers {
@@ -94,6 +105,7 @@ ClusterControllers = element cluster-controllers {
 }
 
 LogForwarding = element logforwarding {
+    attribute include-admin { xsd:boolean }? &
     element splunk {
         attribute splunk-home { xsd:string }? &
         attribute deployment-server { xsd:string } &

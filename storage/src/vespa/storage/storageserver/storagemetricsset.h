@@ -4,7 +4,6 @@
 
 #include "tls_statistics_metrics_wrapper.h"
 #include "fnet_metrics_wrapper.h"
-#include <vespa/metrics/metrics.h>
 
 namespace storage {
 

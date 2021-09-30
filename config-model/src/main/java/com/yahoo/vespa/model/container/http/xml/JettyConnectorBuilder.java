@@ -1,17 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.http.xml;
 
+import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
-import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.ssl.ConfiguredFilebasedSslProvider;
 import com.yahoo.vespa.model.container.http.ssl.CustomSslProvider;
 import com.yahoo.vespa.model.container.http.ssl.DefaultSslProvider;
+import com.yahoo.vespa.model.container.http.ssl.SslProvider;
 import org.w3c.dom.Element;
 
 import java.util.Arrays;
@@ -27,15 +28,21 @@ import static java.util.stream.Collectors.toList;
 public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ConnectorFactory>  {
 
     @Override
-    protected ConnectorFactory doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element serverSpec) {
+    protected ConnectorFactory doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element serverSpec) {
         String name = XmlHelper.getIdString(serverSpec);
         int port = HttpBuilder.readPort(new ModelElement(serverSpec), deployState.isHosted(), deployState.getDeployLogger());
-
-        SimpleComponent sslProviderComponent = getSslConfigComponents(name, serverSpec);
-        return new ConnectorFactory(name, port, sslProviderComponent);
+        ConnectorFactory.Builder builder = new ConnectorFactory.Builder(name, port);
+        XmlHelper.getOptionalAttribute(serverSpec, "default-request-chain")
+                .map(ComponentId::new)
+                .ifPresent(builder::defaultRequestFilterChain);
+        XmlHelper.getOptionalAttribute(serverSpec, "default-response-chain")
+                .map(ComponentId::new)
+                .ifPresent(builder::defaultResponseFilterChain);
+        SslProvider sslProviderComponent = getSslConfigComponents(name, serverSpec);
+        return builder.sslProvider(sslProviderComponent).build();
     }
 
-    SimpleComponent getSslConfigComponents(String serverName, Element serverSpec) {
+    SslProvider getSslConfigComponents(String serverName, Element serverSpec) {
         Element sslConfigurator = XML.getChild(serverSpec, "ssl");
         Element sslProviderConfigurator = XML.getChild(serverSpec, "ssl-provider");
 

@@ -15,10 +15,10 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
  */
 public class ProductionList {
 
-    private List<Production> productions =new java.util.ArrayList<>();
+    private final List<Production> productions = new java.util.ArrayList<>();
 
     /** True to replace by the production, false to add it */
-    private boolean replacing=true;
+    private boolean replacing = true;
 
     public void addProduction(Production term) {
         term.setReplacing(replacing);
@@ -28,12 +28,12 @@ public class ProductionList {
 
     /** True to replace, false to add, default true */
     void setReplacing(boolean replacing) {
-        for (Iterator<Production> i=productions.iterator(); i.hasNext(); ) {
-            Production production=i.next();
+        for (Iterator<Production> i = productions.iterator(); i.hasNext(); ) {
+            Production production = i.next();
             production.setReplacing(replacing);
         }
 
-        this.replacing=replacing;
+        this.replacing = replacing;
     }
 
     /** Returns an unmodifiable view of the productions in this */
@@ -42,22 +42,22 @@ public class ProductionList {
     public int getTermCount() { return productions.size(); }
 
     void addMatchReferences(Set<String> matchReferences) {
-        for (Iterator<Production> i=productions.iterator(); i.hasNext(); ) {
-            Production term=i.next();
+        for (Iterator<Production> i = productions.iterator(); i.hasNext(); ) {
+            Production term = i.next();
             term.addMatchReferences(matchReferences);
         }
     }
 
     public void produce(RuleEvaluation e) {
-        for (int i=0; i<productions.size(); i++) {
-            productions.get(i).produce(e,i);
+        for (int i = 0; i < productions.size(); i++) {
+            productions.get(i).produce(e, i);
         }
     }
 
     public String toString() {
-        StringBuilder buffer=new StringBuilder();
-        for (Iterator<Production> i=productions.iterator(); i.hasNext(); ) {
-            buffer.append(i.next().toString());
+        StringBuilder buffer = new StringBuilder();
+        for (Iterator<Production> i = productions.iterator(); i.hasNext(); ) {
+            buffer.append(i.next());
             if (i.hasNext())
                 buffer.append(" ");
         }

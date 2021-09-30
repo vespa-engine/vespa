@@ -9,6 +9,7 @@ import com.yahoo.container.jdisc.config.SessionConfig;
 import com.yahoo.docproc.jdisc.messagebus.MbusRequestContext;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
+import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,7 +45,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
     private void addSource(
             final ContainerCluster cluster, final String name, final SessionConfig.Type.Enum type) {
         final MbusClient mbusClient = new MbusClient(name, type);
-        mbusClient.addClientBindings("mbus://*/" + mbusClient.getSessionName());
+        mbusClient.addClientBindings(SystemBindingPattern.fromPattern("mbus://*/" + mbusClient.getSessionName()));
         cluster.addComponent(mbusClient);
     }
 

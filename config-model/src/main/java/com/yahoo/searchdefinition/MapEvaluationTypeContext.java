@@ -1,6 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.google.common.collect.ImmutableMap;
+import com.yahoo.searchdefinition.expressiontransforms.OnnxModelTransformer;
+import com.yahoo.searchdefinition.expressiontransforms.TokenTransformer;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -37,9 +40,14 @@ import java.util.stream.Collectors;
  */
 public class MapEvaluationTypeContext extends FunctionReferenceContext implements TypeContext<Reference> {
 
+    private final Optional<MapEvaluationTypeContext> parent;
+
     private final Map<Reference, TensorType> featureTypes = new HashMap<>();
 
     private final Map<Reference, TensorType> resolvedTypes = new HashMap<>();
+
+    /** To avoid re-resolving diamond-shaped dependencies */
+    private final Map<Reference, TensorType> globallyResolvedTypes;
 
     /** For invocation loop detection */
     private final Deque<Reference> currentResolutionCallStack;
@@ -47,25 +55,31 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     private final SortedSet<Reference> queryFeaturesNotDeclared;
     private boolean tensorsAreUsed;
 
-    MapEvaluationTypeContext(Collection<ExpressionFunction> functions, Map<Reference, TensorType> featureTypes) {
+    MapEvaluationTypeContext(ImmutableMap<String, ExpressionFunction> functions, Map<Reference, TensorType> featureTypes) {
         super(functions);
+        this.parent = Optional.empty();
         this.featureTypes.putAll(featureTypes);
         this.currentResolutionCallStack =  new ArrayDeque<>();
         this.queryFeaturesNotDeclared = new TreeSet<>();
         tensorsAreUsed = false;
+        globallyResolvedTypes = new HashMap<>();
     }
 
-    private MapEvaluationTypeContext(Map<String, ExpressionFunction> functions,
+    private MapEvaluationTypeContext(ImmutableMap<String, ExpressionFunction> functions,
                                      Map<String, String> bindings,
+                                     Optional<MapEvaluationTypeContext> parent,
                                      Map<Reference, TensorType> featureTypes,
                                      Deque<Reference> currentResolutionCallStack,
                                      SortedSet<Reference> queryFeaturesNotDeclared,
-                                     boolean tensorsAreUsed) {
+                                     boolean tensorsAreUsed,
+                                     Map<Reference, TensorType> globallyResolvedTypes) {
         super(functions, bindings);
+        this.parent = parent;
         this.featureTypes.putAll(featureTypes);
         this.currentResolutionCallStack = currentResolutionCallStack;
         this.queryFeaturesNotDeclared = queryFeaturesNotDeclared;
         this.tensorsAreUsed = tensorsAreUsed;
+        this.globallyResolvedTypes = globallyResolvedTypes;
     }
 
     public void setType(Reference reference, TensorType type) {
@@ -82,11 +96,25 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         resolvedTypes.clear();
     }
 
+    private boolean referenceCanBeResolvedGlobally(Reference reference) {
+        Optional<ExpressionFunction> function = functionInvocation(reference);
+        return function.isPresent() && function.get().arguments().size() == 0;
+        // are there other cases we would like to resolve globally?
+    }
+
     @Override
     public TensorType getType(Reference reference) {
         // computeIfAbsent without concurrent modification due to resolve adding more resolved entries:
+
+        boolean canBeResolvedGlobally = referenceCanBeResolvedGlobally(reference);
+
         TensorType resolvedType = resolvedTypes.get(reference);
-        if (resolvedType != null) return resolvedType;
+        if (resolvedType == null && canBeResolvedGlobally) {
+            resolvedType = globallyResolvedTypes.get(reference);
+        }
+        if (resolvedType != null) {
+            return resolvedType;
+        }
 
         resolvedType = resolveType(reference);
         if (resolvedType == null)
@@ -94,7 +122,25 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         resolvedTypes.put(reference, resolvedType);
         if (resolvedType.rank() > 0)
             tensorsAreUsed = true;
+
+        if (canBeResolvedGlobally) {
+            globallyResolvedTypes.put(reference, resolvedType);
+        }
+
         return resolvedType;
+    }
+
+    MapEvaluationTypeContext getParent(String forArgument, String boundTo) {
+        return parent.orElseThrow(
+            () -> new IllegalArgumentException("argument "+forArgument+" is bound to "+boundTo+" but there is no parent context"));
+    }
+
+    String resolveBinding(String argument) {
+        String bound = getBinding(argument);
+        if (bound == null) {
+            return argument;
+        }
+        return getParent(argument, bound).resolveBinding(bound);
     }
 
     private TensorType resolveType(Reference reference) {
@@ -103,13 +149,15 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                                                currentResolutionCallStack.stream().map(Reference::toString).collect(Collectors.joining(" -> ")) +
                                                " -> " + reference);
 
-        // Bound to a function argument, and not to a same-named identifier (which would lead to a loop)?
+        // Bound to a function argument?
         Optional<String> binding = boundIdentifier(reference);
-        if (binding.isPresent() && ! binding.get().equals(reference.toString())) {
+        if (binding.isPresent()) {
             try {
                 // This is not pretty, but changing to bind expressions rather
                 // than their string values requires deeper changes
-                return new RankingExpression(binding.get()).type(this);
+                var expr = new RankingExpression(binding.get());
+                var type = expr.type(getParent(reference.name(), binding.get()));
+                return type;
             } catch (ParseException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -122,15 +170,30 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             if (FeatureNames.isSimpleFeature(reference)) {
                 // The argument may be a local identifier bound to the actual value
                 String argument = reference.simpleArgument().get();
-                String argumentBinding = getBinding(argument);
-                reference = Reference.simple(reference.name(), argumentBinding != null ? argumentBinding : argument);
+                String argumentBinding = resolveBinding(argument);
+                reference = Reference.simple(reference.name(), argumentBinding);
                 return featureTypes.get(reference);
             }
 
             // A reference to a function?
             Optional<ExpressionFunction> function = functionInvocation(reference);
             if (function.isPresent()) {
-                return function.get().getBody().type(this.withBindings(bind(function.get().arguments(), reference.arguments())));
+                var body = function.get().getBody();
+                var child = this.withBindings(bind(function.get().arguments(), reference.arguments()));
+                var type = body.type(child);
+                return type;
+            }
+
+            // A reference to an ONNX model?
+            Optional<TensorType> onnxFeatureType = onnxFeatureType(reference);
+            if (onnxFeatureType.isPresent()) {
+                return onnxFeatureType.get();
+            }
+
+            // A reference to a feature for transformer token input?
+            Optional<TensorType> transformerTokensFeatureType = transformerTokensFeatureType(reference);
+            if (transformerTokensFeatureType.isPresent()) {
+                return transformerTokensFeatureType.get();
             }
 
             // A reference to a feature which returns a tensor?
@@ -142,6 +205,14 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             // A directly injected identifier? (Useful for stateless model evaluation)
             if (reference.isIdentifier() && featureTypes.containsKey(reference)) {
                 return featureTypes.get(reference);
+            }
+
+            // the name of a constant feature?
+            if (reference.isIdentifier()) {
+                Reference asConst = FeatureNames.asConstantFeature(reference.name());
+                if (featureTypes.containsKey(asConst)) {
+                    return featureTypes.get(asConst);
+                }
             }
 
             // We do not know what this is - since we do not have complete knowledge about the match features
@@ -185,6 +256,39 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         return Optional.of(function);
     }
 
+    private Optional<TensorType> onnxFeatureType(Reference reference) {
+        if ( ! reference.name().equals("onnxModel") && ! reference.name().equals("onnx"))
+            return Optional.empty();
+
+        if ( ! featureTypes.containsKey(reference)) {
+            String configOrFileName = reference.arguments().expressions().get(0).toString();
+
+            // Look up standardized format as added in RankProfile
+            String modelConfigName = OnnxModelTransformer.getModelConfigName(reference);
+            String modelOutput = OnnxModelTransformer.getModelOutput(reference, null);
+
+            reference = new Reference("onnxModel", new Arguments(new ReferenceNode(modelConfigName)), modelOutput);
+            if ( ! featureTypes.containsKey(reference)) {
+                throw new IllegalArgumentException("Missing onnx-model config for '" + configOrFileName + "'");
+            }
+        }
+
+        return Optional.of(featureTypes.get(reference));
+    }
+
+    private Optional<TensorType> transformerTokensFeatureType(Reference reference) {
+        if ( ! reference.name().equals("tokenTypeIds") &&
+                ! reference.name().equals("tokenInputIds") &&
+                ! reference.name().equals("tokenAttentionMask"))
+            return Optional.empty();
+
+        if ( ! (reference.arguments().size() > 1))
+            throw new IllegalArgumentException(reference.name() + " must have at least 2 arguments");
+
+        ExpressionNode size = reference.arguments().expressions().get(0);
+        return Optional.of(TokenTransformer.createTensorType(reference.name(), size));
+    }
+
     /**
      * There are two features which returns the (non-empty) tensor type: tensorFromLabels and tensorFromWeightedSet.
      * This returns the type of those features if this is a reference to either of them, or empty otherwise.
@@ -225,14 +329,9 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         Map<String, String> bindings = new HashMap<>(formalArguments.size());
         for (int i = 0; i < formalArguments.size(); i++) {
             String identifier = invocationArguments.expressions().get(i).toString();
-            String identifierBinding = super.getBinding(identifier);
-            bindings.put(formalArguments.get(i), identifierBinding != null ? identifierBinding : identifier);
+            bindings.put(formalArguments.get(i), identifier);
         }
         return bindings;
-    }
-
-    public Map<Reference, TensorType> featureTypes() {
-        return Collections.unmodifiableMap(featureTypes);
     }
 
     /**
@@ -251,10 +350,12 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     public MapEvaluationTypeContext withBindings(Map<String, String> bindings) {
         return new MapEvaluationTypeContext(functions(),
                                             bindings,
+                                            Optional.of(this),
                                             featureTypes,
                                             currentResolutionCallStack,
                                             queryFeaturesNotDeclared,
-                                            tensorsAreUsed);
+                                            tensorsAreUsed,
+                                            globallyResolvedTypes);
     }
 
 }

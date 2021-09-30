@@ -2,6 +2,7 @@
 #include "loadbalancerpolicy.h"
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
+#include <vespa/messagebus/error.h>
 #include <vespa/messagebus/routing/ihopdirective.h>
 #include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>

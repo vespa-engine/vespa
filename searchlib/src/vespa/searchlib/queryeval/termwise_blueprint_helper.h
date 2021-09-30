@@ -7,8 +7,7 @@
 #include "unpackinfo.h"
 #include "searchiterator.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * Utility used to keep track of which children can be evaluated
@@ -16,17 +15,21 @@ namespace queryeval {
  * termwise and non-termwise parts with each other.
  **/
 struct TermwiseBlueprintHelper {
-    MultiSearch::Children children;
-    MultiSearch::Children termwise;
+private:
+    MultiSearch::Children termwise_ch;
+    MultiSearch::Children other_ch;
+public:
     size_t                first_termwise;
     UnpackInfo            termwise_unpack;
 
+    MultiSearch::Children get_termwise_children() { return std::move(termwise_ch); }
+    MultiSearch::Children get_result() { return std::move(other_ch); }
+
     TermwiseBlueprintHelper(const IntermediateBlueprint &self,
-                            const MultiSearch::Children &subSearches, UnpackInfo &unpackInfo);
+                            MultiSearch::Children subSearches, UnpackInfo &unpackInfo);
     ~TermwiseBlueprintHelper();
 
     void insert_termwise(SearchIterator::UP search, bool strict);
 };
 
-} // namespace queryeval
-} // namespace search
+}

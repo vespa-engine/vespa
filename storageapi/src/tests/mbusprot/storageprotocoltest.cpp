@@ -5,22 +5,23 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/internal.h>
 #include <vespa/storageapi/message/removelocation.h>
+#include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/mbusprot/storageprotocol.h>
 #include <vespa/storageapi/mbusprot/storagecommand.h>
 #include <vespa/storageapi/mbusprot/storagereply.h>
 #include <vespa/storageapi/message/visitor.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/document.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/size_literals.h>
 
-#include <iomanip>
 #include <sstream>
 
-#include <gtest/gtest.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace ::testing;
 
@@ -57,7 +58,6 @@ struct StorageProtocolTest : TestWithParam<vespalib::Version> {
     document::Bucket  _bucket;
     document::BucketId _dummy_remap_bucket{17, 12345};
     BucketInfo _dummy_bucket_info{1,2,3,4,5, true, false, 48};
-    documentapi::LoadTypeSet _loadTypes;
     mbusprot::StorageProtocol _protocol;
     static auto constexpr CONDITION_STRING = "There's just one condition";
 
@@ -67,9 +67,8 @@ struct StorageProtocolTest : TestWithParam<vespalib::Version> {
           _testDocId(_testDoc->getId()),
           _bucket_id(16, 0x51),
           _bucket(makeDocumentBucket(_bucket_id)),
-          _protocol(_docMan.getTypeRepoSP(), _loadTypes)
+          _protocol(_docMan.getTypeRepoSP())
     {
-        _loadTypes.addLoadType(34, "foo", documentapi::Priority::PRI_NORMAL_2);
     }
     ~StorageProtocolTest();
 
@@ -105,11 +104,10 @@ std::string version_as_gtest_string(TestParamInfo<vespalib::Version> info) {
 
 }
 
-// TODO replace with INSTANTIATE_TEST_SUITE_P on newer gtest versions
-INSTANTIATE_TEST_CASE_P(MultiVersionTest, StorageProtocolTest,
-                        Values(vespalib::Version(6, 240, 0),
-                               vespalib::Version(7, 41, 19)),
-                        version_as_gtest_string);
+VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(MultiVersionTest, StorageProtocolTest,
+                                     Values(vespalib::Version(6, 240, 0),
+                                            vespalib::Version(7, 41, 19)),
+                                     version_as_gtest_string);
 
 namespace {
     mbus::Message::UP lastCommand;
@@ -117,9 +115,10 @@ namespace {
 }
 
 TEST_F(StorageProtocolTest, testAddress50) {
-    StorageMessageAddress address("foo", lib::NodeType::STORAGE, 3);
+    vespalib::string cluster("foo");
+    StorageMessageAddress address(&cluster, lib::NodeType::STORAGE, 3);
     EXPECT_EQ(vespalib::string("storage/cluster.foo/storage/3/default"),
-                         address.getRoute().toString());
+                         address.to_mbus_route().toString());
 }
 
 template<typename Command> std::shared_ptr<Command>
@@ -162,11 +161,9 @@ StorageProtocolTest::copyReply(const std::shared_ptr<Reply>& m)
 TEST_P(StorageProtocolTest, put) {
     auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
     cmd->setUpdateTimestamp(Timestamp(13));
-    cmd->setLoadType(_loadTypes["foo"]);
     auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(_bucket, cmd2->getBucket());
     EXPECT_EQ(*_testDoc, *cmd2->getDocument());
-    EXPECT_EQ(vespalib::string("foo"), cmd2->getLoadType().getName());
     EXPECT_EQ(Timestamp(14), cmd2->getTimestamp());
     EXPECT_EQ(Timestamp(13), cmd2->getUpdateTimestamp());
 
@@ -221,12 +218,10 @@ TEST_P(StorageProtocolTest, request_metadata_is_propagated) {
     auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
     cmd->forceMsgId(12345);
     cmd->setPriority(50);
-    cmd->setLoadType(_loadTypes["foo"]);
     cmd->setSourceIndex(321);
     auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(12345, cmd2->getMsgId());
     EXPECT_EQ(50, cmd2->getPriority());
-    EXPECT_EQ(_loadTypes["foo"].getId(), cmd2->getLoadType().getId());
     EXPECT_EQ(321, cmd2->getSourceIndex());
 }
 
@@ -292,6 +287,7 @@ TEST_P(StorageProtocolTest, get) {
     EXPECT_EQ(_testDoc->getId(), reply2->getDocumentId());
     EXPECT_EQ(Timestamp(123), reply2->getBeforeTimestamp());
     EXPECT_EQ(Timestamp(100), reply2->getLastModifiedTimestamp());
+    EXPECT_FALSE(reply2->is_tombstone());
     EXPECT_NO_FATAL_FAILURE(assert_bucket_info_reply_fields_propagated(*reply2));
 }
 
@@ -315,6 +311,40 @@ TEST_P(StorageProtocolTest, can_set_internal_read_consistency_on_get_commands) {
     cmd->set_internal_read_consistency(InternalReadConsistency::Strong);
     cmd2 = copyCommand(cmd);
     EXPECT_EQ(cmd2->internal_read_consistency(), InternalReadConsistency::Strong);
+}
+
+TEST_P(StorageProtocolTest, tombstones_propagated_for_gets) {
+    // Only supported on protocol version 7+.
+    if (GetParam().getMajor() < 7) {
+        return;
+    }
+    auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar", 123);
+    auto reply = std::make_shared<GetReply>(*cmd, std::shared_ptr<Document>(), 100, false, true);
+    set_dummy_bucket_info_reply_fields(*reply);
+    auto reply2 = copyReply(reply);
+
+    EXPECT_TRUE(reply2->getDocument().get() == nullptr);
+    EXPECT_EQ(_testDoc->getId(), reply2->getDocumentId());
+    EXPECT_EQ(Timestamp(123), reply2->getBeforeTimestamp());
+    EXPECT_EQ(Timestamp(100), reply2->getLastModifiedTimestamp()); // In this case, the tombstone timestamp.
+    EXPECT_TRUE(reply2->is_tombstone());
+}
+
+// TODO remove this once pre-protobuf serialization is removed
+TEST_P(StorageProtocolTest, old_serialization_format_treats_tombstone_get_replies_as_not_found) {
+    if (GetParam().getMajor() >= 7) {
+        return;
+    }
+    auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar", 123);
+    auto reply = std::make_shared<GetReply>(*cmd, std::shared_ptr<Document>(), 100, false, true);
+    set_dummy_bucket_info_reply_fields(*reply);
+    auto reply2 = copyReply(reply);
+
+    EXPECT_TRUE(reply2->getDocument().get() == nullptr);
+    EXPECT_EQ(_testDoc->getId(), reply2->getDocumentId());
+    EXPECT_EQ(Timestamp(123), reply2->getBeforeTimestamp());
+    EXPECT_EQ(Timestamp(0), reply2->getLastModifiedTimestamp());
+    EXPECT_FALSE(reply2->is_tombstone()); // Protocol version doesn't understand explicit tombstones.
 }
 
 TEST_P(StorageProtocolTest, remove) {
@@ -522,8 +552,33 @@ TEST_P(StorageProtocolTest, remove_location) {
     EXPECT_EQ("id.group == \"mygroup\"", cmd2->getDocumentSelection());
     EXPECT_EQ(_bucket, cmd2->getBucket());
 
-    auto reply = std::make_shared<RemoveLocationReply>(*cmd2);
+    uint32_t n_docs_removed = 12345;
+    auto reply = std::make_shared<RemoveLocationReply>(*cmd2, n_docs_removed);
     auto reply2 = copyReply(reply);
+    if (GetParam().getMajor() == 7) {
+        // Statistics are only available for protobuf-enabled version.
+        EXPECT_EQ(n_docs_removed, reply2->documents_removed());
+    } else {
+        EXPECT_EQ(0, reply2->documents_removed());
+    }
+}
+
+TEST_P(StorageProtocolTest, stat_bucket) {
+    if (GetParam().getMajor() < 7) {
+        return; // Only available for protobuf-backed protocol version.
+    }
+    auto cmd = std::make_shared<StatBucketCommand>(_bucket, "id.group == 'mygroup'");
+    auto cmd2 = copyCommand(cmd);
+    EXPECT_EQ("id.group == 'mygroup'", cmd2->getDocumentSelection());
+    EXPECT_EQ(_bucket, cmd2->getBucket());
+
+    auto reply = std::make_shared<StatBucketReply>(*cmd2, "neat bucket info goes here");
+    reply->remapBucketId(_dummy_remap_bucket);
+    auto reply2 = copyReply(reply);
+    EXPECT_EQ(reply2->getResults(), "neat bucket info goes here");
+    EXPECT_TRUE(reply2->hasBeenRemapped());
+    EXPECT_EQ(_dummy_remap_bucket, reply2->getBucketId());
+    EXPECT_EQ(_bucket_id, reply2->getOriginalBucketId());
 }
 
 TEST_P(StorageProtocolTest, create_visitor) {
@@ -573,7 +628,7 @@ TEST_P(StorageProtocolTest, get_bucket_diff) {
     entries.back()._gid = document::GlobalId("1234567890abcdef");
     entries.back()._timestamp = 123456;
     entries.back()._headerSize = 100;
-    entries.back()._bodySize = 65536;
+    entries.back()._bodySize = 64_Ki;
     entries.back()._flags = 1;
     entries.back()._hasMask = 3;
 
@@ -628,7 +683,7 @@ TEST_P(StorageProtocolTest, apply_bucket_diff) {
     nodes.push_back(13);
     std::vector<ApplyBucketDiffCommand::Entry> entries = {dummy_apply_entry()};
 
-    auto cmd = std::make_shared<ApplyBucketDiffCommand>(_bucket, nodes, 1234);
+    auto cmd = std::make_shared<ApplyBucketDiffCommand>(_bucket, nodes);
     cmd->getDiff() = entries;
     auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(_bucket, cmd2->getBucket());
@@ -638,7 +693,6 @@ TEST_P(StorageProtocolTest, apply_bucket_diff) {
 
     EXPECT_EQ(nodes, reply2->getNodes());
     EXPECT_EQ(entries, reply2->getDiff());
-    EXPECT_EQ(1234u, reply2->getMaxBufferSize());
 }
 
 namespace {
@@ -760,6 +814,28 @@ TEST_P(StorageProtocolTest, serialized_size_is_used_to_set_approx_size_of_storag
     } else { // Legacy encoding
         EXPECT_EQ(181u, cmd2->getApproxByteSize());
     }
+}
+
+TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
+    EXPECT_EQ(72u, sizeof(StorageMessage));
+    EXPECT_EQ(88u, sizeof(StorageReply));
+    EXPECT_EQ(112u, sizeof(BucketReply));
+    EXPECT_EQ(8u, sizeof(document::BucketId));
+    EXPECT_EQ(16u, sizeof(document::Bucket));
+    EXPECT_EQ(32u, sizeof(BucketInfo));
+    EXPECT_EQ(144u, sizeof(BucketInfoReply));
+    EXPECT_EQ(288u, sizeof(PutReply));
+    EXPECT_EQ(272u, sizeof(UpdateReply));
+    EXPECT_EQ(264u, sizeof(RemoveReply));
+    EXPECT_EQ(352u, sizeof(GetReply));
+    EXPECT_EQ(88u, sizeof(StorageCommand));
+    EXPECT_EQ(112u, sizeof(BucketCommand));
+    EXPECT_EQ(112u, sizeof(BucketInfoCommand));
+    EXPECT_EQ(112u + sizeof(std::string), sizeof(TestAndSetCommand));
+    EXPECT_EQ(144u + sizeof(std::string), sizeof(PutCommand));
+    EXPECT_EQ(144u + sizeof(std::string), sizeof(UpdateCommand));
+    EXPECT_EQ(224u + sizeof(std::string), sizeof(RemoveCommand));
+    EXPECT_EQ(296u, sizeof(GetCommand));
 }
 
 } // storage::api

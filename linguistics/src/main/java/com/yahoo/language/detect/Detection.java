@@ -44,4 +44,5 @@ public class Detection {
     public boolean isLocal() {
         return local;
     }
+
 }

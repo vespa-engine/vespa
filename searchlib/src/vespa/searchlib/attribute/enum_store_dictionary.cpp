@@ -1,146 +1,313 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "enum_store_dictionary.h"
-#include "enumstore.h"
 #include <vespa/vespalib/btree/btree.hpp>
-#include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreenode.hpp>
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
-#include <vespa/vespalib/datastore/datastore.hpp>
+#include <vespa/vespalib/datastore/sharded_hash_map.h>
 #include <vespa/vespalib/datastore/unique_store_dictionary.hpp>
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.enum_store_dictionary");
 
-using search::datastore::EntryComparator;
-using search::datastore::EntryRef;
-using search::datastore::UniqueStoreAddResult;
+using vespalib::datastore::EntryRef;
+using vespalib::datastore::UniqueStoreAddResult;
 
 namespace search {
 
-using btree::BTreeNode;
+using vespalib::btree::BTreeNode;
 
-template <typename DictionaryT>
+template <typename BTreeDictionaryT, typename HashDictionaryT>
 void
-EnumStoreDictionary<DictionaryT>::remove_unused_values(const IndexSet& unused,
-                                                       const datastore::EntryComparator& cmp)
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::remove_unused_values(const IndexList & unused,const EntryComparator& cmp)
 {
-    if (unused.empty()) {
-        return;
-    }
     for (const auto& ref : unused) {
         this->remove(cmp, ref);
     }
 }
 
-template <typename DictionaryT>
-EnumStoreDictionary<DictionaryT>::EnumStoreDictionary(IEnumStore& enumStore)
-    : ParentUniqueStoreDictionary(),
+template <typename BTreeDictionaryT, typename HashDictionaryT>
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::EnumStoreDictionary(IEnumStore& enumStore, std::unique_ptr<EntryComparator> compare)
+    : ParentUniqueStoreDictionary(std::move(compare)),
       _enumStore(enumStore)
 {
 }
 
-template <typename DictionaryT>
-EnumStoreDictionary<DictionaryT>::~EnumStoreDictionary() = default;
+template <typename BTreeDictionaryT, typename HashDictionaryT>
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::~EnumStoreDictionary() = default;
 
-template <typename DictionaryT>
+template <typename BTreeDictionaryT, typename HashDictionaryT>
 void
-EnumStoreDictionary<DictionaryT>::set_ref_counts(const EnumVector& hist)
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::free_unused_values(const EntryComparator& cmp)
 {
-    _enumStore.set_ref_counts(hist, this->_dict);
-}
-
-template <typename DictionaryT>
-void
-EnumStoreDictionary<DictionaryT>::free_unused_values(const datastore::EntryComparator& cmp)
-{
-    IndexSet unused;
+    IndexList unused;
 
     // find unused enums
-    for (auto iter = this->_dict.begin(); iter.valid(); ++iter) {
-        _enumStore.free_value_if_unused(iter.getKey(), unused);
+    if constexpr (has_btree_dictionary) {
+        for (auto iter = this->_btree_dict.begin(); iter.valid(); ++iter) {
+            _enumStore.free_value_if_unused(iter.getKey(), unused);
+        }
+    } else {
+        this->_hash_dict.foreach_key([this, &unused](EntryRef ref) {
+            _enumStore.free_value_if_unused(ref, unused);
+        });
     }
     remove_unused_values(unused, cmp);
 }
 
-template <typename DictionaryT>
+template <typename BTreeDictionaryT, typename HashDictionaryT>
 void
-EnumStoreDictionary<DictionaryT>::free_unused_values(const IndexSet& to_remove,
-                                                     const datastore::EntryComparator& cmp)
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::free_unused_values(const IndexList& to_remove, const EntryComparator& cmp)
 {
-    IndexSet unused;
+    IndexList unused;
+
+    EntryRef prev;
     for (const auto& index : to_remove) {
-        _enumStore.free_value_if_unused(index, unused);
+        assert(prev <= index);
+        if (index != prev) {
+            _enumStore.free_value_if_unused(index, unused);
+            prev = index;
+        }
     }
     remove_unused_values(unused, cmp);
 }
 
-template <typename DictionaryT>
+template <typename BTreeDictionaryT, typename HashDictionaryT>
 void
-EnumStoreDictionary<DictionaryT>::remove(const EntryComparator &comp, EntryRef ref)
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::remove(const EntryComparator &comp, EntryRef ref)
 {
     assert(ref.valid());
-    auto itr = this->_dict.lowerBound(ref, comp);
-    assert(itr.valid() && itr.getKey() == ref);
-    if constexpr (std::is_same_v<DictionaryT, EnumPostingTree>) {
-        assert(EntryRef(itr.getData()) == EntryRef());
+    if constexpr (has_btree_dictionary) {
+        auto itr = this->_btree_dict.lowerBound(ref, comp);
+        assert(itr.valid() && itr.getKey() == ref);
+        if constexpr (std::is_same_v<BTreeDictionaryT, EnumPostingTree>) {
+            assert(EntryRef(itr.getData()) == EntryRef());
+        }
+        this->_btree_dict.remove(itr);
     }
-    this->_dict.remove(itr);
+    if constexpr (has_hash_dictionary) {
+        auto *result = this->_hash_dict.remove(comp, ref);
+        assert(result != nullptr && result->first.load_relaxed() == ref);
+    }
 }
 
-template <typename DictionaryT>
+template <typename BTreeDictionaryT, typename HashDictionaryT>
 bool
-EnumStoreDictionary<DictionaryT>::find_index(const datastore::EntryComparator& cmp,
-                                             Index& idx) const
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::find_index(const EntryComparator& cmp, Index& idx) const
 {
-    auto itr = this->_dict.find(Index(), cmp);
-    if (!itr.valid()) {
+    if constexpr (has_hash_dictionary) {
+        auto find_result = this->_hash_dict.find(cmp, EntryRef());
+        if (find_result != nullptr) {
+            idx = find_result->first.load_acquire();
+            return true;
+        }
         return false;
+    } else {
+        auto itr = this->_btree_dict.find(Index(), cmp);
+        if (!itr.valid()) {
+            return false;
+        }
+        idx = itr.getKey();
+        return true;
     }
-    idx = itr.getKey();
-    return true;
 }
 
-template <typename DictionaryT>
+template <typename BTreeDictionaryT, typename HashDictionaryT>
 bool
-EnumStoreDictionary<DictionaryT>::find_frozen_index(const datastore::EntryComparator& cmp,
-                                                    Index& idx) const
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::find_frozen_index(const EntryComparator& cmp, Index& idx) const
 {
-    auto itr = this->_dict.getFrozenView().find(Index(), cmp);
-    if (!itr.valid()) {
+    if constexpr (has_hash_dictionary) {
+        auto find_result = this->_hash_dict.find(cmp, EntryRef());
+        if (find_result != nullptr) {
+            idx = find_result->first.load_acquire();
+            return true;
+        }
         return false;
+    } else {
+        auto itr = this->_btree_dict.getFrozenView().find(Index(), cmp);
+        if (!itr.valid()) {
+            return false;
+        }
+        idx = itr.getKey();
+        return true;
     }
-    idx = itr.getKey();
-    return true;
 }
 
-template <typename DictionaryT>
+template <typename BTreeDictionaryT, typename HashDictionaryT>
 std::vector<IEnumStore::EnumHandle>
-EnumStoreDictionary<DictionaryT>::find_matching_enums(const datastore::EntryComparator& cmp) const
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::find_matching_enums(const EntryComparator& cmp) const
 {
     std::vector<IEnumStore::EnumHandle> result;
-    auto itr = this->_dict.getFrozenView().find(Index(), cmp);
-    while (itr.valid() && !cmp(Index(), itr.getKey())) {
-        result.push_back(itr.getKey().ref());
-        ++itr;
+    if constexpr (has_btree_dictionary) {
+        auto itr = this->_btree_dict.getFrozenView().find(Index(), cmp);
+        while (itr.valid() && !cmp.less(Index(), itr.getKey())) {
+            result.push_back(itr.getKey().ref());
+            ++itr;
+        }
+    } else {
+        auto find_result = this->_hash_dict.find(cmp, EntryRef());
+        if (find_result != nullptr) {
+            result.push_back(find_result->first.load_acquire().ref());
+        }
     }
     return result;
 }
 
+template <typename BTreeDictionaryT, typename HashDictionaryT>
+EntryRef
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::get_frozen_root() const
+{
+    if constexpr (has_btree_dictionary) {
+        return this->_btree_dict.getFrozenView().getRoot();
+    } else {
+        return EntryRef();
+    }
+}
+
 template <>
-EnumPostingTree &
-EnumStoreDictionary<EnumTree>::get_posting_dictionary()
+std::pair<IEnumStore::Index, EntryRef>
+EnumStoreDictionary<EnumTree>::find_posting_list(const EntryComparator&, EntryRef) const
 {
     LOG_ABORT("should not be reached");
 }
 
-template <>
-EnumPostingTree &
-EnumStoreDictionary<EnumPostingTree>::get_posting_dictionary()
+template <typename BTreeDictionaryT, typename HashDictionaryT>
+std::pair<IEnumStore::Index, EntryRef>
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::find_posting_list(const EntryComparator& cmp, EntryRef root) const
 {
-    return _dict;
+    if constexpr (has_hash_dictionary) {
+        (void) root;
+        auto find_result = this->_hash_dict.find(cmp, EntryRef());
+        if (find_result != nullptr) {
+            return std::make_pair(find_result->first.load_acquire(), find_result->second.load_acquire());
+        }
+        return std::make_pair(Index(), EntryRef());
+    } else {
+        typename BTreeDictionaryType::ConstIterator itr(vespalib::btree::BTreeNode::Ref(), this->_btree_dict.getAllocator());
+        itr.lower_bound(root, Index(), cmp);
+        if (itr.valid() && !cmp.less(Index(), itr.getKey())) {
+            return std::make_pair(itr.getKey(), EntryRef(itr.getData()));
+        }
+        return std::make_pair(Index(), EntryRef());
+    }
+}
+
+template <typename BTreeDictionaryT, typename HashDictionaryT>
+void
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::collect_folded(Index idx, EntryRef, const std::function<void(EntryRef)>& callback) const
+{
+    callback(idx);
+}
+
+template <typename BTreeDictionaryT, typename HashDictionaryT>
+IEnumStore::Index
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::remap_index(Index idx)
+{
+    return idx;
+}
+
+template <>
+void
+EnumStoreDictionary<EnumTree>::clear_all_posting_lists(std::function<void(EntryRef)>)
+{
+    LOG_ABORT("should not be reached");
+}
+
+template <typename BTreeDictionaryT, typename HashDictionaryT>
+void
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::clear_all_posting_lists(std::function<void(EntryRef)> clearer)
+{
+    if constexpr (has_btree_dictionary) {
+        auto& dict = this->_btree_dict;
+        auto itr = dict.begin();
+        EntryRef prev;
+        while (itr.valid()) {
+            EntryRef ref(itr.getData());
+            if (ref.ref() != prev.ref()) {
+                if (ref.valid()) {
+                    clearer(ref);
+                }
+                prev = ref;
+            }
+            itr.writeData(EntryRef().ref());
+            ++itr;
+        }
+    } else {
+        this->_hash_dict.normalize_values([&clearer](EntryRef ref) { clearer(ref); return EntryRef(); });
+    }
+}
+
+template <>
+void
+EnumStoreDictionary<EnumTree>::update_posting_list(Index, const EntryComparator&, std::function<EntryRef(EntryRef)>)
+{
+    LOG_ABORT("should not be reached");
+}
+
+template <typename BTreeDictionaryT, typename HashDictionaryT>
+void
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::update_posting_list(Index idx, const EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater)
+{
+    if constexpr (has_btree_dictionary) {
+        auto& dict = this->_btree_dict;
+        auto itr = dict.lowerBound(idx, cmp);
+        assert(itr.valid() && itr.getKey() == idx);
+        EntryRef old_posting_idx(itr.getData());
+        EntryRef new_posting_idx = updater(old_posting_idx);
+        // Note: Needs review when porting to other platforms
+        // Assumes that other CPUs observes stores from this CPU in order
+        std::atomic_thread_fence(std::memory_order_release);
+        itr.writeData(new_posting_idx.ref());
+        if constexpr (has_hash_dictionary) {
+            auto find_result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), idx);
+            assert(find_result != nullptr && find_result->first.load_relaxed() == idx);
+            assert(find_result->second.load_relaxed() == old_posting_idx);
+            find_result->second.store_release(new_posting_idx);
+        }
+    } else {
+        auto find_result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), idx);
+        assert(find_result != nullptr && find_result->first.load_relaxed() == idx);
+        EntryRef old_posting_idx = find_result->second.load_relaxed();
+        EntryRef new_posting_idx = updater(old_posting_idx);
+        find_result->second.store_release(new_posting_idx);
+    }
+}
+
+template <>
+bool
+EnumStoreDictionary<EnumTree>::normalize_posting_lists(std::function<EntryRef(EntryRef)>)
+{
+    LOG_ABORT("should not be reached");
+}
+
+template <typename BTreeDictionaryT, typename HashDictionaryT>
+bool
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::normalize_posting_lists(std::function<EntryRef(EntryRef)> normalize)
+{
+    if constexpr (has_btree_dictionary) {
+        bool changed = false;
+        auto& dict = this->_btree_dict;
+        for (auto itr = dict.begin(); itr.valid(); ++itr) {
+            EntryRef old_posting_idx(itr.getData());
+            EntryRef new_posting_idx = normalize(old_posting_idx);
+            if (new_posting_idx != old_posting_idx) {
+                changed = true;
+                // Note: Needs review when porting to other platforms
+                // Assumes that other CPUs observes stores from this CPU in order
+                std::atomic_thread_fence(std::memory_order_release);
+                itr.writeData(new_posting_idx.ref());
+                if constexpr (has_hash_dictionary) {
+                    auto find_result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), itr.getKey());
+                    assert(find_result != nullptr && find_result->first.load_relaxed() == itr.getKey());
+                    assert(find_result->second.load_relaxed() == old_posting_idx);
+                    find_result->second.store_release(new_posting_idx);
+                }
+            }
+        }
+        return changed;
+    } else {
+        return this->_hash_dict.normalize_values(normalize);
+    }
 }
 
 template <>
@@ -152,13 +319,20 @@ EnumStoreDictionary<EnumTree>::get_posting_dictionary() const
 
 template <>
 const EnumPostingTree &
-EnumStoreDictionary<EnumPostingTree>::get_posting_dictionary() const
+EnumStoreDictionary<vespalib::datastore::NoBTreeDictionary, vespalib::datastore::ShardedHashMap>::get_posting_dictionary() const
 {
-    return _dict;
+    LOG_ABORT("should not be reached");
 }
 
-EnumStoreFoldedDictionary::EnumStoreFoldedDictionary(IEnumStore& enumStore, std::unique_ptr<EntryComparator> folded_compare)
-    : EnumStoreDictionary<EnumPostingTree>(enumStore),
+template <typename BTreeDictionaryT, typename HashDictionaryT>
+const EnumPostingTree &
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::get_posting_dictionary() const
+{
+    return this->_btree_dict;
+}
+
+EnumStoreFoldedDictionary::EnumStoreFoldedDictionary(IEnumStore& enumStore, std::unique_ptr<EntryComparator> compare, std::unique_ptr<EntryComparator> folded_compare)
+    : EnumStoreDictionary<EnumPostingTree>(enumStore, std::move(compare)),
       _folded_compare(std::move(folded_compare))
 {
 }
@@ -168,18 +342,19 @@ EnumStoreFoldedDictionary::~EnumStoreFoldedDictionary() = default;
 UniqueStoreAddResult
 EnumStoreFoldedDictionary::add(const EntryComparator& comp, std::function<EntryRef(void)> insertEntry)
 {
-    auto it = _dict.lowerBound(EntryRef(), comp);
-    if (it.valid() && !comp(EntryRef(), it.getKey())) {
+    static_assert(!has_hash_dictionary, "Folded Dictionary does not support hash dictionary");
+    auto it = _btree_dict.lowerBound(EntryRef(), comp);
+    if (it.valid() && !comp.less(EntryRef(), it.getKey())) {
         // Entry already exists
         return UniqueStoreAddResult(it.getKey(), false);
     }
     EntryRef newRef = insertEntry();
-    _dict.insert(it, newRef, EntryRef().ref());
+    _btree_dict.insert(it, newRef, EntryRef().ref());
     // Maybe move posting list reference from next entry
     ++it;
-    if (it.valid() && EntryRef(it.getData()).valid() && !(*_folded_compare)(newRef, it.getKey())) {
+    if (it.valid() && EntryRef(it.getData()).valid() && !_folded_compare->less(newRef, it.getKey())) {
         EntryRef posting_list_ref(it.getData());
-        _dict.thaw(it);
+        _btree_dict.thaw(it);
         it.writeData(EntryRef().ref());
         --it;
         assert(it.valid() && it.getKey() == newRef);
@@ -191,15 +366,16 @@ EnumStoreFoldedDictionary::add(const EntryComparator& comp, std::function<EntryR
 void
 EnumStoreFoldedDictionary::remove(const EntryComparator& comp, EntryRef ref)
 {
+    static_assert(!has_hash_dictionary, "Folded Dictionary does not support hash dictionary");
     assert(ref.valid());
-    auto it = _dict.lowerBound(ref, comp);
+    auto it = _btree_dict.lowerBound(ref, comp);
     assert(it.valid() && it.getKey() == ref);
     EntryRef posting_list_ref(it.getData());
-    _dict.remove(it);
+    _btree_dict.remove(it);
     // Maybe copy posting list reference to next entry
     if (posting_list_ref.valid()) {
-        if (it.valid() && !EntryRef(it.getData()).valid() && !(*_folded_compare)(ref, it.getKey())) {
-            this->_dict.thaw(it);
+        if (it.valid() && !EntryRef(it.getData()).valid() && !_folded_compare->less(ref, it.getKey())) {
+            this->_btree_dict.thaw(it);
             it.writeData(posting_list_ref.ref());
         } else {
             LOG_ABORT("Posting list not cleared for removed unique value");
@@ -207,99 +383,130 @@ EnumStoreFoldedDictionary::remove(const EntryComparator& comp, EntryRef ref)
     }
 }
 
+void
+EnumStoreFoldedDictionary::collect_folded(Index idx, EntryRef root, const std::function<void(EntryRef)>& callback) const
+{
+    BTreeDictionaryType::ConstIterator itr(vespalib::btree::BTreeNode::Ref(), _btree_dict.getAllocator());
+    itr.lower_bound(root, idx, *_folded_compare);
+    while (itr.valid() && !_folded_compare->less(idx, itr.getKey())) {
+        callback(itr.getKey());
+        ++itr;
+    }
+}
+
+IEnumStore::Index
+EnumStoreFoldedDictionary::remap_index(Index idx)
+{
+    auto itr = _btree_dict.find(idx, *_folded_compare);
+    assert(itr.valid());
+    return itr.getKey();
+}
+
 template class EnumStoreDictionary<EnumTree>;
 
 template class EnumStoreDictionary<EnumPostingTree>;
 
-template
-class btree::BTreeNodeT<IEnumStore::Index, EnumTreeTraits::INTERNAL_SLOTS>;
+template class EnumStoreDictionary<EnumPostingTree, vespalib::datastore::ShardedHashMap>;
+
+template class EnumStoreDictionary<vespalib::datastore::NoBTreeDictionary, vespalib::datastore::ShardedHashMap>;
+
+}
+
+namespace vespalib::btree {
+
+using search::IEnumStore;
+using search::EnumTreeTraits;
+using datastore::EntryComparatorWrapper;
 
 template
-class btree::BTreeNodeTT<IEnumStore::Index, uint32_t, btree::NoAggregated, EnumTreeTraits::INTERNAL_SLOTS>;
+class BTreeNodeT<IEnumStore::Index, EnumTreeTraits::INTERNAL_SLOTS>;
 
 template
-class btree::BTreeNodeTT<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeNodeTT<IEnumStore::Index, uint32_t, NoAggregated, EnumTreeTraits::INTERNAL_SLOTS>;
 
 template
-class btree::BTreeInternalNode<IEnumStore::Index, btree::NoAggregated, EnumTreeTraits::INTERNAL_SLOTS>;
+class BTreeNodeTT<IEnumStore::Index, BTreeNoLeafData, NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeLeafNode<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeInternalNode<IEnumStore::Index, NoAggregated, EnumTreeTraits::INTERNAL_SLOTS>;
 
 template
-class btree::BTreeLeafNode<IEnumStore::Index, uint32_t, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeLeafNode<IEnumStore::Index, BTreeNoLeafData, NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeLeafNodeTemp<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeLeafNode<IEnumStore::Index, uint32_t, NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeLeafNodeTemp<IEnumStore::Index, uint32_t, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeLeafNodeTemp<IEnumStore::Index, BTreeNoLeafData, NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeNodeStore<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                            EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeLeafNodeTemp<IEnumStore::Index, uint32_t, NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeNodeStore<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                            EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeNodeStore<IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                     EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeRoot<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                       const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeNodeStore<IEnumStore::Index, uint32_t, NoAggregated,
+                     EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeRoot<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                       const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeRoot<IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                const EntryComparatorWrapper, EnumTreeTraits>;
 
 template
-class btree::BTreeRootT<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                        const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeRoot<IEnumStore::Index, uint32_t, NoAggregated,
+                const EntryComparatorWrapper, EnumTreeTraits>;
 
 template
-class btree::BTreeRootT<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                        const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeRootT<IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                 const EntryComparatorWrapper, EnumTreeTraits>;
 
 template
-class btree::BTreeRootBase<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                           EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeRootT<IEnumStore::Index, uint32_t, NoAggregated,
+                 const EntryComparatorWrapper, EnumTreeTraits>;
 
 template
-class btree::BTreeRootBase<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                           EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeRootBase<IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                    EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeNodeAllocator<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                                EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeRootBase<IEnumStore::Index, uint32_t, NoAggregated,
+                    EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeNodeAllocator<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                                EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
+class BTreeNodeAllocator<IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                         EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeIteratorBase<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                               EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS, EnumTreeTraits::PATH_SIZE>;
-template
-class btree::BTreeIteratorBase<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                               EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS, EnumTreeTraits::PATH_SIZE>;
-
-template class btree::BTreeConstIterator<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                                         const datastore::EntryComparatorWrapper, EnumTreeTraits>;
-
-template class btree::BTreeConstIterator<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                                         const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeNodeAllocator<IEnumStore::Index, uint32_t, NoAggregated,
+                         EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeIterator<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                           const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeIteratorBase<IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                        EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS, EnumTreeTraits::PATH_SIZE>;
 template
-class btree::BTreeIterator<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                           const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeIteratorBase<IEnumStore::Index, uint32_t, NoAggregated,
+                        EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS, EnumTreeTraits::PATH_SIZE>;
+
+template class BTreeConstIterator<IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                                  const EntryComparatorWrapper, EnumTreeTraits>;
+
+template class BTreeConstIterator<IEnumStore::Index, uint32_t, NoAggregated,
+                                  const EntryComparatorWrapper, EnumTreeTraits>;
 
 template
-class btree::BTree<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                   const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeIterator<IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+                    const EntryComparatorWrapper, EnumTreeTraits>;
 template
-class btree::BTree<IEnumStore::Index, uint32_t, btree::NoAggregated,
-                   const datastore::EntryComparatorWrapper, EnumTreeTraits>;
+class BTreeIterator<IEnumStore::Index, uint32_t, NoAggregated,
+                    const EntryComparatorWrapper, EnumTreeTraits>;
+
+template
+class BTree<IEnumStore::Index, BTreeNoLeafData, NoAggregated,
+            const EntryComparatorWrapper, EnumTreeTraits>;
+template
+class BTree<IEnumStore::Index, uint32_t, NoAggregated,
+            const EntryComparatorWrapper, EnumTreeTraits>;
 
 }

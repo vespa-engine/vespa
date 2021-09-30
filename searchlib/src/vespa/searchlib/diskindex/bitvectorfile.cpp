@@ -1,10 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bitvectorfile.h"
-#include <vespa/searchlib/index/bitvectorkeys.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/index/bitvectorkeys.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <cassert>
 
 namespace search::diskindex {
 
@@ -17,13 +20,11 @@ void
 readHeader(vespalib::FileHeader &h,
            const vespalib::string &name)
 {
-    Fast_BufferedFile file(32768u);
+    Fast_BufferedFile file(32_Ki);
     file.OpenReadOnly(name.c_str());
     h.readFile(file);
     file.Close();
 }
-
-const size_t FILE_HEADERSIZE_ALIGNMENT = 4096;
 
 }
 
@@ -91,7 +92,7 @@ BitVectorFileWrite::open(const vespalib::string &name,
 void
 BitVectorFileWrite::makeDatHeader(const FileHeaderContext &fileHeaderContext)
 {
-    vespalib::FileHeader h(FILE_HEADERSIZE_ALIGNMENT); // 64 byte alignment on bitvector.dat header
+    vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     typedef vespalib::GenericHeader::Tag Tag;
     fileHeaderContext.addTags(h, _datFile->GetFileName());
     h.putTag(Tag("docIdLimit", _docIdLimit));
@@ -108,7 +109,7 @@ BitVectorFileWrite::makeDatHeader(const FileHeaderContext &fileHeaderContext)
 void
 BitVectorFileWrite::updateDatHeader(uint64_t fileBitSize)
 {
-    vespalib::FileHeader h(FILE_HEADERSIZE_ALIGNMENT);
+    vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     typedef vespalib::GenericHeader::Tag Tag;
     readHeader(h, _datFile->GetFileName());
     FileHeaderContext::setFreezeTime(h);

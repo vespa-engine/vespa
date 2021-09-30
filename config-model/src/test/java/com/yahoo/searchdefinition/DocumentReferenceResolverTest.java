@@ -23,14 +23,16 @@ import static org.junit.Assert.assertTrue;
  */
 public class DocumentReferenceResolverTest {
 
+    private static final String BAR = "bar";
+    private static final String FOO = "foo";
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void reference_from_one_document_to_another_is_resolved() {
         // Create bar document with no fields
-        Search barSearch = new Search();
-        SDDocumentType barDocument = new SDDocumentType("bar", barSearch);
+        Search barSearch = new Search(BAR);
+        SDDocumentType barDocument = new SDDocumentType(BAR, barSearch);
         barSearch.addDocument(barDocument);
 
         // Create foo document with document reference to bar and add another field
@@ -38,7 +40,7 @@ public class DocumentReferenceResolverTest {
                 ("bar_ref", ReferenceDataType.createWithInferredId(barDocument.getDocumentType()));
         AttributeUtils.addAttributeAspect(fooRefToBarField);
         SDField irrelevantField = new SDField("irrelevant_stuff", DataType.INT);
-        Search fooSearch = new Search();
+        Search fooSearch = new Search(FOO);
         SDDocumentType fooDocument = new SDDocumentType("foo", fooSearch);
         fooDocument.addField(fooRefToBarField);
         fooDocument.addField(irrelevantField);
@@ -60,7 +62,7 @@ public class DocumentReferenceResolverTest {
         SDField fooRefToBarField = new SDField(
                 "bar_ref", ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create("bar")));
         AttributeUtils.addAttributeAspect(fooRefToBarField);
-        Search fooSearch = new Search();
+        Search fooSearch = new Search(FOO);
         SDDocumentType fooDocument = new SDDocumentType("foo", fooSearch);
         fooDocument.addField(fooRefToBarField);
         fooSearch.addDocument(fooDocument);
@@ -76,14 +78,14 @@ public class DocumentReferenceResolverTest {
     @Test
     public void throws_exception_if_reference_is_not_an_attribute() {
         // Create bar document with no fields
-        Search barSearch = new Search();
+        Search barSearch = new Search(BAR);
         SDDocumentType barDocument = new SDDocumentType("bar", barSearch);
         barSearch.addDocument(barDocument);
 
         // Create foo document with document reference to bar
         SDField fooRefToBarField = new SDField
                 ("bar_ref", ReferenceDataType.createWithInferredId(barDocument.getDocumentType()));
-        Search fooSearch = new Search();
+        Search fooSearch = new Search(FOO);
         SDDocumentType fooDocument = new SDDocumentType("foo", fooSearch);
         fooDocument.addField(fooRefToBarField);
         fooSearch.addDocument(fooDocument);

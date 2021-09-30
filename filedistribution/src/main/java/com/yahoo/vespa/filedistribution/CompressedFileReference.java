@@ -1,8 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
 import com.google.common.io.ByteStreams;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
@@ -47,13 +47,6 @@ public class CompressedFileReference {
                 .map(Path::toFile).collect(Collectors.toList()), outputFile);
     }
 
-    public static byte[] compress(File directory) throws IOException {
-        return compress(directory, Files.find(Paths.get(directory.getAbsolutePath()),
-                                              recurseDepth,
-                                              (p, basicFileAttributes) -> basicFileAttributes.isRegularFile())
-                .map(Path::toFile).collect(Collectors.toList()));
-    }
-
     public static byte[] compress(File baseDir, List<File> inputFiles) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TarArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(out));
@@ -63,7 +56,7 @@ public class CompressedFileReference {
     }
 
     static void decompress(File inputFile, File outputDir) throws IOException {
-        log.log(LogLevel.DEBUG, () -> "Decompressing '" + inputFile + "' into '" + outputDir + "'");
+        log.log(Level.FINE, () -> "Decompressing '" + inputFile + "' into '" + outputDir + "'");
         try (ArchiveInputStream ais = new TarArchiveInputStream(new GZIPInputStream(new FileInputStream(inputFile)))) {
             decompress(ais, outputDir);
         } catch (IllegalArgumentException e) {
@@ -75,20 +68,19 @@ public class CompressedFileReference {
         int entries = 0;
         ArchiveEntry entry;
         while ((entry = archiveInputStream.getNextEntry()) != null) {
-            log.log(LogLevel.DEBUG, "Unpacking " + entry.getName());
             File outFile = new File(outputFile, entry.getName());
             if (entry.isDirectory()) {
                 if (!(outFile.exists() && outFile.isDirectory())) {
-                    log.log(LogLevel.DEBUG, () -> "Creating dir: " + outFile.getAbsolutePath());
+                    log.log(Level.FINE, () -> "Creating dir: " + outFile.getAbsolutePath());
                     if (!outFile.mkdirs()) {
-                        log.log(LogLevel.WARNING, "Could not create dir " + entry.getName());
+                        log.log(Level.WARNING, "Could not create dir " + entry.getName());
                     }
                 }
             } else {
                 // Create parent dir if necessary
                 File parent = new File(outFile.getParent());
                 if (!parent.exists() && !parent.mkdirs()) {
-                    log.log(LogLevel.WARNING, "Could not create dir " + parent.getAbsolutePath());
+                    log.log(Level.WARNING, "Could not create dir " + parent.getAbsolutePath());
                 }
                 FileOutputStream fos = new FileOutputStream(outFile);
                 ByteStreams.copy(archiveInputStream, fos);
@@ -114,7 +106,7 @@ public class CompressedFileReference {
     }
 
     private static void writeFileToTar(ArchiveOutputStream taos, File baseDir, File file) throws IOException {
-        log.log(LogLevel.DEBUG, () -> "Adding file to tar: " + baseDir.toPath().relativize(file.toPath()).toString());
+        log.log(Level.FINE, () -> "Adding file to tar: " + baseDir.toPath().relativize(file.toPath()).toString());
         taos.putArchiveEntry(taos.createArchiveEntry(file, baseDir.toPath().relativize(file.toPath()).toString()));
         ByteStreams.copy(new FileInputStream(file), taos);
         taos.closeArchiveEntry();

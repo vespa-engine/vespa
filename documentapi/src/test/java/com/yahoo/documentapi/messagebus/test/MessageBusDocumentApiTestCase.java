@@ -1,9 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.test;
 
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentType;
 import com.yahoo.document.select.parser.ParseException;
+import com.yahoo.documentapi.AsyncParameters;
+import com.yahoo.documentapi.AsyncSession;
 import com.yahoo.documentapi.DocumentAccess;
+import com.yahoo.documentapi.DocumentOperationParameters;
 import com.yahoo.documentapi.ProgressToken;
+import com.yahoo.documentapi.Response;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
@@ -22,6 +30,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Instant;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -96,4 +111,26 @@ public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
         // TODO(vekterli): test remote-to-local message sending as well?
         // TODO(vekterli): test DocumentAccess shutdown during active ession?
     }
+
+    @Test
+    public void requireThatTimeoutWorks() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<Response> response = new AtomicReference<>();
+        AsyncSession session = access().createAsyncSession(new AsyncParameters());
+        DocumentType type = access().getDocumentTypeManager().getDocumentType("music");
+        Document doc1 = new Document(type, new DocumentId("id:ns:music::1"));
+        assertTrue(session.put(new DocumentPut(doc1),
+                               DocumentOperationParameters.parameters()
+                                                          .withResponseHandler(result -> {
+                                                              response.set(result);
+                                                              latch.countDown();
+                                                          })
+                                                          .withDeadline(Instant.now().minusSeconds(1)))
+                          .isSuccess());
+        assertTrue(latch.await(60, TimeUnit.SECONDS));
+        assertNotNull(response.get());
+        assertEquals(Response.Outcome.TIMEOUT, response.get().outcome());
+        session.destroy();
+    }
+
 }

@@ -5,10 +5,11 @@
 #include "unique_store_allocator.h"
 #include "unique_store_value_filter.h"
 #include "datastore.hpp"
+#include <vespa/vespalib/util/size_literals.h>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
-constexpr size_t NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER = 1024u;
+constexpr size_t NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER = 1_Ki;
 constexpr float ALLOC_GROW_FACTOR = 0.2;
 
 template <typename EntryT, typename RefT>
@@ -19,7 +20,7 @@ UniqueStoreAllocator<EntryT, RefT>::UniqueStoreAllocator()
 {
     auto typeId = _store.addType(&_typeHandler);
     assert(typeId == 0u);
-    _store.initActiveBuffers();
+    _store.init_primary_buffers();
     _store.enableFreeLists();
 }
 

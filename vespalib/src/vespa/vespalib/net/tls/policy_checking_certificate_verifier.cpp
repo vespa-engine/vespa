@@ -6,8 +6,17 @@ namespace vespalib::net::tls {
 
 namespace {
 
-bool matches_single_san_requirement(const PeerCredentials& peer_creds, const RequiredPeerCredential& requirement) {
+bool matches_single_san_dns_requirement(const PeerCredentials& peer_creds, const RequiredPeerCredential& requirement) {
     for (const auto& provided_cred : peer_creds.dns_sans) {
+        if (requirement.matches(provided_cred)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool matches_single_san_uri_requirement(const PeerCredentials& peer_creds, const RequiredPeerCredential& requirement) {
+    for (const auto& provided_cred : peer_creds.uri_sans) {
         if (requirement.matches(provided_cred)) {
             return true;
         }
@@ -23,7 +32,12 @@ bool matches_all_policy_requirements(const PeerCredentials& peer_creds, const Pe
     for (const auto& required_cred : policy.required_peer_credentials()) {
         switch (required_cred.field()) {
         case RequiredPeerCredential::Field::SAN_DNS:
-            if (!matches_single_san_requirement(peer_creds, required_cred)) {
+            if (!matches_single_san_dns_requirement(peer_creds, required_cred)) {
+                return false;
+            }
+            continue;
+        case RequiredPeerCredential::Field::SAN_URI:
+            if (!matches_single_san_uri_requirement(peer_creds, required_cred)) {
                 return false;
             }
             continue;
@@ -43,14 +57,14 @@ bool matches_all_policy_requirements(const PeerCredentials& peer_creds, const Pe
 class PolicyConfiguredCertificateVerifier : public CertificateVerificationCallback {
     AuthorizedPeers _authorized_peers;
 public:
-    explicit PolicyConfiguredCertificateVerifier(AuthorizedPeers authorized_peers);
+    explicit PolicyConfiguredCertificateVerifier(AuthorizedPeers authorized_peers) noexcept;
 
     ~PolicyConfiguredCertificateVerifier() override;
 
     bool verify(const PeerCredentials& peer_creds) const override;
 };
 
-PolicyConfiguredCertificateVerifier::PolicyConfiguredCertificateVerifier(AuthorizedPeers authorized_peers)
+PolicyConfiguredCertificateVerifier::PolicyConfiguredCertificateVerifier(AuthorizedPeers authorized_peers) noexcept
     : _authorized_peers(std::move(authorized_peers)) {}
 
 PolicyConfiguredCertificateVerifier::~PolicyConfiguredCertificateVerifier() = default;

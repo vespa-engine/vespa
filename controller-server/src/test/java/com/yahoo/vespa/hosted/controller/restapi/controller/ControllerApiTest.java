@@ -6,8 +6,15 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.MockAccessControlService;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
+import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Before;
@@ -19,7 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
 
@@ -41,39 +47,25 @@ public class ControllerApiTest extends ControllerContainerTest {
     public void testControllerApi() {
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/", "", Request.Method.GET), new File("root.json"));
 
-        // POST deactivates a maintenance job
-        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
-                                            "", Request.Method.POST),
-                       "{\"message\":\"Deactivated job 'DeploymentExpirer'\"}", 200);
+        ((InMemoryFlagSource) tester.controller().flagSource()).withListFlag(PermanentFlags.INACTIVE_MAINTENANCE_JOBS.id(), List.of("DeploymentExpirer"), String.class);
 
         // GET a list of all maintenance jobs
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/maintenance/", "", Request.Method.GET),
                               new File("maintenance.json"));
+    }
 
-        // DELETE activates maintenance job
-        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
-                                            "", Request.Method.DELETE),
-                       "{\"message\":\"Re-activated job 'DeploymentExpirer'\"}",
-                              200);
+    @Test
+    public void testStats() {
+        var mock = (NodeRepositoryMock)tester.controller().serviceRegistry().configServer().nodeRepository();
+        mock.putApplication(ZoneId.from("prod", "us-west-1"),
+                            new Application(ApplicationId.fromFullString("t1.a1.i1"), List.of()));
+        mock.putApplication(ZoneId.from("prod", "us-west-1"),
+                            new Application(ApplicationId.fromFullString("t2.a2.i2"), List.of()));
+        mock.putApplication(ZoneId.from("prod", "us-east-3"),
+                            new Application(ApplicationId.fromFullString("t1.a1.i1"), List.of()));
 
-        // DELETE fails to activate unknown maintenance job
-        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/foo",
-                                                    "", Request.Method.DELETE),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No job named 'foo'\"}",
-                              404);
-
-        // DELETE clears inactive flag for maintenance job that has been removed from the code base
-        tester.controller().curator().writeInactiveJobs(Set.of("bar"));
-        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/bar",
-                                                    "", Request.Method.DELETE),
-                              "{\"message\":\"Re-activated job 'bar'\"}",
-                              200);
-        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/bar",
-                                                    "", Request.Method.DELETE),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No job named 'bar'\"}",
-                              404);
-
-        assertFalse("Actions are logged to audit log", tester.controller().auditLogger().readLog().entries().isEmpty());
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/stats", "", Request.Method.GET),
+                              new File("stats.json"));
     }
 
     @Test
@@ -176,4 +168,25 @@ public class ControllerApiTest extends ControllerContainerTest {
         );
     }
 
+    @Test
+    public void testApproveMembership() {
+        ApplicationId applicationId = ApplicationId.from("tenant", "app", "instance");
+        DeploymentId deployment = new DeploymentId(applicationId, ZoneId.defaultId());
+        String requestBody = "{\n" +
+                             " \"applicationId\": \"" + deployment.applicationId().serializedForm() + "\",\n" +
+                             " \"zone\": \"" + deployment.zoneId().value() + "\"\n" +
+                             "}";
+
+        MockAccessControlService accessControlService = (MockAccessControlService) tester.serviceRegistry().accessControlService();
+        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/access/requests/"+hostedOperator.getName(), requestBody, Request.Method.POST),
+                              "{\"message\":\"Unable to approve membership request\"}", 400);
+
+        accessControlService.addPendingMember(hostedOperator);
+        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/access/requests/"+hostedOperator.getName(), requestBody, Request.Method.POST),
+                              "{\"message\":\"Unable to approve membership request\"}", 400);
+
+        tester.controller().supportAccess().allow(deployment, Instant.now().plus(Duration.ofHours(1)), "tenantx");
+        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/access/requests/"+hostedOperator.getName(), requestBody, Request.Method.POST),
+                              "{\"members\":[\"user.alice\"]}");
+    }
 }

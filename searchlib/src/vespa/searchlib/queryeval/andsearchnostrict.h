@@ -22,8 +22,8 @@ public:
      * @param children the search objects we are and'ing
      *        ownership of the children is taken by the MultiSearch base class.
      **/
-    AndSearchNoStrict(const Children & children, const Unpack & unpacker) :
-        AndSearch(children),
+    AndSearchNoStrict(Children children, const Unpack & unpacker) :
+        AndSearch(std::move(children)),
         _unpacker(unpacker)
     { }
 

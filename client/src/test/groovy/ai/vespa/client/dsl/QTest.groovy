@@ -59,7 +59,7 @@ class QTest extends Specification {
             .build()
 
         expect:
-        q == """yql=select * from sd1 where f1 contains "v1" and f2 contains "v2" or f3 contains "v3" and !(f4 contains "v4") order by f1 desc, f2 asc, limit 2 offset 1 timeout 3;&paramk1=paramv1"""
+        q == """yql=select * from sd1 where f1 contains "v1" and f2 contains "v2" or f3 contains "v3" and !(f4 contains "v4") order by f1 desc, f2 asc limit 2 offset 1 timeout 3;&paramk1=paramv1"""
     }
 
     def "matches"() {
@@ -109,6 +109,40 @@ class QTest extends Specification {
 
         expect:
         q == """yql=select * from sd1 where f1 <= 1L and f2 < 2L and f3 >= 3L and f4 > 4L and f5 = 5L and range(f6, 6L, 7L);"""
+    }
+
+    def "float numeric operations"() {
+        given:
+        def q = Q.select("*")
+                .from("sd1")
+                .where("f1").le(1.1)
+                .and("f2").lt(2.2)
+                .and("f3").ge(3.3)
+                .and("f4").gt(4.4)
+                .and("f5").eq(5.5)
+                .and("f6").inRange(6.6, 7.7)
+                .semicolon()
+                .build()
+
+        expect:
+        q == """yql=select * from sd1 where f1 <= 1.1 and f2 < 2.2 and f3 >= 3.3 and f4 > 4.4 and f5 = 5.5 and range(f6, 6.6, 7.7);"""
+    }
+
+    def "double numeric operations"() {
+        given:
+        def q = Q.select("*")
+                .from("sd1")
+                .where("f1").le(1.1D)
+                .and("f2").lt(2.2D)
+                .and("f3").ge(3.3D)
+                .and("f4").gt(4.4D)
+                .and("f5").eq(5.5D)
+                .and("f6").inRange(6.6D, 7.7D)
+                .semicolon()
+                .build()
+
+        expect:
+        q == """yql=select * from sd1 where f1 <= 1.1 and f2 < 2.2 and f3 >= 3.3 and f4 > 4.4 and f5 = 5.5 and range(f6, 6.6, 7.7);"""
     }
 
     def "nested queries"() {
@@ -209,6 +243,46 @@ class QTest extends Specification {
         expect:
         q == """yql=select * from sd1 where weakAnd(f1, f1 contains "v1", f2 contains "v2") and ([{"scoreThreshold":0.13}]weakAnd(f3, f1 contains "v1", f2 contains "v2"));"""
     }
+
+    def "geo location"() {
+        given:
+        def q = Q.select("*")
+                .from("sd1")
+                .where("a").contains("b").and(Q.geoLocation("taiwan", 25.105497, 121.597366, "200km"))
+                .semicolon()
+                .build()
+
+        expect:
+        q == """yql=select * from sd1 where a contains "b" and geoLocation(taiwan, 25.105497, 121.597366, "200km");"""
+    }
+
+    def "nearest neighbor query"() {
+        when:
+        def q = Q.select("*")
+                .from("sd1")
+                .where("a").contains("b")
+                .and(Q.nearestNeighbor("vec1", "vec2")
+                        .annotate(A.a("targetHits", 10, "approximate", false))
+                )
+                .semicolon()
+                .build()
+
+        then:
+        q == """yql=select * from sd1 where a contains "b" and ([{"approximate":false,"targetHits":10}]nearestNeighbor(vec1, vec2));"""
+    }
+
+    def "invalid nearest neighbor should throws an exception (targetHits annotation is required)"() {
+        when:
+        def q = Q.select("*")
+                .from("sd1")
+                .where("a").contains("b").and(Q.nearestNeighbor("vec1", "vec2"))
+                .semicolon()
+                .build()
+
+        then:
+        thrown(IllegalArgumentException)
+    }
+
 
     def "rank with only query"() {
         given:
@@ -390,6 +464,26 @@ class QTest extends Specification {
         q == """yql=select * from sources * where f1 contains ([{"key":"value"}]uri("https://test.uri"));"""
     }
 
+    def "nearestNeighbor"() {
+        given:
+        def q = Q.p("f1").nearestNeighbor("query_vector")
+                .semicolon()
+                .build()
+
+        expect:
+        q == """yql=select * from sources * where nearestNeighbor(f1, query_vector);"""
+    }
+
+    def "nearestNeighbor with annotation"() {
+        given:
+        def q = Q.p("f1").nearestNeighbor(A.a("targetHits", 10), "query_vector")
+                .semicolon()
+                .build()
+
+        expect:
+        q == """yql=select * from sources * where ([{"targetHits":10}]nearestNeighbor(f1, query_vector));"""
+    }
+
     def "use contains instead of contains equiv when input size is 1"() {
         def q = Q.p("f1").containsEquiv(["p1"])
             .semicolon()
@@ -439,7 +533,7 @@ class QTest extends Specification {
     def "basic group syntax"() {
         /*
         example from vespa document:
-        https://docs.vespa.ai/documentation/grouping.html
+        https://docs.vespa.ai/en/grouping.html
         all( group(a) max(5) each(output(count())
             all(max(1) each(output(summary())))
             all(group(b) each(output(count())
@@ -470,7 +564,7 @@ class QTest extends Specification {
     def "set group syntax string directly"() {
         /*
         example from vespa document:
-        https://docs.vespa.ai/documentation/grouping.html
+        https://docs.vespa.ai/en/grouping.html
         all( group(a) max(5) each(output(count())
             all(max(1) each(output(summary())))
             all(group(b) each(output(count())

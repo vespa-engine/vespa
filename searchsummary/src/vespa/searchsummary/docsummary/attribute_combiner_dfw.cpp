@@ -6,7 +6,7 @@
 #include "docsumstate.h"
 #include "struct_fields_resolver.h"
 #include "struct_map_attribute_combiner_dfw.h"
-#include <vespa/searchlib/common/struct_field_mapper.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -16,12 +16,13 @@ using search::attribute::IAttributeContext;
 
 namespace search::docsummary {
 
-AttributeCombinerDFW::AttributeCombinerDFW(const vespalib::string &fieldName, bool filter_elements, std::shared_ptr<StructFieldMapper> struct_field_mapper)
+AttributeCombinerDFW::AttributeCombinerDFW(const vespalib::string &fieldName, bool filter_elements,
+                                           std::shared_ptr<MatchingElementsFields> matching_elems_fields)
     : ISimpleDFW(),
       _stateIndex(0),
       _filter_elements(filter_elements),
       _fieldName(fieldName),
-      _struct_field_mapper(std::move(struct_field_mapper))
+      _matching_elems_fields(std::move(matching_elems_fields))
 {
 }
 
@@ -41,15 +42,16 @@ AttributeCombinerDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex)
 }
 
 std::unique_ptr<IDocsumFieldWriter>
-AttributeCombinerDFW::create(const vespalib::string &fieldName, IAttributeContext &attrCtx, bool filter_elements, std::shared_ptr<StructFieldMapper> struct_field_mapper)
+AttributeCombinerDFW::create(const vespalib::string &fieldName, IAttributeContext &attrCtx, bool filter_elements,
+                             std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     StructFieldsResolver structFields(fieldName, attrCtx, true);
     if (structFields.has_error()) {
         return std::unique_ptr<IDocsumFieldWriter>();
     } else if (structFields.is_map_of_struct()) {
-        return std::make_unique<StructMapAttributeCombinerDFW>(fieldName, structFields, filter_elements, std::move(struct_field_mapper));
+        return std::make_unique<StructMapAttributeCombinerDFW>(fieldName, structFields, filter_elements, std::move(matching_elems_fields));
     }
-    return std::make_unique<ArrayAttributeCombinerDFW>(fieldName, structFields, filter_elements, std::move(struct_field_mapper));
+    return std::make_unique<ArrayAttributeCombinerDFW>(fieldName, structFields, filter_elements, std::move(matching_elems_fields));
 }
 
 void
@@ -59,7 +61,7 @@ AttributeCombinerDFW::insertField(uint32_t docid, GetDocsumsState *state, ResTyp
     if (!fieldWriterState) {
         const MatchingElements *matching_elements = nullptr;
         if (_filter_elements) {
-            matching_elements = &state->get_matching_elements(*_struct_field_mapper);
+            matching_elements = &state->get_matching_elements(*_matching_elems_fields);
         }
         fieldWriterState = allocFieldWriterState(*state->_attrCtx, matching_elements);
     }

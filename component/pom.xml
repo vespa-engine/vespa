@@ -76,7 +76,7 @@
             <configuration>
               <mainClass>com.yahoo.vespa.VersionTagger</mainClass>
               <arguments>
-	        <argument>${project.basedir}/../dist/vtag.map</argument>
+	            <argument>${project.basedir}/../dist/vtag.map</argument>
                 <argument>com.yahoo.component</argument>
                 <argument>${project.build.directory}/generated-sources/vtag</argument>
                 <argument>vtag</argument>

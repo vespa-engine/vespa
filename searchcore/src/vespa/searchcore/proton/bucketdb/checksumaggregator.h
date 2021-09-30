@@ -16,15 +16,6 @@ public:
     using GlobalId = document::GlobalId;
     using Timestamp = storage::spi::Timestamp;
     using BucketChecksum = storage::spi::BucketChecksum;
-    virtual ~ChecksumAggregator() = default;
-    virtual ChecksumAggregator & addDoc(const GlobalId &gid, const Timestamp &timestamp) = 0;
-    virtual ChecksumAggregator & removeDoc(const GlobalId &gid, const Timestamp &timestamp) = 0;
-    virtual ChecksumAggregator & addChecksum(const ChecksumAggregator & rhs) = 0;
-    virtual ChecksumAggregator & removeChecksum(const ChecksumAggregator & rhs) = 0;
-    virtual BucketChecksum getChecksum() const = 0;
-    virtual bool empty() const = 0;;
-    virtual ChecksumAggregator * clone() const = 0;
-    static std::unique_ptr<ChecksumAggregator> create(ChecksumType type, BucketChecksum seed);
 };
 
 }

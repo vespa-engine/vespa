@@ -11,7 +11,6 @@ import static org.junit.Assert.*;
 public class TokenTypeTestCase {
 
     @Test
-    @SuppressWarnings("deprecation")
     public void requireThatValueOfWorks() {
         for (TokenType type : TokenType.values()) {
             assertEquals(type, TokenType.valueOf(type.getValue()));
@@ -19,7 +18,6 @@ public class TokenTypeTestCase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void requireThatValueOfUnknownIsUnknown() {
         assertEquals(TokenType.UNKNOWN, TokenType.valueOf(-1));
     }

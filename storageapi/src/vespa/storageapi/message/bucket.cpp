@@ -2,6 +2,7 @@
 
 #include "bucket.h"
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/array.hpp>
@@ -109,7 +110,7 @@ MergeBucketCommand::MergeBucketCommand(
       _chain(chain)
 {}
 
-MergeBucketCommand::~MergeBucketCommand() {}
+MergeBucketCommand::~MergeBucketCommand() = default;
 
 void
 MergeBucketCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
@@ -212,7 +213,7 @@ GetBucketDiffCommand::GetBucketDiffCommand(
       _maxTimestamp(maxTimestamp)
 {}
 
-GetBucketDiffCommand::~GetBucketDiffCommand() {}
+GetBucketDiffCommand::~GetBucketDiffCommand() = default;
 
 void
 GetBucketDiffCommand::print(std::ostream& out, bool verbose,
@@ -250,7 +251,7 @@ GetBucketDiffReply::GetBucketDiffReply(const GetBucketDiffCommand& cmd)
       _diff(cmd.getDiff())
 {}
 
-GetBucketDiffReply::~GetBucketDiffReply() {}
+GetBucketDiffReply::~GetBucketDiffReply() = default;
 
 void
 GetBucketDiffReply::print(std::ostream& out, bool verbose,
@@ -297,7 +298,7 @@ ApplyBucketDiffCommand::Entry::Entry(const GetBucketDiffCommand::Entry& e)
       _repo()
 {}
 
-ApplyBucketDiffCommand::Entry::~Entry() {}
+ApplyBucketDiffCommand::Entry::~Entry() = default;
 ApplyBucketDiffCommand::Entry::Entry(const Entry &) = default;
 ApplyBucketDiffCommand::Entry & ApplyBucketDiffCommand::Entry::operator = (const Entry &) = default;
 
@@ -341,15 +342,13 @@ ApplyBucketDiffCommand::Entry::operator==(const Entry& e) const
 }
 
 ApplyBucketDiffCommand::ApplyBucketDiffCommand(
-        const document::Bucket &bucket, const std::vector<Node>& nodes,
-        uint32_t maxBufferSize)
+        const document::Bucket &bucket, const std::vector<Node>& nodes)
     : BucketInfoCommand(MessageType::APPLYBUCKETDIFF, bucket),
       _nodes(nodes),
-      _diff(),
-      _maxBufferSize(maxBufferSize)
+      _diff()
 {}
 
-ApplyBucketDiffCommand::~ApplyBucketDiffCommand() {}
+ApplyBucketDiffCommand::~ApplyBucketDiffCommand() = default;
 
 void
 ApplyBucketDiffCommand::print(std::ostream& out, bool verbose,
@@ -369,8 +368,7 @@ ApplyBucketDiffCommand::print(std::ostream& out, bool verbose,
         if (i != 0) out << ", ";
         out << _nodes[i];
     }
-    out << ", max buffer size " << _maxBufferSize << " bytes"
-        << ", " << _diff.size() << " entries of " << totalSize << " bytes, "
+    out << _diff.size() << " entries of " << totalSize << " bytes, "
         << (100.0 * filled / _diff.size()) << " \% filled)";
     if (_diff.empty()) {
         out << ", no entries";
@@ -394,11 +392,10 @@ ApplyBucketDiffCommand::print(std::ostream& out, bool verbose,
 ApplyBucketDiffReply::ApplyBucketDiffReply(const ApplyBucketDiffCommand& cmd)
     : BucketInfoReply(cmd),
       _nodes(cmd.getNodes()),
-      _diff(cmd.getDiff()),
-      _maxBufferSize(cmd.getMaxBufferSize())
+      _diff(cmd.getDiff())
 {}
 
-ApplyBucketDiffReply::~ApplyBucketDiffReply() {}
+ApplyBucketDiffReply::~ApplyBucketDiffReply() = default;
 
 void
 ApplyBucketDiffReply::print(std::ostream& out, bool verbose,
@@ -406,20 +403,17 @@ ApplyBucketDiffReply::print(std::ostream& out, bool verbose,
 {
     uint32_t totalSize = 0;
     uint32_t filled = 0;
-    for (std::vector<Entry>::const_iterator it = _diff.begin();
-         it != _diff.end(); ++it)
-    {
-        totalSize += it->_headerBlob.size();
-        totalSize += it->_bodyBlob.size();
-        if (it->filled()) ++filled;
+    for (const Entry & entry : _diff) {
+        totalSize += entry._headerBlob.size();
+        totalSize += entry._bodyBlob.size();
+        if (entry.filled()) ++filled;
     }
     out << "ApplyBucketDiffReply(" << getBucketId() << ", nodes: ";
     for (uint32_t i=0; i<_nodes.size(); ++i) {
         if (i != 0) out << ", ";
         out << _nodes[i];
     }
-    out << ", max buffer size " << _maxBufferSize << " bytes"
-        << ", " << _diff.size() << " entries of " << totalSize << " bytes, "
+    out << _diff.size() << " entries of " << totalSize << " bytes, "
         << (100.0 * filled / _diff.size()) << " \% filled)";
     if (_diff.empty()) {
         out << ", no entries";
@@ -482,19 +476,27 @@ RequestBucketInfoCommand::getBucket() const
     return document::Bucket(_bucketSpace, document::BucketId());
 }
 
+document::BucketId
+RequestBucketInfoCommand::super_bucket_id() const
+{
+    return _buckets.empty() ? document::BucketId() : _buckets[0];
+}
+
 void
 RequestBucketInfoCommand::print(std::ostream& out, bool verbose,
                                 const std::string& indent) const
 {
     out << "RequestBucketInfoCommand(";
-    if (_buckets.size() != 0) {
+    if ( ! _buckets.empty()) {
         out << _buckets.size() << " buckets";
     }
     if (hasSystemState()) {
         out << "distributor " << _distributor << " in ";
         _state->print(out, verbose, indent + "  ");
+    } else if (super_bucket_id().isSet()) {
+        out << ", super bucket " << super_bucket_id() << ". ";
     }
-    if (verbose && _buckets.size() > 0) {
+    if (verbose && !_buckets.empty()) {
         out << "\n" << indent << "  Specified buckets:\n" << indent << "    ";
         std::copy(_buckets.begin(), _buckets.end(),
                   std::ostream_iterator<document::BucketId>(
@@ -507,26 +509,31 @@ RequestBucketInfoCommand::print(std::ostream& out, bool verbose,
     }
 }
 
-std::ostream& operator<<(std::ostream& out,
-                         const RequestBucketInfoReply::Entry& e)
+std::ostream& operator<<(std::ostream& out, const RequestBucketInfoReply::Entry& e)
 {
     return out << e._bucketId << " - " << e._info;
 }
 
 
-RequestBucketInfoReply::RequestBucketInfoReply(
-        const RequestBucketInfoCommand& cmd)
+RequestBucketInfoReply::RequestBucketInfoReply(const RequestBucketInfoCommand& cmd)
     : StorageReply(cmd),
-      _buckets()
+      _buckets(),
+      _full_bucket_fetch(cmd.hasSystemState()),
+      _super_bucket_id(cmd.super_bucket_id())
 { }
 
-RequestBucketInfoReply::~RequestBucketInfoReply() { }
+RequestBucketInfoReply::~RequestBucketInfoReply() = default;
 
 void
 RequestBucketInfoReply::print(std::ostream& out, bool verbose,
                               const std::string& indent) const
 {
     out << "RequestBucketInfoReply(" << _buckets.size();
+    if (_full_bucket_fetch) {
+        out << ", full fetch";
+    } else if (super_bucket_id().isSet()) {
+        out << ", super bucket " << super_bucket_id();
+    }
     if (verbose) {
         out << "\n" << indent << "  ";
         std::copy(_buckets.begin(), _buckets.end(),
@@ -552,7 +559,7 @@ NotifyBucketChangeCommand::print(std::ostream& out, bool verbose,
                                  const std::string& indent) const
 {
     out << "NotifyBucketChangeCommand(" << getBucketId() << ", ";
-    _info.print(out, verbose, indent);
+    out << _info;
     out << ")";
     if (verbose) {
         out << " : ";

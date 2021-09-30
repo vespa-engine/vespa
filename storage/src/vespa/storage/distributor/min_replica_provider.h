@@ -4,8 +4,7 @@
 #include <stdint.h>
 #include <unordered_map>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class MinReplicaProvider
 {
@@ -21,5 +20,8 @@ public:
     virtual std::unordered_map<uint16_t, uint32_t> getMinReplica() const = 0;
 };
 
-} // distributor
-} // storage
+void merge_min_replica_stats(std::unordered_map<uint16_t, uint32_t>& dest,
+                             const std::unordered_map<uint16_t, uint32_t>& src);
+
+}
+

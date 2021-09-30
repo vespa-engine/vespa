@@ -21,14 +21,14 @@ class EnumPostingPair
 {
 private:
     IEnumStore::Index _idx;
-    const datastore::EntryComparator *_cmp;
+    const vespalib::datastore::EntryComparator *_cmp;
 public:
-    EnumPostingPair(IEnumStore::Index idx, const datastore::EntryComparator *cmp)
+    EnumPostingPair(IEnumStore::Index idx, const vespalib::datastore::EntryComparator *cmp)
         : _idx(idx),
           _cmp(cmp)
     { }
 
-    bool operator<(const EnumPostingPair &rhs) const { return (*_cmp)(_idx, rhs._idx); }
+    bool operator<(const EnumPostingPair &rhs) const { return _cmp->less(_idx, rhs._idx); }
     IEnumStore::Index getEnumIdx() const { return _idx; }
 };
 
@@ -41,23 +41,21 @@ protected:
 
     using AggregationTraits = attribute::PostingListTraits<DataType>;
     using DocId = AttributeVector::DocId;
-    using EntryRef = datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     using EnumIndex = IEnumStore::Index;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using PostingList = typename AggregationTraits::PostingList;
     using PostingMap = std::map<EnumPostingPair, PostingChange<P> >;
 
     PostingList _postingList;
     AttributeVector &_attr;
-    EnumPostingTree &_dict;
-    IEnumStore      &_esb;
+    IEnumStoreDictionary& _dictionary;
 
     PostingListAttributeBase(AttributeVector &attr, IEnumStore &enumStore);
-    virtual ~PostingListAttributeBase();
+    ~PostingListAttributeBase() override;
 
     virtual void updatePostings(PostingMap & changePost) = 0;
 
-    void updatePostings(PostingMap &changePost, datastore::EntryComparator &cmp);
+    void updatePostings(PostingMap &changePost, const vespalib::datastore::EntryComparator &cmp);
     void clearAllPostings();
     void disableFreeLists() { _postingList.disableFreeLists(); }
     void disableElemHoldList() { _postingList.disableElemHoldList(); }
@@ -65,10 +63,12 @@ protected:
     bool forwardedOnAddDoc(DocId doc, size_t wantSize, size_t wantCapacity);
 
     void clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid,
-                       uint32_t toLid, datastore::EntryComparator &cmp);
+                       uint32_t toLid, const vespalib::datastore::EntryComparator &cmp);
 
     void forwardedShrinkLidSpace(uint32_t newSize) override;
-    virtual vespalib::MemoryUsage getMemoryUsage() const override;
+    vespalib::MemoryUsage getMemoryUsage() const override;
+    bool consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy) override;
+    bool consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy) override;
 
 public:
     const PostingList & getPostingList() const { return _postingList; }
@@ -82,11 +82,10 @@ public:
     using Parent = PostingListAttributeBase<P>;
 
     using Dictionary = EnumPostingTree;
-    using EntryRef = datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     using EnumIndex = IEnumStore::Index;
     using EnumStore = EnumStoreType;
-    using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
+    using ComparatorType = typename EnumStore::ComparatorType;
     using PostingList = typename Parent::PostingList;
     using PostingMap = typename Parent::PostingMap;
 
@@ -96,14 +95,14 @@ public:
     using Parent::clearPostings;
     using Parent::_postingList;
     using Parent::_attr;
-    using Parent::_dict;
+    using Parent::_dictionary;
 
 private:
     EnumStore &_es;
 
 public:
     PostingListAttributeSubBase(AttributeVector &attr, EnumStore &enumStore);
-    virtual ~PostingListAttributeSubBase();
+    ~PostingListAttributeSubBase() override;
 
     void handle_load_posting_lists(LoadedVector &loaded);
     void updatePostings(PostingMap &changePost) override;

@@ -13,6 +13,7 @@ package com.yahoo.documentapi;
  * @author Håkon Humberset
  */
 public interface VisitorControlSession {
+
     /**
      * Acknowledges a response previously retrieved by the <code>getNext</code>
      * method.
@@ -20,19 +21,19 @@ public interface VisitorControlSession {
      * @param token The ack token. You must get this from the visitor response
      *              returned by the <code>getNext</code> method.
      */
-    public void ack(AckToken token);
+    void ack(AckToken token);
 
     /**
      * Aborts the session.
      */
-    public void abort();
+    void abort();
 
     /**
      * Returns the next response of this session. This method returns immediately.
      *
      * @return the next response, or null if no response is ready at this time
      */
-    public VisitorResponse getNext();
+    VisitorResponse getNext();
 
     /**
      * Returns the next response of this session. This will block until a response is ready
@@ -43,11 +44,11 @@ public interface VisitorControlSession {
      * @return the next response, or null if no response becomes ready before the timeout expires
      * @throws InterruptedException if this thread is interrupted while waiting
      */
-    public VisitorResponse getNext(int timeoutMilliseconds) throws InterruptedException;
+    VisitorResponse getNext(int timeoutMilliseconds) throws InterruptedException;
 
     /**
      * Destroys this session and frees up any resources it has held.
      */
-    public void destroy();
+    void destroy();
 
 }

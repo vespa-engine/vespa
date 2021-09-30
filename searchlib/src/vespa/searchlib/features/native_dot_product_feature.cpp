@@ -2,11 +2,11 @@
 
 #include "native_dot_product_feature.h"
 #include "utils.h"
+#include <vespa/vespalib/util/stash.h>
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 NativeDotProductExecutor::NativeDotProductExecutor(const search::fef::IQueryEnvironment &env)
     : FeatureExecutor(),
@@ -80,5 +80,4 @@ NativeDotProductBlueprint::createExecutor(const IQueryEnvironment &queryEnv, ves
     }
 }
 
-} // namespace features
-} // namespace search
+}

@@ -8,10 +8,10 @@ namespace proton {
 
 using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 
-struct MoveOperationLimiter::Callback : public search::IDestructorCallback {
+struct MoveOperationLimiter::Callback : public vespalib::IDestructorCallback {
     MoveOperationLimiter::SP _limiter;
-    Callback(MoveOperationLimiter::SP limiter) : _limiter(std::move(limiter)) {}
-    virtual ~Callback() { _limiter->endOperation(); }
+    Callback(MoveOperationLimiter::SP limiter) noexcept : _limiter(std::move(limiter)) {}
+    ~Callback() override { _limiter->endOperation(); }
 };
 
 bool
@@ -50,14 +50,14 @@ MoveOperationLimiter::clearJob()
     _job = nullptr;
 }
 
-bool
-MoveOperationLimiter::isAboveLimit() const
+size_t
+MoveOperationLimiter::numPending() const
 {
     LockGuard guard(_mutex);
-    return (_outstandingOps >= _maxOutstandingOps);
+    return _outstandingOps;
 }
 
-std::shared_ptr<search::IDestructorCallback>
+std::shared_ptr<vespalib::IDestructorCallback>
 MoveOperationLimiter::beginOperation()
 {
     LockGuard guard(_mutex);

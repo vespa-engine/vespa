@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.ranking;
 
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
@@ -59,7 +60,7 @@ public class Matching implements Cloneable {
 
     public void setTermwiselimit(double value) {
         if ((value < 0.0) || (value > 1.0)) {
-            throw new IllegalArgumentException("termwiselimit must be in the range [0.0, 1.0]. It is " + value);
+            throw new IllegalInputException("termwiselimit must be in the range [0.0, 1.0]. It is " + value);
         }
         termwiseLimit = value;
     }

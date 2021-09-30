@@ -15,7 +15,7 @@ import org.w3c.dom.Element;
  * @author gjoranv
  * @author Tony Vaagenes
  */
-public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Component> {
+public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Component<?, ?>> {
 
     public static final String elementName = "component" ;
 
@@ -30,7 +30,7 @@ public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilde
     }
 
     @Override
-    protected Component doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element spec) {
+    protected Component doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element spec) {
         Component component = buildComponent(spec);
         addChildren(deployState, ancestor, spec, component);
         return component;

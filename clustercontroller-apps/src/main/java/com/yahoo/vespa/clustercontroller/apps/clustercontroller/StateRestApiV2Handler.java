@@ -3,7 +3,7 @@ package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ClusterInfoConfig;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.clustercontroller.apputil.communication.http.JDiscHttpRequestHandler;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.ClusterControllerStateRestAPI;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.server.RestApiHandler;
@@ -44,7 +44,7 @@ public class StateRestApiV2Handler extends JDiscHttpRequestHandler {
         }
         if (result.isEmpty()) {
             log.warning("Found no cluster controller in model config");
-        } else if (log.isLoggable(LogLevel.DEBUG)) {
+        } else if (log.isLoggable(Level.FINE)) {
             StringBuilder sb = new StringBuilder();
             sb.append("Found ").append(result.size()).append(" cluster controllers in model config:");
             for (Map.Entry<Integer, ClusterControllerStateRestAPI.Socket> e : result.entrySet()) {

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/feature.h>
+#include <algorithm>
 
 namespace search::queryeval {
 
@@ -13,6 +14,16 @@ struct Scores {
     Scores(feature_t l, feature_t h) : low(l), high(h) {}
 
     bool isValid() const { return low <= high; }
+
+    void update(feature_t score) {
+        if (isValid()) {
+            low = std::min(low, score);
+            high = std::max(high, score);
+        } else {
+            low = score;
+            high = score;
+        }
+    }
 };
 
 }

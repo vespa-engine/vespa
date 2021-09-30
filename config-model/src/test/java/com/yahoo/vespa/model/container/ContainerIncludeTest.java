@@ -18,7 +18,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  * @since 5.1.13
  */
 public class ContainerIncludeTest {
@@ -123,7 +123,7 @@ public class ContainerIncludeTest {
             creator.create(true);
             fail("Expected exception due to xml schema violation ('zearcer')");
          } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), containsString("XML error"));
+            assertThat(e.getMessage(), containsString("Invalid XML according to XML schema"));
             assertThat(e.getMessage(), containsString("zearcer"));
         }
     }

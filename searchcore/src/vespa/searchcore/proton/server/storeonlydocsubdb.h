@@ -12,10 +12,7 @@
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreflushtarget.h>
-#include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
-#include <vespa/searchcore/proton/matchengine/imatchhandler.h>
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
-#include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/util/varholder.h>
@@ -23,6 +20,7 @@
 
 namespace proton {
 
+class AllocStrategy;
 struct DocumentDBTaggedMetrics;
 class DocumentMetaStoreInitializerResult;
 class FeedHandler;
@@ -32,7 +30,6 @@ class ShrinkLidSpaceFlushTarget;
 namespace initializer { class InitializerTask; }
 
 namespace bucketdb { class IBucketDBHandlerInitializer; }
-namespace documentmetastore { class LidReuseDelayerConfig; }
 
 /**
  * Base class for a document sub database.
@@ -54,8 +51,6 @@ public:
     void close() override { }
 };
 
-class StoreOnlyDocSubDB;
-
 /**
  * File header context used by the store-only sub database.
  *
@@ -69,8 +64,7 @@ class StoreOnlySubDBFileHeaderContext : public search::common::FileHeaderContext
     vespalib::string _subDB;
 
 public:
-    StoreOnlySubDBFileHeaderContext(StoreOnlyDocSubDB &owner,
-                                    const search::common::FileHeaderContext & parentFileHeaderContext,
+    StoreOnlySubDBFileHeaderContext(const search::common::FileHeaderContext & parentFileHeaderContext,
                                     const DocTypeName &docTypeName,
                                     const vespalib::string &baseDir);
     ~StoreOnlySubDBFileHeaderContext();
@@ -88,18 +82,17 @@ public:
 class StoreOnlyDocSubDB : public DocSubDB
 {
 public:
+    using BucketDBOwnerSP = std::shared_ptr<bucketdb::BucketDBOwner>;
     struct Config {
         const DocTypeName _docTypeName;
         const vespalib::string _subName;
         const vespalib::string _baseDir;
-        const search::GrowStrategy _attributeGrow;
-        const size_t _attributeGrowNumDocs;
         const uint32_t _subDbId;
         const SubDbType _subDbType;
 
         Config(const DocTypeName &docTypeName, const vespalib::string &subName,
-               const vespalib::string &baseDir, const search::GrowStrategy &attributeGrow,
-               size_t attributeGrowNumDocs, uint32_t subDbId, SubDbType subDbType);
+               const vespalib::string &baseDir,
+               uint32_t subDbId, SubDbType subDbType);
         ~Config();
     };
 
@@ -109,7 +102,7 @@ public:
         const IGetSerialNum &_getSerialNum;
         const search::common::FileHeaderContext &_fileHeaderContext;
         searchcorespi::index::IThreadingService &_writeService;
-        std::shared_ptr<BucketDBOwner> _bucketDB;
+        BucketDBOwnerSP _bucketDB;
         bucketdb::IBucketDBHandlerInitializer &_bucketDBHandlerInitializer;
         DocumentDBTaggedMetrics &_metrics;
         std::mutex &_configMutex;
@@ -120,7 +113,7 @@ public:
                 const IGetSerialNum &getSerialNum,
                 const search::common::FileHeaderContext &fileHeaderContext,
                 searchcorespi::index::IThreadingService &writeService,
-                std::shared_ptr<BucketDBOwner> bucketDB,
+                BucketDBOwnerSP bucketDB,
                 bucketdb::IBucketDBHandlerInitializer &
                 bucketDBHandlerInitializer,
                 DocumentDBTaggedMetrics &metrics,
@@ -134,11 +127,9 @@ protected:
     const DocTypeName             _docTypeName;
     const vespalib::string        _subName;
     const vespalib::string        _baseDir;
-    BucketDBOwner::SP             _bucketDB;
+    BucketDBOwnerSP               _bucketDB;
     bucketdb::IBucketDBHandlerInitializer &_bucketDBHandlerInitializer;
     IDocumentMetaStoreContext::SP _metaStoreCtx;
-    const search::GrowStrategy    _attributeGrow;
-    const size_t                  _attributeGrowNumDocs;
     // The following two serial numbers reflect state at program startup
     // and are used by replay logic.
     SerialNum                     _flushedDocumentMetaStoreSerialNum;
@@ -160,18 +151,18 @@ private:
     TlsSyncer                        _tlsSyncer;
     DocumentMetaStoreFlushTarget::SP _dmsFlushTarget;
     std::shared_ptr<ShrinkLidSpaceFlushTarget> _dmsShrinkTarget;
+    std::shared_ptr<PendingLidTrackerBase>     _pendingLidsForCommit;
 
     IFlushTargetList getFlushTargets() override;
 protected:
     const uint32_t                  _subDbId;
     const SubDbType                 _subDbType;
     StoreOnlySubDBFileHeaderContext _fileHeaderContext;
-    std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
-    CommitTimeTracker               _commitTimeTracker;
     std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
 
     std::shared_ptr<initializer::InitializerTask>
     createSummaryManagerInitializer(const search::LogDocumentStore::Config & protonSummaryCfg,
+                                    const AllocStrategy& alloc_strategy,
                                     const search::TuneFileSummary &tuneFile,
                                     search::IBucketizer::SP bucketizer,
                                     std::shared_ptr<SummaryManager::SP> result) const;
@@ -179,7 +170,8 @@ protected:
     void setupSummaryManager(SummaryManager::SP summaryManager);
 
     std::shared_ptr<initializer::InitializerTask>
-    createDocumentMetaStoreInitializer(const search::TuneFileAttributes &tuneFile,
+    createDocumentMetaStoreInitializer(const AllocStrategy& alloc_strategy,
+                                       const search::TuneFileAttributes &tuneFile,
                                        std::shared_ptr<std::shared_ptr<DocumentMetaStoreInitializerResult>> result) const;
 
     void setupDocumentMetaStore(std::shared_ptr<DocumentMetaStoreInitializerResult> dmsResult);
@@ -188,15 +180,12 @@ protected:
     StoreOnlyFeedView::Context getStoreOnlyFeedViewContext(const DocumentDBConfig &configSnapshot);
     StoreOnlyFeedView::PersistentParams getFeedViewPersistentParams();
     vespalib::string getSubDbName() const;
-    void updateLidReuseDelayer(const DocumentDBConfig *newConfigSnapshot);
 
-    using LidReuseDelayerConfig = documentmetastore::LidReuseDelayerConfig;
-
-    virtual void updateLidReuseDelayer(const LidReuseDelayerConfig &config);
-    void reconfigure(const search::LogDocumentStore::Config & protonConfig);
+    void reconfigure(const search::LogDocumentStore::Config & protonConfig,
+                     const AllocStrategy& alloc_strategy);
 public:
     StoreOnlyDocSubDB(const Config &cfg, const Context &ctx);
-    ~StoreOnlyDocSubDB();
+    ~StoreOnlyDocSubDB() override;
 
     uint32_t getSubDbId() const override { return _subDbId; }
     vespalib::string getName() const override { return _subName; }
@@ -207,6 +196,8 @@ public:
 
     void setup(const DocumentSubDbInitializerResult &initResult) override;
     void initViews(const DocumentDBConfig &configSnapshot, const std::shared_ptr<matching::SessionManager> &sessionManager) override;
+
+    void validateDocStore(FeedHandler & feedHandler, SerialNum serialNum) const override;
 
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
@@ -241,6 +232,7 @@ public:
     void close() override;
     std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override;
     void tearDownReferences(IDocumentDBReferenceResolver &resolver) override;
+    PendingLidTrackerBase & getUncommittedLidsTracker() override { return *_pendingLidsForCommit; }
 };
 
 }

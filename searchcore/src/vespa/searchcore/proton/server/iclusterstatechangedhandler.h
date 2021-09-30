@@ -3,9 +3,9 @@
 #pragma once
 
 #include "ibucketstatecalculator.h"
+#include <memory>
 
-namespace proton
-{
+namespace proton {
 
 /**
  * Interface used to notify when cluster state has changed.
@@ -13,10 +13,9 @@ namespace proton
 class IClusterStateChangedHandler
 {
 public:
-    virtual ~IClusterStateChangedHandler() { }
+    virtual ~IClusterStateChangedHandler() = default;
 
-    virtual void
-    notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) = 0;
+    virtual void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) = 0;
 };
 
-} // namespace proton
+}

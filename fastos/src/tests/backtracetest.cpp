@@ -6,7 +6,7 @@
 
 #include "tests.h"
 
-#if defined(__x86_64__) && defined(__linux__)
+#if (defined(__x86_64__) || defined(__aarch64__)) && defined(__linux__)
 class Tracker
 {
 private:

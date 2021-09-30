@@ -170,7 +170,8 @@ Test::testNativeFieldMatch()
         f.firstOccTable = &t;
         f.numOccTable = &t;
         p.vector.push_back(f);
-        NativeFieldMatchExecutor nfme(ft.getQueryEnv(), p);
+        NativeFieldMatchExecutorSharedState nfmess(ft.getQueryEnv(), p);
+        NativeFieldMatchExecutor nfme(nfmess);
         EXPECT_EQUAL(p.minFieldLength, 6u);
         EXPECT_EQUAL(nfme.getFirstOccBoost(0, 0, 4), 0);
         EXPECT_EQUAL(nfme.getFirstOccBoost(0, 1, 4), 1);
@@ -227,7 +228,8 @@ Test::testNativeFieldMatch()
         EXPECT_TRUE(assertNativeFieldMatch(34, "a%0.1 b%0.4", "x a x x x b"));
 
         // change firstOccImportance
-        Properties p = Properties().add("nativeFieldMatch.firstOccurrenceImportance", "1");
+        Properties p;
+        p.add("nativeFieldMatch.firstOccurrenceImportance", "1");
         EXPECT_TRUE(assertNativeFieldMatch(100, "a", "a", p));
         p.clear().add("nativeFieldMatch.firstOccurrenceImportance", "0");
         EXPECT_TRUE(assertNativeFieldMatch(10, "a", "a", p));
@@ -374,7 +376,8 @@ Test::testNativeAttributeMatch()
         { // use table normalization
             // foo: max table value: 255
             // bar: max table value: 510
-            Properties p = Properties().add("nativeRank.useTableNormalization", "true");
+            Properties p;
+            p.add("nativeRank.useTableNormalization", "true");
             EXPECT_TRUE(assertNativeAttributeMatch(0.2941, ANAM(100), ANAM(50), p)); // (100/255 + 100/510)*0.5
             EXPECT_TRUE(assertNativeAttributeMatch(1, ANAM(255), ANAM(255), p));     // (255/255 + 510/510)*0.5
             p.add("nativeAttributeMatch.weightTable.foo", "linear(0,0)");
@@ -544,12 +547,12 @@ Test::testNativeProximity()
         env.getProperties().add("vespa.term.2.connexity", "0.6");
         {
             NativeProximityExecutor::FieldSetup setup(0);
-            NativeProximityExecutor::TermPairVector & pairs = setup.pairs;
-            NativeProximityExecutor::generateTermPairs(env, terms, 0, setup);
+            NativeProximityExecutorSharedState::TermPairVector & pairs = setup.pairs;
+            NativeProximityExecutorSharedState::generateTermPairs(env, terms, 0, setup);
             EXPECT_EQUAL(pairs.size(), 0u);
-            NativeProximityExecutor::generateTermPairs(env, terms, 1, setup);
+            NativeProximityExecutorSharedState::generateTermPairs(env, terms, 1, setup);
             EXPECT_EQUAL(pairs.size(), 0u);
-            NativeProximityExecutor::generateTermPairs(env, terms, 2, setup);
+            NativeProximityExecutorSharedState::generateTermPairs(env, terms, 2, setup);
             EXPECT_EQUAL(pairs.size(), 2u);
             EXPECT_TRUE(pairs[0].first.termData() == &a);
             EXPECT_TRUE(pairs[0].second.termData() == &b);
@@ -562,7 +565,7 @@ Test::testNativeProximity()
             pairs.clear();
             setup.divisor = 0;
 
-            NativeProximityExecutor::generateTermPairs(env, terms, 3, setup);
+            NativeProximityExecutorSharedState::generateTermPairs(env, terms, 3, setup);
             EXPECT_EQUAL(pairs.size(), 3u);
             EXPECT_TRUE(pairs[0].first.termData() == &a);
             EXPECT_TRUE(pairs[0].second.termData() == &b);
@@ -581,7 +584,7 @@ Test::testNativeProximity()
             b.setWeight(search::query::Weight(0));
 
             // test that (ab) is filtered away
-            NativeProximityExecutor::generateTermPairs(env, terms, 2, setup);
+            NativeProximityExecutorSharedState::generateTermPairs(env, terms, 2, setup);
             EXPECT_EQUAL(pairs.size(), 1u);
             EXPECT_TRUE(pairs[0].first.termData() == &b);
             EXPECT_TRUE(pairs[0].second.termData() == &c);
@@ -629,7 +632,8 @@ Test::testNativeProximity()
         EXPECT_TRUE(assertNativeProximity(3.667, "a 0.5:b 1:c", "a b x x c")); // (5*0.5 + 3*1) / (0.5 + 1)
 
         // change proximityImportance
-        Properties p = Properties().add("nativeProximity.proximityImportance", "1");
+        Properties p;
+        p.add("nativeProximity.proximityImportance", "1");
         EXPECT_TRUE(assertNativeProximity(10, "a b", "a b x x x a", p));
         p.clear().add("nativeProximity.proximityImportance", "0");
         EXPECT_TRUE(assertNativeProximity(4, "a b", "a b x x x a", p));

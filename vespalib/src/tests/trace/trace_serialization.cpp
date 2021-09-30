@@ -3,6 +3,7 @@
 #include <vespa/vespalib/trace/tracenode.h>
 #include <vespa/vespalib/trace/slime_trace_serializer.h>
 #include <vespa/vespalib/trace/slime_trace_deserializer.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("trace_test");

@@ -11,14 +11,14 @@ namespace search::attribute {
 /**
  * Class for mapping from from document id to an array of values.
  */
-template <typename EntryT, typename RefT = datastore::EntryRefT<19> >
+template <typename EntryT, typename RefT = vespalib::datastore::EntryRefT<19> >
 class MultiValueMapping : public MultiValueMappingBase
 {
 public:
     using MultiValueType = EntryT;
     using RefType = RefT;
 private:
-    using ArrayStore = datastore::ArrayStore<EntryT, RefT>;
+    using ArrayStore = vespalib::datastore::ArrayStore<EntryT, RefT>;
     using generation_t = vespalib::GenerationHandler::generation_t;
     using ConstArrayRef = vespalib::ConstArrayRef<EntryT>;
 
@@ -26,7 +26,7 @@ private:
 public:
     MultiValueMapping(const MultiValueMapping &) = delete;
     MultiValueMapping & operator = (const MultiValueMapping &) = delete;
-    MultiValueMapping(const datastore::ArrayStoreConfig &storeCfg,
+    MultiValueMapping(const vespalib::datastore::ArrayStoreConfig &storeCfg,
                       const vespalib::GrowStrategy &gs = vespalib::GrowStrategy());
     ~MultiValueMapping() override;
     ConstArrayRef get(uint32_t docId) const { return _store.get(_indices[docId]); }
@@ -50,7 +50,7 @@ public:
     vespalib::MemoryUsage getArrayStoreMemoryUsage() const override;
     bool has_free_lists_enabled() const { return _store.has_free_lists_enabled(); }
 
-    static datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
+    static vespalib::datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                                   size_t hugePageSize,
                                                                   size_t smallPageSize,
                                                                   size_t minNumArraysForNewBuffer,

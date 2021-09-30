@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
 #include <vespa/config/config.h>
 #include <vespa/config/frt/frtconfigrequestfactory.h>
 #include <vespa/config/frt/frtconnection.h>
 #include <vespa/config/common/payload_converter.h>
 #include <vespa/fastos/app.h>
-
 
 #include <string>
 #include <sstream>
@@ -28,7 +28,7 @@ private:
 
 public:
     GetConfig() : _server(), _target(nullptr) {}
-    virtual ~GetConfig();
+    ~GetConfig() override;
     int usage();
     void initRPC(const char *spec);
     void finiRPC();
@@ -91,7 +91,7 @@ int
 GetConfig::Main()
 {
     bool debugging = false;
-    char c = -1;
+    int c = -1;
 
     std::vector<vespalib::string> defSchema;
     const char *schema = nullptr;
@@ -216,8 +216,7 @@ GetConfig::Main()
         vespaVersion = VespaVersion::fromString(vespaVersionString);
     }
 
-    int protocolVersion = config::protocol::readProtocolVersion();
-    FRTConfigRequestFactory requestFactory(protocolVersion, traceLevel, vespaVersion, config::protocol::readProtocolCompressionType());
+    FRTConfigRequestFactory requestFactory(traceLevel, vespaVersion, config::protocol::readProtocolCompressionType());
     FRTConnection connection(spec, _server->supervisor(), TimingValues());
     ConfigKey key(configId, defName, defNamespace, defMD5, defSchema);
     ConfigState state(configMD5, generation, false);
@@ -241,10 +240,9 @@ GetConfig::Main()
             printf("defNamespace %s\n", rKey.getDefNamespace().c_str());
 
             printf("configID   %s\n", rKey.getConfigId().c_str());
-            printf("configMD5  %s\n", rState.md5.c_str());
+            printf("configXxhash64  %s\n", rState.xxhash64.c_str());
 
             printf("generation  %" PRId64 "\n", rState.generation);
-            printf("internalRedeploy %s\n", rState.internalRedeploy == 0 ? "false" : "true");
             printf("trace       %s\n", response->getTrace().toString().c_str());
         } else if (traceLevel > 0) {
             printf("trace       %s\n", response->getTrace().toString().c_str());

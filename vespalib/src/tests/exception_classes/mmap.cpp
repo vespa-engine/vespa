@@ -2,7 +2,7 @@
 #include <vespa/vespalib/util/alloc.h>
 #include <vector>
 #include <cassert>
-#include <string.h>
+#include <cstring>
 #include <cstdlib>
 #include <sys/resource.h>
 

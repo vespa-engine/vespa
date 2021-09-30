@@ -14,7 +14,7 @@ public:
     /**
      * Called when a {wordRef, docId} tuple is inserted into the field index.
      */
-    virtual void insert(datastore::EntryRef wordRef, uint32_t docId) = 0;
+    virtual void insert(vespalib::datastore::EntryRef wordRef, uint32_t docId) = 0;
 
     /**
      * Called to process the set of {wordRef, docId} tuples inserted since last flush().

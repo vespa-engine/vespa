@@ -68,6 +68,7 @@ vespa_define_module(
     src/tests/aggregator
     src/tests/alignment
     src/tests/attribute
+    src/tests/attribute/attribute_header
     src/tests/attribute/attribute_operation
     src/tests/attribute/attributefilewriter
     src/tests/attribute/attributemanager
@@ -77,6 +78,7 @@ vespa_define_module(
     src/tests/attribute/changevector
     src/tests/attribute/compaction
     src/tests/attribute/document_weight_iterator
+    src/tests/attribute/document_weight_or_filter_search
     src/tests/attribute/enum_attribute_compaction
     src/tests/attribute/enum_comparator
     src/tests/attribute/enumeratedsave
@@ -89,22 +91,24 @@ vespa_define_module(
     src/tests/attribute/posting_list_merger
     src/tests/attribute/postinglist
     src/tests/attribute/postinglistattribute
+    src/tests/attribute/posting_store
     src/tests/attribute/reference_attribute
+    src/tests/attribute/save_target
     src/tests/attribute/searchable
     src/tests/attribute/searchcontext
+    src/tests/attribute/searchcontextelementiterator
     src/tests/attribute/sourceselector
     src/tests/attribute/stringattribute
     src/tests/attribute/tensorattribute
     src/tests/bitcompression/expgolomb
     src/tests/bitvector
-    src/tests/bytecomplens
+    src/tests/btree
     src/tests/common/bitvector
-    src/tests/common/foregroundtaskexecutor
     src/tests/common/location
+    src/tests/common/location_iterator
     src/tests/common/matching_elements
+    src/tests/common/matching_elements_fields
     src/tests/common/resultset
-    src/tests/common/sequencedtaskexecutor
-    src/tests/common/struct_field_mapper
     src/tests/common/summaryfeatures
     src/tests/diskindex/bitvector
     src/tests/diskindex/diskindex
@@ -134,6 +138,9 @@ vespa_define_module(
     src/tests/features/item_raw_score
     src/tests/features/max_reduce_prod_join_replacer
     src/tests/features/native_dot_product
+    src/tests/features/nns_closeness
+    src/tests/features/nns_distance
+    src/tests/features/onnx_feature
     src/tests/features/ranking_expression
     src/tests/features/raw_score
     src/tests/features/subqueries
@@ -182,11 +189,11 @@ vespa_define_module(
     src/tests/query
     src/tests/queryeval
     src/tests/queryeval/blueprint
-    src/tests/queryeval/booleanmatchiteratorwrapper
     src/tests/queryeval/dot_product
     src/tests/queryeval/equiv
     src/tests/queryeval/fake_searchable
     src/tests/queryeval/getnodeweight
+    src/tests/queryeval/matching_elements_search
     src/tests/queryeval/monitoring_search_iterator
     src/tests/queryeval/multibitvectoriterator
     src/tests/queryeval/nearest_neighbor
@@ -201,7 +208,7 @@ vespa_define_module(
     src/tests/queryeval/weak_and_heap
     src/tests/queryeval/weak_and_scorers
     src/tests/queryeval/weighted_set_term
-    src/tests/rankingexpression/feature_name_extractor
+    src/tests/queryeval/wrappers
     src/tests/rankingexpression/intrinsic_blueprint_adapter
     src/tests/ranksetup
     src/tests/ranksetup/verify_feature
@@ -210,19 +217,18 @@ vespa_define_module(
     src/tests/sortspec
     src/tests/stringenum
     src/tests/tensor/dense_tensor_store
+    src/tests/tensor/direct_tensor_store
+    src/tests/tensor/distance_functions
     src/tests/tensor/hnsw_index
+    src/tests/tensor/hnsw_saver
     src/tests/transactionlog
     src/tests/transactionlogstress
     src/tests/true
     src/tests/url
     src/tests/util
     src/tests/util/bufferwriter
-    src/tests/util/ioerrorhandler
     src/tests/util/searchable_stats
-    src/tests/util/sigbushandler
     src/tests/util/slime_output_raw_buf_adapter
-    src/tests/util/statebuf
-    src/tests/util/statefile
     src/tests/vespa-fileheader-inspect
 )
 
@@ -231,4 +237,5 @@ install_fat_java_artifact(searchlib)
 
 vespa_install_script(src/main/sh/vespa-gbdt-converter bin)
 vespa_install_script(src/main/sh/vespa-treenet-converter bin)
+vespa_install_script(src/main/sh/vespa-evaluate-tensor-conformance.sh bin)
 

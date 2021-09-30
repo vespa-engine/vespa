@@ -1,10 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-
-import com.yahoo.security.tls.AuthorizationMode;
 import com.yahoo.security.tls.MixedMode;
-import com.yahoo.security.tls.ConfigFileBasedTlsContext;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
 
@@ -24,8 +21,7 @@ public interface CryptoEngine extends AutoCloseable {
         if (!TransportSecurityUtils.isTransportSecurityEnabled()) {
             return new NullCryptoEngine();
         }
-        AuthorizationMode mode = TransportSecurityUtils.getInsecureAuthorizationMode();
-        TlsContext tlsContext = new ConfigFileBasedTlsContext(TransportSecurityUtils.getConfigFile().get(), mode);
+        TlsContext tlsContext = TransportSecurityUtils.getSystemTlsContext().get();
         TlsCryptoEngine tlsCryptoEngine = new TlsCryptoEngine(tlsContext);
         MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode();
         switch (mixedMode) {

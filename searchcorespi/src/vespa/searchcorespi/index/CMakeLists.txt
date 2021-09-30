@@ -20,7 +20,6 @@ vespa_add_library(searchcorespi_index OBJECT
     indexmanagerconfig.cpp
     indexreadutilities.cpp
     index_searchable_stats.cpp
-    memory_index_stats.cpp
     indexwriteutilities.cpp
     warmupindexcollection.cpp
     isearchableindexcollection.cpp

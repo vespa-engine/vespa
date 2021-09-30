@@ -8,7 +8,7 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.Node;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.NodeLookup;
 import com.yahoo.vespa.clustercontroller.core.Timer;
@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 
 public class SlobrokClient implements NodeLookup {
 
-    public static Logger log = Logger.getLogger(SlobrokClient.class.getName());
+    public static final Logger log = Logger.getLogger(SlobrokClient.class.getName());
 
     private final Timer timer;
     private String[] connectionSpecs;
@@ -52,13 +52,15 @@ public class SlobrokClient implements NodeLookup {
         if (equalsExistingSpec(slobrokConnectionSpecs)) return;
         this.connectionSpecs = slobrokConnectionSpecs;
         shutdown();
-        supervisor = new Supervisor(new Transport());
+        supervisor = new Supervisor(new Transport("slobrok-client"));
+        supervisor.setDropEmptyBuffers(true);
         SlobrokList slist = new SlobrokList();
         slist.setup(slobrokConnectionSpecs);
         mirror = new Mirror(supervisor, slist);
         freshMirror = true;
     }
 
+    @Override
     public void shutdown() {
         if (supervisor != null) {
             supervisor.transport().shutdown().join();
@@ -67,14 +69,20 @@ public class SlobrokClient implements NodeLookup {
 
     public Mirror getMirror() { return mirror; }
 
+    @Override
+    public boolean isReady() {
+        return mirror != null && mirror.ready();
+    }
+
+    @Override
     public boolean updateCluster(ContentCluster cluster, NodeAddedOrRemovedListener listener) {
         if (mirror == null) return false;
         int mirrorVersion = mirror.updates();
         if (freshMirror) {
             freshMirror = false;
         } else if (cluster.getSlobrokGenerationCount() == mirrorVersion) {
-            if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Slobrok still at generation count " + cluster.getSlobrokGenerationCount() + ". Not updating.");
+            if (log.isLoggable(Level.FINEST)) {
+                log.log(Level.FINEST, "Slobrok still at generation count " + cluster.getSlobrokGenerationCount() + ". Not updating.");
             }
             return false;
         }
@@ -142,7 +150,7 @@ public class SlobrokClient implements NodeLookup {
         cluster.setSlobrokGenerationCount(mirrorVersion);
         for (NodeInfo nodeInfo : cluster.getNodeInfo()) {
             if (slobrokNodes.containsKey(nodeInfo.getNode()) && nodeInfo.isRpcAddressOutdated()) {
-                log.log(LogLevel.WARNING, "Node " + nodeInfo
+                log.log(Level.WARNING, "Node " + nodeInfo
                         + " was tagged NOT in slobrok even though it is. It was in the following lists:"
                         + (newNodes.contains(nodeInfo.getNode()) ? " newNodes" : "")
                         + (missingNodeInfos.contains(nodeInfo) ? " missingNodes" : "")
@@ -151,7 +159,7 @@ public class SlobrokClient implements NodeLookup {
                 nodeInfo.markRpcAddressLive();
             }
         }
-        log.log(LogLevel.SPAM, "Slobrok information updated to generation " + cluster.getSlobrokGenerationCount());
+        log.log(Level.FINEST, "Slobrok information updated to generation " + cluster.getSlobrokGenerationCount());
         return true;
     }
 
@@ -196,7 +204,7 @@ public class SlobrokClient implements NodeLookup {
     private Map<Node, SlobrokData> getSlobrokData(String pattern) {
         Map<Node, SlobrokData> result = new TreeMap<>();
         List<Mirror.Entry> entries = mirror.lookup(pattern);
-        log.log(LogLevel.SPAM, "Looking for slobrok entries with pattern '" + pattern + "'. Found " + entries.size() + " entries.");
+        log.log(Level.FINEST, "Looking for slobrok entries with pattern '" + pattern + "'. Found " + entries.size() + " entries.");
         for (Mirror.Entry entry : entries) {
             StringTokenizer st = new StringTokenizer(entry.getName(), "/");
             String addressType = st.nextToken();

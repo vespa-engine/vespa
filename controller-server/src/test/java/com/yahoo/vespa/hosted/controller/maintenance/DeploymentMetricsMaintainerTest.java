@@ -6,18 +6,19 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -40,19 +41,9 @@ public class DeploymentMetricsMaintainerTest {
 
         DeploymentMetricsMaintainer maintainer = maintainer(tester.controller());
         Supplier<Application> app = application::application;
-        Supplier<Instance> instance = application::instance;
         Supplier<Deployment> deployment = () -> application.deployment(ZoneId.from("dev", "us-east-1"));
 
         // No metrics gathered yet
-        assertEquals(0, app.get().metrics().queryServiceQuality(), 0);
-        assertEquals(0, deployment.get().metrics().documentCount(), 0);
-        assertFalse("No timestamp set", deployment.get().metrics().instant().isPresent());
-        assertFalse("Never received any queries", deployment.get().activity().lastQueried().isPresent());
-        assertFalse("Never received any writes", deployment.get().activity().lastWritten().isPresent());
-
-        // Only get application metrics for old version
-        application.runJob(JobType.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("6.3.3"));
-        maintainer.maintain();
         assertEquals(0, app.get().metrics().queryServiceQuality(), 0);
         assertEquals(0, deployment.get().metrics().documentCount(), 0);
         assertFalse("No timestamp set", deployment.get().metrics().instant().isPresent());
@@ -115,16 +106,28 @@ public class DeploymentMetricsMaintainerTest {
         assertEquals(5, deployment.get().activity().lastWritesPerSecond().getAsDouble(), Double.MIN_VALUE);
     }
 
+    @Test
+    public void cluster_metric_aggregation_test() {
+        List<ClusterMetrics> clusterMetrics = List.of(
+                new ClusterMetrics("niceCluster", "container", Map.of("queriesPerSecond", 23.0, "queryLatency", 1337.0), Map.of()),
+                new ClusterMetrics("alsoNiceCluster", "container", Map.of("queriesPerSecond", 11.0, "queryLatency", 12.0), Map.of()));
+
+        DeploymentMetrics deploymentMetrics = DeploymentMetricsMaintainer.updateDeploymentMetrics(DeploymentMetrics.none, clusterMetrics);
+
+        assertEquals(23.0 + 11.0, deploymentMetrics.queriesPerSecond(), 0.001);
+        assertEquals(908.323, deploymentMetrics.queryLatencyMillis(), 0.001);
+        assertEquals(0, deploymentMetrics.documentCount(), 0.001);
+        assertEquals(0.0, deploymentMetrics.writeLatencyMillis(), 0.001);
+        assertEquals(0.0, deploymentMetrics.writesPerSecond(), 0.001);
+    }
+
     private void setMetrics(ApplicationId application, Map<String, Double> metrics) {
-        var clusterMetrics = new ClusterMetrics("default", "container");
-        for (var kv : metrics.entrySet()) {
-            clusterMetrics = clusterMetrics.addMetric(kv.getKey(), kv.getValue());
-        }
+        var clusterMetrics = new ClusterMetrics("default", "container", metrics, Map.of());
         tester.controllerTester().serviceRegistry().configServerMock().setMetrics(new DeploymentId(application, ZoneId.from("dev", "us-east-1")), clusterMetrics);
     }
 
     private static DeploymentMetricsMaintainer maintainer(Controller controller) {
-        return new DeploymentMetricsMaintainer(controller, Duration.ofDays(1), new JobControl(controller.curator()));
+        return new DeploymentMetricsMaintainer(controller, Duration.ofDays(1));
     }
 
 }

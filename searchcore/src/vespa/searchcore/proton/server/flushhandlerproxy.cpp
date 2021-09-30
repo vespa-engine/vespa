@@ -9,16 +9,12 @@ namespace proton {
 
 FlushHandlerProxy::FlushHandlerProxy(const DocumentDB::SP &documentDB)
     : IFlushHandler(documentDB->getDocTypeName().toString()),
-      _documentDB(documentDB)
-{
-    _documentDB->retain();
-}
+      _documentDB(documentDB),
+      _retainGuard(_documentDB->retain())
+{ }
 
 
-FlushHandlerProxy::~FlushHandlerProxy()
-{
-    _documentDB->release();
-}
+FlushHandlerProxy::~FlushHandlerProxy() = default;
 
 
 std::vector<IFlushTarget::SP>

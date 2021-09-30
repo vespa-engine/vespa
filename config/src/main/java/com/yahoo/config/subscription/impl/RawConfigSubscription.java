@@ -1,14 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
-import java.util.Arrays;
-
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.CfgConfigPayloadBuilder;
 import com.yahoo.config.subscription.ConfigInterruptedException;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.PayloadChecksums;
+
+import java.util.Arrays;
 
 /**
  * Subscription used when config id is raw:...
@@ -35,7 +36,7 @@ public class RawConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         if (payload == null) {
             payload = inputPayload;
             ConfigPayload configPayload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(payload.split("\n")));
-            setConfig(0L, false, configPayload.toInstance(configClass, key.getConfigId()));
+            setConfig(0L, false, configPayload.toInstance(configClass, key.getConfigId()), PayloadChecksums.empty());
             return true;
         }
         try {

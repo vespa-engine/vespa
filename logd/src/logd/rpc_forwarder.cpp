@@ -7,6 +7,10 @@
 #include <vespa/log/exceptions.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/frt/supervisor.h>
+
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".logd.rpc_forwarder");
@@ -57,19 +61,15 @@ RpcForwarder::RpcForwarder(Metrics& metrics, const ForwardMap& forward_filter, F
       _connection_spec(make_string("tcp/%s:%d", hostname.c_str(), rpc_port)),
       _rpc_timeout_secs(rpc_timeout_secs),
       _max_messages_per_request(max_messages_per_request),
-      _target(),
+      _target(supervisor.GetTarget(_connection_spec.c_str())),
       _messages(),
       _bad_lines(0),
       _forward_filter(forward_filter)
 {
-    _target = supervisor.GetTarget(_connection_spec.c_str());
     ping_logserver();
 }
 
-RpcForwarder::~RpcForwarder()
-{
-    _target->SubRef();
-}
+RpcForwarder::~RpcForwarder() = default;
 
 namespace {
 

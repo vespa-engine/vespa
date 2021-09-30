@@ -7,10 +7,10 @@
 #include <vespa/vespalib/util/traits.h>
 #include <vector>
 
-using namespace search::datastore;
+using namespace vespalib::datastore;
 using vespalib::MemoryUsage;
 using generation_t = vespalib::GenerationHandler::generation_t;
-using BufferStats = search::datastore::test::BufferStats;
+using BufferStats = vespalib::datastore::test::BufferStats;
 
 namespace {
 

@@ -18,13 +18,29 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author bratseth
@@ -32,8 +48,8 @@ import static org.junit.Assert.*;
  */
 public class SearchChainConfigurerTestCase {
 
-    private static Random random = new Random(1);
-    private static String topCfgDir = System.getProperty("java.io.tmpdir") + File.separator +
+    private static final Random random = new Random(1);
+    private static final String topCfgDir = System.getProperty("java.io.tmpdir") + File.separator +
             "SearchChainConfigurerTestCase" + File.separator;
 
     private static final String testDir = "src/test/java/com/yahoo/search/searchchain/config/test/";
@@ -132,7 +148,7 @@ public class SearchChainConfigurerTestCase {
      * that does not contain any bootstrap configs.
      */
     @Test
-    public void testSearcherConfigUpdate() throws IOException, InterruptedException {
+    public void testSearcherConfigUpdate() throws IOException {
         File cfgDir = getCfgDir();
         copyFile(testDir + "handlers.cfg", cfgDir +  "/handlers.cfg");
         copyFile(testDir + "qr-search.cfg", cfgDir +  "/qr-search.cfg");
@@ -171,9 +187,9 @@ public class SearchChainConfigurerTestCase {
 
         // Searchers with unchanged config (or that takes no config) are the same as before.
         Searcher s = searchers.getComponent(DeclaredTestSearcher.class.getName());
-        assertThat((DeclaredTestSearcher)s, sameInstance(noConfigSearcher));
+        assertThat(s, sameInstance(noConfigSearcher));
         s = searchers.getComponent(StringSearcher.class.getName());
-        assertThat((StringSearcher)s, sameInstance(stringSearcher));
+        assertThat(s, sameInstance(stringSearcher));
 
         configurer.shutdown();
         cleanup(cfgDir);
@@ -219,7 +235,7 @@ public class SearchChainConfigurerTestCase {
         assertThat(getSearchChainRegistryFrom(configurer).getSearcherRegistry(), not(searchers));
         searchers = getSearchChainRegistryFrom(configurer).getSearcherRegistry();
         assertThat(searchers.getComponentCount(), is(3));
-        assertThat((IntSearcher)searchers.getComponent(IntSearcher.class.getName()), sameInstance(intSearcher));
+        assertThat(searchers.getComponent(IntSearcher.class.getName()), sameInstance(intSearcher));
         assertThat(searchers.getComponent(ConfigurableSearcher.class.getName()), instanceOf(ConfigurableSearcher.class));
         assertThat(searchers.getComponent(DeclaredTestSearcher.class.getName()), instanceOf(DeclaredTestSearcher.class));
         assertThat(searchers.getComponent(StringSearcher.class.getName()), nullValue());
@@ -326,7 +342,7 @@ public class SearchChainConfigurerTestCase {
         if (append) {
             Pattern p = Pattern.compile("^[a-z]+" + "\\[\\d+\\]\\.id (.+)");
             BufferedReader reader = new BufferedReader(new InputStreamReader(
-                                                       new FileInputStream(new File(componentsFile)), "UTF-8"));
+                                                       new FileInputStream(new File(componentsFile)), StandardCharsets.UTF_8));
             while ((line = reader.readLine()) != null) {
                 Matcher m = p.matcher(line);
                 if (m.matches() && !m.group(1).equals(HandlersConfigurerDi.RegistriesHack.class.getName())) {
@@ -337,7 +353,7 @@ public class SearchChainConfigurerTestCase {
             reader.close();
         }
         BufferedReader reader = new BufferedReader(new InputStreamReader(
-                new FileInputStream(new File(configFile)), "UTF-8"));
+                new FileInputStream(new File(configFile)), StandardCharsets.UTF_8));
         Pattern component = Pattern.compile("^" + componentType + "\\[\\d+\\]\\.id (.+)");
         while ((line = reader.readLine()) != null) {
             Matcher m = component.matcher(line);
@@ -353,7 +369,7 @@ public class SearchChainConfigurerTestCase {
             buf.append("components[").append(i++).append("].id ").append(ExecutionFactory.class.getName()).append("\n");
         buf.insert(0, "components["+i+"]\n");
 
-        Writer writer = new OutputStreamWriter(new FileOutputStream(new File(componentsFile)), "UTF-8");
+        Writer writer = new OutputStreamWriter(new FileOutputStream(new File(componentsFile)), StandardCharsets.UTF_8);
         writer.write(buf.toString());
         writer.flush();
         writer.close();

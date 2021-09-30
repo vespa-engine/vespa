@@ -60,7 +60,7 @@ private:
 
 public:
     Reactor(std::function<int()> tick);
-    Reactor() : Reactor([](){ return -1; }) {}
+    Reactor() : Reactor([]() noexcept { return -1; }) {}
     ~Reactor();
     Token::UP attach(EventHandler &handler, int fd, bool read, bool write);
 };

@@ -21,21 +21,19 @@ import java.util.Set;
  * is not needed.
  *
  * @see Span
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
 public class Interpretation {
 
-    private Modification modification;
+    private final Modification modification;
     private double probability;
-    private Span rootSpan;
+    private final Span rootSpan;
 
     public final static AnnotationClass INTERPRETATION_CLASS = new AnnotationClass("interpretation");
-
 
     /**
      * Creates a new interpretation and a new modification from the text,
      * with the probability set to the default value(0.0).
-
      */
     public Interpretation(String text) {
         this(text,0.0);
@@ -47,7 +45,6 @@ public class Interpretation {
     public Interpretation(String text, double probabilty) {
         this(new Modification(text),probabilty);
     }
-
 
     /**
      * Creates a new interpretation based on the modification, with the probability set to the default value(0.0).
@@ -65,11 +62,9 @@ public class Interpretation {
         setProbability(probability);
     }
 
-
     public Modification getModification() {
         return modification;
     }
-
 
     /**
      * The probability that this interpretation is correct.
@@ -98,13 +93,12 @@ public class Interpretation {
     /** Returns the root of the tree representation of the interpretation */
     public Span root() { return rootSpan; }
 
-
     // Wrapper methods for Span
 
     /**
      * Return the annotation with the given annotationclass (and create it if necessary).
-     * @param annotationClass The class of the annotation
      *
+     * @param annotationClass The class of the annotation
      */
     public Annotations annotate(String annotationClass)  {
         return annotate(new AnnotationClass(annotationClass));
@@ -112,8 +106,8 @@ public class Interpretation {
 
     /**
      * Return the annotation with the given annotationclass (and create it if necessary).
-     * @param annotationClass The class of the annotation
      *
+     * @param annotationClass The class of the annotation
      */
     public Annotations annotate(AnnotationClass annotationClass) {
         return rootSpan.annotate(annotationClass);
@@ -124,6 +118,7 @@ public class Interpretation {
      * exist, a new is created.
      *
      * A shortcut for annotate(annotationClass).put(key,value)
+     *
      * @param annotationClass class of the annotation
      * @param key key of the property to set on the annotation
      * @param value value of the property to set on the annotation
@@ -137,6 +132,7 @@ public class Interpretation {
      * exist, a new is created.
      *
      * A shortcut for annotate(annotationClass).put(key,value)
+     *
      * @param annotationClass class of the annotation
      * @param key key of the property to set on the annotation
      * @param value value of the property to set on the annotation
@@ -147,6 +143,7 @@ public class Interpretation {
 
     /**
      * Returns the annotation with the given annotationClass (and create it if necessary).
+     *
      * @param from start of the substring
      * @param to end of the substring
      * @param annotationClass  class of the annotation
@@ -157,6 +154,7 @@ public class Interpretation {
 
     /**
      * Returns the annotation with the given annotationClass (and create it if necessary).
+     *
      * @param from start of the substring
      * @param to end of the substring
      * @param annotationClass  class of the annotation
@@ -169,7 +167,8 @@ public class Interpretation {
      * Sets a key/value pair for an annotation of a substring. If an annotation of the class
      * does not exist, a new is created.
      *
-     * A shortcut for annotate(from, to, annotationClass, key, value
+     * A shortcut for annotate(from, to, annotationClass, key, value)
+     *
      * @param from start of the substring
      * @param to end of the substring
      * @param annotationClass class of the annotation
@@ -184,7 +183,8 @@ public class Interpretation {
      * Sets a key/value pair for an annotation of a substring. If an annotation of the class
      * does not exist, a new is created.
      *
-     * A shortcut for annotate(from, to, annotationClass, key, value
+     * A shortcut for annotate(from, to, annotationClass, key, value)
+     *
      * @param from start of the substring
      * @param to end of the substring
      * @param annotationClass class of the annotation
@@ -219,12 +219,7 @@ public class Interpretation {
      */
     public List<Annotations> getAll(AnnotationClass annotationClass) {
         // TODO: This implementation is very inefficient because it unnecessarily collects for all classes
-        Map<AnnotationClass,List<Annotations>> all = getAll();
-        if(all.containsKey(annotationClass)){
-            return all.get(annotationClass);
-        } else  {
-            return Collections.emptyList();
-        }
+        return getAll().getOrDefault(annotationClass, List.of());
     }
 
     /**
@@ -256,7 +251,7 @@ public class Interpretation {
     /**
      * Gets the value of a property set on an annotation.
      * If the annotation or the key/value pair does not exists, null
-     * is returned
+     * is returned.
      */
     public Object get(String annotationClass,String key) {
         return get(new AnnotationClass(annotationClass),key);
@@ -265,7 +260,7 @@ public class Interpretation {
     /**
      * Gets the value of a property set on an annotation.
      * If the annotation or the key/value pair does not exists, null
-     * is returned
+     * is returned.
      */
     public Object get(AnnotationClass annotationClass,String key) {
         Annotations annotations = get(annotationClass);
@@ -280,7 +275,7 @@ public class Interpretation {
      * Equivalent to <code>get(from,to,new AnnotationClass(annotationClass))</code>
      */
     public Annotations get(int from, int to, String annotationClass)  {
-        return get(from,to,new AnnotationClass(annotationClass));
+        return get(from, to, new AnnotationClass(annotationClass));
     }
 
      /**
@@ -310,7 +305,7 @@ public class Interpretation {
      * @return the anno
      */
     public Annotations get(int from, int to, AnnotationClass annotationClass ) {
-        return rootSpan.getAnnotation(from,to,annotationClass);
+        return rootSpan.getAnnotation(from, to, annotationClass);
     }
 
     /**
@@ -320,9 +315,9 @@ public class Interpretation {
      * is returned.
      *
      */
-    public Object get(int from,int to,String annotationClass,String key) {
-        Annotations annotations = get(from,to,annotationClass);
-        if(annotations != null) {
+    public Object get(int from, int to, String annotationClass, String key) {
+        Annotations annotations = get(from, to, annotationClass);
+        if (annotations != null) {
             return annotations.get(key);
         } else {
             return null;
@@ -331,7 +326,6 @@ public class Interpretation {
 
     /**
      * Gets all the annotationclasses that describes the text.
-
      */
     public Set<AnnotationClass> getClasses() {
         return rootSpan.getClasses();
@@ -399,7 +393,7 @@ public class Interpretation {
                 }
             }
             sb.append("}");
-
         }
     }
+
 }

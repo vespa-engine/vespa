@@ -4,7 +4,6 @@
 #include <vespa/searchcore/proton/feedoperation/feedoperation.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-using document::BucketId;
 using vespalib::IllegalStateException;
 using vespalib::make_string;
 

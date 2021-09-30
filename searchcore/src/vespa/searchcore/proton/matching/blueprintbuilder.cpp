@@ -32,7 +32,7 @@ struct Mixer {
     Blueprint::UP mix(Blueprint::UP indexes) {
         if (attributes.get() == 0) {
             if (indexes.get() == 0) {
-                return Blueprint::UP(new EmptyBlueprint());
+                return std::make_unique<EmptyBlueprint>();
             }
             return Blueprint::UP(std::move(indexes));
         }

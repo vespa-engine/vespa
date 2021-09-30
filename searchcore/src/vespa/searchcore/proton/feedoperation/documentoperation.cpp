@@ -13,7 +13,7 @@ using vespalib::make_string;
 
 namespace proton {
 
-DocumentOperation::DocumentOperation(Type type)
+DocumentOperation::DocumentOperation(Type type) noexcept
     : FeedOperation(type),
       _bucketId(),
       _timestamp(),
@@ -21,12 +21,13 @@ DocumentOperation::DocumentOperation(Type type)
       _prevDbdId(),
       _prevMarkedAsRemoved(false),
       _prevTimestamp(),
-      _serializedDocSize(0)
+      _serializedDocSize(0),
+      _prepare_serial_num(0u)
 {
 }
 
 
-DocumentOperation::DocumentOperation(Type type, const BucketId &bucketId, const Timestamp &timestamp)
+DocumentOperation::DocumentOperation(Type type, BucketId bucketId, Timestamp timestamp) noexcept
     : FeedOperation(type),
       _bucketId(bucketId),
       _timestamp(timestamp),
@@ -34,16 +35,24 @@ DocumentOperation::DocumentOperation(Type type, const BucketId &bucketId, const 
       _prevDbdId(),
       _prevMarkedAsRemoved(false),
       _prevTimestamp(),
-      _serializedDocSize(0)
+      _serializedDocSize(0),
+      _prepare_serial_num(0u)
 {
 }
+
+DocumentOperation::~DocumentOperation() = default;
 
 void
 DocumentOperation::assertValidBucketId(const document::DocumentId &docId) const
 {
+   assertValidBucketId(docId.getGlobalId());
+}
+
+void
+DocumentOperation::assertValidBucketId(const document::GlobalId &gid) const
+{
     assert(_bucketId.valid());
     uint8_t bucketUsedBits = _bucketId.getUsedBits();
-    const GlobalId &gid = docId.getGlobalId();
     BucketId verId(gid.convertToBucketId());
     verId.setUsedBits(bucketUsedBits);
     assert(_bucketId.getRawId() == verId.getRawId() ||
@@ -86,9 +95,5 @@ DocumentOperation::deserialize(vespalib::nbostream &is, const DocumentTypeRepo &
     is >> _prevMarkedAsRemoved;
     is >> _prevTimestamp;
 }
-
-    DbDocumentId DocumentOperation::getDbDocumentId() const {
-        return _dbdId;
-    }
 
 } // namespace proton

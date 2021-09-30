@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -22,11 +23,11 @@ public class MemoryNameService implements NameService {
         return Collections.unmodifiableSet(records);
     }
 
-    private void add(Record record) {
-        if (records.stream().anyMatch(r -> r.type().equals(record.type()) &&
-                                           r.name().equals(record.name()) &&
-                                           r.data().equals(record.data()))) {
-            throw new IllegalArgumentException("Record already exists: " + record);
+    public void add(Record record) {
+        Optional<Record> conflict = records.stream().filter(r -> conflicts(r, record)).findFirst();
+        if (conflict.isPresent()) {
+            throw new AssertionError("'" + record + "' conflicts with existing record '" +
+                                     conflict.get() + "'");
         }
         records.add(record);
     }
@@ -42,11 +43,13 @@ public class MemoryNameService implements NameService {
     public List<Record> createAlias(RecordName name, Set<AliasTarget> targets) {
         var records = targets.stream()
                              .sorted((a, b) -> Comparator.comparing(AliasTarget::name).compare(a, b))
-                             .map(target -> new Record(Record.Type.ALIAS, name, target.asData()))
+                             .map(d -> new Record(Record.Type.ALIAS, name, d.pack()))
                              .collect(Collectors.toList());
         // Satisfy idempotency contract of interface
-        removeRecords(records);
-        records.forEach(this::add);
+        for (var r1 : records) {
+            this.records.removeIf(r2 -> conflicts(r1, r2));
+        }
+        this.records.addAll(records);
         return records;
     }
 
@@ -78,7 +81,7 @@ public class MemoryNameService implements NameService {
                           if (record.type() == type) {
                               if (type == Record.Type.ALIAS) {
                                   // Unpack ALIAS record and compare FQDN of data part
-                                  return RecordData.fqdn(AliasTarget.from(record.data()).name().value())
+                                  return RecordData.fqdn(AliasTarget.unpack(record.data()).name().value())
                                                    .equals(data);
                               }
                               return record.data().equals(data);
@@ -106,6 +109,20 @@ public class MemoryNameService implements NameService {
     @Override
     public void removeRecords(List<Record> records) {
         this.records.removeAll(records);
+    }
+
+    /**
+     * Returns whether record r1 and r2 are in conflict. This attempts to enforce the same constraints a
+     * most real name services.
+     */
+    private static boolean conflicts(Record r1, Record r2) {
+        if (!r1.name().equals(r2.name())) return false;                // Distinct names never conflict
+        if (r1.type() == Record.Type.ALIAS && r1.type() == r2.type()) {
+            AliasTarget t1 = AliasTarget.unpack(r1.data());
+            AliasTarget t2 = AliasTarget.unpack(r2.data());
+            return t1.name().equals(t2.name());                        // ALIAS records require distinct targets
+        }
+        return true;                                                   // Anything else is considered a conflict
     }
 
 }

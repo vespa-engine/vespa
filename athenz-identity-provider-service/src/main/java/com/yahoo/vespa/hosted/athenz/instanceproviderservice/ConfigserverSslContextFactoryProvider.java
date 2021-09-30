@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.google.inject.Inject;
 import com.yahoo.jdisc.http.ssl.impl.TlsContextBasedProvider;
-import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyUtils;
@@ -37,6 +36,7 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -66,7 +66,8 @@ public class ConfigserverSslContextFactoryProvider extends TlsContextBasedProvid
                                                  KeyProvider keyProvider,
                                                  AthenzProviderServiceConfig config) {
         this.athenzProviderServiceConfig = config;
-        this.ztsClient = new DefaultZtsClient(URI.create(athenzProviderServiceConfig.ztsUrl()), bootstrapIdentity);
+        this.ztsClient = new DefaultZtsClient.Builder(URI.create(athenzProviderServiceConfig.ztsUrl()))
+                .withIdentityProvider(bootstrapIdentity).build();
         this.keyProvider = keyProvider;
         this.configserverIdentity = new AthenzService(athenzProviderServiceConfig.domain(), athenzProviderServiceConfig.serviceName());
 
@@ -148,7 +149,7 @@ public class ConfigserverSslContextFactoryProvider extends TlsContextBasedProvid
         SiaUtils.writePrivateKeyFile(VESPA_SIA_DIRECTORY, configserverIdentity, privateKey);
         Instant expirationTime = certificate.getNotAfter().toInstant();
         Duration expiry = Duration.between(certificate.getNotBefore().toInstant(), expirationTime);
-        log.log(LogLevel.INFO, String.format("Got Athenz x509 certificate with expiry %s (expires %s)", expiry, expirationTime));
+        log.log(Level.INFO, String.format("Got Athenz x509 certificate with expiry %s (expires %s)", expiry, expirationTime));
         return KeyStoreBuilder.withType(KeyStoreType.JKS)
                 .withKeyEntry(CERTIFICATE_ALIAS, privateKey, keystorePwd, certificate)
                 .build();
@@ -168,13 +169,13 @@ public class ConfigserverSslContextFactoryProvider extends TlsContextBasedProvid
         @Override
         public void run() {
             try {
-                log.log(LogLevel.INFO, "Updating configserver provider certificate from ZTS");
+                log.log(Level.INFO, "Updating configserver provider certificate from ZTS");
                 char[] keystorePwd = generateKeystorePassword();
                 KeyStore keyStore = updateKeystore(configserverIdentity, keystorePwd, keyProvider, ztsClient, athenzProviderServiceConfig);
                 keyManager.updateKeystore(keyStore, keystorePwd);
-                log.log(LogLevel.INFO, "Certificate successfully updated");
+                log.log(Level.INFO, "Certificate successfully updated");
             } catch (Throwable t) {
-                log.log(LogLevel.ERROR, "Failed to update certificate from ZTS: " + t.getMessage(), t);
+                log.log(Level.SEVERE, "Failed to update certificate from ZTS: " + t.getMessage(), t);
             }
         }
     }

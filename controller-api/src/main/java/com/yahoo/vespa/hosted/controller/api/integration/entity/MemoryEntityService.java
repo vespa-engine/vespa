@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -13,6 +15,8 @@ import java.util.Optional;
  */
 public class MemoryEntityService implements EntityService {
 
+    private final Map<String, NodeEntity> nodeEntities = new HashMap<>();
+
     @Override
     public Map<PropertyId, Property> listProperties() {
         return ImmutableMap.of(new PropertyId("1234"), new Property("foo"),
@@ -20,8 +24,18 @@ public class MemoryEntityService implements EntityService {
     }
 
     @Override
+    public List<NodeEntity> listNodes() {
+        return List.copyOf(nodeEntities.values());
+    }
+
+    @Override
     public Optional<NodeEntity> findNode(String hostname) {
         return Optional.empty();
+    }
+
+    public MemoryEntityService addNodeEntity(NodeEntity nodeEntity) {
+        nodeEntities.put(nodeEntity.hostname(), nodeEntity);
+        return this;
     }
 
 }

@@ -13,3 +13,11 @@ vespa_add_executable(vespamalloc_expectsignal-overwrite_app
 vespa_add_test(NAME vespamalloc_overwrite_test_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/overwrite_test.sh
                DEPENDS vespamalloc_overwrite_test_app vespamalloc_expectsignal-overwrite_app
                        vespamalloc vespamallocd)
+
+vespa_add_executable(vespamalloc_overwrite_test_with_vespamallocd_app TEST
+    SOURCES
+    overwrite.cpp
+    DEPENDS
+    vespamallocd
+)
+vespa_add_test(NAME vespamalloc_overwrite_test_with_vespamallocd_app NO_VALGRIND COMMAND vespamalloc_overwrite_test_with_vespamallocd_app testmemoryfill)

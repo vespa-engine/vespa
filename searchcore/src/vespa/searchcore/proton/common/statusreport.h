@@ -69,7 +69,7 @@ public:
     ~StatusReport();
 
     static StatusReport::UP create(const Params &params) {
-        return StatusReport::UP(new StatusReport(params));
+        return std::make_unique<StatusReport>(params);
     }
 
     const vespalib::string &getComponent() const {

@@ -5,43 +5,9 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 
-namespace storage {
-
-namespace spi {
-
-UpdateResult
-AbstractPersistenceProvider::update(const Bucket& bucket, Timestamp ts,
-                                    const DocumentUpdate::SP& upd, Context& context)
-{
-    GetResult getResult = get(bucket, document::AllFields(), upd->getId(), context);
-
-    if (getResult.hasError()) {
-        return UpdateResult(getResult.getErrorCode(), getResult.getErrorMessage());
-    }
-
-    auto docToUpdate = getResult.getDocumentPtr();
-    Timestamp updatedTs = getResult.getTimestamp();
-    if (!docToUpdate) {
-        if (!upd->getCreateIfNonExistent()) {
-            return UpdateResult();
-        } else {
-            docToUpdate = std::make_shared<document::Document>(upd->getType(), upd->getId());
-            updatedTs = ts;
-        }
-    }
-
-    upd->applyTo(*docToUpdate);
-
-    Result putResult = put(bucket, ts, docToUpdate, context);
-
-    if (putResult.hasError()) {
-        return UpdateResult(putResult.getErrorCode(),
-                            putResult.getErrorMessage());
-    }
-
-    return UpdateResult(updatedTs);
-}
+namespace storage::spi {
 
 RemoveResult
 AbstractPersistenceProvider::removeIfFound(const Bucket& b, Timestamp timestamp,
@@ -50,21 +16,18 @@ AbstractPersistenceProvider::removeIfFound(const Bucket& b, Timestamp timestamp,
     return remove(b, timestamp, id, context);
 }
 
+void
+AbstractPersistenceProvider::removeIfFoundAsync(const Bucket& b, Timestamp timestamp,
+                                                const DocumentId& id, Context& context, OperationComplete::UP onComplete)
+{
+    removeAsync(b, timestamp, id, context, std::move(onComplete));
+}
+
 BucketIdListResult
 AbstractPersistenceProvider::getModifiedBuckets(BucketSpace) const
 {
     BucketIdListResult::List list;
     return BucketIdListResult(list);
-}
-
-Result
-AbstractPersistenceProvider::move(const Bucket& source, PartitionId target, Context& context)
-{
-    spi::Bucket to(source.getBucket(), spi::PartitionId(target));
-
-    return join(source, source, to, context);
-}
-
 }
 
 }

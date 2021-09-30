@@ -1,18 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_from_weighted_set_feature.h"
-
 #include "constant_tensor_executor.h"
 #include "utils.h"
 #include "tensor_from_attribute_executor.h"
 #include "weighted_set_parser.hpp"
-
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/eval/eval/function.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_type.h>
 
 #include <vespa/log/log.h>
@@ -22,9 +19,9 @@ using namespace search::fef;
 using search::attribute::IAttributeVector;
 using search::attribute::WeightedConstCharContent;
 using search::attribute::WeightedStringContent;
-using vespalib::tensor::DirectSparseTensorBuilder;
-using vespalib::tensor::SparseTensorAddressBuilder;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::ValueType;
+using vespalib::eval::CellType;
 using search::fef::FeatureType;
 
 namespace search {
@@ -62,7 +59,7 @@ TensorFromWeightedSetBlueprint::setup(const search::fef::IIndexEnvironment &env,
     }
     describeOutput("tensor",
                    "The tensor created from the given weighted set source (attribute field or query parameter)",
-                   FeatureType::object(ValueType::tensor_type({{_dimension}})));
+                   FeatureType::object(ValueType::make_type(CellType::DOUBLE, {{_dimension}})));
     return validSource;
 }
 
@@ -78,13 +75,13 @@ createAttributeExecutor(const search::fef::IQueryEnvironment &env,
     if (attribute == NULL) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager."
                 " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}), stash);
+        return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }
     if (attribute->getCollectionType() != search::attribute::CollectionType::WSET ||
             attribute->isFloatingPointType()) {
         LOG(warning, "The attribute vector '%s' is NOT of type weighted set of string or integer."
                 " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}), stash);
+        return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }
     if (attribute->isIntegerType()) {
         // Using WeightedStringContent ensures that the integer values are converted
@@ -101,19 +98,22 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
                     const vespalib::string &queryKey,
                     const vespalib::string &dimension, vespalib::Stash &stash)
 {
-    ValueType type = ValueType::tensor_type({{dimension}});
+    ValueType type = ValueType::make_type(CellType::DOUBLE, {{dimension}});
     search::fef::Property prop = env.getProperties().lookup(queryKey);
     if (prop.found() && !prop.get().empty()) {
         WeightedStringVector vector;
         WeightedSetParser::parse(prop.get(), vector);
-        DirectSparseTensorBuilder tensorBuilder(type);
-        SparseTensorAddressBuilder address;
+        auto factory = FastValueBuilderFactory::get();
+        size_t sz = vector._data.size();
+        auto builder = factory.create_value_builder<double>(type, 1, 1, sz);
+        std::vector<vespalib::stringref> addr_ref;
         for (const auto &elem : vector._data) {
-            address.clear();
-            address.add(elem.value());
-            tensorBuilder.insertCell(address, elem.weight(), [](double, double v){ return v; });
+            addr_ref.clear();
+            addr_ref.push_back(elem.value());
+            auto cell_array = builder->add_subspace(addr_ref);
+            cell_array[0] = elem.weight();
         }
-        return ConstantTensorExecutor::create(tensorBuilder.build(), stash);
+        return ConstantTensorExecutor::create(builder->build(std::move(builder)), stash);
     }
     return ConstantTensorExecutor::createEmpty(type, stash);
 }
@@ -128,7 +128,7 @@ TensorFromWeightedSetBlueprint::createExecutor(const search::fef::IQueryEnvironm
     } else if (_sourceType == QUERY_SOURCE) {
         return createQueryExecutor(env, _sourceParam, _dimension, stash);
     }
-    return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{_dimension}}), stash);
+    return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{_dimension}}), stash);
 }
 
 } // namespace features

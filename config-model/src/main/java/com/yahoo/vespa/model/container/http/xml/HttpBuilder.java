@@ -6,19 +6,18 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
-import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.component.chain.Chain;
+import com.yahoo.vespa.model.container.Container;
+import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.http.AccessControl;
+import com.yahoo.vespa.model.container.http.FilterBinding;
 import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
-import com.yahoo.vespa.model.container.http.Binding;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -26,76 +25,99 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 
-import static com.yahoo.vespa.model.container.http.AccessControl.ACCESS_CONTROL_CHAIN_ID;
-
 /**
  * @author Tony Vaagenes
  * @author gjoranv
  */
 public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> {
 
+    static final String REQUEST_CHAIN_TAG_NAME = "request-chain";
+    static final String RESPONSE_CHAIN_TAG_NAME = "response-chain";
+    static final List<String> VALID_FILTER_CHAIN_TAG_NAMES = List.of(REQUEST_CHAIN_TAG_NAME, RESPONSE_CHAIN_TAG_NAME);
+
     @Override
     protected Http doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element spec) {
         FilterChains filterChains;
-        List<Binding> bindings = new ArrayList<>();
+        List<FilterBinding> bindings = new ArrayList<>();
         AccessControl accessControl = null;
+        Optional<Boolean> strictFiltering = Optional.empty();
 
         Element filteringElem = XML.getChild(spec, "filtering");
         if (filteringElem != null) {
             filterChains = new FilterChainsBuilder().build(deployState, ancestor, filteringElem);
-            bindings = readFilterBindings(filteringElem, deployState.getDeployLogger());
+            bindings = readFilterBindings(filteringElem);
+            strictFiltering = XmlHelper.getOptionalAttribute(filteringElem, "strict-mode")
+                    .map(Boolean::valueOf);
 
             Element accessControlElem = XML.getChild(filteringElem, "access-control");
             if (accessControlElem != null) {
                 accessControl = buildAccessControl(deployState, ancestor, accessControlElem);
-                bindings.addAll(accessControl.getBindings());
-                filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
             }
         } else {
             filterChains = new FilterChainsBuilder().newChainsInstance(ancestor);
         }
 
-        Http http = new Http(bindings, accessControl);
-        http.setFilterChains(filterChains);
-
-        buildHttpServers(deployState, ancestor, http, spec);
-
+        Http http = new Http(filterChains);
+        strictFiltering.ifPresent(http::setStrictFiltering);
+        http.getBindings().addAll(bindings);
+        ApplicationContainerCluster cluster = getContainerCluster(ancestor).orElse(null);
+        http.setHttpServer(new JettyHttpServerBuilder(cluster).build(deployState, ancestor, spec));
+        if (accessControl != null) {
+            accessControl.configureHttpFilterChains(http);
+        }
         return http;
     }
 
     private AccessControl buildAccessControl(DeployState deployState, AbstractConfigProducer ancestor, Element accessControlElem) {
-        String application = XmlHelper.getOptionalChildValue(accessControlElem, "application")
-                .orElse(getDeployedApplicationId(deployState, ancestor).value());
+        AthenzDomain domain = getAccessControlDomain(deployState, accessControlElem);
+        AccessControl.Builder builder = new AccessControl.Builder(domain.value());
 
-        AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"), application, deployState.getDeployLogger());
-
-        getContainerCluster(ancestor).ifPresent(cluster -> {
-            builder.setHandlers(cluster.getHandlers());
-            builder.setServlets(cluster.getAllServlets());
-        });
+        getContainerCluster(ancestor).ifPresent(builder::setHandlers);
 
         XmlHelper.getOptionalAttribute(accessControlElem, "read").ifPresent(
                 readAttr -> builder.readEnabled(Boolean.valueOf(readAttr)));
         XmlHelper.getOptionalAttribute(accessControlElem, "write").ifPresent(
                 writeAttr -> builder.writeEnabled(Boolean.valueOf(writeAttr)));
 
+        AccessControl.ClientAuthentication clientAuth =
+                XmlHelper.getOptionalAttribute(accessControlElem, "tls-handshake-client-auth")
+                        .filter("want"::equals)
+                        .map(value -> AccessControl.ClientAuthentication.want)
+                        .orElse(AccessControl.ClientAuthentication.need);
+        if (! deployState.getProperties().allowDisableMtls() && clientAuth == AccessControl.ClientAuthentication.want) {
+            throw new IllegalArgumentException("Overriding 'tls-handshake-client-auth' for application is not allowed.");
+        }
+        builder.clientAuthentication(clientAuth);
+
         Element excludeElem = XML.getChild(accessControlElem, "exclude");
         if (excludeElem != null) {
             XML.getChildren(excludeElem, "binding").stream()
-                    .map(XML::getValue)
+                    .map(xml -> UserBindingPattern.fromPattern(XML.getValue(xml)))
                     .forEach(builder::excludeBinding);
         }
-        XmlHelper.getOptionalChildValue(accessControlElem, "vespa-domain").ifPresent(builder::vespaDomain);
         return builder.build();
     }
 
-    /**
-     * Returns the id of the deployed application, or the default value if not explicitly set (self-hosted).
-     */
-    private static ApplicationName getDeployedApplicationId(DeployState deployState, AbstractConfigProducer ancestor) {
-        return getContainerCluster(ancestor)
-                .map(cluster -> deployState.getProperties().applicationId().application())
-                .orElse(ApplicationId.defaultId().application());
+    // TODO Fail if domain is not provided through deploy properties
+    private static AthenzDomain getAccessControlDomain(DeployState deployState, Element accessControlElem) {
+        AthenzDomain tenantDomain = deployState.getProperties().athenzDomain().orElse(null);
+        AthenzDomain explicitDomain = XmlHelper.getOptionalAttribute(accessControlElem, "domain")
+                .map(AthenzDomain::from)
+                .orElse(null);
+        if (tenantDomain == null) {
+            if (explicitDomain == null) {
+                throw new IllegalStateException("No Athenz domain provided for 'access-control'");
+            }
+            deployState.getDeployLogger().logApplicationPackage(Level.WARNING, "Athenz tenant is not provided by deploy call. This will soon be handled as failure.");
+        }
+        if (explicitDomain != null) {
+            if (tenantDomain != null && !explicitDomain.equals(tenantDomain)) {
+                throw new IllegalArgumentException(
+                        String.format("Domain in access-control ('%s') does not match tenant domain ('%s')", explicitDomain.value(), tenantDomain.value()));
+            }
+            deployState.getDeployLogger().logApplicationPackage(Level.WARNING, "Domain in 'access-control' is deprecated and will be removed soon");
+        }
+        return tenantDomain != null ? tenantDomain : explicitDomain;
     }
 
     private static Optional<ApplicationContainerCluster> getContainerCluster(AbstractConfigProducer configProducer) {
@@ -108,25 +130,29 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         return Optional.of((ApplicationContainerCluster) currentProducer);
     }
 
-    private List<Binding> readFilterBindings(Element filteringSpec, DeployLogger logger) {
-        List<Binding> result = new ArrayList<>();
+    private List<FilterBinding> readFilterBindings(Element filteringSpec) {
+        List<FilterBinding> result = new ArrayList<>();
 
         for (Element child: XML.getChildren(filteringSpec)) {
             String tagName = child.getTagName();
-            if ((tagName.equals("request-chain") || tagName.equals("response-chain"))) {
+            if (VALID_FILTER_CHAIN_TAG_NAMES.contains(tagName)) {
                 ComponentSpecification chainId = XmlHelper.getIdRef(child);
 
                 for (Element bindingSpec: XML.getChildren(child, "binding")) {
                     String binding = XML.getValue(bindingSpec);
-                    result.add(Binding.create(chainId, binding, logger));
+                    result.add(FilterBinding.create(toFilterBindingType(tagName), chainId, UserBindingPattern.fromPattern(binding)));
                 }
             }
         }
         return result;
     }
 
-    private void buildHttpServers(DeployState deployState, AbstractConfigProducer ancestor, Http http, Element spec) {
-        http.setHttpServer(new JettyHttpServerBuilder().build(deployState, ancestor, spec));
+    private static FilterBinding.Type toFilterBindingType(String chainTag) {
+        switch (chainTag) {
+            case REQUEST_CHAIN_TAG_NAME: return FilterBinding.Type.REQUEST;
+            case RESPONSE_CHAIN_TAG_NAME: return FilterBinding.Type.RESPONSE;
+            default: throw new IllegalArgumentException("Unknown filter chain tag: " + chainTag);
+        }
     }
 
     static int readPort(ModelElement spec, boolean isHosted, DeployLogger logger) {
@@ -139,13 +165,9 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
         int legalPortInHostedVespa = Container.BASEPORT;
         if (isHosted && port != legalPortInHostedVespa && ! spec.booleanAttribute("required", false)) {
-            // TODO: After January 2020:
-            // - Set required='true' for the http server on port 4443 in the tester services.xml in InternalStepRunner
-            // - Enable 2 currently ignored tests in this module
-            // - throw IllegalArgumentException here instead of warning
-            logger.log(Level.WARNING, "Illegal port " + port + " in http server '" +
-                                      spec.stringAttribute("id") + "'" +
-                                      ": Port must be set to " + legalPortInHostedVespa);
+            throw new IllegalArgumentException("Illegal port " + port + " in http server '" +
+                                               spec.stringAttribute("id") + "'" +
+                                               ": Port must be set to " + legalPortInHostedVespa);
         }
         return port;
     }

@@ -4,7 +4,7 @@ package com.yahoo.documentapi;
 /**
  * Token to use to acknowledge data for visiting.
  *
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
 public class AckToken {
 

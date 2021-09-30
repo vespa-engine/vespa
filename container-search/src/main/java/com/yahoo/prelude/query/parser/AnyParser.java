@@ -35,21 +35,12 @@ public class AnyParser extends SimpleParser {
         return anyItems(true);
     }
 
-    Item parseFilter(String filter, Language queryLanguage, Set<String> searchDefinitions) {
-        return parseFilter(filter, queryLanguage, environment.getIndexFacts().newSession(searchDefinitions, Collections.emptySet()));
-    }
-
     Item parseFilter(String filter, Language queryLanguage, IndexFacts.Session indexFacts) {
-        Item filterRoot;
-
         setState(queryLanguage, indexFacts);
         tokenize(filter, null, indexFacts, queryLanguage);
 
-        filterRoot = anyItems(true);
-
-        if (filterRoot == null) {
-            return null;
-        }
+        Item filterRoot = anyItems(true);
+        if (filterRoot == null) return null;
 
         markAllTermsAsFilters(filterRoot);
         return filterRoot;
@@ -61,18 +52,10 @@ public class AnyParser extends SimpleParser {
 
         try {
             tokens.skipMultiple(PLUS);
+            if ( ! tokens.skipMultiple(MINUS)) return null;
+            if (tokens.currentIsNoIgnore(SPACE)) return null;
 
-            if (!tokens.skipMultiple(MINUS)) {
-                return null;
-            }
-
-            if (tokens.currentIsNoIgnore(SPACE)) {
-                return null;
-            }
-
-            if (item == null) {
-                item = indexableItem();
-            }
+            item = indexableItem();
 
             if (item == null) {
                 item = compositeItem();
@@ -88,13 +71,13 @@ public class AnyParser extends SimpleParser {
                     }
                 }
             }
-            if (item!=null)
+            if (item != null)
                 item.setProtected(true);
+
             return item;
         } finally {
-            if (item == null) {
+            if (item == null)
                 tokens.setPosition(position);
-            }
         }
     }
 

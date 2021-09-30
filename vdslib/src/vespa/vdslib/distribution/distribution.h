@@ -30,25 +30,24 @@ public:
     typedef std::unique_ptr<Distribution> UP;
     using DistributionConfig = const vespa::config::content::internal::InternalStorDistributionType;
     using DistributionConfigBuilder = vespa::config::content::internal::InternalStorDistributionType;
-    enum DiskDistribution { MODULO, MODULO_INDEX, MODULO_KNUTH, MODULO_BID };
 
 private:
-    std::vector<uint32_t> _distributionBitMasks;
-    std::unique_ptr<Group> _nodeGraph;
+    std::vector<uint32_t>      _distributionBitMasks;
+    std::unique_ptr<Group>     _nodeGraph;
+    std::vector<const Group *> _node2Group;
     uint16_t _redundancy;
     uint16_t _initialRedundancy;
     uint16_t _readyCopies;
     bool _activePerGroup;
     bool _ensurePrimaryPersisted;
     bool _distributorAutoOwnershipTransferOnWholeGroupDown;
-    DiskDistribution _diskDistribution;
     vespalib::string _serialized;
 
     struct ResultGroup {
         const Group* _group;
         uint16_t _redundancy;
 
-        ResultGroup(const Group& group, uint16_t redundancy)
+        ResultGroup(const Group& group, uint16_t redundancy) noexcept
             : _group(&group), _redundancy(redundancy) {}
 
         bool operator<(const ResultGroup& other) const {
@@ -76,15 +75,6 @@ private:
      */
     uint32_t getStorageSeed(
                 const document::BucketId&, const ClusterState&) const;
-    /**
-     * Get seed to use for ideal state algorithm's random number generator
-     * to decide which disk on a storage node this bucket should be mapped to.
-     * Uses node index to ensure that copies of buckets goes to different disks
-     * on different nodes, such that 2 disks missing will have less overlapping
-     * data and all disks will add on some extra load if one disk goes missing.
-     */
-    uint32_t getDiskSeed(
-                const document::BucketId&, uint16_t nodeIndex) const;
 
     void getIdealGroups(const document::BucketId& bucket,
                         const ClusterState& clusterState,
@@ -122,7 +112,7 @@ public:
     Distribution(const vespalib::string& serialized);
     ~Distribution();
 
-    Distribution& operator=(const Distribution&);
+    Distribution& operator=(const Distribution&) = delete;
 
     const vespalib::string& serialize() const { return _serialized; }
 
@@ -133,7 +123,6 @@ public:
     bool ensurePrimaryPersisted() const { return _ensurePrimaryPersisted; }
     bool distributorAutoOwnershipTransferOnWholeGroupDown() const
         { return _distributorAutoOwnershipTransferOnWholeGroupDown; }
-    DiskDistribution getDiskDistribution() const { return _diskDistribution; }
     bool activePerGroup() const { return _activePerGroup; }
 
     bool operator==(const Distribution& o) const
@@ -142,17 +131,6 @@ public:
         { return (_serialized != o._serialized); }
 
     void print(std::ostream& out, bool, const std::string&) const override;
-
-    enum DISK_MODE {
-        IDEAL_DISK_EVEN_IF_DOWN,
-        BEST_AVAILABLE_DISK
-    };
-    uint16_t getIdealDisk(const NodeState&, uint16_t nodeIndex,
-                          const document::BucketId&, DISK_MODE flag) const;
-
-    uint16_t getPreferredAvailableDisk(const NodeState& ns, uint16_t nodeIndex,
-                                       const document::BucketId& bucket) const
-        { return getIdealDisk(ns, nodeIndex, bucket, BEST_AVAILABLE_DISK); }
 
     /** Simplified wrapper for getIdealNodes() */
     std::vector<uint16_t> getIdealStorageNodes(
@@ -182,10 +160,7 @@ public:
      * should not be used by any production code.
      */
     static ConfigWrapper getDefaultDistributionConfig(
-            uint16_t redundancy = 2, uint16_t nodeCount = 10,
-            DiskDistribution distr = MODULO_BID);
-    static vespalib::string getDiskDistributionName(DiskDistribution dist);
-    static DiskDistribution getDiskDistribution(vespalib::stringref name);
+            uint16_t redundancy = 2, uint16_t nodeCount = 10);
 
     /**
      * Utility function used by distributor to split copies into groups to

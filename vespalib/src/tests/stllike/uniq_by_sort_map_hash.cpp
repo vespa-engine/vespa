@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <vector>
 #include <algorithm>
+#include <pthread.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
 template <typename T>
@@ -70,13 +71,13 @@ class Gid
 {
 public:
   struct hash {
-      size_t operator () (const Gid & g) const { return g.getGid()[0]; }
+      size_t operator () (const Gid & g) const noexcept { return g.getGid()[0]; }
   };
-  Gid(unsigned int v=0) : _gid() { _gid[0] = _gid[1] = _gid[2] = v; }
+  Gid(unsigned int v=0) noexcept : _gid() { _gid[0] = _gid[1] = _gid[2] = v; }
   const unsigned int * getGid() const { return _gid; }
-  int cmp(const Gid & b) const { return memcmp(_gid, b._gid, sizeof(_gid)); }
-  bool operator < (const Gid & b) const { return cmp(b) < 0; }
-  bool operator == (const Gid & b) const { return cmp(b) == 0; }
+  int cmp(const Gid & b) const noexcept { return memcmp(_gid, b._gid, sizeof(_gid)); }
+  bool operator < (const Gid & b) const noexcept { return cmp(b) < 0; }
+  bool operator == (const Gid & b) const noexcept { return cmp(b) == 0; }
 private:
   unsigned int _gid[3];
 };
@@ -84,15 +85,15 @@ private:
 class Slot
 {
 public:
-  Slot(unsigned int v=0) : _gid(v) { }
+  Slot(unsigned int v=0) noexcept : _gid(v) { }
   const Gid & getGid() const { return _gid; }
-  int cmp(const Slot & b) const { return _gid.cmp(b.getGid()); }
+  int cmp(const Slot & b) const noexcept { return _gid.cmp(b.getGid()); }
 private:
   Gid _gid;
 };
 
 struct IndirectCmp : public std::binary_function<Slot*, Slot*, bool> {
-    bool operator()(const Slot* s1, const Slot* s2) {
+    bool operator() (const Slot* s1, const Slot* s2) noexcept {
         return s1->cmp(*s2) < 0;
     }
 };
@@ -310,13 +311,13 @@ int main(int argc, char *argv[])
                } else {
                    std::vector<pthread_t> threads(numThreads);
                    for (size_t j(0); j < numThreads; j++) {
-                        pthread_create(&threads[j], NULL, (VFUNC)runBenchMark, &indirectSlotVector);
+                       pthread_create(&threads[j], NULL, (VFUNC)runBenchMark, &indirectSlotVector);
                    }
                    for (size_t j(0); j < numThreads; j++) {
                        pthread_join(threads[j], NULL);
                    }
                }
-           break;
+            break;
         default:
             printf("'m' = %s\n", description[type]);
             printf("'M' = %s\n", description[type]);
@@ -327,11 +328,10 @@ int main(int argc, char *argv[])
             printf("'g' = %s\n", description[type]);
             printf("'G' = %s\n", description[type]);
             printf("'J' = %s\n", description[type]);
-            printf("Unspecified type %c. Running map benchmark\n", type);
-            exit(1);
-            break;
+            printf("Unspecified type %c.\n", type);
+            return 1;
         }
     }
     printf("Running test '%c' = %s, result = %ld unique values\n", type, description[type], uniq);
+    return 0;
 }
-

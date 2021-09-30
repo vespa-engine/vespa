@@ -21,7 +21,7 @@ public class ConfigDefinitionBuilder {
      * @return a ConfigDefinition object
      */
     public static ConfigDefinition createConfigDefinition(CNode root) {
-        ConfigDefinition def = new ConfigDefinition(root.getName(), root.getVersion(), root.getNamespace());
+        ConfigDefinition def = new ConfigDefinition(root.getName(), root.getNamespace());
 
         for (CNode node : root.getChildren()) {
             addNode(def, node);

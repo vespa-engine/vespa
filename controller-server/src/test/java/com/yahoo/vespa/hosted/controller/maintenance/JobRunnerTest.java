@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
@@ -62,6 +62,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -86,19 +87,18 @@ public class JobRunnerTest {
         JobController jobs = tester.controller().jobController();
         StepRunner stepRunner = (step, id) -> id.type() == stagingTest && step.get() == startTests? Optional.of(error) : Optional.of(running);
         Phaser phaser = new Phaser(1);
-        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                         phasedExecutor(phaser), stepRunner);
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), phasedExecutor(phaser), stepRunner);
 
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
-        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
+        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
 
         jobs.start(id, systemTest, versions);
         try {
             jobs.start(id, systemTest, versions);
             fail("Job is already running, so this should not be allowed!");
         }
-        catch (IllegalStateException e) { }
+        catch (IllegalStateException ignored) { }
         jobs.start(id, stagingTest, versions);
 
         assertTrue(jobs.last(id, systemTest).get().stepStatuses().values().stream().allMatch(unfinished::equals));
@@ -118,12 +118,11 @@ public class JobRunnerTest {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
-        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                         inThreadExecutor(), mappedRunner(outcomes));
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), inThreadExecutor(), mappedRunner(outcomes));
 
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
-        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
+        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
         Supplier<Run> run = () -> jobs.last(id, systemTest).get();
 
         jobs.start(id, systemTest, versions);
@@ -132,8 +131,8 @@ public class JobRunnerTest {
         Map<Step, Status> steps = run.get().stepStatuses();
         runner.maintain();
         assertEquals(steps, run.get().stepStatuses());
-        assertEquals(List.of(deployTester), run.get().readySteps());
-        assertStepsWithStartTime(run.get(), deployTester);
+        assertEquals(List.of(deployTester, deployReal), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), deployTester, deployReal);
 
         outcomes.put(deployTester, running);
         runner.maintain();
@@ -184,7 +183,7 @@ public class JobRunnerTest {
         runner.maintain();
         assertTrue(run.get().hasFailed());
         assertTrue(run.get().hasEnded());
-        assertTrue(run.get().status() == aborted);
+        assertSame(aborted, run.get().status());
 
         // A new run is attempted.
         jobs.start(id, systemTest, versions);
@@ -195,7 +194,7 @@ public class JobRunnerTest {
         runner.maintain();
         assertTrue(run.get().hasEnded());
         assertTrue(run.get().hasFailed());
-        assertFalse(run.get().status() == aborted);
+        assertNotSame(aborted, run.get().status());
         assertEquals(failed, run.get().stepStatuses().get(deployTester));
         assertEquals(unfinished, run.get().stepStatuses().get(installTester));
         assertEquals(succeeded, run.get().stepStatuses().get(report));
@@ -226,12 +225,11 @@ public class JobRunnerTest {
         JobController jobs = tester.controller().jobController();
         // Hang during tester deployment, until notified.
         CyclicBarrier barrier = new CyclicBarrier(2);
-        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                         Executors.newFixedThreadPool(32), waitingRunner(barrier));
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), Executors.newFixedThreadPool(32), waitingRunner(barrier));
 
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
-        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
+        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
 
         RunId runId = new RunId(id, systemTest, 1);
         jobs.start(id, systemTest, versions);
@@ -241,7 +239,7 @@ public class JobRunnerTest {
             jobs.locked(id, systemTest, deactivateTester, step -> { });
             fail("deployTester step should still be locked!");
         }
-        catch (TimeoutException e) { }
+        catch (TimeoutException ignored) { }
 
         // Thread is still trying to deploy tester -- delete application, and see all data is garbage collected.
         assertEquals(Collections.singletonList(runId), jobs.active().stream().map(run -> run.id()).collect(Collectors.toList()));
@@ -263,13 +261,12 @@ public class JobRunnerTest {
     public void historyPruning() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
-        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                         inThreadExecutor(), (id, step) -> Optional.of(running));
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), inThreadExecutor(), (id, step) -> Optional.of(running));
 
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId instanceId = appId.defaultInstance();
         JobId jobId = new JobId(instanceId, systemTest);
-        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
+        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
         assertFalse(jobs.lastSuccess(jobId).isPresent());
 
         for (int i = 0; i < jobs.historyLength(); i++) {
@@ -288,8 +285,7 @@ public class JobRunnerTest {
         assertFalse(jobs.details(new RunId(instanceId, systemTest, 1)).isPresent());
         assertTrue(jobs.details(new RunId(instanceId, systemTest, 65)).isPresent());
 
-        JobRunner failureRunner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                                inThreadExecutor(), (id, step) -> Optional.of(error));
+        JobRunner failureRunner = new JobRunner(tester.controller(), Duration.ofDays(1), inThreadExecutor(), (id, step) -> Optional.of(error));
 
         // Make all but the oldest of the 54 jobs a failure.
         for (int i = 0; i < jobs.historyLength() - 1; i++) {
@@ -338,16 +334,34 @@ public class JobRunnerTest {
     }
 
     @Test
+    public void onlySuccessfulRunExpiresThenAnotherFails() {
+        DeploymentTester tester = new DeploymentTester();
+        JobController jobs = tester.controller().jobController();
+        var app = tester.newDeploymentContext().submit();
+        JobId jobId = new JobId(app.instanceId(), systemTest);
+        assertFalse(jobs.lastSuccess(jobId).isPresent());
+
+        app.runJob(systemTest);
+        assertTrue(jobs.lastSuccess(jobId).isPresent());
+        assertEquals(1, jobs.runs(jobId).size());
+
+        tester.clock().advance(JobController.maxHistoryAge.plusSeconds(1));
+        app.submit();
+        app.failDeployment(systemTest);
+        assertFalse(jobs.lastSuccess(jobId).isPresent());
+        assertEquals(1, jobs.runs(jobId).size());
+    }
+
+    @Test
     public void timeout() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
-        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                         inThreadExecutor(), mappedRunner(outcomes));
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), inThreadExecutor(), mappedRunner(outcomes));
 
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
-        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
+        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
 
         jobs.start(id, systemTest, versions);
         tester.clock().advance(JobRunner.jobTimeout.plus(Duration.ofSeconds(1)));
@@ -356,16 +370,15 @@ public class JobRunnerTest {
     }
 
     @Test
-    public void jobMetrics() {
+    public void jobMetrics() throws TimeoutException {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
-        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                                         inThreadExecutor(), mappedRunner(outcomes));
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), inThreadExecutor(), mappedRunner(outcomes));
 
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
-        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
+        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
 
         for (RunStatus status : RunStatus.values()) {
             if (status == success) continue; // Status not used for steps.
@@ -388,12 +401,13 @@ public class JobRunnerTest {
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.convergenceFailure).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.deploymentFailure).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.outOfCapacity).get().intValue());
+        assertEquals(1, metric.getMetric(context::equals, JobMetrics.endpointCertificateTimeout).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.testFailure).get().intValue());
     }
 
     public static ExecutorService inThreadExecutor() {
         return new AbstractExecutorService() {
-            AtomicBoolean shutDown = new AtomicBoolean(false);
+            final AtomicBoolean shutDown = new AtomicBoolean(false);
             @Override public void shutdown() { shutDown.set(true); }
             @Override public List<Runnable> shutdownNow() { shutDown.set(true); return Collections.emptyList(); }
             @Override public boolean isShutdown() { return shutDown.get(); }
@@ -405,7 +419,7 @@ public class JobRunnerTest {
 
     private static ExecutorService phasedExecutor(Phaser phaser) {
         return new AbstractExecutorService() {
-            ExecutorService delegate = Executors.newFixedThreadPool(32);
+            final ExecutorService delegate = Executors.newFixedThreadPool(32);
             @Override public void shutdown() { delegate.shutdown(); }
             @Override public List<Runnable> shutdownNow() { return delegate.shutdownNow(); }
             @Override public boolean isShutdown() { return delegate.isShutdown(); }

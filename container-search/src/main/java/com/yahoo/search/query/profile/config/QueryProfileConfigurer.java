@@ -121,16 +121,20 @@ public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber
                 QueryProfile referenced = registry.getComponent(referenceConfig.value());
                 if (referenced == null)
                     throw new IllegalArgumentException("Query profile '" + referenceConfig.value() + "' referenced as '" +
-                            referenceConfig.name() + "' in " + profile + " was not found");
+                                                       referenceConfig.name() + "' in " + profile + " was not found");
                 profile.set(referenceConfig.name(), referenced, registry);
                 if (referenceConfig.overridable() != null && !referenceConfig.overridable().isEmpty())
-                    profile.setOverridable(referenceConfig.name(), BooleanParser.parseBoolean(referenceConfig.overridable()), null);
+                    profile.setOverridable(referenceConfig.name(),
+                                           BooleanParser.parseBoolean(referenceConfig.overridable()),
+                                           DimensionValues.empty);
             }
 
             for (QueryProfilesConfig.Queryprofile.Property propertyConfig : config.property()) {
                 profile.set(propertyConfig.name(), propertyConfig.value(), registry);
                 if (propertyConfig.overridable() != null && ! propertyConfig.overridable().isEmpty())
-                    profile.setOverridable(propertyConfig.name(), BooleanParser.parseBoolean(propertyConfig.overridable()), null);
+                    profile.setOverridable(propertyConfig.name(),
+                                           BooleanParser.parseBoolean(propertyConfig.overridable()),
+                                           DimensionValues.empty);
             }
 
             for (QueryProfilesConfig.Queryprofile.Queryprofilevariant variantConfig : config.queryprofilevariant()) {
@@ -152,15 +156,24 @@ public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber
                 }
 
                 for (QueryProfilesConfig.Queryprofile.Queryprofilevariant.Reference referenceConfig : variantConfig.reference()) {
-                    QueryProfile referenced=registry.getComponent(referenceConfig.value());
+                    QueryProfile referenced = registry.getComponent(referenceConfig.value());
                     if (referenced == null)
                         throw new IllegalArgumentException("Query profile '" + referenceConfig.value() + "' referenced as '" +
-                                referenceConfig.name() + "' in " + profile + " for '" + forDimensionValues + "' was not found");
+                                                           referenceConfig.name() + "' in " + profile +
+                                                           " for '" + forDimensionValues + "' was not found");
                     profile.set(referenceConfig.name(), referenced, forDimensionValues, registry);
+                    if ( ! referenceConfig.overridable().isEmpty())
+                        profile.setOverridable(referenceConfig.name(),
+                                               Boolean.parseBoolean(referenceConfig.overridable()),
+                                               forDimensionValues);
                 }
 
                 for (QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property propertyConfig : variantConfig.property()) {
                     profile.set(propertyConfig.name(), propertyConfig.value(), forDimensionValues, registry);
+                    if ( ! propertyConfig.overridable().isEmpty())
+                        profile.setOverridable(propertyConfig.name(),
+                                               Boolean.parseBoolean(propertyConfig.overridable()),
+                                               forDimensionValues);
                 }
 
             }

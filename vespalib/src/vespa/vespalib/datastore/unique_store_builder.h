@@ -3,8 +3,9 @@
 #pragma once
 
 #include "unique_store_allocator.h"
+#include <vespa/vespalib/stllike/allocator.h>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 class IUniqueStoreDictionary;
 
@@ -21,8 +22,8 @@ class UniqueStoreBuilder {
 
     Allocator& _allocator;
     IUniqueStoreDictionary& _dict;
-    std::vector<EntryRef> _refs;
-    std::vector<uint32_t> _refCounts;
+    std::vector<EntryRef, allocator_large<EntryRef>> _refs;
+    std::vector<uint32_t, allocator_large<uint32_t>> _refCounts;
 
 public:
     UniqueStoreBuilder(Allocator& allocator, IUniqueStoreDictionary& dict, uint32_t uniqueValuesHint);

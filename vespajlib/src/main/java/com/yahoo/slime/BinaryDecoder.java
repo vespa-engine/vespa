@@ -1,7 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
-import static com.yahoo.slime.BinaryFormat.*;
+
+import static com.yahoo.slime.BinaryFormat.decode_double;
+import static com.yahoo.slime.BinaryFormat.decode_meta;
+import static com.yahoo.slime.BinaryFormat.decode_type;
+import static com.yahoo.slime.BinaryFormat.decode_zigzag;
 
 final class BinaryDecoder {
     BufferedInput in;
@@ -135,9 +139,7 @@ final class BinaryDecoder {
 
     void decodeValue(Inserter inserter) {
         byte b = in.getByte();
-        Cursor cursor = decodeValue(inserter,
-                                    decode_type(b),
-                                    decode_meta(b));
+        Cursor cursor = decodeValue(inserter, decode_type(b), decode_meta(b));
         if (!cursor.valid()) {
             in.fail("failed to decode value");
         }

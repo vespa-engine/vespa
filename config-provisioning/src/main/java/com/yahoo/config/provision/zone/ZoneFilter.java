@@ -28,6 +28,9 @@ public interface ZoneFilter {
     /** Zones where config servers are up and running. */
     ZoneList reachable();
 
+    /** Zones where hosts must be reprovisioned to upgrade their OS */
+    ZoneList reprovisionToUpgradeOs();
+
     /** All zones from the initial pool. */
     ZoneList all();
 

@@ -19,7 +19,7 @@ Juniper * _Juniper;
 TestEnv::TestEnv(FastOS_Application* app, const char* propfile) :
     _props(), _config(), _juniper(), _wordFolder()
 {
-    char c;
+    int c;
     const char* oarg = NULL;
     int oind = 1;
 

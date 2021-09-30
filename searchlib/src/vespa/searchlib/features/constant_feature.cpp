@@ -3,15 +3,21 @@
 #include "constant_feature.h"
 #include "valuefeature.h"
 #include <vespa/searchlib/fef/featureexecutor.h>
+#include <vespa/searchlib/fef/properties.h>
+#include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
+#include <vespa/vespalib/util/stash.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.constant_feature");
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+using vespalib::eval::ValueType;
+using vespalib::eval::Function;
+using vespalib::eval::SimpleConstantValue;
+
+namespace search::features {
 
 /**
  * Feature executor that returns a constant value.
@@ -25,8 +31,8 @@ public:
     ConstantFeatureExecutor(const vespalib::eval::Value &value)
         : _value(value)
     {}
-    virtual bool isPure() override { return true; }
-    virtual void execute(uint32_t) override {
+    bool isPure() override { return true; }
+    void execute(uint32_t) override {
         outputs().set_object(0, _value);
     }
     static FeatureExecutor &create(const vespalib::eval::Value &value, vespalib::Stash &stash) {
@@ -41,9 +47,7 @@ ConstantBlueprint::ConstantBlueprint()
 {
 }
 
-ConstantBlueprint::~ConstantBlueprint()
-{
-}
+ConstantBlueprint::~ConstantBlueprint() = default;
 
 void
 ConstantBlueprint::visitDumpFeatures(const IIndexEnvironment &,
@@ -54,7 +58,7 @@ ConstantBlueprint::visitDumpFeatures(const IIndexEnvironment &,
 Blueprint::UP
 ConstantBlueprint::createInstance() const
 {
-    return Blueprint::UP(new ConstantBlueprint());
+    return std::make_unique<ConstantBlueprint>();
 }
 
 bool
@@ -64,13 +68,26 @@ ConstantBlueprint::setup(const IIndexEnvironment &env,
     _key = params[0].getValue();
     _value = env.getConstantValue(_key);
     if (!_value) {
-        LOG(error, "Constant '%s' not found", _key.c_str());
+        auto type_prop = env.getProperties().lookup(getName(), "type");
+        auto value_prop = env.getProperties().lookup(getName(), "value");
+        if ((type_prop.size() == 1) && (value_prop.size() == 1)) {
+            auto type = ValueType::from_spec(type_prop.get());
+            auto value = Function::parse(value_prop.get())->root().get_const_value();
+            if (!type.is_error() && value && (value->type() == type)) {
+                _value = std::make_unique<SimpleConstantValue>(std::move(value));
+            } else {
+                fail("Constant '%s' has invalid spec: type='%s', value='%s'",
+                     _key.c_str(), type_prop.get().c_str(), value_prop.get().c_str());
+            }
+        } else {
+            fail("Constant '%s' not found", _key.c_str());
+        }
     } else if (_value->type().is_error()) {
-        LOG(error, "Constant '%s' has invalid type", _key.c_str());
+        fail("Constant '%s' has invalid type", _key.c_str());
     }
-    FeatureType output_type = _value ?
-                              FeatureType::object(_value->type()) :
-                              FeatureType::number();
+    FeatureType output_type = _value
+        ? FeatureType::object(_value->type())
+        : FeatureType::number();
     describeOutput("out", "The constant looked up in index environment using the given key.",
                    output_type);
     return (_value && !_value->type().is_error());
@@ -88,5 +105,4 @@ ConstantBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash 
     }
 }
 
-} // namespace features
-} // namespace search
+}

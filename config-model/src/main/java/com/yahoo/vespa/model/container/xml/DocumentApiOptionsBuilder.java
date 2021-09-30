@@ -3,32 +3,36 @@ package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
+import com.yahoo.vespa.model.container.ContainerThreadpool;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 
 /**
  * @author Einar M R Rosenvinge
- * @since 5.1.11
  */
 public class DocumentApiOptionsBuilder {
 
     private static final Logger log = Logger.getLogger(DocumentApiOptionsBuilder.class.getName());
-    private static final String[] DEFAULT_BINDINGS = {"http://*/"};
+
 
     public static ContainerDocumentApi.Options build(Element spec) {
-        return new ContainerDocumentApi.Options(getBindings(spec));
+        return new ContainerDocumentApi.Options(getBindings(spec), threadpoolOptions(spec, "http-client-api"));
+    }
+
+    private static ContainerThreadpool.UserOptions threadpoolOptions(Element spec, String elementName) {
+        Element element = XML.getChild(spec, elementName);
+        if (element == null) return null;
+        return ContainerThreadpool.UserOptions.fromXml(element).orElse(null);
     }
 
     private static List<String> getBindings(Element spec) {
         Collection<Element> bindingElems =  XML.getChildren(spec, "binding");
         if (bindingElems.isEmpty())
-            return Arrays.asList(DEFAULT_BINDINGS);
-
+            return List.of();
         List<String> bindings = new ArrayList<>();
         for (Element e :bindingElems) {
             String binding = getBinding(e);

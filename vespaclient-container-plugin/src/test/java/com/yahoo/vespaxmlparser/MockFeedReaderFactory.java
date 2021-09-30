@@ -13,6 +13,10 @@ import java.io.InputStream;
  */
 public class MockFeedReaderFactory extends FeedReaderFactory {
 
+    public MockFeedReaderFactory() {
+        super(true);
+    }
+
     @Override
     public FeedReader createReader(
             InputStream inputStream,

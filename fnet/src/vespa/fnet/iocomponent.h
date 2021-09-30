@@ -25,8 +25,6 @@ class FNET_IOComponent
     FNET_IOComponent &operator=(const FNET_IOComponent &);
 
     using Selector = vespalib::Selector<FNET_IOComponent>;
-    using clock = FNET_Scheduler::clock;
-    using time_point = clock::time_point;
 
     struct Flags {
         Flags(bool shouldTimeout) :
@@ -50,7 +48,7 @@ protected:
     Selector                *_ioc_selector;      // attached event selector
     char                    *_ioc_spec;          // connect/listen spec
     Flags                    _flags;             // Compressed representation of boolean flags;
-    time_point               _ioc_timestamp;     // last I/O activity
+    vespalib::steady_time    _ioc_timestamp;     // last I/O activity
     std::mutex               _ioc_lock;          // synchronization
     std::condition_variable  _ioc_cond;          // synchronization
     uint32_t                 _ioc_refcnt;        // reference counter
@@ -138,7 +136,7 @@ public:
      *
      * @return config object.
      **/
-    FNET_Config *GetConfig();
+    const FNET_Config & getConfig() const;
 
 
     /**

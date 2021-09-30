@@ -4,11 +4,12 @@ package com.yahoo.search.yql;
 /**
  * Used to communicate a NullItem has been encountered in the query tree.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-@SuppressWarnings("serial")
 public class NullItemException extends RuntimeException {
+
     public NullItemException(String message) {
         super(message);
     }
+
 }

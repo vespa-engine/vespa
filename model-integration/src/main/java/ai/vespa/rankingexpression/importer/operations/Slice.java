@@ -176,13 +176,11 @@ public class Slice extends IntermediateOperation {
         com.yahoo.tensor.functions.Slice<Reference> sliceIndices = new com.yahoo.tensor.functions.Slice<>(inputIndices, dimensionValues);
         ExpressionNode sliceExpression = new TensorFunctionNode(sliceIndices);
 
-        TensorFunction generate = Generate.bound(type.type(), wrapScalar(sliceExpression));
-        return generate;
+        return Generate.bound(type.type(), wrapScalar(sliceExpression));
     }
 
     @Override
     public void addDimensionNameConstraints(DimensionRenamer renamer) {
-        // Todo: what to do?
         for (int i = 0; i < type.dimensions().size(); i++) {
             renamer.addDimension(type.dimensions().get(i).name());
             for (int j = i + 1; j < type.dimensions().size(); j++) {

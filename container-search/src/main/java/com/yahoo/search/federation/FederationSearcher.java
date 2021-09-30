@@ -14,6 +14,7 @@ import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.errorhandling.Results;
 import com.yahoo.errorhandling.Results.Builder;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -57,7 +58,6 @@ import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.yahoo.collections.CollectionUtil.first;
-import static com.yahoo.container.util.Util.quote;
 import static com.yahoo.search.federation.StrictContractsConfig.PropagateSourceProperties;
 
 /**
@@ -78,7 +78,6 @@ public class FederationSearcher extends ForkingSearcher {
     /** The name of the query property containing the source name added to the query to each source by this */
     public final static CompoundName SOURCENAME = new CompoundName("sourceName");
     public final static CompoundName PROVIDERNAME = new CompoundName("providerName");
-
     /** Logging field name constants */
     public static final String LOG_COUNT_PREFIX = "count_";
 
@@ -105,7 +104,7 @@ public class FederationSearcher extends ForkingSearcher {
                                                   ComponentRegistry<TargetSelector> targetSelectors) {
         if (selectorId.isEmpty()) return null;
         return checkNotNull(targetSelectors.getComponent(selectorId),
-                            "Missing target selector with id" + quote(selectorId));
+                            "Missing target selector with id '" + selectorId + "'");
     }
 
     // for testing
@@ -139,7 +138,7 @@ public class FederationSearcher extends ForkingSearcher {
                 }
             }
 
-            //Allow source groups to use by default.
+            // Allow source groups to use by default.
             if (target.useByDefault())
                 builder.useTargetByDefault(target.id());
         }
@@ -304,7 +303,6 @@ public class FederationSearcher extends ForkingSearcher {
                 Object value = getSourceOrProviderProperty(original, key, sourceName, providerName, window.get(key));
                 if (value != null)
                     outgoing.properties().set(key, value);
-                if (value != null) System.out.println("Setting " + key + " = " + value);
             }
         }
     }
@@ -340,9 +338,8 @@ public class FederationSearcher extends ForkingSearcher {
     private List<String> allSourceRefDescriptions() {
         List<String> descriptions = new ArrayList<>();
 
-        for (com.yahoo.search.federation.sourceref.Target target : searchChainResolver.allTopLevelTargets()) {
+        for (com.yahoo.search.federation.sourceref.Target target : searchChainResolver.allTopLevelTargets())
             descriptions.add(target.searchRefDescription());
-        }
         return descriptions;
     }
 
@@ -355,7 +352,7 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private void warnIfUnresolvedSearchChains(List<UnresolvedSearchChainException> missingTargets,
-                                      HitGroup errorHitGroup) {
+                                              HitGroup errorHitGroup) {
         if (!missingTargets.isEmpty()) {
             errorHitGroup.addError(missingSearchChainsErrorMessage(missingTargets));
         }
@@ -493,9 +490,9 @@ public class FederationSearcher extends ForkingSearcher {
      * TODO This is probably a dirty hack for bug 4711376. There are probably better ways.
      * But I will leave that to trd-processing@
      *
-     * @param group  The merging hitgroup to be updated if necessary
-     * @param orderer The per provider hit orderer.
-     * @return The hitorderer chosen
+     * @param group the merging hitgroup to be updated if necessary
+     * @param orderer the per provider hit orderer
+     * @return he hitorderer chosen
      */
     private HitOrderer dirtyCopyIfModifiedOrderer(HitGroup group, HitOrderer orderer) {
         if (orderer != null) {
@@ -546,8 +543,8 @@ public class FederationSearcher extends ForkingSearcher {
     private ComponentSpecification asSourceSpec(String source) {
         try {
             return new ComponentSpecification(source);
-        } catch(Exception e) {
-            throw new IllegalArgumentException("The source ref '" + source + "' used for federation is not valid.", e);
+        } catch (Exception e) {
+            throw new IllegalInputException("The source ref '" + source + "' used for federation is not valid.", e);
         }
     }
 

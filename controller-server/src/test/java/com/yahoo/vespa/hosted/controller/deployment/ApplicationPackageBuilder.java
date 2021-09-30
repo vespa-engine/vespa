@@ -1,17 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.security.SignatureAlgorithm;
+import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.text.Text;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -22,6 +28,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.StringJoiner;
+import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -34,7 +41,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class ApplicationPackageBuilder {
 
-    private final StringBuilder environmentBody = new StringBuilder();
+    private final StringBuilder prodBody = new StringBuilder();
     private final StringBuilder validationOverridesBody = new StringBuilder();
     private final StringBuilder blockChange = new StringBuilder();
     private final StringJoiner notifications = new StringJoiner("/>\n  <email ",
@@ -46,12 +53,13 @@ public class ApplicationPackageBuilder {
     private OptionalInt majorVersion = OptionalInt.empty();
     private String instances = "default";
     private String upgradePolicy = null;
-    private Environment environment = Environment.prod;
+    private String upgradeRollout = null;
     private String globalServiceId = null;
     private String athenzIdentityAttributes = null;
     private String searchDefinition = "search test { }";
     private boolean explicitSystemTest = false;
     private boolean explicitStagingTest = false;
+    private Version compileVersion = Version.fromString("6.1");
 
     public ApplicationPackageBuilder majorVersion(int majorVersion) {
         this.majorVersion = OptionalInt.of(majorVersion);
@@ -68,8 +76,8 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
-    public ApplicationPackageBuilder environment(Environment environment) {
-        this.environment = environment;
+    public ApplicationPackageBuilder upgradeRollout(String upgradeRollout) {
+        this.upgradeRollout = upgradeRollout;
         return this;
     }
 
@@ -109,32 +117,32 @@ public class ApplicationPackageBuilder {
     }
 
     public ApplicationPackageBuilder region(RegionName regionName, boolean active) {
-        environmentBody.append("      <region active='")
-                       .append(active)
-                       .append("'>")
-                       .append(regionName.value())
-                       .append("</region>\n");
+        prodBody.append("      <region active='")
+                .append(active)
+                .append("'>")
+                .append(regionName.value())
+                .append("</region>\n");
         return this;
     }
 
     public ApplicationPackageBuilder test(String regionName) {
-        environmentBody.append("      <test>");
-        environmentBody.append(regionName);
-        environmentBody.append("</test>\n");
+        prodBody.append("      <test>");
+        prodBody.append(regionName);
+        prodBody.append("</test>\n");
         return this;
     }
 
     public ApplicationPackageBuilder parallel(String... regionName) {
-        environmentBody.append("    <parallel>\n");
+        prodBody.append("    <parallel>\n");
         Arrays.stream(regionName).forEach(this::region);
-        environmentBody.append("    </parallel>\n");
+        prodBody.append("    </parallel>\n");
         return this;
     }
 
     public ApplicationPackageBuilder delay(Duration delay) {
-        environmentBody.append("    <delay seconds='");
-        environmentBody.append(delay.getSeconds());
-        environmentBody.append("'/>\n");
+        prodBody.append("    <delay seconds='");
+        prodBody.append(delay.getSeconds());
+        prodBody.append("'/>\n");
         return this;
     }
 
@@ -159,8 +167,13 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    public ApplicationPackageBuilder compileVersion(Version version) {
+        compileVersion = version;
+        return this;
+    }
+
     public ApplicationPackageBuilder athenzIdentity(AthenzDomain domain, AthenzService service) {
-        this.athenzIdentityAttributes = String.format("athenz-domain='%s' athenz-service='%s'", domain.value(),
+        this.athenzIdentityAttributes = Text.format("athenz-domain='%s' athenz-service='%s'", domain.value(),
                                                       service.value());
         return this;
     }
@@ -181,9 +194,28 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    /** Add a trusted certificate to security/clients.pem */
     public ApplicationPackageBuilder trust(X509Certificate certificate) {
         this.trustedCertificates.add(certificate);
         return this;
+    }
+
+    /** Add a default trusted certificate to security/clients.pem */
+    public ApplicationPackageBuilder trustDefaultCertificate() {
+        try {
+            var generator = KeyPairGenerator.getInstance("RSA");
+            var certificate = X509CertificateBuilder.fromKeypair(
+                    generator.generateKeyPair(),
+                    new X500Principal("CN=name"),
+                    Instant.now(),
+                    Instant.now().plusMillis(300_000),
+                    SignatureAlgorithm.SHA256_WITH_RSA,
+                    X509CertificateBuilder.generateRandomSerialNumber()
+            ).build();
+            return trust(certificate);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private byte[] deploymentSpec() {
@@ -195,29 +227,27 @@ public class ApplicationPackageBuilder {
         }
         xml.append(">\n");
         xml.append("  <instance id='").append(instances).append("'>\n");
-        if (upgradePolicy != null) {
-            xml.append("    <upgrade policy='");
-            xml.append(upgradePolicy);
-            xml.append("'/>\n");
+        if (upgradePolicy != null || upgradeRollout != null) {
+            xml.append("    <upgrade ");
+            if (upgradePolicy != null) xml.append("policy='").append(upgradePolicy).append("' ");
+            if (upgradeRollout != null) xml.append("rollout='").append(upgradeRollout).append("' ");
+            xml.append("/>\n");
         }
         xml.append(notifications);
-        xml.append(blockChange);
         if (explicitSystemTest)
             xml.append("    <test />\n");
         if (explicitStagingTest)
             xml.append("    <staging />\n");
-        xml.append("    <");
-        xml.append(environment.value());
+        xml.append(blockChange);
+        xml.append("    <prod");
         if (globalServiceId != null) {
             xml.append(" global-service-id='");
             xml.append(globalServiceId);
             xml.append("'");
         }
         xml.append(">\n");
-        xml.append(environmentBody);
-        xml.append("    </");
-        xml.append(environment.value());
-        xml.append(">\n");
+        xml.append(prodBody);
+        xml.append("    </prod>\n");
         xml.append("    <endpoints>\n");
         xml.append(endpointsBody);
         xml.append("    </endpoints>\n");
@@ -237,8 +267,8 @@ public class ApplicationPackageBuilder {
         return searchDefinition.getBytes(UTF_8);
     }
 
-    private static byte[] buildMeta() {
-        return "{\"compileVersion\":\"6.1\",\"buildTime\":1000}".getBytes(UTF_8);
+    private static byte[] buildMeta(Version compileVersion) {
+        return ("{\"compileVersion\":\"" + compileVersion.toFullString() + "\",\"buildTime\":1000}").getBytes(UTF_8);
     }
 
     public ApplicationPackage build() {
@@ -252,25 +282,25 @@ public class ApplicationPackageBuilder {
         }
         ByteArrayOutputStream zip = new ByteArrayOutputStream();
         try (ZipOutputStream out = new ZipOutputStream(zip)) {
-            out.putNextEntry(new ZipEntry(dir + "deployment.xml"));
-            out.write(deploymentSpec());
-            out.closeEntry();
-            out.putNextEntry(new ZipEntry(dir + "validation-overrides.xml"));
-            out.write(validationOverrides());
-            out.closeEntry();
-            out.putNextEntry(new ZipEntry(dir + "search-definitions/test.sd"));
-            out.write(searchDefinition());
-            out.closeEntry();
-            out.putNextEntry(new ZipEntry(dir + "build-meta.json"));
-            out.write(buildMeta());
-            out.closeEntry();
-            out.putNextEntry(new ZipEntry(dir + "security/clients.pem"));
-            out.write(X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8));
-            out.closeEntry();
+            out.setLevel(Deflater.NO_COMPRESSION); // This is for testing purposes so we skip compression for performance
+            writeZipEntry(out, dir + "deployment.xml", deploymentSpec());
+            writeZipEntry(out, dir + "validation-overrides.xml", validationOverrides());
+            writeZipEntry(out, dir + "search-definitions/test.sd", searchDefinition());
+            writeZipEntry(out, dir + "build-meta.json", buildMeta(compileVersion));
+            if (!trustedCertificates.isEmpty()) {
+                writeZipEntry(out, dir + "security/clients.pem", X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8));
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
         return new ApplicationPackage(zip.toByteArray());
+    }
+
+    private void writeZipEntry(ZipOutputStream out, String name, byte[] content) throws IOException {
+        ZipEntry entry = new ZipEntry(name);
+        out.putNextEntry(entry);
+        out.write(content);
+        out.closeEntry();
     }
 
     private static String asIso8601Date(Instant instant) {
@@ -284,7 +314,7 @@ public class ApplicationPackageBuilder {
             out.write(deploymentXml.getBytes(UTF_8));
             out.closeEntry();
             out.putNextEntry(new ZipEntry("build-meta.json"));
-            out.write(buildMeta());
+            out.write(buildMeta(Version.fromString("6.1")));
             out.closeEntry();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

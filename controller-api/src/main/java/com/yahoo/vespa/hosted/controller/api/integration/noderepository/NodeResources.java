@@ -73,6 +73,30 @@ public class NodeResources {
         this.storageType = storageType;
     }
 
+    public com.yahoo.config.provision.NodeResources toNodeResources() {
+        return new com.yahoo.config.provision.NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps,
+                                                            toDiskSpeed(diskSpeed),
+                                                            toStorageType(storageType));
+    }
+
+    private com.yahoo.config.provision.NodeResources.DiskSpeed toDiskSpeed(String diskSpeed) {
+        switch (diskSpeed) {
+            case "fast" : return com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
+            case "slow" : return com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
+            case "any" : return com.yahoo.config.provision.NodeResources.DiskSpeed.any;
+            default : throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed + "'");
+        }
+    }
+
+    private com.yahoo.config.provision.NodeResources.StorageType toStorageType(String storageType) {
+        switch (storageType) {
+            case "remote" : return com.yahoo.config.provision.NodeResources.StorageType.remote;
+            case "local" : return com.yahoo.config.provision.NodeResources.StorageType.local;
+            case "any" : return com.yahoo.config.provision.NodeResources.StorageType.any;
+            default : throw new IllegalArgumentException("Unknown storage type '" + storageType + "'");
+        }
+    }
+
     @Override
     public String toString() {
         return "NodeResources{" +

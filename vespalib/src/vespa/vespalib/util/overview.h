@@ -22,17 +22,6 @@
  *
  * vespalib::GenCnt
  *
- * Synchronization classes
- *
- * vespalib::Lock
- * <BR> vespalib::LockGuard
- * <BR> vespalib::Monitor	
- * <BR> vespalib::TryLock	
- * <BR> vespalib::MonitorGuard	
- * <BR> vespalib::RWLock	
- * <BR> vespalib::RWLockReader	
- * <BR> vespalib::RWLockWriter	
- *
  * Reference counting
  *
  * <BR> vespalib::ReferenceCounter	
@@ -67,11 +56,4 @@
  * vespalib::Utf8Reader
  * <BR> vespalib::Utf8Writer
  * <BR> vespalib::LowerCase
- *
- * Closures and closure handling
- *
- * vespalib::Closure0
- * <BR> vespalib::MemberClosure0_0
- * <BR> vespalib::ClosureTask
- * <BR> vespalib::AutoClosureCaller
  */

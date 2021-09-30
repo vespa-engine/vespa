@@ -14,6 +14,10 @@ public class MessageResponse extends SlimeJsonResponse {
         super(slime(message));
     }
 
+    public MessageResponse(int statusCode, String message) {
+        super(statusCode, slime(message));
+    }
+
     private static Slime slime(String message) {
         var slime = new Slime();
         slime.setObject().setString("message", message);

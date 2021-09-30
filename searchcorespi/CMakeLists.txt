@@ -18,8 +18,4 @@ vespa_define_module(
     src/vespa/searchcorespi
     src/vespa/searchcorespi/flush
     src/vespa/searchcorespi/index
-    src/vespa/searchcorespi/plugin
-
-    TESTS
-    src/tests/plugin
 )

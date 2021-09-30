@@ -4,7 +4,6 @@
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/storage/distributor/operations/operation.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/vespalib/util/sync.h>
 
 namespace storage {
 
@@ -27,13 +26,13 @@ public:
     const char* getName() const override { return "statBucketList"; }
     std::string getStatus() const override { return ""; }
 
-    void onStart(DistributorMessageSender& sender) override;
-    void onReceive(DistributorMessageSender&, const std::shared_ptr<api::StorageReply>&) override
+    void onStart(DistributorStripeMessageSender& sender) override;
+    void onReceive(DistributorStripeMessageSender&, const std::shared_ptr<api::StorageReply>&) override
     {
         // Never called.
         HDR_ABORT("should not be reached");
     }
-    void onClose(DistributorMessageSender&) override {}
+    void onClose(DistributorStripeMessageSender&) override {}
 
 private:
     void getBucketStatus(const BucketDatabase::Entry& entry, std::ostream& os) const;

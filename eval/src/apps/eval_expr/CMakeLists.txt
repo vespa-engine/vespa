@@ -6,4 +6,6 @@ vespa_add_executable(eval_eval_expr_app
     INSTALL bin
     DEPENDS
     vespaeval
+    EXTERNAL_DEPENDS
+    edit
 )

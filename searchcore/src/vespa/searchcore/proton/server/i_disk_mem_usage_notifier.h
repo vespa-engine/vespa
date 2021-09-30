@@ -2,8 +2,7 @@
 
 #pragma once
 
-namespace proton
-{
+namespace proton {
 
 class IDiskMemUsageListener;
 
@@ -14,7 +13,7 @@ class IDiskMemUsageListener;
 class IDiskMemUsageNotifier
 {
 public:
-    virtual ~IDiskMemUsageNotifier() {}
+    virtual ~IDiskMemUsageNotifier() = default;
     virtual void addDiskMemUsageListener(IDiskMemUsageListener *listener) = 0;
     virtual void removeDiskMemUsageListener(IDiskMemUsageListener *listener) = 0;
 };

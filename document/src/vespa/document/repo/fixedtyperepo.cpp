@@ -5,7 +5,7 @@
 
 namespace document {
 
-FixedTypeRepo::FixedTypeRepo(const DocumentTypeRepo &repo, const vespalib::string &type)
+FixedTypeRepo::FixedTypeRepo(const DocumentTypeRepo &repo, const vespalib::string &type) noexcept
     : _repo(&repo), _doc_type(repo.getDocumentType(type))
 {
     assert(_doc_type);

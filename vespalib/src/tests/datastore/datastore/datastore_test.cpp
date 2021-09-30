@@ -4,44 +4,34 @@
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/test/memory_allocator_observer.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("datastore_test");
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 using vespalib::alloc::MemoryAllocator;
-
-struct IntReclaimer
-{
-    static void reclaim(int *) {}
-};
 
 class MyStore : public DataStore<int, EntryRefT<3, 2> > {
 private:
     using ParentType = DataStore<int, EntryRefT<3, 2> >;
-    using ParentType::_activeBufferIds;
+    using ParentType::_primary_buffer_ids;
 public:
     MyStore() {}
-
-    void
-    holdBuffer(uint32_t bufferId)
-    {
+    explicit MyStore(std::unique_ptr<BufferType<int>> type)
+        : ParentType(std::move(type))
+    {}
+    void holdBuffer(uint32_t bufferId) {
         ParentType::holdBuffer(bufferId);
     }
-
-    void
-    holdElem(EntryRef ref, uint64_t len)
-    {
+    void holdElem(EntryRef ref, uint64_t len) {
         ParentType::holdElem(ref, len);
     }
-
-    void
-    transferHoldLists(generation_t generation)
-    {
+    void transferHoldLists(generation_t generation) {
         ParentType::transferHoldLists(generation);
     }
-
     void trimElemHoldList(generation_t usedGen) override {
         ParentType::trimElemHoldList(usedGen);
     }
@@ -54,17 +44,18 @@ public:
     void enableFreeLists() {
         ParentType::enableFreeLists();
     }
-
-    void
-    switchActiveBuffer()
-    {
-        ParentType::switchActiveBuffer(0, 0u);
+    void switch_primary_buffer() {
+        ParentType::switch_primary_buffer(0, 0u);
     }
-    size_t activeBufferId() const { return _activeBufferIds[0]; }
+    size_t primary_buffer_id() const { return _primary_buffer_ids[0]; }
+    BufferState& get_active_buffer_state() {
+        return ParentType::getBufferState(primary_buffer_id());
+    }
 };
 
 
 using GrowthStats = std::vector<int>;
+using BufferStats = std::vector<int>;
 
 constexpr float ALLOC_GROW_FACTOR = 0.4;
 constexpr size_t HUGE_PAGE_ARRAY_SIZE = (MemoryAllocator::HUGEPAGE_SIZE / sizeof(int));
@@ -86,7 +77,7 @@ public:
     {
         (void) _store.addType(&_firstType);
         _typeId = _store.addType(&_type);
-        _store.initActiveBuffers();
+        _store.init_primary_buffers();
     }
     ~GrowStore() { _store.dropBuffers(); }
 
@@ -133,6 +124,19 @@ public:
             ++i;
         }
     }
+    BufferStats getBuffers(size_t bufs) {
+        BufferStats buffers;
+        while (buffers.size() < bufs) {
+            RefType iRef = (_type.getArraySize() == 1) ?
+                           (_store.template allocator<DataType>(_typeId).alloc().ref) :
+                           (_store.template allocator<DataType>(_typeId).allocArray(_type.getArraySize()).ref);
+            int buffer_id = iRef.bufferId();
+            if (buffers.empty() || buffers.back() != buffer_id) {
+                buffers.push_back(buffer_id);
+            }
+        }
+        return buffers;
+    }
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 };
 
@@ -151,11 +155,43 @@ assertMemStats(const DataStoreBase::MemStats &exp,
     EXPECT_EQ(exp._holdBuffers, act._holdBuffers);
 }
 
+TEST(DataStoreTest, require_that_invalid_entry_ref_can_be_ordered) {
+    EntryRef inValid;
+    EntryRef a(1);
+    EXPECT_EQ(inValid, inValid);
+    EXPECT_EQ(a, a);
+    EXPECT_NE(inValid, a);
+    EXPECT_NE(a, inValid);
+    EXPECT_LT(inValid, a);
+    EXPECT_LE(inValid, a);
+}
+
+TEST(DataStoreTest, require_that_entry_ref_can_be_ordered) {
+    EntryRef a(1);
+    EntryRef b(2);
+    EntryRef c(3);
+    EXPECT_EQ(a, a);
+    EXPECT_EQ(b, b);
+    EXPECT_EQ(c, c);
+    EXPECT_NE(a, b);
+    EXPECT_NE(a, c);
+    EXPECT_NE(b, c);
+    EXPECT_LT(a, b);
+    EXPECT_LT(b, c);
+    EXPECT_LT(a, c);
+    EXPECT_LE(a, a);
+    EXPECT_LE(b, b);
+    EXPECT_LE(c, c);
+    EXPECT_LE(a, b);
+    EXPECT_LE(b, c);
+    EXPECT_LE(a, c);
+}
+
 TEST(DataStoreTest, require_that_entry_ref_is_working)
 {
     using MyRefType = EntryRefT<22>;
-    EXPECT_EQ(4194304u, MyRefType::offsetSize());
-    EXPECT_EQ(1024u, MyRefType::numBuffers());
+    EXPECT_EQ(4_Mi, MyRefType::offsetSize());
+    EXPECT_EQ(1_Ki, MyRefType::numBuffers());
     {
         MyRefType r(0, 0);
         EXPECT_EQ(0u, r.offset());
@@ -182,8 +218,8 @@ TEST(DataStoreTest, require_that_entry_ref_is_working)
 TEST(DataStoreTest, require_that_aligned_entry_ref_is_working)
 {
     using MyRefType = AlignedEntryRefT<22, 2>; // 4 byte alignement
-    EXPECT_EQ(4 * 4194304u, MyRefType::offsetSize());
-    EXPECT_EQ(1024u, MyRefType::numBuffers());
+    EXPECT_EQ(16_Mi, MyRefType::offsetSize());
+    EXPECT_EQ(1_Ki, MyRefType::numBuffers());
     EXPECT_EQ(0u, MyRefType::align(0));
     EXPECT_EQ(4u, MyRefType::align(1));
     EXPECT_EQ(4u, MyRefType::align(2));
@@ -254,20 +290,20 @@ TEST(DataStoreTest, require_that_we_can_hold_and_trim_buffers)
 {
     MyStore s;
     EXPECT_EQ(0u, MyRef(s.addEntry(1)).bufferId());
-    s.switchActiveBuffer();
-    EXPECT_EQ(1u, s.activeBufferId());
+    s.switch_primary_buffer();
+    EXPECT_EQ(1u, s.primary_buffer_id());
     s.holdBuffer(0); // hold last buffer
     s.transferHoldLists(10);
 
     EXPECT_EQ(1u, MyRef(s.addEntry(2)).bufferId());
-    s.switchActiveBuffer();
-    EXPECT_EQ(2u, s.activeBufferId());
+    s.switch_primary_buffer();
+    EXPECT_EQ(2u, s.primary_buffer_id());
     s.holdBuffer(1); // hold last buffer
     s.transferHoldLists(20);
 
     EXPECT_EQ(2u, MyRef(s.addEntry(3)).bufferId());
-    s.switchActiveBuffer();
-    EXPECT_EQ(3u, s.activeBufferId());
+    s.switch_primary_buffer();
+    EXPECT_EQ(3u, s.primary_buffer_id());
     s.holdBuffer(2); // hold last buffer
     s.transferHoldLists(30);
 
@@ -285,8 +321,8 @@ TEST(DataStoreTest, require_that_we_can_hold_and_trim_buffers)
     EXPECT_TRUE(s.getBufferState(2).size() != 0);
     EXPECT_TRUE(s.getBufferState(3).size() != 0);
 
-    s.switchActiveBuffer();
-    EXPECT_EQ(0u, s.activeBufferId());
+    s.switch_primary_buffer();
+    EXPECT_EQ(0u, s.primary_buffer_id());
     EXPECT_EQ(0u, MyRef(s.addEntry(5)).bufferId());
     s.trimHoldLists(41);
     EXPECT_TRUE(s.getBufferState(0).size() != 0);
@@ -337,6 +373,12 @@ operator<<(std::ostream &os, const IntHandle &rhs)
 }
 
 void
+expect_successive_refs(EntryRef first, EntryRef second)
+{
+    EXPECT_EQ(MyRef(first).offset() + 1, MyRef(second).offset());
+}
+
+void
 expect_successive_handles(const IntHandle &first, const IntHandle &second)
 {
     EXPECT_EQ(to_ref(first).offset() + 1, to_ref(second).offset());
@@ -346,30 +388,29 @@ TEST(DataStoreTest, require_that_we_can_use_free_lists)
 {
     MyStore s;
     s.enableFreeLists();
-    auto allocator = s.freeListAllocator<IntReclaimer>();
-    auto h1 = allocator.alloc(1);
-    s.holdElem(h1.ref, 1);
+    auto r1 = s.addEntry(1);
+    s.holdElem(r1, 1);
     s.transferHoldLists(10);
-    auto h2 = allocator.alloc(2);
-    expect_successive_handles(h1, h2);
-    s.holdElem(h2.ref, 1);
+    auto r2 = s.addEntry(2);
+    expect_successive_refs(r1, r2);
+    s.holdElem(r2, 1);
     s.transferHoldLists(20);
     s.trimElemHoldList(11);
-    auto h3 = allocator.alloc(3); // reuse h1.ref
-    EXPECT_EQ(h1, h3);
-    auto h4 = allocator.alloc(4);
-    expect_successive_handles(h2, h4);
+    auto r3 = s.addEntry(3); // reuse r1
+    EXPECT_EQ(r1, r3);
+    auto r4 = s.addEntry(4);
+    expect_successive_refs(r2, r4);
     s.trimElemHoldList(21);
-    auto h5 = allocator.alloc(5); // reuse h2.ref
-    EXPECT_EQ(h2, h5);
-    auto h6 = allocator.alloc(6);
-    expect_successive_handles(h4, h6);
-    EXPECT_EQ(3, s.getEntry(h1.ref));
-    EXPECT_EQ(5, s.getEntry(h2.ref));
-    EXPECT_EQ(3, s.getEntry(h3.ref));
-    EXPECT_EQ(4, s.getEntry(h4.ref));
-    EXPECT_EQ(5, s.getEntry(h5.ref));
-    EXPECT_EQ(6, s.getEntry(h6.ref));
+    auto r5 = s.addEntry(5); // reuse r2
+    EXPECT_EQ(r2, r5);
+    auto r6 = s.addEntry(6);
+    expect_successive_refs(r4, r6);
+    EXPECT_EQ(3, s.getEntry(r1));
+    EXPECT_EQ(5, s.getEntry(r2));
+    EXPECT_EQ(3, s.getEntry(r3));
+    EXPECT_EQ(4, s.getEntry(r4));
+    EXPECT_EQ(5, s.getEntry(r5));
+    EXPECT_EQ(6, s.getEntry(r6));
 }
 
 TEST(DataStoreTest, require_that_we_can_use_free_lists_with_raw_allocator)
@@ -427,13 +468,14 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
     s.holdBuffer(r.bufferId());
     s.transferHoldLists(100);
     m._usedElems += 2;
-    m._holdElems += 2; // used - dead
+    m._holdElems = m._usedElems;
+    m._deadElems = 0;
     m._activeBuffers--;
     m._holdBuffers++;
     assertMemStats(m, s.getMemStats());
 
     // new active buffer
-    s.switchActiveBuffer();
+    s.switch_primary_buffer();
     s.addEntry(40);
     m._allocElems += MyRef::offsetSize();
     m._usedElems++;
@@ -449,6 +491,21 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
     m._freeBuffers = MyRef::numBuffers() - 1;
     m._holdBuffers = 0;
     assertMemStats(m, s.getMemStats());
+
+    { // increase extra used bytes
+        auto prev_stats = s.getMemStats();
+        s.get_active_buffer_state().incExtraUsedBytes(50);
+        auto curr_stats = s.getMemStats();
+        EXPECT_EQ(prev_stats._allocBytes + 50, curr_stats._allocBytes);
+        EXPECT_EQ(prev_stats._usedBytes + 50, curr_stats._usedBytes);
+    }
+
+    { // increase extra hold bytes
+        auto prev_stats = s.getMemStats();
+        s.get_active_buffer_state().incExtraHoldBytes(30);
+        auto curr_stats = s.getMemStats();
+        EXPECT_EQ(prev_stats._holdBytes + 30, curr_stats._holdBytes);
+    }
 }
 
 TEST(DataStoreTest, require_that_memory_usage_is_calculated)
@@ -464,8 +521,8 @@ TEST(DataStoreTest, require_that_memory_usage_is_calculated)
     vespalib::MemoryUsage m = s.getMemoryUsage();
     EXPECT_EQ(MyRef::offsetSize() * sizeof(int), m.allocatedBytes());
     EXPECT_EQ(5 * sizeof(int), m.usedBytes());
-    EXPECT_EQ(2 * sizeof(int), m.deadBytes());
-    EXPECT_EQ(3 * sizeof(int), m.allocatedBytesOnHold());
+    EXPECT_EQ(0 * sizeof(int), m.deadBytes());
+    EXPECT_EQ(5 * sizeof(int), m.allocatedBytesOnHold());
     s.trimHoldLists(101);
 }
 
@@ -520,16 +577,16 @@ TEST(DataStoreTest, require_that_buffer_growth_works)
     assertGrowStats({ 4, 4, 4, 4, 8, 16, 16, 32, 64, 64 },
                     { 4 }, 20, 4, 0);
     // Resize if buffer size is less than 4, min size 0
-    assertGrowStats({ 4, 4, 4, 4, 8, 16, 16, 32, 64, 64 },
+    assertGrowStats({ 4, 4, 8, 32, 32, 64, 64, 128, 128, 128 },
                     { 0, 1, 2, 4 }, 4, 0, 4);
     // Always switch to new buffer, min size 16
     assertGrowStats({ 16, 16, 16, 32, 32, 64, 128, 128, 128 },
                     { 16 }, 68, 16, 0);
     // Resize if buffer size is less than 16, min size 0
-    assertGrowStats({ 16, 16, 16, 32, 32, 64, 128, 128, 128 },
+    assertGrowStats({ 16, 32, 32, 128, 128, 128, 128, 128, 128 },
                     { 0, 1, 2, 4, 8, 16 }, 4, 0, 16);
     // Resize if buffer size is less than 16, min size 4
-    assertGrowStats({ 16, 16, 16, 32, 32, 64, 128, 128, 128 },
+    assertGrowStats({ 16, 32, 32, 128, 128, 128, 128, 128, 128 },
                     { 4, 8, 16 }, 20, 4, 16);
     // Always switch to new buffer, min size 0
     assertGrowStats({ 1, 1, 1, 1, 1, 2, 2, 4, 8, 8, 16, 32 },
@@ -537,7 +594,7 @@ TEST(DataStoreTest, require_that_buffer_growth_works)
 
     // Buffers with sizes larger than the huge page size of the mmap allocator.
     ASSERT_EQ(524288u, HUGE_PAGE_ARRAY_SIZE);
-    assertGrowStats({ 262144, 262144, 262144, 524288, 524288, 524288 * 2, 524288 * 3, 524288 * 4, 524288 * 5, 524288 * 5 },
+    assertGrowStats({ 262144, 524288, 524288, 524288 * 3, 524288 * 3, 524288 * 5, 524288 * 5, 524288 * 5, 524288 * 5, 524288 * 5 },
                     { 0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144 },
                     4, 0, HUGE_PAGE_ARRAY_SIZE / 2, HUGE_PAGE_ARRAY_SIZE * 5);
 }
@@ -571,13 +628,83 @@ TEST(DataStoreTest, require_that_offset_in_EntryRefT_is_within_bounds_when_alloc
      *   4) Cap bytes to alloc to the max offset EntryRef can handle.
      *      The max bytes to alloc is: maxArrays * arraySize * elementSize.
      */
-    assertGrowStats<uint8_t>({8192,8192,8192,16384,16384,32768,65536,65536,98304,98304,98304,98304}, 3);
-    assertGrowStats<uint8_t>({16384,16384,16384,32768,32768,65536,131072,131072,163840,163840,163840,163840}, 5);
-    assertGrowStats<uint8_t>({16384,16384,16384,32768,32768,65536,131072,131072,229376,229376,229376,229376}, 7);
-    assertGrowStats<uint32_t>({8192,8192,8192,16384,16384,32768,65536,65536,98304,98304,98304,98304}, 3);
-    assertGrowStats<uint32_t>({16384,16384,16384,32768,32768,65536,131072,131072,163840,163840,163840,163840}, 5);
-    assertGrowStats<uint32_t>({16384,16384,16384,32768,32768,65536,131072,131072,229376,229376,229376,229376}, 7);
+    assertGrowStats<uint8_t>({8192,16384,16384,65536,65536,98304,98304,98304,98304,98304,98304,98304}, 3);
+    assertGrowStats<uint8_t>({16384,16384,65536,65536,131072,131072,163840,163840,163840,163840,163840,163840}, 5);
+    assertGrowStats<uint8_t>({16384,32768,32768,131072,131072,229376,229376,229376,229376,229376,229376,229376}, 7);
+    assertGrowStats<uint32_t>({8192,16384,16384,65536,65536,98304,98304,98304,98304,98304,98304,98304}, 3);
+    assertGrowStats<uint32_t>({16384,16384,65536,65536,131072,131072,163840,163840,163840,163840,163840,163840}, 5);
+    assertGrowStats<uint32_t>({16384,32768,32768,131072,131072,229376,229376,229376,229376,229376,229376,229376}, 7);
 }
+
+namespace {
+
+using MyMemoryAllocator = vespalib::alloc::test::MemoryAllocatorObserver;
+using AllocStats = MyMemoryAllocator::Stats;
+
+class MyBufferType : public BufferType<int>
+{
+    std::unique_ptr<alloc::MemoryAllocator> _allocator;
+public:
+    MyBufferType(std::unique_ptr<alloc::MemoryAllocator> allocator, uint32_t max_arrays)
+        : BufferType<int>(1, 2, max_arrays, max_arrays, 0.2),
+          _allocator(std::move(allocator))
+    {
+    }
+    const alloc::MemoryAllocator* get_memory_allocator() const override {
+        return _allocator.get();
+    }
+};
+
+}
+
+TEST(DataStoreTest, can_set_memory_allocator)
+{
+    AllocStats stats;
+    {
+        MyStore s(std::make_unique<MyBufferType>(std::make_unique<MyMemoryAllocator>(stats), MyStore::RefType::offsetSize()));
+        EXPECT_EQ(AllocStats(1, 0), stats);
+        auto ref = s.addEntry(42);
+        EXPECT_EQ(0u, MyRef(ref).bufferId());
+        EXPECT_EQ(AllocStats(1, 0), stats);
+        auto ref2 = s.addEntry(43);
+        EXPECT_EQ(0u, MyRef(ref2).bufferId());
+        EXPECT_EQ(AllocStats(2, 0), stats);
+        s.switch_primary_buffer();
+        EXPECT_EQ(AllocStats(3, 0), stats);
+        s.holdBuffer(0);
+        s.transferHoldLists(10);
+        EXPECT_EQ(AllocStats(3, 0), stats);
+        s.trimHoldLists(11);
+        EXPECT_EQ(AllocStats(3, 2), stats);
+    }
+    EXPECT_EQ(AllocStats(3, 3), stats);
+}
+
+namespace {
+
+void
+assertBuffers(BufferStats exp_buffers, size_t num_arrays_for_new_buffer)
+{
+    EXPECT_EQ(exp_buffers, IntGrowStore(1, 1, 1024, num_arrays_for_new_buffer).getBuffers(exp_buffers.size()));
+}
+
+}
+
+TEST(DataStoreTest, can_reuse_active_buffer_as_primary_buffer)
+{
+    assertBuffers({ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, 0);
+    assertBuffers({ 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3}, 16);
+}
+
+TEST(DataStoreTest, control_static_sizes) {
+    EXPECT_EQ(96, sizeof(BufferTypeBase));
+    EXPECT_EQ(32, sizeof(BufferState::FreeList));
+    EXPECT_EQ(1, sizeof(BufferState::State));
+    EXPECT_EQ(144, sizeof(BufferState));
+    BufferState bs;
+    EXPECT_EQ(0, bs.size());
+}
+
 
 }
 

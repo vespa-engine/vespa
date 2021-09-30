@@ -13,7 +13,7 @@ import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.model.StorageNode;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 
 /**
  * @author oyving
@@ -22,6 +22,7 @@ public class HostedVespaPolicy implements Policy {
 
     public static final String APPLICATION_SUSPENDED_CONSTRAINT = "application-suspended";
     public static final String ENOUGH_SERVICES_UP_CONSTRAINT = "enough-services-up";
+    public static final String UNKNOWN_SERVICE_STATUS = "unknown-service-status";
     public static final String SET_NODE_STATE_CONSTRAINT = "controller-set-node-state";
     public static final String CLUSTER_CONTROLLER_AVAILABLE_CONSTRAINT = "controller-available";
     public static final String DEADLINE_CONSTRAINT = "deadline";
@@ -39,16 +40,18 @@ public class HostedVespaPolicy implements Policy {
     }
 
     @Override
-    public void grantSuspensionRequest(OrchestratorContext context, ApplicationApi application)
+    public SuspensionReasons grantSuspensionRequest(OrchestratorContext context, ApplicationApi application)
             throws HostStateChangeDeniedException {
+        var suspensionReasons = new SuspensionReasons();
+
         // Apply per-cluster policy
         for (ClusterApi cluster : application.getClusters()) {
-            clusterPolicy.verifyGroupGoingDownIsFine(cluster);
+            suspensionReasons.mergeWith(clusterPolicy.verifyGroupGoingDownIsFine(cluster));
         }
 
-        // Ask Cluster Controller to set UP storage nodes in maintenance.
-        // These storage nodes are guaranteed to be NO_REMARKS
-        for (StorageNode storageNode : application.getUpStorageNodesInGroupInClusterOrder()) {
+        // Ask Cluster Controller to set storage nodes in maintenance, unless the node is already allowed
+        // to be down (or permanently down) in case they are guaranteed to be in maintenance already.
+        for (StorageNode storageNode : application.getNoRemarksStorageNodesInGroupInClusterOrder()) {
             storageNode.setNodeState(context, ClusterControllerNodeState.MAINTENANCE);
         }
 
@@ -56,6 +59,8 @@ public class HostedVespaPolicy implements Policy {
         for (HostName hostName : application.getNodesInGroupWithStatus(HostStatus.NO_REMARKS)) {
             application.setHostState(context, hostName, HostStatus.ALLOWED_TO_BE_DOWN);
         }
+
+        return suspensionReasons;
     }
 
     @Override
@@ -95,15 +100,9 @@ public class HostedVespaPolicy implements Policy {
             storageNode.setNodeState(context, ClusterControllerNodeState.DOWN);
         }
 
-        if (context.usePermanentlyDownStatus()) {
-            // Ensure all nodes in the group are marked as permanently down
-            for (HostName hostName : applicationApi.getNodesInGroupWith(status -> status != HostStatus.PERMANENTLY_DOWN)) {
-                applicationApi.setHostState(context, hostName, HostStatus.PERMANENTLY_DOWN);
-            }
-        } else {
-            for (HostName hostName : applicationApi.getNodesInGroupWith(status -> status != HostStatus.ALLOWED_TO_BE_DOWN)) {
-                applicationApi.setHostState(context, hostName, HostStatus.ALLOWED_TO_BE_DOWN);
-            }
+        // Ensure all nodes in the group are marked as permanently down
+        for (HostName hostName : applicationApi.getNodesInGroupWith(status -> status != HostStatus.PERMANENTLY_DOWN)) {
+            applicationApi.setHostState(context, hostName, HostStatus.PERMANENTLY_DOWN);
         }
     }
 
@@ -113,9 +112,9 @@ public class HostedVespaPolicy implements Policy {
             OrchestratorContext context,
             ApplicationInstance applicationInstance,
             HostName hostName,
-            MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
+            ApplicationLock lock) throws HostStateChangeDeniedException {
         NodeGroup nodeGroup = new NodeGroup(applicationInstance, hostName);
-        ApplicationApi applicationApi = applicationApiFactory.create(nodeGroup, hostStatusService, clusterControllerClientFactory);
+        ApplicationApi applicationApi = applicationApiFactory.create(nodeGroup, lock, clusterControllerClientFactory);
         releaseSuspensionGrant(context, applicationApi);
     }
 

@@ -16,7 +16,6 @@ class NumericAttribute : public AttributeVector
 {
 protected:
     typedef IEnumStore::Index       EnumIndex;
-    typedef IEnumStore::IndexVector EnumIndexVector;
     typedef IEnumStore::EnumVector  EnumVector;
 
     NumericAttribute(const vespalib::string & name, const AttributeVector::Config & cfg)

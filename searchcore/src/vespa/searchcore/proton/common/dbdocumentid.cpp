@@ -4,27 +4,6 @@
 
 namespace proton {
 
-DbDocumentId::DbDocumentId()
-    : _subDbId(0),
-      _lid(0)
-{
-}
-
-
-DbDocumentId::DbDocumentId(search::DocumentIdT lid)
-    : _subDbId(0),
-      _lid(lid)
-{
-}
-
-
-DbDocumentId::DbDocumentId(uint32_t subDbId, search::DocumentIdT lid)
-    : _subDbId(subDbId),
-      _lid(lid)
-{
-}
-
-
 vespalib::nbostream &
 operator<<(vespalib::nbostream &os, const DbDocumentId &dbdId)
 {

@@ -81,7 +81,10 @@ public class MapFieldValue<K extends FieldValue, V extends FieldValue> extends C
      */
     public boolean equals(Object o) {
         if (!(o instanceof MapFieldValue)) return false;
-        return super.equals(o) && entrySet().equals(((MapFieldValue) o).entrySet());
+        MapFieldValue m = (MapFieldValue) o;
+        if (size() != m.size()) return false;
+        if ( ! super.equals(m)) return false;
+        return entrySet().equals(m.entrySet());
     }
 
     @Override

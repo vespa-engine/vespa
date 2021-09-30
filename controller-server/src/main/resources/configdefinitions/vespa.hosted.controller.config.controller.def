@@ -1,0 +1,7 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Generic config for controller
+namespace=vespa.hosted.controller.config
+
+steprunner.testerapp.tenantCdBundle string default="cloud-tenant-cd"
+
+steprunner.testerapp.runtimeProviderClass string default="ai.vespa.hosted.cd.cloud.impl.VespaTestRuntimeProvider"

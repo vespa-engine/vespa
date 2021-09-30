@@ -5,7 +5,7 @@ import com.yahoo.document.BucketId;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.DocumentId;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
-import com.yahoo.documentapi.messagebus.protocol.StoragePolicy;
+import com.yahoo.documentapi.messagebus.protocol.ContentPolicy;
 import com.yahoo.messagebus.routing.RoutingNode;
 import com.yahoo.vdslib.distribution.RandomGen;
 import com.yahoo.vdslib.state.ClusterState;
@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public abstract class Simulator extends StoragePolicyTestEnvironment {
+public abstract class Simulator extends ContentPolicyTestEnvironment {
 
     enum FailureType {
         TRANSIENT_ERROR,
@@ -31,7 +31,7 @@ public abstract class Simulator extends StoragePolicyTestEnvironment {
         RESET_CLUSTER_STATE_NO_GOOD_NODES,
         NODE_NOT_IN_SLOBROK
     };
-    private Integer getIdealTarget(String idString, String clusterState) {
+    private int getIdealTarget(String idString, String clusterState) {
         DocumentId did = new DocumentId(idString);
         BucketIdFactory factory = new BucketIdFactory();
         BucketId bid = factory.getBucketId(did);
@@ -145,6 +145,7 @@ public abstract class Simulator extends StoragePolicyTestEnvironment {
             return currentClusterState;
         }
     }
+
     public void runSimulation(String expected, PersistentFailureTestParameters params) {
         params.validate();
         // Set nodes in slobrok
@@ -157,16 +158,16 @@ public abstract class Simulator extends StoragePolicyTestEnvironment {
             replyWrongDistribution(target, "foo", null, params.getInitialClusterState().toString());
         }
         RandomGen randomizer = new RandomGen(432121);
-        int correctnode[] = new int[2],
-                wrongnode[] = new int[2],
-                failed[] = new int[2],
-                worked[] = new int[2],
-                downnode[] = new int[2];
+        int[] correctnode = new int[2],
+                wrongnode = new int[2],
+                   failed = new int[2],
+                   worked = new int[2],
+                 downnode = new int[2];
         for (int step = 0, steps = (params.getTotalRequests() / params.getParallellRequests()); step < steps; ++step) {
             int half = (step < steps / 2 ? 0 : 1);
             if (debug) System.err.println("Starting step " + step + " in half " + half);
-            String docId[] = new String[params.getParallellRequests()];
-            RoutingNode targets[] = new RoutingNode[params.getParallellRequests()];
+            String[] docId = new String[params.getParallellRequests()];
+            RoutingNode[] targets = new RoutingNode[params.getParallellRequests()];
             for (int i=0; i<params.getParallellRequests(); ++i) {
                 docId[i] = "id:ns:testdoc::" + (step * params.getParallellRequests() + i);
                 frame.setMessage(createMessage(docId[i]));
@@ -175,7 +176,7 @@ public abstract class Simulator extends StoragePolicyTestEnvironment {
             for (int i=0; i<params.getParallellRequests(); ++i) {
                 RoutingNode target = targets[i];
                 int index = getAddress(target).getSecond();
-                if (!params.getCurrentClusterState(null).getNodeState(new Node(NodeType.DISTRIBUTOR, index)).getState().oneOf(StoragePolicy.owningBucketStates)) {
+                if (!params.getCurrentClusterState(null).getNodeState(new Node(NodeType.DISTRIBUTOR, index)).getState().oneOf(ContentPolicy.owningBucketStates)) {
                     ++downnode[half];
                 }
                 BadNode badNode = params.getBadNodes().get(index);
@@ -206,7 +207,6 @@ public abstract class Simulator extends StoragePolicyTestEnvironment {
             }
         }
         StringBuilder actual = new StringBuilder();
-        String result[][] = new String[2][];
         for (int i=0; i<2; ++i) {
             actual.append(i == 0 ? "First " : " Last ")
                     .append("correctnode ").append(correctnode[i])
@@ -215,7 +215,7 @@ public abstract class Simulator extends StoragePolicyTestEnvironment {
                     .append(", worked ").append(worked[i])
                     .append(", failed ").append(failed[i]);
         }
-        if (!Pattern.matches(expected, actual.toString())) {
+        if ( ! Pattern.matches(expected, actual.toString())) {
             assertEquals(expected, actual.toString());
         }
     }

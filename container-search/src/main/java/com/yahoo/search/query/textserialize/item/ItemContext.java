@@ -12,6 +12,7 @@ import java.util.Map;
  * @author Tony Vaagenes
  */
 public class ItemContext {
+
     private class Connectivity {
         final String id;
         final double strength;
@@ -43,7 +44,8 @@ public class ItemContext {
     private Item getItem(String id) {
         Item item = itemById.get(id);
         if (item == null)
-            throw new IllegalArgumentException("No item with id '" + id + "'.");
+            throw new IllegalArgumentException("No item with id '" + id + "'");
         return item;
     }
+
 }

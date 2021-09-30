@@ -62,7 +62,6 @@
           <systemPropertyVariables>
             <test.bundle.path>${project.build.directory}/dependency</test.bundle.path>
           </systemPropertyVariables>
-          <trimStackTrace>false</trimStackTrace>
         </configuration>
       </plugin>
       <plugin>
@@ -89,4 +88,10 @@
       </plugin>
     </plugins>
   </build>
+
+  <properties>
+    <maven.javadoc.skip>true</maven.javadoc.skip>
+    <maven.deploy.skip>true</maven.deploy.skip>
+  </properties>
+
 </project>

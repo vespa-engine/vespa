@@ -60,7 +60,7 @@ public class JsonReader {
      * @param docIdString document ID.
      * @return the document
      */
-    public DocumentOperation readSingleDocument(DocumentParser.SupportedOperation operationType, String docIdString) {
+    public DocumentOperation readSingleDocument(DocumentOperationType operationType, String docIdString) {
         DocumentId docId = new DocumentId(docIdString);
         DocumentParseInfo documentParseInfo;
         try {

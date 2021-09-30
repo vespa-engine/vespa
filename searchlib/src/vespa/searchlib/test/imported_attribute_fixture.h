@@ -23,7 +23,7 @@ namespace search {
 struct MockDocumentMetaStoreContext : public IDocumentMetaStoreContext {
     mutable size_t get_read_guard_cnt;
 
-    MockDocumentMetaStoreContext() : get_read_guard_cnt(0) {}
+    MockDocumentMetaStoreContext() noexcept : get_read_guard_cnt(0) {}
     IReadGuard::UP getReadGuard() const override;
 };
 

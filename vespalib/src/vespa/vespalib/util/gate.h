@@ -16,7 +16,7 @@ public:
     /**
      * Sets the initial count to 1.
      **/
-    Gate() : CountDownLatch(1) {}
+    Gate() noexcept : CountDownLatch(1) {}
 };
 
 } // namespace vespalib

@@ -3,8 +3,7 @@
 #include "feature_type.h"
 #include <cassert>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 const FeatureType FeatureType::_number = FeatureType(TYPE_UP());
 
@@ -28,5 +27,4 @@ FeatureType::type() const {
     return *_type;
 }
 
-} // namespace fef
-} // namespace search
+}

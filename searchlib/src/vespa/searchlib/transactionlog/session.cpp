@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "session.h"
 #include "domain.h"
+#include "domainpart.h"
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <vespa/log/log.h>
+#include <cassert>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.session");
 
-using vespalib::LockGuard;
 
 namespace search::transactionlog {
 
@@ -31,13 +32,9 @@ Session::VisitTask::run()
 
 bool
 Session::visit(FastOS_FileInterface & file, DomainPart & dp) {
-    Packet packet;
-    bool more(false);
-    if (dp.isClosed()) {
-        more = dp.visit(file, _range, packet);
-    } else {
-        more = dp.visit(_range, packet);
-    }
+    Packet packet(size_t(-1));
+    bool more = dp.visit(file, _range, packet);
+
     if ( ! packet.getHandle().empty()) {
         send(packet);
     }

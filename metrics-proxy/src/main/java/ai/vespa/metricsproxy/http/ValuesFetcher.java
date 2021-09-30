@@ -21,9 +21,10 @@ import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
  * @author gjoranv
  */
 public class ValuesFetcher {
+
     private static final Logger log = Logger.getLogger(ValuesFetcher.class.getName());
 
-    public static final ConsumerId DEFAULT_PUBLIC_CONSUMER_ID = toConsumerId("default");
+    public static final ConsumerId defaultMetricsConsumerId = toConsumerId("default");
 
     private final MetricsManager metricsManager;
     private final VespaServices vespaServices;
@@ -46,17 +47,27 @@ public class ValuesFetcher {
                 .collect(Collectors.toList());
     }
 
+    public List<MetricsPacket.Builder> fetchMetricsAsBuilders(String requestedConsumer) throws JsonRenderingException {
+        ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
+
+        return metricsManager.getMetricsAsBuilders(vespaServices.getVespaServices(), Instant.now())
+                .stream()
+                .filter(builder -> builder.hasConsumer(consumer))
+                .collect(Collectors.toList());
+    }
+
+
     public List<MetricsPacket> fetchAllMetrics() throws JsonRenderingException {
         return metricsManager.getMetrics(vespaServices.getVespaServices(), Instant.now());
     }
 
     public static ConsumerId getConsumerOrDefault(String requestedConsumer, MetricsConsumers consumers) {
-        if (requestedConsumer == null) return DEFAULT_PUBLIC_CONSUMER_ID;
+        if (requestedConsumer == null) return defaultMetricsConsumerId;
 
         ConsumerId consumerId = toConsumerId(requestedConsumer);
         if (! consumers.getAllConsumers().contains(consumerId)) {
             log.info("No consumer with id '" + requestedConsumer + "' - using the default consumer instead.");
-            return DEFAULT_PUBLIC_CONSUMER_ID;
+            return defaultMetricsConsumerId;
         }
         return consumerId;
     }

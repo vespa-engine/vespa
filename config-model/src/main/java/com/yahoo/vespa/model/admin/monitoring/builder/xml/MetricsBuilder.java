@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicConsumer.DEFAULT_PUBLIC_CONSUMER_ID;
-import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.VESPA_CONSUMER_ID;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
 
@@ -42,7 +40,11 @@ public class MetricsBuilder {
             throwIfIllegalConsumerId(metrics, consumerId);
 
             MetricSet metricSet = buildMetricSet(consumerId, consumerElement);
-            metrics.addConsumer(new MetricsConsumer(consumerId, metricSet));
+            var consumer = new MetricsConsumer(consumerId, metricSet);
+            for (Element cloudwatchElement : XML.getChildren(consumerElement, "cloudwatch")) {
+                consumer.addCloudWatch(CloudWatchBuilder.buildCloudWatch(cloudwatchElement, consumer));
+            }
+            metrics.addConsumer(consumer);
         }
         return metrics;
     }
@@ -58,7 +60,7 @@ public class MetricsBuilder {
 
     private MetricSet buildMetricSet(String consumerId, Element consumerElement) {
         List<Metric> metrics = XML.getChildren(consumerElement, "metric").stream()
-                .map(metricElement -> metricFromElement(metricElement))
+                .map(MetricsBuilder::metricFromElement)
                 .collect(Collectors.toCollection(LinkedList::new));
 
         List<MetricSet> metricSets = XML.getChildren(consumerElement, "metric-set").stream()
@@ -81,11 +83,17 @@ public class MetricsBuilder {
     }
 
     private void throwIfIllegalConsumerId(Metrics metrics, String consumerId) {
-        if (consumerId.equalsIgnoreCase(VESPA_CONSUMER_ID) && applicationType != ApplicationType.HOSTED_INFRASTRUCTURE)
+        if (consumerId.equalsIgnoreCase(MetricsConsumer.vespa.id()) && applicationType != ApplicationType.HOSTED_INFRASTRUCTURE)
             throw new IllegalArgumentException("'Vespa' is not allowed as metrics consumer id (case is ignored.)");
 
-        if (consumerId.equalsIgnoreCase(DEFAULT_PUBLIC_CONSUMER_ID))
-            throw new IllegalArgumentException("'" + DEFAULT_PUBLIC_CONSUMER_ID + "' is not allowed as metrics consumer id (case is ignored.)");
+        if (consumerId.equalsIgnoreCase(MetricsConsumer.defaultConsumer.id()))
+            throw new IllegalArgumentException("'" + MetricsConsumer.defaultConsumer.id() + "' is not allowed as metrics consumer id (case is ignored.)");
+
+        if (consumerId.equalsIgnoreCase(MetricsConsumer.autoscaling.id()))
+            throw new IllegalArgumentException("'" + MetricsConsumer.autoscaling.id() + " is not allowed as metrics consumer id (case is ignored.)");
+
+        if (consumerId.equalsIgnoreCase(MetricsConsumer.vespaCloud.id()))
+            throw new IllegalArgumentException("'" + MetricsConsumer.vespaCloud.id() + " is not allowed as metrics consumer id (case is ignored.)");
 
         if (metrics.hasConsumerIgnoreCase(consumerId))
             throw new IllegalArgumentException("'" + consumerId + "' is used as id for two metrics consumers (case is ignored.)");

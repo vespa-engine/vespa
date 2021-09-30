@@ -21,8 +21,8 @@ public class ApplicationMapperTest {
 
     private ApplicationId appId;
     private ApplicationMapper applicationMapper;
-    private ArrayList<Version> vespaVersions = new ArrayList<>();
-    private ArrayList<Application> applications = new ArrayList<>();
+    private final ArrayList<Version> vespaVersions = new ArrayList<>();
+    private final ArrayList<Application> applications = new ArrayList<>();
 
     @Before
     public void setUp() {
@@ -58,7 +58,7 @@ public class ApplicationMapperTest {
 
     @Test (expected = NotFoundException.class)
     public void testGetForVersionThrows2() {
-        applicationMapper.register(appId, ApplicationSet.fromSingle(applications.get(0)));
+        applicationMapper.register(appId, ApplicationSet.from(applications.get(0)));
 
         applicationMapper.getForVersion(new ApplicationId.Builder()
                                                 .tenant("different")
@@ -70,7 +70,7 @@ public class ApplicationMapperTest {
     }
 
     private Application createApplication(Version version) {
-        return new Application(new ModelStub(), null, 0, false, version, MetricUpdater.createTestUpdater(), ApplicationId.defaultId());
+        return new Application(new ModelStub(), null, 0, version, MetricUpdater.createTestUpdater(), ApplicationId.defaultId());
     }
 
 }

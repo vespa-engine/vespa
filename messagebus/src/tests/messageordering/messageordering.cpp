@@ -29,25 +29,23 @@ getRouting()
 class MultiReceptor : public IMessageHandler
 {
 private:
-    vespalib::Monitor _mon;
+    std::mutex _mon;
     DestinationSession* _destinationSession;
     int _messageCounter;
 
-    MultiReceptor(const Receptor &);
-    MultiReceptor &operator=(const Receptor &);
 public:
     MultiReceptor()
         : _mon(),
-          _destinationSession(0),
+          _destinationSession(nullptr),
           _messageCounter(0)
     {}
     void handleMessage(Message::UP msg) override
      {
-        SimpleMessage& simpleMsg(dynamic_cast<SimpleMessage&>(*msg));
+        auto & simpleMsg(dynamic_cast<SimpleMessage&>(*msg));
         LOG(spam, "Attempting to acquire lock for %s",
             simpleMsg.getValue().c_str());
 
-        vespalib::MonitorGuard lock(_mon);
+        std::lock_guard guard(_mon);
 
         vespalib::string expected(vespalib::make_string("%d", _messageCounter));
         LOG(debug, "Got message %p with %s, expecting %s",
@@ -79,20 +77,22 @@ public:
 
 class VerifyReplyReceptor : public IReplyHandler
 {
-    vespalib::Monitor _mon;
+    mutable std::mutex              _mon;
+    mutable std::condition_variable _cond;
     std::string _failure;
     int _replyCount;
 public:
-    ~VerifyReplyReceptor();
+    ~VerifyReplyReceptor() override;
     VerifyReplyReceptor();
     void handleReply(Reply::UP reply) override;
     void waitUntilDone(int waitForCount) const;
     const std::string& getFailure() const { return _failure; }
 };
 
-VerifyReplyReceptor::~VerifyReplyReceptor() {}
+VerifyReplyReceptor::~VerifyReplyReceptor() = default;
 VerifyReplyReceptor::VerifyReplyReceptor()
     : _mon(),
+      _cond(),
       _failure(),
       _replyCount(0)
 {}
@@ -100,7 +100,7 @@ VerifyReplyReceptor::VerifyReplyReceptor()
 void
 VerifyReplyReceptor::handleReply(Reply::UP reply)
 {
-    vespalib::MonitorGuard lock(_mon);
+    std::lock_guard lock(_mon);
     if (reply->hasErrors()) {
         std::ostringstream ss;
         ss << "Reply failed with "
@@ -113,7 +113,7 @@ VerifyReplyReceptor::handleReply(Reply::UP reply)
         LOG(warning, "%s", ss.str().c_str());
     } else {
         vespalib::string expected(vespalib::make_string("%d", _replyCount));
-        SimpleReply& simpleReply(static_cast<SimpleReply&>(*reply));
+        auto & simpleReply(static_cast<SimpleReply&>(*reply));
         if (simpleReply.getValue() != expected) {
             std::stringstream ss;
             ss << "Received out-of-sequence reply! Expected "
@@ -127,14 +127,14 @@ VerifyReplyReceptor::handleReply(Reply::UP reply)
         }
     }
     ++_replyCount;
-    lock.broadcast();
+    _cond.notify_all();
 }
 void
 VerifyReplyReceptor::waitUntilDone(int waitForCount) const
 {
-    vespalib::MonitorGuard lock(_mon);
+    std::unique_lock guard(_mon);
     while (_replyCount < waitForCount) {
-        lock.wait(1000);
+        _cond.wait_for(guard, 1s);
     }
 }
 

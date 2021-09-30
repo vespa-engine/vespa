@@ -13,7 +13,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  *
  * @author geirst
  */
-public class Tuning extends AbstractConfigProducer implements ProtonConfig.Producer {
+public class Tuning extends AbstractConfigProducer<Tuning> implements ProtonConfig.Producer {
 
     public static class SearchNode implements ProtonConfig.Producer {
 
@@ -241,7 +241,12 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
                     public Integer level = null;
 
                     public void getConfig(ProtonConfig.Summary.Cache.Compression.Builder compression) {
-                        if (type != null)  compression.type(ProtonConfig.Summary.Cache.Compression.Type.Enum.valueOf(type.name));
+                        if (type != null) compression.type(ProtonConfig.Summary.Cache.Compression.Type.Enum.valueOf(type.name));
+                        if (level != null) compression.level(level);
+                    }
+
+                    public void getConfig(ProtonConfig.Summary.Log.Compact.Compression.Builder compression) {
+                        if (type != null) compression.type(ProtonConfig.Summary.Log.Compact.Compression.Type.Enum.valueOf(type.name));
                         if (level != null) compression.level(level);
                     }
 
@@ -281,6 +286,12 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
                         }
                     }
 
+                    public void getConfig(ProtonConfig.Summary.Log.Compact.Builder compact) {
+                        if (compression != null) {
+                            compression.getConfig(compact.compression);
+                        }
+                    }
+
                     public void getConfig(ProtonConfig.Summary.Log.Chunk.Builder chunk) {
                         if (outputInt) {
                             if (maxSize!=null) chunk.maxbytes(maxSize.intValue());
@@ -288,7 +299,7 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
                             throw new IllegalStateException("Fix this, chunk does not have long types");
                         }
                         if (compression != null) {
-                           compression.getConfig(chunk.compression);
+                            compression.getConfig(chunk.compression);
                         }
                     }
                 }
@@ -303,6 +314,7 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
                         if (minFileSizeFactor!=null) log.minfilesizefactor(minFileSizeFactor);
                         if (chunk != null) {
                             chunk.getConfig(log.chunk);
+                            chunk.getConfig(log.compact);
                         }
                     }
                 }
@@ -351,9 +363,7 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
             @Override
             public void getConfig(ProtonConfig.Builder builder) {
                 if (concurrency != null) {
-                    // We divide by 2 as this number is used for 2 different thread pools.
-                    // Not perfect, but the best way to split the resources evenly.
-                    builder.feeding.concurrency(concurrency/2);
+                    builder.feeding.concurrency(concurrency);
                 }
             }
         }
@@ -385,13 +395,20 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
     public DispatchTuning dispatch = DispatchTuning.empty;
     public SearchNode searchNode;
 
-    public Tuning(AbstractConfigProducer parent) {
+    public Tuning(AbstractConfigProducer<?> parent) {
         super(parent, "tuning");
     }
 
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         if (searchNode != null) searchNode.getConfig(builder);
+    }
+
+    public int threadsPerSearch() {
+        if (searchNode == null) return 1;
+        if (searchNode.threads == null) return 1;
+        if (searchNode.threads.numThreadsPerSearch == null) return 1;
+        return searchNode.threads.numThreadsPerSearch;
     }
 
 }

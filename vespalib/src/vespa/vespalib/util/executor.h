@@ -20,8 +20,10 @@ public:
     struct Task {
         typedef std::unique_ptr<Task> UP;
         virtual void run() = 0;
-        virtual ~Task() {}
+        virtual ~Task() = default;
     };
+
+    enum class OptimizeFor {LATENCY, THROUGHPUT, ADAPTIVE};
 
     /**
      * Execute the given task using one of the internal threads some
@@ -36,9 +38,10 @@ public:
     virtual Task::UP execute(Task::UP task) = 0;
 
     /**
-     * Empty.
+     * In case you have a lazy executor that naps inbetween.
      **/
-    virtual ~Executor() {}
+    virtual void wakeup() = 0;
+    virtual ~Executor() = default;
 };
 
 } // namespace vespalib

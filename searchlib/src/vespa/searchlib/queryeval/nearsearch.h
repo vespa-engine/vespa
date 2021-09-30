@@ -72,7 +72,7 @@ public:
      * @param window The size of the window in which all terms must occur.
      * @param strict Whether or not to skip to next matching document if seek fails.
      */
-    NearSearchBase(const Children & terms,
+    NearSearchBase(Children terms,
                    const TermFieldMatchDataArray &data,
                    uint32_t window,
                    bool strict);
@@ -106,7 +106,7 @@ public:
      * @param window The size of the window in which all terms must occur.
      * @param strict Whether or not to skip to next matching document if seek fails.
      */
-    NearSearch(const Children & terms,
+    NearSearch(Children terms,
                const TermFieldMatchDataArray &data,
                uint32_t window,
                bool strict = true);
@@ -138,7 +138,7 @@ public:
      * @param window The size of the window in which all terms must occur.
      * @param strict Whether or not to skip to next matching document if seek fails.
      */
-    ONearSearch(const Children & terms,
+    ONearSearch(Children terms,
                 const TermFieldMatchDataArray &data,
                 uint32_t window,
                 bool strict = true);

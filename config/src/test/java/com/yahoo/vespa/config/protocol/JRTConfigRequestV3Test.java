@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.config.subscription.ConfigSet;
@@ -6,25 +6,32 @@ import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.config.subscription.impl.GenericConfigSubscriber;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
+import com.yahoo.config.subscription.impl.JRTConfigSubscription;
 import com.yahoo.config.subscription.impl.MockConnection;
 import com.yahoo.foo.SimpletypesConfig;
-import com.yahoo.config.subscription.impl.JRTConfigSubscription;
 import com.yahoo.jrt.Request;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
-import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.*;
+import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.ErrorCode;
+import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.RawConfig;
+import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
+import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -35,16 +42,21 @@ import static org.junit.Assert.assertTrue;
  */
 public class JRTConfigRequestV3Test {
 
+    private static final String [] configDefinition = new String[]{
+            "namespace=my.name.space",
+            "myfield string"
+    };
+
     private final Optional<VespaVersion> vespaVersion = Optional.of(VespaVersion.fromString("5.38.24"));
-    private String defName = "mydef";
-    private String defNamespace = "my.name.space";
-    private String hostname = "myhost";
-    private String configId = "config/id";
-    private String defMd5 = "595f44fec1e92a71d3e9e77456ba80d1";
-    private long currentGeneration = 3;
-    private long timeout = 5000;
+    private final String defName = "mydef";
+    private final String defNamespace = "my.name.space";
+    private final String hostname = "myhost";
+    private final String configId = "config/id";
+    private final String defMd5 = ConfigUtils.getDefMd5(List.of(configDefinition));
+    private final long currentGeneration = 3;
+    private final long timeout = 5000;
     private Trace trace ;
-    private String configMd5 = ConfigUtils.getMd5(createPayload().getData());
+    private final PayloadChecksums payloadChecksums = PayloadChecksums.fromPayload(createPayload());
     private JRTClientConfigRequest clientReq;
     private JRTServerConfigRequest serverReq;
 
@@ -70,12 +82,15 @@ public class JRTConfigRequestV3Test {
     @Test
     public void emptypayload() {
         ConfigPayload payload = ConfigPayload.empty();
-        SlimeConfigResponse response = SlimeConfigResponse.fromConfigPayload(payload, 0, false, ConfigUtils.getMd5(payload));
-        serverReq.addOkResponse(serverReq.payloadFromResponse(response), response.getGeneration(), false, response.getConfigMd5());
+        PayloadChecksums payloadChecksums = PayloadChecksums.fromPayload(Payload.from(payload));
+        SlimeConfigResponse response = SlimeConfigResponse.fromConfigPayload(payload,
+                                                                             0,
+                                                                             false,
+                                                                             payloadChecksums);
+        serverReq.addOkResponse(serverReq.payloadFromResponse(response), response.getGeneration(),  false, payloadChecksums);
         assertTrue(clientReq.validateResponse());
         assertTrue(clientReq.hasUpdatedGeneration());
-        assertThat(clientReq.getNewPayload().withCompression(CompressionType.UNCOMPRESSED).getData().toString(), is("{}"));
-        assertFalse(clientReq.responseIsInternalRedeploy());
+        assertEquals("{}", clientReq.getNewPayload().withCompression(CompressionType.UNCOMPRESSED).getData().toString());
     }
 
     @Test
@@ -89,14 +104,13 @@ public class JRTConfigRequestV3Test {
 
     @Test
     public void next_request_when_error_is_correct() {
-        serverReq.addOkResponse(createPayload(), 999999, false, "newmd5");
+        Payload payload = createPayload();
+        serverReq.addOkResponse(payload, 999999, false, PayloadChecksums.fromPayload(payload));
         serverReq.addErrorResponse(ErrorCode.OUTDATED_CONFIG, "error message");
-        System.out.println(serverReq);
         JRTClientConfigRequest next = clientReq.nextRequest(6);
-        System.out.println(next);
-        // Should use config md5 and generation from the request, not the response
-        // when there are errors
-        assertThat(next.getRequestConfigMd5(), is(clientReq.getRequestConfigMd5()));
+        // Should use config checksums and generation from the request (not the response) when there are errors
+        assertThat(next.getRequestConfigChecksums().getForType(MD5), is(clientReq.getRequestConfigChecksums().getForType(MD5)));
+        assertThat(next.getRequestConfigChecksums().getForType(XXHASH64), is(clientReq.getRequestConfigChecksums().getForType(XXHASH64)));
         assertThat(next.getRequestGeneration(), is(clientReq.getRequestGeneration()));
     }
 
@@ -104,12 +118,14 @@ public class JRTConfigRequestV3Test {
     public void ok_response_is_added() {
         Payload payload = createPayload("vale");
         String md5 = ConfigUtils.getMd5(payload.getData());
+        String xxhash64 = ConfigUtils.getXxhash64(payload.getData());
         long generation = 4L;
-        serverReq.addOkResponse(payload, generation, false, md5);
+        serverReq.addOkResponse(payload, generation, false, PayloadChecksums.fromPayload(payload));
         assertTrue(clientReq.validateResponse());
         assertThat(clientReq.getNewPayload().withCompression(CompressionType.UNCOMPRESSED).getData().toString(), is(payload.getData().toString()));
         assertThat(clientReq.getNewGeneration(), is(4L));
-        assertThat(clientReq.getNewConfigMd5(), is(md5));
+        assertThat(clientReq.getNewChecksums().getForType(MD5).asString(), is(md5));
+        assertThat(clientReq.getNewChecksums().getForType(XXHASH64).asString(), is(xxhash64));
         assertTrue(clientReq.hasUpdatedConfig());
         assertTrue(clientReq.hasUpdatedGeneration());
     }
@@ -118,8 +134,7 @@ public class JRTConfigRequestV3Test {
     public void error_response_adds_common_elements() {
         serverReq.addErrorResponse(ErrorCode.APPLICATION_NOT_LOADED, ErrorCode.getName(ErrorCode.APPLICATION_NOT_LOADED));
         assertThat(serverReq.getRequest().returnValues().size(), is(1));
-        Slime data = new JsonDecoder().decode(new Slime(), Utf8.toBytes(serverReq.getRequest().returnValues().get(0).asString()));
-        Inspector response = data.get();
+        Inspector response = SlimeUtils.jsonToSlime(serverReq.getRequest().returnValues().get(0).asString()).get();
         assertThat(response.field(SlimeResponseData.RESPONSE_DEF_NAME).asString(), is(defName));
         assertThat(response.field(SlimeResponseData.RESPONSE_DEF_NAMESPACE).asString(), is(defNamespace));
         assertThat(response.field(SlimeResponseData.RESPONSE_DEF_MD5).asString(), is(defMd5));
@@ -132,7 +147,7 @@ public class JRTConfigRequestV3Test {
     @Test
     public void generation_only_is_updated() {
         Payload payload = createPayload();
-        serverReq.addOkResponse(payload, 4L, false, ConfigUtils.getMd5(payload.getData()));
+        serverReq.addOkResponse(payload, 4L, false, PayloadChecksums.fromPayload(payload));
         boolean value = clientReq.validateResponse();
         assertTrue(clientReq.errorMessage(), value);
         assertFalse(clientReq.hasUpdatedConfig());
@@ -142,7 +157,7 @@ public class JRTConfigRequestV3Test {
     @Test
     public void nothing_is_updated() {
         Payload payload = createPayload();
-        serverReq.addOkResponse(payload, currentGeneration, false, configMd5);
+        serverReq.addOkResponse(payload, currentGeneration, false, payloadChecksums);
         assertTrue(clientReq.validateResponse());
         assertFalse(clientReq.hasUpdatedConfig());
         assertFalse(clientReq.hasUpdatedGeneration());
@@ -153,7 +168,7 @@ public class JRTConfigRequestV3Test {
         Payload payload = Payload.from(ConfigPayload.empty());
         clientReq = createReq(payload);
         serverReq = createReq(clientReq.getRequest());
-        serverReq.addOkResponse(payload, currentGeneration, false, ConfigUtils.getMd5(payload.getData()));
+        serverReq.addOkResponse(payload, currentGeneration, false, PayloadChecksums.fromPayload(payload));
         boolean val = clientReq.validateResponse();
         assertTrue(clientReq.errorMessage(), val);
         assertFalse(clientReq.hasUpdatedConfig());
@@ -190,7 +205,7 @@ public class JRTConfigRequestV3Test {
             @Override
             public void createResponse() {
                 JRTServerConfigRequest serverRequest = createReq(request);
-                serverRequest.addOkResponse(createPayload(), currentGeneration, false, configMd5);
+                serverRequest.addOkResponse(createPayload(), currentGeneration, false, payloadChecksums);
             }
         });
 
@@ -201,9 +216,10 @@ public class JRTConfigRequestV3Test {
         assertTrue(sub.nextConfig(120_0000));
         sub.close();
         JRTClientConfigRequest nextReq = createReq(sub, Trace.createNew());
-        SimpletypesConfig config = sub.getConfigState().getConfig();
-        assertThat(nextReq.getRequestConfigMd5(), is(config.getConfigMd5()));
-        assertThat(nextReq.getRequestGeneration(), is(currentGeneration));
+        assertEquals(nextReq.getRequestConfigMd5(), sub.getConfigState().getChecksums().getForType(MD5).asString());
+        assertEquals(nextReq.getRequestConfigChecksums().getForType(MD5).asString(), sub.getConfigState().getChecksums().getForType(MD5).asString());
+        assertEquals(nextReq.getRequestConfigChecksums().getForType(XXHASH64).asString(), sub.getConfigState().getChecksums().getForType(XXHASH64).asString());
+        assertEquals(nextReq.getRequestGeneration(), currentGeneration);
     }
 
     @Test
@@ -221,13 +237,12 @@ public class JRTConfigRequestV3Test {
     @Test
     public void parameters_are_validated() {
         assertTrue(serverReq.validateParameters());
-        assertValidationFail(createReq("35#$#!$@#", defNamespace, defMd5, hostname, configId, configMd5, currentGeneration, timeout, trace));
-        assertValidationFail(createReq(defName, "abcd.o#$*(!&$", defMd5, hostname, configId, configMd5, currentGeneration, timeout, trace));
-        assertValidationFail(createReq(defName, defNamespace, "34", hostname, configId, "34", currentGeneration, timeout, trace));
-        assertValidationFail(createReq(defName, defNamespace, defMd5, hostname, configId, "34", currentGeneration, timeout, trace));
-        assertValidationFail(createReq(defName, defNamespace, defMd5, hostname, configId, configMd5, -34, timeout, trace));
-        assertValidationFail(createReq(defName, defNamespace, defMd5, hostname, configId, configMd5, currentGeneration, -23, trace));
-        assertValidationFail(createReq(defName, defNamespace, defMd5, "", configId, configMd5, currentGeneration, timeout, trace));
+        assertValidationFail(createReq("35#$#!$@#", defNamespace, hostname, configId, payloadChecksums, currentGeneration, timeout, trace));
+        assertValidationFail(createReq(defName, "abcd.o#$*(!&$", hostname, configId, payloadChecksums, currentGeneration, timeout, trace));
+        assertValidationFail(createReq(defName, defNamespace, hostname, configId, PayloadChecksums.from("1234", "opnq"), currentGeneration, timeout, trace));
+        assertValidationFail(createReq(defName, defNamespace, hostname, configId, payloadChecksums, -34, timeout, trace));
+        assertValidationFail(createReq(defName, defNamespace, hostname, configId, payloadChecksums, currentGeneration, -23, trace));
+        assertValidationFail(createReq(defName, defNamespace, "", configId, payloadChecksums, currentGeneration, timeout, trace));
     }
 
     private void assertValidationFail(JRTClientConfigRequest req) {
@@ -244,13 +259,13 @@ public class JRTConfigRequestV3Test {
         return Payload.from(new ConfigPayload(slime));
     }
 
-    private JRTClientConfigRequest createReq(String defName, String defNamespace, String defMd5,
-                                             String hostname, String configId, String configMd5,
+    private JRTClientConfigRequest createReq(String defName, String defNamespace,
+                                             String hostname, String configId, PayloadChecksums payloadChecksums,
                                              long currentGeneration, long timeout, Trace trace) {
-        return JRTClientConfigRequestV3.createWithParams(ConfigKey.createFull(defName, configId, defNamespace, defMd5),
-                                                         DefContent.fromList(Arrays.asList("namespace=my.name.space", "myfield string")),
+        return JRTClientConfigRequestV3.createWithParams(ConfigKey.createFull(defName, configId, defNamespace),
+                                                         DefContent.fromList(List.of(configDefinition)),
                                                          hostname,
-                                                         configMd5,
+                                                         payloadChecksums,
                                                          currentGeneration,
                                                          timeout,
                                                          trace,
@@ -273,43 +288,36 @@ public class JRTConfigRequestV3Test {
     private JRTClientConfigRequest createReq() {
         trace = Trace.createNew(3, new ManualClock());
         trace.trace(1, "hei");
-        return createReq(defName, defNamespace, defMd5, hostname, configId, configMd5, currentGeneration, timeout, trace);
+        return createReq(defName, defNamespace, hostname, configId, payloadChecksums, currentGeneration, timeout, trace);
     }
 
     private JRTClientConfigRequest createReq(Payload payload) {
         trace = Trace.createNew(3, new ManualClock());
         trace.trace(1, "hei");
-        return createReq(defName, defNamespace, defMd5, hostname, configId, ConfigUtils.getMd5(payload.getData()), currentGeneration, timeout, trace);
+        return createReq(defName, defNamespace, hostname, configId, PayloadChecksums.fromPayload(payload), currentGeneration, timeout, trace);
     }
 
     private void request_is_parsed_base() {
-        String [] expectedContent = new String[]{
-                "namespace=my.name.space",
-                "myfield string"
-        };
         System.out.println(serverReq.toString());
         assertThat(serverReq.getConfigKey().getName(), is(defName));
         assertThat(serverReq.getConfigKey().getNamespace(), is(defNamespace));
-        assertThat(serverReq.getConfigKey().getMd5(), is(defMd5));
+        assertThat(serverReq.getRequestDefMd5(), is(defMd5));
         assertThat(serverReq.getConfigKey().getConfigId(), is(configId));
-        assertThat(serverReq.getDefContent().asStringArray(), is(expectedContent));
+        assertThat(serverReq.getDefContent().asStringArray(), is(configDefinition));
         assertFalse(serverReq.noCache());
         assertTrue(serverReq.getRequestTrace().toString().contains("hi"));
-        assertThat(serverReq.getRequestConfigMd5(), is(configMd5));
+        assertThat(serverReq.getRequestConfigChecksums().getForType(MD5), is(payloadChecksums.getForType(MD5)));
+        assertThat(serverReq.getRequestConfigChecksums().getForType(XXHASH64), is(payloadChecksums.getForType(XXHASH64)));
         assertThat(serverReq.getRequestGeneration(), is(currentGeneration));
     }
 
     private JRTServerConfigRequest next_request_is_correct_base() {
-        String [] expectedContent = new String[]{
-                "namespace=my.name.space",
-                "myfield string"
-        };
         JRTServerConfigRequest next = createReq(clientReq.nextRequest(6).getRequest());
         assertThat(next.getConfigKey().getName(), is(defName));
         assertThat(next.getConfigKey().getNamespace(), is(defNamespace));
-        assertThat(next.getConfigKey().getMd5(), is(defMd5));
+        assertThat(next.getRequestDefMd5(), is(defMd5));
         assertThat(next.getConfigKey().getConfigId(), is(configId));
-        assertThat(next.getDefContent().asStringArray(), is(expectedContent));
+        assertThat(next.getDefContent().asStringArray(), is(configDefinition));
         assertFalse(next.noCache());
         assertThat(next.getTimeout(), is(6L));
         assertThat(next.getTimeout(), is(6L));

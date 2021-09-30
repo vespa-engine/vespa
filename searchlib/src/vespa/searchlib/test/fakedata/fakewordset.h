@@ -6,7 +6,7 @@
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 
-namespace search { class Rand48; }
+namespace vespalib { class Rand48; }
 
 namespace search::fakedata {
 
@@ -46,12 +46,12 @@ public:
     void setupParams(bool hasElements,
                      bool hasElementWeights);
 
-    void setupWords(search::Rand48 &rnd,
+    void setupWords(vespalib::Rand48 &rnd,
                     uint32_t numDocs,
                     uint32_t commonDocFreq,
                     uint32_t numWordsPerWordClass);
 
-    void setupWords(search::Rand48 &rnd,
+    void setupWords(vespalib::Rand48 &rnd,
                     uint32_t numDocs,
                     uint32_t commonDocFreq,
                     uint32_t mediumDocFreq,

@@ -29,12 +29,13 @@
         <module>application-preprocessor</module>
         <module>athenz-identity-provider-service</module>
         <module>bundle-plugin-test</module>
-        <module>chain</module>
         <module>client</module>
+        <module>cloud-tenant-base</module>
+        <module>cloud-tenant-base-dependencies-enforcer</module>
+        <module>cloud-tenant-cd</module>
         <module>clustercontroller-apps</module>
-        <module>clustercontroller-apputil</module>
         <module>clustercontroller-core</module>
-        <module>clustercontroller-standalone</module>
+        <module>clustercontroller-reindexer</module>
         <module>clustercontroller-utils</module>
         <module>component</module>
         <module>config-application-package</module>
@@ -48,53 +49,54 @@
         <module>config-provisioning</module>
         <module>config-proxy</module>
         <module>configserver</module>
+        <module>configserver-client</module>
         <module>configserver-flags</module>
         <module>config_test</module>
         <module>container</module>
+        <module>container-apache-http-client-bundle</module>
         <module>container-core</module>
-        <module>container-accesslogging</module>
         <module>container-dependencies-enforcer</module>
         <module>container-dependency-versions</module>
         <module>container-dev</module>
-        <module>container-di</module>
         <module>container-disc</module>
+        <module>container-documentapi</module>
         <module>container-integration-test</module>
-        <module>container-jersey2</module>
         <module>container-messagebus</module>
         <module>container-search-and-docproc</module>
         <module>container-search</module>
         <module>container-search-gui</module>
         <module>container-test</module>
-        <module>container-test-jars</module>
         <module>controller-api</module>
         <module>controller-server</module>
         <module>defaults</module>
-        <module>docker-api</module>
         <module>docproc</module>
         <module>docprocs</module>
-        <module>documentapi</module>
         <module>document</module>
+        <module>documentapi</module>
+        <module>documentapi-dependencies</module>
         <module>documentgen-test</module>
         <module>fat-model-dependencies</module>
         <module>fileacquirer</module>
         <module>filedistribution</module>
         <module>flags</module>
         <module>fsa</module>
+        <module>hosted-api</module>
+        <module>hosted-tenant-base</module>
+        <module>hosted-zone-api</module>
         <module>http-utils</module>
         <module>indexinglanguage</module>
         <module>jaxrs_client_utils</module>
         <module>jaxrs_utils</module>
+        <module>jdisc-cloud-aws</module>
         <module>jdisc-security-filters</module>
         <module>jdisc_core</module>
         <module>jdisc_core_test</module>
-        <module>jdisc_http_service</module>
         <module>jdisc_jetty</module>
-        <module>jdisc_messagebus_service</module>
         <module>jrt</module>
         <module>linguistics</module>
+        <module>linguistics-components</module>
         <module>logd</module>
         <module>logserver</module>
-        <module>messagebus-disc</module>
         <module>messagebus</module>
         <module>metrics</module>
         <module>metrics-proxy</module>
@@ -107,7 +109,6 @@
         <module>parent</module>
         <module>predicate-search</module>
         <module>predicate-search-core</module>
-        <module>processing</module>
         <module>provided-dependencies</module>
         <module>searchcore</module>
         <module>searchlib</module>
@@ -116,14 +117,13 @@
         <module>security-utils</module>
         <module>serviceview</module>
         <module>service-monitor</module>
-        <module>simplemetrics</module>
         <module>socket_test</module>
         <module>standalone-container</module>
         <module>statistics</module>
         <module>storage</module>
-        <module>tenant-auth</module>
         <module>tenant-base</module>
-        <module>tenant-cd</module>
+        <module>tenant-cd-api</module>
+        <module>tenant-cd-commons</module>
         <module>testutil</module>
         <module>vdslib</module>
         <module>vespaclient-core</module>
@@ -131,9 +131,12 @@
         <module>vespaclient-java</module>
         <module>vespa-athenz</module>
         <module>vespa-documentgen-plugin</module>
+        <module>vespa-feed-client</module>
+        <module>vespa-feed-client-cli</module>
         <module>vespa-hadoop</module>
         <module>vespa-http-client</module>
         <module>vespa-maven-plugin</module>
+        <module>vespa-osgi-testrunner</module>
         <module>vespa-testrunner-components</module>
         <module>vespa_feed_perf</module>
         <module>vespa_jersey2</module>
@@ -142,9 +145,14 @@
         <module>vsm</module>
         <module>yolean</module>
         <module>zkfacade</module>
+        <module>zookeeper-client-common</module>
         <module>zookeeper-command-line-client</module>
         <module>zookeeper-server</module>
-        <module>hosted-api</module>
     </modules>
-</project>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+
+</project>

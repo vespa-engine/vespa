@@ -10,7 +10,7 @@
 #include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/datastore/handle.h>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename KeyT,
           typename DataT,
@@ -28,8 +28,7 @@ public:
     typedef DataStoreType::RefType RefType;
     typedef BTreeKeyData<KeyT, DataT> KeyDataType;
 
-    typedef BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT,
-                      AggrCalcT> BTreeType;
+    typedef BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT> BTreeType;
     typedef BTreeInternalNode<KeyT, AggrT,
                               TraitsT::INTERNAL_SLOTS> InternalNodeType;
     typedef BTreeLeafNode<KeyT, DataT, AggrT, TraitsT::LEAF_SLOTS>
@@ -133,7 +132,7 @@ public:
 
     BTreeTypeRefPair
     allocBTreeCopy(const BTreeType &rhs) {
-        return _store.freeListAllocator<BTreeType, DefaultReclaimer<BTreeType> >(BUFFERTYPE_BTREE).alloc(rhs);
+        return _store.freeListAllocator<BTreeType, datastore::DefaultReclaimer<BTreeType> >(BUFFERTYPE_BTREE).alloc(rhs);
     }
 
     KeyDataTypeRefPair
@@ -390,6 +389,13 @@ public:
     void
     foreach_frozen(EntryRef ref, FunctionType func) const;
 
+    std::vector<uint32_t> start_compact_worst_btree_nodes();
+    void finish_compact_worst_btree_nodes(const std::vector<uint32_t>& to_hold);
+    void move_btree_nodes(EntryRef ref);
+
+    std::vector<uint32_t> start_compact_worst_buffers();
+    EntryRef move(EntryRef ref);
+
 private:
     static constexpr size_t MIN_BUFFER_ARRAYS = 128u;
     template <typename FunctionType, bool Frozen>
@@ -506,4 +512,12 @@ extern template class BTreeStore<uint32_t, int32_t,
 
 }
 
+namespace vespalib::datastore {
 
+using namespace btree;
+
+extern template class BufferType<BTreeRoot<uint32_t, uint32_t, NoAggregated, std::less<uint32_t>, BTreeDefaultTraits>>;
+extern template class BufferType<BTreeRoot<uint32_t, BTreeNoLeafData, NoAggregated, std::less<uint32_t>, BTreeDefaultTraits>>;
+extern template class BufferType<BTreeRoot<uint32_t, int32_t, MinMaxAggregated, std::less<uint32_t>, BTreeDefaultTraits, MinMaxAggrCalc>>;
+
+}

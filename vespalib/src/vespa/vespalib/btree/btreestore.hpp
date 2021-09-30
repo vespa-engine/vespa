@@ -8,7 +8,7 @@
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/util/optimized.h>
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, typename AggrCalcT>
@@ -48,7 +48,7 @@ BTreeStore(bool init)
     _store.addType(&_small8Type);
     _store.addType(&_treeType);
     if (init) {
-        _store.initActiveBuffers();
+        _store.init_primary_buffers();
         _store.enableFreeLists();
     }
 }
@@ -85,7 +85,7 @@ allocKeyData(uint32_t clusterSize)
 {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
-    return _store.freeListAllocator<KeyDataType, DefaultReclaimer<KeyDataType>>(typeId).allocArray(clusterSize);
+    return _store.freeListAllocator<KeyDataType, datastore::DefaultReclaimer<KeyDataType>>(typeId).allocArray(clusterSize);
 }
 
 
@@ -111,7 +111,7 @@ allocKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize)
 {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
-    return _store.freeListAllocator<KeyDataType, DefaultReclaimer<KeyDataType>>(typeId).
+    return _store.freeListAllocator<KeyDataType, datastore::DefaultReclaimer<KeyDataType>>(typeId).
             allocArray(vespalib::ConstArrayRef<KeyDataType>(rhs, clusterSize));
 }
 
@@ -176,7 +176,7 @@ makeTree(EntryRef &ref,
     }
     typedef BTreeAggregator<KeyT, DataT, AggrT,
         TraitsT::INTERNAL_SLOTS, TraitsT::LEAF_SLOTS, AggrCalcT> Aggregator;
-    if (AggrCalcT::hasAggregated()) {
+    if constexpr (AggrCalcT::hasAggregated()) {
         Aggregator::recalc(*lNode, _aggrCalc);
     }
     lNode->freeze();
@@ -304,7 +304,7 @@ insert(EntryRef &ref,
     assert(idx == clusterSize + 1);
     typedef BTreeAggregator<KeyT, DataT, AggrT,
         TraitsT::INTERNAL_SLOTS, TraitsT::LEAF_SLOTS, AggrCalcT> Aggregator;
-    if (AggrCalcT::hasAggregated()) {
+    if constexpr (AggrCalcT::hasAggregated()) {
         Aggregator::recalc(*lNode, _aggrCalc);
     }
     lNode->freeze();
@@ -959,9 +959,79 @@ getAggregated(const EntryRef ref) const
     const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
     AggregatedType a;
     for (uint32_t i = 0; i < clusterSize; ++i) {
-        _aggrCalc.add(a, _aggrCalc.getVal(shortArray[i].getData()));
+        if constexpr (AggrCalcT::aggregate_over_values()) {
+            _aggrCalc.add(a, _aggrCalc.getVal(shortArray[i].getData()));
+        } else {
+            _aggrCalc.add(a, _aggrCalc.getVal(shortArray[i].getKey()));
+        }
     }
     return a;
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, typename AggrCalcT>
+std::vector<uint32_t>
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
+start_compact_worst_btree_nodes()
+{
+    _builder.clear();
+    return _allocator.start_compact_worst();
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, typename AggrCalcT>
+void
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
+finish_compact_worst_btree_nodes(const std::vector<uint32_t>& to_hold)
+{
+    _allocator.finishCompact(to_hold);
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, typename AggrCalcT>
+void
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
+move_btree_nodes(EntryRef ref)
+{
+    if (ref.valid()) {
+        RefType iRef(ref);
+        uint32_t clusterSize = getClusterSize(iRef);
+        if (clusterSize == 0) {
+            BTreeType *tree = getWTreeEntry(iRef);
+            tree->move_nodes(_allocator);
+        }
+    }
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, typename AggrCalcT>
+std::vector<uint32_t>
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
+start_compact_worst_buffers()
+{
+    freeze();
+    return _store.startCompactWorstBuffers(true, false);
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, typename AggrCalcT>
+typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::EntryRef
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
+move(EntryRef ref)
+{
+    if (!ref.valid() || !_store.getCompacting(ref)) {
+        return ref;
+    }
+    RefType iRef(ref);
+    uint32_t clusterSize = getClusterSize(iRef);
+    if (clusterSize == 0) {
+        BTreeType *tree = getWTreeEntry(iRef);
+        auto ref_and_ptr = allocBTreeCopy(*tree);
+        tree->prepare_hold();
+        return ref_and_ptr.ref;
+    }
+    const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
+    return allocKeyDataCopy(shortArray, clusterSize).ref;
 }
 
 }

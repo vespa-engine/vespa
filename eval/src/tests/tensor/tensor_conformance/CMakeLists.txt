@@ -5,4 +5,4 @@ vespa_add_executable(eval_tensor_tensor_conformance_test_app TEST
     DEPENDS
     vespaeval
 )
-vespa_add_test(NAME eval_tensor_tensor_conformance_test_app COMMAND eval_tensor_tensor_conformance_test_app)
+vespa_add_test(NAME eval_tensor_tensor_conformance_test_app COMMAND eval_tensor_tensor_conformance_test_app COST 150)

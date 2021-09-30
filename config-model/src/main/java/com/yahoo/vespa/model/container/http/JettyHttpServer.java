@@ -6,44 +6,38 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.yahoo.component.ComponentSpecification.fromString;
-
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.16.0
+ * @author Einar M R Rosenvinge
+ * @author bjorncs
  */
 public class JettyHttpServer extends SimpleComponent implements ServerConfig.Producer {
 
-    private List<ConnectorFactory> connectorFactories = new ArrayList<>();
+    private final ContainerCluster<?> cluster;
+    private volatile boolean isHostedVespa;
+    private final List<ConnectorFactory> connectorFactories = new ArrayList<>();
 
-    public JettyHttpServer(ComponentId id) {
-        super(new ComponentModel(
-                new BundleInstantiationSpecification(id,
-                                                     fromString("com.yahoo.jdisc.http.server.jetty.JettyHttpServer"),
-                                                     fromString("jdisc_http_service"))
-        ));
-        final FilterBindingsProviderComponent filterBindingsProviderComponent = new FilterBindingsProviderComponent(id);
+    public JettyHttpServer(String componentId, ContainerCluster<?> cluster, boolean isHostedVespa) {
+        super(new ComponentModel(componentId, com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName(), null));
+        this.isHostedVespa = isHostedVespa;
+        this.cluster = cluster;
+        final FilterBindingsProviderComponent filterBindingsProviderComponent = new FilterBindingsProviderComponent(componentId);
         addChild(filterBindingsProviderComponent);
         inject(filterBindingsProviderComponent);
     }
 
+    public void setHostedVespa(boolean isHostedVespa) { this.isHostedVespa = isHostedVespa; }
+
     public void addConnector(ConnectorFactory connectorFactory) {
         connectorFactories.add(connectorFactory);
         addChild(connectorFactory);
-    }
-
-    public void removeConnector(ConnectorFactory connectorFactory) {
-        if (connectorFactory == null) {
-            return;
-        }
-        removeChild(connectorFactory);
-        connectorFactories.remove(connectorFactory);
     }
 
     public List<ConnectorFactory> getConnectorFactories() {
@@ -52,19 +46,47 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
 
     @Override
     public void getConfig(ServerConfig.Builder builder) {
+        builder.metric(new ServerConfig.Metric.Builder()
+                .monitoringHandlerPaths(List.of("/state/v1", "/status.html"))
+                .searchHandlerPaths(List.of("/search"))
+        );
+        if (isHostedVespa) {
+            // Proxy-protocol v1/v2 is used in hosted Vespa for remote address/port
+            builder.accessLog(new ServerConfig.AccessLog.Builder()
+                    .remoteAddressHeaders(List.of())
+                    .remotePortHeaders(List.of()));
+
+            // Enable connection log hosted Vespa
+            builder.connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true));
+        } else {
+            // TODO Vespa 8: Remove legacy Yahoo headers
+            builder.accessLog(new ServerConfig.AccessLog.Builder()
+                    .remoteAddressHeaders(List.of("x-forwarded-for", "y-ra", "yahooremoteip", "client-ip"))
+                    .remotePortHeaders(List.of("X-Forwarded-Port", "y-rp")));
+        }
+        configureJettyThreadpool(builder);
     }
 
-    static ComponentModel providerComponentModel(final ComponentId parentId, String className) {
+    private void configureJettyThreadpool(ServerConfig.Builder builder) {
+        if (cluster == null) return;
+        if (cluster instanceof ApplicationContainerCluster) {
+            if (isHostedVespa) builder.minWorkerThreads(-1).maxWorkerThreads(-1);
+        } else {
+            builder.minWorkerThreads(4).maxWorkerThreads(4);
+        }
+    }
+
+    static ComponentModel providerComponentModel(String parentId, String className) {
         final ComponentSpecification classNameSpec = new ComponentSpecification(
                 className);
         return new ComponentModel(new BundleInstantiationSpecification(
-                classNameSpec.nestInNamespace(parentId),
+                classNameSpec.nestInNamespace(new ComponentId(parentId)),
                 classNameSpec,
                 null));
     }
 
     public static final class FilterBindingsProviderComponent extends SimpleComponent {
-        public FilterBindingsProviderComponent(final ComponentId parentId) {
+        public FilterBindingsProviderComponent(String parentId) {
             super(providerComponentModel(parentId, "com.yahoo.container.jdisc.FilterBindingsProvider"));
         }
 

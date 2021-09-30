@@ -17,7 +17,13 @@ public interface RunDataStore {
     /** Stores the given log for the given deployment job. */
     void put(RunId id, byte[] log);
 
-    /** Deletes the run logs for the given deployment job. */
+    /** Returns the test report og the given deployment job, if present */
+    Optional<byte[]> getTestReport(RunId id);
+
+    /** Stores the test report for the given deployment job */
+    void putTestReport(RunId id, byte[] report);
+
+    /** Deletes the run logs and test report for the given deployment job. */
     void delete(RunId id);
 
     /** Deletes all data associated with the given application. */

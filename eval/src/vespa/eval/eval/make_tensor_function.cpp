@@ -1,13 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "make_tensor_function.h"
+#include "value_codec.h"
 #include "tensor_function.h"
 #include "node_visitor.h"
 #include "node_traverser.h"
 #include "tensor_spec.h"
 #include "operation.h"
 #include "node_types.h"
-#include "tensor_engine.h"
 #include <vespa/eval/eval/llvm/compile_cache.h>
 
 namespace vespalib::eval {
@@ -15,36 +15,18 @@ namespace vespalib::eval {
 namespace {
 
 using namespace nodes;
-using map_fun_t = double (*)(double);
-using join_fun_t = double (*)(double, double);
-
-//-----------------------------------------------------------------------------
-
-// TODO(havardpe): generic function pointer resolving for all single
-//                 operation lambdas.
-
-template <typename OP2>
-bool is_op2(const Function &lambda) {
-    if (lambda.num_params() == 2) {
-        if (auto op2 = as<OP2>(lambda.root())) {
-            auto sym1 = as<Symbol>(op2->lhs());
-            auto sym2 = as<Symbol>(op2->rhs());
-            return (sym1 && sym2 && (sym1->id() != sym2->id()));
-        }
-    }
-    return false;
-}
 
 //-----------------------------------------------------------------------------
 
 struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
-    Stash              &stash;
-    const TensorEngine &tensor_engine;
-    const NodeTypes    &types;
-    std::vector<tensor_function::Node::CREF> stack;
+    Stash                     &stash;
+    const ValueBuilderFactory &factory;
+    const NodeTypes           &types;
+    std::vector<TensorFunction::CREF> stack;
 
-    TensorFunctionBuilder(Stash &stash_in, const TensorEngine &tensor_engine_in, const NodeTypes &types_in)
-        : stash(stash_in), tensor_engine(tensor_engine_in), types(types_in), stack() {}
+    TensorFunctionBuilder(Stash &stash_in, const ValueBuilderFactory &factory_in, const NodeTypes &types_in)
+        : stash(stash_in), factory(factory_in), types(types_in), stack() {}
+    ~TensorFunctionBuilder() override;
 
     //-------------------------------------------------------------------------
 
@@ -59,52 +41,58 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     void make_reduce(const Node &, Aggr aggr, const std::vector<vespalib::string> &dimensions) {
         assert(stack.size() >= 1);
-        const auto &a = stack.back();
+        const auto &a = stack.back().get();
         stack.back() = tensor_function::reduce(a, aggr, dimensions, stash);
     }
 
-    void make_map(const Node &, map_fun_t function) {
+    void make_map(const Node &, operation::op1_t function) {
         assert(stack.size() >= 1);
-        const auto &a = stack.back();
+        const auto &a = stack.back().get();
         stack.back() = tensor_function::map(a, function, stash);
     }
 
-    void make_join(const Node &, join_fun_t function) {
+    void make_join(const Node &, operation::op2_t function) {
         assert(stack.size() >= 2);
-        const auto &b = stack.back();
+        const auto &b = stack.back().get();
         stack.pop_back();
-        const auto &a = stack.back();
+        const auto &a = stack.back().get();
         stack.back() = tensor_function::join(a, b, function, stash);
     }
 
-    void make_merge(const Node &, join_fun_t function) {
+    void make_merge(const Node &, operation::op2_t function) {
         assert(stack.size() >= 2);
-        const auto &b = stack.back();
+        const auto &b = stack.back().get();
         stack.pop_back();
-        const auto &a = stack.back();
+        const auto &a = stack.back().get();
         stack.back() = tensor_function::merge(a, b, function, stash);
     }
 
     void make_concat(const Node &, const vespalib::string &dimension) {
         assert(stack.size() >= 2);
-        const auto &b = stack.back();
+        const auto &b = stack.back().get();
         stack.pop_back();
-        const auto &a = stack.back();
+        const auto &a = stack.back().get();
         stack.back() = tensor_function::concat(a, b, dimension, stash);
+    }
+
+    void make_cell_cast(const Node &, CellType cell_type) {
+        assert(stack.size() >= 1);
+        const auto &a = stack.back().get();
+        stack.back() = tensor_function::cell_cast(a, cell_type, stash);
     }
 
     bool maybe_make_const(const Node &node) {
         if (auto create = as<TensorCreate>(node)) {
-            bool is_const = true;
+            bool is_const_double = true;
             for (size_t i = 0; i < create->num_children(); ++i) {
-                is_const &= create->get_child(i).is_const();
+                is_const_double &= create->get_child(i).is_const_double();
             }
-            if (is_const) {
+            if (is_const_double) {
                 TensorSpec spec(create->type().to_spec());
                 for (size_t i = 0; i < create->num_children(); ++i) {
-                    spec.add(create->get_child_address(i), create->get_child(i).get_const_value());
+                    spec.add(create->get_child_address(i), create->get_child(i).get_const_double_value());
                 }
-                make_const(node, *stash.create<Value::UP>(tensor_engine.from_spec(spec)));
+                make_const(node, *stash.create<Value::UP>(value_from_spec(spec, factory)));
                 return true;
             }
         }
@@ -113,7 +101,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     void make_create(const TensorCreate &node) {
         assert(stack.size() >= node.num_children());
-        std::map<TensorSpec::Address, tensor_function::Node::CREF> spec;
+        std::map<TensorSpec::Address, TensorFunction::CREF> spec;
         for (size_t idx = node.num_children(); idx-- > 0; ) {
             spec.emplace(node.get_child_address(idx), stack.back());
             stack.pop_back();
@@ -121,10 +109,21 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.push_back(tensor_function::create(node.type(), spec, stash));
     }
 
+    void make_lambda(const TensorLambda &node) {
+        if (node.bindings().empty()) {
+            NoParams no_bound_params;
+            InterpretedFunction my_fun(factory, node.lambda().root(), types);
+            TensorSpec spec = tensor_function::Lambda::create_spec_impl(node.type(), no_bound_params, node.bindings(), my_fun);
+            make_const(node, *stash.create<Value::UP>(value_from_spec(spec, factory)));
+        } else {
+            stack.push_back(tensor_function::lambda(node.type(), node.bindings(), node.lambda(), types.export_types(node.lambda().root()), stash));
+        }
+    }
+
     void make_peek(const TensorPeek &node) {
         assert(stack.size() >= node.num_children());
-        const tensor_function::Node &param = stack[stack.size()-node.num_children()];
-        std::map<vespalib::string, std::variant<TensorSpec::Label, tensor_function::Node::CREF>> spec;
+        const TensorFunction &param = stack[stack.size()-node.num_children()];
+        std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> spec;
         for (auto pos = node.dim_list().rbegin(); pos != node.dim_list().rend(); ++pos) {
             if (pos->second.is_expr()) {
                 spec.emplace(pos->first, stack.back());
@@ -145,17 +144,17 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     void make_rename(const Node &, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) {
         assert(stack.size() >= 1);
-        const auto &a = stack.back();
+        const auto &a = stack.back().get();
         stack.back() = tensor_function::rename(a, from, to, stash);
     }
 
     void make_if(const Node &) {
         assert(stack.size() >= 3);
-        const auto &c = stack.back();
+        const auto &c = stack.back().get();
         stack.pop_back();
-        const auto &b = stack.back();
+        const auto &b = stack.back().get();
         stack.pop_back();
-        const auto &a = stack.back();
+        const auto &a = stack.back().get();
         stack.back() = tensor_function::if_node(a, b, c, stash);
     }
 
@@ -173,7 +172,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const In &node) override {
         auto my_in = std::make_unique<In>(std::make_unique<Symbol>(0));
         for (size_t i = 0; i < node.num_entries(); ++i) {
-            my_in->add_entry(std::make_unique<Number>(node.get_entry(i).get_const_value()));
+            my_in->add_entry(std::make_unique<Number>(node.get_entry(i).get_const_double_value()));
         }
         auto my_fun = Function::create(std::move(my_in), {"x"});
         const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(*my_fun, PassParams::SEPARATE));
@@ -192,14 +191,16 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         abort();
     }
     void visit(const TensorMap &node) override {
-        const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
-        make_map(node, token.get()->get().get_function<1>());
+        if (auto op1 = operation::lookup_op1(node.lambda())) {
+            make_map(node, op1.value());
+        } else {
+            const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
+            make_map(node, token.get()->get().get_function<1>());
+        }
     }
     void visit(const TensorJoin &node) override {
-        if (is_op2<Mul>(node.lambda())) {
-            make_join(node, operation::Mul::f);
-        } else if (is_op2<Add>(node.lambda())) {
-            make_join(node, operation::Add::f);
+        if (auto op2 = operation::lookup_op2(node.lambda())) {
+            make_join(node, op2.value());
         } else {
             const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
             make_join(node, token.get()->get().get_function<2>());
@@ -218,8 +219,14 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const TensorConcat &node) override {
         make_concat(node, node.dimension());
     }
+    void visit(const TensorCellCast &node) override {
+        make_cell_cast(node, node.cell_type());
+    }
     void visit(const TensorCreate &node) override {
         make_create(node);
+    }
+    void visit(const TensorLambda &node) override {
+        make_lambda(node);
     }
     void visit(const TensorPeek &node) override {
         make_peek(node);
@@ -347,6 +354,15 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const Elu &node) override {
         make_map(node, operation::Elu::f);
     }
+    void visit(const Erf &node) override {
+        make_map(node, operation::Erf::f);
+    }
+    void visit(const Bit &node) override {
+        make_join(node, operation::Bit::f);
+    }
+    void visit(const Hamming &node) override {
+        make_join(node, operation::Hamming::f);
+    }
 
     //-------------------------------------------------------------------------
 
@@ -354,10 +370,12 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     void close(const Node &node) override { node.accept(*this); }
 };
 
+TensorFunctionBuilder::~TensorFunctionBuilder() = default;
+
 } // namespace vespalib::eval::<unnamed>
 
-const TensorFunction &make_tensor_function(const TensorEngine &engine, const nodes::Node &root, const NodeTypes &types, Stash &stash) {
-    TensorFunctionBuilder builder(stash, engine, types);
+const TensorFunction &make_tensor_function(const ValueBuilderFactory &factory, const nodes::Node &root, const NodeTypes &types, Stash &stash) {
+    TensorFunctionBuilder builder(stash, factory, types);
     root.traverse(builder);
     assert(builder.stack.size() == 1);
     return builder.stack[0];

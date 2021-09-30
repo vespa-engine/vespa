@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.executor;
 
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,7 +62,7 @@ public class RunletExecutorImpl implements RunletExecutor {
         try {
             executor.awaitTermination(10, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
-            logger.log(LogLevel.WARNING, "Timed out waiting for termination of executor", e);
+            logger.log(Level.WARNING, "Timed out waiting for termination of executor", e);
         }
     }
 }

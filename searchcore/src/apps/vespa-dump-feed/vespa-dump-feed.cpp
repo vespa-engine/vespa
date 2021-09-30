@@ -6,14 +6,13 @@
 #include <vespa/document/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/messagebus/destinationsession.h>
 #include <vespa/messagebus/protocolset.h>
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/signalhandler.h>
-#include <vespa/vespalib/util/slaveproc.h>
+#include <vespa/vespalib/util/child_process.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/config/common/exceptions.h>
@@ -47,7 +46,6 @@ public:
 class FeedHandler : public mbus::IMessageHandler
 {
 private:
-    documentapi::LoadTypeSet     _loadTypes;
     mbus::RPCMessageBus          _mbus;
     mbus::DestinationSession::UP _session;
     OutputFile                  &_idx;
@@ -95,8 +93,7 @@ FeedHandler::handleMessage(mbus::Message::UP message)
 }
 
 FeedHandler::FeedHandler(std::shared_ptr<const document::DocumentTypeRepo> repo, OutputFile &idx, OutputFile &dat)
-    : _loadTypes(),
-      _mbus(mbus::MessageBusParams().addProtocol(mbus::IProtocol::SP(new documentapi::DocumentProtocol(_loadTypes, repo))),
+    : _mbus(mbus::MessageBusParams().addProtocol(std::make_shared<documentapi::DocumentProtocol>(repo)),
             mbus::RPCNetworkParams()),
       _session(_mbus.getMessageBus()
                .createDestinationSession(mbus::DestinationSessionParams()
@@ -207,7 +204,7 @@ App::Main()
                                                   route.c_str(), feedFile.c_str()));
         fprintf(stderr, "running feed command: %s\n", feedCmd.c_str());
         std::string feederOutput;
-        bool feedingOk = vespalib::SlaveProc::run(feedCmd.c_str(), feederOutput);
+        bool feedingOk = vespalib::ChildProcess::run(feedCmd.c_str(), feederOutput);
         if (!feedingOk) {
             fprintf(stderr, "error: feed command failed\n");
             fprintf(stderr, "feed command output:\n-----\n%s\n-----\n", feederOutput.c_str());

@@ -3,14 +3,13 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
-#include <vespa/searchcore/proton/bucketdb/bucketstate.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdeltapair.h>
 #include <vector>
 
 namespace proton::bucketdb {
     class SplitBucketSession;
     class JoinBucketsSession;
+    class BucketDBOwner;
 }
 
 namespace proton::documentmetastore {
@@ -22,9 +21,9 @@ struct IBucketHandler
 {
     typedef document::BucketId BucketId;
 
-    virtual ~IBucketHandler() {}
+    virtual ~IBucketHandler() = default;
 
-    virtual BucketDBOwner &getBucketDB() const = 0;
+    virtual bucketdb::BucketDBOwner &getBucketDB() const = 0;
 
     /**
      * Split the source bucket into two target buckets.

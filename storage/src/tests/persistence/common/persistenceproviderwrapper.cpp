@@ -3,17 +3,20 @@
 #include "persistenceproviderwrapper.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <sstream>
 
 #define LOG_SPI(ops) \
     { \
         std::ostringstream logStream; \
         logStream << ops; \
+        Guard guard(_lock); \
         _log.push_back(logStream.str()); \
     }
 
 #define CHECK_ERROR(className, failType) \
     { \
+        Guard guard(_lock); \
         if (_result.getErrorCode() != spi::Result::ErrorType::NONE && (_failureMask & (failType))) { \
             return className(_result.getErrorCode(), _result.getErrorMessage()); \
         } \
@@ -42,40 +45,34 @@ includedVersionsToString(spi::IncludedVersions versions)
 PersistenceProviderWrapper::PersistenceProviderWrapper(spi::PersistenceProvider& spi)
     : _spi(spi),
       _result(spi::Result(spi::Result::ErrorType::NONE, "")),
+      _lock(),
       _log(),
       _failureMask(0)
 { }
-PersistenceProviderWrapper::~PersistenceProviderWrapper() {}
+PersistenceProviderWrapper::~PersistenceProviderWrapper() = default;
 
 
 std::string
 PersistenceProviderWrapper::toString() const
 {
     std::ostringstream ss;
+    Guard guard(_lock);
     for (size_t i = 0; i < _log.size(); ++i) {
         ss << _log[i] << "\n";
     }
     return ss.str();
 }
 
-spi::PartitionStateListResult
-PersistenceProviderWrapper::getPartitionStates() const
-{
-    LOG_SPI("getPartitionStates()");
-    return _spi.getPartitionStates();
-}
-
 spi::BucketIdListResult
-PersistenceProviderWrapper::listBuckets(BucketSpace bucketSpace, spi::PartitionId partitionId) const
+PersistenceProviderWrapper::listBuckets(BucketSpace bucketSpace) const
 {
-    LOG_SPI("listBuckets(" << bucketSpace.getId() << ", " << uint16_t(partitionId) << ")");
+    LOG_SPI("listBuckets(" << bucketSpace.getId() << ")");
     CHECK_ERROR(spi::BucketIdListResult, FAIL_LIST_BUCKETS);
-    return _spi.listBuckets(bucketSpace, partitionId);
+    return _spi.listBuckets(bucketSpace);
 }
 
 spi::Result
-PersistenceProviderWrapper::createBucket(const spi::Bucket& bucket,
-                                         spi::Context& context)
+PersistenceProviderWrapper::createBucket(const spi::Bucket& bucket, spi::Context& context)
 {
     LOG_SPI("createBucket(" << bucket << ")");
     CHECK_ERROR(spi::Result, FAIL_CREATE_BUCKET);
@@ -91,14 +88,12 @@ PersistenceProviderWrapper::getBucketInfo(const spi::Bucket& bucket) const
 }
 
 spi::Result
-PersistenceProviderWrapper::put(const spi::Bucket& bucket,
-                                spi::Timestamp timestamp,
-                                const document::Document::SP& doc,
-                                spi::Context& context)
+PersistenceProviderWrapper::put(const spi::Bucket& bucket, spi::Timestamp timestamp,
+                                document::Document::SP doc, spi::Context& context)
 {
     LOG_SPI("put(" << bucket << ", " << timestamp << ", " << doc->getId() << ")");
     CHECK_ERROR(spi::Result, FAIL_PUT);
-    return _spi.put(bucket, timestamp, doc, context);
+    return _spi.put(bucket, timestamp, std::move(doc), context);
 }
 
 spi::RemoveResult
@@ -126,12 +121,12 @@ PersistenceProviderWrapper::removeIfFound(const spi::Bucket& bucket,
 spi::UpdateResult
 PersistenceProviderWrapper::update(const spi::Bucket& bucket,
                                    spi::Timestamp timestamp,
-                                   const document::DocumentUpdate::SP& upd,
+                                   document::DocumentUpdate::SP upd,
                                    spi::Context& context)
 {
     LOG_SPI("update(" << bucket << ", " << timestamp << ", " << upd->getId() << ")");
     CHECK_ERROR(spi::UpdateResult, FAIL_UPDATE);
-    return _spi.update(bucket, timestamp, upd, context);
+    return _spi.update(bucket, timestamp, std::move(upd), context);
 }
 
 spi::GetResult
@@ -145,21 +140,10 @@ PersistenceProviderWrapper::get(const spi::Bucket& bucket,
     return _spi.get(bucket, fieldSet, id, context);
 }
 
-spi::Result
-PersistenceProviderWrapper::flush(const spi::Bucket& bucket,
-                                  spi::Context& context)
-{
-    LOG_SPI("flush(" << bucket << ")");
-    CHECK_ERROR(spi::Result, FAIL_FLUSH);
-    return _spi.flush(bucket, context);
-}
-
 spi::CreateIteratorResult
-PersistenceProviderWrapper::createIterator(const spi::Bucket& bucket,
-                                           const document::FieldSet& fields,
-                                           const spi::Selection& sel,
+PersistenceProviderWrapper::createIterator(const spi::Bucket &bucket, FieldSetSP fields, const spi::Selection &sel,
                                            spi::IncludedVersions versions,
-                                           spi::Context& context)
+                                           spi::Context &context)
 {
     // TODO: proper printing of FieldSet and Selection
 
@@ -217,6 +201,18 @@ PersistenceProviderWrapper::join(const spi::Bucket& source1,
     LOG_SPI("join(" << source1 << ", " << source2 << ", " << target << ")");
     CHECK_ERROR(spi::Result, FAIL_JOIN);
     return _spi.join(source1, source2, target, context);
+}
+
+std::unique_ptr<vespalib::IDestructorCallback>
+PersistenceProviderWrapper::register_resource_usage_listener(spi::IResourceUsageListener& listener)
+{
+    return _spi.register_resource_usage_listener(listener);
+}
+
+std::unique_ptr<vespalib::IDestructorCallback>
+PersistenceProviderWrapper::register_executor(std::shared_ptr<spi::BucketExecutor> executor)
+{
+    return _spi.register_executor(std::move(executor));
 }
 
 spi::Result

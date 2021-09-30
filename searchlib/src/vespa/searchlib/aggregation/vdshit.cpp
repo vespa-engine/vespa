@@ -7,38 +7,38 @@
 
 namespace search::aggregation {
 
-using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
 
-static FieldBase _G_docIdField("docId");
-static FieldBase _G_summaryField("summary");
+namespace {
+    vespalib::string _G_docIdField("docId");
+    vespalib::string _G_summaryField("summary");
+}
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, VdsHit, Hit);
 
-VdsHit::~VdsHit() {
-}
+VdsHit::~VdsHit() = default;
 
 Serializer &
 VdsHit::onSerialize(Serializer &os) const
 {
     Hit::onSerialize(os);
-    return os.put(_G_docIdField, _docId) << _summary;
+    return os.put(_docId) << _summary;
 }
 
 Deserializer &
 VdsHit::onDeserialize(Deserializer &is)
 {
     Hit::onDeserialize(is);
-    return is.get(_G_docIdField, _docId) >> _summary;
+    return is.get(_docId) >> _summary;
 }
 
 void
 VdsHit::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     Hit::visitMembers(visitor);
-    visit(visitor, _G_docIdField.getName(), _docId);
-    visit(visitor, _G_summaryField.getName(), _summary);
+    visit(visitor, _G_docIdField, _docId);
+    visit(visitor, _G_summaryField, _summary);
 }
 
 }

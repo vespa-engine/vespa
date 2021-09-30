@@ -64,6 +64,7 @@ configure_memory() {
     consider_fallback jvm_heapsize 1536
     consider_fallback jvm_stacksize 512
     consider_fallback jvm_baseMaxDirectMemorySize 75
+    consider_fallback jvm_compressedClassSpaceSize 32
     consider_fallback jvm_directMemorySizeCache 0
 
     # Update jvm_heapsize only if percentage is explicitly set (default is 0).
@@ -74,22 +75,29 @@ configure_memory() {
             available_cgroup=$((available_cgroup_bytes >> 20))
             available=$((available > available_cgroup ? available_cgroup : available))
         fi
+        #Subtract 1G as fixed overhead for an application container.
+        reserved_mem=1024
+        available=$((available > reserved_mem ? available - reserved_mem : available))
 
         jvm_heapsize=$((available * jvm_heapSizeAsPercentageOfPhysicalMemory / 100))
         jvm_minHeapsize=${jvm_heapsize}
     fi
 
     # Safety measure against bad min vs max heapsize.
-   if ((jvm_minHeapsize > jvm_heapsize)); then
+    if ((jvm_minHeapsize > jvm_heapsize)); then
         jvm_minHeapsize=${jvm_heapsize}
         echo "Misconfigured heap size, jvm_minHeapsize(${jvm_minHeapsize} is larger than jvm_heapsize(${jvm_heapsize}). It has been capped."
-   fi
+    fi
 
     maxDirectMemorySize=$(( jvm_baseMaxDirectMemorySize + jvm_heapsize / 8 + jvm_directMemorySizeCache ))
 
     memory_options="-Xms${jvm_minHeapsize}m -Xmx${jvm_heapsize}m"
     memory_options="${memory_options} -XX:ThreadStackSize=${jvm_stacksize}"
-    memory_options="${memory_options} -XX:MaxDirectMemorySize=${maxDirectMemorySize}m"    
+    memory_options="${memory_options} -XX:MaxDirectMemorySize=${maxDirectMemorySize}m"
+
+    if ((jvm_compressedClassSpaceSize != 0)); then
+        memory_options="${memory_options} -XX:CompressedClassSpaceSize=${jvm_compressedClassSpaceSize}m"
+    fi
 
     if [ "${VESPA_USE_HUGEPAGES}" ]; then
         memory_options="${memory_options} -XX:+UseLargePages"
@@ -105,27 +113,8 @@ configure_cpu() {
 }
 
 configure_numactl() {
-    log_message debug "starting ${VESPA_SERVICE_NAME} for ${VESPA_CONFIG_ID}"
-    if numactl --interleave all true &> /dev/null; then
-        # We are allowed to use numactl
-        numnodes=$(numactl --hardware |
-                   grep available |
-                   awk '$3 == "nodes" { print $2 }')
-        if [ "$VESPA_AFFINITY_CPU_SOCKET" ] &&
-           [ "$numnodes" -gt 1 ]
-        then
-            node=$(($VESPA_AFFINITY_CPU_SOCKET % $numnodes))
-            log_message debug "with affinity to $VESPA_AFFINITY_CPU_SOCKET out of $numnodes cpu sockets"
-            numactlcmd="numactl --cpunodebind=$node --membind=$node"
-        else
-            log_message debug "with memory interleaving on all nodes"
-            numactlcmd="numactl --interleave all"
-        fi
-    else
-            log_message debug "without numactl (no permission or not available)"
-            numactlcmd=""
-    fi
-    log_message debug "numactlcmd: $numactlcmd"
+    numactlcmd=$(get_numa_ctl_cmd)
+    log_message debug "starting ${VESPA_SERVICE_NAME} for ${VESPA_CONFIG_ID} with numactl command : $numactlcmd"
 }
 
 configure_gcopts() {
@@ -210,16 +199,19 @@ exec $numactlcmd $envcmd java \
         --add-opens=java.base/java.io=ALL-UNNAMED \
         --add-opens=java.base/java.lang=ALL-UNNAMED \
         --add-opens=java.base/java.net=ALL-UNNAMED \
+        --add-opens=java.base/java.nio=ALL-UNNAMED \
         --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED \
+        --add-opens=java.base/sun.security.ssl=ALL-UNNAMED  \
+        -Djava.io.tmpdir="${VESPA_HOME}/tmp" \
         -Djava.library.path="${VESPA_HOME}/lib64" \
         -Djava.awt.headless=true \
         -Djavax.net.ssl.keyStoreType=JKS \
+        -Djdk.tls.rejectClientInitiatedRenegotiation=true \
         -Dsun.rmi.dgc.client.gcInterval=3600000 \
         -Dsun.net.client.defaultConnectTimeout=5000 -Dsun.net.client.defaultReadTimeout=60000 \
         -Djdisc.config.file="$cfpfile" \
         -Djdisc.export.packages=${jdisc_export_packages} \
         -Djdisc.cache.path="$bundlecachedir" \
-        -Djdisc.debug.resources=false \
         -Djdisc.bundle.path="${VESPA_HOME}/lib/jars" \
         -Djdisc.logger.enabled=false \
         -Djdisc.logger.level=ALL \
@@ -231,3 +223,4 @@ exec $numactlcmd $envcmd java \
         -cp "$CP" \
         "$@" \
         com.yahoo.jdisc.core.StandaloneMain file:${VESPA_HOME}/lib/jars/container-disc-jar-with-dependencies.jar
+

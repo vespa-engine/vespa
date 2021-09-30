@@ -35,7 +35,6 @@
 #include "itablemanager.h"
 #include "itermdata.h"
 #include "itermfielddata.h"
-#include "location.h"
 #include "matchdata.h"
 #include "matchdatalayout.h"
 #include "parameter.h"

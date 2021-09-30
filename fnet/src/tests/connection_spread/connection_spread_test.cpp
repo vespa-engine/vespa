@@ -1,6 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/fnet/fnet.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fnet/transport_thread.h>
+#include <vespa/fnet/iserveradapter.h>
+#include <vespa/fnet/ipacketstreamer.h>
+#include <vespa/fnet/connector.h>
+#include <vespa/fnet/connection.h>
+#include <vespa/fastos/thread.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <thread>
 #include <chrono>
@@ -25,7 +32,7 @@ struct Fixture {
     FastOS_ThreadPool thread_pool;
     FNET_Transport client;
     FNET_Transport server;
-    Fixture() : streamer(), adapter(), thread_pool(128 * 1024), client(8), server(8)
+    Fixture() : streamer(), adapter(), thread_pool(128_Ki), client(8), server(8)
     {
         ASSERT_TRUE(client.Start(&thread_pool));
         ASSERT_TRUE(server.Start(&thread_pool));

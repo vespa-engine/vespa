@@ -14,10 +14,7 @@ using search::engine::SearchRequest;
 
 namespace proton {
 
-EmptySearchView::EmptySearchView()
-    : ISearchHandler()
-{
-}
+EmptySearchView::EmptySearchView() = default;
 
 
 DocsumReply::UP
@@ -25,20 +22,16 @@ EmptySearchView::getDocsums(const DocsumRequest &req)
 {
     LOG(debug, "getDocsums(): resultClass(%s), numHits(%zu)",
         req.resultClassName.c_str(), req.hits.size());
-    DocsumReply::UP reply(new DocsumReply());
-    for (size_t i = 0; i < req.hits.size(); ++i) {
-        reply->docsums.push_back(DocsumReply::Docsum());
-        reply->docsums.back().gid = req.hits[i].gid;
+    auto reply = std::make_unique<DocsumReply>();
+    for (const auto & hit : req.hits) {
+        reply->docsums.emplace_back(hit.gid);
     }
     return reply;
 }
 
 SearchReply::UP
-EmptySearchView::match(const ISearchHandler::SP &,
-                       const SearchRequest &,
-                       vespalib::ThreadBundle &) const {
-    SearchReply::UP reply(new SearchReply);
-    return reply;
+EmptySearchView::match(const SearchRequest &, vespalib::ThreadBundle &) const {
+    return std::make_unique<SearchReply>();
 }
 
 

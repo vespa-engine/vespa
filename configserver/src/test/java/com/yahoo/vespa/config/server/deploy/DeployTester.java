@@ -1,8 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
-import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -16,48 +16,44 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.HostedConfigModelRegistry;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostFilter;
-import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.ProvisionLogger;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.docproc.jdisc.metric.NullMetric;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.MockTesterClient;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.http.LogRetriever;
+import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
-import com.yahoo.vespa.config.server.session.LocalSession;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
+import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author bratseth
@@ -71,81 +67,16 @@ public class DeployTester {
     private final TenantRepository tenantRepository;
     private final ApplicationRepository applicationRepository;
 
-    public DeployTester() {
-        this(Collections.singletonList(createModelFactory(Clock.systemUTC())));
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories) {
-        this(modelFactories,
-             new ConfigserverConfig(new ConfigserverConfig.Builder()
-                     .configServerDBDir(Files.createTempDir().getAbsolutePath())
-                     .configDefinitionsDir(Files.createTempDir().getAbsolutePath())),
-             Clock.systemUTC());
-    }
-
-    public DeployTester(ConfigserverConfig configserverConfig) {
-        this(Collections.singletonList(createModelFactory(Clock.systemUTC())), configserverConfig, Clock.systemUTC());
-    }
-
-    public DeployTester(ConfigserverConfig configserverConfig, HostProvisioner provisioner) {
-        this(Collections.singletonList(createModelFactory(Clock.systemUTC())), configserverConfig, Clock.systemUTC(), provisioner);
-    }
-
-    public DeployTester(ConfigserverConfig configserverConfig, Clock clock) {
-        this(Collections.singletonList(createModelFactory(clock)), configserverConfig, clock);
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig) {
-        this(modelFactories, configserverConfig, Clock.systemUTC());
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock) {
-        this(modelFactories, configserverConfig, clock, Zone.defaultZone());
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, HostProvisioner hostProvisioner) {
-        this(modelFactories, configserverConfig, Clock.systemUTC(), hostProvisioner);
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, HostProvisioner provisioner) {
-        this(modelFactories, configserverConfig, clock, Zone.defaultZone(), provisioner);
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone) {
-        this(modelFactories, configserverConfig, clock, zone, createProvisioner());
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone, HostProvisioner provisioner) {
-        this(modelFactories, configserverConfig, clock, zone, provisioner, new MockCurator());
-    }
-
-    public DeployTester(List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig, Clock clock, Zone zone,
-                        HostProvisioner provisioner, Curator curator) {
+    private DeployTester(Clock clock, TenantRepository tenantRepository, ApplicationRepository applicationRepository) {
         this.clock = clock;
-        TestComponentRegistry componentRegistry = createComponentRegistry(curator, Metrics.createTestMetrics(),
-                                                                          modelFactories, configserverConfig, clock, zone,
-                                                                          provisioner);
-        try {
-            this.tenantRepository = new TenantRepository(componentRegistry);
-            tenantRepository.addTenant(tenantName);
-        }
-        catch (Exception e) {
-            throw new IllegalArgumentException(e);
-        }
-        applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          new ProvisionerAdapter(provisioner),
-                                                          new OrchestratorMock(),
-                                                          configserverConfig,
-                                                          new LogRetriever(),
-                                                          clock,
-                                                          new MockTesterClient(),
-                                                          new NullMetric());
+        this.tenantRepository = tenantRepository;
+        this.applicationRepository = applicationRepository;
     }
 
     public Tenant tenant() {
         return tenantRepository.getTenant(tenantName);
     }
-    
+
     /** Create a model factory for the version of this source*/
     public static CountingModelFactory createModelFactory(Clock clock) {
         return new CountingModelFactory(clock);
@@ -159,11 +90,6 @@ public class DeployTester {
     /** Create a model factory for a particular version and clock */
     public static CountingModelFactory createModelFactory(Version version, Clock clock) {
         return createModelFactory(version, clock, Zone.defaultZone());
-    }
-
-    /** Create a model factory for a particular version and zone */
-    public static CountingModelFactory createModelFactory(Version version, Zone zone) {
-        return new CountingModelFactory(version, Clock.systemUTC(), zone);
     }
 
     /** Create a model factory for a particular version, clock and zone */
@@ -198,41 +124,30 @@ public class DeployTester {
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public PrepareResult deployApp(String applicationPath) {
-        return deployApp(applicationPath, null, Instant.now());
+    public void deployApp(String applicationPath) {
+        deployApp(applicationPath, (String) null);
     }
 
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public PrepareResult deployApp(String applicationPath, Instant now) {
-        return deployApp(applicationPath, null, now);
+    public PrepareResult deployApp(String applicationPath, String vespaVersion)  {
+        return deployApp(applicationPath, new PrepareParams.Builder().vespaVersion(vespaVersion));
     }
 
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public PrepareResult deployApp(String applicationPath, String vespaVersion) {
-        return deployApp(applicationPath, vespaVersion, Instant.now());
-    }
-
-    /**
-     * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
-     */
-    public PrepareResult deployApp(String applicationPath, String vespaVersion, Instant now)  {
-        PrepareParams.Builder paramsBuilder = new PrepareParams.Builder()
-                .applicationId(applicationId)
+    public PrepareResult deployApp(String applicationPath, PrepareParams.Builder paramsBuilder)  {
+         paramsBuilder.applicationId(applicationId)
                 .timeoutBudget(new TimeoutBudget(clock, Duration.ofSeconds(60)));
-        if (vespaVersion != null)
-            paramsBuilder.vespaVersion(vespaVersion);
 
-        return applicationRepository.deploy(new File(applicationPath), paramsBuilder.build(), false, now);
+        return applicationRepository.deploy(new File(applicationPath), paramsBuilder.build());
     }
 
     public AllocatedHosts getAllocatedHostsOf(ApplicationId applicationId) {
         Tenant tenant = tenant();
-        LocalSession session = tenant.getLocalSessionRepo().getSession(tenant.getApplicationRepo()
-                                                                             .requireActiveSessionOf(applicationId));
+        Session session = applicationRepository.getActiveSession(tenant, applicationId);
         return session.getAllocatedHosts();
     }
 
@@ -251,67 +166,17 @@ public class DeployTester {
     }
 
     private static HostProvisioner createProvisioner() {
-        return new InMemoryProvisioner(true, "host0", "host1", "host2", "host3", "host4", "host5");
-    }
-
-    private TestComponentRegistry createComponentRegistry(Curator curator, Metrics metrics,
-                                                          List<ModelFactory> modelFactories,
-                                                          ConfigserverConfig configserverConfig,
-                                                          Clock clock,
-                                                          Zone zone,
-                                                          HostProvisioner provisioner) {
-        TestComponentRegistry.Builder builder = new TestComponentRegistry.Builder();
-
-        if (configserverConfig.hostedVespa())
-            builder.provisioner(new ProvisionerAdapter(provisioner));
-
-        builder.configServerConfig(configserverConfig)
-               .curator(curator)
-               .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
-               .metrics(metrics)
-               .zone(zone)
-               .clock(clock);
-        return builder.build();
-    }
-
-    private static class ProvisionerAdapter implements Provisioner {
-
-        private final HostProvisioner hostProvisioner;
-
-        public ProvisionerAdapter(HostProvisioner hostProvisioner) {
-            this.hostProvisioner = hostProvisioner;
-        }
-
-        @Override
-        public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
-            return hostProvisioner.prepare(cluster, capacity, groups, logger);
-        }
-
-        @Override
-        public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
-            // noop
-        }
-
-        @Override
-        public void remove(NestedTransaction transaction, ApplicationId application) {
-            // noop
-        }
-
-        @Override
-        public void restart(ApplicationId application, HostFilter filter) {
-            // noop
-        }
-
+        return new InMemoryProvisioner(7, false);
     }
 
     private static class FailingModelFactory implements ModelFactory {
 
         private final Version version;
-        
+
         public FailingModelFactory(Version version) {
             this.version = version;
         }
-        
+
         @Override
         public Version version() { return version; }
 
@@ -330,7 +195,7 @@ public class DeployTester {
         @Override
         public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
             if ( ! validationParameters.ignoreValidationErrors())
-                throw new IllegalArgumentException("Validation fails");
+                throw new IllegalArgumentException("Model building fails");
             return new ModelCreateResult(createModel(modelContext), Collections.emptyList());
         }
 
@@ -378,6 +243,103 @@ public class DeployTester {
             return result;
         }
 
+    }
+
+    public static class Builder {
+        private Clock clock;
+        private Provisioner provisioner;
+        private ConfigserverConfig configserverConfig;
+        private Zone zone;
+        private Curator curator = new MockCurator();
+        private Metrics metrics;
+        private List<ModelFactory> modelFactories;
+        private Orchestrator orchestrator;
+
+        public DeployTester build() {
+            Clock clock = Optional.ofNullable(this.clock).orElseGet(Clock::systemUTC);
+            Zone zone = Optional.ofNullable(this.zone).orElseGet(Zone::defaultZone);
+            ConfigserverConfig configserverConfig = Optional.ofNullable(this.configserverConfig)
+                    .orElseGet(() -> new ConfigserverConfig(new ConfigserverConfig.Builder()
+                            .configServerDBDir(uncheck(() -> Files.createTempDirectory("serverdb")).toString())
+                            .configDefinitionsDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())
+                            .fileReferencesDir(uncheck(() -> Files.createTempDirectory("configdefinitions")).toString())));
+            Provisioner provisioner = Optional.ofNullable(this.provisioner)
+                    .orElseGet(() -> new MockProvisioner().hostProvisioner(createProvisioner()));
+            List<ModelFactory> modelFactories = Optional.ofNullable(this.modelFactories)
+                    .orElseGet(() -> List.of(createModelFactory(clock)));
+
+            TestTenantRepository.Builder builder = new TestTenantRepository.Builder()
+                    .withClock(clock)
+                    .withConfigserverConfig(configserverConfig)
+                    .withCurator(curator)
+                    .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
+                    .withMetrics(Optional.ofNullable(metrics).orElse(Metrics.createTestMetrics()))
+                    .withModelFactoryRegistry((new ModelFactoryRegistry(modelFactories)))
+                    .withZone(zone);
+
+            if (configserverConfig.hostedVespa()) builder.withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true));
+
+            TenantRepository tenantRepository = builder.build();
+            tenantRepository.addTenant(tenantName);
+
+            ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
+                    .withTenantRepository(tenantRepository)
+                    .withConfigserverConfig(configserverConfig)
+                    .withOrchestrator(Optional.ofNullable(orchestrator).orElseGet(OrchestratorMock::new))
+                    .withClock(clock)
+                    .withProvisioner(provisioner)
+                    .build();
+
+            return new DeployTester(clock, tenantRepository, applicationRepository);
+        }
+
+        public Builder clock(Clock clock) {
+            this.clock = clock;
+            return this;
+        }
+
+        public Builder provisioner(Provisioner provisioner) {
+            this.provisioner = provisioner;
+            return this;
+        }
+
+        public Builder hostProvisioner(HostProvisioner hostProvisioner) {
+            return provisioner(new MockProvisioner().hostProvisioner(hostProvisioner));
+        }
+
+        public Builder configserverConfig(ConfigserverConfig configserverConfig) {
+            this.configserverConfig = configserverConfig;
+            return this;
+        }
+
+        public Builder zone(Zone zone) {
+            this.zone = zone;
+            return this;
+        }
+
+        public Builder curator(Curator curator) {
+            this.curator = curator;
+            return this;
+        }
+
+        public Builder metrics(Metrics metrics) {
+            this.metrics = metrics;
+            return this;
+        }
+
+        public Builder modelFactory(ModelFactory modelFactory) {
+            return modelFactories(List.of(modelFactory));
+        }
+
+        public Builder modelFactories(List<ModelFactory> modelFactories) {
+            this.modelFactories = modelFactories;
+            return this;
+        }
+
+        public Builder orchestrator(Orchestrator orchestrator) {
+            this.orchestrator = orchestrator;
+            return this;
+        }
     }
 
 }

@@ -33,11 +33,14 @@
 
     <properties>
         <vespaversion>${project.version}</vespaversion>
-        <test-framework.version>${project.version}</test-framework.version>
+        <!-- when <test-framework.version> is "${project.version}", it is decoupled from the
+             compile version set with "-D vespaversion=...", and is instead the newest version.
+             When it is "${vespaversion}", it is coupled, which should be the default. -->
+        <test-framework.version>${vespaversion}</test-framework.version>
         <target_jdk_version>11</target_jdk_version>
-        <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.0</maven-surefire-plugin.version>
-        <junit.version>5.4.2</junit.version>
+        <junit.version>5.7.0</junit.version> <!-- Keep in sync with hosted-tenant-base and tenant-cd until all direct use is removed -->
         <endpoint>https://api.vespa-external.aws.oath.cloud:4443</endpoint>
         <test.categories>!integration</test.categories>
     </properties>
@@ -93,23 +96,34 @@
 
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>tenant-cd</artifactId>
+            <artifactId>tenant-cd-api</artifactId>
             <version>${test-framework.version}</version>
             <scope>test</scope>
-	    <exclusions>
-		    <exclusion>
-			    <groupId>net.java.dev.jna</groupId>
-			    <artifactId>jna</artifactId>
-		    </exclusion>
-		    <exclusion>
-			    <groupId>org.apache.commons</groupId>
-			    <artifactId>commons-exec</artifactId>
-		    </exclusion>
-		    <exclusion>
-			    <groupId>commons-lang</groupId>
-			    <artifactId>commons-lang</artifactId>
-		    </exclusion>
-	    </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>cloud-tenant-cd</artifactId>
+            <version>${test-framework.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.java.dev.jna</groupId>
+                    <artifactId>jna</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-exec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-lang</groupId>
+                    <artifactId>commons-lang</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -252,6 +266,30 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile> <!-- Alias vespaversion with a more descriptive vespa.compile.version -->
+            <id>set-vespa-compile-version</id>
+            <activation>
+                <property>
+                    <name>vespa.compile.version</name>
+                </property>
+            </activation>
+            <properties>
+                <vespaversion>${vespa.compile.version}</vespaversion>
+            </properties>
+        </profile>
+
+        <profile> <!-- Alias vespaVersion with a more descriptive vespa.runtime.version -->
+            <id>set-vespa-runtime-version</id>
+            <activation>
+                <property>
+                    <name>vespa.runtime.version</name>
+                </property>
+            </activation>
+            <properties>
+                <vespaVersion>${vespa.runtime.version}</vespaVersion>
+            </properties>
         </profile>
     </profiles>
 

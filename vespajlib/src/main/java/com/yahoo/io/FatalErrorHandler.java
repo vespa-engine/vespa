@@ -26,7 +26,7 @@ import java.util.logging.Level;
  *       their own, application specific error handlers rather than
  *       relying on the default.
  *
- *  @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ *  @author Steinar Knutsen
  */
 
 public class FatalErrorHandler {

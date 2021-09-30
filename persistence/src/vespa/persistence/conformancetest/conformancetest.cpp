@@ -3,18 +3,20 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/persistence/spi/test.h>
+#include <vespa/persistence/spi/resource_usage_listener.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/util/bytebuffer.h>
-#include <vespa/metrics/loadmetric.h>
 #include <vespa/vdslib/state/state.h>
 #include <vespa/vdslib/state/node.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/config-stor-distribution.h>
 #include <algorithm>
 #include <limits>
@@ -27,24 +29,22 @@ using storage::spi::test::makeSpiBucket;
 
 namespace storage::spi {
 
+using PersistenceProviderUP = std::unique_ptr<PersistenceProvider>;
+
 namespace {
 
-LoadType defaultLoadType(0, "default");
-
-PersistenceProvider::UP getSpi(ConformanceTest::PersistenceFactory &factory,
+std::unique_ptr<PersistenceProvider> getSpi(ConformanceTest::PersistenceFactory &factory,
                                const document::TestDocMan &testDocMan) {
-    PersistenceProvider::UP result(factory.getPersistenceImplementation(
+    PersistenceProviderUP result(factory.getPersistenceImplementation(
                 testDocMan.getTypeRepoSP(), *testDocMan.getTypeConfig()));
     EXPECT_TRUE(!result->initialize().hasError());
-    EXPECT_TRUE(!result->getPartitionStates().hasError());
     return result;
 }
 
 enum SELECTION_FIELDS
 {
     METADATA_ONLY = 0,
-    FIELDS_HEADER = 1,
-    FIELDS_BODY   = 2
+    ALL_FIELDS = 1
 };
 
 CreateIteratorResult
@@ -52,19 +52,17 @@ createIterator(PersistenceProvider& spi,
                const Bucket& b,
                const Selection& sel,
                IncludedVersions versions = NEWEST_DOCUMENT_ONLY,
-               int fields = FIELDS_HEADER | FIELDS_BODY)
+               int fields = ALL_FIELDS)
 {
-    document::FieldSet::UP fieldSet;
-    if (fields & FIELDS_BODY) {
-        fieldSet.reset(new document::AllFields());
-    } else if (fields & FIELDS_HEADER) {
-        fieldSet.reset(new document::HeaderFields());
+    document::FieldSet::SP fieldSet;
+    if (fields & ALL_FIELDS) {
+        fieldSet = std::make_shared<document::AllFields>();
     } else {
-        fieldSet.reset(new document::DocIdOnly());
+        fieldSet = std::make_shared<document::DocIdOnly>();
     }
 
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
-    return spi.createIterator(b, *fieldSet, sel, versions, context);
+    Context context(Priority(0), Trace::TraceLevel(0));
+    return spi.createIterator(b, std::move(fieldSet), sel, versions, context);
 }
 
 Selection
@@ -92,8 +90,7 @@ createClusterState(const lib::State& nodeState = lib::State::UP)
                         NodeState(NodeType::STORAGE,
                                   nodeState,
                                   "dummy desc",
-                                  1.0,
-                                  1));
+                                  1.0));
     cstate.setClusterState(State::UP);
     dc.redundancy = 1;
     dc.readyCopies = 1;
@@ -154,7 +151,7 @@ doIterate(PersistenceProvider& spi,
     std::vector<Chunk> chunks;
 
     while (true) {
-        Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+        Context context(Priority(0), Trace::TraceLevel(0));
         IterateResult result(spi.iterate(id, maxByteSize, context));
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
@@ -206,10 +203,10 @@ iterateBucket(PersistenceProvider& spi,
     DocumentSelection docSel("");
     Selection sel(docSel);
 
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     CreateIteratorResult iter = spi.createIterator(
             bucket,
-            document::AllFields(),
+            std::make_shared<document::AllFields>(),
             sel,
             versions,
             context);
@@ -288,7 +285,7 @@ feedDocs(PersistenceProvider& spi,
          uint32_t maxSize = 110)
 {
     std::vector<DocAndTimestamp> docs;
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     for (uint32_t i = 0; i < numDocs; ++i) {
         Document::SP doc(
                 testDocMan.createRandomDocumentAtLocation(
@@ -300,8 +297,6 @@ feedDocs(PersistenceProvider& spi,
         EXPECT_TRUE(!result.hasError());
         docs.push_back(DocAndTimestamp(doc, Timestamp(1000 + i)));
     }
-    spi.flush(bucket, context);
-    EXPECT_EQ(Result(), Result(spi.flush(bucket, context)));
     return docs;
 }
 
@@ -335,9 +330,9 @@ TEST_F(ConformanceTest, testBasics)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
 
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
     Document::SP doc2 = testDocMan.createRandomDocumentAtLocation(0x01, 2);
@@ -354,8 +349,6 @@ TEST_F(ConformanceTest, testBasics)
             Result(),
             Result(spi->remove(bucket, Timestamp(3), doc1->getId(), context)));
 
-    EXPECT_EQ(Result(), Result(spi->flush(bucket, context)));
-
     // Iterate first without removes, then with.
     for (int iterPass = 0; iterPass < 2; ++iterPass) {
         bool includeRemoves = (iterPass == 1);
@@ -365,7 +358,7 @@ TEST_F(ConformanceTest, testBasics)
 
         CreateIteratorResult iter = spi->createIterator(
                 bucket,
-                document::AllFields(),
+                std::make_shared<document::AllFields>(),
                 sel,
                 includeRemoves
                     ?  NEWEST_DOCUMENT_OR_REMOVE : NEWEST_DOCUMENT_ONLY,
@@ -422,38 +415,29 @@ TEST_F(ConformanceTest, testListBuckets)
     //TODO: enable when supported by provider in storage
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
 
-    PartitionId partId(0);
     BucketId bucketId1(8, 0x01);
     BucketId bucketId2(8, 0x02);
     BucketId bucketId3(8, 0x03);
-    Bucket bucket1(makeSpiBucket(bucketId1, partId));
-    Bucket bucket2(makeSpiBucket(bucketId2, partId));
-    Bucket bucket3(makeSpiBucket(bucketId3, partId));
+    Bucket bucket1(makeSpiBucket(bucketId1));
+    Bucket bucket2(makeSpiBucket(bucketId2));
+    Bucket bucket3(makeSpiBucket(bucketId3));
 
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
     Document::SP doc2 = testDocMan.createRandomDocumentAtLocation(0x02, 2);
     Document::SP doc3 = testDocMan.createRandomDocumentAtLocation(0x03, 3);
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     spi->createBucket(bucket1, context);
     spi->createBucket(bucket2, context);
     spi->createBucket(bucket3, context);
 
     spi->put(bucket1, Timestamp(1), doc1, context);
-    spi->flush(bucket1, context);
     spi->put(bucket2, Timestamp(2), doc2, context);
-    spi->flush(bucket2, context);
     spi->put(bucket3, Timestamp(3), doc3, context);
-    spi->flush(bucket3, context);
 
     {
-        BucketIdListResult result = spi->listBuckets(makeBucketSpace(), PartitionId(1));
-        EXPECT_TRUE(result.getList().empty());
-    }
-
-    {
-        BucketIdListResult result = spi->listBuckets(makeBucketSpace(), partId);
+        BucketIdListResult result = spi->listBuckets(makeBucketSpace());
         const BucketIdListResult::List &bucketList = result.getList();
         EXPECT_EQ(3u, (uint32_t)bucketList.size());
         EXPECT_TRUE(std::find(bucketList.begin(), bucketList.end(), bucketId1) != bucketList.end());
@@ -470,19 +454,18 @@ TEST_F(ConformanceTest, testBucketInfo)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
 
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
 
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
     Document::SP doc2 = testDocMan.createRandomDocumentAtLocation(0x01, 2);
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     spi->createBucket(bucket, context);
 
     spi->put(bucket, Timestamp(2), doc2, context);
 
     const BucketInfo info1 = spi->getBucketInfo(bucket).getBucketInfo();
-    spi->flush(bucket, context);
 
     {
         EXPECT_EQ(1, (int)info1.getDocumentCount());
@@ -492,7 +475,6 @@ TEST_F(ConformanceTest, testBucketInfo)
     spi->put(bucket, Timestamp(3), doc1, context);
 
     const BucketInfo info2 = spi->getBucketInfo(bucket).getBucketInfo();
-    spi->flush(bucket, context);
 
     {
         EXPECT_EQ(2, (int)info2.getDocumentCount());
@@ -503,7 +485,6 @@ TEST_F(ConformanceTest, testBucketInfo)
     spi->put(bucket, Timestamp(4), doc1, context);
 
     const BucketInfo info3 = spi->getBucketInfo(bucket).getBucketInfo();
-    spi->flush(bucket, context);
 
     {
         EXPECT_EQ(2, (int)info3.getDocumentCount());
@@ -514,7 +495,6 @@ TEST_F(ConformanceTest, testBucketInfo)
     spi->remove(bucket, Timestamp(5), doc1->getId(), context);
 
     const BucketInfo info4 = spi->getBucketInfo(bucket).getBucketInfo();
-    spi->flush(bucket, context);
 
     {
         EXPECT_EQ(1, (int)info4.getDocumentCount());
@@ -531,20 +511,19 @@ TEST_F(ConformanceTest, testOrderIndependentBucketInfo)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
 
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
 
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
     Document::SP doc2 = testDocMan.createRandomDocumentAtLocation(0x01, 2);
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     spi->createBucket(bucket, context);
 
     BucketChecksum checksumOrdered(0);
     {
         spi->put(bucket, Timestamp(2), doc1, context);
         spi->put(bucket, Timestamp(3), doc2, context);
-        spi->flush(bucket, context);
         const BucketInfo info(spi->getBucketInfo(bucket).getBucketInfo());
 
         checksumOrdered = info.getChecksum();
@@ -563,7 +542,6 @@ TEST_F(ConformanceTest, testOrderIndependentBucketInfo)
         // Swap order of puts
         spi->put(bucket, Timestamp(3), doc2, context);
         spi->put(bucket, Timestamp(2), doc1, context);
-        spi->flush(bucket, context);
         const BucketInfo info(spi->getBucketInfo(bucket).getBucketInfo());
 
         checksumUnordered = info.getChecksum();
@@ -577,8 +555,8 @@ TEST_F(ConformanceTest, testPut)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
@@ -589,7 +567,6 @@ TEST_F(ConformanceTest, testPut)
 
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(1, (int)info.getDocumentCount());
         EXPECT_TRUE(info.getEntryCount() >= info.getDocumentCount());
@@ -603,8 +580,8 @@ TEST_F(ConformanceTest, testPutNewDocumentVersion)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
@@ -615,7 +592,6 @@ TEST_F(ConformanceTest, testPutNewDocumentVersion)
     Result result = spi->put(bucket, Timestamp(3), doc1, context);
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(1, (int)info.getDocumentCount());
         EXPECT_TRUE(info.getEntryCount() >= info.getDocumentCount());
@@ -627,7 +603,6 @@ TEST_F(ConformanceTest, testPutNewDocumentVersion)
     result = spi->put(bucket, Timestamp(4), doc2, context);
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(1, (int)info.getDocumentCount());
         EXPECT_TRUE(info.getEntryCount() >= info.getDocumentCount());
@@ -641,6 +616,7 @@ TEST_F(ConformanceTest, testPutNewDocumentVersion)
 
     EXPECT_EQ(Result::ErrorType::NONE, gr.getErrorCode());
     EXPECT_EQ(Timestamp(4), gr.getTimestamp());
+    EXPECT_FALSE(gr.is_tombstone());
 
     if (!((*doc2)==gr.getDocument())) {
         std::cerr << "Document returned is not the expected one: \n"
@@ -655,8 +631,8 @@ TEST_F(ConformanceTest, testPutOlderDocumentVersion)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
@@ -666,7 +642,6 @@ TEST_F(ConformanceTest, testPutOlderDocumentVersion)
 
     Result result = spi->put(bucket, Timestamp(5), doc1, context);
     const BucketInfo info1 = spi->getBucketInfo(bucket).getBucketInfo();
-    spi->flush(bucket, context);
     {
         EXPECT_EQ(1, (int)info1.getDocumentCount());
         EXPECT_TRUE(info1.getEntryCount() >= info1.getDocumentCount());
@@ -678,7 +653,6 @@ TEST_F(ConformanceTest, testPutOlderDocumentVersion)
     result = spi->put(bucket, Timestamp(4), doc2, context);
     {
         const BucketInfo info2 = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(1, (int)info2.getDocumentCount());
         EXPECT_TRUE(info2.getEntryCount() >= info1.getDocumentCount());
@@ -694,14 +668,15 @@ TEST_F(ConformanceTest, testPutOlderDocumentVersion)
     EXPECT_EQ(Result::ErrorType::NONE, gr.getErrorCode());
     EXPECT_EQ(Timestamp(5), gr.getTimestamp());
     EXPECT_EQ(*doc1, gr.getDocument());
+    EXPECT_FALSE(gr.is_tombstone());
 }
 
 TEST_F(ConformanceTest, testPutDuplicate)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
@@ -712,7 +687,6 @@ TEST_F(ConformanceTest, testPutDuplicate)
     BucketChecksum checksum;
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
         EXPECT_EQ(1, (int)info.getDocumentCount());
         checksum = info.getChecksum();
     }
@@ -721,7 +695,6 @@ TEST_F(ConformanceTest, testPutDuplicate)
 
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
         EXPECT_EQ(1, (int)info.getDocumentCount());
         EXPECT_EQ(checksum, info.getChecksum());
     }
@@ -734,8 +707,8 @@ TEST_F(ConformanceTest, testRemove)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
@@ -746,7 +719,6 @@ TEST_F(ConformanceTest, testRemove)
 
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(1, (int)info.getDocumentCount());
         EXPECT_TRUE(info.getChecksum() != 0);
@@ -764,7 +736,6 @@ TEST_F(ConformanceTest, testRemove)
 
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(0, (int)info.getDocumentCount());
         EXPECT_EQ(0, (int)info.getChecksum());
@@ -791,7 +762,6 @@ TEST_F(ConformanceTest, testRemove)
                                        context);
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(0, (int)info.getDocumentCount());
         EXPECT_EQ(0, (int)info.getChecksum());
@@ -799,7 +769,6 @@ TEST_F(ConformanceTest, testRemove)
     }
 
     Result result4 = spi->put(bucket, Timestamp(9), doc1, context);
-    spi->flush(bucket, context);
 
     EXPECT_TRUE(!result4.hasError());
 
@@ -809,7 +778,6 @@ TEST_F(ConformanceTest, testRemove)
                                        context);
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
-        spi->flush(bucket, context);
 
         EXPECT_EQ(0, (int)info.getDocumentCount());
         EXPECT_EQ(0, (int)info.getChecksum());
@@ -823,16 +791,17 @@ TEST_F(ConformanceTest, testRemove)
                                 context);
 
     EXPECT_EQ(Result::ErrorType::NONE, getResult.getErrorCode());
-    EXPECT_EQ(Timestamp(0), getResult.getTimestamp());
-    EXPECT_TRUE(!getResult.hasDocument());
+    EXPECT_EQ(Timestamp(9), getResult.getTimestamp());
+    EXPECT_TRUE(getResult.is_tombstone());
+    EXPECT_FALSE(getResult.hasDocument());
 }
 
 TEST_F(ConformanceTest, testRemoveMerge)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
@@ -847,7 +816,6 @@ TEST_F(ConformanceTest, testRemoveMerge)
                                                 Timestamp(10),
                                                 removeId,
                                                 context);
-        spi->flush(bucket, context);
         EXPECT_EQ(Result::ErrorType::NONE, removeResult.getErrorCode());
         EXPECT_EQ(false, removeResult.wasFound());
     }
@@ -875,7 +843,6 @@ TEST_F(ConformanceTest, testRemoveMerge)
                                                 Timestamp(11),
                                                 removeId,
                                                 context);
-        spi->flush(bucket, context);
         EXPECT_EQ(Result::ErrorType::NONE, removeResult.getErrorCode());
         EXPECT_EQ(false, removeResult.wasFound());
     }
@@ -903,7 +870,6 @@ TEST_F(ConformanceTest, testRemoveMerge)
                                                 Timestamp(7),
                                                 removeId,
                                                 context);
-        spi->flush(bucket, context);
         EXPECT_EQ(Result::ErrorType::NONE, removeResult.getErrorCode());
         EXPECT_EQ(false, removeResult.wasFound());
     }
@@ -928,9 +894,9 @@ TEST_F(ConformanceTest, testUpdate)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
     spi->createBucket(bucket, context);
@@ -946,7 +912,6 @@ TEST_F(ConformanceTest, testUpdate)
     {
         UpdateResult result = spi->update(bucket, Timestamp(3), update,
                                           context);
-        spi->flush(bucket, context);
         EXPECT_EQ(Result(), Result(result));
         EXPECT_EQ(Timestamp(0), result.getExistingTimestamp());
     }
@@ -955,7 +920,6 @@ TEST_F(ConformanceTest, testUpdate)
     {
         UpdateResult result = spi->update(bucket, Timestamp(4), update,
                                           context);
-        spi->flush(bucket, context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(3), result.getExistingTimestamp());
@@ -969,13 +933,13 @@ TEST_F(ConformanceTest, testUpdate)
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(4), result.getTimestamp());
+        EXPECT_FALSE(result.is_tombstone());
         EXPECT_EQ(document::IntFieldValue(42),
                              static_cast<document::IntFieldValue&>(
                                      *result.getDocument().getValue("headerval")));
     }
 
     spi->remove(bucket, Timestamp(5), doc1->getId(), context);
-    spi->flush(bucket, context);
 
     {
         GetResult result = spi->get(bucket,
@@ -984,14 +948,14 @@ TEST_F(ConformanceTest, testUpdate)
                                     context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
-        EXPECT_EQ(Timestamp(0), result.getTimestamp());
-        EXPECT_TRUE(!result.hasDocument());
+        EXPECT_EQ(Timestamp(5), result.getTimestamp());
+        EXPECT_FALSE(result.hasDocument());
+        EXPECT_TRUE(result.is_tombstone());
     }
 
     {
         UpdateResult result = spi->update(bucket, Timestamp(6), update,
                                           context);
-        spi->flush(bucket, context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(0), result.getExistingTimestamp());
@@ -1000,8 +964,9 @@ TEST_F(ConformanceTest, testUpdate)
     {
         GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
-        EXPECT_EQ(Timestamp(0), result.getTimestamp());
-        EXPECT_TRUE(!result.hasDocument());
+        EXPECT_EQ(Timestamp(5), result.getTimestamp());
+        EXPECT_FALSE(result.hasDocument());
+        EXPECT_TRUE(result.is_tombstone());
     }
 
     update->setCreateIfNonExistent(true);
@@ -1009,7 +974,6 @@ TEST_F(ConformanceTest, testUpdate)
         // Document does not exist (and therefore its condition cannot match by definition),
         // but since CreateIfNonExistent is set it should be auto-created anyway.
         UpdateResult result = spi->update(bucket, Timestamp(7), update, context);
-        spi->flush(bucket, context);
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(7), result.getExistingTimestamp());
     }
@@ -1018,6 +982,7 @@ TEST_F(ConformanceTest, testUpdate)
         GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(7), result.getTimestamp());
+        EXPECT_FALSE(result.is_tombstone());
         EXPECT_EQ(document::IntFieldValue(42),
                              reinterpret_cast<document::IntFieldValue&>(
                                      *result.getDocument().getValue("headerval")));
@@ -1028,9 +993,9 @@ TEST_F(ConformanceTest, testGet)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
     spi->createBucket(bucket, context);
@@ -1041,27 +1006,28 @@ TEST_F(ConformanceTest, testGet)
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(0), result.getTimestamp());
+        EXPECT_FALSE(result.is_tombstone());
     }
 
     spi->put(bucket, Timestamp(3), doc1, context);
-    spi->flush(bucket, context);
 
     {
         GetResult result = spi->get(bucket, document::AllFields(),
                                     doc1->getId(), context);
         EXPECT_EQ(*doc1, result.getDocument());
         EXPECT_EQ(Timestamp(3), result.getTimestamp());
+        EXPECT_FALSE(result.is_tombstone());
     }
 
     spi->remove(bucket, Timestamp(4), doc1->getId(), context);
-    spi->flush(bucket, context);
 
     {
         GetResult result = spi->get(bucket, document::AllFields(),
                                     doc1->getId(), context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
-        EXPECT_EQ(Timestamp(0), result.getTimestamp());
+        EXPECT_EQ(Timestamp(4), result.getTimestamp());
+        EXPECT_TRUE(result.is_tombstone());
     }
 }
 
@@ -1070,8 +1036,8 @@ TEST_F(ConformanceTest, testIterateCreateIterator)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
@@ -1089,8 +1055,8 @@ TEST_F(ConformanceTest, testIterateWithUnknownId)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
@@ -1103,8 +1069,8 @@ TEST_F(ConformanceTest, testIterateDestroyIterator)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
@@ -1135,15 +1101,15 @@ TEST_F(ConformanceTest, testIterateAllDocs)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
     std::vector<DocAndTimestamp> docs(feedDocs(*spi, testDocMan, b, 100));
     CreateIteratorResult iter(createIterator(*spi, b, createSelection("")));
 
-    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
+    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4_Ki);
     verifyDocs(docs, chunks);
 
     spi->destroyIterator(iter.getIteratorId(), context);
@@ -1153,8 +1119,8 @@ TEST_F(ConformanceTest, testIterateAllDocsNewestVersionOnly)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
@@ -1168,11 +1134,10 @@ TEST_F(ConformanceTest, testIterateAllDocsNewestVersionOnly)
         spi->put(b, newTimestamp, newDoc, context);
         newDocs.push_back(DocAndTimestamp(newDoc, newTimestamp));
     }
-    spi->flush(b, context);
 
     CreateIteratorResult iter(createIterator(*spi, b, createSelection("")));
 
-    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
+    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4_Ki);
     verifyDocs(newDocs, chunks);
 
     spi->destroyIterator(iter.getIteratorId(), context);
@@ -1182,8 +1147,8 @@ TEST_F(ConformanceTest, testIterateChunked)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
@@ -1202,13 +1167,13 @@ TEST_F(ConformanceTest, testMaxByteSize)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
     std::vector<DocAndTimestamp> docs(
-            feedDocs(*spi, testDocMan, b, 100, 4096, 4096));
+            feedDocs(*spi, testDocMan, b, 100, 4_Ki, 4096));
 
     Selection sel(createSelection(""));
     CreateIteratorResult iter(createIterator(*spi, b, sel));
@@ -1228,8 +1193,8 @@ TEST_F(ConformanceTest, testIterateMatchTimestampRange)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
@@ -1249,7 +1214,6 @@ TEST_F(ConformanceTest, testIterateMatchTimestampRange)
                     DocAndTimestamp(doc, Timestamp(1000 + i)));
         }
     }
-    spi->flush(b, context);
 
     Selection sel = Selection(DocumentSelection(""));
     sel.setFromTimestamp(fromTimestamp);
@@ -1257,7 +1221,7 @@ TEST_F(ConformanceTest, testIterateMatchTimestampRange)
 
     CreateIteratorResult iter(createIterator(*spi, b, sel));
 
-    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 2048);
+    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 2_Ki);
     verifyDocs(docsToVisit, chunks);
 
     spi->destroyIterator(iter.getIteratorId(), context);
@@ -1267,8 +1231,8 @@ TEST_F(ConformanceTest, testIterateExplicitTimestampSubset)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
@@ -1295,7 +1259,6 @@ TEST_F(ConformanceTest, testIterateExplicitTimestampSubset)
                                Timestamp(2000),
                                docsToVisit.front().doc->getId(), context)
                    .wasFound());
-    spi->flush(b, context);
 
     timestampsToVisit.push_back(Timestamp(2000));
     removes.insert(docsToVisit.front().doc->getId().toString());
@@ -1307,7 +1270,7 @@ TEST_F(ConformanceTest, testIterateExplicitTimestampSubset)
 
     CreateIteratorResult iter(createIterator(*spi, b, sel));
 
-    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 2048);
+    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 2_Ki);
     verifyDocs(docsToVisit, chunks, removes);
 
     spi->destroyIterator(iter.getIteratorId(), context);
@@ -1317,8 +1280,8 @@ TEST_F(ConformanceTest, testIterateRemoves)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
@@ -1339,24 +1302,22 @@ TEST_F(ConformanceTest, testIterateRemoves)
             nonRemovedDocs.push_back(docs[i]);
         }
     }
-    spi->flush(b, context);
 
     // First, test iteration without removes
     {
         Selection sel(createSelection(""));
         CreateIteratorResult iter(createIterator(*spi, b, sel));
 
-        std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
+        std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4_Ki);
         verifyDocs(nonRemovedDocs, chunks);
         spi->destroyIterator(iter.getIteratorId(), context);
     }
 
     {
         Selection sel(createSelection(""));
-        CreateIteratorResult iter(
-                createIterator(*spi, b, sel, NEWEST_DOCUMENT_OR_REMOVE));
+        CreateIteratorResult iter(createIterator(*spi, b, sel, NEWEST_DOCUMENT_OR_REMOVE));
 
-        std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
+        std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4_Ki);
         std::vector<DocEntry::UP> entries = getEntriesFromChunks(chunks);
         EXPECT_EQ(docs.size(), entries.size());
         verifyDocs(nonRemovedDocs, chunks, removedDocs);
@@ -1369,8 +1330,8 @@ TEST_F(ConformanceTest, testIterateMatchSelection)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
@@ -1383,18 +1344,13 @@ TEST_F(ConformanceTest, testIterateMatchSelection)
 
         spi->put(b, Timestamp(1000 + i), doc, context);
         if ((i % 3) == 0) {
-            docsToVisit.push_back(
-                    DocAndTimestamp(doc, Timestamp(1000 + i)));
+            docsToVisit.push_back(DocAndTimestamp(doc, Timestamp(1000 + i)));
         }
     }
-    spi->flush(b, context);
 
-    CreateIteratorResult iter(
-            createIterator(*spi,
-                           b,
-                           createSelection("testdoctype1.headerval % 3 == 0")));
+    CreateIteratorResult iter(createIterator(*spi, b, createSelection("testdoctype1.headerval % 3 == 0")));
 
-    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 2048 * 1024);
+    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 2_Mi);
     verifyDocs(docsToVisit, chunks);
 
     spi->destroyIterator(iter.getIteratorId(), context);
@@ -1404,8 +1360,8 @@ TEST_F(ConformanceTest, testIterationRequiringDocumentIdOnlyMatching)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
@@ -1414,17 +1370,14 @@ TEST_F(ConformanceTest, testIterationRequiringDocumentIdOnlyMatching)
 
     // Document does not already exist, remove should create a
     // remove entry for it regardless.
-    EXPECT_TRUE(
-            !spi->remove(b, Timestamp(2000), removedId, context).wasFound());
-    spi->flush(b, context);
+    EXPECT_TRUE(!spi->remove(b, Timestamp(2000), removedId, context).wasFound());
 
     Selection sel(createSelection("id == '" + removedId.toString() + "'"));
 
-    CreateIteratorResult iter(
-            createIterator(*spi, b, sel, NEWEST_DOCUMENT_OR_REMOVE));
+    CreateIteratorResult iter(createIterator(*spi, b, sel, NEWEST_DOCUMENT_OR_REMOVE));
     EXPECT_TRUE(iter.getErrorCode() == Result::ErrorType::NONE);
 
-    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
+    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4_Ki);
     std::vector<DocAndTimestamp> docs;
     std::set<vespalib::string> removes;
     removes.insert(removedId.toString());
@@ -1437,16 +1390,14 @@ TEST_F(ConformanceTest, testIterateBadDocumentSelection)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
     {
-        CreateIteratorResult iter(
-                createIterator(*spi, b, createSelection("the muppet show")));
+        CreateIteratorResult iter(createIterator(*spi, b, createSelection("the muppet show")));
         if (iter.getErrorCode() == Result::ErrorType::NONE) {
-            IterateResult result(
-                    spi->iterate(iter.getIteratorId(), 4096, context));
+            IterateResult result(spi->iterate(iter.getIteratorId(), 4_Ki, context));
             EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
             EXPECT_EQ(size_t(0), result.getEntries().size());
             EXPECT_EQ(true, result.isCompleted());
@@ -1456,14 +1407,9 @@ TEST_F(ConformanceTest, testIterateBadDocumentSelection)
         }
     }
     {
-        CreateIteratorResult iter(
-                createIterator(*spi,
-                               b,
-                               createSelection(
-                                       "unknownddoctype.something=thatthing")));
+        CreateIteratorResult iter(createIterator(*spi, b, createSelection("unknownddoctype.something=thatthing")));
         if (iter.getErrorCode() == Result::ErrorType::NONE) {
-            IterateResult result(spi->iterate(
-                    iter.getIteratorId(), 4096, context));
+            IterateResult result(spi->iterate(iter.getIteratorId(), 4_Ki, context));
             EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
             EXPECT_EQ(size_t(0), result.getEntries().size());
             EXPECT_EQ(true, result.isCompleted());
@@ -1478,8 +1424,8 @@ TEST_F(ConformanceTest, testIterateAlreadyCompleted)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
@@ -1487,10 +1433,10 @@ TEST_F(ConformanceTest, testIterateAlreadyCompleted)
     Selection sel(createSelection(""));
     CreateIteratorResult iter(createIterator(*spi, b, sel));
 
-    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
+    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4_Ki);
     verifyDocs(docs, chunks);
 
-    IterateResult result(spi->iterate(iter.getIteratorId(), 4096, context));
+    IterateResult result(spi->iterate(iter.getIteratorId(), 4_Ki, context));
     EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
     EXPECT_EQ(size_t(0), result.getEntries().size());
     EXPECT_TRUE(result.isCompleted());
@@ -1502,15 +1448,15 @@ TEST_F(ConformanceTest, testIterateEmptyBucket)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
     Selection sel(createSelection(""));
 
     CreateIteratorResult iter(createIterator(*spi, b, sel));
 
-    IterateResult result(spi->iterate(iter.getIteratorId(), 4096, context));
+    IterateResult result(spi->iterate(iter.getIteratorId(), 4_Ki, context));
     EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
     EXPECT_EQ(size_t(0), result.getEntries().size());
     EXPECT_TRUE(result.isCompleted());
@@ -1522,39 +1468,38 @@ TEST_F(ConformanceTest, testDeleteBucket)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
 
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
     spi->createBucket(bucket, context);
 
     spi->put(bucket, Timestamp(3), doc1, context);
-    spi->flush(bucket, context);
 
     spi->deleteBucket(bucket, context);
-    testDeleteBucketPostCondition(spi, bucket, *doc1);
+    testDeleteBucketPostCondition(*spi, bucket, *doc1);
     if (_factory->hasPersistence()) {
         spi.reset();
         document::TestDocMan testDocMan2;
         spi = getSpi(*_factory, testDocMan2);
-        testDeleteBucketPostCondition(spi, bucket, *doc1);
+        testDeleteBucketPostCondition(*spi, bucket, *doc1);
     }
 }
 
 
 void
 ConformanceTest::
-testDeleteBucketPostCondition(const PersistenceProvider::UP &spi,
+testDeleteBucketPostCondition(const PersistenceProvider &spi,
                               const Bucket &bucket,
                               const Document &doc1)
 {
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     {
-        GetResult result = spi->get(bucket,
-                                    document::AllFields(),
-                                    doc1.getId(),
-                                    context);
+        GetResult result = spi.get(bucket,
+                                   document::AllFields(),
+                                   doc1.getId(),
+                                   context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(0), result.getTimestamp());
@@ -1566,8 +1511,8 @@ TEST_F(ConformanceTest, testSplitNormalCase)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucketA(makeSpiBucket(BucketId(3, 0x02)));
     Bucket bucketB(makeSpiBucket(BucketId(3, 0x06)));
@@ -1586,54 +1531,42 @@ TEST_F(ConformanceTest, testSplitNormalCase)
         spi->put(bucketC, Timestamp(i + 1), doc1, context);
     }
 
-    spi->flush(bucketC, context);
-
     spi->split(bucketC, bucketA, bucketB, context);
-    testSplitNormalCasePostCondition(spi, bucketA, bucketB, bucketC,
-                                     testDocMan);
+    testSplitNormalCasePostCondition(*spi, bucketA, bucketB, bucketC, testDocMan);
     if (_factory->hasPersistence()) {
         spi.reset();
         document::TestDocMan testDocMan2;
         spi = getSpi(*_factory, testDocMan2);
-        testSplitNormalCasePostCondition(spi, bucketA, bucketB, bucketC,
-                testDocMan2);
+        testSplitNormalCasePostCondition(*spi, bucketA, bucketB, bucketC, testDocMan2);
     }
 }
 
 
 void
 ConformanceTest::
-testSplitNormalCasePostCondition(const PersistenceProvider::UP &spi,
+testSplitNormalCasePostCondition(const PersistenceProvider &spi,
                                  const Bucket &bucketA,
                                  const Bucket &bucketB,
                                  const Bucket &bucketC,
                                  document::TestDocMan &testDocMan)
 {
-    EXPECT_EQ(10, (int)spi->getBucketInfo(bucketA).getBucketInfo().
-                         getDocumentCount());
-    EXPECT_EQ(10, (int)spi->getBucketInfo(bucketB).getBucketInfo().
-                         getDocumentCount());
+    EXPECT_EQ(10, (int)spi.getBucketInfo(bucketA).getBucketInfo().getDocumentCount());
+    EXPECT_EQ(10, (int)spi.getBucketInfo(bucketB).getBucketInfo().getDocumentCount());
 
     document::AllFields fs;
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     for (uint32_t i = 0; i < 10; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x02, i);
-        EXPECT_TRUE(
-                spi->get(bucketA, fs, doc1->getId(), context).hasDocument());
-        EXPECT_TRUE(
-                !spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
-        EXPECT_TRUE(
-                !spi->get(bucketB, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(spi.get(bucketA, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(!spi.get(bucketC, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(!spi.get(bucketB, fs, doc1->getId(), context).hasDocument());
     }
 
     for (uint32_t i = 10; i < 20; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
-        EXPECT_TRUE(
-                spi->get(bucketB, fs, doc1->getId(), context).hasDocument());
-        EXPECT_TRUE(
-                !spi->get(bucketA, fs, doc1->getId(), context).hasDocument());
-        EXPECT_TRUE(
-                !spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(spi.get(bucketB, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(!spi.get(bucketA, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(!spi.get(bucketC, fs, doc1->getId(), context).hasDocument());
     }
 }
 
@@ -1641,8 +1574,8 @@ TEST_F(ConformanceTest, testSplitTargetExists)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucketA(makeSpiBucket(BucketId(3, 0x02)));
     Bucket bucketB(makeSpiBucket(BucketId(3, 0x06)));
@@ -1657,74 +1590,67 @@ TEST_F(ConformanceTest, testSplitTargetExists)
         spi->put(bucketC, Timestamp(i + 1), doc1, context);
     }
 
-    spi->flush(bucketC, context);
 
     for (uint32_t i = 10; i < 20; ++i) {
         Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
         spi->put(bucketB, Timestamp(i + 1), doc1, context);
     }
-    spi->flush(bucketB, context);
     EXPECT_TRUE(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
 
     for (uint32_t i = 10; i < 20; ++i) {
         Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
         spi->put(bucketC, Timestamp(i + 1), doc1, context);
     }
-    spi->flush(bucketC, context);
 
     for (uint32_t i = 20; i < 25; ++i) {
         Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
         spi->put(bucketB, Timestamp(i + 1), doc1, context);
     }
 
-    spi->flush(bucketB, context);
-
     spi->split(bucketC, bucketA, bucketB, context);
-    testSplitTargetExistsPostCondition(spi, bucketA, bucketB, bucketC,
-                                       testDocMan);
+    testSplitTargetExistsPostCondition(*spi, bucketA, bucketB, bucketC,testDocMan);
     if (_factory->hasPersistence()) {
         spi.reset();
         document::TestDocMan testDocMan2;
         spi = getSpi(*_factory, testDocMan2);
-        testSplitTargetExistsPostCondition(spi, bucketA, bucketB, bucketC,
-                testDocMan2);
+        testSplitTargetExistsPostCondition(*spi, bucketA, bucketB, bucketC,testDocMan2);
     }
 }
 
 
 void
 ConformanceTest::
-testSplitTargetExistsPostCondition(const PersistenceProvider::UP &spi,
+testSplitTargetExistsPostCondition(const PersistenceProvider &spi,
                                    const Bucket &bucketA,
                                    const Bucket &bucketB,
                                    const Bucket &bucketC,
                                    document::TestDocMan &testDocMan)
 {
-    EXPECT_EQ(10, (int)spi->getBucketInfo(bucketA).getBucketInfo().
+    EXPECT_EQ(10, (int)spi.getBucketInfo(bucketA).getBucketInfo().
                          getDocumentCount());
-    EXPECT_EQ(15, (int)spi->getBucketInfo(bucketB).getBucketInfo().
+    EXPECT_EQ(15, (int)spi.getBucketInfo(bucketB).getBucketInfo().
                          getDocumentCount());
 
     document::AllFields fs;
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     for (uint32_t i = 0; i < 10; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x02, i);
         EXPECT_TRUE(
-                spi->get(bucketA, fs, doc1->getId(), context).hasDocument());
+                spi.get(bucketA, fs, doc1->getId(), context).hasDocument());
         EXPECT_TRUE(
-                !spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
+                !spi.get(bucketC, fs, doc1->getId(), context).hasDocument());
         EXPECT_TRUE(
-                !spi->get(bucketB, fs, doc1->getId(), context).hasDocument());
+                !spi.get(bucketB, fs, doc1->getId(), context).hasDocument());
     }
 
     for (uint32_t i = 10; i < 25; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
         EXPECT_TRUE(
-                spi->get(bucketB, fs, doc1->getId(), context).hasDocument());
+                spi.get(bucketB, fs, doc1->getId(), context).hasDocument());
         EXPECT_TRUE(
-                !spi->get(bucketA, fs, doc1->getId(), context).hasDocument());
+                !spi.get(bucketA, fs, doc1->getId(), context).hasDocument());
         EXPECT_TRUE(
-                !spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
+                !spi.get(bucketC, fs, doc1->getId(), context).hasDocument());
     }
 }
 
@@ -1732,8 +1658,8 @@ TEST_F(ConformanceTest, testSplitSingleDocumentInSource)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket target1(makeSpiBucket(BucketId(3, 0x02)));
     Bucket target2(makeSpiBucket(BucketId(3, 0x06)));
@@ -1745,45 +1671,35 @@ TEST_F(ConformanceTest, testSplitSingleDocumentInSource)
     Document::SP doc = testDocMan.createRandomDocumentAtLocation(0x06, 0);
     spi->put(source, Timestamp(1), doc, context);
 
-    spi->flush(source, context);
-
     spi->split(source, target1, target2, context);
-    testSplitSingleDocumentInSourcePostCondition(
-            spi, source, target1, target2, testDocMan);
+    testSplitSingleDocumentInSourcePostCondition(*spi, source, target1, target2, testDocMan);
 
     if (_factory->hasPersistence()) {
         spi.reset();
         document::TestDocMan testDocMan2;
         spi = getSpi(*_factory, testDocMan2);
-        testSplitSingleDocumentInSourcePostCondition(
-                spi, source, target1, target2, testDocMan2);
+        testSplitSingleDocumentInSourcePostCondition(*spi, source, target1, target2, testDocMan2);
     }
 }
 
 void
 ConformanceTest::testSplitSingleDocumentInSourcePostCondition(
-        const PersistenceProvider::UP& spi,
+        const PersistenceProvider& spi,
         const Bucket& source,
         const Bucket& target1,
         const Bucket& target2,
         document::TestDocMan& testDocMan)
 {
-    EXPECT_EQ(uint32_t(0),
-                         spi->getBucketInfo(source).getBucketInfo().
-                             getDocumentCount());
-    EXPECT_EQ(uint32_t(0),
-                         spi->getBucketInfo(target1).getBucketInfo().
-                             getDocumentCount());
-    EXPECT_EQ(uint32_t(1),
-                         spi->getBucketInfo(target2).getBucketInfo().
-                             getDocumentCount());
+    EXPECT_EQ(uint32_t(0), spi.getBucketInfo(source).getBucketInfo().getDocumentCount());
+    EXPECT_EQ(uint32_t(0), spi.getBucketInfo(target1).getBucketInfo().getDocumentCount());
+    EXPECT_EQ(uint32_t(1), spi.getBucketInfo(target2).getBucketInfo().getDocumentCount());
 
     document::AllFields fs;
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Document::UP doc = testDocMan.createRandomDocumentAtLocation(0x06, 0);
-    EXPECT_TRUE(spi->get(target2, fs, doc->getId(), context).hasDocument());
-    EXPECT_TRUE(!spi->get(target1, fs, doc->getId(), context).hasDocument());
-    EXPECT_TRUE(!spi->get(source, fs, doc->getId(), context).hasDocument());
+    EXPECT_TRUE(spi.get(target2, fs, doc->getId(), context).hasDocument());
+    EXPECT_TRUE(!spi.get(target1, fs, doc->getId(), context).hasDocument());
+    EXPECT_TRUE(!spi.get(source, fs, doc->getId(), context).hasDocument());
 }
 
 void
@@ -1793,7 +1709,7 @@ ConformanceTest::createAndPopulateJoinSourceBuckets(
         const Bucket& source2,
         document::TestDocMan& testDocMan)
 {
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     spi.createBucket(source1, context);
     spi.createBucket(source2, context);
@@ -1804,7 +1720,6 @@ ConformanceTest::createAndPopulateJoinSourceBuckets(
                     source1.getBucketId().getId(), i));
         spi.put(source1, Timestamp(i + 1), doc, context);
     }
-    spi.flush(source1, context);
 
     for (uint32_t i = 10; i < 20; ++i) {
         Document::SP doc(
@@ -1812,7 +1727,6 @@ ConformanceTest::createAndPopulateJoinSourceBuckets(
                     source2.getBucketId().getId(), i));
         spi.put(source2, Timestamp(i + 1), doc, context);
     }
-    spi.flush(source2, context);
 }
 
 void
@@ -1822,21 +1736,19 @@ ConformanceTest::doTestJoinNormalCase(const Bucket& source1,
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
 
     createAndPopulateJoinSourceBuckets(*spi, source1, source2, testDocMan);
 
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     spi->join(source1, source2, target, context);
 
-    testJoinNormalCasePostCondition(spi, source1, source2, target,
-                                    testDocMan);
+    testJoinNormalCasePostCondition(*spi, source1, source2, target, testDocMan);
     if (_factory->hasPersistence()) {
         spi.reset();
         document::TestDocMan testDocMan2;
         spi = getSpi(*_factory, testDocMan2);
-        testJoinNormalCasePostCondition(spi, source1, source2, target,
-                                        testDocMan2);
+        testJoinNormalCasePostCondition(*spi, source1, source2, target, testDocMan2);
     }
 }
 
@@ -1858,35 +1770,28 @@ TEST_F(ConformanceTest, testJoinNormalCaseWithMultipleBitsDecreased)
 
 void
 ConformanceTest::
-testJoinNormalCasePostCondition(const PersistenceProvider::UP &spi,
+testJoinNormalCasePostCondition(const PersistenceProvider &spi,
                                 const Bucket &bucketA,
                                 const Bucket &bucketB,
                                 const Bucket &bucketC,
                                 document::TestDocMan &testDocMan)
 {
-    EXPECT_EQ(20, (int)spi->getBucketInfo(bucketC).
-                         getBucketInfo().getDocumentCount());
+    EXPECT_EQ(20, (int)spi.getBucketInfo(bucketC).getBucketInfo().getDocumentCount());
 
     document::AllFields fs;
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     for (uint32_t i = 0; i < 10; ++i) {
         Document::UP doc(
                 testDocMan.createRandomDocumentAtLocation(
                     bucketA.getBucketId().getId(), i));
-        EXPECT_TRUE(
-                spi->get(bucketC, fs, doc->getId(), context).hasDocument());
-        EXPECT_TRUE(
-                !spi->get(bucketA, fs, doc->getId(), context).hasDocument());
+        EXPECT_TRUE(spi.get(bucketC, fs, doc->getId(), context).hasDocument());
+        EXPECT_TRUE(!spi.get(bucketA, fs, doc->getId(), context).hasDocument());
     }
 
     for (uint32_t i = 10; i < 20; ++i) {
-        Document::UP doc(
-                testDocMan.createRandomDocumentAtLocation(
-                    bucketB.getBucketId().getId(), i));
-        EXPECT_TRUE(
-                spi->get(bucketC, fs, doc->getId(), context).hasDocument());
-        EXPECT_TRUE(
-                !spi->get(bucketB, fs, doc->getId(), context).hasDocument());
+        Document::UP doc(testDocMan.createRandomDocumentAtLocation(bucketB.getBucketId().getId(), i));
+        EXPECT_TRUE(spi.get(bucketC, fs, doc->getId(), context).hasDocument());
+        EXPECT_TRUE(!spi.get(bucketB, fs, doc->getId(), context).hasDocument());
     }
 }
 
@@ -1895,8 +1800,8 @@ TEST_F(ConformanceTest, testJoinTargetExists)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucketA(makeSpiBucket(BucketId(3, 0x02)));
     spi->createBucket(bucketA, context);
@@ -1912,67 +1817,55 @@ TEST_F(ConformanceTest, testJoinTargetExists)
         spi->put(bucketA, Timestamp(i + 1), doc1, context);
     }
 
-    spi->flush(bucketA, context);
 
     for (uint32_t i = 10; i < 20; ++i) {
         Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
         spi->put(bucketB, Timestamp(i + 1), doc1, context);
     }
-    spi->flush(bucketB, context);
 
     for (uint32_t i = 20; i < 30; ++i) {
         Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
         spi->put(bucketC, Timestamp(i + 1), doc1, context);
     }
 
-    spi->flush(bucketC, context);
-
     spi->join(bucketA, bucketB, bucketC, context);
-    testJoinTargetExistsPostCondition(spi, bucketA, bucketB, bucketC,
-                                      testDocMan);
+    testJoinTargetExistsPostCondition(*spi, bucketA, bucketB, bucketC, testDocMan);
     if (_factory->hasPersistence()) {
         spi.reset();
         document::TestDocMan testDocMan2;
         spi = getSpi(*_factory, testDocMan2);
-        testJoinTargetExistsPostCondition(spi, bucketA, bucketB, bucketC,
-                testDocMan2);
+        testJoinTargetExistsPostCondition(*spi, bucketA, bucketB, bucketC, testDocMan2);
     }
 }
 
 
 void
 ConformanceTest::
-testJoinTargetExistsPostCondition(const PersistenceProvider::UP &spi,
+testJoinTargetExistsPostCondition(const PersistenceProvider &spi,
                                   const Bucket &bucketA,
                                   const Bucket &bucketB,
                                   const Bucket &bucketC,
                                   document::TestDocMan &testDocMan)
 {
-    EXPECT_EQ(30, (int)spi->getBucketInfo(bucketC).getBucketInfo().
-                         getDocumentCount());
+    EXPECT_EQ(30, (int)spi.getBucketInfo(bucketC).getBucketInfo().getDocumentCount());
 
     document::AllFields fs;
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     for (uint32_t i = 0; i < 10; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x02, i);
-        EXPECT_TRUE(
-                spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
-        EXPECT_TRUE(
-                !spi->get(bucketA, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(spi.get(bucketC, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(!spi.get(bucketA, fs, doc1->getId(), context).hasDocument());
     }
 
     for (uint32_t i = 10; i < 20; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
-        EXPECT_TRUE(
-                spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
-        EXPECT_TRUE(
-                !spi->get(bucketB, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(spi.get(bucketC, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(!spi.get(bucketB, fs, doc1->getId(), context).hasDocument());
     }
 
     for (uint32_t i = 20; i < 30; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
-        EXPECT_TRUE(
-                spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(spi.get(bucketC, fs, doc1->getId(), context).hasDocument());
     }
 }
 
@@ -1987,19 +1880,17 @@ ConformanceTest::populateBucket(const Bucket& b,
     assert(from <= to);
     for (uint32_t i = from; i < to; ++i) {
         const uint32_t location = b.getBucketId().getId();
-        Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(
-                location, i);
+        Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(location, i);
         spi.put(b, Timestamp(i + 1), doc1, context);
     }
-    spi.flush(b, context);
 }
 
 TEST_F(ConformanceTest, testJoinOneBucket)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucketA(makeSpiBucket(BucketId(3, 0x02)));
     spi->createBucket(bucketA, context);
@@ -2010,40 +1901,37 @@ TEST_F(ConformanceTest, testJoinOneBucket)
     populateBucket(bucketA, *spi, context, 0, 10, testDocMan);
 
     spi->join(bucketA, bucketB, bucketC, context);
-    testJoinOneBucketPostCondition(spi, bucketA, bucketC, testDocMan);
+    testJoinOneBucketPostCondition(*spi, bucketA, bucketC, testDocMan);
     if (_factory->hasPersistence()) {
         spi.reset();
         document::TestDocMan testDocMan2;
         spi = getSpi(*_factory, testDocMan2);
-        testJoinOneBucketPostCondition(spi, bucketA, bucketC, testDocMan2);
+        testJoinOneBucketPostCondition(*spi, bucketA, bucketC, testDocMan2);
     }
 }
 
 void
 ConformanceTest::
-testJoinOneBucketPostCondition(const PersistenceProvider::UP &spi,
+testJoinOneBucketPostCondition(const PersistenceProvider &spi,
                                const Bucket &bucketA,
                                const Bucket &bucketC,
                                document::TestDocMan &testDocMan)
 {
-    EXPECT_EQ(10, (int)spi->getBucketInfo(bucketC).getBucketInfo().
-                         getDocumentCount());
+    EXPECT_EQ(10, (int)spi.getBucketInfo(bucketC).getBucketInfo().getDocumentCount());
 
     document::AllFields fs;
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     for (uint32_t i = 0; i < 10; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x02, i);
-        EXPECT_TRUE(
-                spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
-        EXPECT_TRUE(
-                !spi->get(bucketA, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(spi.get(bucketC, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(!spi.get(bucketA, fs, doc1->getId(), context).hasDocument());
     }
 }
 
 void
 ConformanceTest::
 testJoinSameSourceBucketsPostCondition(
-        const PersistenceProvider::UP& spi,
+        const PersistenceProvider& spi,
         const Bucket& source,
         const Bucket& target,
         document::TestDocMan& testDocMan)
@@ -2053,25 +1941,23 @@ testJoinSameSourceBucketsPostCondition(
 }
 
 void
-ConformanceTest::doTestJoinSameSourceBuckets(const Bucket& source,
-                                             const Bucket& target)
+ConformanceTest::doTestJoinSameSourceBuckets(const Bucket& source, const Bucket& target)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     spi->createBucket(source, context);
     populateBucket(source, *spi, context, 0, 10, testDocMan);
 
     spi->join(source, source, target, context);
-    testJoinSameSourceBucketsPostCondition(spi, source, target, testDocMan);
+    testJoinSameSourceBucketsPostCondition(*spi, source, target, testDocMan);
     if (_factory->hasPersistence()) {
         spi.reset();
         document::TestDocMan testDocMan2;
         spi = getSpi(*_factory, testDocMan2);
-        testJoinSameSourceBucketsPostCondition(
-                spi, source, target, testDocMan2);
+        testJoinSameSourceBucketsPostCondition(*spi, source, target, testDocMan2);
     }
 }
 
@@ -2096,17 +1982,14 @@ ConformanceTest::testJoinSameSourceBucketsTargetExistsPostCondition(
         const Bucket& target,
         document::TestDocMan& testDocMan)
 {
-    EXPECT_EQ(20, (int)spi.getBucketInfo(target).getBucketInfo().
-                         getDocumentCount());
+    EXPECT_EQ(20, (int)spi.getBucketInfo(target).getBucketInfo().getDocumentCount());
 
     document::AllFields fs;
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    Context context(Priority(0), Trace::TraceLevel(0));
     for (uint32_t i = 0; i < 20; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x02, i);
-        EXPECT_TRUE(
-                spi.get(target, fs, doc1->getId(), context).hasDocument());
-        EXPECT_TRUE(
-                !spi.get(source, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(spi.get(target, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(!spi.get(source, fs, doc1->getId(), context).hasDocument());
     }
 }
 
@@ -2114,8 +1997,8 @@ TEST_F(ConformanceTest, testJoinSameSourceBucketsTargetExists)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket source(makeSpiBucket(BucketId(3, 0x02)));
     spi->createBucket(source, context);
@@ -2133,36 +2016,16 @@ TEST_F(ConformanceTest, testJoinSameSourceBucketsTargetExists)
         spi.reset();
         document::TestDocMan testDocMan2;
         spi = getSpi(*_factory, testDocMan2);
-        testJoinSameSourceBucketsTargetExistsPostCondition(
-                *spi, source, target, testDocMan2);
+        testJoinSameSourceBucketsTargetExistsPostCondition(*spi, source, target, testDocMan2);
     }
-}
-
-TEST_F(ConformanceTest, testMaintain)
-{
-    document::TestDocMan testDocMan;
-    _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
-    Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
-
-    Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
-    spi->createBucket(bucket, context);
-
-    spi->put(bucket, Timestamp(3), doc1, context);
-    spi->flush(bucket, context);
-
-    EXPECT_EQ(Result::ErrorType::NONE,
-                         spi->maintain(bucket, LOW).getErrorCode());
 }
 
 TEST_F(ConformanceTest, testGetModifiedBuckets)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    EXPECT_EQ(0,
-                         (int)spi->getModifiedBuckets(makeBucketSpace()).getList().size());
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    EXPECT_EQ(0, (int)spi->getModifiedBuckets(makeBucketSpace()).getList().size());
 }
 
 TEST_F(ConformanceTest, testBucketActivation)
@@ -2173,8 +2036,8 @@ TEST_F(ConformanceTest, testBucketActivation)
 
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
 
     spi->setClusterState(makeBucketSpace(), createClusterState());
@@ -2216,8 +2079,8 @@ TEST_F(SingleDocTypeConformanceTest, testBucketActivationSplitAndJoin)
 
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucketA(makeSpiBucket(BucketId(3, 0x02)));
     Bucket bucketB(makeSpiBucket(BucketId(3, 0x06)));
@@ -2229,7 +2092,6 @@ TEST_F(SingleDocTypeConformanceTest, testBucketActivationSplitAndJoin)
     spi->createBucket(bucketC, context);
     spi->put(bucketC, Timestamp(1), doc1, context);
     spi->put(bucketC, Timestamp(2), doc2, context);
-    spi->flush(bucketC, context);
 
     spi->setActiveState(bucketC, BucketInfo::ACTIVE);
     EXPECT_TRUE(spi->getBucketInfo(bucketC).getBucketInfo().isActive());
@@ -2295,8 +2157,8 @@ TEST_F(ConformanceTest, testRemoveEntry)
     }
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
 
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
@@ -2304,14 +2166,11 @@ TEST_F(ConformanceTest, testRemoveEntry)
     spi->createBucket(bucket, context);
 
     spi->put(bucket, Timestamp(3), doc1, context);
-    spi->flush(bucket, context);
     BucketInfo info1 = spi->getBucketInfo(bucket).getBucketInfo();
 
     {
         spi->put(bucket, Timestamp(4), doc2, context);
-        spi->flush(bucket, context);
         spi->removeEntry(bucket, Timestamp(4), context);
-        spi->flush(bucket, context);
         BucketInfo info2 = spi->getBucketInfo(bucket).getBucketInfo();
         EXPECT_EQ(info1, info2);
     }
@@ -2319,9 +2178,7 @@ TEST_F(ConformanceTest, testRemoveEntry)
     // Test case where there exists a previous version of the document.
     {
         spi->put(bucket, Timestamp(5), doc1, context);
-        spi->flush(bucket, context);
         spi->removeEntry(bucket, Timestamp(5), context);
-        spi->flush(bucket, context);
         BucketInfo info2 = spi->getBucketInfo(bucket).getBucketInfo();
         EXPECT_EQ(info1, info2);
     }
@@ -2329,14 +2186,11 @@ TEST_F(ConformanceTest, testRemoveEntry)
     // Test case where the newest document version after removeEntrying is a remove.
     {
         spi->remove(bucket, Timestamp(6), doc1->getId(), context);
-        spi->flush(bucket, context);
         BucketInfo info2 = spi->getBucketInfo(bucket).getBucketInfo();
         EXPECT_EQ(uint32_t(0), info2.getDocumentCount());
 
         spi->put(bucket, Timestamp(7), doc1, context);
-        spi->flush(bucket, context);
         spi->removeEntry(bucket, Timestamp(7), context);
-        spi->flush(bucket, context);
         BucketInfo info3 = spi->getBucketInfo(bucket).getBucketInfo();
         EXPECT_EQ(info2, info3);
     }
@@ -2354,10 +2208,9 @@ void assertBucketInfo(PersistenceProvider &spi, const Bucket &bucket, uint32_t e
 
 void assertBucketList(PersistenceProvider &spi,
                       BucketSpace &bucketSpace,
-                      PartitionId partId,
                       const std::vector<BucketId> &expBuckets)
 {
-    BucketIdListResult result = spi.listBuckets(bucketSpace, partId);
+    BucketIdListResult result = spi.listBuckets(bucketSpace);
     const BucketIdListResult::List &bucketList = result.getList();
     EXPECT_EQ(expBuckets.size(), bucketList.size());
     for (const auto &expBucket : expBuckets) {
@@ -2372,18 +2225,17 @@ TEST_F(ConformanceTest, testBucketSpaces)
     }
     document::TestDocMan testDocMan;
     _factory->clear();
-    PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
     BucketSpace bucketSpace0(makeBucketSpace("testdoctype1"));
     BucketSpace bucketSpace1(makeBucketSpace("testdoctype2"));
     BucketSpace bucketSpace2(makeBucketSpace("no"));
-    PartitionId partId(0);
 
     BucketId bucketId1(8, 0x01);
     BucketId bucketId2(8, 0x02);
-    Bucket bucket01({ bucketSpace0, bucketId1 }, partId);
-    Bucket bucket11({ bucketSpace1, bucketId1 }, partId);
-    Bucket bucket12({ bucketSpace1, bucketId2 }, partId);
+    Bucket bucket01({ bucketSpace0, bucketId1 });
+    Bucket bucket11({ bucketSpace1, bucketId1 });
+    Bucket bucket12({ bucketSpace1, bucketId2 });
     Document::SP doc1 = testDocMan.createDocument("content", "id:test:testdoctype1:n=1:1", "testdoctype1");
     Document::SP doc2 = testDocMan.createDocument("content", "id:test:testdoctype1:n=1:2", "testdoctype1");
     Document::SP doc3 = testDocMan.createDocument("content", "id:test:testdoctype2:n=1:3", "testdoctype2");
@@ -2395,17 +2247,26 @@ TEST_F(ConformanceTest, testBucketSpaces)
     spi->put(bucket01, Timestamp(4), doc2, context);
     spi->put(bucket11, Timestamp(5), doc3, context);
     spi->put(bucket12, Timestamp(6), doc4, context);
-    spi->flush(bucket01, context);
-    spi->flush(bucket11, context);
-    spi->flush(bucket12, context);
     // Check bucket lists
-    assertBucketList(*spi, bucketSpace0, partId, { bucketId1 });
-    assertBucketList(*spi, bucketSpace1, partId, { bucketId1, bucketId2 });
-    assertBucketList(*spi, bucketSpace2, partId, { });
+    assertBucketList(*spi, bucketSpace0, { bucketId1 });
+    assertBucketList(*spi, bucketSpace1, { bucketId1, bucketId2 });
+    assertBucketList(*spi, bucketSpace2, { });
     // Check bucket info
     assertBucketInfo(*spi, bucket01, 2);
     assertBucketInfo(*spi, bucket11, 1);
     assertBucketInfo(*spi, bucket12, 1);
+}
+
+TEST_F(ConformanceTest, resource_usage)
+{
+    ResourceUsageListener resource_usage_listener;
+    document::TestDocMan testDocMan;
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    EXPECT_EQ(0.0, resource_usage_listener.get_usage().get_disk_usage());
+    EXPECT_EQ(0.0, resource_usage_listener.get_usage().get_memory_usage());
+    auto register_guard = spi->register_resource_usage_listener(resource_usage_listener);
+    EXPECT_EQ(0.5, resource_usage_listener.get_usage().get_disk_usage());
+    EXPECT_EQ(0.4, resource_usage_listener.get_usage().get_memory_usage());
 }
 
 TEST_F(ConformanceTest, detectAndTestOptionalBehavior)

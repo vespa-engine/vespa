@@ -7,6 +7,13 @@
 %option noyywrap nounput
 %option yyclass="document::select::DocSelScanner"
 
+ /* Flex lexer must be compiled with batch mode (as opposed to interactive mode)
+  * or parsing of large tokens appears to trigger superlinear time complexity.
+  * Also use full, non-compressed lookup tables for maximum performance.
+  */
+%option batch
+%option full
+
  /* Used to track source locations, see https://github.com/bingmann/flex-bison-cpp-example/blob/master/src/scanner.ll */
 %{
 #define YY_USER_ACTION yyloc->columns(yyleng);
@@ -112,7 +119,6 @@ SQ_STRING \'(\\([\\tnfr']|x{HEXDIGIT}{2})|[^'\\])*\'
 \[{WS}*(${IDCHARS}|{DECIMAL}){WS}*\]                      STRING_TOKEN(FP_ARRAY_LOOKUP)
 
  /* Primary tokens are case insensitive */
-(?i:"id")    NAMED_TOKEN(ID)
 (?i:"null")  NAMED_TOKEN(NULL)
 (?i:"true")  NAMED_TOKEN(TRUE)
 (?i:"false") NAMED_TOKEN(FALSE)
@@ -121,6 +127,7 @@ SQ_STRING \'(\\([\\tnfr']|x{HEXDIGIT}{2})|[^'\\])*\'
 (?i:"not")   NAMED_TOKEN(NOT)
 
  /* We expose the verbatim input as the token value, as these may also be used for identifiers... */
+(?i:"id")        STRING_TOKEN(ID)
 (?i:"user")      STRING_TOKEN(USER)
 (?i:"group")     STRING_TOKEN(GROUP)
 (?i:"scheme")    STRING_TOKEN(SCHEME)

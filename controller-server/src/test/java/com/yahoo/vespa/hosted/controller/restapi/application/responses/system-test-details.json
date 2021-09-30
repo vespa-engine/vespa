@@ -11,11 +11,6 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "No services requiring restart."
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
         "message": "Deployment successful."
       },
       {
@@ -33,7 +28,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform 6.1"
+        "message": "--- platform vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",
@@ -48,7 +43,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform 6.1"
+        "message": "--- platform vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",
@@ -63,7 +58,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform 6.1"
+        "message": "--- platform vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",
@@ -78,7 +73,22 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform 6.1"
+        "message": "--- platform vespa/vespa:6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-t-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",
@@ -95,11 +105,6 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "No services requiring restart."
-      },
-      {
-        "at": "(ignore)",
-        "type": "info",
         "message": "Deployment successful."
       },
       {
@@ -112,12 +117,107 @@
       {
         "at": "(ignore)",
         "type": "info",
+        "message": "######## Details for all nodes ########"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
         "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
       },
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "--- platform 6.1"
+        "message": "--- platform vespa/vespa:6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform vespa/vespa:6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform vespa/vespa:6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform vespa/vespa:6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform vespa/vespa:6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform vespa/vespa:6.1"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": "(ignore)",
+        "type": "info",
+        "message": "--- platform vespa/vespa:6.1"
       },
       {
         "at": "(ignore)",
@@ -137,7 +237,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": " |-- https://instance1--application1--tenant1.us-east-1.test.vespa:43 (cluster 'default')"
+        "message": " |-- https://instance1--application1--tenant1.us-east-1.test.vespa.oath.cloud:4443/ (cluster 'default')"
       },
       {
         "at": "(ignore)",
@@ -164,7 +264,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": " |-- https://instance1--application1--tenant1.us-east-1.test.vespa:43 (cluster 'default')"
+        "message": " |-- https://instance1--application1--tenant1.us-east-1.test.vespa.oath.cloud:4443/ (cluster 'default')"
       },
       {
         "at": "(ignore)",
@@ -194,7 +294,7 @@
       }
     ]
   },
-  "lastId": 34,
+  "lastId": 54,
   "steps": {
     "deployTester": {
       "status": "succeeded",

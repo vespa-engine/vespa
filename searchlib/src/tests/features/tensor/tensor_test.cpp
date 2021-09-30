@@ -10,12 +10,13 @@
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/tensor/direct_tensor_attribute.h>
 #include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
-#include <vespa/eval/tensor/test/test_utils.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 using search::feature_t;
@@ -25,14 +26,14 @@ using namespace search::fef::test;
 using namespace search::features;
 using search::AttributeFactory;
 using search::tensor::TensorAttribute;
+using search::tensor::DirectTensorAttribute;
 using search::AttributeVector;
 using vespalib::eval::Function;
+using vespalib::eval::SimpleValue;
+using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using vespalib::eval::TensorSpec;
-using vespalib::tensor::DefaultTensorEngine;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::test::makeTensor;
+using vespalib::eval::spec_from_value;
 
 using AVC = search::attribute::Config;
 using AVBT = search::attribute::BasicType;
@@ -44,8 +45,8 @@ using CollectionType = FieldInfo::CollectionType;
 namespace
 {
 
-Tensor::UP make_empty(const vespalib::string &type) {
-    return makeTensor<Tensor>(TensorSpec(type));
+Value::UP make_empty(const vespalib::string &type) {
+    return SimpleValue::from_spec(TensorSpec(type));
 }
 
 }
@@ -70,10 +71,14 @@ struct ExecFixture
         addAttributeField(attrName);
         return AttributeFactory::createAttribute(attrName, AVC(AVBT::STRING, AVCT::SINGLE));
     }
-    AttributeVector::SP createTensorAttribute(const vespalib::string &attrName, const vespalib::string &type) {
+    AttributeVector::SP createTensorAttribute(const vespalib::string &attrName,
+                                              const vespalib::string &type,
+                                              bool direct = false)
+    {
         addAttributeField(attrName);
         AVC config(AVBT::TENSOR, AVCT::SINGLE);
         config.setTensorType(ValueType::from_spec(type));
+        config.setFastSearch(direct);
         return AttributeFactory::createAttribute(attrName, config);
     }
     void setAttributeTensorType(const vespalib::string &attrName, const vespalib::string &type) {
@@ -85,10 +90,12 @@ struct ExecFixture
     void setupAttributeVectors() {
         std::vector<AttributePtr> attrs;
         attrs.push_back(createTensorAttribute("tensorattr", "tensor(x{})"));
+        attrs.push_back(createTensorAttribute("directattr", "tensor(x{})", true));
         attrs.push_back(createStringAttribute("singlestr"));
         attrs.push_back(createTensorAttribute("wrongtype", "tensor(y{})"));
         addAttributeField("null");
         setAttributeTensorType("tensorattr", "tensor(x{})");
+        setAttributeTensorType("directattr", "tensor(x{})");
         setAttributeTensorType("wrongtype", "tensor(x{})");
         setAttributeTensorType("null", "tensor(x{})");
 
@@ -103,21 +110,26 @@ struct ExecFixture
 
         TensorAttribute *tensorAttr =
             dynamic_cast<TensorAttribute *>(attrs[0].get());
+        DirectTensorAttribute *directAttr =
+            dynamic_cast<DirectTensorAttribute *>(attrs[1].get());
 
-        tensorAttr->setTensor(1, *makeTensor<Tensor>(TensorSpec("tensor(x{})")
-                                                     .add({{"x", "a"}}, 3)
-                                                     .add({{"x", "b"}}, 5)
-                                                     .add({{"x", "c"}}, 7)));
+        auto doc_tensor = SimpleValue::from_spec(TensorSpec("tensor(x{})")
+                                                 .add({{"x", "a"}}, 3)
+                                                 .add({{"x", "b"}}, 5)
+                                                 .add({{"x", "c"}}, 7));
+        tensorAttr->setTensor(1, *doc_tensor);
+        directAttr->set_tensor(1, std::move(doc_tensor));
+
         for (const auto &attr : attrs) {
             attr->commit();
         }
     }
     void setQueryTensor(const vespalib::string &tensorName,
                         const vespalib::string &tensorTypeSpec,
-                        std::unique_ptr<Tensor> tensor)
+                        std::unique_ptr<Value> tensor)
     {
         vespalib::nbostream stream;
-        vespalib::tensor::TypedBinaryFormat::serialize(stream, *tensor);
+        encode_value(*tensor, stream);
         test.getQueryEnv().getProperties().add(tensorName,
                 vespalib::stringref(stream.peek(), stream.size()));
         setQueryTensorType(tensorName, tensorTypeSpec);
@@ -126,24 +138,24 @@ struct ExecFixture
     void setupQueryEnvironment() {
         setQueryTensor("tensorquery",
                        "tensor(q{})",
-                       makeTensor<Tensor>(TensorSpec("tensor(q{})")
-                                          .add({{"q", "d"}}, 11 )
-                                          .add({{"q", "e"}}, 13 )
-                                          .add({{"q", "f"}}, 17 )));
+                       SimpleValue::from_spec(TensorSpec("tensor(q{})")
+                                              .add({{"q", "d"}}, 11 )
+                                              .add({{"q", "e"}}, 13 )
+                                              .add({{"q", "f"}}, 17 )));
         setQueryTensor("mappedtensorquery",
                        "tensor(x[2])",
-                       makeTensor<Tensor>(TensorSpec("tensor(x{},y{})")
-                                          .add({{"x", "0"},{"y", "0"}}, 11 )
-                                          .add({{"x", "0"},{"y", "1"}}, 13 )
-                                          .add({{"x", "1"},{"y", "0"}}, 17 )));
+                       SimpleValue::from_spec(TensorSpec("tensor(x{},y{})")
+                                              .add({{"x", "0"},{"y", "0"}}, 11 )
+                                              .add({{"x", "0"},{"y", "1"}}, 13 )
+                                              .add({{"x", "1"},{"y", "0"}}, 17 )));
         setQueryTensorType("null", "tensor(q{})");
     }
-    const Tensor &extractTensor(uint32_t docid) {
+    const Value &extractTensor(uint32_t docid) {
         Value::CREF value = test.resolveObjectFeature(docid);
-        ASSERT_TRUE(value.get().is_tensor());
-        return static_cast<const Tensor &>(*value.get().as_tensor());
+        ASSERT_TRUE(value.get().type().has_dimensions());
+        return value.get();
     }
-    const Tensor &execute(uint32_t docId = 1) {
+    const Value &execute(uint32_t docId = 1) {
         return extractTensor(docId);
     }
 };
@@ -151,19 +163,28 @@ struct ExecFixture
 TEST_F("require that tensor attribute can be extracted as tensor in attribute feature",
        ExecFixture("attribute(tensorattr)"))
 {
-    EXPECT_EQUAL(*makeTensor<Tensor>(TensorSpec("tensor(x{})")
-                                     .add({{"x", "b"}}, 5)
-                                     .add({{"x", "c"}}, 7)
-                                     .add({{"x", "a"}}, 3)), f.execute());
+    EXPECT_EQUAL(TensorSpec("tensor(x{})")
+                 .add({{"x", "b"}}, 5)
+                 .add({{"x", "c"}}, 7)
+                 .add({{"x", "a"}}, 3), spec_from_value(f.execute()));
+}
+
+TEST_F("require that direct tensor attribute can be extracted in attribute feature",
+       ExecFixture("attribute(directattr)"))
+{
+    EXPECT_EQUAL(TensorSpec("tensor(x{})")
+                 .add({{"x", "b"}}, 5)
+                 .add({{"x", "c"}}, 7)
+                 .add({{"x", "a"}}, 3), spec_from_value(f.execute()));
 }
 
 TEST_F("require that tensor from query can be extracted as tensor in query feature",
        ExecFixture("query(tensorquery)"))
 {
-    EXPECT_EQUAL(*makeTensor<Tensor>(TensorSpec("tensor(q{})")
-                                     .add({{"q", "f"}}, 17)
-                                     .add({{"q", "d"}}, 11)
-                                     .add({{"q", "e"}}, 13)), f.execute());
+    EXPECT_EQUAL(TensorSpec("tensor(q{})")
+                 .add({{"q", "f"}}, 17)
+                 .add({{"q", "d"}}, 11)
+                 .add({{"q", "e"}}, 13), spec_from_value(f.execute()));
 }
 
 TEST_F("require that empty tensor is created if attribute does not exists",
@@ -189,11 +210,16 @@ TEST_F("require that empty tensor with correct type is created if document has n
     EXPECT_EQUAL(*make_empty("tensor(x{})"), f.execute(2));
 }
 
+TEST_F("require that empty tensor with correct type is returned by direct tensor attribute",
+       ExecFixture("attribute(directattr)")) {
+    EXPECT_EQUAL(*make_empty("tensor(x{})"), f.execute(2));
+}
+
 TEST_F("require that wrong tensor type from query tensor gives empty tensor",
        ExecFixture("query(mappedtensorquery)")) {
-    EXPECT_EQUAL(*makeTensor<Tensor>(TensorSpec("tensor(x[2])")
-                                     .add({{"x", 0}}, 0)
-                                     .add({{"x", 1}}, 0)), f.execute());
+    EXPECT_EQUAL(TensorSpec("tensor(x[2])")
+                 .add({{"x", 0}}, 0)
+                 .add({{"x", 1}}, 0), spec_from_value(f.execute()));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

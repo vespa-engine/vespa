@@ -1,24 +1,38 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.cloud.config.ZookeeperServerConfig;
+import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.concurrent.StripedExecutor;
+import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.config.server.GlobalComponentRegistry;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.ConfigServerDB;
+import com.yahoo.vespa.config.server.MockProvisioner;
+import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.ServerCache;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.application.Application;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
+import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
+import com.yahoo.vespa.config.server.host.HostRegistry;
+import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -28,6 +42,7 @@ import org.junit.rules.TemporaryFolder;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -44,10 +59,10 @@ public class TenantRepositoryTest {
     private static final TenantName tenant3 = TenantName.from("tenant3");
 
     private TenantRepository tenantRepository;
-    private TestComponentRegistry globalComponentRegistry;
-    private TenantRequestHandlerTest.MockReloadListener listener;
+    private TenantApplicationsTest.MockReloadListener listener;
     private MockTenantListener tenantListener;
     private Curator curator;
+    private ConfigserverConfig configserverConfig;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -56,13 +71,20 @@ public class TenantRepositoryTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
-    public void setupSessions() {
+    public void setupSessions() throws IOException {
         curator = new MockCurator();
-        globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
-        listener = (TenantRequestHandlerTest.MockReloadListener)globalComponentRegistry.getReloadListener();
-        tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();
+        listener = new TenantApplicationsTest.MockReloadListener();
+        tenantListener = new MockTenantListener();
         assertFalse(tenantListener.tenantsLoaded);
-        tenantRepository = new TenantRepository(globalComponentRegistry);
+        configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
+        tenantRepository = new TestTenantRepository.Builder().withConfigserverConfig(configserverConfig)
+                                                             .withCurator(curator)
+                                                             .withReloadListener(listener)
+                                                             .withTenantListener(tenantListener)
+                                                             .build();
         assertTrue(tenantListener.tenantsLoaded);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
@@ -81,16 +103,17 @@ public class TenantRepositoryTest {
 
     @Test
     public void testListenersAdded() throws IOException, SAXException {
-        tenantRepository.getTenant(tenant1).getApplicationRepo().createApplication(ApplicationId.defaultId());
-        tenantRepository.getTenant(tenant1).getApplicationRepo().createPutTransaction(ApplicationId.defaultId(), 4).commit();
-        tenantRepository.getTenant(tenant1).getReloadHandler().reloadConfig(ApplicationSet.fromSingle(
-                new Application(new VespaModel(MockApplicationPackage.createEmpty()),
-                                new ServerCache(),
-                                4L,
-                                false,
-                                new Version(1, 2, 3),
-                                MetricUpdater.createTestUpdater(),
-                                ApplicationId.defaultId())));
+        TenantApplications applicationRepo = tenantRepository.getTenant(tenant1).getApplicationRepo();
+        ApplicationId id = ApplicationId.from(tenant1, ApplicationName.defaultName(), InstanceName.defaultName());
+        applicationRepo.createApplication(id);
+        applicationRepo.createPutTransaction(id, 4).commit();
+        applicationRepo.activateApplication(ApplicationSet.from(new Application(new VespaModel(MockApplicationPackage.createEmpty()),
+                                                                                new ServerCache(),
+                                                                                4L,
+                                                                                new Version(1, 2, 3),
+                                                                                MetricUpdater.createTestUpdater(),
+                                                                                id)),
+                                            4);
         assertEquals(1, listener.reloaded.get());
     }
 
@@ -165,18 +188,12 @@ public class TenantRepositoryTest {
     }
 
     @Test
-    public void testFailingBootstrap() throws IOException {
+    public void testFailingBootstrap() {
         tenantRepository.close(); // stop using the one setup in Before method
 
-        // No exception if config is false
-        boolean throwIfBootstrappingTenantRepoFails = false;
-        new FailingDuringBootstrapTenantRepository(createComponentRegistry(throwIfBootstrappingTenantRepoFails));
-
-        // Should get exception if config is true
-        throwIfBootstrappingTenantRepoFails = true;
         expectedException.expect(RuntimeException.class);
         expectedException.expectMessage("Could not create all tenants when bootstrapping, failed to create: [default]");
-        new FailingDuringBootstrapTenantRepository(createComponentRegistry(throwIfBootstrappingTenantRepoFails));
+        new FailingDuringBootstrapTenantRepository(configserverConfig);
     }
 
     private List<String> readZKChildren(String path) throws Exception {
@@ -184,29 +201,36 @@ public class TenantRepositoryTest {
     }
 
     private void assertZooKeeperTenantPathExists(TenantName tenantName) throws Exception {
-        assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenantRepository.tenantZkPath(tenantName)));
-    }
-
-    private GlobalComponentRegistry createComponentRegistry(boolean throwIfBootstrappingTenantRepoFails) throws IOException {
-        return new TestComponentRegistry.Builder()
-                .curator(new MockCurator())
-                .configServerConfig(new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                                                   .throwIfBootstrappingTenantRepoFails(throwIfBootstrappingTenantRepoFails)
-                                                                   .configDefinitionsDir(temporaryFolder.newFolder("configdefs" + throwIfBootstrappingTenantRepoFails).getAbsolutePath())
-                                                                   .configServerDBDir(temporaryFolder.newFolder("configserverdb" + throwIfBootstrappingTenantRepoFails).getAbsolutePath())))
-                .zone(new Zone(SystemName.cd, Environment.prod, RegionName.from("foo")))
-                .build();
+        assertNotNull(curator.framework().checkExists().forPath(TenantRepository.getTenantPath(tenantName).getAbsolute()));
     }
 
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
 
-        public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry globalComponentRegistry) {
-            super(globalComponentRegistry, false);
+        public FailingDuringBootstrapTenantRepository(ConfigserverConfig configserverConfig) {
+            super(new HostRegistry(),
+                  new MockCurator(),
+                  Metrics.createTestMetrics(),
+                  new StripedExecutor<>(new InThreadExecutorService()),
+                  new StripedExecutor<>(new InThreadExecutorService()),
+                  new FileDistributionFactory(configserverConfig),
+                  new InMemoryFlagSource(),
+                  new InThreadExecutorService(),
+                  new MockSecretStore(),
+                  HostProvisionerProvider.withProvisioner(new MockProvisioner(), false),
+                  configserverConfig,
+                  new ConfigServerDB(configserverConfig),
+                  Zone.defaultZone(),
+                  Clock.systemUTC(),
+                  new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))),
+                  new TestConfigDefinitionRepo(),
+                  new TenantApplicationsTest.MockReloadListener(),
+                  new MockTenantListener(),
+                  new ZookeeperServerConfig.Builder().myid(0).build());
         }
 
         @Override
-        protected void createTenant(TenantBuilder builder) {
-            throw new RuntimeException("Failed to create: " + builder.getTenantName());
+        public void bootstrapTenant(TenantName tenantName) {
+            throw new RuntimeException("Failed to create: " + tenantName);
         }
     }
 

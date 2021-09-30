@@ -9,8 +9,7 @@ import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.util.LinkedList;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -29,7 +28,7 @@ public class GarbageCollectionMetricsTest {
 
         Duration interval = GarbageCollectionMetrics.REPORTING_INTERVAL;
         GarbageCollectionMetrics garbageCollectionMetrics = new GarbageCollectionMetrics(clock);
-        assertThat(garbageCollectionMetrics.getGcStatistics().keySet().size(), is(garbageCollectors));
+        assertEquals(garbageCollectors, garbageCollectionMetrics.getGcStatistics().keySet().size());
 
         clock.advance(interval.minus(Duration.ofMillis(10)));
         garbageCollectionMetrics.emitMetrics(metric);
@@ -52,7 +51,7 @@ public class GarbageCollectionMetricsTest {
 
     private static void assertWindowLengths(GarbageCollectionMetrics gcm, int count) {
         for(LinkedList<GarbageCollectionMetrics.GcStats> window: gcm.getGcStatistics().values()) {
-            assertThat(window.size(), is(count));
+            assertEquals(count, window.size());
         }
     }
 }

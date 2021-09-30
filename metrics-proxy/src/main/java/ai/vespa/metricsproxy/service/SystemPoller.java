@@ -3,7 +3,9 @@ package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
-import com.yahoo.log.LogLevel;
+import ai.vespa.metricsproxy.metric.model.MetricId;
+
+import java.util.logging.Level;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -24,7 +26,8 @@ import java.util.logging.Logger;
  * @author Eirik Nygaard
  */
 public class SystemPoller {
-    final private static Logger log = Logger.getLogger(SystemPoller.class.getName());
+
+    private static final Logger log = Logger.getLogger(SystemPoller.class.getName());
 
     private final int pollingIntervalSecs;
     private final List<VespaService> services;
@@ -54,12 +57,10 @@ public class SystemPoller {
      * @return array[0] = memoryResident, array[1] = memoryVirtual (kB units)
      */
     long[] getMemoryUsage(VespaService service) {
-        long size[] = new long[2];
+        long[] size = new long[2];
         BufferedReader br;
         int pid = service.getPid();
 
-        size[0] = 0;
-        size[1] = 0;
         try {
             br = new BufferedReader(new FileReader("/proc/" + pid + "/smaps"));
         } catch (FileNotFoundException ex) {
@@ -80,7 +81,7 @@ public class SystemPoller {
 
             br.close();
         } catch (IOException ex) {
-            log.log(LogLevel.DEBUG, "Unable to read line from smaps file", ex);
+            log.log(Level.FINE, "Unable to read line from smaps file", ex);
             return size;
         }
 
@@ -100,7 +101,7 @@ public class SystemPoller {
             return;
         }
 
-        log.log(LogLevel.DEBUG, "Monitoring system metrics for " + services.size() + " services");
+        log.log(Level.FINE, () -> "Monitoring system metrics for " + services.size() + " services");
 
         long sysJiffies = getNormalizedSystemJiffies();
         for (VespaService s : services) {
@@ -111,13 +112,13 @@ public class SystemPoller {
             }
 
             Metrics metrics = new Metrics();
-            log.log(LogLevel.DEBUG, "Current size of system metrics for service  " + s + " is " + metrics.size());
+            log.log(Level.FINE, () -> "Current size of system metrics for service  " + s + " is " + metrics.size());
 
             long[] size = getMemoryUsage(s);
-            log.log(LogLevel.DEBUG, "Updating memory metric for service " + s);
+            log.log(Level.FINE, () -> "Updating memory metric for service " + s);
 
-            metrics.add(new Metric("memory_virt", size[memoryTypeVirtual], startTime / 1000));
-            metrics.add(new Metric("memory_rss", size[memoryTypeResident], startTime / 1000));
+            metrics.add(new Metric(MetricId.toMetricId("memory_virt"), size[memoryTypeVirtual], startTime / 1000));
+            metrics.add(new Metric(MetricId.toMetricId("memory_rss"), size[memoryTypeResident], startTime / 1000));
 
             long procJiffies = getPidJiffies(s);
             if (lastTotalCpuJiffies >= 0 && lastCpuJiffiesMetrics.containsKey(s)) {
@@ -125,7 +126,7 @@ public class SystemPoller {
                 long diff = procJiffies - last;
 
                 if (diff >= 0) {
-                    metrics.add(new Metric("cpu", 100 * ((double) diff) / (sysJiffies - lastTotalCpuJiffies), startTime / 1000));
+                    metrics.add(new Metric(MetricId.toMetricId("cpu"), 100 * ((double) diff) / (sysJiffies - lastTotalCpuJiffies), startTime / 1000));
                 }
             }
             lastCpuJiffiesMetrics.put(s, procJiffies);
@@ -151,7 +152,7 @@ public class SystemPoller {
         try {
             in = new BufferedReader(new FileReader("/proc/" + pid + "/stat"));
         } catch (FileNotFoundException ex) {
-            log.log(LogLevel.DEBUG, "Unable to find pid " + pid + " in proc directory, for service " + service.getInstanceName());
+            log.log(Level.FINE, () -> "Unable to find pid " + pid + " in proc directory, for service " + service.getInstanceName());
             service.setAlive(false);
             return 0;
         }
@@ -160,7 +161,7 @@ public class SystemPoller {
             line = in.readLine();
             in.close();
         } catch (IOException ex) {
-            log.log(LogLevel.DEBUG, "Unable to read line from process stat file", ex);
+            log.log(Level.FINE, "Unable to read line from process stat file", ex);
             return 0;
         }
 
@@ -179,7 +180,7 @@ public class SystemPoller {
         try {
             in = new BufferedReader(new FileReader("/proc/stat"));
         } catch (FileNotFoundException ex) {
-            log.log(LogLevel.ERROR, "Unable to open stat file", ex);
+            log.log(Level.SEVERE, "Unable to open stat file", ex);
             return 0;
         }
         try {
@@ -193,7 +194,7 @@ public class SystemPoller {
 
             in.close();
         } catch (IOException ex) {
-            log.log(LogLevel.ERROR, "Unable to read line from stat file", ex);
+            log.log(Level.SEVERE, "Unable to read line from stat file", ex);
             return 0;
         }
 

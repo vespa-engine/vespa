@@ -5,13 +5,16 @@
 namespace search::engine {
 
 Request::Request(RelativeTime relativeTime)
+    : Request(std::move(relativeTime), 0)
+{}
+
+Request::Request(RelativeTime relativeTime, uint32_t reservePropMaps)
     : _relativeTime(std::move(relativeTime)),
       _timeOfDoom(vespalib::steady_time::max()),
       dumpFeatures(false),
       ranking(),
       location(),
-      propertiesMap(),
-      stackItems(0),
+      propertiesMap(reservePropMaps),
       stackDump(),
       _trace(_relativeTime, 0)
 {

@@ -23,7 +23,7 @@ public:
     KeySet() : _keys() { }
     KeySet(uint32_t key);
     explicit KeySet(const IDocumentStore::LidVector &keys);
-    uint32_t hash() const { return _keys.empty() ? 0 : _keys[0]; }
+    uint32_t hash() const noexcept { return _keys.empty() ? 0 : _keys[0]; }
     bool operator==(const KeySet &rhs) const { return _keys == rhs._keys; }
     bool operator<(const KeySet &rhs) const { return _keys < rhs._keys; }
     bool contains(const KeySet &rhs) const;
@@ -40,7 +40,7 @@ class BlobSet {
 public:
     class LidPosition {
     public:
-        LidPosition(uint32_t lid, uint32_t offset, uint32_t size) : _lid(lid), _offset(offset), _size(size) { }
+        LidPosition(uint32_t lid, uint32_t offset, uint32_t size) noexcept : _lid(lid), _offset(offset), _size(size) { }
         uint32_t    lid() const { return _lid; }
         uint32_t offset() const { return _offset; }
         uint32_t   size() const { return _size; }
@@ -150,12 +150,12 @@ private:
         CompressedBlobSet readSet(const KeySet & keys);
         void removeKey(uint32_t key);
     private:
-        void locateAndInvalidateOtherSubsets(const vespalib::LockGuard & cacheGuard, const KeySet & keys);
+        void locateAndInvalidateOtherSubsets(const UniqueLock & cacheGuard, const KeySet & keys);
         using IdSet = vespalib::hash_set<uint64_t>;
         using Parent = vespalib::cache<CacheParams>;
         using LidUniqueKeySetId = vespalib::hash_map<uint32_t, uint64_t>;
         using IdKeySetMap = vespalib::hash_map<uint64_t, KeySet>;
-        IdSet findSetsContaining(const vespalib::LockGuard &, const KeySet & keys) const;
+        IdSet findSetsContaining(const UniqueLock &, const KeySet & keys) const;
         void onInsert(const K & key) override;
         void onRemove(const K & key) override;
         LidUniqueKeySetId _lid2Id;

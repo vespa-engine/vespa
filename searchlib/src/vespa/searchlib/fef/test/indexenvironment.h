@@ -5,6 +5,7 @@
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/fef/onnx_model.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/tablemanager.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
@@ -47,6 +48,8 @@ public:
     };
 
     using ConstantsMap = std::map<vespalib::string, Constant>;
+    using ExprMap = std::map<vespalib::string, vespalib::string>;
+    using ModelMap = std::map<vespalib::string, OnnxModel>;
 
     IndexEnvironment();
     ~IndexEnvironment();
@@ -60,6 +63,7 @@ public:
     void hintFeatureMotivation(FeatureMotivation) const override {}
     void hintFieldAccess(uint32_t) const override {}
     void hintAttributeAccess(const string &) const override {}
+    uint32_t getDistributionKey() const override { return 3; }
 
     /** Returns a reference to the properties map of this. */
     Properties &getProperties() { return _properties; }
@@ -76,11 +80,17 @@ public:
     /** Returns a reference to the table manager of this. */
     TableManager &getTableManager() { return _tableMan; }
 
-    virtual vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override;
+    vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override;
 
     void addConstantValue(const vespalib::string &name,
                           vespalib::eval::ValueType type,
                           std::unique_ptr<vespalib::eval::Value> value);
+
+    vespalib::string getRankingExpression(const vespalib::string &name) const override;
+    void addRankingExpression(const vespalib::string &name, const vespalib::string &value);
+
+    const OnnxModel *getOnnxModel(const vespalib::string &name) const override;
+    void addOnnxModel(const OnnxModel &model);
 
 private:
     IndexEnvironment(const IndexEnvironment &);             // hide
@@ -92,6 +102,8 @@ private:
     AttributeMap           _attrMap;
     TableManager           _tableMan;
     ConstantsMap           _constants;
+    ExprMap                _expressions;
+    ModelMap               _models;
 };
 
 }

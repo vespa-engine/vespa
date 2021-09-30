@@ -5,6 +5,10 @@
 #include <logd/rpc_forwarder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/metrics/dummy_metrics_manager.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+
+
 
 using namespace logdemon;
 using vespalib::metrics::DummyMetricsManager;
@@ -85,7 +89,7 @@ make_log_line(const std::string& level, const std::string& payload)
 
 struct MockMetricsManager : public DummyMetricsManager {
     int add_count;
-    MockMetricsManager() : DummyMetricsManager(), add_count(0) {}
+    MockMetricsManager() noexcept : DummyMetricsManager(), add_count(0) {}
     void add(Counter::Increment) override {
         ++add_count;
     }

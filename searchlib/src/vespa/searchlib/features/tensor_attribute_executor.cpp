@@ -3,13 +3,12 @@
 #include "tensor_attribute_executor.h"
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 TensorAttributeExecutor::
-TensorAttributeExecutor(const search::tensor::ITensorAttribute *attribute)
+TensorAttributeExecutor(const search::tensor::ITensorAttribute& attribute)
     : _attribute(attribute),
-      _emptyTensor(attribute->getEmptyTensor()),
+      _emptyTensor(attribute.getEmptyTensor()),
       _tensor()
 {
 }
@@ -17,7 +16,7 @@ TensorAttributeExecutor(const search::tensor::ITensorAttribute *attribute)
 void
 TensorAttributeExecutor::execute(uint32_t docId)
 {
-    _tensor = _attribute->getTensor(docId);
+    _tensor = _attribute.getTensor(docId);
     if (_tensor) {
         outputs().set_object(0, *_tensor);
     } else {
@@ -25,5 +24,4 @@ TensorAttributeExecutor::execute(uint32_t docId)
     }
 }
 
-} // namespace features
-} // namespace search
+}

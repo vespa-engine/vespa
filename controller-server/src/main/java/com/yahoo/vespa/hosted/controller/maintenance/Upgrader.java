@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 
@@ -17,15 +18,14 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
-import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 
 /**
@@ -34,29 +34,32 @@ import static java.util.Comparator.naturalOrder;
  * @author bratseth
  * @author mpolden
  */
-public class Upgrader extends Maintainer {
+public class Upgrader extends ControllerMaintainer {
 
     private static final Logger log = Logger.getLogger(Upgrader.class.getName());
 
     private final CuratorDb curator;
+    private final Random random;
 
-    public Upgrader(Controller controller, Duration interval, JobControl jobControl, CuratorDb curator) {
-        super(controller, interval, jobControl);
-        this.curator = Objects.requireNonNull(curator, "curator cannot be null");
+    public Upgrader(Controller controller, Duration interval) {
+        super(controller, interval);
+        this.curator = controller.curator();
+        this.random = new Random(controller.clock().instant().toEpochMilli()); // Seed with clock for test determinism
     }
 
     /**
      * Schedule application upgrades. Note that this implementation must be idempotent.
      */
     @Override
-    public void maintain() {
+    public double maintain() {
         // Determine target versions for each upgrade policy
-        Version canaryTarget = controller().systemVersion();
-        Collection<Version> defaultTargets = targetVersions(Confidence.normal);
-        Collection<Version> conservativeTargets = targetVersions(Confidence.high);
+        VersionStatus versionStatus = controller().readVersionStatus();
+        Version canaryTarget = controller().systemVersion(versionStatus);
+        Collection<Version> defaultTargets = targetVersions(Confidence.normal, versionStatus);
+        Collection<Version> conservativeTargets = targetVersions(Confidence.high, versionStatus);
 
         // Cancel upgrades to broken targets (let other ongoing upgrades complete to avoid starvation)
-        for (VespaVersion version : controller().versionStatus().versions()) {
+        for (VespaVersion version : versionStatus.versions()) {
             if (version.confidence() == Confidence.broken)
                 cancelUpgradesOf(instances().upgradingTo(version.versionNumber())
                                             .not().with(UpgradePolicy.canary),
@@ -84,37 +87,40 @@ public class Upgrader extends Maintainer {
 
         // Schedule the right upgrades
         InstanceList instances = instances();
-        upgrade(instances.with(UpgradePolicy.canary), canaryTarget, instances.size());
-        defaultTargets.forEach(target -> upgrade(instances.with(UpgradePolicy.defaultPolicy), target, numberOfApplicationsToUpgrade()));
-        conservativeTargets.forEach(target -> upgrade(instances.with(UpgradePolicy.conservative), target, numberOfApplicationsToUpgrade()));
+        Optional<Integer> targetMajorVersion = targetMajorVersion();
+        upgrade(instances.with(UpgradePolicy.canary), canaryTarget, targetMajorVersion, instances.size());
+        defaultTargets.forEach(target -> upgrade(instances.with(UpgradePolicy.defaultPolicy), target, targetMajorVersion, numberOfApplicationsToUpgrade()));
+        conservativeTargets.forEach(target -> upgrade(instances.with(UpgradePolicy.conservative), target, targetMajorVersion, numberOfApplicationsToUpgrade()));
+        return 1.0;
     }
 
     /** Returns the target versions for given confidence, one per major version in the system */
-    private Collection<Version> targetVersions(Confidence confidence) {
-        return controller().versionStatus().versions().stream()
-                           // Ensure we never pick a version newer than the system
-                           .filter(v -> !v.versionNumber().isAfter(controller().systemVersion()))
-                           .filter(v -> v.confidence().equalOrHigherThan(confidence))
-                           .map(VespaVersion::versionNumber)
-                           .collect(Collectors.toMap(Version::getMajor, // Key on major version
-                                                     Function.identity(),  // Use version as value
-                                                     BinaryOperator.<Version>maxBy(naturalOrder()))) // Pick highest version when merging versions within this major
-                           .values();
+    private Collection<Version> targetVersions(Confidence confidence, VersionStatus versionStatus) {
+        return versionStatus.versions().stream()
+                            // Ensure we never pick a version newer than the system
+                            .filter(v -> !v.versionNumber().isAfter(controller().systemVersion(versionStatus)))
+                            .filter(v -> v.confidence().equalOrHigherThan(confidence))
+                            .map(VespaVersion::versionNumber)
+                            .collect(Collectors.toMap(Version::getMajor, // Key on major version
+                                                      Function.identity(),  // Use version as value
+                                                      BinaryOperator.<Version>maxBy(naturalOrder()))) // Pick highest version when merging versions within this major
+                            .values();
     }
 
     /** Returns a list of all production application instances, except those which are pinned, which we should not manipulate here. */
     private InstanceList instances() {
-        return InstanceList.from(controller().jobController().deploymentStatuses(ApplicationList.from(controller().applications().asList())))
-                           .withProductionDeployment()
+        return InstanceList.from(controller().jobController().deploymentStatuses(ApplicationList.from(controller().applications().readable())))
+                           .withDeclaredJobs()
                            .unpinned();
     }
 
-    private void upgrade(InstanceList instances, Version version, int numberToUpgrade) {
+    private void upgrade(InstanceList instances, Version version, Optional<Integer> targetMajorVersion, int numberToUpgrade) {
         instances.not().failingOn(version)
-                 .allowMajorVersion(version.getMajor(), targetMajorVersion().orElse(version.getMajor()))
+                 .allowMajorVersion(version.getMajor(), targetMajorVersion.orElse(version.getMajor()))
                  .not().deploying()
                  .onLowerVersionThan(version)
                  .canUpgradeAt(version, controller().clock().instant())
+                 .shuffle(random) // Shuffle so we do not always upgrade instances in the same order
                  .byIncreasingDeployedVersion()
                  .first(numberToUpgrade).asList()
                  .forEach(instance -> controller().applications().deploymentTrigger().triggerChange(instance, Change.of(version)));
@@ -130,7 +136,7 @@ public class Upgrader extends Maintainer {
 
     /** Returns the number of applications to upgrade in this run */
     private int numberOfApplicationsToUpgrade() {
-        return numberOfApplicationsToUpgrade(maintenanceInterval().dividedBy(Math.max(1, controller().curator().cluster().size())).toMillis(),
+        return numberOfApplicationsToUpgrade(interval().dividedBy(Math.max(1, controller().curator().cluster().size())).toMillis(),
                                              controller().clock().millis(),
                                              upgradesPerMinute());
     }

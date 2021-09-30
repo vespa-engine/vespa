@@ -11,7 +11,8 @@ import java.util.List;
  */
 public interface AdapterFactory {
 
-    public DocumentAdapter newDocumentAdapter(Document doc);
+    DocumentAdapter newDocumentAdapter(Document doc);
 
-    public List<UpdateAdapter> newUpdateAdapterList(DocumentUpdate upd);
+    List<UpdateAdapter> newUpdateAdapterList(DocumentUpdate upd);
+
 }

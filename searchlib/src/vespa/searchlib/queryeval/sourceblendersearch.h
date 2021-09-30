@@ -6,8 +6,7 @@
 #include "emptysearch.h"
 #include <vector>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
     namespace sourceselector { class Iterator; }
 /**
@@ -29,8 +28,8 @@ public:
     struct Child {
         SearchIterator *search;
         uint32_t    sourceId;
-        Child() : search(NULL), sourceId(0) { }
-        Child(SearchIterator *s, uint32_t id) : search(s), sourceId(id) {}
+        Child() : search(nullptr), sourceId(0) { }
+        Child(SearchIterator *s, uint32_t id) noexcept : search(s), sourceId(id) {}
     };
     typedef std::vector<Child> Children;
 
@@ -69,21 +68,21 @@ public:
      * @param strict whether this search is strict
      * (a strict search will locate its next hit when seeking fails)
      **/
-    static SourceBlenderSearch * create(std::unique_ptr<Iterator> sourceSelector,
-                                        const Children &children, bool strict);
-    virtual ~SourceBlenderSearch();
+    static SearchIterator::UP create(std::unique_ptr<Iterator> sourceSelector,
+                                     const Children &children,
+                                     bool strict);
+    ~SourceBlenderSearch() override;
     size_t getNumChildren() const { return _children.size(); }
     SearchIterator::UP steal(size_t index) {
         SearchIterator::UP retval(_sources[_children[index]]);
-        _sources[_children[index]] = NULL;
+        _sources[_children[index]] = nullptr;
         return retval;
     }
     void setChild(size_t index, SearchIterator::UP child);
     void initRange(uint32_t beginId, uint32_t endId) override;
 };
 
-} // namespace queryeval
-} // namespace search
+}
 
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
            const search::queryeval::SourceBlenderSearch::Child &obj);

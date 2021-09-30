@@ -6,7 +6,7 @@ import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.defaults.Defaults;
 import net.jpountz.xxhash.XXHashFactory;
@@ -79,20 +79,20 @@ class UrlDownloadRpcServer {
             setIfModifiedSince(connection, downloadDir);  // don't download if we already have the file
 
             if (connection.getResponseCode() == 200) {
-                log.log(LogLevel.INFO, "Downloading URL '" + url + "'");
+                log.log(Level.INFO, "Downloading URL '" + url + "'");
                 downloadFile(req, connection, downloadDir);
 
             } else if (connection.getResponseCode() == 304) {
-                log.log(LogLevel.INFO, "URL '" + url + "' already downloaded (server response: 304)");
+                log.log(Level.INFO, "URL '" + url + "' already downloaded (server response: 304)");
                 req.returnValues().add(new StringValue(new File(downloadDir, CONTENTS_FILE_NAME).getAbsolutePath()));
 
             } else {
-                log.log(LogLevel.ERROR, "Download of URL '" + url + "' got server response: " + connection.getResponseCode());
+                log.log(Level.SEVERE, "Download of URL '" + url + "' got server response: " + connection.getResponseCode());
                 req.setError(HTTP_ERROR, String.valueOf(connection.getResponseCode()));
             }
 
         } catch (Throwable e) {
-            log.log(LogLevel.ERROR, "Download of URL '" + url + "' got exception: " + e.getMessage());
+            log.log(Level.SEVERE, "Download of URL '" + url + "' got exception: " + e.getMessage());
             req.setError(INTERNAL_ERROR, "Download of URL '" + url + "' internal error: " + e.getMessage());
         }
         req.returnRequest();
@@ -111,11 +111,11 @@ class UrlDownloadRpcServer {
                     writeLastModifiedTimestamp(downloadDir, connection.getLastModified());
                     new RequestTracker().trackRequest(downloadDir);
                     req.returnValues().add(new StringValue(contentsPath.getAbsolutePath()));
-                    log.log(LogLevel.DEBUG, () -> "URL '" + url + "' available at " + contentsPath);
-                    log.log(LogLevel.INFO, String.format("Download of URL '%s' done in %.3f seconds",
+                    log.log(Level.FINE, () -> "URL '" + url + "' available at " + contentsPath);
+                    log.log(Level.INFO, String.format("Download of URL '%s' done in %.3f seconds",
                                                          url, (System.currentTimeMillis() -start) / 1000.0));
                 } else {
-                    log.log(LogLevel.ERROR, "Downloaded URL '" + url + "' not found, returning error");
+                    log.log(Level.SEVERE, "Downloaded URL '" + url + "' not found, returning error");
                     req.setError(DOES_NOT_EXIST, "Downloaded '" + url + "' not found");
                 }
             }

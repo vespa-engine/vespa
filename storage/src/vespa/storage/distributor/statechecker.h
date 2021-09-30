@@ -6,20 +6,20 @@
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <unordered_set>
 #include <map>
 #include <set>
 
-namespace storage {
+namespace storage::lib {
+    class ClusterState;
+}
+namespace storage { class DistributorConfiguration; }
 
-class DistributorConfiguration;
+namespace storage::distributor {
 
-namespace distributor {
-
-class DistributorComponent;
 class DistributorBucketSpace;
+class DistributorNodeContext;
+class DistributorStripeOperationContext;
 class NodeMaintenanceStatsTracker;
 
 /**
@@ -45,7 +45,8 @@ public:
      */
     struct Context
     {
-        Context(const DistributorComponent&,
+        Context(const DistributorNodeContext& node_ctx_in,
+                const DistributorStripeOperationContext& op_ctx_in,
                 const DistributorBucketSpace &distributorBucketSpace,
                 NodeMaintenanceStatsTracker&,
                 const document::Bucket &bucket_);
@@ -77,7 +78,8 @@ public:
         std::vector<uint16_t> idealState;
         std::unordered_set<uint16_t> unorderedIdealState;
 
-        const DistributorComponent& component;
+        const DistributorNodeContext& node_ctx;
+        const DistributorStripeOperationContext& op_ctx;
         const BucketDatabase& db;
         NodeMaintenanceStatsTracker& stats;
 
@@ -165,6 +167,3 @@ public:
 };
 
 }
-
-}
-

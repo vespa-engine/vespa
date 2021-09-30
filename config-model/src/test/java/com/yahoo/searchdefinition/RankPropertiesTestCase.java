@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.config.model.application.provider.MockFileRegistry;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
@@ -13,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author bratseth
  */
-public class RankPropertiesTestCase extends SearchDefinitionTestCase {
+public class RankPropertiesTestCase extends SchemaTestCase {
 
     @Test
     public void testRankPropertyInheritance() throws ParseException {
@@ -55,8 +57,8 @@ public class RankPropertiesTestCase extends SearchDefinitionTestCase {
             assertEquals("query(a) = 1500", parent.getRankProperties().get(0).toString());
 
             // Check derived model
-            RawRankProfile rawParent = new RawRankProfile(parent, new QueryProfileRegistry(), new ImportedMlModels(), attributeFields);
-            assertEquals("(query(a),1500)", rawParent.configProperties().get(0).toString());
+            RawRankProfile rawParent = new RawRankProfile(parent, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), attributeFields, new TestProperties());
+            assertEquals("(query(a), 1500)", rawParent.configProperties().get(0).toString());
         }
 
         {
@@ -66,10 +68,12 @@ public class RankPropertiesTestCase extends SearchDefinitionTestCase {
 
             // Check derived model
             RawRankProfile rawChild = new RawRankProfile(rankProfileRegistry.get(search, "child"),
+                                                         new LargeRankExpressions(new MockFileRegistry()),
                                                          new QueryProfileRegistry(),
                                                          new ImportedMlModels(),
-                                                         attributeFields);
-            assertEquals("(query(a),2000)", rawChild.configProperties().get(0).toString());
+                                                         attributeFields,
+                                                         new TestProperties());
+            assertEquals("(query(a), 2000)", rawChild.configProperties().get(0).toString());
         }
     }
 

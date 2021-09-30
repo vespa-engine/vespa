@@ -1,18 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "distributorcomponent.h"
+#include "distributor_stripe_component.h"
 #include "statechecker.h"
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
-#include <vespa/vdslib/state/clusterstate.h>
 
 namespace storage::distributor {
 
 class IdealStateMetricSet;
 class IdealStateOperation;
-class Distributor;
+class DistributorStripeInterface;
 class SplitBucketStateChecker;
 
 /**
@@ -29,17 +28,14 @@ class SplitBucketStateChecker;
    may generate Operations. Once one does so, the rest of the state checkers
    aren't run.
 */
-class IdealStateManager : public framework::HtmlStatusReporter,
-                          public MaintenancePriorityGenerator,
+class IdealStateManager : public MaintenancePriorityGenerator,
                           public MaintenanceOperationGenerator
 {
 public:
 
-    IdealStateManager(Distributor& owner,
-                      DistributorBucketSpaceRepo& bucketSpaceRepo,
-                      DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
-                      DistributorComponentRegister& compReg,
-                      bool manageActiveBucketCopies);
+    IdealStateManager(const DistributorNodeContext& node_ctx,
+                      DistributorStripeOperationContext& op_ctx,
+                      IdealStateMetricSet& metrics);
 
     ~IdealStateManager() override;
 
@@ -68,22 +64,18 @@ public:
             const BucketDatabase::Entry& e,
             api::StorageMessage::Priority pri);
 
-    IdealStateMetricSet& getMetrics() { return *_metrics; }
+    IdealStateMetricSet& getMetrics() { return _metrics; }
+
+
+    void dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const;
 
     void getBucketStatus(std::ostream& out) const;
 
-    // HtmlStatusReporter
-    void reportHtmlStatus(
-            std::ostream& out, const framework::HttpUrlPath&) const override {
-        getBucketStatus(out);
-    }
-
-    DistributorComponent& getDistributorComponent() {
-        return _distributorComponent; }
-    StorageComponent::LoadTypeSetSP getLoadTypes() {
-        return _distributorComponent.getLoadTypes(); }
-    DistributorBucketSpaceRepo &getBucketSpaceRepo() { return _bucketSpaceRepo; }
-    const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _bucketSpaceRepo; }
+    const DistributorNodeContext& node_context() const { return _node_ctx; }
+    DistributorStripeOperationContext& operation_context() { return _op_ctx; }
+    const DistributorStripeOperationContext& operation_context() const { return _op_ctx; }
+    DistributorBucketSpaceRepo &getBucketSpaceRepo() { return _op_ctx.bucket_space_repo(); }
+    const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _op_ctx.bucket_space_repo(); }
 
 private:
     void verify_only_live_nodes_in_context(const StateChecker::Context& c) const;
@@ -96,7 +88,7 @@ private:
 
     BucketDatabase::Entry* getEntryForPrimaryBucket(StateChecker::Context& c) const;
 
-    std::shared_ptr<IdealStateMetricSet> _metrics;
+    IdealStateMetricSet& _metrics;
     document::BucketId _lastPrioritizedBucket;
 
     // Prioritized of state checkers that generate operations
@@ -104,8 +96,8 @@ private:
     std::vector<StateChecker::SP> _stateCheckers;
     SplitBucketStateChecker* _splitBucketStateChecker;
 
-    DistributorComponent            _distributorComponent;
-    DistributorBucketSpaceRepo     &_bucketSpaceRepo;
+    const DistributorNodeContext& _node_ctx;
+    DistributorStripeOperationContext& _op_ctx;
     mutable bool _has_logged_phantom_replica_warning;
 
     bool iAmUp() const;
@@ -129,7 +121,6 @@ private:
 
     void getBucketStatus(document::BucketSpace bucketSpace, const BucketDatabase::ConstEntryRef& entry,
                          NodeMaintenanceStatsTracker& statsTracker, std::ostream& out) const;
-    void dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const;
 };
 
 }

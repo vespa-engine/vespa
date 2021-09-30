@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 import java.util.List;
@@ -21,18 +21,19 @@ public interface NameService {
     Record createCname(RecordName name, RecordData canonicalName);
 
     /**
-     * Create a non-standard ALIAS record pointing to given targets. Implementations of this can be expected to be
+     * Create a non-standard ALIAS record pointing to given targets. Implementations of this are expected to be
      * idempotent
      *
-     * @param targets Targets that should be resolved by this alias. pointing to given targets.
-     * @return The created records. One for each target.
+     * @param targets Targets that should be resolved by this name.
+     * @return The created records. One per target.
      */
     List<Record> createAlias(RecordName name, Set<AliasTarget> targets);
 
     /**
      * Create a new TXT record containing the provided data.
      * @param name Name of the created record
-     * @param txtRecords TXT data values for the record, each consisting of one or more space-separated <em>double-quoted</em> strings: "string1" "string2"
+     * @param txtRecords TXT data values for the record, each consisting of one or more space-separated double-quoted
+     *                   strings: "string1" "string2"
      * @return The created records
      */
     List<Record> createTxtRecords(RecordName name, List<RecordData> txtRecords);

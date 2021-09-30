@@ -11,7 +11,7 @@ import static org.junit.Assert.assertNotNull;
  *
  * @author frodelu
  */
-public class IndexingParsingTestCase extends SearchDefinitionTestCase {
+public class IndexingParsingTestCase extends SchemaTestCase {
 
     @Test
     public void requireThatIndexingExpressionsCanBeParsed() throws Exception {

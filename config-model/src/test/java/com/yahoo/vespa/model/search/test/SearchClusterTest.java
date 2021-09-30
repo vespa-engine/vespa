@@ -22,7 +22,11 @@ import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 
 /**
  * Unit tests for SearchCluster. Please use this instead of SearchModelTestCase if possible and
@@ -36,7 +40,7 @@ public class SearchClusterTest {
     public void testSdConfigLogical() {
         // sd1
         SDDocumentType sdt1 = new SDDocumentType("s1");
-        Search search1 = new Search("s1", null);
+        Search search1 = new Search("s1");
         SDField f1 = new SDField("f1", DataType.STRING);
         f1.addAttribute(new Attribute("f1", DataType.STRING));
         f1.setIndexingScript(new ScriptExpression(new StatementExpression(new AttributeExpression("f1"))));
@@ -45,7 +49,7 @@ public class SearchClusterTest {
 
         // sd2
         SDDocumentType sdt2 = new SDDocumentType("s2");
-        Search search2 = new Search("s2", null);
+        Search search2 = new Search("s2");
         SDField f2=new SDField("f2", DataType.STRING);
         f2.addAttribute(new Attribute("f2", DataType.STRING));
         f2.setIndexingScript(new ScriptExpression(new StatementExpression(new AttributeExpression("f2"))));
@@ -123,7 +127,7 @@ public class SearchClusterTest {
                 "  </content>" +
                 "</services>";
 
-        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, services, ApplicationPackageUtils.generateSearchDefinitions("music")).create();
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, services, ApplicationPackageUtils.generateSchemas("music")).create();
 
         ContainerCluster containerCluster1 = (ContainerCluster)model.getConfigProducer("j1").get();
         assertFalse(containerCluster1.getSearch().getChains().localProviders().isEmpty());
@@ -170,17 +174,19 @@ public class SearchClusterTest {
         assertEquals("com.yahoo.search.dispatch.Dispatcher", dispatcher.getClassId().stringValue());
         assertEquals("j1/component/dispatcher." + cluster, dispatcher.getConfigId());
         DispatchConfig.Builder dispatchConfigBuilder = new DispatchConfig.Builder();
-        model.getConfig(dispatchConfigBuilder, "j1/component/dispatcher." + cluster);
+        model.getConfig(dispatchConfigBuilder, dispatcher.getConfigId());
         assertEquals(host, dispatchConfigBuilder.build().node(0).host());
 
-        Component<?,?> rpcResourcePool = (Component<?, ?>)containerCluster.getComponentsMap().get(new ComponentId("rpcresourcepool." + cluster));
-        assertNotNull(dispatcher);
+        assertTrue(dispatcher.getInjectedComponentIds().contains("rpcresourcepool." + cluster));
+
+        Component<?,?> rpcResourcePool = (Component<?, ?>)dispatcher.getChildren().get("rpcresourcepool." + cluster);
+        assertNotNull(rpcResourcePool);
         assertEquals("rpcresourcepool." + cluster, rpcResourcePool.getComponentId().stringValue());
         assertEquals("com.yahoo.search.dispatch.rpc.RpcResourcePool", rpcResourcePool.getClassId().stringValue());
-        assertEquals("j1/component/rpcresourcepool."+cluster, rpcResourcePool.getConfigId());
-        DispatchConfig.Builder rpcResourcePoolDispatchConfigBuilder = new DispatchConfig.Builder();
-        model.getConfig(rpcResourcePoolDispatchConfigBuilder, "j1/component/rpcresourcepool." + cluster);
-        assertEquals(host, rpcResourcePoolDispatchConfigBuilder.build().node(0).host());
+        assertEquals("j1/component/dispatcher." + cluster + "/rpcresourcepool." + cluster, rpcResourcePool.getConfigId());
+        dispatchConfigBuilder = new DispatchConfig.Builder();
+        model.getConfig(dispatchConfigBuilder, rpcResourcePool.getConfigId());
+        assertEquals(host, dispatchConfigBuilder.build().node(0).host());
     }
 
 }

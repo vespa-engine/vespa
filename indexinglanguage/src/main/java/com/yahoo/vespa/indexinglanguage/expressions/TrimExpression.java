@@ -2,25 +2,25 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.StringFieldValue;
 
 /**
  * @author Simon Thoresen Hult
  */
 public final class TrimExpression extends Expression {
+
     public TrimExpression() {
         super(DataType.STRING);
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(new StringFieldValue(String.valueOf(ctx.getValue()).trim()));
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(new StringFieldValue(String.valueOf(context.getValue()).trim()));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

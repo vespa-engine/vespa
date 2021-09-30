@@ -304,7 +304,7 @@ public:
      *
      * @param f Reference to FSA.
      */
-    State(const FSA& f) : _fsa(&f), _state(_fsa->start()) {}
+    State(const FSA& f) noexcept : _fsa(&f), _state(_fsa->start()) {}
 
     /**
      * @brief Constructor.
@@ -314,7 +314,7 @@ public:
      *
      * @param f Pointer to FSA.
      */
-    State(const FSA* f) : _fsa(f), _state(_fsa->start()) {}
+    State(const FSA* f) noexcept : _fsa(f), _state(_fsa->start()) {}
 
     /**
      * @brief Copy constructor.
@@ -325,14 +325,14 @@ public:
      *
      * @param s Reference to state to be duplicated.
      */
-    State(const State& s) : _fsa(s._fsa), _state(s._state) {}
+    State(const State& s) noexcept : _fsa(s._fsa), _state(s._state) {}
 
     /**
      * @brief Destructor.
      *
      * Destructor, does nothing special.
      */
-    virtual ~State() {}
+    virtual ~State() = default;
 
     /**
      * @brief Check if the automaton has perfect hash built in.
@@ -1043,7 +1043,7 @@ public:
      *
      * @param f Reference to FSA.
      */
-    WordCounterState(const FSA& f) : State(f), _counter(0) {}
+    WordCounterState(const FSA& f) noexcept : State(f), _counter(0) {}
 
     /**
      * @brief Constructor.
@@ -1053,7 +1053,7 @@ public:
      *
      * @param f Pointer to FSA.
      */
-    WordCounterState(const FSA* f) : State(f), _counter(0) {}
+    WordCounterState(const FSA* f) noexcept : State(f), _counter(0) {}
 
     /**
      * @brief Copy constructor.
@@ -1062,12 +1062,12 @@ public:
      *
      * @param s Reference to hashed state to copy.
      */
-    WordCounterState(const WordCounterState& s) : State(s), _counter(s._counter) {}
+    WordCounterState(const WordCounterState& s) noexcept : State(s), _counter(s._counter) {}
 
     /**
      * @brief Destructor.
      */
-    virtual ~WordCounterState() {}
+    virtual ~WordCounterState() = default;
 
     /**
      * @brief Set the state to the starting state of the automaton.
@@ -1798,7 +1798,7 @@ public:
      *
      * @param f Reference to FSA.
      */
-    HashedWordCounterState(const FSA& f) : State(f), _hash(0), _counter(0) {}
+    HashedWordCounterState(const FSA& f) noexcept : State(f), _hash(0), _counter(0) {}
 
     /**
      * @brief Constructor.
@@ -1808,7 +1808,7 @@ public:
      *
      * @param f Pointer to FSA.
      */
-    HashedWordCounterState(const FSA* f) : State(f), _hash(0), _counter(0) {}
+    HashedWordCounterState(const FSA* f) noexcept : State(f), _hash(0), _counter(0) {}
 
     /**
      * @brief Copy constructor.
@@ -1817,12 +1817,12 @@ public:
      *
      * @param s Reference to hashed state to copy.
      */
-    HashedWordCounterState(const HashedWordCounterState& s) : State(s), _hash(s._hash), _counter(s._counter) {}
+    HashedWordCounterState(const HashedWordCounterState& s) noexcept : State(s), _hash(s._hash), _counter(s._counter) {}
 
     /**
      * @brief Destructor.
      */
-    virtual ~HashedWordCounterState() {}
+    virtual ~HashedWordCounterState() = default;
 
     /**
      * @brief Set the state to the starting state of the automaton.
@@ -2120,7 +2120,7 @@ public:
    *
    * @return Index of the start state (0 if the %FSA is empty).
    */
-  state_t start() const
+  state_t start() const noexcept
   {
     return _start;
   }

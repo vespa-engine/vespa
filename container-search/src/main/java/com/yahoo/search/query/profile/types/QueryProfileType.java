@@ -177,11 +177,12 @@ public class QueryProfileType extends FreezableSimpleComponent {
 
     public void freeze() {
         if (isFrozen()) return;
-        // Flatten the inheritance hierarchy into this to facilitate faster lookup
+        // Flatten for faster lookup
         for (QueryProfileType inheritedType : inherited) {
             for (FieldDescription field : inheritedType.fields().values())
-                if ( ! fields.containsKey(field.getName()))
-                    fields.put(field.getName(),field);
+                if ( ! fields.containsKey(field.getName())) {
+                    fields.put(field.getName(), field);
+                }
         }
         fields = ImmutableMap.copyOf(fields);
         inherited = ImmutableList.copyOf(inherited);
@@ -354,9 +355,10 @@ public class QueryProfileType extends FreezableSimpleComponent {
         if (inherited().size() == 0) return Collections.unmodifiableMap(fields);
 
         // Collapse inherited
-        Map<String, FieldDescription> allFields = new HashMap<>(fields);
+        Map<String, FieldDescription> allFields = new HashMap<>();
         for (QueryProfileType inheritedType : inherited)
             allFields.putAll(inheritedType.fields());
+        allFields.putAll(fields);
         return Collections.unmodifiableMap(allFields);
     }
 

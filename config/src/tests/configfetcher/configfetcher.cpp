@@ -1,9 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/helper/configfetcher.h>
+#include <vespa/config/common/configcontext.h>
 #include <vespa/vespalib/util/exception.h>
 #include "config-my.h"
 #include <atomic>
+#include <thread>
 
 using namespace config;
 
@@ -12,7 +14,7 @@ class MyCallback : public IFetcherCallback<MyConfig>
 {
 public:
     MyCallback(const std::string & badConfig="");
-    ~MyCallback();
+    ~MyCallback() override;
     void configure(std::unique_ptr<MyConfig> config) override
     {
         _config = std::move(config);
@@ -49,7 +51,7 @@ TEST("requireThatConfigUpdatesArePerformed") {
     FileSpec spec("test1.cfg");
     MyCallback cb;
     cb._configured = false;
-    vespalib::ThreadStackExecutor executor(1, 128 * 1024);
+    vespalib::ThreadStackExecutor executor(1, 128_Ki);
 
     {
         ConfigFetcher fetcher(500);
@@ -126,7 +128,7 @@ struct ConfigFixture {
     ConfigContext::SP context;
     ConfigFixture() : builder(), set(), context() {
         set.addBuilder("cfgid", &builder);
-        context.reset(new ConfigContext(set));
+        context = std::make_shared<ConfigContext>(set);
     }
 };
 

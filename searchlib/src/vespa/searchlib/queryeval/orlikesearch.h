@@ -46,8 +46,8 @@ public:
      *
      * @param children the search objects we are or'ing
      **/
-    OrLikeSearch(const Children &children, const Unpack & unpacker) :
-        OrSearch(children),
+    OrLikeSearch(Children children, const Unpack & unpacker)
+      : OrSearch(std::move(children)),
         _unpacker(unpacker)
     { }
 private:

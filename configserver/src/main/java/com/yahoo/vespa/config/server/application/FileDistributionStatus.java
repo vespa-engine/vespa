@@ -10,7 +10,7 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
-import com.yahoo.log.LogLevel;
+import java.util.logging.Level;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 
@@ -39,7 +39,7 @@ public class FileDistributionStatus extends AbstractComponent {
     enum Status {UNKNOWN, FINISHED, IN_PROGRESS}
 
     private final ExecutorService rpcExecutor = Executors.newCachedThreadPool(new DaemonThreadFactory("filedistribution status"));
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor = new Supervisor(new Transport("filedistribution-status"));
 
     public StatusAllHosts status(Application application, Duration timeout) {
         List<HostStatus> hostStatuses = new ArrayList<>();
@@ -56,7 +56,7 @@ public class FileDistributionStatus extends AbstractComponent {
             try {
                 hostStatuses.add(future.get());
             } catch (InterruptedException | ExecutionException e) {
-                log.log(LogLevel.WARNING, "Failed getting file distribution status", e);
+                log.log(Level.WARNING, "Failed getting file distribution status", e);
             }
         });
         return createStatusForAllHosts(hostStatuses);
@@ -145,6 +145,11 @@ public class FileDistributionStatus extends AbstractComponent {
 
             object.setString("status", status.name());
         }
+    }
+
+    @Override
+    public void deconstruct() {
+        rpcExecutor.shutdownNow();
     }
 
     static class HostStatus {

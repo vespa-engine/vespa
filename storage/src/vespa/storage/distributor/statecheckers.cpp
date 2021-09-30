@@ -2,13 +2,15 @@
 
 #include "statecheckers.h"
 #include "activecopy.h"
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/joinoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/removebucketoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/setbucketstateoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/log.h>
@@ -82,15 +84,14 @@ StateChecker::Result
 SplitBucketStateChecker::generateMinimumBucketSplitOperation(
         StateChecker::Context& c)
 {
-    IdealStateOperation::UP so(new SplitOperation(
-                c.component.getClusterName(),
+    auto so = std::make_unique<SplitOperation>(
+                c.node_ctx,
                 BucketAndNodes(c.getBucket(), c.entry->getNodes()),
                 c.distributorConfig.getMinimalBucketSplit(),
                 0,
-                0));
+                0);
 
-    so->setPriority(c.distributorConfig.getMaintenancePriorities()
-                    .splitDistributionBits);
+    so->setPriority(c.distributorConfig.getMaintenancePriorities().splitDistributionBits);
     so->setDetailedReason(
             "[Splitting bucket because the current system size requires "
             "a higher minimum split bit]");
@@ -101,15 +102,14 @@ StateChecker::Result
 SplitBucketStateChecker::generateMaxSizeExceededSplitOperation(
         StateChecker::Context& c)
 {
-    IdealStateOperation::UP so(new SplitOperation(                
-                c.component.getClusterName(),
+    auto so = std::make_unique<SplitOperation>(
+                c.node_ctx,
                 BucketAndNodes(c.getBucket(), c.entry->getNodes()),
                 58,
                 c.distributorConfig.getSplitCount(),
-                c.distributorConfig.getSplitSize()));
+                c.distributorConfig.getSplitSize());
 
-    so->setPriority(c.distributorConfig.getMaintenancePriorities()
-                    .splitLargeBucket);
+    so->setPriority(c.distributorConfig.getMaintenancePriorities().splitLargeBucket);
 
     const BucketInfo& info(c.entry.getBucketInfo());
     vespalib::asciistream ost;
@@ -465,12 +465,11 @@ JoinBucketsStateChecker::check(StateChecker::Context& c)
         sourceBuckets.push_back(c.getBucketId());
     }
     sourceBuckets.push_back(c.getBucketId());
-    IdealStateOperation::UP op(new JoinOperation(
-            c.component.getClusterName(),
+    auto op = std::make_unique<JoinOperation>(
+            c.node_ctx,
             BucketAndNodes(joinedBucket, c.entry->getNodes()),
-            sourceBuckets));
-    op->setPriority(c.distributorConfig.getMaintenancePriorities()
-                    .joinBuckets);
+            sourceBuckets);
+    op->setPriority(c.distributorConfig.getMaintenancePriorities().joinBuckets);
     vespalib::asciistream ost;
     ost << "[Joining buckets "
         << sourceBuckets[1].toString()
@@ -570,15 +569,14 @@ SplitInconsistentStateChecker::check(StateChecker::Context& c)
         return Result::noMaintenanceNeeded();
     }
     
-    IdealStateOperation::UP op(new SplitOperation(
-            c.component.getClusterName(),
+    auto op = std::make_unique<SplitOperation>(
+            c.node_ctx,
             BucketAndNodes(c.getBucket(), c.entry->getNodes()),
             getHighestUsedBits(c.entries),
             0,
-            0));
+            0);
 
-    op->setPriority(c.distributorConfig.getMaintenancePriorities()
-                    .splitInconsistentBucket);
+    op->setPriority(c.distributorConfig.getMaintenancePriorities().splitInconsistentBucket);
     op->setDetailedReason(getReason(c.getBucketId(), c.entries));
     return Result::createStoredResult(std::move(op), MaintenancePriority::HIGH);
 }
@@ -861,11 +859,21 @@ SynchronizeAndMoveStateChecker::check(StateChecker::Context& c)
         IdealStateOperation::UP op(
                 new MergeOperation(BucketAndNodes(c.getBucket(), result.nodes()),
                                    c.distributorConfig.getMaxNodesPerMerge()));
-        op->setPriority(result.priority());
         op->setDetailedReason(result.reason());
-        MaintenancePriority::Priority schedPri(
-                result.needsMoveOnly() ? MaintenancePriority::LOW
-                                       : MaintenancePriority::MEDIUM);
+        MaintenancePriority::Priority schedPri;
+        if ((c.getBucketSpace() == document::FixedBucketSpaces::default_space())
+            || !c.distributorConfig.prioritize_global_bucket_merges())
+        {
+            schedPri = (result.needsMoveOnly() ? MaintenancePriority::LOW
+                                               : MaintenancePriority::MEDIUM);
+            op->setPriority(result.priority());
+        } else {
+            // Since the default bucket space has a dependency on the global bucket space,
+            // we prioritize scheduling of merges to global buckets over those for default buckets.
+            // We also prioritize these above bucket deletions for the default space to avoid starvation.
+            schedPri = MaintenancePriority::VERY_HIGH;
+            op->setPriority(c.distributorConfig.getMaintenancePriorities().mergeGlobalBuckets);
+        }
 
         return Result::createStoredResult(std::move(op), schedPri);
     } else {
@@ -961,8 +969,7 @@ DeleteExtraCopiesStateChecker::removeRedundantEmptyOrConsistentCopies(
                    && enoughCopiesKept(keptIdealCopies, keptNonIdealCopies, c)
                    && !cp.active())
         {
-            addToRemoveSet(cp, "redundant in-sync copy",
-                           removedCopies, reasons);
+            addToRemoveSet(cp, "redundant in-sync copy", removedCopies, reasons);
         } else {
             ++keptNonIdealCopies;
         }
@@ -1001,12 +1008,11 @@ DeleteExtraCopiesStateChecker::check(StateChecker::Context& c)
     }
 
     if (!removedCopies.empty()) {
-        IdealStateOperation::UP ro(new RemoveBucketOperation(
-                c.component.getClusterName(),
-                BucketAndNodes(c.getBucket(), removedCopies)));
+        auto ro = std::make_unique<RemoveBucketOperation>(
+                c.node_ctx,
+                BucketAndNodes(c.getBucket(), removedCopies));
 
-        ro->setPriority(c.distributorConfig.getMaintenancePriorities()
-                        .deleteBucketCopy);
+        ro->setPriority(c.distributorConfig.getMaintenancePriorities().deleteBucketCopy);
         ro->setDetailedReason(reasons.str());
         return Result::createStoredResult(std::move(ro), MaintenancePriority::HIGH);
     }
@@ -1056,7 +1062,8 @@ BucketStateStateChecker::check(StateChecker::Context& c)
     }
 
     ActiveList activeNodes(
-            ActiveCopy::calculate(c.idealState, c.distribution, c.entry));
+            ActiveCopy::calculate(c.idealState, c.distribution, c.entry,
+                                  c.distributorConfig.max_activation_inhibited_out_of_sync_groups()));
     if (activeNodes.empty()) {
         return Result::noMaintenanceNeeded();
     }
@@ -1103,7 +1110,7 @@ BucketStateStateChecker::check(StateChecker::Context& c)
         activeNodeIndexes.push_back(activeNodes[i]._nodeIndex);
     }
     auto op = std::make_unique<SetBucketStateOperation>(
-            c.component.getClusterName(),
+            c.node_ctx,
             BucketAndNodes(c.getBucket(), operationNodes),
             activeNodeIndexes);
 
@@ -1116,7 +1123,7 @@ BucketStateStateChecker::check(StateChecker::Context& c)
         op->setPriority(c.distributorConfig.getMaintenancePriorities().activateWithExistingActive);
     }
     op->setDetailedReason(reason.str());
-    return Result::createStoredResult(std::move(op), MaintenancePriority::VERY_HIGH);
+    return Result::createStoredResult(std::move(op), MaintenancePriority::HIGHEST);
 }
 
 bool
@@ -1130,7 +1137,7 @@ GarbageCollectionStateChecker::needsGarbageCollection(const Context& c) const
     }
     std::chrono::seconds lastRunAt(c.entry->getLastGarbageCollectionTime());
     std::chrono::seconds currentTime(
-            c.component.getClock().getTimeInSeconds().getTime());
+            c.node_ctx.clock().getTimeInSeconds().getTime());
 
     return c.gcTimeCalculator.shouldGc(c.getBucketId(), currentTime, lastRunAt);
 }
@@ -1139,16 +1146,15 @@ StateChecker::Result
 GarbageCollectionStateChecker::check(Context& c)
 {
     if (needsGarbageCollection(c)) {
-        IdealStateOperation::UP op(
-                new GarbageCollectionOperation(
-                        c.component.getClusterName(),
-                        BucketAndNodes(c.getBucket(), c.entry->getNodes())));
+        auto op = std::make_unique<GarbageCollectionOperation>(
+                        c.node_ctx,
+                        BucketAndNodes(c.getBucket(), c.entry->getNodes()));
 
         vespalib::asciistream reason;
         reason << "[Needs garbage collection: Last check at "
                << c.entry->getLastGarbageCollectionTime()
                << ", current time "
-               << c.component.getClock().getTimeInSeconds().getTime()
+               << c.node_ctx.clock().getTimeInSeconds().getTime()
                << ", configured interval "
                << vespalib::to_s(c.distributorConfig.getGarbageCollectionInterval()) << "]";
 

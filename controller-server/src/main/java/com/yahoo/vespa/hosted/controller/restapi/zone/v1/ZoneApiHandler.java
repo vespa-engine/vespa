@@ -29,8 +29,6 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class ZoneApiHandler extends LoggingRequestHandler {
 
-    private static final String OPTIONAL_PREFIX = "/api";
-
     private final ZoneRegistry zoneRegistry;
 
     public ZoneApiHandler(LoggingRequestHandler.Context parentCtx, ServiceRegistry serviceRegistry) {
@@ -57,7 +55,7 @@ public class ZoneApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse get(HttpRequest request) {
-        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
+        Path path = new Path(request.getUri());
         if (path.matches("/zone/v1")) {
             return root(request);
         }

@@ -2,8 +2,6 @@
 
 #include "match_phase_limit_calculator.h"
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
-} // namespace proton::matching
-} // namespace proton
+}

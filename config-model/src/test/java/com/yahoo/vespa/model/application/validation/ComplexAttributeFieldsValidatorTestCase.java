@@ -15,6 +15,7 @@ import org.junit.rules.ExpectedException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
@@ -29,11 +30,7 @@ public class ComplexAttributeFieldsValidatorTestCase {
     @Test
     public void throws_exception_when_unsupported_complex_fields_have_struct_field_attributes() throws IOException, SAXException {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For cluster 'mycluster', search 'test': " +
-                "The following complex fields do not support using struct field attributes: " +
-                "struct_array (struct_array.f1), struct_map (struct_map.key, struct_map.value.f1). " +
-                "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types");
-
+        exceptionRule.expectMessage(getExpectedMessage("struct_array (struct_array.f1), struct_map (struct_map.value.f1)"));
         createModelAndValidate(joinLines("search test {",
                 "  document test {",
                 "    struct s { field f1 type array<int> {} }",
@@ -46,6 +43,37 @@ public class ComplexAttributeFieldsValidatorTestCase {
                 "    }",
                 "  }",
                 "}"));
+    }
+
+    @Test
+    public void throws_exception_when_nested_struct_array_is_specified_as_struct_field_attribute() throws IOException, SAXException {
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage(getExpectedMessage("docTopics (docTopics.topics)"));
+        createModelAndValidate(joinLines(
+                "schema test {",
+                "document test {",
+                "struct topic {",
+                "  field id type string {}",
+                "  field label type string {}",
+                "}",
+                "struct docTopic {",
+                "  field id type string {}",
+                "  field topics type array<topic> {}",
+                "}",
+                "field docTopics type array<docTopic> {",
+                "  indexing: summary",
+                "  struct-field id { indexing: attribute }",
+                "  struct-field topics { indexing: attribute }",
+                "}",
+                "}",
+                "}"));
+    }
+
+    private String getExpectedMessage(String unsupportedFields) {
+        return "For cluster 'mycluster', search 'test': " +
+                "The following complex fields do not support using struct field attributes: " +
+                unsupportedFields + ". " +
+                "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types";
     }
 
     @Test
@@ -72,17 +100,17 @@ public class ComplexAttributeFieldsValidatorTestCase {
                 "}"));
     }
 
-    private static void createModelAndValidate(String searchDefinition) throws IOException, SAXException {
-        DeployState deployState = createDeployState(servicesXml(), searchDefinition);
+    private static void createModelAndValidate(String schema) throws IOException, SAXException {
+        DeployState deployState = createDeployState(servicesXml(), schema);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         ValidationParameters validationParameters = new ValidationParameters(CheckRouting.FALSE);
         Validation.validate(model, validationParameters, deployState);
     }
 
-    private static DeployState createDeployState(String servicesXml, String searchDefinition) {
+    private static DeployState createDeployState(String servicesXml, String schema) {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
-                .withSearchDefinition(searchDefinition)
+                .withSchemas(List.of(schema))
                 .build();
         return new DeployState.Builder().applicationPackage(app).build();
     }

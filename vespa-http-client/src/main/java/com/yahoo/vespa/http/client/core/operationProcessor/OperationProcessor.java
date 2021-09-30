@@ -15,7 +15,9 @@ import com.yahoo.vespa.http.client.core.communication.ClusterConnection;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,16 +57,19 @@ public class OperationProcessor {
     private final boolean traceToStderr;
     private final ThreadGroup ioThreadGroup;
     private final String clientId = new BigInteger(130, random).toString(32);
+    private final Clock clock;
 
     public OperationProcessor(IncompleteResultsThrottler incompleteResultsThrottler,
                               FeedClient.ResultCallback resultCallback,
                               SessionParams sessionParams,
-                              ScheduledThreadPoolExecutor timeoutExecutor) {
+                              ScheduledThreadPoolExecutor timeoutExecutor,
+                              Clock clock) {
         this.numDestinations = sessionParams.getClusters().size();
         this.resultCallback = resultCallback;
         this.incompleteResultsThrottler = incompleteResultsThrottler;
         this.timeoutExecutor = timeoutExecutor;
         this.ioThreadGroup = new ThreadGroup("operationprocessor");
+        this.clock = clock;
 
         if (sessionParams.getClusters().isEmpty())
             throw new IllegalArgumentException("Cannot feed to 0 clusters.");
@@ -82,7 +87,8 @@ public class OperationProcessor {
                                                cluster,
                                                i,
                                                sessionParams.getClientQueueSize() / sessionParams.getClusters().size(),
-                                               timeoutExecutor));
+                                               timeoutExecutor,
+                                               clock));
         }
         operationStats = new OperationStats(sessionParams, clusters, incompleteResultsThrottler);
         maxRetries = sessionParams.getConnectionParams().getMaxRetries();
@@ -181,7 +187,7 @@ public class OperationProcessor {
             }
         }
         if (blockedDocumentToSend != null) {
-            sendToClusters(blockedDocumentToSend);
+            sendToClusters(blockedDocumentToSend, clock);
         }
         return result;
     }
@@ -225,13 +231,13 @@ public class OperationProcessor {
             inflightDocumentIds.add(document.getDocumentId());
         }
 
-        sendToClusters(document);
+        sendToClusters(document, clock);
     }
 
-    private void sendToClusters(Document document) {
+    private void sendToClusters(Document document, Clock clock) {
         synchronized (monitor) {
             boolean traceThisDoc = traceEveryXOperation > 0 && traceCounter++ % traceEveryXOperation == 0;
-            docSendInfoByOperationId.put(document.getOperationId(), new DocumentSendInfo(document, traceThisDoc));
+            docSendInfoByOperationId.put(document.getOperationId(), new DocumentSendInfo(document, traceThisDoc, clock));
         }
 
         for (ClusterConnection clusterConnection : clusters) {
@@ -249,6 +255,8 @@ public class OperationProcessor {
                                                              clusterConnection.getClusterId());
         }
     }
+
+    public List<ClusterConnection> clusters() { return Collections.unmodifiableList(clusters); }
 
     public String getStatsAsJson() {
         return operationStats.getStatsAsJson();

@@ -3,8 +3,7 @@
 #include "stat.h"
 #include <ostream>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 IMPLEMENT_COMMAND(StatBucketCommand, StatBucketReply)
 IMPLEMENT_REPLY(StatBucketReply)
@@ -18,7 +17,7 @@ StatBucketCommand::StatBucketCommand(const document::Bucket& bucket,
 {
 }
 
-StatBucketCommand::~StatBucketCommand() {}
+StatBucketCommand::~StatBucketCommand() = default;
 
 void
 StatBucketCommand::print(std::ostream& out, bool verbose,
@@ -102,5 +101,4 @@ operator<<(std::ostream& out, const GetBucketListReply::BucketInfo& instance)
     return out;
 }
 
-} // api
-} // storage
+}

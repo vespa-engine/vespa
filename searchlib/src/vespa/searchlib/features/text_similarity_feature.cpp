@@ -3,6 +3,7 @@
 #include "text_similarity_feature.h"
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
+#include <vespa/vespalib/util/stash.h>
 
 namespace search::features {
 
@@ -194,7 +195,7 @@ TextSimilarityBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &env,
 fef::Blueprint::UP
 TextSimilarityBlueprint::createInstance() const
 {
-    return Blueprint::UP(new TextSimilarityBlueprint());
+    return std::make_unique<TextSimilarityBlueprint>();
 }
 
 bool
@@ -217,7 +218,5 @@ TextSimilarityBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespa
 {
     return stash.create<TextSimilarityExecutor>(env, _field_id);
 }
-
-//-----------------------------------------------------------------------------
 
 }

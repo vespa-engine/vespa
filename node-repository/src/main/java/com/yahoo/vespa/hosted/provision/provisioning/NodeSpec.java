@@ -1,11 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.Node;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -45,7 +48,7 @@ public interface NodeSpec {
     boolean considerRetiring();
 
     /** Returns the ideal number of nodes that should be retired to fulfill this spec */
-    int idealRetiredCount(int acceptedCount, int currentRetiredCount);
+    int idealRetiredCount(int acceptedCount, int wantToRetireCount, int currentRetiredCount);
 
     /** Returns number of additional nodes needed for this spec to be fulfilled given the current node count */
     int fulfilledDeficitCount(int count);
@@ -56,12 +59,21 @@ public interface NodeSpec {
     /** Returns the resources requested by this or empty if none are explicitly requested */
     Optional<NodeResources> resources();
 
+    /** Returns whether the given node must be resized to match this spec */
+    boolean needsResize(Node node);
+
+    /** Returns true if there exist some circumstance where we may accept to have this node allocated */
+    boolean acceptable(NodeCandidate node);
+
+    /** Returns true if nodes with non-active parent hosts should be rejected */
+    boolean rejectNonActiveParent();
+
     /**
      * Returns true if a node with given current resources and current spare host resources can be resized
      * in-place to resources in this spec.
      */
     default boolean canResize(NodeResources currentNodeResources, NodeResources currentSpareHostResources,
-                              boolean hasTopologyChange, int currentClusterSize) {
+                              ClusterSpec.Type type, boolean hasTopologyChange, int currentClusterSize) {
         return false;
     }
 
@@ -121,7 +133,9 @@ public interface NodeSpec {
         }
 
         @Override
-        public int idealRetiredCount(int acceptedCount, int currentRetiredCount) { return acceptedCount - this.count; }
+        public int idealRetiredCount(int acceptedCount, int wantToRetireCount, int currentRetiredCount) {
+            return acceptedCount - this.count - currentRetiredCount;
+        }
 
         @Override
         public int fulfilledDeficitCount(int count) {
@@ -134,17 +148,30 @@ public interface NodeSpec {
         }
 
         @Override
+        public boolean needsResize(Node node) {
+            return ! node.resources().compatibleWith(requestedNodeResources);
+        }
+
+        @Override
         public boolean canResize(NodeResources currentNodeResources, NodeResources currentSpareHostResources,
-                                 boolean hasTopologyChange, int currentClusterSize) {
+                                 ClusterSpec.Type type, boolean hasTopologyChange, int currentClusterSize) {
             // Never allow in-place resize when also changing topology or decreasing cluster size
             if (hasTopologyChange || count < currentClusterSize) return false;
 
-            // Do not allow increasing cluster size and decreasing node resources at the same time
-            if (count > currentClusterSize && !requestedNodeResources.satisfies(currentNodeResources.justNumbers()))
+            // Do not allow increasing cluster size and decreasing node resources at the same time for content nodes
+            if (type.isContent() && count > currentClusterSize && !requestedNodeResources.satisfies(currentNodeResources.justNumbers()))
                 return false;
 
             // Otherwise, allowed as long as the host can satisfy the new requested resources
             return currentSpareHostResources.add(currentNodeResources.justNumbers()).satisfies(requestedNodeResources);
+        }
+
+        @Override
+        public boolean acceptable(NodeCandidate node) { return true; }
+
+        @Override
+        public boolean rejectNonActiveParent() {
+            return false;
         }
 
         @Override
@@ -154,6 +181,9 @@ public interface NodeSpec {
 
     /** A node spec specifying a node type. This will accept all nodes of this type. */
     class TypeNodeSpec implements NodeSpec {
+
+        private static final Map<NodeType, Integer> WANTED_NODE_COUNT = Map.of(NodeType.config, 3,
+                                                                               NodeType.controller, 3);
 
         private final NodeType type;
 
@@ -180,23 +210,37 @@ public interface NodeSpec {
         public boolean considerRetiring() { return true; }
 
         @Override
-        public int idealRetiredCount(int acceptedCount, int currentRetiredCount) {
-             // All nodes marked with wantToRetire get marked as retired just before this function is called,
-             // the job of this function is to throttle the retired count. If no nodes are marked as retired
-             // then continue this way, otherwise allow only 1 node to be retired
-            return Math.min(1, currentRetiredCount);
+        public int idealRetiredCount(int acceptedCount, int wantToRetireCount, int currentRetiredCount) {
+            return wantToRetireCount - currentRetiredCount;
         }
 
         @Override
         public int fulfilledDeficitCount(int count) {
-            return 0;
+            // If no wanted count is specified for this node type, then any count fulfills the deficit
+            return Math.max(0, WANTED_NODE_COUNT.getOrDefault(type, 0) - count);
         }
 
         @Override
         public NodeSpec fraction(int divisor) { return this; }
 
         @Override
-        public Optional<NodeResources> resources() { return Optional.empty(); }
+        public Optional<NodeResources> resources() {
+            return Optional.empty();
+        }
+
+        @Override
+        public boolean needsResize(Node node) { return false; }
+
+        @Override
+        public boolean acceptable(NodeCandidate node) {
+            // Since we consume all offered nodes we should not accept previously deactivated nodes
+            return node.state() != Node.State.inactive;
+        }
+
+        @Override
+        public boolean rejectNonActiveParent() {
+            return true;
+        }
 
         @Override
         public String toString() { return "request for all nodes of type '" + type + "'"; }

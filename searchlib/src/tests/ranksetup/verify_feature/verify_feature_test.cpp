@@ -46,8 +46,8 @@ TEST_F("verify illegal feature name", RankFixture) {
 }
 
 TEST_F("verify too deep dependency graph", RankFixture) {
-    EXPECT_TRUE(f1.verify("chain(basic, 63, 4)"));
-    EXPECT_FALSE(f1.verify("chain(basic, 64, 4)"));
+    EXPECT_TRUE(f1.verify("chain(basic, 255, 4)"));
+    EXPECT_FALSE(f1.verify("chain(basic, 256, 4)"));
 }
 
 TEST_F("verify dependency cycle", RankFixture) {

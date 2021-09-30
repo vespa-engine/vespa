@@ -4,32 +4,44 @@ package com.yahoo.vespa.config.server.http.v2;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.HostFilter;
-import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Response;
-import com.yahoo.jdisc.application.BindingMatch;
-import com.yahoo.jdisc.application.UriPattern;
+import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.MessageResponse;
+import com.yahoo.restapi.Path;
+import com.yahoo.slime.SlimeUtils;
+import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
-import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
-import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
+import com.yahoo.vespa.config.server.http.v2.request.ApplicationContentRequest;
+import com.yahoo.vespa.config.server.http.v2.response.ApplicationSuspendedResponse;
+import com.yahoo.vespa.config.server.http.v2.response.DeleteApplicationResponse;
+import com.yahoo.vespa.config.server.http.v2.response.GetApplicationResponse;
+import com.yahoo.vespa.config.server.http.v2.response.QuotaUsageResponse;
+import com.yahoo.vespa.config.server.http.v2.response.ReindexingResponse;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.List;
-import java.util.Objects;
+import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Set;
+import java.util.StringJoiner;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Operations on applications (delete, wait for config convergence, restart, application content etc.)
@@ -37,23 +49,6 @@ import java.util.stream.Stream;
  * @author hmusum
  */
 public class ApplicationHandler extends HttpHandler {
-
-    private static final List<UriPattern> URI_PATTERNS = Stream.of(
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/content/*",
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/filedistributionstatus",
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart",
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/suspended",
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge",
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*",
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*",
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics",
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/logs",
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*/*",
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*",
-            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*",
-            "http://*/application/v2/tenant/*/application/*")
-            .map(UriPattern::new)
-            .collect(Collectors.toList());
 
     private final Zone zone;
     private final ApplicationRepository applicationRepository;
@@ -68,259 +63,239 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     @Override
-    public HttpResponse handleDELETE(HttpRequest request) {
-        ApplicationId applicationId = getApplicationIdFromRequest(request);
-        // TODO: Add support for timeout in request
-        boolean deleted = applicationRepository.delete(applicationId, Duration.ofSeconds(60));
-        if ( ! deleted)
-            return HttpErrorResponse.notFoundError("Unable to delete " + applicationId.toFullString() + ": Not found");
-        return new DeleteApplicationResponse(Response.Status.OK, applicationId);
-    }
-
-
-    @Override
     public HttpResponse handleGET(HttpRequest request) {
-        ApplicationId applicationId = getApplicationIdFromRequest(request);
-        Duration timeout = HttpHandler.getRequestTimeout(request, Duration.ofSeconds(5));
+        Path path = new Path(request.getUri());
 
-        if (isServiceConvergeRequest(request)) {
-            // Expects both hostname and port in the request (hostname:port)
-            String hostAndPort = getHostNameFromRequest(request);
-            return applicationRepository.checkServiceForConfigConvergence(applicationId, hostAndPort, request.getUri(),
-                                                                          timeout, getVespaVersionFromRequest(request));
-        }
-
-        if (isClusterControllerStatusRequest(request)) {
-            String hostName = getHostNameFromRequest(request);
-            String pathSuffix = getPathSuffix(request);
-            return applicationRepository.clusterControllerStatusPage(applicationId, hostName, pathSuffix);
-        }
-
-        if (isContentRequest(request)) {
-            long sessionId = applicationRepository.getSessionIdForApplication(applicationId);
-            String contentPath = getBindingMatch(request).group(7);
-            ApplicationFile applicationFile =
-                    applicationRepository.getApplicationFileFromSession(applicationId.tenant(),
-                                                                        sessionId,
-                                                                        contentPath,
-                                                                        ContentRequest.getApplicationFileMode(request.getMethod()));
-            ApplicationContentRequest contentRequest = new ApplicationContentRequest(request,
-                                                                                     sessionId,
-                                                                                     applicationId,
-                                                                                     zone,
-                                                                                     contentPath,
-                                                                                     applicationFile);
-            return new ContentHandler().get(contentRequest);
-        }
-
-        if (isServiceConvergeListRequest(request)) {
-            return applicationRepository.servicesToCheckForConfigConvergence(applicationId, request.getUri(), timeout,
-                                                                             getVespaVersionFromRequest(request));
-        }
-
-        if (isFiledistributionStatusRequest(request)) {
-            return applicationRepository.filedistributionStatus(applicationId, timeout);
-        }
-
-        if (isLogRequest(request)) {
-            Optional<String> hostname = Optional.ofNullable(request.getProperty("hostname"));
-            String apiParams = Optional.ofNullable(request.getUri().getQuery()).map(q -> "?" + q).orElse("");
-            return applicationRepository.getLogs(applicationId, hostname, apiParams);
-        }
-
-        if (isMetricsRequest(request)) {
-            return applicationRepository.getMetrics(applicationId);
-        }
-
-        if (isIsSuspendedRequest(request)) {
-            return new ApplicationSuspendedResponse(applicationRepository.isSuspended(applicationId));
-        }
-
-        if (isTesterRequest(request)) {
-            String testerCommand = getTesterCommandFromRequest(request);
-            switch (testerCommand) {
-                case "status":
-                    return applicationRepository.getTesterStatus(applicationId);
-                case "log":
-                    Long after = Long.valueOf(request.getProperty("after"));
-                    return applicationRepository.getTesterLog(applicationId, after);
-                case "ready":
-                    return applicationRepository.isTesterReady(applicationId);
-                default:
-                    throw new IllegalArgumentException("Unknown tester command in request " + request.getUri().toString());
-            }
-        }
-
-        return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(applicationId));
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}")) return getApplicationResponse(ApplicationId.from(path.get("tenant"), path.get("application"), InstanceName.defaultName().value()));
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}")) return getApplicationResponse(applicationId(path));
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/content/{*}")) return content(applicationId(path), path.getRest(), request);
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/filedistributionstatus")) return filedistributionStatus(applicationId(path), request);
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/logs")) return logs(applicationId(path), request);
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/metrics/deployment")) return deploymentMetrics(applicationId(path));
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/metrics/proton")) return protonMetrics(applicationId(path));
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/reindexing")) return getReindexingStatus(applicationId(path));
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/service/{service}/{hostname}/status/{*}")) return serviceStatusPage(applicationId(path), path.get("service"), path.get("hostname"), path.getRest());
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/serviceconverge")) return listServiceConverge(applicationId(path), request);
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/serviceconverge/{hostAndPort}")) return checkServiceConverge(applicationId(path), path.get("hostAndPort"), request);
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/suspended")) return isSuspended(applicationId(path));
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/tester/{command}")) return testerRequest(applicationId(path), path.get("command"), request);
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/quota")) return quotaUsage(applicationId(path));
+        return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
     @Override
     public HttpResponse handlePOST(HttpRequest request) {
-        ApplicationId applicationId = getApplicationIdFromRequest(request);
-        if (request.getUri().getPath().endsWith("restart")) {
-            return restart(request, applicationId);
-        } else if (isTesterStartTestsRequest(request)) {
-            byte[] data;
-            try {
-                data = IOUtils.readBytes(request.getData(), 1024 * 1000);
-            } catch (IOException e) {
-                throw new IllegalArgumentException("Could not read data in request " + request);
-            }
-            return applicationRepository.startTests(applicationId, getSuiteFromRequest(request), data);
-        } else {
-            throw new NotFoundException("Illegal POST request '" + request.getUri() + "'");
+        Path path = new Path(request.getUri());
+
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/reindex")) return triggerReindexing(applicationId(path), request);
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/reindexing")) return enableReindexing(applicationId(path));
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/restart")) return restart(applicationId(path), request);
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/tester/run/{suite}")) return testerStartTests(applicationId(path), path.get("suite"), request);
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/validate-secret-store")) return validateSecretStore(applicationId(path), request);
+        return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    @Override
+    public HttpResponse handleDELETE(HttpRequest request) {
+        Path path = new Path(request.getUri());
+
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}")) return deleteApplication(ApplicationId.from(path.get("tenant"), path.get("application"), InstanceName.defaultName().value()));
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}")) return deleteApplication(applicationId(path));
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/reindexing")) return disableReindexing(applicationId(path));
+        return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    private HttpResponse listServiceConverge(ApplicationId applicationId, HttpRequest request) {
+        return applicationRepository.servicesToCheckForConfigConvergence(applicationId, request.getUri(),
+                getTimeoutFromRequest(request), getVespaVersionFromRequest(request));
+    }
+
+    private HttpResponse checkServiceConverge(ApplicationId applicationId, String hostAndPort, HttpRequest request) {
+        return applicationRepository.checkServiceForConfigConvergence(applicationId, hostAndPort, request.getUri(),
+                getTimeoutFromRequest(request), getVespaVersionFromRequest(request));
+    }
+
+    private HttpResponse serviceStatusPage(ApplicationId applicationId, String service, String hostname, String pathSuffix) {
+        return applicationRepository.serviceStatusPage(applicationId, hostname, service, pathSuffix);
+    }
+
+    private HttpResponse content(ApplicationId applicationId, String contentPath, HttpRequest request) {
+        long sessionId = applicationRepository.getSessionIdForApplication(applicationId);
+        ApplicationFile applicationFile =
+                applicationRepository.getApplicationFileFromSession(applicationId.tenant(),
+                        sessionId,
+                        contentPath,
+                        ContentRequest.getApplicationFileMode(request.getMethod()));
+        ApplicationContentRequest contentRequest = new ApplicationContentRequest(request,
+                sessionId,
+                applicationId,
+                zone,
+                contentPath,
+                applicationFile);
+        return new ContentHandler().get(contentRequest);
+    }
+
+    private HttpResponse filedistributionStatus(ApplicationId applicationId, HttpRequest request) {
+        return applicationRepository.filedistributionStatus(applicationId, getTimeoutFromRequest(request));
+    }
+
+    private HttpResponse logs(ApplicationId applicationId, HttpRequest request) {
+        Optional<String> hostname = Optional.ofNullable(request.getProperty("hostname"));
+        String apiParams = Optional.ofNullable(request.getUri().getQuery()).map(q -> "?" + q).orElse("");
+        return applicationRepository.getLogs(applicationId, hostname, apiParams);
+    }
+
+    private HttpResponse protonMetrics(ApplicationId applicationId) {
+        return applicationRepository.getProtonMetrics(applicationId);
+    }
+
+    private HttpResponse deploymentMetrics(ApplicationId applicationId) {
+        return applicationRepository.getDeploymentMetrics(applicationId);
+    }
+
+    private HttpResponse isSuspended(ApplicationId applicationId) {
+        return new ApplicationSuspendedResponse(applicationRepository.isSuspended(applicationId));
+    }
+
+    private HttpResponse testerRequest(ApplicationId applicationId, String command, HttpRequest request) {
+        switch (command) {
+            case "status":
+                return applicationRepository.getTesterStatus(applicationId);
+            case "log":
+                Long after = Long.valueOf(request.getProperty("after"));
+                return applicationRepository.getTesterLog(applicationId, after);
+            case "ready":
+                return applicationRepository.isTesterReady(applicationId);
+            case "report":
+                return applicationRepository.getTestReport(applicationId);
+            default:
+                throw new IllegalArgumentException("Unknown tester command in request " + request.getUri().toString());
         }
     }
 
-    private HttpResponse restart(HttpRequest request, ApplicationId applicationId) {
-        if (getBindingMatch(request).groupCount() != 7)
-            throw new NotFoundException("Illegal POST restart request '" + request.getUri() +
-                                        "': Must have 6 arguments but had " + ( getBindingMatch(request).groupCount()-1 ) );
-        applicationRepository.restart(applicationId, hostFilterFrom(request));
-        return new JSONResponse(Response.Status.OK); // return empty
+    private HttpResponse quotaUsage(ApplicationId applicationId) {
+        double quotaUsageRate = applicationRepository.getQuotaUsageRate(applicationId);
+        return new QuotaUsageResponse(quotaUsageRate);
     }
 
-    private HostFilter hostFilterFrom(HttpRequest request) {
-        return HostFilter.from(request.getProperty("hostname"),
-                               request.getProperty("flavor"),
-                               request.getProperty("clusterType"),
-                               request.getProperty("clusterId"));
+    private HttpResponse getApplicationResponse(ApplicationId applicationId) {
+        return new GetApplicationResponse(Response.Status.OK,
+                applicationRepository.getApplicationGeneration(applicationId),
+                applicationRepository.getAllVersions(applicationId),
+                applicationRepository.getApplicationPackageReference(applicationId));
     }
 
-    private static BindingMatch<?> getBindingMatch(HttpRequest request) {
-        return URI_PATTERNS.stream()
-                .map(pattern -> {
-                    UriPattern.Match match = pattern.match(request.getUri());
-                    if (match == null) return null;
-                    return new BindingMatch<>(match, new Object(), pattern);
-                })
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Illegal url for config request: " + request.getUri()));
+    public HttpResponse deleteApplication(ApplicationId applicationId) {
+        if (applicationRepository.delete(applicationId))
+            return new DeleteApplicationResponse(applicationId);
+        return ErrorResponse.notFoundError("Unable to delete " + applicationId.toFullString() + ": Not found");
     }
 
-    private static boolean isIsSuspendedRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 7 &&
-               request.getUri().getPath().endsWith("/suspended");
+
+    private Model getActiveModelOrThrow(ApplicationId id) {
+        return applicationRepository.getActiveApplicationSet(id)
+                                    .orElseThrow(() -> new NotFoundException("Application '" + id + "' not found"))
+                                    .getForVersionOrLatest(Optional.empty(), applicationRepository.clock().instant())
+                .getModel();
     }
 
-    private static boolean isMetricsRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 7 &&
-                request.getUri().getPath().endsWith("/metrics");
+    private HttpResponse triggerReindexing(ApplicationId applicationId, HttpRequest request) {
+        Model model = getActiveModelOrThrow(applicationId);
+        Map<String, Set<String>> documentTypes = model.documentTypesByCluster();
+        Map<String, Set<String>> indexedDocumentTypes = model.indexedDocumentTypesByCluster();
+
+        boolean indexedOnly = request.getBooleanProperty("indexedOnly");
+        Set<String> clusters = StringUtilities.split(request.getProperty("clusterId"));
+        Set<String> types = StringUtilities.split(request.getProperty("documentType"));
+
+        Map<String, Set<String>> reindexed = new TreeMap<>();
+        Instant now = applicationRepository.clock().instant();
+        applicationRepository.modifyReindexing(applicationId, reindexing -> {
+            for (String cluster : clusters.isEmpty() ? documentTypes.keySet() : clusters) {
+                if ( ! documentTypes.containsKey(cluster))
+                    throw new IllegalArgumentException("No content cluster '" + cluster + "' in application — only: " +
+                                                       String.join(", ", documentTypes.keySet()));
+
+                for (String type : types.isEmpty() ? documentTypes.get(cluster) : types) {
+                    if ( ! documentTypes.get(cluster).contains(type))
+                        throw new IllegalArgumentException("No document type '" + type + "' in cluster '" + cluster + "' — only: " +
+                                                           String.join(", ", documentTypes.get(cluster)));
+
+                    if ( ! indexedOnly || indexedDocumentTypes.get(cluster).contains(type)) {
+                        reindexing = reindexing.withReady(cluster, type, now);
+                        reindexed.computeIfAbsent(cluster, __ -> new TreeSet<>()).add(type);
+                    }
+                }
+            }
+            return reindexing;
+        });
+
+        return new MessageResponse(reindexed.entrySet().stream()
+                                              .filter(cluster -> ! cluster.getValue().isEmpty())
+                                              .map(cluster -> "[" + String.join(", ", cluster.getValue()) + "] in '" + cluster.getKey() + "'")
+                                              .reduce(new StringJoiner(", ", "Reindexing document types ", " of application " + applicationId)
+                                                              .setEmptyValue("Not reindexing any document types of application " + applicationId),
+                                                      StringJoiner::add,
+                                                      StringJoiner::merge)
+                                              .toString());
     }
 
-    private static boolean isLogRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 7 &&
-                request.getUri().getPath().endsWith("/logs");
+    public HttpResponse disableReindexing(ApplicationId applicationId) {
+        applicationRepository.modifyReindexing(applicationId, reindexing -> reindexing.enabled(false));
+        return new MessageResponse("Reindexing disabled");
     }
 
-    private static boolean isServiceConvergeListRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 7 &&
-                request.getUri().getPath().endsWith("/serviceconverge");
+    private HttpResponse enableReindexing(ApplicationId applicationId) {
+        applicationRepository.modifyReindexing(applicationId, reindexing -> reindexing.enabled(true));
+        return new MessageResponse("Reindexing enabled");
     }
 
-    private static boolean isServiceConvergeRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 8 &&
-                request.getUri().getPath().contains("/serviceconverge/");
+    private HttpResponse getReindexingStatus(ApplicationId applicationId) {
+        Tenant tenant = applicationRepository.getTenant(applicationId);
+        if (tenant == null)
+            throw new NotFoundException("Tenant '" + applicationId.tenant().value() + "' not found");
+
+        return new ReindexingResponse(getActiveModelOrThrow(applicationId).documentTypesByCluster(),
+                                      applicationRepository.getReindexing(applicationId),
+                                      applicationRepository.getClusterReindexingStatus(applicationId));
     }
 
-    private static boolean isClusterControllerStatusRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 9 &&
-                request.getUri().getPath().contains("/clustercontroller/");
+    private HttpResponse restart(ApplicationId applicationId, HttpRequest request) {
+        HostFilter filter = HostFilter.from(request.getProperty("hostname"),
+                request.getProperty("flavor"),
+                request.getProperty("clusterType"),
+                request.getProperty("clusterId"));
+        applicationRepository.restart(applicationId, filter);
+        return new MessageResponse("Success");
     }
 
-    private static boolean isContentRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() > 7 &&
-                request.getUri().getPath().contains("/content/");
+    private HttpResponse testerStartTests(ApplicationId applicationId, String suite, HttpRequest request) {
+        byte[] data;
+        try {
+            data = IOUtils.readBytes(request.getData(), 1024 * 1000);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Could not read data in request " + request);
+        }
+        return applicationRepository.startTests(applicationId, suite, data);
     }
 
-    private static boolean isFiledistributionStatusRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 7 &&
-                request.getUri().getPath().contains("/filedistributionstatus");
+    private HttpResponse validateSecretStore(ApplicationId applicationId, HttpRequest request) {
+        var slime = uncheck(() -> SlimeUtils.jsonToSlime(request.getData().readAllBytes()));
+        return applicationRepository.validateSecretStore(applicationId, zone.system(), slime);
     }
 
-    private static boolean isTesterRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 8 &&
-               request.getUri().getPath().contains("/tester");
+    private static ApplicationId applicationId(Path path) {
+        return ApplicationId.from(path.get("tenant"), path.get("application"), path.get("instance"));
     }
 
-    private static boolean isTesterStartTestsRequest(HttpRequest request) {
-        System.out.println(getBindingMatch(request).groupCount());
-        return getBindingMatch(request).groupCount() == 9 &&
-               request.getUri().getPath().contains("/tester/run/");
-    }
-
-    private static String getHostNameFromRequest(HttpRequest req) {
-        BindingMatch<?> bm = getBindingMatch(req);
-        return bm.group(7);
-    }
-
-    private static String getTesterCommandFromRequest(HttpRequest req) {
-        BindingMatch<?> bm = getBindingMatch(req);
-        return bm.group(7);
-    }
-
-    private static String getSuiteFromRequest(HttpRequest req) {
-        BindingMatch<?> bm = getBindingMatch(req);
-        return bm.group(8);
-    }
-
-    private static String getPathSuffix(HttpRequest req) {
-        BindingMatch<?> bm = getBindingMatch(req);
-        return bm.group(8);
-    }
-
-    private static ApplicationId getApplicationIdFromRequest(HttpRequest req) {
-        // Two bindings for this: with full app id or only application name
-        BindingMatch<?> bm = getBindingMatch(req);
-        if (bm.groupCount() > 4) return createFromRequestFullAppId(bm);
-        return createFromRequestSimpleAppId(bm);
-    }
-
-    // The URL pattern with only tenant and application given
-    private static ApplicationId createFromRequestSimpleAppId(BindingMatch<?> bm) {
-        TenantName tenant = TenantName.from(bm.group(2));
-        ApplicationName application = ApplicationName.from(bm.group(3));
-        return new ApplicationId.Builder().tenant(tenant).applicationName(application).build();
-    }
-
-    // The URL pattern with full app id given
-    private static ApplicationId createFromRequestFullAppId(BindingMatch<?> bm) {
-        String tenant = bm.group(2);
-        String application = bm.group(3);
-        String instance = bm.group(6);
-        return new ApplicationId.Builder()
-            .tenant(tenant)
-            .applicationName(application).instanceName(instance)
-            .build();
+    private static Duration getTimeoutFromRequest(HttpRequest request) {
+        return HttpHandler.getRequestTimeout(request, Duration.ofSeconds(5));
     }
 
     private static Optional<Version> getVespaVersionFromRequest(HttpRequest request) {
-        String vespaVersion = request.getProperty("vespaVersion");
-        return (vespaVersion == null || vespaVersion.isEmpty())
-                ? Optional.empty()
-                : Optional.of(Version.fromString(vespaVersion));
-    }
-
-    private static class DeleteApplicationResponse extends JSONResponse {
-        DeleteApplicationResponse(int status, ApplicationId applicationId) {
-            super(status);
-            object.setString("message", "Application '" + applicationId + "' deleted");
-        }
-    }
-
-    private static class GetApplicationResponse extends JSONResponse {
-        GetApplicationResponse(int status, long generation) {
-            super(status);
-            object.setLong("generation", generation);
-        }
-    }
-
-    private static class ApplicationSuspendedResponse extends JSONResponse {
-        ApplicationSuspendedResponse(boolean suspended) {
-            super(Response.Status.OK);
-            object.setBool("suspended", suspended);
-        }
+        return Optional.ofNullable(request.getProperty("vespaVersion"))
+                .filter(s -> !s.isEmpty())
+                .map(Version::fromString);
     }
 
 }

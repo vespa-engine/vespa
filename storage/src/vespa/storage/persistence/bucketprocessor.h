@@ -6,7 +6,12 @@
  */
 #pragma once
 
-#include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/bucket.h>
+#include <vespa/persistence/spi/docentry.h>
+#include <vespa/persistence/spi/context.h>
+
+namespace document { class FieldSet; }
+namespace storage::spi { struct PersistenceProvider; }
 
 namespace storage {
 
@@ -22,6 +27,7 @@ public:
     static void iterateAll(spi::PersistenceProvider&,
                            const spi::Bucket&,
                            const std::string& documentSelection,
+                           std::shared_ptr<document::FieldSet> field_set,
                            EntryProcessor&,
                            spi::IncludedVersions,
                            spi::Context&);

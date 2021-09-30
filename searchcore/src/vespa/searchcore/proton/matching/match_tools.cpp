@@ -9,6 +9,7 @@
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/attribute/diversity.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
+#include <vespa/searchlib/attribute/attribute_blueprint_params.h>
 #include <vespa/searchlib/common/bitvector.h>
 
 #include <vespa/log/log.h>
@@ -19,6 +20,7 @@ using search::queryeval::IRequestContext;
 using search::queryeval::IDiversifier;
 using search::attribute::diversity::DiversityFilter;
 using search::attribute::BasicType;
+using search::attribute::AttributeBlueprintParams;
 
 using namespace search::fef;
 using namespace search::fef::indexproperties::matchphase;
@@ -64,6 +66,12 @@ extractDiversityParams(const RankSetup &rankSetup, const Properties &rankPropert
                            AttributeLimiter::toDiversityCutoffStrategy(DiversityCutoffStrategy::lookup(rankProperties, rankSetup.getDiversityCutoffStrategy())));
 }
 
+AttributeBlueprintParams
+extractAttributeBlueprintParams(const RankSetup& rank_setup, const Properties &rankProperties)
+{
+    return AttributeBlueprintParams(NearestNeighborBruteForceLimit::lookup(rankProperties, rank_setup.get_nearest_neighbor_brute_force_limit()));
+}
+
 } // namespace proton::matching::<unnamed>
 
 void
@@ -84,7 +92,7 @@ MatchTools::setup(search::fef::RankProgram::UP rank_program, double termwise_lim
         recorder.tag_match_data(*_match_data);
         _match_data->set_termwise_limit(termwise_limit);
         _search = _query.createSearch(*_match_data);
-        _used_handles = recorder.get_handles();
+        _used_handles = std::move(recorder).steal_handles();
         _search_has_changed = false;
     }
 }
@@ -159,9 +167,10 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const IIndexEnvironment    & indexEnv,
                   const RankSetup            & rankSetup,
                   const Properties           & rankProperties,
-                  const Properties           & featureOverrides)
+                  const Properties           & featureOverrides,
+                  bool                         is_search)
     : _queryLimiter(queryLimiter),
-      _requestContext(doom, attributeContext, rankProperties),
+      _requestContext(doom, attributeContext, rankProperties, extractAttributeBlueprintParams(rankSetup, rankProperties)),
       _query(),
       _match_limiter(),
       _queryEnv(indexEnv, attributeContext, rankProperties, searchContext.getIndexes()),
@@ -185,6 +194,12 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.optimize();
         trace.addEvent(4, "MTF: Fetch Postings");
         _query.fetchPostings();
+        if (is_search) {
+            trace.addEvent(5, "MTF: Handle Global Filters");
+            double lower_limit = GlobalFilterLowerLimit::lookup(rankProperties, rankSetup.get_global_filter_lower_limit());
+            double upper_limit = GlobalFilterUpperLimit::lookup(rankProperties, rankSetup.get_global_filter_upper_limit());
+            _query.handle_global_filters(searchContext.getDocIdLimit(), lower_limit, upper_limit);
+        }
         _query.freeze();
         trace.addEvent(5, "MTF: prepareSharedState");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());

@@ -11,10 +11,11 @@
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/fieldset/fieldsets.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <atomic>
 #include <map>
+#include <mutex>
+#include <condition_variable>
 
 namespace document {
 class DocumentTypeRepo;
@@ -93,7 +94,7 @@ struct Iterator {
     using UP = std::unique_ptr<Iterator>;
     Bucket _bucket;
     std::vector<Timestamp> _leftToIterate;
-    std::unique_ptr<document::FieldSet> _fieldSet;
+    std::shared_ptr<document::FieldSet> _fieldSet;
 };
 
 class DummyPersistence;
@@ -135,14 +136,17 @@ private:
 class DummyPersistence : public AbstractPersistenceProvider
 {
 public:
-    DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo>& repo,
-                     uint16_t partitionCount = 1);
+    DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo>& repo);
     ~DummyPersistence();
 
-    PartitionStateListResult getPartitionStates() const override;
-    BucketIdListResult listBuckets(BucketSpace bucketSpace, PartitionId) const override;
+    Result initialize() override;
+    BucketIdListResult listBuckets(BucketSpace bucketSpace) const override;
 
     void setModifiedBuckets(const BucketIdListResult::List& result);
+
+    // Important: any subsequent mutations to the bucket set in fake_info will reset
+    // the bucket info due to implicit recalculation of bucket info.
+    void set_fake_bucket_set(const std::vector<std::pair<Bucket, BucketInfo>>& fake_info);
 
     /**
      * Returns the list set by setModifiedBuckets(), then clears
@@ -153,22 +157,13 @@ public:
     Result setClusterState(BucketSpace bucketSpace, const ClusterState& newState) override;
     Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
-    Result put(const Bucket&, Timestamp, const DocumentSP&, Context&) override;
-    GetResult get(const Bucket&,
-                  const document::FieldSet& fieldSet,
-                  const DocumentId&,
-                  Context&) const override;
+    Result put(const Bucket&, Timestamp, DocumentSP, Context&) override;
+    GetResult get(const Bucket&, const document::FieldSet&, const DocumentId&, Context&) const override;
+    RemoveResult remove(const Bucket& b, Timestamp t, const DocumentId& did, Context&) override;
+    UpdateResult update(const Bucket&, Timestamp, DocumentUpdateSP, Context&) override;
 
-    RemoveResult remove(const Bucket& b,
-                        Timestamp t,
-                        const DocumentId& did,
-                        Context&) override;
-
-    CreateIteratorResult createIterator(const Bucket&,
-                                        const document::FieldSet& fs,
-                                        const Selection&,
-                                        IncludedVersions,
-                                        Context&) override;
+    CreateIteratorResult
+    createIterator(const Bucket &bucket, FieldSetSP fs, const Selection &, IncludedVersions, Context &context) override;
 
     IterateResult iterate(IteratorId, uint64_t maxByteSize, Context&) const override;
     Result destroyIterator(IteratorId, Context&) override;
@@ -176,18 +171,13 @@ public:
     Result createBucket(const Bucket&, Context&) override;
     Result deleteBucket(const Bucket&, Context&) override;
 
-    Result split(const Bucket& source,
-                 const Bucket& target1,
-                 const Bucket& target2,
-                 Context&) override;
+    Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
 
-    Result join(const Bucket& source1,
-                const Bucket& source2,
-                const Bucket& target,
-                Context&) override;
+    Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
 
-    Result revert(const Bucket&, Timestamp, Context&);
-    Result maintain(const Bucket& bucket, MaintenanceLevel level) override;
+    std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(IResourceUsageListener& listener) override;
+    std::unique_ptr<vespalib::IDestructorCallback> register_executor(std::shared_ptr<BucketExecutor>) override;
+    std::shared_ptr<BucketExecutor> get_bucket_executor() noexcept { return _bucket_executor.lock(); }
 
     /**
      * The following methods are used only for unit testing.
@@ -208,10 +198,6 @@ public:
         return *_clusterState;
     }
 
-    void simulateMaintenanceFailure() {
-        _simulateMaintainFailure = true;
-    }
-
 private:
     friend class BucketContentGuard;
     // Const since funcs only alter mutable field in BucketContent
@@ -220,18 +206,16 @@ private:
 
     mutable bool _initialized;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
-    PartitionStateList _partitions;
-    typedef vespalib::hash_map<Bucket, BucketContent::SP, document::BucketId::hash>
-    PartitionContent;
+    using Content = vespalib::hash_map<Bucket, BucketContent::SP, document::BucketId::hash>;
 
-    std::vector<PartitionContent> _content;
+    Content _content;
     IteratorId _nextIterator;
     mutable std::map<IteratorId, Iterator::UP> _iterators;
-    vespalib::Monitor _monitor;
+    mutable std::mutex      _monitor;
+    std::condition_variable _cond;
 
     std::unique_ptr<ClusterState> _clusterState;
-
-    bool _simulateMaintainFailure;
+    std::weak_ptr<BucketExecutor> _bucket_executor;
 
     std::unique_ptr<document::select::Node> parseDocumentSelection(
             const string& documentSelection,

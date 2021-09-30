@@ -13,8 +13,8 @@
   "projectId": 123,
   "deploying": {
     "revision": {
-      "buildNumber": "(ignore)",
-      "hash": "(ignore)",
+      "buildNumber": 1,
+      "hash": "1.0.1-commit1",
       "source": {
         "gitRepository": "repository1",
         "gitBranch": "master",
@@ -24,198 +24,6 @@
       "commit": "commit1"
     }
   },
-  "deploymentJobs": [
-    {
-      "type": "system-test",
-      "success": true,
-      "lastTriggered": {
-        "id": 1,
-        "version": "(ignore)",
-        "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          },
-          "sourceUrl": "repository1/tree/commit1",
-          "commit": "commit1"
-        },
-        "reason": "unknown reason",
-        "at": "(ignore)"
-      },
-      "lastCompleted": {
-        "id": 1,
-        "version": "(ignore)",
-        "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          },
-          "sourceUrl": "repository1/tree/commit1",
-          "commit": "commit1"
-        },
-        "reason": "unknown reason",
-        "at": "(ignore)"
-      },
-      "lastSuccess": {
-        "id": 1,
-        "version": "(ignore)",
-        "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          },
-          "sourceUrl": "repository1/tree/commit1",
-          "commit": "commit1"
-        },
-        "reason": "unknown reason",
-        "at": "(ignore)"
-      }
-    },
-    {
-      "type": "staging-test",
-      "success": true,
-      "lastTriggered": {
-        "id": 1,
-        "version": "(ignore)",
-        "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          },
-          "sourceUrl": "repository1/tree/commit1",
-          "commit": "commit1"
-        },
-        "reason": "unknown reason",
-        "at": "(ignore)"
-      },
-      "lastCompleted": {
-        "id": 1,
-        "version": "(ignore)",
-        "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          },
-          "sourceUrl": "repository1/tree/commit1",
-          "commit": "commit1"
-        },
-        "reason": "unknown reason",
-        "at": "(ignore)"
-      },
-      "lastSuccess": {
-        "id": 1,
-        "version": "(ignore)",
-        "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          },
-          "sourceUrl": "repository1/tree/commit1",
-          "commit": "commit1"
-        },
-        "reason": "unknown reason",
-        "at": "(ignore)"
-      }
-    },
-    {
-      "type": "production-us-central-1",
-      "success": true,
-      "lastTriggered": {
-        "id": 1,
-        "version": "(ignore)",
-        "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          },
-          "sourceUrl": "repository1/tree/commit1",
-          "commit": "commit1"
-        },
-        "reason": "unknown reason",
-        "at": "(ignore)"
-      },
-      "lastCompleted": {
-        "id": 1,
-        "version": "(ignore)",
-        "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          },
-          "sourceUrl": "repository1/tree/commit1",
-          "commit": "commit1"
-        },
-        "reason": "unknown reason",
-        "at": "(ignore)"
-      },
-      "lastSuccess": {
-        "id": 1,
-        "version": "(ignore)",
-        "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          },
-          "sourceUrl": "repository1/tree/commit1",
-          "commit": "commit1"
-        },
-        "reason": "unknown reason",
-        "at": "(ignore)"
-      }
-    },
-    {
-      "type": "production-us-east-3",
-      "success": false,
-      "lastTriggered": {
-        "id": 1,
-        "version": "(ignore)",
-        "revision": {
-          "buildNumber": "(ignore)",
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          },
-          "sourceUrl": "repository1/tree/commit1",
-          "commit": "commit1"
-        },
-        "reason": "unknown reason",
-        "at": "(ignore)"
-      }
-    },
-    {
-      "type": "production-us-west-1",
-      "success": false
-    }
-  ],
   "changeBlockers": [
     {
       "versions": true,
@@ -241,7 +49,6 @@
       ]
     }
   ],
-  "compileVersion": "(ignore)",
   "globalRotations": [
     "https://instance1--application1--tenant1.global.vespa.oath.cloud:4443/"
   ],

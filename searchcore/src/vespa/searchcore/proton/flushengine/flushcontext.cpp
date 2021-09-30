@@ -16,33 +16,30 @@ FlushContext::FlushContext(
       _target(target),
       _task(),
       _lastSerial(lastSerial)
-{
-    // empty
-}
+{ }
 
-vespalib::string FlushContext::createName(const IFlushHandler & handler, const IFlushTarget & target)
-{
+vespalib::string
+FlushContext::createName(const IFlushHandler & handler, const IFlushTarget & target) {
     return (handler.getName() + "." + target.getName());
 }
 
 FlushContext::~FlushContext()
 {
-    if (_task.get() != NULL) {
-        LOG(warning, "Unexecuted flush task for '%s' destroyed.",
-            _name.c_str());
+    if (_task) {
+        LOG(warning, "Unexecuted flush task for '%s' destroyed.", _name.c_str());
     }
 }
 
 bool
-FlushContext::initFlush()
+FlushContext::initFlush(std::shared_ptr<search::IFlushToken> flush_token)
 {
     LOG(debug, "Attempting to flush '%s'.", _name.c_str());
-    _task = _target->initFlush(std::max(_handler->getCurrentSerialNumber(), _lastSerial));
-    if (_task.get() == NULL) {
+    _task = _target->initFlush(std::max(_handler->getCurrentSerialNumber(), _lastSerial), std::move(flush_token));
+    if ( ! _task ) {
         LOG(debug, "Target refused to init flush.");
         return false;
     }
     return true;
 }
 
-} // namespace proton
+}

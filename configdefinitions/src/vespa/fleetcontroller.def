@@ -112,11 +112,12 @@ min_storage_up_ratio double default=0.01
 cycle_wait_time double default=0.1
 
 ## Minimum time to pass in seconds before broadcasting our first systemstate as
-## a new fleetcontroller. (Will broadcast earlier than this if we have gathered
-## state from all before this). To prevent disturbance when taking over as
+## a new fleetcontroller. Will broadcast earlier than this if we have gathered
+## state from all before this. To prevent disturbance when taking over as
 ## fleetcontroller, give nodes a bit of time to answer so we dont temporarily
-## report nodes as down.
-min_time_before_first_system_state_broadcast double default=5.0
+## report nodes as down.  See also max_slobrok_disconnect_grace_period and
+## get_node_state_request_timeout.
+min_time_before_first_system_state_broadcast double default=30.0
 
 ## Request timeout of node state requests. Keeping a high timeout allows us to
 ## always have a pending operation with very low cost. Keeping a low timeout is
@@ -179,10 +180,29 @@ min_merge_completion_ratio double default=1.0
 ## transition logic aims to minimize the window of time where active states diverge.
 enable_two_phase_cluster_state_transitions bool default=false
 
-## Determines which metric will be used to decide whether a content node manages
-## zero buckets, when deciding whether it can be set permanently down (typically
-## to be removed from the application).
-## If true, use vds.datastored.bucket_space.buckets_total (new), otherwise use
-## vds.datastored.alldisks.buckets (legacy).
-## This setting is intended to be used to safely roll out the new metric.
+## Deprecated - not used
 determine_buckets_from_bucket_space_metric bool default=true
+
+# If enabled, the cluster controller observes reported (categorized) resource usage from content nodes (via host info),
+# and decides whether external feed should be blocked (or unblocked) in the entire cluster.
+#
+# Each resource category has a limit, which is specified in cluster_feed_block_limit.
+# If one resource category from one content node is above the configured limit, feed is blocked.
+# This information is pushed to all distributor nodes via a new cluster state bundle.
+# The distributor nodes handle the actual feed blocking based on this information.
+enable_cluster_feed_block bool default=false
+
+# Contains all resource categories (key) with its corresponding feed block limit (value)
+# used when the cluster controller decides whether external feed should be blocked (or unblocked) in the entire cluster.
+#
+# The keys used must match the similar keys in the host info JSON structure.
+# All limits are numbers between 0.0 and 1.0.
+cluster_feed_block_limit{} double
+
+# To avoid having the cluster feed block state flip-flop from nodes that are hovering
+# just around the feed block limits, this noise threshold implicitly makes the
+# feed block limit value _lower_ for a resource that is already exhausted. I.e. the
+# node must reach a lower resource usage than the limit for feed to be unblocked.
+# This is in absolute numbers, so 0.01 implies that a block limit of 0.8 effectively
+# becomes 0.79 for an already blocked node.
+cluster_feed_block_noise_level double default=0.0

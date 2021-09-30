@@ -105,6 +105,8 @@
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
       "public final java.lang.String getDefNamespace()",
+      "public final boolean getApplyOnRestart()",
+      "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.application.MockApplicationConfig build()"
     ],
     "fields": [
@@ -270,6 +272,17 @@
       "public static final enum com.yahoo.application.Networking enable",
       "public static final enum com.yahoo.application.Networking disable"
     ]
+  },
+  "com.yahoo.application.container.DocumentAccesses": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static com.yahoo.documentapi.local.LocalDocumentAccess createFromSchemas(java.lang.String)"
+    ],
+    "fields": []
   },
   "com.yahoo.application.container.DocumentProcessing": {
     "superClass": "java.lang.Object",

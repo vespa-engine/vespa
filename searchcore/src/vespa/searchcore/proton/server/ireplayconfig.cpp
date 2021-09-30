@@ -4,10 +4,7 @@
 
 namespace proton {
 
-IReplayConfig::~IReplayConfig()
-{
-}
-
+IReplayConfig::~IReplayConfig() = default;
 
 } // namespace proton
 

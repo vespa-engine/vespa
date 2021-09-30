@@ -2,7 +2,6 @@
 #pragma once
 
 #include "cfg.h"
-#include <vespa/vespalib/util/sync.h>
 
 namespace slobrok::api {
 
@@ -42,7 +41,7 @@ public:
     /** check if the list contains a given spec */
     bool contains(const std::string &spec);
 private:
-    vespalib::Lock _lock;
+    std::mutex _lock;
     std::vector<std::string> _slobrokSpecs;
     size_t _nextSpec;
     size_t _currSpec;

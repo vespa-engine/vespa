@@ -6,7 +6,7 @@ import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeActi
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
-import com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder;
+import com.yahoo.vespa.model.content.utils.SchemaBuilder;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 
 import java.util.Arrays;
@@ -31,10 +31,17 @@ public abstract class ContentClusterFixture {
         nextCluster = createCluster(nextSd);
     }
 
+    public ContentClusterFixture(String entireSd) throws Exception {
+        currentCluster = new ContentClusterBuilder().build(
+            ContentClusterUtils.createMockRoot(Arrays.asList(entireSd)));
+        nextCluster = new ContentClusterBuilder().build(
+            ContentClusterUtils.createMockRoot(Arrays.asList(entireSd)));
+    }
+
     private static ContentCluster createCluster(String sdContent) throws Exception {
         return new ContentClusterBuilder().build(
                 ContentClusterUtils.createMockRoot(
-                        Arrays.asList(new SearchDefinitionBuilder().content(sdContent).build())));
+                        Arrays.asList(new SchemaBuilder().content(sdContent).build())));
     }
 
     protected DocumentDatabase currentDb() {

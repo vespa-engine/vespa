@@ -3,6 +3,7 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
@@ -41,6 +42,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
     private final Set<SearchInvoker> invokers;
     private final SearchCluster searchCluster;
+    private final Group group;
     private final LinkedBlockingQueue<SearchInvoker> availableForProcessing;
     private final Set<Integer> alreadyFailedNodes;
     private Query query;
@@ -59,11 +61,15 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private boolean timedOut = false;
     private boolean degradedByMatchPhase = false;
 
-    public InterleavedSearchInvoker(Collection<SearchInvoker> invokers, SearchCluster searchCluster, Set<Integer> alreadyFailedNodes) {
+    public InterleavedSearchInvoker(Collection<SearchInvoker> invokers,
+                                    SearchCluster searchCluster,
+                                    Group group,
+                                    Set<Integer> alreadyFailedNodes) {
         super(Optional.empty());
         this.invokers = Collections.newSetFromMap(new IdentityHashMap<>());
         this.invokers.addAll(invokers);
         this.searchCluster = searchCluster;
+        this.group = group;
         this.availableForProcessing = newQueue();
         this.alreadyFailedNodes = alreadyFailedNodes;
     }
@@ -74,23 +80,33 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
      * will be adjusted accordingly.
      */
     @Override
-    protected void sendSearchRequest(Query query) throws IOException {
+    protected Object sendSearchRequest(Query query, Object unusedContext) throws IOException {
         this.query = query;
         invokers.forEach(invoker -> invoker.setMonitor(this));
         deadline = currentTime() + query.getTimeLeft();
 
         int originalHits = query.getHits();
         int originalOffset = query.getOffset();
-        query.setHits(query.getHits() + query.getOffset());
+        int neededHits = originalHits + originalOffset;
+        int q = neededHits;
+        if (group.isBalanced() && !group.isSparse()) {
+            Double topkProbabilityOverrride = query.properties().getDouble(Dispatcher.topKProbability);
+            q = (topkProbabilityOverrride != null)
+                    ? searchCluster.estimateHitsToFetch(neededHits, invokers.size(), topkProbabilityOverrride)
+                    : searchCluster.estimateHitsToFetch(neededHits, invokers.size());
+        }
+        query.setHits(q);
         query.setOffset(0);
 
+        Object context = null;
         for (SearchInvoker invoker : invokers) {
-            invoker.sendSearchRequest(query);
+            context = invoker.sendSearchRequest(query, context);
             askedNodes++;
         }
 
         query.setHits(originalHits);
         query.setOffset(originalOffset);
+        return null;
     }
 
     @Override
@@ -98,6 +114,8 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         InvokerResult result = new InvokerResult(query, query.getHits());
         List<LeanHit> merged = Collections.emptyList();
         long nextTimeout = query.getTimeLeft();
+        boolean extraDebug = (query.getOffset() == 0) && (query.getHits() == 7) && log.isLoggable(java.util.logging.Level.FINE);
+        List<InvokerResult> processed = new ArrayList<>();
         try {
             while (!invokers.isEmpty() && nextTimeout >= 0) {
                 SearchInvoker invoker = availableForProcessing.poll(nextTimeout, TimeUnit.MILLISECONDS);
@@ -105,7 +123,11 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                     log.fine(() -> "Search timed out with " + askedNodes + " requests made, " + answeredNodes + " responses received");
                     break;
                 } else {
-                    merged = mergeResult(result.getResult(), invoker.getSearchResult(execution), merged);
+                    InvokerResult toMerge = invoker.getSearchResult(execution);
+                    if (extraDebug) {
+                        processed.add(toMerge);
+                    }
+                    merged = mergeResult(result.getResult(), toMerge, merged);
                     ejectInvoker(invoker);
                 }
                 nextTimeout = nextTimeout();
@@ -116,6 +138,33 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
         insertNetworkErrors(result.getResult());
         result.getResult().setCoverage(createCoverage());
+
+        if (extraDebug && merged.size() > 0) {
+            int firstPartId = merged.get(0).getPartId();
+            for (int index = 1; index < merged.size(); index++) {
+                if (merged.get(index).getPartId() != firstPartId) {
+                    extraDebug = false;
+                    log.fine("merged["+index+"/"+merged.size()+"] from partId "+merged.get(index).getPartId()+", first "+firstPartId);
+                    break;
+                }
+            }
+        }
+        if (extraDebug) {
+            log.fine("Interleaved "+processed.size()+" results");
+            for (int pIdx = 0; pIdx < processed.size(); ++pIdx) {
+                var p = processed.get(pIdx);
+                log.fine("InvokerResult "+pIdx+" total hits "+p.getResult().getTotalHitCount());
+                var lean = p.getLeanHits();
+                for (int idx = 0; idx < lean.size(); ++idx) {
+                    var hit = lean.get(idx);
+                    log.fine("lean hit "+idx+" relevance "+hit.getRelevance()+" partid "+hit.getPartId());
+                }
+            }
+            for (int mIdx = 0; mIdx < merged.size(); ++mIdx) {
+                var hit = merged.get(mIdx);
+                log.fine("merged hit "+mIdx+" relevance "+hit.getRelevance()+" partid "+hit.getPartId());                
+            }
+        }
         int needed = query.getOffset() + query.getHits();
         for (int index = query.getOffset(); (index < merged.size()) && (index < needed); index++) {
             result.getLeanHits().add(merged.get(index));
@@ -213,15 +262,15 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         int indexCurrent = 0;
         int indexPartial = 0;
         while (indexCurrent < current.size() && indexPartial < partial.size() && merged.size() < needed) {
-            LeanHit incommingHit = partial.get(indexPartial);
+            LeanHit incomingHit = partial.get(indexPartial);
             LeanHit currentHit = current.get(indexCurrent);
 
-            int cmpRes = currentHit.compareTo(incommingHit);
+            int cmpRes = currentHit.compareTo(incomingHit);
             if (cmpRes < 0) {
                 merged.add(currentHit);
                 indexCurrent++;
             } else if (cmpRes > 0) {
-                merged.add(incommingHit);
+                merged.add(incomingHit);
                 indexPartial++;
             } else { // Duplicates
                 merged.add(currentHit);
@@ -230,10 +279,12 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             }
         }
         while ((indexCurrent < current.size()) && (merged.size() < needed)) {
-            merged.add(current.get(indexCurrent++));
+            LeanHit currentHit = current.get(indexCurrent++);
+            merged.add(currentHit);
         }
         while ((indexPartial < partial.size()) && (merged.size() < needed)) {
-            merged.add(partial.get(indexPartial++));
+            LeanHit incomingHit = partial.get(indexPartial++);
+            merged.add(incomingHit);
         }
         return merged;
     }
@@ -321,4 +372,8 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     protected LinkedBlockingQueue<SearchInvoker> newQueue() {
         return new LinkedBlockingQueue<>();
     }
+
+    // For testing
+    Collection<SearchInvoker> invokers() { return invokers; }
+
 }

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/searchlib/common/serialnum.h>
+
 namespace document { class DocumentTypeRepo; }
 
 namespace proton {
@@ -40,6 +42,8 @@ struct IReplayPacketHandler
     virtual void replay(const MoveOperation &op) = 0;
     virtual void replay(const CreateBucketOperation &op) = 0;
     virtual void replay(const CompactLidSpaceOperation &op) = 0;
+    virtual void check_serial_num(search::SerialNum serial_num) = 0;
+    virtual void optionalCommit(search::SerialNum) = 0;
     
     virtual feedoperation::IStreamHandler &getNewConfigStreamHandler() = 0;
     virtual const document::DocumentTypeRepo &getDeserializeRepo() = 0;

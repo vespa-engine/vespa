@@ -4,8 +4,7 @@
 #include "serializer.h"
 #include <vespa/vespalib/objects/asciiserializer.h>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class RawResultNode;
 
@@ -13,12 +12,10 @@ class StrCatSerializer : public vespalib::AsciiSerializer, public ResultSerializ
 {
 public:
     StrCatSerializer(vespalib::asciistream & stream) : vespalib::AsciiSerializer(stream) { }
-    StrCatSerializer & put(const vespalib::IFieldBase & field, const vespalib::Identifiable & value) override;
-    ResultSerializer & putResult(const vespalib::IFieldBase & field, const ResultNodeVector & value) override;
-    ResultSerializer & putResult(const vespalib::IFieldBase & field, const RawResultNode & value) override;
+    StrCatSerializer & put(const vespalib::Identifiable & value) override;
+    ResultSerializer & putResult(const ResultNodeVector & value) override;
+    ResultSerializer & putResult(const RawResultNode & value) override;
     void proxyPut(const ResultNode & value) override;
 };
 
 }
-}
-

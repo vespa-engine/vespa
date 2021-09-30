@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -16,12 +15,15 @@ import java.util.concurrent.atomic.AtomicReference;
  **/
 public class Supervisor {
 
+    private static final int SMALL_INPUT_BUFFER_SIZE = 20 * 1024;  // Large enough too hold the typical application buffersize of 17k.
+    private static final int SMALL_OUTPUT_BUFFER_SIZE = 8 *1024;   // Suitable small buffer usage with many connections and little traffic.
     private final Transport         transport;
     private SessionHandler          sessionHandler = null;
     private final Object            methodMapLock = new Object();
     private final AtomicReference<HashMap<String, Method>> methodMap = new AtomicReference<>(new HashMap<>());
-    private int                     maxInputBufferSize  = 0;
-    private int                     maxOutputBufferSize = 0;
+    private int                     maxInputBufferSize  = 64*1024;
+    private int                     maxOutputBufferSize = 64*1024;
+    private boolean                 dropEmptyBuffers = false;
 
     /**
      * Create a new Supervisor based on the given {@link Transport}
@@ -33,6 +35,19 @@ public class Supervisor {
         this.transport = transport;
         new MandatoryMethods(this);
     }
+
+    /**
+     * Drop empty buffers. This will reduce memory footprint for idle
+     * connections at the cost of extra allocations when buffer space
+     * is needed again.
+     *
+     * @param value true means drop empty buffers
+     **/
+    public Supervisor setDropEmptyBuffers(boolean value) {
+        dropEmptyBuffers = value;
+        return this;
+    }
+    boolean getDropEmptyBuffers() { return dropEmptyBuffers; }
 
     /**
      * Set maximum input buffer size. This value will only affect
@@ -47,6 +62,7 @@ public class Supervisor {
     public void setMaxInputBufferSize(int bytes) {
         maxInputBufferSize = bytes;
     }
+    int getMaxInputBufferSize() { return maxInputBufferSize; }
 
     /**
      * Set maximum output buffer size. This value will only affect
@@ -61,6 +77,7 @@ public class Supervisor {
     public void setMaxOutputBufferSize(int bytes) {
         maxOutputBufferSize = bytes;
     }
+    int getMaxOutputBufferSize() { return maxOutputBufferSize; }
 
     /**
      * Obtain the method map for this Supervisor
@@ -98,19 +115,6 @@ public class Supervisor {
         synchronized (methodMapLock) {
             HashMap<String, Method> newMap = new HashMap<>(methodMap());
             newMap.put(method.name(), method);
-            methodMap.setRelease(newMap);
-        }
-    }
-
-    /**
-     * Remove a method from the set of methods held by this Supervisor
-     *
-     * @param methodName name of the method to remove
-     **/
-    public void removeMethod(String methodName) {
-        synchronized (methodMapLock) {
-            HashMap<String, Method> newMap = new HashMap<>(methodMap());
-            newMap.remove(methodName);
             methodMap.setRelease(newMap);
         }
     }
@@ -191,11 +195,6 @@ public class Supervisor {
      * @param target the target
      **/
     void sessionInit(Target target) {
-        if (target instanceof Connection) {
-            Connection conn = (Connection) target;
-            conn.setMaxInputSize(maxInputBufferSize);
-            conn.setMaxOutputSize(maxOutputBufferSize);
-        }
         SessionHandler handler = sessionHandler;
         if (handler != null) {
             handler.handleSessionInit(target);

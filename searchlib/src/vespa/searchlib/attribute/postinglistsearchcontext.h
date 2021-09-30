@@ -29,6 +29,7 @@ protected:
     using FrozenDictionary = Dictionary::FrozenView;
     using EnumIndex = IEnumStore::Index;
 
+    const IEnumStoreDictionary& _dictionary;
     const FrozenDictionary _frozenDictionary;
     DictionaryConstIterator _lowerDictItr;
     DictionaryConstIterator _upperDictItr;
@@ -38,23 +39,22 @@ protected:
     uint64_t                _numValues; // attr.getStatus().getNumValues();
     bool                    _hasWeight;
     bool                    _useBitVector;
-    datastore::EntryRef     _pidx;
-    datastore::EntryRef     _frozenRoot; // Posting list in tree form
+    vespalib::datastore::EntryRef     _pidx;
+    vespalib::datastore::EntryRef     _frozenRoot; // Posting list in tree form
     float _FSTC;  // Filtering Search Time Constant
     float _PLSTC; // Posting List Search Time Constant
-    const IEnumStore       &_esb;
     uint32_t                _minBvDocFreq;
     const GrowableBitVector *_gbv; // bitvector if _useBitVector has been set
     const ISearchContext    &_baseSearchCtx;
 
 
-    PostingListSearchContext(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
-                             const IEnumStore &esb, uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
+    PostingListSearchContext(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
+                             uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
 
     ~PostingListSearchContext();
 
-    void lookupTerm(const datastore::EntryComparator &comp);
-    void lookupRange(const datastore::EntryComparator &low, const datastore::EntryComparator &high);
+    void lookupTerm(const vespalib::datastore::EntryComparator &comp);
+    void lookupRange(const vespalib::datastore::EntryComparator &low, const vespalib::datastore::EntryComparator &high);
     void lookupSingle();
     virtual bool useThis(const DictionaryConstIterator & it) const {
         (void) it;
@@ -80,6 +80,9 @@ protected:
     }
 
     virtual bool fallbackToFiltering() const {
+        if (_uniqueValues >= 2 && !_dictionary.get_has_btree_dictionary()) {
+            return true; // force filtering for range search
+        }
         uint32_t numHits = calculateApproxNumHits();
         // numHits > 1000: make sure that posting lists are unit tested.
         return (numHits > 1000) &&
@@ -98,8 +101,7 @@ protected:
     using Traits = PostingListTraits<DataType>;
     using PostingList = typename Traits::PostingList;
     using Posting = typename Traits::Posting;
-    using PostingVector = std::vector<Posting>;
-    using EntryRef = datastore::EntryRef;
+    using EntryRef = vespalib::datastore::EntryRef;
     using FrozenView = typename PostingList::BTreeType::FrozenView;
 
     const PostingList    &_postingList;
@@ -107,15 +109,14 @@ protected:
      * Synthetic posting lists for range search, in array or bitvector form
      */
     PostingListMerger<DataT> _merger;
-    bool           _fetchPostingsDone;
 
     static const long MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION = 100;
     static const long MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 20;
     static const long MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 10;
 
-    PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
-                              bool hasWeight, const PostingList &postingList, const IEnumStore &esb,
-                              uint32_t minBvCocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
+    PostingListSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
+                              bool hasWeight, const PostingList &postingList, uint32_t minBvDocFreq,
+                              bool useBitVector, const ISearchContext &baseSearchCtx);
     ~PostingListSearchContextT() override;
 
     void lookupSingle();
@@ -151,9 +152,9 @@ protected:
     using Parent::countHits;
     using Parent::singleHits;
 
-    PostingListFoldedSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
-                                    bool hasWeight, const PostingList &postingList, const IEnumStore &esb,
-                                    uint32_t minBvCocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
+    PostingListFoldedSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
+                                    bool hasWeight, const PostingList &postingList, uint32_t minBvDocFreq,
+                                    bool useBitVector, const ISearchContext &baseSearchCtx);
 
     unsigned int approximateHits() const override;
 };
@@ -179,19 +180,11 @@ class StringPostingSearchContext
     : public PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>
 {
 private:
-    using AggregationTraits = PostingListTraits<DataT>;
-    using PostingList = typename AggregationTraits::PostingList;
     using Parent = PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>;
-    using FoldedComparatorType = typename Parent::EnumStore::FoldedComparatorType;
-    using Regexp = vespalib::Regexp;
+    using RegexpUtil = vespalib::RegexpUtil;
     using QueryTermSimpleUP = typename Parent::QueryTermSimpleUP;
-    using Parent::_toBeSearched;
     using Parent::_enumStore;
-    using Parent::isRegex;
-    using Parent::getRegex;
-    bool useThis(const PostingListSearchContext::DictionaryConstIterator & it) const override {
-        return isRegex() ? (getRegex() ? std::regex_search(_enumStore.get_value(it.getKey()), *getRegex()) : false ) : true;
-    }
+    bool useThis(const PostingListSearchContext::DictionaryConstIterator & it) const override;
 public:
     StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched);
 };
@@ -201,10 +194,7 @@ class NumericPostingSearchContext
     : public PostingSearchContext<BaseSC, PostingListSearchContextT<DataT>, AttrT>
 {
 private:
-    typedef PostingSearchContext<BaseSC, PostingListSearchContextT<DataT>, AttrT> Parent;
-    typedef PostingListTraits<DataT> AggregationTraits;
-    typedef typename AggregationTraits::PostingList PostingList;
-    typedef typename Parent::EnumStore::ComparatorType ComparatorType;
+    using Parent = PostingSearchContext<BaseSC, PostingListSearchContextT<DataT>, AttrT>;
     typedef typename AttrT::T BaseType;
     using Params = attribute::SearchContextParams;
     using QueryTermSimpleUP = typename Parent::QueryTermSimpleUP;
@@ -219,7 +209,7 @@ private:
 
     bool fallbackToFiltering() const override {
         return (this->getRangeLimit() != 0)
-            ? false
+            ? (this->_uniqueValues >= 2 && !this->_dictionary.get_has_btree_dictionary())
             : Parent::fallbackToFiltering();
     }
     unsigned int approximateHits() const override {
@@ -251,13 +241,12 @@ template <typename BaseSC, typename BaseSC2, typename AttrT>
 PostingSearchContext<BaseSC, BaseSC2, AttrT>::
 PostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched)
     : BaseSC(std::move(qTerm), toBeSearched),
-      BaseSC2(toBeSearched.getEnumStore().get_posting_dictionary(),
+      BaseSC2(toBeSearched.getEnumStore().get_dictionary(),
               toBeSearched.getCommittedDocIdLimit(),
               toBeSearched.getStatus().getNumValues(),
               toBeSearched.hasWeightedSetType(),
               toBeSearched.getPostingList(),
-              toBeSearched.getEnumStore(),
-              toBeSearched._postingList._minBvDocFreq,
+              toBeSearched.getPostingList()._minBvDocFreq,
               useBitVector,
               *this),
       _toBeSearched(toBeSearched),
@@ -285,11 +274,11 @@ StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const Att
 
     if (this->valid()) {
         if (this->isPrefix()) {
-            auto comp = _enumStore.make_folded_comparator(this->queryTerm()->getTerm(), true);
+            auto comp = _enumStore.make_folded_comparator_prefix(this->queryTerm()->getTerm());
             this->lookupRange(comp, comp);
         } else if (this->isRegex()) {
-            vespalib::string prefix(Regexp::get_prefix(this->queryTerm()->getTerm()));
-            auto comp = _enumStore.make_folded_comparator(prefix.c_str(), true);
+            vespalib::string prefix(RegexpUtil::get_prefix(this->queryTerm()->getTerm()));
+            auto comp = _enumStore.make_folded_comparator_prefix(prefix.c_str());
             this->lookupRange(comp, comp);
         } else {
             auto comp = _enumStore.make_folded_comparator(this->queryTerm()->getTerm());
@@ -301,6 +290,18 @@ StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const Att
     }
 }
 
+template <typename BaseSC, typename AttrT, typename DataT>
+bool
+StringPostingSearchContext<BaseSC, AttrT, DataT>::useThis(const PostingListSearchContext::DictionaryConstIterator & it) const {
+    if ( this->isRegex() ) {
+        return this->getRegex().valid()
+            ? this->getRegex().partial_match(_enumStore.get_value(it.getKey()))
+            : false;
+    } else if ( this->isCased() ) {
+        return this->isMatch(_enumStore.get_value(it.getKey()));
+    }
+    return true;
+}
 
 template <typename BaseSC, typename AttrT, typename DataT>
 NumericPostingSearchContext<BaseSC, AttrT, DataT>::
@@ -343,6 +344,11 @@ getIterators(bool shouldApplyRangeLimit)
     auto compHigh = _enumStore.make_comparator(capped.upper());
 
     this->lookupRange(compLow, compHigh);
+    if (!this->_dictionary.get_has_btree_dictionary()) {
+        _low = capped.lower();
+        _high = capped.upper();
+        return;
+    }
     if (shouldApplyRangeLimit) {
         this->applyRangeLimit(this->getRangeLimit());
     }
@@ -357,9 +363,9 @@ getIterators(bool shouldApplyRangeLimit)
 
 
 
-extern template class PostingListSearchContextT<btree::BTreeNoLeafData>;
+extern template class PostingListSearchContextT<vespalib::btree::BTreeNoLeafData>;
 extern template class PostingListSearchContextT<int32_t>;
-extern template class PostingListFoldedSearchContextT<btree::BTreeNoLeafData>;
+extern template class PostingListFoldedSearchContextT<vespalib::btree::BTreeNoLeafData>;
 extern template class PostingListFoldedSearchContextT<int32_t>;
 
 }

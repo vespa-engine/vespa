@@ -8,7 +8,7 @@ QueryEnvironment::QueryEnvironment(IndexEnvironment *env)
     : _indexEnv(env),
       _terms(),
       _properties(),
-      _location(),
+      _locations(),
       _attrCtx((env == nullptr) ? attribute::IAttributeContext::UP() : env->getAttributeMap().createContext())
 {
 }

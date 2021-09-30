@@ -31,7 +31,7 @@ public class RankTypeResolver extends MultiFieldResolver {
                     rankType = fields.get(0).getRankType();
                     first = false;
                 } else if (!field.getRankType().equals(rankType)) {
-                    deployLogger.log(Level.WARNING, "In field '" + field.getName() + "' " +
+                    deployLogger.logApplicationPackage(Level.WARNING, "In field '" + field.getName() + "' " +
                             field.getRankType() + " for index '" + indexName +
                             "' conflicts with " + rankType +
                             " defined for the same index in field '" +

@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include "ilidreusedelayer.h"
+#include <vector>
+#include <cstdint>
 
 namespace searchcorespi::index { struct IThreadingService; }
 
@@ -21,24 +22,18 @@ struct IStore;
  *
  * Currently only works correctly when visibility delay is 0.
  */
-class LidReuseDelayer : public ILidReuseDelayer
+class LidReuseDelayer
 {
     searchcorespi::index::IThreadingService &_writeService;
     IStore &_documentMetaStore;
-    bool _immediateCommit;
-    bool _hasIndexedOrAttributeFields;
     std::vector<uint32_t> _pendingLids; // lids waiting for commit
 
 public:
-    LidReuseDelayer(searchcorespi::index::IThreadingService &writeService,
-                    IStore &documentMetaStore);
-    ~LidReuseDelayer() override;
-    bool delayReuse(uint32_t lid) override;
-    bool delayReuse(const std::vector<uint32_t> &lids) override;
-    void setImmediateCommit(bool immediateCommit) override;
-    bool getImmediateCommit() const override;
-    void setHasIndexedOrAttributeFields(bool hasIndexedOrAttributeFields) override;
-    std::vector<uint32_t> getReuseLids() override;
+    LidReuseDelayer(searchcorespi::index::IThreadingService &writeService, IStore &documentMetaStore);
+    ~LidReuseDelayer();
+    bool delayReuse(uint32_t lid);
+    bool delayReuse(const std::vector<uint32_t> &lids);
+    std::vector<uint32_t> getReuseLids();
 };
 
 }

@@ -3,7 +3,7 @@
 # You can get a reasonable configuration by only configuring
 # a document
 # ...this has become less and less simple over time actually
-search simple {
+schema simple {
 
   document simple {
 

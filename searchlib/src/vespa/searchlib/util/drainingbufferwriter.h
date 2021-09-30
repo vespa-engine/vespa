@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vector>
 #include <cstdint>
 

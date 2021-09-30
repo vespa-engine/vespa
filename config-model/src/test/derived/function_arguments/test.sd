@@ -1,0 +1,52 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search args {
+
+    document args {
+        field f1 type float {
+            indexing: attribute | summary
+        }
+        field t1 type tensor<float>(x{}) {
+            indexing: attribute | summary
+        }
+        field t2 type tensor<float>(x{}) {
+            indexing: attribute | summary
+        }
+    }
+
+    rank-profile test {
+
+        function sin(x) {  # shadows internal function "sin"
+            expression: sqrt(x)
+        }
+
+        function my_func(x) {
+            expression: x * x
+        }
+
+        function test_numeric_constants() {
+            expression: my_func(10) + my_func(10.1) + my_func(-10) + my_func(-10.1)
+        }
+
+        function test_string_constants() {
+            expression: my_func("string")  # + my_func(-"string") -> -"string" parses but not a valid Value
+        }
+
+        function test_features() {
+            expression: my_func(attribute(f1)) + my_func(term(0).significance) + my_func(cos(-1.1)) + my_func(cos(attribute(f1)))
+        }
+
+        function test_feature_shadowing() {
+            expression: my_func(sin(3.14)) + my_func(cos(3.14))
+        }
+
+        function test_identifiers() {
+            expression: my_func(if) + my_func(unknown) + my_func(cos)
+        }
+
+        function test_parses_but_invalid() {
+            expression: my_func(attribute(query(q1)))
+        }
+
+    }
+
+}

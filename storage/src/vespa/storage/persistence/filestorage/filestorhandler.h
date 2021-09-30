@@ -13,10 +13,10 @@
 
 #pragma once
 
-#include "mergestatus.h"
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/storage/storageutil/resumeguard.h>
 #include <vespa/storage/common/messagesender.h>
+#include <vespa/storageapi/messageapi/storagemessage.h>
 
 namespace storage {
 namespace api {
@@ -25,9 +25,6 @@ namespace api {
     class StorageCommand;
     class StorageReply;
 }
-namespace spi {
-    class PartitionStateList;
-}
 namespace framework {
     class HttpUrlPath;
 }
@@ -35,27 +32,25 @@ namespace framework {
 class FileStorHandlerImpl;
 struct FileStorMetrics;
 struct MessageSender;
-class MountPointList;
 struct ServiceLayerComponentRegister;
 class AbortBucketOperationsCommand;
+class MergeStatus;
 
 class FileStorHandler : public MessageSender {
 public:
     struct RemapInfo {
         document::Bucket bucket;
-        uint16_t diskIndex;
         bool foundInQueue;
 
-        RemapInfo(const document::Bucket &bucket_, uint16_t diskIdx)
+        RemapInfo(const document::Bucket &bucket_)
             : bucket(bucket_),
-              diskIndex(diskIdx),
               foundInQueue(false)
-            {}
+        {}
     };
 
     class BucketLockInterface {
     public:
-        typedef std::shared_ptr<BucketLockInterface> SP;
+        using SP = std::shared_ptr<BucketLockInterface>;
 
         virtual const document::Bucket &getBucket() const = 0;
         virtual api::LockingRequirements lockingRequirements() const noexcept = 0;
@@ -63,21 +58,39 @@ public:
         virtual ~BucketLockInterface() = default;
     };
 
-    typedef std::pair<BucketLockInterface::SP, api::StorageMessage::SP> LockedMessage;
+    using LockedMessage = std::pair<BucketLockInterface::SP, api::StorageMessage::SP>;
+    class ScheduleAsyncResult {
+    private:
+        bool _was_scheduled;
+        LockedMessage _async_message;
+
+    public:
+        ScheduleAsyncResult() : _was_scheduled(false), _async_message() {}
+        explicit ScheduleAsyncResult(LockedMessage&& async_message_in)
+            : _was_scheduled(true),
+              _async_message(std::move(async_message_in))
+        {}
+        bool was_scheduled() const {
+            return _was_scheduled;
+        }
+        bool has_async_message() const {
+            return _async_message.first.get() != nullptr;
+        }
+        const LockedMessage& async_message() const {
+            return _async_message;
+        }
+        LockedMessage&& release_async_message() {
+            return std::move(_async_message);
+        }
+    };
 
     enum DiskState {
         AVAILABLE,
-        DISABLED,
         CLOSED
     };
 
-    FileStorHandler(uint32_t numThreads, uint32_t numStripes, MessageSender&, FileStorMetrics&,
-                    const spi::PartitionStateList&, ServiceLayerComponentRegister&);
-    FileStorHandler(MessageSender&, FileStorMetrics&,
-                    const spi::PartitionStateList&, ServiceLayerComponentRegister&);
-    ~FileStorHandler();
+    virtual ~FileStorHandler() = default;
 
-        // Commands used by file stor manager
 
     /**
      * Waits for the filestor queues to be empty. Providing no new load is
@@ -86,45 +99,39 @@ public:
      * @param killPendingMerges If true, clear out all pending merges and reply
      * to them with failure.
      */
-    void flush(bool killPendingMerges);
+    virtual void flush(bool killPendingMerges) = 0;
 
-    void setDiskState(uint16_t disk, DiskState state);
-    DiskState getDiskState(uint16_t disk);
+    virtual void setDiskState(DiskState state) = 0;
+    virtual DiskState getDiskState() const = 0;
 
-    /** Check whether a given disk is enabled or not. */
-    bool enabled(uint16_t disk) { return (getDiskState(disk) == AVAILABLE); }
-    bool closed(uint16_t disk) { return (getDiskState(disk) == CLOSED); }
-    /**
-     * Disable the given disk. Operations towards threads using this disk will
-     * start to fail. Typically called when disk errors are detected.
-     */
-    void disable(uint16_t disk) { setDiskState(disk, DISABLED); }
+    /** Check if it has been closed. */
+    bool closed() const { return (getDiskState() == CLOSED); }
     /** Closes all disk threads. */
-    void close();
+    virtual void close() = 0;
 
     /**
      * Makes sure no operations are active, then stops any new operations
      * from being performed, until the ResumeGuard is destroyed.
      */
-    ResumeGuard pause();
+    virtual ResumeGuard pause() = 0;
 
     /**
-     * Schedule a storage message to be processed by the given disk
+     * Schedule a storage message to be processed
      * @return True if we maanged to schedule operation. False if not
      */
-    bool schedule(const std::shared_ptr<api::StorageMessage>&, uint16_t disk);
+    virtual bool schedule(const std::shared_ptr<api::StorageMessage>&) = 0;
+
+    /**
+     * Schedule the given message to be processed and return the next async message to process (if any).
+     */
+    virtual ScheduleAsyncResult schedule_and_get_next_async_message(const std::shared_ptr<api::StorageMessage>& msg) = 0;
 
     /**
      * Used by file stor threads to get their next message to process.
      *
-     * @param disk The disk to get messages for
+     * @param stripe The stripe to get messages for
      */
-    LockedMessage getNextMessage(uint16_t disk, uint32_t stripeId);
-
-    /**
-     * Returns the next message for the same bucket.
-     */
-    LockedMessage & getNextMessage(uint16_t disk, uint32_t stripeId, LockedMessage& lock);
+    virtual LockedMessage getNextMessage(uint32_t stripeId) = 0;
 
     /**
      * Lock a bucket. By default, each file stor thread has the locks of all
@@ -140,20 +147,7 @@ public:
      *
      *
      */
-    BucketLockInterface::SP lock(const document::Bucket&, uint16_t disk, api::LockingRequirements lockReq);
-
-    /**
-     * Called by FileStorThread::onBucketDiskMove() after moving file, in case
-     * we need to move operations from one disk queue to another.
-     *
-     * get/put/remove/update/revert/stat/multiop - Move to correct queue
-     * merge messages - Move to correct queue. Move any filestor thread state.
-     * join/split/getiter/repair/deletebucket - Move to correct queue
-     * requeststatus - Ignore
-     * readbucketinfo/bucketdiskmove/internalbucketjoin - Fail and log errors
-     */
-    void remapQueueAfterDiskMove(const document::Bucket &bucket,
-                                 uint16_t sourceDisk, uint16_t targetDisk);
+    virtual BucketLockInterface::SP lock(const document::Bucket&, api::LockingRequirements lockReq) = 0;
 
     /**
      * Called by FileStorThread::onJoin() after joining a bucket into another,
@@ -170,7 +164,7 @@ public:
      * requeststatus/deletebucket - Ignore
      * readbucketinfo/internalbucketjoin - Fail and log errors
      */
-    void remapQueueAfterJoin(const RemapInfo& source, RemapInfo& target);
+    virtual void remapQueueAfterJoin(const RemapInfo& source, RemapInfo& target) = 0;
 
     /**
      * Called by FileStorThread::onSplit() after splitting a bucket,
@@ -190,25 +184,20 @@ public:
      * requeststatus/deletebucket - Ignore
      * readbucketinfo/internalbucketjoin - Fail and log errors
      */
-    void remapQueueAfterSplit(const RemapInfo& source,
-                              RemapInfo& target1,
-                              RemapInfo& target2);
-
-    struct DeactivateCallback {
-        virtual ~DeactivateCallback() {}
-        virtual void handleDeactivate() = 0;
-    };
+    virtual void remapQueueAfterSplit(const RemapInfo& source,
+                                      RemapInfo& target1,
+                                      RemapInfo& target2) = 0;
 
     /**
      * Fail all operations towards a single bucket currently queued to the
      * given thread with the given error code.
      */
-    void failOperations(const document::Bucket&, uint16_t fromDisk, const api::ReturnCode&);
+    virtual void failOperations(const document::Bucket&, const api::ReturnCode&) = 0;
 
     /**
      * Add a new merge state to the registry.
      */
-    void addMergeStatus(const document::Bucket&, MergeStatus::SP);
+    virtual void addMergeStatus(const document::Bucket&, std::shared_ptr<MergeStatus>) = 0;
 
     /**
      * Returns the reference to the current merge status for the given bucket.
@@ -217,7 +206,7 @@ public:
      *
      * @param bucket The bucket to start merging.
      */
-    MergeStatus& editMergeStatus(const document::Bucket& bucket);
+    virtual MergeStatus& editMergeStatus(const document::Bucket& bucket) = 0;
 
     /**
      * Returns true if the bucket is currently being merged on this node.
@@ -225,41 +214,25 @@ public:
      * @param bucket The bucket to check merge status for
      * @return Returns true if the bucket is being merged.
      */
-    bool isMerging(const document::Bucket& bucket) const;
-
-    /**
-     * @return Returns the number of active merges on the node.
-     */
-    uint32_t getNumActiveMerges() const;
-
-    /// Provides the next stripe id for a certain disk.
-    uint32_t getNextStripeId(uint32_t disk);
+    virtual bool isMerging(const document::Bucket& bucket) const = 0;
 
     /** Removes the merge status for the given bucket. */
-    void clearMergeStatus(const document::Bucket&);
-    void clearMergeStatus(const document::Bucket&, const api::ReturnCode&);
+    virtual void clearMergeStatus(const document::Bucket&) = 0;
+    virtual void clearMergeStatus(const document::Bucket&, const api::ReturnCode&) = 0;
 
-    void abortQueuedOperations(const AbortBucketOperationsCommand& cmd);
-
-    /** Send the given command back out of the persistence layer. */
-    void sendCommand(const api::StorageCommand::SP&) override;
-    /** Send the given reply back out of the persistence layer. */
-    void sendReply(const api::StorageReply::SP&) override;
+    virtual void abortQueuedOperations(const AbortBucketOperationsCommand& cmd) = 0;
 
     /** Writes status page. */
-    void getStatus(std::ostream& out, const framework::HttpUrlPath& path) const;
+    virtual void getStatus(std::ostream& out, const framework::HttpUrlPath& path) const = 0;
 
     /** Utility function to fetch total size of queue. */
-    uint32_t getQueueSize() const;
-    uint32_t getQueueSize(uint16_t disk) const;
+    virtual uint32_t getQueueSize() const = 0;
 
     // Commands used by testing
-    void setGetNextMessageTimeout(uint32_t timeout);
+    virtual void setGetNextMessageTimeout(vespalib::duration timeout) = 0;
 
-    std::string dumpQueue(uint16_t disk) const;
+    virtual std::string dumpQueue() const = 0;
 
-private:
-    FileStorHandlerImpl* _impl;
 };
 
 } // storage

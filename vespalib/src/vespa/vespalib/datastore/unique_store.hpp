@@ -10,11 +10,10 @@
 #include "unique_store_builder.hpp"
 #include "unique_store_dictionary.hpp"
 #include "unique_store_enumerator.hpp"
-#include <vespa/vespalib/util/bufferwriter.h>
 #include <atomic>
 #include <algorithm>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 namespace uniquestore {
 
@@ -29,7 +28,7 @@ using DefaultUniqueStoreDictionary = UniqueStoreDictionary<DefaultDictionary>;
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 UniqueStore<EntryT, RefT, Compare, Allocator>::UniqueStore()
-    : UniqueStore<EntryT, RefT, Compare, Allocator>(std::make_unique<uniquestore::DefaultUniqueStoreDictionary>())
+    : UniqueStore<EntryT, RefT, Compare, Allocator>(std::make_unique<uniquestore::DefaultUniqueStoreDictionary>(std::unique_ptr<EntryComparator>()))
 {
 }
 
@@ -108,7 +107,7 @@ private:
         for (const auto bufferId : _bufferIdsToCompact) {
             BufferState &state = _dataStore.getBufferState(bufferId);
             _compacting_buffer[bufferId] = true;
-            _mapping[bufferId].resize(state.size());
+            _mapping[bufferId].resize(state.get_used_arrays());
         }
     }
 
@@ -117,8 +116,9 @@ private:
         assert(iRef.valid());
         uint32_t buffer_id = iRef.bufferId();
         if (_compacting_buffer[buffer_id]) {
-            assert(iRef.offset() < _mapping[buffer_id].size());
-            EntryRef &mappedRef = _mapping[buffer_id][iRef.offset()];
+            auto &inner_mapping = _mapping[buffer_id];
+            assert(iRef.unscaled_offset() < inner_mapping.size());
+            EntryRef &mappedRef = inner_mapping[iRef.unscaled_offset()];
             assert(!mappedRef.valid());
             EntryRef newRef = _store.move(oldRef);
             mappedRef = newRef;
@@ -177,8 +177,8 @@ template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 vespalib::MemoryUsage
 UniqueStore<EntryT, RefT, Compare, Allocator>::getMemoryUsage() const
 {
-    vespalib::MemoryUsage usage = _store.getMemoryUsage();
-    usage.merge(_dict->get_memory_usage());
+    vespalib::MemoryUsage usage = get_values_memory_usage();
+    usage.merge(get_dictionary_memory_usage());
     return usage;
 }
 
@@ -230,9 +230,9 @@ UniqueStore<EntryT, RefT, Compare, Allocator>::getBuilder(uint32_t uniqueValuesH
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 typename UniqueStore<EntryT, RefT, Compare, Allocator>::Enumerator
-UniqueStore<EntryT, RefT, Compare, Allocator>::getEnumerator() const
+UniqueStore<EntryT, RefT, Compare, Allocator>::getEnumerator(bool sort_unique_values) const
 {
-    return Enumerator(*_dict, _store);
+    return Enumerator(*_dict, _store, sort_unique_values);
 }
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>

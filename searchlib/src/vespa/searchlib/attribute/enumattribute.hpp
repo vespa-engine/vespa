@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "address_space_components.h"
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/searchlib/attribute/enumattribute.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
@@ -13,15 +14,13 @@ EnumAttribute<B>::
 EnumAttribute(const vespalib::string &baseFileName,
               const AttributeVector::Config &cfg)
     : B(baseFileName, cfg),
-      _enumStore(cfg.fastSearch())
+      _enumStore(cfg.fastSearch(), cfg.get_dictionary_config())
 {
     this->setEnum(true);
 }
 
 template <typename B>
-EnumAttribute<B>::~EnumAttribute()
-{
-}
+EnumAttribute<B>::~EnumAttribute() = default;
 
 template <typename B>
 void EnumAttribute<B>::load_enum_store(LoadedVector& loaded)
@@ -30,12 +29,12 @@ void EnumAttribute<B>::load_enum_store(LoadedVector& loaded)
         auto loader = _enumStore.make_non_enumerated_loader();
         if (!loaded.empty()) {
             auto value = loaded.read();
-            LoadedValueType prev = value.getValue();
+            typename B::LoadedValueType prev = value.getValue();
             uint32_t prevRefCount(0);
             EnumIndex index = loader.insert(value.getValue(), value._pidx.ref());
             for (size_t i(0), m(loaded.size()); i < m; ++i, loaded.next()) {
                 value = loaded.read();
-                if (!EnumStore::ComparatorType::equal(prev, value.getValue())) {
+                if (!EnumStore::ComparatorType::equal_helper(prev, value.getValue())) {
                     loader.set_ref_count_for_last_value(prevRefCount);
                     index = loader.insert(value.getValue(), value._pidx.ref());
                     prev = value.getValue();
@@ -64,16 +63,9 @@ template <typename B>
 void
 EnumAttribute<B>::insertNewUniqueValues(EnumStoreBatchUpdater& updater)
 {
-    UniqueSet newUniques;
-
-    // find new unique strings
-    for (const auto & data : this->_changes) {
-        considerAttributeChange(data, newUniques);
-    }
-
-    // insert new unique values in EnumStore
-    for (const auto & data : newUniques) {
-        updater.insert(data.raw());
+    // find and insert new unique strings
+    for (const auto & data : this->_changes.getInsertOrder()) {
+        considerAttributeChange(data, updater);
     }
 }
 
@@ -85,10 +77,11 @@ EnumAttribute<B>::getEnumStoreValuesMemoryUsage() const
 }
 
 template <typename B>
-vespalib::AddressSpace
-EnumAttribute<B>::getEnumStoreAddressSpaceUsage() const
+void
+EnumAttribute<B>::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
-    return _enumStore.get_address_space_usage();
+    B::populate_address_space_usage(usage);
+    usage.set(AddressSpaceComponents::enum_store, _enumStore.get_address_space_usage());
 }
 
 } // namespace search

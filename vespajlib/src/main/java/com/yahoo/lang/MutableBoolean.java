@@ -18,6 +18,16 @@ public class MutableBoolean {
 
     public void set(boolean value) { this.value = value; }
 
+    public void andSet(boolean value) { this.value &= value; }
+
+    public void orSet(boolean value) { this.value |= value; }
+
+    public boolean getAndSet(boolean newValue) {
+        boolean prev = value;
+        value = newValue;
+        return prev;
+    }
+
     @Override
     public String toString() { return Boolean.toString(value); }
 

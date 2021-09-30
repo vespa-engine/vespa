@@ -7,10 +7,11 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Evaluates machine-learned models added to Vespa applications and available as config form.
@@ -27,8 +28,18 @@ public class ModelsEvaluator extends AbstractComponent {
     @Inject
     public ModelsEvaluator(RankProfilesConfig config,
                            RankingConstantsConfig constantsConfig,
+                           RankingExpressionsConfig expressionsConfig,
+                           OnnxModelsConfig onnxModelsConfig,
                            FileAcquirer fileAcquirer) {
-        this(new RankProfilesConfigImporter(fileAcquirer).importFrom(config, constantsConfig));
+        this(new RankProfilesConfigImporter(fileAcquirer), config, constantsConfig, expressionsConfig, onnxModelsConfig);
+    }
+
+    public ModelsEvaluator(RankProfilesConfigImporter importer,
+                           RankProfilesConfig config,
+                           RankingConstantsConfig constantsConfig,
+                           RankingExpressionsConfig expressionsConfig,
+                           OnnxModelsConfig onnxModelsConfig) {
+        this(importer.importFrom(config, constantsConfig, expressionsConfig, onnxModelsConfig));
     }
 
     public ModelsEvaluator(Map<String, Model> models) {

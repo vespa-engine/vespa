@@ -12,7 +12,7 @@ namespace proton {
  * the documenttype.  First create, search and rank, then group/sort,
  * collect hits.
  */
-class SearchContext : public matching::ISearchContext
+class SearchContext final : public matching::ISearchContext
 {
 private:
     /// Snapshot of the indexes used.

@@ -1,32 +1,35 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.configchange;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigChangeRefeedAction;
 import com.yahoo.config.model.api.ServiceInfo;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Represents all actions to re-feed document types in order to handle config changes.
  *
  * @author geirst
- * @since 5.44
  */
 public class RefeedActions {
 
     public static class Entry {
 
         private final String name;
-        private final boolean allowed;
         private final String documentType;
         private final String clusterName;
         private final Set<ServiceInfo> services = new LinkedHashSet<>();
         private final Set<String> messages = new TreeSet<>();
 
-        private Entry(String name, boolean allowed, String documentType, String clusterName) {
+        private Entry(String name, String documentType, String clusterName) {
             this.name = name;
-            this.allowed = allowed;
             this.documentType = documentType;
             this.clusterName = clusterName;
         }
@@ -43,8 +46,6 @@ public class RefeedActions {
 
         public String name() { return name; }
 
-        public boolean allowed() { return allowed; }
-
         public String getDocumentType() { return documentType; }
 
         public String getClusterName() { return clusterName; }
@@ -55,12 +56,12 @@ public class RefeedActions {
 
     }
 
-    private Entry addEntry(String name, boolean allowed, String documentType, ServiceInfo service) {
+    private Entry addEntry(String name, String documentType, ServiceInfo service) {
         String clusterName = service.getProperty("clustername").orElse("");
-        String entryId = name + "." + allowed + "." + clusterName + "." + documentType;
+        String entryId = name + "." + "." + clusterName + "." + documentType;
         Entry entry = actions.get(entryId);
         if (entry == null) {
-            entry = new Entry(name, allowed, documentType, clusterName);
+            entry = new Entry(name, documentType, clusterName);
             actions.put(entryId, entry);
         }
         return entry;
@@ -76,7 +77,7 @@ public class RefeedActions {
             if (action.getType().equals(ConfigChangeAction.Type.REFEED)) {
                 ConfigChangeRefeedAction refeedAction = (ConfigChangeRefeedAction) action;
                 for (ServiceInfo service : refeedAction.getServices()) {
-                    addEntry(refeedAction.name(), refeedAction.allowed(), refeedAction.getDocumentType(), service).
+                    addEntry(refeedAction.name(), refeedAction.getDocumentType(), service).
                             addService(service).
                             addMessage(action.getMessage());
                 }

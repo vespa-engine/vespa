@@ -2,9 +2,12 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.google.common.net.InetAddresses;
-import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
+import com.yahoo.vespa.hosted.node.admin.container.metrics.Dimensions;
+import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentTask;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.Editor;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEditor;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
@@ -15,9 +18,12 @@ import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -40,20 +46,34 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 public class AclMaintainer {
     private static final Logger logger = Logger.getLogger(AclMaintainer.class.getName());
 
-    private final DockerOperations dockerOperations;
+    private final ContainerOperations containerOperations;
     private final IPAddresses ipAddresses;
+    private final Metrics metrics;
+    private final Map<String, Long> lastSuccess;
+    private static final String METRIC_NAME_POSTFIX = ".acl.age";
 
-    public AclMaintainer(DockerOperations dockerOperations, IPAddresses ipAddresses) {
-        this.dockerOperations = dockerOperations;
+    public AclMaintainer(ContainerOperations containerOperations, IPAddresses ipAddresses, Metrics metrics) {
+        this.containerOperations = containerOperations;
         this.ipAddresses = ipAddresses;
+        this.metrics = metrics;
+        long timestamp = System.currentTimeMillis() / 1_000;
+        this.lastSuccess = new HashMap<>(Map.of(IPVersion.IPv4.id(), timestamp,
+                                                IPVersion.IPv6.id(), timestamp));
     }
 
     // ip(6)tables operate while having the xtables lock, run with synchronized to prevent multiple NodeAgents
     // invoking ip(6)tables concurrently.
     public synchronized void converge(NodeAgentContext context) {
+        if (context.isDisabled(NodeAgentTask.AclMaintainer)) return;
+
         // Apply acl to the filter table
-        editFlushOnError(context, IPVersion.IPv4, "filter", FilterTableLineEditor.from(context.acl(), IPVersion.IPv4));
-        editFlushOnError(context, IPVersion.IPv6, "filter", FilterTableLineEditor.from(context.acl(), IPVersion.IPv6));
+        boolean updatedIPv4 = editFlushOnError(context, IPVersion.IPv4, "filter", FilterTableLineEditor.from(context.acl(), IPVersion.IPv4));
+        boolean updatedIPv6 = editFlushOnError(context, IPVersion.IPv6, "filter", FilterTableLineEditor.from(context.acl(), IPVersion.IPv6));
+
+        Dimensions dimensions = generateDimensions(context);
+
+        updateMetric(dimensions, updatedIPv4, IPVersion.IPv4.id());
+        updateMetric(dimensions, updatedIPv6, IPVersion.IPv6.id());
 
         ipAddresses.getAddress(context.hostname().value(), IPVersion.IPv4).ifPresent(addr -> applyRedirect(context, addr));
         ipAddresses.getAddress(context.hostname().value(), IPVersion.IPv6).ifPresent(addr -> applyRedirect(context, addr));
@@ -85,7 +105,7 @@ public class AclMaintainer {
     }
 
     private Supplier<List<String>> listTable(NodeAgentContext context, String table, IPVersion ipVersion) {
-        return () -> dockerOperations
+        return () -> containerOperations
                 .executeCommandInNetworkNamespace(context, ipVersion.iptablesCmd(), "-S", "-t", table)
                 .mapEachLine(String::trim);
     }
@@ -96,20 +116,46 @@ public class AclMaintainer {
                 String rules = String.join("\n", list);
                 String fileContent = "*" + table + "\n" + rules + "\nCOMMIT\n";
                 fileHandler.writeUtf8Content(fileContent);
-                dockerOperations.executeCommandInNetworkNamespace(context, ipVersion.iptablesRestore(), fileHandler.absolutePath());
+                containerOperations.executeCommandInNetworkNamespace(context, ipVersion.iptablesRestore(), fileHandler.absolutePath());
             } catch (Exception e) {
                 if (flush) {
-                    context.log(logger, LogLevel.ERROR, "Exception occurred while syncing iptable " + table + ", attempting rollback", e);
+                    context.log(logger, Level.SEVERE, "Exception occurred while syncing iptable " + table + ", attempting rollback", e);
                     try {
-                        dockerOperations.executeCommandInNetworkNamespace(context, ipVersion.iptablesCmd(), "-F", "-t", table);
+                        containerOperations.executeCommandInNetworkNamespace(context, ipVersion.iptablesCmd(), "-F", "-t", table);
                     } catch (Exception ne) {
-                        context.log(logger, LogLevel.ERROR, "Rollback of table " + table + " failed, giving up", ne);
+                        context.log(logger, Level.SEVERE, "Rollback of table " + table + " failed, giving up", ne);
                     }
                 } else {
-                    context.log(logger, LogLevel.WARNING, "Unable to sync iptables for " + table, e);
+                    context.log(logger, Level.WARNING, "Unable to sync iptables for " + table, e);
                 }
             }
         };
+    }
+
+    void updateMetric(Dimensions dimensions, boolean updated, String ipVersion) {
+        long updateAgeInSec;
+        long timestamp = System.currentTimeMillis() / 1_000;
+        if (updated) {
+            updateAgeInSec = 0;
+            lastSuccess.put(ipVersion, timestamp);
+        } else {
+            updateAgeInSec = timestamp - lastSuccess.get(ipVersion);
+        }
+
+        metrics.declareGauge(Metrics.APPLICATION_NODE, ipVersion + METRIC_NAME_POSTFIX, dimensions, Metrics.DimensionType.PRETAGGED)
+                .sample(updateAgeInSec);
+
+    }
+
+    private Dimensions generateDimensions(NodeAgentContext context) {
+        NodeSpec node = context.node();
+        Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
+                .add("host", node.hostname())
+                .add("zone", context.zone().getId().value());
+
+        node.currentVespaVersion().ifPresent(vespaVersion -> dimensionsBuilder.add("vespaVersion", vespaVersion.toFullString()));
+
+        return dimensionsBuilder.build();
     }
 
     private static class TemporaryIpTablesFileHandler implements AutoCloseable {

@@ -39,7 +39,7 @@ public class FastAccessValidatorTest {
                         "            indexing: attribute ",
                         "            attribute: fast-access",
                         "        }",
-                        "        field tensor_attribute type tensor(x[]) {",
+                        "        field tensor_attribute type tensor(x[5]) {",
                         "            indexing: attribute ",
                         "            attribute: fast-access",
                         "        }",

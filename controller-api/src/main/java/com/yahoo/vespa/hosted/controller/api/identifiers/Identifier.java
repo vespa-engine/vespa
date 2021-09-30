@@ -12,6 +12,8 @@ import java.util.regex.Pattern;
  */
 public abstract class Identifier {
 
+    // Note: The limit of 20 characters is due to hostname being 'cluster--app--tenant', which can be max. 63 characters.
+    // This is an issue for level 7 routing, with level 4 routing we do not have the same limitation
     protected static final String strictPatternExplanation =
             "Tenant, application and instance names must start with a letter, may contain no more than 20 " +
             "characters, and may only contain lowercase letters, digits or dashes, but no double-dashes.";

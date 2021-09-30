@@ -34,25 +34,24 @@ ThreadedFlushTarget::ThreadedFlushTarget(vespalib::Executor &executor,
 namespace {
 IFlushTarget::Task::UP
 callInitFlush(IFlushTarget *target, IFlushTarget::SerialNum serial,
-              const IGetSerialNum *getSerialNum) {
+              const IGetSerialNum *getSerialNum, std::shared_ptr<search::IFlushToken> flush_token) {
     // Serial number from flush engine might have become stale, obtain
     // a fresh serial number now.
     (void) serial;
     search::SerialNum freshSerial = getSerialNum->getSerialNum();
     assert(freshSerial >= serial);
-    return target->initFlush(freshSerial);
+    return target->initFlush(freshSerial, std::move(flush_token));
 }
 }  // namespace
 
 IFlushTarget::Task::UP
-ThreadedFlushTarget::initFlush(SerialNum currentSerial)
+ThreadedFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token)
 {
     std::promise<Task::UP> promise;
     std::future<Task::UP> future = promise.get_future();
-    _executor.execute(makeLambdaTask([&]()
-                      { promise.set_value(callInitFlush(_target.get(),
-                                                        currentSerial,
-                                                        &_getSerialNum)); }));
+    _executor.execute(makeLambdaTask([&]() {
+        promise.set_value(callInitFlush(_target.get(), currentSerial, &_getSerialNum, flush_token));
+    }));
     return future.get();
 }
 

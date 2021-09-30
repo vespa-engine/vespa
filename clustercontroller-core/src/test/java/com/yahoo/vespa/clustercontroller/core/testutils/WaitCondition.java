@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.testutils;
 
 import com.yahoo.vdslib.state.ClusterState;
@@ -19,7 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
-* @author <a href="mailto:humbe@yahoo-inc.com">Haakon Humberset</a>
+* @author Haakon Humberset
 */
 public interface WaitCondition {
 
@@ -222,4 +222,5 @@ public interface WaitCondition {
         @Override
         public String toString() { return "MinUsedBitsMatcher(" + bitCount + ", " + nodeCount + ")"; }
     }
+
 }

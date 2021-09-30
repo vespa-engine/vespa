@@ -14,6 +14,8 @@ private:
     int64_t _generation;
     DocumentDBConfig::RankProfilesConfigSP _rankProfiles;
     DocumentDBConfig::RankingConstants::SP _rankingConstants;
+    DocumentDBConfig::RankingExpressions::SP _rankingExpressions;
+    DocumentDBConfig::OnnxModels::SP _onnxModels;
     DocumentDBConfig::IndexschemaConfigSP _indexschema;
     DocumentDBConfig::AttributesConfigSP _attributes;
     DocumentDBConfig::SummaryConfigSP _summary;
@@ -26,6 +28,8 @@ private:
     search::index::Schema::SP _schema;
     DocumentDBConfig::MaintenanceConfigSP _maintenance;
     search::LogDocumentStore::Config _store;
+    std::shared_ptr<const ThreadingServiceConfig> _threading_service_config;
+    std::shared_ptr<const AllocConfig> _alloc_config;
     vespalib::string _configId;
     vespalib::string _docTypeName;
 
@@ -52,6 +56,14 @@ public:
     }
     DocumentDBConfigBuilder &rankingConstants(const DocumentDBConfig::RankingConstants::SP &rankingConstants_in) {
         _rankingConstants = rankingConstants_in;
+        return *this;
+    }
+    DocumentDBConfigBuilder &rankingExpressions(const DocumentDBConfig::RankingExpressions::SP &rankingExpressions_in) {
+        _rankingExpressions = rankingExpressions_in;
+        return *this;
+    }
+    DocumentDBConfigBuilder &onnxModels(const DocumentDBConfig::OnnxModels::SP &onnxModels_in) {
+        _onnxModels = onnxModels_in;
         return *this;
     }
     DocumentDBConfigBuilder &importedFields(const DocumentDBConfig::ImportedFieldsConfigSP &importedFields_in) {

@@ -1,7 +1,6 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.dns;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
@@ -14,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -28,7 +28,11 @@ import java.util.stream.Collectors;
  */
 public class NameServiceForwarder {
 
-    private static final int maxQueuedRequests = 200;
+    /**
+     * The number of {@link NameServiceRequest}s we allow to be queued. When the queue overflows, the first requests
+     * are dropped in a FIFO order until the queue shrinks below this capacity.
+     */
+    private static final int QUEUE_CAPACITY = 400;
 
     private static final Logger log = Logger.getLogger(NameServiceForwarder.class.getName());
 
@@ -45,8 +49,8 @@ public class NameServiceForwarder {
 
     /** Create or update an ALIAS record with given name and targets */
     public void createAlias(RecordName name, Set<AliasTarget> targets, NameServiceQueue.Priority priority) {
-        var records = targets.stream().map(AliasTarget::asData)
-                             .map(data -> new Record(Record.Type.ALIAS, name, data))
+        var records = targets.stream()
+                             .map(target -> new Record(Record.Type.ALIAS, name, target.pack()))
                              .collect(Collectors.toList());
         forward(new CreateRecords(records), priority);
     }
@@ -69,17 +73,17 @@ public class NameServiceForwarder {
         forward(new RemoveRecords(type, data), priority);
     }
 
-    private void forward(NameServiceRequest request, NameServiceQueue.Priority priority) {
+    protected void forward(NameServiceRequest request, NameServiceQueue.Priority priority) {
         try (Lock lock = db.lockNameServiceQueue()) {
             NameServiceQueue queue = db.readNameServiceQueue();
             var queued = queue.requests().size();
-            if (queued >= maxQueuedRequests) {
-                log.log(LogLevel.WARNING, "Queue is at capacity (size: " + queued + "), dropping older " +
+            if (queued >= QUEUE_CAPACITY) {
+                log.log(Level.WARNING, "Queue is at capacity (size: " + queued + "), dropping older " +
                                           "requests. This likely means that the name service is not successfully " +
                                           "executing requests");
             }
-            log.log(LogLevel.INFO, "Queueing name service request: " + request);
-            db.writeNameServiceQueue(queue.with(request, priority).last(maxQueuedRequests));
+            log.log(Level.FINE, () -> "Queueing name service request: " + request);
+            db.writeNameServiceQueue(queue.with(request, priority).last(QUEUE_CAPACITY));
         }
     }
 

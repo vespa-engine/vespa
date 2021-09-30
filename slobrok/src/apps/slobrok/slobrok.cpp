@@ -1,5 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fnet/fnet.h>
 #include <vespa/slobrok/server/sbenv.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -54,14 +53,17 @@ App::Main()
 
     int argi = 1;
     const char* optArg;
-    char c;
-    while ((c = GetOpt("c:s:p:", optArg, argi)) != -1) {
+    int c;
+    while ((c = GetOpt("c:s:p:N", optArg, argi)) != -1) {
         switch (c) {
         case 'c':
             cfgId = std::string(optArg);
             break;
         case 'p':
             portnum = atoi(optArg);
+            break;
+        case 'N':
+            // ignored
             break;
         default:
             LOG(error, "unknown option letter '%c'", c);

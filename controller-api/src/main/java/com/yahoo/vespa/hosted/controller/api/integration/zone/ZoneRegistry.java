@@ -8,7 +8,10 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.UpgradePolicy;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneFilter;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -36,14 +39,8 @@ public interface ZoneRegistry {
     /** Returns the default region for the given environment, if one is configured */
     Optional<RegionName> getDefaultRegion(Environment environment);
 
-    /** Returns the API endpoints of all known config servers in the given zone */
-    List<URI> getConfigServerUris(ZoneId zoneId);
-
     /** Returns the URI for the config server VIP in the given zone */
     URI getConfigServerVipUri(ZoneId zoneId);
-
-    /** Returns all possible API endpoints of all known config servers and config server VIPs in the given zone */
-    List<URI> getConfigServerApiUris(ZoneId zoneId);
 
     /** Returns the time to live for deployments in the given zone, or empty if this is infinite */
     Optional<Duration> getDeploymentTimeToLive(ZoneId zoneId);
@@ -53,6 +50,9 @@ public interface ZoneRegistry {
 
     /** Returns the system of this registry */
     SystemName system();
+
+    /** Returns the system of this registry as a zone */
+    ZoneApi systemZone();
 
     /** Return the configserver's Athenz service identity */
     AthenzIdentity getConfigServerHttpsIdentity(ZoneId zoneId);
@@ -72,6 +72,9 @@ public interface ZoneRegistry {
     /** Returns all OS upgrade policies */
     List<UpgradePolicy> osUpgradePolicies();
 
+    /** Returns the routing methods supported by given zone, with the most preferred method appearing first */
+    List<RoutingMethod> routingMethods(ZoneId zone);
+
     /** Returns a URL where an informative dashboard can be found. */
     URI dashboardUrl();
 
@@ -84,10 +87,10 @@ public interface ZoneRegistry {
     /** Returns a URL used to request support from the Vespa team. */
     URI supportUrl();
 
-    /** Returns a URL used to generate flashy badges from strings. */
-    URI badgeUrl();
-
     /** Returns a URL to the controller's api endpoint */
     URI apiUrl();
+
+    /** IAM tenant developer role ARN */
+    Optional<String> tenantDeveloperRoleArn(TenantName tenant);
 
 }

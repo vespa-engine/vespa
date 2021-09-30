@@ -9,7 +9,7 @@ namespace storage::spi {
 
 Result::Result(const Result &) = default;
 Result & Result::operator = (const Result &) = default;
-Result::~Result() { }
+Result::~Result() = default;
 
 vespalib::string
 Result::toString() const {
@@ -30,13 +30,22 @@ std::ostream & operator << (std::ostream & os, const Result::ErrorType &errorCod
 GetResult::GetResult(Document::UP doc, Timestamp timestamp)
     : Result(),
       _timestamp(timestamp),
-      _doc(std::move(doc))
-{ }
+      _doc(std::move(doc)),
+      _is_tombstone(false)
+{
+}
 
-GetResult::~GetResult() { }
-BucketIdListResult::~BucketIdListResult() { }
+GetResult::GetResult(Timestamp removed_at_ts, bool is_tombstone)
+    : _timestamp(removed_at_ts),
+      _doc(),
+      _is_tombstone(is_tombstone)
+{
+}
 
-IterateResult::~IterateResult() { }
+GetResult::~GetResult() = default;
+BucketIdListResult::~BucketIdListResult() = default;
+
+IterateResult::~IterateResult() = default;
 
 }
 

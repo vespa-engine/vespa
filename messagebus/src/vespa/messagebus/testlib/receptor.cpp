@@ -12,27 +12,27 @@ Receptor::~Receptor() = default;
 void
 Receptor::handleMessage(Message::UP msg)
 {
-    vespalib::MonitorGuard guard(_mon);
+    std::lock_guard guard(_mon);
     _msg = std::move(msg);
-    guard.broadcast();
+    _cond.notify_all();
 }
 
 void
 Receptor::handleReply(Reply::UP reply)
 {
-    vespalib::MonitorGuard guard(_mon);
+    std::lock_guard guard(_mon);
     _reply = std::move(reply);
-    guard.broadcast();
+    _cond.notify_all();
 }
 
 Message::UP
 Receptor::getMessage(duration maxWait)
 {
     steady_clock::time_point startTime = steady_clock::now();
-    vespalib::MonitorGuard guard(_mon);
-    while (_msg.get() == 0) {
+    std::unique_lock guard(_mon);
+    while ( ! _msg) {
         duration w = maxWait - duration_cast<milliseconds>(steady_clock::now() - startTime);
-        if (w <= duration::zero() || !guard.wait(w)) {
+        if (w <= duration::zero() || (_cond.wait_for(guard, w) == std::cv_status::timeout)) {
             break;
         }
     }
@@ -43,10 +43,10 @@ Reply::UP
 Receptor::getReply(duration maxWait)
 {
     steady_clock::time_point startTime = steady_clock::now();
-    vespalib::MonitorGuard guard(_mon);
+    std::unique_lock guard(_mon);
     while (_reply.get() == 0) {
         duration w = maxWait - duration_cast<milliseconds>(steady_clock::now() - startTime);
-        if (w <= duration::zero() || !guard.wait(w)) {
+        if (w <= duration::zero() || (_cond.wait_for(guard, w) == std::cv_status::timeout)) {
             break;
         }
     }

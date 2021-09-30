@@ -1,33 +1,38 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.path.Path;
+import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
+import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 
+import java.io.File;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class SessionTest {
 
     public static class MockSessionPreparer extends SessionPreparer {
-        public boolean isPrepared = false;
 
         public MockSessionPreparer() {
-            super(null, null, null, null, null, null, new MockCurator(), null, null, null);
+            super(null, null, new InThreadExecutorService(), null, null, null, null, new MockCurator(), null, null, null);
         }
 
         @Override
-        public ConfigChangeActions prepare(SessionContext context, DeployLogger logger, PrepareParams params, Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath, Instant now) {
-            isPrepared = true;
-            return new ConfigChangeActions(new ArrayList<>());
+        public PrepareResult prepare(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
+                                     Optional<ApplicationSet> currentActiveApplicationSet,
+                                     Instant now, File serverDbSessionDir, ApplicationPackage applicationPackage,
+                                     SessionZooKeeperClient sessionZooKeeperClient) {
+            return new PrepareResult(AllocatedHosts.withHosts(Set.of()), List.of());
         }
     }
 

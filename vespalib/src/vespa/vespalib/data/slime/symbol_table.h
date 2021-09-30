@@ -7,8 +7,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/data/memorydatastore.h>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * Maps between strings and symbols.
@@ -43,6 +42,5 @@ public:
     void clear();
 };
 
-} // namespace vespalib::slime
-} // namespace vespalib
+}
 

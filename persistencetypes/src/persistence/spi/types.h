@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vector>
 #include <vespa/vespalib/stllike/string.h>
+#include <vector>
+#include <memory>
 
 namespace vespalib {
     class nbostream;
@@ -27,12 +28,12 @@ namespace document {
       type _value; \
   public: \
       typedef type Type; \
-      name() : _value() {} \
-      explicit name(type v) : _value(v) {} \
-      operator type() const { return _value; } \
-      operator type&() { return _value; } \
-      type getValue() const { return _value; } \
-      name& operator=(type val) { _value = val; return *this; } \
+      name() noexcept : _value() {} \
+      explicit name(type v) noexcept : _value(v) {} \
+      operator type() const noexcept { return _value; } \
+      operator type&() noexcept { return _value; } \
+      type getValue() const noexcept { return _value; } \
+      name& operator=(type val) noexcept { _value = val; return *this; } \
       friend vespalib::nbostream & \
       operator<<(vespalib::nbostream &os, const name &wrapped); \
       friend vespalib::nbostream & \
@@ -61,12 +62,6 @@ namespace storage::spi {
  * \ingroup spi
  */
 DEFINE_PRIMITIVE_WRAPPER(uint16_t, NodeIndex);
-
-/**
- * \class storage::spi::PartitionId
- * \ingroup spi
- */
-DEFINE_PRIMITIVE_WRAPPER(uint16_t, PartitionId);
 
 /**
  * \class storage::spi::IteratorId

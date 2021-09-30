@@ -13,6 +13,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
@@ -21,10 +22,8 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import static java.time.Instant.ofEpochSecond;
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -32,20 +31,20 @@ import static org.junit.Assert.fail;
  * @author  Bjorn Borud
  */
 public class VespaLogHandlerTestCase {
-    protected static String hostname;
-    protected static String pid;
+    private final static String hostname;
+    private final static String pid;
 
-    protected static LogRecord record1;
-    protected static String record1String;
+    static final LogRecord record1;
+    static final String record1String;
 
-    protected static LogRecord record2;
-    protected static String record2String;
+    static final LogRecord record2;
+    private static final String record2String;
 
-    protected static LogRecord record3;
-    protected static String record3String;
+    private static final LogRecord record3;
+    private static final String record3String;
 
-    protected static LogRecord record4;
-    protected static String record4String;
+    private static final LogRecord record4;
+    private static final String record4String;
 
     static {
         hostname = Util.getHostName();
@@ -139,7 +138,7 @@ public class VespaLogHandlerTestCase {
     }
 
     @Test
-    public void testFallback() throws FileNotFoundException {
+    public void testFallback() {
         File file = new File("mydir2");
         file.delete();
         assertTrue(file.mkdir());
@@ -157,7 +156,7 @@ public class VespaLogHandlerTestCase {
      * Perform simple test
      */
     @Test
-    public void testLogCtl () throws InterruptedException, FileNotFoundException {
+    public void testLogCtl () {
         MockLevelController ctl = new MockLevelController();
         MockLevelControllerRepo ctlRepo = new MockLevelControllerRepo(ctl);
         MockLogTarget target = new MockLogTarget();
@@ -190,7 +189,7 @@ public class VespaLogHandlerTestCase {
 
         h.close();
         String [] lines = target.getLines();
-        assertThat(lines.length, is(4));
+        assertEquals(4, lines.length);
         assertEquals(record1String, lines[0]);
         assertEquals(record3String, lines[1]);
         //assertEquals(record4String, lines[2]);
@@ -203,7 +202,7 @@ public class VespaLogHandlerTestCase {
     @Test
     public void testRotate () throws IOException {
         // Doesn't work in Windows. TODO: Fix the logging stuff
-        if (System.getProperty("os.name").toLowerCase().indexOf("win")>=0)
+        if (System.getProperty("os.name").toLowerCase().contains("win"))
             return;
         try {
             VespaLogHandler h
@@ -269,10 +268,8 @@ public class VespaLogHandlerTestCase {
                 );
 
             class LogRacer implements Runnable {
-				private int n;
 
-                public LogRacer (int n) {
-                    this.n = n;
+                private LogRacer() {
                 }
 
                 public void run () {
@@ -285,7 +282,7 @@ public class VespaLogHandlerTestCase {
                     }
                 }
 
-                public void logLikeCrazy () {
+                void logLikeCrazy() {
                     for (int j = 0; j < numLogEntries; j++) {
                         try {
                             h.publish(record1);
@@ -299,7 +296,7 @@ public class VespaLogHandlerTestCase {
             }
 
             for (int i = 0; i < numThreads; i++) {
-                t[i] = new Thread(new LogRacer(i));
+                t[i] = new Thread(new LogRacer());
                 t[i].start();
             }
 
@@ -361,35 +358,23 @@ public class VespaLogHandlerTestCase {
      *
      */
     protected static String[] readFile (String fileName) {
-        BufferedReader br = null;
-        List<String> lines = new LinkedList<String>();
-        try {
-            br = new BufferedReader(
-                     new InputStreamReader(new FileInputStream(new File(fileName)), "UTF-8"));
+        List<String> lines = new LinkedList<>();
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(new FileInputStream(new File(fileName)), StandardCharsets.UTF_8))) {
             for (String line = br.readLine();
                  line != null;
-                 line = br.readLine())
-            {
+                 line = br.readLine()) {
                 lines.add(line);
             }
-            return lines.toArray(new String[lines.size()]);
-        }
-        catch (Throwable e) {
+            return lines.toArray(new String[0]);
+        } catch (Throwable e) {
             return new String[0];
-        }
-        finally {
-            if (br != null) {
-                try {
-                    br.close();
-                }
-                catch (IOException e) {}
-            }
         }
     }
 
     private static class MockLevelControllerRepo implements LevelControllerRepo {
-        private LevelController levelController;
-        public MockLevelControllerRepo(LevelController controller) {
+        private final LevelController levelController;
+        MockLevelControllerRepo(LevelController controller) {
             this.levelController = controller;
         }
 
@@ -411,7 +396,7 @@ public class VespaLogHandlerTestCase {
             return (level.equals(logLevel));
         }
 
-        public void setShouldLog(Level level) {
+        void setShouldLog(Level level) {
             this.logLevel = level;
         }
 
@@ -431,7 +416,7 @@ public class VespaLogHandlerTestCase {
     private static class MockLogTarget implements LogTarget {
         private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        public String[] getLines() {
+        String[] getLines() {
             return baos.toString().split("\n");
         }
         @Override

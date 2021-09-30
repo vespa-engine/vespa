@@ -28,29 +28,11 @@
             <url>https://github.com/vespa-engine</url>
         </developer>
     </developers>
-    <distributionManagement>
-        <repository>
-            <id>bintray-vespa-repo</id>
-            <url>https://api.bintray.com/maven/yahoo/maven/vespa;publish=1</url>
-        </repository>
-    </distributionManagement>
     <scm>
         <connection>scm:git:git@github.com:vespa-engine/vespa.git</connection>
         <developerConnection>scm:git:git@github.com:vespa-engine/vespa.git</developerConnection>
         <url>git@github.com:vespa-engine/vespa.git</url>
     </scm>
-
-    <repositories>
-        <!-- Required for Athenz libraries -->
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>bintray-yahoo-maven</id>
-            <name>bintray</name>
-            <url>https://yahoo.bintray.com/maven</url>
-        </repository>
-    </repositories>
 
     <build>
         <finalName>${project.artifactId}</finalName>
@@ -82,12 +64,6 @@
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>
                     <version>${maven-bundle-plugin.version}</version>
-                    <configuration>
-                        <!-- TODO: remove when bundle-plugin understands java 10, https://issues.apache.org/jira/browse/FELIX-5879 -->
-                        <instructions>
-                            <_noee>true</_noee>
-                        </instructions>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -220,8 +196,11 @@
                     <configuration>
                         <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
                         <systemPropertyVariables>
+                            <config_model.ip_check>false</config_model.ip_check>
+                            <jdisc.logger.level>INFO</jdisc.logger.level>
                             <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         </systemPropertyVariables>
+                        <trimStackTrace>false</trimStackTrace>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -273,7 +252,7 @@
                 <plugin>
                     <groupId>com.github.os72</groupId>
                     <artifactId>protoc-jar-maven-plugin</artifactId>
-                    <version>3.6.0.2</version>
+                    <version>3.11.4</version>
                     <executions>
                         <execution>
                             <phase>generate-sources</phase>
@@ -336,11 +315,35 @@
             </build>
         </profile>
         <profile>
+            <id>custom-javadoc</id>
+            <activation>
+                <file><exists>src/main/javadoc</exists></file>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>javadoc</classifier>
+                                    <classesDirectory>${project.basedir}/src/main/javadoc</classesDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>generate-javadoc</id>
             <activation>
-                <property>
-                    <name>!skipJavadoc</name>
-                </property>
+                <file><missing>src/main/javadoc</missing></file>
             </activation>
             <build>
                 <plugins>
@@ -352,7 +355,13 @@
                                 <id>generate-javadoc</id>
                                 <phase>package</phase>
                                 <goals>
-                                    <goal>javadoc</goal>
+                                    <goal>javadoc-no-fork</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
                                 </goals>
                             </execution>
                         </executions>
@@ -414,6 +423,31 @@
                 <version>${aws.sdk.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-ssm</artifactId>
+                <version>${aws.sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-sts</artifactId>
+                <version>${aws.sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.auth0</groupId>
+                <artifactId>java-jwt</artifactId>
+                <version>3.10.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                <artifactId>jackson-jaxrs-xml-provider</artifactId>
+                <version>${jackson2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-xml</artifactId>
+                <version>${jackson2.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.github.cverges.expect4j</groupId>
                 <artifactId>expect4j</artifactId>
                 <version>1.6</version>
@@ -430,6 +464,11 @@
                 <groupId>com.github.tomakehurst</groupId>
                 <artifactId>wiremock-standalone</artifactId>
                 <version>2.6.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava-testlib</artifactId>
+                <version>${guava.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.jimfs</groupId>
@@ -453,6 +492,11 @@
                 <version>1.4</version>
             </dependency>
             <dependency>
+                <groupId>com.microsoft.onnxruntime</groupId>
+                <artifactId>onnxruntime</artifactId>
+                <version>${onnxruntime.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.optimaize.languagedetector</groupId>
                 <artifactId>language-detector</artifactId>
                 <version>0.6</version>
@@ -471,6 +515,26 @@
                 <groupId>com.yahoo.athenz</groupId>
                 <artifactId>athenz-zts-java-client</artifactId>
                 <version>${athenz.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-math3</artifactId>
+                <version>${commons.math3.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-cli</groupId>
@@ -528,9 +592,14 @@
                 <version>${antlr4.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.aries.spifly</groupId>
+                <artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+                <version>${spifly.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.19</version>
+                <version>1.21</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -549,13 +618,13 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>fluent-hc</artifactId>
-                <version>4.3.6</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>${apache.httpclient.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-csv</artifactId>
+                <version>1.8</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -563,9 +632,14 @@
                 <version>${apache.httpcore.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>${apache.httpclient5.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpmime</artifactId>
-                <version>4.3.6</version>
+                <version>${apache.httpclient.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
@@ -655,6 +729,51 @@
                 <version>9.2.0</version>
             </dependency>
             <dependency>
+                <groupId>org.eclipse.jetty.alpn</groupId>
+                <artifactId>alpn-api</artifactId>
+                <version>${jetty-alpn.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.http2</groupId>
+                <artifactId>http2-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-alpn-java-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-continuation</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlet</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlets</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-jmx</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>2.3.2</version> <!-- 2.3.3 has a BROKEN manifest -->
+            </dependency>
+            <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
                 <version>1.3</version>
@@ -679,6 +798,11 @@
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
                 <version>${junit.version}</version>
             </dependency>
@@ -697,11 +821,6 @@
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
                 <version>${asm.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-test</artifactId>
-                <version>4.0.6.RELEASE</version>
             </dependency>
             <dependency>
                 <groupId>org.tensorflow</groupId>
@@ -727,7 +846,12 @@
             <dependency>
                 <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
-                <version>2.11.0</version>
+                <version>2.12.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>aircompressor</artifactId>
+                <version>0.17</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -735,24 +859,29 @@
     <properties>
         <antlr.version>3.5.2</antlr.version>
         <antlr4.version>4.5</antlr4.version>
-        <apache.httpclient.version>4.5.10</apache.httpclient.version>
-        <apache.httpcore.version>4.4.12</apache.httpcore.version>
-        <asm.version>7.0</asm.version>
+        <apache.httpclient.version>4.5.12</apache.httpclient.version>
+        <apache.httpcore.version>4.4.13</apache.httpcore.version>
+        <apache.httpclient5.version>5.1</apache.httpclient5.version>
+        <asm.version>9.1</asm.version>
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <athenz.version>1.8.44</athenz.version>
-        <aws.sdk.version>1.11.542</aws.sdk.version>
+        <athenz.version>1.10.14</athenz.version>
+        <jjwt.version>0.11.2</jjwt.version>
+        <aws.sdk.version>1.11.974</aws.sdk.version>
         <!-- WARNING: If you change curator version, you also need to update
                  zkfacade/src/main/java/org/apache/curator/**/package-info.java
              using something like
                  find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
-                     xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 2, minor = 9, micro = 1/g'
+                     xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 4, minor = 3, micro = 0/g'
         -->
-        <curator.version>2.9.1</curator.version>
+        <curator.version>5.1.0</curator.version>
         <jna.version>4.5.2</jna.version>
-        <junit.version>5.4.2</junit.version>
+        <commons.codec.version>1.15</commons.codec.version>
+        <commons.math3.version>3.6.1</commons.math3.version>
+        <junit.version>5.7.0</junit.version>
         <maven-assembly-plugin.version>3.1.1</maven-assembly-plugin.version>
-        <maven-bundle-plugin.version>3.5.0</maven-bundle-plugin.version>
-        <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
+        <!-- TODO: in order to upgrade above 4.1.0, we probably need to convert fat-model-deps to a jar artifact. -->
+        <maven-bundle-plugin.version>4.1.0</maven-bundle-plugin.version>
+        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>3.1.1</maven-dependency-plugin.version>
         <maven-deploy-plugin.version>2.8.1</maven-deploy-plugin.version>
         <maven-enforcer-plugin.version>3.0.0-M2</maven-enforcer-plugin.version>
@@ -761,14 +890,16 @@
         <maven-javadoc-plugin.version>3.0.1</maven-javadoc-plugin.version>
         <maven-plugin-tools.version>3.6.0</maven-plugin-tools.version>
         <maven-resources-plugin.version>2.7</maven-resources-plugin.version>
-        <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
+        <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
         <maven-site-plugin.version>3.3</maven-site-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
         <prometheus.client.version>0.6.0</prometheus.client.version>
-        <protobuf.version>3.7.0</protobuf.version>
+        <onnxruntime.version>1.8.0</onnxruntime.version>
+        <protobuf.version>3.11.4</protobuf.version>
+        <spifly.version>1.3.3</spifly.version>
         <surefire.version>2.22.0</surefire.version>
         <tensorflow.version>1.12.0</tensorflow.version>
-        <zookeeper.client.version>3.5.6</zookeeper.client.version>
+        <zookeeper.client.version>3.6.3</zookeeper.client.version>
 
         <doclint>all</doclint>
         <test.hide>true</test.hide>

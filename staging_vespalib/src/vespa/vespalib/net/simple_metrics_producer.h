@@ -3,24 +3,24 @@
 #pragma once
 
 #include "metrics_producer.h"
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
 
 namespace vespalib {
 
 class SimpleMetricsProducer : public MetricsProducer
 {
 private:
-    Lock _lock;
+    std::mutex _lock;
     vespalib::string _metrics;
     vespalib::string _totalMetrics;
 
 public:
     SimpleMetricsProducer();
-    ~SimpleMetricsProducer();
+    ~SimpleMetricsProducer() override;
     void setMetrics(const vespalib::string &metrics);
-    virtual vespalib::string getMetrics(const vespalib::string &consumer) override;
+    vespalib::string getMetrics(const vespalib::string &consumer) override;
     void setTotalMetrics(const vespalib::string &metrics);
-    virtual vespalib::string getTotalMetrics(const vespalib::string &consumer) override;
+    vespalib::string getTotalMetrics(const vespalib::string &consumer) override;
 };
 
 } // namespace vespalib

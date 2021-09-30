@@ -4,15 +4,14 @@
 #include <vespa/searchcore/proton/metrics/i_job_tracker.h>
 #include <vespa/vespalib/util/count_down_latch.h>
 
-namespace proton {
-namespace test {
+namespace proton::test {
 
 struct SimpleJobTracker : public IJobTracker
 {
     typedef std::shared_ptr<SimpleJobTracker> SP;
     vespalib::CountDownLatch _started;
     vespalib::CountDownLatch _ended;
-    SimpleJobTracker(uint32_t numJobTrackings)
+    SimpleJobTracker(uint32_t numJobTrackings) noexcept
         : _started(numJobTrackings),
           _ended(numJobTrackings)
     {}
@@ -22,6 +21,5 @@ struct SimpleJobTracker : public IJobTracker
     void end() override { _ended.countDown(); }
 };
 
-} // namespace test
-} // namespace proton
+}
 

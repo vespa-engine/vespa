@@ -2,27 +2,66 @@
 
 #include "fieldmatchfeature.h"
 #include "utils.h"
+#include <vespa/searchlib/features/fieldmatch/computer.h>
+#include <vespa/searchlib/features/fieldmatch/computer_shared_state.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/indexproperties.h>
+#include <vespa/searchlib/fef/phrase_splitter_query_env.h>
+#include <vespa/searchlib/fef/phrasesplitter.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/stash.h>
 
 using namespace search::fef;
 using CollectionType = FieldInfo::CollectionType;
 
 namespace search::features {
 
-FieldMatchExecutor::FieldMatchExecutor(const IQueryEnvironment & queryEnv,
-                                       const FieldInfo & field,
-                                       [[maybe_unused]] const fieldmatch::Params & params) :
-    FeatureExecutor(),
-    _splitter(queryEnv, field.id()),
-    _field(field),
-    _cmp(vespalib::make_string("fieldMatch(%s)", _field.name().c_str()),
-         _splitter, field, params)
+class FieldMatchExecutorSharedState : public Anything {
+private:
+    PhraseSplitterQueryEnv _splitter_env;
+    fieldmatch::ComputerSharedState _cmp_shared_state;
+public:
+    FieldMatchExecutorSharedState(const fef::IQueryEnvironment& query_env,
+                                  const fef::FieldInfo& field,
+                                  const fieldmatch::Params& params);
+    ~FieldMatchExecutorSharedState() override;
+    const PhraseSplitterQueryEnv& get_phrase_splitter_query_env() const { return _splitter_env; }
+    const fieldmatch::ComputerSharedState &get_computer_shared_state() const { return _cmp_shared_state; }
+};
+
+FieldMatchExecutorSharedState::FieldMatchExecutorSharedState(const IQueryEnvironment& query_env,
+                                                             const FieldInfo& field,
+                                                             const fieldmatch::Params& params)
+    : Anything(),
+      _splitter_env(query_env, field.id()),
+      _cmp_shared_state(vespalib::make_string("fieldMatch(%s)", field.name().c_str()), _splitter_env, field, params)
 {
-    // empty
+}
+
+FieldMatchExecutorSharedState::~FieldMatchExecutorSharedState() = default;
+
+/**
+ * Implements the executor for THE field match feature.
+ */
+class FieldMatchExecutor : public fef::FeatureExecutor {
+private:
+    fef::PhraseSplitter    _splitter;
+    fieldmatch::Computer   _cmp;
+
+    void handle_bind_match_data(const fef::MatchData &md) override;
+
+public:
+    FieldMatchExecutor(const FieldMatchExecutorSharedState& shared_state);
+    void execute(uint32_t docId) override;
+};
+
+FieldMatchExecutor::FieldMatchExecutor(const FieldMatchExecutorSharedState& shared_state)
+    : FeatureExecutor(),
+      _splitter(shared_state.get_phrase_splitter_query_env()),
+      _cmp(shared_state.get_computer_shared_state(), _splitter)
+{
 }
 
 void
@@ -32,7 +71,6 @@ FieldMatchExecutor::execute(uint32_t docId)
 
     _splitter.update();
     _cmp.reset(docId);
-    //_cmp.setTracing(true);
 
     const fieldmatch::SimpleMetrics & simple = _cmp.getSimpleMetrics();
 
@@ -92,14 +130,13 @@ FieldMatchExecutor::handle_bind_match_data(const fef::MatchData &md)
 
 FieldMatchBlueprint::FieldMatchBlueprint() :
     Blueprint("fieldMatch"),
-    _field(NULL),
+    _field(nullptr),
+    _shared_state_key(),
     _params()
 {
 }
 
-FieldMatchBlueprint::~FieldMatchBlueprint()
-{
-}
+FieldMatchBlueprint::~FieldMatchBlueprint() = default;
 
 void
 FieldMatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
@@ -158,7 +195,7 @@ FieldMatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
 Blueprint::UP
 FieldMatchBlueprint::createInstance() const
 {
-    return Blueprint::UP(new FieldMatchBlueprint());
+    return std::make_unique<FieldMatchBlueprint>();
 }
 
 bool
@@ -166,6 +203,7 @@ FieldMatchBlueprint::setup(const IIndexEnvironment & env,
                            const ParameterList & params)
 {
     _field = params[0].asField();
+    _shared_state_key = "fef.fieldmatch." + _field->name();
 
     const Properties & lst = env.getProperties();
     Property obj;
@@ -303,8 +341,17 @@ FieldMatchBlueprint::setup(const IIndexEnvironment & env,
 FeatureExecutor &
 FieldMatchBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Stash &stash) const
 {
-    return stash.create<FieldMatchExecutor>(env, *_field, _params);
+    auto *shared_state = dynamic_cast<const FieldMatchExecutorSharedState *>(env.getObjectStore().get(_shared_state_key));
+    if (shared_state == nullptr) {
+        shared_state = &stash.create<FieldMatchExecutorSharedState>(env, *_field, _params);
+    }
+    return stash.create<FieldMatchExecutor>(*shared_state);
 }
 
+void FieldMatchBlueprint::prepareSharedState(const IQueryEnvironment &env, IObjectStore & store) const {
+    if (store.get(_shared_state_key) == nullptr) {
+        store.add(_shared_state_key, std::make_unique<FieldMatchExecutorSharedState>(env, *_field, _params));
+    }
+}
 
 }

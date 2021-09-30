@@ -13,7 +13,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".messagebus");
 
-using vespalib::LockGuard;
 using vespalib::make_string;
 using namespace std::chrono_literals;
 
@@ -83,13 +82,13 @@ public:
 
 namespace mbus {
 
-MessageBus::MessageBus(INetwork &net, ProtocolSet protocols) :
+MessageBus::MessageBus(INetwork &net, ProtocolSet protocols, bool skip_request_thread, bool skip_reply_thread) :
     _network(net),
     _lock(),
     _routingTables(),
     _sessions(),
     _protocolRepository(std::make_unique<ProtocolRepository>()),
-    _msn(std::make_unique<Messenger>()),
+    _msn(std::make_unique<Messenger>(skip_request_thread, skip_reply_thread)),
     _resender(),
     _maxPendingCount(0),
     _maxPendingSize(0),
@@ -99,7 +98,7 @@ MessageBus::MessageBus(INetwork &net, ProtocolSet protocols) :
     MessageBusParams params;
     while (!protocols.empty()) {
         IProtocol::SP protocol = protocols.extract();
-        if (protocol.get() != nullptr) {
+        if (protocol) {
             params.addProtocol(protocol);
         }
     }
@@ -112,7 +111,7 @@ MessageBus::MessageBus(INetwork &net, const MessageBusParams &params) :
     _routingTables(),
     _sessions(),
     _protocolRepository(std::make_unique<ProtocolRepository>()),
-    _msn(std::make_unique<Messenger>()),
+    _msn(std::make_unique<Messenger>(true, true)),
     _resender(),
     _maxPendingCount(params.getMaxPendingCount()),
     _maxPendingSize(params.getMaxPendingSize()),
@@ -132,8 +131,7 @@ MessageBus::~MessageBus()
     bool done = false;
     while (!done) {
         vespalib::Gate gate;
-        Messenger::ITask::UP task(new ShutdownTask(_network, *_msn, done, gate));
-        _msn->enqueue(std::move(task));
+        _msn->enqueue(std::make_unique<ShutdownTask>(_network, *_msn, done, gate));
         gate.await();
     }
 }
@@ -157,11 +155,10 @@ MessageBus::setup(const MessageBusParams &params)
 
     // Start messenger.
     IRetryPolicy::SP retryPolicy = params.getRetryPolicy();
-    if (retryPolicy.get() != nullptr) {
-        _resender.reset(new Resender(retryPolicy));
+    if (retryPolicy) {
+        _resender = std::make_unique<Resender>(retryPolicy);
 
-        Messenger::ITask::UP task(new ResenderTask(*_resender));
-        _msn->addRecurrentTask(std::move(task));
+        _msn->addRecurrentTask(std::make_unique<ResenderTask>(*_resender));
     }
     if (!_msn->start()) {
         throw vespalib::NetworkSetupFailureException("Failed to start messenger.");
@@ -203,7 +200,7 @@ MessageBus::createIntermediateSession(const string &name,
 IntermediateSession::UP
 MessageBus::createIntermediateSession(const IntermediateSessionParams &params)
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     IntermediateSession::UP ret(new IntermediateSession(*this, params));
     _sessions[params.getName()] = ret.get();
     if (params.getBroadcastName()) {
@@ -226,7 +223,7 @@ MessageBus::createDestinationSession(const string &name,
 DestinationSession::UP
 MessageBus::createDestinationSession(const DestinationSessionParams &params)
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     DestinationSession::UP ret(new DestinationSession(*this, params));
     _sessions[params.getName()] = ret.get();
     if (params.getBroadcastName()) {
@@ -238,7 +235,7 @@ MessageBus::createDestinationSession(const DestinationSessionParams &params)
 void
 MessageBus::unregisterSession(const string &sessionName)
 {
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     _network.unregisterSession(sessionName);
     _sessions.erase(sessionName);
 }
@@ -247,7 +244,7 @@ RoutingTable::SP
 MessageBus::getRoutingTable(const string &protocol)
 {
     typedef std::map<string, RoutingTable::SP>::iterator ITR;
-    LockGuard guard(_lock);
+    std::lock_guard guard(_lock);
     ITR itr = _routingTables.find(protocol);
     if (itr == _routingTables.end()) {
         return RoutingTable::SP(); // not found
@@ -273,7 +270,7 @@ MessageBus::sync()
 void
 MessageBus::handleMessage(Message::UP msg)
 {
-    if (_resender.get() != nullptr && msg->hasBucketSequence()) {
+    if (_resender && msg->hasBucketSequence()) {
         deliverError(std::move(msg), ErrorCode::SEQUENCE_ERROR,
                      "Bucket sequences not supported when resender is enabled.");
         return;
@@ -292,11 +289,10 @@ MessageBus::setupRouting(const RoutingSpec &spec)
             LOG(info, "Protocol '%s' is not supported, ignoring routing table.", cfg.getProtocol().c_str());
             continue;
         }
-        RoutingTable::SP rt(new RoutingTable(cfg));
-        rtm[cfg.getProtocol()] = rt;
+        rtm[cfg.getProtocol()] = std::make_shared<RoutingTable>(cfg);
     }
     {
-        LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         std::swap(_routingTables, rtm);
     }
     _protocolRepository->clearPolicyCache();
@@ -363,7 +359,7 @@ MessageBus::deliverMessage(Message::UP msg, const string &session)
 {
     IMessageHandler *msgHandler = nullptr;
     {
-        LockGuard guard(_lock);
+        std::lock_guard guard(_lock);
         std::map<string, IMessageHandler*>::iterator it = _sessions.find(session);
         if (it != _sessions.end()) {
             msgHandler = it->second;
@@ -383,7 +379,7 @@ MessageBus::deliverMessage(Message::UP msg, const string &session)
 void
 MessageBus::deliverError(Message::UP msg, uint32_t errCode, const string &errMsg)
 {
-    Reply::UP reply(new EmptyReply());
+    auto reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(errCode, errMsg));
 

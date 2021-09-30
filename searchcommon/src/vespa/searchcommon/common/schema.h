@@ -35,17 +35,19 @@ public:
         vespalib::string  _name;
         DataType          _dataType;
         CollectionType    _collectionType;
+        vespalib::string  _tensor_spec;
 
     public:
-        Field(vespalib::stringref n, DataType dt);
-        Field(vespalib::stringref n, DataType dt, CollectionType ct);
+        Field(vespalib::stringref n, DataType dt) noexcept;
+        Field(vespalib::stringref n, DataType dt, CollectionType ct) noexcept;
+        Field(vespalib::stringref n, DataType dt, CollectionType ct, vespalib::stringref tensor_spec) noexcept;
 
         /**
          * Create this field based on the given config lines.
          **/
         Field(const std::vector<vespalib::string> & lines);
-        Field(const Field &);
-        Field & operator = (const Field &);
+        Field(const Field &) noexcept;
+        Field & operator = (const Field &) noexcept;
         Field(Field &&) noexcept;
         Field & operator = (Field &&) noexcept;
 
@@ -58,6 +60,7 @@ public:
         const vespalib::string &getName() const { return _name; }
         DataType getDataType() const { return _dataType; }
         CollectionType getCollectionType() const { return _collectionType; }
+        const vespalib::string& get_tensor_spec() const { return _tensor_spec; }
 
         bool matchingTypes(const Field &rhs) const {
             return getDataType() == rhs.getDataType() &&
@@ -80,10 +83,10 @@ public:
         bool _interleaved_features;
 
     public:
-        IndexField(vespalib::stringref name, DataType dt);
-        IndexField(vespalib::stringref name, DataType dt, CollectionType ct);
-        IndexField(const IndexField &);
-        IndexField & operator = (const IndexField &);
+        IndexField(vespalib::stringref name, DataType dt) noexcept;
+        IndexField(vespalib::stringref name, DataType dt, CollectionType ct) noexcept;
+        IndexField(const IndexField &) noexcept;
+        IndexField & operator = (const IndexField &) noexcept;
         IndexField(IndexField &&) noexcept;
         IndexField & operator = (IndexField &&) noexcept;
         /**

@@ -19,13 +19,13 @@ class WordStore;
 class FieldIndexRemover : public IFieldIndexInsertListener {
 private:
     struct WordFieldDocTuple {
-        datastore::EntryRef _wordRef;
+        vespalib::datastore::EntryRef _wordRef;
         uint32_t _docId;
-        WordFieldDocTuple() :
+        WordFieldDocTuple() noexcept :
             _wordRef(0),
             _docId(0)
         { }
-        WordFieldDocTuple(datastore::EntryRef wordRef, uint32_t docId) :
+        WordFieldDocTuple(vespalib::datastore::EntryRef wordRef, uint32_t docId) noexcept :
             _wordRef(wordRef),
             _docId(docId)
         { }
@@ -44,18 +44,18 @@ private:
 
     CompactWordsStore              _store;
     CompactWordsStore::Builder::UP _builder;
-    std::vector<WordFieldDocTuple>         _wordFieldDocTuples;
+    std::vector<WordFieldDocTuple> _wordFieldDocTuples;
     const WordStore &_wordStore;
 
 public:
     FieldIndexRemover(const WordStore &wordStore);
-    ~FieldIndexRemover();
+    ~FieldIndexRemover() override;
     void remove(uint32_t docId, IFieldIndexRemoveListener &inverter);
     CompactWordsStore &getStore() { return _store; }
     const CompactWordsStore &getStore() const { return _store; }
 
     // Implements IFieldIndexInsertListener
-    void insert(datastore::EntryRef wordRef, uint32_t docId) override;
+    void insert(vespalib::datastore::EntryRef wordRef, uint32_t docId) override;
     void flush() override;
 };
 

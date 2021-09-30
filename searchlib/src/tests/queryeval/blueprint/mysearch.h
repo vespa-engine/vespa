@@ -9,11 +9,9 @@ namespace search::queryeval {
 
 //-----------------------------------------------------------------------------
 
-class MySearch : public SearchIterator
+class MySearch : public MultiSearch
 {
 public:
-    typedef MultiSearch::Children      Children;
-    typedef std::vector<SearchIterator::UP>      MyChildren;
     typedef search::fef::TermFieldMatchDataArray TFMDA;
     typedef search::fef::MatchData               MatchData;
 
@@ -21,7 +19,6 @@ private:
     vespalib::string _tag;
     bool             _isLeaf;
     bool             _isStrict;
-    MyChildren       _children;
     TFMDA            _match;
     MatchData       *_md;
 
@@ -33,21 +30,18 @@ protected:
 
 public:
     MySearch(const std::string &tag, bool leaf, bool strict)
-        : _tag(tag), _isLeaf(leaf), _isStrict(strict), _children(),
+        : _tag(tag), _isLeaf(leaf), _isStrict(strict),
           _match(), _md(0) {}
 
     MySearch(const std::string &tag, const TFMDA &tfmda, bool strict)
-        : _tag(tag), _isLeaf(true), _isStrict(strict), _children(),
+        : _tag(tag), _isLeaf(true), _isStrict(strict),
           _match(tfmda), _md(0) {}
 
-    MySearch(const std::string &tag, const Children &children,
+    MySearch(const std::string &tag, Children children,
              MatchData *md, bool strict)
-        : _tag(tag), _isLeaf(false), _isStrict(strict), _children(),
-          _match(), _md(md) {
-        for (size_t i(0); i < children.size(); i++) {
-            _children.emplace_back(children[i]);
-        }
-    }
+      : MultiSearch(std::move(children)),
+        _tag(tag), _isLeaf(false), _isStrict(strict),
+        _match(), _md(md) {}
 
     MySearch &add(SearchIterator *search) {
         _children.emplace_back(search);
@@ -98,7 +92,7 @@ public:
         visit(visitor, "_tag",      _tag);
         visit(visitor, "_isLeaf",   _isLeaf);
         visit(visitor, "_isStrict", _isStrict);
-        visit(visitor, "_children", _children);
+        MultiSearch::visitMembers(visitor);
         visit(visitor, "_handles",  _handles);
     }
 
@@ -110,6 +104,7 @@ public:
 class MyLeaf : public SimpleLeafBlueprint
 {
     typedef search::fef::TermFieldMatchDataArray TFMDA;
+    bool _got_global_filter;
 
 public:
     SearchIterator::UP
@@ -119,7 +114,7 @@ public:
     }
 
     MyLeaf(const FieldSpecBaseList &fields)
-        : SimpleLeafBlueprint(fields)
+        : SimpleLeafBlueprint(fields), _got_global_filter(false)
     {}
 
     MyLeaf &estimate(uint32_t hits, bool empty = false) {
@@ -131,6 +126,12 @@ public:
         set_cost_tier(value);
         return *this;
     }
+    void set_global_filter(const GlobalFilter &) override {
+        _got_global_filter = true;
+    }
+    bool got_global_filter() const { return _got_global_filter; }
+    // make public
+    using LeafBlueprint::set_want_global_filter;
 };
 
 //-----------------------------------------------------------------------------
@@ -141,10 +142,11 @@ private:
     FieldSpecBaseList      _fields;
     Blueprint::HitEstimate _estimate;
     uint32_t               _cost_tier;
+    bool                   _want_global_filter;
 
 public:
     explicit MyLeafSpec(uint32_t estHits, bool empty = false)
-        : _fields(), _estimate(estHits, empty), _cost_tier(0) {}
+        : _fields(), _estimate(estHits, empty), _cost_tier(0), _want_global_filter(false) {}
 
     MyLeafSpec &addField(uint32_t fieldId, uint32_t handle) {
         _fields.add(FieldSpecBase(fieldId, handle));
@@ -153,6 +155,10 @@ public:
     MyLeafSpec &cost_tier(uint32_t value) {
         assert(value > 0);
         _cost_tier = value;
+        return *this;
+    }
+    MyLeafSpec &want_global_filter() {
+        _want_global_filter = true;
         return *this;
     }
     MyLeaf *create() const {
@@ -165,6 +171,7 @@ public:
         if (_cost_tier > 0) {
             leaf->cost_tier(_cost_tier);
         }
+        leaf->set_want_global_filter(_want_global_filter);
         return leaf;
     }
 };

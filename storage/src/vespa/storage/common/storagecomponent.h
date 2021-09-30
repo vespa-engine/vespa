@@ -31,46 +31,43 @@
 
 #pragma once
 
+#include "cluster_context.h"
 #include <vespa/storageframework/generic/component/component.h>
 #include <vespa/storageframework/generic/component/componentregister.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vdslib/state/node.h>
 #include <mutex>
 
-namespace vespa::config::content::core::internal {
-    class InternalStorPrioritymappingType;
-}
 namespace document {
     class DocumentTypeRepo;
-}
-namespace documentapi {
-    class LoadType;
-    class LoadTypeSet;
+    class FieldSetRepo;
 }
 
 namespace storage {
+
 namespace lib {
     class Distribution;
 }
 struct NodeStateUpdater;
-class PriorityMapper;
 struct StorageComponentRegister;
 
-class StorageComponent : public framework::Component {
+class StorageComponent : public framework::Component
+{
 public:
+    struct Repos {
+        explicit Repos(std::shared_ptr<const document::DocumentTypeRepo> repo);
+        ~Repos();
+        const std::shared_ptr<const document::DocumentTypeRepo> documentTypeRepo;
+        const std::shared_ptr<const document::FieldSetRepo> fieldSetRepo;
+    };
     using UP = std::unique_ptr<StorageComponent>;
-    using PriorityConfig = vespa::config::content::core::internal::InternalStorPrioritymappingType;
-    using DocumentTypeRepoSP = std::shared_ptr<const document::DocumentTypeRepo>;
-    using LoadTypeSetSP = std::shared_ptr<documentapi::LoadTypeSet>;
     using DistributionSP = std::shared_ptr<lib::Distribution>;
 
     /**
      * Node type is supposed to be set immediately, and never be updated.
      * Thus it does not need to be threadsafe. Should never be used before set.
      */
-    void setNodeInfo(vespalib::stringref clusterName,
-                     const lib::NodeType& nodeType,
-                     uint16_t index);
+    void setNodeInfo(vespalib::stringref clusterName, const lib::NodeType& nodeType, uint16_t index);
 
     /**
      * Node state updater is supposed to be set immediately, and never be
@@ -78,41 +75,36 @@ public:
      * before set.
      */
     void setNodeStateUpdater(NodeStateUpdater& updater);
-    void setDocumentTypeRepo(DocumentTypeRepoSP);
-    void setLoadTypes(LoadTypeSetSP);
-    void setPriorityConfig(const PriorityConfig&);
+    void setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo>);
     void setBucketIdFactory(const document::BucketIdFactory&);
     void setDistribution(DistributionSP);
 
     StorageComponent(StorageComponentRegister&, vespalib::stringref name);
-    virtual ~StorageComponent();
+    ~StorageComponent() override;
 
-    vespalib::string getClusterName() const { return _clusterName; }
+    const ClusterContext & cluster_context() const noexcept { return _cluster_ctx; }
     const lib::NodeType& getNodeType() const { return *_nodeType; }
     uint16_t getIndex() const { return _index; }
     lib::Node getNode() const { return lib::Node(*_nodeType, _index); }
 
     vespalib::string getIdentity() const;
 
-    DocumentTypeRepoSP getTypeRepo() const;
-    LoadTypeSetSP getLoadTypes() const;
-    const document::BucketIdFactory& getBucketIdFactory() const
-        { return _bucketIdFactory; }
-    uint8_t getPriority(const documentapi::LoadType&) const;
+    std::shared_ptr<Repos> getTypeRepo() const;
+    const document::BucketIdFactory& getBucketIdFactory() const { return _bucketIdFactory; }
     DistributionSP getDistribution() const;
     NodeStateUpdater& getStateUpdater() const;
-
+    uint64_t getGeneration() const { return _generation.load(std::memory_order_relaxed); }
 private:
-    vespalib::string _clusterName;
+    SimpleClusterContext _cluster_ctx;
     const lib::NodeType* _nodeType;
     uint16_t _index;
-    DocumentTypeRepoSP _docTypeRepo;
-    LoadTypeSetSP _loadTypes;
-    std::unique_ptr<PriorityMapper> _priorityMapper;
+    std::shared_ptr<Repos> _repos;
+    // TODO: move _distribution in to _repos so lock will only taken once and only copying one shared_ptr.
     document::BucketIdFactory _bucketIdFactory;
     DistributionSP _distribution;
     NodeStateUpdater* _nodeStateUpdater;
     mutable std::mutex _lock;
+    std::atomic<uint64_t> _generation;
 };
 
 struct StorageComponentRegister : public virtual framework::ComponentRegister

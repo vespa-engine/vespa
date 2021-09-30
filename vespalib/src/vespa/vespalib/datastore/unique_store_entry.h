@@ -6,7 +6,7 @@
 #include <cassert>
 #include <utility>
 
-namespace search::datastore {
+namespace vespalib::datastore {
 
 template<typename EntryType>
 struct UniqueStoreEntryReclaimer {

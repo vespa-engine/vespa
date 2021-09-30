@@ -30,19 +30,16 @@ public:
     using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
 
 private:
-    struct DocumentWeightAttributeAdapter : IDocumentWeightAttribute {
+    struct DocumentWeightAttributeAdapter final : IDocumentWeightAttribute {
         const MultiValueStringPostingAttributeT &self;
         DocumentWeightAttributeAdapter(const MultiValueStringPostingAttributeT &self_in) : self(self_in) {}
-        virtual LookupResult lookup(const vespalib::string &term) const override final;
-        virtual void create(datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const override final;
-        virtual DocumentWeightIterator create(datastore::EntryRef idx) const override final;
+        vespalib::datastore::EntryRef get_dictionary_snapshot() const override;
+        LookupResult lookup(const LookupKey & key, vespalib::datastore::EntryRef dictionary_snapshot) const override;
+        void collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback) const override;
+        void create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const override;
+        DocumentWeightIterator create(vespalib::datastore::EntryRef idx) const override;
     };
     DocumentWeightAttributeAdapter _document_weight_attribute_adapter;
-
-    friend class PostingListAttributeTest;
-    template <typename, typename, typename> 
-    friend class attribute::PostingSearchContext; // getEnumStore()
-    friend class StringAttributeTest;
 
     using LoadedVector = typename B::LoadedVector;
     using PostingParent = PostingListAttributeSubBase<AttributeWeightPosting,
@@ -51,16 +48,9 @@ private:
                                                       typename B::EnumStore>;
 
     using ComparatorType = typename EnumStore::ComparatorType;
-    using Dictionary = EnumPostingTree;
-    using DictionaryConstIterator = typename Dictionary::ConstIterator;
     using DocId = typename MultiValueStringAttributeT<B, T>::DocId;
     using DocIndices = typename MultiValueStringAttributeT<B, T>::DocIndices;
-    using EnumIndex = typename EnumStore::Index;
-    using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
-    using FrozenDictionary = typename Dictionary::FrozenView;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using Posting = typename PostingParent::Posting;
-    using PostingList = typename PostingParent::PostingList;
     using PostingMap = typename PostingParent::PostingMap;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using SelfType = MultiValueStringPostingAttributeT<B, T>;
@@ -82,6 +72,10 @@ private:
     void applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater) override ;
 
 public:
+    using PostingParent::getPostingList;
+    using Dictionary = EnumPostingTree;
+    using PostingList = typename PostingParent::PostingList;
+
     MultiValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
                                       AttributeVector::Config(AttributeVector::BasicType::STRING,
                                                               attribute::CollectionType::ARRAY));

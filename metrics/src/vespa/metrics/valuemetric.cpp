@@ -23,12 +23,6 @@ AbstractValueMetric::logWarning(const char* msg, const char * op) const
 }
 
 void
-AbstractValueMetric::sendLogEvent(Metric::String name, double value) const
-{
-    EV_VALUE(name.c_str(), value);
-}
-
-void
 AbstractValueMetric::logNonFiniteValueWarning() const
 {
     if (hasWarned.exchange(true, std::memory_order_relaxed) == false) {

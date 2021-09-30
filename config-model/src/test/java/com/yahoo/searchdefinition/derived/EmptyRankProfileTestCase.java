@@ -6,10 +6,9 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SearchDefinitionTestCase;
+import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
-import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import org.junit.Test;
 
 /**
@@ -17,11 +16,11 @@ import org.junit.Test;
  *
  * @author bratseth
  */
-public class EmptyRankProfileTestCase extends SearchDefinitionTestCase {
+public class EmptyRankProfileTestCase extends SchemaTestCase {
 
     @Test
     public void testDeriving() {
-        Search search = new Search("test", null);
+        Search search = new Search("test");
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
         SDDocumentType doc = new SDDocumentType("test");
         search.addDocument(doc);
@@ -32,7 +31,7 @@ public class EmptyRankProfileTestCase extends SearchDefinitionTestCase {
         doc.addField(new SDField("c", DataType.STRING));
 
         search = SearchBuilder.buildFromRawSearch(search, rankProfileRegistry, new QueryProfileRegistry());
-        new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry(), new ImportedMlModels());
+        new DerivedConfiguration(search, rankProfileRegistry);
     }
 
 }

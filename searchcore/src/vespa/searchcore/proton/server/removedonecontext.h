@@ -3,10 +3,8 @@
 #pragma once
 
 #include "operationdonecontext.h"
+#include <vespa/searchcore/proton/common/ipendinglidtracker.h>
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/document/base/globalid.h>
-#include <vespa/searchlib/common/serialnum.h>
-#include <vespa/searchcore/proton/reference/pending_notify_remove_done.h>
 
 namespace proton {
 
@@ -14,7 +12,7 @@ struct IDocumentMetaStore;
 
 
 /**
- * Context class for document removes that acks remove andschedules a
+ * Context class for document removes that acks remove and schedules a
  * task when instance is destroyed. Typically a shared pointer to an
  * instance is passed around to multiple worker threads that performs
  * portions of a larger task before dropping the shared pointer,
@@ -25,11 +23,11 @@ class RemoveDoneContext : public OperationDoneContext
 {
     vespalib::Executor &_executor;
     std::unique_ptr<vespalib::Executor::Task> _task;
-    PendingNotifyRemoveDone _pendingNotifyRemoveDone;
+    IPendingLidTracker::Token _uncommitted;
 
 public:
-    RemoveDoneContext(FeedToken token, vespalib::Executor &executor, IDocumentMetaStore &documentMetaStore,
-                      PendingNotifyRemoveDone &&pendingNotifyRemoveDone, uint32_t lid);
+    RemoveDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted, vespalib::Executor &executor,
+                      IDocumentMetaStore &documentMetaStore, uint32_t lid);
     ~RemoveDoneContext() override;
 };
 

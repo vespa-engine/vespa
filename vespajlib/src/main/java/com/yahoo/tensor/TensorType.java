@@ -33,7 +33,7 @@ public class TensorType {
     public enum Value {
 
         // Types added must also be added to TensorTypeParser.parseValueTypeSpec, serialization, and largestOf below
-        DOUBLE("double"), FLOAT("float");
+        DOUBLE("double"), FLOAT("float"), BFLOAT16("bfloat16"), INT8("int8");
 
         private final String id;
 
@@ -59,19 +59,23 @@ public class TensorType {
 
         public static Value largestOf(Value value1, Value value2) {
             if (value1 == DOUBLE || value2 == DOUBLE) return DOUBLE;
-            return FLOAT;
+            if (value1 == FLOAT || value2 == FLOAT) return FLOAT;
+            if (value1 == BFLOAT16 || value2 == BFLOAT16) return BFLOAT16;
+            if (value1 == INT8 && value2 == INT8) return INT8;
+            throw new IllegalArgumentException("Cannot find largest of "+value1+" and "+value2);
         }
 
         @Override
         public String toString() { return name().toLowerCase(); }
 
         public static Value fromId(String valueTypeString) {
-            switch (valueTypeString) {
-                case "double" : return Value.DOUBLE;
-                case "float" : return Value.FLOAT;
-                default : throw new IllegalArgumentException("Value type must be either 'double' or 'float'" +
-                                                             " but was '" + valueTypeString + "'");
+            for (Value value : values()) {
+                if (value.id.equals(valueTypeString)) {
+                    return value;
+                }
             }
+            throw new IllegalArgumentException("Value type must be either 'double', 'float', " +
+                                               "'bfloat16', or 'int8' but was '" + valueTypeString + "'");
         }
 
     };
@@ -112,7 +116,7 @@ public class TensorType {
 
     /**
      * Returns a tensor type instance from a
-     * <a href="https://docs.vespa.ai/documentation/reference/tensor.html#tensor-type-spec">tensor type spec</a>:
+     * <a href="https://docs.vespa.ai/en/reference/tensor.html#tensor-type-spec">tensor type spec</a>:
      * <code>tensor(dimension1, dimension2, ...)</code>
      * where each dimension is either
      * <ul>
@@ -183,7 +187,7 @@ public class TensorType {
     }
 
     /**
-     * Returns whether or not this type can simply be renamed to
+     * Returns whether this type can simply be renamed to
      * the given type. This is the same as being assignable, but disregarding
      * dimension names.
      */
@@ -520,27 +524,9 @@ public class TensorType {
             }
         }
 
-        private static final boolean supportsMixedTypes = false;
-
         private void addDimensionsOf(TensorType type, boolean allowDifferentSizes) {
-            if ( ! supportsMixedTypes) {  // TODO: Support it
-                addDimensionsOfAndDisallowMixedDimensions(type, allowDifferentSizes);
-            }
-            else {
-                for (Dimension dimension : type.dimensions)
-                    set(dimension.combineWith(Optional.ofNullable(dimensions.get(dimension.name())), allowDifferentSizes));
-            }
-        }
-
-        private void addDimensionsOfAndDisallowMixedDimensions(TensorType type, boolean allowDifferentSizes) {
-            boolean containsMapped = dimensions.values().stream().anyMatch(d -> ! d.isIndexed());
-            containsMapped = containsMapped || type.dimensions().stream().anyMatch(d -> ! d.isIndexed());
-
             for (Dimension dimension : type.dimensions) {
-                if (containsMapped)
-                    dimension = new MappedDimension(dimension.name());
-                Dimension existing = dimensions.get(dimension.name());
-                set(dimension.combineWith(Optional.ofNullable(existing), allowDifferentSizes));
+                set(dimension.combineWith(Optional.ofNullable(dimensions.get(dimension.name())), allowDifferentSizes));
             }
         }
 

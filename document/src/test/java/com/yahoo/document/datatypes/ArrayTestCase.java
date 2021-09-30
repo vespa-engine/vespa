@@ -283,6 +283,7 @@ public class ArrayTestCase {
         b.add(new StringFieldValue("mumbo jumbo 1"));
         b.add(new StringFieldValue("mumbo jumbo 2"));
         assertEquals(a, b);
+        assertEquals(b, a);
         assertEquals(0, a.compareTo(b));
         assertEquals(0, b.compareTo(a));
 
@@ -292,6 +293,7 @@ public class ArrayTestCase {
         l.add("mumbo jumbo 2");
         b.assign(l);
         assertEquals(a, b);
+        assertEquals(b, a);
         assertEquals(0, a.compareTo(b));
         assertEquals(0, b.compareTo(a));
     }
@@ -305,6 +307,7 @@ public class ArrayTestCase {
         b.add(new StringFieldValue("mumbo jumbo 1"));
         b.add(new StringFieldValue("mumbo jumbo 2"));
         assertNotEquals(a, b);
+        assertNotEquals(b, a);
         assertEquals(1, a.compareTo(b));
         assertEquals(-1, b.compareTo(a));
 
@@ -314,6 +317,7 @@ public class ArrayTestCase {
         l.add("mumbo jumbo 2");
         b.assign(l);
         assertNotEquals(a, b);
+        assertNotEquals(b, a);
         assertEquals(1, a.compareTo(b));
         assertEquals(-1, b.compareTo(a));
     }

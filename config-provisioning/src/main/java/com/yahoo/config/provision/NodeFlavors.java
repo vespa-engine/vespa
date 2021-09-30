@@ -7,6 +7,7 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +15,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * All the flavors *configured* in this zone (i.e this should be called HostFlavors).
+ * All the flavors configured in this zone (i.e this should be called HostFlavors).
  *
  * @author bratseth
  */
@@ -25,10 +26,11 @@ public class NodeFlavors {
 
     @Inject
     public NodeFlavors(FlavorsConfig config) {
-        HashMap<String, Flavor> b = new HashMap<>();
-        for (Flavor flavor : toFlavors(config))
-            b.put(flavor.name(), flavor);
-        this.configuredFlavors = Collections.unmodifiableMap(b);
+        this(toFlavors(config));
+    }
+
+    public NodeFlavors(Collection<Flavor> flavors) {
+        configuredFlavors = flavors.stream().collect(Collectors.toUnmodifiableMap(f -> f.name(), f -> f));
     }
 
     public List<Flavor> getFlavors() {

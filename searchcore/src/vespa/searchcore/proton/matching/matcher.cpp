@@ -27,7 +27,7 @@ using namespace search::grouping;
 using search::DocumentMetaData;
 using search::LidUsageStats;
 using search::FeatureSet;
-using search::StructFieldMapper;
+using search::MatchingElementsFields;
 using search::MatchingElements;
 using search::attribute::IAttributeContext;
 using search::fef::MatchDataLayout;
@@ -99,17 +99,18 @@ handleGroupingSession(SessionManager &sessionMgr, GroupingContext & groupingCont
 }  // namespace proton::matching::<unnamed>
 
 Matcher::Matcher(const search::index::Schema &schema, const Properties &props, const vespalib::Clock &clock,
-                 QueryLimiter &queryLimiter, const IConstantValueRepo &constantValueRepo, uint32_t distributionKey)
-    : _indexEnv(schema, props, constantValueRepo),
-      _blueprintFactory(),
-      _rankSetup(),
-      _viewResolver(ViewResolver::createFromSchema(schema)),
-      _statsLock(),
-      _stats(),
-      _startTime(my_clock::now()),
-      _clock(clock),
-      _queryLimiter(queryLimiter),
-      _distributionKey(distributionKey)
+                 QueryLimiter &queryLimiter, const IConstantValueRepo &constantValueRepo,
+                 RankingExpressions rankingExpressions, OnnxModels onnxModels, uint32_t distributionKey)
+  : _indexEnv(distributionKey, schema, props, constantValueRepo, std::move(rankingExpressions), std::move(onnxModels)),
+    _blueprintFactory(),
+    _rankSetup(),
+    _viewResolver(ViewResolver::createFromSchema(schema)),
+    _statsLock(),
+    _stats(),
+    _startTime(my_clock::now()),
+    _clock(clock),
+    _queryLimiter(queryLimiter),
+    _distributionKey(distributionKey)
 {
     search::features::setup_search_features(_blueprintFactory);
     search::fef::test::setup_fef_test_plugin(_blueprintFactory);
@@ -136,7 +137,7 @@ using search::fef::indexproperties::softtimeout::Factor;
 std::unique_ptr<MatchToolsFactory>
 Matcher::create_match_tools_factory(const search::engine::Request &request, ISearchContext &searchContext,
                                     IAttributeContext &attrContext, const search::IDocumentMetaStore &metaStore,
-                                    const Properties &feature_overrides) const
+                                    const Properties &feature_overrides, bool is_search) const
 {
     const Properties & rankProperties = request.propertiesMap.rankProperties();
     bool softTimeoutEnabled = Enabled::lookup(rankProperties, _rankSetup->getSoftTimeoutEnabled());
@@ -156,7 +157,7 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
     return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext,
                                                request.trace(), request.getStackRef(), request.location,
                                                _viewResolver, metaStore, _indexEnv, *_rankSetup,
-                                               rankProperties, feature_overrides);
+                                               rankProperties, feature_overrides, is_search);
 }
 
 size_t
@@ -216,7 +217,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         }
 
         MatchToolsFactory::UP mtf = create_match_tools_factory(request, searchContext, attrContext,
-                                                               metaStore, *feature_overrides);
+                metaStore, *feature_overrides, true);
         isDoomExplicit = mtf->getRequestContext().getDoom().isExplicitSoftDoom();
         traceQuery(6, request.trace(), mtf->query());
         if (!mtf->valid()) {
@@ -336,10 +337,10 @@ Matcher::getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
 MatchingElements::UP
 Matcher::get_matching_elements(const DocsumRequest &req, ISearchContext &search_ctx,
                                IAttributeContext &attr_ctx, SessionManager &session_manager,
-                               const StructFieldMapper &field_mapper)
+                               const MatchingElementsFields &fields)
 {
     auto docsum_matcher = create_docsum_matcher(req, search_ctx, attr_ctx, session_manager);
-    return docsum_matcher->get_matching_elements(field_mapper);
+    return docsum_matcher->get_matching_elements(fields);
 }
 
 DocsumMatcher::UP
@@ -368,7 +369,7 @@ Matcher::create_docsum_matcher(const DocsumRequest &req, ISearchContext &search_
     }
     StupidMetaStore meta;
     MatchToolsFactory::UP mtf = create_match_tools_factory(req, search_ctx, attr_ctx, meta,
-            req.propertiesMap.featureOverrides());
+            req.propertiesMap.featureOverrides(), false);
     if (!mtf->valid()) {
         LOG(warning, "could not initialize docsum matching: %s",
             (expectedSessionCached) ? "session has expired" : "invalid query");

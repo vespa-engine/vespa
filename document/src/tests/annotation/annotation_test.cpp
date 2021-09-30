@@ -140,8 +140,8 @@ TEST("requireThatSpanTreeCanHaveMultipleLevels") {
 TEST("requireThatAnnotationsCanHaveValues") {
     PrimitiveDataType double_type(DataType::T_DOUBLE);
     StructDataType city_data_type;
-    city_data_type.addField(Field("latitude", 0, double_type, false));
-    city_data_type.addField(Field("longitude", 1, double_type, false));
+    city_data_type.addField(Field("latitude", 0, double_type));
+    city_data_type.addField(Field("longitude", 1, double_type));
 
     StructFieldValue::UP position(new StructFieldValue(city_data_type));
     position->setValue("latitude", DoubleFieldValue(37.774929));
@@ -162,14 +162,12 @@ TEST("requireThatAnnotationsCanReferenceAnnotations") {
     AnnotationReferenceDataType annotation_ref_type(text_type, 101);
     ArrayDataType array_type(annotation_ref_type);
     StructDataType city_data_type("name", 42);
-    city_data_type.addField(Field("references", 0, array_type, false));
+    city_data_type.addField(Field("references", 0, array_type));
 
     StructFieldValue::UP city_data(new StructFieldValue(city_data_type));
     ArrayFieldValue ref_list(array_type);
-    ref_list.add(AnnotationReferenceFieldValue(annotation_ref_type,
-                                               san_index));
-    ref_list.add(AnnotationReferenceFieldValue(annotation_ref_type,
-                                               fran_index));
+    ref_list.add(AnnotationReferenceFieldValue(annotation_ref_type, san_index));
+    ref_list.add(AnnotationReferenceFieldValue(annotation_ref_type, fran_index));
     city_data->setValue("references", ref_list);
     StructFieldValue original(*city_data);
 

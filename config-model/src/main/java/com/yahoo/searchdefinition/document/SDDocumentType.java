@@ -155,7 +155,6 @@ public class SDDocumentType implements Cloneable, Serializable {
     public SDDocumentType(String name, Search search) {
         docType = new DocumentType(name);
         docType.contentStruct().setCompressionConfig(new CompressionConfig());
-        docType.getBodyType().setCompressionConfig(new CompressionConfig());
         validateId(search);
         inherit(VESPA_DOCUMENT);
     }

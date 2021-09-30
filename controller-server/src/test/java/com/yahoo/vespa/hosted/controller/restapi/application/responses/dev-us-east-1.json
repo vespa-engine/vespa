@@ -8,30 +8,26 @@
     {
       "cluster": "default",
       "tls": true,
-      "url": "https://instance1--application1--tenant1.us-east-1.dev.vespa:43",
-      "scope": "zone"
+      "url": "https://instance1--application1--tenant1.us-east-1.dev.vespa.oath.cloud:4443/",
+      "scope": "zone",
+      "routingMethod": "shared",
+      "legacy": false
     }
   ],
-  "serviceUrls": [
-    "https://instance1--application1--tenant1.us-east-1.dev.vespa:43"
-  ],
-  "nodes": "http://localhost:8080/zone/v2/dev/us-east-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.instance1",
+  "clusters":"http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/dev/region/us-east-1/clusters",
+  "nodes": "http://localhost:8080/zone/v2/dev/us-east-1/nodes/v2/node/?recursive=true&application=tenant1.application1.instance1",
   "yamasUrl": "http://monitoring-system.test/?environment=dev&region=us-east-1&application=tenant1.application1.instance1",
   "version": "(ignore)",
   "revision": "(ignore)",
   "deployTimeEpochMs": "(ignore)",
   "screwdriverId": "123",
+  "status": "complete",
+  "quota": "(ignore)",
   "activity": {
     "lastQueried": 1527848130000,
     "lastWritten": 1527848130000,
     "lastQueriesPerSecond": 1.0,
     "lastWritesPerSecond": 2.0
-  },
-  "cost": {
-    "tco": 0,
-    "waste": 0,
-    "utilization": 0.0,
-    "cluster": {}
   },
   "metrics": {
     "queriesPerSecond": 1.0,

@@ -43,6 +43,8 @@ class NotifyBucketChangeCommand;
 class NotifyBucketChangeReply;
 class SplitBucketCommand;
 class SplitBucketReply;
+class StatBucketCommand;
+class StatBucketReply;
 class JoinBucketsCommand;
 class JoinBucketsReply;
 class SetBucketStateCommand;
@@ -111,6 +113,8 @@ protected:
     virtual void onEncode(GBBuf&, const api::DestroyVisitorReply&) const = 0;
     virtual void onEncode(GBBuf&, const api::RemoveLocationCommand&) const = 0;
     virtual void onEncode(GBBuf&, const api::RemoveLocationReply&) const = 0;
+    virtual void onEncode(GBBuf&, const api::StatBucketCommand&) const = 0;
+    virtual void onEncode(GBBuf&, const api::StatBucketReply&) const = 0;
 
     virtual SCmd::UP onDecodePutCommand(BBuf&) const = 0;
     virtual SRep::UP onDecodePutReply(const SCmd&, BBuf&) const = 0;
@@ -148,6 +152,8 @@ protected:
     virtual SRep::UP onDecodeDestroyVisitorReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeRemoveLocationCommand(BBuf&) const = 0;
     virtual SRep::UP onDecodeRemoveLocationReply(const SCmd&, BBuf&) const = 0;
+    virtual SCmd::UP onDecodeStatBucketCommand(BBuf&) const = 0;
+    virtual SRep::UP onDecodeStatBucketReply(const SCmd&, BBuf&) const = 0;
 };
 
 }

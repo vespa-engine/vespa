@@ -136,6 +136,10 @@ TEST_F("require that bucket checksum is a combination of sub db types", Fixture)
     EXPECT_EQUAL(zero,     f.remove(TIME_3, SDT::REMOVED).getChecksum());
 }
 
+TEST("require that BucketState follows checksum type") {
+    EXPECT_EQUAL(48u, sizeof(BucketState));
+}
+
 TEST_F("require that bucket is ready when not having docs in notready sub db", Fixture)
 {
     assertReady(true, f.get());
@@ -222,47 +226,47 @@ verifyChecksumCompliance(ChecksumAggregator::ChecksumType type) {
     GlobalId gid2("bbbbbbbbbbbb");
     Timestamp t1(0);
     Timestamp t2(1);
-    auto ckaggr = ChecksumAggregator::create(type, BucketChecksum(0));
+    BucketState::setChecksumType(type);
+    BucketState bs;
 
-    EXPECT_EQUAL(0u, ckaggr->getChecksum());
-    ckaggr->addDoc(gid1, t1);
-    BucketChecksum afterAdd = ckaggr->getChecksum();
+    EXPECT_EQUAL(0u, bs.getChecksum());
+    bs.add(gid1, t1, 1, SubDbType::READY);
+    BucketChecksum afterAdd = bs.getChecksum();
     EXPECT_NOT_EQUAL(0u, afterAdd);                   // add Changes checksum
-    ckaggr->removeDoc(gid1, t1);
-    EXPECT_EQUAL(0u, ckaggr->getChecksum());          // add/remove are symmetrical
-    ckaggr->addDoc(gid1, t2);
-    EXPECT_NOT_EQUAL(afterAdd, ckaggr->getChecksum()); // timestamp changes checksum
-    ckaggr->removeDoc(gid1, t2);
-    EXPECT_EQUAL(0u, ckaggr->getChecksum());          // add/remove are symmetrical
-    ckaggr->addDoc(gid2, t1);
-    EXPECT_NOT_EQUAL(afterAdd, ckaggr->getChecksum()); // gid changes checksum
-    ckaggr->removeDoc(gid2, t1);
-    EXPECT_EQUAL(0u, ckaggr->getChecksum());          // add/remove are symmetrical
+    bs.remove(gid1, t1, 1, SubDbType::READY);
+    EXPECT_EQUAL(0u, bs.getChecksum());          // add/remove are symmetrical
+    bs.add(gid1, t2, 1, SubDbType::READY);
+    EXPECT_NOT_EQUAL(afterAdd, bs.getChecksum()); // timestamp changes checksum
+    bs.remove(gid1, t2, 1, SubDbType::READY);
+    EXPECT_EQUAL(0u, bs.getChecksum());          // add/remove are symmetrical
+    bs.add(gid2, t1, 1, SubDbType::READY);
+    EXPECT_NOT_EQUAL(afterAdd, bs.getChecksum()); // gid changes checksum
+    bs.remove(gid2, t1, 1, SubDbType::READY);
+    EXPECT_EQUAL(0u, bs.getChecksum());          // add/remove are symmetrical
 
     {
         // Verify order does not matter, only current content. A,B == B,A
-        ckaggr->addDoc(gid1, t1);
-        BucketChecksum after1AddOfGid1 = ckaggr->getChecksum();
-        ckaggr->addDoc(gid2, t2);
-        BucketChecksum after2Add1 = ckaggr->getChecksum();
-        ckaggr->removeDoc(gid2, t2);
-        EXPECT_EQUAL(after1AddOfGid1, ckaggr->getChecksum());
-        ckaggr->removeDoc(gid1, t1);
-        EXPECT_EQUAL(0u, ckaggr->getChecksum());
+        bs.add(gid1, t1, 1, SubDbType::READY);
+        BucketChecksum after1AddOfGid1 = bs.getChecksum();
+        bs.add(gid2, t2, 1, SubDbType::READY);
+        BucketChecksum after2Add1 = bs.getChecksum();
+        bs.remove(gid2, t2, 1, SubDbType::READY);
+        EXPECT_EQUAL(after1AddOfGid1, bs.getChecksum());
+        bs.remove(gid1, t1, 1, SubDbType::READY);
+        EXPECT_EQUAL(0u, bs.getChecksum());
 
-        ckaggr->addDoc(gid2, t2);
-        EXPECT_NOT_EQUAL(after1AddOfGid1, ckaggr->getChecksum());
-        ckaggr->addDoc(gid1, t1);
-        EXPECT_EQUAL(after2Add1, ckaggr->getChecksum());
-        ckaggr->removeDoc(gid2, t2);
-        EXPECT_EQUAL(after1AddOfGid1, ckaggr->getChecksum());
-        ckaggr->removeDoc(gid1, t1);
-        EXPECT_EQUAL(0u, ckaggr->getChecksum());          // add/remove are symmetrical
+        bs.add(gid2, t2, 1, SubDbType::READY);
+        EXPECT_NOT_EQUAL(after1AddOfGid1, bs.getChecksum());
+        bs.add(gid1, t1, 1, SubDbType::READY);
+        EXPECT_EQUAL(after2Add1, bs.getChecksum());
+        bs.remove(gid2, t2, 1, SubDbType::READY);
+        EXPECT_EQUAL(after1AddOfGid1, bs.getChecksum());
+        bs.remove(gid1, t1, 1, SubDbType::READY);
+        EXPECT_EQUAL(0u, bs.getChecksum());          // add/remove are symmetrical
     }
 
-    ckaggr->addDoc(gid1, t1); // Add something so we can verify it does not change between releases.
-
-    return ckaggr->getChecksum();
+    bs.add(gid1, t1, 1, SubDbType::READY); // Add something so we can verify it does not change between releases.
+    return bs.getChecksum();
 }
 
 TEST("test that legacy checksum complies") {

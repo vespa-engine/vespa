@@ -1,0 +1,76 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search test {
+
+    document test {
+        field i1 type int {
+            indexing: attribute | summary
+        }
+        field t1 type tensor<float>(x{}) {
+            indexing: attribute | summary
+        }
+        field t2 type tensor<float>(x{}) {
+            indexing: attribute | summary
+        }
+    }
+
+    rank-profile test {
+
+        function my_square(x) {
+            expression: x * x
+        }
+
+        function test_constant() {
+            expression: my_square(2) + my_square(-3.14)
+        }
+
+        function test_arithmetic() {
+            expression: my_square(attribute(i1) * 2) + my_square(attribute(i1) < 1)
+        }
+
+        function test_not_neg() {
+            expression: my_square( ! attribute(i1) ) + my_square( -attribute(i1) )
+        }
+
+        function test_if_in() {
+            expression: my_square( if(attribute(i1) in [0,1,2], 0, 1) ) + my_square( attribute(i1) in [0,1,2] )
+        }
+
+        function test_function() {
+            expression: my_square( cos(attribute(i1)) )
+        }
+
+        function test_embraced() {
+            expression: my_square( ( attribute(i1) * 2 ) )
+        }
+
+        function my_func(t) {
+            expression: sum(t, x) + 1
+        }
+
+        function test_func() {
+            expression: my_func( attribute(t1) )
+        }
+
+        function test_tensor_func_with_expr() {
+            expression: my_func( attribute(t1) * attribute(t2) )
+        }
+
+        function test_func_with_tensor_func() {
+            expression: my_func( map(attribute(t1), f(x)(x * x)) )
+        }
+
+        function test_func_with_slice() {
+            expression: my_square( attribute(t1){x:0} )
+        }
+
+        function test_func_via_func_with_expr() {
+            expression: call_func_with_expr( attribute(t1), attribute(t2) )
+        }
+
+        function call_func_with_expr(a, b) {
+            expression: my_func( a * b )
+        }
+
+    }
+
+}

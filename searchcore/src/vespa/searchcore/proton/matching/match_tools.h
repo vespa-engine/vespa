@@ -119,7 +119,8 @@ public:
                       const search::fef::IIndexEnvironment &indexEnv,
                       const search::fef::RankSetup &rankSetup,
                       const search::fef::Properties &rankProperties,
-                      const search::fef::Properties &featureOverrides);
+                      const search::fef::Properties &featureOverrides,
+                      bool is_search);
     ~MatchToolsFactory();
     bool valid() const { return _valid; }
     const MaybeMatchPhaseLimiter &match_limiter() const { return *_match_limiter; }

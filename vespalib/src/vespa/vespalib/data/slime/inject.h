@@ -5,8 +5,7 @@
 #include "inserter.h"
 #include "inspector.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * Inject a slime sub-structure described by an Inspector into a slime
@@ -24,5 +23,4 @@ namespace slime {
 void inject(const Inspector &inspector, const Inserter &inserter);
 
 } // namespace vespalib::slime
-} // namespace vespalib
 

@@ -179,9 +179,9 @@ struct FilterFactory : WandFactory {
     virtual std::string name() const override { return make_string("Filter (mod=%u) [%s]", n, factory.name().c_str()); }
     virtual SearchIterator::UP create(const wand::Terms &terms) override {
         AndNotSearch::Children children;
-        children.push_back(factory.create(terms).release());
-        children.push_back(new ModSearch(stats, n, search::endDocId, n, NULL));
-        return SearchIterator::UP(AndNotSearch::create(children, true));
+        children.push_back(factory.create(terms));
+        children.emplace_back(new ModSearch(stats, n, search::endDocId, n, NULL));
+        return AndNotSearch::create(std::move(children), true);
     }
 };
 

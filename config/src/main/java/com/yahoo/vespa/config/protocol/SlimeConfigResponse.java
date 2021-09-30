@@ -1,11 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
-import com.yahoo.text.Utf8Array;
+import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.vespa.config.ConfigPayload;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+
+import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
 
 /**
  * Class for serializing config responses based on {@link com.yahoo.slime.Slime} implementing the {@link ConfigResponse} interface.
@@ -14,34 +18,51 @@ import java.io.OutputStream;
  */
 public class SlimeConfigResponse implements ConfigResponse {
 
-    private final Utf8Array payload;
+    private final AbstractUtf8Array payload;
     private final CompressionInfo compressionInfo;
     private final long generation;
-    private final boolean internalRedeploy;
-    private final String configMd5;
+    private final boolean applyOnRestart;
+    private final PayloadChecksums payloadChecksums;
 
-    public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload, long generation,
-                                                        boolean internalRedeploy, String configMd5) {
-        Utf8Array data = payload.toUtf8Array(true);
-        return new SlimeConfigResponse(data, generation, internalRedeploy,
-                                       configMd5,
+    public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload,
+                                                        long generation,
+                                                        boolean applyOnRestart,
+                                                        PayloadChecksums payloadChecksums) {
+        AbstractUtf8Array data = payload.toUtf8Array(true);
+        return new SlimeConfigResponse(data,
+                                       generation,
+                                       applyOnRestart,
+                                       payloadChecksums,
                                        CompressionInfo.create(CompressionType.UNCOMPRESSED, data.getByteLength()));
     }
 
-    public SlimeConfigResponse(Utf8Array payload,
+    // TODO: Legacy method, remove when not used anymore
+    public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload,
+                                                        long generation,
+                                                        boolean applyOnRestart,
+                                                        String configMd5) {
+        AbstractUtf8Array data = payload.toUtf8Array(true);
+        return new SlimeConfigResponse(data,
+                                       generation,
+                                       applyOnRestart,
+                                       PayloadChecksums.from(configMd5, ""),
+                                       CompressionInfo.create(CompressionType.UNCOMPRESSED, data.getByteLength()));
+    }
+
+    public SlimeConfigResponse(AbstractUtf8Array payload,
                                long generation,
-                               boolean internalRedeploy,
-                               String configMd5,
+                               boolean applyOnRestart,
+                               PayloadChecksums payloadChecksums,
                                CompressionInfo compressionInfo) {
         this.payload = payload;
         this.generation = generation;
-        this.internalRedeploy = internalRedeploy;
-        this.configMd5 = configMd5;
+        this.applyOnRestart = applyOnRestart;
+        this.payloadChecksums = payloadChecksums;
         this.compressionInfo = compressionInfo;
     }
 
     @Override
-    public Utf8Array getPayload() {
+    public AbstractUtf8Array getPayload() {
         return payload;
     }
 
@@ -50,31 +71,30 @@ public class SlimeConfigResponse implements ConfigResponse {
         return generation;
     }
 
-    /**
-     * Returns whether this application instance was produced by an internal redeployment,
-     * not an application package change
-     */
     @Override
-    public boolean isInternalRedeploy() { return internalRedeploy; }
+    public boolean applyOnRestart() { return applyOnRestart; }
 
     @Override
     public String getConfigMd5() {
-        return configMd5;
+        return payloadChecksums.getForType(MD5).asString();
     }
 
     @Override
     public void serialize(OutputStream os, CompressionType type) throws IOException {
-        os.write(Payload.from(payload, compressionInfo).withCompression(type).getData().getBytes());
+        ByteBuffer buf = Payload.from(payload, compressionInfo).withCompression(type).getData().wrap();
+        os.write(buf.array(), buf.arrayOffset()+buf.position(), buf.remaining());
     }
 
     @Override
     public String toString() {
         return "generation=" + generation +  "\n" +
-                "configmd5=" + configMd5 +  "\n" +
+                "checksums=" + payloadChecksums +  "\n" +
                 Payload.from(payload, compressionInfo).withCompression(CompressionType.UNCOMPRESSED);
     }
 
     @Override
     public CompressionInfo getCompressionInfo() { return compressionInfo; }
 
+    @Override
+    public PayloadChecksums getPayloadChecksums() { return payloadChecksums; }
 }

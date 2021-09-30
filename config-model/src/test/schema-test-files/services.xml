@@ -15,15 +15,29 @@
       <slobrok hostalias="rtc-1" />
     </slobroks>
     <metrics>
-      <consumer id="my-consumer">
+
+      <consumer id="cloudwatch-hosted">
         <metric-set id="my-set" />
         <metric id="my-metric"/>
         <metric id="my-metric2" display-name="my-metric3"/>
         <metric display-name="my-metric4" id="my-metric4.avg"/>
+        <cloudwatch region="us-east1" namespace="my-namespace">
+          <credentials access-key-name="my-access-key" secret-key-name="my-secret-key" />
+        </cloudwatch>
       </consumer>
-      <consumer id="my-consumer2">
-        <metric-set id="my-set2" />
+
+      <consumer id="cloudwatch-self-hosted-with-default-auth">
+        <metric-set id="public" />
+        <cloudwatch region="us-east1" namespace="namespace_legal.chars:/#1" />
       </consumer>
+
+      <consumer id="cloudwatch-self-hosted-with-profile">
+        <metric id="my-custom-metric" />
+        <cloudwatch region="us-east1" namespace="another-namespace">
+          <shared-credentials file="/user/.aws/credentials" profile="profile-in-credentials-file" />
+        </cloudwatch>
+      </consumer>
+
     </metrics>
     <logforwarding>
       <splunk deployment-server="foo:8989" client-name="foobar" splunk-home="/opt/splunk" phone-home-interval="900"/>
@@ -44,18 +58,6 @@
       <group name="foo" environment="aws_stage" />
     </secret-store>
 
-    <rest-api path="jersey1">
-      <components bundle="my-bundle" />
-      <components bundle="other-bundle">
-        <package>com.yahoo.foo</package>
-        <package>com.yahoo.bar</package>
-      </components>
-
-    </rest-api>
-    <rest-api path="jersey/2">
-      <components bundle="my-bundle" />
-    </rest-api>
-
     <servlet id="my-servlet" class="com.yahoo.MyServlet" bundle="my-bundle">
       <path>p/a/t/h</path>
     </servlet>
@@ -71,12 +73,11 @@
     </servlet>
 
     <http>
-      <filtering>
+      <filtering strict-mode="true">
         <access-control domain="my.athens-domain" read="true">
           <exclude>
             <binding>http//*/foo/*</binding>
           </exclude>
-          <application>my-app</application>
           <vespa-domain>vespa.vespa.cd</vespa-domain>
         </access-control>
 
@@ -111,7 +112,7 @@
         </request-chain>
       </filtering>
 
-      <server port="4080" id="myServer"/>
+      <server port="4080" id="myServer" default-request-chain="DerivedChain" default-response-chain="BaseChain"/>
       <server port="4081" id="anotherServer"/>
       <server port="4082" id="defaultSsl">
         <ssl>
@@ -134,7 +135,7 @@
     </http>
 
     <accesslog type='json'
-           fileNamePattern='logs/vespa/qrs/access-json.%Y%m%d%H%M%S' />
+           fileNamePattern='logs/vespa/qrs/access-json.%Y%m%d%H%M%S' compressOnRotation='true'  compressionType='zstd' queueSize='13' bufferSize='65536'/>
     <accesslog type='vespa'
            fileNamePattern='logs/vespa/qrs/access-vespa.%Y%m%d%H%M%S' />
 
@@ -145,6 +146,13 @@
       <timeout>5.55</timeout>
       <route>default</route>
       <maxpendingdocs>100</maxpendingdocs>
+      <http-client-api>
+        <threadpool>
+          <max-threads>50</max-threads>
+          <min-threads>10</min-threads>
+          <queue-size>1000</queue-size>
+        </threadpool>
+      </http-client-api>
     </document-api>
 
     <search>
@@ -171,6 +179,12 @@
       </chain>
 
       <chain id="achain" searchers="asearcher anothersearcher" inherits="wonkaparentchain" excludes="notneededsearcher"/>
+
+      <threadpool>
+        <max-threads>500</max-threads>
+        <min-threads>500</min-threads>
+        <queue-size>0</queue-size>
+      </threadpool>
     </search>
 
     <processing>
@@ -218,4 +232,11 @@
     </nodes>
   </container>
 
+  <container id='qrsCluster_2' version='1.0'>
+    <secret-store type="cloud">
+      <store id="foo">
+        <aws-parameter-store account="foo" aws-region="us-east-1"/>
+      </store>
+    </secret-store>
+  </container>
 </services>

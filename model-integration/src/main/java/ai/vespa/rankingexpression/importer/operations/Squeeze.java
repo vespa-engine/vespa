@@ -80,7 +80,7 @@ public class Squeeze extends IntermediateOperation {
 
     private OrderedTensorType reducedType(OrderedTensorType inputType) {
         OrderedTensorType.Builder builder = new OrderedTensorType.Builder(resultValueType());
-        for (TensorType.Dimension dimension: inputType.type().dimensions()) {
+        for (TensorType.Dimension dimension: inputType.dimensions()) {
             if ( ! squeezeDimensions.contains(dimension.name())) {
                 builder.add(dimension);
             }

@@ -4,9 +4,9 @@
 
 #include "attributemanager.h"
 #include "initialized_attributes_result.h"
-#include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
+#include <vespa/searchcore/proton/common/alloc_strategy.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/config-attributes.h>
 
@@ -24,8 +24,7 @@ private:
     DocumentMetaStore::SP _documentMetaStore;
     AttributeManager::SP _attrMgr;
     vespa::config::search::AttributesConfig _attrCfg;
-    search::GrowStrategy _attributeGrow;
-    size_t _attributeGrowNumDocs;
+    AllocStrategy _alloc_strategy;
     bool _fastAccessAttributesOnly;
     searchcorespi::index::IThreadService &_master;
     InitializedAttributesResult _attributesResult;
@@ -39,8 +38,7 @@ public:
                                 DocumentMetaStore::SP documentMetaStore,
                                 AttributeManager::SP baseAttrMgr,
                                 const vespa::config::search::AttributesConfig &attrCfg,
-                                const search::GrowStrategy &attributeGrow,
-                                size_t attributeGrowNumDocs,
+                                const AllocStrategy& alloc_strategy,
                                 bool fastAccessAttributesOnly,
                                 searchcorespi::index::IThreadService &master,
                                 std::shared_ptr<AttributeManager::SP> attrMgrResult);

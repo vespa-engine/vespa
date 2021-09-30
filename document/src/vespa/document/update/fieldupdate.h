@@ -33,10 +33,10 @@ public:
 
     FieldUpdate(const Field& field);
     FieldUpdate(const FieldUpdate &);
-    FieldUpdate & operator = (const FieldUpdate &);
+    FieldUpdate & operator = (const FieldUpdate &) = delete;
     FieldUpdate(FieldUpdate &&) = default;
     FieldUpdate & operator = (FieldUpdate &&) = default;
-    ~FieldUpdate();
+    ~FieldUpdate() override;
 
     /**
      * This is a convenience function to construct a field update directly from

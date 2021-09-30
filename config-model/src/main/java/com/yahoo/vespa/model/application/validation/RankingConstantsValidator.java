@@ -9,7 +9,7 @@ import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ConstantTensorJsonValidator.InvalidConstantTensor;
-import com.yahoo.vespa.model.search.SearchDefinition;
+import com.yahoo.vespa.model.search.NamedSchema;
 
 import java.io.FileNotFoundException;
 
@@ -31,7 +31,7 @@ public class RankingConstantsValidator extends Validator {
 
         public ExceptionMessageCollector add(Throwable throwable, String rcName, String rcFilename) {
             exceptionsOccurred = true;
-            combinedMessage += String.format("\nRanking constant \"%s\" (%s): %s", rcName, rcFilename, throwable.getMessage());
+            combinedMessage += String.format("\nRanking constant '%s' (%s): %s", rcName, rcFilename, throwable.getMessage());
             return this;
         }
     }
@@ -47,7 +47,7 @@ public class RankingConstantsValidator extends Validator {
         ApplicationPackage applicationPackage = deployState.getApplicationPackage();
         ExceptionMessageCollector exceptionMessageCollector = new ExceptionMessageCollector("Invalid constant tensor file(s):");
 
-        for (SearchDefinition sd : deployState.getSearchDefinitions()) {
+        for (NamedSchema sd : deployState.getSchemas()) {
             for (RankingConstant rc : sd.getSearch().rankingConstants().asMap().values()) {
                 try {
                     validateRankingConstant(rc, applicationPackage);

@@ -26,8 +26,8 @@ private:
 public:
     WandSpec() : _leafs(), _layout(), _handles(), _history() {}
     ~WandSpec() {}
-    WandSpec &leaf(const LeafSpec &l) {
-        _leafs.push_back(l);
+    WandSpec &leaf(LeafSpec && l) {
+        _leafs.emplace_back(std::move(l));
         _handles.push_back(_layout.allocTermField(0));
         return *this;
     }
@@ -35,7 +35,7 @@ public:
         wand::Terms terms;
         for (size_t i = 0; i < _leafs.size(); ++i) {
             fef::TermFieldMatchData *tfmd = (matchData != NULL ? matchData->resolveTermField(_handles[i]) : NULL);
-            terms.push_back(wand::Term(_leafs[i].create(_history, tfmd),
+            terms.push_back(wand::Term(_leafs[i].create(_history, tfmd).release(),
                                        _leafs[i].weight,
                                        _leafs[i].result.inspect().size(),
                                        tfmd));

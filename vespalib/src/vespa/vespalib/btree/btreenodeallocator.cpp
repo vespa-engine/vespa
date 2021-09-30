@@ -3,9 +3,9 @@
 #include "btreenodeallocator.hpp"
 #include <vespa/vespalib/util/array.hpp>
 
-template class vespalib::Array<search::datastore::EntryRef>;
+template class vespalib::Array<vespalib::datastore::EntryRef>;
 
-namespace search::btree {
+namespace vespalib::btree {
 
 template class BTreeNodeAllocator<uint32_t, uint32_t, NoAggregated,
                                   BTreeDefaultTraits::INTERNAL_SLOTS,

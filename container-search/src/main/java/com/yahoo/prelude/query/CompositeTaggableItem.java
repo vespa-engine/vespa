@@ -27,6 +27,10 @@ public abstract class CompositeTaggableItem extends CompositeItem implements Tag
 
     /** See {@link TaggableItem#setConnectivity} */
     public void setConnectivity(Item item, double connectivity) {
+        if (!(item instanceof TaggableItem)) {
+            throw new IllegalArgumentException("setConnectivity item must be taggable, was: "
+                                               + item.getClass() + " [" + item + "]");
+        }
         setHasUniqueID(true);
         item.setHasUniqueID(true);
         if (connectedItem != null) {

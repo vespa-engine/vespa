@@ -22,7 +22,7 @@ public:
     class Builder {
     public:
         using UP = std::unique_ptr<Builder>;
-        using WordRefVector = vespalib::Array<datastore::EntryRef>;
+        using WordRefVector = vespalib::Array<vespalib::datastore::EntryRef>;
 
     private:
         uint32_t   _docId;
@@ -31,7 +31,7 @@ public:
     public:
         Builder(uint32_t docId_);
         ~Builder();
-        Builder &insert(datastore::EntryRef wordRef);
+        Builder &insert(vespalib::datastore::EntryRef wordRef);
         uint32_t docId() const { return _docId; }
         const WordRefVector &words() const { return _words; }
     };
@@ -53,7 +53,7 @@ public:
         Iterator(const uint32_t *buf);
         bool valid() const { return _valid; }
         Iterator &operator++();
-        datastore::EntryRef wordRef() const { return datastore::EntryRef(_wordRef); }
+        vespalib::datastore::EntryRef wordRef() const { return vespalib::datastore::EntryRef(_wordRef); }
         bool hasBackingBuf() const { return _buf != nullptr; }
     };
 
@@ -62,23 +62,23 @@ public:
      */
     class Store {
     public:
-        using DataStoreType = datastore::DataStoreT<datastore::EntryRefT<22>>;
+        using DataStoreType = vespalib::datastore::DataStoreT<vespalib::datastore::EntryRefT<22>>;
         using RefType = DataStoreType::RefType;
 
     private:
         DataStoreType               _store;
-        datastore::BufferType<uint32_t> _type;
+        vespalib::datastore::BufferType<uint32_t> _type;
         const uint32_t              _typeId;
 
     public:
         Store();
         ~Store();
-        datastore::EntryRef insert(const Builder &builder);
-        Iterator get(datastore::EntryRef wordRef) const;
+        vespalib::datastore::EntryRef insert(const Builder &builder);
+        Iterator get(vespalib::datastore::EntryRef wordRef) const;
         vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
     };
 
-    using DocumentWordsMap = vespalib::hash_map<uint32_t, datastore::EntryRef>;
+    using DocumentWordsMap = vespalib::hash_map<uint32_t, vespalib::datastore::EntryRef>;
 
 private:
     DocumentWordsMap _docs;

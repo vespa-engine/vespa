@@ -19,16 +19,13 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     /** Whether this was explicitly written as a phrase using quotes by the user */
     private boolean explicit = false;
 
-    /**
-     * Creates a phrase containing the same words and state (as pertinent) as
-     * the given SegmentAndItem.
-     */
-    public PhraseSegmentItem(AndSegmentItem segAnd) {
-        super(segAnd.getRawWord(), segAnd.stringValue(), segAnd.isFromQuery(), segAnd.isStemmed(), segAnd.getOrigin());
-        if (segAnd.getItemCount() > 0) {
-            WordItem w = (WordItem) segAnd.getItem(0);
+    /** Creates a phrase containing the same words and state (as pertinent) as the given SegmentAndItem. */
+    public PhraseSegmentItem(AndSegmentItem andSegment) {
+        super(andSegment.getRawWord(), andSegment.stringValue(), andSegment.isFromQuery(), andSegment.isStemmed(), andSegment.getOrigin());
+        if (andSegment.getItemCount() > 0) {
+            WordItem w = (WordItem) andSegment.getItem(0);
             setIndexName(w.getIndexName());
-            for (Iterator<Item> i = segAnd.getItemIterator(); i.hasNext();) {
+            for (Iterator<Item> i = andSegment.getItemIterator(); i.hasNext();) {
                 WordItem word = (WordItem) i.next();
                 addWordItem(word);
             }

@@ -2,6 +2,7 @@
 #include "producerconsumer.h"
 #include <vespa/vespalib/testkit/testapp.h>
 #include <map>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("allocfree_test");

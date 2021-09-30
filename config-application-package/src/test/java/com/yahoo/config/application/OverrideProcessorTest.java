@@ -347,8 +347,58 @@ public class OverrideProcessorTest {
         new OverrideProcessor(InstanceName.from("default"), Environment.defaultEnvironment(), RegionName.from("us-west")).process(inputDoc);
     }
 
+    @Test
+    public void testImpliedRequired() throws TransformerException {
+        String input = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+                       "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
+                       "  <content id=\"foo\" version=\"1.0\">" +
+                       "    <nodes deploy:environment=\"dev\">" +
+                       "      <!-- comment -->" +
+                       "      <resources vcpu=\"2\" memory=\"8Gb\" disk=\"50Gb\" disk-speed=\"any\"/>" +
+                       "    </nodes>" +
+                       "  </content>" +
+                       "</services>";
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+                "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
+                "  <content id=\"foo\" version=\"1.0\">" +
+                "    <nodes required=\"true\">" +
+                "      <!-- comment -->" +
+                "      <resources vcpu=\"2\" memory=\"8Gb\" disk=\"50Gb\" disk-speed=\"any\"/>" +
+                "    </nodes>" +
+                "  </content>" +
+                "</services>";
+
+        assertOverride(input, Environment.dev, RegionName.defaultName(), expected);
+    }
+
+    @Test
+    public void testNodeElementCancelsImpliedRequired() throws TransformerException {
+        String input = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+                "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
+                "  <content id=\"foo\" version=\"1.0\">" +
+                "    <nodes deploy:environment=\"dev\">" +
+                "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
+                "    </nodes>" +
+                "  </content>" +
+                "</services>";
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+                "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
+                "  <content id=\"foo\" version=\"1.0\">" +
+                "    <nodes>" +
+                "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
+                "    </nodes>" +
+                "  </content>" +
+                "</services>";
+
+        assertOverride(input, Environment.dev, RegionName.defaultName(), expected);
+    }
+
     private void assertOverride(Environment environment, RegionName region, String expected) throws TransformerException {
-        Document inputDoc = Xml.getDocument(new StringReader(OverrideProcessorTest.input));
+        assertOverride(input, environment, region, expected);
+    }
+
+    private void assertOverride(String input, Environment environment, RegionName region, String expected) throws TransformerException {
+        Document inputDoc = Xml.getDocument(new StringReader(input));
         Document newDoc = new OverrideProcessor(InstanceName.from("default"), environment, region).process(inputDoc);
         TestBase.assertDocument(expected, newDoc);
     }

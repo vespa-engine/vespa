@@ -11,28 +11,26 @@
 
     <component id="com.yahoo.vespa.config.server.ConfigServerBootstrap" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.monitoring.Metrics" bundle="configserver" />
-    <component id="com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl" bundle="zookeeper-server" />
+    <component id="com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer" bundle="zookeeper-server" />
+    <component id="com.yahoo.vespa.zookeeper.Reconfigurer" bundle="zookeeper-server" />
+    <component id="com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl" bundle="zookeeper-server" />
     <component id="com.yahoo.vespa.config.server.rpc.RpcServer" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.ConfigServerDB" bundle="configserver" />
-    <component id="com.yahoo.vespa.config.server.session.FileDistributionFactory" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.SuperModelGenerationCounter" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.SuperModelManager" bundle="configserver" />
-    <component id="com.yahoo.vespa.config.server.session.SessionPreparer" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.SuperModelRequestHandler" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.StaticConfigDefinitionRepo" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.provision.HostProvisionerProvider" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.deploy.InfraDeployerProvider" bundle="configserver" />
     <component id="com.yahoo.vespa.curator.Curator" bundle="configserver" />
-    <component id="com.yahoo.vespa.config.server.InjectedGlobalComponentRegistry" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.tenant.TenantRepository" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.application.PermanentApplicationPackage" bundle="configserver" />
-    <component id="com.yahoo.vespa.config.server.host.HostRegistries" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.host.HostRegistry" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.ApplicationRepository" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.version.VersionState" bundle="configserver" />
-    <component id="com.yahoo.vespa.config.server.zookeeper.ConfigCurator" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker" bundle="configserver" />
-    <component id="com.yahoo.container.jdisc.metric.state.StateMetricConsumerFactory" bundle="container-disc" />
     <component id="com.yahoo.config.provision.Zone" bundle="config-provisioning" />
     <component id="com.yahoo.vespa.config.server.application.ConfigConvergenceChecker" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.application.HttpProxy" bundle="configserver" />
@@ -42,14 +40,11 @@
     <component id="com.yahoo.vespa.config.server.rpc.security.DummyNodeIdentifierProvider" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.rpc.security.DefaultRpcAuthorizerProvider" bundle="configserver" />
 
-    <component id="com.yahoo.vespa.serviceview.ConfigServerLocation" bundle="configserver" />
-
     <components>
       <include dir="config-models" />
     </components>
 
     <preprocess:include file='config-models.xml' required='false' />
-    <preprocess:include file='node-repository.xml' required='false' />
     <preprocess:include file='routing-status.xml' required='false' />
     <preprocess:include file='model-integration.xml' required='true' />
 
@@ -57,27 +52,41 @@
     <component id="com.yahoo.vespa.configserver.flags.db.FlagsDbImpl" bundle="configserver-flags"/>
 
     <preprocess:include file='metrics-packets.xml' required='false' />
-    <preprocess:include file='container.xml' required='false' />
     <component id="com.yahoo.vespa.service.slobrok.SlobrokMonitorManagerImpl" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.health.HealthMonitorManager" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.manager.UnionMonitorManager" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.model.ServiceMonitorImpl" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.duper.DuperModelManager" bundle="service-monitor" />
-    <component id="com.yahoo.vespa.orchestrator.ServiceMonitorInstanceLookupService" bundle="orchestrator" />
-    <component id="com.yahoo.vespa.orchestrator.status.ZookeeperStatusService" bundle="orchestrator" />
+    <component id="com.yahoo.vespa.orchestrator.status.ZkStatusService" bundle="orchestrator" />
     <component id="com.yahoo.vespa.orchestrator.controller.RetryingClusterControllerClientFactory" bundle="orchestrator" />
-    <component id="com.yahoo.vespa.orchestrator.OrchestratorImpl" bundle="orchestrator" />
+    <component id="com.yahoo.vespa.orchestrator.OrchestratorImpl" bundle="orchestrator">
+      <preprocess:include file="orchestrator-config.xml" required="false" />
+    </component>
     
-    <rest-api path="orchestrator" jersey2="true">      
-      <components bundle="orchestrator" />      
-    </rest-api>
-
-    <rest-api path="serviceview" jersey2="true">
-      <components bundle="configserver">
-        <package>com.yahoo.vespa.serviceview</package>
-      </components>
-    </rest-api>
-
+    <handler id="com.yahoo.vespa.orchestrator.resources.ApplicationSuspensionRequestHandler" bundle="orchestrator">
+      <binding>http://*/orchestrator/v1/suspensions/applications</binding>
+      <binding>http://*/orchestrator/v1/suspensions/applications/*</binding>
+    </handler>
+    <handler id="com.yahoo.vespa.orchestrator.resources.HealthRequestHandler" bundle="orchestrator">
+      <binding>http://*/orchestrator/v1/health</binding>
+      <binding>http://*/orchestrator/v1/health/*</binding>
+    </handler>
+    <handler id="com.yahoo.vespa.orchestrator.resources.HostRequestHandler" bundle="orchestrator">
+      <binding>http://*/orchestrator/v1/hosts</binding>
+      <binding>http://*/orchestrator/v1/hosts/*</binding>
+    </handler>
+    <handler id="com.yahoo.vespa.orchestrator.resources.HostSuspensionRequestHandler" bundle="orchestrator">
+      <binding>http://*/orchestrator/v1/suspensions/hosts</binding>
+      <binding>http://*/orchestrator/v1/suspensions/hosts/*</binding>
+    </handler>
+    <handler id="com.yahoo.vespa.orchestrator.resources.InstanceRequestHandler" bundle="orchestrator">
+      <binding>http://*/orchestrator/v1/instances</binding>
+      <binding>http://*/orchestrator/v1/instances/*</binding>
+    </handler>
+    <handler id="com.yahoo.vespa.serviceview.StateRequestHandler" bundle="configserver">
+      <binding>http://*/serviceview/v1</binding>
+      <binding>http://*/serviceview/v1/*</binding>
+    </handler>
     <handler id='com.yahoo.vespa.config.server.http.HttpGetConfigHandler' bundle='configserver'>
       <binding>http://*/config/v1/*/*</binding>
       <binding>http://*/config/v1/*</binding>
@@ -93,8 +102,7 @@
       <binding>http://*/status</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.TenantHandler' bundle='configserver'>
-      <binding>http://*/application/v2/tenant/</binding>
-      <binding>http://*/application/v2/tenant/*</binding>
+      <binding>http://*/application/v2/tenant*</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.SessionCreateHandler' bundle='configserver'>
       <binding>http://*/application/v2/tenant/*/session</binding>
@@ -107,7 +115,6 @@
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.ApplicationApiHandler' bundle='configserver'>
       <binding>http://*/application/v2/tenant/*/prepareandactivate</binding>
-      <binding>http://*/application/v2/tenant/*/session/*/prepareandactivate</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.SessionContentHandler' bundle='configserver'>
       <binding>http://*/application/v2/tenant/*/session/*/content/*</binding>
@@ -141,7 +148,6 @@
     <http>
       <server port="19071" id="configserver" />
       <preprocess:include file='http-server.xml' required='false' />
-      <preprocess:include file='http.xml' required='false' />
     </http>
 
     <preprocess:include file='athenz-identity-provider.xml' required='false' />
@@ -151,5 +157,6 @@
     <preprocess:include file='configserver-components.xml' required='false' />
 
     <preprocess:include file='zookeeper-server-config.xml' required='false' />
+
   </container>
 </services>

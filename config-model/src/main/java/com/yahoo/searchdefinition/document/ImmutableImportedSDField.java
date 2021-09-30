@@ -78,6 +78,11 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     }
 
     @Override
+    public boolean wasConfiguredToDoAttributing() {
+        return importedField.targetField().wasConfiguredToDoAttributing();
+    }
+
+    @Override
     public DataType getDataType() {
         return importedField.targetField().getDataType();
     }
