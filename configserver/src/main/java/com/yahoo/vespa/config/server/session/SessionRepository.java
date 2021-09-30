@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.HashMultiset;
@@ -236,14 +236,16 @@ public class SessionRepository {
         logger.log(Level.FINE, "Created application " + params.getApplicationId());
         long sessionId = session.getSessionId();
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
-        CompletionWaiter waiter = sessionZooKeeperClient.createPrepareWaiter();
+        Optional<CompletionWaiter> waiter = params.isDryRun()
+                ? Optional.empty()
+                : Optional.of(sessionZooKeeperClient.createPrepareWaiter());
         Optional<ApplicationSet> activeApplicationSet = getActiveApplicationSet(params.getApplicationId());
         ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo.getHostValidator(), logger, params,
                                                               activeApplicationSet, now, getSessionAppDir(sessionId),
                                                               session.getApplicationPackage(), sessionZooKeeperClient)
                 .getConfigChangeActions();
         setPrepared(session);
-        waiter.awaitCompletion(params.getTimeoutBudget().timeLeft());
+        waiter.ifPresent(w -> w.awaitCompletion(params.getTimeoutBudget().timeLeft()));
         return actions;
     }
 
