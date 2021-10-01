@@ -20,8 +20,8 @@ public:
     ~BmMergeStats();
     BmMergeStats& operator+=(const BmMergeStats& rhs);
     bool operator==(const BmMergeStats &rhs) const;
-    uint64_t get_active() const noexcept { return _active; }
-    uint64_t get_queued() const noexcept { return _queued; }
+    uint32_t get_active() const noexcept { return _active; }
+    uint32_t get_queued() const noexcept { return _queued; }
 };
 
 }
