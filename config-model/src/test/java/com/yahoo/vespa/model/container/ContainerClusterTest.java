@@ -56,6 +56,7 @@ public class ContainerClusterTest {
         ClusterInfoConfig config = getClusterInfoConfig(cluster);
         assertEquals("name", config.clusterId());
         assertEquals(2, config.nodeCount());
+        assertEquals(List.of(0, 0), config.nodeIndices());  // both containers are created with index 0
         assertEquals(2, config.services().size());
 
         Iterator<ClusterInfoConfig.Services> iterator = config.services().iterator();

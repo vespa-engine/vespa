@@ -26,7 +26,7 @@ public class SystemInfoProvider extends AbstractComponent implements Provider<Sy
     @Inject
     public SystemInfoProvider(ConfigserverConfig csConfig, QrConfig qrConfig, ClusterInfoConfig ciConfig) {
         this.instance = new SystemInfo(new Zone(Environment.valueOf(csConfig.environment()), csConfig.region()),
-                                       new Cluster(ciConfig.nodeCount()),
+                                       new Cluster(ciConfig.nodeCount(), ciConfig.nodeIndices()),
                                        new Node(qrConfig.nodeIndex()));
     }
 
