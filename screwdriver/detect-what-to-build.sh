@@ -27,6 +27,8 @@ elif ! grep -v -E "(\.h|\.hh|\.hxx|\.c|\.cpp|\.cxx)$" <<< "$FILES" &> /dev/null;
   SHOULD_BUILD=cpp
 elif ! grep -v -E "(\.java)$" <<< "$FILES" &> /dev/null; then
   SHOULD_BUILD=java
+elif ! grep -v -E "(\.go)$" <<< "$FILES" &> /dev/null; then
+  SHOULD_BUILD=go
 else
   SHOULD_BUILD=all
 fi
