@@ -47,7 +47,7 @@ func query(arguments []string) {
 
 	response, err := service.Do(&http.Request{URL: url}, time.Second*10)
 	if err != nil {
-		printErr(nil, "Request failed: ", err)
+		fatalErr(nil, "Request failed: ", err)
 		return
 	}
 	defer response.Body.Close()
@@ -55,9 +55,9 @@ func query(arguments []string) {
 	if response.StatusCode == 200 {
 		log.Print(util.ReaderToJSON(response.Body))
 	} else if response.StatusCode/100 == 4 {
-		printErr(nil, "Invalid query: ", response.Status, "\n", util.ReaderToJSON(response.Body))
+		fatalErr(nil, "Invalid query: ", response.Status, "\n", util.ReaderToJSON(response.Body))
 	} else {
-		printErr(nil, response.Status, " from container at ", color.Cyan(url.Host), "\n", util.ReaderToJSON(response.Body))
+		fatalErr(nil, response.Status, " from container at ", color.Cyan(url.Host), "\n", util.ReaderToJSON(response.Body))
 	}
 }
 
