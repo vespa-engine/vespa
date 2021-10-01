@@ -1259,6 +1259,51 @@ public class JsonRendererTestCase {
         assertEqualJson(expected, summary);
     }
 
+    private static SlimeAdapter dataFromSimplified(String simplified) {
+        var decoder = new com.yahoo.slime.JsonDecoder();
+        var slime = decoder.decode(new Slime(), Utf8.toBytes(simplified));
+        return new SlimeAdapter(slime.get());
+    }
+
+    @Test
+    public void testMapDeepInFields() throws IOException, InterruptedException, ExecutionException {
+        var expected = dataFromSimplified(
+                "{'root':{'id':'toplevel','relevance':1.0,'fields':{'totalCount':1}," +
+                "  'children': [ { 'id': 'myHitName', 'relevance': 1.0," +
+                "    'fields': { " +
+                "      'f1': [ 'v1', { 'mykey1': 'myvalue1', 'mykey2': 'myvalue2' } ]," +
+                "      'f2': { 'i1': 'v2', 'i2': { 'mykey3': 'myvalue3' }, 'i3': 'v3' }," +
+                "      'f3': { 'a': 42, 'b': 17.75, 'c': [ 'v4', 'v5' ] }" +
+                "    }" +
+                "  } ]" +
+                "}}");
+        Result r = new Result(new Query("/?renderer.json.wrapAllMaps=true"));
+        Hit h = new Hit("myHitName");
+        h.setField("f1", dataFromSimplified("[ 'v1', [ { 'key': 'mykey1', 'value': 'myvalue1' }, { 'key': 'mykey2', 'value': 'myvalue2' } ] ]"));
+        h.setField("f2", dataFromSimplified("{ 'i1': 'v2', 'i2': [ { 'key': 'mykey3', 'value': 'myvalue3' } ], 'i3': 'v3' }"));
+        h.setField("f3", dataFromSimplified("{ 'a': 42, 'b': 17.75, 'c': [ 'v4', 'v5' ] }"));
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+        String summary = render(r);
+        assertEqualJson(expected.toString(), summary);
+
+        expected = dataFromSimplified(
+                "{'root':{'id':'toplevel','relevance':1.0,'fields':{'totalCount':1}," +
+                "  'children': [ { 'id': 'myHitName', 'relevance': 1.0," +
+                "    'fields': { " +
+                "      'f1': [ 'v1', [ { 'key': 'mykey1', 'value': 'myvalue1' }, { 'key': 'mykey2', 'value': 'myvalue2' } ] ]," +
+                "      'f2': { 'i1': 'v2', 'i2': [ { 'key': 'mykey3', 'value': 'myvalue3' } ], 'i3': 'v3' }," +
+                "      'f3': { 'a': 42, 'b': 17.75, 'c': [ 'v4', 'v5' ] }" +
+                "    }" +
+                "  } ]" +
+                "}}");
+        r = new Result(new Query("/?renderer.json.wrapAllMaps=false"));
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+        summary = render(r);
+        assertEqualJson(expected.toString(), summary);
+    }
+
     @Test
     public void testThatTheJsonValidatorCanCatchErrors() {
         String json = "{"
