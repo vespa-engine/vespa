@@ -150,7 +150,12 @@ public class AthenzDbMock {
             this.resource = resource;
         }
 
-        public Assertion(String role, String action, String resource) { this("grant", role, action, resource); }
+        public Assertion(String role, String action, String resource) { this("allow", role, action, resource); }
+
+        public String effect() { return effect; }
+        public String role() { return role; }
+        public String action() { return action; }
+        public String resource() { return resource; }
 
         public boolean matches(AthenzIdentity principal, String action, String resource) {
             return Pattern.compile(this.role).matcher(principal.getFullName()).matches()
