@@ -13,11 +13,15 @@ namespace search::bmcluster {
 class BmClusterParams
 {
     uint32_t _bucket_db_stripe_bits;
+    uint32_t _distributor_merge_busy_wait;
     uint32_t _distributor_stripes;
     bool     _enable_distributor;
     bool     _enable_service_layer;
     uint32_t _groups;
     vespalib::string _indexing_sequencer;
+    uint32_t _max_merges_per_node;
+    uint32_t _max_merge_queue_size;
+    uint32_t _max_pending_idealstate_operations;
     uint32_t _num_nodes;
     uint32_t _nodes_per_group;
     uint32_t _redundancy;
@@ -36,10 +40,14 @@ public:
     BmClusterParams();
     ~BmClusterParams();
     uint32_t get_bucket_db_stripe_bits() const { return _bucket_db_stripe_bits; }
+    uint32_t get_distributor_merge_busy_wait() const { return _distributor_merge_busy_wait; }
     uint32_t get_distributor_stripes() const { return _distributor_stripes; }
     bool get_enable_distributor() const { return _enable_distributor; }
     uint32_t get_groups() const noexcept { return _groups; }
     const vespalib::string & get_indexing_sequencer() const { return _indexing_sequencer; }
+    uint32_t get_max_merges_per_node() const noexcept { return _max_merges_per_node; }
+    uint32_t get_max_merge_queue_size() const noexcept { return _max_merge_queue_size; }
+    uint32_t get_max_pending_idealstate_operations() const noexcept { return _max_pending_idealstate_operations; }
     uint32_t get_nodes_per_group() const noexcept { return _nodes_per_group; }
     uint32_t get_num_nodes() const { return _num_nodes; }
     uint32_t get_redundancy() const { return _redundancy; }
@@ -57,11 +65,15 @@ public:
     bool needs_message_bus() const { return _use_message_bus || _use_document_api; }
     bool needs_service_layer() const { return _enable_service_layer || _enable_distributor || _use_storage_chain || _use_message_bus || _use_document_api; }
     void set_bucket_db_stripe_bits(uint32_t value) { _bucket_db_stripe_bits = value; }
+    void set_distributor_merge_busy_wait(uint32_t value) { _distributor_merge_busy_wait = value; }
     void set_distributor_stripes(uint32_t value) { _distributor_stripes = value; }
     void set_enable_distributor(bool value) { _enable_distributor = value; }
     void set_enable_service_layer(bool value) { _enable_service_layer = value; }
     void set_groups(uint32_t value);
     void set_indexing_sequencer(vespalib::stringref sequencer) { _indexing_sequencer = sequencer; }
+    void set_max_merges_per_node(uint32_t value) { _max_merges_per_node = value; }
+    void set_max_merge_queue_size(uint32_t value) { _max_merge_queue_size = value; }
+    void set_max_pending_idealstate_operations(uint32_t value) { _max_pending_idealstate_operations = value; }
     void set_nodes_per_group(uint32_t value);
     void set_redundancy(uint32_t value) { _redundancy = value; }
     void set_response_threads(uint32_t threads_in) { _response_threads = threads_in; }
