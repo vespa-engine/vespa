@@ -369,6 +369,8 @@ App::usage()
         "[--client-threads threads]\n"
         "[--distributor-merge-busy-wait distributor-merge-busy-wait]\n"
         "[--distributor-stripes stripes]\n"
+        "[--doc-store-chunk-compression-level level]\n"
+        "[--doc-store-chunk-maxbytes maxbytes]\n"
         "[--documents documents]\n"
         "[--flip-nodes flip-nodes]\n"
         "[--groups groups]\n"
@@ -400,6 +402,8 @@ App::get_options()
         { "client-threads", 1, nullptr, 0 },
         { "distributor-merge-busy-wait", 1, nullptr, 0 },
         { "distributor-stripes", 1, nullptr, 0 },
+        { "doc-store-chunk-compression-level", 1, nullptr, 0 },
+        { "doc-store-chunk-maxbytes", 1, nullptr, 0 },
         { "documents", 1, nullptr, 0 },
         { "flip-nodes", 1, nullptr, 0 },
         { "groups", 1, nullptr, 0 },
@@ -424,6 +428,8 @@ App::get_options()
         LONGOPT_CLIENT_THREADS,
         LONGOPT_DISTRIBUTOR_MERGE_BUSY_WAIT,
         LONGOPT_DISTRIBUTOR_STRIPES,
+        LONGOPT_DOC_STORE_CHUNK_COMPRESSION_LEVEL,
+        LONGOPT_DOC_STORE_CHUNK_MAXBYTES,
         LONGOPT_DOCUMENTS,
         LONGOPT_FLIP_NODES,
         LONGOPT_GROUPS,
@@ -460,6 +466,12 @@ App::get_options()
                 break;
             case LONGOPT_DISTRIBUTOR_STRIPES:
                 _bm_params.set_distributor_stripes(atoi(opt_argument));
+                break;
+            case LONGOPT_DOC_STORE_CHUNK_COMPRESSION_LEVEL:
+                _bm_params.set_doc_store_chunk_compression_level(atoi(opt_argument));
+                break;
+            case LONGOPT_DOC_STORE_CHUNK_MAXBYTES:
+                _bm_params.set_doc_store_chunk_maxbytes(atoi(opt_argument));
                 break;
             case LONGOPT_DOCUMENTS:
                 _bm_params.set_documents(atoi(opt_argument));

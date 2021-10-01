@@ -9,6 +9,8 @@ BmClusterParams::BmClusterParams()
     : _bucket_db_stripe_bits(4),
       _distributor_merge_busy_wait(10), // Same default as stor_distributormanager.def
       _distributor_stripes(0),
+      _doc_store_chunk_compression_level(9), // Same default as in proton.def
+      _doc_store_chunk_maxbytes(65536),      // Same default as in proton.def
       _enable_distributor(false),
       _enable_service_layer(false),
       _groups(0),
