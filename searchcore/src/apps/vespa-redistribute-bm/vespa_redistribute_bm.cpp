@@ -279,7 +279,7 @@ Benchmark::feed()
     vespalib::ThreadStackExecutor executor(_params.get_client_threads(), 128_Ki);
     BmFeeder feeder(_repo, *_cluster->get_feed_handler(), executor);
     auto put_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_put_feed(range, bucket_selector); }, _feed.num_buckets(), "put");
-    BmNodeStatsReporter reporter(*_cluster);
+    BmNodeStatsReporter reporter(*_cluster, false);
     reporter.start(500ms);
     int64_t time_bias = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch() - 24h).count();
     LOG(info, "Feed handler is '%s'", feeder.get_feed_handler().get_name().c_str());
@@ -297,7 +297,7 @@ Benchmark::feed()
 std::chrono::duration<double>
 Benchmark::redistribute()
 {
-    BmNodeStatsReporter reporter(*_cluster);
+    BmNodeStatsReporter reporter(*_cluster, true);
     auto before = std::chrono::steady_clock::now();
     reporter.start(500ms);
     _cluster->propagate_cluster_state();
@@ -367,12 +367,16 @@ App::usage()
         "vespa-redistribute-bm\n"
         "[--bucket-db-stripe-bits bits]\n"
         "[--client-threads threads]\n"
+        "[--distributor-merge-busy-wait distributor-merge-busy-wait]\n"
         "[--distributor-stripes stripes]\n"
         "[--documents documents]\n"
         "[--flip-nodes flip-nodes]\n"
         "[--groups groups]\n"
         "[--indexing-sequencer [latency,throughput,adaptive]]\n"
+        "[--max-merges-per-node max-merges-per-node]\n"
+        "[--max-merge-queue-size max-merge-queue-size]\n"
         "[--max-pending max-pending]\n"
+        "[--max-pending-idealstate-operations max-pending-idealstate-operations]\n"
         "[--mode [grow, shrink, perm-crash, temp-crash, replace]\n"
         "[--nodes-per-group nodes-per-group]\n"
         "[--redundancy redundancy]\n"
@@ -394,12 +398,16 @@ App::get_options()
     static struct option long_opts[] = {
         { "bucket-db-stripe-bits", 1, nullptr, 0 },
         { "client-threads", 1, nullptr, 0 },
+        { "distributor-merge-busy-wait", 1, nullptr, 0 },
         { "distributor-stripes", 1, nullptr, 0 },
         { "documents", 1, nullptr, 0 },
         { "flip-nodes", 1, nullptr, 0 },
         { "groups", 1, nullptr, 0 },
         { "indexing-sequencer", 1, nullptr, 0 },
+        { "max-merges-per-node", 1, nullptr, 0 },
+        { "max-merge-queue-size", 1, nullptr, 0 },
         { "max-pending", 1, nullptr, 0 },
+        { "max-pending-idealstate-operations", 1, nullptr, 0 },
         { "mode", 1, nullptr, 0 },
         { "nodes-per-group", 1, nullptr, 0 },
         { "redundancy", 1, nullptr, 0 },
@@ -414,12 +422,16 @@ App::get_options()
     enum longopts_enum {
         LONGOPT_BUCKET_DB_STRIPE_BITS,
         LONGOPT_CLIENT_THREADS,
+        LONGOPT_DISTRIBUTOR_MERGE_BUSY_WAIT,
         LONGOPT_DISTRIBUTOR_STRIPES,
         LONGOPT_DOCUMENTS,
         LONGOPT_FLIP_NODES,
         LONGOPT_GROUPS,
         LONGOPT_INDEXING_SEQUENCER,
+        LONGOPT_MAX_MERGES_PER_NODE,
+        LONGOPT_MAX_MERGE_QUEUE_SIZE,
         LONGOPT_MAX_PENDING,
+        LONGOPT_MAX_PENDING_IDEALSTATE_OPERATIONS,
         LONGOPT_MODE,
         LONGOPT_NODES_PER_GROUP,
         LONGOPT_REDUNDANCY,
@@ -443,6 +455,9 @@ App::get_options()
             case LONGOPT_CLIENT_THREADS:
                 _bm_params.set_client_threads(atoi(opt_argument));
                 break;
+            case LONGOPT_DISTRIBUTOR_MERGE_BUSY_WAIT:
+                _bm_params.set_distributor_merge_busy_wait(atoi(opt_argument));
+                break;
             case LONGOPT_DISTRIBUTOR_STRIPES:
                 _bm_params.set_distributor_stripes(atoi(opt_argument));
                 break;
@@ -458,8 +473,17 @@ App::get_options()
             case LONGOPT_INDEXING_SEQUENCER:
                 _bm_params.set_indexing_sequencer(opt_argument);
                 break;
+            case LONGOPT_MAX_MERGES_PER_NODE:
+                _bm_params.set_max_merges_per_node(atoi(opt_argument));
+                break;
+            case LONGOPT_MAX_MERGE_QUEUE_SIZE:
+                _bm_params.set_max_merge_queue_size(atoi(opt_argument));
+                break;
             case LONGOPT_MAX_PENDING:
                 _bm_params.set_max_pending(atoi(opt_argument));
+                break;
+            case LONGOPT_MAX_PENDING_IDEALSTATE_OPERATIONS:
+                _bm_params.set_max_pending_idealstate_operations(atoi(opt_argument));
                 break;
             case LONGOPT_MODE:
                 _bm_params.set_mode(get_mode(opt_argument));

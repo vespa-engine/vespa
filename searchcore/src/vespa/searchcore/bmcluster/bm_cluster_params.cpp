@@ -7,11 +7,15 @@ namespace search::bmcluster {
 
 BmClusterParams::BmClusterParams()
     : _bucket_db_stripe_bits(4),
+      _distributor_merge_busy_wait(10), // Same default as stor_distributormanager.def
       _distributor_stripes(0),
       _enable_distributor(false),
       _enable_service_layer(false),
       _groups(0),
       _indexing_sequencer(),
+      _max_merges_per_node(16),     // Same default as in stor-server.def
+      _max_merge_queue_size(1024),  // Same default as in stor-server.def
+      _max_pending_idealstate_operations(100), // Same default as in stor-distributormanager.def
       _num_nodes(1),
       _nodes_per_group(1),
       _redundancy(1),
