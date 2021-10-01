@@ -242,9 +242,9 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
         ContainerThreadpoolConfig config = root.getConfig(
                 ContainerThreadpoolConfig.class, "default/component/" + SearchHandler.HANDLER_CLASS + "/threadpool@search-handler");
-        assertEquals(500, config.maxThreads());
-        assertEquals(500, config.minThreads());
-        assertEquals(0, config.queueSize());
+        assertEquals(-2, config.maxThreads());
+        assertEquals(-2, config.minThreads());
+        assertEquals(-40, config.queueSize());
     }
 
     @Test
