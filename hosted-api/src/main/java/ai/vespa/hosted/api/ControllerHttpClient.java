@@ -4,6 +4,7 @@ package ai.vespa.hosted.api;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyUtils;
@@ -36,9 +37,11 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -175,6 +178,28 @@ public abstract class ControllerHttpClient {
                             GET));
     }
 
+    /** Returns the tenants in this system. */
+    public Set<TenantName> tenants() {
+        return toTenants(send(request(HttpRequest.newBuilder(tenantsPath())
+                                       .timeout(Duration.ofSeconds(20)),
+                            GET)));
+    }
+
+    /** Returns the applications for the given tenant. */
+    public Set<ApplicationName> applications(TenantName tenantName) {
+        return toApplications(send(request(HttpRequest.newBuilder(applicationsPath(tenantName))
+                                                 .timeout(Duration.ofSeconds(20)),
+                                      GET)));
+    }
+
+    /** Returns the application instances for the given tenant. */
+    public Set<ApplicationId> applicationInstances(TenantName tenantName) {
+        return toApplicationInstances(send(request(HttpRequest.newBuilder(applicationsPath(tenantName))
+                                                              .timeout(Duration.ofSeconds(20)),
+                                                   GET)),
+                                      tenantName);
+    }
+
     /** Follows the given deployment job until it is done, or this thread is interrupted, at which point the current status is returned. */
     public DeploymentLog followDeploymentUntilDone(ApplicationId id, ZoneId zone, long run,
                                                    Consumer<DeploymentLog.Entry> out) {
@@ -227,9 +252,13 @@ public abstract class ControllerHttpClient {
         return concatenated(endpoint, "application", "v4");
     }
 
+    private URI tenantsPath() { return concatenated(applicationApiPath(), "tenant"); }
+
     private URI tenantPath(TenantName tenant) {
         return concatenated(applicationApiPath(), "tenant", tenant.value());
     }
+
+    private URI applicationsPath(TenantName tenant) { return concatenated(tenantPath(tenant), "application"); }
 
     private URI applicationPath(TenantName tenant, ApplicationName application) {
         return concatenated(tenantPath(tenant), "application", application.value());
@@ -413,6 +442,32 @@ public abstract class ControllerHttpClient {
                                  valueOf(rootObject.field("status").asString()),
                                  rootObject.field("lastId").valid() ? OptionalLong.of(rootObject.field("lastId").asLong())
                                                                     : OptionalLong.empty());
+    }
+
+    private static Set<TenantName> toTenants(HttpResponse<byte[]> response) {
+        Set<TenantName> tenants = new HashSet<>();
+        toInspector(response).traverse((ArrayTraverser) (___, entryObject) ->
+                tenants.add(TenantName.from(entryObject.field("tenant").asString())));
+        return tenants;
+    }
+
+    private static Set<ApplicationName> toApplications(HttpResponse<byte[]> response) {
+        Set<ApplicationName> applications = new HashSet<>();
+        toInspector(response).traverse((ArrayTraverser) (___, entryObject) ->
+                applications.add(ApplicationName.from(entryObject.field("application").asString())));
+        return applications;
+    }
+
+    private static Set<ApplicationId> toApplicationInstances(HttpResponse<byte[]> response, TenantName tenantName) {
+        Set<ApplicationId> applicationIds = new HashSet<>();
+        toInspector(response).traverse((ArrayTraverser) (___, entryObject) -> {
+            ApplicationName applicationName = ApplicationName.from(entryObject.field("application").asString());
+            entryObject.field("instances").traverse((ArrayTraverser) (____, instanceObject) ->
+                    applicationIds.add(ApplicationId.from(tenantName,
+                                                          applicationName,
+                                                          InstanceName.from(instanceObject.field("instance").asString()))));
+        });
+        return applicationIds;
     }
 
     private static Slime toSlime(byte[] data) {
