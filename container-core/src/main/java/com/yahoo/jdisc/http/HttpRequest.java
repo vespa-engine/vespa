@@ -52,7 +52,7 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
 
         private final String str;
 
-        private Version(String str) {
+        Version(String str) {
             this.str = str;
         }
 
@@ -96,7 +96,7 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
             } else {
                 this.connectedAt = creationTime(TimeUnit.MILLISECONDS);
             }
-        } catch (RuntimeException e) {
+        } catch (Throwable e) {
             release();
             throw e;
         }
@@ -110,7 +110,7 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
             this.remoteAddress = null;
             this.parameters.putAll(getUriQueryParameters(uri));
             this.connectedAt = creationTime(TimeUnit.MILLISECONDS);
-        } catch (RuntimeException e) {
+        } catch (Throwable e) {
             release();
             throw e;
         }

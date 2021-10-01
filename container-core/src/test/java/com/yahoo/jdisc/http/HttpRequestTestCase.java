@@ -73,6 +73,7 @@ public class HttpRequestTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void requireThatAccessorsWork() {
         URI uri = URI.create("http://localhost/path?foo=bar&foo=baz&cox=69");
         InetSocketAddress address = new InetSocketAddress("remotehost", 69);

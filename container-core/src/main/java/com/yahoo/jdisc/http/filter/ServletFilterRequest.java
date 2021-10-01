@@ -32,6 +32,7 @@ class ServletFilterRequest extends DiscFilterRequest {
         return parent;
     }
 
+    @Deprecated
     public void setUri(URI uri) {
         parent.setUri(uri);
     }

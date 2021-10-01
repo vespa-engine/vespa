@@ -263,6 +263,7 @@ public class DiscFilterRequestTest {
 	}
 
 	@Test
+	@SuppressWarnings("deprecation")
 	public void testSetScheme() throws Exception {
 		URI uri = URI.create("https://example.yahoo.com:8080/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
@@ -274,6 +275,7 @@ public class DiscFilterRequestTest {
 	}
 
 	@Test
+	@SuppressWarnings("deprecation")
 	public void testGetServerPort() throws Exception {
 		URI uri = URI.create("http://example.yahoo.com/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
@@ -286,6 +288,7 @@ public class DiscFilterRequestTest {
 	}
 
 	@Test
+	@SuppressWarnings("deprecation")
 	public void testIsSecure() throws Exception {
 		URI uri = URI.create("http://example.yahoo.com/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);

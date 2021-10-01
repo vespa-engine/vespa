@@ -31,6 +31,7 @@ import static org.junit.Assert.assertTrue;
 public class ContainerSnapshotTestCase {
 
     @Test
+    @SuppressWarnings("deprecation")
     public void requireThatServerHandlerCanBeResolved() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
@@ -63,6 +64,7 @@ public class ContainerSnapshotTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void requireThatClientHandlerCanBeResolved() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
@@ -95,6 +97,7 @@ public class ContainerSnapshotTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void requireThatClientBindingsAreUsed() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
