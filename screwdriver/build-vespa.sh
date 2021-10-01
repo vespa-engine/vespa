@@ -35,10 +35,14 @@ case $SHOULD_BUILD in
     ccache --show-stats
     ;;
   java)
-    ./bootstrap.sh java
-    mvn -V $VESPA_MAVEN_EXTRA_OPTS install
-    ;;
+      ./bootstrap.sh java
+      mvn -V $VESPA_MAVEN_EXTRA_OPTS install
+      ;;
+  go)
+      make -C client/go -j ${NUM_THREADS}
+      ;;
   *)
+    make -C client/go -j ${NUM_THREADS}
     ./bootstrap.sh java
     time mvn -V $VESPA_MAVEN_EXTRA_OPTS install
     cmake3 -DVESPA_UNPRIVILEGED=no .
