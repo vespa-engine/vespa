@@ -1479,7 +1479,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Allow developer launch privilege to domain1.service. Deployment now completes.
         AthenzDbMock.Domain domainMock = tester.athenzClientFactory().getSetup().getOrCreateDomain(ATHENZ_TENANT_DOMAIN);
-        domainMock.withPolicy("user." + developer.id(), "launch", "service.service");
+        domainMock.withPolicy("launch-" +developer.id(), "user." + developer.id(), "launch", "service.service");
 
 
         tester.assertResponse(request("/application/v4/tenant/sandbox/application/myapp/instance/default/deploy/dev-us-east-1", POST)
@@ -1757,7 +1757,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
      */
     private void allowLaunchOfService(com.yahoo.vespa.athenz.api.AthenzService service) {
         AthenzDbMock.Domain domainMock = tester.athenzClientFactory().getSetup().getOrCreateDomain(service.getDomain());
-        domainMock.withPolicy(tester.controller().zoneRegistry().accessControlDomain().value()+".provider.*","launch", "service." + service.getName());
+        String principalRegex = tester.controller().zoneRegistry().accessControlDomain().value() + ".provider.*";
+        domainMock.withPolicy("provider-launch", principalRegex,"launch", "service." + service.getName());
     }
 
     /**

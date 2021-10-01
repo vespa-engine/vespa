@@ -67,8 +67,8 @@ public class AthenzDbMock {
             return this;
         }
 
-        public Domain withPolicy(String principalRegex, String operation, String resource) {
-            policies.put("admin", new Policy("admin", principalRegex, operation, resource));
+        public Domain withPolicy(String name, String principalRegex, String operation, String resource) {
+            policies.put(name, new Policy(name, principalRegex, operation, resource));
             return this;
         }
 
@@ -83,6 +83,9 @@ public class AthenzDbMock {
 
         public boolean hasPolicy(String name) { return policies.containsKey(name); }
 
+        public boolean checkAccess(AthenzIdentity principal, String action, String resource) {
+            return policies.values().stream().anyMatch(a -> a.matches(principal, action, resource));
+        }
     }
 
     public static class Application {
@@ -125,20 +128,12 @@ public class AthenzDbMock {
             return name;
         }
 
-        public boolean principalMatches(AthenzIdentity athenzIdentity) {
-            return assertions.get(0).principalMatches(athenzIdentity);
+        public boolean matches(String assertion) {
+            return assertions.stream().anyMatch(a -> a.matches(assertion));
         }
 
-        public boolean actionMatches(String operation) {
-            return assertions.get(0).actionMatches(operation);
-        }
-
-        public boolean resourceMatches(String resource) {
-            return assertions.get(0).resourceMatches(resource);
-        }
-
-        public boolean hasAssertionMatching(String assertion) {
-            return assertions.stream().anyMatch(a -> a.asString().equals(assertion));
+        public boolean matches(AthenzIdentity principal, String action, String resource) {
+            return assertions.stream().anyMatch(a -> a.matches(principal, action, resource));
         }
     }
 
@@ -157,17 +152,13 @@ public class AthenzDbMock {
 
         public Assertion(String role, String action, String resource) { this("grant", role, action, resource); }
 
-        public boolean principalMatches(AthenzIdentity athenzIdentity) {
-            return Pattern.compile(role).matcher(athenzIdentity.getFullName()).matches();
+        public boolean matches(AthenzIdentity principal, String action, String resource) {
+            return Pattern.compile(this.role).matcher(principal.getFullName()).matches()
+                    &&  Pattern.compile(this.action).matcher(action).matches()
+                    && Pattern.compile(this.resource).matcher(resource).matches();
         }
 
-        public boolean actionMatches(String operation) {
-            return Pattern.compile(action).matcher(operation).matches();
-        }
-
-        public boolean resourceMatches(String resource) {
-            return Pattern.compile(resource).matcher(resource).matches();
-        }
+        public boolean matches(String assertion) { return asString().equals(assertion); }
 
         public String asString() { return String.format("%s %s to %s on %s", effect, action, role, resource).toLowerCase(); }
 
