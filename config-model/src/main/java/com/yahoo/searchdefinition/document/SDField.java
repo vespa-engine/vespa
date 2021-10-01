@@ -293,7 +293,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
                 for (Field field : subType.fieldSet()) {
                     SDField subField = new SDField(sdoc, name.concat(".").concat(field.getName()), field.getDataType(),
                                                    subType, new Matching(), true, recursion + 1);
-                    structFields.put(field.getName(), subField);
+                    structFields.putIfAbsent(field.getName(), subField);
                 }
             }
         }
