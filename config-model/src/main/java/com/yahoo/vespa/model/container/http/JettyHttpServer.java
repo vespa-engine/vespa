@@ -70,7 +70,7 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
     private void configureJettyThreadpool(ServerConfig.Builder builder) {
         if (cluster == null) return;
         if (cluster instanceof ApplicationContainerCluster) {
-            if (isHostedVespa) builder.minWorkerThreads(-1).maxWorkerThreads(-1);
+            builder.minWorkerThreads(-1).maxWorkerThreads(-1);
         } else {
             builder.minWorkerThreads(4).maxWorkerThreads(4);
         }
