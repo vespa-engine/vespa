@@ -77,6 +77,9 @@ public class VespaMetricSet {
         // C++ Fnet metrics
         metrics.add(new Metric("vds.server.fnet.num-connections"));
 
+        // Node certificate
+        metrics.add(new Metric("node-certificate.expiry.seconds"));
+
         return metrics;
     }
 
@@ -181,8 +184,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.deactivated_containers.with_retained_refs.last"));
 
         metrics.add(new Metric("athenz-tenant-cert.expiry.seconds.last"));
-        metrics.add(new Metric("node-certificate.expiry.seconds.last"));
-        metrics.add(new Metric("container-iam-role.expiry.seconds.last"));
+        metrics.add(new Metric("container-iam-role.expiry.seconds"));
 
         metrics.add(new Metric("jdisc.http.request.prematurely_closed.rate"));
         addMetric(metrics, "jdisc.http.request.requests_per_connection", List.of("sum", "count", "min", "max", "average"));
