@@ -1267,7 +1267,7 @@ public class JsonRendererTestCase {
 
     @Test
     public void testMapDeepInFields() throws IOException, InterruptedException, ExecutionException {
-        Result r = new Result(new Query("/?renderer.json.wrapAllMaps=true"));
+        Result r = new Result(new Query("/?renderer.json.recognizeDeepMaps=true"));
         var expected = dataFromSimplified(
                 "{root: { id:'toplevel', relevance:1.0, fields: { totalCount: 1 }," +
                 "  children: [ { id: 'myHitName', relevance: 1.0," +
@@ -1287,7 +1287,7 @@ public class JsonRendererTestCase {
         String summary = render(r);
         assertEqualJson(expected.toString(), summary);
 
-        r = new Result(new Query("/?renderer.json.wrapAllMaps=false"));
+        r = new Result(new Query("/?renderer.json.recognizeDeepMaps=false"));
         expected = dataFromSimplified(
                 "{root:{id:'toplevel',relevance:1.0,fields:{totalCount:1}," +
                 "  children: [ { id: 'myHitName', relevance: 1.0," +
