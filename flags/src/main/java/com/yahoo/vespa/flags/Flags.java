@@ -200,7 +200,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_ENCRYPTING_HOSTS = defineIntFlag(
             "max-encrypting-hosts", 0,
-            List.of("mpolden", "hakonhall"), "2021-05-27", "2021-10-01",
+            List.of("mpolden", "hakonhall"), "2021-05-27", "2021-11-01",
             "The maximum number of hosts allowed to encrypt their disk concurrently",
             "Takes effect on next run of HostEncrypter, but any currently encrypting hosts will not be cancelled when reducing the limit");
 
@@ -213,7 +213,7 @@ public class Flags {
 
     public static final UnboundListFlag<String> DEFER_APPLICATION_ENCRYPTION = defineListFlag(
             "defer-application-encryption", List.of(), String.class,
-            List.of("mpolden", "hakonhall"), "2021-06-23", "2021-10-01",
+            List.of("mpolden", "hakonhall"), "2021-06-23", "2021-11-01",
             "List of applications where encryption of their host should be deferred",
             "Takes effect on next run of HostEncrypter");
 
