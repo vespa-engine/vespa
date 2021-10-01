@@ -4,6 +4,7 @@ package com.yahoo.vespa.athenz.client.zms;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPolicy;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -57,6 +58,8 @@ public interface ZmsClient extends AutoCloseable {
     void addPolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole);
 
     boolean deletePolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole);
+
+    Optional<AthenzPolicy> getPolicy(AthenzDomain domain, String name);
 
     Map<AthenzUser, String> listPendingRoleApprovals(AthenzRole athenzRole);
 

@@ -1,9 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
+import com.yahoo.vespa.athenz.api.AthenzAssertion;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPolicy;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -181,6 +183,20 @@ public class ZmsClientMock implements ZmsClient {
     @Override
     public boolean deletePolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole) {
         return false;
+    }
+
+    @Override
+    public Optional<AthenzPolicy> getPolicy(AthenzDomain domain, String name) {
+        AthenzDbMock.Policy policy = athenz.getOrCreateDomain(domain).policies.get(name);
+        if (policy == null) return Optional.empty();
+        List<AthenzAssertion> assertions = policy.assertions.stream()
+                .map(a -> AthenzAssertion.newBuilder(
+                        new AthenzRole(domain, a.role()),
+                        AthenzResourceName.fromString(a.resource()),
+                        a.action())
+                        .build())
+                .collect(Collectors.toList());
+        return Optional.of(new AthenzPolicy(policy.name(), assertions));
     }
 
     @Override
