@@ -33,6 +33,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.rendering.RendererRegistry;
+import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.text.XML;
@@ -559,7 +560,29 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         RankProfileList profiles =
                 context.vespaModel() != null ? context.vespaModel().rankProfileList() : RankProfileList.empty;
+
+        Element onnxElement = XML.getChild(modelEvaluationElement, "onnx");
+        Element modelsElement = XML.getChild(onnxElement, "models");
+        for (Element modelElement : XML.getChildren(modelsElement, "model") ) {
+            OnnxModel onnxModel = profiles.getOnnxModels().get(modelElement.getAttribute("name"));
+            if (onnxModel == null)
+                continue; // Skip if model is not found
+            onnxModel.setStatelessExecutionMode(getStringValue(modelElement, "execution-mode", null));
+            onnxModel.setStatelessInterOpThreads(getIntValue(modelElement, "interop-threads", -1));
+            onnxModel.setStatelessIntraOpThreads(getIntValue(modelElement, "intraop-threads", -1));
+        }
+
         cluster.setModelEvaluation(new ContainerModelEvaluation(cluster, profiles));
+    }
+
+    private String getStringValue(Element element, String name, String defaultValue) {
+        Element child = XML.getChild(element, name);
+        return (child != null) ? child.getTextContent() : defaultValue;
+    }
+
+    private int getIntValue(Element element, String name, int defaultValue) {
+        Element child = XML.getChild(element, name);
+        return (child != null) ? Integer.parseInt(child.getTextContent()) : defaultValue;
     }
 
     protected void addModelEvaluationBundles(ApplicationContainerCluster cluster) {

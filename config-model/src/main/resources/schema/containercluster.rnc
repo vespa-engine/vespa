@@ -105,7 +105,16 @@ ZooKeeper = element zookeeper {
 }
 
 ModelEvaluation = element model-evaluation {
-    empty
+    element onnx {
+        element models {
+            element model {
+                attribute name { string } &
+                element intraop-threads { xsd:nonNegativeInteger }? &
+                element interop-threads { xsd:nonNegativeInteger }? &
+                element execution-mode { string "sequential" | string "parallel" }?
+            }*
+        }?
+    }?
 }
 
 Ssl = element ssl {

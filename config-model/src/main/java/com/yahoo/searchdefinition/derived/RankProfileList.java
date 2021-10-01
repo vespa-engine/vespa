@@ -130,6 +130,10 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         }
     }
 
+    public OnnxModels getOnnxModels() {
+        return onnxModels;
+    }
+
     public Map<String, RawRankProfile> getRankProfiles() {
         return rankProfiles;
     }
@@ -182,6 +186,13 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                 modelBuilder.fileref(model.getFileReference());
                 model.getInputMap().forEach((name, source) -> modelBuilder.input(new OnnxModelsConfig.Model.Input.Builder().name(name).source(source)));
                 model.getOutputMap().forEach((name, as) -> modelBuilder.output(new OnnxModelsConfig.Model.Output.Builder().name(name).as(as)));
+                if (model.getStatelessExecutionMode().isPresent())
+                    modelBuilder.stateless_execution_mode(model.getStatelessExecutionMode().get());
+                if (model.getStatelessInterOpThreads().isPresent())
+                    modelBuilder.stateless_interop_threads(model.getStatelessInterOpThreads().get());
+                if (model.getStatelessIntraOpThreads().isPresent())
+                    modelBuilder.stateless_intraop_threads(model.getStatelessIntraOpThreads().get());
+
                 builder.model(modelBuilder);
             }
         }
