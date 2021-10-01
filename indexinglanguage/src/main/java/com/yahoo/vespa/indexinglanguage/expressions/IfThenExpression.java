@@ -2,6 +2,8 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.vespa.objects.ObjectOperation;
@@ -51,6 +53,14 @@ public final class IfThenExpression extends CompositeExpression {
         this.rhs = rhs;
         this.ifTrue = ifTrue;
         this.ifFalse = ifFalse;
+    }
+
+    @Override
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        lhs.setStatementOutput(documentType, field);
+        rhs.setStatementOutput(documentType, field);
+        ifTrue.setStatementOutput(documentType, field);
+        ifFalse.setStatementOutput(documentType, field);
     }
 
     public Expression getLeftHandSide() {

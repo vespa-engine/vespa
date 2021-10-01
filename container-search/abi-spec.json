@@ -6259,7 +6259,8 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.language.process.Embedder, java.util.Map)",
+      "public void <init>(java.lang.String, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.language.process.Embedder, java.util.Map)",
+      "public java.lang.String destination()",
       "public static com.yahoo.search.query.profile.types.ConversionContext empty()"
     ],
     "fields": []

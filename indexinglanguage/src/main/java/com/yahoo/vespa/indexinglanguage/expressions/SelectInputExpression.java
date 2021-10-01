@@ -3,6 +3,8 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
@@ -26,6 +28,12 @@ public final class SelectInputExpression extends CompositeExpression {
     public SelectInputExpression(List<Pair<String, Expression>> cases) {
         super(null);
         this.cases = cases;
+    }
+
+    @Override
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        for (var casePair : cases)
+        casePair.getSecond().setStatementOutput(documentType, field);
     }
 
     @Override

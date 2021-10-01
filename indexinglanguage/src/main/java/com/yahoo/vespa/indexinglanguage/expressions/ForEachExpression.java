@@ -27,6 +27,11 @@ public final class ForEachExpression extends CompositeExpression {
     }
 
     @Override
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        exp.setStatementOutput(documentType, field);
+    }
+
+    @Override
     protected void doExecute(final ExecutionContext context) {
         FieldValue input = context.getValue();
         if (input instanceof Array || input instanceof WeightedSet) {

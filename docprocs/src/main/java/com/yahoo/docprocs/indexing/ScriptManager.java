@@ -82,7 +82,8 @@ public class ScriptManager {
         parserContext.getAnnotatorConfig().setMaxTokenLength(config.fieldmatchmaxlength());
 
         for (IlscriptsConfig.Ilscript ilscript : config.ilscript()) {
-            InputExpression.FieldPathOptimizer fieldPathOptimizer = new InputExpression.FieldPathOptimizer(docTypeMgr.getDocumentType(ilscript.doctype()));
+            DocumentType documentType = docTypeMgr.getDocumentType(ilscript.doctype());
+            InputExpression.FieldPathOptimizer fieldPathOptimizer = new InputExpression.FieldPathOptimizer(documentType);
             List<StatementExpression> expressions = new ArrayList<>(ilscript.content().size());
             Map<String, DocumentScript> fieldScripts = new HashMap<>(ilscript.content().size());
             for (String content : ilscript.content()) {
@@ -95,7 +96,7 @@ public class ScriptManager {
                 statement.select(fieldPathOptimizer, fieldPathOptimizer);
                 if ( ! outputFieldNameExtractor.getOutputFieldNames().isEmpty()) {
                     String outputFieldName = outputFieldNameExtractor.getOutputFieldNames().get(0);
-		    statement.setStatementOutputType(docTypeMgr.getDocumentType(ilscript.doctype()).getField(outputFieldName).getDataType());
+                    statement.setStatementOutput(documentType, documentType.getField(outputFieldName));
                 }
                 if (inputFieldNameExtractor.getInputFieldNames().size() == 1) {
                     String fieldName = inputFieldNameExtractor.getInputFieldNames().get(0);

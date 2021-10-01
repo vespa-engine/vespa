@@ -20,7 +20,6 @@ import com.yahoo.search.searchchain.Execution;
  * semantics are not necessary for the application.
  *
  * @see FederationSearcher
- * @since 5.0.13
  * @author Steinar Knutsen
  */
 @After("*")

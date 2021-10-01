@@ -17,7 +17,7 @@ import com.yahoo.tensor.TensorType;
  */
 public abstract class Value {
 
-    private boolean frozen=false;
+    private boolean frozen = false;
 
     /** Returns the type of this value */
     public abstract TensorType type();
