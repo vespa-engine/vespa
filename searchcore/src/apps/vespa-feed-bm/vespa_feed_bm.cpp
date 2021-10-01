@@ -268,7 +268,8 @@ App::get_options()
         { "use-async-message-handling", 0, nullptr, 0 },
         { "use-document-api", 0, nullptr, 0 },
         { "use-message-bus", 0, nullptr, 0 },
-        { "use-storage-chain", 0, nullptr, 0 }
+        { "use-storage-chain", 0, nullptr, 0 },
+        { nullptr, 0, nullptr, 0 }
     };
     enum longopts_enum {
         LONGOPT_BUCKET_DB_STRIPE_BITS,
