@@ -81,6 +81,6 @@ java \
 -XX:ThreadStackSize=512 \
 -XX:MaxJavaStackTraceDepth=1000000 \
 -Djava.library.path=${VESPA_HOME}/libexec64/native:${VESPA_HOME}/lib64 \
--XX:MaxDirectMemorySize=32m -Djava.awt.headless=true \
+-XX:MaxDirectMemorySize=64m -Djava.awt.headless=true \
 -Xms128m -Xmx1024m $(getJavaOptionsIPV46) \
 -cp ${VESPA_HOME}/lib/jars/vespaclient-java-jar-with-dependencies.jar com.yahoo.vespafeeder.VespaFeeder "$@"
