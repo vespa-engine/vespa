@@ -216,7 +216,6 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                 .ifPresent(info -> {
                     int suspended = info.status().isSuspended() ? 1 : 0;
                     metric.set("suspended", suspended, context);
-                    metric.set("allowedToBeDown", suspended, context); // remove summer 2020.
                     long suspendedSeconds = info.suspendedSince()
                             .map(suspendedSince -> Duration.between(suspendedSince, clock().instant()).getSeconds())
                             .orElse(0L);

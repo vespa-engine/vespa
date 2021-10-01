@@ -115,7 +115,6 @@ public class MetricsReporterTest {
         expectedMetrics.put("failReport", 0);
 
 
-        expectedMetrics.put("allowedToBeDown", 1);
         expectedMetrics.put("suspended", 1);
         expectedMetrics.put("suspendedSeconds", 123L);
         expectedMetrics.put("numberOfServices", 0L);
