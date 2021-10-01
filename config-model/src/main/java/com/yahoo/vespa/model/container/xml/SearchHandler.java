@@ -48,11 +48,7 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
 
             // User options overrides below configuration
             if (hasUserOptions()) return;
-            if (cluster.isHostedVespa()) {
-                builder.maxThreads(-2).minThreads(-2).queueSize(-40);
-            } else {
-                builder.maxThreads(500).minThreads(500).queueSize(0);
-            }
+            builder.maxThreads(-2).minThreads(-2).queueSize(-40);
         }
 
 
