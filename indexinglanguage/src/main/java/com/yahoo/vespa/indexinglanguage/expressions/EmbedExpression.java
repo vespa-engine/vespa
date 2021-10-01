@@ -40,7 +40,9 @@ public class EmbedExpression extends Expression  {
     @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue) context.getValue();
-        Tensor tensor = embedder.embed(input.getString(), context.getLanguage(), destination, targetType);
+        Tensor tensor = embedder.embed(input.getString(),
+                                       new Embedder.Context(destination).setLanguage(context.getLanguage()),
+                                       targetType);
         context.setValue(new TensorFieldValue(tensor));
     }
 

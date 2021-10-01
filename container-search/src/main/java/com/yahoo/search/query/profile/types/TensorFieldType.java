@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.types;
 
+import com.yahoo.language.process.Embedder;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -52,7 +53,11 @@ public class TensorFieldType extends FieldType {
         if ( ! s.endsWith(")"))
             throw new IllegalArgumentException("Expected any string enclosed in embed(), but the argument does not end by ')'");
         String text = s.substring("embed(".length(), s.length() - 1);
-        return context.embedder().embed(text, context.language(), context.destination(), type);
+        return context.embedder().embed(text, toEmbedderContext(context), type);
+    }
+
+    private Embedder.Context toEmbedderContext(ConversionContext context) {
+        return new Embedder.Context(context.destination()).setLanguage(context.language());
     }
 
     public static TensorFieldType fromTypeString(String s) {

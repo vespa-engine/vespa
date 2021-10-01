@@ -747,16 +747,16 @@ public class QueryProfileTypeTestCase {
         }
 
         @Override
-        public List<Integer> embed(String text, Language language, String destination) {
+        public List<Integer> embed(String text, Embedder.Context context) {
             fail("Unexpected call");
             return null;
         }
 
         @Override
-        public Tensor embed(String text, Language language, String destination, TensorType tensorType) {
+        public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
             assertEquals(expectedText, text);
-            assertEquals(expectedLanguage, language);
-            assertEquals(expectedDestination, destination);
+            assertEquals(expectedLanguage, context.getLanguage());
+            assertEquals(expectedDestination, context.getDestination());
             assertEquals(tensorToReturn.type(), tensorType);
             return tensorToReturn;
         }

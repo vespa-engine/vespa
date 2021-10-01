@@ -4,6 +4,7 @@
 package com.yahoo.language.sentencepiece;
 
 import com.yahoo.language.Language;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -29,13 +30,13 @@ class SentencePieceTester {
     }
 
     public void assertEmbedded(String input, Integer... expectedCodes) {
-        assertArrayEquals(expectedCodes, embedder.embed(input, Language.UNKNOWN, null).toArray());
+        assertArrayEquals(expectedCodes, embedder.embed(input, new Embedder.Context("test")).toArray());
     }
 
     public void assertEmbedded(String input, String tensorType, String tensor) {
         TensorType type = TensorType.fromSpec(tensorType);
         Tensor expected = Tensor.from(type, tensor);
-        assertEquals(expected, embedder.embed(input, Language.UNKNOWN, null, type));
+        assertEquals(expected, embedder.embed(input, new Embedder.Context("test"), type));
     }
 
     public void assertSegmented(String input, String... expectedSegments) {

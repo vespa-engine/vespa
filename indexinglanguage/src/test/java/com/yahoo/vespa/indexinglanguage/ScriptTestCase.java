@@ -135,13 +135,13 @@ public class ScriptTestCase {
         }
 
         @Override
-        public List<Integer> embed(String text, Language language, String destination) {
+        public List<Integer> embed(String text, Embedder.Context context) {
             return null;
         }
 
         @Override
-        public Tensor embed(String text, Language language, String destination, TensorType tensorType) {
-            assertEquals(expectedDestination, destination);
+        public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
+            assertEquals(expectedDestination, context.getDestination());
             return Tensor.from(tensorType, "[7,3,0,0]");
         }
 
