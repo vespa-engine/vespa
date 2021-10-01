@@ -48,7 +48,7 @@ overridden by setting the VESPA_CLI_HOME environment variable.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Root command does nothing
 		cmd.Help()
-		os.Exit(1)
+		exitFunc(1)
 	},
 }
 

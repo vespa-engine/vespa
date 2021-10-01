@@ -48,7 +48,7 @@ variable.`,
 		if listApps {
 			apps, err := listSampleApps()
 			if err != nil {
-				printErr(err, "Could not list sample applications")
+				fatalErr(err, "Could not list sample applications")
 				return
 			}
 			for _, app := range apps {
@@ -70,7 +70,7 @@ func cloneApplication(source string, name string) {
 
 	zipReader, zipOpenError := zip.OpenReader(zipFile.Name())
 	if zipOpenError != nil {
-		printErr(zipOpenError, "Could not open sample apps zip '", color.Cyan(zipFile.Name()), "'")
+		fatalErr(zipOpenError, "Could not open sample apps zip '", color.Cyan(zipFile.Name()), "'")
 		return
 	}
 	defer zipReader.Close()
@@ -82,7 +82,7 @@ func cloneApplication(source string, name string) {
 			if !found { // Create destination directory lazily when source is found
 				createErr := os.Mkdir(name, 0755)
 				if createErr != nil {
-					printErr(createErr, "Could not create directory '", color.Cyan(name), "'")
+					fatalErr(createErr, "Could not create directory '", color.Cyan(name), "'")
 					return
 				}
 			}
@@ -90,13 +90,13 @@ func cloneApplication(source string, name string) {
 
 			copyError := copy(f, name, zipEntryPrefix)
 			if copyError != nil {
-				printErr(copyError, "Could not copy zip entry '", color.Cyan(f.Name), "' to ", color.Cyan(name))
+				fatalErr(copyError, "Could not copy zip entry '", color.Cyan(f.Name), "' to ", color.Cyan(name))
 				return
 			}
 		}
 	}
 	if !found {
-		printErr(nil, "Could not find source application '", color.Cyan(source), "'")
+		fatalErr(nil, "Could not find source application '", color.Cyan(source), "'")
 	} else {
 		log.Print("Created ", color.Cyan(name))
 	}
