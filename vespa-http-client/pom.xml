@@ -60,9 +60,28 @@
     <dependency>
       <!-- Needed for Vespa TLS configuration. Standard jar artifact -->
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>http-utils</artifactId>
+      <artifactId>vespajlib</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>
+      <exclusions>
+        <!-- Optimization: exclude artifacts that are not used by this module -->
+        <exclusion>
+          <groupId>io.airlift</groupId>
+          <artifactId>aircompressor</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.java.dev.jna</groupId>
+          <artifactId>jna</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-exec</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.lz4</groupId>
+          <artifactId>lz4-java</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <!-- Needed for Vespa TLS configuration. -->
