@@ -19,24 +19,24 @@ import (
 )
 
 // Sends the operation given in the file
-func Send(jsonFile string, service *Service, curlOutput io.Writer) util.OperationResult {
-	return sendOperation("", jsonFile, service, anyOperation, curlOutput)
+func Send(jsonFile string, service *Service, options OperationOptions) util.OperationResult {
+	return sendOperation("", jsonFile, service, anyOperation, options)
 }
 
-func Put(documentId string, jsonFile string, service *Service, curlOutput io.Writer) util.OperationResult {
-	return sendOperation(documentId, jsonFile, service, putOperation, curlOutput)
+func Put(documentId string, jsonFile string, service *Service, options OperationOptions) util.OperationResult {
+	return sendOperation(documentId, jsonFile, service, putOperation, options)
 }
 
-func Update(documentId string, jsonFile string, service *Service, curlOutput io.Writer) util.OperationResult {
-	return sendOperation(documentId, jsonFile, service, updateOperation, curlOutput)
+func Update(documentId string, jsonFile string, service *Service, options OperationOptions) util.OperationResult {
+	return sendOperation(documentId, jsonFile, service, updateOperation, options)
 }
 
-func RemoveId(documentId string, service *Service, curlOutput io.Writer) util.OperationResult {
-	return sendOperation(documentId, "", service, removeOperation, curlOutput)
+func RemoveId(documentId string, service *Service, options OperationOptions) util.OperationResult {
+	return sendOperation(documentId, "", service, removeOperation, options)
 }
 
-func RemoveOperation(jsonFile string, service *Service, curlOutput io.Writer) util.OperationResult {
-	return sendOperation("", jsonFile, service, removeOperation, curlOutput)
+func RemoveOperation(jsonFile string, service *Service, options OperationOptions) util.OperationResult {
+	return sendOperation("", jsonFile, service, removeOperation, options)
 }
 
 const (
@@ -46,7 +46,12 @@ const (
 	removeOperation string = "remove"
 )
 
-func sendOperation(documentId string, jsonFile string, service *Service, operation string, curlOutput io.Writer) util.OperationResult {
+type OperationOptions struct {
+	CurlOutput io.Writer
+	Timeout    time.Duration
+}
+
+func sendOperation(documentId string, jsonFile string, service *Service, operation string, options OperationOptions) util.OperationResult {
 	header := http.Header{}
 	header.Add("Content-Type", "application/json")
 
@@ -95,7 +100,7 @@ func sendOperation(documentId string, jsonFile string, service *Service, operati
 		Header: header,
 		Body:   ioutil.NopCloser(bytes.NewReader(documentData)),
 	}
-	response, err := serviceDo(service, request, jsonFile, curlOutput)
+	response, err := serviceDo(service, request, jsonFile, options)
 	if response == nil {
 		return util.Failure("Request failed: " + err.Error())
 	}
@@ -134,7 +139,7 @@ func operationToHTTPMethod(operation string) string {
 	panic("Unexpected document operation ''" + operation + "'")
 }
 
-func serviceDo(service *Service, request *http.Request, filename string, curlOutput io.Writer) (*http.Response, error) {
+func serviceDo(service *Service, request *http.Request, filename string, options OperationOptions) (*http.Response, error) {
 	cmd, err := curl.RawArgs(request.URL.String())
 	if err != nil {
 		return nil, err
@@ -149,13 +154,13 @@ func serviceDo(service *Service, request *http.Request, filename string, curlOut
 	cmd.Certificate = service.TLSOptions.CertificateFile
 	cmd.PrivateKey = service.TLSOptions.PrivateKeyFile
 	out := cmd.String() + "\n"
-	if _, err := io.WriteString(curlOutput, out); err != nil {
+	if _, err := io.WriteString(options.CurlOutput, out); err != nil {
 		return nil, err
 	}
-	return service.Do(request, time.Second*60)
+	return service.Do(request, options.Timeout)
 }
 
-func Get(documentId string, service *Service, curlOutput io.Writer) util.OperationResult {
+func Get(documentId string, service *Service, options OperationOptions) util.OperationResult {
 	documentPath, documentPathError := IdToURLPath(documentId)
 	if documentPathError != nil {
 		return util.Failure("Invalid document id '" + documentId + "': " + documentPathError.Error())
@@ -170,7 +175,7 @@ func Get(documentId string, service *Service, curlOutput io.Writer) util.Operati
 		URL:    url,
 		Method: "GET",
 	}
-	response, err := serviceDo(service, request, "", curlOutput)
+	response, err := serviceDo(service, request, "", options)
 	if response == nil {
 		return util.Failure("Request failed: " + err.Error())
 	}
