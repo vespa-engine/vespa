@@ -124,7 +124,7 @@ public class Flags {
 
     public static final UnboundIntFlag NUM_DEPLOY_HELPER_THREADS = defineIntFlag(
             "num-model-builder-threads", -1,
-            List.of("balder"), "2021-09-09", "2021-10-01",
+            List.of("balder"), "2021-09-09", "2021-11-01",
             "Number of threads used for speeding up building of models.",
             "Takes effect on first (re)start of config server");
 
@@ -193,7 +193,7 @@ public class Flags {
 
     public static final UnboundIntFlag LARGE_RANK_EXPRESSION_LIMIT = defineIntFlag(
             "large-rank-expression-limit", 8192,
-            List.of("baldersheim"), "2021-06-09", "2021-10-15",
+            List.of("baldersheim"), "2021-06-09", "2021-11-01",
             "Limit for size of rank expressions distributed by filedistribution",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
@@ -239,7 +239,7 @@ public class Flags {
 
     public static final UnboundIntFlag METRICSPROXY_NUM_THREADS = defineIntFlag(
             "metricsproxy-num-threads", 2,
-            List.of("balder"), "2021-09-01", "2021-10-01",
+            List.of("balder"), "2021-09-01", "2021-11-01",
             "Number of threads for metrics proxy",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
