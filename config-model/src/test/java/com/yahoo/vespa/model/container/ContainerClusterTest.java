@@ -239,15 +239,27 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void requireThatNonHostedUsesLargerDefaultThreadpool() {
+    public void requireThatPoolAndQueueCanNotBeControlledByPropertiesWhenNoFlavor() {
         MockRoot root = new MockRoot("foo");
         ApplicationContainerCluster cluster = createContainerCluster(root, false);
         addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
         ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
-        assertEquals(-4, threadpoolConfig.maxthreads());
-        assertEquals(-40, threadpoolConfig.queueSize());
+        assertEquals(500, threadpoolConfig.maxthreads());
+        assertEquals(0, threadpoolConfig.queueSize());
+    }
+
+    @Test
+    public void requireThatDefaultThreadPoolConfigIsSane() {
+        MockRoot root = new MockRoot("foo");
+        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        addContainer(root, cluster, "c1", "host-c1");
+        root.freezeModelTopology();
+
+        ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
+        assertEquals(500, threadpoolConfig.maxthreads());
+        assertEquals(0, threadpoolConfig.queueSize());
     }
 
     @Test
