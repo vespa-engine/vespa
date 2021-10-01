@@ -1274,7 +1274,8 @@ public class JsonRendererTestCase {
                 "    fields: { " +
                 "      f1: [ 'v1', { mykey1: 'myvalue1', mykey2: 'myvalue2' } ]," +
                 "      f2: { i1: 'v2', i2: { mykey3: 'myvalue3' }, i3: 'v3' }," +
-                "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }" +
+                "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }," +
+                "      f4: { mykey4: 'myvalue4', mykey5: 'myvalue5' }" +
                 "    }" +
                 "  } ]" +
                 "}}");
@@ -1282,6 +1283,7 @@ public class JsonRendererTestCase {
         h.setField("f1", dataFromSimplified("[ 'v1', [ { key: 'mykey1', value: 'myvalue1' }, { key: 'mykey2', value: 'myvalue2' } ] ]"));
         h.setField("f2", dataFromSimplified("{ i1: 'v2', i2: [ { key: 'mykey3', value: 'myvalue3' } ], i3: 'v3' }"));
         h.setField("f3", dataFromSimplified("{ j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }"));
+        h.setField("f4", dataFromSimplified("[ { key: 'mykey4', value: 'myvalue4' }, { key: 'mykey5', value: 'myvalue5' } ]"));
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
@@ -1294,7 +1296,8 @@ public class JsonRendererTestCase {
                 "    fields: { " +
                 "      f1: [ 'v1', [ { key: 'mykey1', value: 'myvalue1' }, { key: 'mykey2', value: 'myvalue2' } ] ]," +
                 "      f2: { i1: 'v2', i2: [ { key: 'mykey3', value: 'myvalue3' } ], i3: 'v3' }," +
-                "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }" +
+                "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }," +
+                "      f4: { mykey4: 'myvalue4', mykey5: 'myvalue5' }" +
                 "    }" +
                 "  } ]" +
                 "}}");
