@@ -59,12 +59,16 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
 
         zoneRegistry.zones().controllerUpgraded().zones().forEach(z -> {
                     ZoneId zoneId = z.getId();
-                    var tenantArchiveAccessRoles = tenantArchiveAccessRoles(z);
-                    archiveBucketDb.buckets(zoneId).forEach(archiveBucket ->
-                            archiveService.updateBucketAndKeyPolicy(zoneId, archiveBucket,
-                                    Maps.filterEntries(tenantArchiveAccessRoles,
-                                            entry -> archiveBucket.tenants().contains(entry.getKey())))
-                    );
+                    try {
+                        var tenantArchiveAccessRoles = tenantArchiveAccessRoles(z);
+                        archiveBucketDb.buckets(zoneId).forEach(archiveBucket ->
+                                archiveService.updateBucketAndKeyPolicy(zoneId, archiveBucket,
+                                        Maps.filterEntries(tenantArchiveAccessRoles,
+                                                entry -> archiveBucket.tenants().contains(entry.getKey())))
+                        );
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to maintain archive access in " + zoneId.value(), e);
+                    }
                 }
         );
 
