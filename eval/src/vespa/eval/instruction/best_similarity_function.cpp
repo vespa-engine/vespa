@@ -145,7 +145,8 @@ struct SelectFun {
     const ValueType &res_type;
     const ValueType &lhs_type;
     const ValueType &rhs_type;
-    SelectFun(const auto &res, const auto &lhs, const auto &rhs)
+    template <typename ResType, typename LhsType, typename RhsType>
+    SelectFun(const ResType &res, const LhsType &lhs, const RhsType &rhs)
       : res_type(res.result_type()), lhs_type(lhs.result_type()), rhs_type(rhs.result_type()) {}
     template <typename R1> static InterpretedFunction::op_function invoke(Aggr best_aggr, op2_t join_fun, CellType cell_types) {
         if ((best_aggr == Aggr::MAX) && (join_fun == Mul::f) && (cell_types == CellType::FLOAT)) {

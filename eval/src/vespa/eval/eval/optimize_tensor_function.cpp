@@ -40,7 +40,8 @@ namespace {
 
 using Child = TensorFunction::Child;
 
-void run_optimize_pass(const Child &root, auto optimize_node) {
+template <typename Func>
+void run_optimize_pass(const Child &root, Func&& optimize_node) {
     std::vector<Child::CREF> nodes({root});
     for (size_t i = 0; i < nodes.size(); ++i) {
         nodes[i].get().get().push_children(nodes);
