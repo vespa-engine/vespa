@@ -61,7 +61,7 @@ public:
         size_t external_load_operations;
         size_t maintenance_operations;
         PendingOperationStats(size_t external_load_operations_in,
-                              size_t maintenance_operations_in)
+                              size_t maintenance_operations_in) noexcept
             : external_load_operations(external_load_operations_in),
               maintenance_operations(maintenance_operations_in) {}
 
