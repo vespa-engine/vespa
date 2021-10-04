@@ -21,6 +21,8 @@ import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.util.logging.Level.FINE;
+
 /**
  * @author Tony Vaagenes
  * @author ollivir
@@ -108,12 +110,14 @@ public class CloudSubscriberFactory implements SubscriberFactory {
             int numExceptions = 0;
             while ( ! gotNextGen) {
                 try {
-                    if (subscriber.nextGeneration(isInitializing))
+                    if (subscriber.nextGeneration(isInitializing)) {
                         gotNextGen = true;
+                        log.log(FINE, () -> this + " got next config generation " + subscriber.getGeneration() + "\n" + subscriber.toString());
+                    }
                 }
                 catch (IllegalArgumentException e) {
                     numExceptions++;
-                    log.log(Level.WARNING, "Got exception from the config system (ignore if you just removed a " +
+                    log.log(Level.WARNING, this + " got exception from the config system (ignore if you just removed a " +
                                            "component from your application that used the mentioned config) Subscriber info: " +
                                            subscriber.toString(), e);
                     if (numExceptions >= 5)

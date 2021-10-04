@@ -89,7 +89,7 @@ public final class ConfigRetriever {
                 return bootstrapConfig;
             } else {
                 if (newestBootstrapGeneration == newestComponentGeneration) {
-                    log.log(FINE, () -> "Got new components configs with unchanged bootstrap configs.");
+                    log.log(FINE, () -> this + " got new components configs with unchanged bootstrap configs.");
                     return componentsConfigIfChanged();
                 } else {
                     // This should not be a normal case, and hence a warning to allow investigation.
