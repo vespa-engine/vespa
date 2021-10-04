@@ -15,6 +15,8 @@ class BmClusterParams
     uint32_t _bucket_db_stripe_bits;
     uint32_t _distributor_merge_busy_wait;
     uint32_t _distributor_stripes;
+    uint32_t _doc_store_chunk_compression_level;
+    uint32_t _doc_store_chunk_maxbytes;
     bool     _enable_distributor;
     bool     _enable_service_layer;
     uint32_t _groups;
@@ -42,6 +44,8 @@ public:
     uint32_t get_bucket_db_stripe_bits() const { return _bucket_db_stripe_bits; }
     uint32_t get_distributor_merge_busy_wait() const { return _distributor_merge_busy_wait; }
     uint32_t get_distributor_stripes() const { return _distributor_stripes; }
+    uint32_t get_doc_store_chunk_compression_level() const noexcept { return _doc_store_chunk_compression_level; }
+    uint32_t get_doc_store_chunk_maxbytes() const noexcept { return _doc_store_chunk_maxbytes; }
     bool get_enable_distributor() const { return _enable_distributor; }
     uint32_t get_groups() const noexcept { return _groups; }
     const vespalib::string & get_indexing_sequencer() const { return _indexing_sequencer; }
@@ -67,6 +71,8 @@ public:
     void set_bucket_db_stripe_bits(uint32_t value) { _bucket_db_stripe_bits = value; }
     void set_distributor_merge_busy_wait(uint32_t value) { _distributor_merge_busy_wait = value; }
     void set_distributor_stripes(uint32_t value) { _distributor_stripes = value; }
+    void set_doc_store_chunk_compression_level(uint32_t value) { _doc_store_chunk_compression_level = value; }
+    void set_doc_store_chunk_maxbytes(uint32_t value) { _doc_store_chunk_maxbytes = value; }
     void set_enable_distributor(bool value) { _enable_distributor = value; }
     void set_enable_service_layer(bool value) { _enable_service_layer = value; }
     void set_groups(uint32_t value);

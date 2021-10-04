@@ -574,6 +574,8 @@ MyBmNode::create_document_db(const BmClusterParams& params)
         std::transform(sequencer.begin(), sequencer.end(), sequencer.begin(), [](unsigned char c){ return std::toupper(c); });
         protonCfg->indexing.optimize = ProtonConfig::Indexing::getOptimize(sequencer);
     }
+    protonCfg->summary.log.chunk.compression.level = params.get_doc_store_chunk_compression_level();
+    protonCfg->summary.log.chunk.maxbytes = params.get_doc_store_chunk_maxbytes();
     auto bootstrap_config = std::make_shared<BootstrapConfig>(1,
                                                               _document_types,
                                                               _repo,
