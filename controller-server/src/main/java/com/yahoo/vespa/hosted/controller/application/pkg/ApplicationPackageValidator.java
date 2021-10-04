@@ -81,7 +81,7 @@ public class ApplicationPackageValidator {
             for (var endpoint : instance.endpoints()) {
                 var clouds = new HashSet<CloudName>();
                 for (var region : endpoint.regions()) {
-                    for (ZoneApi zone : controller.zoneRegistry().zones().all().in(region).zones()) {
+                    for (ZoneApi zone : controller.zoneRegistry().zones().all().in(Environment.prod).in(region).zones()) {
                         clouds.add(zone.getCloudName());
                     }
                 }
