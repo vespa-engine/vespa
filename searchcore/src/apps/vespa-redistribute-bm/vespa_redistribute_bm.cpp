@@ -417,7 +417,8 @@ App::get_options()
         { "rpc-targets-per-node", 1, nullptr, 0 },
         { "skip-communicationmanager-thread", 0, nullptr, 0 },
         { "use-async-message-handling", 0, nullptr, 0 },
-        { "use-feed-settle", 0, nullptr, 0 }
+        { "use-feed-settle", 0, nullptr, 0 },
+        { nullptr, 0, nullptr, 0 }
     };
     enum longopts_enum {
         LONGOPT_BUCKET_DB_STRIPE_BITS,
