@@ -1217,7 +1217,7 @@ TEST_F(MergeThrottlerTest, unknown_merge_with_self_in_chain) {
               static_cast<MergeBucketReply&>(*reply).getResult().getResult());
 }
 
-TEST_F(MergeThrottlerTest, busy_returned_on_full_queue) {
+TEST_F(MergeThrottlerTest, busy_returned_on_full_queue_for_merges_sent_from_distributors) {
     size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
     size_t maxQueue = _throttlers[0]->getMaxQueueSize();
     ASSERT_EQ(20, maxQueue);
@@ -1227,6 +1227,7 @@ TEST_F(MergeThrottlerTest, busy_returned_on_full_queue) {
         nodes.push_back(0);
         nodes.push_back(1);
         nodes.push_back(2);
+        // No chain set, i.e. merge command is freshly squeezed from a distributor.
         auto cmd = std::make_shared<MergeBucketCommand>(
                 makeDocumentBucket(BucketId(32, 0xf00000 + i)), nodes, 1234, 1);
         _topLinks[0]->sendDown(cmd);
@@ -1260,6 +1261,34 @@ TEST_F(MergeThrottlerTest, busy_returned_on_full_queue) {
 
     EXPECT_EQ(0, _throttlers[0]->getMetrics().chaining.failures.busy.getValue());
     EXPECT_EQ(1, _throttlers[0]->getMetrics().local.failures.busy.getValue());
+}
+
+TEST_F(MergeThrottlerTest, forwarded_merges_not_busy_bounced_even_if_queue_is_full) {
+    // Note: uses node with index 1 to not be the first node in chain
+    size_t max_pending = _throttlers[1]->getThrottlePolicy().getMaxPendingCount();
+    size_t max_enqueued = _throttlers[1]->getMaxQueueSize();
+    for (std::size_t i = 0; i < max_pending + max_enqueued; ++i) {
+        std::vector<MergeBucketCommand::Node> nodes({{1}, {2}, {3}});
+        // No chain set, i.e. merge command is freshly squeezed from a distributor.
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xf00000 + i)), nodes, 1234, 1);
+        _topLinks[1]->sendDown(cmd);
+    }
+    _topLinks[1]->waitForMessages(max_pending, _messageWaitTime);
+    waitUntilMergeQueueIs(*_throttlers[1], max_enqueued, _messageWaitTime);
+
+    // Clear all forwarded merges
+    _topLinks[1]->getRepliesOnce();
+    // Send down another merge with non-empty chain. It should _not_ be busy bounced
+    // as it has already been accepted into another node's merge window.
+    {
+        std::vector<MergeBucketCommand::Node> nodes({{0}, {1}, {2}});
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xf000baaa)), nodes, 1234, 1);
+        cmd->setChain(std::vector<uint16_t>({0})); // Forwarded from node 0
+        _topLinks[1]->sendDown(cmd);
+    }
+    waitUntilMergeQueueIs(*_throttlers[1], max_enqueued + 1, _messageWaitTime);
 }
 
 TEST_F(MergeThrottlerTest, broken_cycle) {

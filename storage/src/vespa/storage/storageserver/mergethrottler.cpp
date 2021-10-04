@@ -732,7 +732,10 @@ MergeThrottler::handleMessageDown(
             processCycledMergeCommand(msg, msgGuard);
         } else if (canProcessNewMerge()) {
             processNewMergeCommand(msg, msgGuard);
-        } else if (_queue.size() < _maxQueueSize) {
+        } else if ((_queue.size() < _maxQueueSize) || !mergeCmd.getChain().empty()) {
+            // We let any merge through that has already passed through at least one other node's merge
+            // window, as that has already taken up a logical resource slot on all those nodes. Busy-bouncing
+            // a merge at that point would undo a great amount of thumb-twiddling and waiting.
             enqueueMerge(msg, msgGuard); // Queue for later processing
         } else {
             // No more room at the inn. Return BUSY so that the
