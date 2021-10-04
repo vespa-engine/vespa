@@ -6,8 +6,9 @@
       "public"
     ],
     "methods": [
-      "public void <init>(int)",
-      "public int size()"
+      "public void <init>(int, java.util.List)",
+      "public int size()",
+      "public java.util.List indices()"
     ],
     "fields": []
   },

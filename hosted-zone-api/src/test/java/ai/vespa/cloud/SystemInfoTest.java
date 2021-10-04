@@ -3,6 +3,8 @@ package ai.vespa.cloud;
 
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -14,7 +16,7 @@ public class SystemInfoTest {
     @Test
     public void testSystemInfo() {
         Zone zone = new Zone(Environment.dev, "us-west-1");
-        Cluster cluster = new Cluster(1);
+        Cluster cluster = new Cluster(1, List.of());
         Node node = new Node(0);
 
         SystemInfo info = new SystemInfo(zone, cluster, node);
@@ -54,8 +56,10 @@ public class SystemInfoTest {
     @Test
     public void testCluster() {
         int size = 1;
-        Cluster cluster = new Cluster(size);
+        var indices = List.of(1);
+        Cluster cluster = new Cluster(size, indices);
         assertEquals(size, cluster.size());
+        assertEquals(indices, cluster.indices());
     }
 
     @Test

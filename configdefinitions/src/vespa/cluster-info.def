@@ -5,6 +5,7 @@ namespace=cloud.config
 # clusterId is same as clustername in model
 clusterId string
 nodeCount int
+nodeIndices[] int
 
 services[].index int default=-1
 services[].hostname string default="(nohostname)"

@@ -555,6 +555,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void getConfig(ClusterInfoConfig.Builder builder) {
         builder.clusterId(name);
         builder.nodeCount(containers.size());
+        containers.forEach(c -> builder.nodeIndices(c.index()));
 
         for (Service service : getDescendantServices()) {
             builder.services.add(new ClusterInfoConfig.Services.Builder()
