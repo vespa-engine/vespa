@@ -98,7 +98,7 @@ public class ClientThreadingTestCase {
             driver.activateContainer(builder);
             delegate.start();
         }
-
+        @SuppressWarnings("deprecation")
         void send(final Message msg, final ResponseHandler handler) {
             final MbusRequest request = new MbusRequest(driver, URI.create("mbus://remote/"), msg);
             request.setServerRequest(false);
