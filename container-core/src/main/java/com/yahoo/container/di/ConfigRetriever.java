@@ -77,7 +77,8 @@ public final class ConfigRetriever {
         long newestComponentGeneration = componentSubscriber.waitNextGeneration(isInitializing);
         log.log(FINE, () -> "getConfigsOptional: new component generation: " + newestComponentGeneration);
 
-        // leastGeneration is only used to ensure newer generation when the previous generation was invalidated due to an exception
+        // leastGeneration is only used to ensure newer generation (than the latest bootstrap or component gen)
+        // when the previous generation was invalidated due to an exception upon creating the component graph.
         if (newestComponentGeneration < leastGeneration) {
             return Optional.empty();
         } else if (bootstrapSubscriber.generation() < newestComponentGeneration) {
