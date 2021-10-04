@@ -43,7 +43,8 @@ public class ReindexingTriggererTest {
             }
             now = now.plus(interval);
         }
-        assertEquals("Should be in window of opportunity exactly four times each period", 4, triggered);
+        // Summer/winter time :'(
+        assertTrue("Should be in window of opportunity three to five times each period", 3 <= triggered && triggered <= 5);
     }
 
     @Test
