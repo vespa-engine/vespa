@@ -15,7 +15,10 @@ public class MbusRequest extends Request {
     private final Message message;
 
     public MbusRequest(CurrentContainer current, URI uri, Message msg) {
-        super(current, uri);
+        this(current, uri, msg, true);
+    }
+    public MbusRequest(CurrentContainer current, URI uri, Message msg, boolean isServerRequest) {
+        super(current, uri, isServerRequest);
         this.message = validateMessage(msg);
     }
 

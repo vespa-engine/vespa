@@ -31,7 +31,6 @@ import static org.junit.Assert.assertTrue;
 public class ContainerSnapshotTestCase {
 
     @Test
-    @SuppressWarnings("deprecation")
     public void requireThatServerHandlerCanBeResolved() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
@@ -43,8 +42,7 @@ public class ContainerSnapshotTestCase {
         assertNotNull(request.getBindingMatch());
         request.release();
 
-        request = new Request(driver, URI.create("http://foo/"));
-        request.setServerRequest(false);
+        request = new Request(driver, URI.create("http://foo/"), false);
         assertNull(request.container().resolveHandler(request));
         assertNull(request.getBindingMatch());
         request.release();
@@ -54,8 +52,7 @@ public class ContainerSnapshotTestCase {
         assertNull(request.getBindingMatch());
         request.release();
 
-        request = new Request(driver, URI.create("http://bar/"));
-        request.setServerRequest(false);
+        request = new Request(driver, URI.create("http://bar/"), false);
         assertNull(request.container().resolveHandler(request));
         assertNull(request.getBindingMatch());
         request.release();
@@ -64,7 +61,6 @@ public class ContainerSnapshotTestCase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void requireThatClientHandlerCanBeResolved() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
@@ -76,8 +72,7 @@ public class ContainerSnapshotTestCase {
         assertNull(request.getBindingMatch());
         request.release();
 
-        request = new Request(driver, URI.create("http://foo/"));
-        request.setServerRequest(false);
+        request = new Request(driver, URI.create("http://foo/"), false);
         assertNotNull(request.container().resolveHandler(request));
         assertNotNull(request.getBindingMatch());
         request.release();
@@ -87,8 +82,7 @@ public class ContainerSnapshotTestCase {
         assertNull(request.getBindingMatch());
         request.release();
 
-        request = new Request(driver, URI.create("http://bar/"));
-        request.setServerRequest(false);
+        request = new Request(driver, URI.create("http://bar/"), false);
         assertNull(request.container().resolveHandler(request));
         assertNull(request.getBindingMatch());
         request.release();
@@ -97,15 +91,12 @@ public class ContainerSnapshotTestCase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void requireThatClientBindingsAreUsed() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
         builder.clientBindings().bind("http://host/path", MyRequestHandler.newInstance());
         driver.activateContainer(builder);
-        Request request = new Request(driver, URI.create("http://host/path"));
-        assertNull(request.container().resolveHandler(request));
-        request.setServerRequest(false);
+        Request request = new Request(driver, URI.create("http://host/path"), false);
         assertNotNull(request.container().resolveHandler(request));
         request.release();
         assertTrue(driver.close());

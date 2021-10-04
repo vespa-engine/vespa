@@ -79,9 +79,13 @@ public class Request extends AbstractResource {
      * @param uri     The identifier of this request.
      */
     public Request(CurrentContainer current, URI uri) {
+        this(current, uri, true);
+    }
+
+    public Request(CurrentContainer current, URI uri, boolean isServerRequest) {
         parent = null;
         parentReference = null;
-        serverRequest = true;
+        serverRequest = isServerRequest;
         setUri(uri);
         container = current.newReference(uri);
         creationTime = container.currentTimeMillis();
