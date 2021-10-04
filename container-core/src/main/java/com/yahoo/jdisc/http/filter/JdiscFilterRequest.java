@@ -33,6 +33,7 @@ public class JdiscFilterRequest extends DiscFilterRequest {
         return parent;
     }
 
+    @Deprecated
     public void setUri(URI uri) {
         parent.setUri(uri);
     }

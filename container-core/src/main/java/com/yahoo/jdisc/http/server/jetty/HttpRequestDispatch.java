@@ -197,6 +197,7 @@ class HttpRequestDispatch {
             requestContentChannel = requestHandler.handleRequest(jdiscRequest, servletResponseController.responseHandler);
         }
 
+        //TODO If the below method throws requestContentChannel will not be close and there is a reference leak
         ServletInputStream servletInputStream = jettyRequest.getInputStream();
 
         ServletRequestReader servletRequestReader = new ServletRequestReader(servletInputStream,
@@ -204,6 +205,9 @@ class HttpRequestDispatch {
                                                                              jDiscContext.janitor,
                                                                              metricReporter);
 
+        //TODO If the below method throws servletRequestReader will not complete and
+        // requestContentChannel will not be closed and there is a reference leak
+        // Ditto for the servletInputStream
         servletInputStream.setReadListener(servletRequestReader);
         return servletRequestReader;
     }

@@ -98,10 +98,8 @@ public class ClientThreadingTestCase {
             driver.activateContainer(builder);
             delegate.start();
         }
-
         void send(final Message msg, final ResponseHandler handler) {
-            final MbusRequest request = new MbusRequest(driver, URI.create("mbus://remote/"), msg);
-            request.setServerRequest(false);
+            final MbusRequest request = new MbusRequest(driver, URI.create("mbus://remote/"), msg, false);
             request.connect(handler).close(null);
             request.release();
         }

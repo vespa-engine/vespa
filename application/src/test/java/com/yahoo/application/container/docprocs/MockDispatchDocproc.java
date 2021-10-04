@@ -54,7 +54,7 @@ public class MockDispatchDocproc extends DocumentProcessor {
         return new RequestDispatch() {
             @Override
             protected Request newRequest() {
-                return new MbusRequest(currentContainer, uri, message.setRoute(route)).setServerRequest(false);
+                return new MbusRequest(currentContainer, uri, message.setRoute(route), false);
             }
         };
     }

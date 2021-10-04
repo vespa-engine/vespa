@@ -65,6 +65,7 @@ public abstract class DiscFilterRequest {
         return parent.getUri();
     }
 
+    @Deprecated
     public abstract void setUri(URI uri);
 
     public HttpRequest getParentRequest() {
@@ -313,6 +314,7 @@ public abstract class DiscFilterRequest {
         return getUri().getScheme();
     }
 
+    @Deprecated
     public void setScheme(String scheme, boolean isSecure) {
         String uri = getUri().toString();
         String arr [] = uri.split("://");
