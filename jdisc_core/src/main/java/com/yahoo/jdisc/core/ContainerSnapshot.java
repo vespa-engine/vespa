@@ -28,13 +28,13 @@ class ContainerSnapshot extends AbstractResource implements Container {
     private final BindingSet<RequestHandler> clientBindings;
 
     ContainerSnapshot(ActiveContainer container, BindingSet<RequestHandler> serverBindings,
-                      BindingSet<RequestHandler> clientBindings)
+                      BindingSet<RequestHandler> clientBindings, Object context)
     {
         this.timeoutMgr = container.timeoutManager();
         this.container = container;
         this.serverBindings = serverBindings;
         this.clientBindings = clientBindings;
-        this.containerReference = container.refer();
+        this.containerReference = container.refer(context);
     }
 
     @Override

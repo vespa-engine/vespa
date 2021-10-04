@@ -146,7 +146,7 @@ public class ContainerSnapshotTestCase {
             }
         });
         ActiveContainer active = new ActiveContainer(driver.newContainerBuilder());
-        ContainerSnapshot snapshot = new ContainerSnapshot(active, null, null);
+        ContainerSnapshot snapshot = new ContainerSnapshot(active, null, null, null);
         assertSame(obj, snapshot.getInstance(Object.class));
         assertEquals("foo", snapshot.getInstance(Key.get(String.class, Names.named("foo"))));
         snapshot.release();

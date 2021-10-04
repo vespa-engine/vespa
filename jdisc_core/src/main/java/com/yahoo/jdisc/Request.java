@@ -87,7 +87,7 @@ public class Request extends AbstractResource {
         parentReference = null;
         serverRequest = isServerRequest;
         setUri(uri);
-        container = current.newReference(uri);
+        container = current.newReference(uri, this);
         creationTime = container.currentTimeMillis();
     }
 
