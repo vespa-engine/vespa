@@ -44,6 +44,12 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag FORCE_DISK_ENCRYPTION = defineFeatureFlag(
+            "force-disk-encryption", true,
+            List.of("hakonhall"), "2021-10-01", "2021-11-01",
+            "Enable new conditions for when to encrypt disk.",
+            "Takes effect on next host admin tick.");
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2022-01-01",
