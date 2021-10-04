@@ -191,6 +191,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean containerDumpHeapOnShutdownTimeout;
         private final double containerShutdownTimeout;
         private final int maxConnectionLifeInHosted;
+        private final int distributorMergeBusyWait;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -220,6 +221,7 @@ public class ModelContextImpl implements ModelContext {
             this.containerDumpHeapOnShutdownTimeout = flagValue(source, appId, Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT);
             this.containerShutdownTimeout = flagValue(source, appId,Flags.CONTAINER_SHUTDOWN_TIMEOUT);
             this.maxConnectionLifeInHosted = flagValue(source, appId, Flags.MAX_CONNECTION_LIFE_IN_HOSTED);
+            this.distributorMergeBusyWait = flagValue(source, appId, Flags.DISTRIBUTOR_MERGE_BUSY_WAIT);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -251,6 +253,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
         @Override public int maxConnectionLifeInHosted() { return maxConnectionLifeInHosted; }
+        @Override public int distributorMergeBusyWait() { return distributorMergeBusyWait; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
