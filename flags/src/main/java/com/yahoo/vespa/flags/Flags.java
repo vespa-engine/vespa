@@ -306,6 +306,14 @@ public class Flags {
             TENANT_ID
     );
 
+    public static final UnboundIntFlag DISTRIBUTOR_MERGE_BUSY_WAIT = defineIntFlag(
+            "distributor-merge-busy-wait", 10,
+            List.of("geirst", "vekterli"), "2021-10-04", "2021-12-31",
+            "Number of seconds that scheduling of new merge operations in the distributor should be inhibited " +
+                    "towards a content node that has indicated merge busy",
+            "Takes effect at redeploy",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

@@ -65,6 +65,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double minNodeRatioPerGroup = 0.0;
     private boolean containerDumpHeapOnShutdownTimeout = false;
     private double containerShutdownTimeout = 50.0;
+    private int distributorMergeBusyWait = 10;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -109,6 +110,9 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int metricsproxyNumThreads() { return 1; }
     @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
     @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
+    @Override public int distributorMergeBusyWait() { return distributorMergeBusyWait; }
+
+
     public TestProperties containerDumpHeapOnShutdownTimeout(boolean value) {
         containerDumpHeapOnShutdownTimeout = value;
         return this;
@@ -263,6 +267,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setMinNodeRatioPerGroup(double value) {
         this.minNodeRatioPerGroup = value;
+        return this;
+    }
+
+    public TestProperties setDistributorMergeBusyWait(int value) {
+        distributorMergeBusyWait = value;
         return this;
     }
 

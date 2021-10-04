@@ -1085,6 +1085,23 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
+    public void distributor_merge_busy_wait_controlled_by_properties() throws Exception {
+        assertEquals(10, resolveDistributorMergeBusyWaitConfig(Optional.empty()));
+        assertEquals(1, resolveDistributorMergeBusyWaitConfig(Optional.of(1)));
+    }
+
+    private int resolveDistributorMergeBusyWaitConfig(Optional<Integer> mergeBusyWait) throws Exception {
+        var props = new TestProperties();
+        if (mergeBusyWait.isPresent()) {
+            props.setDistributorMergeBusyWait(mergeBusyWait.get());
+        }
+        var cluster = createOneNodeCluster(props);
+        var builder = new StorDistributormanagerConfig.Builder();
+        cluster.getDistributorNodes().getConfig(builder);
+        return (new StorDistributormanagerConfig(builder)).inhibit_merge_sending_on_busy_node_duration_sec();
+    }
+
+    @Test
     public void testDedicatedClusterControllers() {
         VespaModel noContentModel = createEnd2EndOneNode(new TestProperties().setHostedVespa(true)
                                                                              .setMultitenant(true),
