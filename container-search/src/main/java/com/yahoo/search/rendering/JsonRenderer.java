@@ -76,7 +76,7 @@ import static com.fasterxml.jackson.databind.SerializationFeature.FLUSH_AFTER_WR
 // NOTE: The JSON format is a public API. If new elements are added be sure to update the reference doc.
 public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
-    private static final CompoundName WRAP_ALL_MAPS = new CompoundName("renderer.json.recognizeDeepMaps");
+    private static final CompoundName WRAP_ALL_MAPS = new CompoundName("renderer.json.jsonMaps");
     private static final CompoundName DEBUG_RENDERING_KEY = new CompoundName("renderer.json.debug");
     private static final CompoundName JSON_CALLBACK = new CompoundName("jsoncallback");
     private static final CompoundName TENSOR_FORMAT = new CompoundName("format.tensors");
@@ -126,7 +126,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private FieldConsumer fieldConsumer;
     private Deque<Integer> renderedChildren;
     private boolean debugRendering;
-    private boolean recognizeDeepMaps;
+    private boolean jsonMaps;
     private LongSupplier timeSource;
     private OutputStream stream;
 
@@ -161,7 +161,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     public void init() {
         super.init();
         debugRendering = false;
-        recognizeDeepMaps = false;
+        jsonMaps = false;
         setGenerator(null, debugRendering);
         renderedChildren = null;
         timeSource = System::currentTimeMillis;
@@ -172,7 +172,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     public void beginResponse(OutputStream stream) throws IOException {
         beginJsonCallback(stream);
         debugRendering = getDebugRendering(getResult().getQuery());
-        recognizeDeepMaps = getWrapAllMaps(getResult().getQuery());
+        jsonMaps = getWrapAllMaps(getResult().getQuery());
         tensorShortFormRendering = getTensorShortFormRendering(getResult().getQuery());
         setGenerator(generatorFactory.createGenerator(stream, JsonEncoding.UTF8), debugRendering);
         renderedChildren = new ArrayDeque<>();
@@ -522,15 +522,15 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private void setGenerator(JsonGenerator generator, boolean debugRendering) {
         this.generator = generator;
-        this.fieldConsumer = generator == null ? null : createFieldConsumer(generator, debugRendering, recognizeDeepMaps);
+        this.fieldConsumer = generator == null ? null : createFieldConsumer(generator, debugRendering, jsonMaps);
     }
 
     protected FieldConsumer createFieldConsumer(JsonGenerator generator, boolean debugRendering) {
-        return createFieldConsumer(generator, debugRendering, this.recognizeDeepMaps);
+        return createFieldConsumer(generator, debugRendering, this.jsonMaps);
     }
 
-    private FieldConsumer createFieldConsumer(JsonGenerator generator, boolean debugRendering, boolean recognizeDeepMaps) {
-        return new FieldConsumer(generator, debugRendering, tensorShortFormRendering, recognizeDeepMaps);
+    private FieldConsumer createFieldConsumer(JsonGenerator generator, boolean debugRendering, boolean jsonMaps) {
+        return new FieldConsumer(generator, debugRendering, tensorShortFormRendering, jsonMaps);
     }
 
     /**
@@ -549,7 +549,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         private final JsonGenerator generator;
         private final boolean debugRendering;
-        private final boolean recognizeDeepMaps;
+        private final boolean jsonMaps;
         private final boolean tensorShortForm;
 
         private MutableBoolean hasFieldsField;
@@ -560,11 +560,11 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         public FieldConsumer(JsonGenerator generator, boolean debugRendering, boolean tensorShortForm) {
             this(generator, debugRendering, tensorShortForm, false);
         }
-        public FieldConsumer(JsonGenerator generator, boolean debugRendering, boolean tensorShortForm, boolean recognizeDeepMaps) {
+        public FieldConsumer(JsonGenerator generator, boolean debugRendering, boolean tensorShortForm, boolean jsonMaps) {
             this.generator = generator;
             this.debugRendering = debugRendering;
             this.tensorShortForm = tensorShortForm;
-            this.recognizeDeepMaps = recognizeDeepMaps;
+            this.jsonMaps = jsonMaps;
         }
 
         /**
@@ -689,7 +689,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private void renderInspector(Inspector data) throws IOException {
-            Inspector asMap = recognizeDeepMaps ? deepWrapAsMap(data) : wrapAsMap(data);
+            Inspector asMap = jsonMaps ? deepWrapAsMap(data) : wrapAsMap(data);
             if (asMap != null) {
                 renderInspectorDirect(asMap);
             } else {
