@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
@@ -20,7 +20,6 @@ import java.util.Random;
 
 import static com.yahoo.config.subscription.impl.JRTConfigRequester.calculateFailedRequestDelay;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
@@ -34,59 +33,23 @@ public class JRTConfigRequesterTest {
     @Test
     public void testDelayCalculation() {
         TimingValues defaultTimingValues = new TimingValues();
-        Random random = new Random(0); // Use seed to make tests predictable
+        Random random = new Random(0); // Use seed to make delays deterministic
         TimingValues timingValues = new TimingValues(defaultTimingValues, random);
 
-        // transientFailures and fatalFailures are not set until after delay has been calculated,
-        // so false is the case for the first failure
-        boolean fatalFailures = false;
-        boolean configured = false;
+        int failures = 1;
+        // First time failure
+        long delay = calculateFailedRequestDelay(failures, timingValues);
+        assertEquals(10924, delay);
 
-        // First time failure, not configured
-        long delay = calculateFailedRequestDelay(ErrorType.TRANSIENT, fatalFailures, timingValues, configured);
-        assertTransientDelay(timingValues.getUnconfiguredDelay(), delay);
-        delay = calculateFailedRequestDelay(ErrorType.TRANSIENT, fatalFailures, timingValues, configured);
-        assertTransientDelay(timingValues.getUnconfiguredDelay(), delay);
+        failures++;
+        // 2nd time failure
+        delay = calculateFailedRequestDelay(failures, timingValues);
+        assertEquals(22652, delay);
 
-
-        delay = calculateFailedRequestDelay(ErrorType.FATAL, fatalFailures, timingValues, configured);
-        assertTrue("delay=" + delay, delay > (1 - JRTConfigRequester.randomFraction) * timingValues.getFixedDelay());
-        assertTrue("delay=" + delay,delay < (1 + JRTConfigRequester.randomFraction) * timingValues.getFixedDelay());
-        assertEquals(4481, delay);
-
-        // First time failure, configured
-        configured = true;
-        delay = calculateFailedRequestDelay(ErrorType.TRANSIENT, fatalFailures, timingValues, configured);
-        assertTransientDelay(timingValues.getConfiguredErrorDelay(), delay);
-
-        delay = calculateFailedRequestDelay(ErrorType.FATAL, fatalFailures, timingValues, configured);
-        assertTrue(delay > (1 - JRTConfigRequester.randomFraction) * timingValues.getFixedDelay());
-        assertTrue(delay < (1 + JRTConfigRequester.randomFraction) * timingValues.getFixedDelay());
-        assertEquals(5275, delay);
-
-
-        // nth time failure, not configured
-        fatalFailures = true;
-        configured = false;
-        delay = calculateFailedRequestDelay(ErrorType.TRANSIENT, fatalFailures, timingValues, configured);
-        assertTransientDelay(timingValues.getUnconfiguredDelay(), delay);
-        delay = calculateFailedRequestDelay(ErrorType.FATAL, fatalFailures, timingValues, configured);
-        final long l = timingValues.getFixedDelay() + timingValues.getUnconfiguredDelay();
-        assertTrue(delay > (1 - JRTConfigRequester.randomFraction) * l);
-        assertTrue(delay < (1 + JRTConfigRequester.randomFraction) * l);
-        assertEquals(6121, delay);
-
-
-        // nth time failure, configured
-        fatalFailures = true;
-        configured = true;
-        delay = calculateFailedRequestDelay(ErrorType.TRANSIENT, fatalFailures, timingValues, configured);
-        assertTransientDelay(timingValues.getConfiguredErrorDelay(), delay);
-        delay = calculateFailedRequestDelay(ErrorType.FATAL, fatalFailures, timingValues, configured);
-        final long l1 = timingValues.getFixedDelay() + timingValues.getConfiguredErrorDelay();
-        assertTrue(delay > (1 - JRTConfigRequester.randomFraction) * l1);
-        assertTrue(delay < (1 + JRTConfigRequester.randomFraction) * l1);
-        assertEquals(20780, delay);
+        failures++;
+        // 3rd time failure
+        delay = calculateFailedRequestDelay(failures, timingValues);
+        assertEquals(35849, delay);
     }
 
     @Test
@@ -120,7 +83,7 @@ public class JRTConfigRequesterTest {
         JRTServerConfigRequestV3 receivedRequest = JRTServerConfigRequestV3.createFromRequest(request);
         assertTrue(receivedRequest.validateParameters());
         assertEquals(timingValues.getSubscribeTimeout(), receivedRequest.getTimeout());
-        assertFalse(requester.getFatalFailures());
+        assertEquals(0, requester.getFailures());
     }
 
     @Test
@@ -132,7 +95,7 @@ public class JRTConfigRequesterTest {
         JRTConfigRequester requester = new JRTConfigRequester(connection, timingValues);
         requester.request(createSubscription(subscriber, timingValues));
         waitUntilResponse(connection);
-        assertTrue(requester.getFatalFailures());
+        assertEquals(1, requester.getFailures());
     }
 
     @Test
@@ -146,7 +109,7 @@ public class JRTConfigRequesterTest {
         JRTConfigRequester requester = new JRTConfigRequester(connection, timingValues);
         requester.request(sub);
         waitUntilResponse(connection);
-        assertTrue(requester.getFatalFailures());
+        assertEquals(1, requester.getFailures());
     }
 
     @Test
@@ -158,7 +121,7 @@ public class JRTConfigRequesterTest {
         JRTConfigRequester requester = new JRTConfigRequester(connection, timingValues);
         requester.request(createSubscription(subscriber, timingValues));
         waitUntilResponse(connection);
-        assertFalse(requester.getFatalFailures());
+        assertEquals(1, requester.getFailures());
     }
 
     @Test
@@ -172,7 +135,7 @@ public class JRTConfigRequesterTest {
         JRTConfigRequester requester = new JRTConfigRequester(connection, timingValues);
         requester.request(sub);
         waitUntilResponse(connection);
-        assertFalse(requester.getFatalFailures());
+        assertEquals(1, requester.getFailures());
     }
 
     @Test
@@ -187,7 +150,7 @@ public class JRTConfigRequesterTest {
         assertEquals(requester.getConnectionPool(), connection);
         requester.request(sub);
         waitUntilResponse(connection);
-        assertTrue(requester.getFatalFailures());
+        assertEquals(1, requester.getFailures());
     }
 
     @Test
@@ -257,8 +220,6 @@ public class JRTConfigRequesterTest {
             500,   // errorTimeout
             500,   // initialTimeout
             2000,  // subscribeTimeout
-            250,   // unconfiguredDelay
-            500,   // configuredErrorDelay
             250);   // fixedDelay
     }
 
@@ -319,12 +280,6 @@ public class JRTConfigRequesterTest {
         assertNotSame(requester1.getConnectionPool(), requester2.getConnectionPool());
         requester1.close();
         requester2.close();
-    }
-
-    private void assertTransientDelay(long maxDelay, long delay) {
-        long minDelay = 0;
-        assertTrue("delay=" + delay + ", minDelay=" + minDelay + ",maxDelay=" + maxDelay,
-                   delay >= minDelay && delay <= maxDelay);
     }
 
 }
