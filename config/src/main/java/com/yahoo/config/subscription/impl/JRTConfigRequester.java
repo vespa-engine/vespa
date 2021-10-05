@@ -129,15 +129,13 @@ public class JRTConfigRequester implements RequestWaiter {
         Trace trace = jrtReq.getResponseTrace();
         trace.trace(TRACELEVEL, "JRTConfigRequester.doHandle()");
         log.log(FINEST, () -> trace.toString());
-        if (validResponse) {
+        if (validResponse)
             handleOKRequest(jrtReq, sub);
-        } else {
-            logWhenErrorResponse(jrtReq, connection);
+        else
             handleFailedRequest(jrtReq, sub, connection);
-        }
     }
 
-    private void logWhenErrorResponse(JRTClientConfigRequest jrtReq, Connection connection) {
+    private void logError(JRTClientConfigRequest jrtReq, Connection connection) {
         switch (jrtReq.errorCode()) {
             case com.yahoo.jrt.ErrorCode.CONNECTION:
                 log.log(FINE, () -> "Request callback failed: " + jrtReq.errorMessage() +
@@ -160,19 +158,21 @@ public class JRTConfigRequester implements RequestWaiter {
     }
 
     private void handleFailedRequest(JRTClientConfigRequest jrtReq, JRTConfigSubscription<ConfigInstance> sub, Connection connection) {
-        final boolean configured = (sub.getConfigState().getConfig() != null);
+        logError(jrtReq, connection);
+
+        boolean configured = (sub.getConfigState().getConfig() != null);
         if (configured) {
             // The subscription object has an "old" config, which is all we have to offer back now
-            log.log(INFO, "Failure of config subscription, clients will keep existing config until resolved: " + sub);
+            log.log(INFO, "Failure of config subscription tp " + connection.getAddress() +
+                    ", clients will keep existing config until resolved: " + sub);
         }
         ErrorType errorType = ErrorType.getErrorType(jrtReq.errorCode());
         connectionPool.setError(connection, jrtReq.errorCode());
         long delay = calculateFailedRequestDelay(errorType, fatalFailures, timingValues, configured);
-        if (errorType == ErrorType.TRANSIENT) {
-            handleTransientlyFailed(jrtReq, sub, delay, connection);
-        } else {
+        if (errorType == ErrorType.TRANSIENT)
+            handleTransientlyFailed(jrtReq, sub, delay);
+        else
             handleFatallyFailed(jrtReq, sub, delay);
-        }
     }
 
     static long calculateFailedRequestDelay(ErrorType errorType,
@@ -197,11 +197,8 @@ public class JRTConfigRequester implements RequestWaiter {
 
     private void handleTransientlyFailed(JRTClientConfigRequest jrtReq,
                                          JRTConfigSubscription<ConfigInstance> sub,
-                                         long delay,
-                                         Connection connection) {
+                                         long delay) {
         fatalFailures = false;
-        log.log(INFO, "Connection to " + connection.getAddress() +
-                " failed or timed out, clients will keep existing config, will keep trying.");
         scheduleNextRequest(jrtReq, sub, delay, calculateErrorTimeout());
     }
 
@@ -222,10 +219,9 @@ public class JRTConfigRequester implements RequestWaiter {
         fatalFailures = true;
         // The logging depends on whether we are configured or not.
         Level logLevel = sub.getConfigState().getConfig() == null ? Level.FINE : Level.INFO;
-        String logMessage = "Request for config " + jrtReq.getShortDescription() + "' failed with error code " +
+        log.log(logLevel, () -> "Request for config " + jrtReq.getShortDescription() + "' failed with error code " +
                 jrtReq.errorCode() + " (" + jrtReq.errorMessage() + "), scheduling new connect " +
-                " in " + delay + " ms";
-        log.log(logLevel, logMessage);
+                " in " + delay + " ms");
         scheduleNextRequest(jrtReq, sub, delay, calculateErrorTimeout());
     }
 
