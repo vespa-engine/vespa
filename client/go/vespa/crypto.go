@@ -13,21 +13,20 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"math/big"
 	"net/http"
-	"os"
 	"strings"
 	"time"
+
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 const (
 	defaultCommonName = "cloud.vespa.example"
 	certificateExpiry = 3650 * 24 * time.Hour // Approximately 10 years
-	tempFilePattern   = "vespa"
 )
 
 // PemKeyPair represents a PEM-encoded private key and X509 certificate.
@@ -38,31 +37,18 @@ type PemKeyPair struct {
 
 // WriteCertificateFile writes the certificate contained in this key pair to certificateFile.
 func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite bool) error {
-	return atomicWriteFile(certificateFile, kp.Certificate, overwrite)
+	if util.PathExists(certificateFile) && !overwrite {
+		return fmt.Errorf("cannot overwrite existing file: %s", certificateFile)
+	}
+	return util.AtomicWriteFile(certificateFile, kp.Certificate)
 }
 
 // WritePrivateKeyFile writes the private key contained in this key pair to privateKeyFile.
 func (kp *PemKeyPair) WritePrivateKeyFile(privateKeyFile string, overwrite bool) error {
-	return atomicWriteFile(privateKeyFile, kp.PrivateKey, overwrite)
-}
-
-func atomicWriteFile(filename string, data []byte, overwrite bool) error {
-	tmpFile, err := ioutil.TempFile("", tempFilePattern)
-	if err != nil {
-		return err
+	if util.PathExists(privateKeyFile) && !overwrite {
+		return fmt.Errorf("cannot overwrite existing file: %s", privateKeyFile)
 	}
-	defer os.Remove(tmpFile.Name())
-	if _, err := tmpFile.Write(data); err != nil {
-		return err
-	}
-	if err := tmpFile.Close(); err != nil {
-		return err
-	}
-	_, err = os.Stat(filename)
-	if errors.Is(err, os.ErrNotExist) || overwrite {
-		return os.Rename(tmpFile.Name(), filename)
-	}
-	return fmt.Errorf("cannot overwrite existing file: %s", filename)
+	return util.AtomicWriteFile(privateKeyFile, kp.PrivateKey)
 }
 
 // CreateKeyPair creates a key pair containing a private key and self-signed X509 certificate.

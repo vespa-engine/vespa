@@ -50,3 +50,19 @@ func ReaderToJSON(reader io.Reader) string {
 	}
 	return prettyJSON.String()
 }
+
+// AtomicWriteFile atomically writes data to filename.
+func AtomicWriteFile(filename string, data []byte) error {
+	tmpFile, err := ioutil.TempFile("", "vespa")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmpFile.Name())
+	if _, err := tmpFile.Write(data); err != nil {
+		return err
+	}
+	if err := tmpFile.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmpFile.Name(), filename)
+}
