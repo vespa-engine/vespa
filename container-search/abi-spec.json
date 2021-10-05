@@ -7076,6 +7076,7 @@
     "methods": [
       "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean)",
       "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean, boolean)",
+      "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean, boolean, boolean)",
       "public void accept(java.lang.String, java.lang.Object)",
       "public void accept(java.lang.String, byte[], int, int)",
       "protected boolean shouldRender(java.lang.String, java.lang.Object)",
