@@ -205,6 +205,7 @@ MergeThrottler::MergeThrottler(
       _rendezvous(RENDEZVOUS_NONE),
       _throttle_until_time(),
       _backpressure_duration(std::chrono::seconds(30)),
+      _disable_queue_limits_for_chained_merges(false),
       _closing(false)
 {
     _throttlePolicy->setMaxPendingCount(20);
@@ -240,6 +241,7 @@ MergeThrottler::configure(std::unique_ptr<vespa::config::content::core::StorServ
     _maxQueueSize = newConfig->maxMergeQueueSize;
     _backpressure_duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
             std::chrono::duration<double>(newConfig->resourceExhaustionMergeBackPressureDurationSecs));
+    _disable_queue_limits_for_chained_merges = newConfig->disableQueueLimitsForChainedMerges;
 }
 
 MergeThrottler::~MergeThrottler()
@@ -703,6 +705,13 @@ bool MergeThrottler::backpressure_mode_active() const {
     return backpressure_mode_active_no_lock();
 }
 
+bool MergeThrottler::allow_merge_with_queue_full(const api::MergeBucketCommand& cmd) const noexcept {
+    // We let any merge through that has already passed through at least one other node's merge
+    // window, as that has already taken up a logical resource slot on all those nodes. Busy-bouncing
+    // a merge at that point would undo a great amount of thumb-twiddling and waiting.
+    return (_disable_queue_limits_for_chained_merges && !cmd.getChain().empty());
+}
+
 // Must be run from worker thread
 void
 MergeThrottler::handleMessageDown(
@@ -732,10 +741,7 @@ MergeThrottler::handleMessageDown(
             processCycledMergeCommand(msg, msgGuard);
         } else if (canProcessNewMerge()) {
             processNewMergeCommand(msg, msgGuard);
-        } else if ((_queue.size() < _maxQueueSize) || !mergeCmd.getChain().empty()) {
-            // We let any merge through that has already passed through at least one other node's merge
-            // window, as that has already taken up a logical resource slot on all those nodes. Busy-bouncing
-            // a merge at that point would undo a great amount of thumb-twiddling and waiting.
+        } else if ((_queue.size() < _maxQueueSize) || allow_merge_with_queue_full(mergeCmd)) {
             enqueueMerge(msg, msgGuard); // Queue for later processing
         } else {
             // No more room at the inn. Return BUSY so that the
@@ -1258,6 +1264,12 @@ MergeThrottler::markActiveMergesAsAborted(uint32_t minimumStateVersion)
             activeMerge.second.setAborted(true);
         }
     }
+}
+
+void
+MergeThrottler::set_disable_queue_limits_for_chained_merges(bool disable_limits) noexcept {
+    std::lock_guard lock(_stateLock);
+    _disable_queue_limits_for_chained_merges = disable_limits;
 }
 
 void
