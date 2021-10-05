@@ -15,6 +15,7 @@ import com.yahoo.vespa.config.protocol.Payload;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -39,7 +40,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
      * The queue containing either nothing or the one (newest) request that has got callback from JRT,
      * but has not yet been handled.
      */
-    private LinkedBlockingQueue<JRTClientConfigRequest> reqQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<JRTClientConfigRequest> reqQueue = new LinkedBlockingQueue<>();
     private ConfigSourceSet sources;
 
     public JRTConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource source, TimingValues timingValues) {
@@ -134,9 +135,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         return configInstance;
     }
 
-    LinkedBlockingQueue<JRTClientConfigRequest> getReqQueue() {
-        return reqQueue;
-    }
+    BlockingQueue<JRTClientConfigRequest> getReqQueue() { return reqQueue; }
 
     @Override
     public boolean subscribe(long timeout) {

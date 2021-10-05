@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import java.util.Random;
@@ -19,8 +19,6 @@ public class TimingValues {
     private long configuredErrorTimeout = -1;  // Don't ever timeout (and do not use error response) when we are already configured
 
     private long fixedDelay = 5000;
-    private long unconfiguredDelay = 1000;
-    private long configuredErrorDelay = 15000;
     private final Random rand;
 
     public TimingValues() {
@@ -35,15 +33,11 @@ public class TimingValues {
                         long errorTimeout,
                         long initialTimeout,
                         long subscribeTimeout,
-                        long unconfiguredDelay,
-                        long configuredErrorDelay,
                         long fixedDelay) {
         this.successTimeout = successTimeout;
         this.errorTimeout = errorTimeout;
         this.initialTimeout = initialTimeout;
         this.subscribeTimeout = subscribeTimeout;
-        this.unconfiguredDelay = unconfiguredDelay;
-        this.configuredErrorDelay = configuredErrorDelay;
         this.fixedDelay = fixedDelay;
         this.rand = new Random(System.currentTimeMillis());
     }
@@ -52,16 +46,12 @@ public class TimingValues {
                          long errorTimeout,
                          long initialTimeout,
                          long subscribeTimeout,
-                         long unconfiguredDelay,
-                         long configuredErrorDelay,
                          long fixedDelay,
                          Random rand) {
         this.successTimeout = successTimeout;
         this.errorTimeout = errorTimeout;
         this.initialTimeout = initialTimeout;
         this.subscribeTimeout = subscribeTimeout;
-        this.unconfiguredDelay = unconfiguredDelay;
-        this.configuredErrorDelay = configuredErrorDelay;
         this.fixedDelay = fixedDelay;
         this.rand = rand;
     }
@@ -71,8 +61,6 @@ public class TimingValues {
                 tv.errorTimeout,
                 tv.initialTimeout,
                 tv.subscribeTimeout,
-                tv.unconfiguredDelay,
-                tv.configuredErrorDelay,
                 tv.fixedDelay,
                 random);
     }
@@ -115,39 +103,6 @@ public class TimingValues {
     }
 
     /**
-     * Returns time to wait until next attempt to get config after a failed request when the client has not
-     * gotten a successful response to a config subscription (i.e, the client has not been configured).
-     * A negative value means that there will never be a next attempt. If a negative value is set, the
-     * user must also setSubscribeTimeout(0) to prevent a deadlock while subscribing.
-     *
-     * @return delay in milliseconds, a negative value means never.
-     */
-    public long getUnconfiguredDelay() {
-        return unconfiguredDelay;
-    }
-
-    public TimingValues setUnconfiguredDelay(long d) {
-        unconfiguredDelay = d;
-        return this;
-    }
-
-    /**
-     * Returns time to wait until next attempt to get config after a failed request when the client has
-     * previously gotten a successful response to a config subscription (i.e, the client is configured).
-     * A negative value means that there will never be a next attempt.
-     *
-     * @return delay in milliseconds, a negative value means never.
-     */
-    public long getConfiguredErrorDelay() {
-        return configuredErrorDelay;
-    }
-
-    public TimingValues setConfiguredErrorDelay(long d) {
-        configuredErrorDelay = d;
-        return this;
-    }
-
-    /**
      * Returns fixed delay that is used when retrying getting config no matter if it was a success or an error
      * and independent of number of retries.
      *
@@ -155,6 +110,11 @@ public class TimingValues {
      */
     public long getFixedDelay() {
         return fixedDelay;
+    }
+
+    public TimingValues setFixedDelay(long t) {
+        fixedDelay = t;
+        return this;
     }
 
     /**
@@ -168,16 +128,6 @@ public class TimingValues {
         return Math.round(value - (value * fraction) + (rand.nextFloat() * 2L * value * fraction));
     }
 
-    /**
-     * Returns a number between 0 and maxValue
-     *
-     * @param maxValue max maxValue
-     * @return a number
-     */
-    public long getRandomTransientDelay(long maxValue) {
-        return Math.round(rand.nextFloat() * maxValue);
-    }
-
     @Override
     public String toString() {
         return "TimingValues [successTimeout=" + successTimeout
@@ -186,8 +136,6 @@ public class TimingValues {
                + ", subscribeTimeout=" + subscribeTimeout
                + ", configuredErrorTimeout=" + configuredErrorTimeout
                + ", fixedDelay=" + fixedDelay
-               + ", unconfiguredDelay=" + unconfiguredDelay
-               + ", configuredErrorDelay=" + configuredErrorDelay
                + ", rand=" + rand + "]";
     }
 
