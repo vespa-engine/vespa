@@ -50,7 +50,7 @@ resource_exhaustion_merge_back_pressure_duration_secs double default=30.0
 ## max_merge_queue_size limit. They will be allowed to enqueue regardless of
 ## the current queue size. This avoids wasting the time spent being accepted
 ## into merge windows, which would happen if the merge were to be bounced with
-## a busy-reply that would subsequently be unwound throuh the entire merge chain.
+## a busy-reply that would subsequently be unwound through the entire merge chain.
 disable_queue_limits_for_chained_merges bool default=false
 
 ## Whether the deadlock detector should be enabled or not. If disabled, it will
