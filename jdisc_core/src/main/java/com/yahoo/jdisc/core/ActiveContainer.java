@@ -106,7 +106,7 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
     }
 
     @Override
-    public ContainerSnapshot newReference(URI uri) {
+    public ContainerSnapshot newReference(URI uri, Object context) {
         String name = bindingSetSelector.select(uri);
         if (name == null) {
             throw new NoBindingSetSelectedException(uri);
@@ -116,7 +116,7 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
         if (serverBindings == null || clientBindings == null) {
             throw new BindingSetNotFoundException(name);
         }
-        return new ContainerSnapshot(this, serverBindings, clientBindings);
+        return new ContainerSnapshot(this, serverBindings, clientBindings, context);
     }
 
 }

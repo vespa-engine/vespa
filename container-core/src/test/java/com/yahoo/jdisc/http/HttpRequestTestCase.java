@@ -202,6 +202,7 @@ public class HttpRequestTestCase {
     private static CurrentContainer mockContainer() {
         final CurrentContainer currentContainer = mock(CurrentContainer.class);
         when(currentContainer.newReference(any(URI.class))).thenReturn(mock(Container.class));
+        when(currentContainer.newReference(any(URI.class), any(Object.class))).thenReturn(mock(Container.class));
         return currentContainer;
     }
 }

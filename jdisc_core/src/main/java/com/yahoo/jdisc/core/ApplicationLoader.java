@@ -81,12 +81,12 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
     }
 
     @Override
-    public ContainerSnapshot newReference(URI uri) {
+    public ContainerSnapshot newReference(URI uri, Object context) {
         ActiveContainer container = containerRef.get();
         if (container == null) {
             throw new ContainerNotReadyException();
         }
-        return container.newReference(uri);
+        return container.newReference(uri, context);
     }
 
     @Override

@@ -43,6 +43,7 @@ public class EmptyRequestFilterTestCase {
             final Method method, final String uri, final Version version) {
         final CurrentContainer currentContainer = mock(CurrentContainer.class);
         when(currentContainer.newReference(any(URI.class))).thenReturn(mock(Container.class));
+        when(currentContainer.newReference(any(URI.class), any(Object.class))).thenReturn(mock(Container.class));
         return HttpRequest.newServerRequest(currentContainer, URI.create(uri), method, version);
     }
 }
