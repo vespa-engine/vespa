@@ -635,7 +635,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private static Inspector deepWrapAsMap(Inspector data) {
-            System.err.println("deep wrap: "+data);
             if (data.type() == Type.ARRAY) {
                 var map = new Value.ObjectValue();
                 for (int i = 0; i < data.entryCount(); i++) {
@@ -653,7 +652,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                     }
                 }
                 if (map != null) {
-                    System.err.println("recognized as map -> "+map);
                     return map;
                 }
                 var array = new Value.ArrayValue();
@@ -661,7 +659,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                     Inspector obj = data.entry(i);
                     array.add(deepWrapAsMap(obj));
                 }
-                System.err.println("just an array -> "+array);
                 return array;
             }
             if (data.type() == Type.OBJECT) {
@@ -669,10 +666,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 for (var entry : data.fields()) {
                     object.put(entry.getKey(), deepWrapAsMap(entry.getValue()));
                 }
-                System.err.println("just an object -> "+object);
                 return object;
             }
-            System.err.println("just data");
             return data;
         }
 
@@ -696,10 +691,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         private void renderInspector(Inspector data) throws IOException {
             Inspector asMap = recognizeDeepMaps ? deepWrapAsMap(data) : wrapAsMap(data);
             if (asMap != null) {
-                System.err.println("maybe converted: "+asMap);
                 renderInspectorDirect(asMap);
             } else {
-                System.err.println("not converted: "+data);
                 renderInspectorDirect(data);
             }
         }
