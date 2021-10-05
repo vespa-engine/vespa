@@ -2,14 +2,12 @@
 package ai.vespa.rankingexpression.importer.tensorflow;
 
 import ai.vespa.rankingexpression.importer.ImportedModel;
-import ai.vespa.rankingexpression.importer.IntermediateGraph;
 import ai.vespa.rankingexpression.importer.ModelImporter;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import com.yahoo.collections.Pair;
 import com.yahoo.io.IOUtils;
 import com.yahoo.system.ProcessExecuter;
-import org.tensorflow.SavedModelBundle;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +25,7 @@ public class TensorFlowImporter extends ModelImporter {
 
     private static final Logger log = Logger.getLogger(TensorFlowImporter.class.getName());
 
-    private final static int[] onnxOpsetsToTry = {8, 10, 12};
+    private final static int[] onnxOpsetsToTry = {12, 10, 8};
 
     private final OnnxImporter onnxImporter = new OnnxImporter();
 
@@ -54,17 +52,6 @@ public class TensorFlowImporter extends ModelImporter {
     @Override
     public ImportedModel importModel(String modelName, String modelDir) {
         return convertToOnnxAndImport(modelName, modelDir);
-    }
-
-    /** Imports a TensorFlow model - DEPRECATED */
-    public ImportedModel importModel(String modelName, String modelDir, SavedModelBundle model) {
-        try {
-            IntermediateGraph graph = GraphImporter.importGraph(modelName, model);
-            return convertIntermediateGraphToModel(graph, modelDir, ImportedMlModel.ModelType.TENSORFLOW);
-        }
-        catch (IOException e) {
-            throw new IllegalArgumentException("Could not import TensorFlow model '" + model + "'", e);
-        }
     }
 
     private ImportedModel convertToOnnxAndImport(String modelName, String modelDir) {
