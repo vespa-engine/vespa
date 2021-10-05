@@ -59,12 +59,15 @@ func sendOperation(documentId string, jsonFile string, service *Service, operati
 	if operation == "remove" && jsonFile == "" {
 		documentData = []byte("{\n    \"remove\": \"" + documentId + "\"\n}\n")
 	} else {
-		fileReader, fileError := os.Open(jsonFile)
-		if fileError != nil {
-			return util.FailureWithDetail("Could not open file '"+jsonFile+"'", fileError.Error())
+		fileReader, err := os.Open(jsonFile)
+		if err != nil {
+			return util.FailureWithDetail("Could not open file '"+jsonFile+"'", err.Error())
 		}
 		defer fileReader.Close()
-		documentData = util.ReaderToBytes(fileReader)
+		documentData, err = ioutil.ReadAll(fileReader)
+		if err != nil {
+			return util.FailureWithDetail("Failed to read '"+jsonFile+"'", err.Error())
+		}
 	}
 
 	var doc map[string]interface{}

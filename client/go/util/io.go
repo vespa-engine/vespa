@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -41,7 +42,7 @@ func ReaderToBytes(reader io.Reader) []byte {
 
 // Returns the contents of reader as indented JSON
 func ReaderToJSON(reader io.Reader) string {
-	bodyBytes := ReaderToBytes(reader)
+	bodyBytes, _ := ioutil.ReadAll(reader)
 	var prettyJSON bytes.Buffer
 	parseError := json.Indent(&prettyJSON, bodyBytes, "", "    ")
 	if parseError != nil { // Not JSON: Print plainly

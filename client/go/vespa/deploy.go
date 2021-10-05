@@ -344,7 +344,7 @@ func zipDir(dir string, destination string) error {
 
 // Returns the error message in the given JSON, or the entire content if it could not be extracted
 func extractError(reader io.Reader) string {
-	responseData := util.ReaderToBytes(reader)
+	responseData, _ := ioutil.ReadAll(reader)
 	var response map[string]interface{}
 	json.Unmarshal(responseData, &response)
 	if response["error-code"] == "INVALID_APPLICATION_PACKAGE" {
