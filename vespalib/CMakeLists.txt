@@ -64,6 +64,7 @@ vespa_define_module(
     src/tests/hwaccelrated
     src/tests/io/fileutil
     src/tests/io/mapped_file_input
+    src/tests/issue
     src/tests/latch
     src/tests/left_right_heap
     src/tests/make_fixture_macros
