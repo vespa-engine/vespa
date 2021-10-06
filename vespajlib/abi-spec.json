@@ -1180,6 +1180,7 @@
       "public com.yahoo.tensor.Tensor matmul(com.yahoo.tensor.Tensor, java.lang.String)",
       "public com.yahoo.tensor.Tensor softmax(java.lang.String)",
       "public com.yahoo.tensor.Tensor xwPlusB(com.yahoo.tensor.Tensor, com.yahoo.tensor.Tensor, java.lang.String)",
+      "public com.yahoo.tensor.Tensor expand(java.lang.String)",
       "public com.yahoo.tensor.Tensor argmax(java.lang.String)",
       "public com.yahoo.tensor.Tensor argmin(java.lang.String)",
       "public static com.yahoo.tensor.Tensor diag(com.yahoo.tensor.TensorType)",
