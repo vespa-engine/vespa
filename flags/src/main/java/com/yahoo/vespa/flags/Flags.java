@@ -197,6 +197,14 @@ public class Flags {
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag IGNORE_MERGE_QUEUE_LIMIT = defineFeatureFlag(
+            "ignore-merge-queue-limit", false,
+            List.of("vekterli", "geirst"), "2021-10-06", "2021-12-01",
+            "Specifies if merges that are forwarded (chained) from another content node are always " +
+                    "allowed to be enqueued even if the queue is otherwise full.",
+            "Takes effect at redeploy",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundIntFlag LARGE_RANK_EXPRESSION_LIMIT = defineIntFlag(
             "large-rank-expression-limit", 8192,
             List.of("baldersheim"), "2021-06-09", "2021-11-01",
