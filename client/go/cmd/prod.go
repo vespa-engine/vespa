@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,6 +21,7 @@ import (
 func init() {
 	rootCmd.AddCommand(prodCmd)
 	prodCmd.AddCommand(prodInitCmd)
+	prodCmd.AddCommand(prodSubmitCmd)
 }
 
 var prodCmd = &cobra.Command{
@@ -60,7 +62,7 @@ https://cloud.vespa.ai/en/reference/deployment`,
 		}
 		if pkg.IsZip() {
 			fatalErrHint(fmt.Errorf("Cannot modify compressed application package %s", pkg.Path),
-				"Try running 'mvn clean' and re-running this command")
+				"Try running 'mvn clean' and run this command again")
 			return
 		}
 
@@ -91,6 +93,69 @@ https://cloud.vespa.ai/en/reference/deployment`,
 		if err := writeWithBackup(pkg, "services.xml", servicesXML.String()); err != nil {
 			fatalErr(err)
 			return
+		}
+	},
+}
+
+var prodSubmitCmd = &cobra.Command{
+	Use:   "submit",
+	Short: "Submit your application for production deployment",
+	Long: `Submit your application for production deployment.
+
+This commands uploads your application package to Vespa Cloud and deploys it to
+the production zones specified in deployment.xml.
+
+Nodes are allocated to your application according to resources specified in
+services.xml.
+
+While submitting an application from a local development environment is
+supported, it's strongly recommended that production deployments are performed
+by a continuous build system.
+
+For more information about production deployments in Vespa Cloud see:
+https://cloud.vespa.ai/en/getting-to-production
+https://cloud.vespa.ai/en/automated-deployments`,
+	DisableAutoGenTag: true,
+	Example: `$ mvn package
+$ vespa prod submit`,
+	Run: func(cmd *cobra.Command, args []string) {
+		target := getTarget()
+		if target.Type() != "cloud" {
+			fatalErr(fmt.Errorf("%s target cannot deploy to Vespa Cloud", target.Type()))
+			return
+		}
+		appSource := applicationSource(args)
+		pkg, err := vespa.FindApplicationPackage(appSource, true)
+		if err != nil {
+			fatalErr(err)
+			return
+		}
+		cfg, err := LoadConfig()
+		if err != nil {
+			fatalErr(err, "Could not load config")
+			return
+		}
+		if !pkg.HasDeployment() {
+			fatalErrHint(fmt.Errorf("No deployment.xml found"), "Try creating one with vespa prod init")
+			return
+		}
+		if !pkg.IsJava() {
+			// TODO: Loosen this requirement when we start supporting applications with Java in production
+			fatalErrHint(fmt.Errorf("No jar files found in %s", pkg.Path), "Only applications containing Java components are currently supported")
+			return
+		}
+		isCI := os.Getenv("CI") != ""
+		if !isCI {
+			fmt.Fprintln(stderr, color.Yellow("Warning:"), "Submitting from a non-CI environment is discouraged")
+			printErrHint(nil, "See https://cloud.vespa.ai/en/getting-to-production for best practices")
+		}
+		opts := getDeploymentOpts(cfg, pkg, target)
+		if err := vespa.Submit(opts); err != nil {
+			fatalErr(err, "Could not submit application for deployment")
+		} else {
+			printSuccess("Submitted ", color.Cyan(pkg.Path), " for deployment")
+			log.Printf("See %s for deployment progress\n", color.Cyan(fmt.Sprintf("%s/tenant/%s/application/%s/prod/deployment",
+				getConsoleURL(), opts.Deployment.Application.Tenant, opts.Deployment.Application.Application)))
 		}
 	},
 }
@@ -133,6 +198,13 @@ func updateRegions(r *bufio.Reader, deploymentXML xml.Deployment) xml.Deployment
 	if err := deploymentXML.Replace("prod", "region", regionElements); err != nil {
 		fatalErr(err, "Could not update region elements in deployment.xml")
 	}
+	// TODO: Some sample apps come with production <test> elements, but not necessarily working production tests, we
+	//       therefore remove <test> elements here.
+	//       This can be improved by supporting <test> elements in xml package and allow specifying testing as part of
+	//       region prompt, e.g. region1;test,region2
+	if err := deploymentXML.Replace("prod", "test", nil); err != nil {
+		fatalErr(err, "Could not remove test elements in deployment.xml")
+	}
 	return deploymentXML
 }
 
@@ -152,7 +224,7 @@ func promptRegions(r *bufio.Reader, deploymentXML xml.Deployment) string {
 	validator := func(input string) error {
 		regions := strings.Split(input, ",")
 		for _, r := range regions {
-			if !xml.ValidProdRegion(r) {
+			if !xml.IsProdRegion(r, getSystem()) {
 				return fmt.Errorf("invalid region %s", r)
 			}
 		}

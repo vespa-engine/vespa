@@ -45,12 +45,12 @@ func TestServerError(t *testing.T) {
 
 func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 	client := &mockHttpClient{}
-	queryURL := queryServiceURL(client)
 	client.NextResponse(200, "{\"query\":\"result\"}")
 	assert.Equal(t,
 		"{\n    \"query\": \"result\"\n}\n",
 		executeCommand(t, client, []string{"query"}, query),
 		"query output")
+	queryURL := queryServiceURL(client)
 	assert.Equal(t, queryURL+"/search/"+expectedQuery, client.lastRequest.URL.String())
 }
 

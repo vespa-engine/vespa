@@ -58,6 +58,8 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 	os.Setenv("VESPA_CLI_CACHE_DIR", cmd.cacheDir)
 
 	// Reset flags to their default value - persistent flags in Cobra persists over tests
+	// TODO: Due to the bad design of viper, the only proper fix is to get rid of global state by moving each command to
+	// their own sub-package
 	rootCmd.Flags().VisitAll(resetFlag)
 	documentCmd.Flags().VisitAll(resetFlag)
 

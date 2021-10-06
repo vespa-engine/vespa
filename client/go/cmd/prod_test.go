@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -82,6 +83,7 @@ func readFileString(t *testing.T, filename string) string {
 
 func createApplication(t *testing.T, pkgDir string) {
 	appDir := filepath.Join(pkgDir, "src", "main", "application")
+	targetDir := filepath.Join(pkgDir, "target")
 	if err := os.MkdirAll(appDir, 0755); err != nil {
 		t.Fatal(err)
 	}
@@ -113,6 +115,52 @@ func createApplication(t *testing.T, pkgDir string) {
 </services>`
 
 	if err := ioutil.WriteFile(filepath.Join(appDir, "services.xml"), []byte(servicesXML), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(targetDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := ioutil.WriteFile(filepath.Join(pkgDir, "pom.xml"), []byte(""), 0644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestProdSubmit(t *testing.T) {
+	homeDir := filepath.Join(t.TempDir(), ".vespa")
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir)
+
+	httpClient := &mockHttpClient{}
+	httpClient.NextResponse(200, `ok`)
+	execute(command{homeDir: homeDir, args: []string{"config", "set", "application", "t1.a1.i1"}}, t, httpClient)
+	execute(command{homeDir: homeDir, args: []string{"config", "set", "target", "cloud"}}, t, httpClient)
+	execute(command{homeDir: homeDir, args: []string{"api-key"}}, t, httpClient)
+	execute(command{homeDir: homeDir, args: []string{"cert", pkgDir}}, t, httpClient)
+
+	// Copy an application package pre-assambled with mvn package
+	testAppDir := filepath.Join("testdata", "applications", "withDeployment", "target")
+	zipFile := filepath.Join(testAppDir, "application.zip")
+	copyFile(t, filepath.Join(pkgDir, "target", "application.zip"), zipFile)
+	testZipFile := filepath.Join(testAppDir, "application-test.zip")
+	copyFile(t, filepath.Join(pkgDir, "target", "application-test.zip"), testZipFile)
+
+	out, _ := execute(command{homeDir: homeDir, args: []string{"prod", "submit", pkgDir}}, t, httpClient)
+	assert.Contains(t, out, "Success: Submitted")
+	assert.Contains(t, out, "See https://console.vespa.oath.cloud/tenant/t1/application/a1/prod/deployment for deployment progress")
+}
+
+func copyFile(t *testing.T, dstFilename, srcFilename string) {
+	dst, err := os.Create(dstFilename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer dst.Close()
+	src, err := os.Open(srcFilename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer src.Close()
+	if _, err := io.Copy(dst, src); err != nil {
 		t.Fatal(err)
 	}
 }

@@ -193,8 +193,8 @@ func ParseNodeCount(s string) (int, int, error) {
 	return 0, 0, parseErr
 }
 
-// ValidProdRegion returns whether string s is a valid production region.
-func ValidProdRegion(s string, system string) bool {
+// IsProdRegion returns whether string s is a valid production region.
+func IsProdRegion(s string, system string) bool {
 	if system == "publiccd" {
 		return s == "aws-us-east-1c"
 	}
