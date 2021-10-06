@@ -975,8 +975,6 @@
       "public static final enum com.yahoo.container.protect.Error BAD_REQUEST",
       "public static final enum com.yahoo.container.protect.Error INTERNAL_SERVER_ERROR",
       "public static final enum com.yahoo.container.protect.Error INSUFFICIENT_STORAGE",
-      "public static final enum com.yahoo.container.protect.Error ERROR_IN_SEARCH_REPLY",
-      "public static final enum com.yahoo.container.protect.Error ERROR_IN_DOCSUM_REPLY",
       "public final int code"
     ]
   },

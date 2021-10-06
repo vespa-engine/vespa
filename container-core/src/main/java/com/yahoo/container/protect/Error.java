@@ -27,9 +27,7 @@ public enum Error {
     NOT_FOUND(16),
     BAD_REQUEST(17),
     INTERNAL_SERVER_ERROR(18),
-    INSUFFICIENT_STORAGE(19),
-    ERROR_IN_SEARCH_REPLY(20),
-    ERROR_IN_DOCSUM_REPLY(21);
+    INSUFFICIENT_STORAGE(19);
 
     public final int code;
 

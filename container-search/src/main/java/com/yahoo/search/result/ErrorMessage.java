@@ -165,12 +165,12 @@ public class ErrorMessage extends com.yahoo.processing.request.ErrorMessage {
 
     /** Wraps an error message received in a SearchReply packet */
     public static ErrorMessage createSearchReplyError(String detailedMessage) {
-        return new ErrorMessage(ERROR_IN_SEARCH_REPLY.code, "Error in search reply.", detailedMessage);
+        return new ErrorMessage(RESULT_HAS_ERRORS.code, "Error in search reply.", detailedMessage);
     }
 
     /** Wraps an error message received in a DocsumReply packet */
     public static ErrorMessage createDocsumReplyError(String detailedMessage) {
-        return new ErrorMessage(ERROR_IN_DOCSUM_REPLY.code, "Error in getDocsum reply.", detailedMessage);
+        return new ErrorMessage(RESULT_HAS_ERRORS.code, "Error in fill reply.", detailedMessage);
     }
 
     /** Sets the source producing this error */
