@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
-import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.functions.Argmax;
 import com.yahoo.tensor.functions.Argmin;
 import com.yahoo.tensor.functions.CellCast;
@@ -20,7 +19,7 @@ import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.Softmax;
 import com.yahoo.tensor.functions.XwPlusB;
-import com.yahoo.text.Ascii7BitMatcher;
+import com.yahoo.tensor.functions.Expand;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,7 +34,6 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.yahoo.text.Ascii7BitMatcher.charsAndNumbers;
 import static com.yahoo.tensor.functions.ScalarFunctions.Hamming;
 
 /**
@@ -208,6 +206,10 @@ public interface Tensor {
 
     default Tensor xwPlusB(Tensor w, Tensor b, String dimension) {
         return new XwPlusB<>(new ConstantTensor<>(this), new ConstantTensor<>(w), new ConstantTensor<>(b), dimension).evaluate();
+    }
+
+    default Tensor expand(String dimension) {
+        return new Expand<>(new ConstantTensor<>(this), dimension).evaluate();
     }
 
     default Tensor argmax(String dimension) {
