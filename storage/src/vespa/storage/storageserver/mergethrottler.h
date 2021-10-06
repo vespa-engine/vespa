@@ -212,8 +212,7 @@ public:
     mbus::StaticThrottlePolicy& getThrottlePolicy() { return *_throttlePolicy; }
     void set_disable_queue_limits_for_chained_merges(bool disable_limits) noexcept;
     // For unit testing only
-    std::mutex & getMonitor() { return _messageLock; }
-    std::mutex & getStateLock() { return _stateLock; }
+    std::mutex& getStateLock() { return _stateLock; }
 
     Metrics& getMetrics() { return *_metrics; }
     std::size_t getMaxQueueSize() const { return _maxQueueSize; }
@@ -263,7 +262,6 @@ private:
          * pairwise compares equally to the vector of sorted node indices
          */
         bool isChainCompleted() const;
-        std::string getSequenceString() const;
     };
 
     /**
