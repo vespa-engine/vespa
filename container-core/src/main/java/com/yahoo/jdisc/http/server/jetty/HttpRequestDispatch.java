@@ -59,6 +59,8 @@ class HttpRequestDispatch {
     private final ServletResponseController servletResponseController;
     private final RequestHandler requestHandler;
     private final RequestMetricReporter metricReporter;
+    private final BiConsumer<Void, Throwable> completeRequestCallback;
+    private final AtomicBoolean completeRequestCalled = new AtomicBoolean(false);
 
     public HttpRequestDispatch(JDiscContext jDiscContext,
                                AccessLogEntry accessLogEntry,
@@ -80,6 +82,7 @@ class HttpRequestDispatch {
         this.async = servletRequest.startAsync();
         async.setTimeout(0);
         metricReporter.uriLength(jettyRequest.getOriginalURI().length());
+        completeRequestCallback = this::handleCompleteRequestCallback;
     }
 
     public void dispatch() throws IOException {
@@ -103,48 +106,44 @@ class HttpRequestDispatch {
         }
     }
 
-    private final BiConsumer<Void, Throwable> completeRequestCallback;
+
+    private void handleCompleteRequestCallback(Void result, Throwable error)
     {
-        AtomicBoolean completeRequestCalled = new AtomicBoolean(false);
-        HttpRequestDispatch parent = this; //used to avoid binding uninitialized variables
+        boolean alreadyCalled = completeRequestCalled.getAndSet(true);
+        if (alreadyCalled) {
+            AssertionError e = new AssertionError("completeRequest called more than once");
+            log.log(Level.WARNING, "Assertion failed.", e);
+            throw e;
+        }
 
-        completeRequestCallback = (result, error) -> {
-            boolean alreadyCalled = completeRequestCalled.getAndSet(true);
-            if (alreadyCalled) {
-                AssertionError e = new AssertionError("completeRequest called more than once");
-                log.log(Level.WARNING, "Assertion failed.", e);
-                throw e;
+        boolean reportedError = false;
+
+        if (error != null) {
+            if (isErrorOfType(error, EofException.class, IOException.class)) {
+                log.log(Level.FINE,
+                        error,
+                        () -> "Network connection was unexpectedly terminated: " + jettyRequest.getRequestURI());
+                metricReporter.prematurelyClosed();
+            } else if (isErrorOfType(error, TimeoutException.class)) {
+                log.log(Level.FINE,
+                        error,
+                        () -> "Request/stream was timed out by Jetty: " + jettyRequest.getRequestURI());
+            } else if (!isErrorOfType(error, OverloadException.class, BindingNotFoundException.class, RequestException.class)) {
+                log.log(Level.WARNING, "Request failed: " + jettyRequest.getRequestURI(), error);
             }
+            reportedError = true;
+            metricReporter.failedResponse();
+        } else {
+            metricReporter.successfulResponse();
+        }
 
-            boolean reportedError = false;
-
-            if (error != null) {
-                if (isErrorOfType(error, EofException.class, IOException.class)) {
-                    log.log(Level.FINE,
-                            error,
-                            () -> "Network connection was unexpectedly terminated: " + parent.jettyRequest.getRequestURI());
-                    parent.metricReporter.prematurelyClosed();
-                } else if (isErrorOfType(error, TimeoutException.class)) {
-                    log.log(Level.FINE,
-                            error,
-                            () -> "Request/stream was timed out by Jetty: " + parent.jettyRequest.getRequestURI());
-                } else if (!isErrorOfType(error, OverloadException.class, BindingNotFoundException.class, RequestException.class)) {
-                    log.log(Level.WARNING, "Request failed: " + parent.jettyRequest.getRequestURI(), error);
-                }
-                reportedError = true;
-                parent.metricReporter.failedResponse();
-            } else {
-                parent.metricReporter.successfulResponse();
-            }
-
-            try {
-                parent.async.complete();
-                log.finest(() -> "Request completed successfully: " + parent.jettyRequest.getRequestURI());
-            } catch (Throwable throwable) {
-                Level level = reportedError ? Level.FINE: Level.WARNING;
-                log.log(level, "Async.complete failed", throwable);
-            }
-        };
+        try {
+            async.complete();
+            log.finest(() -> "Request completed successfully: " + jettyRequest.getRequestURI());
+        } catch (Throwable throwable) {
+            Level level = reportedError ? Level.FINE: Level.WARNING;
+            log.log(level, "Async.complete failed", throwable);
+        }
     }
 
     private static void shutdownConnectionGracefullyIfThresholdReached(Request request) {
