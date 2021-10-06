@@ -51,6 +51,11 @@ message SearchReply {
     repeated Hit hits = 7;
     bytes grouping_blob = 8; // serialized opaquely like now, to be changed later
     bytes slime_trace = 9;
+    repeated Error errors = 10;
+}
+
+message Error {
+    string message = 1;
 }
 
 message Hit {
@@ -79,6 +84,7 @@ message DocsumRequest {
 
 message DocsumReply {
     bytes slime_summaries = 1; // result array inside slime object
+    repeated Error errors = 2;
 }
 
 message MonitorRequest {
