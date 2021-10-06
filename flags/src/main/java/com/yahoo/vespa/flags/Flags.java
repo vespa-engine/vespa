@@ -176,13 +176,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundIntFlag NUM_DISTRIBUTOR_STRIPES = defineIntFlag(
-            "num-distributor-stripes", 0,
-            List.of("geirst", "vekterli"), "2021-04-20", "2021-11-01",
-            "Specifies the number of stripes used by the distributor. When 0, legacy single stripe behavior is used.",
-            "Takes effect after distributor restart",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundIntFlag MAX_CONCURRENT_MERGES_PER_NODE = defineIntFlag(
             "max-concurrent-merges-per-node", 128,
             List.of("balder", "vekterli"), "2021-06-06", "2021-11-01",
