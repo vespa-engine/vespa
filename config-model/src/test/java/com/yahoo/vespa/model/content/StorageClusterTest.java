@@ -118,6 +118,7 @@ public class StorageClusterTest {
         StorServerConfig config = new StorServerConfig(builder);
         assertEquals(16, config.max_merges_per_node());
         assertEquals(1024, config.max_merge_queue_size());
+        assertFalse(config.disable_queue_limits_for_chained_merges());
     }
 
     @Test
@@ -134,14 +135,27 @@ public class StorageClusterTest {
         assertEquals(1024, config.max_merges_per_node());
         assertEquals(1024*10, config.max_merge_queue_size());
     }
+
+    private StorServerConfig configFromProperties(TestProperties properties) {
+        StorServerConfig.Builder builder = new StorServerConfig.Builder();
+        parse(cluster("foofighters", ""), properties).getConfig(builder);
+        return new StorServerConfig(builder);
+    }
+
     @Test
     public void testMergeFeatureFlags() {
-        StorServerConfig.Builder builder = new StorServerConfig.Builder();
-        parse(cluster("foofighters", ""), new TestProperties().setMaxMergeQueueSize(1919).setMaxConcurrentMergesPerNode(37)).getConfig(builder);
-
-        StorServerConfig config = new StorServerConfig(builder);
+        var config = configFromProperties(new TestProperties().setMaxMergeQueueSize(1919).setMaxConcurrentMergesPerNode(37));
         assertEquals(37, config.max_merges_per_node());
         assertEquals(1919, config.max_merge_queue_size());
+    }
+
+    @Test
+    public void ignore_merge_queue_limit_can_be_controlled_by_feature_flag() {
+        var config = configFromProperties(new TestProperties().setIgnoreMergeQueueLimit(true));
+        assertTrue(config.disable_queue_limits_for_chained_merges());
+
+        config = configFromProperties(new TestProperties().setIgnoreMergeQueueLimit(false));
+        assertFalse(config.disable_queue_limits_for_chained_merges());
     }
 
     @Test
