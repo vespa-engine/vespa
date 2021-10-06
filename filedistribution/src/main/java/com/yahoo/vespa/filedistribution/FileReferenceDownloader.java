@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
@@ -114,7 +114,7 @@ public class FileReferenceDownloader {
             log.log(logLevel, () -> "Downloading file " + fileReference + " from " + connection.getAddress() + " failed: " +
                                     request + ", error: " + request.errorMessage() + ", will use another config server for next request" +
                                     " (retry count " + retryCount + ", rpc timeout " + rpcTimeout.getSeconds() + ")");
-            connectionPool.setError(connection, request.errorCode());
+            connectionPool.switchConnection(connection);
             return false;
         }
     }

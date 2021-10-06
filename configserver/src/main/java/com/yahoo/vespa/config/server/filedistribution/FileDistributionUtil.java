@@ -75,9 +75,6 @@ public class FileDistributionUtil {
         }
 
         @Override
-        public void setError(Connection connection, int i) {}
-
-        @Override
         public Connection getCurrent() { return null; }
 
         @Override

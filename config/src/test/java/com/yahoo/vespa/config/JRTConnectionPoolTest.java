@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
@@ -160,7 +160,7 @@ public class JRTConnectionPoolTest {
     }
 
     private JRTConnection failAndGetNewConnection(JRTConnectionPool connectionPool, Connection failingConnection) {
-        connectionPool.setError(failingConnection, 123);
+        connectionPool.switchConnection(failingConnection);
         return connectionPool.getCurrent();
     }
 

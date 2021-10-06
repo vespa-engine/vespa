@@ -165,7 +165,7 @@ public class JRTConfigRequester implements RequestWaiter {
         // The subscription object has an "old" config, which is all we have to offer back now
         log.log(INFO, "Failure of config subscription tp " + connection.getAddress() +
                 ", clients will keep existing config until resolved: " + sub);
-        connectionPool.setError(connection, jrtReq.errorCode());
+        connectionPool.switchConnection(connection);
         failures++;
         long delay = calculateFailedRequestDelay(failures, timingValues);
         // The logging depends on whether we are configured or not.
