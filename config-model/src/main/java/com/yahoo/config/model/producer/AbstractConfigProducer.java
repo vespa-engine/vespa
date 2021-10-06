@@ -385,7 +385,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
     public void validate() throws Exception {
         assert (childrenBySubId.isFrozen());
 
-        for (AbstractConfigProducer child : childrenBySubId.values()) {
+        for (AbstractConfigProducer<?> child : childrenBySubId.values()) {
             child.validate();
         }
     }

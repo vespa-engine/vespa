@@ -287,7 +287,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             }
             else if (admin.multitenant()) { // system tests: Put on logserver
                 if (admin.getClusterControllers() == null) {
-                    // TODO: logserver== null only obtains in unit tests, disallow it
+                    // TODO: logserver == null only obtains in unit tests, disallow it
                     List<HostResource> host = admin.getLogserver() == null ? List.of() : List.of(admin.getLogserver().getHostResource());
                     admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
                                                                          host,
