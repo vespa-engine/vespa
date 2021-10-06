@@ -1,10 +1,25 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
-import com.yahoo.tensor.evaluation.Name;
-import com.yahoo.tensor.evaluation.TypeContext;
-import com.yahoo.tensor.functions.*;
-import com.yahoo.text.Ascii7BitMatcher;
+import com.yahoo.tensor.functions.Argmax;
+import com.yahoo.tensor.functions.Argmin;
+import com.yahoo.tensor.functions.CellCast;
+import com.yahoo.tensor.functions.Concat;
+import com.yahoo.tensor.functions.ConstantTensor;
+import com.yahoo.tensor.functions.Diag;
+import com.yahoo.tensor.functions.Generate;
+import com.yahoo.tensor.functions.Join;
+import com.yahoo.tensor.functions.L1Normalize;
+import com.yahoo.tensor.functions.L2Normalize;
+import com.yahoo.tensor.functions.Matmul;
+import com.yahoo.tensor.functions.Merge;
+import com.yahoo.tensor.functions.Random;
+import com.yahoo.tensor.functions.Range;
+import com.yahoo.tensor.functions.Reduce;
+import com.yahoo.tensor.functions.Rename;
+import com.yahoo.tensor.functions.Softmax;
+import com.yahoo.tensor.functions.XwPlusB;
+import com.yahoo.tensor.functions.Expand;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,7 +34,6 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.yahoo.text.Ascii7BitMatcher.charsAndNumbers;
 import static com.yahoo.tensor.functions.ScalarFunctions.Hamming;
 
 /**
