@@ -54,7 +54,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
-    private int numDistributorStripes = 0;
     private int maxConcurrentMergesPerNode = 16;
     private int maxMergeQueueSize = 1024;
     private boolean ignoreMergeQueueLimit = false;
@@ -99,7 +98,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
     @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
     @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
-    @Override public int numDistributorStripes() { return numDistributorStripes; }
     @Override public boolean allowDisableMtls() { return allowDisableMtls; }
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
     @Override public int largeRankExpressionLimit() { return largeRankExpressionLimit; }
@@ -244,11 +242,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setJvmOmitStackTraceInFastThrowOption(String value) {
         this.jvmOmitStackTraceInFastThrowOption = value;
-        return this;
-    }
-
-    public TestProperties setNumDistributorStripes(int value) {
-        this.numDistributorStripes = value;
         return this;
     }
 

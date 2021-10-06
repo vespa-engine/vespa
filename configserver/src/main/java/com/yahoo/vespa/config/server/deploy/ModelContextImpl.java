@@ -178,7 +178,6 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> allowedAthenzProxyIdentities;
         private final int maxActivationInhibitedOutOfSyncGroups;
         private final ToIntFunction<ClusterSpec.Type> jvmOmitStackTraceInFastThrow;
-        private final int numDistributorStripes;
         private final boolean requireConnectivityCheck;
         private final int maxConcurrentMergesPerContentNode;
         private final int maxMergeQueueSize;
@@ -209,7 +208,6 @@ public class ModelContextImpl implements ModelContext {
             this.allowedAthenzProxyIdentities = flagValue(source, appId, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
             this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
             this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
-            this.numDistributorStripes = flagValue(source, appId, Flags.NUM_DISTRIBUTOR_STRIPES);
             this.largeRankExpressionLimit = flagValue(source, appId, Flags.LARGE_RANK_EXPRESSION_LIMIT);
             this.requireConnectivityCheck = flagValue(source, appId, Flags.REQUIRE_CONNECTIVITY_CHECK);
             this.maxConcurrentMergesPerContentNode = flagValue(source, appId, Flags.MAX_CONCURRENT_MERGES_PER_NODE);
@@ -242,7 +240,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) {
             return translateJvmOmitStackTraceInFastThrowIntToString(jvmOmitStackTraceInFastThrow, type);
         }
-        @Override public int numDistributorStripes() { return numDistributorStripes; }
         @Override public int largeRankExpressionLimit() { return largeRankExpressionLimit; }
         @Override public boolean requireConnectivityCheck() { return requireConnectivityCheck; }
         @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerContentNode; }
