@@ -128,7 +128,7 @@ public class FileDistributionStatusClient {
                                     tenantName, applicationName, environment, region, instanceName);
         try {
             return new URIBuilder()
-                    .setScheme("https")
+                    .setScheme("http")
                     .setHost("localhost")
                     .setPort(19071)
                     .setPath(path)
