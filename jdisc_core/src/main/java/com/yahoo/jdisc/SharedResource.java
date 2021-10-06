@@ -52,7 +52,9 @@ public interface SharedResource {
      *
      * @see ResourceReference#close()
      */
-    ResourceReference refer();
+    default ResourceReference refer() {
+        return refer(null);
+    }
 
     /**
      * <p>Creates a reference to this resource. You call this method to prevent an object from being
