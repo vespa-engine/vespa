@@ -71,6 +71,11 @@ class ReferenceCountingRequestHandler implements DelegatedRequestHandler {
     }
 
     @Override
+    public ResourceReference refer(Object context) {
+        return delegate.refer(context);
+    }
+
+    @Override
     public void release() {
         delegate.release();
     }
@@ -97,7 +102,7 @@ class ReferenceCountingRequestHandler implements DelegatedRequestHandler {
             Objects.requireNonNull(delegate, "delegate");
             this.request = request;
             this.delegate = delegate;
-            this.requestReference = request.refer();
+            this.requestReference = request.refer(this);
         }
 
         @Override
@@ -143,7 +148,7 @@ class ReferenceCountingRequestHandler implements DelegatedRequestHandler {
             Objects.requireNonNull(delegate, "delegate");
             this.request = request;
             this.delegate = delegate;
-            this.requestReference = request.refer();
+            this.requestReference = request.refer(this);
         }
 
         @Override
@@ -200,7 +205,7 @@ class ReferenceCountingRequestHandler implements DelegatedRequestHandler {
 
         public ReferenceCountingCompletionHandler(SharedResource request, CompletionHandler delegate) {
             this.delegate = delegate;
-            this.requestReference = request.refer();
+            this.requestReference = request.refer(this);
         }
 
         @Override

@@ -174,7 +174,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
 
         RequestTask(Request request, BufferedContentChannel content, ResponseHandler responseHandler) {
             this.request = request;
-            this.requestReference = request.refer();
+            this.requestReference = request.refer(this);
             this.content = content;
             this.responseHandler = responseHandler;
         }
