@@ -7,6 +7,7 @@ package cmd
 import (
 	"bytes"
 	"crypto/tls"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -23,6 +24,7 @@ import (
 type command struct {
 	homeDir  string
 	cacheDir string
+	stdin    io.ReadWriter
 	args     []string
 	moreArgs []string
 }
@@ -67,6 +69,11 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 	var capturedErr bytes.Buffer
 	stdout = &capturedOut
 	stderr = &capturedErr
+	if cmd.stdin != nil {
+		stdin = cmd.stdin
+	} else {
+		stdin = os.Stdin
+	}
 
 	// Execute command and return output
 	rootCmd.SetArgs(append(cmd.args, cmd.moreArgs...))

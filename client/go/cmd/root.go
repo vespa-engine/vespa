@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -37,6 +38,7 @@ Vespa documentation: https://docs.vespa.ai`,
 	waitSecsArg    int
 	colorArg       string
 	quietArg       bool
+	stdin          io.ReadWriter = os.Stdin
 
 	color  = aurora.NewAurora(false)
 	stdout = colorable.NewColorableStdout()
