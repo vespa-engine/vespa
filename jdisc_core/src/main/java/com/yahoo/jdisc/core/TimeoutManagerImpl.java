@@ -145,6 +145,11 @@ public class TimeoutManagerImpl {
         }
 
         @Override
+        public ResourceReference refer(Object context) {
+            return delegate.refer(context);
+        }
+
+        @Override
         public void release() {
             delegate.release();
         }

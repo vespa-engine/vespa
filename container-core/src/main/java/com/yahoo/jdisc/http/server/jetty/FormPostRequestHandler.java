@@ -72,7 +72,7 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
         this.contentCharset = getCharsetByName(contentCharsetName);
         this.responseHandler = responseHandler;
         this.request = (HttpRequest) request;
-        this.requestReference = request.refer();
+        this.requestReference = request.refer(this);
 
         return this;
     }

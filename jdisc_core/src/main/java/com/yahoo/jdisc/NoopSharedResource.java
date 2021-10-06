@@ -12,6 +12,10 @@ public class NoopSharedResource implements SharedResource {
     public final ResourceReference refer() {
         return References.NOOP_REFERENCE;
     }
+    @Override
+    public final ResourceReference refer(Object context) {
+        return References.NOOP_REFERENCE;
+    }
 
     @Override
     public final void release() {

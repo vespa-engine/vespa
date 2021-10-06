@@ -121,7 +121,7 @@ public class Request extends AbstractResource {
         creationTime = parent.container().currentTimeMillis();
         serverRequest = false;
         setUri(uri);
-        parentReference = this.parent.refer();
+        parentReference = this.parent.refer(this);
     }
 
     /** Returns the {@link Container} for which this Request was created */

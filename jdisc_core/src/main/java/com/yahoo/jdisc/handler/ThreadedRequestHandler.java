@@ -150,7 +150,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
             this.request = request;
             this.content = content;
             this.responseHandler = responseHandler;
-            this.requestReference = request.refer();
+            this.requestReference = request.refer(this);
         }
 
         @Override
