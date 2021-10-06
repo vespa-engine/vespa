@@ -66,7 +66,7 @@ public class StorageClusterTest {
         ContentCluster cluster = ContentClusterUtils.createCluster(xml, root);
 
         root.freezeModelTopology();
-        return cluster.getStorageNodes();
+        return cluster.getStorageCluster();
     }
 
     private static String group() {
@@ -328,9 +328,9 @@ public class StorageClusterTest {
         ContentCluster cluster = ContentClusterUtils.createCluster(xml, new MockRoot());
 
         for (int i = 0; i < 3; ++i) {
-            StorageNode node = cluster.getStorageNodes().getChildren().get("" + i);
+            StorageNode node = cluster.getStorageCluster().getChildren().get("" + i);
             StorServerConfig.Builder builder = new StorServerConfig.Builder();
-            cluster.getStorageNodes().getConfig(builder);
+            cluster.getStorageCluster().getConfig(builder);
             node.getConfig(builder);
             StorServerConfig config = new StorServerConfig(builder);
             assertEquals(1.0 + (double)i * 0.5, config.node_capacity(), 0.001);
@@ -341,11 +341,11 @@ public class StorageClusterTest {
     public void testRootFolder() {
         ContentCluster cluster = ContentClusterUtils.createCluster(cluster("storage", ""), new MockRoot());
 
-        StorageNode node = cluster.getStorageNodes().getChildren().get("0");
+        StorageNode node = cluster.getStorageCluster().getChildren().get("0");
 
         {
             StorServerConfig.Builder builder = new StorServerConfig.Builder();
-            cluster.getStorageNodes().getConfig(builder);
+            cluster.getStorageCluster().getConfig(builder);
             node.getConfig(builder);
             StorServerConfig config = new StorServerConfig(builder);
             assertEquals(getDefaults().underVespaHome("var/db/vespa/search/storage/storage/0"), config.root_folder());
@@ -378,7 +378,7 @@ public class StorageClusterTest {
         ContentCluster cluster = ContentClusterUtils.createCluster(xml, new MockRoot());
 
         PersistenceConfig.Builder builder = new PersistenceConfig.Builder();
-        cluster.getStorageNodes().getConfig(builder);
+        cluster.getStorageCluster().getConfig(builder);
 
         PersistenceConfig config = new PersistenceConfig(builder);
         assertTrue(config.fail_partition_on_error());

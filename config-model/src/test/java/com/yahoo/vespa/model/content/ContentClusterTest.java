@@ -553,15 +553,15 @@ public class ContentClusterTest extends ContentBaseTest {
 
         {
             StorServerConfig.Builder builder = new StorServerConfig.Builder();
-            cluster.getStorageNodes().getConfig(builder);
-            cluster.getStorageNodes().getChildren().get("0").getConfig(builder);
+            cluster.getStorageCluster().getConfig(builder);
+            cluster.getStorageCluster().getChildren().get("0").getConfig(builder);
             StorServerConfig config = new StorServerConfig(builder);
         }
 
         {
             StorServerConfig.Builder builder = new StorServerConfig.Builder();
-            cluster.getStorageNodes().getConfig(builder);
-            cluster.getStorageNodes().getChildren().get("1").getConfig(builder);
+            cluster.getStorageCluster().getConfig(builder);
+            cluster.getStorageCluster().getChildren().get("1").getConfig(builder);
             StorServerConfig config = new StorServerConfig(builder);
         }
     }
@@ -635,8 +635,8 @@ public class ContentClusterTest extends ContentBaseTest {
 
         {
             StorServerConfig.Builder builder = new StorServerConfig.Builder();
-            cluster.getStorageNodes().getConfig(builder);
-            cluster.getStorageNodes().getChildren().get("0").getConfig(builder);
+            cluster.getStorageCluster().getConfig(builder);
+            cluster.getStorageCluster().getChildren().get("0").getConfig(builder);
 
             StorServerConfig config = new StorServerConfig(builder);
 
@@ -696,7 +696,7 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals("partofsum", config.consumer(5).removedtags(1));
         assertEquals(0, config.consumer(5).tags().size());
 
-        cluster.getStorageNodes().getConfig(builder);
+        cluster.getStorageCluster().getConfig(builder);
         config = new MetricsmanagerConfig(builder);
         assertEquals(6, config.consumer().size());
 

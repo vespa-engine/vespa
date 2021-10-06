@@ -38,9 +38,9 @@ public class DocumentSourceSearcher extends Searcher {
     // TODO: update tests to explicitly set hits, so that the default results can be removed entirely.
     private Result defaultFilledResult;
 
-    private Map<Query, Result> completelyFilledResults = new HashMap<>();
-    private Map<Query, Result> unFilledResults = new HashMap<>();
-    private Map<String, Set<String>> summaryClasses = new HashMap<>();
+    private final Map<Query, Result> completelyFilledResults = new HashMap<>();
+    private final Map<Query, Result> unFilledResults = new HashMap<>();
+    private final Map<String, Set<String>> summaryClasses = new HashMap<>();
 
     private int queryCount;
 
