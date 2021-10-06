@@ -216,9 +216,10 @@ public class StorageGroup {
                     deployState.getDeployLogger().logApplicationPackage(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
 
             GroupBuilder groupBuilder = collectGroup(owner.isHosted(), group, nodes, null, null);
-            StorageGroup storageGroup = (owner.isHosted())
-                    ? groupBuilder.buildHosted(deployState, owner, Optional.empty())
-                    : groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
+            StorageGroup storageGroup = owner.isHosted()
+                                        ? groupBuilder.buildHosted(deployState, owner, Optional.empty())
+                                        : groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
+
             Redundancy redundancy = redundancyBuilder.build(owner.getName(), owner.isHosted(), storageGroup.subgroups.size(),
                                                             storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes(false),
                                                             maxRedundancy);
@@ -305,16 +306,18 @@ public class StorageGroup {
                     storageGroup.nodes.add(nodeBuilder.build(deployState, owner, storageGroup));
                 }
                 
-                if (parent.isEmpty() && subGroups.isEmpty() && nodeBuilders.isEmpty()) // no nodes or groups: create single node
+                if (parent.isEmpty() && subGroups.isEmpty() && nodeBuilders.isEmpty()) { // no nodes or groups: create single node
                     storageGroup.nodes.add(buildSingleNode(deployState, owner));
+                }
 
                 return storageGroup;
             }
 
             private StorageNode buildSingleNode(DeployState deployState, ContentCluster parent) {
                 int distributionKey = 0;
-                StorageNode sNode = new StorageNode(deployState.getProperties(), parent.getStorageNodes(), 1.0, distributionKey , false);
+                StorageNode sNode = new StorageNode(deployState.getProperties(), parent.getStorageCluster(), 1.0, distributionKey , false);
                 sNode.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
+                sNode.initService(deployLogger);
                 PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, storageGroup, null);
                 new Distributor(deployState.getProperties(), parent.getDistributorNodes(), distributionKey, null, provider);
                 return sNode;
@@ -332,7 +335,7 @@ public class StorageGroup {
                     throw new IllegalArgumentException("Specifying individual groups is not supported on hosted applications");
                 Map<HostResource, ClusterMembership> hostMapping =
                         nodeRequirement.isPresent() ?
-                        provisionHosts(nodeRequirement.get(), owner.getStorageNodes().getClusterName(), owner.getRoot().hostSystem(), deployLogger) :
+                        provisionHosts(nodeRequirement.get(), owner.getStorageCluster().getClusterName(), owner.getRoot().hostSystem(), deployLogger) :
                         Collections.emptyMap();
 
                 Map<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostGroups = collectAllocatedSubgroups(hostMapping);
@@ -389,7 +392,7 @@ public class StorageGroup {
             }
 
             public StorageNode build(DeployState deployState, ContentCluster parent, StorageGroup storageGroup) {
-                StorageNode sNode = new StorageNode.Builder().build(deployState, parent.getStorageNodes(), element.getXml());
+                StorageNode sNode = new StorageNode.Builder().build(deployState, parent.getStorageCluster(), element.getXml());
                 PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, storageGroup, element);
                 new Distributor.Builder(clusterElement, provider).build(deployState, parent.getDistributorNodes(), element.getXml());
                 return sNode;
@@ -494,7 +497,7 @@ public class StorageGroup {
         }
 
         private static StorageNode createStorageNode(DeployState deployState, ContentCluster parent, HostResource hostResource, StorageGroup parentGroup, ClusterMembership clusterMembership) {
-            StorageNode sNode = new StorageNode(deployState.getProperties(), parent.getStorageNodes(), null, clusterMembership.index(), clusterMembership.retired());
+            StorageNode sNode = new StorageNode(deployState.getProperties(), parent.getStorageCluster(), null, clusterMembership.index(), clusterMembership.retired());
             sNode.setHostResource(hostResource);
             sNode.initService(deployState.getDeployLogger());
 

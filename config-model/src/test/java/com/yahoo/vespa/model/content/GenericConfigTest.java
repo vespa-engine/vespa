@@ -55,7 +55,7 @@ public class GenericConfigTest {
 
     @Test
     public void config_override_on_root_is_visible_on_storage_cluster() {
-        StorageCluster cluster = model.getContentClusters().get("storage").getStorageNodes();
+        StorageCluster cluster = model.getContentClusters().get("storage").getStorageCluster();
 
         StorFilestorConfig config = model.getConfig(StorFilestorConfig.class, cluster.getConfigId());
         assertThat(config.num_threads(), is(7));

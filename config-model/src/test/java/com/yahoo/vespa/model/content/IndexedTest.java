@@ -179,8 +179,8 @@ public class IndexedTest extends ContentBaseTest {
         assertFalse(s.getSearch().hasIndexedCluster());
 
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
-        s.getStorageNodes().getConfig(builder);
-        s.getStorageNodes().getChildren().get("3").getConfig(builder);
+        s.getStorageCluster().getConfig(builder);
+        s.getStorageCluster().getChildren().get("3").getConfig(builder);
     }
 
     @Test

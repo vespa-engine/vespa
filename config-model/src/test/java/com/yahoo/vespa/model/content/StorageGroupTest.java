@@ -32,9 +32,9 @@ public class StorageGroupTest {
                         "</content>"
         );
 
-        assertEquals("content", cluster.getStorageNodes().getChildren().get("0").getServicePropertyString("clustertype"));
-        assertEquals("storage", cluster.getStorageNodes().getChildren().get("0").getServicePropertyString("clustername"));
-        assertEquals("0", cluster.getStorageNodes().getChildren().get("0").getServicePropertyString("index"));
+        assertEquals("content", cluster.getStorageCluster().getChildren().get("0").getServicePropertyString("clustertype"));
+        assertEquals("storage", cluster.getStorageCluster().getChildren().get("0").getServicePropertyString("clustername"));
+        assertEquals("0", cluster.getStorageCluster().getChildren().get("0").getServicePropertyString("index"));
 
         assertEquals("content", cluster.getDistributorNodes().getChildren().get("0").getServicePropertyString("clustertype"));
         assertEquals("storage", cluster.getDistributorNodes().getChildren().get("0").getServicePropertyString("clustername"));

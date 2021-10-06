@@ -428,7 +428,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
 
     public DistributorCluster getDistributorNodes() { return distributorNodes; }
 
-    public StorageCluster getStorageNodes() { return storageNodes; }
+    public StorageCluster getStorageCluster() { return storageNodes; }
 
     public ClusterControllerConfig getClusterControllerConfig() { return clusterControllerConfig; }
 
