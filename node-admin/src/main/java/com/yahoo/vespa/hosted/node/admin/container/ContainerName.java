@@ -11,14 +11,14 @@ import java.util.regex.Pattern;
  */
 public class ContainerName implements Comparable<ContainerName> {
 
-    private static final Pattern LEGAL_CONTAINER_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9-]+$");
+    private static final Pattern LEGAL_CONTAINER_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9-_]+$");
     private final String name;
 
     public ContainerName(final String name) {
         this.name = Objects.requireNonNull(name);
         if (! LEGAL_CONTAINER_NAME_PATTERN.matcher(name).matches()) {
             throw new IllegalArgumentException("Illegal container name: " + name + ". Must match " +
-                    LEGAL_CONTAINER_NAME_PATTERN.toString());
+                    LEGAL_CONTAINER_NAME_PATTERN.pattern());
         }
     }
 
