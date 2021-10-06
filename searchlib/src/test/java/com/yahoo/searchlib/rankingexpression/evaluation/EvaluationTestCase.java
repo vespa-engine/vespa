@@ -498,7 +498,6 @@ public class EvaluationTestCase {
                 "tensor(d0[3],d1[2],d2[1],d3[1])(tensor0{a0:0, a1:((d0 * 2 + d1) / 3), a2:((d0 * 2 + d1) % 3) })",
                 "tensor(a0[1],a1[2],a2[3]):[1,2,3,4,5,6]",
                 "tensor(d0[4]):[3,2,-1,1]");
-
     }
 
     @Test
@@ -725,6 +724,21 @@ public class EvaluationTestCase {
         tester.assertEvaluates("tensor(d0[1], d1[3]):[1, 2, 3]",
                                "tensor0 * tensor(d0[1])(1)",
                                "tensor(d1[3]):[1, 2, 3]");
+        // Add using the "expand" non-primitive function
+        tester.assertEvaluates("tensor(d0[1],d1[3]):[[1,2,3]]",
+                               "expand(tensor0, d0)",
+                               "tensor(d1[3]):[1, 2, 3]");
+        tester.assertEvaluates("tensor<float>(d0[1],d1[3]):[[1,2,3]]",
+                               "expand(tensor0, d0)",
+                               "tensor<float>(d1[3]):[1, 2, 3]");
+    }
+
+    @Test
+    public void test() throws ParseException {
+        RankingExpression expr = new RankingExpression("expand(tensor<float>(d1[3]):[1,2,3], d0)");
+        System.out.println(expr);
+        Tensor t = expr.evaluate(new MapContext()).asTensor();
+        System.out.println(t);
     }
 
     @Test

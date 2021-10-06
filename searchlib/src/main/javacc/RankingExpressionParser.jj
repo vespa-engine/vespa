@@ -144,6 +144,7 @@ TOKEN :
     <ARGMAX: "argmax"> |
     <ARGMIN: "argmin"> |
     <CELL_CAST: "cell_cast"> |
+    <EXPAND: "expand"> |
 
     <AVG: "avg" > |
     <COUNT: "count"> |
@@ -384,7 +385,8 @@ TensorFunctionNode tensorFunction() :
         tensorExpression = tensorXwPlusB() |
         tensorExpression = tensorArgmax() |
         tensorExpression = tensorArgmin() |
-        tensorExpression = tensorCellCast()
+        tensorExpression = tensorCellCast() |
+        tensorExpression = tensorExpand()
     )
     { return tensorExpression; }
 }
@@ -581,6 +583,16 @@ TensorFunctionNode tensorXwPlusB() :
                                                 dimension)); }
 }
 
+TensorFunctionNode tensorExpand() :
+{
+    ExpressionNode argument;
+    String dimension;
+}
+{
+    <EXPAND> <LBRACE> argument = expression() <COMMA> dimension = identifier() <RBRACE>
+    { return new TensorFunctionNode(new Expand(TensorFunctionNode.wrap(argument), dimension)); }
+}
+
 TensorFunctionNode tensorArgmax() :
 {
     ExpressionNode tensor;
@@ -696,6 +708,7 @@ String tensorFunctionName() :
     ( <ARGMAX>       { return token.image; } ) |
     ( <ARGMIN>       { return token.image; } ) |
     ( <CELL_CAST>    { return token.image; } ) |
+    ( <EXPAND>       { return token.image; } ) |
     ( aggregator = tensorReduceAggregator() { return aggregator.toString(); } )
 }
 

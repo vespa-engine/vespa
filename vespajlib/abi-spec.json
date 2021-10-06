@@ -1699,6 +1699,21 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.functions.Expand": {
+    "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
+      "public java.util.List arguments()",
+      "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
+      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
+    ],
+    "fields": []
+  },
   "com.yahoo.tensor.functions.Generate": {
     "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
     "interfaces": [],
@@ -2050,6 +2065,22 @@
       "public void <init>()",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.tensor.functions.ScalarFunctions$Constant": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.util.function.Function"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(double)",
+      "public java.lang.Double apply(java.util.List)",
+      "public java.lang.String toString()",
+      "public bridge synthetic java.lang.Object apply(java.lang.Object)"
     ],
     "fields": []
   },
@@ -2603,7 +2634,8 @@
       "public static java.util.function.DoubleUnaryOperator selu(double, double)",
       "public static java.util.function.Function random()",
       "public static java.util.function.Function equal(java.util.List)",
-      "public static java.util.function.Function sum(java.util.List)"
+      "public static java.util.function.Function sum(java.util.List)",
+      "public static java.util.function.Function constant(double)"
     ],
     "fields": []
   },

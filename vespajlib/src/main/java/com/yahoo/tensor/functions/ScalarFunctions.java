@@ -66,6 +66,7 @@ public class ScalarFunctions {
     public static Function<List<Long>, Double> random() { return new Random(); }
     public static Function<List<Long>, Double> equal(List<String> argumentNames) { return new EqualElements(argumentNames); }
     public static Function<List<Long>, Double> sum(List<String> argumentNames) { return new SumElements(argumentNames); }
+    public static Function<List<Long>, Double> constant(double value) { return new Constant(value); }
 
     // Binary operators -----------------------------------------------------------------------------
 
@@ -492,5 +493,20 @@ public class ScalarFunctions {
             return argumentNames.stream().collect(Collectors.joining("+"));
         }
     }
+
+    public static class Constant implements Function<List<Long>, Double> {
+        private final double value;
+
+        public Constant(double value) {
+            this.value = value;
+        }
+        @Override
+        public Double apply(List<Long> values) {
+            return value;
+        }
+        @Override
+        public String toString() { return Double.toString(value); }
+    }
+
 
 }
