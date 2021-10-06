@@ -734,14 +734,6 @@ public class EvaluationTestCase {
     }
 
     @Test
-    public void test() throws ParseException {
-        RankingExpression expr = new RankingExpression("expand(tensor<float>(d1[3]):[1,2,3], d0)");
-        System.out.println(expr);
-        Tensor t = expr.evaluate(new MapContext()).asTensor();
-        System.out.println(t);
-    }
-
-    @Test
     public void testProgrammaticBuildingAndPrecedence() {
         RankingExpression standardPrecedence = new RankingExpression(new ArithmeticNode(constant(2), ArithmeticOperator.PLUS, new ArithmeticNode(constant(3), ArithmeticOperator.MULTIPLY, constant(4))));
         RankingExpression oppositePrecedence = new RankingExpression(new ArithmeticNode(new ArithmeticNode(constant(2), ArithmeticOperator.PLUS, constant(3)), ArithmeticOperator.MULTIPLY, constant(4)));
