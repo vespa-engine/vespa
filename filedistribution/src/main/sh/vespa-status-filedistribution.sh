@@ -76,11 +76,11 @@ findhost
 
 ROOT=${VESPA_HOME%/}
 
-if [ "$cloudconfig_server__environment" != "" ]; then
-    environment="--environment $cloudconfig_server__environment"
+if [ "$VESPA_ENVIRONMENT" != "" ]; then
+    environment="--environment $VESPA_ENVIRONMENT"
 fi
-if [ "$cloudconfig_server__region" != "" ]; then
-    region="--region $cloudconfig_server__region"
+if [ "$VESPA_REGION" != "" ]; then
+    region="--region $VESPA_REGION"
 fi
 
 defaults="--tenant default --application default --instance default"
