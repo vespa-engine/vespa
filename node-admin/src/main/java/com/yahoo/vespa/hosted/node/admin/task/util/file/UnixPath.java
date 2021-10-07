@@ -16,7 +16,6 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.PosixFileAttributeView;
-import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.attribute.UserPrincipal;
@@ -57,7 +56,7 @@ public class UnixPath {
         Path filename = path.getFileName();
         if (filename == null) {
             // E.g. "/".
-            throw new IllegalStateException("Path has no filename: '" + path.toString() + "'");
+            throw new IllegalStateException("Path has no filename: '" + path + "'");
         }
 
         return filename.toString();
@@ -129,28 +128,32 @@ public class UnixPath {
         return this;
     }
 
-    public String getOwner() {
-        return getAttributes().owner();
+    public int getOwnerId() {
+        return getAttributes().ownerId();
     }
 
-    public UnixPath setOwner(String owner) {
+    public UnixPath setOwner(String user) { return setOwner(user, "user"); }
+    public UnixPath setOwnerId(int uid) { return setOwner(String.valueOf(uid), "uid"); }
+    private UnixPath setOwner(String owner, String type) {
         UserPrincipalLookupService service = path.getFileSystem().getUserPrincipalLookupService();
         UserPrincipal principal = uncheck(
                 () -> service.lookupPrincipalByName(owner),
-                "While looking up user %s", owner);
+                "While looking up %s %s", type, owner);
         uncheck(() -> Files.setOwner(path, principal));
         return this;
     }
 
-    public String getGroup() {
-        return getAttributes().group();
+    public int getGroupId() {
+        return getAttributes().groupId();
     }
 
-    public UnixPath setGroup(String group) {
+    public UnixPath setGroup(String group) { return setGroup(group, "group"); }
+    public UnixPath setGroupId(int gid) { return setGroup(String.valueOf(gid), "gid"); }
+    public UnixPath setGroup(String group, String type) {
         UserPrincipalLookupService service = path.getFileSystem().getUserPrincipalLookupService();
         GroupPrincipal principal = uncheck(
                 () -> service.lookupPrincipalByGroupName(group),
-                "while looking up group %s", group);
+                "While looking up group %s %s", type, group);
         uncheck(() -> Files.getFileAttributeView(path, PosixFileAttributeView.class).setGroup(principal));
         return this;
     }
@@ -169,9 +172,7 @@ public class UnixPath {
     }
 
     public FileAttributes getAttributes() {
-        PosixFileAttributes attributes = uncheck(() ->
-                Files.getFileAttributeView(path, PosixFileAttributeView.class).readAttributes());
-        return new FileAttributes(attributes);
+        return uncheck(() -> FileAttributes.fromAttributes(Files.readAttributes(path, "unix:*")));
     }
 
     public Optional<FileAttributes> getAttributesIfExists() {

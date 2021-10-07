@@ -34,8 +34,8 @@ public class MakeDirectory {
      */
     public MakeDirectory createParents() { this.createParents = true; return this; }
 
-    public MakeDirectory withOwner(String owner) { attributeSync.withOwner(owner); return this; }
-    public MakeDirectory withGroup(String group) { attributeSync.withGroup(group); return this; }
+    public MakeDirectory withOwnerId(int ownerId) { attributeSync.withOwnerId(ownerId); return this; }
+    public MakeDirectory withGroupId(int groupId) { attributeSync.withGroupId(groupId); return this; }
     public MakeDirectory withPermissions(String permissions) {
         attributeSync.withPermissions(permissions);
         return this;
