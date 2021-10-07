@@ -146,10 +146,10 @@ public class RotationRepositoryTest {
     public void prefixes_system_when_not_main() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .globalServiceId("foo")
-                .region("cd-us-central-1")
+                .region("cd-us-east-1")
                 .region("cd-us-west-1")
                 .build();
-        var zones = List.of(ZoneApiMock.fromId("prod.cd-us-central-1"), ZoneApiMock.fromId("prod.cd-us-west-1"));
+        var zones = List.of(ZoneApiMock.fromId("prod.cd-us-east-1"), ZoneApiMock.fromId("prod.cd-us-west-1"));
         tester.controllerTester().zoneRegistry()
               .setZones(zones)
               .setRoutingMethod(zones, RoutingMethod.shared)
