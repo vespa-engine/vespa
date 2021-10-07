@@ -7803,8 +7803,11 @@
       "public void <init>(com.yahoo.component.chain.Chain, com.yahoo.search.searchchain.Execution)",
       "public void <init>(com.yahoo.component.chain.Chain, com.yahoo.search.searchchain.Execution$Context)",
       "public void <init>(com.yahoo.search.searchchain.Execution)",
+      "public com.yahoo.search.searchchain.FutureResult search(com.yahoo.search.Query, java.util.concurrent.Executor)",
       "public com.yahoo.search.searchchain.FutureResult search(com.yahoo.search.Query)",
+      "public com.yahoo.search.searchchain.FutureResult searchAndFill(com.yahoo.search.Query, java.util.concurrent.Executor)",
       "public com.yahoo.search.searchchain.FutureResult searchAndFill(com.yahoo.search.Query)",
+      "public com.yahoo.search.searchchain.FutureResult fill(com.yahoo.search.Result, java.lang.String, java.util.concurrent.Executor)",
       "public com.yahoo.search.searchchain.FutureResult fill(com.yahoo.search.Result, java.lang.String)",
       "public static java.util.List waitForAll(java.util.Collection, long)"
     ],
