@@ -27,6 +27,5 @@
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
-        <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
     </properties>
 </project>
