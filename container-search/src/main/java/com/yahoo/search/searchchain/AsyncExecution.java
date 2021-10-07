@@ -148,7 +148,11 @@ public class AsyncExecution {
 
     private static <T> Future<T> getFuture(Callable<T> callable) {
         FutureTask<T> future = new FutureTask<>(callable);
-        getExecutor().execute(future);
+        try {
+            getExecutor().execute(future);
+        } catch (RejectedExecutionException e) {
+            future.run();
+        }
         return future;
     }
 
@@ -161,7 +165,11 @@ public class AsyncExecution {
 
     private FutureResult getFutureResult(Callable<Result> callable, Query query) {
         FutureResult future = new FutureResult(callable, execution, query);
-        getExecutor().execute(future);
+        try {
+            getExecutor().execute(future);
+        } catch (RejectedExecutionException e) {
+            future.run();
+        }
         return future;
     }
 
