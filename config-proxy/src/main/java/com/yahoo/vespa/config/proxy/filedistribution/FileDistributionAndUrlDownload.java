@@ -28,7 +28,7 @@ public class FileDistributionAndUrlDownload {
     public FileDistributionAndUrlDownload(Supervisor supervisor, ConfigSourceSet source) {
         fileDistributionRpcServer =
                 new FileDistributionRpcServer(supervisor,
-                                              new FileDownloader(new JRTConnectionPool(source, "filedistribution-jrt-pool")));
+                                              new FileDownloader(new JRTConnectionPool(source, supervisor)));
         urlDownloadRpcServer = new UrlDownloadRpcServer(supervisor);
         cleanupExecutor.scheduleAtFixedRate(new CachedFilesMaintainer(), delay.toSeconds(), delay.toSeconds(), TimeUnit.SECONDS);
     }

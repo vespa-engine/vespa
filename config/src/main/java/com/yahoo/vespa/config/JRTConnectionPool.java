@@ -37,17 +37,13 @@ public class JRTConnectionPool implements ConnectionPool {
     private volatile JRTConnection currentConnection;
 
     public JRTConnectionPool(ConfigSourceSet sourceSet) {
-        this(sourceSet, "config-jrt-pool" + sourceSet.hashCode());
+        this(sourceSet, new Supervisor(new Transport("config-pool-" + sourceSet.hashCode())).setDropEmptyBuffers(true));
     }
 
-    public JRTConnectionPool(ConfigSourceSet sourceSet, String poolName) {
-        this.poolName = poolName;
-        supervisor = new Supervisor(new Transport(poolName + "-")).setDropEmptyBuffers(true);
+    public JRTConnectionPool(ConfigSourceSet sourceSet, Supervisor supervisor) {
+        this.supervisor = supervisor;
+        this.poolName = supervisor.transport().getName();
         addSources(sourceSet);
-    }
-
-    JRTConnectionPool(List<String> addresses) {
-        this(new ConfigSourceSet(addresses));
     }
 
     public void addSources(ConfigSourceSet sourceSet) {
