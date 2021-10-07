@@ -82,7 +82,7 @@ public class Cluster {
     public boolean shouldSuggestResources(ClusterResources currentResources) {
         if (suggested.isEmpty()) return false;
         if (suggested.get().resources().isWithin(min, max)) return false;
-        if (Autoscaler.similar(suggested.get().resources(), currentResources)) return false;
+        if ( ! Autoscaler.worthRescaling(currentResources, suggested.get().resources())) return false;
         return true;
     }
 
