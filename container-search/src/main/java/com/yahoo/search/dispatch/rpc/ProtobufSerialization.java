@@ -25,6 +25,7 @@ import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.query.Sorting.Order;
 import com.yahoo.search.result.Coverage;
+import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.vespa.objects.BufferSerializer;
@@ -40,6 +41,12 @@ public class ProtobufSerialization {
 
     static byte[] serializeSearchRequest(Query query, int hits, String serverId) {
         return convertFromQuery(query, hits, serverId).toByteArray();
+    }
+
+    private static void convertSearchReplyErrors(Result target, List<SearchProtocol.Error> errors) {
+        for (var error : errors) {
+            target.hits().addError(ErrorMessage.createSearchReplyError(error.getMessage()));
+        }
     }
 
     private static SearchProtocol.SearchRequest convertFromQuery(Query query, int hits, String serverId) {
@@ -195,6 +202,8 @@ public class ProtobufSerialization {
 
         result.getResult().setTotalHitCount(protobuf.getTotalHitCount());
         result.getResult().setCoverage(convertToCoverage(protobuf));
+
+        convertSearchReplyErrors(result.getResult(), protobuf.getErrorsList());
 
         var haveGrouping = ! protobuf.getGroupingBlob().isEmpty();
         if (haveGrouping) {
