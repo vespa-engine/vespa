@@ -1,18 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.federation.test;
+package com.yahoo.search.federation;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.federation.FederationSearcher;
 import com.yahoo.search.federation.sourceref.SearchChainResolver;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 
 import java.util.Collections;
+import java.util.concurrent.Executor;
 
 /**
  * @author Tony Vaagenes
@@ -23,7 +23,11 @@ class FederationTester {
     private final SearchChainRegistry registry = new SearchChainRegistry();
 
     private Execution execution;
+    private final Executor executor;
 
+    FederationTester(Executor executor) {
+        this.executor = executor;
+    }
     void addSearchChain(String id, Searcher... searchers) {
         addSearchChain(id, federationOptions(), searchers);
     }
@@ -47,7 +51,7 @@ class FederationTester {
     }
 
     FederationSearcher buildFederationSearcher() {
-        return new FederationSearcher(ComponentId.fromString("federation"), builder.build());
+        return new FederationSearcher(ComponentId.fromString("federation"), builder.build(), executor);
     }
 
     public Result search() {

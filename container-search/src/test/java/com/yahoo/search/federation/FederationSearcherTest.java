@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.federation.test;
+package com.yahoo.search.federation;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
@@ -10,12 +10,8 @@ import com.yahoo.processing.execution.chain.ChainRegistry;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.federation.FederationConfig;
-import com.yahoo.search.federation.FederationSearcher;
-import com.yahoo.search.federation.TimeoutException;
 import com.yahoo.search.federation.selection.FederationTarget;
 import com.yahoo.search.federation.selection.TargetSelector;
-import com.yahoo.search.federation.StrictContractsConfig;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
@@ -24,18 +20,21 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.Execution.Context;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Tony Vaagenes
@@ -43,6 +42,18 @@ import static org.junit.Assert.*;
 public class FederationSearcherTest {
 
     private static final String hasBeenFilled = "hasBeenFilled";
+
+    private ExecutorService executor;
+
+    @Before
+    public void setUp() throws Exception {
+        executor = Executors.newFixedThreadPool(16);
+    }
+
+    @After
+    public void tearDown() {
+        assertEquals(0, executor.shutdownNow().size());
+    }
 
     @Test
     public void require_that_hits_are_not_automatically_filled() {
@@ -58,7 +69,7 @@ public class FederationSearcherTest {
 
     @Test
     public void require_that_hits_can_be_filled_when_moved() {
-        FederationTester tester = new FederationTester();
+        FederationTester tester = new FederationTester(executor);
         tester.addSearchChain("chain1", new AddHitSearcher());
         tester.addSearchChain("chain2", new AddHitSearcher());
 
@@ -86,7 +97,7 @@ public class FederationSearcherTest {
 
     @Test
     public void require_that_hits_can_be_filled_for_multiple_chains_and_queries() {
-        FederationTester tester = new FederationTester();
+        FederationTester tester = new FederationTester(executor);
         tester.addSearchChain("chain1", new AddHitSearcher());
         tester.addSearchChain("chain2", new ModifyQueryAndAddHitSearcher("modified1"));
         tester.addSearchChain("chain3", new ModifyQueryAndAddHitSearcher("modified2"));
@@ -100,7 +111,7 @@ public class FederationSearcherTest {
 
     @Test
     public void require_that_hits_that_time_out_in_fill_are_removed() {
-        FederationTester tester = new FederationTester();
+        FederationTester tester = new FederationTester(executor);
         tester.addSearchChain("chain1", new AddHitSearcher());
         tester.addSearchChain("chain2", new TimeoutInFillSearcher());
 
@@ -118,7 +129,7 @@ public class FederationSearcherTest {
     public void require_that_optional_search_chains_does_not_delay_federation() {
         BlockingSearcher blockingSearcher = new BlockingSearcher();
 
-        FederationTester tester = new FederationTester();
+        FederationTester tester = new FederationTester(executor);
         tester.addSearchChain("chain1", new AddHitSearcher());
         tester.addOptionalSearchChain("chain2", blockingSearcher);
 
@@ -147,7 +158,7 @@ public class FederationSearcherTest {
 
     @Test
     public void require_that_calling_a_single_slow_source_with_long_timeout_does_not_delay_federation() {
-        FederationTester tester = new FederationTester();
+        FederationTester tester = new FederationTester(executor);
         tester.addSearchChain("chain1",
                               new FederationOptions().setUseByDefault(true).setRequestTimeoutInMilliseconds(3600 * 1000),
                               new BlockingSearcher() );
@@ -177,14 +188,14 @@ public class FederationSearcherTest {
         FederationSearcher searcher = new FederationSearcher(
                 new FederationConfig(new FederationConfig.Builder().targetSelector(targetSelectorId.toString())),
                 new StrictContractsConfig(new StrictContractsConfig.Builder()),
-                targetSelectors);
+                targetSelectors, executor);
 
         Query query = new Query();
         query.setTimeout(20000);
         Result result = new Execution(searcher, Context.createContextStub()).search(query);
         HitGroup myChainGroup = (HitGroup) result.hits().get(0);
-        assertThat(myChainGroup.getId(), is(new URI("source:myChain")));
-        assertThat(myChainGroup.get(0).getId(), is(new URI("myHit")));
+        assertEquals(myChainGroup.getId(), new URI("source:myChain"));
+        assertEquals(myChainGroup.get(0).getId(), new URI("myHit"));
     }
 
     @Test
@@ -196,7 +207,7 @@ public class FederationSearcherTest {
         FederationSearcher searcher = new FederationSearcher(
                 new FederationConfig(new FederationConfig.Builder().targetSelector(targetSelectorId.toString())),
                 new StrictContractsConfig(new StrictContractsConfig.Builder()),
-                targetSelectors);
+                targetSelectors, executor);
 
         Query query = new Query();
         query.setTimeout(20000);
@@ -206,11 +217,11 @@ public class FederationSearcherTest {
         Hit hit1 = hitsIterator.next();
         Hit hit2 = hitsIterator.next();
 
-        assertThat(hit1.getSource(), is("chain1"));
-        assertThat(hit2.getSource(), is("chain2"));
+        assertEquals(hit1.getSource(), "chain1");
+        assertEquals(hit2.getSource(), "chain2");
 
-        assertThat(hit1.getField("data"), is("modifyTargetQuery:custom-data:1"));
-        assertThat(hit2.getField("data"), is("modifyTargetQuery:custom-data:2"));
+        assertEquals(hit1.getField("data"), "modifyTargetQuery:custom-data:1");
+        assertEquals(hit2.getField("data"), "modifyTargetQuery:custom-data:2");
     }
 
     private Hit getFirstHit(Hit hitGroup) {
@@ -220,15 +231,6 @@ public class FederationSearcherTest {
             throw new IllegalArgumentException("Expected HitGroup");
     }
 
-    private List<Hit> getNonErrorHits(Result result) {
-        List<Hit> nonErrorHits = new ArrayList<>();
-        for (Hit hit : result.hits()) {
-            if (!(hit instanceof ErrorHit))
-                nonErrorHits.add(hit);
-        }
-
-        return nonErrorHits;
-    }
     private static void assertFilled(Hit hit) {
         if (hit.isMeta()) return;
         assertTrue((Boolean)hit.getField(hasBeenFilled));
@@ -239,7 +241,7 @@ public class FederationSearcherTest {
     }
 
     private FederationTester federationToSingleAddHitSearcher() {
-        FederationTester tester = new FederationTester();
+        FederationTester tester = new FederationTester(executor);
         tester.addSearchChain("chain1", new AddHitSearcher());
         return tester;
     }
@@ -326,8 +328,8 @@ public class FederationSearcherTest {
 
         @Override
         public Collection<FederationTarget<String>> getTargets(Query query, ChainRegistry<Searcher> searcherChainRegistry) {
-            return Arrays.asList(
-                    new FederationTarget<>(new Chain<>("myChain", Collections.<Searcher>emptyList()), new FederationOptions(), "hello"));
+            return List.of(
+                    new FederationTarget<>(new Chain<>("myChain", List.of()), new FederationOptions(), "hello"));
         }
 
         @Override
@@ -339,13 +341,13 @@ public class FederationSearcherTest {
         @Override
         public void modifyTargetResult(FederationTarget<String> target, Result result) {
             checkTarget(target);
-            assertThat(result.getQuery().properties().getString(keyName), is("called"));
+            assertEquals(result.getQuery().properties().getString(keyName), "called");
             result.hits().add(new Hit("myHit"));
         }
 
         private void checkTarget(FederationTarget<String> target) {
-            assertThat(target.getCustomData(), is("hello"));
-            assertThat(target.getChain().getId(), is(ComponentId.fromString("myChain")));
+            assertEquals(target.getCustomData(), "hello");
+            assertEquals(target.getChain().getId(), ComponentId.fromString("myChain"));
         }
     }
 
@@ -359,7 +361,7 @@ public class FederationSearcherTest {
         }
 
         private FederationTarget<String> createTarget(int number) {
-            return new FederationTarget<>(new Chain<>("chain" + number, Collections.<Searcher>emptyList()),
+            return new FederationTarget<>(new Chain<>("chain" + number, List.of()),
                                           new FederationOptions(),
                                           "custom-data:" + number);
         }

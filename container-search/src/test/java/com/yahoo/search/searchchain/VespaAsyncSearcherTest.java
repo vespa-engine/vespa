@@ -1,17 +1,22 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.searchchain.test;
+package com.yahoo.search.searchchain;
 
 import com.yahoo.component.chain.Chain;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.searchchain.AsyncExecution;
-import com.yahoo.search.searchchain.Execution;
-import com.yahoo.search.searchchain.FutureResult;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests async execution of search chains.
@@ -21,7 +26,22 @@ import java.util.List;
  */
 public class VespaAsyncSearcherTest {
 
+    private ExecutorService executor;
+
+    @Before
+    public void setUp() throws Exception {
+        executor = Executors.newFixedThreadPool(16);
+    }
+
+    @After
+    public void tearDown() {
+        assertEquals(0, executor.shutdownNow().size());
+    }
+
     private static class FirstSearcher extends Searcher {
+
+        private final Executor executor;
+        FirstSearcher(Executor executor) { this.executor = executor;}
 
         @Override
         public Result search(Query query, Execution execution) {
@@ -29,10 +49,10 @@ public class VespaAsyncSearcherTest {
             List<FutureResult> futures = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
                 Query subQuery = query.clone();
-                FutureResult future = new AsyncExecution(execution).search(subQuery);
+                FutureResult future = new AsyncExecution(execution).search(subQuery, executor);
                 futures.add(future);
             }
-            AsyncExecution.waitForAll(futures, 10 * 60 * 1000);
+            AsyncExecution.waitForAll(futures, 10 * 60 * 1000, new InThreadExecutorService());
             Result combinedResult = new Result(query);
             for (FutureResult resultFuture : futures) {
                 Result result = resultFuture.get();
@@ -55,7 +75,7 @@ public class VespaAsyncSearcherTest {
 
     @Test
     public void testAsyncExecution() {
-        Chain<Searcher> chain = new Chain<>(new FirstSearcher(), new SecondSearcher());
+        Chain<Searcher> chain = new Chain<>(new FirstSearcher(executor), new SecondSearcher());
         Execution execution = new Execution(chain, Execution.Context.createContextStub(null));
         Query query = new Query();
         execution.search(query);

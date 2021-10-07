@@ -11,6 +11,7 @@ import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.errorhandling.Results;
 import com.yahoo.errorhandling.Results.Builder;
 import com.yahoo.prelude.IndexFacts;
@@ -53,6 +54,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -71,15 +73,14 @@ import static com.yahoo.search.federation.StrictContractsConfig.PropagateSourceP
 @After("*")
 public class FederationSearcher extends ForkingSearcher {
 
-    public static final String FEDERATION = "Federation";
-
     private static final Logger log = Logger.getLogger(FederationSearcher.class.getName());
 
     /** The name of the query property containing the source name added to the query to each source by this */
     public final static CompoundName SOURCENAME = new CompoundName("sourceName");
     public final static CompoundName PROVIDERNAME = new CompoundName("providerName");
-    /** Logging field name constants */
+    public static final String FEDERATION = "Federation";
     public static final String LOG_COUNT_PREFIX = "count_";
+    private static final List<CompoundName> queryAndHits = ImmutableList.of(Query.OFFSET, Query.HITS);
 
     private final SearchChainResolver searchChainResolver;
     private final PropagateSourceProperties.Enum propagateSourceProperties;
@@ -88,39 +89,45 @@ public class FederationSearcher extends ForkingSearcher {
 
     private final boolean strictSearchchain;
     private final TargetSelector<?> targetSelector;
-
     private final Clock clock = Clock.systemUTC();
+    private final Executor executor;
 
-    private static final List<CompoundName> queryAndHits = ImmutableList.of(Query.OFFSET, Query.HITS);
+
 
     @Inject
     public FederationSearcher(FederationConfig config, StrictContractsConfig strict,
-                              ComponentRegistry<TargetSelector> targetSelectors) {
+                              ComponentRegistry<TargetSelector> targetSelectors, Executor executor) {
         this(createResolver(config), strict.searchchains(), strict.propagateSourceProperties(),
-             resolveSelector(config.targetSelector(), targetSelectors));
-    }
-
-    private static TargetSelector resolveSelector(String selectorId, 
-                                                  ComponentRegistry<TargetSelector> targetSelectors) {
-        if (selectorId.isEmpty()) return null;
-        return checkNotNull(targetSelectors.getComponent(selectorId),
-                            "Missing target selector with id '" + selectorId + "'");
+             resolveSelector(config.targetSelector(), targetSelectors), executor);
     }
 
     // for testing
+    FederationSearcher(ComponentId id, SearchChainResolver searchChainResolver, Executor executor) {
+        this(searchChainResolver, false, PropagateSourceProperties.EVERY, null, executor);
+    }
+    // for testing
     public FederationSearcher(ComponentId id, SearchChainResolver searchChainResolver) {
-        this(searchChainResolver, false, PropagateSourceProperties.EVERY, null);
+        this(id, searchChainResolver, new InThreadExecutorService());
     }
 
     private FederationSearcher(SearchChainResolver searchChainResolver,
                                boolean strictSearchchain,
                                PropagateSourceProperties.Enum propagateSourceProperties,
-                               TargetSelector targetSelector) {
+                               TargetSelector targetSelector,
+                               Executor executor) {
         this.searchChainResolver = searchChainResolver;
         sourceRefResolver = new SourceRefResolver(searchChainResolver);
         this.strictSearchchain = strictSearchchain;
         this.propagateSourceProperties = propagateSourceProperties;
         this.targetSelector = targetSelector;
+        this.executor = executor;
+    }
+
+    private static TargetSelector resolveSelector(String selectorId,
+                                                  ComponentRegistry<TargetSelector> targetSelectors) {
+        if (selectorId.isEmpty()) return null;
+        return checkNotNull(targetSelectors.getComponent(selectorId),
+                "Missing target selector with id '" + selectorId + "'");
     }
 
     private static SearchChainResolver createResolver(FederationConfig config) {
@@ -248,7 +255,7 @@ public class FederationSearcher extends ForkingSearcher {
         if (timeout <= 0)
             return new FutureResult(() -> new Result(query, ErrorMessage.createTimeout("Timed out before federation")), execution, query);
         Query clonedQuery = cloneFederationQuery(query, window, timeout, target);
-        return new AsyncExecution(target.getChain(), execution).search(clonedQuery);
+        return new AsyncExecution(target.getChain(), execution).search(clonedQuery, executor);
     }
 
     private Query cloneFederationQuery(Query query, Window window, long timeout, Target target) {
@@ -439,7 +446,7 @@ public class FederationSearcher extends ForkingSearcher {
                     propagateErrors(resultToFill, result);
                 } else {
                     AsyncExecution asyncFill = new AsyncExecution(chainExecution);
-                    futureFilledResults.add(new Pair<>(resultToFill, asyncFill.fill(resultToFill, summaryClass)));
+                    futureFilledResults.add(new Pair<>(resultToFill, asyncFill.fill(resultToFill, summaryClass, executor)));
                 }
             }
         }

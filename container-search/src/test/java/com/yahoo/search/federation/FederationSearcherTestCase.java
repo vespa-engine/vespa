@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.federation.test;
+package com.yahoo.search.federation;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
@@ -7,13 +7,8 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.federation.FederationConfig;
-import com.yahoo.search.federation.FederationSearcher;
-import com.yahoo.search.federation.StrictContractsConfig;
-import com.yahoo.search.federation.selection.TargetSelector;
 import com.yahoo.search.federation.sourceref.SearchChainResolver;
 import com.yahoo.search.query.profile.QueryProfile;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
@@ -29,10 +24,17 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import static org.junit.Assert.*;
 import static com.yahoo.search.federation.StrictContractsConfig.PropagateSourceProperties;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for federation searcher. The searcher is also tested in
@@ -40,7 +42,6 @@ import static com.yahoo.search.federation.StrictContractsConfig.PropagateSourceP
  *
  * @author Arne Bergene Fossaa
  */
-@SuppressWarnings("deprecation")
 public class FederationSearcherTestCase {
 
     static final String SOURCE1 = "source1";
@@ -63,17 +64,20 @@ public class FederationSearcherTestCase {
 
     private FederationConfig.Builder builder;
     private SearchChainRegistry chainRegistry;
+    private ExecutorService executor;
 
     @Before
     public void setUp() throws Exception {
         builder = new FederationConfig.Builder();
         chainRegistry = new SearchChainRegistry();
+        executor = Executors.newFixedThreadPool(16);
     }
 
     @After
     public void tearDown() {
         builder = null;
         chainRegistry = null;
+        assertEquals(0, executor.shutdownNow().size());
     }
 
     private void addChained(Searcher searcher, String sourceName) {
@@ -103,7 +107,7 @@ public class FederationSearcherTestCase {
     }
 
     private Searcher buildFederation(StrictContractsConfig contracts) throws RuntimeException {
-        return new FederationSearcher(new FederationConfig(builder), contracts, new ComponentRegistry<>());
+        return new FederationSearcher(new FederationConfig(builder), contracts, new ComponentRegistry<>(), executor);
     }
 
     private SearchChain createSearchChain(ComponentId chainId,Searcher searcher) {
@@ -161,12 +165,12 @@ public class FederationSearcherTestCase {
 
         }, SOURCE2);
 
-        Chain<Searcher> mainChain = new Chain<>("default",
+        return new Chain<>("default",
                 new FederationSearcher(new FederationConfig(builder),
                         new StrictContractsConfig(
                                 new StrictContractsConfig.Builder().searchchains(strictContracts)),
-                        new ComponentRegistry<>()));
-        return mainChain;
+                        new ComponentRegistry<>(),
+                        executor));
     }
 
     @Test
@@ -208,7 +212,7 @@ public class FederationSearcherTestCase {
         assertEquals("source:mySource2", result.hits().get(1).getId().stringValue());
         assertEquals("nalle", result.hits().get(0).getQuery().getPresentation().getSummary());
         assertNull(result.hits().get(1).getQuery().getPresentation().getSummary());
-        assertEquals(null, result.hits().get(0).getQuery().properties().get("custom"));
+        assertNull(result.hits().get(0).getQuery().properties().get("custom"));
     }
 
     @Test
@@ -219,8 +223,8 @@ public class FederationSearcherTestCase {
         assertEquals("source:mySource2", result.hits().get(1).getId().stringValue());
         assertEquals("nalle", result.hits().get(0).getQuery().getPresentation().getSummary());
         assertEquals("foo", result.hits().get(0).getQuery().properties().get("customSourceProperty"));
-        assertEquals(null,  result.hits().get(1).getQuery().properties().get("customSourceProperty"));
-        assertEquals(null,  result.hits().get(0).getQuery().properties().get("custom.source.property"));
+        assertNull(result.hits().get(1).getQuery().properties().get("customSourceProperty"));
+        assertNull(result.hits().get(0).getQuery().properties().get("custom.source.property"));
         assertEquals("bar", result.hits().get(1).getQuery().properties().get("custom.source.property"));
         assertEquals(13, result.hits().get(0).getQuery().properties().get("hits"));
         assertEquals(1, result.hits().get(0).getQuery().properties().get("offset"));
@@ -347,12 +351,12 @@ public class FederationSearcherTestCase {
         ComponentId provider1 = new ComponentId("provider1");
         ComponentId provider2 = new ComponentId("provider2");
         ComponentId news = new ComponentId("news");
-        builder.addSearchChain(provider1, options, Collections.<String> emptyList());
-        builder.addSearchChain(provider2, options, Collections.<String> emptyList());
-        builder.addSourceForProvider(news, provider1, provider1, true, options, Collections.<String> emptyList());
-        builder.addSourceForProvider(news, provider2, provider2, false, options, Collections.<String> emptyList());
+        builder.addSearchChain(provider1, options, List.of());
+        builder.addSearchChain(provider2, options, List.of());
+        builder.addSourceForProvider(news, provider1, provider1, true, options, List.of());
+        builder.addSourceForProvider(news, provider2, provider2, false, options, List.of());
 
-        return new FederationSearcher(new ComponentId("federation"), builder.build());
+        return new FederationSearcher(new ComponentId("federation"), builder.build(), executor);
     }
 
     private static class MockProvider extends Searcher {

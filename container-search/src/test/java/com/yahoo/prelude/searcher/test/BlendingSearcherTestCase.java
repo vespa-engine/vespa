@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
@@ -27,6 +29,8 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChain;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -45,7 +49,19 @@ public class BlendingSearcherTestCase {
 
     private static final double delta = 0.00000001;
 
-    public static class BlendingSearcherWrapper extends Searcher {
+    private ExecutorService executor;
+
+    @Before
+    public void setUp() throws Exception {
+        executor = Executors.newFixedThreadPool(16);
+    }
+
+    @After
+    public void tearDown() {
+        assertEquals(0, executor.shutdownNow().size());
+    }
+
+    public class BlendingSearcherWrapper extends Searcher {
 
         private SearchChain blendingChain;
         private final FederationConfig.Builder builder = new FederationConfig.Builder();
@@ -111,7 +127,7 @@ public class BlendingSearcherTestCase {
             StrictContractsConfig contracts = new StrictContractsConfig.Builder().build();
 
             FederationSearcher fedSearcher =
-                    new FederationSearcher(new FederationConfig(builder), contracts, new ComponentRegistry<>());
+                    new FederationSearcher(new FederationConfig(builder), contracts, new ComponentRegistry<>(), executor);
             BlendingSearcher blendingSearcher = new BlendingSearcher(blendingField);
             blendingChain = new SearchChain(ComponentId.createAnonymousComponentId("blendingChain"), blendingSearcher, fedSearcher);
             return true;

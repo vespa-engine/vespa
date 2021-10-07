@@ -1,31 +1,45 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.federation.test;
+package com.yahoo.search.federation;
 
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Tony Vaagenes
  */
 public class HitCountTestCase {
 
+    private ExecutorService executor;
+
+    @Before
+    public void setUp() throws Exception {
+        executor = Executors.newFixedThreadPool(16);
+    }
+
+    @After
+    public void tearDown() {
+        assertEquals(0, executor.shutdownNow().size());
+    }
+
     @Test
     public void require_that_offset_and_hits_are_adjusted_when_federating() {
         final int chain1RelevanceMultiplier = 1;
         final int chain2RelevanceMultiplier = 10;
 
-        FederationTester tester = new FederationTester();
+        FederationTester tester = new FederationTester(executor);
         tester.addSearchChain("chain1", new AddHitsWithRelevanceSearcher("chain1", chain1RelevanceMultiplier));
         tester.addSearchChain("chain2", new AddHitsWithRelevanceSearcher("chain2", chain2RelevanceMultiplier));
 
@@ -47,14 +61,14 @@ public class HitCountTestCase {
         final long chain2TotalHitCount = 7;
         final long chain2DeepHitCount = 11;
 
-        FederationTester tester = new FederationTester();
+        FederationTester tester = new FederationTester(executor);
         tester.addSearchChain("chain1", new SetHitCountsSearcher(chain1TotalHitCount, chain1DeepHitCount));
         tester.addSearchChain("chain2", new SetHitCountsSearcher(chain2TotalHitCount, chain2DeepHitCount));
 
         Result result = tester.searchAndFill();
 
-        assertThat(result.getTotalHitCount(), is(chain1TotalHitCount + chain2TotalHitCount));
-        assertThat(result.getDeepHitCount(), is(chain1DeepHitCount + chain2DeepHitCount));
+        assertEquals(result.getTotalHitCount(), chain1TotalHitCount + chain2TotalHitCount);
+        assertEquals(result.getDeepHitCount(), chain1DeepHitCount + chain2DeepHitCount);
     }
 
     @Test
@@ -65,7 +79,7 @@ public class HitCountTestCase {
         final long chain2TotalHitCount = 11;
         final long chain2DeepHitCount = 15;
 
-        FederationTester tester = new FederationTester();
+        FederationTester tester = new FederationTester(executor);
         tester.addSearchChain("chain1",
                 new SetHitCountsSearcher(chain1TotalHitCount, chain1DeepHitCount));
 
@@ -110,7 +124,7 @@ public class HitCountTestCase {
 
     private void assertAllHitsFrom(String chainName, HitGroup flattenedHits) {
         for (Hit hit : flattenedHits) {
-            assertThat(hit.getId().toString(), startsWith(chainName));
+            assertTrue(hit.getId().toString().startsWith(chainName));
         }
     }
 
