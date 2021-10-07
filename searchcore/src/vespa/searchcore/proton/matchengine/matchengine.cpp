@@ -115,6 +115,9 @@ MatchEngine::search(search::engine::SearchRequest::Source request,
 std::unique_ptr<search::engine::SearchReply>
 MatchEngine::performSearch(search::engine::SearchRequest::Source req)
 {
+    auto my_issues = std::make_unique<search::UniqueIssues>();
+    auto capture_issues = vespalib::Issue::listen(*my_issues);
+
     auto ret = std::make_unique<search::engine::SearchReply>();
 
     const search::engine::SearchRequest * searchRequest = req.get();
@@ -143,6 +146,7 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req)
         _threadBundlePool.release(std::move(threadBundle));
     }
     ret->request = req.release();
+    ret->my_issues = std::move(my_issues);
     ret->setDistributionKey(_distributionKey);
     if ((ret->request->trace().getLevel() > 0) && ret->request->trace().hasTrace()) {
         ret->request->trace().getRoot().setLong("distribution-key", _distributionKey);

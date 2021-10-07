@@ -8,6 +8,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winline"
 
+using ::search::UniqueIssues;
 using Converter = ::search::engine::ProtoConverter;
 
 using SearchRequest = ::search::engine::SearchRequest;
@@ -301,6 +302,20 @@ TEST_F(SearchReplyTest, require_that_slime_trace_is_converted) {
     EXPECT_EQ(proto.slime_trace(), "slime-trace");
 }
 
+TEST_F(SearchReplyTest, require_that_issues_are_converted_to_errors) {
+    reply.my_issues = std::make_unique<UniqueIssues>();
+    reply.my_issues->handle(vespalib::Issue("a"));
+    reply.my_issues->handle(vespalib::Issue("b"));
+    reply.my_issues->handle(vespalib::Issue("c"));
+    reply.my_issues->handle(vespalib::Issue("a"));
+    reply.my_issues->handle(vespalib::Issue("b"));
+    convert();
+    ASSERT_EQ(proto.errors_size(), 3);
+    EXPECT_EQ(proto.errors(0).message(), "a");
+    EXPECT_EQ(proto.errors(1).message(), "b");
+    EXPECT_EQ(proto.errors(2).message(), "c");
+}
+
 //-----------------------------------------------------------------------------
 
 struct DocsumRequestTest : ::testing::Test {
@@ -488,6 +503,20 @@ TEST_F(DocsumReplyTest, require_that_missing_root_slime_gives_empty_payload) {
     reply._root.reset();
     convert();
     EXPECT_EQ(proto.slime_summaries().size(), 0);
+}
+
+TEST_F(DocsumReplyTest, require_that_issues_are_converted_to_errors) {
+    reply.my_issues = std::make_unique<UniqueIssues>();
+    reply.my_issues->handle(vespalib::Issue("a"));
+    reply.my_issues->handle(vespalib::Issue("b"));
+    reply.my_issues->handle(vespalib::Issue("c"));
+    reply.my_issues->handle(vespalib::Issue("a"));
+    reply.my_issues->handle(vespalib::Issue("b"));
+    convert();
+    ASSERT_EQ(proto.errors_size(), 3);
+    EXPECT_EQ(proto.errors(0).message(), "a");
+    EXPECT_EQ(proto.errors(1).message(), "b");
+    EXPECT_EQ(proto.errors(2).message(), "c");
 }
 
 //-----------------------------------------------------------------------------

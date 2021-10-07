@@ -13,8 +13,8 @@ vespa_add_library(searchlib_common OBJECT
     fileheadercontext.cpp
     flush_token.cpp
     geo_location.cpp
-    geo_location_spec.cpp
     geo_location_parser.cpp
+    geo_location_spec.cpp
     growablebitvector.cpp
     indexmetainfo.cpp
     location.cpp
@@ -32,5 +32,6 @@ vespa_add_library(searchlib_common OBJECT
     sortspec.cpp
     threaded_compactable_lid_space.cpp
     tunefileinfo.cpp
+    unique_issues.cpp
     DEPENDS
 )
