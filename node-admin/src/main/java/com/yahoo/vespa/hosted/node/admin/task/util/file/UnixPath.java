@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -251,6 +252,17 @@ public class UnixPath {
     public UnixPath deleteIfExists() {
         uncheck(() -> Files.deleteIfExists(path));
         return this;
+    }
+
+    /** @return false path does not exist, is not a directory, or has at least one entry. */
+    public boolean isEmptyDirectory() {
+        try (var entryStream = Files.list(path)) {
+            return entryStream.findAny().isEmpty();
+        } catch (NotDirectoryException | NoSuchFileException e) {
+            return false;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /** Lists the contents of this as a stream. Callers should use try-with to ensure that the stream is closed */
