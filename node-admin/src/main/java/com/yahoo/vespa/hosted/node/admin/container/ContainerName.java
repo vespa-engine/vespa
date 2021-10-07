@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  */
 public class ContainerName implements Comparable<ContainerName> {
 
-    private static final Pattern LEGAL_CONTAINER_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9-_]+$");
+    private static final Pattern LEGAL_CONTAINER_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
     private final String name;
 
     public ContainerName(final String name) {
