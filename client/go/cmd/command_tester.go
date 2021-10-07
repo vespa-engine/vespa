@@ -7,6 +7,7 @@ package cmd
 import (
 	"bytes"
 	"crypto/tls"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -23,6 +24,7 @@ import (
 type command struct {
 	homeDir  string
 	cacheDir string
+	stdin    io.ReadWriter
 	args     []string
 	moreArgs []string
 }
@@ -56,6 +58,8 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 	os.Setenv("VESPA_CLI_CACHE_DIR", cmd.cacheDir)
 
 	// Reset flags to their default value - persistent flags in Cobra persists over tests
+	// TODO: Due to the bad design of viper, the only proper fix is to get rid of global state by moving each command to
+	// their own sub-package
 	rootCmd.Flags().VisitAll(resetFlag)
 	documentCmd.Flags().VisitAll(resetFlag)
 
@@ -67,6 +71,11 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 	var capturedErr bytes.Buffer
 	stdout = &capturedOut
 	stderr = &capturedErr
+	if cmd.stdin != nil {
+		stdin = cmd.stdin
+	} else {
+		stdin = os.Stdin
+	}
 
 	// Execute command and return output
 	rootCmd.SetArgs(append(cmd.args, cmd.moreArgs...))

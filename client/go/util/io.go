@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -41,11 +42,27 @@ func ReaderToBytes(reader io.Reader) []byte {
 
 // Returns the contents of reader as indented JSON
 func ReaderToJSON(reader io.Reader) string {
-	bodyBytes := ReaderToBytes(reader)
+	bodyBytes, _ := ioutil.ReadAll(reader)
 	var prettyJSON bytes.Buffer
 	parseError := json.Indent(&prettyJSON, bodyBytes, "", "    ")
 	if parseError != nil { // Not JSON: Print plainly
 		return string(bodyBytes)
 	}
 	return prettyJSON.String()
+}
+
+// AtomicWriteFile atomically writes data to filename.
+func AtomicWriteFile(filename string, data []byte) error {
+	tmpFile, err := ioutil.TempFile("", "vespa")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmpFile.Name())
+	if _, err := tmpFile.Write(data); err != nil {
+		return err
+	}
+	if err := tmpFile.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmpFile.Name(), filename)
 }

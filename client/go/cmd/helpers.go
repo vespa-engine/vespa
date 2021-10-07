@@ -30,7 +30,9 @@ func fatalErr(err error, msg ...interface{}) {
 }
 
 func printErrHint(err error, hints ...string) {
-	printErr(nil, err.Error())
+	if err != nil {
+		printErr(nil, err.Error())
+	}
 	for _, hint := range hints {
 		fmt.Fprintln(stderr, color.Cyan("Hint:"), hint)
 	}
@@ -140,9 +142,10 @@ func getService(service string, sessionOrRunID int64) *vespa.Service {
 	return s
 }
 
+func getSystem() string { return os.Getenv("VESPA_CLI_CLOUD_SYSTEM") }
+
 func getConsoleURL() string {
-	system := os.Getenv("VESPA_CLI_CLOUD_SYSTEM")
-	if system == "publiccd" {
+	if getSystem() == "publiccd" {
 		return "https://console-cd.vespa.oath.cloud"
 	}
 	return "https://console.vespa.oath.cloud"
@@ -150,8 +153,7 @@ func getConsoleURL() string {
 }
 
 func getApiURL() string {
-	system := os.Getenv("VESPA_CLI_CLOUD_SYSTEM")
-	if system == "publiccd" {
+	if getSystem() == "publiccd" {
 		return "https://api.vespa-external-cd.aws.oath.cloud:4443"
 	}
 	return "https://api.vespa-external.aws.oath.cloud:4443"
@@ -220,4 +222,23 @@ func waitForService(service string, sessionOrRunID int64) {
 		}
 		fatalErr(err, s.Description(), " at ", color.Cyan(s.BaseURL), " is ", color.Red("not ready"))
 	}
+}
+
+func getDeploymentOpts(cfg *Config, pkg vespa.ApplicationPackage, target vespa.Target) vespa.DeploymentOpts {
+	opts := vespa.DeploymentOpts{ApplicationPackage: pkg, Target: target}
+	if opts.IsCloud() {
+		deployment := deploymentFromArgs()
+		if !opts.ApplicationPackage.HasCertificate() {
+			fatalErrHint(fmt.Errorf("Missing certificate in application package"), "Applications in Vespa Cloud require a certificate", "Try 'vespa cert'")
+			return opts
+		}
+		var err error
+		opts.APIKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
+		if err != nil {
+			fatalErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
+			return opts
+		}
+		opts.Deployment = deployment
+	}
+	return opts
 }

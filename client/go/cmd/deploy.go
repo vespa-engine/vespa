@@ -44,7 +44,10 @@ If application directory is not specified, it defaults to working directory.
 When deploying to Vespa Cloud the system can be overridden by setting the
 environment variable VESPA_CLI_CLOUD_SYSTEM. This is intended for internal use
 only.`,
-	Example:           "$ vespa deploy .",
+	Example: `$ vespa deploy .
+$ vespa deploy -t cloud
+$ vespa deploy -t cloud -z dev.aws-us-east-1c  # -z can be omitted here as this zone is the default
+$ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 	Args:              cobra.MaximumNArgs(1),
 	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -59,20 +62,7 @@ only.`,
 			return
 		}
 		target := getTarget()
-		opts := vespa.DeploymentOpts{ApplicationPackage: pkg, Target: target}
-		if opts.IsCloud() {
-			deployment := deploymentFromArgs()
-			if !opts.ApplicationPackage.HasCertificate() {
-				fatalErrHint(fmt.Errorf("Missing certificate in application package"), "Applications in Vespa Cloud require a certificate", "Try 'vespa cert'")
-				return
-			}
-			opts.APIKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
-			if err != nil {
-				fatalErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
-				return
-			}
-			opts.Deployment = deployment
-		}
+		opts := getDeploymentOpts(cfg, pkg, target)
 		if sessionOrRunID, err := vespa.Deploy(opts); err == nil {
 			if opts.IsCloud() {
 				printSuccess("Triggered deployment of ", color.Cyan(pkg.Path), " with run ID ", color.Cyan(sessionOrRunID))
