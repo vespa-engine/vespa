@@ -13,7 +13,7 @@ import com.yahoo.config.*;
 /**
  * This class represents the root node of allfeatures
  *
- * Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+ * Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
  *  
  * This def file should test most aspects of def files that makes a difference
  * for the generated config classes. The goal is to trigger all blocks of
