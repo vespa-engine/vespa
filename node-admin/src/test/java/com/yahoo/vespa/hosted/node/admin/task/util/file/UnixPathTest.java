@@ -127,6 +127,22 @@ public class UnixPathTest {
     }
 
     @Test
+    public void isEmptyDirectory() {
+        var path = new UnixPath((fs.getPath("/foo")));
+        assertFalse(path.isEmptyDirectory());
+
+        path.writeUtf8File("");
+        assertFalse(path.isEmptyDirectory());
+
+        path.deleteIfExists();
+        path.createDirectory();
+        assertTrue(path.isEmptyDirectory());
+
+        path.resolve("bar").writeUtf8File("");
+        assertFalse(path.isEmptyDirectory());
+    }
+
+    @Test
     public void atomicWrite() {
         var path = new UnixPath(fs.getPath("/dir/foo"));
         path.createParents();
