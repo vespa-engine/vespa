@@ -45,8 +45,6 @@ public interface SyncSession extends Session {
      *
      * @param documentPut the DocumentPut operation
      * @param parameters parameters for the operation
-     *
-     * @param documentPut the DocumentPut operation
      */
     default void put(DocumentPut documentPut, DocumentOperationParameters parameters) {
         put(documentPut);
