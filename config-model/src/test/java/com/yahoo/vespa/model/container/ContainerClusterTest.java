@@ -247,8 +247,8 @@ public class ContainerClusterTest {
         root.freezeModelTopology();
 
         ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
-        assertEquals(-2, threadpoolConfig.maxthreads());
-        assertEquals(-40, threadpoolConfig.queueSize());
+        assertEquals(-100, threadpoolConfig.maxthreads());
+        assertEquals(0, threadpoolConfig.queueSize());
     }
 
     @Test
@@ -278,8 +278,8 @@ public class ContainerClusterTest {
         root.freezeModelTopology();
 
         ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
-        assertEquals(-2, threadpoolConfig.maxthreads());
-        assertEquals(-40, threadpoolConfig.queueSize());
+        assertEquals(-100, threadpoolConfig.maxthreads());
+        assertEquals(0, threadpoolConfig.queueSize());
     }
 
     @Test
