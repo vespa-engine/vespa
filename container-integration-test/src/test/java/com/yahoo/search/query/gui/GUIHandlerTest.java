@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.gui;
 
 import com.yahoo.application.Networking;
@@ -40,7 +40,7 @@ public class GUIHandlerTest {
 
     @Test
     public void testRequest() throws Exception {
-       assertResponse("/querybuilder/", "<!-- Copyright 2018 Yahoo Holdings.","text/html; charset=UTF-8", 200);
+       assertResponse("/querybuilder/", "<!-- Copyright Yahoo.","text/html; charset=UTF-8", 200);
     }
 
     @Test
