@@ -209,7 +209,7 @@ public class AsyncExecution {
      * @return the list of results in the same order as returned from the task
      * collection
      */
-    static List<Result> waitForAll(Collection<FutureResult> tasks, long timeoutMs, Executor executor) {
+    public static List<Result> waitForAll(Collection<FutureResult> tasks, long timeoutMs, Executor executor) {
         // Copy the list in case it is modified while we are waiting
         List<FutureResult> workingTasks = new ArrayList<>(tasks);
         try {

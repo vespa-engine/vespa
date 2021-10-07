@@ -7809,6 +7809,7 @@
       "public com.yahoo.search.searchchain.FutureResult searchAndFill(com.yahoo.search.Query)",
       "public com.yahoo.search.searchchain.FutureResult fill(com.yahoo.search.Result, java.lang.String, java.util.concurrent.Executor)",
       "public com.yahoo.search.searchchain.FutureResult fill(com.yahoo.search.Result, java.lang.String)",
+      "public static java.util.List waitForAll(java.util.Collection, long, java.util.concurrent.Executor)",
       "public static java.util.List waitForAll(java.util.Collection, long)"
     ],
     "fields": []
