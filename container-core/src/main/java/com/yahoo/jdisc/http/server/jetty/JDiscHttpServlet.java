@@ -110,7 +110,7 @@ class JDiscHttpServlet extends HttpServlet {
         try {
             switch (request.getDispatcherType()) {
                 case REQUEST:
-                    new HttpRequestDispatch(context, accessLogEntry, getMetricContext(request), request, response).dispatch();
+                    new HttpRequestDispatch(context, accessLogEntry, getMetricContext(request), request, response).dispatchRequest();
                     break;
                 default:
                     if (log.isLoggable(Level.INFO)) {

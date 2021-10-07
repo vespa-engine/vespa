@@ -126,7 +126,7 @@ class JDiscFilterInvokerFilter implements Filter {
                 throw new RuntimeException("Can't return response from filter asynchronously");
 
             HttpRequestDispatch requestDispatch = createRequestDispatch(httpRequest, httpResponse);
-            return requestDispatch.handleRequestFilterResponse(jdiscResponse);
+            return requestDispatch.dispatchFilterRequest(jdiscResponse);
         };
     }
 
