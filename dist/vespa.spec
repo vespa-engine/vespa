@@ -657,7 +657,6 @@ fi
 %{_prefix}/lib/jars/orchestrator-jar-with-dependencies.jar
 %{_prefix}/lib/jars/predicate-search-jar-with-dependencies.jar
 %{_prefix}/lib/jars/searchlib.jar
-%{_prefix}/lib/jars/searchlib-jar-with-dependencies.jar
 %{_prefix}/lib/jars/service-monitor-jar-with-dependencies.jar
 %{_prefix}/lib/jars/tenant-cd-api-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespa_feed_perf-jar-with-dependencies.jar
