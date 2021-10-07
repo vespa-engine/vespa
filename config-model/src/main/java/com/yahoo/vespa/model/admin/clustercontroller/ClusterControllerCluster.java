@@ -16,6 +16,7 @@ import com.yahoo.vespa.model.container.Container;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -78,17 +79,19 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ClusterCont
 
     @Override
     public void validate() {
-        assert(containerCluster != null);
+        Objects.requireNonNull(containerCluster);
         for (Container c1 : containerCluster.getContainers()) {
             assert(c1 instanceof ClusterControllerContainer);
             for (Service service : c1.getHostResource().getServices()) {
                 if (service instanceof Configserver) {
-                    throw new IllegalArgumentException("Error validating cluster controller cluster: cluster controller '" + c1.getConfigId() + "' is set to run on the same host as a configserver");
+                    throw new IllegalArgumentException("Error validating cluster controller cluster: cluster controller '" +
+                                                       c1.getConfigId() + "' is set to run on the same host as a configserver");
                 }
             }
             for (Container c2 : containerCluster.getContainers()) {
                 if (c1 != c2 && c1.getHostName().equals(c2.getHostName())) {
-                    throw new IllegalArgumentException("Error validating cluster controller cluster: cluster controllers '" + c1.getConfigId() + "' and '" + c2.getConfigId() + "' share the same host");
+                    throw new IllegalArgumentException("Error validating cluster controller cluster: cluster controllers '" +
+                                                       c1.getConfigId() + "' and '" + c2.getConfigId() + "' share the same host");
                 }
             }
         }

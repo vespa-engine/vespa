@@ -182,7 +182,7 @@ public class VespaModelTester {
                                       new SingleNodeProvisioner();
 
         TestProperties properties = new TestProperties()
-                .setMultitenant(true)
+                .setMultitenant(hosted) // Note: system tests are multitenant but not hosted
                 .setHostedVespa(hosted)
                 .setApplicationId(applicationId)
                 .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver);
