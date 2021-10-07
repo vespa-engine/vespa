@@ -22,7 +22,8 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.Callback;
 
 import javax.servlet.AsyncContext;
-import javax.servlet.ServletInputStream;
+import javax.servlet.AsyncEvent;
+import javax.servlet.AsyncListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -32,9 +33,6 @@ import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,16 +51,13 @@ class HttpRequestDispatch {
     private final static String CHARSET_ANNOTATION = ";charset=";
 
     private final JDiscContext jDiscContext;
-    private final AsyncContext async;
     private final Request jettyRequest;
 
     private final ServletResponseController servletResponseController;
     private final RequestHandler requestHandler;
     private final RequestMetricReporter metricReporter;
-    private final BiConsumer<Void, Throwable> completeRequestCallback;
-    private final AtomicBoolean completeRequestCalled = new AtomicBoolean(false);
 
-    public HttpRequestDispatch(JDiscContext jDiscContext,
+    HttpRequestDispatch(JDiscContext jDiscContext,
                                AccessLogEntry accessLogEntry,
                                Context metricContext,
                                HttpServletRequest servletRequest,
@@ -79,45 +74,71 @@ class HttpRequestDispatch {
                                                                        metricReporter,
                                                                        jDiscContext.developerMode());
         shutdownConnectionGracefullyIfThresholdReached(jettyRequest);
-        this.async = servletRequest.startAsync();
-        async.setTimeout(0);
         metricReporter.uriLength(jettyRequest.getOriginalURI().length());
-        completeRequestCallback = this::handleCompleteRequestCallback;
     }
 
-    public void dispatch() throws IOException {
+    void dispatchRequest() {
+        CompletableFuture<Void> requestCompletion = startServletAsyncExecution();
         ServletRequestReader servletRequestReader;
         try {
             servletRequestReader = handleRequest();
-        } catch (Throwable throwable) {
-            servletResponseController.trySendError(throwable);
-            servletResponseController.finishedFuture().whenComplete((result, exception) ->
-                                                                            completeRequestCallback.accept(null, throwable));
+        } catch (Throwable t) {
+            servletResponseController.finishedFuture()
+                    .whenComplete((__, ___) -> requestCompletion.completeExceptionally(t));
+            servletResponseController.fail(t);
             return;
         }
 
+        servletRequestReader.finishedFuture().whenComplete((__, t) -> {
+            if (t != null) servletResponseController.fail(t);
+        });
+        servletResponseController.finishedFuture().whenComplete((__, t) -> {
+            if (t != null) servletRequestReader.fail(t);
+        });
+        CompletableFuture.allOf(servletRequestReader.finishedFuture(), servletResponseController.finishedFuture())
+                .whenComplete((r, t) -> {
+                    if (t != null) requestCompletion.completeExceptionally(t);
+                    else requestCompletion.complete(null);
+                });
+    }
+
+    ContentChannel dispatchFilterRequest(Response response) {
         try {
-            onError(servletRequestReader.finishedFuture, servletResponseController::trySendError);
-            onError(servletResponseController.finishedFuture(), servletRequestReader::onError);
-            CompletableFuture.allOf(servletRequestReader.finishedFuture, servletResponseController.finishedFuture())
-                    .whenComplete(completeRequestCallback);
-        } catch (Throwable throwable) {
-            log.log(Level.WARNING, "Failed registering finished listeners.", throwable);
+
+            CompletableFuture<Void> requestCompletion = startServletAsyncExecution();
+            jettyRequest.getInputStream().close();
+            ContentChannel responseContentChannel = servletResponseController.responseHandler().handleResponse(response);
+            servletResponseController.finishedFuture()
+                    .whenComplete((r, t) -> {
+                        if (t != null) requestCompletion.completeExceptionally(t);
+                        else requestCompletion.complete(null);
+                    });
+            return responseContentChannel;
+        } catch (IOException e) {
+            throw throwUnchecked(e);
         }
     }
 
+    private CompletableFuture<Void> startServletAsyncExecution() {
+        CompletableFuture<Void> requestCompletion = new CompletableFuture<>();
+        AsyncContext asyncCtx = jettyRequest.startAsync();
+        asyncCtx.setTimeout(0);
+        asyncCtx.addListener(new AsyncListener() {
+            @Override public void onStartAsync(AsyncEvent event) {}
+            @Override public void onComplete(AsyncEvent event) { requestCompletion.complete(null); }
+            @Override public void onTimeout(AsyncEvent event) {
+                requestCompletion.completeExceptionally(new TimeoutException("Timeout from AsyncContext"));
+            }
+            @Override public void onError(AsyncEvent event) {
+                requestCompletion.completeExceptionally(event.getThrowable());
+            }
+        });
+        requestCompletion.whenComplete((__, t) -> onRequestFinished(asyncCtx, t));
+        return requestCompletion;
+    }
 
-    private void handleCompleteRequestCallback(Void result, Throwable error)
-    {
-        boolean alreadyCalled = completeRequestCalled.getAndSet(true);
-        if (alreadyCalled) {
-            AssertionError e = new AssertionError("completeRequest called more than once");
-            log.log(Level.WARNING, "Assertion failed.", e);
-            throw e;
-        }
-
+    private void onRequestFinished(AsyncContext asyncCtx, Throwable error) {
         boolean reportedError = false;
-
         if (error != null) {
             if (isErrorOfType(error, EofException.class, IOException.class)) {
                 log.log(Level.FINE,
@@ -138,7 +159,7 @@ class HttpRequestDispatch {
         }
 
         try {
-            async.complete();
+            asyncCtx.complete();
             log.finest(() -> "Request completed successfully: " + jettyRequest.getRequestURI());
         } catch (Throwable throwable) {
             Level level = reportedError ? Level.FINE: Level.WARNING;
@@ -190,46 +211,16 @@ class HttpRequestDispatch {
     private ServletRequestReader handleRequest() throws IOException {
         HttpRequest jdiscRequest = HttpRequestFactory.newJDiscRequest(jDiscContext.container, jettyRequest);
         ContentChannel requestContentChannel;
-
         try (ResourceReference ref = References.fromResource(jdiscRequest)) {
             HttpRequestFactory.copyHeaders(jettyRequest, jdiscRequest);
-            requestContentChannel = requestHandler.handleRequest(jdiscRequest, servletResponseController.responseHandler);
+            requestContentChannel = requestHandler.handleRequest(jdiscRequest, servletResponseController.responseHandler());
         }
-
-        //TODO If the below method throws requestContentChannel will not be close and there is a reference leak
-        ServletInputStream servletInputStream = jettyRequest.getInputStream();
-
-        ServletRequestReader servletRequestReader = new ServletRequestReader(servletInputStream,
-                                                                             requestContentChannel,
-                                                                             jDiscContext.janitor,
-                                                                             metricReporter);
-
         //TODO If the below method throws servletRequestReader will not complete and
         // requestContentChannel will not be closed and there is a reference leak
         // Ditto for the servletInputStream
-        servletInputStream.setReadListener(servletRequestReader);
-        return servletRequestReader;
+        return new ServletRequestReader(
+                jettyRequest.getInputStream(), requestContentChannel, jDiscContext.janitor, metricReporter);
     }
-
-    private static void onError(CompletableFuture<?> future, Consumer<Throwable> errorHandler) {
-        future.whenComplete((result, exception) -> {
-            if (exception != null) {
-                errorHandler.accept(exception);
-            }
-        });
-    }
-
-    ContentChannel handleRequestFilterResponse(Response response) {
-        try {
-            jettyRequest.getInputStream().close();
-            ContentChannel responseContentChannel = servletResponseController.responseHandler.handleResponse(response);
-            servletResponseController.finishedFuture().whenComplete(completeRequestCallback);
-            return responseContentChannel;
-        } catch (IOException e) {
-            throw throwUnchecked(e);
-        }
-    }
-
 
     private static RequestHandler newRequestHandler(JDiscContext context,
                                                     AccessLogEntry accessLogEntry,
