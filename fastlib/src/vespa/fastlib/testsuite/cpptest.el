@@ -1,4 +1,4 @@
-;; Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+;; Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 ;; cpptest.el --- C++ unit test support for c++-mode
 
 ;; $Revision: 1.179 $ $Date: 2004-02-17 17:01:15 $

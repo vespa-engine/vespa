@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
  * An interface to implement for a calculator calcuting ideal state. It should
  * be easy to wrap this calculator in a cache. Thus options that seldom change,

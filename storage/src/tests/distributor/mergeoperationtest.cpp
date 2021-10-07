@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <tests/common/dummystoragelink.h>
 #include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_bucket_space.h>

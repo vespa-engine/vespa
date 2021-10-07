@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #============================================================================
 # @version  $Id: expand-config.pl,v 1.1 2006-07-26 15:52:43 gv Exp $
