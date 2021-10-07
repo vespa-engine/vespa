@@ -58,7 +58,7 @@ public class CoredumpHandlerTest {
     @SuppressWarnings("unchecked")
     private final Supplier<String> coredumpIdSupplier = mock(Supplier.class);
     private final CoredumpHandler coredumpHandler = new CoredumpHandler(terminal, coreCollector, coredumpReporter,
-            crashPathInContainer, doneCoredumpsPath, "users", metrics, clock, coredumpIdSupplier);
+            crashPathInContainer, doneCoredumpsPath, 100, metrics, clock, coredumpIdSupplier);
 
 
     @Test
