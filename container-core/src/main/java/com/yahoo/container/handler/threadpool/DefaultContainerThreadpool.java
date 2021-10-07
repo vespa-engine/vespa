@@ -56,7 +56,7 @@ public class DefaultContainerThreadpool extends AbstractComponent implements Aut
                         threadPoolMetric);
         // Prestart needed, if not all threads will be created by the fist N tasks and hence they might also
         // get the dreaded thread locals initialized even if they will never run.
-        // That counters what we we want to achieve with the Q that will prefer thread locality.
+        // That counters what we want to achieve with the Q that will prefer thread locality.
         executor.prestartAllCoreThreads();
         threadpool = new ExecutorServiceWrapper(
                 executor, threadPoolMetric, processTerminator, config.maxThreadExecutionTimeSeconds() * 1000L,

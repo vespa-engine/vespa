@@ -306,7 +306,7 @@ public class ClusterSearcher extends Searcher {
         }
     }
 
-    private void processResult(Query query, FutureTask<Result> task, Result mergedResult) {
+    private static void processResult(Query query, FutureTask<Result> task, Result mergedResult) {
         try {
             Result result = task.get();
             mergedResult.mergeWith(result);

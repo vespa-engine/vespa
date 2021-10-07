@@ -100,13 +100,21 @@ public class AsyncExecution {
 
     private static <T> Future<T> getFuture(final Callable<T> callable) {
         FutureTask<T> future = new FutureTask<>(callable);
-        executorMain.execute(future);
+        try {
+            executorMain.execute(future);
+        } catch (RejectedExecutionException e) {
+            future.run();
+        }
         return future;
     }
 
     private FutureResponse getFutureResponse(Callable<Response> callable, Request request) {
         FutureResponse future = new FutureResponse(callable, execution, request);
-        executorMain.execute(future.delegate());
+        try {
+            executorMain.execute(future.delegate());
+        } catch (RejectedExecutionException e) {
+            future.delegate().run();
+        }
         return future;
     }
 
