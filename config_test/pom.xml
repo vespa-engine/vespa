@@ -48,6 +48,8 @@
   </build>
   <properties>
     <maven.deploy.skip>true</maven.deploy.skip>
+    <maven.javadoc.skip>true</maven.javadoc.skip>
+    <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 </project>
