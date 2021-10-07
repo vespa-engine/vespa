@@ -68,12 +68,14 @@ class ServletResponseController {
     }
 
     void fail(Throwable t) {
-        try {
-            trySendError(t);
-        } catch (Throwable suppressed) {
-            t.addSuppressed(suppressed);
-        } finally {
-            out.close();
+        synchronized (monitor) {
+            try {
+                trySendError(t);
+            } catch (Throwable suppressed) {
+                t.addSuppressed(suppressed);
+            } finally {
+                out.close();
+            }
         }
     }
 
@@ -88,35 +90,33 @@ class ServletResponseController {
     ResponseHandler responseHandler() { return responseHandler; }
 
     private void trySendError(Throwable t) {
-        synchronized (monitor) {
-            if (!responseCommitted) {
-                responseCommitted = true;
-                servletResponse.setHeader(HttpHeaders.Names.EXPIRES, null);
-                servletResponse.setHeader(HttpHeaders.Names.LAST_MODIFIED, null);
-                servletResponse.setHeader(HttpHeaders.Names.CACHE_CONTROL, null);
-                servletResponse.setHeader(HttpHeaders.Names.CONTENT_TYPE, null);
-                servletResponse.setHeader(HttpHeaders.Names.CONTENT_LENGTH, null);
-                String reasonPhrase = getReasonPhrase(t, developerMode);
-                int statusCode = getStatusCode(t);
-                setStatus(servletResponse, statusCode, reasonPhrase);
-                // If we are allowed to have a body
-                if (statusCode != HttpServletResponse.SC_NO_CONTENT &&
-                        statusCode != HttpServletResponse.SC_NOT_MODIFIED &&
-                        statusCode != HttpServletResponse.SC_PARTIAL_CONTENT &&
-                        statusCode >= HttpServletResponse.SC_OK) {
-                    servletResponse.setHeader(HttpHeaders.Names.CACHE_CONTROL, "must-revalidate,no-cache,no-store");
-                    servletResponse.setContentType(MimeTypes.Type.TEXT_HTML_8859_1.toString());
-                    byte[] errorContent = errorResponseContentCreator
-                            .createErrorContent(servletRequest.getRequestURI(), statusCode, reasonPhrase);
-                    servletResponse.setContentLength(errorContent.length);
-                    out.writeBuffer(ByteBuffer.wrap(errorContent), NOOP_COMPLETION_HANDLER);
-                } else {
-                    servletResponse.setContentLength(0);
-                }
+        if (!responseCommitted) {
+            responseCommitted = true;
+            servletResponse.setHeader(HttpHeaders.Names.EXPIRES, null);
+            servletResponse.setHeader(HttpHeaders.Names.LAST_MODIFIED, null);
+            servletResponse.setHeader(HttpHeaders.Names.CACHE_CONTROL, null);
+            servletResponse.setHeader(HttpHeaders.Names.CONTENT_TYPE, null);
+            servletResponse.setHeader(HttpHeaders.Names.CONTENT_LENGTH, null);
+            String reasonPhrase = getReasonPhrase(t, developerMode);
+            int statusCode = getStatusCode(t);
+            setStatus(servletResponse, statusCode, reasonPhrase);
+            // If we are allowed to have a body
+            if (statusCode != HttpServletResponse.SC_NO_CONTENT &&
+                    statusCode != HttpServletResponse.SC_NOT_MODIFIED &&
+                    statusCode != HttpServletResponse.SC_PARTIAL_CONTENT &&
+                    statusCode >= HttpServletResponse.SC_OK) {
+                servletResponse.setHeader(HttpHeaders.Names.CACHE_CONTROL, "must-revalidate,no-cache,no-store");
+                servletResponse.setContentType(MimeTypes.Type.TEXT_HTML_8859_1.toString());
+                byte[] errorContent = errorResponseContentCreator
+                        .createErrorContent(servletRequest.getRequestURI(), statusCode, reasonPhrase);
+                servletResponse.setContentLength(errorContent.length);
+                out.writeBuffer(ByteBuffer.wrap(errorContent), NOOP_COMPLETION_HANDLER);
             } else {
-                RuntimeException exceptionWithStackTrace = new RuntimeException(t);
-                log.log(Level.FINE, "Response already committed, can't change response code", exceptionWithStackTrace);
+                servletResponse.setContentLength(0);
             }
+        } else {
+            RuntimeException exceptionWithStackTrace = new RuntimeException(t);
+            log.log(Level.FINE, "Response already committed, can't change response code", exceptionWithStackTrace);
         }
     }
 
