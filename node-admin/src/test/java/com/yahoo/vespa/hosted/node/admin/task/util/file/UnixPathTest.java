@@ -63,11 +63,11 @@ public class UnixPathTest {
         UnixPath unixPath = new UnixPath(path);
         unixPath.writeUtf8File("foo");
 
-        unixPath.setOwner("owner");
-        assertEquals("owner", unixPath.getOwner());
+        unixPath.setOwnerId(123);
+        assertEquals(123, unixPath.getOwnerId());
 
-        unixPath.setGroup("group");
-        assertEquals("group", unixPath.getGroup());
+        unixPath.setGroupId(456);
+        assertEquals(456, unixPath.getGroupId());
     }
 
     @Test

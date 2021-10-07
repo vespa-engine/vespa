@@ -43,13 +43,13 @@ public class FileWriter {
 
     public Path path() { return path; }
 
-    public FileWriter withOwner(String owner) {
-        fileDataBuilder.withOwner(owner);
+    public FileWriter withOwnerId(int ownerId) {
+        fileDataBuilder.withOwnerId(ownerId);
         return this;
     }
 
-    public FileWriter withGroup(String group) {
-        fileDataBuilder.withGroup(group);
+    public FileWriter withGroupId(int groupId) {
+        fileDataBuilder.withGroupId(groupId);
         return this;
     }
 
