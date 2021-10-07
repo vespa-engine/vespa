@@ -162,8 +162,7 @@ public class JRTConfigRequester implements RequestWaiter {
     private void handleFailedRequest(JRTClientConfigRequest jrtReq, JRTConfigSubscription<ConfigInstance> sub, Connection connection) {
         logError(jrtReq, connection);
 
-        // The subscription object has an "old" config, which is all we have to offer back now
-        log.log(INFO, "Failure of config subscription tp " + connection.getAddress() +
+        log.log(INFO, "Failure of config subscription to " + connection.getAddress() +
                 ", clients will keep existing config until resolved: " + sub);
         connectionPool.setError(connection, jrtReq.errorCode());
         failures++;
@@ -194,12 +193,7 @@ public class JRTConfigRequester implements RequestWaiter {
         sub.setLastCallBackOKTS(Instant.now());
         log.log(FINE, () -> "OK response received in handleOkRequest: " + jrtReq);
         if (jrtReq.hasUpdatedGeneration()) {
-            // We only want this latest generation to be in the queue, we do not preserve history in this system
-            sub.getReqQueue().clear();
-            boolean putOK = sub.getReqQueue().offer(jrtReq);
-            if (!putOK) {
-                sub.setException(new ConfigurationRuntimeException("Could not put returned request on queue of subscription " + sub));
-            }
+            sub.updateConfig(jrtReq);
         }
         scheduleNextRequest(jrtReq, sub, calculateSuccessDelay(), calculateSuccessTimeout());
     }
