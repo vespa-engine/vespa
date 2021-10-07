@@ -90,7 +90,7 @@ public class Transport {
     boolean getTcpNoDelay() { return tcpNoDelay; }
     int getEventsBeforeWakeup() { return eventsBeforeWakeup; }
 
-    String getName() { return name; }
+    public String getName() { return name; }
 
     /**
      * Use the underlying CryptoEngine to create a CryptoSocket for
