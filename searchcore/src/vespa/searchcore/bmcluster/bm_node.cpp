@@ -320,6 +320,7 @@ struct StorageConfigSet
           messagebus()
     {
         stor_distribution = distribution.get_distribution_config();
+        stor_server.disableQueueLimitsForChainedMerges = params.get_disable_queue_limits_for_chained_merges();
         stor_server.nodeIndex = node_idx;
         stor_server.isDistributor = distributor;
         stor_server.contentNodeBucketDbStripeBits = params.get_bucket_db_stripe_bits();
