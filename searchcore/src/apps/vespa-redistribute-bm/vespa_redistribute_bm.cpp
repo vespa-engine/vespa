@@ -475,6 +475,7 @@ App::usage()
         "[--documents documents]\n"
         "[--flip-nodes flip-nodes]\n"
         "[--groups groups]\n"
+        "[--ignore-merge-queue-limit]\n"
         "[--indexing-sequencer [latency,throughput,adaptive]]\n"
         "[--max-merges-per-node max-merges-per-node]\n"
         "[--max-merge-queue-size max-merge-queue-size]\n"
@@ -509,6 +510,7 @@ App::get_options()
         { "documents", 1, nullptr, 0 },
         { "flip-nodes", 1, nullptr, 0 },
         { "groups", 1, nullptr, 0 },
+        { "ignore-merge-queue-limit", 0, nullptr, 0 },
         { "indexing-sequencer", 1, nullptr, 0 },
         { "max-merges-per-node", 1, nullptr, 0 },
         { "max-merge-queue-size", 1, nullptr, 0 },
@@ -537,6 +539,7 @@ App::get_options()
         LONGOPT_DOCUMENTS,
         LONGOPT_FLIP_NODES,
         LONGOPT_GROUPS,
+        LONGOPT_IGNORE_MERGE_QUEUE_LIMIT,
         LONGOPT_INDEXING_SEQUENCER,
         LONGOPT_MAX_MERGES_PER_NODE,
         LONGOPT_MAX_MERGE_QUEUE_SIZE,
@@ -586,6 +589,9 @@ App::get_options()
                 break;
             case LONGOPT_GROUPS:
                 _bm_params.set_groups(atoi(opt_argument));
+                break;
+            case LONGOPT_IGNORE_MERGE_QUEUE_LIMIT:
+                _bm_params.set_disable_queue_limits_for_chained_merges(true);
                 break;
             case LONGOPT_INDEXING_SEQUENCER:
                 _bm_params.set_indexing_sequencer(opt_argument);
