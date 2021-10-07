@@ -4,6 +4,7 @@ package com.yahoo.prelude.cluster;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.ClustersStatus;
@@ -263,9 +264,10 @@ public class ClusterSearcherTestCase {
 
     private Execution createExecution(List<String> docTypesList, boolean expectAttributePrefetch) {
         Set<String> documentTypes = new LinkedHashSet<>(docTypesList);
-        ClusterSearcher cluster = new ClusterSearcher(documentTypes);
+        ClusterSearcher cluster = new ClusterSearcher(documentTypes,
+                                                      new MyMockSearcher(expectAttributePrefetch),
+                                                      new InThreadExecutorService());
         try {
-            cluster.addBackendSearcher(new MyMockSearcher(expectAttributePrefetch));
             cluster.setValidRankProfile("default", documentTypes);
             cluster.addValidRankProfile("testprofile", "type1");
             return new Execution(cluster, Execution.Context.createContextStub());
@@ -523,6 +525,7 @@ public class ClusterSearcherTestCase {
         dispatchers.register(new ComponentId("dispatcher." + clusterName), dispatcher);
 
         return new ClusterSearcher(new ComponentId("test-id"),
+                                   new InThreadExecutorService(),
                                    qrSearchersConfig.build(),
                                    clusterConfig.build(),
                                    documentDbConfig.build(),
