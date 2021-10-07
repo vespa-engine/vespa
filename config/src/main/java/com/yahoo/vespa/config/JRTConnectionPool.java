@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
@@ -18,7 +18,6 @@ import java.util.logging.Logger;
  * The current connection is chosen randomly when calling {#link {@link #switchConnection()}}
  * (it will continue to use the same connection if there is only one source).
  * The current connection is available with {@link #getCurrent()}.
- * When calling {@link #setError(Connection, int)}, {@link #switchConnection()} will always be called.
  *
  * @author Gunnar Gauslaa Bergem
  * @author hmusum
@@ -113,11 +112,6 @@ public class JRTConnectionPool implements ConnectionPool {
 
     ConfigSourceSet getSourceSet() {
         return sourceSet;
-    }
-
-    @Override
-    public void setError(Connection connection, int errorCode) {
-        switchConnection(connection);
     }
 
     public JRTConnectionPool updateSources(List<String> addresses) {
