@@ -22,13 +22,13 @@ public enum JobType {
 //     | enum name ------------| job name ------------------| Zone in main system ---------------------------------------| Zone in CD system -------------------------------------------
     systemTest             ("system-test",
                             Map.of(main    , ZoneId.from("test", "us-east-1"),
-                                   cd      , ZoneId.from("test", "cd-us-central-1"),
+                                   cd      , ZoneId.from("test", "cd-us-west-1"),
                                    PublicCd, ZoneId.from("test", "aws-us-east-1c"),
                                    Public  , ZoneId.from("test", "aws-us-east-1c"))),
 
     stagingTest            ("staging-test",
                             Map.of(main    , ZoneId.from("staging", "us-east-3"),
-                                   cd      , ZoneId.from("staging", "cd-us-central-1"),
+                                   cd      , ZoneId.from("staging", "cd-us-west-1"),
                                    PublicCd, ZoneId.from("staging", "aws-us-east-1c"),
                                    Public  , ZoneId.from("staging", "aws-us-east-1c"))),
 
