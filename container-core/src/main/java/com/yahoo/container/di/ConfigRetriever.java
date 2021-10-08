@@ -66,13 +66,13 @@ public final class ConfigRetriever {
             throw new IllegalArgumentException(
                     "Component config keys [" + componentConfigKeys + "] overlaps with bootstrap config keys [" + bootstrapKeys + "]");
         }
-        log.log(FINE, () -> "getConfigsOnce: " + componentConfigKeys);
-
         Set<ConfigKey<? extends ConfigInstance>> allKeys = new HashSet<>(componentConfigKeys);
         allKeys.addAll(bootstrapKeys);
         setupComponentSubscriber(allKeys);
 
-        return getConfigsOptional(leastGeneration, isInitializing);
+        var maybeSnapshot = getConfigsOptional(leastGeneration, isInitializing);
+        log.log(FINE, () -> "getConfigsOnce returning " + maybeSnapshot);
+        return maybeSnapshot;
     }
 
     private Optional<ConfigSnapshot> getConfigsOptional(long leastGeneration, boolean isInitializing) {
@@ -132,10 +132,11 @@ public final class ConfigRetriever {
     private void setupComponentSubscriber(Set<ConfigKey<? extends ConfigInstance>> keys) {
         if (! componentSubscriberKeys.equals(keys)) {
             componentSubscriber.close();
+            log.log(FINE, () -> "Closed " + componentSubscriber);
             componentSubscriberKeys = keys;
             try {
-                log.log(FINE, () -> "Setting up new component subscriber for keys: " + keys);
                 componentSubscriber = subscriberFactory.getSubscriber(keys, "component_" + ++componentSubscriberIndex);
+                log.log(FINE, () -> "Set up new subscriber " + componentSubscriber + " for keys: " + keys);
             } catch (Throwable e) {
                 log.log(Level.WARNING, "Failed setting up subscriptions for component configs: " + e.getMessage());
                 log.log(Level.WARNING, "Config keys: " + keys);
