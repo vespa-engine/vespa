@@ -27,7 +27,7 @@ public class SharedSourceSession extends AbstractResource implements ClientSessi
             throw new IllegalArgumentException("Reply handler must be null.");
         }
         this.session = mbus.messageBus().createSourceSession(params.setReplyHandler(this));
-        this.mbusReference = mbus.refer();
+        this.mbusReference = mbus.refer(this);
     }
 
     public SourceSession session() {

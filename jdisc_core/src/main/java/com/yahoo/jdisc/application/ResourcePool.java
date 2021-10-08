@@ -151,7 +151,7 @@ public final class ResourcePool extends AbstractResource implements AutoCloseabl
      * @return The parameter <code>t</code>, to allow inlined calls to this function.
      */
     public <T extends SharedResource> T retain(T t) {
-        resources.add(t.refer());
+        resources.add(t.refer(this));
         return t;
     }
 

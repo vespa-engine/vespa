@@ -29,7 +29,7 @@ public class SharedDestinationSession extends AbstractResource implements Messag
     SharedDestinationSession(SharedMessageBus mbus, DestinationSessionParams params) {
         this.msgHandler.set(params.getMessageHandler());
         this.session = mbus.messageBus().createDetachedDestinationSession(params.setMessageHandler(this));
-        this.mbusReference = mbus.refer();
+        this.mbusReference = mbus.refer(this);
     }
 
     public DestinationSession session() {

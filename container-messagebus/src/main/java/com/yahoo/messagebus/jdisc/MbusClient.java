@@ -41,7 +41,7 @@ public final class MbusClient extends AbstractResource implements ClientProvider
     @Inject
     public MbusClient(ClientSession session) {
         this.session = session;
-        this.sessionReference = session.refer();
+        this.sessionReference = session.refer(this);
         thread = new Thread(new SenderTask(), "mbus-client-" + threadId.getAndIncrement());
     }
 

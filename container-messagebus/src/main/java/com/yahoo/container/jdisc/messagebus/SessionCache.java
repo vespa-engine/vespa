@@ -177,7 +177,7 @@ public final class SessionCache extends AbstractComponent {
                     sessionReference = References.fromResource(session);
                 } else {
                     try {
-                        sessionReference = session.refer();
+                        sessionReference = session.refer(this);
                         logReuse(session);
                     } catch (final IllegalStateException e) {
                         session = createAndStore(registry, p, key);
