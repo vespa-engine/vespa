@@ -132,7 +132,7 @@ Bouncer::rejectCommandWithTooHighClockSkew(api::StorageMessage& msg,
     auto& as_cmd = dynamic_cast<api::StorageCommand&>(msg);
     std::ostringstream ost;
     ost << "Message " << msg.getType() << " is more than "
-        << maxClockSkewInSeconds << " seconds in the future";
+        << maxClockSkewInSeconds << " seconds in the future, set up NTP.";
     append_node_identity(ost);
     LOGBP(warning, "Rejecting operation from distributor %u: %s",
           as_cmd.getSourceIndex(), ost.str().c_str());
