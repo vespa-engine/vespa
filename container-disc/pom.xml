@@ -49,6 +49,12 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>security-utils</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
     </dependency>
@@ -71,6 +77,10 @@
         <exclusion>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>config</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
