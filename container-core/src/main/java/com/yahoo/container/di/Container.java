@@ -62,7 +62,7 @@ public class Container {
         platformBundlesConfigKey = new ConfigKey<>(PlatformBundlesConfig.class, configId);
         componentsConfigKey = new ConfigKey<>(ComponentsConfig.class, configId);
         var bootstrapKeys = Set.of(applicationBundlesConfigKey, platformBundlesConfigKey, componentsConfigKey);
-        this.configurer = new ConfigRetriever(bootstrapKeys, subscriberFactory::getSubscriber);
+        this.configurer = new ConfigRetriever(bootstrapKeys, subscriberFactory);
     }
 
     public Container(SubscriberFactory subscriberFactory, String configId, ComponentDeconstructor componentDeconstructor) {

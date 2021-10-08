@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.container.di.componentgraph.core.Keys;
 import com.yahoo.container.di.config.Subscriber;
+import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.util.Collections;
@@ -31,18 +32,17 @@ public final class ConfigRetriever {
     private Set<ConfigKey<? extends ConfigInstance>> componentSubscriberKeys;
     private final Subscriber bootstrapSubscriber;
     private Subscriber componentSubscriber;
-    private final Function<Set<ConfigKey<? extends ConfigInstance>>, Subscriber> subscribe;
+    private final SubscriberFactory subscriberFactory;
 
-    public ConfigRetriever(Set<ConfigKey<? extends ConfigInstance>> bootstrapKeys,
-                           Function<Set<ConfigKey<? extends ConfigInstance>>, Subscriber> subscribe) {
+    public ConfigRetriever(Set<ConfigKey<? extends ConfigInstance>> bootstrapKeys, SubscriberFactory subscriberFactory) {
         this.bootstrapKeys = bootstrapKeys;
         this.componentSubscriberKeys = new HashSet<>();
-        this.subscribe = subscribe;
+        this.subscriberFactory = subscriberFactory;
         if (bootstrapKeys.isEmpty()) {
             throw new IllegalArgumentException("Bootstrap key set is empty");
         }
-        this.bootstrapSubscriber = subscribe.apply(bootstrapKeys);
-        this.componentSubscriber = subscribe.apply(componentSubscriberKeys);
+        this.bootstrapSubscriber = this.subscriberFactory.getSubscriber(bootstrapKeys);
+        this.componentSubscriber = this.subscriberFactory.getSubscriber(componentSubscriberKeys);
     }
 
     public ConfigSnapshot getConfigs(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
@@ -133,7 +133,7 @@ public final class ConfigRetriever {
             componentSubscriberKeys = keys;
             try {
                 log.log(FINE, () -> "Setting up new component subscriber for keys: " + keys);
-                componentSubscriber = subscribe.apply(keys);
+                componentSubscriber = subscriberFactory.getSubscriber(keys);
             } catch (Throwable e) {
                 log.log(Level.WARNING, "Failed setting up subscriptions for component configs: " + e.getMessage());
                 log.log(Level.WARNING, "Config keys: " + keys);
