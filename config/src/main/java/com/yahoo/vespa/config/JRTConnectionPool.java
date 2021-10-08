@@ -148,9 +148,4 @@ public class JRTConnectionPool implements ConnectionPool {
         }
     }
 
-    @Override
-    public Supervisor getSupervisor() {
-        return supervisor;
-    }
-
 }

@@ -4,7 +4,10 @@ package com.yahoo.vespa.config.server.maintenance;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.ConnectionPool;
+import com.yahoo.config.subscription.ConfigSourceSet;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
+import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
@@ -19,8 +22,8 @@ import java.io.File;
 import java.time.Duration;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.createConnectionPool;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
+import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
 
 /**
  * Verifies that all active sessions has an application package on local disk.
@@ -33,8 +36,10 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     private static final Logger log = Logger.getLogger(ApplicationPackageMaintainer.class.getName());
 
     private final ApplicationRepository applicationRepository;
-    private final ConnectionPool connectionPool;
     private final File downloadDirectory;
+    private final ConfigserverConfig configserverConfig;
+    private final Supervisor supervisor;
+
 
     ApplicationPackageMaintainer(ApplicationRepository applicationRepository,
                                  Curator curator,
@@ -42,9 +47,8 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                                  FlagSource flagSource) {
         super(applicationRepository, curator, flagSource, applicationRepository.clock().instant(), interval);
         this.applicationRepository = applicationRepository;
-        ConfigserverConfig configserverConfig = applicationRepository.configserverConfig();
-        connectionPool = createConnectionPool(configserverConfig);
-
+        this.configserverConfig = applicationRepository.configserverConfig();
+        this.supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
         downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
     }
 
@@ -53,7 +57,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         int attempts = 0;
         int failures = 0;
 
-        try (var fileDownloader = new FileDownloader(connectionPool, downloadDirectory, new Downloads())) {
+        try (var fileDownloader = createFileDownloader()) {
             for (var applicationId : applicationRepository.listApplications()) {
                 log.fine(() -> "Verifying application package for " + applicationId);
                 Session session = applicationRepository.getActiveSession(applicationId);
@@ -81,9 +85,16 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         return asSuccessFactor(attempts, failures);
     }
 
+    private FileDownloader createFileDownloader() {
+        return new FileDownloader(new JRTConnectionPool(new ConfigSourceSet(getOtherConfigServersInCluster(configserverConfig)), supervisor),
+                                  supervisor,
+                                  downloadDirectory,
+                                  new Downloads());
+    }
+
     @Override
     public void awaitShutdown() {
-        connectionPool.close();
+        supervisor.transport().shutdown().join();
         super.awaitShutdown();
     }
 
