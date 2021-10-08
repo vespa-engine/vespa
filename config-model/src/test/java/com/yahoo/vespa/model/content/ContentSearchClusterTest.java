@@ -259,4 +259,25 @@ public class ContentSearchClusterTest {
         assertTrue(getTlsConfig(createCluster(new ContentClusterBuilder().syncTransactionLog(true).getXml())).usefsync());
         assertFalse(getTlsConfig(createCluster(new ContentClusterBuilder().syncTransactionLog(false).getXml())).usefsync());
     }
+
+    @Test
+    public void verifyControlOfDocStoreCompression() throws Exception {
+        assertEquals(9, getProtonConfig(createCluster(new ContentClusterBuilder().getXml())).summary().log().chunk().compression().level());
+        assertEquals(3, getProtonConfig(createCluster(new ContentClusterBuilder().getXml(),
+                new DeployState.Builder().properties(new TestProperties().docstoreCompressionLevel(3))
+                )).summary().log().chunk().compression().level());
+    }
+
+    @Test
+    public void verifyControlOfDiskBloatFactor() throws Exception {
+        var defaultCfg = getProtonConfig(createCluster(new ContentClusterBuilder().getXml()));
+        assertEquals(0.2, defaultCfg.flush().memory().diskbloatfactor(), EPSILON);
+        assertEquals(0.2, defaultCfg.flush().memory().each().diskbloatfactor(), EPSILON);
+
+        var controlledCfg = getProtonConfig(createCluster(new ContentClusterBuilder().getXml(),
+                new DeployState.Builder().properties(new TestProperties().diskBloatFactor(0.31))
+        ));
+        assertEquals(0.31, controlledCfg.flush().memory().diskbloatfactor(), EPSILON);
+        assertEquals(0.31, controlledCfg.flush().memory().each().diskbloatfactor(), EPSILON);
+    }
 }

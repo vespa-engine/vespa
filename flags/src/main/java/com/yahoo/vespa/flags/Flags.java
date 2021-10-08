@@ -128,6 +128,20 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundDoubleFlag DISK_BLOAT_FACTOR = defineDoubleFlag(
+            "disk-bloat-factor", 0.2,
+            List.of("baldersheim"), "2021-10-08", "2022-01-01",
+            "Amount of bloat allowed before compacting file",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundIntFlag DOCSTORE_COMPRESSION_LEVEL = defineIntFlag(
+            "docstore-compression-level", 9,
+            List.of("baldersheim"), "2021-10-08", "2022-01-01",
+            "Default compression level used for document store",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundIntFlag NUM_DEPLOY_HELPER_THREADS = defineIntFlag(
             "num-model-builder-threads", -1,
             List.of("balder"), "2021-09-09", "2021-11-01",

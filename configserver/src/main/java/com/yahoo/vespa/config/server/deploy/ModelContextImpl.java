@@ -192,6 +192,8 @@ public class ModelContextImpl implements ModelContext {
         private final double containerShutdownTimeout;
         private final int maxConnectionLifeInHosted;
         private final int distributorMergeBusyWait;
+        private final int docstoreCompressionLevel;
+        private final double diskBloatFactor;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -222,6 +224,8 @@ public class ModelContextImpl implements ModelContext {
             this.containerShutdownTimeout = flagValue(source, appId,Flags.CONTAINER_SHUTDOWN_TIMEOUT);
             this.maxConnectionLifeInHosted = flagValue(source, appId, Flags.MAX_CONNECTION_LIFE_IN_HOSTED);
             this.distributorMergeBusyWait = flagValue(source, appId, Flags.DISTRIBUTOR_MERGE_BUSY_WAIT);
+            this.docstoreCompressionLevel = flagValue(source, appId, Flags.DOCSTORE_COMPRESSION_LEVEL);
+            this.diskBloatFactor = flagValue(source, appId, Flags.DISK_BLOAT_FACTOR);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -254,6 +258,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
         @Override public int maxConnectionLifeInHosted() { return maxConnectionLifeInHosted; }
         @Override public int distributorMergeBusyWait() { return distributorMergeBusyWait; }
+        @Override public double diskBloatFactor() { return diskBloatFactor; }
+        @Override public int docstoreCompressionLevel() { return docstoreCompressionLevel; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
