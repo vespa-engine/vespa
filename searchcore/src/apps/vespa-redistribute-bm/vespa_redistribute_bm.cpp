@@ -481,6 +481,7 @@ App::usage()
         "[--max-merge-queue-size max-merge-queue-size]\n"
         "[--max-pending max-pending]\n"
         "[--max-pending-idealstate-operations max-pending-idealstate-operations]\n"
+        "[--mbus-distributor-node-max-pending-count] count\n"
         "[--mode [grow, shrink, perm-crash, temp-crash, replace]\n"
         "[--nodes-per-group nodes-per-group]\n"
         "[--redundancy redundancy]\n"
@@ -516,6 +517,7 @@ App::get_options()
         { "max-merge-queue-size", 1, nullptr, 0 },
         { "max-pending", 1, nullptr, 0 },
         { "max-pending-idealstate-operations", 1, nullptr, 0 },
+        { "mbus-distributor-node-max-pending-count", 1, nullptr, 0 },
         { "mode", 1, nullptr, 0 },
         { "nodes-per-group", 1, nullptr, 0 },
         { "redundancy", 1, nullptr, 0 },
@@ -545,6 +547,7 @@ App::get_options()
         LONGOPT_MAX_MERGE_QUEUE_SIZE,
         LONGOPT_MAX_PENDING,
         LONGOPT_MAX_PENDING_IDEALSTATE_OPERATIONS,
+        LONGOPT_MBUS_DISTRIBUTOR_NODE_MAX_PENDING_COUNT,
         LONGOPT_MODE,
         LONGOPT_NODES_PER_GROUP,
         LONGOPT_REDUNDANCY,
@@ -607,6 +610,9 @@ App::get_options()
                 break;
             case LONGOPT_MAX_PENDING_IDEALSTATE_OPERATIONS:
                 _bm_params.set_max_pending_idealstate_operations(atoi(opt_argument));
+                break;
+            case LONGOPT_MBUS_DISTRIBUTOR_NODE_MAX_PENDING_COUNT:
+                _bm_params.set_mbus_distributor_node_max_pending_count(atoi(opt_argument));
                 break;
             case LONGOPT_MODE:
                 _bm_params.set_mode(get_mode(opt_argument));

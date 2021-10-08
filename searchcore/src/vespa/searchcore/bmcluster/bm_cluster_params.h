@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <vespa/vespalib/stllike/string.h>
+#include <optional>
 
 namespace search::bmcluster {
 
@@ -25,6 +26,7 @@ class BmClusterParams
     uint32_t _max_merges_per_node;
     uint32_t _max_merge_queue_size;
     uint32_t _max_pending_idealstate_operations;
+    std::optional<uint32_t> _mbus_distributor_node_max_pending_count;
     uint32_t _num_nodes;
     uint32_t _nodes_per_group;
     uint32_t _redundancy;
@@ -54,6 +56,7 @@ public:
     uint32_t get_max_merges_per_node() const noexcept { return _max_merges_per_node; }
     uint32_t get_max_merge_queue_size() const noexcept { return _max_merge_queue_size; }
     uint32_t get_max_pending_idealstate_operations() const noexcept { return _max_pending_idealstate_operations; }
+    const std::optional<uint32_t>& get_mbus_distributor_node_max_pending_count() const noexcept { return _mbus_distributor_node_max_pending_count; }
     uint32_t get_nodes_per_group() const noexcept { return _nodes_per_group; }
     uint32_t get_num_nodes() const { return _num_nodes; }
     uint32_t get_redundancy() const { return _redundancy; }
@@ -83,6 +86,7 @@ public:
     void set_max_merges_per_node(uint32_t value) { _max_merges_per_node = value; }
     void set_max_merge_queue_size(uint32_t value) { _max_merge_queue_size = value; }
     void set_max_pending_idealstate_operations(uint32_t value) { _max_pending_idealstate_operations = value; }
+    void set_mbus_distributor_node_max_pending_count(int32_t value) { _mbus_distributor_node_max_pending_count = value; }
     void set_nodes_per_group(uint32_t value);
     void set_redundancy(uint32_t value) { _redundancy = value; }
     void set_response_threads(uint32_t threads_in) { _response_threads = threads_in; }
