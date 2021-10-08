@@ -178,6 +178,15 @@ public class ComponentNode extends Node {
         return component;
     }
 
+    @Override
+    public String toString() {
+        return "ComponentNode{" +
+                super.toString() +
+                ", clazz=" + clazz +
+                ", key=" + key +
+                ", configId='" + configId + '\'' +
+                '}';
+    }
 
     @Override
     public int hashCode() {
