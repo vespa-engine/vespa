@@ -281,15 +281,13 @@ public class FilterTestCase {
         final RequestFilter requestFilter1 = mock(RequestFilter.class);
         final RequestFilter requestFilter2 = mock(RequestFilter.class);
 
-        verify(requestFilter1, never()).refer();
-        verify(requestFilter2, never()).refer();
         final ResourceReference reference1 = mock(ResourceReference.class);
         final ResourceReference reference2 = mock(ResourceReference.class);
-        when(requestFilter1.refer()).thenReturn(reference1);
-        when(requestFilter2.refer()).thenReturn(reference2);
+        when(requestFilter1.refer(any())).thenReturn(reference1);
+        when(requestFilter2.refer(any())).thenReturn(reference2);
         final RequestFilter chain = RequestFilterChain.newInstance(requestFilter1, requestFilter2);
-        verify(requestFilter1, times(1)).refer();
-        verify(requestFilter2, times(1)).refer();
+        verify(requestFilter1, times(1)).refer(any());
+        verify(requestFilter2, times(1)).refer(any());
 
         verify(reference1, never()).close();
         verify(reference2, never()).close();
@@ -367,15 +365,13 @@ public class FilterTestCase {
         final ResponseFilter responseFilter1 = mock(ResponseFilter.class);
         final ResponseFilter responseFilter2 = mock(ResponseFilter.class);
 
-        verify(responseFilter1, never()).refer();
-        verify(responseFilter2, never()).refer();
         final ResourceReference reference1 = mock(ResourceReference.class);
         final ResourceReference reference2 = mock(ResourceReference.class);
-        when(responseFilter1.refer()).thenReturn(reference1);
-        when(responseFilter2.refer()).thenReturn(reference2);
+        when(responseFilter1.refer(any())).thenReturn(reference1);
+        when(responseFilter2.refer(any())).thenReturn(reference2);
         final ResponseFilter chain = ResponseFilterChain.newInstance(responseFilter1, responseFilter2);
-        verify(responseFilter1, times(1)).refer();
-        verify(responseFilter2, times(1)).refer();
+        verify(responseFilter1, times(1)).refer(any());
+        verify(responseFilter2, times(1)).refer(any());
 
         verify(reference1, never()).close();
         verify(reference2, never()).close();
