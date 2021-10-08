@@ -363,7 +363,7 @@ public class GroupingExecutorTestCase {
         res = exec.search(query);
         assertTrue(res.hits().getError() != null);
         assertEquals(Error.TIMEOUT.code, res.hits().getError().getCode());
-        assertFalse(err.continuedOnFail);
+        assertTrue(err.continuedOnFail);
     }
 
     @Test
