@@ -61,7 +61,12 @@ GroupingManager::init(const IAttributeContext &attrCtx)
             list.push_back(groupingList[i]);
         } catch (const std::exception & e) {
             auto msg = fmt("Could not locate attribute for grouping number %ld : %s. Ignoring grouping '%s'", i, e.what(), grouping.asString().c_str());
-            Issue::report(msg);
+            //
+            // NOTE: if this issue is reported as an error in the
+            // search reply, the grouping searcher will discard all
+            // grouping results, which may or may not be what we want.
+            //
+            // Issue::report(msg);
             LOG(error, "%s", msg.c_str());
         }
     }
