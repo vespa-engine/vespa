@@ -59,6 +59,7 @@ public class UserManagementMaintainer extends ControllerMaintainer {
                 .collect(Collectors.toList());
 
         return userManagement.listRoles().stream()
+                .peek(role -> logger.fine(role::toString))
                 .filter(role -> role instanceof TenantRole || role instanceof ApplicationRole)
                 .filter(role -> !tenantRoles.contains(role) && !applicationRoles.contains(role))
                 .collect(Collectors.toList());
