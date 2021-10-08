@@ -7818,6 +7818,7 @@
       "final"
     ],
     "methods": [
+      "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub()",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.prelude.IndexFacts)",
@@ -7839,7 +7840,8 @@
       "public boolean getBreakdown()",
       "public void setBreakdown(boolean)",
       "public com.yahoo.language.Linguistics getLinguistics()",
-      "public void setLinguistics(com.yahoo.language.Linguistics)"
+      "public void setLinguistics(com.yahoo.language.Linguistics)",
+      "public java.util.concurrent.Executor executor()"
     ],
     "fields": []
   },
@@ -7880,6 +7882,8 @@
       "public"
     ],
     "methods": [
+      "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, com.yahoo.container.handler.threadpool.ContainerThreadPool)",
+      "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry)",
       "public com.yahoo.search.searchchain.Execution newExecution(com.yahoo.component.chain.Chain)",
       "public com.yahoo.search.searchchain.Execution newExecution(java.lang.String)",
@@ -7929,6 +7933,7 @@
       "public com.yahoo.search.Result get(long, java.util.concurrent.TimeUnit)",
       "public java.util.Optional getIfAvailable(long, java.util.concurrent.TimeUnit)",
       "public com.yahoo.search.Query getQuery()",
+      "public com.yahoo.search.searchchain.Execution getExecution()",
       "public com.yahoo.search.result.ErrorMessage createTimeoutError()",
       "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
       "public bridge synthetic java.lang.Object get()"

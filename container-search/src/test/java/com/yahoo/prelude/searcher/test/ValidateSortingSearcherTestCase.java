@@ -112,7 +112,7 @@ public class ValidateSortingSearcherTestCase {
     }
 
     private Execution createExecution(Searcher searcher) {
-        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
+        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics(), null);
         return new Execution(chainedAsSearchChain(searcher), context);
     }
 

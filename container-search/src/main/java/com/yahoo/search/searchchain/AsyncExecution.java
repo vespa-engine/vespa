@@ -2,7 +2,6 @@
 package com.yahoo.search.searchchain;
 
 import com.yahoo.component.chain.Chain;
-import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -10,7 +9,14 @@ import com.yahoo.search.Searcher;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Provides asynchronous execution of searchchains.
@@ -43,20 +49,6 @@ import java.util.concurrent.*;
  * @author Arne Bergene Fossaa
  */
 public class AsyncExecution {
-
-    private static final ThreadFactory threadFactory = ThreadFactoryFactory.getThreadFactory("search");
-
-    private static final Executor executorMain = createExecutor();
-
-    private static Executor createExecutor() {
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(100, 8192, 1L, TimeUnit.SECONDS,
-                                                            new SynchronousQueue<>(false), threadFactory);
-        // Prestart needed, if not all threads will be created by the fist N tasks and hence they might also
-        // get the dreaded thread locals initialized even if they will never run.
-        // That counters what we we want to achieve with the Q that will prefer thread locality.
-        executor.prestartAllCoreThreads();
-        return executor;
-    }
 
     /** The execution this executes */
     private final Execution execution;
@@ -118,19 +110,15 @@ public class AsyncExecution {
      * @see com.yahoo.search.searchchain.Execution
      */
     public FutureResult search(Query query) {
-        return getFutureResult(() -> execution.search(query), query);
+        return getFutureResult(execution.context().executor(), () -> execution.search(query), query);
     }
 
     public FutureResult searchAndFill(Query query) {
-        return getFutureResult(() -> {
+        return getFutureResult(execution.context().executor(), () -> {
             Result result = execution.search(query);
             execution.fill(result, query.getPresentation().getSummary());
             return result;
         }, query);
-    }
-
-    private static Executor getExecutor() {
-        return executorMain;
     }
 
     /**
@@ -139,34 +127,33 @@ public class AsyncExecution {
      * @see com.yahoo.search.searchchain.Execution
      */
     public FutureResult fill(Result result, String summaryClass) {
-        return getFutureResult(() -> {
+        return getFutureResult(execution.context().executor(), () -> {
             execution.fill(result, summaryClass);
             return result;
         }, result.getQuery());
-
     }
 
-    private static <T> Future<T> getFuture(Callable<T> callable) {
+    private static <T> Future<T> getFuture(Executor executor, Callable<T> callable) {
         FutureTask<T> future = new FutureTask<>(callable);
         try {
-            getExecutor().execute(future);
+            executor.execute(future);
         } catch (RejectedExecutionException e) {
             future.run();
         }
         return future;
     }
 
-    private static Future<Void> runTask(Runnable runnable) {
-        return getFuture(() -> {
+    private static Future<Void> runTask(Executor executor, Runnable runnable) {
+        return getFuture(executor, () -> {
             runnable.run();
             return null;
         });
     }
 
-    private FutureResult getFutureResult(Callable<Result> callable, Query query) {
+    private FutureResult getFutureResult(Executor executor, Callable<Result> callable, Query query) {
         FutureResult future = new FutureResult(callable, execution, query);
         try {
-            getExecutor().execute(future);
+            executor.execute(future);
         } catch (RejectedExecutionException e) {
             future.run();
         }
@@ -178,16 +165,17 @@ public class AsyncExecution {
      * done when the timeout expires, it will be cancelled, and it will return a
      * result. All unfinished Futures will be cancelled.
      *
-     * @return the list of results in the same order as returned from the task
-     * collection
+     * @return the list of results in the same order as returned from the task collection
      */
     public static List<Result> waitForAll(Collection<FutureResult> tasks, long timeoutMs) {
+        if (tasks.isEmpty()) return new ArrayList<>();
+
         // Copy the list in case it is modified while we are waiting
         List<FutureResult> workingTasks = new ArrayList<>(tasks);
         try {
-            runTask(() -> {
+            runTask(tasks.stream().findAny().get().getExecution().context().executor(), () -> {
                 for (FutureResult task : workingTasks)
-                    task.get();
+                    task.get(timeoutMs, TimeUnit.MILLISECONDS);
             }).get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (TimeoutException | InterruptedException | ExecutionException e) {
             // Handle timeouts below

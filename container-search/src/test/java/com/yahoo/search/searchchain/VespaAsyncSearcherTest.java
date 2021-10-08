@@ -1,17 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.searchchain.test;
+package com.yahoo.search.searchchain;
 
 import com.yahoo.component.chain.Chain;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.searchchain.AsyncExecution;
-import com.yahoo.search.searchchain.Execution;
-import com.yahoo.search.searchchain.FutureResult;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests async execution of search chains.
@@ -20,6 +23,18 @@ import java.util.List;
  * @author bratseth
  */
 public class VespaAsyncSearcherTest {
+
+    private ExecutorService executor;
+
+    @Before
+    public void setUp() throws Exception {
+        executor = Executors.newFixedThreadPool(16);
+    }
+
+    @After
+    public void tearDown() {
+        assertEquals(0, executor.shutdownNow().size());
+    }
 
     private static class FirstSearcher extends Searcher {
 

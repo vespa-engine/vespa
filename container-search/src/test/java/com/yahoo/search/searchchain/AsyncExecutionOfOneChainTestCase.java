@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.searchchain.test;
+package com.yahoo.search.searchchain;
 
 import com.yahoo.component.chain.Chain;
 import com.yahoo.search.Query;
@@ -7,14 +7,14 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
-import com.yahoo.search.searchchain.AsyncExecution;
-import com.yahoo.search.searchchain.Execution;
-import com.yahoo.search.searchchain.FutureResult;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -29,8 +29,9 @@ public class AsyncExecutionOfOneChainTestCase {
     /** Tests having a result with some slow source data which should pass directly to rendering */
     @Test
     public void testParallelExecutionOfOneChain() {
+        ExecutorService executor = Executors.newFixedThreadPool(16);
         // Setup
-        Chain<Searcher> mainChain=new Chain<>(new ParallelExecutor(),new ResultProcessor(),new RegularProvider());
+        Chain<Searcher> mainChain=new Chain<>(new ParallelExecutor(executor),new ResultProcessor(),new RegularProvider());
 
         // Execute
         Result result=new Execution(mainChain, Execution.Context.createContextStub()).search(new Query());
@@ -43,12 +44,15 @@ public class AsyncExecutionOfOneChainTestCase {
         assertEquals(0.5, result.hits().get("thread-0:hit-1").getRelevance().getScore(), delta);
         assertEquals(0.5, result.hits().get("thread-1:hit-1").getRelevance().getScore(), delta);
         assertEquals(0.5, result.hits().get("thread-2:hit-1").getRelevance().getScore(), delta);
+        assertEquals(0, executor.shutdownNow().size());
     }
 
-    private class ParallelExecutor extends Searcher {
+    private static class ParallelExecutor extends Searcher {
 
         /** The number of parallel executions */
         private static final int parallelism = 2;
+        private final Executor executor;
+        ParallelExecutor(Executor executor) { this.executor = executor; }
 
         @Override
         public Result search(Query query, Execution execution) {

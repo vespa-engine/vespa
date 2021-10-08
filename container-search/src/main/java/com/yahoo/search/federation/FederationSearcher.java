@@ -71,15 +71,14 @@ import static com.yahoo.search.federation.StrictContractsConfig.PropagateSourceP
 @After("*")
 public class FederationSearcher extends ForkingSearcher {
 
-    public static final String FEDERATION = "Federation";
-
     private static final Logger log = Logger.getLogger(FederationSearcher.class.getName());
 
     /** The name of the query property containing the source name added to the query to each source by this */
     public final static CompoundName SOURCENAME = new CompoundName("sourceName");
     public final static CompoundName PROVIDERNAME = new CompoundName("providerName");
-    /** Logging field name constants */
+    public static final String FEDERATION = "Federation";
     public static final String LOG_COUNT_PREFIX = "count_";
+    private static final List<CompoundName> queryAndHits = ImmutableList.of(Query.OFFSET, Query.HITS);
 
     private final SearchChainResolver searchChainResolver;
     private final PropagateSourceProperties.Enum propagateSourceProperties;
@@ -88,23 +87,13 @@ public class FederationSearcher extends ForkingSearcher {
 
     private final boolean strictSearchchain;
     private final TargetSelector<?> targetSelector;
-
     private final Clock clock = Clock.systemUTC();
-
-    private static final List<CompoundName> queryAndHits = ImmutableList.of(Query.OFFSET, Query.HITS);
 
     @Inject
     public FederationSearcher(FederationConfig config, StrictContractsConfig strict,
                               ComponentRegistry<TargetSelector> targetSelectors) {
         this(createResolver(config), strict.searchchains(), strict.propagateSourceProperties(),
              resolveSelector(config.targetSelector(), targetSelectors));
-    }
-
-    private static TargetSelector resolveSelector(String selectorId, 
-                                                  ComponentRegistry<TargetSelector> targetSelectors) {
-        if (selectorId.isEmpty()) return null;
-        return checkNotNull(targetSelectors.getComponent(selectorId),
-                            "Missing target selector with id '" + selectorId + "'");
     }
 
     // for testing
@@ -121,6 +110,13 @@ public class FederationSearcher extends ForkingSearcher {
         this.strictSearchchain = strictSearchchain;
         this.propagateSourceProperties = propagateSourceProperties;
         this.targetSelector = targetSelector;
+    }
+
+    private static TargetSelector resolveSelector(String selectorId,
+                                                  ComponentRegistry<TargetSelector> targetSelectors) {
+        if (selectorId.isEmpty()) return null;
+        return checkNotNull(targetSelectors.getComponent(selectorId),
+                "Missing target selector with id '" + selectorId + "'");
     }
 
     private static SearchChainResolver createResolver(FederationConfig config) {

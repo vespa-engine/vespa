@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.federation.test;
+package com.yahoo.search.federation;
 
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -10,7 +10,7 @@ import com.yahoo.search.searchchain.Execution;
 /**
  * @author Tony Vaagenes
  */
-public class AddHitsWithRelevanceSearcher extends Searcher {
+class AddHitsWithRelevanceSearcher extends Searcher {
     public static final int numHitsAdded = 5;
 
     private final String chainName;

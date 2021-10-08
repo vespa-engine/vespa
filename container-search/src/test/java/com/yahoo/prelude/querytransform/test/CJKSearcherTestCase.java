@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 /**
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class CJKSearcherTestCase {
 
@@ -65,7 +65,7 @@ public class CJKSearcherTestCase {
         query.getModel().getQueryTree().setRoot(root);
 
         new Execution(new Chain<Searcher>(new CJKSearcher()),
-                      new Execution.Context(null, indexFacts, null, null, linguistics)).search(query);
+                      new Execution.Context(null, indexFacts, null, null, linguistics, null)).search(query);
         assertEquals(expected, query.getModel().getQueryTree().getRoot().toString());
     }
 

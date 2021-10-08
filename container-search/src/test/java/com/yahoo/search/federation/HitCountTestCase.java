@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.federation.test;
+package com.yahoo.search.federation;
 
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -10,10 +10,8 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Tony Vaagenes
@@ -53,8 +51,8 @@ public class HitCountTestCase {
 
         Result result = tester.searchAndFill();
 
-        assertThat(result.getTotalHitCount(), is(chain1TotalHitCount + chain2TotalHitCount));
-        assertThat(result.getDeepHitCount(), is(chain1DeepHitCount + chain2DeepHitCount));
+        assertEquals(result.getTotalHitCount(), chain1TotalHitCount + chain2TotalHitCount);
+        assertEquals(result.getDeepHitCount(), chain1DeepHitCount + chain2DeepHitCount);
     }
 
     @Test
@@ -110,7 +108,7 @@ public class HitCountTestCase {
 
     private void assertAllHitsFrom(String chainName, HitGroup flattenedHits) {
         for (Hit hit : flattenedHits) {
-            assertThat(hit.getId().toString(), startsWith(chainName));
+            assertTrue(hit.getId().toString().startsWith(chainName));
         }
     }
 

@@ -232,7 +232,7 @@ public class ValidateNearestNeighborTestCase {
         query.getRanking().getFeatures().put("query(qvector)", qTensor);
         SearchDefinition searchDefinition = new SearchDefinition("document");
         IndexFacts indexFacts = new IndexFacts(new IndexModel(searchDefinition));
-        Execution.Context context = new Execution.Context(null, indexFacts, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
+        Execution.Context context = new Execution.Context(null, indexFacts, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics(), null);
         return new Execution(searcher, context).search(query);
     }
 

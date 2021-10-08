@@ -45,7 +45,7 @@ public class BlendingSearcherTestCase {
 
     private static final double delta = 0.00000001;
 
-    public static class BlendingSearcherWrapper extends Searcher {
+    public class BlendingSearcherWrapper extends Searcher {
 
         private SearchChain blendingChain;
         private final FederationConfig.Builder builder = new FederationConfig.Builder();

@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.federation.test;
+package com.yahoo.search.federation;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
@@ -10,12 +10,8 @@ import com.yahoo.processing.execution.chain.ChainRegistry;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.federation.FederationConfig;
-import com.yahoo.search.federation.FederationSearcher;
-import com.yahoo.search.federation.TimeoutException;
 import com.yahoo.search.federation.selection.FederationTarget;
 import com.yahoo.search.federation.selection.TargetSelector;
-import com.yahoo.search.federation.StrictContractsConfig;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
@@ -24,18 +20,19 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.Execution.Context;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Tony Vaagenes
@@ -183,8 +180,8 @@ public class FederationSearcherTest {
         query.setTimeout(20000);
         Result result = new Execution(searcher, Context.createContextStub()).search(query);
         HitGroup myChainGroup = (HitGroup) result.hits().get(0);
-        assertThat(myChainGroup.getId(), is(new URI("source:myChain")));
-        assertThat(myChainGroup.get(0).getId(), is(new URI("myHit")));
+        assertEquals(myChainGroup.getId(), new URI("source:myChain"));
+        assertEquals(myChainGroup.get(0).getId(), new URI("myHit"));
     }
 
     @Test
@@ -206,11 +203,11 @@ public class FederationSearcherTest {
         Hit hit1 = hitsIterator.next();
         Hit hit2 = hitsIterator.next();
 
-        assertThat(hit1.getSource(), is("chain1"));
-        assertThat(hit2.getSource(), is("chain2"));
+        assertEquals(hit1.getSource(), "chain1");
+        assertEquals(hit2.getSource(), "chain2");
 
-        assertThat(hit1.getField("data"), is("modifyTargetQuery:custom-data:1"));
-        assertThat(hit2.getField("data"), is("modifyTargetQuery:custom-data:2"));
+        assertEquals(hit1.getField("data"), "modifyTargetQuery:custom-data:1");
+        assertEquals(hit2.getField("data"), "modifyTargetQuery:custom-data:2");
     }
 
     private Hit getFirstHit(Hit hitGroup) {
@@ -220,15 +217,6 @@ public class FederationSearcherTest {
             throw new IllegalArgumentException("Expected HitGroup");
     }
 
-    private List<Hit> getNonErrorHits(Result result) {
-        List<Hit> nonErrorHits = new ArrayList<>();
-        for (Hit hit : result.hits()) {
-            if (!(hit instanceof ErrorHit))
-                nonErrorHits.add(hit);
-        }
-
-        return nonErrorHits;
-    }
     private static void assertFilled(Hit hit) {
         if (hit.isMeta()) return;
         assertTrue((Boolean)hit.getField(hasBeenFilled));
@@ -326,8 +314,8 @@ public class FederationSearcherTest {
 
         @Override
         public Collection<FederationTarget<String>> getTargets(Query query, ChainRegistry<Searcher> searcherChainRegistry) {
-            return Arrays.asList(
-                    new FederationTarget<>(new Chain<>("myChain", Collections.<Searcher>emptyList()), new FederationOptions(), "hello"));
+            return List.of(
+                    new FederationTarget<>(new Chain<>("myChain", List.of()), new FederationOptions(), "hello"));
         }
 
         @Override
@@ -339,13 +327,13 @@ public class FederationSearcherTest {
         @Override
         public void modifyTargetResult(FederationTarget<String> target, Result result) {
             checkTarget(target);
-            assertThat(result.getQuery().properties().getString(keyName), is("called"));
+            assertEquals(result.getQuery().properties().getString(keyName), "called");
             result.hits().add(new Hit("myHit"));
         }
 
         private void checkTarget(FederationTarget<String> target) {
-            assertThat(target.getCustomData(), is("hello"));
-            assertThat(target.getChain().getId(), is(ComponentId.fromString("myChain")));
+            assertEquals(target.getCustomData(), "hello");
+            assertEquals(target.getChain().getId(), ComponentId.fromString("myChain"));
         }
     }
 
@@ -359,7 +347,7 @@ public class FederationSearcherTest {
         }
 
         private FederationTarget<String> createTarget(int number) {
-            return new FederationTarget<>(new Chain<>("chain" + number, Collections.<Searcher>emptyList()),
+            return new FederationTarget<>(new Chain<>("chain" + number, List.of()),
                                           new FederationOptions(),
                                           "custom-data:" + number);
         }
