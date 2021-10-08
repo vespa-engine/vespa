@@ -23,6 +23,7 @@ import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Provides creation of fully configured query Execution instances.
@@ -65,7 +66,7 @@ public class ExecutionFactory extends AbstractComponent {
         this.specialTokens = new SpecialTokenRegistry(specialTokens);
         this.linguistics = linguistics;
         this.rendererRegistry = new RendererRegistry(renderers.allComponents());
-        this.executor = executor;
+        this.executor = executor != null ? executor : Runnable::run;
     }
 
     /** @deprecated pass the container threadpool */

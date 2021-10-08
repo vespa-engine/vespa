@@ -122,7 +122,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             this.tokenRegistry = tokenRegistry;
             this.rendererRegistry = rendererRegistry;
             this.linguistics = linguistics;
-            this.executor = executor;
+            this.executor = executor != null ? executor : Runnable::run; // Run in same thread if no executor is provided
         }
 
         /** @deprecated pass an executor */
@@ -167,6 +167,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
          *
          * @param sourceContext the context from which to get the parameters
          */
+        // TODO: Deprecate
         public void populateFrom(Context sourceContext) {
             // breakdown and detailedDiagnostics has no unset state, so they are always copied
             detailedDiagnostics = sourceContext.detailedDiagnostics;
@@ -181,9 +182,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
                 rendererRegistry = sourceContext.rendererRegistry;
             if (linguistics == null)
                 linguistics = sourceContext.linguistics;
-            if (executor == null)
-                executor = sourceContext.executor;
-
+            executor = sourceContext.executor; // executor will always either be the same, or we're in a test
         }
 
         /**
@@ -361,8 +360,11 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             this.linguistics = linguistics;
         }
 
-        /** Returns the executor that should be used to execute tasks as part of this execution, or null if none */
-        public Executor getExecutor() { return executor; }
+        /**
+         * Returns the executor that should be used to execute tasks as part of this execution.
+         * This is never null but will be an executor that runs in the same thread if none is passed to this.
+         */
+        public Executor executor() { return executor; }
 
         /** Creates a child trace if this has an owner, or a root trace otherwise */
         private Trace createChildTrace() {
@@ -474,7 +476,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         // "if any" because a context may, or may not, belong to an execution.
         // This is decided at the creation time of the Context - Context instances which do not belong
         // to an execution plays the role of data carriers between executions.
-        super(searchChain,searcherIndex,context.createChildTrace(),context.createChildEnvironment());
+        super(searchChain, searcherIndex, context.createChildTrace(), context.createChildEnvironment());
         this.context.fill(context);
         contextCache = new Context[searchChain.components().size()];
         entryIndex=searcherIndex;
