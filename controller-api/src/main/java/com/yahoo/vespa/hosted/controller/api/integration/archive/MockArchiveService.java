@@ -16,7 +16,7 @@ public class MockArchiveService implements ArchiveService {
     public Map<ArchiveBucket, Map<TenantName, String>> authorizedIamRoles = new HashMap<>();
 
     @Override
-    public ArchiveBucket createArchiveBucketFor(ZoneId zoneId) {
+    public ArchiveBucket createArchiveBucketFor(ZoneId zoneId, boolean sharded) {
         return new ArchiveBucket("bucketName", "keyArn");
     }
 

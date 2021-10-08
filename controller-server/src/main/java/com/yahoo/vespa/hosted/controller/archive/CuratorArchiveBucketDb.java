@@ -17,6 +17,7 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -27,14 +28,6 @@ import java.util.stream.Collectors;
  * @author andreer
  */
 public class CuratorArchiveBucketDb {
-
-    /**
-     * Due to policy limits, we can't put data for more than this many tenants in a bucket.
-     * Policy size limit is 20kb, about 550 bytes for non-tenant related policies. Each tenant
-     * needs about 500 + len(role_arn) bytes, we limit role_arn to 100 characters, so we can
-     * fit about (20k - 550) / 600 ~ 32 tenants per bucket.
-     */
-    private final static int TENANTS_PER_BUCKET = 30;
 
     /**
      * Archive URIs are often requested because they are returned in /application/v4 API. Since they
@@ -84,7 +77,7 @@ public class CuratorArchiveBucketDb {
                     .orElseGet(() -> {
                         // If not, find an existing bucket with space
                         Optional<ArchiveBucket> unfilledBucket = zoneBuckets.stream()
-                                .filter(bucket -> bucket.tenants().size() < TENANTS_PER_BUCKET)
+                                .filter(bucket -> bucket.tenants().size() < tenantsPerBucket().orElse(Integer.MAX_VALUE))
                                 .findAny();
 
                         // And place the tenant in that bucket.
@@ -99,7 +92,8 @@ public class CuratorArchiveBucketDb {
                         }
 
                         // We'll have to create a new bucket
-                        var newBucket = archiveService.createArchiveBucketFor(zoneId).withTenant(tenant);
+                        var newBucket = archiveService.createArchiveBucketFor(zoneId, tenantsPerBucket().isPresent())
+                                .withTenant(tenant);
                         zoneBuckets.add(newBucket);
                         curatorDb.writeArchiveBuckets(zoneId, zoneBuckets);
                         updateArchiveUriCache(zoneId, zoneBuckets);
@@ -119,6 +113,23 @@ public class CuratorArchiveBucketDb {
                 .map(ArchiveBucket::bucketName);
         if (bucketName.isPresent()) updateArchiveUriCache(zoneId, zoneBuckets);
         return bucketName;
+    }
+
+    private OptionalInt tenantsPerBucket() {
+        if (system.isPublic()) {
+            /*
+             * Due to policy limits, we can't put data for more than this many tenants in a bucket.
+             * Policy size limit is 20kb, about 550 bytes for non-tenant related policies. Each tenant
+             * needs about 500 + len(role_arn) bytes, we limit role_arn to 100 characters, so we can
+             * fit about (20k - 550) / 600 ~ 32 tenants per bucket.
+             */
+            return OptionalInt.of(30);
+        } else {
+            /*
+             * The S3 policies in main/cd have a fixed size.
+             */
+            return OptionalInt.empty();
+        }
     }
 
     private Optional<String> getBucketNameFromCache(ZoneId zoneId, TenantName tenantName) {
