@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -55,18 +56,17 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
     private boolean stopped;
 
     // Non-final for testing
-    private volatile Duration taskTimeout;
+    private final AtomicReference<Duration> taskTimeout;
 
     @Inject
     public ApplicationMetricsRetriever(MetricsNodesConfig nodesConfig) {
         clients = createNodeClients(nodesConfig);
-        taskTimeout = timeout(clients.size());
+        taskTimeout = new AtomicReference<>(timeout(clients.size()));
         stopped = false;
         consumerSet = new HashSet<>();
         httpClient.start();
         pollThread = new Thread(this, "metrics-poller");
         pollThread.setDaemon(true);
-        pollThread.start();
     }
 
     @Override
@@ -158,7 +158,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
         int numTried = futures.size();
         for (Map.Entry<Node, Future<Boolean>> entry : futures.entrySet()) {
             try {
-                Boolean result = entry.getValue().get(taskTimeout.toMillis(), TimeUnit.MILLISECONDS);
+                Boolean result = entry.getValue().get(taskTimeout.get().toMillis(), TimeUnit.MILLISECONDS);
                 if ((result != null) && result) numOk++;
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 Throwable cause = e.getCause();
@@ -199,7 +199,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
 
     // For testing only!
     void setTaskTimeout(Duration taskTimeout) {
-        this.taskTimeout = taskTimeout;
+        this.taskTimeout.set(taskTimeout);
     }
 
 }
