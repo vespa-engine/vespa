@@ -42,17 +42,34 @@
       <artifactId>vespa-http-client</artifactId>
       <version>${project.version}</version>
       <exclusions>
+        <!-- Exclude artifacts that are provided by Jdisc container -->
         <exclusion>
           <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.datatype</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.module</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>security-utils</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
+          <artifactId>*</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpcore</artifactId>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
