@@ -11,7 +11,6 @@ import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
-import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.errorhandling.Results;
 import com.yahoo.errorhandling.Results.Builder;
 import com.yahoo.prelude.IndexFacts;
@@ -54,7 +53,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
