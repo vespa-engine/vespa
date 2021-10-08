@@ -7803,13 +7803,9 @@
       "public void <init>(com.yahoo.component.chain.Chain, com.yahoo.search.searchchain.Execution)",
       "public void <init>(com.yahoo.component.chain.Chain, com.yahoo.search.searchchain.Execution$Context)",
       "public void <init>(com.yahoo.search.searchchain.Execution)",
-      "public com.yahoo.search.searchchain.FutureResult search(com.yahoo.search.Query, java.util.concurrent.Executor)",
       "public com.yahoo.search.searchchain.FutureResult search(com.yahoo.search.Query)",
-      "public com.yahoo.search.searchchain.FutureResult searchAndFill(com.yahoo.search.Query, java.util.concurrent.Executor)",
       "public com.yahoo.search.searchchain.FutureResult searchAndFill(com.yahoo.search.Query)",
-      "public com.yahoo.search.searchchain.FutureResult fill(com.yahoo.search.Result, java.lang.String, java.util.concurrent.Executor)",
       "public com.yahoo.search.searchchain.FutureResult fill(com.yahoo.search.Result, java.lang.String)",
-      "public static java.util.List waitForAll(java.util.Collection, long, java.util.concurrent.Executor)",
       "public static java.util.List waitForAll(java.util.Collection, long)"
     ],
     "fields": []
@@ -7845,7 +7841,7 @@
       "public void setBreakdown(boolean)",
       "public com.yahoo.language.Linguistics getLinguistics()",
       "public void setLinguistics(com.yahoo.language.Linguistics)",
-      "public java.util.concurrent.Executor getExecutor()"
+      "public java.util.concurrent.Executor executor()"
     ],
     "fields": []
   },
@@ -7937,6 +7933,7 @@
       "public com.yahoo.search.Result get(long, java.util.concurrent.TimeUnit)",
       "public java.util.Optional getIfAvailable(long, java.util.concurrent.TimeUnit)",
       "public com.yahoo.search.Query getQuery()",
+      "public com.yahoo.search.searchchain.Execution getExecution()",
       "public com.yahoo.search.result.ErrorMessage createTimeoutError()",
       "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
       "public bridge synthetic java.lang.Object get()"

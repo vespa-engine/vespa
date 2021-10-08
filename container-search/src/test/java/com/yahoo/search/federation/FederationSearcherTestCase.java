@@ -25,8 +25,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static com.yahoo.search.federation.StrictContractsConfig.PropagateSourceProperties;
 import static org.junit.Assert.assertEquals;
@@ -64,20 +62,17 @@ public class FederationSearcherTestCase {
 
     private FederationConfig.Builder builder;
     private SearchChainRegistry chainRegistry;
-    private ExecutorService executor;
 
     @Before
     public void setUp() throws Exception {
         builder = new FederationConfig.Builder();
         chainRegistry = new SearchChainRegistry();
-        executor = Executors.newFixedThreadPool(16);
     }
 
     @After
     public void tearDown() {
         builder = null;
         chainRegistry = null;
-        assertEquals(0, executor.shutdownNow().size());
     }
 
     private void addChained(Searcher searcher, String sourceName) {
@@ -107,7 +102,7 @@ public class FederationSearcherTestCase {
     }
 
     private Searcher buildFederation(StrictContractsConfig contracts) throws RuntimeException {
-        return new FederationSearcher(new FederationConfig(builder), contracts, new ComponentRegistry<>(), executor);
+        return new FederationSearcher(new FederationConfig(builder), contracts, new ComponentRegistry<>());
     }
 
     private SearchChain createSearchChain(ComponentId chainId,Searcher searcher) {
@@ -169,8 +164,7 @@ public class FederationSearcherTestCase {
                 new FederationSearcher(new FederationConfig(builder),
                         new StrictContractsConfig(
                                 new StrictContractsConfig.Builder().searchchains(strictContracts)),
-                        new ComponentRegistry<>(),
-                        executor));
+                        new ComponentRegistry<>()));
     }
 
     @Test
@@ -356,7 +350,7 @@ public class FederationSearcherTestCase {
         builder.addSourceForProvider(news, provider1, provider1, true, options, List.of());
         builder.addSourceForProvider(news, provider2, provider2, false, options, List.of());
 
-        return new FederationSearcher(new ComponentId("federation"), builder.build(), executor);
+        return new FederationSearcher(new ComponentId("federation"), builder.build());
     }
 
     private static class MockProvider extends Searcher {

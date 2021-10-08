@@ -24,7 +24,6 @@ public class FutureResult extends FutureTask<Result> {
 
     private final Query query;
 
-    /** Only used for generating messages */
     private final Execution execution;
 
     private final static Logger log = Logger.getLogger(FutureResult.class.getName());
@@ -89,6 +88,9 @@ public class FutureResult extends FutureTask<Result> {
     public Query getQuery() {
         return query;
     }
+
+    /** Returns the execution which creates this */
+    public Execution getExecution() { return execution; }
 
     private ErrorMessage createInterruptedError(Exception e) {
         return ErrorMessage.createUnspecifiedError(execution + " was interrupted while executing: " +

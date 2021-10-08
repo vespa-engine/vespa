@@ -12,7 +12,6 @@ import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 
 import java.util.Collections;
-import java.util.concurrent.Executor;
 
 /**
  * @author Tony Vaagenes
@@ -23,11 +22,7 @@ class FederationTester {
     private final SearchChainRegistry registry = new SearchChainRegistry();
 
     private Execution execution;
-    private final Executor executor;
 
-    FederationTester(Executor executor) {
-        this.executor = executor;
-    }
     void addSearchChain(String id, Searcher... searchers) {
         addSearchChain(id, federationOptions(), searchers);
     }
@@ -51,7 +46,7 @@ class FederationTester {
     }
 
     FederationSearcher buildFederationSearcher() {
-        return new FederationSearcher(ComponentId.fromString("federation"), builder.build(), executor);
+        return new FederationSearcher(ComponentId.fromString("federation"), builder.build());
     }
 
     public Result search() {

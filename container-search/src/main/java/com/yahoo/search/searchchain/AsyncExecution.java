@@ -53,31 +53,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Arne Bergene Fossaa
  */
 public class AsyncExecution {
-    private static final AtomicReference<Executor> deprecatedExecutor = new AtomicReference<>(null);
-
-    private static Executor createDeprecatedExecutor() {
-        int numCpus = Runtime.getRuntime().availableProcessors();
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(2*numCpus, numCpus*10, 1L, TimeUnit.SECONDS,
-                new SynchronousQueue<>(false), ThreadFactoryFactory.getThreadFactory("search"));
-        // Prestart needed, if not all threads will be created by the fist N tasks and hence they might also
-        // get the dreaded thread locals initialized even if they will never run.
-        // That counters what we we want to achieve with the Q that will prefer thread locality.
-        executor.prestartAllCoreThreads();
-        return executor;
-    }
-    private static Executor getDeprecatedExecutor() {
-        Executor executor = deprecatedExecutor.get();
-        if (executor == null) {
-            synchronized (deprecatedExecutor) {
-                executor = deprecatedExecutor.get();
-                if (executor == null) {
-                    executor = createDeprecatedExecutor();
-                    deprecatedExecutor.set(executor);
-                }
-            }
-        }
-        return executor;
-    }
 
     /** The execution this executes */
     private final Execution execution;
@@ -138,24 +113,16 @@ public class AsyncExecution {
      *
      * @see com.yahoo.search.searchchain.Execution
      */
-    public FutureResult search(Query query, Executor executor) {
-        return getFutureResult(executor, () -> execution.search(query), query);
-    }
-    @Deprecated
     public FutureResult search(Query query) {
-        return search(query, getDeprecatedExecutor());
+        return getFutureResult(execution.context().executor(), () -> execution.search(query), query);
     }
 
-    public FutureResult searchAndFill(Query query, Executor executor) {
-        return getFutureResult(executor, () -> {
+    public FutureResult searchAndFill(Query query) {
+        return getFutureResult(execution.context().executor(), () -> {
             Result result = execution.search(query);
             execution.fill(result, query.getPresentation().getSummary());
             return result;
         }, query);
-    }
-    @Deprecated
-    public FutureResult searchAndFill(Query query) {
-        return searchAndFill(query, getDeprecatedExecutor());
     }
 
     /**
@@ -163,15 +130,11 @@ public class AsyncExecution {
      *
      * @see com.yahoo.search.searchchain.Execution
      */
-    public FutureResult fill(Result result, String summaryClass, Executor executor) {
-        return getFutureResult(executor, () -> {
+    public FutureResult fill(Result result, String summaryClass) {
+        return getFutureResult(execution.context().executor(), () -> {
             execution.fill(result, summaryClass);
             return result;
         }, result.getQuery());
-    }
-    @Deprecated
-    public FutureResult fill(Result result, String summaryClass) {
-        return fill(result, summaryClass, getDeprecatedExecutor());
     }
 
     private static <T> Future<T> getFuture(Executor executor, Callable<T> callable) {
@@ -206,14 +169,15 @@ public class AsyncExecution {
      * done when the timeout expires, it will be cancelled, and it will return a
      * result. All unfinished Futures will be cancelled.
      *
-     * @return the list of results in the same order as returned from the task
-     * collection
+     * @return the list of results in the same order as returned from the task collection
      */
-    public static List<Result> waitForAll(Collection<FutureResult> tasks, long timeoutMs, Executor executor) {
+    public static List<Result> waitForAll(Collection<FutureResult> tasks, long timeoutMs) {
+        if (tasks.isEmpty()) return new ArrayList<>();
+
         // Copy the list in case it is modified while we are waiting
         List<FutureResult> workingTasks = new ArrayList<>(tasks);
         try {
-            runTask(executor, () -> {
+            runTask(tasks.stream().findAny().get().getExecution().context().executor(), () -> {
                 for (FutureResult task : workingTasks)
                     task.get(timeoutMs, TimeUnit.MILLISECONDS);
             }).get(timeoutMs, TimeUnit.MILLISECONDS);
@@ -232,10 +196,6 @@ public class AsyncExecution {
             results.add(result);
         }
         return results;
-    }
-    @Deprecated
-    public static List<Result> waitForAll(Collection<FutureResult> tasks, long timeoutMs) {
-        return waitForAll(tasks, timeoutMs, getDeprecatedExecutor());
     }
 
 }

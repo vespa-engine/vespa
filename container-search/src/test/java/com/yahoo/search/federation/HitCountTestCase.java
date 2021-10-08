@@ -5,14 +5,10 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -22,24 +18,12 @@ import static org.junit.Assert.assertTrue;
  */
 public class HitCountTestCase {
 
-    private ExecutorService executor;
-
-    @Before
-    public void setUp() throws Exception {
-        executor = Executors.newFixedThreadPool(16);
-    }
-
-    @After
-    public void tearDown() {
-        assertEquals(0, executor.shutdownNow().size());
-    }
-
     @Test
     public void require_that_offset_and_hits_are_adjusted_when_federating() {
         final int chain1RelevanceMultiplier = 1;
         final int chain2RelevanceMultiplier = 10;
 
-        FederationTester tester = new FederationTester(executor);
+        FederationTester tester = new FederationTester();
         tester.addSearchChain("chain1", new AddHitsWithRelevanceSearcher("chain1", chain1RelevanceMultiplier));
         tester.addSearchChain("chain2", new AddHitsWithRelevanceSearcher("chain2", chain2RelevanceMultiplier));
 
@@ -61,7 +45,7 @@ public class HitCountTestCase {
         final long chain2TotalHitCount = 7;
         final long chain2DeepHitCount = 11;
 
-        FederationTester tester = new FederationTester(executor);
+        FederationTester tester = new FederationTester();
         tester.addSearchChain("chain1", new SetHitCountsSearcher(chain1TotalHitCount, chain1DeepHitCount));
         tester.addSearchChain("chain2", new SetHitCountsSearcher(chain2TotalHitCount, chain2DeepHitCount));
 
@@ -79,7 +63,7 @@ public class HitCountTestCase {
         final long chain2TotalHitCount = 11;
         final long chain2DeepHitCount = 15;
 
-        FederationTester tester = new FederationTester(executor);
+        FederationTester tester = new FederationTester();
         tester.addSearchChain("chain1",
                 new SetHitCountsSearcher(chain1TotalHitCount, chain1DeepHitCount));
 

@@ -6,8 +6,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
@@ -48,18 +46,6 @@ import static org.junit.Assert.assertTrue;
 public class BlendingSearcherTestCase {
 
     private static final double delta = 0.00000001;
-
-    private ExecutorService executor;
-
-    @Before
-    public void setUp() throws Exception {
-        executor = Executors.newFixedThreadPool(16);
-    }
-
-    @After
-    public void tearDown() {
-        assertEquals(0, executor.shutdownNow().size());
-    }
 
     public class BlendingSearcherWrapper extends Searcher {
 
@@ -127,7 +113,7 @@ public class BlendingSearcherTestCase {
             StrictContractsConfig contracts = new StrictContractsConfig.Builder().build();
 
             FederationSearcher fedSearcher =
-                    new FederationSearcher(new FederationConfig(builder), contracts, new ComponentRegistry<>(), executor);
+                    new FederationSearcher(new FederationConfig(builder), contracts, new ComponentRegistry<>());
             BlendingSearcher blendingSearcher = new BlendingSearcher(blendingField);
             blendingChain = new SearchChain(ComponentId.createAnonymousComponentId("blendingChain"), blendingSearcher, fedSearcher);
             return true;

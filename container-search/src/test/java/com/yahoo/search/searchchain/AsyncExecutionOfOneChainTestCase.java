@@ -58,12 +58,12 @@ public class AsyncExecutionOfOneChainTestCase {
         public Result search(Query query, Execution execution) {
             List<FutureResult> futureResults = new ArrayList<>(parallelism);
             for (int i = 0; i < parallelism; i++)
-                futureResults.add(new AsyncExecution(execution).search(query.clone(), executor));
+                futureResults.add(new AsyncExecution(execution).search(query.clone()));
 
             Result mainResult = execution.search(query);
 
             // Add hits from other threads
-            AsyncExecution.waitForAll(futureResults,query.getTimeLeft(), executor);
+            AsyncExecution.waitForAll(futureResults,query.getTimeLeft());
             for (FutureResult futureResult : futureResults) {
                 Result result = futureResult.get();
                 mainResult.mergeWith(result);

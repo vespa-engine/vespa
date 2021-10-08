@@ -66,7 +66,7 @@ public class ExecutionFactory extends AbstractComponent {
         this.specialTokens = new SpecialTokenRegistry(specialTokens);
         this.linguistics = linguistics;
         this.rendererRegistry = new RendererRegistry(renderers.allComponents());
-        this.executor = executor != null ? executor : Runnable::run;
+        this.executor = executor != null ? executor : Executors.newSingleThreadExecutor();
     }
 
     /** @deprecated pass the container threadpool */

@@ -18,6 +18,7 @@ import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.statistics.TimeTracker;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * <p>An execution of a search chain. This keeps track of the call state for an execution (in the calling thread)
@@ -122,7 +123,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             this.tokenRegistry = tokenRegistry;
             this.rendererRegistry = rendererRegistry;
             this.linguistics = linguistics;
-            this.executor = executor != null ? executor : Runnable::run; // Run in same thread if no executor is provided
+            this.executor = executor != null ? executor : Executors.newSingleThreadExecutor();
         }
 
         /** @deprecated pass an executor */
@@ -362,7 +363,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
 
         /**
          * Returns the executor that should be used to execute tasks as part of this execution.
-         * This is never null but will be an executor that runs in the same thread if none is passed to this.
+         * This is never null but will be an executor that runs a single thread if none is passed to this.
          */
         public Executor executor() { return executor; }
 

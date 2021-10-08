@@ -90,37 +90,28 @@ public class FederationSearcher extends ForkingSearcher {
     private final boolean strictSearchchain;
     private final TargetSelector<?> targetSelector;
     private final Clock clock = Clock.systemUTC();
-    private final Executor executor;
-
-
 
     @Inject
     public FederationSearcher(FederationConfig config, StrictContractsConfig strict,
-                              ComponentRegistry<TargetSelector> targetSelectors, Executor executor) {
+                              ComponentRegistry<TargetSelector> targetSelectors) {
         this(createResolver(config), strict.searchchains(), strict.propagateSourceProperties(),
-             resolveSelector(config.targetSelector(), targetSelectors), executor);
+             resolveSelector(config.targetSelector(), targetSelectors));
     }
 
     // for testing
-    FederationSearcher(ComponentId id, SearchChainResolver searchChainResolver, Executor executor) {
-        this(searchChainResolver, false, PropagateSourceProperties.EVERY, null, executor);
-    }
-    // for testing
     public FederationSearcher(ComponentId id, SearchChainResolver searchChainResolver) {
-        this(id, searchChainResolver, new InThreadExecutorService());
+        this(searchChainResolver, false, PropagateSourceProperties.EVERY, null);
     }
 
     private FederationSearcher(SearchChainResolver searchChainResolver,
                                boolean strictSearchchain,
                                PropagateSourceProperties.Enum propagateSourceProperties,
-                               TargetSelector targetSelector,
-                               Executor executor) {
+                               TargetSelector targetSelector) {
         this.searchChainResolver = searchChainResolver;
         sourceRefResolver = new SourceRefResolver(searchChainResolver);
         this.strictSearchchain = strictSearchchain;
         this.propagateSourceProperties = propagateSourceProperties;
         this.targetSelector = targetSelector;
-        this.executor = executor;
     }
 
     private static TargetSelector resolveSelector(String selectorId,
@@ -255,7 +246,7 @@ public class FederationSearcher extends ForkingSearcher {
         if (timeout <= 0)
             return new FutureResult(() -> new Result(query, ErrorMessage.createTimeout("Timed out before federation")), execution, query);
         Query clonedQuery = cloneFederationQuery(query, window, timeout, target);
-        return new AsyncExecution(target.getChain(), execution).search(clonedQuery, executor);
+        return new AsyncExecution(target.getChain(), execution).search(clonedQuery);
     }
 
     private Query cloneFederationQuery(Query query, Window window, long timeout, Target target) {
@@ -446,7 +437,7 @@ public class FederationSearcher extends ForkingSearcher {
                     propagateErrors(resultToFill, result);
                 } else {
                     AsyncExecution asyncFill = new AsyncExecution(chainExecution);
-                    futureFilledResults.add(new Pair<>(resultToFill, asyncFill.fill(resultToFill, summaryClass, executor)));
+                    futureFilledResults.add(new Pair<>(resultToFill, asyncFill.fill(resultToFill, summaryClass)));
                 }
             }
         }

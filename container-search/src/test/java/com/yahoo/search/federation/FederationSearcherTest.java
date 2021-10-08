@@ -28,8 +28,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -42,18 +40,6 @@ import static org.junit.Assert.assertTrue;
 public class FederationSearcherTest {
 
     private static final String hasBeenFilled = "hasBeenFilled";
-
-    private ExecutorService executor;
-
-    @Before
-    public void setUp() throws Exception {
-        executor = Executors.newFixedThreadPool(16);
-    }
-
-    @After
-    public void tearDown() {
-        assertEquals(0, executor.shutdownNow().size());
-    }
 
     @Test
     public void require_that_hits_are_not_automatically_filled() {
@@ -69,7 +55,7 @@ public class FederationSearcherTest {
 
     @Test
     public void require_that_hits_can_be_filled_when_moved() {
-        FederationTester tester = new FederationTester(executor);
+        FederationTester tester = new FederationTester();
         tester.addSearchChain("chain1", new AddHitSearcher());
         tester.addSearchChain("chain2", new AddHitSearcher());
 
@@ -97,7 +83,7 @@ public class FederationSearcherTest {
 
     @Test
     public void require_that_hits_can_be_filled_for_multiple_chains_and_queries() {
-        FederationTester tester = new FederationTester(executor);
+        FederationTester tester = new FederationTester();
         tester.addSearchChain("chain1", new AddHitSearcher());
         tester.addSearchChain("chain2", new ModifyQueryAndAddHitSearcher("modified1"));
         tester.addSearchChain("chain3", new ModifyQueryAndAddHitSearcher("modified2"));
@@ -111,7 +97,7 @@ public class FederationSearcherTest {
 
     @Test
     public void require_that_hits_that_time_out_in_fill_are_removed() {
-        FederationTester tester = new FederationTester(executor);
+        FederationTester tester = new FederationTester();
         tester.addSearchChain("chain1", new AddHitSearcher());
         tester.addSearchChain("chain2", new TimeoutInFillSearcher());
 
@@ -129,7 +115,7 @@ public class FederationSearcherTest {
     public void require_that_optional_search_chains_does_not_delay_federation() {
         BlockingSearcher blockingSearcher = new BlockingSearcher();
 
-        FederationTester tester = new FederationTester(executor);
+        FederationTester tester = new FederationTester();
         tester.addSearchChain("chain1", new AddHitSearcher());
         tester.addOptionalSearchChain("chain2", blockingSearcher);
 
@@ -158,7 +144,7 @@ public class FederationSearcherTest {
 
     @Test
     public void require_that_calling_a_single_slow_source_with_long_timeout_does_not_delay_federation() {
-        FederationTester tester = new FederationTester(executor);
+        FederationTester tester = new FederationTester();
         tester.addSearchChain("chain1",
                               new FederationOptions().setUseByDefault(true).setRequestTimeoutInMilliseconds(3600 * 1000),
                               new BlockingSearcher() );
@@ -188,7 +174,7 @@ public class FederationSearcherTest {
         FederationSearcher searcher = new FederationSearcher(
                 new FederationConfig(new FederationConfig.Builder().targetSelector(targetSelectorId.toString())),
                 new StrictContractsConfig(new StrictContractsConfig.Builder()),
-                targetSelectors, executor);
+                targetSelectors);
 
         Query query = new Query();
         query.setTimeout(20000);
@@ -207,7 +193,7 @@ public class FederationSearcherTest {
         FederationSearcher searcher = new FederationSearcher(
                 new FederationConfig(new FederationConfig.Builder().targetSelector(targetSelectorId.toString())),
                 new StrictContractsConfig(new StrictContractsConfig.Builder()),
-                targetSelectors, executor);
+                targetSelectors);
 
         Query query = new Query();
         query.setTimeout(20000);
@@ -241,7 +227,7 @@ public class FederationSearcherTest {
     }
 
     private FederationTester federationToSingleAddHitSearcher() {
-        FederationTester tester = new FederationTester(executor);
+        FederationTester tester = new FederationTester();
         tester.addSearchChain("chain1", new AddHitSearcher());
         return tester;
     }

@@ -2,7 +2,6 @@
 package com.yahoo.search.searchchain;
 
 import com.yahoo.component.chain.Chain;
-import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -12,7 +11,6 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -40,19 +38,16 @@ public class VespaAsyncSearcherTest {
 
     private static class FirstSearcher extends Searcher {
 
-        private final Executor executor;
-        FirstSearcher(Executor executor) { this.executor = executor;}
-
         @Override
         public Result search(Query query, Execution execution) {
             int count = 10;
             List<FutureResult> futures = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
                 Query subQuery = query.clone();
-                FutureResult future = new AsyncExecution(execution).search(subQuery, executor);
+                FutureResult future = new AsyncExecution(execution).search(subQuery);
                 futures.add(future);
             }
-            AsyncExecution.waitForAll(futures, 10 * 60 * 1000, new InThreadExecutorService());
+            AsyncExecution.waitForAll(futures, 10 * 60 * 1000);
             Result combinedResult = new Result(query);
             for (FutureResult resultFuture : futures) {
                 Result result = resultFuture.get();
@@ -75,7 +70,7 @@ public class VespaAsyncSearcherTest {
 
     @Test
     public void testAsyncExecution() {
-        Chain<Searcher> chain = new Chain<>(new FirstSearcher(executor), new SecondSearcher());
+        Chain<Searcher> chain = new Chain<>(new FirstSearcher(), new SecondSearcher());
         Execution execution = new Execution(chain, Execution.Context.createContextStub(null));
         Query query = new Query();
         execution.search(query);
