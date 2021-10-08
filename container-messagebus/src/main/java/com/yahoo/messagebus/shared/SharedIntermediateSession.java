@@ -37,7 +37,7 @@ public class SharedIntermediateSession extends AbstractResource
         this.msgHandler.set(params.getMessageHandler());
         this.session = mbus.messageBus().createDetachedIntermediateSession(params.setReplyHandler(this)
                                                                                  .setMessageHandler(this));
-        this.mbusReference = mbus.refer();
+        this.mbusReference = mbus.refer(this);
     }
 
     public IntermediateSession session() {

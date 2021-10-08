@@ -44,7 +44,7 @@ public final class MbusServer extends AbstractResource implements ServerProvider
         this.session = session;
         uri = URI.create("mbus://localhost/" + session.name());
         session.setMessageHandler(this);
-        sessionReference = session.refer();
+        sessionReference = session.refer(this);
     }
 
     @Override
