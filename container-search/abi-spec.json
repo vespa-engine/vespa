@@ -7845,7 +7845,7 @@
       "public void setBreakdown(boolean)",
       "public com.yahoo.language.Linguistics getLinguistics()",
       "public void setLinguistics(com.yahoo.language.Linguistics)",
-      "public java.util.concurrent.Executor getExecutor()"
+      "public java.util.concurrent.Executor executor()"
     ],
     "fields": []
   },
