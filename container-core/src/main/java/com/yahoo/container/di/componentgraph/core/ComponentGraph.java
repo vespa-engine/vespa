@@ -95,11 +95,11 @@ public class ComponentGraph {
             List<Node> nonProviderComponents = components.stream().filter(c -> !Provider.class.isAssignableFrom(c.instanceType()))
                     .collect(Collectors.toList());
             if (nonProviderComponents.isEmpty()) {
-                throw new IllegalStateException("Multiple global component providers for class '" + clazz.getName() + "' found");
+                throw new IllegalStateException("Multiple global component providers for class '" + clazz.getName() + "' found :" + components);
             } else if (nonProviderComponents.size() == 1) {
                 return Optional.of(nonProviderComponents.get(0));
             } else {
-                throw new IllegalStateException("Multiple global components with class '" + clazz.getName() + "' found");
+                throw new IllegalStateException("Multiple global components with class '" + clazz.getName() + "' found : " + nonProviderComponents);
             }
         }
     }
