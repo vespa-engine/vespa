@@ -8,6 +8,8 @@ import com.yahoo.config.FileReference;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.filedistribution.CompressedFileReference;
 import com.yahoo.vespa.filedistribution.EmptyFileReferenceData;
@@ -27,8 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.createConnectionPool;
-import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.emptyConnectionPool;
+import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
 
 public class FileServer {
     private static final Logger log = Logger.getLogger(FileServer.class.getName());
@@ -70,12 +71,16 @@ public class FileServer {
     @Inject
     public FileServer(ConfigserverConfig configserverConfig) {
         this(new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())),
-             new FileDownloader(createConnectionPool(configserverConfig)));
+             new FileDownloader(getOtherConfigServersInCluster(configserverConfig),
+                                new Supervisor(new Transport("filedistribution-pool"))
+                                        .setDropEmptyBuffers(true)));
     }
 
     // For testing only
     public FileServer(File rootDir) {
-        this(rootDir, new FileDownloader(emptyConnectionPool()));
+        this(rootDir, new FileDownloader(FileDownloader.emptyConnectionPool(),
+                                         new Supervisor(new Transport("fileserver-for-testing"))
+                                                 .setDropEmptyBuffers(true)));
     }
 
     public FileServer(File rootDir, FileDownloader fileDownloader) {

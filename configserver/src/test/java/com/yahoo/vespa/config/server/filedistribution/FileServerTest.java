@@ -4,6 +4,8 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.filedistribution.Downloads;
 import com.yahoo.vespa.filedistribution.FileDownloader;
@@ -22,7 +24,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.emptyConnectionPool;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -138,7 +139,12 @@ public class FileServerTest {
     private static class MockFileDownloader extends FileDownloader {
 
         public MockFileDownloader(File downloadDirectory) {
-            super(emptyConnectionPool(), downloadDirectory, new Downloads(), Duration.ofMillis(100), Duration.ofMillis(100));
+            super(FileDownloader.emptyConnectionPool(),
+                  new Supervisor(new Transport("mock")).setDropEmptyBuffers(true),
+                  downloadDirectory,
+                  new Downloads(),
+                  Duration.ofMillis(100),
+                  Duration.ofMillis(100));
         }
 
     }

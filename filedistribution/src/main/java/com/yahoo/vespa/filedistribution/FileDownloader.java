@@ -2,14 +2,17 @@
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.config.FileReference;
-import java.util.logging.Level;
+import com.yahoo.config.subscription.ConfigSourceSet;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
+import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.time.Duration;
-
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -18,6 +21,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -31,27 +35,33 @@ public class FileDownloader implements AutoCloseable {
     public static File defaultDownloadDirectory = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"));
 
     private final ConnectionPool connectionPool;
+    private final Supervisor supervisor;
     private final File downloadDirectory;
     private final Duration timeout;
     private final FileReferenceDownloader fileReferenceDownloader;
     private final Downloads downloads;
 
-    public FileDownloader(ConnectionPool connectionPool) {
-        this(connectionPool, defaultDownloadDirectory, new Downloads());
+    public FileDownloader(List<String> configservers, Supervisor supervisor) {
+        this(getConnectionPool(configservers, supervisor), supervisor);
     }
 
-    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory, Downloads downloads) {
+    public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor) {
+        this(connectionPool, supervisor, defaultDownloadDirectory, new Downloads());
+    }
+
+    public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor, File downloadDirectory, Downloads downloads) {
         // TODO: Reduce timeout even more, timeout is so long that we might get starvation
-        this(connectionPool, downloadDirectory, downloads, Duration.ofMinutes(5), Duration.ofSeconds(10));
+        this(connectionPool, supervisor, downloadDirectory, downloads, Duration.ofMinutes(5), Duration.ofSeconds(10));
     }
 
-    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory, Downloads downloads,
+    public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor, File downloadDirectory, Downloads downloads,
                           Duration timeout, Duration sleepBetweenRetries) {
         this.connectionPool = connectionPool;
+        this.supervisor = supervisor;
         this.downloadDirectory = downloadDirectory;
         this.timeout = timeout;
-        // Needed to receive RPC calls receiveFile* from server after asking for files
-        new FileReceiver(connectionPool.getSupervisor(), downloads, downloadDirectory);
+        // Needed to receive RPC receiveFile* calls from server after asking for files
+        new FileReceiver(supervisor, downloads, downloadDirectory);
         this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool, downloads, timeout, sleepBetweenRetries);
         this.downloads = downloads;
     }
@@ -133,6 +143,33 @@ public class FileDownloader implements AutoCloseable {
 
     public void close() {
         fileReferenceDownloader.close();
+        supervisor.transport().shutdown().join();
+    }
+
+    private static ConnectionPool getConnectionPool(List<String> configServers, Supervisor supervisor) {
+        return configServers.size() > 0
+                ? new JRTConnectionPool(new ConfigSourceSet(configServers), supervisor)
+                : emptyConnectionPool();
+    }
+
+    public static ConnectionPool emptyConnectionPool() {
+        return new EmptyConnectionPool();
+    }
+
+    private static class EmptyConnectionPool implements ConnectionPool {
+
+        @Override
+        public void close() { }
+
+        @Override
+        public Connection getCurrent() { return null; }
+
+        @Override
+        public Connection switchConnection(Connection connection) { return null; }
+
+        @Override
+        public int getSize() { return 0; }
+
     }
 
 }
