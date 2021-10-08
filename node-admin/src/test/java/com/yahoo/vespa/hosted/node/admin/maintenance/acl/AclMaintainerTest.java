@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
+import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
@@ -37,7 +38,8 @@ public class AclMaintainerTest {
 
     private final ContainerOperations containerOperations = mock(ContainerOperations.class);
     private final IPAddressesMock ipAddresses = new IPAddressesMock();
-    private final AclMaintainer aclMaintainer = new AclMaintainer(containerOperations, ipAddresses);
+    private final Metrics metrics = new Metrics();
+    private final AclMaintainer aclMaintainer = new AclMaintainer(containerOperations, ipAddresses, metrics);
 
     private final FileSystem fileSystem = TestFileSystem.create();
     private final Function<Acl, NodeAgentContext> contextGenerator =
