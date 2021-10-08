@@ -181,7 +181,8 @@ struct State {
     }
 
     void calculate_scores(size_t num_query_terms, int total_term_weight) {
-        double matches = std::min(element_length, matched_terms);
+        element_length = std::max(element_length, matched_terms);
+        double matches = matched_terms;
         if (matches < 2) {
             proximity = proximity_score(element_length);
             order = (num_query_terms == 1) ? 1.0 : 0.0;
