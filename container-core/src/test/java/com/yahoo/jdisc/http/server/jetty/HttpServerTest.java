@@ -94,6 +94,7 @@ import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
 
 /**
  * @author Oyvind Bakksjo
@@ -106,14 +107,14 @@ public class HttpServerTest {
     public TemporaryFolder tmpFolder = new TemporaryFolder();
 
     @Test
-    public void requireThatServerCanListenToRandomPort() throws Exception {
+    public void requireThatServerCanListenToRandomPort() {
         final JettyTestDriver driver = JettyTestDriver.newInstance(mockRequestHandler());
         assertNotEquals(0, driver.server().getListenPort());
         assertTrue(driver.close());
     }
 
     @Test
-    public void requireThatServerCanNotListenToBoundPort() throws Exception {
+    public void requireThatServerCanNotListenToBoundPort() {
         final JettyTestDriver driver = JettyTestDriver.newInstance(mockRequestHandler());
         try {
             JettyTestDriver.newConfiguredInstance(
@@ -759,6 +760,7 @@ public class HttpServerTest {
     private static RequestHandler mockRequestHandler() {
         final RequestHandler mockRequestHandler = mock(RequestHandler.class);
         when(mockRequestHandler.refer()).thenReturn(References.NOOP_REFERENCE);
+        when(mockRequestHandler.refer(any())).thenReturn(References.NOOP_REFERENCE);
         return mockRequestHandler;
     }
 
@@ -771,7 +773,7 @@ public class HttpServerTest {
     }
 
     private static JettyTestDriver newDriverWithFormPostContentRemoved(RequestHandler requestHandler,
-                                                                       boolean removeFormPostBody) throws Exception {
+                                                                       boolean removeFormPostBody) {
         return JettyTestDriver.newConfiguredInstance(
                 requestHandler,
                 new ServerConfig.Builder()
