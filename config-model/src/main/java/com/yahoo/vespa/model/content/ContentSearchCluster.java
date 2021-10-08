@@ -65,6 +65,8 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private Optional<ResourceLimits> resourceLimits = Optional.empty();
     private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
     private final double defaultFeedConcurrency;
+    private final double defaultDiskBloatFactor;
+    private final int defaultDocStoreCompressionLevel;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final boolean combined;
@@ -209,6 +211,8 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.combined = combined;
         feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
         defaultFeedConcurrency = featureFlags.feedConcurrency();
+        defaultDocStoreCompressionLevel = featureFlags.docstoreCompressionLevel();
+        defaultDiskBloatFactor = featureFlags.diskBloatFactor();
     }
 
     public void setVisibilityDelay(double delay) {
@@ -401,6 +405,9 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         } else {
             builder.feeding.concurrency(defaultFeedConcurrency);
         }
+        builder.flush.memory.diskbloatfactor(defaultDiskBloatFactor);
+        builder.flush.memory.each.diskbloatfactor(defaultDiskBloatFactor);
+        builder.summary.log.chunk.compression.level(defaultDocStoreCompressionLevel);
 
         int numDocumentDbs = builder.documentdb.size();
         builder.initialize(new ProtonConfig.Initialize.Builder().threads(numDocumentDbs + 1));

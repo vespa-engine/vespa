@@ -50,7 +50,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useAsyncMessageHandlingOnSchedule = false;
     private double feedConcurrency = 0.5;
     private boolean enableFeedBlockInDistributor = true;
-    private boolean enforceRankProfileInheritance = true;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
@@ -66,6 +65,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean containerDumpHeapOnShutdownTimeout = false;
     private double containerShutdownTimeout = 50.0;
     private int distributorMergeBusyWait = 10;
+    private int docstoreCompressionLevel = 9;
+    private double diskBloatFactor = 0.2;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -111,7 +112,18 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
     @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
     @Override public int distributorMergeBusyWait() { return distributorMergeBusyWait; }
+    @Override public double diskBloatFactor() { return diskBloatFactor; }
+    @Override public int docstoreCompressionLevel() { return docstoreCompressionLevel; }
 
+    public TestProperties docstoreCompressionLevel(int docstoreCompressionLevel) {
+        this.docstoreCompressionLevel = docstoreCompressionLevel;
+        return this;
+    }
+
+    public TestProperties diskBloatFactor(double diskBloatFactor) {
+        this.diskBloatFactor = diskBloatFactor;
+        return this;
+    }
 
     public TestProperties containerDumpHeapOnShutdownTimeout(boolean value) {
         containerDumpHeapOnShutdownTimeout = value;
