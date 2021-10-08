@@ -30,9 +30,10 @@ public final class ConfigRetriever {
 
     private final Set<ConfigKey<? extends ConfigInstance>> bootstrapKeys;
     private Set<ConfigKey<? extends ConfigInstance>> componentSubscriberKeys;
+
+    private final SubscriberFactory subscriberFactory;
     private final Subscriber bootstrapSubscriber;
     private Subscriber componentSubscriber;
-    private final SubscriberFactory subscriberFactory;
     private int componentSubscriberIndex;
 
     public ConfigRetriever(Set<ConfigKey<? extends ConfigInstance>> bootstrapKeys, SubscriberFactory subscriberFactory) {
