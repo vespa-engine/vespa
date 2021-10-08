@@ -363,7 +363,8 @@ public class QueryTestCase {
                                                                           createIndexFacts(),
                                                                           null,
                                                                           null,
-                                                                          linguistics)));
+                                                                          linguistics,
+                                                                          null)));
         query.getModel().setLanguage(language);
         return query;
     }

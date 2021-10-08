@@ -366,7 +366,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /**
      * Returns the set of summary classes for which this hit is
      * filled as an unmodifiable set. If this set is 'null', it means that this hit is
-     * unfillable, which is equivalent with a hit where all summary
+     * unfillable, which is equivalent to a hit where all summary
      * classes have already been used for filling, or a hit where
      * further filling will yield no extra information, if you prefer
      * to look at it that way.

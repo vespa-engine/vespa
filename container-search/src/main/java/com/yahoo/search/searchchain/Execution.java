@@ -17,6 +17,8 @@ import com.yahoo.search.cluster.PingableSearcher;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.statistics.TimeTracker;
 
+import java.util.concurrent.Executor;
+
 /**
  * <p>An execution of a search chain. This keeps track of the call state for an execution (in the calling thread)
  * of the searchers of a search chain.</p>
@@ -79,6 +81,8 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         /** The current linguistics */
         private Linguistics linguistics = null;
 
+        private Executor executor;
+
         /** Always set if this context belongs to an execution, never set if it does not. */
         private final Execution owner;
 
@@ -89,10 +93,10 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         // package private.
 
         /** Create a context used to carry state into another context */
-        Context() { this.owner=null; }
+        Context() { this.owner = null; }
 
         /** Create a context which belongs to an execution */
-        Context(Execution owner) { this.owner=owner; }
+        Context(Execution owner) { this.owner = owner; }
 
         /**
          * Creates a context from arguments, all of which may be null, though
@@ -107,11 +111,9 @@ public class Execution extends com.yahoo.processing.execution.Execution {
          * another context.
          */
         public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts,
-                       SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics)
-        {
+                       SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics,
+                       Executor executor) {
             owner = null;
-            // The next time something is added here, compose into wrapper objects. Many arguments...
-
             // Four methods need to be updated when adding something:
             // fill(Context), populateFrom(Context), equals(Context) and,
             // obviously, the most complete constructor.
@@ -120,11 +122,19 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             this.tokenRegistry = tokenRegistry;
             this.rendererRegistry = rendererRegistry;
             this.linguistics = linguistics;
+            this.executor = executor;
+        }
+
+        /** @deprecated pass an executor */
+        @Deprecated // TODO: Remove on Vespa 8
+        public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts,
+                       SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics) {
+            this(searchChainRegistry, indexFacts, tokenRegistry, rendererRegistry, linguistics, null);
         }
 
         /** Creates a context stub with no information. This is for unit testing. */
         public static Context createContextStub() {
-            return new Context(null, null, null, null, null);
+            return new Context(null, null, null, null, null, null);
         }
 
         /**
@@ -132,7 +142,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
          * initialized. This is for unit testing.
          */
         public static Context createContextStub(IndexFacts indexFacts) {
-            return new Context(null, indexFacts, null, null, null);
+            return new Context(null, indexFacts, null, null, null, null);
         }
 
         /**
@@ -140,7 +150,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
          * initialized. This is for unit testing.
          */
         public static Context createContextStub(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts) {
-            return new Context(searchChainRegistry, indexFacts, null, null, null);
+            return new Context(searchChainRegistry, indexFacts, null, null, null, null);
         }
 
         /**
@@ -148,7 +158,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
          * initialized. This is for unit testing.
          */
         public static Context createContextStub(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts, Linguistics linguistics) {
-            return new Context(searchChainRegistry, indexFacts, null, null, linguistics);
+            return new Context(searchChainRegistry, indexFacts, null, null, linguistics, null);
         }
 
         /**
@@ -161,21 +171,19 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             // breakdown and detailedDiagnostics has no unset state, so they are always copied
             detailedDiagnostics = sourceContext.detailedDiagnostics;
             breakdown = sourceContext.breakdown;
-            if (indexFacts == null) {
+            if (indexFacts == null)
                 indexFacts = sourceContext.indexFacts;
-            }
-            if (tokenRegistry == null) {
+            if (tokenRegistry == null)
                 tokenRegistry = sourceContext.tokenRegistry;
-            }
-            if (searchChainRegistry == null) {
+            if (searchChainRegistry == null)
                 searchChainRegistry = sourceContext.searchChainRegistry;
-            }
-            if (rendererRegistry == null) {
+            if (rendererRegistry == null)
                 rendererRegistry = sourceContext.rendererRegistry;
-            }
-            if (linguistics == null) {
+            if (linguistics == null)
                 linguistics = sourceContext.linguistics;
-            }
+            if (executor == null)
+                executor = sourceContext.executor;
+
         }
 
         /**
@@ -191,6 +199,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             detailedDiagnostics = other.detailedDiagnostics;
             breakdown = other.breakdown;
             linguistics = other.linguistics;
+            executor = other.executor;
         }
 
         public boolean equals(Context other) {
@@ -202,7 +211,8 @@ public class Execution extends com.yahoo.processing.execution.Execution {
                     && other.searchChainRegistry == searchChainRegistry
                     && other.detailedDiagnostics == detailedDiagnostics
                     && other.breakdown == breakdown
-                    && other.linguistics == linguistics;
+                    && other.linguistics == linguistics
+                    && other.executor == executor;
         }
 
         @Override
@@ -210,19 +220,15 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             return java.util.Objects.hash(indexFacts,
                                           rendererRegistry, tokenRegistry, searchChainRegistry,
                                           detailedDiagnostics, breakdown,
-                                          linguistics);
+                                          linguistics,
+                                          executor);
         }
 
         @Override
         public boolean equals(Object other) {
-            if (other == null) {
-                return false;
-            }
-            if (other.getClass() != Context.class) {
-                return false;
-            } else {
-                return equals((Context) other);
-            }
+            if (other == null) return false;
+            if (other.getClass() != Context.class) return false;
+            return equals((Context) other);
         }
 
         /**
@@ -268,9 +274,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
          * IndexFacts instance in a subclass. E.g.
          * execution.context().setIndexFacts(new WrapperClass(execution.context().getIndexFacts())).
          *
-         * @param indexFacts
-         *            an instance to override the following searcher's view of
-         *            the indexes.
+         * @param indexFacts an instance to override the following searcher's view of the indexes
          */
         public void setIndexFacts(IndexFacts indexFacts) {
             this.indexFacts = indexFacts;
@@ -294,9 +298,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             return rendererRegistry;
         }
 
-        /**
-         * @return the current set of special strings for the query tokenizer
-         */
+        /** Returns the current set of special strings for the query tokenizer */
         public SpecialTokenRegistry getTokenRegistry() {
             return tokenRegistry;
         }
@@ -358,6 +360,9 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         public void setLinguistics(Linguistics linguistics) {
             this.linguistics = linguistics;
         }
+
+        /** Returns the executor that should be used to execute tasks as part of this execution, or null if none */
+        public Executor getExecutor() { return executor; }
 
         /** Creates a child trace if this has an owner, or a root trace otherwise */
         private Trace createChildTrace() {

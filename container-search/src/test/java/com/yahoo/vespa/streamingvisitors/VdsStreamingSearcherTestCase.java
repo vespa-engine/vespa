@@ -157,7 +157,7 @@ public class VdsStreamingSearcherTestCase {
     }
 
     private static Result executeQuery(VdsStreamingSearcher searcher, Query query) {
-        Execution execution = new Execution(new Execution.Context(null, null, null, null, null));
+        Execution execution = new Execution(new Execution.Context(null, null, null, null, null, null));
         return searcher.doSearch2(query, execution);
     }
 

@@ -418,7 +418,7 @@ public class FieldCollapsingSearcherTestCase {
     }
 
     private Execution createExecution(Searcher searcher, Map<Searcher, Searcher> chained) {
-        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
+        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics(), null);
         return new Execution(chainedAsSearchChain(searcher, chained), context);
     }
 

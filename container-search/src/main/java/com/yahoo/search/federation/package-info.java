@@ -13,5 +13,4 @@
 @ExportPackage
 package com.yahoo.search.federation;
 
-import com.yahoo.api.annotations.PublicApi;
 import com.yahoo.osgi.annotation.ExportPackage;
