@@ -335,6 +335,9 @@ struct StorageConfigSet
         stor_communicationmanager.rpc.numNetworkThreads = params.get_rpc_network_threads();
         stor_communicationmanager.rpc.eventsBeforeWakeup = params.get_rpc_events_before_wakeup();
         stor_communicationmanager.rpc.numTargetsPerNode = params.get_rpc_targets_per_node();
+        if (params.get_mbus_distributor_node_max_pending_count().has_value()) {
+            stor_communicationmanager.mbusDistributorNodeMaxPendingCount = params.get_mbus_distributor_node_max_pending_count().value();
+        }
         stor_communicationmanager.mbusport = mbus_port;
         stor_communicationmanager.rpcport = rpc_port;
         stor_communicationmanager.skipThread = params.get_skip_communicationmanager_thread();
