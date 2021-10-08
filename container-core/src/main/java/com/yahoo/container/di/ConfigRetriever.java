@@ -33,6 +33,7 @@ public final class ConfigRetriever {
     private final Subscriber bootstrapSubscriber;
     private Subscriber componentSubscriber;
     private final SubscriberFactory subscriberFactory;
+    private int componentSubscriberIndex;
 
     public ConfigRetriever(Set<ConfigKey<? extends ConfigInstance>> bootstrapKeys, SubscriberFactory subscriberFactory) {
         this.bootstrapKeys = bootstrapKeys;
@@ -41,8 +42,8 @@ public final class ConfigRetriever {
         if (bootstrapKeys.isEmpty()) {
             throw new IllegalArgumentException("Bootstrap key set is empty");
         }
-        this.bootstrapSubscriber = this.subscriberFactory.getSubscriber(bootstrapKeys);
-        this.componentSubscriber = this.subscriberFactory.getSubscriber(componentSubscriberKeys);
+        this.bootstrapSubscriber = this.subscriberFactory.getSubscriber(bootstrapKeys, "bootstrap");
+        this.componentSubscriber = this.subscriberFactory.getSubscriber(componentSubscriberKeys, "component_" + ++componentSubscriberIndex);
     }
 
     public ConfigSnapshot getConfigs(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
@@ -133,7 +134,7 @@ public final class ConfigRetriever {
             componentSubscriberKeys = keys;
             try {
                 log.log(FINE, () -> "Setting up new component subscriber for keys: " + keys);
-                componentSubscriber = subscriberFactory.getSubscriber(keys);
+                componentSubscriber = subscriberFactory.getSubscriber(keys, "component_" + ++componentSubscriberIndex);
             } catch (Throwable e) {
                 log.log(Level.WARNING, "Failed setting up subscriptions for component configs: " + e.getMessage());
                 log.log(Level.WARNING, "Config keys: " + keys);

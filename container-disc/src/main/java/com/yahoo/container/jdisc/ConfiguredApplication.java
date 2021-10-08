@@ -212,7 +212,8 @@ public final class ConfiguredApplication implements Application {
     }
 
     private <T extends ConfigInstance> T getConfig(Class<T> configClass, boolean isInitializing) {
-        Subscriber subscriber = subscriberFactory.getSubscriber(Collections.singleton(new ConfigKey<>(configClass, configId)));
+        Subscriber subscriber = subscriberFactory.getSubscriber(Collections.singleton(new ConfigKey<>(configClass, configId)),
+                                                                configClass.getName());
         try {
             subscriber.waitNextGeneration(isInitializing);
             return configClass.cast(first(subscriber.config().values()));
@@ -222,7 +223,8 @@ public final class ConfiguredApplication implements Application {
     }
 
     private void watchPortChange() {
-        Subscriber subscriber = subscriberFactory.getSubscriber(Collections.singleton(new ConfigKey<>(QrConfig.class, configId)));
+        Subscriber subscriber = subscriberFactory.getSubscriber(Collections.singleton(new ConfigKey<>(QrConfig.class, configId)),
+                                                                "portWatcher");
         try {
             while (true) {
                 subscriber.waitNextGeneration(false);

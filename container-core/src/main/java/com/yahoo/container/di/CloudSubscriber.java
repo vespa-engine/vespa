@@ -24,13 +24,15 @@ import static java.util.logging.Level.FINE;
 public class CloudSubscriber  implements Subscriber {
     private static final Logger log = Logger.getLogger(CloudSubscriber.class.getName());
 
+    private final String name;
     private final ConfigSubscriber subscriber;
     private final Map<ConfigKey<ConfigInstance>, ConfigHandle<ConfigInstance>> handles = new HashMap<>();
 
     // if waitNextGeneration has not yet been called, -1 should be returned
     private long generation = -1L;
 
-    CloudSubscriber(Set<ConfigKey<ConfigInstance>> keys, ConfigSource configSource) {
+    CloudSubscriber(String name, ConfigSource configSource, Set<ConfigKey<ConfigInstance>> keys) {
+        this.name = name;
         this.subscriber = new ConfigSubscriber(configSource);
         keys.forEach(k -> handles.put(k, subscriber.subscribe(k.getConfigClass(), k.getConfigId())));
     }
@@ -89,6 +91,11 @@ public class CloudSubscriber  implements Subscriber {
     @Override
     public void close() {
         subscriber.close();
+    }
+
+    @Override
+    public String toString() {
+        return "CloudSubscriber{" + name + ", gen." + generation + "}";
     }
 
     // TODO: Remove, only used by test specific code in CloudSubscriberFactory
