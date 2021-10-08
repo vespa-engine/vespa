@@ -7,6 +7,7 @@
 #include "match_tools.h"
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/vespalib/util/thread_bundle.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/data/slime/inject.h>
 #include <vespa/vespalib/data/slime/cursor.h>
@@ -20,6 +21,7 @@ namespace proton::matching {
 using namespace search::fef;
 using search::queryeval::SearchIterator;
 using search::FeatureSet;
+using vespalib::Issue;
 
 namespace {
 
@@ -100,6 +102,7 @@ MatchMaster::match(search::engine::Trace & trace,
         if (inserter && matchThread.getTrace().hasTrace()) {
             vespalib::slime::inject(matchThread.getTrace().getRoot(), *inserter);
         }
+        matchThread.get_issues().for_each_message([](const auto &msg){ Issue::report(Issue(msg)); });
     }
     _stats.queryLatency(query_time_s);
     _stats.matchTime(match_time_s - rerank_time_s);

@@ -4,6 +4,7 @@
 
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/hitrank.h>
+#include <vespa/searchlib/common/unique_issues.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vector>
@@ -72,6 +73,7 @@ public:
     PropertiesMap         propertiesMap;
 
     SearchRequest::UP     request;
+    UniqueIssues::UP      my_issues;
 
     SearchReply();
     ~SearchReply();

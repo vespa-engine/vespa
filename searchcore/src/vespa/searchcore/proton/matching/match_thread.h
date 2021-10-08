@@ -12,6 +12,7 @@
 #include <vespa/vespalib/util/dual_merge_director.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/common/sortresults.h>
+#include <vespa/searchlib/common/unique_issues.h>
 #include <vespa/searchlib/queryeval/hitcollector.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 
@@ -44,6 +45,7 @@ public:
     using Doom = vespalib::Doom;
     using Trace = search::engine::Trace;
     using RelativeTime = search::engine::RelativeTime;
+    using UniqueIssues = search::UniqueIssues;
 
 private:
     size_t                        thread_id;
@@ -63,6 +65,7 @@ private:
     double                        wait_time_s;
     bool                          match_with_ranking;
     std::unique_ptr<Trace>        trace;
+    UniqueIssues                  my_issues;
 
     class Context {
     public:
@@ -129,6 +132,7 @@ public:
     double get_match_time() const { return match_time_s; }
     PartialResult::UP extract_result() { return std::move(resultContext->result); }
     const Trace & getTrace() const { return *trace; }
+    const UniqueIssues &get_issues() const { return my_issues; }
 };
 
 }

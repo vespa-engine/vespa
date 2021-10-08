@@ -128,6 +128,9 @@ SummaryEngine::getDocsums(DocsumRequest::Source request, DocsumClient & client)
 DocsumReply::UP
 SummaryEngine::getDocsums(DocsumRequest::UP req)
 {
+    auto my_issues = std::make_unique<search::UniqueIssues>();
+    auto capture_issues = vespalib::Issue::listen(*my_issues);
+
     DocsumReply::UP reply = std::make_unique<DocsumReply>();
 
     if (req) {
@@ -147,6 +150,7 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
         updateDocsumMetrics(vespalib::to_s(req->getTimeUsed()), getNumDocs(*reply));
     }
     reply->request = std::move(req);
+    reply->my_issues = std::move(my_issues);
 
     return reply;
 }

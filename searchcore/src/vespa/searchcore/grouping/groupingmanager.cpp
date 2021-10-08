@@ -5,6 +5,8 @@
 #include "groupingcontext.h"
 #include <vespa/searchlib/aggregation/fs4hit.h>
 #include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/vespalib/util/issue.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".groupingmanager");
@@ -13,6 +15,8 @@ namespace search::grouping {
 
 using aggregation::Grouping;
 using attribute::IAttributeContext;
+using vespalib::Issue;
+using vespalib::make_string_short::fmt;
 
 //-----------------------------------------------------------------------------
 
@@ -56,7 +60,14 @@ GroupingManager::init(const IAttributeContext &attrCtx)
             grouping.configureStaticStuff(stuff);
             list.push_back(groupingList[i]);
         } catch (const std::exception & e) {
-            LOG(error, "Could not locate attribute for grouping number %ld : %s. Ignoring grouping '%s'", i, e.what(), grouping.asString().c_str());
+            auto msg = fmt("Could not locate attribute for grouping number %ld : %s. Ignoring grouping '%s'", i, e.what(), grouping.asString().c_str());
+            //
+            // NOTE: if this issue is reported as an error in the
+            // search reply, the grouping searcher will discard all
+            // grouping results, which may or may not be what we want.
+            //
+            // Issue::report(msg);
+            LOG(error, "%s", msg.c_str());
         }
     }
     std::swap(list, groupingList);
