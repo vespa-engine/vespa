@@ -4,6 +4,7 @@ package ai.vespa.hosted.api;
 import java.time.Instant;
 import java.util.List;
 import java.util.OptionalLong;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
@@ -52,6 +53,13 @@ public class DeploymentLog {
         return last;
     }
 
+    @Override
+    public String toString() {
+        return "status: " + status.name() + ", " + (active ? "active" : "not active") + ", log entries:\n" +
+                entries.stream()
+                       .map(entry -> String.format("%s %s %s", entry.at(), entry.level(), entry.message()))
+                       .collect(Collectors.joining("\n"));
+    }
 
     public static class Entry {
 
