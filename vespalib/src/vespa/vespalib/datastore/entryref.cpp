@@ -1,4 +1,4 @@
-// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "entryref.hpp"
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -8,6 +8,7 @@ namespace vespalib::datastore {
 template EntryRefT<24u, 8u>::EntryRefT(size_t, uint32_t);
 template EntryRefT<31u, 1u>::EntryRefT(size_t, uint32_t);
 template EntryRefT<22u,10u>::EntryRefT(size_t, uint32_t);
+template EntryRefT<20u,12u>::EntryRefT(size_t, uint32_t);
 template EntryRefT<19u,13u>::EntryRefT(size_t, uint32_t);
 template EntryRefT<18u, 6u>::EntryRefT(size_t, uint32_t);
 template EntryRefT<15u,17u>::EntryRefT(size_t, uint32_t);

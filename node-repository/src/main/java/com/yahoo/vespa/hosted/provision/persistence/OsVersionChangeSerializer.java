@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.yahoo.component.Version;
@@ -56,9 +56,7 @@ public class OsVersionChangeSerializer {
         inspector.field(TARGETS_FIELD).traverse((ArrayTraverser) (idx, arrayInspector) -> {
             var version = Version.fromString(arrayInspector.field(VERSION_FIELD).asString());
             var nodeType = NodeSerializer.nodeTypeFromString(arrayInspector.field(NODE_TYPE_FIELD).asString());
-            // TODO(mpolden): Require this field after 2021-05-01
-            Duration budget = optionalLong(arrayInspector.field(UPGRADE_BUDGET_FIELD)).map(Duration::ofMillis)
-                                                                                      .orElse(Duration.ZERO);
+            Duration budget = SlimeUtils.duration(arrayInspector.field(UPGRADE_BUDGET_FIELD));
             Optional<Instant> lastRetiredAt = optionalLong(arrayInspector.field(LAST_RETIRED_AT_FIELD)).map(Instant::ofEpochMilli);
             targets.put(nodeType, new OsVersionTarget(nodeType, version, budget, lastRetiredAt));
         });

@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
@@ -88,7 +88,8 @@ public class ApplicationSerializerTest {
                                                                         Optional.of(Version.fromString("1.2.3")),
                                                                         Optional.of(Instant.ofEpochMilli(666)),
                                                                         Optional.empty(),
-                                                                        Optional.of("best commit"));
+                                                                        Optional.of("best commit"),
+                                                                        true);
         assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
 
         ApplicationVersion applicationVersion2 = ApplicationVersion

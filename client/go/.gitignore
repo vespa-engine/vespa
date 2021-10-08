@@ -1,0 +1,6 @@
+bin/
+dist/
+share/
+!Makefile
+!build/
+!target/

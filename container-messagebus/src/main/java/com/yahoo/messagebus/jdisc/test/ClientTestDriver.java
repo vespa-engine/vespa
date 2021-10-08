@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.jdisc.test;
 
 import com.yahoo.jdisc.References;
@@ -7,7 +7,12 @@ import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.test.TestDriver;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBusParams;
+import com.yahoo.messagebus.Protocol;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.SourceSession;
+import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.jdisc.MbusClient;
 import com.yahoo.messagebus.jdisc.MbusRequest;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
@@ -33,7 +38,7 @@ public class ClientTestDriver {
         this.server = server;
 
         MessageBusParams mbusParams = new MessageBusParams().addProtocol(protocol);
-        RPCNetworkParams netParams = new RPCNetworkParams().setSlobrokConfigId(server.slobrokId());
+        RPCNetworkParams netParams = new RPCNetworkParams().setSlobroksConfig(server.slobroksConfig());
         SharedMessageBus mbus = SharedMessageBus.newInstance(mbusParams, netParams);
         session = mbus.newSourceSession(new SourceSessionParams());
         client = new MbusClient(session);
@@ -128,7 +133,4 @@ public class ClientTestDriver {
         return new ClientTestDriver(RemoteServer.newInstanceWithInternSlobrok(), protocol);
     }
 
-    public static ClientTestDriver newInstanceWithExternSlobrok(String slobrokId) {
-        return new ClientTestDriver(RemoteServer.newInstanceWithExternSlobrok(slobrokId), new SimpleProtocol());
-    }
 }

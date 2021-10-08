@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storage/distributor/blockingoperationstarter.h>
 #include <vespa/storage/distributor/distributor_stripe_operation_context.h>
@@ -122,7 +122,7 @@ BlockingOperationStarterTest::SetUp()
     _compReg = std::make_unique<StorageComponentRegisterImpl>();
     _compReg->setClock(_clock);
     _clock.setAbsoluteTimeInSeconds(1);
-    _messageTracker = std::make_unique<PendingMessageTracker>(*_compReg);
+    _messageTracker = std::make_unique<PendingMessageTracker>(*_compReg, 0);
     _fake_ctx = std::make_unique<FakeDistributorStripeOperationContext>(*_messageTracker);
     _operation_sequencer = std::make_unique<OperationSequencer>();
     _operationStarter = std::make_unique<BlockingOperationStarter>(*_fake_ctx, *_operation_sequencer, *_starterImpl);

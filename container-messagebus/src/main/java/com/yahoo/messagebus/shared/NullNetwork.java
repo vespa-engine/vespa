@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.shared;
 
 import com.yahoo.jrt.slobrok.api.IMirror;
@@ -12,9 +12,9 @@ import java.util.List;
 /**
  * <p>Used by SharedMessageBus as a network when the container runs in LocalApplication with no network services.</p>
  *
- * @author <a href="mailto:vegardh@yahoo-inc.com">Vegard Havdal</a>
+ * @author Vegard Havdal
  */
-class NullNetwork implements Network {
+public class NullNetwork implements Network {
 
     @Override
     public boolean waitUntilReady(double seconds) {

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -36,10 +36,12 @@ public:
     class BufferType : public vespalib::datastore::BufferType<char>
     {
         using CleanContext = vespalib::datastore::BufferType<char>::CleanContext;
+        std::unique_ptr<vespalib::alloc::MemoryAllocator> _allocator;
     public:
-        BufferType(const TensorSizeCalc &tensorSizeCalc);
+        BufferType(const TensorSizeCalc &tensorSizeCalc, std::unique_ptr<vespalib::alloc::MemoryAllocator> allocator);
         ~BufferType() override;
         void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) override;
+        const vespalib::alloc::MemoryAllocator* get_memory_allocator() const override;
     };
 private:
     DataStoreType _concreteStore;
@@ -55,7 +57,7 @@ private:
     setDenseTensor(const TensorType &tensor);
 
 public:
-    DenseTensorStore(const ValueType &type);
+    DenseTensorStore(const ValueType &type, std::unique_ptr<vespalib::alloc::MemoryAllocator> allocator);
     ~DenseTensorStore() override;
 
     const ValueType &type() const { return _type; }

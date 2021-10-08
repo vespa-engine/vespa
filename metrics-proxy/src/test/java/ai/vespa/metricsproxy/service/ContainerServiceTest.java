@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
+import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.service.RemoteMetricsFetcher.METRICS_PATH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -40,7 +41,7 @@ public class ContainerServiceTest {
         int count = 0;
         VespaService service = VespaService.create("service1", "id", httpServer.port());
         for (Metric m : service.getMetrics().getMetrics()) {
-            if (m.getName().equals("queries.rate")) {
+            if (m.getName().equals(toMetricId("queries.rate"))) {
                 count++;
                 System.out.println("Name: " + m.getName() + " value: " + m.getValue());
                 if (m.getDimensions().get(toDimensionId("chain")).equals("asvBlendingResult")) {

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -71,11 +71,14 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
+    private ConfigserverConfig configserverConfig;
+
     @Before
     public void setupRepo() throws IOException {
-        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+        configserverConfig = new ConfigserverConfig.Builder()
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withConfigserverConfig(configserverConfig)
@@ -196,7 +199,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     private SessionCreateHandler createHandler() {
         return new SessionCreateHandler(SessionCreateHandler.testOnlyContext(),
                                         applicationRepository,
-                                        new ConfigserverConfig.Builder().build());
+                                        configserverConfig);
     }
 
     private HttpRequest post() throws FileNotFoundException {

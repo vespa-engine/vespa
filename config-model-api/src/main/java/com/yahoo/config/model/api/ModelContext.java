@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
 import com.yahoo.component.Version;
@@ -10,7 +10,6 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
 
 import java.io.File;
@@ -23,6 +22,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Model context containing state provided to model factories.
@@ -39,6 +39,7 @@ public interface ModelContext {
     DeployLogger deployLogger();
     ConfigDefinitionRepo configDefinitionRepo();
     FileRegistry getFileRegistry();
+    ExecutorService getExecutor();
     default Optional<? extends Reindexing> reindexing() { return Optional.empty(); }
     Properties properties();
     default Optional<File> appDir() { return Optional.empty();}
@@ -68,7 +69,6 @@ public interface ModelContext {
      *  - Remove all flag data files from hosted-feature-flag repository
      */
     interface FeatureFlags {
-        @ModelFeatureFlag(owners = {"jonmv"}) default Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.empty(); }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2021") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useThreePhaseUpdates() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
@@ -77,30 +77,26 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipCommunicationManagerThread() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipMbusRequestThread() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipMbusReplyThread() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"tokle"}) default boolean useAccessControlTlsHandshakeClientAuth() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useAsyncMessageHandlingOnSchedule() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useBucketExecutorForPruneRemoved() { return true; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default int largeRankExpressionLimit() { return 0x10000; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useExternalRankExpressions() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean distributeExternalRankExpressions() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default int metricsproxyNumThreads() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default int largeRankExpressionLimit() { return 8192; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxConcurrentMergesPerNode() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxMergeQueueSize() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean dryRunOnnxOnSetup() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"vekterli", "geirst"}) default boolean ignoreMergeQueueLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean containerDumpHeapOnShutdownTimeout() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default double containerShutdownTimeout() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"geirst"}) default boolean enableFeedBlockInDistributor() { return true; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.428") default int clusterControllerMaxHeapSizeInMb() { return 128; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.422") default int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return 256; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
-        @ModelFeatureFlag(owners = {"tokle"}) default boolean tenantIamRole() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return ""; }
-        @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}, removeAfter = "7.424") default boolean enableJdiscHttp2() { return true; }
-        @ModelFeatureFlag(owners = {"tokle", "bjorncs"}) default boolean enableCustomAclMapping() { return false; }
-        @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default int numDistributorStripes() { return 0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean requireConnectivityCheck() { return true; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default boolean throwIfResourceLimitsSpecified() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitDisk() { return 0.8; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitMemory() { return 0.8; }
+        @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default double minNodeRatioPerGroup() { return 0.0; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean newLocationBrokerLogic() { return true; }
+        @ModelFeatureFlag(owners = {"bjorncs"}) default int maxConnectionLifeInHosted() { return 45; }
+        @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default int distributorMergeBusyWait() { return 10; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -122,7 +118,8 @@ public interface ModelContext {
 
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
 
-        Optional<ApplicationRoles> applicationRoles();
+        // applicationRoles is no longer in use and should be removed. Replaced by AwsEnvironment. Remove after 7.458
+        default Optional<ApplicationRoles> applicationRoles() { return Optional.empty(); }
 
         default Quota quota() { return Quota.unlimited(); }
 

@@ -1,9 +1,10 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distributor_stripe_component.h"
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
 #include "pendingmessagetracker.h"
+#include "storage_node_up_states.h"
 #include <vespa/document/select/parser.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>

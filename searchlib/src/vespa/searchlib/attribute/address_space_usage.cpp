@@ -1,33 +1,43 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "address_space_components.h"
 #include "address_space_usage.h"
-#include "i_enum_store.h"
 
 namespace search {
 
 using vespalib::AddressSpace;
 
 AddressSpaceUsage::AddressSpaceUsage()
-        : _enumStoreUsage(defaultEnumStoreUsage()),
-          _multiValueUsage(defaultMultiValueUsage()) {
+    : _map()
+{
 }
 
-AddressSpaceUsage::AddressSpaceUsage(const AddressSpace &enumStoreUsage_,
-                                     const AddressSpace &multiValueUsage_)
-        : _enumStoreUsage(enumStoreUsage_),
-          _multiValueUsage(multiValueUsage_) {
+void
+AddressSpaceUsage::set(const vespalib::string& component, const vespalib::AddressSpace& usage)
+{
+    _map[component] = usage;
 }
 
 AddressSpace
-AddressSpaceUsage::defaultEnumStoreUsage()
+AddressSpaceUsage::get(const vespalib::string& component) const
 {
-    return AddressSpace(0, 0, IEnumStore::InternalIndex::offsetSize());
+    auto itr = _map.find(component);
+    if (itr != _map.end()) {
+        return itr->second;
+    }
+    return AddressSpace();
 }
 
 AddressSpace
-AddressSpaceUsage::defaultMultiValueUsage()
+AddressSpaceUsage::enum_store_usage() const
 {
-    return AddressSpace(0, 0, (1ull << 32));
+    return get(AddressSpaceComponents::enum_store);
 }
 
-} // namespace search
+AddressSpace
+AddressSpaceUsage::multi_value_usage() const
+{
+    return get(AddressSpaceComponents::multi_value);
+}
+
+}

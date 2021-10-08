@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memory_flush_config_updater.h"
 #include <vespa/vespalib/util/size_literals.h>
@@ -78,11 +78,11 @@ MemoryFlushConfigUpdater::updateFlushStrategy(const LockGuard &guard, const char
     if ( currentConfig != newConfig ) {
         _flushStrategy->setConfig(newConfig);
         LOG(info, "Due to %s (conservative-disk=%d, conservative-memory=%d, retired=%d) flush config updated to "
-                  "global-disk-bloat(%1.2f), max-tls-size(%" PRIu64 "),"
-                                                                    "max-global-memory(%" PRIu64 "), max-memory-gain(%" PRIu64 ")",
+                  "global-disk-bloat(%1.2f), max-tls-size(%" PRIu64 "),max-global-memory(%" PRIu64 "), max-memory-gain(%" PRIu64 ")",
             why, _useConservativeDiskMode, _useConservativeMemoryMode, _nodeRetired,
             newConfig.globalDiskBloatFactor, newConfig.maxGlobalTlsSize,
             newConfig.maxGlobalMemory, newConfig.maxMemoryGain);
+        LOG(debug, "Old config = %s\nNew config = %s", currentConfig.toString().c_str(), newConfig.toString().c_str());
     }
 }
 

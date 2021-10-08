@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
@@ -10,7 +10,6 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -27,7 +26,7 @@ public class Index implements Cloneable, Serializable {
     public enum Type {
 
         VESPA("vespa");
-        private String name;
+        private final String name;
         Type(String name) { this.name = name; }
         public String getName() { return name; }
 

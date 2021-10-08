@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.component.Version;
@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
@@ -157,9 +157,10 @@ public class JobControllerApiHandlerHelperTest {
         tester.configServer().setLogStream(() -> "Nope, this won't be logged");
         tester.configServer().convergeServices(app.instanceId(), zone);
         tester.runner().run();
-
-        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root")), "dev-overview.json");
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), devUsEast1).get().id(), "8"), "dev-us-east-1-log-second-part.json");
+
+        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage());
+        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root")), "dev-overview.json");
     }
 
     @Test
@@ -171,6 +172,19 @@ public class JobControllerApiHandlerHelperTest {
         var applicationPackage = new ApplicationPackageBuilder().region(region).build();
         // Deploy directly to production zone, like integration tests.
         tester.controller().jobController().deploy(tester.instance().id(), productionUsWest1, Optional.empty(), applicationPackage);
+        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root/")),
+                       "jobs-direct-deployment.json");
+    }
+
+    @Test
+    public void testResponsesWithDryRunDeployment() {
+        var tester = new DeploymentTester();
+        var app = tester.newDeploymentContext();
+        tester.clock().setInstant(Instant.EPOCH);
+        var region = "us-west-1";
+        var applicationPackage = new ApplicationPackageBuilder().region(region).build();
+        // Deploy directly to production zone, like integration tests, with dryRun.
+        tester.controller().jobController().deploy(tester.instance().id(), productionUsWest1, Optional.empty(), applicationPackage, true);
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root/")),
                        "jobs-direct-deployment.json");
     }

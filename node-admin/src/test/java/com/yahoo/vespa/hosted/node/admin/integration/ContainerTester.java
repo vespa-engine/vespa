@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integration;
 
 import com.yahoo.config.provision.DockerImage;
@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
+import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
@@ -77,7 +78,7 @@ public class ContainerTester implements AutoCloseable {
         for (int i = 1; i < 4; i++) ipAddresses.addAddress("host" + i + ".test.yahoo.com", "f000::" + i);
 
         NodeSpec hostSpec = NodeSpec.Builder.testSpec(HOST_HOSTNAME.value()).type(NodeType.host).build();
-        nodeRepository.updateNodeRepositoryNode(hostSpec);
+        nodeRepository.updateNodeSpec(hostSpec);
 
         Clock clock = Clock.systemUTC();
         Metrics metrics = new Metrics();
@@ -86,7 +87,8 @@ public class ContainerTester implements AutoCloseable {
         NodeAgentFactory nodeAgentFactory = (contextSupplier, nodeContext) -> new NodeAgentImpl(
                 contextSupplier, nodeRepository, orchestrator, containerOperations, () -> RegistryCredentials.none,
                 storageMaintainer, flagSource,
-                Collections.emptyList(), Optional.empty(), Optional.empty(), clock, Duration.ofSeconds(-1));
+                Collections.emptyList(), Optional.empty(), Optional.empty(), clock, Duration.ofSeconds(-1),
+                VespaServiceDumper.DUMMY_INSTANCE);
         nodeAdmin = new NodeAdminImpl(nodeAgentFactory, metrics, clock, Duration.ofMillis(10), Duration.ZERO);
         NodeAgentContextFactory nodeAgentContextFactory = (nodeSpec, acl) ->
                 new NodeAgentContextImpl.Builder(nodeSpec).acl(acl).fileSystem(fileSystem).build();
@@ -120,7 +122,7 @@ public class ContainerTester implements AutoCloseable {
                                                    ", but that image does not exist in the container engine");
             }
         }
-        nodeRepository.updateNodeRepositoryNode(new NodeSpec.Builder(nodeSpec)
+        nodeRepository.updateNodeSpec(new NodeSpec.Builder(nodeSpec)
                 .parentHostname(HOST_HOSTNAME.value())
                 .build());
     }
@@ -130,7 +132,7 @@ public class ContainerTester implements AutoCloseable {
     }
 
     <T> T inOrder(T t) {
-        return inOrder.verify(t, timeout(5000));
+        return inOrder.verify(t, timeout(10000));
     }
 
     public static NodeAgentContext containerMatcher(ContainerName containerName) {

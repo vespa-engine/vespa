@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.ArrayDataType;
@@ -26,40 +26,40 @@ public final class CatExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getValue();
         DataType inputType = input != null ? input.getDataType() : null;
-        VerificationContext ver = new VerificationContext(ctx);
+        VerificationContext ver = new VerificationContext(context);
         List<FieldValue> values = new LinkedList<>();
         List<DataType> types = new LinkedList<>();
         for (Expression exp : this) {
-            FieldValue val = ctx.setValue(input).execute(exp).getValue();
+            FieldValue val = context.setValue(input).execute(exp).getValue();
             values.add(val);
 
             DataType type;
             if (val != null) {
                 type = val.getDataType();
             } else {
-                type = ver.setValue(inputType).execute(this).getValue();
+                type = ver.setValueType(inputType).execute(this).getValueType();
             }
             types.add(type);
         }
         DataType type = resolveOutputType(types);
-        ctx.setValue(type == DataType.STRING ? asString(values) : asCollection(type, values));
+        context.setValue(type == DataType.STRING ? asString(values) : asCollection(type, values));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+        DataType input = context.getValueType();
         List<DataType> types = new LinkedList<>();
         for (Expression exp : this) {
-            DataType val = context.setValue(input).execute(exp).getValue();
+            DataType val = context.setValueType(input).execute(exp).getValueType();
             types.add(val);
             if (val == null) {
                 throw new VerificationException(this, "Attempting to concatenate a null value (" + exp + ").");
             }
         }
-        context.setValue(resolveOutputType(types));
+        context.setValueType(resolveOutputType(types));
     }
 
     private static DataType resolveInputType(Collection<? extends Expression> list) {

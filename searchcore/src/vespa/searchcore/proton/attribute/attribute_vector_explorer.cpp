@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_vector_explorer.h"
 #include <vespa/searchlib/attribute/i_enum_store.h>
@@ -63,8 +63,9 @@ convertAddressSpaceToSlime(const AddressSpace &addressSpace, Cursor &object)
 void
 convertAddressSpaceUsageToSlime(const AddressSpaceUsage &usage, Cursor &object)
 {
-    convertAddressSpaceToSlime(usage.enumStoreUsage(), object.setObject("enumStore"));
-    convertAddressSpaceToSlime(usage.multiValueUsage(), object.setObject("multiValue"));
+    for (const auto& entry : usage.get_all()) {
+        convertAddressSpaceToSlime(entry.second, object.setObject(entry.first));
+    }
 }
 
 void
@@ -158,6 +159,8 @@ AttributeVectorExplorer::get_state(const vespalib::slime::Inserter &inserter, bo
         object.setLong("numDocs", status.getNumDocs());
         object.setLong("lastSerialNum", status.getLastSyncToken());
         object.setLong("allocatedMemory", status.getAllocated());
+        object.setLong("usedMemory", status.getUsed());
+        object.setLong("onHoldMemory", status.getOnHold());
         object.setLong("committedDocIdLimit", attr.getCommittedDocIdLimit());
     }
 }

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -81,7 +81,7 @@ public class VirtualNodeProvisioningCompleteHostCalculatorTest {
         }
 
         @Override
-        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository, boolean exclusive) {
+        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
             if (node.parentHostname().isEmpty()) return node.resources(); // hosts use configured flavors
             return realResourcesOf(node.resources());
         }

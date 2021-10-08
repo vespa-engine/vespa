@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/document/bucket/bucketid.h>
@@ -16,7 +16,7 @@ namespace storage { class PersistenceOperationMetricSet; }
 namespace storage::distributor {
 
 class DistributorMetricSet;
-class Distributor;
+class TopLevelDistributor;
 class MaintenanceOperationGenerator;
 class DirectDispatchSender;
 class SequencingHandle;

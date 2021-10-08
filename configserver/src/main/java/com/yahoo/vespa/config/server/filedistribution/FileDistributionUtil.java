@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -50,7 +50,9 @@ public class FileDistributionUtil {
                 .collect(Collectors.toList());
 
         return configServers.size() > 0
-                ? new JRTConnectionPool(new ConfigSourceSet(configServers), "filedistribution-jrt-pool-")
+                ? new JRTConnectionPool(new ConfigSourceSet(configServers),
+                                        new Supervisor(new Transport("filedistribution-pool"))
+                                                .setDropEmptyBuffers(true))
                 : emptyConnectionPool();
     }
 
@@ -75,9 +77,6 @@ public class FileDistributionUtil {
         }
 
         @Override
-        public void setError(Connection connection, int i) {}
-
-        @Override
         public Connection getCurrent() { return null; }
 
         @Override
@@ -90,7 +89,7 @@ public class FileDistributionUtil {
         public Supervisor getSupervisor() {
             synchronized (this) {
                 if (supervisor == null) {
-                    supervisor = new Supervisor(new Transport("empty-connectionpool"));
+                    supervisor = new Supervisor(new Transport("empty-connection-pool")).setDropEmptyBuffers(true);
                 }
             }
             return supervisor;

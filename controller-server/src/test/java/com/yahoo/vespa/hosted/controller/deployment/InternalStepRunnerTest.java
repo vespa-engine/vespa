@@ -20,11 +20,12 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
@@ -194,13 +195,13 @@ public class InternalStepRunnerTest {
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.stagingTest).get().stepStatuses().get(Step.installTester));
 
         Node systemTestNode = tester.configServer().nodeRepository().list(JobType.systemTest.zone(system()),
-                                                                          app.instanceId()).iterator().next();
+                                                                          NodeFilter.all().applications(app.instanceId())).iterator().next();
         tester.clock().advance(InternalStepRunner.Timeouts.of(system()).noNodesDown().minus(Duration.ofSeconds(1)));
         tester.configServer().nodeRepository().putNodes(JobType.systemTest.zone(system()),
-                                                        new Node.Builder(systemTestNode)
-                                                                     .serviceState(Node.ServiceState.allowedDown)
-                                                                     .suspendedSince(tester.clock().instant())
-                                                                     .build());
+                                                        Node.builder(systemTestNode)
+                                                            .serviceState(Node.ServiceState.allowedDown)
+                                                            .suspendedSince(tester.clock().instant())
+                                                            .build());
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.stagingTest).get().stepStatuses().get(Step.installInitialReal));

@@ -3,11 +3,13 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -48,7 +50,8 @@ public interface HostProvisioner {
                                          NodeResources resources,
                                          ApplicationId applicationId,
                                          Version osVersion,
-                                         HostSharing sharing);
+                                         HostSharing sharing,
+                                         Optional<ClusterSpec.Type> clusterType);
 
     /**
      * Continue provisioning of given list of Nodes.

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.horizon;
 
 /**
@@ -17,12 +17,7 @@ public class MockHorizonClient implements HorizonClient {
     }
 
     @Override
-    public HorizonResponse getDashboard(String dashboardId) {
-        return HorizonResponse.empty();
-    }
-
-    @Override
-    public HorizonResponse getFavorite(String userId) {
+    public HorizonResponse getDashboard() {
         return HorizonResponse.empty();
     }
 
@@ -31,18 +26,4 @@ public class MockHorizonClient implements HorizonClient {
         return HorizonResponse.empty();
     }
 
-    @Override
-    public HorizonResponse getRecent(String userId) {
-        return HorizonResponse.empty();
-    }
-
-    @Override
-    public HorizonResponse getClipboard(String dashboardId) {
-        return HorizonResponse.empty();
-    }
-
-    @Override
-    public HorizonResponse getMetaData(byte[] query) {
-        return HorizonResponse.empty();
-    }
 }

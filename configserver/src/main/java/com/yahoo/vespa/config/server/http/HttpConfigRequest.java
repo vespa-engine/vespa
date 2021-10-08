@@ -1,26 +1,27 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
-
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.yahoo.collections.Tuple2;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.http.v2.request.HttpConfigRequests;
 import com.yahoo.vespa.config.server.http.v2.request.TenantRequest;
 import com.yahoo.vespa.config.util.ConfigUtils;
+
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * A request to get config, bound to tenant and app id. Used by both v1 and v2 of the config REST API.
@@ -191,4 +192,11 @@ public class HttpConfigRequest implements GetConfigRequest, TenantRequest {
     public boolean noCache() {
         return noCache;
     }
+
+    @Override
+    public String getRequestDefMd5() { return ConfigUtils.getDefMd5(getDefContent().asList()); }
+
+    @Override
+    public PayloadChecksums configPayloadChecksums() { return PayloadChecksums.empty(); }
+
 }

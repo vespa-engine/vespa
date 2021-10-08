@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.json.readers;
 
 import com.fasterxml.jackson.core.JsonToken;
@@ -94,6 +94,8 @@ public class TensorReader {
         IndexedTensor.BoundBuilder indexedBuilder = (IndexedTensor.BoundBuilder)builder;
         if (buffer.currentToken() == JsonToken.VALUE_STRING) {
             double[] decoded = decodeHexString(buffer.currentText(), builder.type().valueType());
+            if (decoded.length == 0)
+                throw new IllegalArgumentException("The 'values' string does not contain any values");
             for (int i = 0; i < decoded.length; i++) {
                 indexedBuilder.cellByDirectIndex(i, decoded[i]);
             }
@@ -104,6 +106,8 @@ public class TensorReader {
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             indexedBuilder.cellByDirectIndex(index++, readDouble(buffer));
         }
+        if (index == 0)
+            throw new IllegalArgumentException("The 'values' array does not contain any values");
         expectCompositeEnd(buffer.currentToken());
     }
 

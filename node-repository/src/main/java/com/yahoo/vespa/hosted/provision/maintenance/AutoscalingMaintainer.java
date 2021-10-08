@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -82,7 +82,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                 applications().put(application.get().with(updatedCluster), lock);
                 if (advice.isPresent() && advice.target().isPresent() && !cluster.get().targetResources().equals(advice.target())) {
                     // 2. Also autoscale
-                    logAutoscaling(advice.target().get(), applicationId, updatedCluster, clusterNodes);
+                    logAutoscaling(advice.target().get(), applicationId, clusterNodes);
                     try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
                         if (deployment.isValid())
                             deployment.activate();
@@ -121,11 +121,8 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         return cluster.with(event.withCompletion(completionTime));
     }
 
-    private void logAutoscaling(ClusterResources target,
-                                ApplicationId application,
-                                Cluster cluster,
-                                NodeList clusterNodes) {
-        ClusterResources current = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository(), cluster.exclusive()).advertisedResources();
+    private void logAutoscaling(ClusterResources target, ApplicationId application, NodeList clusterNodes) {
+        ClusterResources current = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository()).advertisedResources();
         log.info("Autoscaling " + application + " " + clusterNodes.clusterSpec() + ":" +
                  "\nfrom " + toString(current) + "\nto   " + toString(target));
     }

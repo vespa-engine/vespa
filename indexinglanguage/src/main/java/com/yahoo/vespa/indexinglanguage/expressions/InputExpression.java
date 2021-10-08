@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -9,7 +9,6 @@ import com.yahoo.vespa.objects.ObjectPredicate;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Simon Thoresen Hult
@@ -29,11 +28,11 @@ public final class InputExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
+    protected void doExecute(ExecutionContext context) {
         if (fieldPath != null) {
-            ctx.setValue(ctx.getInputValue(fieldPath));
+            context.setValue(context.getInputValue(fieldPath));
         } else {
-            ctx.setValue(ctx.getInputValue(fieldName));
+            context.setValue(context.getInputValue(fieldName));
         }
     }
 
@@ -43,7 +42,7 @@ public final class InputExpression extends Expression {
         if (val == null) {
             throw new VerificationException(this, "Field '" + fieldName + "' not found.");
         }
-        context.setValue(val);
+        context.setValueType(val);
     }
 
     @Override

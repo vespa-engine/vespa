@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.vespa.config.protocol.DefContent;
@@ -36,5 +36,19 @@ public interface GetConfigRequest {
      * @return true if content should _not_ be cached, false if it should.
      */
     boolean noCache();
+
+    /**
+     * Returns the md5 of the config definition in the request.
+     *
+     * @return an md5 of config definition in request.
+     */
+    String getRequestDefMd5();
+
+    /**
+     * Returns the payload checksums from the config request.
+     *
+     * @return the payload checksums from request.
+     */
+    PayloadChecksums configPayloadChecksums();
 
 }

@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=cloud.config
 
 ## The port where sentinel should run its telnet interface
@@ -23,10 +23,10 @@ application.region string default="default"
 # if we have more problems than the following limits allow:
 
 ## Percentage of nodes that must be up and fully OK, minimum
-connectivity.minOkPercent int default=30
+connectivity.minOkPercent int default=50
 
 ## Absolute number of nodes with confirmed network connectivity problems, maximum
-connectivity.maxBadCount int default=3
+connectivity.maxBadCount int default=1
 
 ## The command to run. This will be run by sh -c, and the following
 ## environment variables are defined: $ROOT, $VESPA_SERVICE_NAME,

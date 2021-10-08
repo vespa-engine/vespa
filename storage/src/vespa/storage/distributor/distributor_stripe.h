@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -22,6 +22,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
+#include <atomic>
 #include <mutex>
 #include <queue>
 #include <unordered_map>
@@ -45,12 +46,14 @@ class StripeHostInfoNotifier;
 class ThrottlingOperationStarter;
 
 /**
- * TODO STRIPE add class comment.
+ * A DistributorStripe encapsulates client operation handling and maintenance of a subset of the
+ * bucket space that the full distributor has responsibility for.
+ *
+ * Each distributor stripe is responsible for a completely disjoint subset of the bucket space of all
+ * other distributor stripes in the process (and transitively, in the entire cluster).
  */
 class DistributorStripe final
     : public DistributorStripeInterface,
-      public StatusDelegator,
-      public framework::StatusReporter,
       public MinReplicaProvider,
       public BucketSpacesStatsProvider,
       public NonTrackingMessageSender,
@@ -61,11 +64,9 @@ public:
                       DistributorMetricSet& metrics,
                       IdealStateMetricSet& ideal_state_metrics,
                       const NodeIdentity& node_identity,
-                      framework::TickingThreadPool&,
-                      DoneInitializeHandler&,
                       ChainedMessageSender& messageSender,
                       StripeHostInfoNotifier& stripe_host_info_notifier,
-                      bool use_legacy_mode,
+                      const bool& done_initializing_ref,
                       uint32_t stripe_index = 0);
 
     ~DistributorStripe() override;
@@ -109,24 +110,15 @@ public:
      */
     void notifyDistributionChangeEnabled() override;
 
-    void storage_distribution_changed();
-
     void recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket) override;
 
     bool handleReply(const std::shared_ptr<api::StorageReply>& reply) override;
-
-    // StatusReporter implementation
-    vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
-    bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
-
-    bool handleStatusRequest(const DelegatedStatusRequest& request) const override;
 
     StripeAccessGuard::PendingOperationStats pending_operation_stats() const override;
 
     std::string getActiveIdealStateOperations() const;
     std::string getActiveOperations() const;
 
-    framework::ThreadWaitInfo doCriticalTick(framework::ThreadIndex);
     framework::ThreadWaitInfo doNonCriticalTick(framework::ThreadIndex);
 
     /**
@@ -147,7 +139,7 @@ public:
     void handleCompletedMerge(const std::shared_ptr<api::MergeBucketReply>& reply) override;
 
     bool initializing() const override {
-        return !_doneInitializing;
+        return !_done_initializing_ref;
     }
 
     const DistributorConfiguration& getConfig() const override {
@@ -191,23 +183,28 @@ public:
         return _db_memory_sample_interval;
     }
 
+    void inhibit_non_activation_maintenance_operations(bool inhibit) noexcept {
+        _non_activation_maintenance_is_inhibited.store(inhibit, std::memory_order_relaxed);
+    }
+
+    bool non_activation_maintenance_is_inhibited() const noexcept {
+        return _non_activation_maintenance_is_inhibited.load(std::memory_order_relaxed);
+    }
+
     bool tick() override;
 
 private:
-    // TODO STRIPE: reduce number of friends. DistributorStripe too popular for its own good.
-    friend class Distributor;
+    friend class TopLevelDistributor;
     friend class DistributorStripeTestUtil;
-    friend class DistributorTestUtil;
-    friend class LegacyBucketDBUpdaterTest;
     friend class MetricUpdateHook;
     friend class MultiThreadedStripeAccessGuard;
     friend struct DistributorStripeTest;
-    friend struct LegacyDistributorTest;
+    friend struct TopLevelDistributorTest;
+    friend class TopLevelDistributorTestUtil;
 
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
     bool isMaintenanceReply(const api::StorageReply& reply) const;
 
-    void handleStatusRequests();
     void send_shutdown_abort_reply(const std::shared_ptr<api::StorageMessage>&);
     void handle_or_propagate_message(const std::shared_ptr<api::StorageMessage>& msg);
     void startExternalOperations();
@@ -240,8 +237,6 @@ private:
     bool should_inhibit_current_maintenance_scan_tick() const noexcept;
     void mark_current_maintenance_tick_as_inhibited() noexcept;
     void mark_maintenance_tick_as_no_longer_inhibited() noexcept;
-    void enableNextConfig();
-    void fetchStatusRequests();
     void fetchExternalMessages();
     void startNextMaintenanceOperation();
     void signalWorkWasDone();
@@ -256,7 +251,6 @@ private:
     bool generateOperation(const std::shared_ptr<api::StorageMessage>& msg,
                            Operation::SP& operation);
 
-    void enableNextDistribution(); // TODO STRIPE remove once legacy is gone
     void propagateDefaultDistribution(std::shared_ptr<const lib::Distribution>); // TODO STRIPE remove once legacy is gone
     void propagateClusterStates();
 
@@ -272,7 +266,8 @@ private:
     void update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config) override;
     void set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state) override;
     void clear_pending_cluster_state_bundle() override;
-    void enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state) override;
+    void enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,
+                                     bool has_bucket_ownership_change) override;
     void notify_distribution_change_enabled() override;
     PotentialDataLossReport remove_superfluous_buckets(document::BucketSpace bucket_space,
                                                        const lib::ClusterState& new_state,
@@ -308,15 +303,12 @@ private:
     std::unique_ptr<OperationSequencer> _operation_sequencer;
     PendingMessageTracker _pendingMessageTracker;
     StripeBucketDBUpdater _bucketDBUpdater;
-    StatusReporterDelegate _distributorStatusDelegate;
-    StatusReporterDelegate _bucketDBStatusDelegate;
     IdealStateManager _idealStateManager;
     ChainedMessageSender& _messageSender;
     StripeHostInfoNotifier& _stripe_host_info_notifier;
     ExternalOperationHandler _externalOperationHandler;
 
     std::shared_ptr<lib::Distribution> _distribution;
-    std::shared_ptr<lib::Distribution> _nextDistribution;
 
     using MessageQueue = std::vector<std::shared_ptr<api::StorageMessage>>;
     struct IndirectHigherPriority {
@@ -334,13 +326,7 @@ private:
     MessageQueue _messageQueue;
     ClientRequestPriorityQueue _client_request_priority_queue;
     MessageQueue _fetchedMessages;
-    framework::TickingThreadPool& _threadPool;
-
-    mutable std::vector<std::shared_ptr<DistributorStatus>> _statusToDo;
-    mutable std::vector<std::shared_ptr<DistributorStatus>> _fetchedStatusRequests;
-
-    DoneInitializeHandler& _doneInitializeHandler;
-    bool _doneInitializing;
+    const bool& _done_initializing_ref;
 
     std::unique_ptr<BucketPriorityDatabase> _bucketPriorityDb;
     std::unique_ptr<SimpleMaintenanceScanner> _scanner;
@@ -365,9 +351,9 @@ private:
     std::chrono::steady_clock::duration _db_memory_sample_interval;
     std::chrono::steady_clock::time_point _last_db_memory_sample_time_point;
     size_t _inhibited_maintenance_tick_count;
-    bool _must_send_updated_host_info;
-    bool _use_legacy_mode;
     uint32_t _stripe_index;
+    std::atomic<bool> _non_activation_maintenance_is_inhibited;
+    bool _must_send_updated_host_info;
 };
 
 }

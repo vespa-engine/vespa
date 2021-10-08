@@ -1,7 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchers.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.net.SocketAddress;
@@ -9,7 +13,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import com.yahoo.component.chain.Chain;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -79,19 +82,19 @@ public class ConnectionControlSearcherTestCase {
 
 
     private Result doSearch(URI uri, long connectedAtMillis, long nowMillis) {
-        SocketAddress remoteAddress = Mockito.mock(SocketAddress.class);
+        SocketAddress remoteAddress = mock(SocketAddress.class);
         Version version = Version.HTTP_1_1;
         Method method = Method.GET;
-        CurrentContainer container = Mockito.mock(CurrentContainer.class);
-        Mockito.when(container.newReference(Mockito.any())).thenReturn(Mockito.mock(Container.class));
+        CurrentContainer container = mock(CurrentContainer.class);
+        when(container.newReference(any())).thenReturn(mock(Container.class));
+        when(container.newReference(any(URI.class), any(Object.class))).thenReturn(mock(Container.class));
         final com.yahoo.jdisc.http.HttpRequest serverRequest = com.yahoo.jdisc.http.HttpRequest
                 .newServerRequest(container, uri, method, version, remoteAddress, connectedAtMillis);
         HttpRequest incoming = new HttpRequest(serverRequest, new ByteArrayInputStream(new byte[0]));
         Query query = new Query(incoming);
         Execution e = new Execution(new Chain<Searcher>(ConnectionControlSearcher.createTestInstance(() -> nowMillis)),
                 Execution.Context.createContextStub());
-        Result r = e.search(query);
-        return r;
+        return e.search(query);
     }
 
 }

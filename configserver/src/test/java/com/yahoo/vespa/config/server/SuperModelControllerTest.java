@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.LbServicesConfig;
@@ -13,11 +13,11 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.protocol.CompressionType;
 import com.yahoo.vespa.config.protocol.DefContent;
-import com.yahoo.vespa.config.protocol.JRTClientConfigRequestV3;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.server.model.SuperModelConfigProvider;
@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
+import static com.yahoo.vespa.config.protocol.JRTClientConfigRequestV3.createWithParams;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -73,11 +74,12 @@ public class SuperModelControllerTest {
 
     @Test(expected = UnknownConfigDefinitionException.class)
     public void test_unknown_config_definition() {
-        String md5 = "asdfasf";
-        Request request = JRTClientConfigRequestV3.createWithParams(new ConfigKey<>("foo", "id", "bar", md5, null), DefContent.fromList(Collections.emptyList()),
-                                                                    "fromHost", md5, 1, 1, Trace.createDummy(), CompressionType.UNCOMPRESSED,
-                                                                    Optional.empty())
-                                                  .getRequest();
+        PayloadChecksums payloadChecksums = PayloadChecksums.empty();
+        Request request = createWithParams(new ConfigKey<>("foo", "id", "bar", null),
+                                           DefContent.fromList(Collections.emptyList()), "fromHost",
+                                           payloadChecksums, 1, 1, Trace.createDummy(),
+                                           CompressionType.UNCOMPRESSED, Optional.empty())
+                .getRequest();
         JRTServerConfigRequestV3 v3Request = JRTServerConfigRequestV3.createFromRequest(request);
         handler.resolveConfig(v3Request);
     }

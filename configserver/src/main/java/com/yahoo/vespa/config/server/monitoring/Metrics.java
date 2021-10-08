@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.monitoring;
 
 import com.google.inject.Inject;
@@ -10,11 +10,14 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.jdisc.Metric;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.statistics.Counter;
 
-import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -42,8 +42,6 @@ public:
     AttributeUsageStats getAttributeUsageStats() const;
     void setConfig(Config config);
     void set_listener(std::unique_ptr<IAttributeUsageListener> listener);
-    double getEnumStoreUsedRatio() const;
-    double getMultiValueUsedRatio() const;
     bool acceptWriteOperation() const override;
     State getAcceptState() const override;
 };

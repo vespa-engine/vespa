@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.test;
 
 import com.yahoo.component.chain.Chain;
@@ -292,6 +292,14 @@ public class QueryTestCase {
             // As expected.
             assertTrue(Exceptions.toMessageString(e).contains("Could not set 'timeout' to 'nalle': Error parsing 'nalle': Invalid number 'nalle'"));
         }
+    }
+
+    @Test
+    public void testCloneTimeout() {
+        Query q = new Query(httpEncode("/search?timeout=300ms"));
+        assertEquals(300, q.getTimeout());
+        Query clonedQ = q.clone();
+        assertEquals(300, clonedQ.getTimeout());
     }
 
     @Test
@@ -1112,6 +1120,8 @@ public class QueryTestCase {
         @Override
         public Detector getDetector() { return detector; }
 
+        @Override
+        public boolean equals(Linguistics other) { return (other instanceof MockLinguistics); }
     }
 
     private static class MockDetector extends SimpleDetector {

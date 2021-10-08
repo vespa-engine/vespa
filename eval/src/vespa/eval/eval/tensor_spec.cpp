@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_spec.h"
 #include "array_array_map.h"
@@ -282,6 +282,23 @@ TensorSpec::to_slime(slime::Cursor &tensor) const
         }
         cell.setDouble("value", my_cell.second.value);
     }
+}
+
+vespalib::string
+TensorSpec::to_expr() const
+{
+    if (_type == "double") {
+        return make_string("%g", as_double());
+    }
+    vespalib::string out = _type;
+    out.append(":{");
+    CommaTracker cell_list;
+    for (const auto &cell: _cells) {
+        cell_list.maybe_add_comma(out);
+        out.append(make_string("%s:%g", as_string(cell.first).c_str(), cell.second.value));
+    }
+    out.append("}");
+    return out;
 }
 
 TensorSpec

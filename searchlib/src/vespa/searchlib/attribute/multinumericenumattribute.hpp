@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -86,7 +86,7 @@ MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(ReaderBase &attrReader)
 
 template <typename B, typename M>
 bool
-MultiValueNumericEnumAttribute<B, M>::onLoad()
+MultiValueNumericEnumAttribute<B, M>::onLoad(vespalib::Executor *)
 {
     AttributeReader attrReader(*this);
     bool ok(attrReader.getHasLoadData());

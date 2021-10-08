@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.ArrayDataType;
@@ -28,8 +28,8 @@ public final class JoinExpression extends Expression {
 
     @SuppressWarnings({ "unchecked" })
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getValue();
         if (!(input instanceof Array)) {
             throw new IllegalArgumentException("Expected Array input, got " + input.getDataType().getName() + ".");
         }
@@ -40,16 +40,16 @@ public final class JoinExpression extends Expression {
                 output.append(delimiter);
             }
         }
-        ctx.setValue(new StringFieldValue(output.toString()));
+        context.setValue(new StringFieldValue(output.toString()));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+        DataType input = context.getValueType();
         if (!(input instanceof ArrayDataType)) {
             throw new VerificationException(this, "Expected Array input, got " + input.getName() + ".");
         }
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
 import com.yahoo.config.provision.HostName;
@@ -43,7 +43,7 @@ class StateV1HealthEndpoint implements HealthEndpoint {
 
     @Override
     public HealthMonitor startMonitoring() {
-        StateV1HealthUpdater updater = new StateV1HealthUpdater(url, requestTimeout, connectionKeepAlive);
+        var updater = new StateV1HealthUpdater(url, requestTimeout, connectionKeepAlive);
         return new StateV1HealthMonitor(updater, executor, delay);
     }
 

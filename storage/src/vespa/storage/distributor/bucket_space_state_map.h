@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/document/bucket/bucketspace.h>
@@ -16,7 +16,6 @@ namespace storage::distributor {
 
 /**
  * Represents cluster state and distribution for a given bucket space.
- * TODO STRIPE: Make DistributorBucketSpace inherit this class.
  */
 class BucketSpaceState {
 private:
@@ -63,6 +62,9 @@ public:
 
     StateMap::const_iterator begin() const { return _map.begin(); }
     StateMap::const_iterator end() const { return _map.end(); }
+
+    const BucketSpaceState& get(document::BucketSpace space) const;
+    BucketSpaceState& get(document::BucketSpace space);
 
     void set_cluster_state(std::shared_ptr<const lib::ClusterState> cluster_state);
     void set_distribution(std::shared_ptr<const lib::Distribution> distribution);

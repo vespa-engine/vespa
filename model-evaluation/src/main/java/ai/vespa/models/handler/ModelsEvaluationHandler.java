@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.handler;
 
 import ai.vespa.models.evaluation.FunctionEvaluator;
@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -87,6 +88,14 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
             }
         }
         Tensor result = evaluator.evaluate();
+
+        Optional<String> format = property(request, "format.tensors");
+        if (format.isPresent() && format.get().equalsIgnoreCase("short")) {
+            return new Response(200, JsonFormat.encodeShortForm(result));
+        }
+        else if (format.isPresent() && format.get().equalsIgnoreCase("string")) {
+            return new Response(200, result.toString().getBytes(StandardCharsets.UTF_8));
+        }
         return new Response(200, JsonFormat.encode(result));
     }
 
@@ -140,9 +149,14 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
     private String baseUrl(HttpRequest request) {
        URI uri = request.getUri();
        StringBuilder sb = new StringBuilder();
-       sb.append(uri.getScheme()).append("://").append(uri.getHost());
-       if (uri.getPort() >= 0) {
-           sb.append(":").append(uri.getPort());
+       sb.append(uri.getScheme()).append("://");
+       if (request.getHeader("Host") != null) {
+           sb.append(request.getHeader("Host"));
+       } else {
+           sb.append(uri.getHost());
+           if (uri.getPort() >= 0) {
+               sb.append(":").append(uri.getPort());
+           }
        }
        sb.append("/").append(API_ROOT).append("/").append(VERSION_V1).append("/");
        return sb.toString();

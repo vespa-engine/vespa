@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.config.codegen.CNode;
@@ -21,7 +21,7 @@ public class ConfigDefinitionBuilder {
      * @return a ConfigDefinition object
      */
     public static ConfigDefinition createConfigDefinition(CNode root) {
-        ConfigDefinition def = new ConfigDefinition(root.getName(), root.getVersion(), root.getNamespace());
+        ConfigDefinition def = new ConfigDefinition(root.getName(), root.getNamespace());
 
         for (CNode node : root.getChildren()) {
             addNode(def, node);

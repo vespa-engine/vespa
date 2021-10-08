@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.handler.CompletionHandler;
@@ -10,7 +10,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -22,7 +21,7 @@ import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMP
  * @author Tony Vaagenes
  * @author bjorncs
  */
-public class ServletOutputStreamWriter {
+class ServletOutputStreamWriter {
     /** Rules:
      * 1) Don't modify the output stream without isReady returning true (write/flush/close).
      *    Multiple modification calls without interleaving isReady calls are not allowed.
@@ -66,31 +65,16 @@ public class ServletOutputStreamWriter {
      *
      * The future might complete in the servlet framework thread, user thread or executor thread.
      */
-    final CompletableFuture<Void> finishedFuture = new CompletableFuture<>();
+    private final CompletableFuture<Void> finishedFuture = new CompletableFuture<>();
 
 
-    public ServletOutputStreamWriter(ServletOutputStream outputStream, Janitor janitor, RequestMetricReporter metricReporter) {
+    ServletOutputStreamWriter(ServletOutputStream outputStream, Janitor janitor, RequestMetricReporter metricReporter) {
         this.outputStream = outputStream;
         this.janitor = janitor;
         this.metricReporter = metricReporter;
     }
 
-    public void sendErrorContentAndCloseAsync(ByteBuffer errorContent) {
-        synchronized (monitor) {
-            // Assert that no content has been written as it is too late to write error response if the response is committed.
-            assertStateIs(state, State.NOT_STARTED);
-            queueErrorContent_holdingLock(errorContent);
-            state = State.WAITING_FOR_WRITE_POSSIBLE_CALLBACK;
-            outputStream.setWriteListener(writeListener);
-        }
-    }
-
-    private void queueErrorContent_holdingLock(ByteBuffer errorContent) {
-        responseContentQueue.addLast(new ResponseContentPart(errorContent, NOOP_COMPLETION_HANDLER));
-        responseContentQueue.addLast(new ResponseContentPart(CLOSE_STREAM_BUFFER, NOOP_COMPLETION_HANDLER));
-    }
-
-    public void writeBuffer(ByteBuffer buf, CompletionHandler handler) {
+    void writeBuffer(ByteBuffer buf, CompletionHandler handler) {
         boolean thisThreadShouldWrite = false;
 
         synchronized (monitor) {
@@ -121,13 +105,13 @@ public class ServletOutputStreamWriter {
         }
     }
 
-    public void close(CompletionHandler handler) {
-        writeBuffer(CLOSE_STREAM_BUFFER, handler);
-    }
+    void fail(Throwable t) { setFinished(t); }
 
-    public void close() {
-        close(NOOP_COMPLETION_HANDLER);
-    }
+    void close(CompletionHandler handler) { writeBuffer(CLOSE_STREAM_BUFFER, handler); }
+
+    void close() { close(NOOP_COMPLETION_HANDLER); }
+
+    CompletableFuture<Void> finishedFuture() { return finishedFuture; }
 
     private void writeBuffersInQueueToOutputStream() {
         boolean lastOperationWasFlush = false;
@@ -165,29 +149,28 @@ public class ServletOutputStreamWriter {
 
                 if (contentPart.buf == CLOSE_STREAM_BUFFER) {
                     callCompletionHandlerWhenDone(contentPart.handler, outputStream::close);
-                    setFinished(Optional.empty());
+                    setFinished(null);
                     return;
                 } else {
                     writeBufferToOutputStream(contentPart);
                 }
-            } catch (Throwable e) {
-                setFinished(Optional.of(e));
+            } catch (Throwable t) {
+                setFinished(t);
                 return;
             }
         }
     }
 
-    private void setFinished(Optional<Throwable> e) {
+    private void setFinished(Throwable t) {
         synchronized (monitor) {
             state = State.FINISHED_OR_ERROR;
             if (!responseContentQueue.isEmpty()) {
-                failAllParts_holdingLock(e.orElse(new IllegalStateException("ContentChannel closed.")));
+                failAllParts_holdingLock(t != null ? t : new IllegalStateException("ContentChannel closed."));
             }
         }
-
         assert !Thread.holdsLock(monitor);
-        if (e.isPresent()) {
-            finishedFuture.completeExceptionally(e.get());
+        if (t != null) {
+            finishedFuture.completeExceptionally(t);
         } else {
             finishedFuture.complete(null);
         }
@@ -255,13 +238,9 @@ public class ServletOutputStreamWriter {
         }
     }
 
-    public void fail(Throwable t) {
-        setFinished(Optional.of(t));
-    }
-
     private final WriteListener writeListener = new WriteListener() {
         @Override
-        public void onWritePossible() throws IOException {
+        public void onWritePossible() {
             synchronized (monitor) {
                 if (state == State.FINISHED_OR_ERROR) {
                     return;
@@ -274,10 +253,7 @@ public class ServletOutputStreamWriter {
             writeBuffersInQueueToOutputStream();
         }
 
-        @Override
-        public void onError(Throwable t) {
-            setFinished(Optional.of(t));
-        }
+        @Override public void onError(Throwable t) { setFinished(t); }
     };
 
     private static class ResponseContentPart {

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "frtconfigresponsev3.h"
 #include "compressioninfo.h"
 #include <vespa/fnet/frt/values.h>
@@ -53,7 +53,7 @@ FRTConfigResponseV3::getResponseTypes() const
 ConfigValue
 FRTConfigResponseV3::readConfigValue() const
 {
-    vespalib::string md5(_data->get()[RESPONSE_CONFIG_MD5].asString().make_string());
+    vespalib::string xxhash64(_data->get()[RESPONSE_CONFIG_XXHASH64].asString().make_string());
     CompressionInfo info;
     info.deserialize(_data->get()[RESPONSE_COMPRESSION_INFO]);
     auto slime = std::make_unique<Slime>();
@@ -67,9 +67,9 @@ FRTConfigResponseV3::readConfigValue() const
         }
     }
     if (LOG_WOULD_LOG(spam)) {
-        LOG(spam, "read config value md5(%s), payload size: %lu", md5.c_str(), data.memRef.size);
+        LOG(spam, "read config value xxhash64(%s), payload size: %lu", xxhash64.c_str(), data.memRef.size);
     }
-    return ConfigValue(std::make_shared<V3Payload>(std::move(slime)), md5);
+    return ConfigValue(std::make_shared<V3Payload>(std::move(slime)), xxhash64);
 }
 
 } // namespace config

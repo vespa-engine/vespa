@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.admin;
 
 import com.google.common.collect.ImmutableList;
@@ -84,7 +84,6 @@ public class AdminModel extends ConfigModel {
             AbstractConfigProducer<?> parent = modelContext.getParentProducer();
             ModelContext.Properties properties = modelContext.getDeployState().getProperties();
             DomAdminV2Builder domBuilder = new DomAdminV2Builder(modelContext.getApplicationType(),
-                                                                 modelContext.getDeployState().getFileRegistry(),
                                                                  properties.multitenant(),
                                                                  properties.configServerSpecs());
             model.admin = domBuilder.build(modelContext.getDeployState(), parent, adminElement);

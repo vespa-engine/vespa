@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -17,10 +17,10 @@ public final class HexDecodeExpression extends Expression {
         super(DataType.STRING);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        String input = String.valueOf(ctx.getValue());
+    protected void doExecute(ExecutionContext context) {
+        String input = String.valueOf(context.getValue());
         if (input.isEmpty()) {
-            ctx.setValue(new LongFieldValue(Long.MIN_VALUE));
+            context.setValue(new LongFieldValue(Long.MIN_VALUE));
             return;
         }
         BigInteger output;
@@ -35,12 +35,12 @@ public final class HexDecodeExpression extends Expression {
         if (output.compareTo(BigInteger.ZERO) == 1 && output.bitLength() == 64) {
             output = output.subtract(ULONG_MAX); // flip to negative
         }
-        ctx.setValue(new LongFieldValue(output.longValue()));
+        context.setValue(new LongFieldValue(output.longValue()));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

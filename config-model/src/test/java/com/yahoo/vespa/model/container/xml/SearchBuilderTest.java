@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.component.ComponentId;
@@ -242,9 +242,9 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
         ContainerThreadpoolConfig config = root.getConfig(
                 ContainerThreadpoolConfig.class, "default/component/" + SearchHandler.HANDLER_CLASS + "/threadpool@search-handler");
-        assertEquals(500, config.maxThreads());
-        assertEquals(500, config.minThreads());
-        assertEquals(0, config.queueSize());
+        assertEquals(-2, config.maxThreads());
+        assertEquals(-2, config.minThreads());
+        assertEquals(-40, config.queueSize());
     }
 
     @Test

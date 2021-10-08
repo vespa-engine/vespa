@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search;
 
 import com.google.common.collect.ImmutableList;
@@ -7,6 +7,7 @@ import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.fs4.MapEncoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
@@ -333,20 +334,32 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
         super(new QueryPropertyAliases(propertyAliases));
         this.httpRequest = request;
-        init(requestMap, queryProfile);
+        init(requestMap, queryProfile, Embedder.throwsOnUse);
     }
 
-    private void init(Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
+    // TODO: Deprecate most constructors above here
+
+    private Query(Builder builder) {
+        this(builder.getRequest(), builder.getRequestMap(), builder.getQueryProfile(), builder.getEmbedder());
+    }
+
+    private Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile, Embedder embedder) {
+        super(new QueryPropertyAliases(propertyAliases));
+        this.httpRequest = request;
+        init(requestMap, queryProfile, embedder);
+    }
+
+    private void init(Map<String, String> requestMap, CompiledQueryProfile queryProfile, Embedder embedder) {
         startTime = httpRequest.getJDiscRequest().creationTime(TimeUnit.MILLISECONDS);
         if (queryProfile != null) {
             // Move all request parameters to the query profile just to validate that the parameter settings are legal
-            Properties queryProfileProperties = new QueryProfileProperties(queryProfile);
+            Properties queryProfileProperties = new QueryProfileProperties(queryProfile, embedder);
             properties().chain(queryProfileProperties);
             // TODO: Just checking legality rather than actually setting would be faster
             setPropertiesFromRequestMap(requestMap, properties(), true); // Adds errors to the query for illegal set attempts
 
             // Create the full chain
-            properties().chain(new QueryProperties(this, queryProfile.getRegistry())).
+            properties().chain(new QueryProperties(this, queryProfile.getRegistry(), embedder)).
                          chain(new ModelObjectMap()).
                          chain(new RequestContextProperties(requestMap)).
                          chain(queryProfileProperties).
@@ -365,7 +378,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
         else { // bypass these complications if there is no query profile to get values from and validate against
             properties().
-                    chain(new QueryProperties(this, CompiledQueryProfileRegistry.empty)).
+                    chain(new QueryProperties(this, CompiledQueryProfileRegistry.empty, embedder)).
                     chain(new PropertyMap()).
                     chain(new DefaultProperties());
             setPropertiesFromRequestMap(requestMap, properties(), false);
@@ -982,6 +995,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         clone.properties().setParentQuery(clone);
         assert (clone.properties().getParentQuery() == clone);
 
+        clone.setTimeout(getTimeout());
         clone.setTraceLevel(getTraceLevel());
         clone.setExplainLevel(getExplainLevel());
         clone.setHits(getHits());
@@ -1109,6 +1123,61 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         getModel().prepare(getRanking());
         getPresentation().prepare();
         getRanking().prepare();
+    }
+
+    public static class Builder {
+
+        private HttpRequest request = null;
+        private Map<String, String> requestMap = null;
+        private CompiledQueryProfile queryProfile = null;
+        private Embedder embedder = Embedder.throwsOnUse;
+
+        public Builder setRequest(String query) {
+            request = HttpRequest.createTestRequest(query, com.yahoo.jdisc.http.HttpRequest.Method.GET);
+            return this;
+        }
+
+        public Builder setRequest(HttpRequest request) {
+            this.request = request;
+            return this;
+        }
+
+        public HttpRequest getRequest() {
+            if (request == null)
+                return HttpRequest.createTestRequest("", com.yahoo.jdisc.http.HttpRequest.Method.GET);
+            return request;
+        }
+
+        /** Sets the request mao to use explicitly. If not set, the request map will be getRequest().propertyMap() */
+        public Builder setRequestMap(Map<String, String> requestMap) {
+            this.requestMap = requestMap;
+            return this;
+        }
+
+        public Map<String, String> getRequestMap() {
+            if (requestMap == null)
+                return getRequest().propertyMap();
+            return requestMap;
+        }
+
+        public Builder setQueryProfile(CompiledQueryProfile queryProfile) {
+            this.queryProfile = queryProfile;
+            return this;
+        }
+
+        /** Returns the query profile of this query, or null if none. */
+        public CompiledQueryProfile getQueryProfile() { return queryProfile; }
+
+        public Builder setEmbedder(Embedder embedder) {
+            this.embedder = embedder;
+            return this;
+        }
+
+        public Embedder getEmbedder() { return embedder; }
+
+        /** Creates a new query from this builder. No properties are required to before calling this. */
+        public Query build() { return new Query(this); }
+
     }
 
 }

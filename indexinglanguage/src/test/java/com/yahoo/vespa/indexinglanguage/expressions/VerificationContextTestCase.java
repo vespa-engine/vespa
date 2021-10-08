@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -16,8 +16,8 @@ public class VerificationContextTestCase {
     public void requireThatValueCanBeSet() {
         VerificationContext ctx = new VerificationContext();
         DataType val = DataType.STRING;
-        ctx.setValue(val);
-        assertSame(val, ctx.getValue());
+        ctx.setValueType(val);
+        assertSame(val, ctx.getValueType());
     }
 
     @Test
@@ -31,9 +31,9 @@ public class VerificationContextTestCase {
     @Test
     public void requireThatClearRemovesValue() {
         VerificationContext ctx = new VerificationContext();
-        ctx.setValue(DataType.STRING);
+        ctx.setValueType(DataType.STRING);
         ctx.clear();
-        assertNull(ctx.getValue());
+        assertNull(ctx.getValueType());
     }
 
     @Test

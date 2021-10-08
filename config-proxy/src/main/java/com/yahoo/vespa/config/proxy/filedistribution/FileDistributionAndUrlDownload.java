@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy.filedistribution;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
@@ -28,7 +28,7 @@ public class FileDistributionAndUrlDownload {
     public FileDistributionAndUrlDownload(Supervisor supervisor, ConfigSourceSet source) {
         fileDistributionRpcServer =
                 new FileDistributionRpcServer(supervisor,
-                                              new FileDownloader(new JRTConnectionPool(source, "filedistribution-jrt-pool-")));
+                                              new FileDownloader(new JRTConnectionPool(source, supervisor)));
         urlDownloadRpcServer = new UrlDownloadRpcServer(supervisor);
         cleanupExecutor.scheduleAtFixedRate(new CachedFilesMaintainer(), delay.toSeconds(), delay.toSeconds(), TimeUnit.SECONDS);
     }

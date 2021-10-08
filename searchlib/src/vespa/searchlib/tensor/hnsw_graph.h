@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -10,7 +10,7 @@
 namespace search::tensor {
 
 /**
- * Stroage of a hierarchical navigable small world graph (HNSW)
+ * Storage of a hierarchical navigable small world graph (HNSW)
  * that is used for approximate K-nearest neighbor search.
  */
 struct HnswGraph {
@@ -18,7 +18,10 @@ struct HnswGraph {
 
     // This uses 10 bits for buffer id -> 1024 buffers.
     // As we have very short arrays we get less fragmentation with fewer and larger buffers.
-    using EntryRefType = vespalib::datastore::EntryRefT<22>;
+    using LevelArrayEntryRefType = vespalib::datastore::EntryRefT<22>;
+
+    // This uses 12 bits for buffer id -> 4096 buffers.
+    using LinkArrayEntryRefType = vespalib::datastore::EntryRefT<20>;
 
     // Provides mapping from document id -> node reference.
     // The reference is used to lookup the node data in NodeStore.
@@ -27,16 +30,17 @@ struct HnswGraph {
 
     // This stores the level arrays for all nodes.
     // Each node consists of an array of levels (from level 0 to n) where each entry is a reference to the link array at that level.
-    using NodeStore = vespalib::datastore::ArrayStore<AtomicEntryRef, EntryRefType>;
+    using NodeStore = vespalib::datastore::ArrayStore<AtomicEntryRef, LevelArrayEntryRefType>;
     using StoreConfig = vespalib::datastore::ArrayStoreConfig;
     using LevelArrayRef = NodeStore::ConstArrayRef;
 
     // This stores all link arrays.
     // A link array consists of the document ids of the nodes a particular node is linked to.
-    using LinkStore = vespalib::datastore::ArrayStore<uint32_t, EntryRefType>;
+    using LinkStore = vespalib::datastore::ArrayStore<uint32_t, LinkArrayEntryRefType>;
     using LinkArrayRef = LinkStore::ConstArrayRef;
 
     NodeRefVector node_refs;
+    std::atomic<uint32_t> node_refs_size;
     NodeStore     nodes;
     LinkStore     links;
 
@@ -48,6 +52,8 @@ struct HnswGraph {
     NodeRef make_node_for_document(uint32_t docid, uint32_t num_levels);
 
     void remove_node_for_document(uint32_t docid);
+
+    void trim_node_refs_size();
 
     NodeRef get_node_ref(uint32_t docid) const {
         return node_refs[docid].load_acquire();

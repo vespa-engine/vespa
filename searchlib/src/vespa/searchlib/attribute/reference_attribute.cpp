@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributesaver.h"
 #include "load_utils.h"
@@ -216,7 +216,7 @@ ReferenceAttribute::onInitSave(vespalib::stringref fileName)
 }
 
 bool
-ReferenceAttribute::onLoad()
+ReferenceAttribute::onLoad(vespalib::Executor *)
 {
     ReaderBase attrReader(*this);
     bool ok(attrReader.getHasLoadData());

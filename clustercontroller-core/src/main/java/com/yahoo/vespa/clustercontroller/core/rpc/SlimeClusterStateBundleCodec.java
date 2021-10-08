@@ -1,9 +1,13 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.rpc;
 
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
-import com.yahoo.slime.*;
+import com.yahoo.slime.BinaryFormat;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.ObjectTraverser;
+import com.yahoo.slime.Slime;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vespa.clustercontroller.core.AnnotatedClusterState;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
@@ -47,8 +51,7 @@ public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec, En
             feedBlock.setString("description", stateBundle.getFeedBlock().get().getDescription());
         }
 
-        byte[] serialized = BinaryFormat.encode(slime);
-        Compressor.Compression compression = compressor.compress(serialized);
+        Compressor.Compression compression = BinaryFormat.encode_and_compress(slime, compressor);
         return EncodedClusterStateBundle.fromCompressionBuffer(compression);
     }
 

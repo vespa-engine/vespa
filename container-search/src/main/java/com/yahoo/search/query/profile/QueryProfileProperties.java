@@ -1,15 +1,16 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.processing.request.properties.PropertyMap;
 import com.yahoo.protect.Validator;
-import com.yahoo.search.Query;
 import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.DimensionalValue;
+import com.yahoo.search.query.profile.types.ConversionContext;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
@@ -29,6 +30,7 @@ import java.util.Map;
 public class QueryProfileProperties extends Properties {
 
     private final CompiledQueryProfile profile;
+    private final Embedder embedder;
 
     // Note: The priority order is: values has precedence over references
 
@@ -42,10 +44,15 @@ public class QueryProfileProperties extends Properties {
      */
     private List<Pair<CompoundName, CompiledQueryProfile>> references = null;
 
-    /** Creates an instance from a profile, throws an exception if the given profile is null */
     public QueryProfileProperties(CompiledQueryProfile profile) {
+        this(profile, Embedder.throwsOnUse);
+    }
+
+    /** Creates an instance from a profile, throws an exception if the given profile is null */
+    public QueryProfileProperties(CompiledQueryProfile profile, Embedder embedder) {
         Validator.ensureNotNull("The profile wrapped by this cannot be null", profile);
         this.profile = profile;
+        this.embedder = embedder;
     }
 
     /** Returns the query profile backing this, or null if none */
@@ -114,7 +121,10 @@ public class QueryProfileProperties extends Properties {
 
                     if (fieldDescription != null) {
                         if (i == name.size() - 1) { // at the end of the path, check the assignment type
-                            value = fieldDescription.getType().convertFrom(value, profile.getRegistry());
+                            value = fieldDescription.getType().convertFrom(value, new ConversionContext(localName,
+                                                                                                        profile.getRegistry(),
+                                                                                                        embedder,
+                                                                                                        context));
                             if (value == null)
                                 throw new IllegalInputException("'" + value + "' is not a " +
                                                                 fieldDescription.getType().toInstanceDescription());

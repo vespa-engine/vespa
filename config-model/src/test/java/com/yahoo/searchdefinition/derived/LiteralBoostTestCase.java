@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -11,7 +11,6 @@ import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.processing.Processing;
-import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
 
@@ -37,12 +36,12 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         SDField field1= document.addField("a", DataType.STRING);
         field1.parseIndexingScript("{ index }");
         field1.setLiteralBoost(20);
-        RankProfile other=new RankProfile("other", search, rankProfileRegistry);
+        RankProfile other=new RankProfile("other", search, rankProfileRegistry, search.rankingConstants());
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
         new Processing().process(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(), true, false);
-        DerivedConfiguration derived=new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry(), new ImportedMlModels());
+        DerivedConfiguration derived=new DerivedConfiguration(search, rankProfileRegistry);
 
         // Check attribute fields
         derived.getAttributeFields(); // TODO: assert content
@@ -68,12 +67,12 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         search.addDocument(document);
         SDField field1= document.addField("a", DataType.STRING);
         field1.parseIndexingScript("{ index }");
-        RankProfile other=new RankProfile("other", search, rankProfileRegistry);
+        RankProfile other=new RankProfile("other", search, rankProfileRegistry, search.rankingConstants());
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
         search = SearchBuilder.buildFromRawSearch(search, rankProfileRegistry, new QueryProfileRegistry());
-        DerivedConfiguration derived = new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry(),new ImportedMlModels());
+        DerivedConfiguration derived = new DerivedConfiguration(search, rankProfileRegistry);
 
         // Check il script addition
         assertIndexing(Arrays.asList("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
@@ -100,7 +99,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         field2.setLiteralBoost(20);
 
         search = SearchBuilder.buildFromRawSearch(search, rankProfileRegistry, new QueryProfileRegistry());
-        new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry(), new ImportedMlModels());
+        new DerivedConfiguration(search, rankProfileRegistry);
         assertIndexing(Arrays.asList("clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
                                      "clear_state | guard { input body | tokenize normalize stem:\"BEST\" | summary body | index body; }",
                                      "clear_state | guard { input title | tokenize | index title_literal; }",

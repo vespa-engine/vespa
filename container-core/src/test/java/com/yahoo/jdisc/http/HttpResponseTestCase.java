@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http;
 
 import com.yahoo.jdisc.Container;
@@ -134,6 +134,7 @@ public class HttpResponseTestCase {
     private static CurrentContainer mockContainer() {
         final CurrentContainer currentContainer = mock(CurrentContainer.class);
         when(currentContainer.newReference(any(URI.class))).thenReturn(mock(Container.class));
+        when(currentContainer.newReference(any(URI.class), any(Object.class))).thenReturn(mock(Container.class));
         return currentContainer;
     }
 }

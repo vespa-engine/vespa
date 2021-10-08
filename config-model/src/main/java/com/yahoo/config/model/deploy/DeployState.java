@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.deploy;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
@@ -55,6 +56,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 
 /**
@@ -87,6 +89,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final HostProvisioner provisioner;
     private final Provisioned provisioned;
     private final Reindexing reindexing;
+    private final ExecutorService executor;
 
     public static DeployState createTestState() {
         return new Builder().build();
@@ -104,6 +107,7 @@ public class DeployState implements ConfigDefinitionStore {
                         SearchDocumentModel searchDocumentModel,
                         RankProfileRegistry rankProfileRegistry,
                         FileRegistry fileRegistry,
+                        ExecutorService executor,
                         DeployLogger deployLogger,
                         Optional<HostProvisioner> hostProvisioner,
                         Provisioned provisioned,
@@ -124,6 +128,7 @@ public class DeployState implements ConfigDefinitionStore {
                         Reindexing reindexing) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
+        this.executor = executor;
         this.rankProfileRegistry = rankProfileRegistry;
         this.applicationPackage = applicationPackage;
         this.properties = properties;
@@ -140,7 +145,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.zone = zone;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
-        this.importedModels = importMlModels(applicationPackage, modelImporters, deployLogger);
+        this.importedModels = importMlModels(applicationPackage, modelImporters, deployLogger, executor);
 
         this.validationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
                                                      .orElse(ValidationOverrides.empty);
@@ -206,9 +211,10 @@ public class DeployState implements ConfigDefinitionStore {
 
     private static ImportedMlModels importMlModels(ApplicationPackage applicationPackage,
                                                    Collection<MlModelImporter> modelImporters,
-                                                   DeployLogger deployLogger) {
+                                                   DeployLogger deployLogger,
+                                                   ExecutorService executor) {
         File importFrom = applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR);
-        ImportedMlModels importedModels = new ImportedMlModels(importFrom, modelImporters);
+        ImportedMlModels importedModels = new ImportedMlModels(importFrom, executor, modelImporters);
         for (var entry : importedModels.getSkippedModels().entrySet()) {
             deployLogger.logApplicationPackage(Level.WARNING, "Skipping import of model " + entry.getKey() + " as an exception " +
                     "occurred during import. Error: " + entry.getValue());
@@ -282,6 +288,8 @@ public class DeployState implements ConfigDefinitionStore {
     /** The (machine learned) models imported from the models/ directory, as an unmodifiable map indexed by model name */
     public ImportedMlModels getImportedModels() { return importedModels; }
 
+    public ExecutorService getExecutor() { return executor; }
+
     public Version getWantedNodeVespaVersion() { return wantedNodeVespaVersion; }
 
     public Optional<DockerImage> getWantedDockerImageRepo() { return wantedDockerImageRepo; }
@@ -312,6 +320,7 @@ public class DeployState implements ConfigDefinitionStore {
 
         private ApplicationPackage applicationPackage = MockApplicationPackage.createEmpty();
         private FileRegistry fileRegistry = new MockFileRegistry();
+        private ExecutorService executor = new InThreadExecutorService();
         private DeployLogger logger = new BaseDeployLogger();
         private Optional<HostProvisioner> hostProvisioner = Optional.empty();
         private Provisioned provisioned = new Provisioned();
@@ -329,6 +338,8 @@ public class DeployState implements ConfigDefinitionStore {
         private Optional<DockerImage> wantedDockerImageRepo = Optional.empty();
         private Reindexing reindexing = null;
 
+        public Builder() {}
+
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
             return this;
@@ -336,6 +347,11 @@ public class DeployState implements ConfigDefinitionStore {
 
         public Builder fileRegistry(FileRegistry fileRegistry) {
             this.fileRegistry = fileRegistry;
+            return this;
+        }
+
+        public Builder executor(ExecutorService executor) {
+            this.executor = executor;
             return this;
         }
 
@@ -433,6 +449,7 @@ public class DeployState implements ConfigDefinitionStore {
                                    searchDocumentModel,
                                    rankProfileRegistry,
                                    fileRegistry,
+                                   executor,
                                    logger,
                                    hostProvisioner,
                                    provisioned,
@@ -458,7 +475,7 @@ public class DeployState implements ConfigDefinitionStore {
                                                               ValidationParameters validationParameters) {
             Collection<NamedReader> readers = applicationPackage.getSchemas();
             Map<String, String> names = new LinkedHashMap<>();
-            SearchBuilder builder = new SearchBuilder(applicationPackage, logger, properties, rankProfileRegistry, queryProfiles.getRegistry());
+            SearchBuilder builder = new SearchBuilder(applicationPackage, fileRegistry, logger, properties, rankProfileRegistry, queryProfiles.getRegistry());
             for (NamedReader reader : readers) {
                 try {
                     String readerName = reader.getName();

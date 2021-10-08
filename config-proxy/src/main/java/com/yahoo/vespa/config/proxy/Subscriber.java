@@ -1,19 +1,18 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.impl.GenericConfigHandle;
 import com.yahoo.config.subscription.impl.GenericConfigSubscriber;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
-
-import java.util.Optional;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.Map;
+import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -43,14 +42,13 @@ public class Subscriber {
     }
 
     public Optional<RawConfig> nextGeneration() {
-        if (subscriber.nextGeneration(0, true)) { // Proxy should never skip config due to not initializing
-            try {
+        try {
+            if (subscriber.nextGeneration(0, true))// Proxy should never skip config due to not initializing
                 return Optional.of(handle.getRawConfig());
-            } catch (Exception e) {  // To avoid thread throwing exception and loop never running this again
-                log.log(Level.WARNING, "Got exception: " + Exceptions.toMessageString(e));
-            } catch (Throwable e) {
-                com.yahoo.protect.Process.logAndDie("Got error, exiting: " + Exceptions.toMessageString(e));
-            }
+        } catch (Exception e) {  // To avoid thread throwing exception and loop never running this again
+            log.log(Level.WARNING, "Got exception: " + Exceptions.toMessageString(e));
+        } catch (Throwable e) {
+            com.yahoo.protect.Process.logAndDie("Got error, exiting: " + Exceptions.toMessageString(e));
         }
         return Optional.empty();
     }

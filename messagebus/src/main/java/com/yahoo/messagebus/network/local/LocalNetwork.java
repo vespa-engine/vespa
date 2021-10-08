@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network.local;
 
 import com.yahoo.component.Vtag;
@@ -115,7 +115,7 @@ public class LocalNetwork implements Network {
                                          error.getMessage(),
                                          error.getService() != null ? error.getService() : envelope.sender.hostId));
             }
-            owner.deliverReply(reply, envelope.parent.recipient);
+            envelope.parent.recipient.handleReply(reply);
         });
     }
 

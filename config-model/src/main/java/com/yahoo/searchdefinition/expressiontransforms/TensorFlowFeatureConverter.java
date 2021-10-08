@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.path.Path;
@@ -25,6 +25,8 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
     /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
     private final Map<Path, ConvertedModel> convertedTensorFlowModels = new HashMap<>();
+
+    public TensorFlowFeatureConverter() {}
 
     @Override
     public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {

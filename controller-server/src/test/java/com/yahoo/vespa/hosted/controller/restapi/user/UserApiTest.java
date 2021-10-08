@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.user;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -205,65 +206,68 @@ public class UserApiTest extends ControllerContainerCloudTest {
 
     @Test
     public void userMetadataTest() {
-        ContainerTester tester = new ContainerTester(container, responseFiles);
-        ((InMemoryFlagSource) tester.controller().flagSource())
-                .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
-        ControllerTester controller = new ControllerTester(tester);
-        Set<Role> operator = Set.of(Role.hostedOperator(), Role.hostedSupporter(), Role.hostedAccountant());
-        User user = new User("dev@domail", "Joe Developer", "dev", null);
+        try (Flags.Replacer ignored = Flags.clearFlagsForTesting(PermanentFlags.MAX_TRIAL_TENANTS.id(), PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id())) {
+            ContainerTester tester = new ContainerTester(container, responseFiles);
+            ((InMemoryFlagSource) tester.controller().flagSource())
+                    .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
+            ControllerTester controller = new ControllerTester(tester);
+            Set<Role> operator = Set.of(Role.hostedOperator(), Role.hostedSupporter(), Role.hostedAccountant());
+            User user = new User("dev@domail", "Joe Developer", "dev", null);
 
-        tester.assertResponse(request("/user/v1/user")
-                        .roles(operator)
-                        .user(user),
-                new File("user-without-applications.json"));
+            tester.assertResponse(request("/user/v1/user")
+                            .roles(operator)
+                            .user(user),
+                    new File("user-without-applications.json"));
 
-        controller.createTenant("tenant1", Tenant.Type.cloud);
-        controller.createApplication("tenant1", "app1", "default");
-        controller.createApplication("tenant1", "app2", "default");
-        controller.createApplication("tenant1", "app2", "myinstance");
-        controller.createApplication("tenant1", "app3");
+            controller.createTenant("tenant1", Tenant.Type.cloud);
+            controller.createApplication("tenant1", "app1", "default");
+            controller.createApplication("tenant1", "app2", "default");
+            controller.createApplication("tenant1", "app2", "myinstance");
+            controller.createApplication("tenant1", "app3");
 
-        controller.createTenant("tenant2", Tenant.Type.cloud);
-        controller.createApplication("tenant2", "app2", "test");
+            controller.createTenant("tenant2", Tenant.Type.cloud);
+            controller.createApplication("tenant2", "app2", "test");
 
-        controller.createTenant("tenant3", Tenant.Type.cloud);
-        controller.createApplication("tenant3", "app1");
+            controller.createTenant("tenant3", Tenant.Type.cloud);
+            controller.createApplication("tenant3", "app1");
 
-        controller.createTenant("sandbox", Tenant.Type.cloud);
-        controller.createApplication("sandbox", "app1", "default");
-        controller.createApplication("sandbox", "app2", "default");
-        controller.createApplication("sandbox", "app2", "dev");
+            controller.createTenant("sandbox", Tenant.Type.cloud);
+            controller.createApplication("sandbox", "app1", "default");
+            controller.createApplication("sandbox", "app2", "default");
+            controller.createApplication("sandbox", "app2", "dev");
 
-        // Should still be empty because none of the roles explicitly refer to any of the applications
-        tester.assertResponse(request("/user/v1/user")
-                        .roles(operator)
-                        .user(user),
-                new File("user-without-applications.json"));
+            // Should still be empty because none of the roles explicitly refer to any of the applications
+            tester.assertResponse(request("/user/v1/user")
+                            .roles(operator)
+                            .user(user),
+                    new File("user-without-applications.json"));
 
-        // Empty applications because tenant dummy does not exist
-        tester.assertResponse(request("/user/v1/user")
-                        .roles(Set.of(Role.administrator(TenantName.from("tenant1")),
-                                Role.developer(TenantName.from("tenant2")),
-                                Role.developer(TenantName.from("sandbox")),
-                                Role.reader(TenantName.from("sandbox"))))
-                        .user(user),
-                new File("user-with-applications-cloud.json"));
+            // Empty applications because tenant dummy does not exist
+            tester.assertResponse(request("/user/v1/user")
+                            .roles(Set.of(Role.administrator(TenantName.from("tenant1")),
+                                    Role.developer(TenantName.from("tenant2")),
+                                    Role.developer(TenantName.from("sandbox")),
+                                    Role.reader(TenantName.from("sandbox"))))
+                            .user(user),
+                    new File("user-with-applications-cloud.json"));
+        }
     }
 
     @Test
     public void maxTrialTenants() {
-        ContainerTester tester = new ContainerTester(container, responseFiles);
-        ((InMemoryFlagSource) tester.controller().flagSource())
-                .withIntFlag(PermanentFlags.MAX_TRIAL_TENANTS.id(), 1)
-                .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
-        ControllerTester controller = new ControllerTester(tester);
-        Set<Role> operator = Set.of(Role.hostedOperator(), Role.hostedSupporter(), Role.hostedAccountant());
-        User user = new User("dev@domail", "Joe Developer", "dev", null);
+        try (Flags.Replacer ignored = Flags.clearFlagsForTesting(PermanentFlags.MAX_TRIAL_TENANTS.id(), PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id())) {
+            ContainerTester tester = new ContainerTester(container, responseFiles);
+            ((InMemoryFlagSource) tester.controller().flagSource())
+                    .withIntFlag(PermanentFlags.MAX_TRIAL_TENANTS.id(), 1)
+                    .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
+            ControllerTester controller = new ControllerTester(tester);
+            User user = new User("dev@domail", "Joe Developer", "dev", null);
 
-        controller.createTenant("tenant1", Tenant.Type.cloud);
+            controller.createTenant("tenant1", Tenant.Type.cloud);
 
-        tester.assertResponse(
-                request("/user/v1/user").user(user),
-                new File("user-without-trial-capacity-cloud.json"));
+            tester.assertResponse(
+                    request("/user/v1/user").user(user),
+                    new File("user-without-trial-capacity-cloud.json"));
+        }
     }
 }

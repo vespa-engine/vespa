@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -25,8 +25,8 @@ public final class SplitExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        String input = String.valueOf(ctx.getValue());
+    protected void doExecute(ExecutionContext context) {
+        String input = String.valueOf(context.getValue());
         Array<StringFieldValue> output = new Array<>(DataType.getArray(DataType.STRING));
         if (!input.isEmpty()) {
             String[] splits = splitPattern.split(input);
@@ -34,12 +34,12 @@ public final class SplitExpression extends Expression {
                 output.add(new StringFieldValue(split));
             }
         }
-        ctx.setValue(output);
+        context.setValue(output);
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.routing;
 
 import com.yahoo.messagebus.EmptyReply;
@@ -805,9 +805,13 @@ public class RoutingNode implements ReplyHandler {
         this.serviceAddress = serviceAddress;
     }
 
+    /** Proxy through message bus in case it was destroyed in the meantime. */
     @Override
     public void handleReply(Reply reply) {
-        setReply(reply);
-        notifyParent();
+        mbus.deliverReply(reply, r -> {
+            setReply(reply);
+            notifyParent();
+        });
     }
+
 }

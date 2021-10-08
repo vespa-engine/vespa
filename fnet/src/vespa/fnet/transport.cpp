@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "transport.h"
 #include "transport_thread.h"
 #include "iocomponent.h"
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/rendezvous.h>
 #include <chrono>
 #include <xxhash.h>
 
@@ -24,12 +25,83 @@ struct HashState {
 
 VESPA_THREAD_STACK_TAG(fnet_work_pool);
 
+struct DefaultTimeTools : fnet::TimeTools {
+    vespalib::duration event_timeout() const override {
+        return FNET_Scheduler::tick_ms;
+    }
+    vespalib::steady_time current_time() const override {
+        return vespalib::steady_clock::now();
+    }
+};
+
+struct DebugTimeTools : fnet::TimeTools {
+    vespalib::duration my_event_timeout;
+    std::function<vespalib::steady_time()> my_current_time;
+    DebugTimeTools(vespalib::duration d, std::function<vespalib::steady_time()> f) noexcept
+      : my_event_timeout(d), my_current_time(std::move(f)) {}
+    vespalib::duration event_timeout() const override {
+        return my_event_timeout;
+    }
+    vespalib::steady_time current_time() const override {
+        return my_current_time();
+    }
+};
+
+struct CaptureMeet : vespalib::Rendezvous<int,bool> {
+    using SP = std::shared_ptr<CaptureMeet>;
+    vespalib::SyncableThreadExecutor &work_pool;
+    vespalib::AsyncResolver &async_resolver;
+    std::function<bool()> capture_hook;
+    CaptureMeet(size_t N,
+                vespalib::SyncableThreadExecutor &work_pool_in,
+                vespalib::AsyncResolver &resolver_in,
+                std::function<bool()> capture_hook_in)
+      : vespalib::Rendezvous<int,bool>(N),
+        work_pool(work_pool_in),
+        async_resolver(resolver_in),
+        capture_hook(std::move(capture_hook_in)) {}
+    void mingle() override {
+        work_pool.sync();
+        async_resolver.wait_for_pending_resolves();
+        bool result = capture_hook();
+        for (size_t i = 0; i < size(); ++i) {
+            out(i) = result;
+        }
+    }
+};
+
+struct CaptureTask : FNET_Task {
+    CaptureMeet::SP meet;
+    CaptureTask(FNET_Scheduler *scheduler, CaptureMeet::SP meet_in)
+      : FNET_Task(scheduler), meet(std::move(meet_in)) {}
+    void PerformTask() override {
+        int dummy_value = 0; // rendezvous must have input value
+        if (meet->rendezvous(dummy_value)) {
+            ScheduleNow();
+        } else {
+            delete this;
+        }
+    };
+};
+
 } // namespace <unnamed>
+
+namespace fnet {
+
+TimeTools::SP
+TimeTools::make_debug(vespalib::duration event_timeout,
+                      std::function<vespalib::steady_time()> current_time)
+{
+    return std::make_shared<DebugTimeTools>(event_timeout, std::move(current_time));
+}
+
+} // fnet
 
 TransportConfig::TransportConfig(int num_threads)
     : _config(),
       _resolver(),
       _crypto(),
+      _time_tools(),
       _num_threads(num_threads)
 {}
 
@@ -39,14 +111,21 @@ vespalib::AsyncResolver::SP
 TransportConfig::resolver() const {
     return _resolver ? _resolver : vespalib::AsyncResolver::get_shared();
 }
+
 vespalib::CryptoEngine::SP
 TransportConfig::crypto() const {
     return _crypto ? _crypto : vespalib::CryptoEngine::get_default();
 }
 
-FNET_Transport::FNET_Transport(TransportConfig cfg)
+fnet::TimeTools::SP
+TransportConfig::time_tools() const {
+    return _time_tools ? _time_tools : std::make_shared<DefaultTimeTools>();
+}
+
+FNET_Transport::FNET_Transport(const TransportConfig &cfg)
     : _async_resolver(cfg.resolver()),
       _crypto_engine(cfg.crypto()),
+      _time_tools(cfg.time_tools()),
       _work_pool(std::make_unique<vespalib::ThreadStackExecutor>(1, 128_Ki, fnet_work_pool, 1024)),
       _threads(),
       _config(cfg.config())
@@ -172,6 +251,17 @@ FNET_Transport::Start(FastOS_ThreadPool *pool)
         result &= thread->Start(pool);
     }
     return result;
+}
+
+void
+FNET_Transport::attach_capture_hook(std::function<bool()> capture_hook)
+{
+    auto meet = std::make_shared<CaptureMeet>(_threads.size(), *_work_pool, *_async_resolver, std::move(capture_hook));
+    for (auto &thread: _threads) {
+        // tasks will be deleted when the capture_hook returns false
+        auto *task = new CaptureTask(thread->GetScheduler(), meet);
+        task->ScheduleNow();
+    }
 }
 
 void

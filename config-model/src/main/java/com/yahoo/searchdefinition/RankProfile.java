@@ -1,14 +1,17 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.expressiontransforms.ExpressionTransforms;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -21,7 +24,6 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.vespa.model.VespaModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,6 +44,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,11 +63,9 @@ public class RankProfile implements Cloneable {
     /** The search definition owning this profile, or null if global (owned by a model) */
     private final ImmutableSearch search;
 
-    /** The model owning this profile if it is global, or null if it is owned by a search definition */
-    private final VespaModel model;
-
     /** The name of the rank profile inherited by this */
     private String inheritedName = null;
+    private RankProfile inherited = null;
 
     /** The match settings of this profile */
     private MatchPhaseSettings matchPhaseSettings = null;
@@ -104,6 +105,8 @@ public class RankProfile implements Cloneable {
     private Boolean ignoreDefaultRankFeatures = null;
 
     private Map<String, RankingExpressionFunction> functions = new LinkedHashMap<>();
+    // This cache must be invalidated every time modifications are done to 'functions'.
+    private CachedFunctions allFunctionsCached = null;
 
     private Map<Reference, TensorType> inputFeatures = new LinkedHashMap<>();
 
@@ -121,7 +124,24 @@ public class RankProfile implements Cloneable {
     private List<ImmutableSDField> allFieldsList;
 
     /** Global onnx models not tied to a search definition */
-    private OnnxModels onnxModels = new OnnxModels();
+    private final OnnxModels onnxModels;
+    private final RankingConstants rankingConstants;
+    private final ApplicationPackage applicationPackage;
+    private final DeployLogger deployLogger;
+
+    private static class CachedFunctions {
+        private final Map<String, RankingExpressionFunction> allRankingExpressionFunctions;
+        private final ImmutableMap<String, ExpressionFunction> allExpressionFunctions;
+        CachedFunctions(Map<String, RankingExpressionFunction> functions) {
+            allRankingExpressionFunctions = functions;
+            ImmutableMap.Builder<String,ExpressionFunction> mapBuilder = new ImmutableMap.Builder<>();
+            for (var entry : functions.entrySet()) {
+                ExpressionFunction function = entry.getValue().function();
+                mapBuilder.put(function.getName(), function);
+            }
+            allExpressionFunctions = mapBuilder.build();
+        }
+    }
 
     /**
      * Creates a new rank profile for a particular search definition
@@ -131,25 +151,29 @@ public class RankProfile implements Cloneable {
      * @param rankProfileRegistry the {@link com.yahoo.searchdefinition.RankProfileRegistry} to use for storing
      *                            and looking up rank profiles.
      */
-    public RankProfile(String name, Search search, RankProfileRegistry rankProfileRegistry) {
+    public RankProfile(String name, Search search, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.search = Objects.requireNonNull(search, "search cannot be null");
-        this.model = null;
+        this.onnxModels = null;
+        this.rankingConstants = rankingConstants;
         this.rankProfileRegistry = rankProfileRegistry;
+        this.applicationPackage = search.applicationPackage();
+        this.deployLogger = search.getDeployLogger();
     }
 
     /**
      * Creates a global rank profile
      *
      * @param name  the name of the new profile
-     * @param model the model owning this profile
      */
-    public RankProfile(String name, VespaModel model, RankProfileRegistry rankProfileRegistry, OnnxModels onnxModels) {
+    public RankProfile(String name, ApplicationPackage applicationPackage, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants, OnnxModels onnxModels) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.search = null;
-        this.model = Objects.requireNonNull(model, "model cannot be null");
         this.rankProfileRegistry = rankProfileRegistry;
+        this.rankingConstants = rankingConstants;
         this.onnxModels = onnxModels;
+        this.applicationPackage = applicationPackage;
+        this.deployLogger = deployLogger;
     }
 
     public String getName() { return name; }
@@ -159,12 +183,12 @@ public class RankProfile implements Cloneable {
 
     /** Returns the application this is part of */
     public ApplicationPackage applicationPackage() {
-        return search != null ? search.applicationPackage() : model.applicationPackage();
+        return applicationPackage;
     }
 
     /** Returns the ranking constants of the owner of this */
     public RankingConstants rankingConstants() {
-        return search != null ? search.rankingConstants() : model.rankingConstants();
+        return rankingConstants;
     }
 
     public Map<String, OnnxModel> onnxModels() {
@@ -195,21 +219,61 @@ public class RankProfile implements Cloneable {
     public String getInheritedName() { return inheritedName; }
 
     /** Returns the inherited rank profile, or null if there is none */
-    public RankProfile getInherited() {
-        if (getSearch() == null) return getInheritedFromRegistry(inheritedName);
-
-        RankProfile inheritedInThisSearch = rankProfileRegistry.get(search, inheritedName);
-        if (inheritedInThisSearch != null) return inheritedInThisSearch;
-        return getInheritedFromRegistry(inheritedName);
-    }
-
-    private RankProfile getInheritedFromRegistry(String inheritedName) {
-        for (RankProfile r : rankProfileRegistry.all()) {
-            if (r.getName().equals(inheritedName)) {
-                return r;
+    private RankProfile getInherited() {
+        if (inheritedName == null) return null;
+        if (inherited == null) {
+            inherited = resolveInherited();
+            if (inherited == null) {
+                String msg = "rank-profile '" + getName() + "' inherits '" + inheritedName +
+                        "', but it does not exist anywhere in the inheritance of search '" +
+                        ((getSearch() != null) ? getSearch().getName() : " global rank profiles") + "'.";
+                throw new IllegalArgumentException(msg);
+            } else {
+                List<String> children = new ArrayList<>();
+                children.add(createFullyQualifiedName());
+                verifyNoInheritanceCycle(children, inherited);
             }
         }
-        return null;
+        return inherited;
+    }
+
+    private String createFullyQualifiedName() {
+        return (search != null)
+                ? (search.getName() + "." + getName())
+                : getName();
+    }
+
+    private void verifyNoInheritanceCycle(List<String> children, RankProfile parent) {
+        children.add(parent.createFullyQualifiedName());
+        String root = children.get(0);
+        if (root.equals(parent.createFullyQualifiedName())) {
+            throw new IllegalArgumentException("There is a cycle in the inheritance for rank-profile '" + root + "' = " + children);
+        }
+        if (parent.getInherited() != null) {
+            verifyNoInheritanceCycle(children, parent.getInherited());
+        }
+    }
+
+    private RankProfile resolveInherited(ImmutableSearch search) {
+        SDDocumentType documentType = search.getDocument();
+        if (documentType != null) {
+            if (name.equals(inheritedName)) {
+                // If you seemingly inherit yourself, you are actually referencing a rank-profile in one of your inherited schemas
+                for (SDDocumentType baseType : documentType.getInheritedTypes()) {
+                    RankProfile resolvedFromBase = rankProfileRegistry.resolve(baseType, inheritedName);
+                    if (resolvedFromBase != null) return resolvedFromBase;
+                }
+            }
+            return rankProfileRegistry.resolve(documentType, inheritedName);
+        }
+        return rankProfileRegistry.get(search.getName(), inheritedName);
+    }
+
+    private RankProfile resolveInherited() {
+        if (inheritedName == null) return null;
+        return (getSearch() != null)
+                ? resolveInherited(search)
+                : rankProfileRegistry.getGlobal(inheritedName);
     }
 
     /**
@@ -583,7 +647,12 @@ public class RankProfile implements Cloneable {
     /** Adds a function and returns it */
     public RankingExpressionFunction addFunction(ExpressionFunction function, boolean inline) {
         RankingExpressionFunction rankingExpressionFunction = new RankingExpressionFunction(function, inline);
+        if (functions.containsKey(function.getName())) {
+            deployLogger.log(Level.WARNING, "Function '" + function.getName() + "' replaces a previous function " +
+                    "with the same name in rank profile '" + this.name + "'");
+        }
         functions.put(function.getName(), rankingExpressionFunction);
+        allFunctionsCached = null;
         return rankingExpressionFunction;
     }
 
@@ -612,6 +681,20 @@ public class RankProfile implements Cloneable {
     }
     /** Returns an unmodifiable snapshot of the functions in this */
     public Map<String, RankingExpressionFunction> getFunctions() {
+        updateCachedFunctions();
+        return allFunctionsCached.allRankingExpressionFunctions;
+    }
+    private ImmutableMap<String, ExpressionFunction> getExpressionFunctions() {
+        updateCachedFunctions();
+        return allFunctionsCached.allExpressionFunctions;
+    }
+    private void updateCachedFunctions() {
+        if (needToUpdateFunctionCache()) {
+            allFunctionsCached = new CachedFunctions(gatherAllFunctions());
+        }
+    }
+
+    private  Map<String, RankingExpressionFunction> gatherAllFunctions() {
         if (functions.isEmpty() && getInherited() == null) return Collections.emptyMap();
         if (functions.isEmpty()) return getInherited().getFunctions();
         if (getInherited() == null) return Collections.unmodifiableMap(new LinkedHashMap<>(functions));
@@ -620,6 +703,12 @@ public class RankProfile implements Cloneable {
         Map<String, RankingExpressionFunction> allFunctions = new LinkedHashMap<>(getInherited().getFunctions());
         allFunctions.putAll(functions);
         return Collections.unmodifiableMap(allFunctions);
+    }
+
+    private boolean needToUpdateFunctionCache() {
+        if (getInherited() != null)
+            return (allFunctionsCached == null) || getInherited().needToUpdateFunctionCache();
+        return allFunctionsCached == null;
     }
 
     public int getKeepRankCount() {
@@ -710,6 +799,7 @@ public class RankProfile implements Cloneable {
             clone.rankProperties = new LinkedHashMap<>(this.rankProperties);
             clone.inputFeatures = new LinkedHashMap<>(this.inputFeatures);
             clone.functions = new LinkedHashMap<>(this.functions);
+            clone.allFunctionsCached = null;
             clone.filterFields = new HashSet<>(this.filterFields);
             clone.constants = new HashMap<>(this.constants);
             return clone;
@@ -749,6 +839,7 @@ public class RankProfile implements Cloneable {
         // Function compiling second pass: compile all functions and insert previously compiled inline functions
         // TODO This merges all functions from inherited profiles too and erases inheritance information. Not good.
         functions = compileFunctions(this::getFunctions, queryProfiles, featureTypes, importedModels, inlineFunctions, expressionTransforms);
+        allFunctionsCached = null;
     }
 
     private void checkNameCollisions(Map<String, RankingExpressionFunction> functions, Map<String, Value> constants) {
@@ -835,10 +926,7 @@ public class RankProfile implements Cloneable {
     }
     
     public MapEvaluationTypeContext typeContext(QueryProfileRegistry queryProfiles, Map<Reference, TensorType> featureTypes) {
-        MapEvaluationTypeContext context = new MapEvaluationTypeContext(getFunctions().values().stream()
-                                                                                      .map(RankingExpressionFunction::function)
-                                                                                      .collect(Collectors.toList()),
-                                                                        featureTypes);
+        MapEvaluationTypeContext context = new MapEvaluationTypeContext(getExpressionFunctions(), featureTypes);
 
         // Add small and large constants, respectively
         getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));

@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_define_module(
     DEPENDS
     fastos
@@ -20,6 +20,7 @@ vespa_define_module(
     fileacquirer
 
     LIBS
+    src/vespa/searchcore/bmcluster
     src/vespa/searchcore/config
     src/vespa/searchcore/grouping
     src/vespa/searchcore/proton/attribute
@@ -49,6 +50,7 @@ vespa_define_module(
     src/apps/vespa-feed-bm
     src/apps/vespa-gen-testdocs
     src/apps/vespa-proton-cmd
+    src/apps/vespa-redistribute-bm
     src/apps/vespa-transactionlog-inspect
 
     TESTS
@@ -61,6 +63,7 @@ vespa_define_module(
     src/tests/proton/attribute/attribute_populator
     src/tests/proton/attribute/attribute_usage_filter
     src/tests/proton/attribute/attribute_usage_sampler_functor
+    src/tests/proton/attribute/attribute_usage_stats
     src/tests/proton/attribute/attributes_state_explorer
     src/tests/proton/attribute/document_field_extractor
     src/tests/proton/attribute/document_field_populator

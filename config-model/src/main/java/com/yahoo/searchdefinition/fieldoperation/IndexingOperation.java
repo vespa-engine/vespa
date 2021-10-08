@@ -1,7 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.fieldoperation;
 
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -10,6 +11,7 @@ import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
+import com.yahoo.yolean.Exceptions;
 
 /**
  * @author Einar M R Rosenvinge
@@ -27,14 +29,14 @@ public class IndexingOperation implements FieldOperation {
     }
 
     /** Creates an indexing operation which will use the simple linguistics implementation suitable for testing */
-    @SuppressWarnings("deprecation")
     public static IndexingOperation fromStream(SimpleCharStream input, boolean multiLine) throws ParseException {
-        return fromStream(input, multiLine, new SimpleLinguistics());
+        return fromStream(input, multiLine, new SimpleLinguistics(), Embedder.throwsOnUse);
     }
 
-    public static IndexingOperation fromStream(SimpleCharStream input, boolean multiLine, Linguistics linguistics)
+    public static IndexingOperation fromStream(SimpleCharStream input, boolean multiLine,
+                                               Linguistics linguistics, Embedder embedder)
             throws ParseException {
-        ScriptParserContext config = new ScriptParserContext(linguistics);
+        ScriptParserContext config = new ScriptParserContext(linguistics, embedder);
         config.setAnnotatorConfig(new AnnotatorConfig());
         config.setInputStream(input);
         ScriptExpression exp;
@@ -45,7 +47,7 @@ public class IndexingOperation implements FieldOperation {
                 exp = new ScriptExpression(StatementExpression.newInstance(config));
             }
         } catch (com.yahoo.vespa.indexinglanguage.parser.ParseException e) {
-            ParseException t = new ParseException("Error reported by IL parser: " + e.getMessage());
+            ParseException t = new ParseException("Could not parse indexing statement: " + Exceptions.toMessageString(e));
             t.initCause(e);
             throw t;
         }

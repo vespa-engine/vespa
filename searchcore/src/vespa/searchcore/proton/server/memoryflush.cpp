@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memoryflush.h"
 #include <vespa/searchcore/proton/flushengine/tls_stats_map.h>
@@ -73,6 +73,18 @@ MemoryFlush::Config::Config(uint64_t maxGlobalMemory_in,
       diskBloatFactor(diskBloatFactor_in),
       maxTimeGain(maxTimeGain_in)
 { }
+
+vespalib::string
+MemoryFlush::Config::toString() const {
+    vespalib::asciistream os;
+    os << "maxGlobalMemory=" << maxGlobalMemory << " ";
+    os << "maxGlobalTlsSize=" << maxGlobalTlsSize << " ";
+    os << "globalDiskBloatFactor=" << globalDiskBloatFactor << " ";
+    os << "maxMemoryGain=" << maxMemoryGain << " ";
+    os << "diskBloatFactor=" << diskBloatFactor << " ";
+    os << "maxTimeGain(ns)=" << maxTimeGain.count();
+    return os.str();
+}
 
 MemoryFlush::MemoryFlush(const Config &config, vespalib::system_time startTime)
     : _lock(),

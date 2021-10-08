@@ -1,10 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.types;
 
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 
 /**
  * Represents a query profile field type which is a reference to a query profile.
@@ -57,11 +56,11 @@ public class QueryProfileFieldType extends FieldType {
     }
 
     @Override
-    public CompiledQueryProfile convertFrom(Object object, CompiledQueryProfileRegistry registry) {
+    public CompiledQueryProfile convertFrom(Object object, ConversionContext context) {
         String profileId = object.toString();
         if (profileId.startsWith("ref:"))
             profileId = profileId.substring("ref:".length());
-        CompiledQueryProfile profile = registry.getComponent(profileId);
+        CompiledQueryProfile profile = context.registry().getComponent(profileId);
         if (profile == null) return null;
         if (type != null && ! type.equals(profile.getType())) return null;
         return profile;

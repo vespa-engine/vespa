@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
@@ -96,9 +96,10 @@ public class FileReferenceDownloader {
         String fileReference = fileReferenceDownload.fileReference().value();
         request.parameters().add(new StringValue(fileReference));
         request.parameters().add(new Int32Value(fileReferenceDownload.downloadFromOtherSourceIfNotFound() ? 0 : 1));
-
-        connection.invokeSync(request, (double) rpcTimeout.getSeconds());
-        Level logLevel = (retryCount > 50 ? Level.INFO : Level.FINE);
+        double timeoutSecs = (double) rpcTimeout.getSeconds();
+        timeoutSecs += retryCount * 10.0;
+        connection.invokeSync(request, timeoutSecs);
+        Level logLevel = (retryCount > 5 ? Level.INFO : Level.FINE);
         if (validateResponse(request)) {
             log.log(Level.FINE, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection + ", retry count " + retryCount);
             if (request.returnValues().get(0).asInt32() == 0) {
@@ -113,7 +114,7 @@ public class FileReferenceDownloader {
             log.log(logLevel, () -> "Downloading file " + fileReference + " from " + connection.getAddress() + " failed: " +
                                     request + ", error: " + request.errorMessage() + ", will use another config server for next request" +
                                     " (retry count " + retryCount + ", rpc timeout " + rpcTimeout.getSeconds() + ")");
-            connectionPool.setError(connection, request.errorCode());
+            connectionPool.switchConnection(connection);
             return false;
         }
     }

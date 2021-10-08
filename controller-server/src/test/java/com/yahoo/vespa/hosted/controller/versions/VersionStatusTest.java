@@ -9,9 +9,10 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -69,8 +70,8 @@ public class VersionStatusTest {
         Version version1 = Version.fromString("6.5");
         // Upgrade some config servers
         for (ZoneApi zone : tester.zoneRegistry().zones().all().zones()) {
-            for (Node node : tester.configServer().nodeRepository().list(zone.getId(), SystemApplication.configServer.id())) {
-                Node upgradedNode = new Node.Builder(node).currentVersion(version1).build();
+            for (Node node : tester.configServer().nodeRepository().list(zone.getId(), NodeFilter.all().applications(SystemApplication.configServer.id()))) {
+                Node upgradedNode = Node.builder(node).currentVersion(version1).build();
                 tester.configServer().nodeRepository().putNodes(zone.getId(), upgradedNode);
                 break;
             }
@@ -113,8 +114,8 @@ public class VersionStatusTest {
         // Downgrade one config server in each zone
         Version ancientVersion = Version.fromString("5.1");
         for (ZoneApi zone : tester.controller().zoneRegistry().zones().all().zones()) {
-            for (Node node : tester.configServer().nodeRepository().list(zone.getId(), SystemApplication.configServer.id())) {
-                Node downgradedNode = new Node.Builder(node).currentVersion(ancientVersion).build();
+            for (Node node : tester.configServer().nodeRepository().list(zone.getId(), NodeFilter.all().applications(SystemApplication.configServer.id()))) {
+                Node downgradedNode = Node.builder(node).currentVersion(ancientVersion).build();
                 tester.configServer().nodeRepository().putNodes(zone.getId(), downgradedNode);
                 break;
             }
@@ -303,7 +304,7 @@ public class VersionStatusTest {
                      Confidence.low, confidence(tester.controller(), version2));
 
         // Remaining canary upgrades to version2 which raises confidence to normal and more apps upgrade
-        canary2.failDeployment(systemTest);
+        canary2.triggerJobs().jobAborted(systemTest).jobAborted(stagingTest);
         canary2.runJob(stagingTest);
         canary2.deployPlatform(version2);
         tester.controllerTester().computeVersionStatus();

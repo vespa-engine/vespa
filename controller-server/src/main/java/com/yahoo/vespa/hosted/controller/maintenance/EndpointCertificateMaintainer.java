@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.common.collect.Sets;
@@ -24,8 +24,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Updates refreshed endpoint certificates and triggers redeployment, and deletes unused certificates.
@@ -60,6 +62,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
             deployRefreshedCertificates();
             updateRefreshedCertificates();
             deleteUnusedCertificates();
+            reportUnmanagedCertificates();
         } catch (Exception e) {
             log.log(LogLevel.ERROR, "Exception caught while maintaining endpoint certificates", e);
             return 0.0;
@@ -132,6 +135,16 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                 }
             }
         });
+    }
+
+    private void reportUnmanagedCertificates() {
+        Set<String> managedRequestIds = curator.readAllEndpointCertificateMetadata().values().stream().map(EndpointCertificateMetadata::requestId).collect(Collectors.toSet());
+
+        for (EndpointCertificateMetadata cameoCertificateMetadata : endpointCertificateProvider.listCertificates()) {
+            if (!managedRequestIds.contains(cameoCertificateMetadata.requestId())) {
+                log.info("Certificate metadata exists with provider but is not managed by controller: " + cameoCertificateMetadata.requestId() + ", " + cameoCertificateMetadata.issuer() + ", " + cameoCertificateMetadata.requestedDnsSans());
+            }
+        }
     }
 
     private Lock lock(ApplicationId applicationId) {

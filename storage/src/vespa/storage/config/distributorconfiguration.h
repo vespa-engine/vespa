@@ -1,8 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "config-stor-distributormanager.h"
-#include "config-stor-visitordispatcher.h"
+#include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/vespalib/util/time.h>

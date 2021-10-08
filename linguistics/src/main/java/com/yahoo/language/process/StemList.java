@@ -1,8 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.process;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A list of strings which does not allow for duplicate elements.
@@ -10,7 +11,8 @@ import java.util.ArrayList;
  * @author steinar
  */
 public class StemList extends AbstractList<String> {
-    private final ArrayList<String> stems;
+
+    private final List<String> stems;
 
     public StemList() {
         this(new String[0]);

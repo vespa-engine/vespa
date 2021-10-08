@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.cache.AbstractCache;
@@ -54,7 +54,7 @@ public class CuratorDatabase {
     public CuratorDatabase(Curator curator, Path root, boolean useCache) {
         this.useCache = useCache;
         this.curator = curator;
-        changeGenerationCounter = new CuratorCounter(curator, root.append("changeCounter").getAbsolute());
+        changeGenerationCounter = new CuratorCounter(curator, root.append("changeCounter"));
         cache.set(newCache(changeGenerationCounter.get()));
     }
 

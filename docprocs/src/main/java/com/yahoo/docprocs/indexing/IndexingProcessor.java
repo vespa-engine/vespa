@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docprocs.indexing;
 
 import java.util.ArrayList;
@@ -20,6 +20,8 @@ import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.language.Linguistics;
 import java.util.logging.Level;
+
+import com.yahoo.language.process.Embedder;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.AdapterFactory;
 import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
@@ -52,9 +54,10 @@ public class IndexingProcessor extends DocumentProcessor {
     @Inject
     public IndexingProcessor(DocumentmanagerConfig documentmanagerConfig,
                              IlscriptsConfig ilscriptsConfig,
-                             Linguistics linguistics) {
+                             Linguistics linguistics,
+                             Embedder embedder) {
         docTypeMgr = DocumentTypeManagerConfigurer.configureNewManager(documentmanagerConfig);
-        scriptMgr = new ScriptManager(docTypeMgr, ilscriptsConfig, linguistics);
+        scriptMgr = new ScriptManager(docTypeMgr, ilscriptsConfig, linguistics, embedder);
         adapterFactory = new SimpleAdapterFactory(new ExpressionSelector());
     }
 

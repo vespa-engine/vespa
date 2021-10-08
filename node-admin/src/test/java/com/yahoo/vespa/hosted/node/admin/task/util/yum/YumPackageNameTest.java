@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
 import org.junit.Test;
@@ -65,7 +65,7 @@ public class YumPackageNameTest {
 
         // name-ver
         verifyPackageName("docker-engine-selinux-1.12.6",
-                          "0",
+                          null,
                           "docker-engine-selinux",
                           "1.12.6",
                           null,
@@ -75,7 +75,7 @@ public class YumPackageNameTest {
 
         // name-ver-rel
         verifyPackageName("docker-engine-selinux-1.12.6-1.el7",
-                "0",
+                null,
                 "docker-engine-selinux",
                 "1.12.6",
                 "1.el7",
@@ -85,7 +85,7 @@ public class YumPackageNameTest {
 
         // name-ver-rel.arch
         verifyPackageName("docker-engine-selinux-1.12.6-1.el7.x86_64",
-                "0",
+                null,
                 "docker-engine-selinux",
                 "1.12.6",
                 "1.el7",

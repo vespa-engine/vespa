@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.component.Version;
@@ -21,10 +21,12 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
+import com.yahoo.vespa.config.server.filedistribution.AddFileInterface;
+import com.yahoo.vespa.config.server.filedistribution.MockFileManager;
 import com.yahoo.vespa.config.server.tenant.OperatorCertificateSerializer;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
@@ -36,6 +38,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USER_DEFCONFIGS_ZK_SUBPATH;
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -62,23 +65,26 @@ public class SessionZooKeeperClient {
     private static final String OPERATOR_CERTIFICATES_PATH = "operatorCertificates";
 
     private final Curator curator;
-    private final ConfigCurator configCurator;
     private final TenantName tenantName;
     private final Path sessionPath;
     private final Path sessionStatusPath;
     private final String serverId;  // hostname
+    private final int maxNodeSize;
+    private final AddFileInterface fileManager;
 
-    public SessionZooKeeperClient(Curator curator,
-                                  ConfigCurator configCurator,
-                                  TenantName tenantName,
-                                  long sessionId,
-                                  String serverId) {
+    public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, String serverId, AddFileInterface fileManager, int maxNodeSize) {
         this.curator = curator;
-        this.configCurator = configCurator;
         this.tenantName = tenantName;
         this.sessionPath = getSessionPath(tenantName, sessionId);
         this.serverId = serverId;
-        this.sessionStatusPath = sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
+        this.sessionStatusPath = sessionPath.append(ZKApplication.SESSIONSTATE_ZK_SUBPATH);
+        this.maxNodeSize = maxNodeSize;
+        this.fileManager = fileManager;
+    }
+
+    // For testing only
+    public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, String serverId) {
+        this(curator, tenantName, sessionId, serverId, new MockFileManager(), 10 * 1024 * 1024);
     }
 
     public void writeStatus(Session.Status sessionStatus) {
@@ -92,11 +98,11 @@ public class SessionZooKeeperClient {
     public Session.Status readStatus() {
         try {
             Optional<byte[]> data = curator.getData(sessionStatusPath);
-            return data.map(d -> Session.Status.parse(Utf8.toString(d))).orElse(Session.Status.NONE);
+            return data.map(d -> Session.Status.parse(Utf8.toString(d))).orElse(Session.Status.UNKNOWN);
         } catch (Exception e) {
             log.log(Level.INFO, "Failed to read session status at " + sessionStatusPath.getAbsolute() +
                     ", will assume session has been removed: ", e);
-            return Session.Status.NONE;
+            return Session.Status.UNKNOWN;
         }
     }
 
@@ -137,93 +143,93 @@ public class SessionZooKeeperClient {
     }
 
     public ApplicationPackage loadApplicationPackage() {
-        return new ZKApplicationPackage(configCurator, sessionPath);
+        return new ZKApplicationPackage(fileManager, curator, sessionPath, maxNodeSize);
     }
 
     public ConfigDefinitionRepo getUserConfigDefinitions() {
-        return new UserConfigDefinitionRepo(configCurator, sessionPath.append(ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH).getAbsolute());
+        return new UserConfigDefinitionRepo(curator, sessionPath.append(USER_DEFCONFIGS_ZK_SUBPATH));
     }
 
-    private String applicationIdPath() {
-        return sessionPath.append(APPLICATION_ID_PATH).getAbsolute();
+    private Path applicationIdPath() {
+        return sessionPath.append(APPLICATION_ID_PATH);
     }
 
     public void writeApplicationId(ApplicationId id) {
         if ( ! id.tenant().equals(tenantName))
             throw new IllegalArgumentException("Cannot write application id '" + id + "' for tenant '" + tenantName + "'");
-        configCurator.putData(applicationIdPath(), id.serializedForm());
+        curator.set(applicationIdPath(), Utf8.toBytes(id.serializedForm()));
     }
 
     public Optional<ApplicationId> readApplicationId() {
-        if ( ! configCurator.exists(applicationIdPath())) return Optional.empty();
-        return Optional.of(ApplicationId.fromSerializedForm(configCurator.getData(applicationIdPath())));
+        return curator.getData(applicationIdPath()).map(d -> ApplicationId.fromSerializedForm(Utf8.toString(d)));
     }
 
     void writeApplicationPackageReference(Optional<FileReference> applicationPackageReference) {
         applicationPackageReference.ifPresent(
-                reference -> configCurator.putData(applicationPackageReferencePath(), reference.value()));
+                reference -> curator.set(applicationPackageReferencePath(), Utf8.toBytes(reference.value())));
     }
 
     FileReference readApplicationPackageReference() {
-        if ( ! configCurator.exists(applicationPackageReferencePath())) return null;  // This should not happen.
-        return new FileReference(configCurator.getData(applicationPackageReferencePath()));
+        Optional<byte[]> data = curator.getData(applicationPackageReferencePath());
+        if (data.isEmpty()) return null; // This should not happen.
+
+        return new FileReference(Utf8.toString(data.get()));
     }
 
-    private String applicationPackageReferencePath() {
-        return sessionPath.append(APPLICATION_PACKAGE_REFERENCE_PATH).getAbsolute();
+    private Path applicationPackageReferencePath() {
+        return sessionPath.append(APPLICATION_PACKAGE_REFERENCE_PATH);
     }
 
-    private String versionPath() {
-        return sessionPath.append(VERSION_PATH).getAbsolute();
+    private Path versionPath() {
+        return sessionPath.append(VERSION_PATH);
     }
 
-    private String dockerImageRepositoryPath() {
-        return sessionPath.append(DOCKER_IMAGE_REPOSITORY_PATH).getAbsolute();
+    private Path dockerImageRepositoryPath() {
+        return sessionPath.append(DOCKER_IMAGE_REPOSITORY_PATH);
     }
 
-    private String athenzDomainPath() {
-        return sessionPath.append(ATHENZ_DOMAIN).getAbsolute();
+    private Path athenzDomainPath() {
+        return sessionPath.append(ATHENZ_DOMAIN);
     }
 
-    private String quotaPath() {
-        return sessionPath.append(QUOTA_PATH).getAbsolute();
+    private Path quotaPath() {
+        return sessionPath.append(QUOTA_PATH);
     }
 
-    private String tenantSecretStorePath() {
-        return sessionPath.append(TENANT_SECRET_STORES_PATH).getAbsolute();
+    private Path tenantSecretStorePath() {
+        return sessionPath.append(TENANT_SECRET_STORES_PATH);
     }
 
-    private String operatorCertificatesPath() {
-        return sessionPath.append(OPERATOR_CERTIFICATES_PATH).getAbsolute();
+    private Path operatorCertificatesPath() {
+        return sessionPath.append(OPERATOR_CERTIFICATES_PATH);
     }
 
     public void writeVespaVersion(Version version) {
-        configCurator.putData(versionPath(), version.toString());
+       curator.set(versionPath(), Utf8.toBytes(version.toString()));
     }
 
     public Version readVespaVersion() {
-        if ( ! configCurator.exists(versionPath())) return Vtag.currentVersion; // TODO: This should not be possible any more - verify and remove
-        return new Version(configCurator.getData(versionPath()));
+        Optional<byte[]> data = curator.getData(versionPath());
+        // TODO: Empty version should not be possible any more - verify and remove
+        return data.map(d -> new Version(Utf8.toString(d))).orElse(Vtag.currentVersion);
     }
 
     public Optional<DockerImage> readDockerImageRepository() {
-        if ( ! configCurator.exists(dockerImageRepositoryPath())) return Optional.empty();
-        String dockerImageRepository = configCurator.getData(dockerImageRepositoryPath());
-        return dockerImageRepository.isEmpty() ? Optional.empty() : Optional.of(DockerImage.fromString(dockerImageRepository));
+        Optional<byte[]> dockerImageRepository = curator.getData(dockerImageRepositoryPath());
+        return dockerImageRepository.map(d -> DockerImage.fromString(Utf8.toString(d)));
     }
 
     public void writeDockerImageRepository(Optional<DockerImage> dockerImageRepository) {
-        dockerImageRepository.ifPresent(repo -> configCurator.putData(dockerImageRepositoryPath(), repo.untagged()));
+        dockerImageRepository.ifPresent(repo -> curator.set(dockerImageRepositoryPath(), Utf8.toBytes(repo.untagged())));
     }
 
     public Instant readCreateTime() {
-        String path = getCreateTimePath();
-        if ( ! configCurator.exists(path)) return Instant.EPOCH;
-        return Instant.ofEpochSecond(Long.parseLong(configCurator.getData(path)));
+        Optional<byte[]> data = curator.getData(getCreateTimePath());
+        return data.map(d -> Instant.ofEpochSecond(Long.parseLong(Utf8.toString(d)))).orElse(Instant.EPOCH);
     }
 
-    private String getCreateTimePath() {
-        return sessionPath.append(CREATE_TIME_PATH).getAbsolute();
+    private Path getCreateTimePath() {
+        return sessionPath.append(CREATE_TIME_PATH);
     }
 
     AllocatedHosts getAllocatedHosts() {
@@ -232,14 +238,13 @@ public class SessionZooKeeperClient {
     }
 
     public ZooKeeperDeployer createDeployer(DeployLogger logger) {
-        ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, logger, sessionPath);
+        ZooKeeperClient zkClient = new ZooKeeperClient(curator, logger, sessionPath);
         return new ZooKeeperDeployer(zkClient);
     }
 
     public Transaction createWriteStatusTransaction(Session.Status status) {
-        String path = sessionStatusPath.getAbsolute();
         CuratorTransaction transaction = new CuratorTransaction(curator);
-        if (configCurator.exists(path)) {
+        if (curator.exists(sessionStatusPath)) {
             transaction.add(CuratorOperations.setData(sessionStatusPath.getAbsolute(), Utf8.toBytes(status.name())));
         } else {
             transaction.add(CuratorOperations.create(sessionStatusPath.getAbsolute(), Utf8.toBytes(status.name())));
@@ -248,59 +253,56 @@ public class SessionZooKeeperClient {
     }
 
     public void writeAthenzDomain(Optional<AthenzDomain> athenzDomain) {
-        athenzDomain.ifPresent(domain -> configCurator.putData(athenzDomainPath(), domain.value()));
+        athenzDomain.ifPresent(domain -> curator.set(athenzDomainPath(), Utf8.toBytes(domain.value())));
     }
 
     public Optional<AthenzDomain> readAthenzDomain() {
-        if ( ! configCurator.exists(athenzDomainPath())) return Optional.empty();
-        return Optional.ofNullable(configCurator.getData(athenzDomainPath()))
-                .filter(domain -> ! domain.isBlank())
-                .map(AthenzDomain::from);
+        return curator.getData(athenzDomainPath())
+                      .map(Utf8::toString)
+                      .filter(domain -> !domain.isBlank())
+                      .map(AthenzDomain::from);
     }
 
     public void writeQuota(Optional<Quota> maybeQuota) {
         maybeQuota.ifPresent(quota -> {
             var bytes = uncheck(() -> SlimeUtils.toJsonBytes(quota.toSlime()));
-            configCurator.putData(quotaPath(), bytes);
+            curator.set(quotaPath(), bytes);
         });
     }
 
     public Optional<Quota> readQuota() {
-        if ( ! configCurator.exists(quotaPath())) return Optional.empty();
-        return Optional.ofNullable(configCurator.getData(quotaPath()))
-                .map(SlimeUtils::jsonToSlime)
-                .map(slime -> Quota.fromSlime(slime.get()));
+        return curator.getData(quotaPath())
+                      .map(SlimeUtils::jsonToSlime)
+                      .map(slime -> Quota.fromSlime(slime.get()));
     }
 
     public void writeTenantSecretStores(List<TenantSecretStore> tenantSecretStores) {
         if (!tenantSecretStores.isEmpty()) {
             var bytes = uncheck(() -> SlimeUtils.toJsonBytes(TenantSecretStoreSerializer.toSlime(tenantSecretStores)));
-            configCurator.putData(tenantSecretStorePath(), bytes);
+            curator.set(tenantSecretStorePath(), bytes);
         }
 
     }
 
     public List<TenantSecretStore> readTenantSecretStores() {
-        if ( ! configCurator.exists(tenantSecretStorePath())) return List.of();
-        return Optional.ofNullable(configCurator.getData(tenantSecretStorePath()))
-                .map(SlimeUtils::jsonToSlime)
-                .map(slime -> TenantSecretStoreSerializer.listFromSlime(slime.get()))
-                .orElse(List.of());
+        return curator.getData(tenantSecretStorePath())
+                      .map(SlimeUtils::jsonToSlime)
+                      .map(slime -> TenantSecretStoreSerializer.listFromSlime(slime.get()))
+                      .orElse(List.of());
     }
 
     public void writeOperatorCertificates(List<X509Certificate> certificates) {
         if( ! certificates.isEmpty()) {
             var bytes = uncheck(() -> SlimeUtils.toJsonBytes(OperatorCertificateSerializer.toSlime(certificates)));
-            configCurator.putData(operatorCertificatesPath(), bytes);
+            curator.set(operatorCertificatesPath(), bytes);
         }
     }
 
     public List<X509Certificate> readOperatorCertificates() {
-        if ( ! configCurator.exists(operatorCertificatesPath())) return List.of();
-        return Optional.ofNullable(configCurator.getData(operatorCertificatesPath()))
-                .map(SlimeUtils::jsonToSlime)
-                .map(slime -> OperatorCertificateSerializer.fromSlime(slime.get()))
-                .orElse(List.of());
+        return curator.getData(operatorCertificatesPath())
+                      .map(SlimeUtils::jsonToSlime)
+                      .map(slime -> OperatorCertificateSerializer.fromSlime(slime.get()))
+                      .orElse(List.of());
     }
 
     /**
@@ -313,7 +315,7 @@ public class SessionZooKeeperClient {
         transaction.add(CuratorOperations.create(sessionPath.getAbsolute()));
         transaction.add(CuratorOperations.create(sessionPath.append(UPLOAD_BARRIER).getAbsolute()));
         transaction.add(createWriteStatusTransaction(Session.Status.NEW).operations());
-        transaction.add(CuratorOperations.create(getCreateTimePath(), Utf8.toBytes(String.valueOf(createTime.getEpochSecond()))));
+        transaction.add(CuratorOperations.create(getCreateTimePath().getAbsolute(), Utf8.toBytes(String.valueOf(createTime.getEpochSecond()))));
         transaction.commit();
     }
 

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.searchdefinition.RankProfile;
@@ -26,10 +26,11 @@ public class FunctionShadower extends ExpressionTransformer<RankProfileTransform
 
     @Override
     public RankingExpression transform(RankingExpression expression, RankProfileTransformContext context) {
-        String name = expression.getName();
         ExpressionNode node = expression.getRoot();
         ExpressionNode result = transform(node, context);
-        return new RankingExpression(name, result);
+        return (result == node)
+                ? expression
+                : new RankingExpression(expression.getName(), result);
     }
 
     @Override

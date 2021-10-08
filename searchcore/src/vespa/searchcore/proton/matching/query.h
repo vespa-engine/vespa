@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -92,7 +92,7 @@ public:
      **/
     void optimize();
     void fetchPostings();
-    void handle_global_filters(uint32_t docidLimit, double global_filter_limit);
+    void handle_global_filters(uint32_t docidLimit, double global_filter_lower_limit, double global_filter_upper_limit);
     void freeze();
 
     /**

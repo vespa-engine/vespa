@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -310,7 +310,7 @@ public class DynamicAllocationTest {
         tester.activate(application, hosts);
 
         NodeList activeNodes = tester.nodeRepository().nodes().list().owner(application);
-        assertEquals(Set.of("127.0.127.13", "::13"), activeNodes.asList().get(0).ipConfig().primary());
+        assertEquals(Set.of("127.0.127.13", "::d"), activeNodes.asList().get(0).ipConfig().primary());
         assertEquals(Set.of("127.0.127.2", "::2"), activeNodes.asList().get(1).ipConfig().primary());
     }
 

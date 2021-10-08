@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter;
 
 import com.yahoo.container.jdisc.RequestView;
@@ -65,6 +65,7 @@ public abstract class DiscFilterRequest {
         return parent.getUri();
     }
 
+    @Deprecated
     public abstract void setUri(URI uri);
 
     public HttpRequest getParentRequest() {
@@ -313,6 +314,7 @@ public abstract class DiscFilterRequest {
         return getUri().getScheme();
     }
 
+    @Deprecated
     public void setScheme(String scheme, boolean isSecure) {
         String uri = getUri().toString();
         String arr [] = uri.split("://");

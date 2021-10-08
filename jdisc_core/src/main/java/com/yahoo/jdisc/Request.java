@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc;
 
 import com.yahoo.jdisc.application.BindingMatch;
@@ -45,9 +45,9 @@ public class Request extends AbstractResource {
     private volatile boolean cancel = false;
     private BindingMatch<RequestHandler> bindingMatch;
     private TimeoutManager timeoutManager;
-    private boolean serverRequest;
+    private boolean serverRequest; // TODO could be final, only used in tests
     private Long timeout;
-    private URI uri;
+    private URI uri; // TODO Could be made final,
 
     public enum RequestType {
         READ, WRITE, MONITORING
@@ -79,12 +79,16 @@ public class Request extends AbstractResource {
      * @param uri     The identifier of this request.
      */
     public Request(CurrentContainer current, URI uri) {
-        container = current.newReference(uri);
+        this(current, uri, true);
+    }
+
+    public Request(CurrentContainer current, URI uri, boolean isServerRequest) {
         parent = null;
         parentReference = null;
-        creationTime = container.currentTimeMillis();
-        serverRequest = true;
+        serverRequest = isServerRequest;
         setUri(uri);
+        container = current.newReference(uri, this);
+        creationTime = container.currentTimeMillis();
     }
 
     /**
@@ -113,11 +117,11 @@ public class Request extends AbstractResource {
      */
     public Request(Request parent, URI uri) {
         this.parent = parent;
-        this.parentReference = this.parent.refer();
         container = null;
         creationTime = parent.container().currentTimeMillis();
         serverRequest = false;
         setUri(uri);
+        parentReference = this.parent.refer(this);
     }
 
     /** Returns the {@link Container} for which this Request was created */
@@ -142,6 +146,7 @@ public class Request extends AbstractResource {
      * @return this, to allow chaining
      * @see #getUri()
      */
+    @Deprecated
     public Request setUri(URI uri) {
         this.uri = uri.normalize();
         return this;
@@ -166,6 +171,7 @@ public class Request extends AbstractResource {
      * @return this, to allow chaining
      * @see #isServerRequest()
      */
+    @Deprecated
     public Request setServerRequest(boolean serverRequest) {
         this.serverRequest = serverRequest;
         return this;

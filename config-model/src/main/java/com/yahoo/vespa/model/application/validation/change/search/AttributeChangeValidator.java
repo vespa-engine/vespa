@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.provision.ClusterSpec;
@@ -105,6 +105,7 @@ public class AttributeChangeValidator {
                 validateAttributeSetting(id, currAttr, nextAttr, AttributeChangeValidator::extractDictionaryType, "dictionary: btree/hash", result);
                 validateAttributeSetting(id, currAttr, nextAttr, AttributeChangeValidator::extractDictionaryCase, "dictionary: cased/uncased", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::isHuge, "huge", result);
+                validateAttributeSetting(id, currAttr, nextAttr, Attribute::isPaged, "paged", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::densePostingListThreshold, "dense-posting-list-threshold", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::isEnabledOnlyBitVector, "rank: filter", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::distanceMetric, "distance-metric", result);

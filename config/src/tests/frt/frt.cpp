@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "config-my.h"
 #include "config-bar.h"
@@ -72,7 +72,7 @@ namespace {
         FRT_RPCRequest * createOKResponse(const vespalib::string & defName="",
                                           const vespalib::string & defMd5="",
                                           const vespalib::string & configId="",
-                                          const vespalib::string & configMd5="",
+                                          const vespalib::string & configXxhash64="",
                                           int changed=0,
                                           long generation=0,
                                           const std::vector<vespalib::string> & payload = std::vector<vespalib::string>(),
@@ -85,7 +85,7 @@ namespace {
             ret.AddString("");
             ret.AddString(defMd5.c_str());
             ret.AddString(configId.c_str());
-            ret.AddString(configMd5.c_str());
+            ret.AddString(configXxhash64.c_str());
             ret.AddInt32(changed);
             ret.AddInt64(generation);
             FRT_StringValue * payload_arr = ret.AddStringArray(payload.size());
@@ -268,16 +268,16 @@ TEST_FF("require that request is config task is scheduled", SourceFixture(), FRT
 TEST("require that v3 request is correctly initialized") {
     ConnectionMock conn;
     ConfigKey key = ConfigKey::create<MyConfig>("foobi");
-    vespalib::string md5 = "mymd5";
+    vespalib::string xxhash64 = "myxxhash64";
     int64_t currentGeneration = 3;
     vespalib::string hostName = "myhost";
     int64_t timeout = 3000;
     Trace traceIn(3);
     traceIn.trace(2, "Hei");
-    FRTConfigRequestV3 v3req(&conn, key, md5, currentGeneration, hostName,
+    FRTConfigRequestV3 v3req(&conn, key, xxhash64, currentGeneration, hostName,
                              timeout, traceIn, VespaVersion::fromString("1.2.3"), CompressionType::LZ4);
-    ASSERT_TRUE(v3req.verifyState(ConfigState(md5, 3, false)));
-    ASSERT_FALSE(v3req.verifyState(ConfigState(md5, 2, false)));
+    ASSERT_TRUE(v3req.verifyState(ConfigState(xxhash64, 3, false)));
+    ASSERT_FALSE(v3req.verifyState(ConfigState(xxhash64, 2, false)));
     ASSERT_FALSE(v3req.verifyState(ConfigState("xxx", 3, false)));
     ASSERT_FALSE(v3req.verifyState(ConfigState("xxx", 2, false)));
 
@@ -297,7 +297,7 @@ TEST("require that v3 request is correctly initialized") {
     EXPECT_EQUAL(key.getConfigId(), root[REQUEST_CLIENT_CONFIGID].asString().make_string());
     EXPECT_EQUAL(hostName, root[REQUEST_CLIENT_HOSTNAME].asString().make_string());
     EXPECT_EQUAL(currentGeneration, root[REQUEST_CURRENT_GENERATION].asLong());
-    EXPECT_EQUAL(md5, root[REQUEST_CONFIG_MD5].asString().make_string());
+    EXPECT_EQUAL(xxhash64, root[REQUEST_CONFIG_XXHASH64].asString().make_string());
     EXPECT_EQUAL(timeout, root[REQUEST_TIMEOUT].asLong());
     EXPECT_EQUAL("LZ4", root[REQUEST_COMPRESSION_TYPE].asString().make_string());
     EXPECT_EQUAL(root[REQUEST_VESPA_VERSION].asString().make_string(), "1.2.3");
@@ -322,7 +322,7 @@ struct V3RequestFixture {
     Cursor & root;
     FRT_RPCRequest * req;
     ConfigKey key;
-    vespalib::string md5;
+    vespalib::string xxhash64;
     int64_t generation;
     vespalib::string hostname;
     Trace traceIn;
@@ -333,7 +333,7 @@ struct V3RequestFixture {
           root(slime.setObject()),
           req(conn.allocRPCRequest()), 
           key(ConfigKey::create<BarConfig>("foobi")),
-          md5("mymd5"),
+          xxhash64("myxxhash64"),
           generation(3),
           hostname("myhhost"),
           traceIn(3)
@@ -345,7 +345,7 @@ struct V3RequestFixture {
         root.setString(RESPONSE_DEF_MD5, Memory(key.getDefMd5()));
         root.setString(RESPONSE_CONFIGID, Memory(key.getConfigId()));
         root.setString(RESPONSE_CLIENT_HOSTNAME, Memory(hostname));
-        root.setString(RESPONSE_CONFIG_MD5, Memory(md5));
+        root.setString(RESPONSE_CONFIG_XXHASH64, Memory(xxhash64));
         root.setLong(RESPONSE_CONFIG_GENERATION, generation);
         traceIn.serialize(root.setObject(RESPONSE_TRACE));
     }
@@ -379,7 +379,7 @@ struct V3RequestFixture {
         EXPECT_EQUAL(key.getConfigId(), responseKey.getConfigId());
         EXPECT_EQUAL(hostname, response.getHostName());
         ConfigState state(response.getConfigState());
-        EXPECT_EQUAL(md5, state.md5);
+        EXPECT_EQUAL(xxhash64, state.xxhash64);
         EXPECT_EQUAL(generation, state.generation);
         ConfigValue value(response.getValue());
         BarConfig::UP config(value.newInstance<BarConfig>());

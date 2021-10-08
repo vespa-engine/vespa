@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_function.h"
 #include "value.h"
@@ -443,7 +443,11 @@ const TensorFunction &inject(const ValueType &type, size_t param_idx, Stash &sta
 
 const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) {
     ValueType result_type = child.result_type().reduce(dimensions);
-    return stash.create<Reduce>(result_type, child, aggr, dimensions);
+    if (dimensions.empty()) { // expand dimension list for full reduce
+        return stash.create<Reduce>(result_type, child, aggr, child.result_type().dimension_names());
+    } else {
+        return stash.create<Reduce>(result_type, child, aggr, dimensions);
+    }
 }
 
 const TensorFunction &map(const TensorFunction &child, map_fun_t function, Stash &stash) {

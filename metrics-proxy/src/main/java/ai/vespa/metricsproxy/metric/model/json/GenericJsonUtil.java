@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 import static ai.vespa.metricsproxy.metric.ExternalMetrics.VESPA_NODE_SERVICE_ID;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
-import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -139,7 +138,7 @@ public class GenericJsonUtil {
     }
 
     private static MetricsPacket.Builder newServicePacket(GenericService service) {
-        return new MetricsPacket.Builder(toServiceId(service.name))
+        return new MetricsPacket.Builder(ServiceId.toServiceId(service.name))
                 .statusCode(StatusCode.fromString(service.status.code).ordinal())
                 .statusMessage(service.status.description)
                 .timestamp(service.timestamp);

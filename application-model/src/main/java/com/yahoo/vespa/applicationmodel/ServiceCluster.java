@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.applicationmodel;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -98,14 +98,38 @@ public class ServiceCluster {
                 Objects.equals(serviceType, ServiceType.HOST_ADMIN);
     }
 
+    @JsonIgnore
+    public boolean isProxy() {
+        return isHostedVespaApplicationWithPredicate(ApplicationInstanceId::isProxy) &&
+               Objects.equals(clusterId, ClusterId.ROUTING) &&
+               Objects.equals(serviceType, ServiceType.CONTAINER);
+    }
+
+    @JsonIgnore
+    public boolean isProxyHost() {
+        return isHostedVespaApplicationWithPredicate(ApplicationInstanceId::isProxyHost) &&
+               Objects.equals(clusterId, ClusterId.PROXY_HOST) &&
+               Objects.equals(serviceType, ServiceType.HOST_ADMIN);
+    }
+
     public String nodeDescription(boolean plural) {
+        return entityDescription("node", plural);
+    }
+
+    public String serviceDescription(boolean plural) {
+        return entityDescription("service", plural);
+    }
+
+    private String entityDescription(String entity, boolean plural) {
         String pluralSuffix = plural ? "s" : "";
         return isConfigServer() ? "config server" + pluralSuffix :
                isConfigServerHost() ? "config server host" + pluralSuffix :
                isController() ? "controller" + pluralSuffix :
                isControllerHost() ? "controller host" + pluralSuffix :
+               isProxy() ? (plural ? "proxies" : "proxy") :
+               isProxyHost() ? "proxy host" + pluralSuffix :
                isTenantHost() ? "tenant host" + pluralSuffix :
-               "node" + pluralSuffix + " of {" + serviceType + "," + clusterId + "}";
+               entity + pluralSuffix + " of {" + serviceType + "," + clusterId + "}";
     }
 
     private boolean isHostedVespaApplicationWithId(ApplicationInstanceId id) {

@@ -1,8 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -16,13 +15,13 @@ public final class HostNameExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(new StringFieldValue(normalizeHostName(getDefaults().vespaHostname())));
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(new StringFieldValue(normalizeHostName(getDefaults().vespaHostname())));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

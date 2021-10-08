@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.collect.BiMap;
@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
@@ -56,6 +57,7 @@ public class TenantSerializer {
     private static final String propertyIdField = "propertyId";
     private static final String creatorField = "creator";
     private static final String createdAtField = "createdAt";
+    private static final String deletedAtField = "deletedAt";
     private static final String contactField = "contact";
     private static final String contactUrlField = "contactUrl";
     private static final String propertyUrlField = "propertyUrl";
@@ -84,9 +86,10 @@ public class TenantSerializer {
         toSlime(tenant.lastLoginInfo(), tenantObject.setObject(lastLoginInfoField));
 
         switch (tenant.type()) {
-            case athenz: toSlime((AthenzTenant) tenant, tenantObject); break;
-            case cloud:  toSlime((CloudTenant) tenant, tenantObject);  break;
-            default:     throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
+            case athenz:  toSlime((AthenzTenant) tenant, tenantObject); break;
+            case cloud:   toSlime((CloudTenant) tenant, tenantObject);  break;
+            case deleted: toSlime((DeletedTenant) tenant, tenantObject);  break;
+            default:      throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
         return slime;
     }
@@ -114,6 +117,10 @@ public class TenantSerializer {
         tenant.archiveAccessRole().ifPresent(role -> root.setString(archiveAccessRoleField, role));
     }
 
+    private void toSlime(DeletedTenant tenant, Cursor root) {
+        root.setLong(deletedAtField, tenant.deletedAt().toEpochMilli());
+    }
+
     private void developerKeysToSlime(BiMap<PublicKey, Principal> keys, Cursor array) {
         keys.forEach((key, user) -> {
             Cursor object = array.addObject();
@@ -139,9 +146,10 @@ public class TenantSerializer {
         Tenant.Type type = typeOf(tenantObject.field(typeField).asString());
 
         switch (type) {
-            case athenz: return athenzTenantFrom(tenantObject);
-            case cloud:  return cloudTenantFrom(tenantObject);
-            default:     throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
+            case athenz:  return athenzTenantFrom(tenantObject);
+            case cloud:   return cloudTenantFrom(tenantObject);
+            case deleted: return deletedTenantFrom(tenantObject);
+            default:      throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
         }
     }
 
@@ -166,6 +174,13 @@ public class TenantSerializer {
         List<TenantSecretStore> tenantSecretStores = secretStoresFromSlime(tenantObject.field(secretStoresField));
         Optional<String> archiveAccessRole = SlimeUtils.optionalString(tenantObject.field(archiveAccessRoleField));
         return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccessRole);
+    }
+
+    private DeletedTenant deletedTenantFrom(Inspector tenantObject) {
+        TenantName name = TenantName.from(tenantObject.field(nameField).asString());
+        Instant createdAt = SlimeUtils.instant(tenantObject.field(createdAtField));
+        Instant deletedAt = SlimeUtils.instant(tenantObject.field(deletedAtField));
+        return new DeletedTenant(name, createdAt, deletedAt);
     }
 
     private BiMap<PublicKey, Principal> developerKeysFromSlime(Inspector array) {
@@ -321,23 +336,20 @@ public class TenantSerializer {
         return personLists;
     }
 
-    private BillingInfo billingInfoFrom(Inspector billingInfoObject) {
-        return new BillingInfo(billingInfoObject.field(customerIdField).asString(),
-                               billingInfoObject.field(productCodeField).asString());
-    }
-
     private static Tenant.Type typeOf(String value) {
         switch (value) {
-            case "athenz": return Tenant.Type.athenz;
-            case "cloud":  return Tenant.Type.cloud;
+            case "athenz":  return Tenant.Type.athenz;
+            case "cloud":   return Tenant.Type.cloud;
+            case "deleted": return Tenant.Type.deleted;
             default: throw new IllegalArgumentException("Unknown tenant type '" + value + "'.");
         }
     }
 
     private static String valueOf(Tenant.Type type) {
         switch (type) {
-            case athenz: return "athenz";
-            case cloud:  return "cloud";
+            case athenz:  return "athenz";
+            case cloud:   return "cloud";
+            case deleted: return "deleted";
             default: throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
         }
     }

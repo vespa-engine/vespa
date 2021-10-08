@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
@@ -36,7 +36,7 @@ public final class Change {
     private Change(Optional<Version> platform, Optional<ApplicationVersion> application, boolean pinned) {
         this.platform = requireNonNull(platform, "platform cannot be null");
         this.application = requireNonNull(application, "application cannot be null");
-        if (application.isPresent() && application.get().isUnknown()) {
+        if (application.isPresent() && (application.get().isUnknown() || application.get().isDeployedDirectly())) {
             throw new IllegalArgumentException("Application version to deploy must be a known version");
         }
         this.pinned = pinned;

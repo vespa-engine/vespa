@@ -169,4 +169,30 @@ public final class Q {
     public static WeakAnd weakand(String field, Query query) {
         return new WeakAnd(field, query);
     }
+
+    /**
+     * GeoLocation geo location
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#geolocation
+     *
+     * @param field the field
+     * @param longitude longitude
+     * @param latitude latitude
+     * @param radius a string specifying the radius and it's unit
+     * @return the geo-location query
+     */
+    public static GeoLocation geoLocation(String field, Double longitude, Double latitude, String radius) {
+        return new GeoLocation(field, longitude, latitude, radius);
+    }
+
+    /**
+     * NearestNeighbor nearest neighbor
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#nearestneighbor
+     *
+     * @param docVectorName the vector name defined in the vespa schema
+     * @param queryVectorName the vector name in this query
+     * @return the nearest neighbor query
+     */
+    public static NearestNeighbor nearestNeighbor(String docVectorName, String queryVectorName) {
+        return new NearestNeighbor(docVectorName, queryVectorName);
+    }
 }

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.api.ModelContext;
@@ -153,7 +153,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                                                String clusterName, ContentSearchCluster search) {
             List<ModelElement> indexedDefs = getIndexedSchemas(clusterElem);
             if (!indexedDefs.isEmpty()) {
-                IndexedSearchCluster isc = new IndexedSearchCluster(search, clusterName, 0, deployState);
+                IndexedSearchCluster isc = new IndexedSearchCluster(search, clusterName, 0);
                 isc.setRoutingSelector(clusterElem.childAsString("documents.selection"));
 
                 Double visibilityDelay = clusterElem.childAsDouble("engine.proton.visibility-delay");

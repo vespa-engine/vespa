@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # BEGIN environment bootstrap section
 # Do not edit between here and END as this section should stay identical in all scripts
@@ -180,7 +180,6 @@ StartCommand() {
         -Djdisc.config.file="$cfpfile" \
         -Djdisc.export.packages= \
         -Djdisc.cache.path="$bundlecachedir" \
-        -Djdisc.debug.resources=false \
         -Djdisc.bundle.path="$VESPA_HOME/lib/jars" \
         -Djdisc.logger.enabled=true \
         -Djdisc.logger.level=ALL \

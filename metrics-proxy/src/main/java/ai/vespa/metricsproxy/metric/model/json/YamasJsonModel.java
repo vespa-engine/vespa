@@ -4,6 +4,7 @@ package ai.vespa.metricsproxy.metric.model.json;
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
+import ai.vespa.metricsproxy.metric.model.MetricId;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -55,7 +56,7 @@ public class YamasJsonModel {
     // NOTE: do not rename to 'setMetrics', as jackson will try to use it.
     public void resetMetrics(List<Metric> newMetrics) {
         metrics = new LinkedHashMap<>();
-        newMetrics.forEach(metric -> metrics.put(metric.getName(), metric.getValue().doubleValue()));
+        newMetrics.forEach(metric -> metrics.put(metric.getName().id, metric.getValue().doubleValue()));
     }
 
     /**
@@ -106,7 +107,7 @@ public class YamasJsonModel {
         if (metrics == null) return emptyList();
 
         return metrics.keySet().stream()
-                .map(name -> new Metric(name, metrics.get(name)))
+                .map(name -> new Metric(MetricId.toMetricId(name), metrics.get(name)))
                 .collect(Collectors.toList());
     }
 

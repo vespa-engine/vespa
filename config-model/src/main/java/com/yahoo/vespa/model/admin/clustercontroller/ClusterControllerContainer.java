@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.clustercontroller;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
@@ -23,7 +23,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
-import com.yahoo.vespa.model.container.xml.PlatformBundles;
+import com.yahoo.vespa.model.container.PlatformBundles;
 
 import java.util.Set;
 import java.util.TreeSet;

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler.threadpool;
 
 import com.yahoo.collections.Tuple2;
@@ -21,6 +21,9 @@ import static org.junit.Assert.fail;
  * @author bjorncs
  */
 public class DefaultContainerThreadPoolTest {
+
+    private static final int CPUS = 16;
+
     @Test
     public final void testThreadPool() throws InterruptedException {
         ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder().maxThreads(1));
@@ -55,8 +58,12 @@ public class DefaultContainerThreadPoolTest {
     }
 
     private ThreadPoolExecutor createPool(int maxThreads, int queueSize) {
-        ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder().maxThreads(maxThreads).queueSize(queueSize));
-        ContainerThreadPool threadPool = new DefaultContainerThreadpool(config, Mockito.mock(Metric.class));
+        ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder()
+                .maxThreads(maxThreads)
+                .minThreads(maxThreads)
+                .queueSize(queueSize));
+        ContainerThreadPool threadPool = new DefaultContainerThreadpool(
+                config, Mockito.mock(Metric.class), new MockProcessTerminator(), CPUS);
         ExecutorServiceWrapper wrapper = (ExecutorServiceWrapper) threadPool.executor();
         WorkerCompletionTimingThreadPoolExecutor executor = (WorkerCompletionTimingThreadPoolExecutor)wrapper.delegate();
         return executor;
@@ -64,27 +71,27 @@ public class DefaultContainerThreadPoolTest {
 
     @Test
     public void testThatThreadPoolSizeFollowsConfig() {
-        ThreadPoolExecutor executor = createPool(3, 9);
+        ThreadPoolExecutor executor = createPool(3, 1200);
         assertEquals(3, executor.getMaximumPoolSize());
-        assertEquals(9, executor.getQueue().remainingCapacity());
+        assertEquals(1200, executor.getQueue().remainingCapacity());
     }
     @Test
     public void testThatThreadPoolSizeAutoDetected() {
         ThreadPoolExecutor executor = createPool(0, 0);
-        assertEquals(Runtime.getRuntime().availableProcessors()*4, executor.getMaximumPoolSize());
+        assertEquals(CPUS*4, executor.getMaximumPoolSize());
         assertEquals(0, executor.getQueue().remainingCapacity());
     }
     @Test
     public void testThatQueueSizeAutoDetected() {
-        ThreadPoolExecutor executor = createPool(3, -1);
-        assertEquals(3, executor.getMaximumPoolSize());
-        assertEquals(executor.getMaximumPoolSize()*4, executor.getQueue().remainingCapacity());
+        ThreadPoolExecutor executor = createPool(24, -50);
+        assertEquals(24, executor.getMaximumPoolSize());
+        assertEquals(24*50, executor.getQueue().remainingCapacity());
     }
     @Test
     public void testThatThreadPoolSizeAndQueueSizeAutoDetected() {
-        ThreadPoolExecutor executor = createPool(0, -1);
-        assertEquals(Runtime.getRuntime().availableProcessors()*4, executor.getMaximumPoolSize());
-        assertEquals(executor.getMaximumPoolSize()*4, executor.getQueue().remainingCapacity());
+        ThreadPoolExecutor executor = createPool(0, -100);
+        assertEquals(CPUS*4, executor.getMaximumPoolSize());
+        assertEquals(CPUS*4*100, executor.getQueue().remainingCapacity());
     }
 
     private class FlipIt implements Runnable {

@@ -658,6 +658,7 @@
       "public static void logAndDie(java.lang.String, boolean)",
       "public static void logAndDie(java.lang.String, java.lang.Throwable)",
       "public static void logAndDie(java.lang.String, java.lang.Throwable, boolean)",
+      "public static void dumpHeap(java.lang.String, boolean)",
       "public static void dumpThreads()"
     ],
     "fields": []
@@ -1179,6 +1180,7 @@
       "public com.yahoo.tensor.Tensor matmul(com.yahoo.tensor.Tensor, java.lang.String)",
       "public com.yahoo.tensor.Tensor softmax(java.lang.String)",
       "public com.yahoo.tensor.Tensor xwPlusB(com.yahoo.tensor.Tensor, com.yahoo.tensor.Tensor, java.lang.String)",
+      "public com.yahoo.tensor.Tensor expand(java.lang.String)",
       "public com.yahoo.tensor.Tensor argmax(java.lang.String)",
       "public com.yahoo.tensor.Tensor argmin(java.lang.String)",
       "public static com.yahoo.tensor.Tensor diag(com.yahoo.tensor.TensorType)",
@@ -1202,6 +1204,7 @@
       "public com.yahoo.tensor.Tensor notEqual(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor approxEqual(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor bit(com.yahoo.tensor.Tensor)",
+      "public com.yahoo.tensor.Tensor hamming(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor avg()",
       "public com.yahoo.tensor.Tensor avg(java.lang.String)",
       "public com.yahoo.tensor.Tensor avg(java.util.List)",
@@ -1697,6 +1700,21 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.functions.Expand": {
+    "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
+      "public java.util.List arguments()",
+      "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
+      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
+    ],
+    "fields": []
+  },
   "com.yahoo.tensor.functions.Generate": {
     "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
     "interfaces": [],
@@ -2051,6 +2069,22 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.functions.ScalarFunctions$Constant": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.util.function.Function"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(double)",
+      "public java.lang.Double apply(java.util.List)",
+      "public java.lang.String toString()",
+      "public bridge synthetic java.lang.Object apply(java.lang.Object)"
+    ],
+    "fields": []
+  },
   "com.yahoo.tensor.functions.ScalarFunctions$Cos": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -2183,6 +2217,22 @@
     ],
     "methods": [
       "public void <init>()",
+      "public double applyAsDouble(double, double)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.tensor.functions.ScalarFunctions$Hamming": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.util.function.DoubleBinaryOperator"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public static double hamming(double, double)",
       "public double applyAsDouble(double, double)",
       "public java.lang.String toString()"
     ],
@@ -2556,6 +2606,7 @@
       "public static java.util.function.DoubleBinaryOperator pow()",
       "public static java.util.function.DoubleBinaryOperator squareddifference()",
       "public static java.util.function.DoubleBinaryOperator subtract()",
+      "public static java.util.function.DoubleBinaryOperator hamming()",
       "public static java.util.function.DoubleUnaryOperator abs()",
       "public static java.util.function.DoubleUnaryOperator acos()",
       "public static java.util.function.DoubleUnaryOperator asin()",
@@ -2584,7 +2635,8 @@
       "public static java.util.function.DoubleUnaryOperator selu(double, double)",
       "public static java.util.function.Function random()",
       "public static java.util.function.Function equal(java.util.List)",
-      "public static java.util.function.Function sum(java.util.List)"
+      "public static java.util.function.Function sum(java.util.List)",
+      "public static java.util.function.Function constant(double)"
     ],
     "fields": []
   },

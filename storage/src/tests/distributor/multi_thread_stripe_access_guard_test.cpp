@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "mock_tickable_stripe.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/persistence/spi/bucket_limits.h>
@@ -18,6 +18,7 @@ namespace storage::distributor {
 struct AggregationTestingMockTickableStripe : MockTickableStripe {
     PotentialDataLossReport report;
     std::vector<dbtransition::Entry> entries;
+    StripeAccessGuard::PendingOperationStats pending_stats{0, 0};
 
     PotentialDataLossReport remove_superfluous_buckets(document::BucketSpace, const lib::ClusterState&, bool) override {
         return report;
@@ -36,6 +37,10 @@ struct AggregationTestingMockTickableStripe : MockTickableStripe {
         }
         std::sort(result.begin(), result.end());
         return result;
+    }
+
+    StripeAccessGuard::PendingOperationStats pending_operation_stats() const override {
+        return pending_stats;
     }
 
     bool tick() override {
@@ -94,6 +99,21 @@ TEST_F(MultiThreadedStripeAccessGuardTest, remove_superfluous_buckets_aggregates
                                                     lib::ClusterState(), false);
     EXPECT_EQ(report.buckets, 35);
     EXPECT_EQ(report.documents, 680);
+}
+
+TEST_F(MultiThreadedStripeAccessGuardTest, pending_operation_stats_aggregates_stats_across_stripes) {
+    using Stats = StripeAccessGuard::PendingOperationStats;
+    _stripe0.pending_stats = Stats(20, 100);
+    _stripe1.pending_stats = Stats(5,  200);
+    _stripe2.pending_stats = Stats(7,  350);
+    _stripe3.pending_stats = Stats(3,  30);
+    start_pool_with_stripes();
+
+    auto guard = _accessor.rendezvous_and_hold_all();
+    auto pending_stats = guard->pending_operation_stats();
+
+    EXPECT_EQ(pending_stats.external_load_operations, 35);
+    EXPECT_EQ(pending_stats.maintenance_operations, 680);
 }
 
 TEST_F(MultiThreadedStripeAccessGuardTest, merge_entries_into_db_operates_across_all_stripes) {

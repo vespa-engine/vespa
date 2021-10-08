@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "blueprint.h"
 #include "leaf_blueprints.h"
@@ -27,12 +27,11 @@ namespace search::queryeval {
 void maybe_eliminate_self(Blueprint* &self, Blueprint::UP replacement) {
     // replace with replacement
     if (replacement) {
-        Blueprint *tmp = replacement.release();
-        tmp->setParent(self->getParent());
-        tmp->setSourceId(self->getSourceId());
-        self->setParent(0);
-        replacement.reset(self);
-        self = tmp;
+        Blueprint::UP discard(self);
+        self = replacement.release();
+        self->setParent(discard->getParent());
+        self->setSourceId(discard->getSourceId());
+        discard->setParent(nullptr);
     }
     // replace with empty blueprint if empty
     if (self->getState().estimate().empty) {
@@ -40,6 +39,8 @@ void maybe_eliminate_self(Blueprint* &self, Blueprint::UP replacement) {
         self = new EmptyBlueprint(discard->getState().fields());
         self->setParent(discard->getParent());
         self->setSourceId(discard->getSourceId());
+        self->setDocIdLimit(discard->get_docid_limit());
+        discard->setParent(nullptr);
     }
 }
 
@@ -67,6 +68,20 @@ Blueprint::min(const std::vector<HitEstimate> &data)
         }
     }
     return est;
+}
+
+Blueprint::HitEstimate
+Blueprint::sat_sum(const std::vector<HitEstimate> &data, uint32_t docid_limit)
+{
+    uint64_t sum = 0;
+    bool empty = true;
+    uint32_t limit = docid_limit;
+    for (const auto &est: data) {
+        sum += est.estHits;
+        empty = (empty && est.empty);
+        limit = std::max(limit, est.estHits);
+    }
+    return { uint32_t(std::min(sum, uint64_t(limit))), empty };
 }
 
 Blueprint::State::State(const FieldSpecBaseList &fields_in)

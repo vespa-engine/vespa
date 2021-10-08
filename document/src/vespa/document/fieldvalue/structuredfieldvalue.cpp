@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "structuredfieldvalue.hpp"
 #include "iteratorhandler.h"
@@ -118,7 +118,7 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
             const Field & field = fpe.getFieldRef();
             FieldValue::UP value = getValue(field, FieldValue::UP());
             LOG(spam, "fieldRef = %s", field.toString().c_str());
-            LOG(spam, "fieldValueToSet = %s", value->toString().c_str());
+            LOG(spam, "fieldValueToSet = %s", value ? value->toString().c_str() : "<null>");
             ModificationStatus status = ModificationStatus::NOT_MODIFIED;
             if (value) {
                 status = value->iterateNested(nested.next(), handler);

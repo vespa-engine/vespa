@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distributornode.h"
 #include "bouncer.h"
@@ -7,7 +7,7 @@
 #include "statemanager.h"
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/i_storage_chain_builder.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_stripe_pool.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -26,7 +26,9 @@ DistributorNode::DistributorNode(
     : StorageNode(configUri, context, generationFetcher,
                   std::make_unique<HostInfo>(),
                   !communicationManager ? NORMAL : SINGLE_THREADED_TEST_MODE),
-      _threadPool(framework::TickingThreadPool::createDefault("distributor")),
+      // TODO STRIPE: Change waitTime default to 100ms when legacy mode is removed.
+      _threadPool(framework::TickingThreadPool::createDefault("distributor",
+                                                              (num_distributor_stripes > 0) ? 100ms : 5ms)),
       _stripe_pool(std::make_unique<distributor::DistributorStripePool>()),
       _context(context),
       _timestamp_mutex(),
@@ -103,7 +105,7 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
     // Distributor instance registers a host info reporter with the state
     // manager, which is safe since the lifetime of said state manager
     // extends to the end of the process.
-    builder.add(std::make_unique<storage::distributor::Distributor>
+    builder.add(std::make_unique<storage::distributor::TopLevelDistributor>
                 (dcr, *_node_identity, *_threadPool, *_stripe_pool, getDoneInitializeHandler(),
                  _num_distributor_stripes,
                  stateManager->getHostInfo()));
@@ -127,9 +129,9 @@ DistributorNode::generate_unique_timestamp()
                        "%u timestamps were generated within this time period.",
                 SanityCheckMaxWallClockSecondSkew, now_seconds,_timestamp_second_counter,
                 _intra_second_pseudo_usec_counter);
-            abort();
+            std::_Exit(65);
         }
-        assert(_intra_second_pseudo_usec_counter < 1'000'000);
+        assert(_intra_second_pseudo_usec_counter < 999'999);
         ++_intra_second_pseudo_usec_counter;
     } else {
         _timestamp_second_counter = now_seconds;

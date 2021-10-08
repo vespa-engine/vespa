@@ -1,8 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.types;
 
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.yql.YqlQuery;
 
 /**
@@ -32,7 +31,7 @@ public class QueryFieldType extends FieldType {
     }
 
     @Override
-    public Object convertFrom(Object o, CompiledQueryProfileRegistry registry) {
+    public Object convertFrom(Object o, ConversionContext context) {
         return convertFrom(o, (QueryProfileRegistry)null);
     }
 

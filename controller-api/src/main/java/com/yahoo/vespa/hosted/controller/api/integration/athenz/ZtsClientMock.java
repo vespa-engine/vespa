@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
 import com.yahoo.security.Pkcs10Csr;
@@ -36,7 +36,7 @@ public class ZtsClientMock implements ZtsClient {
 
     @Override
     public List<AthenzDomain> getTenantDomains(AthenzIdentity providerIdentity, AthenzIdentity userIdentity, String roleName) {
-        log.log(Level.INFO, String.format("getTenantDomains(providerIdentity='%s', userIdentity='%s', roleName='%s')",
+        log.log(Level.FINE, String.format("getTenantDomains(providerIdentity='%s', userIdentity='%s', roleName='%s')",
                                           providerIdentity.getFullName(), userIdentity.getFullName(), roleName));
         return athenz.domains.values().stream()
                 .filter(domain -> domain.tenantAdmins.contains(userIdentity) || domain.admins.contains(userIdentity))

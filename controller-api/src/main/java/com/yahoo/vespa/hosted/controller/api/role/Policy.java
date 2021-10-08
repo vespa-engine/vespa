@@ -84,7 +84,7 @@ enum Policy {
 
     /** Read access to application information and settings. */
     applicationRead(Privilege.grant(Action.read)
-                             .on(PathGroup.application, PathGroup.applicationInfo, PathGroup.reindexing)
+                             .on(PathGroup.application, PathGroup.applicationInfo, PathGroup.reindexing, PathGroup.serviceDump)
                              .in(SystemName.all())),
 
     /** Read access to application information and settings. */
@@ -99,7 +99,7 @@ enum Policy {
 
     /** Full access to application information and settings. */
     applicationOperations(Privilege.grant(Action.write())
-                                   .on(PathGroup.applicationInfo, PathGroup.productionRestart, PathGroup.reindexing)
+                                   .on(PathGroup.applicationInfo, PathGroup.productionRestart, PathGroup.reindexing, PathGroup.serviceDump)
                                    .in(SystemName.all())),
 
     /** Access to create and delete developer and deploy keys under a tenant. */
@@ -205,7 +205,7 @@ enum Policy {
 
     horizonProxyOperations(Privilege.grant(Action.all())
             .on(PathGroup.horizonProxy)
-            .in(SystemName.PublicCd));
+            .in(SystemName.PublicCd, SystemName.Public));
 
     private final Set<Privilege> privileges;
 

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi;
 
 import com.yahoo.document.Document;
@@ -45,8 +45,6 @@ public interface SyncSession extends Session {
      *
      * @param documentPut the DocumentPut operation
      * @param parameters parameters for the operation
-     *
-     * @param documentPut the DocumentPut operation
      */
     default void put(DocumentPut documentPut, DocumentOperationParameters parameters) {
         put(documentPut);

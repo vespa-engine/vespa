@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
 import com.google.common.collect.ImmutableList;
@@ -187,7 +187,7 @@ public class TensorType {
     }
 
     /**
-     * Returns whether or not this type can simply be renamed to
+     * Returns whether this type can simply be renamed to
      * the given type. This is the same as being assignable, but disregarding
      * dimension names.
      */

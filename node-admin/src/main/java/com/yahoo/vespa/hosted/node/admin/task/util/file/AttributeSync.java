@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
@@ -22,8 +22,8 @@ public class AttributeSync {
 
     private final UnixPath path;
 
-    private Optional<String> owner = Optional.empty();
-    private Optional<String> group = Optional.empty();
+    private Optional<Integer> ownerId = Optional.empty();
+    private Optional<Integer> groupId = Optional.empty();
     private Optional<String> permissions = Optional.empty();
 
     public AttributeSync(Path path) {
@@ -39,27 +39,27 @@ public class AttributeSync {
         return this;
     }
 
-    public Optional<String> getOwner() {
-        return owner;
+    public Optional<Integer> ownerId() {
+        return ownerId;
     }
 
-    public AttributeSync withOwner(String owner) {
-        this.owner = Optional.of(owner);
+    public AttributeSync withOwnerId(int ownerId) {
+        this.ownerId = Optional.of(ownerId);
         return this;
     }
 
-    public Optional<String> getGroup() {
-        return group;
+    public Optional<Integer> groupId() {
+        return groupId;
     }
 
-    public AttributeSync withGroup(String group) {
-        this.group = Optional.of(group);
+    public AttributeSync withGroupId(int groupId) {
+        this.groupId = Optional.of(groupId);
         return this;
     }
 
     public AttributeSync with(PartialFileData fileData) {
-        owner = fileData.getOwner();
-        group = fileData.getGroup();
+        ownerId = fileData.getOwnerId();
+        groupId = fileData.getGroupId();
         permissions = fileData.getPermissions();
         return this;
     }
@@ -74,17 +74,17 @@ public class AttributeSync {
     public boolean converge(TaskContext context, FileAttributesCache currentAttributes) {
         boolean systemModified = updateAttribute(
                 context,
-                "owner",
-                owner,
-                () -> currentAttributes.getOrThrow().owner(),
-                path::setOwner);
+                "user ID",
+                ownerId,
+                () -> currentAttributes.getOrThrow().ownerId(),
+                path::setOwnerId);
 
         systemModified |= updateAttribute(
                 context,
-                "group",
-                group,
-                () -> currentAttributes.getOrThrow().group(),
-                path::setGroup);
+                "group ID",
+                groupId,
+                () -> currentAttributes.getOrThrow().groupId(),
+                path::setGroupId);
 
         systemModified |= updateAttribute(
                 context,
@@ -96,16 +96,16 @@ public class AttributeSync {
         return systemModified;
     }
 
-    private boolean updateAttribute(TaskContext context,
+    private <T> boolean updateAttribute(TaskContext context,
                                     String attributeName,
-                                    Optional<String> wantedValue,
-                                    Supplier<String> currentValueSupplier,
-                                    Consumer<String> valueSetter) {
+                                    Optional<T> wantedValue,
+                                    Supplier<T> currentValueSupplier,
+                                    Consumer<T> valueSetter) {
         if (wantedValue.isEmpty()) {
             return false;
         }
 
-        String currentValue = currentValueSupplier.get();
+        T currentValue = currentValueSupplier.get();
         if (Objects.equals(currentValue, wantedValue.get())) {
             return false;
         }
@@ -114,7 +114,7 @@ public class AttributeSync {
                 logger,
                 String.format("Changing %s of %s from %s to %s",
                         attributeName,
-                        path.toString(),
+                        path,
                         currentValue,
                         wantedValue.get()));
 

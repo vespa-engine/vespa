@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 vespa_add_executable(storage_distributor_gtest_runner_app TEST
     SOURCES
@@ -15,15 +15,12 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     distributor_stripe_pool_test.cpp
     distributor_stripe_test.cpp
     distributor_stripe_test_util.cpp
-    distributortestutil.cpp
     externaloperationhandlertest.cpp
     garbagecollectiontest.cpp
     getoperationtest.cpp
     gtest_runner.cpp
     idealstatemanagertest.cpp
     joinbuckettest.cpp
-    legacy_bucket_db_updater_test.cpp
-    legacy_distributor_test.cpp
     maintenanceschedulertest.cpp
     mergelimitertest.cpp
     mergeoperationtest.cpp
@@ -47,6 +44,9 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     statoperationtest.cpp
     statusreporterdelegatetest.cpp
     throttlingoperationstartertest.cpp
+    top_level_bucket_db_updater_test.cpp
+    top_level_distributor_test.cpp
+    top_level_distributor_test_util.cpp
     twophaseupdateoperationtest.cpp
     updateoperationtest.cpp
     visitoroperationtest.cpp

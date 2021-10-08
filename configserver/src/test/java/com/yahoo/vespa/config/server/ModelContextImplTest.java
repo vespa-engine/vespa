@@ -1,8 +1,9 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostProvisioner;
@@ -58,6 +59,7 @@ public class ModelContextImplTest {
                 new BaseDeployLogger(),
                 new StaticConfigDefinitionRepo(),
                 new MockFileRegistry(),
+                new InThreadExecutorService(),
                 Optional.empty(),
                 hostProvisioner,
                 new Provisioned(),
@@ -70,7 +72,6 @@ public class ModelContextImplTest {
                         false,
                         flagSource,
                         null,
-                        Optional.empty(),
                         Optional.empty(),
                         Optional.empty(),
                         List.of(),

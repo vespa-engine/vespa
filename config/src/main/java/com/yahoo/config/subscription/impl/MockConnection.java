@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
 import com.yahoo.jrt.Request;
@@ -7,9 +7,9 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Payload;
-import com.yahoo.vespa.config.util.ConfigUtils;
 
 /**
  * For unit testing
@@ -62,9 +62,6 @@ public class MockConnection implements ConnectionPool, Connection {
     public void close() {}
 
     @Override
-    public void setError(Connection connection, int errorCode) { }
-
-    @Override
     public Connection getCurrent() {
         return this;
     }
@@ -96,7 +93,7 @@ public class MockConnection implements ConnectionPool, Connection {
             JRTServerConfigRequestV3 jrtReq = JRTServerConfigRequestV3.createFromRequest(request);
             Payload payload = Payload.from(ConfigPayload.empty());
             long generation = 1;
-            jrtReq.addOkResponse(payload, generation, false, ConfigUtils.getMd5(payload.getData()));
+            jrtReq.addOkResponse(payload, generation, false, PayloadChecksums.fromPayload(payload));
         }
 
     }

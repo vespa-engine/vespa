@@ -1,9 +1,8 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.standalone;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.config.model.ConfigModelRepo;
-import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder.Networking;
@@ -22,9 +21,6 @@ import java.util.List;
  * @author ollivir
  */
 public class StandaloneContainer {
-    public static String firstContainerId(AbstractConfigProducerRoot root) {
-        return root.getConfigProducer("container").get().getConfigId();
-    }
 
     interface ThrowingFunction<T, U> {
         U apply(T input) throws Exception;

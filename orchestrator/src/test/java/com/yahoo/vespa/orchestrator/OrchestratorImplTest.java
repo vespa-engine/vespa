@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -81,7 +81,7 @@ public class OrchestratorImplTest {
     private static final Zone zone = Zone.defaultZone();
 
     private final ManualClock clock = new ManualClock();
-    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, clock);
+    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, 5, clock);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final MockCurator curator = new MockCurator();
     private final ZkStatusService statusService = new ZkStatusService(

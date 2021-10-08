@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -25,13 +25,13 @@ public final class SetValueExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(value);
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(value);
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(value.getDataType());
+        context.setValueType(value.getDataType());
     }
 
     @Override

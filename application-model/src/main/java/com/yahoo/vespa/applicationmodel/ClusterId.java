@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.applicationmodel;
 
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -14,6 +14,8 @@ public class ClusterId {
     public static final ClusterId CONTROLLER = new ClusterId("controller");
     public static final ClusterId CONFIG_SERVER_HOST = new ClusterId("configserver-host");
     public static final ClusterId CONTROLLER_HOST = new ClusterId("controller-host");
+    public static final ClusterId PROXY_HOST = new ClusterId("proxy-host");
+    public static final ClusterId ROUTING = new ClusterId("routing");
     public static final ClusterId TENANT_HOST = new ClusterId("tenant-host");
 
     private final String id;

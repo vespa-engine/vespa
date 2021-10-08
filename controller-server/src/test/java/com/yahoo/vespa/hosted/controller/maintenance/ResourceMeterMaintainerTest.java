@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
@@ -114,8 +114,8 @@ public class ResourceMeterMaintainerTest {
         ZoneApiMock zone1 = ZoneApiMock.newBuilder().withId("prod.region-2").build();
         ZoneApiMock zone2 = ZoneApiMock.newBuilder().withId("test.region-3").build();
         tester.zoneRegistry().setZones(zone1, zone2);
-        tester.configServer().nodeRepository().setFixedNodes(zone1.getId());
-        tester.configServer().nodeRepository().setFixedNodes(zone2.getId());
+        tester.configServer().nodeRepository().addFixedNodes(zone1.getId());
+        tester.configServer().nodeRepository().addFixedNodes(zone2.getId());
         tester.configServer().nodeRepository().putNodes(zone1.getId(), createNodes());
     }
 
@@ -126,21 +126,21 @@ public class ResourceMeterMaintainerTest {
                          Node.State.failed,
                          Node.State.parked,
                          Node.State.active)
-                     .map(state -> new Node.Builder()
-                             .hostname(HostName.from("host" + state))
-                             .parentHostname(HostName.from("parenthost" + state))
-                             .state(state)
-                             .type(NodeType.tenant)
-                             .owner(ApplicationId.from("tenant1", "app1", "default"))
-                             .currentVersion(Version.fromString("7.42"))
-                             .wantedVersion(Version.fromString("7.42"))
-                             .currentOsVersion(Version.fromString("7.6"))
-                             .wantedOsVersion(Version.fromString("7.6"))
-                             .serviceState(Node.ServiceState.expectedUp)
-                             .resources(new NodeResources(24, 24, 500, 1))
-                             .clusterId("clusterA")
-                             .clusterType(state == Node.State.active ? Node.ClusterType.admin : Node.ClusterType.container)
-                             .build())
+                     .map(state -> Node.builder()
+                                       .hostname(HostName.from("host" + state))
+                                       .parentHostname(HostName.from("parenthost" + state))
+                                       .state(state)
+                                       .type(NodeType.tenant)
+                                       .owner(ApplicationId.from("tenant1", "app1", "default"))
+                                       .currentVersion(Version.fromString("7.42"))
+                                       .wantedVersion(Version.fromString("7.42"))
+                                       .currentOsVersion(Version.fromString("7.6"))
+                                       .wantedOsVersion(Version.fromString("7.6"))
+                                       .serviceState(Node.ServiceState.expectedUp)
+                                       .resources(new NodeResources(24, 24, 500, 1))
+                                       .clusterId("clusterA")
+                                       .clusterType(state == Node.State.active ? Node.ClusterType.admin : Node.ClusterType.container)
+                                       .build())
                      .collect(Collectors.toUnmodifiableList());
     }
 }

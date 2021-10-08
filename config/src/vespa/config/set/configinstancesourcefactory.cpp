@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configinstancesourcefactory.h"
 
@@ -14,8 +14,8 @@ public:
     void close() override { }
     void getConfig() override {
         std::vector<vespalib::string> lines(_buffer.getlines());
-        std::string currentMd5(config::calculateContentMd5(lines));
-        _holder->handle(config::ConfigUpdate::UP(new config::ConfigUpdate(config::ConfigValue(lines, currentMd5), true, _generation)));
+        std::string currentXxhash64(config::calculateContentXxhash64(lines));
+        _holder->handle(config::ConfigUpdate::UP(new config::ConfigUpdate(config::ConfigValue(lines, currentXxhash64), true, _generation)));
 
     }
     void reload(int64_t generation) override { _generation = generation; }

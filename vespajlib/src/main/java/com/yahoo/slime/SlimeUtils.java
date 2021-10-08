@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
 import java.io.ByteArrayOutputStream;
@@ -131,6 +131,10 @@ public class SlimeUtils {
 
     public static Instant instant(Inspector field) {
         return Instant.ofEpochMilli(field.asLong());
+    }
+
+    public static Duration duration(Inspector field) {
+        return Duration.ofMillis(field.asLong());
     }
 
     public static Optional<String> optionalString(Inspector inspector) {

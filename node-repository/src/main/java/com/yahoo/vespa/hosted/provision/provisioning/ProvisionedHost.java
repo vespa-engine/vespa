@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -28,18 +29,21 @@ public class ProvisionedHost {
     private final String hostHostname;
     private final Flavor hostFlavor;
     private final NodeType hostType;
-    private final Optional<ApplicationId> exclusiveTo;
+    private final Optional<ApplicationId> exclusiveToApplicationId;
+    private final Optional<ClusterSpec.Type> exclusiveToClusterType;
     private final List<Address> nodeAddresses;
     private final NodeResources nodeResources;
     private final Version osVersion;
 
-    public ProvisionedHost(String id, String hostHostname, Flavor hostFlavor, NodeType hostType, Optional<ApplicationId> exclusiveTo,
+    public ProvisionedHost(String id, String hostHostname, Flavor hostFlavor, NodeType hostType,
+                           Optional<ApplicationId> exclusiveToApplicationId, Optional<ClusterSpec.Type> exclusiveToClusterType,
                            List<Address> nodeAddresses, NodeResources nodeResources, Version osVersion) {
         this.id = Objects.requireNonNull(id, "Host id must be set");
         this.hostHostname = Objects.requireNonNull(hostHostname, "Host hostname must be set");
         this.hostFlavor = Objects.requireNonNull(hostFlavor, "Host flavor must be set");
         this.hostType = Objects.requireNonNull(hostType, "Host type must be set");
-        this.exclusiveTo = Objects.requireNonNull(exclusiveTo, "exclusiveTo must be set");
+        this.exclusiveToApplicationId = Objects.requireNonNull(exclusiveToApplicationId, "exclusiveToApplicationId must be set");
+        this.exclusiveToClusterType = Objects.requireNonNull(exclusiveToClusterType, "exclusiveToClusterType must be set");
         this.nodeAddresses = validateNodeAddresses(nodeAddresses);
         this.nodeResources = Objects.requireNonNull(nodeResources, "Node resources must be set");
         this.osVersion = Objects.requireNonNull(osVersion, "OS version must be set");
@@ -59,7 +63,8 @@ public class ProvisionedHost {
         Node.Builder builder = Node
                 .create(id, IP.Config.of(Set.of(), Set.of(), nodeAddresses), hostHostname, hostFlavor, hostType)
                 .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))));
-        exclusiveTo.ifPresent(builder::exclusiveTo);
+        exclusiveToApplicationId.ifPresent(builder::exclusiveToApplicationId);
+        exclusiveToClusterType.ifPresent(builder::exclusiveToClusterType);
         return builder.build();
     }
 
@@ -98,6 +103,9 @@ public class ProvisionedHost {
         return id.equals(that.id) &&
                hostHostname.equals(that.hostHostname) &&
                hostFlavor.equals(that.hostFlavor) &&
+               hostType == that.hostType &&
+               exclusiveToApplicationId.equals(that.exclusiveToApplicationId) &&
+               exclusiveToClusterType.equals(that.exclusiveToClusterType) &&
                nodeAddresses.equals(that.nodeAddresses) &&
                nodeResources.equals(that.nodeResources) &&
                osVersion.equals(that.osVersion);
@@ -105,7 +113,7 @@ public class ProvisionedHost {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, hostHostname, hostFlavor, nodeAddresses, nodeResources, osVersion);
+        return Objects.hash(id, hostHostname, hostFlavor, hostType, exclusiveToApplicationId, exclusiveToClusterType, nodeAddresses, nodeResources, osVersion);
     }
 
     @Override
@@ -114,7 +122,10 @@ public class ProvisionedHost {
                "id='" + id + '\'' +
                ", hostHostname='" + hostHostname + '\'' +
                ", hostFlavor=" + hostFlavor +
-               ", nodeAddresses='" + nodeAddresses + '\'' +
+               ", hostType=" + hostType +
+               ", exclusiveToApplicationId=" + exclusiveToApplicationId +
+               ", exclusiveToClusterType=" + exclusiveToClusterType +
+               ", nodeAddresses=" + nodeAddresses +
                ", nodeResources=" + nodeResources +
                ", osVersion=" + osVersion +
                '}';

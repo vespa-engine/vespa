@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
 import com.google.inject.AbstractModule;
@@ -42,8 +42,7 @@ public class ContainerSnapshotTestCase {
         assertNotNull(request.getBindingMatch());
         request.release();
 
-        request = new Request(driver, URI.create("http://foo/"));
-        request.setServerRequest(false);
+        request = new Request(driver, URI.create("http://foo/"), false);
         assertNull(request.container().resolveHandler(request));
         assertNull(request.getBindingMatch());
         request.release();
@@ -53,8 +52,7 @@ public class ContainerSnapshotTestCase {
         assertNull(request.getBindingMatch());
         request.release();
 
-        request = new Request(driver, URI.create("http://bar/"));
-        request.setServerRequest(false);
+        request = new Request(driver, URI.create("http://bar/"), false);
         assertNull(request.container().resolveHandler(request));
         assertNull(request.getBindingMatch());
         request.release();
@@ -74,8 +72,7 @@ public class ContainerSnapshotTestCase {
         assertNull(request.getBindingMatch());
         request.release();
 
-        request = new Request(driver, URI.create("http://foo/"));
-        request.setServerRequest(false);
+        request = new Request(driver, URI.create("http://foo/"), false);
         assertNotNull(request.container().resolveHandler(request));
         assertNotNull(request.getBindingMatch());
         request.release();
@@ -85,8 +82,7 @@ public class ContainerSnapshotTestCase {
         assertNull(request.getBindingMatch());
         request.release();
 
-        request = new Request(driver, URI.create("http://bar/"));
-        request.setServerRequest(false);
+        request = new Request(driver, URI.create("http://bar/"), false);
         assertNull(request.container().resolveHandler(request));
         assertNull(request.getBindingMatch());
         request.release();
@@ -100,9 +96,7 @@ public class ContainerSnapshotTestCase {
         ContainerBuilder builder = driver.newContainerBuilder();
         builder.clientBindings().bind("http://host/path", MyRequestHandler.newInstance());
         driver.activateContainer(builder);
-        Request request = new Request(driver, URI.create("http://host/path"));
-        assertNull(request.container().resolveHandler(request));
-        request.setServerRequest(false);
+        Request request = new Request(driver, URI.create("http://host/path"), false);
         assertNotNull(request.container().resolveHandler(request));
         request.release();
         assertTrue(driver.close());
@@ -152,7 +146,7 @@ public class ContainerSnapshotTestCase {
             }
         });
         ActiveContainer active = new ActiveContainer(driver.newContainerBuilder());
-        ContainerSnapshot snapshot = new ContainerSnapshot(active, null, null);
+        ContainerSnapshot snapshot = new ContainerSnapshot(active, null, null, null);
         assertSame(obj, snapshot.getInstance(Object.class));
         assertEquals("foo", snapshot.getInstance(Key.get(String.class, Names.named("foo"))));
         snapshot.release();

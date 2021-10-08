@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.vespa.config.content.StorFilestorConfig;
@@ -55,7 +55,7 @@ public class GenericConfigTest {
 
     @Test
     public void config_override_on_root_is_visible_on_storage_cluster() {
-        StorageCluster cluster = model.getContentClusters().get("storage").getStorageNodes();
+        StorageCluster cluster = model.getContentClusters().get("storage").getStorageCluster();
 
         StorFilestorConfig config = model.getConfig(StorFilestorConfig.class, cluster.getConfigId());
         assertThat(config.num_threads(), is(7));

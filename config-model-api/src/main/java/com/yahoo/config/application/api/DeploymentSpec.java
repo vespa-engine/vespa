@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
 import com.yahoo.collections.Comparables;
@@ -509,6 +509,18 @@ public class DeploymentSpec {
         /** Will upgrade after most default applications upgraded successfully */
         conservative
     }
+
+
+    /** Determines when application changes deploy, when there is already an ongoing platform upgrade. */
+    public enum UpgradeRollout {
+        /** Separate: Application changes wait for upgrade to complete, unless upgrade fails. */
+        separate,
+        /** Leading: Application changes are allowed to start and catch up to the platform upgrade. */
+        leading
+        // /** Simultaneous: Application changes deploy independently of platform upgrades. */
+        // simultaneous
+    }
+
 
     /** A blocking of changes in a given time window */
     public static class ChangeBlocker {

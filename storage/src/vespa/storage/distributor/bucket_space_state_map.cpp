@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucket_space_state_map.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
@@ -30,6 +30,22 @@ BucketSpaceStateMap::BucketSpaceStateMap()
 {
     _map.emplace(document::FixedBucketSpaces::default_space(), std::make_unique<BucketSpaceState>());
     _map.emplace(document::FixedBucketSpaces::global_space(), std::make_unique<BucketSpaceState>());
+}
+
+const BucketSpaceState&
+BucketSpaceStateMap::get(document::BucketSpace space) const
+{
+    auto itr = _map.find(space);
+    assert(itr != _map.end());
+    return *itr->second;
+}
+
+BucketSpaceState&
+BucketSpaceStateMap::get(document::BucketSpace space)
+{
+    auto itr = _map.find(space);
+    assert(itr != _map.end());
+    return *itr->second;
 }
 
 void

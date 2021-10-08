@@ -1,9 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator;
 
 import java.util.Arrays;
 
-public class OrchestrationException extends Exception {
+public class OrchestrationException extends RuntimeException {
 
     public OrchestrationException(Throwable cause) {
         super(cause);

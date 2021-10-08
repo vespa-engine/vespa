@@ -1,6 +1,7 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.utils.FileSender;
@@ -10,13 +11,14 @@ import java.util.Collection;
 import java.util.Objects;
 
 public class DistributableResource {
+
     public enum PathType { FILE, URI, BLOB };
 
     /** The search definition-unique name of this constant */
     private final String name;
     private final ByteBuffer blob;
     private String path;
-    private String fileReference = "";
+    private FileReference fileReference = new FileReference("");
     private PathType pathType = PathType.FILE;
 
     public PathType getPathType() {
@@ -37,6 +39,7 @@ public class DistributableResource {
         Objects.requireNonNull(blob, "Blob cannot be null");
         this.name = name;
         this.blob = blob;
+        path = name + ".lz4";
         pathType = PathType.BLOB;
     }
 
@@ -54,18 +57,7 @@ public class DistributableResource {
 
     /** Initiate sending of this constant to some services over file distribution */
     public void sendTo(Collection<? extends AbstractService> services) {
-        fileReference = sendToServices(services).value();
-    }
-    private FileReference sendToServices(Collection<? extends AbstractService> services) {
-        switch (pathType) {
-            case FILE:
-                return FileSender.sendFileToServices(path, services);
-            case URI:
-                return FileSender.sendUriToServices(path, services);
-            case BLOB:
-                return FileSender.sendBlobToServices(blob, services);
-        }
-        throw new IllegalArgumentException("Unknown path type " + pathType);
+        FileSender.send(fileReference, services);
     }
 
     public String getName() { return name; }
@@ -73,17 +65,40 @@ public class DistributableResource {
     public String getFileName() { return path; }
     public Path getFilePath() { return Path.fromString(path); }
     public String getUri() { return path; }
-    public String getFileReference() { return fileReference; }
+    public String getFileReference() { return fileReference.value(); }
 
     public void validate() {
-        if (path == null || path.isEmpty())
-            throw new IllegalArgumentException("Distributable resource must have a file or uri.");
+        switch (pathType) {
+            case FILE:
+            case URI:
+                if (path == null || path.isEmpty())
+                    throw new IllegalArgumentException("Distributable URI/FILE resource must have a file or uri.");
+                break;
+            case BLOB:
+                if (blob == null)
+                    throw new IllegalArgumentException("Distributable BLOB can not be null.");
+        }
     }
 
-    public String toString() {
-        StringBuilder b = new StringBuilder();
-        b.append("resource '").append(name).append(" of type '").append(pathType)
-                .append("' with ref '").append(fileReference).append("'");
-        return b.toString();
+    void register(FileRegistry fileRegistry) {
+        switch (pathType) {
+            case FILE:
+                fileReference = fileRegistry.addFile(path);
+                break;
+            case URI:
+                fileReference = fileRegistry.addUri(path);
+                break;
+            case BLOB:
+                fileReference = fileRegistry.addBlob(path, blob);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown path type " + pathType);
+        }
     }
+
+    @Override
+    public String toString() {
+        return "resource '" + name + " of type '" + pathType + "' with ref '" + fileReference + "'";
+    }
+
 }

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.slime.ArrayTraverser;
@@ -45,10 +45,8 @@ public class OsVersionTargetSerializer {
         Set<OsVersionTarget> osVersionTargets = new TreeSet<>();
         array.traverse((ArrayTraverser) (i, inspector) -> {
             OsVersion osVersion = osVersionSerializer.fromSlime(inspector);
-            Duration upgradeBudget = Duration.ofMillis(inspector.field(upgradeBudgetField).asLong());
-            // TODO(mpolden): Require after 2021-09-01
-            Instant scheduledAt = SlimeUtils.optionalInstant(inspector.field(scheduledAtField))
-                                            .orElse(Instant.EPOCH);
+            Duration upgradeBudget = SlimeUtils.duration(inspector.field(upgradeBudgetField));
+            Instant scheduledAt = SlimeUtils.instant(inspector.field(scheduledAtField));
             osVersionTargets.add(new OsVersionTarget(osVersion, upgradeBudget, scheduledAt));
         });
         return Collections.unmodifiableSet(osVersionTargets);

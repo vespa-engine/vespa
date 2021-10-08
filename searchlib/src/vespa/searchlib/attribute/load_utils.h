@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -16,10 +16,7 @@ public:
     using FileInterfaceUP = std::unique_ptr<FastOS_FileInterface>;
     using LoadedBufferUP = std::unique_ptr<fileutil::LoadedBuffer>;
 
-private:
     static FileInterfaceUP openFile(const AttributeVector& attr, const vespalib::string& suffix);
-
-public:
     static FileInterfaceUP openDAT(const AttributeVector& attr);
     static FileInterfaceUP openIDX(const AttributeVector& attr);
     static FileInterfaceUP openWeight(const AttributeVector& attr);

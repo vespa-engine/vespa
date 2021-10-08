@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.applicationmodel;
 
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -16,6 +16,9 @@ public class ApplicationInstanceId {
     public boolean isConfigServerHost() { return id.startsWith("configserver-host:"); }
     public static final ApplicationInstanceId CONTROLLER_HOST = new ApplicationInstanceId("controller-host:prod:default:default");
     public boolean isTenantHost() { return id.startsWith("tenant-host:"); }
+    public boolean isProxyHost() { return id.startsWith("proxy-host:"); }
+    // Routing application instance ID is of the form: routing:prod:eu-west-1:default
+    public boolean isProxy() { return id.startsWith("routing:"); }
 
     private final String id;
 

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "nodeinfo.h"
@@ -77,7 +77,7 @@ public:
      */
     using TimePoint = std::chrono::milliseconds;
 
-    explicit PendingMessageTracker(framework::ComponentRegister&);
+    explicit PendingMessageTracker(framework::ComponentRegister&, uint32_t stripe_index);
     ~PendingMessageTracker() override;
 
     void insert(const std::shared_ptr<api::StorageMessage>&);

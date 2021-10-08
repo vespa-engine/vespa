@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.model.deploy.DeployState;
@@ -12,8 +12,6 @@ import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.config.search.SummarymapConfig;
 import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
 import com.yahoo.vespa.config.search.vsm.VsmsummaryConfig;
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -99,7 +97,8 @@ public class StreamingSearchCluster extends SearchCluster implements
                                                  deployState.getProperties(),
                                                  deployState.rankProfileRegistry(),
                                                  deployState.getQueryProfiles().getRegistry(),
-                                                 deployState.getImportedModels());
+                                                 deployState.getImportedModels(),
+                                                 deployState.getExecutor());
     }
     @Override
     public DerivedConfiguration getSdConfig() {

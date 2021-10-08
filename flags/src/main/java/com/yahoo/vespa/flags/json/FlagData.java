@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -14,9 +14,6 @@ import com.yahoo.vespa.flags.json.wire.WireRule;
 import javax.annotation.concurrent.Immutable;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -35,21 +32,25 @@ public class FlagData {
     private final FetchVector defaultFetchVector;
 
     public FlagData(FlagId id) {
-        this(id, new FetchVector(), Collections.emptyList());
+        this(id, new FetchVector(), List.of());
     }
 
     public FlagData(FlagId id, FetchVector defaultFetchVector, Rule... rules) {
-        this(id, defaultFetchVector, Arrays.asList(rules));
+        this(id, defaultFetchVector, List.of(rules));
     }
 
     public FlagData(FlagId id, FetchVector defaultFetchVector, List<Rule> rules) {
         this.id = id;
-        this.rules = Collections.unmodifiableList(new ArrayList<>(rules));
+        this.rules = List.copyOf(rules);
         this.defaultFetchVector = defaultFetchVector;
     }
 
     public FlagId id() {
         return id;
+    }
+
+    public List<Rule> rules() {
+        return rules;
     }
 
     public boolean isEmpty() { return rules.isEmpty() && defaultFetchVector.isEmpty(); }
@@ -136,7 +137,7 @@ public class FlagData {
     }
 
     private static List<Rule> rulesFromWire(List<WireRule> wireRules) {
-        if (wireRules == null) return Collections.emptyList();
+        if (wireRules == null) return List.of();
         return wireRules.stream().map(Rule::fromWire).collect(Collectors.toList());
     }
 

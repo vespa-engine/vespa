@@ -8,9 +8,9 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.Collections;
 import java.util.List;
@@ -36,7 +36,7 @@ public class ControllerMaintenance extends AbstractComponent {
 
     @Inject
     @SuppressWarnings("unused") // instantiated by Dependency Injection
-    public ControllerMaintenance(Controller controller, Metric metric) {
+    public ControllerMaintenance(Controller controller, Metric metric, UserManagement userManagement) {
         Intervals intervals = new Intervals(controller.system());
         upgrader = new Upgrader(controller, intervals.defaultInterval);
         maintainers.add(upgrader);
@@ -58,7 +58,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new NameServiceDispatcher(controller, intervals.nameServiceDispatcher));
         maintainers.add(new CostReportMaintainer(controller, intervals.costReportMaintainer, controller.serviceRegistry().costReportConsumer()));
         maintainers.add(new ResourceMeterMaintainer(controller, intervals.resourceMeterMaintainer, metric, controller.serviceRegistry().meteringService()));
-        maintainers.add(new CloudEventReporter(controller, intervals.cloudEventReporter));
+        maintainers.add(new CloudEventTracker(controller, intervals.cloudEventReporter));
         maintainers.add(new ResourceTagMaintainer(controller, intervals.resourceTagMaintainer, controller.serviceRegistry().resourceTagger()));
         maintainers.add(new SystemRoutingPolicyMaintainer(controller, intervals.systemRoutingPolicyMaintainer));
         maintainers.add(new ApplicationMetaDataGarbageCollector(controller, intervals.applicationMetaDataGarbageCollector));
@@ -71,9 +71,10 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new ArchiveAccessMaintainer(controller, metric, intervals.archiveAccessMaintainer));
         maintainers.add(new TenantRoleMaintainer(controller, intervals.tenantRoleMaintainer));
         maintainers.add(new ChangeRequestMaintainer(controller, intervals.changeRequestMaintainer));
-        maintainers.add(new VCMRMaintainer(controller, intervals.vcmrMaintainer));
+        maintainers.add(new VcmrMaintainer(controller, intervals.vcmrMaintainer));
         maintainers.add(new CloudTrialExpirer(controller, intervals.defaultInterval));
         maintainers.add(new RetriggerMaintainer(controller, intervals.retriggerMaintainer));
+        maintainers.add(new UserManagementMaintainer(controller, intervals.userManagementMaintainer, userManagement));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -130,6 +131,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration changeRequestMaintainer;
         private final Duration vcmrMaintainer;
         private final Duration retriggerMaintainer;
+        private final Duration userManagementMaintainer;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
@@ -163,6 +165,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.changeRequestMaintainer = duration(1, HOURS);
             this.vcmrMaintainer = duration(1, HOURS);
             this.retriggerMaintainer = duration(1, MINUTES);
+            this.userManagementMaintainer = duration(12, HOURS);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {

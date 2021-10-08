@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
@@ -22,7 +22,7 @@ public class DiversitySettingsValidator extends Processor {
         if ( ! validate) return;
         if (documentsOnly) return;
 
-        for (RankProfile rankProfile : rankProfileRegistry.rankProfilesOf(search)) {
+        for (RankProfile rankProfile : rankProfileRegistry.rankProfilesOf(search.getName())) {
             if (rankProfile.getMatchPhaseSettings() != null && rankProfile.getMatchPhaseSettings().getDiversity() != null) {
                 validate(rankProfile, rankProfile.getMatchPhaseSettings().getDiversity());
             }

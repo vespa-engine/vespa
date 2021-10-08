@@ -1786,6 +1786,27 @@
     ],
     "fields": []
   },
+  "com.yahoo.search.Query$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.search.Query$Builder setRequest(java.lang.String)",
+      "public com.yahoo.search.Query$Builder setRequest(com.yahoo.container.jdisc.HttpRequest)",
+      "public com.yahoo.container.jdisc.HttpRequest getRequest()",
+      "public com.yahoo.search.Query$Builder setRequestMap(java.util.Map)",
+      "public java.util.Map getRequestMap()",
+      "public com.yahoo.search.Query$Builder setQueryProfile(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
+      "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile getQueryProfile()",
+      "public com.yahoo.search.Query$Builder setEmbedder(com.yahoo.language.process.Embedder)",
+      "public com.yahoo.language.process.Embedder getEmbedder()",
+      "public com.yahoo.search.Query build()"
+    ],
+    "fields": []
+  },
   "com.yahoo.search.Query$Type": {
     "superClass": "java.lang.Enum",
     "interfaces": [],
@@ -4237,6 +4258,7 @@
       "public"
     ],
     "methods": [
+      "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, com.yahoo.container.handler.threadpool.ContainerThreadPool, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.language.process.Embedder, com.yahoo.search.searchchain.ExecutionFactory)",
       "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, com.yahoo.container.handler.threadpool.ContainerThreadPool, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.search.searchchain.ExecutionFactory)",
       "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.search.searchchain.ExecutionFactory)",
       "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.config.QueryProfilesConfig, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.search.searchchain.ExecutionFactory)",
@@ -5863,6 +5885,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
+      "public void <init>(com.yahoo.search.query.profile.compiled.CompiledQueryProfile, com.yahoo.language.process.Embedder)",
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile getQueryProfile()",
       "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
       "public void set(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",
@@ -6229,6 +6252,19 @@
     ],
     "fields": []
   },
+  "com.yahoo.search.query.profile.types.ConversionContext": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.language.process.Embedder, java.util.Map)",
+      "public java.lang.String destination()",
+      "public static com.yahoo.search.query.profile.types.ConversionContext empty()"
+    ],
+    "fields": []
+  },
   "com.yahoo.search.query.profile.types.FieldDescription": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -6276,7 +6312,7 @@
       "public abstract java.lang.String toString()",
       "public abstract java.lang.String toInstanceDescription()",
       "public abstract java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.QueryProfileRegistry)",
-      "public abstract java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry)",
+      "public abstract java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.types.ConversionContext)",
       "public com.yahoo.tensor.TensorType asTensorType()",
       "public static com.yahoo.search.query.profile.types.FieldType fromString(java.lang.String, com.yahoo.search.query.profile.types.QueryProfileTypeRegistry)",
       "public static boolean isLegalFieldValue(java.lang.Object)"
@@ -6303,7 +6339,7 @@
       "public java.lang.String stringValue()",
       "public java.lang.String toString()",
       "public java.lang.String toInstanceDescription()",
-      "public java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry)",
+      "public java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.types.ConversionContext)",
       "public java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.QueryProfileRegistry)",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)"
@@ -6323,7 +6359,7 @@
       "public java.lang.String toString()",
       "public java.lang.String toInstanceDescription()",
       "public java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.QueryProfileRegistry)",
-      "public java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry)"
+      "public java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.types.ConversionContext)"
     ],
     "fields": []
   },
@@ -6342,11 +6378,11 @@
       "public java.lang.String stringValue()",
       "public java.lang.String toString()",
       "public java.lang.String toInstanceDescription()",
-      "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile convertFrom(java.lang.Object, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry)",
+      "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile convertFrom(java.lang.Object, com.yahoo.search.query.profile.types.ConversionContext)",
       "public com.yahoo.search.query.profile.QueryProfile convertFrom(java.lang.Object, com.yahoo.search.query.profile.QueryProfileRegistry)",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
-      "public bridge synthetic java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry)",
+      "public bridge synthetic java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.types.ConversionContext)",
       "public bridge synthetic java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.QueryProfileRegistry)"
     ],
     "fields": []
@@ -6419,7 +6455,7 @@
       "public java.lang.String toString()",
       "public java.lang.String toInstanceDescription()",
       "public java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.QueryProfileRegistry)",
-      "public java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry)",
+      "public java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.types.ConversionContext)",
       "public static com.yahoo.search.query.profile.types.TensorFieldType fromTypeString(java.lang.String)"
     ],
     "fields": []
@@ -6496,7 +6532,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.Query, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry)",
+      "public void <init>(com.yahoo.search.Query, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.language.process.Embedder)",
       "public void setParentQuery(com.yahoo.search.Query)",
       "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
       "public void set(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",
@@ -7039,6 +7075,8 @@
     ],
     "methods": [
       "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean)",
+      "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean, boolean)",
+      "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean, boolean, boolean)",
       "public void accept(java.lang.String, java.lang.Object)",
       "public void accept(java.lang.String, byte[], int, int)",
       "protected boolean shouldRender(java.lang.String, java.lang.Object)",
@@ -7374,6 +7412,8 @@
       "public static com.yahoo.search.result.ErrorMessage createNotFound(java.lang.String)",
       "public static com.yahoo.search.result.ErrorMessage createBadRequest(java.lang.String)",
       "public static com.yahoo.search.result.ErrorMessage createInternalServerError(java.lang.String)",
+      "public static com.yahoo.search.result.ErrorMessage createSearchReplyError(java.lang.String)",
+      "public static com.yahoo.search.result.ErrorMessage createDocsumReplyError(java.lang.String)",
       "public void setSource(java.lang.String)",
       "public java.lang.String getSource()",
       "public int hashCode()",
@@ -7404,6 +7444,7 @@
       "public static com.yahoo.search.result.FeatureData empty()",
       "public com.yahoo.data.access.Inspector inspect()",
       "public java.lang.String toJson()",
+      "public java.lang.String toJson(boolean)",
       "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
       "public java.lang.Double getDouble(java.lang.String)",
       "public com.yahoo.tensor.Tensor getTensor(java.lang.String)",

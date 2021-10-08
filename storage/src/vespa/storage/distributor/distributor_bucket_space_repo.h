@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/document/bucket/bucketspace.h>
@@ -19,8 +19,7 @@ private:
     BucketSpaceMap _map;
 
 public:
-    // TODO STRIPE: Remove the use_bucket_db parameter when legacy mode is gone.
-    explicit DistributorBucketSpaceRepo(uint16_t node_index, bool use_bucket_db = true);
+    explicit DistributorBucketSpaceRepo(uint16_t node_index);
     ~DistributorBucketSpaceRepo();
 
     DistributorBucketSpaceRepo(const DistributorBucketSpaceRepo&&) = delete;

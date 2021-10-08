@@ -1,0 +1,18 @@
+[
+  {
+    "name": "multinode",
+    "path": "operations/multinode",
+    "sha": "faa2b5bf9fa6fc7314708341e2ad91211986d681",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/operations/multinode?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/operations/multinode",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/faa2b5bf9fa6fc7314708341e2ad91211986d681",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/operations/multinode?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/faa2b5bf9fa6fc7314708341e2ad91211986d681",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/operations/multinode"
+    }
+  }
+]

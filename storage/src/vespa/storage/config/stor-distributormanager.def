@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=vespa.config.content.core
 
 ## Maximum number of ideal state operations scheduled by a distributor.
@@ -274,6 +274,9 @@ prioritize_global_bucket_merges bool default=true
 ## than 1.
 max_activation_inhibited_out_of_sync_groups int default=0
 
-## TODO STRIPE document
-## If 0, legacy single stripe behavior is used. Currently supports 0 or 1.
+## Specifies the number of stripes over which a distributor internally distributes
+## its buckets and operation processing. Every stripe receives its own thread.
+## If <= 0, the number of stripes is inferred automatically based on the number of
+## CPU cores available. If > 0, the number of stripes is explicitly overridden.
+## Stripe counts must be a power of two.
 num_distributor_stripes int default=0 restart

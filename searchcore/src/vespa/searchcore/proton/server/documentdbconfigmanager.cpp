@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentdbconfigmanager.h"
 #include "bootstrapconfig.h"
@@ -8,6 +8,7 @@
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/searchcore/config/config-ranking-expressions.h>
 #include <vespa/searchcore/config/config-onnx-models.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summarymap.h>
@@ -151,8 +152,7 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                     proton.lidspacecompaction.removeblockrate,
                     isDocumentTypeGlobal),
             AttributeUsageFilterConfig(
-                    proton.writefilter.attribute.enumstorelimit,
-                    proton.writefilter.attribute.multivaluelimit),
+                    proton.writefilter.attribute.addressSpaceLimit),
             vespalib::from_s(proton.writefilter.sampleinterval),
             BlockableMaintenanceJobConfig(
                     proton.maintenancejobs.resourcelimitfactor,
@@ -282,6 +282,10 @@ vespalib::string resolve_file(config::RpcFileAcquirer &fileAcquirer, vespalib::T
         }
     }
     LOG(info, "Got file path from file acquirer: '%s' (%s, ref='%s')", filePath.c_str(), desc.c_str(), fileref.c_str());
+    if (filePath == "") {
+        throw config::ConfigTimeoutException(fmt("could not get file path from file acquirer for %s (ref=%s)",
+                                                 desc.c_str(), fileref.c_str()));
+    }
     return filePath;
 }
 

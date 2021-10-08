@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "distributor_message_sender_stub.h"
@@ -124,6 +124,7 @@ public:
     const storage::distributor::DistributorNodeContext& node_context() const;
     storage::distributor::DistributorStripeOperationContext& operation_context();
     const DocumentSelectionParser& doc_selection_parser() const;
+    DistributorMetricSet& metrics();
 
     bool tick();
 
@@ -168,6 +169,10 @@ public:
                       uint32_t early_return = false,
                       bool require_primary_to_be_written = true);
 
+    void set_redundancy(uint32_t redundancy);
+
+    void trigger_distribution_change(std::shared_ptr<lib::Distribution> distr);
+
     using ConfigBuilder = vespa::config::content::core::StorDistributormanagerConfigBuilder;
 
     std::shared_ptr<DistributorConfiguration> make_config() const;
@@ -201,16 +206,19 @@ public:
 
     void handle_top_level_message(const std::shared_ptr<api::StorageMessage>& msg);
 
+    void simulate_set_pending_cluster_state(const vespalib::string& state_str);
+    void clear_pending_cluster_state_bundle();
+
 protected:
     vdstestlib::DirConfig _config;
     std::unique_ptr<TestDistributorApp> _node;
-    std::unique_ptr<framework::TickingThreadPool> _threadPool;
     std::shared_ptr<DistributorMetricSet> _metrics;
     std::shared_ptr<IdealStateMetricSet>  _ideal_state_metrics;
     std::unique_ptr<DistributorStripe> _stripe;
     DistributorMessageSenderStub _sender;
     DistributorMessageSenderStub _senderDown;
     HostInfo _hostInfo;
+    bool _done_initializing;
 
     struct MessageSenderImpl : public ChainedMessageSender {
         DistributorMessageSenderStub& _sender;

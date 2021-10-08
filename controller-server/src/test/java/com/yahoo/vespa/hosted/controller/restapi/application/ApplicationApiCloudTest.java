@@ -1,6 +1,7 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
+import ai.vespa.hosted.api.MultiPartStreamer;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
@@ -10,10 +11,12 @@ import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -232,6 +235,42 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 200);
     }
 
+    @Test
+    public void create_application_on_deploy() {
+        var application = ApplicationName.from("unique");
+        var applicationPackage = new ApplicationPackageBuilder().build();
+
+        assertTrue(tester.controller().applications().getApplication(TenantAndApplicationId.from(tenantName, application)).isEmpty());
+
+        tester.assertResponse(
+                request("/application/v4/tenant/scoober/application/unique/instance/default/deploy/dev-aws-us-east-1c", POST)
+                    .data(createApplicationDeployData(Optional.of(applicationPackage), Optional.empty(), true))
+                    .roles(Set.of(Role.developer(tenantName))),
+                "{\"message\":\"Deployment started in run 1 of dev-aws-us-east-1c for scoober.unique. This may take about 15 minutes the first time.\",\"run\":1}");
+
+        assertTrue(tester.controller().applications().getApplication(TenantAndApplicationId.from(tenantName, application)).isPresent());
+    }
+
+    @Test
+    public void create_application_on_submit() {
+        var application = ApplicationName.from("unique");
+        var applicationPackage = new ApplicationPackageBuilder()
+                .trustDefaultCertificate()
+                .build();
+
+        assertTrue(tester.controller().applications().getApplication(TenantAndApplicationId.from(tenantName, application)).isEmpty());
+
+        var data = ApplicationApiTest.createApplicationSubmissionData(applicationPackage, 123);
+
+        tester.assertResponse(
+                request("/application/v4/tenant/scoober/application/unique/submit", POST)
+                        .data(data)
+                        .roles(Set.of(Role.developer(tenantName))),
+                "{\"message\":\"Application package version: 1.0.1-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+
+        assertTrue(tester.controller().applications().getApplication(TenantAndApplicationId.from(tenantName, application)).isPresent());
+    }
+
     private ApplicationPackageBuilder prodBuilder() {
         return new ApplicationPackageBuilder()
                 .instances("default")
@@ -264,8 +303,31 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                                                    JobType.productionAwsUsEast1c,
                                                    Optional.empty(),
                                                    applicationPackage);
+    }
 
 
+    private MultiPartStreamer createApplicationDeployData(Optional<ApplicationPackage> applicationPackage,
+                                                          Optional<ApplicationVersion> applicationVersion, boolean deployDirectly) {
+        MultiPartStreamer streamer = new MultiPartStreamer();
+        streamer.addJson("deployOptions", deployOptions(deployDirectly, applicationVersion));
+        applicationPackage.ifPresent(ap -> streamer.addBytes("applicationZip", ap.zippedContent()));
+        return streamer;
+    }
+
+    private String deployOptions(boolean deployDirectly, Optional<ApplicationVersion> applicationVersion) {
+        return "{\"vespaVersion\":null," +
+                "\"ignoreValidationErrors\":false," +
+                "\"deployDirectly\":" + deployDirectly +
+                applicationVersion.map(version ->
+                        "," +
+                                "\"buildNumber\":" + version.buildNumber().getAsLong() + "," +
+                                "\"sourceRevision\":{" +
+                                "\"repository\":\"" + version.source().get().repository() + "\"," +
+                                "\"branch\":\"" + version.source().get().branch() + "\"," +
+                                "\"commit\":\"" + version.source().get().commit() + "\"" +
+                                "}"
+                ).orElse("") +
+                "}";
     }
 
 }

@@ -1,11 +1,8 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.cluster;
 
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.content.ResourceLimits;
-
-import java.util.logging.Level;
 
 /**
  * Builder for feed block resource limits.
@@ -14,23 +11,13 @@ import java.util.logging.Level;
  */
 public class DomResourceLimitsBuilder {
 
-    public static ResourceLimits.Builder createBuilder(ModelElement contentXml,
-                                                       boolean hostedVespa,
-                                                       boolean throwIfSpecified,
-                                                       DeployLogger deployLogger) {
+    public static ResourceLimits.Builder createBuilder(ModelElement contentXml, boolean hostedVespa) {
         ResourceLimits.Builder builder = new ResourceLimits.Builder();
         ModelElement resourceLimits = contentXml.child("resource-limits");
         if (resourceLimits == null) { return builder; }
 
-        if (hostedVespa) {
-            String message = "Element '" + resourceLimits + "' is not allowed to be set";
-            if (throwIfSpecified) throw new IllegalArgumentException(message);
-
-
-            deployLogger.logApplicationPackage(Level.WARNING, message);
-            // TODO: return (default values will then be used). Cannot be done now as an app needs current behavior
-            //return builder;
-        }
+        if (hostedVespa)
+            throw new IllegalArgumentException("Element '" + resourceLimits + "' is not allowed to be set");
 
         if (resourceLimits.child("disk") != null) {
             builder.setDiskLimit(resourceLimits.childAsDouble("disk"));

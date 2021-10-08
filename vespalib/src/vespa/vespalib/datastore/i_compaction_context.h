@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -16,6 +16,7 @@ struct ICompactionContext {
     using UP = std::unique_ptr<ICompactionContext>;
     virtual ~ICompactionContext() {}
     virtual void compact(vespalib::ArrayRef<EntryRef> refs) = 0;
+    virtual void compact(vespalib::ArrayRef<AtomicEntryRef> refs) = 0;
 };
 
 }

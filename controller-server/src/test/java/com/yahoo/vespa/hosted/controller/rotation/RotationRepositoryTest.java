@@ -1,11 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.rotation;
 
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
@@ -146,10 +146,10 @@ public class RotationRepositoryTest {
     public void prefixes_system_when_not_main() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .globalServiceId("foo")
-                .region("cd-us-central-1")
+                .region("cd-us-east-1")
                 .region("cd-us-west-1")
                 .build();
-        var zones = List.of(ZoneApiMock.fromId("prod.cd-us-central-1"), ZoneApiMock.fromId("prod.cd-us-west-1"));
+        var zones = List.of(ZoneApiMock.fromId("prod.cd-us-east-1"), ZoneApiMock.fromId("prod.cd-us-west-1"));
         tester.controllerTester().zoneRegistry()
               .setZones(zones)
               .setRoutingMethod(zones, RoutingMethod.shared)

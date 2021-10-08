@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -21,10 +21,13 @@ import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
@@ -177,5 +180,17 @@ public class X509CertificateUtils {
                         .setBasicConstraints(true, true)
                         .build();
         return new X509CertificateWithKey(cert, keyPair.getPrivate());
+    }
+
+    /**
+     * @return certificate SHA-1 fingerprint
+     */
+    public static byte[] getX509CertificateFingerPrint(X509Certificate certificate) {
+        try {
+            MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+            return sha1.digest(certificate.getEncoded());
+        } catch (CertificateEncodingException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

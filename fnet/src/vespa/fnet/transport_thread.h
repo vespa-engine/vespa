@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -14,6 +14,7 @@
 #include <condition_variable>
 #include <chrono>
 
+namespace fnet { struct TimeTools; }
 class FNET_Transport;
 class FNET_ControlPacket;
 class FNET_IPacketStreamer;
@@ -138,7 +139,7 @@ private:
      * @return config object.
      **/
     const FNET_Config & getConfig() const;
-
+    const fnet::TimeTools &time_tools() const;
 
     void handle_add_cmd(FNET_IOComponent *ioc);
     void handle_close_cmd(FNET_IOComponent *ioc);

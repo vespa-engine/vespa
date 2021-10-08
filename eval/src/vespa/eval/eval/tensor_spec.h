@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -75,6 +75,7 @@ public:
     vespalib::string to_string() const;
     TensorSpec normalize() const;
     void to_slime(slime::Cursor &tensor) const;
+    vespalib::string to_expr() const;
     static TensorSpec from_slime(const slime::Inspector &tensor);
     static TensorSpec from_value(const eval::Value &value);
     static TensorSpec from_expr(const vespalib::string &expr);

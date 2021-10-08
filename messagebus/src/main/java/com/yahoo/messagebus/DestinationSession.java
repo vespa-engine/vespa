@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author Simon Thoresen Hult
  */
-public final class DestinationSession implements MessageHandler {
+public final class DestinationSession implements Connectable, MessageHandler {
 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final String name;
@@ -123,6 +123,11 @@ public final class DestinationSession implements MessageHandler {
     @Override
     public void handleMessage(Message msg) {
         msgHandler.handleMessage(msg);
+    }
+
+    @Override
+    public void connect() {
+        mbus.connect(name, broadcastName);
     }
 
 }

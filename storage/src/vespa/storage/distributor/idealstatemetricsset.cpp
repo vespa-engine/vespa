@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "idealstatemetricsset.h"
 namespace storage {
@@ -86,7 +86,21 @@ IdealStateMetricSet::IdealStateMetricSet()
             {{"logdefault"},{"yamasdefault"}},
             "The number of buckets that we are rechecking for "
             "ideal state operations", this),
-      startOperationsLatency("start_operations_latency", {}, "Time used in startOperations()", this),
+      buckets_replicas_moving_out("bucket_replicas_moving_out",
+            {{"logdefault"},{"yamasdefault"}},
+            "Bucket replicas that should be moved out, e.g. retirement case or node "
+            "added to cluster that has higher ideal state priority.", this),
+      buckets_replicas_copying_in("bucket_replicas_copying_in",
+            {{"logdefault"},{"yamasdefault"}},
+            "Bucket replicas that should be copied in, e.g. node does not have a "
+            "replica for a bucket that it is in ideal state for", this),
+      buckets_replicas_copying_out("bucket_replicas_copying_out",
+            {{"logdefault"},{"yamasdefault"}},
+            "Bucket replicas that should be copied out, e.g. node is in ideal state "
+            "but might have to provide data other nodes in a merge", this),
+      buckets_replicas_syncing("bucket_replicas_syncing",
+            {{"logdefault"},{"yamasdefault"}},
+            "Bucket replicas that need syncing due to mismatching metadata", this),
       nodesPerMerge("nodes_per_merge", {}, "The number of nodes involved in a single merge operation.", this)
 {
     createOperationMetrics();

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
 import com.yahoo.tensor.TensorType;
@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * A global ONNX model distributed using file distribution, similar to ranking constants.
@@ -19,6 +20,10 @@ public class OnnxModel extends DistributableResource {
     private OnnxModelInfo modelInfo = null;
     private Map<String, String> inputMap = new HashMap<>();
     private Map<String, String> outputMap = new HashMap<>();
+
+    private String  statelessExecutionMode = null;
+    private Integer statelessInterOpThreads = null;
+    private Integer statelessIntraOpThreads = null;
 
     public OnnxModel(String name) {
         super(name);
@@ -79,4 +84,37 @@ public class OnnxModel extends DistributableResource {
     TensorType getTensorType(String onnxName, Map<String, TensorType> inputTypes) {
         return modelInfo != null ? modelInfo.getTensorType(onnxName, inputTypes) : TensorType.empty;
     }
+
+    public void setStatelessExecutionMode(String executionMode) {
+        if ("parallel".equalsIgnoreCase(executionMode)) {
+            this.statelessExecutionMode = "parallel";
+        } else if ("sequential".equalsIgnoreCase(executionMode)) {
+            this.statelessExecutionMode = "sequential";
+        }
+    }
+
+    public Optional<String> getStatelessExecutionMode() {
+        return Optional.ofNullable(statelessExecutionMode);
+    }
+
+    public void setStatelessInterOpThreads(int interOpThreads) {
+        if (interOpThreads >= 0) {
+            this.statelessInterOpThreads = interOpThreads;
+        }
+    }
+
+    public Optional<Integer> getStatelessInterOpThreads() {
+        return Optional.ofNullable(statelessInterOpThreads);
+    }
+
+    public void setStatelessIntraOpThreads(int intraOpThreads) {
+        if (intraOpThreads >= 0) {
+            this.statelessIntraOpThreads = intraOpThreads;
+        }
+    }
+
+    public Optional<Integer> getStatelessIntraOpThreads() {
+        return Optional.ofNullable(statelessIntraOpThreads);
+    }
+
 }

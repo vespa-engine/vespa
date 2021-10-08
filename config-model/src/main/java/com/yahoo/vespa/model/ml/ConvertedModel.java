@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.ml;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlFunction;
@@ -84,11 +84,12 @@ public class ConvertedModel {
     public static ConvertedModel fromSourceOrStore(Path modelPath,
                                                    boolean pathIsFile,
                                                    RankProfileTransformContext context) {
+        ApplicationPackage applicationPackage = context.rankProfile().applicationPackage();
         ImportedMlModel sourceModel = // TODO: Convert to name here, make sure its done just one way
-                context.importedModels().get(sourceModelFile(context.rankProfile().applicationPackage(), modelPath));
+                context.importedModels().get(sourceModelFile(applicationPackage, modelPath));
         ModelName modelName = new ModelName(context.rankProfile().getName(), modelPath, pathIsFile);
 
-        if (sourceModel == null && ! new ModelStore(context.rankProfile().applicationPackage(), modelName).exists())
+        if (sourceModel == null && ! new ModelStore(applicationPackage, modelName).exists())
             throw new IllegalArgumentException("No model '" + modelPath + "' is available. Available models: " +
                                                context.importedModels().all().stream().map(ImportedMlModel::source).collect(Collectors.joining(", ")));
 
@@ -96,26 +97,22 @@ public class ConvertedModel {
             if ( ! sourceModel.isNative()) {
                 sourceModel = sourceModel.asNative();
             }
-            return fromSource(modelName,
-                              modelPath.toString(),
-                              context.rankProfile(),
-                              context.queryProfiles(),
-                              sourceModel);
+            return fromSource(applicationPackage, modelName, modelPath.toString(), context.rankProfile(),
+                              context.queryProfiles(), sourceModel);
         }
         else {
-            return fromStore(modelName,
-                             modelPath.toString(),
-                             context.rankProfile());
+            return fromStore(applicationPackage, modelName, modelPath.toString(), context.rankProfile());
         }
     }
 
-    public static ConvertedModel fromSource(ModelName modelName,
+    public static ConvertedModel fromSource(ApplicationPackage applicationPackage,
+                                            ModelName modelName,
                                             String modelDescription,
                                             RankProfile rankProfile,
                                             QueryProfileRegistry queryProfileRegistry,
                                             ImportedMlModel importedModel) {
         try {
-            ModelStore modelStore = new ModelStore(rankProfile.applicationPackage(), modelName);
+            ModelStore modelStore = new ModelStore(applicationPackage, modelName);
             return new ConvertedModel(modelName,
                                       modelDescription,
                                       convertAndStore(importedModel, rankProfile, queryProfileRegistry, modelStore),
@@ -127,11 +124,12 @@ public class ConvertedModel {
         }
     }
 
-    public static ConvertedModel fromStore(ModelName modelName,
+    public static ConvertedModel fromStore(ApplicationPackage applicationPackage,
+                                           ModelName modelName,
                                            String modelDescription,
                                            RankProfile rankProfile) {
         try {
-            ModelStore modelStore = new ModelStore(rankProfile.applicationPackage(), modelName);
+            ModelStore modelStore = new ModelStore(applicationPackage, modelName);
             return new ConvertedModel(modelName,
                                       modelDescription,
                                       convertStored(modelStore, rankProfile),
@@ -219,10 +217,8 @@ public class ConvertedModel {
             for (Map.Entry<String, TensorType> input : expression.argumentTypes().entrySet()) {
                 profile.addInputFeature(input.getKey(), input.getValue());
             }
-            addExpression(expression, expression.getName(),
-                          constantsReplacedByFunctions,
-                          model, store, profile, queryProfiles,
-                          expressions);
+            addExpression(expression, expression.getName(), constantsReplacedByFunctions,
+                          store, profile, queryProfiles, expressions);
         }
 
         // Transform and save function - must come after reading expressions due to optimization transforms
@@ -254,7 +250,6 @@ public class ConvertedModel {
     private static void addExpression(ExpressionFunction expression,
                                       String expressionName,
                                       Set<String> constantsReplacedByFunctions,
-                                      ImportedMlModel model,
                                       ModelStore store,
                                       RankProfile profile,
                                       QueryProfileRegistry queryProfiles,
@@ -276,9 +271,7 @@ public class ConvertedModel {
         }
 
         for (RankingConstant constant : store.readLargeConstants()) {
-            if ( ! profile.rankingConstants().asMap().containsKey(constant.getName())) {
-                profile.rankingConstants().add(constant);
-            }
+            profile.rankingConstants().putIfAbsent(constant);
         }
 
         for (Pair<String, RankingExpression> function : store.readFunctions()) {
@@ -324,11 +317,10 @@ public class ConvertedModel {
             constantsReplacedByFunctions.add(constantName); // will replace constant(constantName) by constantName later
         }
         else {
-            Path constantPath = store.writeLargeConstant(constantName, constantValue);
-            if ( ! profile.rankingConstants().asMap().containsKey(constantName)) {
-                profile.rankingConstants().add(new RankingConstant(constantName, constantValue.type(),
-                                                                   constantPath.toString()));
-            }
+            profile.rankingConstants().computeIfAbsent(constantName, name -> {
+                Path constantPath = store.writeLargeConstant(name, constantValue);
+                return new RankingConstant(name, constantValue.type(), constantPath.toString());
+            });
         }
     }
 
@@ -365,7 +357,7 @@ public class ConvertedModel {
         addFunctionNamesIn(expression.getRoot(), functionNames, model);
         for (String functionName : functionNames) {
             Optional<TensorType> requiredType = model.inputTypeSpec(functionName).map(TensorType::fromSpec);
-            if ( ! requiredType.isPresent()) continue; // Not a required function
+            if ( requiredType.isEmpty()) continue; // Not a required function
 
             RankProfile.RankingExpressionFunction rankingExpressionFunction = profile.getFunctions().get(functionName);
             if (rankingExpressionFunction == null)
@@ -634,7 +626,7 @@ public class ConvertedModel {
             // Secret file format for remembering constants:
             application.getFile(modelFiles.smallConstantsPath()).appendFile(name + "\t" +
                                                                             constant.type().toString() + "\t" +
-                                                                            constant.toString() + "\n");
+                                                                            constant + "\n");
         }
 
         /** Workaround for being constructed with the .preprocessed dir as root while later being used outside it */

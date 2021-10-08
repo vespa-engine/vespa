@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
 import com.yahoo.document.datatypes.FieldValue;
@@ -21,7 +21,7 @@ public class TensorDataType extends DataType {
     public static int classId = registerClass(Ids.document + 59, TensorDataType.class);
 
     public TensorDataType(TensorType tensorType) {
-        super(tensorType.toString(), DataType.tensorDataTypeCode);
+        super(tensorType == null ? "tensor" : tensorType.toString(), DataType.tensorDataTypeCode);
         this.tensorType = tensorType;
     }
 
@@ -64,4 +64,5 @@ public class TensorDataType extends DataType {
     public int hashCode() {
         return Objects.hash(super.hashCode(), tensorType);
     }
+
 }

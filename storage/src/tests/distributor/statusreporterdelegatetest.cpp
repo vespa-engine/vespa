@@ -1,7 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/common/testhelper.h>
-#include <tests/distributor/distributortestutil.h>
+#include <tests/common/teststorageapp.h>
 #include <vespa/storage/distributor/statusreporterdelegate.h>
 #include <vespa/vespalib/gtest/gtest.h>
 

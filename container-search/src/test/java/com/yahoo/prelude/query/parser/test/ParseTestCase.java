@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser.test;
 
 import com.yahoo.language.Language;
@@ -1967,6 +1967,13 @@ public class ParseTestCase {
     @Test
     public void testNegativeTermNegativeNumberWithIndex() {
         tester.assertParsed("+a -normal:-12", "a -normal:-12", Query.Type.ALL);
+    }
+
+    @Test
+    public void testNegativeTermPositiveNumberInParentheses() {
+        tester.assertParsed("+a -12", "a -(12)", Query.Type.ALL);
+        tester.assertParsed("+a -(AND 12 15)", "a -(12 15)", Query.Type.ALL);
+        tester.assertParsed("+a -12 -15", "a -(12) -(15)", Query.Type.ALL);
     }
 
     @Test

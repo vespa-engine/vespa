@@ -1,5 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network.rpc;
+
+import com.yahoo.concurrent.CopyOnWriteHashMap;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -12,7 +14,7 @@ import java.util.Map;
 public class RPCServicePool {
 
     private final RPCNetwork net;
-    private final ThreadLocalCache services = new ThreadLocalCache();
+    private final Map<Long, ServiceLRUCache> mapOfServiceCache;
     private final int maxSize;
 
     /**
@@ -23,6 +25,7 @@ public class RPCServicePool {
      */
     public RPCServicePool(RPCNetwork net, int maxSize) {
         this.net = net;
+        mapOfServiceCache = new CopyOnWriteHashMap<>();
         this.maxSize = maxSize;
     }
 
@@ -34,12 +37,12 @@ public class RPCServicePool {
      * @return A service address for the given pattern.
      */
     public RPCServiceAddress resolve(String pattern) {
-        RPCService service = services.get().get(pattern);
-        if (service == null) {
-            service = new RPCService(net.getMirror(), pattern);
-            services.get().put(pattern, service);
-        }
-        return service.resolve();
+
+        return getPerThreadCache().computeIfAbsent(pattern, (key) -> RPCService.create(net.getMirror(), key)).resolve();
+    }
+
+    private ServiceLRUCache getPerThreadCache() {
+        return mapOfServiceCache.computeIfAbsent(Thread.currentThread().getId(), (key) -> new ServiceLRUCache(maxSize));
     }
 
     /**
@@ -49,7 +52,7 @@ public class RPCServicePool {
      * @return The current size of this pool.
      */
     public int getSize() {
-        return services.get().size();
+        return getPerThreadCache().size();
     }
 
     /**
@@ -59,21 +62,15 @@ public class RPCServicePool {
      * @return True if a corresponding service is in the pool.
      */
     public boolean hasService(String pattern) {
-        return services.get().containsKey(pattern);
+        return getPerThreadCache().containsKey(pattern);
     }
 
-    private class ThreadLocalCache extends ThreadLocal<ServiceLRUCache> {
+    private static class ServiceLRUCache extends LinkedHashMap<String, RPCService> {
+        private final int maxSize;
 
-        @Override
-        protected ServiceLRUCache initialValue() {
-            return new ServiceLRUCache();
-        }
-    }
-
-    private class ServiceLRUCache extends LinkedHashMap<String, RPCService> {
-
-        ServiceLRUCache() {
+        ServiceLRUCache(int maxSize) {
             super(16, 0.75f, true);
+            this.maxSize = maxSize;
         }
 
         @Override

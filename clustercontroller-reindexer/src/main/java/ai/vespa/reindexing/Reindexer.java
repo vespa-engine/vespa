@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.reindexing;
 
 import ai.vespa.reindexing.Reindexing.Status;
@@ -204,7 +204,7 @@ public class Reindexer {
                                                                 .setResizeRate(10)
                                                                 .setMinWindowSize(1));
         parameters.setRemoteDataHandler(cluster.name());
-        parameters.setMaxPending(32);
+        parameters.setMaxPending(8);
         parameters.setResumeToken(progress);
         parameters.setFieldSet(type.getName() + ":[document]");
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_3);

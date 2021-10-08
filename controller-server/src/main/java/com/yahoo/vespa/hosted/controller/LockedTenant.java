@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.BiMap;
@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
@@ -47,9 +48,10 @@ public abstract class LockedTenant {
 
     static LockedTenant of(Tenant tenant, Lock lock) {
         switch (tenant.type()) {
-            case athenz: return new Athenz((AthenzTenant) tenant);
-            case cloud:  return new Cloud((CloudTenant) tenant);
-            default:     throw new IllegalArgumentException("Unexpected tenant type '" + tenant.getClass().getName() + "'.");
+            case athenz:  return new Athenz((AthenzTenant) tenant);
+            case cloud:   return new Cloud((CloudTenant) tenant);
+            case deleted: return new Deleted((DeletedTenant) tenant);
+            default:      throw new IllegalArgumentException("Unexpected tenant type '" + tenant.getClass().getName() + "'.");
         }
     }
 
@@ -57,6 +59,10 @@ public abstract class LockedTenant {
     public abstract Tenant get();
 
     public abstract LockedTenant with(LastLoginInfo lastLoginInfo);
+
+    public Deleted deleted(Instant deletedAt) {
+        return new Deleted(new DeletedTenant(name, createdAt, deletedAt));
+    }
 
     @Override
     public String toString() {
@@ -180,6 +186,28 @@ public abstract class LockedTenant {
 
         public Cloud withArchiveAccessRole(Optional<String> role) {
             return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, role);
+        }
+    }
+
+
+    /** A locked DeletedTenant. */
+    public static class Deleted extends LockedTenant {
+
+        private final Instant deletedAt;
+
+        private Deleted(DeletedTenant tenant) {
+            super(tenant.name(), tenant.createdAt(), tenant.lastLoginInfo());
+            this.deletedAt = tenant.deletedAt();
+        }
+
+        @Override
+        public DeletedTenant get() {
+            return new DeletedTenant(name, createdAt, deletedAt);
+        }
+
+        @Override
+        public LockedTenant with(LastLoginInfo lastLoginInfo) {
+            return this;
         }
     }
 

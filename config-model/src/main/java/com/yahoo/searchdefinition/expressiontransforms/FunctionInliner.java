@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.searchdefinition.RankProfile;
@@ -24,6 +24,7 @@ public class FunctionInliner extends ExpressionTransformer<RankProfileTransformC
     }
 
     private ExpressionNode transformFeatureNode(ReferenceNode feature, RankProfileTransformContext context) {
+        if (feature.getArguments().size() > 0) return feature;  // From RankProfile: only inline no-arg functions
         RankProfile.RankingExpressionFunction rankingExpressionFunction = context.inlineFunctions().get(feature.getName());
         if (rankingExpressionFunction == null) return feature;
         return transform(rankingExpressionFunction.function().getBody().getRoot(), context); // inline recursively and return

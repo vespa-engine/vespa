@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.javacc.FastCharStream;
@@ -50,18 +50,19 @@ public final class ScriptParser {
         });
     }
 
-    private static interface ParserMethod<T extends Expression> {
+    private interface ParserMethod<T extends Expression> {
 
         T call(IndexingParser parser) throws ParseException;
     }
 
-    private static <T extends Expression> T parse(ScriptParserContext config, ParserMethod<T> method)
+    private static <T extends Expression> T parse(ScriptParserContext context, ParserMethod<T> method)
             throws ParseException {
-        CharStream input = config.getInputStream();
+        CharStream input = context.getInputStream();
         IndexingParser parser = new IndexingParser(input);
-        parser.setAnnotatorConfig(config.getAnnotatorConfig());
-        parser.setDefaultFieldName(config.getDefaultFieldName());
-        parser.setLinguistics(config.getLinguistcs());
+        parser.setAnnotatorConfig(context.getAnnotatorConfig());
+        parser.setDefaultFieldName(context.getDefaultFieldName());
+        parser.setLinguistics(context.getLinguistcs());
+        parser.setEmbedder(context.getEmbedder());
         try {
             return method.call(parser);
         } catch (ParseException e) {
@@ -75,4 +76,5 @@ public final class ScriptParser {
             }
         }
     }
+
 }

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator;
 
 import com.yahoo.config.model.api.SuperModel;
@@ -57,7 +57,7 @@ public class OrchestratorTest {
         var flagSource = new InMemoryFlagSource();
         var timer = new TestTimer();
         var clustercontroller = new ClusterControllerClientFactoryMock();
-        var applicationApiFactory = new ApplicationApiFactory(3, timer.toUtcClock());
+        var applicationApiFactory = new ApplicationApiFactory(3, 5, timer.toUtcClock());
         var policy = new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, zone), clustercontroller, applicationApiFactory);
         var zone = new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-east-1"));
         this.superModelManager = new MySuperModelProvider();
@@ -102,7 +102,7 @@ public class OrchestratorTest {
             fail();
         } catch (HostStateChangeDeniedException e) {
             assertThat(e.getMessage(), containsString("Changing the state of cfg2 would violate enough-services-up"));
-            assertThat(e.getMessage(), containsString("Suspended hosts: [cfg1]"));
+            assertThat(e.getMessage(), containsString("[cfg1] are suspended."));
         }
 
         // cfg1 is removed from the application
@@ -114,7 +114,7 @@ public class OrchestratorTest {
             fail();
         } catch (HostStateChangeDeniedException e) {
             assertThat(e.getMessage(), containsString("Changing the state of cfg2 would violate enough-services-up"));
-            assertThat(e.getMessage(), containsString("Services down on resumed hosts: [1 missing config server]"));
+            assertThat(e.getMessage(), containsString("[1 missing config server] are down."));
         }
 
         // cfg1 is reprovisioned, added to the node repo, and activated
@@ -129,7 +129,7 @@ public class OrchestratorTest {
             fail();
         } catch (HostStateChangeDeniedException e) {
             assertThat(e.getMessage(), containsString("Changing the state of cfg1 would violate enough-services-up"));
-            assertThat(e.getMessage(), containsString("Suspended hosts: [cfg2]"));
+            assertThat(e.getMessage(), containsString("[cfg2] are suspended"));
         }
 
         // etc (should be the same as for cfg1)

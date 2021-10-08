@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
 import java.io.Closeable;
@@ -22,18 +22,19 @@ public interface FeedClient extends Closeable {
     /**
      * Send a document put with the given parameters, returning a future with the result of the operation.
      * Exceptional completion will use be an instance of {@link FeedException} or one of its sub-classes.
-     * */
+     */
     CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params);
 
     /**
      * Send a document update with the given parameters, returning a future with the result of the operation.
      * Exceptional completion will use be an instance of {@link FeedException} or one of its sub-classes.
-     * */
+     */
     CompletableFuture<Result> update(DocumentId documentId, String updateJson, OperationParameters params);
 
-    /** Send a document remove with the given parameters, returning a future with the result of the operation.
-     *  Exceptional completion will use be an instance of {@link FeedException} or one of its sub-classes.
-     *  */
+    /**
+     * Send a document remove with the given parameters, returning a future with the result of the operation.
+     * Exceptional completion will use be an instance of {@link FeedException} or one of its sub-classes.
+     */
     CompletableFuture<Result> remove(DocumentId documentId, OperationParameters params);
 
     /** Returns a snapshot of the stats for this feed client, such as requests made, and responses by status. */
@@ -68,8 +69,11 @@ public interface FeedClient extends Closeable {
         /** Called by the client whenever a successful response is obtained. */
         default void success() { }
 
-        /** Called by the client whenever a transient or fatal error occurs. */
-        default void failure() { }
+        /** Called by the client whenever an error HTTP response is received. */
+        default void failure(HttpResponse response) { }
+
+        /** Called by the client whenever an exception occurs trying to obtain a HTTP response. */
+        default void failure(Throwable cause) { }
 
         /** The current state of the circuit breaker. */
         State state();

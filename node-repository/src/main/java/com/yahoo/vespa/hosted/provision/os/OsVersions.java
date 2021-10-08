@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
@@ -32,9 +32,6 @@ public class OsVersions {
 
     /** The maximum number of concurrent upgrades per node type triggered by {@link DelegatingOsUpgrader} */
     private static final int MAX_DELEGATED_UPGRADES = 30;
-
-    /** The maximum number of concurrent upgrades (rebuilds) per node type triggered by {@link RebuildingOsUpgrader} */
-    private static final int MAX_REBUILDS = 10;
 
     private final NodeRepository nodeRepository;
     private final CuratorDatabaseClient db;

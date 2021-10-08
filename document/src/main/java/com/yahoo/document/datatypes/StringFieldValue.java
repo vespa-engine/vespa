@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
 import com.google.common.collect.ImmutableList;
@@ -74,7 +74,6 @@ public class StringFieldValue extends FieldValue {
      * Returns {@link com.yahoo.document.DataType}.STRING.
      *
      * @return DataType.STRING, always
-     * @see com.yahoo.document.DataType
      */
     @Override
     public DataType getDataType() {

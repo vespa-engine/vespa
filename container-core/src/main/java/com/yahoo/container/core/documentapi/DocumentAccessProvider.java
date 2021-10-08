@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.core.documentapi;
 
 import com.google.inject.Inject;
@@ -22,10 +22,10 @@ public class DocumentAccessProvider extends AbstractComponent implements Provide
 
     @Inject
     public DocumentAccessProvider(DocumentmanagerConfig documentmanagerConfig, LoadTypeConfig loadTypeConfig,
-                                  SlobroksConfig slobroksConfig, MessagebusConfig messagebusConfig,
-                                  DocumentProtocolPoliciesConfig policiesConfig, DistributionConfig distributionConfig) {
-        this.access = new VespaDocumentAccess(documentmanagerConfig, loadTypeConfig, slobroksConfig, messagebusConfig,
-                                              policiesConfig, distributionConfig);
+                                  MessagebusConfig messagebusConfig, DocumentProtocolPoliciesConfig policiesConfig,
+                                  DistributionConfig distributionConfig) {
+        this.access = new VespaDocumentAccess(documentmanagerConfig, loadTypeConfig, System.getProperty("config.id"),
+                                              messagebusConfig, policiesConfig, distributionConfig);
     }
 
     @Override

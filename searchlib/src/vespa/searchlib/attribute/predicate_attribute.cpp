@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_header.h"
 #include "iattributesavetarget.h"
@@ -185,7 +185,7 @@ struct DummyObserver : SimpleIndexDeserializeObserver<> {
 }
 
 bool
-PredicateAttribute::onLoad()
+PredicateAttribute::onLoad(vespalib::Executor *)
 {
     auto loaded_buffer = attribute::LoadUtils::loadDAT(*this);
     char *rawBuffer = const_cast<char *>(static_cast<const char *>(loaded_buffer->buffer()));

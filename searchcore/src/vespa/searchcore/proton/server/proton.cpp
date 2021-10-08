@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "disk_mem_usage_sampler.h"
 #include "document_db_explorer.h"
@@ -943,8 +943,9 @@ Proton::get_child(vespalib::stringref name) const
         return std::make_unique<FlushEngineExplorer>(*_flushEngine);
     } else if (name == TLS_NAME && _tls) {
         return std::make_unique<search::transactionlog::TransLogServerExplorer>(_tls->getTransLogServer());
-    } else if (name == RESOURCE_USAGE && _diskMemUsageSampler) {
-        return std::make_unique<ResourceUsageExplorer>(_diskMemUsageSampler->writeFilter());
+    } else if (name == RESOURCE_USAGE && _diskMemUsageSampler && _persistenceEngine) {
+        return std::make_unique<ResourceUsageExplorer>(_diskMemUsageSampler->writeFilter(),
+                                                       _persistenceEngine->get_resource_usage_tracker());
     } else if (name == THREAD_POOLS) {
         return std::make_unique<ProtonThreadPoolsExplorer>(_sharedExecutor.get(),
                                                            (_matchEngine) ? &_matchEngine->get_executor() : nullptr,

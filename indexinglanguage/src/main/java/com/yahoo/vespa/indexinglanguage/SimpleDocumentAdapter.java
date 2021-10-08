@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.DataType;
@@ -76,7 +76,6 @@ public class SimpleDocumentAdapter implements DocumentAdapter {
         }
     }
 
-    @SuppressWarnings({ "unchecked" })
     @Override
     public SimpleDocumentAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
         Field field = output.getField(fieldName);
@@ -87,4 +86,5 @@ public class SimpleDocumentAdapter implements DocumentAdapter {
         output.setFieldValue(field, fieldValue);
         return this;
     }
+
 }

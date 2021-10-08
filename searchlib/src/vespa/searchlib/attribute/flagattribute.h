@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "multinumericattribute.h"
@@ -29,7 +29,7 @@ private:
         template <class SC> friend class FlagAttributeIteratorT;
         template <class SC> friend class FlagAttributeIteratorStrict;
     };
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
     bool onLoadEnumerated(ReaderBase &attrReader) override;
     AttributeVector::SearchContext::UP
     getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;

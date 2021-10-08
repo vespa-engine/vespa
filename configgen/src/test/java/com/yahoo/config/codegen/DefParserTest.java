@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.codegen;
 
 import static org.junit.Assert.*;
@@ -86,15 +86,16 @@ public class DefParserTest {
         assertLineFails(line, "Could not create sting a");
     }
 
+    // Note: Version is not used anymore, so will always be empty
     @Test
     public void testValidVersions() {
         try {
-            testExpectedVersion("version=8", "8");
-            testExpectedVersion("version=8-1", "8-1");
-            testExpectedVersion("version =8", "8");
-            testExpectedVersion("version = 8", "8");
-            testExpectedVersion("version = 8 ", "8");
-            testExpectedVersion("version =\t8", "8");
+            testExpectedVersion("version=8", "");
+            testExpectedVersion("version=8-1", "");
+            testExpectedVersion("version =8", "");
+            testExpectedVersion("version = 8", "");
+            testExpectedVersion("version = 8 ", "");
+            testExpectedVersion("version =\t8", "");
         } catch (Exception e) {
             e.printStackTrace();
             fail();

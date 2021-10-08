@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "pending_bucket_space_db_transition_entry.h"
@@ -15,13 +15,13 @@
 
 namespace storage::distributor {
 
+class BucketSpaceStateMap;
 class DistributorMessageSender;
 class PendingBucketSpaceDbTransition;
-class DistributorBucketSpaceRepo;
 class StripeAccessGuard;
 
 /**
- * Class used by BucketDBUpdater to track request bucket info
+ * Class used by TopLevelBucketDBUpdater to track request bucket info
  * messages sent to the storage nodes.
  */
 class PendingClusterState : public vespalib::XmlSerializable {
@@ -45,14 +45,14 @@ public:
             const framework::Clock& clock,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
-            DistributorBucketSpaceRepo& bucketSpaceRepo,
+            const BucketSpaceStateMap& bucket_space_states,
             const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
             const OutdatedNodesMap &outdatedNodesMap,
             api::Timestamp creationTimestamp)
     {
         // Naked new due to private constructor
         return std::unique_ptr<PendingClusterState>(new PendingClusterState(
-                clock, clusterInfo, sender, bucketSpaceRepo,
+                clock, clusterInfo, sender, bucket_space_states,
                 newStateCmd, outdatedNodesMap, creationTimestamp));
     }
 
@@ -64,12 +64,12 @@ public:
             const framework::Clock& clock,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
-            DistributorBucketSpaceRepo& bucketSpaceRepo,
+            const BucketSpaceStateMap& bucket_space_states,
             api::Timestamp creationTimestamp)
     {
         // Naked new due to private constructor
         return std::unique_ptr<PendingClusterState>(new PendingClusterState(
-                clock, clusterInfo, sender, bucketSpaceRepo, creationTimestamp));
+                clock, clusterInfo, sender, bucket_space_states, creationTimestamp));
     }
 
     PendingClusterState(const PendingClusterState &) = delete;
@@ -146,7 +146,6 @@ public:
     /**
      * Merges all the results with the corresponding bucket databases.
      */
-    void mergeIntoBucketDatabases();
     void merge_into_bucket_databases(StripeAccessGuard& guard);
 
     // Get pending transition for a specific bucket space. Only used by unit test.
@@ -169,7 +168,7 @@ private:
             const framework::Clock&,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
-            DistributorBucketSpaceRepo& bucketSpaceRepo,
+            const BucketSpaceStateMap& bucket_space_states,
             const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
             const OutdatedNodesMap &outdatedNodesMap,
             api::Timestamp creationTimestamp);
@@ -182,7 +181,7 @@ private:
             const framework::Clock&,
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
-            DistributorBucketSpaceRepo& bucketSpaceRepo,
+            const BucketSpaceStateMap& bucket_space_states,
             api::Timestamp creationTimestamp);
 
     struct BucketSpaceAndNode {
@@ -229,7 +228,7 @@ private:
     api::Timestamp _creationTimestamp;
 
     DistributorMessageSender& _sender;
-    DistributorBucketSpaceRepo& _bucketSpaceRepo;
+    const BucketSpaceStateMap& _bucket_space_states;
     uint32_t _clusterStateVersion;
     bool _isVersionedTransition;
     bool _bucketOwnershipTransfer;

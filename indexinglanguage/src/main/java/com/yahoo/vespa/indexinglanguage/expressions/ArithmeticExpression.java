@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -68,17 +68,17 @@ public final class ArithmeticExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
-        ctx.setValue(evaluate(ctx.setValue(input).execute(lhs).getValue(),
-                              ctx.setValue(input).execute(rhs).getValue()));
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getValue();
+        context.setValue(evaluate(context.setValue(input).execute(lhs).getValue(),
+                                  context.setValue(input).execute(rhs).getValue()));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
-        context.setValue(evaluate(context.setValue(input).execute(lhs).getValue(),
-                                  context.setValue(input).execute(rhs).getValue()));
+        DataType input = context.getValueType();
+        context.setValueType(evaluate(context.setValueType(input).execute(lhs).getValueType(),
+                                      context.setValueType(input).execute(rhs).getValueType()));
     }
 
     private static DataType requiredInputType(Expression lhs, Expression rhs) {

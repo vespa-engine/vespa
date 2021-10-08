@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application;
 
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
@@ -11,7 +11,11 @@ import com.google.common.annotations.Beta;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.impl.StandaloneContainerRunner;
 import com.yahoo.application.content.ContentCluster;
-import com.yahoo.config.*;
+import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.InnerNode;
+import com.yahoo.config.InnerNodeVector;
+import com.yahoo.config.LeafNode;
+import com.yahoo.config.LeafNodeVector;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
@@ -37,7 +41,13 @@ import java.net.BindException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 
 /**
  * Contains one or more containers built from services.xml.
@@ -118,8 +128,8 @@ public final class Application implements AutoCloseable {
             List<MlModelImporter> modelImporters = List.of(new VespaImporter(),
                                                            new TensorFlowImporter(),
                                                            new OnnxImporter(),
-                                                           new LightGBMImporter(),
-                                                           new XGBoostImporter());
+                                                           new XGBoostImporter(),
+                                                           new LightGBMImporter());
             DeployState deployState = new DeployState.Builder()
                     .applicationPackage(FilesApplicationPackage.fromFile(path.toFile(), true))
                     .modelImporters(modelImporters)

@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(configdefinitions
     SOURCES
     INSTALL lib64
@@ -20,8 +20,6 @@ vespa_generate_config(configdefinitions curator.def)
 install_config_definition(curator.def cloud.config.curator.def)
 vespa_generate_config(configdefinitions dispatch.def)
 install_config_definition(dispatch.def vespa.config.search.dispatch.def)
-vespa_generate_config(configdefinitions filereferences.def)
-install_config_definition(filereferences.def cloud.config.filedistribution.filereferences.def)
 vespa_generate_config(configdefinitions fleetcontroller.def)
 install_config_definition(fleetcontroller.def vespa.config.content.fleetcontroller.def)
 vespa_generate_config(configdefinitions ilscripts.def)

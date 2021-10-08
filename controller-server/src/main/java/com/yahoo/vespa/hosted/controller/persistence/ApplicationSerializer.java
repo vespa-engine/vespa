@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
@@ -107,6 +107,7 @@ public class ApplicationSerializer {
     private static final String branchField = "branchField";
     private static final String commitField = "commitField";
     private static final String authorEmailField = "authorEmailField";
+    private static final String deployedDirectlyField = "deployedDirectly";
     private static final String compileVersionField = "compileVersion";
     private static final String buildTimeField = "buildTime";
     private static final String sourceUrlField = "sourceUrl";
@@ -228,6 +229,7 @@ public class ApplicationSerializer {
         applicationVersion.buildTime().ifPresent(time -> object.setLong(buildTimeField, time.toEpochMilli()));
         applicationVersion.sourceUrl().ifPresent(url -> object.setString(sourceUrlField, url));
         applicationVersion.commit().ifPresent(commit -> object.setString(commitField, commit));
+        object.setBool(deployedDirectlyField, applicationVersion.isDeployedDirectly());
     }
 
     private void toSlime(SourceRevision sourceRevision, Cursor object) {
@@ -422,7 +424,11 @@ public class ApplicationSerializer {
         Optional<String> sourceUrl = SlimeUtils.optionalString(object.field(sourceUrlField));
         Optional<String> commit = SlimeUtils.optionalString(object.field(commitField));
 
-        return new ApplicationVersion(sourceRevision, applicationBuildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit);
+        // TODO (freva): Simplify once this has rolled out everywhere
+        Inspector deployedDirectlyInspector = object.field(deployedDirectlyField);
+        boolean deployedDirectly = deployedDirectlyInspector.valid() && deployedDirectlyInspector.asBool();
+
+        return new ApplicationVersion(sourceRevision, applicationBuildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly);
     }
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {

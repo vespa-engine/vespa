@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configconverter.h"
 
@@ -108,6 +108,7 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     retval.setIsFilter(cfg.enableonlybitvector);
     retval.setFastAccess(cfg.fastaccess);
     retval.setMutable(cfg.ismutable);
+    retval.setPaged(cfg.paged);
     predicateParams.setArity(cfg.arity);
     predicateParams.setBounds(cfg.lowerbound, cfg.upperbound);
     predicateParams.setDensePostingListThreshold(cfg.densepostinglistthreshold);

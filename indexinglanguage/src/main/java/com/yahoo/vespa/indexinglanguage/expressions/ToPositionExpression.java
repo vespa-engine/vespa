@@ -1,8 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.PositionDataType;
 
 /**
@@ -14,13 +13,13 @@ public final class ToPositionExpression extends Expression {
         super(DataType.STRING);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(PositionDataType.fromString(String.valueOf(ctx.getValue())));
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(PositionDataType.fromString(String.valueOf(context.getValue())));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

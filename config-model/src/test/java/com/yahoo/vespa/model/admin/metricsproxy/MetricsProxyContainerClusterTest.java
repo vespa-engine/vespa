@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
@@ -51,8 +51,7 @@ public class MetricsProxyContainerClusterTest {
         var builder = new PlatformBundlesConfig.Builder();
         model.getConfig(builder, CLUSTER_CONFIG_ID);
         PlatformBundlesConfig config = builder.build();
-        assertEquals(1, config.bundlePaths().size());
-        assertThat(config.bundlePaths(0), endsWith(METRICS_PROXY_BUNDLE_FILE.toString()));
+        assertThat(config.bundlePaths(), hasItem(endsWith(METRICS_PROXY_BUNDLE_FILE.toString())));
     }
 
     @Test

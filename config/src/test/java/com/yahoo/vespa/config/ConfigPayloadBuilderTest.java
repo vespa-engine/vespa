@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.slime.Cursor;
@@ -31,7 +31,7 @@ public class ConfigPayloadBuilderTest {
 
     @Before
     public void setupBuilder() {
-        ConfigDefinition def = new ConfigDefinition("foo", "1", "bar");
+        ConfigDefinition def = new ConfigDefinition("foo","bar");
         def.addBoolDef("boolval");
         ConfigDefinition mystruct = def.structDef("mystruct");
         mystruct.addIntDef("foofield");

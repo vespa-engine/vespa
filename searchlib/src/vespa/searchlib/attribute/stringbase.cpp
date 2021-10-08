@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributevector.hpp"
 #include "load_utils.h"
@@ -364,7 +364,7 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
 }
 
 bool
-StringAttribute::onLoad()
+StringAttribute::onLoad(vespalib::Executor *)
 {
     ReaderBase attrReader(*this);
     bool ok(attrReader.getHasLoadData());

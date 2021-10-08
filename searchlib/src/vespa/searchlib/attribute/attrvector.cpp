@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attrvector.h"
 #include "attrvector.hpp"
@@ -116,7 +116,7 @@ void addString(const char * v, StringAttribute::OffsetVector & offsets, std::vec
     buffer.push_back('\0');
 }
 
-bool StringDirectAttribute::onLoad()
+bool StringDirectAttribute::onLoad(vespalib::Executor *)
 {
     {
         std::vector<char> empty;

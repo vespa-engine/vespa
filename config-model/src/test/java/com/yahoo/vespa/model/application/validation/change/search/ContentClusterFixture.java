@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.documentmodel.NewDocumentType;
@@ -29,6 +29,13 @@ public abstract class ContentClusterFixture {
     public ContentClusterFixture(String currentSd, String nextSd) throws Exception {
         currentCluster = createCluster(currentSd);
         nextCluster = createCluster(nextSd);
+    }
+
+    public ContentClusterFixture(String entireSd) throws Exception {
+        currentCluster = new ContentClusterBuilder().build(
+            ContentClusterUtils.createMockRoot(Arrays.asList(entireSd)));
+        nextCluster = new ContentClusterBuilder().build(
+            ContentClusterUtils.createMockRoot(Arrays.asList(entireSd)));
     }
 
     private static ContentCluster createCluster(String sdContent) throws Exception {

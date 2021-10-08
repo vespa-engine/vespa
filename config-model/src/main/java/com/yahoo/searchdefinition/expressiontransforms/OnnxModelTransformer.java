@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.path.Path;
@@ -75,7 +75,7 @@ public class OnnxModelTransformer extends ExpressionTransformer<RankProfileTrans
         if (onnxModel == null) {
             String path = asString(arguments.expressions().get(0));
             ModelName modelName = new ModelName(null, Path.fromString(path), true);
-            ConvertedModel convertedModel = ConvertedModel.fromStore(modelName, path, rankProfile);
+            ConvertedModel convertedModel = ConvertedModel.fromStore(search.applicationPackage(), modelName, path, rankProfile);
             FeatureArguments featureArguments = new FeatureArguments(arguments);
             return convertedModel.expression(featureArguments, null);
         }

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.restapi;
 
 import com.yahoo.container.jdisc.HttpRequest;
@@ -77,5 +77,11 @@ public class RestApiException extends RuntimeException {
         public Conflict() { this("Conflict", null); }
         public Conflict(String message) { this(message, null); }
         public Conflict(String message, Throwable cause) { super(ErrorResponse::conflict, message, cause); }
+    }
+
+    public static class Unauthorized extends RestApiException {
+        public Unauthorized() { this("Unauthorized", null); }
+        public Unauthorized(String message) { this(message, null); }
+        public Unauthorized(String message, Throwable cause) { super(ErrorResponse::unauthorized, message, cause); }
     }
 }

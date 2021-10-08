@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -25,11 +25,13 @@ private:
     void consider_remove_from_index(DocId docid);
     vespalib::MemoryUsage update_stat() override;
     vespalib::MemoryUsage memory_usage() const override;
-
+    void populate_address_space_usage(AddressSpaceUsage& usage) const override;
+    class ThreadedLoader;
+    class ForegroundLoader;
 public:
     DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                          const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
-    virtual ~DenseTensorAttribute();
+    ~DenseTensorAttribute() override;
     // Implements AttributeVector and ITensorAttribute
     uint32_t clearDoc(DocId docId) override;
     void setTensor(DocId docId, const vespalib::eval::Value &tensor) override;
@@ -38,13 +40,15 @@ public:
     std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
     vespalib::eval::TypedCells extract_cells_ref(DocId docId) const override;
     bool supports_extract_cells_ref() const override { return true; }
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
     std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     void compactWorst() override;
     uint32_t getVersion() const override;
+    void onCommit() override;
     void onGenerationChange(generation_t next_gen) override;
     void removeOldGenerations(generation_t first_used_gen) override;
     void get_state(const vespalib::slime::Inserter& inserter) const override;
+    void onShrinkLidSpace() override;
 
     // Implements DocVectorAccess
     vespalib::eval::TypedCells get_vector(uint32_t docid) const override;

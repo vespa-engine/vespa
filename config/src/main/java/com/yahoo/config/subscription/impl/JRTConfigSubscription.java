@@ -1,7 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.ConfigInterruptedException;
 import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.subscription.ConfigSourceSet;
@@ -15,14 +16,17 @@ import com.yahoo.vespa.config.protocol.Payload;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
 /**
- * A JRT config subscription uses one {@link JRTConfigRequester} to fetch config using Vespa RPC from a config source, typically proxy or server
+ * A config subscription for a config instance, gets config using Vespa RPC from a config source
+ * (config proxy or config server).
  *
  * @author vegardh
  */
@@ -35,10 +39,10 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     private Instant lastOK = Instant.MIN;
 
     /**
-     * The queue containing either nothing or the one (newest) request that has got callback from JRT,
+     * A queue containing either zero or one (the newest) request that got a callback from JRT,
      * but has not yet been handled.
      */
-    private LinkedBlockingQueue<JRTClientConfigRequest> reqQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<JRTClientConfigRequest> reqQueue = new LinkedBlockingQueue<>();
     private ConfigSourceSet sources;
 
     public JRTConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource source, TimingValues timingValues) {
@@ -51,47 +55,19 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
 
     @Override
     public boolean nextConfig(long timeoutMillis) {
-        // These flags may have been left true from a previous call, since ConfigSubscriber's nextConfig
-        // not necessarily returned true and reset the flags then
-        ConfigState<T> configState = getConfigState();
-        boolean gotNew = configState.isGenerationChanged() || configState.isConfigChanged() || hasException();
-        // Return that now, if there's nothing in queue, so that ConfigSubscriber can move on to other subscriptions to check
-        if (getReqQueue().peek() == null && gotNew) {
-            return true;
-        }
-        // Otherwise poll the queue for another generation or timeout
-        //
         // Note: since the JRT callback thread will clear the queue first when it inserts a brand new element,
-        // there is a race here. However: the caller will handle it no matter what it gets from the queue here,
-        // the important part is that local state on the subscription objects is preserved.
-        if (!pollQueue(timeoutMillis)) return gotNew;
-        configState = getConfigState();
-        gotNew = configState.isGenerationChanged() || configState.isConfigChanged() || hasException();
-        return gotNew;
-    }
+        // (see #updateConfig()) there is a race here. However: the caller will handle it no matter what it gets
+        // from the queue here, the important part is that local state on the subscription objects is preserved.
 
-    /**
-     * Polls the callback queue and <em>maybe</em> sets the following (caller must check):
-     * generation, generation changed, config, config changed
-     * Important: it never <em>resets</em> those flags, we must persist that state until the
-     * {@link ConfigSubscriber} clears it
-     *
-     * @param timeoutMillis timeout when polling (returns after at most this time)
-     * @return true if it got anything off the queue and <em>maybe</em> changed any state, false if timed out taking from queue
-     */
-    private boolean pollQueue(long timeoutMillis) {
-        JRTClientConfigRequest jrtReq;
-        try {
-            // Only valid responses are on queue, no need to validate
-            jrtReq = getReqQueue().poll(timeoutMillis, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e1) {
-            throw new ConfigInterruptedException(e1);
-        }
-        if (jrtReq == null) {
-            // timed out, we know nothing new.
-            return false;
-        }
+        // Poll the queue for a next config until timeout
+        JRTClientConfigRequest jrtReq = pollQueue(timeoutMillis);
+        if (jrtReq == null) return newConfigOrException();
+
         log.log(FINE, () -> "Polled queue and found config " + jrtReq);
+        // Might set the following (caller must check):
+        // generation, generation changed, config, config changed
+        // Important: it never <em>resets</em> those flags, we must persist that state until the
+        // ConfigSubscriber clears it
         if (jrtReq.hasUpdatedGeneration()) {
             setApplyOnRestart(jrtReq.responseIsApplyOnRestart());
             if (jrtReq.hasUpdatedConfig()) {
@@ -100,7 +76,29 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
                 setGeneration(jrtReq.getNewGeneration());
             }
         }
-        return true;
+
+        return newConfigOrException();
+    }
+
+    private boolean newConfigOrException() {
+        // These flags may have been left true from a previous call, since ConfigSubscriber's nextConfig
+        // not necessarily returned true and reset the flags then
+        ConfigState<T> configState = getConfigState();
+        return configState.isGenerationChanged() || configState.isConfigChanged() || hasException();
+    }
+
+    /**
+     * Polls the callback queue for new config
+     *
+     * @param timeoutMillis timeout when polling (returns after at most this time)
+     */
+    private JRTClientConfigRequest pollQueue(long timeoutMillis) {
+        try {
+            // Only valid responses are on queue, no need to validate
+            return reqQueue.poll(timeoutMillis, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e1) {
+            throw new ConfigInterruptedException(e1);
+        }
     }
 
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
@@ -111,7 +109,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         } catch (IllegalArgumentException e) {
             badConfigE = e;
         }
-        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), configInstance);
+        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), configInstance, jrtReq.getNewChecksums());
         if (badConfigE != null) {
             throw new IllegalArgumentException("Bad config from jrt", badConfigE);
         }
@@ -129,12 +127,16 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         Payload payload = jrtRequest.getNewPayload();
         ConfigPayload configPayload = ConfigPayload.fromUtf8Array(payload.withCompression(CompressionType.UNCOMPRESSED).getData());
         T configInstance = configPayload.toInstance(configClass, jrtRequest.getConfigKey().getConfigId());
-        configInstance.setConfigMd5(jrtRequest.getNewConfigMd5());
+        configInstance.setConfigMd5(jrtRequest.getNewChecksums().getForType(MD5).asString()); // Note: Sets configmd5 in ConfigInstance
         return configInstance;
     }
 
-    LinkedBlockingQueue<JRTClientConfigRequest> getReqQueue() {
-        return reqQueue;
+    // Will be called by JRTConfigRequester when there is a config with new generation for this subscription
+    void updateConfig(JRTClientConfigRequest jrtReq) {
+        // We only want this latest generation to be in the queue, we do not preserve history in this system
+        reqQueue.clear();
+        if ( ! reqQueue.offer(jrtReq))
+            setException(new ConfigurationRuntimeException("Failed offering returned request to queue of subscription " + this));
     }
 
     @Override

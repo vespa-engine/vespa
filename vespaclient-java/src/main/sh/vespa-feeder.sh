@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # BEGIN environment bootstrap section
 # Do not edit between here and END as this section should stay identical in all scripts
@@ -81,6 +81,6 @@ java \
 -XX:ThreadStackSize=512 \
 -XX:MaxJavaStackTraceDepth=1000000 \
 -Djava.library.path=${VESPA_HOME}/libexec64/native:${VESPA_HOME}/lib64 \
--XX:MaxDirectMemorySize=32m -Djava.awt.headless=true \
+-XX:MaxDirectMemorySize=64m -Djava.awt.headless=true \
 -Xms128m -Xmx1024m $(getJavaOptionsIPV46) \
 -cp ${VESPA_HOME}/lib/jars/vespaclient-java-jar-with-dependencies.jar com.yahoo.vespafeeder.VespaFeeder "$@"

@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # This script is for uploading, preparing, activating and fetching
 # application packages to a cloud config server
 
@@ -412,6 +412,7 @@ sub http_upload {
         debug("output=$output\n");
         $configsource_url = shift(@configsources);
         if ($configsource_url) {
+          $configsource_url =~ s/\/$//; # Remove last / from configsource_url
           $configsource_url_used = $configsource_url;
           $retry = 1;
           print_request_failed($exitcode, $configsource_url_used);

@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distributorprocess.h"
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/storage/common/storagelink.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".process.distributor");
@@ -36,14 +37,19 @@ DistributorProcess::shutdown()
 namespace {
 
 uint32_t
-adjusted_num_distributor_stripes(uint32_t cfg_n_stripes)
+adjusted_num_distributor_stripes(int32_t cfg_n_stripes)
 {
-    uint32_t adjusted_n_stripes = storage::adjusted_num_stripes(cfg_n_stripes);
-    if (adjusted_n_stripes != cfg_n_stripes) {
-        LOG(warning, "Configured number of distributor stripes (%u) is not valid. Adjusting to a valid value (%u)",
-            cfg_n_stripes, adjusted_n_stripes);
+    if (cfg_n_stripes <= 0) {
+        uint32_t cpu_cores = std::thread::hardware_concurrency();
+        return storage::tune_num_stripes_based_on_cpu_cores(cpu_cores);
+    } else {
+        uint32_t adjusted_n_stripes = storage::adjusted_num_stripes(cfg_n_stripes);
+        if (adjusted_n_stripes != static_cast<uint32_t>(cfg_n_stripes)) {
+            LOG(warning, "Configured number of distributor stripes (%d) is not valid. Adjusting to a valid value (%u)",
+                cfg_n_stripes, adjusted_n_stripes);
+        }
+        return adjusted_n_stripes;
     }
-    return adjusted_n_stripes;
 }
 
 }

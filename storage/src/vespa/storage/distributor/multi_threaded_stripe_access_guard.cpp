@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "multi_threaded_stripe_access_guard.h"
 #include "distributor_stripe.h"
 #include "distributor_stripe_pool.h"
@@ -51,9 +51,11 @@ void MultiThreadedStripeAccessGuard::clear_pending_cluster_state_bundle() {
     });
 }
 
-void MultiThreadedStripeAccessGuard::enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state) {
+void MultiThreadedStripeAccessGuard::enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,
+                                                                 bool has_bucket_ownership_change)
+{
     for_each_stripe([&](TickableStripe& stripe) {
-        stripe.enable_cluster_state_bundle(new_state);
+        stripe.enable_cluster_state_bundle(new_state, has_bucket_ownership_change);
     });
 }
 
@@ -138,8 +140,11 @@ void MultiThreadedStripeAccessGuard::report_bucket_db_status(document::BucketSpa
 
 StripeAccessGuard::PendingOperationStats
 MultiThreadedStripeAccessGuard::pending_operation_stats() const {
-    // TODO STRIPE multiple stripes
-    return first_stripe().pending_operation_stats();
+    StripeAccessGuard::PendingOperationStats stats(0, 0);
+    for_each_stripe([&](const TickableStripe& stripe) {
+        stats.merge(stripe.pending_operation_stats());
+    });
+    return stats;
 }
 
 void MultiThreadedStripeAccessGuard::report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const {
@@ -152,14 +157,6 @@ void MultiThreadedStripeAccessGuard::report_delayed_single_bucket_requests(vespa
     for_each_stripe([&](TickableStripe& stripe) {
         stripe.report_delayed_single_bucket_requests(xos);
     });
-}
-
-TickableStripe& MultiThreadedStripeAccessGuard::first_stripe() noexcept {
-    return _stripe_pool.stripe_thread(0).stripe();
-}
-
-const TickableStripe& MultiThreadedStripeAccessGuard::first_stripe() const noexcept {
-    return _stripe_pool.stripe_thread(0).stripe();
 }
 
 template <typename Func>

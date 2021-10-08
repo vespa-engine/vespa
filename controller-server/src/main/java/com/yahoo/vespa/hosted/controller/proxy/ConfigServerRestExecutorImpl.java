@@ -1,7 +1,6 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
-import ai.vespa.util.http.hc4.retry.Sleeper;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.http.HttpRequest.Method;
@@ -10,6 +9,7 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.yolean.concurrent.Sleeper;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -69,7 +69,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
 
     @Inject
     public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, ServiceIdentityProvider sslContextProvider) {
-        this(zoneRegistry, sslContextProvider.getIdentitySslContext(), new Sleeper.Default(),
+        this(zoneRegistry, sslContextProvider.getIdentitySslContext(), Sleeper.DEFAULT,
              new ConnectionReuseStrategy(zoneRegistry));
     }
 

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node;
 
 import com.yahoo.collections.ListMap;
@@ -236,13 +236,15 @@ public class Nodes {
      * transaction commits.
      */
     public List<Node> deactivate(List<Node> nodes, ApplicationTransaction transaction) {
+        if ( ! zone.environment().isProduction() || zone.system().isCd())
+            return deallocate(nodes, Agent.application, "Deactivated by application", transaction.nested());
+
         var stateless = NodeList.copyOf(nodes).stateless();
         var stateful  = NodeList.copyOf(nodes).stateful();
         List<Node> written = new ArrayList<>();
         written.addAll(deallocate(stateless.asList(), Agent.application, "Deactivated by application", transaction.nested()));
         written.addAll(db.writeTo(Node.State.inactive, stateful.asList(), Agent.application, Optional.empty(), transaction.nested()));
         return written;
-
     }
 
     /**

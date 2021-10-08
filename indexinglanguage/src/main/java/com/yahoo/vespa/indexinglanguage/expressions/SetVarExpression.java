@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -20,13 +20,13 @@ public final class SetVarExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setVariable(varName, ctx.getValue());
+    protected void doExecute(ExecutionContext context) {
+        context.setVariable(varName, context.getValue());
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType next = context.getValue();
+        DataType next = context.getValueType();
         DataType prev = context.getVariable(varName);
         if (prev != null && !prev.equals(next)) {
             throw new VerificationException(this, "Attempting to assign conflicting types to variable '" + varName +

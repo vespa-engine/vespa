@@ -1,4 +1,4 @@
-<!-- Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 
 [![#Vespa](https://vespa.ai/assets/vespa-logo-color.png)](https://vespa.ai)
 
@@ -6,7 +6,7 @@ The open big data serving engine - Store, search, organize and make machine-lear
 over big data at serving time.
 
 This is the primary repository for Vespa where all development is happening. 
-New production releases from this repository's master branch are made each weekday from Monday to Thursday.
+New production releases from this repository's master branch are made each weekday from Monday through Thursday.
 
 * Home page: [https://vespa.ai](https://vespa.ai)  
 * Documentation: [https://docs.vespa.ai](https://docs.vespa.ai)  
@@ -50,7 +50,7 @@ Or deploy your Vespa applications to the cloud service: [https://cloud.vespa.ai]
 - Explore the [sample applications](https://github.com/vespa-engine/sample-apps/tree/master)
 - Follow the [Vespa Blog](https://blog.vespa.ai/) for feature updates / use cases
 
-Full documentation is available on [https://docs.vespa.ai](https://docs.vespa.ai).
+Full documentation is at [https://docs.vespa.ai](https://docs.vespa.ai).
 
 
 ## Contribute

@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "openssl_crypto_codec_impl.h"
 #include "openssl_tls_context_impl.h"
 #include "direct_buffer_bio.h"
@@ -369,7 +369,8 @@ HandshakeResult OpenSslCryptoCodecImpl::do_handshake_and_consume_peer_input_byte
             LOG(error, "SSL handshake is not completed even though no more peer data is requested");
             return handshake_failed();
         }
-        LOG(debug, "SSL_do_handshake() is complete, using protocol %s", SSL_get_version(_ssl.get()));
+        LOG(debug, "SSL_do_handshake() with %s is complete, using protocol %s",
+            _peer_address.spec().c_str(), SSL_get_version(_ssl.get()));
         ConnectionStatistics::get(_mode == Mode::Server).inc_tls_connections();
         return handshake_consumed_bytes_and_is_complete(static_cast<size_t>(consumed));
     } else {

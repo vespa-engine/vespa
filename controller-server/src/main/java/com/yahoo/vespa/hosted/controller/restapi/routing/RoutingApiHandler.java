@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
@@ -31,8 +32,10 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This implements the /routing/v1 API, which provides operator with global routing control at both zone- and
@@ -85,9 +88,50 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}")) return application(path, request);
         if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}/instance/{instance}")) return instance(path, request);
         if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deployment(path);
+        if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}/instance/{instance}/endpoint")) return endpoints(path);
         if (path.matches("/routing/v1/status/environment")) return environment(request);
         if (path.matches("/routing/v1/status/environment/{environment}/region/{region}")) return zone(path);
         return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    private HttpResponse endpoints(Path path) {
+        var instanceId = instanceFrom(path);
+        var endpoints = controller.routing().endpointsOf(instanceId)
+                .sortedBy(Comparator.comparing(Endpoint::name))
+                .asList();
+
+        var deployments = endpoints.stream()
+                .flatMap(e -> e.zones().stream())
+                .distinct()
+                .map(zoneId -> new DeploymentId(instanceId, zoneId))
+                .sorted(Comparator.comparing(DeploymentId::dottedString))
+                .collect(Collectors.toList());
+
+        var deploymentsStatus = deployments.stream()
+                .collect(Collectors.toMap(
+                        deploymentId -> deploymentId,
+                        deploymentId -> Stream.concat(
+                                directGlobalRoutingStatus(deploymentId).stream(),
+                                sharedGlobalRoutingStatus(deploymentId).stream()
+                        ).collect(Collectors.toList())
+                ));
+
+        var slime = new Slime();
+        var root = slime.setObject();
+        var endpointsRoot = root.setArray("endpoints");
+        endpoints.forEach(endpoint -> {
+            var endpointRoot = endpointsRoot.addObject();
+            endpointToSlime(endpointRoot, endpoint);
+            var zonesRoot = endpointRoot.setArray("zones");
+            endpoint.zones().stream().sorted(Comparator.comparing(ZoneId::value)).forEach(zoneId -> {
+                var deploymentId = new DeploymentId(instanceId, zoneId);
+                deploymentsStatus.getOrDefault(deploymentId, List.of()).forEach(status -> {
+                    deploymentStatusToSlime(zonesRoot.addObject(), deploymentId, status, endpoint.routingMethod());
+                });
+            });
+        });
+
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse environment(HttpRequest request) {
@@ -241,40 +285,48 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                 for (var zone : zones) {
                     var deploymentId = requireDeployment(new DeploymentId(instance.id(), zone), instance);
                     // Include status from rotation
-                    if (rotationCanRouteTo(zone)) {
-                        var rotationStatus = controller.routing().globalRotationStatus(deploymentId);
-                        // Status is equal across all global endpoints, as the status is per deployment, not per endpoint.
-                        var endpointStatus = rotationStatus.values().stream().findFirst();
-                        if (endpointStatus.isPresent()) {
-                            var changedAt = Instant.ofEpochSecond(endpointStatus.get().getEpoch());
-                            GlobalRouting.Agent agent;
-                            try {
-                                agent = GlobalRouting.Agent.valueOf(endpointStatus.get().getAgent());
-                            } catch (IllegalArgumentException e) {
-                                agent = GlobalRouting.Agent.unknown;
-                            }
-                            var status = endpointStatus.get().getStatus() == EndpointStatus.Status.in
-                                    ? GlobalRouting.Status.in
-                                    : GlobalRouting.Status.out;
-                            deploymentStatusToSlime(deploymentsArray.addObject(), deploymentId,
-                                                    new GlobalRouting(status, agent, changedAt),
-                                                    RoutingMethod.shared);
-                        }
-                    }
+                    sharedGlobalRoutingStatus(deploymentId).ifPresent(status -> {
+                        deploymentStatusToSlime(deploymentsArray.addObject(), deploymentId, status, RoutingMethod.shared);
+                    });
 
                     // Include status from routing policies
-                    var routingPolicies = controller.routing().policies().get(deploymentId);
-                    for (var policy : routingPolicies.values()) {
-                        if (policy.endpoints().isEmpty()) continue; // This policy does not apply to a global endpoint
-                        if (!controller.zoneRegistry().routingMethods(policy.id().zone()).contains(RoutingMethod.exclusive)) continue;
-                        deploymentStatusToSlime(deploymentsArray.addObject(), new DeploymentId(policy.id().owner(),
-                                                                                               policy.id().zone()),
-                                                policy.status().globalRouting(), RoutingMethod.exclusive);
-                    }
+                    directGlobalRoutingStatus(deploymentId).forEach(status -> {
+                        deploymentStatusToSlime(deploymentsArray.addObject(), deploymentId, status, RoutingMethod.exclusive);
+                    });
                 }
             }
         }
 
+    }
+
+    private Optional<GlobalRouting> sharedGlobalRoutingStatus(DeploymentId deploymentId) {
+        if (rotationCanRouteTo(deploymentId.zoneId())) {
+            var rotationStatus = controller.routing().globalRotationStatus(deploymentId);
+            // Status is equal across all global endpoints, as the status is per deployment, not per endpoint.
+            var endpointStatus = rotationStatus.values().stream().findFirst();
+            if (endpointStatus.isPresent()) {
+                var changedAt = Instant.ofEpochSecond(endpointStatus.get().getEpoch());
+                GlobalRouting.Agent agent;
+                try {
+                    agent = GlobalRouting.Agent.valueOf(endpointStatus.get().getAgent());
+                } catch (IllegalArgumentException e) {
+                    agent = GlobalRouting.Agent.unknown;
+                }
+                var status = endpointStatus.get().getStatus() == EndpointStatus.Status.in
+                        ? GlobalRouting.Status.in
+                        : GlobalRouting.Status.out;
+                return Optional.of(new GlobalRouting(status, agent, changedAt));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private List<GlobalRouting> directGlobalRoutingStatus(DeploymentId deploymentId) {
+        return controller.routing().policies().get(deploymentId).values().stream()
+                .filter(p -> ! p.endpoints().isEmpty())  // This policy does not apply to a global endpoint
+                .filter(p -> controller.zoneRegistry().routingMethods(p.id().zone()).contains(RoutingMethod.exclusive))
+                .map(p -> p.status().globalRouting())
+                .collect(Collectors.toList());
     }
 
     /** Returns whether a rotation can route traffic to given zone */
@@ -302,6 +354,14 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         object.setString("status", asString(globalRouting.status()));
         object.setString("agent", asString(globalRouting.agent()));
         object.setLong("changedAt", globalRouting.changedAt().toEpochMilli());
+    }
+
+    private static void endpointToSlime(Cursor object, Endpoint endpoint) {
+        object.setString("name", endpoint.name());
+        object.setString("dnsName", endpoint.dnsName());
+        object.setString("routingMethod", endpoint.routingMethod().name());
+        object.setString("cluster", endpoint.cluster().value());
+        object.setString("scope", endpoint.scope().name());
     }
 
     private TenantName tenantFrom(Path path) {

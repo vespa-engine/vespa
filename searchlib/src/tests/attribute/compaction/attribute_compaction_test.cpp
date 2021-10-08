@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchlib/attribute/address_space_usage.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -154,7 +154,7 @@ public:
         return status;
     }
     const Config &getConfig() const { return _v->getConfig(); }
-    AddressSpace getMultiValueAddressSpaceUsage() const {return _v->getAddressSpaceUsage().multiValueUsage(); }
+    AddressSpace getMultiValueAddressSpaceUsage() const {return _v->getAddressSpaceUsage().multi_value_usage(); }
     AddressSpace getMultiValueAddressSpaceUsage(const vespalib::string &prefix) {
         AddressSpace usage(getMultiValueAddressSpaceUsage());
         LOG(info, "address space usage %s: used=%zu, dead=%zu, limit=%zu, usage=%12.8f",

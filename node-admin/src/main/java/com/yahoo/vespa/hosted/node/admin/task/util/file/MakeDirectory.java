@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
@@ -34,8 +34,8 @@ public class MakeDirectory {
      */
     public MakeDirectory createParents() { this.createParents = true; return this; }
 
-    public MakeDirectory withOwner(String owner) { attributeSync.withOwner(owner); return this; }
-    public MakeDirectory withGroup(String group) { attributeSync.withGroup(group); return this; }
+    public MakeDirectory withOwnerId(int ownerId) { attributeSync.withOwnerId(ownerId); return this; }
+    public MakeDirectory withGroupId(int groupId) { attributeSync.withGroupId(groupId); return this; }
     public MakeDirectory withPermissions(String permissions) {
         attributeSync.withPermissions(permissions);
         return this;

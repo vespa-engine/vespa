@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
 import com.google.common.collect.ImmutableList;
@@ -401,8 +401,6 @@ public abstract class IndexedTensor implements Tensor {
 
         TensorType type();
 
-
-
         /** Sets a value by its <i>standard value order</i> index */
         void cellByDirectIndex(long index, double value);
 
@@ -414,7 +412,7 @@ public abstract class IndexedTensor implements Tensor {
     /** A bound builder can create the double array directly */
     public static abstract class BoundBuilder extends Builder implements DirectIndexBuilder {
 
-        private DimensionSizes sizes;
+        private final DimensionSizes sizes;
 
         private static DimensionSizes dimensionSizesOf(TensorType type) {
             DimensionSizes.Builder b = new DimensionSizes.Builder(type.dimensions().size());

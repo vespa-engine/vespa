@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attributevector.h"
+#include "address_space_components.h"
 #include "attribute_read_guard.h"
 #include "attributefilesavetarget.h"
 #include "attributeiterators.hpp"
 #include "attributesaver.h"
+#include "attributevector.h"
 #include "attributevector.hpp"
 #include "floatbase.h"
 #include "interlock.h"
@@ -14,14 +15,15 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/searchlib/util/file_settings.h>
+#include <vespa/searchlib/util/logutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/searchlib/util/logutil.h>
-#include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -45,8 +47,6 @@ const vespalib::string enumeratedTag = "enumerated";
 const vespalib::string dataTypeTag = "datatype";
 const vespalib::string collectionTypeTag = "collectiontype";
 const vespalib::string docIdLimitTag = "docIdLimit";
-
-constexpr size_t DIRECTIO_ALIGNMENT(4_Ki);
 
 }
 
@@ -222,22 +222,20 @@ AttributeVector::getEnumStoreValuesMemoryUsage() const
     return vespalib::MemoryUsage();
 }
 
-vespalib::AddressSpace
-AttributeVector::getEnumStoreAddressSpaceUsage() const
+void
+AttributeVector::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
-    return AddressSpaceUsage::defaultEnumStoreUsage();
-}
-
-vespalib::AddressSpace
-AttributeVector::getMultiValueAddressSpaceUsage() const
-{
-    return AddressSpaceUsage::defaultMultiValueUsage();
+    // TODO: Stop inserting defaults here when code using AddressSpaceUsage no longer require these two components.
+    usage.set(AddressSpaceComponents::enum_store, AddressSpaceComponents::default_enum_store_usage());
+    usage.set(AddressSpaceComponents::multi_value, AddressSpaceComponents::default_multi_value_usage());
 }
 
 AddressSpaceUsage
 AttributeVector::getAddressSpaceUsage() const
 {
-    return AddressSpaceUsage(getEnumStoreAddressSpaceUsage(), getMultiValueAddressSpaceUsage());
+    AddressSpaceUsage usage;
+    populate_address_space_usage(usage);
+    return usage;
 }
 
 bool
@@ -352,7 +350,7 @@ AttributeVector::isEnumeratedSaveFormat() const
 {
     vespalib::string datName(vespalib::make_string("%s.dat", getBaseFileName().c_str()));
     Fast_BufferedFile   datFile;
-    vespalib::FileHeader datHeader(DIRECTIO_ALIGNMENT);
+    vespalib::FileHeader datHeader(FileSettings::DIRECTIO_ALIGNMENT);
     if ( ! datFile.OpenReadOnly(datName.c_str()) ) {
         LOG(error, "could not open %s: %s", datFile.GetFileName(), getLastErrorString().c_str());
         throw IllegalStateException(make_string("Failed opening attribute data file '%s' for reading",
@@ -363,11 +361,15 @@ AttributeVector::isEnumeratedSaveFormat() const
     return isEnumerated(datHeader);
 }
 
-
 bool
 AttributeVector::load() {
+    return load(nullptr);
+}
+
+bool
+AttributeVector::load(vespalib::Executor * executor) {
     assert(!_loaded);
-    bool loaded = onLoad();
+    bool loaded = onLoad(executor);
     if (loaded) {
         commit();
     }
@@ -375,7 +377,7 @@ AttributeVector::load() {
     return _loaded;
 }
 
-bool AttributeVector::onLoad() { return false; }
+bool AttributeVector::onLoad(vespalib::Executor *) { return false; }
 int32_t AttributeVector::getWeight(DocId, uint32_t) const { return 1; }
 
 bool AttributeVector::findEnum(const char *, EnumHandle &) const { return false; }
@@ -645,7 +647,7 @@ IExtendAttribute *AttributeVector::getExtendInterface() { return nullptr; }
 uint64_t
 AttributeVector::getEstimatedSaveByteSize() const
 {
-    uint64_t headerSize = 4_Ki;
+    uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT;
     uint64_t totalValueCount = _status.getNumValues();
     uint64_t uniqueValueCount = _status.getNumUniqueValues();
     uint64_t docIdLimit = getCommittedDocIdLimit();

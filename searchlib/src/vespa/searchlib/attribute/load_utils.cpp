@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "i_enum_store.h"
 #include "load_utils.hpp"
@@ -23,8 +23,6 @@ LoadUtils::openFile(const AttributeVector& attr, const vespalib::string& suffix)
 {
     return FileUtil::openFile(attr.getBaseFileName() + "." + suffix);
 }
-
-
 
 FileInterfaceUP
 LoadUtils::openDAT(const AttributeVector& attr)

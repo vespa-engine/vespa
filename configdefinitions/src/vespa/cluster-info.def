@@ -1,10 +1,11 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # Information about the cluster the subscriber is a part of
 namespace=cloud.config
 
 # clusterId is same as clustername in model
 clusterId string
 nodeCount int
+nodeIndices[] int
 
 services[].index int default=-1
 services[].hostname string default="(nohostname)"

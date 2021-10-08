@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.collect.ImmutableSet;
@@ -7,6 +7,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeFlavors;
@@ -28,6 +29,7 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.hosted.provision.node.Reports;
+import com.yahoo.vespa.hosted.provision.node.TrustStoreItem;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import org.junit.Test;
 
@@ -450,12 +452,25 @@ public class NodeSerializerTest {
         Node.Builder builder = Node.create("myId", IP.Config.EMPTY, "myHostname",
                 nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
         Node node = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(builder.build()));
-        assertFalse(node.exclusiveTo().isPresent());
+        assertFalse(node.exclusiveToApplicationId().isPresent());
+        assertFalse(node.exclusiveToClusterType().isPresent());
 
-        ApplicationId exclusiveTo = ApplicationId.from("tenant1", "app1", "instance1");
-        node = builder.exclusiveTo(exclusiveTo).build();
+        ApplicationId exclusiveToApp = ApplicationId.from("tenant1", "app1", "instance1");
+        ClusterSpec.Type exclusiveToCluster = ClusterSpec.Type.admin;
+        node = builder.exclusiveToApplicationId(exclusiveToApp).exclusiveToClusterType(exclusiveToCluster).build();
         node = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
-        assertEquals(exclusiveTo, node.exclusiveTo().get());
+        assertEquals(exclusiveToApp, node.exclusiveToApplicationId().get());
+        assertEquals(exclusiveToCluster, node.exclusiveToClusterType().get());
+    }
+
+    @Test
+    public void truststore_serialization() {
+        Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
+        assertEquals(List.of(), node.trustedCertificates());
+        List<TrustStoreItem> trustStoreItems = List.of(new TrustStoreItem("foo", Instant.parse("2023-09-01T23:59:59Z")), new TrustStoreItem("bar", Instant.parse("2025-05-20T23:59:59Z")));
+        node = node.with(trustStoreItems);
+        node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
+        assertEquals(trustStoreItems, node.trustedCertificates());
     }
 
     private byte[] createNodeJson(String hostname, String... ipAddress) {

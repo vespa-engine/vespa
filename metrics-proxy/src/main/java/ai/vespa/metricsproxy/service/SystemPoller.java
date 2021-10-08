@@ -3,6 +3,8 @@ package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
+import ai.vespa.metricsproxy.metric.model.MetricId;
+
 import java.util.logging.Level;
 
 import java.io.BufferedReader;
@@ -115,8 +117,8 @@ public class SystemPoller {
             long[] size = getMemoryUsage(s);
             log.log(Level.FINE, () -> "Updating memory metric for service " + s);
 
-            metrics.add(new Metric("memory_virt", size[memoryTypeVirtual], startTime / 1000));
-            metrics.add(new Metric("memory_rss", size[memoryTypeResident], startTime / 1000));
+            metrics.add(new Metric(MetricId.toMetricId("memory_virt"), size[memoryTypeVirtual], startTime / 1000));
+            metrics.add(new Metric(MetricId.toMetricId("memory_rss"), size[memoryTypeResident], startTime / 1000));
 
             long procJiffies = getPidJiffies(s);
             if (lastTotalCpuJiffies >= 0 && lastCpuJiffiesMetrics.containsKey(s)) {
@@ -124,7 +126,7 @@ public class SystemPoller {
                 long diff = procJiffies - last;
 
                 if (diff >= 0) {
-                    metrics.add(new Metric("cpu", 100 * ((double) diff) / (sysJiffies - lastTotalCpuJiffies), startTime / 1000));
+                    metrics.add(new Metric(MetricId.toMetricId("cpu"), 100 * ((double) diff) / (sysJiffies - lastTotalCpuJiffies), startTime / 1000));
                 }
             }
             lastCpuJiffiesMetrics.put(s, procJiffies);

@@ -5,7 +5,39 @@
       "runs": [
         {
           "versions": {
-            "targetApplication": {},
+            "targetApplication": {
+              "build": 2
+            },
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "build": 1
+            },
+            "sourcePlatform": "6.1.0"
+          },
+          "start": 0,
+          "id": 2,
+          "steps": [
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "unfinished"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "unfinished"
+            }
+          ],
+          "url": "https://some.url:43/root/run/2",
+          "status": "running"
+        },
+        {
+          "versions": {
+            "targetApplication": {
+              "build": 1
+            },
             "targetPlatform": "6.1.0"
           },
           "start": 0,

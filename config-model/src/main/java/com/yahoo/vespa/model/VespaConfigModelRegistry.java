@@ -1,11 +1,12 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.admin.AdminModel;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
-import com.yahoo.vespa.model.builder.xml.dom.*;
+import com.yahoo.vespa.model.builder.xml.dom.DomClientsBuilder;
+import com.yahoo.vespa.model.builder.xml.dom.DomRoutingBuilder;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder.Networking;
 import com.yahoo.vespa.model.content.Content;

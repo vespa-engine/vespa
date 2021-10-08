@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -23,7 +23,9 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
+import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
+import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -98,7 +100,7 @@ public class HostedDeployTest {
                 .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
                 .configserverConfig(createConfigserverConfig()).build();
         String dockerImageRepository = "docker.foo.com:4443/bar/baz";
-        tester.deployApp("src/test/apps/hosted/", Instant.now(), new PrepareParams.Builder()
+        tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
                 .vespaVersion("4.5.6")
                 .dockerImageRepository(dockerImageRepository)
                 .athenzDomain("myDomain"));
@@ -117,13 +119,39 @@ public class HostedDeployTest {
         DeployTester tester = new DeployTester.Builder()
                 .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
                 .configserverConfig(createConfigserverConfig()).build();
-        tester.deployApp("src/test/apps/hosted/", Instant.now(), new PrepareParams.Builder()
+        tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
+                .vespaVersion("4.5.6")
                 .tenantSecretStores(tenantSecretStores));
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
         assertTrue(deployment.isPresent());
         deployment.get().activate();
         assertEquals(tenantSecretStores, ((Deployment) deployment.get()).session().getTenantSecretStores());
+    }
+
+    @Test
+    public void testDeployOnUnknownVersion() throws IOException {
+        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("1.0.0")));
+        DeployTester tester = new DeployTester.Builder().modelFactories(modelFactories).configserverConfig(createConfigserverConfig()).build();
+
+        // No version requested: OK
+        tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder());
+
+        // Bootstrap deployment on wrong version: OK (Must be allowed for self-hosted upgrades.)
+        try {
+            tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder().vespaVersion("1.0.1").isBootstrap(true));
+        }
+        catch (InternalServerException expected) { // Fails actual building, since this is hosted, but self-hosted this is OK.
+            assertTrue(expected.getCause() instanceof UnknownVespaVersionException);
+        }
+
+
+        // Regular deployment with requested, unknown version: not OK.
+        try {
+            tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder().vespaVersion("1.0.1"));
+            fail("Requesting an unknown node version should not be allowed");
+        }
+        catch (UnknownVespaVersionException expected) { }
     }
 
     @Test
@@ -332,7 +360,7 @@ public class HostedDeployTest {
 
         // Deploy with version that does not exist on hosts and with app package that has no write access control,
         // validation of access control should not be done, since the app is already deployed in prod
-        tester.deployApp("src/test/apps/hosted-no-write-access-control", "6.1.0", Instant.now());
+        tester.deployApp("src/test/apps/hosted-no-write-access-control", "6.1.0");
         assertEquals(7, tester.getAllocatedHostsOf(applicationId).getHosts().size());
     }
 
@@ -343,7 +371,7 @@ public class HostedDeployTest {
         List<ModelFactory> modelFactories = List.of(createHostedModelFactory(clock),
                                                     createFailingModelFactory(Version.fromString("1.0.0"))); // older than default
         DeployTester tester = new DeployTester.Builder().modelFactories(modelFactories).configserverConfig(createConfigserverConfig()).build();
-        tester.deployApp("src/test/apps/validationOverride/", clock.instant());
+        tester.deployApp("src/test/apps/validationOverride/");
 
         // Redeployment from local active works
         {
@@ -364,7 +392,7 @@ public class HostedDeployTest {
         // However, redeployment from the outside fails after this date
         {
             try {
-                tester.deployApp("src/test/apps/validationOverride/", "myApp", Instant.now());
+                tester.deployApp("src/test/apps/validationOverride/", "myApp");
                 fail("Expected redeployment to fail");
             }
             catch (Exception expected) {

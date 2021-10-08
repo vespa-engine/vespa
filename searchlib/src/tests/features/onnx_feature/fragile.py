@@ -1,4 +1,4 @@
-# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 import onnx
 from onnx import helper, TensorProto
@@ -6,7 +6,7 @@ from onnx import helper, TensorProto
 INPUT1 = helper.make_tensor_value_info('in1', TensorProto.FLOAT, [2])
 INPUT2 = helper.make_tensor_value_info('in2', TensorProto.FLOAT, ['batch'])
 
-OUTPUT = helper.make_tensor_value_info('out', TensorProto.FLOAT, ['batch'])
+OUTPUT = helper.make_tensor_value_info('out', TensorProto.FLOAT, [2])
 
 nodes = [
     helper.make_node(

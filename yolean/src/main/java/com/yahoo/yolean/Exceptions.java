@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.yolean;
 
 import java.io.IOException;
@@ -70,6 +70,22 @@ public class Exceptions {
         }
     }
 
+    public static void uncheckInterrupted(RunnableThrowingInterruptedException runnable) {
+        try {
+            runnable.run();
+        } catch (InterruptedException e) {
+            throw new UncheckedInterruptedException(e, false);
+        }
+    }
+
+    public static void uncheckInterruptedAndRestoreFlag(RunnableThrowingInterruptedException runnable) {
+        try {
+            runnable.run();
+        } catch (InterruptedException e) {
+            throw new UncheckedInterruptedException(e, true);
+        }
+    }
+
     /**
      * Wraps any IOException thrown from a runnable in an UncheckedIOException w/message.
      */
@@ -109,6 +125,8 @@ public class Exceptions {
     public interface RunnableThrowingIOException {
         void run() throws IOException;
     }
+
+    @FunctionalInterface public interface RunnableThrowingInterruptedException { void run() throws InterruptedException; }
 
     /**
      * Wraps any IOException thrown from a supplier in an UncheckedIOException.

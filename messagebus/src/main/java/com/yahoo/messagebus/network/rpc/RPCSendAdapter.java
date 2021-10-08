@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network.rpc;
 
 import com.yahoo.component.Version;
@@ -11,13 +11,6 @@ import com.yahoo.messagebus.routing.RoutingNode;
  * @author Simon Thoresen Hult
  */
 public interface RPCSendAdapter {
-
-    /**
-     * Attaches this adapter to the given network.
-     *
-     * @param net The network to attach to.
-     */
-    void attach(RPCNetwork net);
 
     /**
      * Performs the actual sending to the given recipient.

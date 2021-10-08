@@ -1,6 +1,7 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "hamming_distance.h"
+#include <vespa/vespalib/util/binary_hamming_distance.h>
 
 using vespalib::typify_invoke;
 using vespalib::eval::TypifyCellType;
@@ -34,25 +35,9 @@ HammingDistance::calc(const vespalib::eval::TypedCells& lhs,
 {
     constexpr auto expected = vespalib::eval::CellType::INT8;
     if (__builtin_expect((lhs.type == expected && rhs.type == expected), true)) {
-        const uint64_t *words_a = static_cast<const uint64_t *>(lhs.data);
-        const uint64_t *words_b = static_cast<const uint64_t *>(rhs.data);
-        size_t sum = 0;
         size_t sz = lhs.size;
         assert(sz == rhs.size);
-        size_t i = 0;
-        for (; i * 8 + 7 < sz; ++i) {
-            uint64_t xor_bits = words_a[i] ^ words_b[i];
-            sum += __builtin_popcountl(xor_bits);
-        }
-        if (__builtin_expect((i * 8 < sz), false)) {
-            const uint8_t *bytes_a = static_cast<const uint8_t *>(lhs.data);
-            const uint8_t *bytes_b = static_cast<const uint8_t *>(rhs.data);
-            for (i *= 8; i < sz; ++i) {
-                uint64_t xor_bits = bytes_a[i] ^ bytes_b[i];
-                sum += __builtin_popcountl(xor_bits);
-            }
-        }
-        return (double)sum;
+        return (double) vespalib::binary_hamming_distance(lhs.data, rhs.data, sz);
     } else {
         return typify_invoke<2,TypifyCellType,CalcHamming>(lhs.type, rhs.type, lhs, rhs);
     }

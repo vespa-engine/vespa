@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.HashMultiset;
@@ -31,19 +31,19 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
+import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
+import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
+import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.yolean.Exceptions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -104,6 +104,7 @@ public class SessionRepository {
     private final Clock clock;
     private final Curator curator;
     private final Executor zkWatcherExecutor;
+    private final FileDistributionFactory fileDistributionFactory;
     private final PermanentApplicationPackage permanentApplicationPackage;
     private final FlagSource flagSource;
     private final TenantFileSystemDirs tenantFileSystemDirs;
@@ -114,7 +115,6 @@ public class SessionRepository {
     private final SessionPreparer sessionPreparer;
     private final Path sessionsPath;
     private final TenantName tenantName;
-    private final ConfigCurator configCurator;
     private final SessionCounter sessionCounter;
     private final SecretStore secretStore;
     private final HostProvisionerProvider hostProvisionerProvider;
@@ -123,13 +123,15 @@ public class SessionRepository {
     private final Zone zone;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
+    private final int maxNodeSize;
 
     public SessionRepository(TenantName tenantName,
                              TenantApplications applicationRepo,
                              SessionPreparer sessionPreparer,
-                             ConfigCurator configCurator,
+                             Curator curator,
                              Metrics metrics,
                              StripedExecutor<TenantName> zkWatcherExecutor,
+                             FileDistributionFactory fileDistributionFactory,
                              PermanentApplicationPackage permanentApplicationPackage,
                              FlagSource flagSource,
                              ExecutorService zkCacheExecutor,
@@ -140,15 +142,16 @@ public class SessionRepository {
                              Zone zone,
                              Clock clock,
                              ModelFactoryRegistry modelFactoryRegistry,
-                             ConfigDefinitionRepo configDefinitionRepo) {
+                             ConfigDefinitionRepo configDefinitionRepo,
+                             int maxNodeSize) {
         this.tenantName = tenantName;
-        this.configCurator = configCurator;
-        sessionCounter = new SessionCounter(configCurator, tenantName);
+        sessionCounter = new SessionCounter(curator, tenantName);
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.clock = clock;
-        this.curator = configCurator.curator();
+        this.curator = curator;
         this.sessionLifetime = Duration.ofSeconds(configserverConfig.sessionLifetime());
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
+        this.fileDistributionFactory = fileDistributionFactory;
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.flagSource = flagSource;
         this.tenantFileSystemDirs = new TenantFileSystemDirs(configServerDB, tenantName);
@@ -163,22 +166,22 @@ public class SessionRepository {
         this.zone = zone;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configDefinitionRepo = configDefinitionRepo;
+        this.maxNodeSize = maxNodeSize;
 
-        loadSessions(Flags.LOAD_LOCAL_SESSIONS_WHEN_BOOTSTRAPPING.bindTo(flagSource)); // Needs to be done before creating cache below
+        loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
     }
 
-    private void loadSessions(BooleanFlag loadLocalSessions) {
+    private void loadSessions() {
         ExecutorService executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                                 new DaemonThreadFactory("load-sessions-"));
-        loadSessions(loadLocalSessions.value(), executor);
+        loadSessions(executor);
     }
 
-    void loadSessions(boolean loadLocalSessions, ExecutorService executor) {
-        if (loadLocalSessions)
-            loadLocalSessions(executor);
+    // For testing
+    void loadSessions(ExecutorService executor) {
         loadRemoteSessions(executor);
         try {
             executor.shutdown();
@@ -207,38 +210,42 @@ public class SessionRepository {
         return List.copyOf(localSessionCache.values());
     }
 
-    private void loadLocalSessions(ExecutorService executor) {
+    public Set<LocalSession> getLocalSessionsFromFileSystem() {
         File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
-        if (sessions == null) return;
+        if (sessions == null) return Set.of();
 
-        Map<Long, Future<?>> futures = new HashMap<>();
+        Set<LocalSession> sessionIds = new HashSet<>();
         for (File session : sessions) {
             long sessionId = Long.parseLong(session.getName());
-            futures.put(sessionId, executor.submit(() -> createSessionFromId(sessionId)));
+            SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
+            File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
+            ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
+            LocalSession localSession = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
+            sessionIds.add(localSession);
         }
-        futures.forEach((sessionId, future) -> {
-            try {
-                future.get();
-                log.log(Level.FINE, () -> "Local session " + sessionId + " loaded");
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException("Could not load local session " + sessionId, e);
-            }
-        });
+        return sessionIds;
     }
 
     public ConfigChangeActions prepareLocalSession(Session session, DeployLogger logger, PrepareParams params, Instant now) {
+        params.vespaVersion().ifPresent(version -> {
+            if ( ! params.isBootstrap() && ! modelFactoryRegistry.allVersions().contains(version))
+                throw new UnknownVespaVersionException("Vespa version '" + version + "' not known by this configserver");
+        });
+
         applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
         logger.log(Level.FINE, "Created application " + params.getApplicationId());
         long sessionId = session.getSessionId();
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
-        CompletionWaiter waiter = sessionZooKeeperClient.createPrepareWaiter();
+        Optional<CompletionWaiter> waiter = params.isDryRun()
+                ? Optional.empty()
+                : Optional.of(sessionZooKeeperClient.createPrepareWaiter());
         Optional<ApplicationSet> activeApplicationSet = getActiveApplicationSet(params.getApplicationId());
         ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo.getHostValidator(), logger, params,
                                                               activeApplicationSet, now, getSessionAppDir(sessionId),
                                                               session.getApplicationPackage(), sessionZooKeeperClient)
                 .getConfigChangeActions();
         setPrepared(session);
-        waiter.awaitCompletion(params.getTimeoutBudget().timeLeft());
+        waiter.ifPresent(w -> w.awaitCompletion(params.getTimeoutBudget().timeLeft()));
         return actions;
     }
 
@@ -498,6 +505,7 @@ public class SessionRepository {
                                                                     session.getSessionId(),
                                                                     sessionZooKeeperClient,
                                                                     previousApplicationSet,
+                                                                    sessionPreparer.getExecutor(),
                                                                     curator,
                                                                     metrics,
                                                                     permanentApplicationPackage,
@@ -552,12 +560,11 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "Purging old sessions for tenant '" + tenantName + "'");
         Set<LocalSession> toDelete = new HashSet<>();
         try {
-            for (LocalSession candidate : getLocalSessions()) {
+            for (LocalSession candidate : getLocalSessionsFromFileSystem()) {
                 Instant createTime = candidate.getCreateTime();
                 log.log(Level.FINE, () -> "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
 
-                // Sessions with state other than ACTIVATE
-                if (hasExpired(candidate) && !isActiveSession(candidate)) {
+                if (hasExpired(candidate) && canBeDeleted(candidate)) {
                     toDelete.add(candidate);
                 } else if (createTime.plus(Duration.ofDays(1)).isBefore(clock.instant())) {
                     //  Sessions with state ACTIVATE, but which are not actually active
@@ -585,13 +592,14 @@ public class SessionRepository {
         return candidate.getCreateTime().plus(sessionLifetime).isBefore(clock.instant());
     }
 
-    private boolean isActiveSession(LocalSession candidate) {
-        return candidate.getStatus() == Session.Status.ACTIVATE;
+    // Sessions with state other than UNKNOWN or ACTIVATE
+    private boolean canBeDeleted(LocalSession candidate) {
+        return  ! List.of(Session.Status.UNKNOWN, Session.Status.ACTIVATE).contains(candidate.getStatus());
     }
 
     private void ensureSessionPathDoesNotExist(long sessionId) {
         Path sessionPath = getSessionPath(sessionId);
-        if (configCurator.exists(sessionPath.getAbsolute())) {
+        if (curator.exists(sessionPath)) {
             throw new IllegalArgumentException("Path " + sessionPath.getAbsolute() + " already exists in ZooKeeper");
         }
     }
@@ -775,12 +783,16 @@ public class SessionRepository {
     }
 
     Path getSessionStatePath(long sessionId) {
-        return getSessionPath(sessionId).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
+        return getSessionPath(sessionId).append(ZKApplication.SESSIONSTATE_ZK_SUBPATH);
     }
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
-        String serverId = configserverConfig.serverId();
-        return new SessionZooKeeperClient(curator, configCurator, tenantName, sessionId, serverId);
+        return new SessionZooKeeperClient(curator,
+                                          tenantName,
+                                          sessionId,
+                                          configserverConfig.serverId(),
+                                          fileDistributionFactory.createFileManager(getSessionAppDir(sessionId)),
+                                          maxNodeSize);
     }
 
     private File getAndValidateExistingSessionAppDir(long sessionId) {

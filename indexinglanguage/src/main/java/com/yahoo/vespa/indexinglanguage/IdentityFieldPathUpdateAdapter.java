@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.DataType;
@@ -65,4 +65,5 @@ public class IdentityFieldPathUpdateAdapter implements UpdateAdapter {
     public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
         fwdAdapter.tryOutputType(exp, fieldName, valueType);
     }
+
 }

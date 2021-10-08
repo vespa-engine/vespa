@@ -33,7 +33,7 @@ public abstract class SlobrokPolicy implements DocumentProtocolRoutingPolicy {
                         }
                     } catch (InterruptedException e) {
                     }
-                    firstTry = true;
+                    firstTry = false;
                 }
             }
         }

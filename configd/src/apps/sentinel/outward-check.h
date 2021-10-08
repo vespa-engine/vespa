@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -38,7 +38,7 @@ private:
     std::string _spec;
     OutwardCheckContext &_context;
 public:
-    OutwardCheck(const std::string &spec, OutwardCheckContext &context);
+    OutwardCheck(const std::string &spec, OutwardCheckContext &context, int ping_timeout);
     virtual ~OutwardCheck();
     void RequestDone(FRT_RPCRequest *req) override;
     bool ok() const { return _result == CcResult::ALL_OK; }

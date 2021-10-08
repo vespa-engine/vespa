@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.storagecluster;
 
 import com.yahoo.config.model.api.ModelContext;
@@ -32,6 +32,7 @@ public class StorServerProducer implements StorServerConfig.Producer {
     private Integer maxMergesPerNode;
     private Integer queueSize;
     private Integer bucketDBStripeBits;
+    private Boolean ignoreMergeQueueLimit;
 
     private StorServerProducer setMaxMergesPerNode(Integer value) {
         if (value != null) {
@@ -54,6 +55,7 @@ public class StorServerProducer implements StorServerConfig.Producer {
         this.clusterName = clusterName;
         maxMergesPerNode = featureFlags.maxConcurrentMergesPerNode();
         queueSize = featureFlags.maxMergeQueueSize();
+        ignoreMergeQueueLimit = featureFlags.ignoreMergeQueueLimit();
     }
 
     @Override
@@ -72,6 +74,9 @@ public class StorServerProducer implements StorServerConfig.Producer {
         }
         if (bucketDBStripeBits != null) {
             builder.content_node_bucket_db_stripe_bits(bucketDBStripeBits);
+        }
+        if (ignoreMergeQueueLimit != null) {
+            builder.disable_queue_limits_for_chained_merges(ignoreMergeQueueLimit);
         }
     }
 }

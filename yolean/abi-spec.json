@@ -12,6 +12,19 @@
     ],
     "fields": []
   },
+  "com.yahoo.yolean.Exceptions$RunnableThrowingInterruptedException": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void run()"
+    ],
+    "fields": []
+  },
   "com.yahoo.yolean.Exceptions$SupplierThrowingIOException": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -36,12 +49,31 @@
       "public static java.lang.String toMessageString(java.lang.Throwable)",
       "public static java.util.Optional findCause(java.lang.Throwable, java.lang.Class)",
       "public static void uncheck(com.yahoo.yolean.Exceptions$RunnableThrowingIOException)",
+      "public static void uncheckInterrupted(com.yahoo.yolean.Exceptions$RunnableThrowingInterruptedException)",
+      "public static void uncheckInterruptedAndRestoreFlag(com.yahoo.yolean.Exceptions$RunnableThrowingInterruptedException)",
       "public static varargs void uncheck(com.yahoo.yolean.Exceptions$RunnableThrowingIOException, java.lang.String, java.lang.String[])",
       "public static void uncheckAndIgnore(com.yahoo.yolean.Exceptions$RunnableThrowingIOException, java.lang.Class)",
       "public static java.lang.Object uncheck(com.yahoo.yolean.Exceptions$SupplierThrowingIOException)",
       "public static varargs java.lang.Object uncheck(com.yahoo.yolean.Exceptions$SupplierThrowingIOException, java.lang.String, java.lang.String[])",
       "public static java.lang.Object uncheckAndIgnore(com.yahoo.yolean.Exceptions$SupplierThrowingIOException, java.lang.Class)",
       "public static java.lang.RuntimeException throwUnchecked(java.lang.Throwable)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.yolean.UncheckedInterruptedException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.InterruptedException, boolean)",
+      "public void <init>(java.lang.InterruptedException, boolean)",
+      "public void <init>(java.lang.String, boolean)",
+      "public void <init>(java.lang.String, java.lang.InterruptedException)",
+      "public void <init>(java.lang.InterruptedException)",
+      "public java.lang.InterruptedException getCause()",
+      "public bridge synthetic java.lang.Throwable getCause()"
     ],
     "fields": []
   },
@@ -231,6 +263,25 @@
       "public java.util.Iterator iterator()"
     ],
     "fields": []
+  },
+  "com.yahoo.yolean.concurrent.Sleeper": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public void sleep(java.time.Duration)",
+      "public void sleepChecked(java.time.Duration)",
+      "public void sleep(long)",
+      "public abstract void sleepChecked(long)"
+    ],
+    "fields": [
+      "public static final com.yahoo.yolean.concurrent.Sleeper DEFAULT",
+      "public static final com.yahoo.yolean.concurrent.Sleeper NOOP"
+    ]
   },
   "com.yahoo.yolean.concurrent.ThreadRobustList": {
     "superClass": "java.lang.Object",

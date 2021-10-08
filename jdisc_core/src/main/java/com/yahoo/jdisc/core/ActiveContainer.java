@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
 import com.google.inject.AbstractModule;
@@ -106,7 +106,7 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
     }
 
     @Override
-    public ContainerSnapshot newReference(URI uri) {
+    public ContainerSnapshot newReference(URI uri, Object context) {
         String name = bindingSetSelector.select(uri);
         if (name == null) {
             throw new NoBindingSetSelectedException(uri);
@@ -116,7 +116,7 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
         if (serverBindings == null || clientBindings == null) {
             throw new BindingSetNotFoundException(name);
         }
-        return new ContainerSnapshot(this, serverBindings, clientBindings);
+        return new ContainerSnapshot(this, serverBindings, clientBindings, context);
     }
 
 }

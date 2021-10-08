@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -30,6 +31,8 @@ public class NodeRepositoryNode {
     public String flavor;
     @JsonProperty("resources")
     public NodeResources resources;
+    @JsonProperty("realResources")
+    public NodeResources realResources;
     @JsonProperty("membership")
     public Membership membership;
     @JsonProperty("owner")
@@ -80,6 +83,11 @@ public class NodeRepositoryNode {
     public String archiveUri;
     @JsonProperty("exclusiveTo")
     public String exclusiveTo;
+    @JsonProperty("history")
+    public List<Event> history;
+    @JsonProperty("trustStore")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<TrustStoreItem> trustStore;
 
     @JsonProperty("reports")
     public Map<String, JsonNode> reports = null;
@@ -95,6 +103,7 @@ public class NodeRepositoryNode {
                 ", modelName='" + modelName + '\'' +
                 ", flavor='" + flavor + '\'' +
                 ", resources=" + resources +
+                ", realResources=" + realResources +
                 ", membership=" + membership +
                 ", owner=" + owner +
                 ", restartGeneration=" + restartGeneration +
@@ -120,6 +129,7 @@ public class NodeRepositoryNode {
                 ", archiveUri=" + archiveUri +
                 ", reports=" + reports +
                 ", exclusiveTo=" + exclusiveTo +
+                ", history=" + history +
                 '}';
     }
 
@@ -195,4 +205,36 @@ public class NodeRepositoryNode {
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Event {
+        @JsonProperty
+        public String event;
+        @JsonProperty
+        public String agent;
+        @JsonProperty
+        public Long at;
+
+        @Override
+        public String toString() {
+            return "Event{" +
+                    "agent=" + agent +
+                    ", event=" + event +
+                    ", at=" + at +
+                    '}';
+        }
+    }
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class TrustStoreItem {
+        @JsonProperty ("fingerprint")
+        public String fingerprint;
+        @JsonProperty ("expiry")
+        public long expiry;
+
+        public TrustStoreItem(@JsonProperty("fingerprint") String fingerprint, @JsonProperty("expiry") long expiry) {
+            this.fingerprint = fingerprint;
+            this.expiry = expiry;
+        }
+    }
 }

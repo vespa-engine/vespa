@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_define_module(
     DEPENDS
     vespalib
@@ -12,12 +12,15 @@ vespa_define_module(
 
     TESTS
     src/tests/ann
+    src/tests/apps/eval_expr
+    src/tests/eval/addr_to_symbol
     src/tests/eval/aggr
     src/tests/eval/array_array_map
     src/tests/eval/cell_type_space
     src/tests/eval/compile_cache
     src/tests/eval/compiled_function
     src/tests/eval/fast_value
+    src/tests/eval/feature_name_extractor
     src/tests/eval/function
     src/tests/eval/function_speed
     src/tests/eval/gbdt
@@ -42,7 +45,9 @@ vespa_define_module(
     src/tests/eval/value_type
     src/tests/gp/ponder_nov2017
     src/tests/instruction/add_trivial_dimension_optimizer
+    src/tests/instruction/best_similarity_function
     src/tests/instruction/dense_dot_product_function
+    src/tests/instruction/dense_hamming_distance
     src/tests/instruction/dense_inplace_join_function
     src/tests/instruction/dense_matmul_function
     src/tests/instruction/dense_multi_matmul_function

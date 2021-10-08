@@ -1,10 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.utils;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.DefaultMonitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import org.w3c.dom.Document;
 
 import java.util.Collections;
@@ -37,7 +35,7 @@ public class ContentClusterUtils {
         return createMockRoot(provisioner, schemas, new DeployState.Builder());
     }
 
-    private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> schemas, DeployState.Builder deployStateBuilder) {
+    public static MockRoot createMockRoot(HostProvisioner provisioner, List<String> schemas, DeployState.Builder deployStateBuilder) {
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withSchemas(schemas).build();
         DeployState deployState = deployStateBuilder.applicationPackage(applicationPackage)
                           .modelHostProvisioner(provisioner)
@@ -58,11 +56,15 @@ public class ContentClusterUtils {
     }
 
     public static ContentCluster createCluster(String clusterXml, MockRoot root) {
+        ConfigModelContext.ApplicationType applicationType = ConfigModelContext.ApplicationType.DEFAULT;
+        Admin admin = new Admin(root,
+                                new DefaultMonitoring(),
+                                new Metrics(),
+                                false,
+                                root.getDeployState().isHosted(),
+                                applicationType);
         Document doc = XML.getDocument(clusterXml);
-        Admin admin = new Admin(root, new DefaultMonitoring("vespa", 60), new Metrics(), false,
-                                new FileDistributionConfigProducer(root, new MockFileRegistry(), List.of(), false),
-                                root.getDeployState().isHosted());
-        ConfigModelContext context = ConfigModelContext.create(null, root.getDeployState(),
+        ConfigModelContext context = ConfigModelContext.create(applicationType, root.getDeployState(),
                                                                null,null, root, null);
 
         return new ContentCluster.Builder(admin).build(Collections.emptyList(), context, doc.getDocumentElement());

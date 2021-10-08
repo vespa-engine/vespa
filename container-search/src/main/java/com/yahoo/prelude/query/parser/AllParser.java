@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser;
 
 import com.yahoo.prelude.query.AndItem;
@@ -112,6 +112,7 @@ public class AllParser extends SimpleParser {
     protected Item negativeItem() {
         int position = tokens.getPosition();
         Item item = null;
+        boolean isComposited = false;
         try {
             if ( ! tokens.skip(MINUS)) return null;
             if (tokens.currentIsNoIgnore(SPACE)) return null;
@@ -121,6 +122,7 @@ public class AllParser extends SimpleParser {
                 item = compositeItem();
 
                 if (item != null) {
+                    isComposited = true;
                     if (item instanceof OrItem) { // Turn into And
                         AndItem and = new AndItem();
 
@@ -137,9 +139,11 @@ public class AllParser extends SimpleParser {
             // Heuristic overdrive engaged!
             // Interpret -N as a positive item matching a negative number (by backtracking out of this)
             // but not if there is an explicit index (such as -a:b)
+            // but interpret -(N) as a negative item matching a positive number
             // but interpret --N as a negative item matching a negative number
             if (item instanceof IntItem &&
                 ((IntItem)item).getIndexName().isEmpty() &&
+                ! isComposited &&
                 ! ((IntItem)item).getNumber().startsWith(("-")))
                 item = null;
 

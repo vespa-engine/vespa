@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_define_module(
     DEPENDS
     fastos
@@ -64,6 +64,7 @@ vespa_define_module(
     src/tests/hwaccelrated
     src/tests/io/fileutil
     src/tests/io/mapped_file_input
+    src/tests/issue
     src/tests/latch
     src/tests/left_right_heap
     src/tests/make_fixture_macros
@@ -139,6 +140,7 @@ vespa_define_module(
     src/tests/util/file_area_freelist
     src/tests/util/generationhandler
     src/tests/util/generationhandler_stress
+    src/tests/util/hamming
     src/tests/util/md5
     src/tests/util/mmap_file_allocator
     src/tests/util/mmap_file_allocator_factory

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/config.h>
 #include <vespa/config/raw/rawsource.h>
@@ -31,12 +31,12 @@ class MyConfigResponse : public ConfigResponse
 {
 public:
     MyConfigResponse(const ConfigKey & key, const ConfigValue & value, bool valid, int64_t timestamp,
-                     const vespalib::string & md5, const std::string & errorMsg, int errorC0de, bool iserror)
+                     const vespalib::string & xxhash64, const std::string & errorMsg, int errorC0de, bool iserror)
         : _key(key),
           _value(value),
           _fillCalled(false),
           _valid(valid),
-          _state(md5, timestamp, false),
+          _state(xxhash64, timestamp, false),
           _errorMessage(errorMsg),
           _errorCode(errorC0de),
           _isError(iserror)
@@ -64,9 +64,9 @@ public:
     Trace _trace;
 
 
-    static ConfigResponse::UP createOKResponse(const ConfigKey & key, const ConfigValue & value, uint64_t timestamp = 10, const vespalib::string & md5 = "a")
+    static ConfigResponse::UP createOKResponse(const ConfigKey & key, const ConfigValue & value, uint64_t timestamp = 10, const vespalib::string & xxhash64 = "a")
     {
-        return std::make_unique<MyConfigResponse>(key, value, true, timestamp, md5, "", 0, false);
+        return std::make_unique<MyConfigResponse>(key, value, true, timestamp, xxhash64, "", 0, false);
     }
 
     static ConfigResponse::UP createServerErrorResponse(const ConfigKey & key, const ConfigValue & value)
@@ -114,11 +114,11 @@ private:
 };
 
 
-ConfigValue createValue(const std::string & myField, const std::string & md5)
+ConfigValue createValue(const std::string & myField, const std::string & xxhash64)
 {
     std::vector< vespalib::string > lines;
     lines.push_back("myField \"" + myField + "\"");
-    return ConfigValue(lines, md5);
+    return ConfigValue(lines, xxhash64);
 }
 
 static TimingValues testTimingValues(
@@ -139,7 +139,7 @@ TEST("require that agent returns correct values") {
     ASSERT_EQUAL(500u, handler.getTimeout());
     ASSERT_EQUAL(0u, handler.getWaitTime());
     ConfigState cs;
-    ASSERT_EQUAL(cs.md5, handler.getConfigState().md5);
+    ASSERT_EQUAL(cs.xxhash64, handler.getConfigState().xxhash64);
     ASSERT_EQUAL(cs.generation, handler.getConfigState().generation);
     ASSERT_EQUAL(cs.applyOnRestart, handler.getConfigState().applyOnRestart);
 }
@@ -167,7 +167,7 @@ TEST("require that important(the change) request is delivered to holder even if 
 
     FRTConfigAgent handler(latch, testTimingValues);
     handler.handleResponse(MyConfigRequest(testKey),
-                           MyConfigResponse::createOKResponse(testKey, testValue1, 1, testValue1.getMd5()));
+                           MyConfigResponse::createOKResponse(testKey, testValue1, 1, testValue1.getXxhash64()));
     ASSERT_TRUE(latch->poll());
     ConfigUpdate::UP update(latch->provide());
     ASSERT_TRUE(update);
@@ -176,9 +176,9 @@ TEST("require that important(the change) request is delivered to holder even if 
     ASSERT_EQUAL("l33t", cfg.myField);
 
     handler.handleResponse(MyConfigRequest(testKey),
-                           MyConfigResponse::createOKResponse(testKey, testValue2, 2, testValue2.getMd5()));
+                           MyConfigResponse::createOKResponse(testKey, testValue2, 2, testValue2.getXxhash64()));
     handler.handleResponse(MyConfigRequest(testKey),
-                           MyConfigResponse::createOKResponse(testKey, testValue2, 3, testValue2.getMd5()));
+                           MyConfigResponse::createOKResponse(testKey, testValue2, 3, testValue2.getXxhash64()));
     ASSERT_TRUE(latch->poll());
     update = latch->provide();
     ASSERT_TRUE(update);

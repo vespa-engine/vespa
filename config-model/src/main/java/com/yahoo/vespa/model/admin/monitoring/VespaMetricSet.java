@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
 import java.util.Collections;
@@ -76,6 +76,9 @@ public class VespaMetricSet {
 
         // C++ Fnet metrics
         metrics.add(new Metric("vds.server.fnet.num-connections"));
+
+        // Node certificate
+        metrics.add(new Metric("node-certificate.expiry.seconds"));
 
         return metrics;
     }
@@ -181,6 +184,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.deactivated_containers.with_retained_refs.last"));
 
         metrics.add(new Metric("athenz-tenant-cert.expiry.seconds.last"));
+        metrics.add(new Metric("container-iam-role.expiry.seconds"));
 
         metrics.add(new Metric("jdisc.http.request.prematurely_closed.rate"));
         addMetric(metrics, "jdisc.http.request.requests_per_connection", List.of("sum", "count", "min", "max", "average"));
@@ -322,7 +326,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("documents_total.count"));
         metrics.add(new Metric("dispatch_internal.rate"));
         metrics.add(new Metric("dispatch_fdispatch.rate"));
-        addMetric(metrics, "jdisc.search.render_latency", Set.of("min", "max", "count", "sum", "last"));
+        addMetric(metrics, "jdisc.render.latency", Set.of("min", "max", "count", "sum", "last", "average"));
 
         metrics.add(new Metric("totalhits_per_query.max"));
         metrics.add(new Metric("totalhits_per_query.sum"));
@@ -471,8 +475,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.resource_usage.open_file_descriptors.max"));
         metrics.add(new Metric("content.proton.resource_usage.feeding_blocked.max"));
         metrics.add(new Metric("content.proton.resource_usage.malloc_arena.max"));
-        metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.enum_store.average"));
-        metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.multi_value.average"));
+        metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.address_space.max"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.feeding_blocked.last")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.feeding_blocked.max"));
 
@@ -705,6 +708,10 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.idealstate.buckets_toomanycopies.average"));
         metrics.add(new Metric("vds.idealstate.buckets.average"));
         metrics.add(new Metric("vds.idealstate.buckets_notrusted.average"));
+        metrics.add(new Metric("vds.idealstate.bucket_replicas_moving_out.average"));
+        metrics.add(new Metric("vds.idealstate.bucket_replicas_copying_out.average"));
+        metrics.add(new Metric("vds.idealstate.bucket_replicas_copying_in.average"));
+        metrics.add(new Metric("vds.idealstate.bucket_replicas_syncing.average"));
         metrics.add(new Metric("vds.idealstate.delete_bucket.done_ok.rate"));
         metrics.add(new Metric("vds.idealstate.delete_bucket.done_failed.rate"));
         metrics.add(new Metric("vds.idealstate.delete_bucket.pending.average"));
@@ -781,6 +788,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.mergethrottler.bounced_due_to_back_pressure.rate"));
         metrics.add(new Metric("vds.mergethrottler.locallyexecutedmerges.ok.rate"));
         metrics.add(new Metric("vds.mergethrottler.mergechains.ok.rate"));
+        metrics.add(new Metric("vds.mergethrottler.mergechains.failures.busy.rate"));
+        metrics.add(new Metric("vds.mergethrottler.mergechains.failures.total.rate"));
         return metrics;
     }
 

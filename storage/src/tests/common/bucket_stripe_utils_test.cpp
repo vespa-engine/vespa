@@ -1,13 +1,14 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::BucketId;
+using storage::adjusted_num_stripes;
 using storage::calc_num_stripe_bits;
 using storage::stripe_of_bucket_key;
-using storage::adjusted_num_stripes;
+using storage::tune_num_stripes_based_on_cpu_cores;
 constexpr uint8_t MUB = storage::spi::BucketLimits::MinUsedBits;
 
 TEST(BucketStripeUtilsTest, stripe_of_bucket_key)
@@ -45,5 +46,15 @@ TEST(BucketStripeUtilsTest, max_stripe_values)
 {
     EXPECT_EQ(8, storage::MaxStripeBits);
     EXPECT_EQ(256, storage::MaxStripes);
+}
+
+TEST(BucketStripeUtilsTest, num_stripes_tuned_based_on_cpu_cores)
+{
+    EXPECT_EQ(1, tune_num_stripes_based_on_cpu_cores(0));
+    EXPECT_EQ(1, tune_num_stripes_based_on_cpu_cores(1));
+    EXPECT_EQ(1, tune_num_stripes_based_on_cpu_cores(16));
+    EXPECT_EQ(2, tune_num_stripes_based_on_cpu_cores(17));
+    EXPECT_EQ(2, tune_num_stripes_based_on_cpu_cores(64));
+    EXPECT_EQ(4, tune_num_stripes_based_on_cpu_cores(65));
 }
 

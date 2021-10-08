@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -205,7 +205,7 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
             return new TensorType.Builder(TensorType.Value.FLOAT).indexed("d0", 1).indexed("d1", length).build();
         } catch (NumberFormatException ex) {
             throw new IllegalArgumentException("Invalid argument to " + featureName + ": the first argument must be " +
-                    "the length to the token sequence to generate. Got " + argument.toString());
+                    "the length to the token sequence to generate. Got " + argument);
         }
     }
 

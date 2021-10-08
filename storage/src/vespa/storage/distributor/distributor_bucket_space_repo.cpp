@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
@@ -13,11 +13,11 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-DistributorBucketSpaceRepo::DistributorBucketSpaceRepo(uint16_t node_index, bool use_bucket_db)
+DistributorBucketSpaceRepo::DistributorBucketSpaceRepo(uint16_t node_index)
     : _map()
 {
-    add(document::FixedBucketSpaces::default_space(), std::make_unique<DistributorBucketSpace>(node_index, use_bucket_db));
-    add(document::FixedBucketSpaces::global_space(), std::make_unique<DistributorBucketSpace>(node_index, use_bucket_db));
+    add(document::FixedBucketSpaces::default_space(), std::make_unique<DistributorBucketSpace>(node_index));
+    add(document::FixedBucketSpaces::global_space(), std::make_unique<DistributorBucketSpace>(node_index));
 }
 
 DistributorBucketSpaceRepo::~DistributorBucketSpaceRepo() = default;

@@ -3,6 +3,7 @@ package ai.vespa.metricsproxy.metric;
 
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
+import ai.vespa.metricsproxy.metric.model.MetricId;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -17,7 +18,7 @@ public class Metric {
     private final long time;
     private final Number value;
     private final String description;
-    private String name;
+    private MetricId name;
     private Map<DimensionId, String> dimensions;
     private Set<ConsumerId> consumers;
 
@@ -28,7 +29,7 @@ public class Metric {
      * @param value The numeric value
      * @param time  The timestamp of this metric in seconds
      */
-    public Metric(String name, Number value, long time, Map<DimensionId, String> dimensions, String description) {
+    public Metric(MetricId name, Number value, long time, Map<DimensionId, String> dimensions, String description) {
         this.time = time;
         this.value = value;
         this.name = name;
@@ -36,11 +37,11 @@ public class Metric {
         this.description = description;
     }
 
-    public Metric(String name, Number value, long timestamp) {
+    public Metric(MetricId name, Number value, long timestamp) {
         this(name, value, timestamp, Collections.emptyMap(), "");
     }
 
-    public Metric(String name, Number value) {
+    public Metric(MetricId name, Number value) {
         this(name, value, System.currentTimeMillis() / 1000);
     }
 
@@ -72,14 +73,14 @@ public class Metric {
      *
      * @param name The name to use for this metric
      */
-    public void setName(String name) {
+    public void setName(MetricId name) {
         this.name = name;
     }
 
     /**
      * @return The name of the metric
      */
-    public String getName() {
+    public MetricId getName() {
         return name;
     }
 
@@ -94,7 +95,7 @@ public class Metric {
     public String toString() {
         return "Metric{" +
                 "time=" + time +
-                ", name=" + name +
+                ", name=" + name.id +
                 ", value='" + value + '\'' +
                 ", dimensions=" + dimensions +
                 '}';

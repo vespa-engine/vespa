@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.ml;
 
 import ai.vespa.models.evaluation.ModelsEvaluator;
@@ -9,7 +9,10 @@ import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
 import ai.vespa.rankingexpression.importer.vespa.VespaImporter;
 import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
 import com.google.common.collect.ImmutableList;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
@@ -19,11 +22,15 @@ import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.model.VespaModel;
+import net.jpountz.lz4.LZ4FrameOutputStream;
 import org.xml.sax.SAXException;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -65,14 +72,16 @@ public class ModelsEvaluatorTester {
         File temporaryApplicationDir = null;
         try {
             temporaryApplicationDir = createTemporaryApplicationDir(modelsPath);
-            RankProfileList rankProfileList = createRankProfileList(temporaryApplicationDir);
+            MockFileRegistry fileRegistry = new MockFileBlobRegistry(temporaryApplicationDir);
+            RankProfileList rankProfileList = createRankProfileList(temporaryApplicationDir, fileRegistry);
 
             RankProfilesConfig rankProfilesConfig = getRankProfilesConfig(rankProfileList);
             RankingConstantsConfig rankingConstantsConfig = getRankingConstantConfig(rankProfileList);
+            RankingExpressionsConfig rankingExpressionsConfig = getRankingExpressionsConfig(rankProfileList);
             OnnxModelsConfig onnxModelsConfig = getOnnxModelsConfig(rankProfileList);
-            FileAcquirer files = createFileAcquirer(rankingConstantsConfig, onnxModelsConfig, temporaryApplicationDir);
+            FileAcquirer files = createFileAcquirer(fileRegistry, temporaryApplicationDir);
 
-            return new ModelsEvaluator(rankProfilesConfig, rankingConstantsConfig, onnxModelsConfig, files);
+            return new ModelsEvaluator(rankProfilesConfig, rankingConstantsConfig, rankingExpressionsConfig, onnxModelsConfig, files);
 
         } catch (IOException | SAXException e) {
             throw new RuntimeException(e);
@@ -91,12 +100,16 @@ public class ModelsEvaluatorTester {
         return temporaryApplicationDir;
     }
 
-    private static RankProfileList createRankProfileList(File appDir) throws IOException, SAXException {
+    private static RankProfileList createRankProfileList(File appDir, FileRegistry registry) throws IOException, SAXException {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withEmptyHosts()
                 .withServices(modelEvaluationServices)
                 .withRoot(appDir).build();
-        DeployState deployState = new DeployState.Builder().applicationPackage(app).modelImporters(importers).build();
+        DeployState deployState = new DeployState.Builder()
+                .applicationPackage(app)
+                .fileRegistry(registry)
+                .modelImporters(importers).build();
+
         VespaModel vespaModel = new VespaModel(deployState);
         return vespaModel.rankProfileList();
     }
@@ -104,34 +117,67 @@ public class ModelsEvaluatorTester {
     private static RankProfilesConfig getRankProfilesConfig(RankProfileList rankProfileList) {
         RankProfilesConfig.Builder builder = new RankProfilesConfig.Builder();
         rankProfileList.getConfig(builder);
-        return new RankProfilesConfig(builder);
+        return builder.build();
     }
 
     private static RankingConstantsConfig getRankingConstantConfig(RankProfileList rankProfileList) {
         RankingConstantsConfig.Builder builder = new RankingConstantsConfig.Builder();
         rankProfileList.getConfig(builder);
-        return new RankingConstantsConfig(builder);
+        return builder.build();
+    }
+
+    private static RankingExpressionsConfig getRankingExpressionsConfig(RankProfileList rankProfileList) {
+        RankingExpressionsConfig.Builder builder = new RankingExpressionsConfig.Builder();
+        rankProfileList.getConfig(builder);
+        return builder.build();
     }
 
     private static OnnxModelsConfig getOnnxModelsConfig(RankProfileList rankProfileList) {
         OnnxModelsConfig.Builder builder = new OnnxModelsConfig.Builder();
         rankProfileList.getConfig(builder);
-        return new OnnxModelsConfig(builder);
+        return builder.build();
     }
 
-    private static FileAcquirer createFileAcquirer(RankingConstantsConfig constantsConfig, OnnxModelsConfig onnxModelsConfig, File appDir) {
+    private static FileAcquirer createFileAcquirer(MockFileRegistry fileRegistry, File appDir) {
         Map<String, File> fileMap = new HashMap<>();
-        for (RankingConstantsConfig.Constant constant : constantsConfig.constant()) {
-            fileMap.put(constant.fileref().value(), relativePath(appDir, constant.fileref().value()));
-        }
-        for (OnnxModelsConfig.Model model : onnxModelsConfig.model()) {
-            fileMap.put(model.fileref().value(), relativePath(appDir, model.fileref().value()));
+        for (FileRegistry.Entry entry : fileRegistry.export()) {
+            fileMap.put(entry.reference.value(), relativePath(appDir, entry.reference.value()));
         }
         return MockFileAcquirer.returnFiles(fileMap);
     }
 
     private static File relativePath(File root, String subpath) {
         return new File(root.getAbsolutePath() + File.separator + subpath);
+    }
+
+    private static class MockFileBlobRegistry extends MockFileRegistry {
+
+        private final File appDir;
+
+        MockFileBlobRegistry(File appdir) {
+            this.appDir = appdir;
+        }
+
+        @Override
+        public FileReference addBlob(String name, ByteBuffer blob) {
+            writeBlob(blob, name);
+            return addFile(name);
+        }
+
+        private void writeBlob(ByteBuffer blob, String relativePath) {
+            try (FileOutputStream fos = new FileOutputStream(new File(appDir, relativePath))) {
+                if (relativePath.endsWith(".lz4")) {
+                    LZ4FrameOutputStream lz4 = new LZ4FrameOutputStream(fos);
+                    lz4.write(blob.array(), blob.arrayOffset(), blob.remaining());
+                    lz4.close();
+                } else {
+                    fos.write(blob.array(), blob.arrayOffset(), blob.remaining());
+                }
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Failed writing temp file", e);
+            }
+        }
+
     }
 
 }

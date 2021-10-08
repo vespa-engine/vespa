@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "bucket_space_distribution_configs.h"
@@ -37,7 +37,8 @@ public:
     virtual void update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) = 0;
     virtual void set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state) = 0;
     virtual void clear_pending_cluster_state_bundle() = 0;
-    virtual void enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state) = 0;
+    virtual void enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,
+                                             bool has_bucket_ownership_change) = 0;
     virtual void notify_distribution_change_enabled() = 0;
 
     virtual PotentialDataLossReport remove_superfluous_buckets(document::BucketSpace bucket_space,
@@ -56,14 +57,18 @@ public:
     virtual void update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state) = 0;
     virtual void clear_read_only_bucket_repo_databases() = 0;
 
-    // TODO STRIPE: Add merge() function.
     struct PendingOperationStats {
         size_t external_load_operations;
         size_t maintenance_operations;
         PendingOperationStats(size_t external_load_operations_in,
-                              size_t maintenance_operations_in)
+                              size_t maintenance_operations_in) noexcept
             : external_load_operations(external_load_operations_in),
               maintenance_operations(maintenance_operations_in) {}
+
+        void merge(const PendingOperationStats& rhs) noexcept {
+            external_load_operations += rhs.external_load_operations;
+            maintenance_operations   += rhs.maintenance_operations;
+        }
     };
 
     // Functions used for state reporting

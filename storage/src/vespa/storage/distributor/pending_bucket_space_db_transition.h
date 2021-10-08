@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "pending_bucket_space_db_transition_entry.h"
@@ -16,9 +16,9 @@ class State;
 
 namespace storage::distributor {
 
+class BucketSpaceState;
 class ClusterInformation;
 class PendingClusterState;
-class DistributorBucketSpace;
 class StripeAccessGuard;
 
 /**
@@ -50,7 +50,7 @@ private:
     const lib::ClusterState&                  _prevClusterState;
     const lib::ClusterState&                  _newClusterState;
     const api::Timestamp                      _creationTimestamp;
-    DistributorBucketSpace&                   _distributorBucketSpace;
+    const BucketSpaceState&                   _bucket_space_state;
     uint16_t                                  _distributorIndex;
     bool                                      _bucketOwnershipTransfer;
     std::unordered_map<uint16_t, size_t>      _rejectedRequests;
@@ -126,7 +126,7 @@ public:
     };
 
     PendingBucketSpaceDbTransition(document::BucketSpace bucket_space,
-                                   DistributorBucketSpace &distributorBucketSpace,
+                                   const BucketSpaceState &bucket_space_state,
                                    bool distributionChanged,
                                    const OutdatedNodes &outdatedNodes,
                                    std::shared_ptr<const ClusterInformation> clusterInfo,
@@ -135,7 +135,6 @@ public:
     ~PendingBucketSpaceDbTransition();
 
     // Merges all the results with the corresponding bucket database.
-    void mergeIntoBucketDatabase();
     void merge_into_bucket_databases(StripeAccessGuard& guard);
 
     // Adds the info from the reply to our list of information.

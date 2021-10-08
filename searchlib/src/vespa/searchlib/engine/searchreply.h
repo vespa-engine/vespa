@@ -1,9 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/hitrank.h>
+#include <vespa/searchlib/common/unique_issues.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vector>
@@ -72,6 +73,7 @@ public:
     PropertiesMap         propertiesMap;
 
     SearchRequest::UP     request;
+    UniqueIssues::UP      my_issues;
 
     SearchReply();
     ~SearchReply();

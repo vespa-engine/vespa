@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.collections.Pair;
@@ -121,7 +121,6 @@ public abstract class ExpressionConverter implements Cloneable {
     }
 
     @Override
-    @SuppressWarnings("CloneDoesntDeclareCloneNotSupportedException")
     public ExpressionConverter clone() {
         try {
             return (ExpressionConverter)super.clone();

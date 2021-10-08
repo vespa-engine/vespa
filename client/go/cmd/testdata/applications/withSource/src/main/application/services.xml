@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<services version="1.0">
+
+  <container id="text_search" version="1.0">
+    <document-api/>
+    <search>
+
+      <!-- Config for bolding in search result snippets -->
+      <config name="container.qr-searchers">
+        <tag>
+          <bold>
+            <open>&lt;strong&gt;</open>
+            <close>&lt;/strong&gt;</close>
+          </bold>
+          <separator>...</separator>
+        </tag>
+      </config>
+
+    </search>
+    <document-processing/>
+
+    <component id="com.yahoo.language.simple.SimpleLinguistics"/>
+
+    <handler id="ai.vespa.example.text_search.site.SiteHandler" bundle="text-search">
+      <binding>http://*/site/*</binding>
+      <binding>http://*/site</binding>
+      <config name="ai.vespa.example.text_search.site.site-handler">
+        <vespaHostName>localhost</vespaHostName>
+        <vespaHostPort>8080</vespaHostPort>
+      </config>
+    </handler>
+
+    <nodes jvmargs="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=*:8998">
+      <node hostalias="node1" />
+    </nodes>
+
+  </container>
+
+  <content id="msmarco" version="1.0">
+
+    <!-- Config for search result snippets -->
+    <config name="vespa.config.search.summary.juniperrc">
+      <max_matches>2</max_matches>
+      <length>1000</length>
+      <surround_max>500</surround_max>
+      <min_length>300</min_length>
+    </config>
+
+    <redundancy>2</redundancy>
+    <documents>
+      <document type='msmarco' mode="index"/>
+      <document-processing cluster="text_search"/>
+    </documents>
+    <nodes>
+      <node distribution-key='0' hostalias='node1'/>
+    </nodes>
+  </content>
+
+</services>

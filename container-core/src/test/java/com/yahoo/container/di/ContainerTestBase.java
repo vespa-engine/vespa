@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di;
 
 import com.google.inject.Guice;
@@ -7,7 +7,6 @@ import com.yahoo.config.FileReference;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.ContainerTest.ComponentTakingConfig;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
-import com.yahoo.container.di.osgi.BundleClasses;
 import org.junit.After;
 import org.junit.Before;
 import org.osgi.framework.Bundle;
@@ -54,11 +53,6 @@ public class ContainerTestBase {
                             } catch (ClassNotFoundException e) {
                                 throw new RuntimeException(e);
                             }
-                        }
-
-                        @Override
-                        public BundleClasses getBundleClasses(ComponentSpecification bundle, Set<String> packagesToScan) {
-                            throw new UnsupportedOperationException("getBundleClasses not supported");
                         }
 
                         @Override

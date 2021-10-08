@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network.rpc;
 
 import com.yahoo.component.Version;
@@ -33,8 +33,11 @@ public class RPCSendV1 extends RPCSend {
     private final String METHOD_PARAMS = "sssbilsxi";
     private final String METHOD_RETURN = "sdISSsxs";
 
+    protected RPCSendV1(RPCNetwork net) { super(net); }
+
     @Override
     protected String getReturnSpec() { return METHOD_RETURN; }
+
     @Override
     protected Method buildMethod() {
 

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
@@ -16,7 +17,6 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
-import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
@@ -41,10 +41,6 @@ import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
 import com.yahoo.search.config.QrStartConfig;
-import com.yahoo.security.KeyAlgorithm;
-import com.yahoo.security.KeyUtils;
-import com.yahoo.security.SignatureAlgorithm;
-import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.vespa.defaults.Defaults;
@@ -60,26 +56,16 @@ import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.VespaModelTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
-import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
-import org.hamcrest.core.IsEqual;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.io.StringReader;
-import java.math.BigInteger;
-import java.security.KeyPair;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -97,7 +83,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -108,7 +93,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -698,36 +682,47 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void qrconfig_is_produced() throws IOException, SAXException {
+        QrConfig qr = getQrConfig(new TestProperties());
+        String hostname = HostName.getLocalhost();  // Using the same way of getting hostname as filedistribution model
+        assertEquals("default.container.0", qr.discriminator());
+        assertEquals(19102, qr.rpc().port());
+        assertEquals("vespa/service/default/container.0", qr.rpc().slobrokId());
+        assertTrue(qr.rpc().enabled());
+        assertEquals("", qr.rpc().host());
+        assertFalse(qr.restartOnDeploy());
+        assertEquals("filedistribution/" + hostname, qr.filedistributor().configid());
+        assertEquals(50.0, qr.shutdown().timeout(), 0.00000000000001);
+        assertFalse(qr.shutdown().dumpHeapOnTimeout());
+    }
+    private QrConfig getQrConfig(ModelContext.Properties properties) throws IOException, SAXException {
         String servicesXml =
                 "<services>" +
-                        "<admin version='3.0'>" +
-                        "    <nodes count='2'/>" +
-                        "</admin>" +
-                        "<container id ='default' version='1.0'>" +
-                        "  <nodes>" +
-                        "    <node hostalias='node1' />" +
-                        "  </nodes>" +
-                        "</container>" +
-                        "</services>";
+                "  <admin version='3.0'>" +
+                "    <nodes count='2'/>" +
+                "  </admin>" +
+                "  <container id ='default' version='1.0'>" +
+                "    <nodes>" +
+                "      <node hostalias='node1' />" +
+                "    </nodes>" +
+                "  </container>" +
+                "</services>";
 
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
-                .properties(new TestProperties())
+                .properties(properties)
                 .build());
 
-        String hostname = HostName.getLocalhost();  // Using the same way of getting hostname as filedistribution model
+        return model.getConfig(QrConfig.class, "default/container.0");
+    }
 
-        QrConfig config = model.getConfig(QrConfig.class, "default/container.0");
-        assertEquals("default.container.0", config.discriminator());
-        assertEquals(19102, config.rpc().port());
-        assertEquals("vespa/service/default/container.0", config.rpc().slobrokId());
-        assertTrue(config.rpc().enabled());
-        assertEquals("", config.rpc().host());
-        assertFalse(config.restartOnDeploy());
-        assertEquals("filedistribution/" + hostname, config.filedistributor().configid());
+    @Test
+    public void control_container_shutdown() throws IOException, SAXException {
+        QrConfig qr = getQrConfig(new TestProperties().containerShutdownTimeout(133).containerDumpHeapOnShutdownTimeout(true));
+        assertEquals(133.0, qr.shutdown().timeout(), 0.00000000000001);
+        assertTrue(qr.shutdown().dumpHeapOnTimeout());
     }
 
     @Test
@@ -980,8 +975,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         DeployState state = new DeployState.Builder().properties(
                 new TestProperties()
                         .setHostedVespa(true)
-                        .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))
-                        .useAccessControlTlsHandshakeClientAuth(true))
+                        .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
                 .build();
         createModel(root, state, null, clusterElem);
         ApplicationContainer container = (ApplicationContainer)root.getProducer("container/container.0");
@@ -1021,11 +1015,8 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         tlsPort.getConfig(builder);
 
         ConnectorConfig connectorConfig = new ConnectorConfig(builder);
-        Set<String> expectedCiphers = new HashSet<>();
-        expectedCiphers.add("TLS_RSA_WITH_AES_256_GCM_SHA384");
-        expectedCiphers.addAll(TlsContext.ALLOWED_CIPHER_SUITES);
 
-        assertThat(connectorConfig.ssl().enabledCipherSuites(), containsInAnyOrder(expectedCiphers.toArray()));
+        assertThat(connectorConfig.ssl().enabledCipherSuites(), containsInAnyOrder(TlsContext.ALLOWED_CIPHER_SUITES.toArray()));
     }
 
     @Test

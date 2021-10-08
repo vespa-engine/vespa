@@ -1,19 +1,22 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution.status;
 
+import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.airlift.airline.Command;
 import io.airlift.airline.HelpOption;
 import io.airlift.airline.Option;
 import io.airlift.airline.SingleCommand;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.net.URIBuilder;
+import org.apache.hc.core5.util.Timeout;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -22,6 +25,8 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+
+import static org.apache.hc.client5.http.config.RequestConfig.custom;
 
 /**
  * Tool for getting file distribution status
@@ -67,28 +72,32 @@ public class FileDistributionStatusClient {
     }
 
     private String doHttpRequest() {
-        int timeoutInMillis = (int) (timeout * 1000);
-        RequestConfig config = RequestConfig.custom()
+        Timeout timeoutInMillis = Timeout.ofMilliseconds((long) (timeout * 1000));
+        RequestConfig config = custom()
                 .setConnectTimeout(timeoutInMillis)
                 .setConnectionRequestTimeout(timeoutInMillis)
-                .setSocketTimeout(timeoutInMillis)
+                .setResponseTimeout(timeoutInMillis)
                 .build();
-        CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build();
+        CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build();
         URI statusUri = createStatusApiUri();
         if (debug)
             System.out.println("URI:" + statusUri);
         try {
-            CloseableHttpResponse response = httpClient.execute(new HttpGet(statusUri));
-            String content = EntityUtils.toString(response.getEntity());
+            HttpGet request = new HttpGet(statusUri);
+            request.addHeader("Connection", "Close");
+            request.setConfig(config);
+            CloseableHttpResponse response = httpClient.execute(request);
+            HttpEntity entity = response.getEntity();
+            String content = EntityUtils.toString(entity);
             if (debug)
                 System.out.println("response:" + content);
-            if (response.getStatusLine().getStatusCode() == 200) {
+            if (response.getCode() == 200) {
                 return content;
             } else {
                 throw new RuntimeException("Failed to get status for request " + statusUri + ": " +
-                                                   response.getStatusLine() + ": " + content);
+                                                   response.getCode() + ": " + content);
             }
-        } catch (IOException e) {
+        } catch (IOException | ParseException e) {
             throw new RuntimeException(e);
         }
     }

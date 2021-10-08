@@ -1,8 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
@@ -23,6 +24,12 @@ public abstract class ExpressionList<T extends Expression> extends CompositeExpr
         for (T exp : lst) {
             this.expressions.add(exp);
         }
+    }
+
+    @Override
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        for (Expression expression : expressions)
+            expression.setStatementOutput(documentType, field);
     }
 
     public int size() {
@@ -70,4 +77,5 @@ public abstract class ExpressionList<T extends Expression> extends CompositeExpr
             exp.select(predicate, operation);
         }
     }
+
 }

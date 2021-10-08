@@ -1,7 +1,8 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.benchmark;
 
 import com.yahoo.collections.Tuple2;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
@@ -252,11 +253,11 @@ public class LoadTester {
         private JRTClientConfigRequest createRequest(ConfigKey<?> reqKey) {
             ConfigDefinitionKey dKey = new ConfigDefinitionKey(reqKey);
             Tuple2<String, String[]> defContent = defs.get(dKey);
-            ConfigKey<?> fullKey = createFull(reqKey.getName(), reqKey.getConfigId(), reqKey.getNamespace(), defContent.first);
+            ConfigKey<?> fullKey = createFull(reqKey.getName(), reqKey.getConfigId(), reqKey.getNamespace());
 
             final long serverTimeout = 1000;
             return JRTClientConfigRequestV3.createWithParams(fullKey, DefContent.fromList(List.of(defContent.second)),
-                                                             ConfigUtils.getCanonicalHostName(), "",
+                                                             ConfigUtils.getCanonicalHostName(), PayloadChecksums.empty(),
                                                              0, serverTimeout, Trace.createDummy(),
                                                              compressionType, Optional.empty());
         }

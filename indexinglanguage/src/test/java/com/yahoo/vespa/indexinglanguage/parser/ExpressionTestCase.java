@@ -1,7 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.parser;
 
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import org.junit.Test;
@@ -84,9 +85,9 @@ public class ExpressionTestCase {
 
     private static void assertExpression(Class expectedClass, String str) throws ParseException {
         Linguistics linguistics = new SimpleLinguistics();
-        Expression foo = Expression.fromString(str, linguistics);
+        Expression foo = Expression.fromString(str, linguistics, Embedder.throwsOnUse);
         assertEquals(expectedClass, foo.getClass());
-        Expression bar = Expression.fromString(foo.toString(), linguistics);
+        Expression bar = Expression.fromString(foo.toString(), linguistics, Embedder.throwsOnUse);
         assertEquals(foo.hashCode(), bar.hashCode());
         assertEquals(foo, bar);
     }

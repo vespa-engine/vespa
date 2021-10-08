@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.zone;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
@@ -88,5 +89,8 @@ public interface ZoneRegistry {
 
     /** Returns a URL to the controller's api endpoint */
     URI apiUrl();
+
+    /** IAM tenant developer role ARN */
+    Optional<String> tenantDeveloperRoleArn(TenantName tenant);
 
 }

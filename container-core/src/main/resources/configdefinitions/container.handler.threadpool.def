@@ -1,12 +1,15 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 namespace=container.handler
 
 ## Maximum number of thread in the thread pool
-## Setting it to 0 or negative number will cause it to be set to #cores * 4
+## 0 is translated to vcpu*4
+## Negative value is interpreted as scale factor ( vcpu*abs(maxThreads) )
 maxthreads int default=500
 
-# The number of threads to keep in the pool, even if they are idle
+## The number of threads to keep in the pool, even if they are idle
+## 0 is translated to vcpu*4
+## Negative value is interpreted as scale factor ( vcpu*abs(corePoolSize) )
 corePoolSize int default=500
 
 # The number of seconds that excess idle threads will wait for new tasks before terminating

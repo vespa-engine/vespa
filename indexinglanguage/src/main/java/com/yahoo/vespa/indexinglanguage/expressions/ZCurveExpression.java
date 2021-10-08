@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -17,14 +17,14 @@ public final class ZCurveExpression extends Expression {
         super(PositionDataType.INSTANCE);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        Struct input = ((Struct)ctx.getValue());
+    protected void doExecute(ExecutionContext context) {
+        Struct input = ((Struct) context.getValue());
         Integer x = getFieldValue(input, PositionDataType.FIELD_X);
         Integer y = getFieldValue(input, PositionDataType.FIELD_Y);
         if (x != null && y != null) {
-            ctx.setValue(new LongFieldValue(ZCurve.encode(x, y)));
+            context.setValue(new LongFieldValue(ZCurve.encode(x, y)));
         } else {
-            ctx.setValue(DataType.LONG.createFieldValue());
+            context.setValue(DataType.LONG.createFieldValue());
         }
     }
 
@@ -35,7 +35,7 @@ public final class ZCurveExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

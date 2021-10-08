@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.dns;
 
 import com.yahoo.vespa.curator.Lock;
@@ -28,7 +28,11 @@ import java.util.stream.Collectors;
  */
 public class NameServiceForwarder {
 
-    private static final int QUEUE_CAPACITY = 300;
+    /**
+     * The number of {@link NameServiceRequest}s we allow to be queued. When the queue overflows, the first requests
+     * are dropped in a FIFO order until the queue shrinks below this capacity.
+     */
+    private static final int QUEUE_CAPACITY = 400;
 
     private static final Logger log = Logger.getLogger(NameServiceForwarder.class.getName());
 

@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
 import java.util.List;
@@ -14,8 +14,9 @@ import java.util.List;
  */
 public class DocumentsOnlyRankProfile extends RankProfile {
 
-    public DocumentsOnlyRankProfile(String name, Search search, RankProfileRegistry rankProfileRegistry) {
-        super(name, search, rankProfileRegistry);
+    public DocumentsOnlyRankProfile(String name, Search search, RankProfileRegistry rankProfileRegistry,
+                                    RankingConstants rankingConstants) {
+        super(name, search, rankProfileRegistry, rankingConstants);
     }
 
     @Override

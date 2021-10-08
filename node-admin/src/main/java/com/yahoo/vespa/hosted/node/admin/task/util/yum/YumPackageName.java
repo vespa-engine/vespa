@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
 import com.google.common.base.Strings;
@@ -79,6 +79,12 @@ public class YumPackageName {
         public Builder setVersion(String version) { this.version = Optional.of(version); return this; }
         public Builder setRelease(String release) { this.release = Optional.of(release); return this; }
         public Builder setArchitecture(String architecture) { this.architecture = Optional.of(architecture); return this; }
+
+        public Optional<String> epoch() { return epoch; }
+        public String name() { return name; }
+        public Optional<String> version() { return version; }
+        public Optional<String> release() { return release; }
+        public Optional<String> architecture() { return architecture; }
 
         public YumPackageName build() { return new YumPackageName(epoch, name, version, release, architecture); }
     }
@@ -162,11 +168,6 @@ public class YumPackageName {
             release = Optional.ofNullable(matcher.group(3));
         }
 
-        // Set default epoch if we have a version
-        if (version.isPresent() && epoch.isEmpty()) {
-            epoch = Optional.of("0");
-        }
-
         if (!NAME_PATTERN.matcher(spec).find()) {
             throw new IllegalArgumentException("Bad package name in " + packageSpec + ": '" + spec + "'");
         }
@@ -211,11 +212,7 @@ public class YumPackageName {
      * @throws IllegalStateException if any field required for the version lock spec is missing
      */
     public String toVersionLockName() {
-        Builder b = new Builder(this).setArchitecture("*");
-        if (epoch.isEmpty()) {
-            b.setEpoch("0");
-        }
-        YumPackageName lockSpec = b.build();
+        YumPackageName lockSpec = new Builder(this).setArchitecture("*").build();
         if (lockSpec.getVersion().isEmpty()) throw new IllegalStateException("Version is missing for YUM package " + name);
         if (lockSpec.getRelease().isEmpty()) throw new IllegalStateException("Release is missing for YUM package " + name);
         return lockSpec.toName();

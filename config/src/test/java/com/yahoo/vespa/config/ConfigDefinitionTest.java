@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import org.junit.Test;
@@ -48,7 +48,7 @@ public class ConfigDefinitionTest {
 
     @Test
     public void testIntDefaultValues() {
-        ConfigDefinition def = new ConfigDefinition("foo", "1", "namespace1");
+        ConfigDefinition def = new ConfigDefinition("foo", "namespace1");
 
         def.addIntDef("foo");
         def.addIntDef("bar", 0);
@@ -68,7 +68,7 @@ public class ConfigDefinitionTest {
 
     @Test
     public void testLongDefaultValues() {
-        ConfigDefinition def = new ConfigDefinition("foo", "1", "namespace1");
+        ConfigDefinition def = new ConfigDefinition("foo", "namespace1");
 
         def.addLongDef("foo");
         def.addLongDef("bar", 1234567890123L);
@@ -87,7 +87,7 @@ public class ConfigDefinitionTest {
     @Test
     @SuppressWarnings("serial")
     public void testDefaultsPayloadMap() {
-        ConfigDefinition def = new ConfigDefinition("foo", "1", "namespace1");
+        ConfigDefinition def = new ConfigDefinition("foo", "namespace1");
         def.addStringDef("mystring");
         def.addStringDef("mystringdef", "foo");
         def.addBoolDef("mybool");
@@ -116,7 +116,7 @@ public class ConfigDefinitionTest {
 
     @Test
     public void testVerification() {
-        ConfigDefinition def = new ConfigDefinition("foo", "1", "bar");
+        ConfigDefinition def = new ConfigDefinition("foo", "bar");
         def.addBoolDef("boolval");
         def.addStringDef("stringval");
         def.addIntDef("intval");

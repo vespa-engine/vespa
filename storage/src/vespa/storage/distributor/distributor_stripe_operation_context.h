@@ -1,10 +1,9 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
 #include "bucketgctimecalculator.h"
 #include "bucketownership.h"
-#include "distributor_operation_context.h"
 #include "operation_routing_snapshot.h"
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
@@ -12,6 +11,7 @@
 #include <vespa/storageapi/defs.h>
 
 namespace document { class Bucket; }
+namespace storage::lib { class ClusterStateBundle; }
 
 namespace storage::distributor {
 
@@ -20,9 +20,17 @@ class PendingMessageTracker;
 /**
  * Interface with functionality that is used when handling distributor stripe operations.
  */
-class DistributorStripeOperationContext : public DistributorOperationContext {
+class DistributorStripeOperationContext {
 public:
     virtual ~DistributorStripeOperationContext() = default;
+
+    virtual api::Timestamp generate_unique_timestamp() = 0;
+    virtual const DistributorBucketSpaceRepo& bucket_space_repo() const noexcept = 0;
+    virtual DistributorBucketSpaceRepo& bucket_space_repo() noexcept = 0;
+    virtual const DistributorBucketSpaceRepo& read_only_bucket_space_repo() const noexcept = 0;
+    virtual DistributorBucketSpaceRepo& read_only_bucket_space_repo() noexcept = 0;
+    virtual const DistributorConfiguration& distributor_config() const noexcept = 0;
+
     virtual void update_bucket_database(const document::Bucket& bucket,
                                         const BucketCopy& changed_node,
                                         uint32_t update_flags = 0) = 0;

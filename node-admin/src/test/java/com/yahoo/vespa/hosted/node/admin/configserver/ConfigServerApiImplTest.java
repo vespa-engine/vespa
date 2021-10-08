@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -116,7 +116,7 @@ public class ConfigServerApiImplTest {
     public void testBasicSuccessWithCustomTimeouts() {
         mockReturnCode = TIMEOUT_RETURN_CODE;
 
-        var params = new ConfigServerApi.Params();
+        var params = new ConfigServerApi.Params<TestPojo>();
         params.setConnectionTimeout(Duration.ofSeconds(3));
 
         try {

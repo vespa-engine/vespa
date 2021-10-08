@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -30,8 +30,8 @@ public final class SubstringExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        String input = String.valueOf(ctx.getValue());
+    protected void doExecute(ExecutionContext context) {
+        String input = String.valueOf(context.getValue());
         int len = input.length();
         if (from >= len) {
             input = "";
@@ -40,12 +40,12 @@ public final class SubstringExpression extends Expression {
         } else {
             input = input.substring(from, to);
         }
-        ctx.setValue(new StringFieldValue(input));
+        context.setValue(new StringFieldValue(input));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

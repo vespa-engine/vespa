@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "generate.h"
 #include <vespa/eval/eval/test/gen_spec.h>
@@ -13,6 +13,19 @@ using vespalib::make_string_short::fmt;
 //-----------------------------------------------------------------------------
 
 namespace {
+
+struct IgnoreJava : TestBuilder {
+    TestBuilder &dst;
+    IgnoreJava(TestBuilder &dst_in) : TestBuilder(dst_in.full), dst(dst_in) {}
+    void add(const vespalib::string &expression,
+             const std::map<vespalib::string,TensorSpec> &inputs,
+             const std::set<vespalib::string> &ignore) override
+    {
+        auto my_ignore = ignore;
+        my_ignore.insert("vespajlib");
+        dst.add(expression, inputs, my_ignore);
+    }
+};
 
 //-----------------------------------------------------------------------------
 
@@ -273,6 +286,9 @@ void generate_join(TestBuilder &dst) {
     generate_op2_join("min(a,b)", Div16(N()), dst);
     generate_op2_join("max(a,b)", Div16(N()), dst);
     generate_op2_join("bit(a,b)", Seq({-128, -43, -1, 0, 85, 127}), Seq({0, 1, 2, 3, 4, 5, 6, 7}), dst);
+    // TODO: add ignored Java test when it can be ignored
+    // IgnoreJava ignore_java(dst);
+    // generate_op2_join("hamming(a,b)", Seq({-128, -43, -1, 0, 85, 127}), ignore_java); // TODO: require java
     // inverted lambda
     generate_join_expr("join(a,b,f(a,b)(b-a))", Div16(N()), dst);
     // custom lambda
@@ -331,6 +347,9 @@ void generate_merge(TestBuilder &dst) {
     generate_op2_merge("min(a,b)", Div16(N()), dst);
     generate_op2_merge("max(a,b)", Div16(N()), dst);
     generate_op2_merge("bit(a,b)", Seq({-128, -43, -1, 0, 85, 127}), Seq({0, 1, 2, 3, 4, 5, 6, 7}), dst);
+    // TODO: add ignored Java test when it can be ignored
+    // IgnoreJava ignore_java(dst);
+    // generate_op2_merge("hamming(a,b)", Seq({-128, -43, -1, 0, 85, 127}), ignore_java); // TODO: require java
     // inverted lambda
     generate_merge_expr("merge(a,b,f(a,b)(b-a))", Div16(N()), dst);
     // custom lambda

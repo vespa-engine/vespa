@@ -6,6 +6,7 @@ import ai.vespa.metricsproxy.metric.Metric;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -14,7 +15,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
-import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.joining;
@@ -90,7 +90,7 @@ public class MetricsPacket {
         private long timestamp = 0L;
         private Map<MetricId, Number> metrics = new LinkedHashMap<>();
         private final Map<DimensionId, String> dimensions = new LinkedHashMap<>();
-        private final Set<ConsumerId> consumers = new LinkedHashSet<>();
+        private Set<ConsumerId> consumers = Collections.emptySet();
 
         public Builder(ServiceId service) {
             Objects.requireNonNull(service, "Service cannot be null.");
@@ -120,8 +120,7 @@ public class MetricsPacket {
 
         public Builder putMetrics(Collection<Metric> extraMetrics) {
             if (extraMetrics != null)
-                extraMetrics.forEach(metric -> metrics.put(toMetricId(metric.getName()),
-                                                           metric.getValue().doubleValue()));
+                extraMetrics.forEach(metric -> metrics.put(metric.getName(), metric.getValue().doubleValue()));
             return this;
         }
 
@@ -135,11 +134,11 @@ public class MetricsPacket {
             return this;
         }
 
-        public Builder applyOutputNames(Map<MetricId, List<String>> outputNamesById) {
+        public Builder applyOutputNames(Map<MetricId, List<MetricId>> outputNamesById) {
             Map<MetricId, Number> newMetrics = new LinkedHashMap<>();
             outputNamesById.forEach((id, outputNames) -> {
                 if (metrics.containsKey(id))
-                    outputNames.forEach(outputName -> newMetrics.put(toMetricId(outputName), metrics.get(id)));
+                    outputNames.forEach(outputName -> newMetrics.put(outputName, metrics.get(id)));
             });
             metrics = newMetrics;
             return this;
@@ -177,7 +176,20 @@ public class MetricsPacket {
         }
 
         public Builder addConsumers(Set<ConsumerId> extraConsumers) {
-            if (extraConsumers != null) consumers.addAll(extraConsumers);
+            if ((extraConsumers != null) && !extraConsumers.isEmpty()) {
+                if (consumers.isEmpty()) {
+                    if (extraConsumers.size() == 1) {
+                        consumers = Collections.singleton(extraConsumers.iterator().next());
+                        return this;
+                    }
+                    consumers = new LinkedHashSet<>(extraConsumers.size());
+                } else if (consumers.size() == 1) {
+                    var copy = new LinkedHashSet<ConsumerId>(extraConsumers.size() + 1);
+                    copy.addAll(consumers);
+                    consumers = copy;
+                }
+                consumers.addAll(extraConsumers);
+            }
             return this;
         }
 

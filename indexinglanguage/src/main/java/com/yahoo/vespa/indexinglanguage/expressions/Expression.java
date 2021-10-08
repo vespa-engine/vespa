@@ -1,11 +1,14 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
+import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.*;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
@@ -19,9 +22,19 @@ public abstract class Expression extends Selectable {
 
     private final DataType inputType;
 
+    /**
+     * Creates an expression
+     *
+     * @param inputType the type of the input this expression can work with.
+     *        UnresolvedDataType.INSTANCE if it works with any type,
+     *        and null if it does not consume any input.
+     */
     protected Expression(DataType inputType) {
         this.inputType = inputType;
     }
+
+    /** Sets the document type and field the statement this expression is part of will write to */
+    public void setStatementOutput(DocumentType documentType, Field field) {}
 
     public final FieldValue execute(FieldValue val) {
         return execute(new ExecutionContext().setValue(val));
@@ -87,14 +100,14 @@ public abstract class Expression extends Selectable {
         return context.getValue();
     }
 
-    protected abstract void doExecute(ExecutionContext ctx);
+    protected abstract void doExecute(ExecutionContext context);
 
     public final DataType verify() {
         return verify(new VerificationContext());
     }
 
     public final DataType verify(DataType val) {
-        return verify(new VerificationContext().setValue(val));
+        return verify(new VerificationContext().setValueType(val));
     }
 
     public final Document verify(Document doc) {
@@ -140,7 +153,7 @@ public abstract class Expression extends Selectable {
 
     public final DataType verify(VerificationContext context) {
         if (inputType != null) {
-            DataType input = context.getValue();
+            DataType input = context.getValueType();
             if (input == null) {
                 throw new VerificationException(this, "Expected " + inputType.getName() + " input, got null.");
             }
@@ -155,7 +168,7 @@ public abstract class Expression extends Selectable {
         doVerify(context);
         DataType outputType = createdOutputType();
         if (outputType != null) {
-            DataType output = context.getValue();
+            DataType output = context.getValueType();
             if (output == null) {
                 throw new VerificationException(this, "Expected " + outputType.getName() + " output, got null.");
             }
@@ -167,7 +180,7 @@ public abstract class Expression extends Selectable {
                                                       output.getName() + ".");
             }
         }
-        return context.getValue();
+        return context.getValueType();
     }
 
     protected abstract void doVerify(VerificationContext context);
@@ -178,11 +191,11 @@ public abstract class Expression extends Selectable {
 
     /** Creates an expression with simple lingustics for testing */
     public static Expression fromString(String expression) throws ParseException {
-        return fromString(expression, new SimpleLinguistics());
+        return fromString(expression, new SimpleLinguistics(), Embedder.throwsOnUse);
     }
 
-    public static Expression fromString(String expression, Linguistics linguistics) throws ParseException {
-        return newInstance(new ScriptParserContext(linguistics).setInputStream(new IndexingInput(expression)));
+    public static Expression fromString(String expression, Linguistics linguistics, Embedder embedder) throws ParseException {
+        return newInstance(new ScriptParserContext(linguistics, embedder).setInputStream(new IndexingInput(expression)));
     }
 
     public static Expression newInstance(ScriptParserContext context) throws ParseException {

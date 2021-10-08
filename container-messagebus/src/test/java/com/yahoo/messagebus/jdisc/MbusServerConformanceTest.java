@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.jdisc;
 
 import com.google.inject.AbstractModule;
@@ -31,6 +31,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 import static com.yahoo.messagebus.ErrorCode.APP_FATAL_ERROR;
+import static com.yahoo.messagebus.ErrorCode.SEND_QUEUE_CLOSED;
 import static com.yahoo.messagebus.ErrorCode.SESSION_BUSY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;

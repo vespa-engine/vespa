@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mysearch.h"
 #include <vespa/vespalib/testkit/testapp.h>
@@ -1451,6 +1451,22 @@ TEST("require that intermediate cost tier is minimum cost tier of children") {
                addChild(ap(MyLeafSpec(30).cost_tier(2).create()))));
     EXPECT_EQUAL(bp1->getState().cost_tier(), 1u);
     EXPECT_EQUAL(bp2->getState().cost_tier(), 2u);
+}
+
+void verify_or_est(const std::vector<Blueprint::HitEstimate> &child_estimates, Blueprint::HitEstimate expect) {
+    OrBlueprint my_or;
+    my_or.setDocIdLimit(32);
+    auto my_est = my_or.combine(child_estimates);
+    EXPECT_EQUAL(my_est.empty, expect.empty);
+    EXPECT_EQUAL(my_est.estHits, expect.estHits);
+}
+
+TEST("require that OR blueprint use saturated sum as estimate") {
+    TEST_DO(verify_or_est({{0, true},{0, true},{0, true}}, {0, true}));
+    TEST_DO(verify_or_est({{0, true},{0, false},{0, true}}, {0, false}));
+    TEST_DO(verify_or_est({{4, false},{6, false},{5, false}}, {15, false}));
+    TEST_DO(verify_or_est({{5, false},{20, false},{10, false}}, {32, false}));
+    TEST_DO(verify_or_est({{100, false},{300, false},{200, false}}, {300, false}));
 }
 
 TEST_MAIN() { TEST_DEBUG("lhs.out", "rhs.out"); TEST_RUN_ALL(); }

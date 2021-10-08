@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "protocol.h"
 #include <lz4.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -25,6 +25,7 @@ const Memory REQUEST_DEF_CONTENT = "defContent";
 const Memory REQUEST_CLIENT_CONFIGID = "configId";
 const Memory REQUEST_CLIENT_HOSTNAME = "clientHostname";
 const Memory REQUEST_CONFIG_MD5 = "configMD5";
+const Memory REQUEST_CONFIG_XXHASH64 = "configXxhash64";
 const Memory REQUEST_CURRENT_GENERATION = "currentGeneration";
 const Memory REQUEST_TIMEOUT = "timeout";
 const Memory REQUEST_TRACE = "trace";
@@ -36,7 +37,7 @@ const Memory RESPONSE_DEF_NAMESPACE = "defNamespace";
 const Memory RESPONSE_DEF_MD5 = "defMD5";
 const Memory RESPONSE_CONFIGID = "configId";
 const Memory RESPONSE_CLIENT_HOSTNAME = "clientHostname";
-const Memory RESPONSE_CONFIG_MD5 = "configMD5";
+const Memory RESPONSE_CONFIG_XXHASH64 = "configXxhash64";
 const Memory RESPONSE_CONFIG_GENERATION = "generation";
 const Memory RESPONSE_PAYLOAD = "payload";
 const Memory RESPONSE_TRACE = "trace";

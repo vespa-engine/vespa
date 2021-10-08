@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
 import com.yahoo.vespa.flags.custom.HostResources;
@@ -17,7 +17,7 @@ class PermanentFlagsTest {
     public void testSharedHostFlag() {
         SharedHost sharedHost = new SharedHost(List.of(new HostResources(
                 4.0, 16.0, 50.0, 0.3,
-                "fast", "local",
+                "fast", "local", "admin",
                 10)),
                 null);
         testGeneric(PermanentFlags.SHARED_HOST, sharedHost);

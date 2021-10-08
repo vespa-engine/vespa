@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchchain.testutil;
 
 
@@ -38,9 +38,9 @@ public class DocumentSourceSearcher extends Searcher {
     // TODO: update tests to explicitly set hits, so that the default results can be removed entirely.
     private Result defaultFilledResult;
 
-    private Map<Query, Result> completelyFilledResults = new HashMap<>();
-    private Map<Query, Result> unFilledResults = new HashMap<>();
-    private Map<String, Set<String>> summaryClasses = new HashMap<>();
+    private final Map<Query, Result> completelyFilledResults = new HashMap<>();
+    private final Map<Query, Result> unFilledResults = new HashMap<>();
+    private final Map<String, Set<String>> summaryClasses = new HashMap<>();
 
     private int queryCount;
 

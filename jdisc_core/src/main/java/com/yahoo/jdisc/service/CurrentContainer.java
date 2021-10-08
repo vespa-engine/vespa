@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.service;
 
 import com.yahoo.jdisc.Container;
@@ -27,11 +27,19 @@ public interface CurrentContainer {
      *
      * @param uri The identifier used to match this Request to an appropriate {@link ClientProvider} or {@link
      *            RequestHandler}. The hostname must be "localhost" or a fully qualified domain name.
+     * @param context that can be attached for reference tracking
      * @return A reference to the current Container.
      * @throws NoBindingSetSelectedException If no {@link BindingSet} was selected by the {@link BindingSetSelector}.
      * @throws BindingSetNotFoundException   If the named BindingSet was not found.
      * @throws ContainerNotReadyException    If no active Container was found, this can only happen during initial
      *                                       setup.
      */
-    public Container newReference(URI uri);
+    default Container newReference(URI uri, Object context) {
+        return newReference(uri);
+    }
+
+    default Container newReference(URI uri) {
+        return newReference(uri, null);
+    }
+
 }

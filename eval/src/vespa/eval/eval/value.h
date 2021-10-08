@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -61,6 +61,19 @@ struct Value {
     virtual MemoryUsage get_memory_usage() const = 0;
     virtual double as_double() const;
     bool as_bool() const { return (as_double() != 0.0); }
+};
+
+/**
+ * Common empty index
+ **/
+class EmptyIndex : public Value::Index {
+private:
+    EmptyIndex();
+    static EmptyIndex _index;
+public:
+    static const EmptyIndex &get() { return _index; }
+    size_t size() const override;
+    std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const override;
 };
 
 /**

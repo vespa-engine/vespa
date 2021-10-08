@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
 import com.yahoo.config.ConfigInstance;
@@ -29,14 +29,14 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
     FileConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, File f) {
         super(key, subscriber);
         setGeneration(0L);
-        file=f;
+        file = f;
         if (!file.exists() && !file.isFile())
-            throw new IllegalArgumentException("Not a file: "+file);
+            throw new IllegalArgumentException("Not a file: " + file);
     }
 
     @Override
     public boolean nextConfig(long timeout) {
-        if (!file.exists() && !file.isFile()) throw new IllegalArgumentException("Not a file: "+file);
+        if (!file.exists() && !file.isFile()) throw new IllegalArgumentException("Not a file: " + file);
         if (checkReloaded()) {
             log.log(FINE, () -> "User forced config reload at " + System.currentTimeMillis());
             // User forced reload
@@ -46,7 +46,7 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
             log.log(FINE, () -> "Config: " + configState.getConfig().toString());
             return true;
         }
-        if (file.lastModified()!=ts) {
+        if (file.lastModified() != ts) {
             setConfigIncGen(updateConfig());
             return true;
         }
@@ -60,7 +60,7 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
     }
 
     private T updateConfig() {
-        ts=file.lastModified();
+        ts = file.lastModified();
         try {
             ConfigPayload payload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(IOUtils.readFile(file).split("\n")));
             return payload.toInstance(configClass, key.getConfigId());

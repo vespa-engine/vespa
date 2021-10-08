@@ -1,12 +1,12 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.text.AbstractUtf8Array;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.protocol.CompressionInfo;
 import com.yahoo.vespa.config.protocol.CompressionType;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
-import com.yahoo.vespa.config.util.ConfigUtils;
 
 /**
  * Simply returns an uncompressed payload.
@@ -18,10 +18,11 @@ public class UncompressedConfigResponseFactory implements ConfigResponseFactory 
     @Override
     public ConfigResponse createResponse(AbstractUtf8Array rawPayload,
                                          long generation,
-                                         boolean applyOnRestart) {
-        String configMd5 = ConfigUtils.getMd5(rawPayload);
+                                         boolean applyOnRestart,
+                                         PayloadChecksums requestsPayloadChecksums) {
         CompressionInfo info = CompressionInfo.create(CompressionType.UNCOMPRESSED, rawPayload.getByteLength());
-        return new SlimeConfigResponse(rawPayload, generation, applyOnRestart, configMd5, info);
+        PayloadChecksums payloadChecksums = generatePayloadChecksums(rawPayload, requestsPayloadChecksums);
+        return new SlimeConfigResponse(rawPayload, generation, applyOnRestart, payloadChecksums, info);
     }
 
 }

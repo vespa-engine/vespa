@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "searchreply.h"
 
@@ -12,7 +12,8 @@ SearchReply::SearchReply()
       groupResult(),
       coverage(),
       hits(),
-      request()
+      request(),
+      my_issues()
 { }
 
 SearchReply::~SearchReply() = default;
@@ -25,7 +26,8 @@ SearchReply::SearchReply(const SearchReply &rhs)
       groupResult  (rhs.groupResult),
       coverage     (rhs.coverage),
       hits         (rhs.hits),
-      request() // NB not copied
+      request(), // NB not copied
+      my_issues() // NB not copied
 { }
 
 }

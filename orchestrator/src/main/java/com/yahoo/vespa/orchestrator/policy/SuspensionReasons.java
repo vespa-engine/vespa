@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.policy;
 
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -23,10 +23,17 @@ public class SuspensionReasons {
     private final Map<HostName, List<String>> reasons = new HashMap<>();
 
     public static SuspensionReasons nothingNoteworthy() { return new SuspensionReasons(); }
+
     public static SuspensionReasons isDown(ServiceInstance service) {
         return new SuspensionReasons().addReason(
                 service.hostName(),
                 service.descriptiveName() + " is down");
+    }
+
+    public static SuspensionReasons unknownStatus(ServiceInstance service) {
+        return new SuspensionReasons().addReason(
+                service.hostName(),
+                service.descriptiveName() + " has not yet been probed for health");
     }
 
     public static SuspensionReasons downSince(ServiceInstance service, Instant instant, Duration downDuration) {

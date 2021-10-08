@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.test;
 
 import com.yahoo.config.ConfigInstance;
@@ -17,7 +17,7 @@ import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.builder.xml.dom.DomAdminV2Builder;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
-import com.yahoo.vespa.model.filedistribution.FileDistributor;
+import com.yahoo.vespa.model.filedistribution.FileReferencesRepository;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 
@@ -41,10 +40,10 @@ public class MockRoot extends AbstractConfigProducerRoot {
 
     private static final long serialVersionUID = 1L;
 
-    private HostSystem hostSystem;
+    private final HostSystem hostSystem;
 
     private final DeployState deployState;
-    private FileDistributor fileDistributor;
+    private final FileReferencesRepository fileReferencesRepository;
     private Admin admin;
 
     public MockRoot() {
@@ -67,7 +66,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
         super(rootConfigId);
         hostSystem = new HostSystem(this, "hostsystem", deployState.getProvisioner(), deployState.getDeployLogger());
         this.deployState = deployState;
-        fileDistributor = new FileDistributor(deployState.getFileRegistry(), List.of(), deployState.isHosted());
+        fileReferencesRepository = new FileReferencesRepository();
     }
 
     public FileDistributionConfigProducer getFileDistributionConfigProducer() {
@@ -120,15 +119,11 @@ public class MockRoot extends AbstractConfigProducerRoot {
         return deployState;
     }
 
-    public FileDistributor getFileDistributor() {
-        return fileDistributor;
-    }
+    public FileReferencesRepository fileReferencesRepository() { return fileReferencesRepository; }
 
-    public HostSystem hostSystem() {
-        return hostSystem;
-    }
+    public HostSystem hostSystem() { return hostSystem; }
 
-    public void addDescendant(String configId, AbstractConfigProducer descendant) {
+    public void addDescendant(String configId, AbstractConfigProducer<?> descendant) {
         if (id2producer.containsKey(configId)) {
             throw new RuntimeException
                     ("Config ID '" + configId + "' cannot be reserved by an instance of class '" +
@@ -139,7 +134,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
     }
 
     @Override
-    public void addChild(AbstractConfigProducer abstractConfigProducer) {
+    public void addChild(AbstractConfigProducer<?> abstractConfigProducer) {
         super.addChild(abstractConfigProducer);
     }
 
@@ -150,8 +145,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
 
         try {
             Document doc = XmlHelper.getDocumentBuilder().parse(new InputSource(new StringReader(servicesXml)));
-            setAdmin(new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT, deployState.getFileRegistry(),
-                                           false, new ArrayList<>()).
+            setAdmin(new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT, false, new ArrayList<>()).
                     build(deployState, this, XML.getChildren(doc.getDocumentElement(), "admin").get(0)));
         } catch (SAXException | IOException e) {
             throw new RuntimeException(e);

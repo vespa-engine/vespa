@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.duper;
 
 import com.yahoo.component.Version;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  */
 public abstract class InfraApplication implements InfraApplicationApi {
 
-    private static final TenantName TENANT_NAME = TenantName.from("hosted-vespa");
+    static final TenantName TENANT_NAME = TenantName.from("hosted-vespa");
 
     private final ApplicationId applicationId;
     private final Capacity capacity;

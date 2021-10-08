@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
@@ -55,12 +55,15 @@ public class ArchiveUrisTest {
         assertEquals("ftp://domain/legal-dir123/", normalizeUri("ftp://domain/legal-dir123"));
         assertEquals("ftp://domain/legal-dir123/", normalizeUri("ftp://domain/legal-dir123/"));
         assertEquals("s3://my-bucket-prod.region/my-tenant-123/", normalizeUri("s3://my-bucket-prod.region/my-tenant-123/"));
+        assertEquals("s3://my-bucket-prod.region/my-tenant_123/", normalizeUri("s3://my-bucket-prod.region/my-tenant_123/"));
         assertThrows(IllegalArgumentException.class, () -> normalizeUri("domain/dir/"));
         assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp:/domain/dir/"));
         assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp:/domain//dir/"));
-        assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp://domain/illegal_dir/"));
+        assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp://domain/illegal:dir/"));
         assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp://domain/-illegal-dir/"));
+        assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp://domain/_illegal-dir/"));
         assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp://domain/illegal-dir-/"));
+        assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp://domain/illegal-dir_/"));
     }
 
     private static void assertThrows(Class<? extends Throwable> clazz, Runnable runnable) {

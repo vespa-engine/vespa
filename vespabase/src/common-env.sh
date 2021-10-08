@@ -1,5 +1,5 @@
 #! /bin/bash
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # common environment setup for vespa scripts
 
 # put these two lines in all scripts:
@@ -121,6 +121,9 @@ populate_environment
 
 export LD_LIBRARY_PATH=$VESPA_HOME/lib64
 export MALLOC_ARENA_MAX=1
+
+# Prefer newer gdb and pstack
+prepend_path /opt/rh/gcc-toolset-10/root/usr/bin
 
 # Maven is needed for tester applications
 prepend_path "$VESPA_HOME/local/maven/bin"
@@ -289,3 +292,31 @@ log_debug_message () {
 log_warning_message () {
     log_message "warning" "$*" 1>&2
 }
+
+get_numa_ctl_cmd () {
+    if ! type numactl &> /dev/null; then
+        echo "FATAL: Could not find required program numactl."
+        exit 1
+    fi
+
+    if numactl --interleave all echo &> /dev/null; then
+        # We are allowed to use numactl
+        numnodes=$(numactl --hardware 2>/dev/null |
+                   grep available |
+                   awk '$3 == "nodes" { print $2 }')
+
+        if [ "$VESPA_AFFINITY_CPU_SOCKET" ] &&
+           [ "$numnodes" -gt 1 ]
+        then
+            node=$(($VESPA_AFFINITY_CPU_SOCKET % $numnodes))
+            numactlcmd="numactl --cpunodebind=$node --membind=$node"
+        else
+            numactlcmd="numactl --interleave all"
+        fi
+    else
+        numactlcmd=""
+    fi
+
+    echo $numactlcmd
+}
+

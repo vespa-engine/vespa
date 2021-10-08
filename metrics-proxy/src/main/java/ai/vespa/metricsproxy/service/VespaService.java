@@ -2,8 +2,10 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.HealthMetric;
+import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
+import ai.vespa.metricsproxy.metric.model.ServiceId;
 
 import java.util.Collections;
 import java.util.Map;
@@ -24,7 +26,7 @@ public class VespaService implements Comparable<VespaService> {
     private final String instanceName;
     private final String configId;
     private final String serviceName;
-    private final String monitoringPrefix;
+    private final ServiceId serviceId;
     private final Map<DimensionId, String> dimensions;
 
     private volatile int pid = -1;
@@ -67,7 +69,7 @@ public class VespaService implements Comparable<VespaService> {
                          Map<DimensionId, String> dimensions) {
         this.serviceName = serviceName;
         this.instanceName = instanceName;
-        this.monitoringPrefix = monitoringPrefix;
+        serviceId = ServiceId.toServiceId(monitoringPrefix + SEPARATOR + serviceName);
         this.configId = configId;
         this.statePort = statePort;
         this.dimensions = dimensions;
@@ -81,8 +83,8 @@ public class VespaService implements Comparable<VespaService> {
      * The name used for this service in the monitoring system:
      * monitoring-system-name.serviceName
      */
-    public String getMonitoringName() {
-        return monitoringPrefix + SEPARATOR + serviceName;
+    public ServiceId getMonitoringName() {
+        return serviceId;
     }
 
     @Override
@@ -133,13 +135,23 @@ public class VespaService implements Comparable<VespaService> {
     /**
      * Get the Metrics registered for this service. Metrics are fetched over HTTP
      * if a metric http port has been defined, otherwise from log file
-     *
-     * @return the non-system metrics
      */
-    public Metrics getMetrics() {
-        Metrics remoteMetrics = remoteMetricsFetcher.getMetrics(metricsFetchCount.get());
+    public void consumeMetrics(MetricsParser.Consumer consumer) {
+        remoteMetricsFetcher.getMetrics(consumer, metricsFetchCount.get());
         metricsFetchCount.getAndIncrement();
-        return remoteMetrics;
+    }
+
+    private static class CollectMetrics implements MetricsParser.Consumer {
+        private final Metrics metrics = new Metrics();
+        @Override
+        public void consume(Metric metric) {
+            metrics.add(metric);
+        }
+    }
+    public final Metrics getMetrics() {
+        CollectMetrics collector = new CollectMetrics();
+        consumeMetrics(collector);
+        return collector.metrics;
     }
 
     /**

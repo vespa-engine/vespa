@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # Extracts the current version number (V_TAG_COMPONENT) from vtag.map and outputs this into a Java class.
 # This replaces vespajlib/../VersionTagger.java as this module cannot depend on that, nor the dependencies

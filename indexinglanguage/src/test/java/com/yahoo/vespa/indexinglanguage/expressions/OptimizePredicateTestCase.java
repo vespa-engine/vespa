@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -80,7 +80,7 @@ public class OptimizePredicateTestCase {
         assertVerifyThrows(DataType.INT, exp, "Expected predicate input, got int.");
         assertVerifyThrows(DataType.PREDICATE, exp, "Variable 'arity' must be set.");
 
-        VerificationContext context = new VerificationContext().setValue(DataType.PREDICATE);
+        VerificationContext context = new VerificationContext().setValueType(DataType.PREDICATE);
         context.setVariable("arity", DataType.STRING);
         assertVerifyCtxThrows(context, exp, "Variable 'arity' must have type int.");
         context.setVariable("arity", DataType.INT);

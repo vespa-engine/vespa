@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "attribute_metrics.h"
@@ -86,8 +86,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     {
         struct ResourceUsageMetrics : metrics::MetricSet
         {
-            metrics::DoubleValueMetric enumStore;
-            metrics::DoubleValueMetric multiValue;
+            metrics::DoubleValueMetric address_space;
             metrics::LongValueMetric   feedingBlocked;
 
             ResourceUsageMetrics(metrics::MetricSet *parent);

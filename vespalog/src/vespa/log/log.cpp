@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "log.h"
 LOG_SETUP_INDIRECT(".log", "$Id$");
@@ -102,11 +102,9 @@ Logger::setTarget()
 void
 Logger::ensurePrefix(const char *name)
 {
-    const char *start = name;
     if (name[0] != '\0' && name[0] != '.') {
         const char *end = strchr(name, '.');
         int len = end ? end - name : strlen(name);
-        start += len;
 
         if (_prefix[0]) {
             // Make sure the prefix already set is identical to this one

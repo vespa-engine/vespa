@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -151,7 +151,7 @@ protected:
 public:
     MultiValueNumericEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
 
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 

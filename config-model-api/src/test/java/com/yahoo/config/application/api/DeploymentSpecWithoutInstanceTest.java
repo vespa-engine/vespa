@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
@@ -111,6 +111,7 @@ public class DeploymentSpecWithoutInstanceTest {
         assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
         
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.requireInstance("default").upgradePolicy());
+        assertEquals(DeploymentSpec.UpgradeRollout.separate, spec.requireInstance("default").upgradeRollout());
     }
 
     @Test
@@ -277,18 +278,23 @@ public class DeploymentSpecWithoutInstanceTest {
     }
 
     @Test
+    public void productionSpecWithUpgradeRollout() {
+        StringReader r = new StringReader(
+                "<deployment>" +
+                "  <upgrade rollout='leading'/>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("leading", spec.requireInstance("default").upgradeRollout().toString());
+    }
+
+    @Test
     public void productionSpecWithUpgradePolicy() {
         StringReader r = new StringReader(
                 "<deployment>" +
                 "  <upgrade policy='canary'/>" +
-                "  <prod>" +
-                "    <region active='true'>us-west-1</region>" +
-                "    <region active='true'>us-central-1</region>" +
-                "    <region active='true'>us-east-3</region>" +
-                "  </prod>" +
                 "</deployment>"
         );
-
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("canary", spec.requireInstance("default").upgradePolicy().toString());
     }

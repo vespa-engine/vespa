@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "searchenvironment.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -16,8 +16,8 @@ __thread SearchEnvironment::EnvMap * SearchEnvironment::_localEnvMap=0;
 SearchEnvironment::Env::Env(const vespalib::string & muffens, const config::ConfigUri & configUri, Fast_NormalizeWordFolder & wf) :
     _configId(configUri.getConfigId()),
     _configurer(std::make_unique<config::SimpleConfigRetriever>(createKeySet(configUri.getConfigId()), configUri.getContext()), this),
-    _vsmAdapter(new VSMAdapter(muffens, _configId, wf)),
-    _rankManager(new RankManager(_vsmAdapter.get()))
+    _vsmAdapter(std::make_unique<VSMAdapter>(muffens, _configId, wf)),
+    _rankManager(std::make_unique<RankManager>(_vsmAdapter.get()))
 {
     
     _configurer.start();

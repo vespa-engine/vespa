@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -60,4 +60,5 @@ public abstract class ValueTransformProvider extends ExpressionConverter {
     protected abstract boolean requiresTransform(Expression exp);
 
     protected abstract Expression newTransform();
+
 }

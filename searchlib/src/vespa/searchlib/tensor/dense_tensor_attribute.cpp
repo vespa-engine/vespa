@@ -1,8 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_tensor_attribute.h"
 #include "dense_tensor_attribute_saver.h"
 #include "nearest_neighbor_index.h"
+#include "nearest_neighbor_index_loader.h"
 #include "nearest_neighbor_index_saver.h"
 #include "tensor_attribute.hpp"
 #include <vespa/eval/eval/value.h>
@@ -10,6 +11,11 @@
 #include <vespa/searchlib/attribute/load_utils.h>
 #include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/memory_allocator.h>
+#include <vespa/vespalib/util/mmap_file_allocator_factory.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.tensor.dense_tensor_attribute");
@@ -24,6 +30,7 @@ namespace search::tensor {
 namespace {
 
 constexpr uint32_t DENSE_TENSOR_ATTRIBUTE_VERSION = 1;
+constexpr uint32_t LOAD_COMMIT_INTERVAL = 256;
 const vespalib::string tensorTypeTag("tensortype");
 
 class BlobSequenceReader : public ReaderBase
@@ -31,31 +38,17 @@ class BlobSequenceReader : public ReaderBase
 private:
     static constexpr uint8_t tensorIsNotPresent = 0;
     static constexpr uint8_t tensorIsPresent = 1;
+    bool _use_index_file;
+    FileWithHeader _index_file;
+
 public:
-    BlobSequenceReader(AttributeVector &attr);
+    BlobSequenceReader(AttributeVector& attr, bool has_index);
     ~BlobSequenceReader();
     bool is_present();
-    void readTensor(void *buf, size_t len) { _datFile->ReadBuf(buf, len); }
+    void readTensor(void *buf, size_t len) { _datFile.file().ReadBuf(buf, len); }
+    bool use_index_file() const { return _use_index_file; }
+    FastOS_FileInterface& index_file() { return _index_file.file(); }
 };
-
-BlobSequenceReader::BlobSequenceReader(AttributeVector &attr)
-    : ReaderBase(attr)
-{
-}
-BlobSequenceReader::~BlobSequenceReader() = default;
-
-bool
-BlobSequenceReader::is_present() {
-    unsigned char detect;
-    _datFile->ReadBuf(&detect, sizeof(detect));
-    if (detect == tensorIsNotPresent) {
-        return false;
-    }
-    if (detect != tensorIsPresent) {
-        LOG_ABORT("should not be reached");
-    }
-    return true;
-}
 
 bool
 can_use_index_save_file(const search::attribute::Config &config, const search::attribute::AttributeHeader &header)
@@ -70,6 +63,49 @@ can_use_index_save_file(const search::attribute::Config &config, const search::a
         return false;
     }
     return true;
+}
+
+bool
+has_index_file(AttributeVector& attr)
+{
+    return LoadUtils::file_exists(attr, DenseTensorAttributeSaver::index_file_suffix());
+}
+
+BlobSequenceReader::BlobSequenceReader(AttributeVector& attr, bool has_index)
+    : ReaderBase(attr),
+      _use_index_file(has_index && has_index_file(attr) &&
+                      can_use_index_save_file(attr.getConfig(),
+                                              search::attribute::AttributeHeader::extractTags(getDatHeader()))),
+      _index_file(_use_index_file ?
+                  attribute::LoadUtils::openFile(attr, DenseTensorAttributeSaver::index_file_suffix()) :
+                  std::unique_ptr<Fast_BufferedFile>())
+{
+}
+
+BlobSequenceReader::~BlobSequenceReader() = default;
+
+bool
+BlobSequenceReader::is_present() {
+    unsigned char detect;
+    _datFile.file().ReadBuf(&detect, sizeof(detect));
+    if (detect == tensorIsNotPresent) {
+        return false;
+    }
+    if (detect != tensorIsPresent) {
+        LOG_ABORT("should not be reached");
+    }
+    return true;
+}
+
+
+
+std::unique_ptr<vespalib::alloc::MemoryAllocator>
+make_memory_allocator(const vespalib::string& name, bool swappable)
+{
+    if (swappable) {
+        return vespalib::alloc::MmapFileAllocatorFactory::instance().make_memory_allocator(name);
+    }
+    return {};
 }
 
 }
@@ -111,10 +147,19 @@ DenseTensorAttribute::memory_usage() const
     return result;
 }
 
+void
+DenseTensorAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
+{
+    TensorAttribute::populate_address_space_usage(usage);
+    if (_index) {
+        _index->populate_address_space_usage(usage);
+    }
+}
+
 DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                                            const NearestNeighborIndexFactory& index_factory)
     : TensorAttribute(baseFileName, cfg, _denseTensorStore),
-      _denseTensorStore(cfg.tensorType()),
+      _denseTensorStore(cfg.tensorType(), make_memory_allocator(getName(), cfg.paged())),
       _index()
 {
     if (cfg.hnsw_index_params().has_value()) {
@@ -190,46 +235,175 @@ DenseTensorAttribute::extract_cells_ref(DocId docId) const
     }
     return _denseTensorStore.get_typed_cells(ref);
 }
+namespace {
+class Loader {
+public:
+    virtual ~Loader() = default;
+    virtual void load(uint32_t lid, vespalib::datastore::EntryRef ref) = 0;
+    virtual void wait_complete() = 0;
+};
+}
+
+/**
+ * Will load and index documents in parallel. Note that indexing order is not guaranteed,
+ * but that is inline with the guarantees vespa already has.
+ */
+class DenseTensorAttribute::ThreadedLoader : public Loader {
+public:
+    ThreadedLoader(DenseTensorAttribute & attr, vespalib::Executor & shared_executor)
+        : _attr(attr),
+          _shared_executor(shared_executor),
+          _queue(MAX_PENDING),
+          _pending(0)
+    {}
+    void load(uint32_t lid, vespalib::datastore::EntryRef ref) override;
+    void wait_complete() override {
+        drainUntilPending(0);
+    }
+private:
+    using Entry = std::pair<uint32_t, std::unique_ptr<PrepareResult>>;
+    using Queue = vespalib::ArrayQueue<Entry>;
+
+    bool pop(Entry & entry) {
+        std::unique_lock guard(_mutex);
+        if (_queue.empty()) return false;
+        entry = std::move(_queue.front());
+        _queue.pop();
+        return true;
+    }
+    void drainQ() {
+        Queue queue(MAX_PENDING);
+        {
+            std::unique_lock guard(_mutex);
+            queue.swap(_queue);
+        }
+        while (!queue.empty()) {
+            auto item = std::move(queue.front());
+            queue.pop();
+            complete(item.first, std::move(item.second));
+        }
+    }
+
+    void complete(uint32_t lid, std::unique_ptr<PrepareResult> prepared) {
+        _attr.setCommittedDocIdLimit(std::max(_attr.getCommittedDocIdLimit(), lid + 1));
+        _attr._index->complete_add_document(lid, std::move(prepared));
+        --_pending;
+        if ((lid % LOAD_COMMIT_INTERVAL) == 0) {
+            _attr.commit();
+        };
+    }
+    void drainUntilPending(uint32_t maxPending) {
+        while (_pending > maxPending) {
+            {
+                std::unique_lock guard(_mutex);
+                while (_queue.empty()) {
+                    _cond.wait(guard);
+                }
+            }
+            drainQ();
+        }
+    }
+    static constexpr uint32_t MAX_PENDING = 1000;
+    DenseTensorAttribute  & _attr;
+    vespalib::Executor    & _shared_executor;
+    std::mutex              _mutex;
+    std::condition_variable _cond;
+    Queue                   _queue;
+    uint64_t                _pending; // _pending is only modified in forground thread
+};
+
+void
+DenseTensorAttribute::ThreadedLoader::load(uint32_t lid, vespalib::datastore::EntryRef ref) {
+    Entry item;
+    while (pop(item)) {
+        // First process items that are ready to complete
+        complete(item.first, std::move(item.second));
+    }
+    // Then ensure that there no mor ethan MAX_PENDING inflight
+    drainUntilPending(MAX_PENDING);
+
+    // Then we can issue a new one
+    ++_pending;
+    _shared_executor.execute(vespalib::makeLambdaTask([this, ref, lid]() {
+        auto prepared = _attr._index->prepare_add_document(lid, _attr._denseTensorStore.get_typed_cells(ref),
+                                                           _attr.getGenerationHandler().takeGuard());
+        std::unique_lock guard(_mutex);
+        _queue.push(std::make_pair(lid, std::move(prepared)));
+        if (_queue.size() == 1) {
+            _cond.notify_all();
+        }
+    }));
+}
+class DenseTensorAttribute::ForegroundLoader : public Loader {
+public:
+    ForegroundLoader(DenseTensorAttribute & attr) : _attr(attr) {}
+    void load(uint32_t lid, vespalib::datastore::EntryRef) override {
+        // This ensures that get_vector() (via getTensor()) is able to find the newly added tensor.
+        _attr.setCommittedDocIdLimit(lid + 1);
+        _attr._index->add_document(lid);
+        if ((lid % LOAD_COMMIT_INTERVAL) == 0) {
+            _attr.commit();
+        }
+    }
+    void wait_complete() override {
+
+    }
+private:
+    DenseTensorAttribute & _attr;
+};
 
 bool
-DenseTensorAttribute::onLoad()
+DenseTensorAttribute::onLoad(vespalib::Executor *executor)
 {
-    BlobSequenceReader tensorReader(*this);
-    if (!tensorReader.hasData()) {
+    BlobSequenceReader reader(*this, _index.get() != nullptr);
+    if (!reader.hasData()) {
         return false;
     }
-    bool has_index_file = LoadUtils::file_exists(*this, DenseTensorAttributeSaver::index_file_suffix());
-    bool use_index_file = has_index_file && _index && can_use_index_save_file(getConfig(), search::attribute::AttributeHeader::extractTags(tensorReader.getDatHeader()));
-
-    setCreateSerialNum(tensorReader.getCreateSerialNum());
-    assert(tensorReader.getVersion() == DENSE_TENSOR_ATTRIBUTE_VERSION);
+    setCreateSerialNum(reader.getCreateSerialNum());
+    assert(reader.getVersion() == DENSE_TENSOR_ATTRIBUTE_VERSION);
     assert(getConfig().tensorType().to_spec() ==
-           tensorReader.getDatHeader().getTag(tensorTypeTag).asString());
-    uint32_t numDocs(tensorReader.getDocIdLimit());
+           reader.getDatHeader().getTag(tensorTypeTag).asString());
+    uint32_t numDocs(reader.getDocIdLimit());
     _refVector.reset();
     _refVector.unsafe_reserve(numDocs);
+    std::unique_ptr<Loader> loader;
+    if (_index && !reader.use_index_file()) {
+        if (executor != nullptr) {
+            loader = std::make_unique<ThreadedLoader>(*this, *executor);
+        } else {
+            loader = std::make_unique<ForegroundLoader>(*this);
+        }
+    }
     for (uint32_t lid = 0; lid < numDocs; ++lid) {
-        if (tensorReader.is_present()) {
+        if (reader.is_present()) {
             auto raw = _denseTensorStore.allocRawBuffer();
-            tensorReader.readTensor(raw.data, _denseTensorStore.getBufSize());
+            reader.readTensor(raw.data, _denseTensorStore.getBufSize());
             _refVector.push_back(raw.ref);
-            if (_index && !use_index_file) {
-                // This ensures that get_vector() (via getTensor()) is able to find the newly added tensor.
-                setCommittedDocIdLimit(lid + 1);
-                _index->add_document(lid);
-                if ((lid % 256) == 0) {
-                    commit();
-                }
+            if (loader) {
+                loader->load(lid, raw.ref);
             }
         } else {
             _refVector.push_back(EntryRef());
         }
     }
+    if (loader) {
+        loader->wait_complete();
+    }
+    commit();
     setNumDocs(numDocs);
     setCommittedDocIdLimit(numDocs);
-    if (_index && use_index_file) {
-        auto buffer = LoadUtils::loadFile(*this, DenseTensorAttributeSaver::index_file_suffix());
-        if (!_index->load(*buffer)) {
+    if (_index && reader.use_index_file()) {
+        try {
+            auto index_loader = _index->make_loader(reader.index_file());
+            size_t cnt = 0;
+            while (index_loader->load_next()) {
+                if ((++cnt % LOAD_COMMIT_INTERVAL) == 0) {
+                    commit();
+                }
+            }
+        } catch (const std::runtime_error& ex) {
+            LOG(error, "Exception while loading nearest neighbor index for tensor attribute '%s': %s",
+                getName().c_str(), ex.what());
             return false;
         }
     }
@@ -240,8 +414,7 @@ DenseTensorAttribute::onLoad()
 std::unique_ptr<AttributeSaver>
 DenseTensorAttribute::onInitSave(vespalib::stringref fileName)
 {
-    vespalib::GenerationHandler::Guard guard(getGenerationHandler().
-                                             takeGuard());
+    vespalib::GenerationHandler::Guard guard(getGenerationHandler().takeGuard());
     auto index_saver = (_index ? _index->make_saver() : std::unique_ptr<NearestNeighborIndexSaver>());
     return std::make_unique<DenseTensorAttributeSaver>
         (std::move(guard),
@@ -261,6 +434,18 @@ uint32_t
 DenseTensorAttribute::getVersion() const
 {
     return DENSE_TENSOR_ATTRIBUTE_VERSION;
+}
+
+void
+DenseTensorAttribute::onCommit()
+{
+    TensorAttribute::onCommit();
+    if (_index) {
+        if (_index->consider_compact(getConfig().getCompactionStrategy())) {
+            incGeneration();
+            updateStat(true);
+        }
+    }
 }
 
 void
@@ -291,6 +476,15 @@ DenseTensorAttribute::get_state(const vespalib::slime::Inserter& inserter) const
     if (_index) {
         ObjectInserter index_inserter(object, "nearest_neighbor_index");
         _index->get_state(index_inserter);
+    }
+}
+
+void
+DenseTensorAttribute::onShrinkLidSpace()
+{
+    TensorAttribute::onShrinkLidSpace();
+    if (_index) {
+        _index->shrink_lid_space(getCommittedDocIdLimit());
     }
 }
 

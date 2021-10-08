@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "ownership_transfer_safe_time_point_calculator.h"
 #include <thread>
@@ -7,8 +7,7 @@ namespace storage {
 namespace distributor {
 
 OwnershipTransferSafeTimePointCalculator::TimePoint
-OwnershipTransferSafeTimePointCalculator::safeTimePoint(
-        TimePoint now) const
+OwnershipTransferSafeTimePointCalculator::safeTimePoint(TimePoint now) const
 {
     if (_max_cluster_clock_skew.count() == 0) {
         return TimePoint{};
@@ -27,8 +26,7 @@ OwnershipTransferSafeTimePointCalculator::safeTimePoint(
     // adding the max skew. This prevents generating time stamps within
     // the same whole second as another distributor already has done for
     // any of the buckets a node now owns.
-    auto now_sec = std::chrono::duration_cast<std::chrono::seconds>(
-            now.time_since_epoch());
+    auto now_sec = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch());
     return TimePoint(now_sec + std::chrono::seconds(1) + _max_cluster_clock_skew);
 }
 

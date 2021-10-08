@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.component.Version;
@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
+import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import org.junit.Before;
 import org.junit.Test;
@@ -696,13 +697,10 @@ public class NodeAgentImplTest {
     }
 
     private void verifyThatContainerIsStopped(NodeState nodeState, Optional<ApplicationId> owner) {
-        NodeSpec.Builder nodeBuilder = new NodeSpec.Builder()
-                .resources(resources)
-                .hostname(hostName)
+        NodeSpec.Builder nodeBuilder = nodeBuilder(nodeState)
                 .type(NodeType.tenant)
                 .flavor("docker")
-                .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
-                .state(nodeState);
+                .wantedDockerImage(dockerImage).currentDockerImage(dockerImage);
 
         owner.ifPresent(nodeBuilder::owner);
         NodeSpec node = nodeBuilder.build();
@@ -748,7 +746,7 @@ public class NodeAgentImplTest {
         return new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, containerOperations,
                                  () -> RegistryCredentials.none, storageMaintainer, flagSource,
                                  List.of(credentialsMaintainer), Optional.of(aclMaintainer),
-                                 Optional.of(healthChecker), clock, warmUpDuration);
+                                 Optional.of(healthChecker), clock, warmUpDuration, VespaServiceDumper.DUMMY_INSTANCE);
     }
 
     private void mockGetContainer(DockerImage dockerImage, boolean isRunning) {
@@ -783,6 +781,6 @@ public class NodeAgentImplTest {
     }
 
     private NodeSpec.Builder nodeBuilder(NodeState state) {
-        return NodeSpec.Builder.testSpec(hostName, state).resources(resources);
+        return NodeSpec.Builder.testSpec(hostName, state).realResources(resources);
     }
 }

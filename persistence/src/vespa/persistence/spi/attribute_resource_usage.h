@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -13,7 +13,7 @@ namespace storage::spi {
 class AttributeResourceUsage
 {
     double _usage;
-    vespalib::string _name; // document_type.subdb.attribute
+    vespalib::string _name; // document_type.subdb.attribute.component
 public:
     
     AttributeResourceUsage(double usage, const vespalib::string& name)

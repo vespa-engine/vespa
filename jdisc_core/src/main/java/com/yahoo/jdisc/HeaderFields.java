@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc;
 
 import com.google.common.collect.ImmutableList;
@@ -300,6 +300,11 @@ public class HeaderFields implements Map<String, List<String>> {
         @Override
         public String setValue(String value) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String toString() {
+            return key + '=' + value;
         }
     }
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services version="1.0" xmlns:preprocess="properties">
   <container id="configserver" jetty="true" version="1.0">
     <config name="container.jdisc.config.health-monitor">
@@ -30,7 +30,6 @@
     <component id="com.yahoo.vespa.config.server.host.HostRegistry" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.ApplicationRepository" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.version.VersionState" bundle="configserver" />
-    <component id="com.yahoo.vespa.config.server.zookeeper.ConfigCurator" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker" bundle="configserver" />
     <component id="com.yahoo.config.provision.Zone" bundle="config-provisioning" />
     <component id="com.yahoo.vespa.config.server.application.ConfigConvergenceChecker" bundle="configserver" />
@@ -60,7 +59,9 @@
     <component id="com.yahoo.vespa.service.duper.DuperModelManager" bundle="service-monitor" />
     <component id="com.yahoo.vespa.orchestrator.status.ZkStatusService" bundle="orchestrator" />
     <component id="com.yahoo.vespa.orchestrator.controller.RetryingClusterControllerClientFactory" bundle="orchestrator" />
-    <component id="com.yahoo.vespa.orchestrator.OrchestratorImpl" bundle="orchestrator" />
+    <component id="com.yahoo.vespa.orchestrator.OrchestratorImpl" bundle="orchestrator">
+      <preprocess:include file="orchestrator-config.xml" required="false" />
+    </component>
     
     <handler id="com.yahoo.vespa.orchestrator.resources.ApplicationSuspensionRequestHandler" bundle="orchestrator">
       <binding>http://*/orchestrator/v1/suspensions/applications</binding>
@@ -156,5 +157,6 @@
     <preprocess:include file='configserver-components.xml' required='false' />
 
     <preprocess:include file='zookeeper-server-config.xml' required='false' />
+
   </container>
 </services>

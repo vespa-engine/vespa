@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.Pair;
 import com.yahoo.compress.Compressor;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.LargeRankExpressions;
@@ -65,14 +64,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         this.name = rankProfile.getName();
         compressedProperties = compress(new Deriver(rankProfile.compile(queryProfiles, importedModels),
                                                     attributeFields, deployProperties).derive(largeExpressions));
-    }
-
-    /**
-     * Only for testing
-     */
-    public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
-                          AttributeFields attributeFields) {
-        this(rankProfile, new LargeRankExpressions(), queryProfiles, importedModels, attributeFields, new TestProperties());
     }
 
     private Compressor.Compression compress(List<Pair<String, String>> properties) {
@@ -148,8 +139,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final double termwiseLimit;
         private final double rankScoreDropLimit;
         private final int largeRankExpressionLimit;
-        private final boolean distributeLargeRankExpressions;
-        private final boolean useDistributedRankExpressions;
 
         /**
          * The rank type definitions used to derive settings for the native rank features
@@ -185,8 +174,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             rankScoreDropLimit = compiled.getRankScoreDropLimit();
             ignoreDefaultRankFeatures = compiled.getIgnoreDefaultRankFeatures();
             largeRankExpressionLimit = deployProperties.featureFlags().largeRankExpressionLimit();
-            distributeLargeRankExpressions = deployProperties.featureFlags().distributeExternalRankExpressions();
-            useDistributedRankExpressions = deployProperties.featureFlags().useExternalRankExpressions();
             rankProperties = new ArrayList<>(compiled.getRankProperties());
 
             Map<String, RankProfile.RankingExpressionFunction> functions = compiled.getFunctions();
@@ -332,7 +319,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         }
 
         /** Derives the properties this produces */
-        public List<Pair<String, String>>  derive(LargeRankExpressions largeRankExpressions) {
+        public List<Pair<String, String>> derive(LargeRankExpressions largeRankExpressions) {
             List<Pair<String, String>>  properties = new ArrayList<>();
             for (RankProfile.RankProperty property : rankProperties) {
                 if (RankingExpression.propertyName(RankProfile.FIRST_PHASE).equals(property.getName())) {
@@ -417,7 +404,24 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 properties.add(new Pair<>("vespa.type.query." + queryFeatureType.getKey(), queryFeatureType.getValue()));
             }
             if (properties.size() >= 1000000) throw new RuntimeException("Too many rank properties");
+            distributeLargeExpressionsAsFiles(properties, largeRankExpressions);
             return properties;
+        }
+
+        private void distributeLargeExpressionsAsFiles(List<Pair<String, String>> properties, LargeRankExpressions largeRankExpressions) {
+            for (ListIterator<Pair<String, String>> iter = properties.listIterator(); iter.hasNext();) {
+                Pair<String, String> property = iter.next();
+                String expression = property.getSecond();
+                if (expression.length() > largeRankExpressionLimit) {
+                    String propertyName = property.getFirst();
+                    String functionName = RankingExpression.extractScriptName(propertyName);
+                    if (functionName != null) {
+                        String mangledName = rankprofileName + "." + functionName;
+                        largeRankExpressions.add(new RankExpressionBody(mangledName, ByteBuffer.wrap(expression.getBytes(StandardCharsets.UTF_8))));
+                        iter.set(new Pair<>(RankingExpression.propertyExpressionName(functionName), mangledName));
+                    }
+                }
+            }
         }
 
         private List<Pair<String, String>> deriveRankingPhaseRankProperties(RankingExpression expression, String phase) {

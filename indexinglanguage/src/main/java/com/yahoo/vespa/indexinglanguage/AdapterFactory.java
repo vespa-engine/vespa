@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.Document;
@@ -11,7 +11,8 @@ import java.util.List;
  */
 public interface AdapterFactory {
 
-    public DocumentAdapter newDocumentAdapter(Document doc);
+    DocumentAdapter newDocumentAdapter(Document doc);
 
-    public List<UpdateAdapter> newUpdateAdapterList(DocumentUpdate upd);
+    List<UpdateAdapter> newUpdateAdapterList(DocumentUpdate upd);
+
 }

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // This file was generated like this:
 // ./create-multiarg-file.pl count 2 10 "const char *name" "double value"
 // Do not modify this file manually!

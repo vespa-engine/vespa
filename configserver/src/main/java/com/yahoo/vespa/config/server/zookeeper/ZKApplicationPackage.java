@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.google.common.base.Joiner;
@@ -10,7 +10,6 @@ import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.codegen.DefParser;
-import com.yahoo.config.model.application.provider.PreGeneratedFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.serialization.AllocatedHostsSerializer;
@@ -20,18 +19,25 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
+import com.yahoo.vespa.config.server.filedistribution.AddFileInterface;
+import com.yahoo.vespa.config.server.filedistribution.FileDBRegistry;
 import com.yahoo.vespa.config.util.ConfigUtils;
+import com.yahoo.vespa.curator.Curator;
 
 import java.io.File;
 import java.io.Reader;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.DEFCONFIGS_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
 
 /**
  * Represents an application residing in zookeeper.
@@ -42,23 +48,28 @@ public class ZKApplicationPackage implements ApplicationPackage {
 
     private final ZKApplication zkApplication;
 
-    private final Map<Version, PreGeneratedFileRegistry> fileRegistryMap = new HashMap<>();
+    private final Map<Version, FileRegistry> fileRegistryMap = new HashMap<>();
     private final Optional<AllocatedHosts> allocatedHosts;
 
     public static final String fileRegistryNode = "fileregistry";
     public static final String allocatedHostsNode = "allocatedHosts";
     private final ApplicationMetaData metaData;
 
-    public ZKApplicationPackage(ConfigCurator zk, Path sessionPath) {
-        verifyAppPath(zk, sessionPath);
-        zkApplication = new ZKApplication(zk, sessionPath);
+    public ZKApplicationPackage(AddFileInterface fileManager, Curator curator, Path sessionPath, int maxNodeSize) {
+        verifyAppPath(curator, sessionPath);
+        zkApplication = new ZKApplication(curator, sessionPath, maxNodeSize);
         metaData = readMetaDataFromLiveApp(zkApplication);
-        importFileRegistries();
+        importFileRegistries(fileManager);
         allocatedHosts = importAllocatedHosts();
     }
 
+    // For testing
+    ZKApplicationPackage(AddFileInterface fileManager, Curator curator, Path sessionPath) {
+        this(fileManager, curator, sessionPath, 10 * 1024 * 1024);
+    }
+
     private Optional<AllocatedHosts> importAllocatedHosts() {
-        if ( ! zkApplication.exists(allocatedHostsNode)) return Optional.empty();
+        if ( ! zkApplication.exists(Path.fromString(allocatedHostsNode))) return Optional.empty();
         return Optional.of(readAllocatedHosts());
     }
 
@@ -69,34 +80,34 @@ public class ZKApplicationPackage implements ApplicationPackage {
      */
     private AllocatedHosts readAllocatedHosts() {
         try {
-            return AllocatedHostsSerializer.fromJson(zkApplication.getBytes(allocatedHostsNode));
+            return AllocatedHostsSerializer.fromJson(zkApplication.getBytes(Path.fromString(allocatedHostsNode)));
         } catch (Exception e) {
             throw new RuntimeException("Unable to read allocated hosts", e);
         }
     }
 
-    private void importFileRegistries() {
-        List<String> perVersionFileRegistryNodes = zkApplication.getChildren(fileRegistryNode);
+    private void importFileRegistries(AddFileInterface fileManager) {
+        List<String> perVersionFileRegistryNodes = zkApplication.getChildren(Path.fromString(fileRegistryNode));
         perVersionFileRegistryNodes
-                .forEach(version ->
-                                 fileRegistryMap.put(Version.fromString(version),
-                                                     importFileRegistry(Joiner.on("/").join(fileRegistryNode, version))));
+                .forEach(version -> fileRegistryMap.put(Version.fromString(version),
+                                                        importFileRegistry(fileManager, Joiner.on("/").join(fileRegistryNode, version))));
     }
 
-    private PreGeneratedFileRegistry importFileRegistry(String fileRegistryNode) {
+    private FileRegistry importFileRegistry(AddFileInterface fileManager, String fileRegistryNode) {
         try {
-            return PreGeneratedFileRegistry.importRegistry(zkApplication.getDataReader(fileRegistryNode));
+            return FileDBRegistry.create(fileManager, zkApplication.getDataReader(Path.fromString(fileRegistryNode)));
         } catch (Exception e) {
             throw new RuntimeException("Could not determine which files to distribute", e);
         }
     }
 
     private ApplicationMetaData readMetaDataFromLiveApp(ZKApplication liveApp) {
-        String metaDataString = liveApp.getData(ConfigCurator.META_ZK_PATH);
+        Path metaPath = Path.fromString(ZKApplication.META_ZK_PATH);
+        String metaDataString = liveApp.getData(metaPath);
         if (metaDataString == null || metaDataString.isEmpty()) {
             return null;
         }
-        return ApplicationMetaData.fromJsonString(liveApp.getData(ConfigCurator.META_ZK_PATH));
+        return ApplicationMetaData.fromJsonString(liveApp.getData(metaPath));
     }
 
     @Override
@@ -104,8 +115,8 @@ public class ZKApplicationPackage implements ApplicationPackage {
         return metaData;
     }
 
-    private static void verifyAppPath(ConfigCurator zk, Path appPath) {
-        if (!zk.exists(appPath.getAbsolute()))
+    private static void verifyAppPath(Curator zk, Path appPath) {
+        if (!zk.exists(appPath))
             throw new RuntimeException("App with path " + appPath + " does not exist");
     }
 
@@ -125,7 +136,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
 
     @Override
     public Reader getHosts() {
-        if (zkApplication.exists(ConfigCurator.USERAPP_ZK_SUBPATH, HOSTS))
+        if (zkApplication.exists(Path.fromString(USERAPP_ZK_SUBPATH).append(HOSTS)))
         	return getUserAppData(HOSTS);
         return null;
     }
@@ -133,9 +144,9 @@ public class ZKApplicationPackage implements ApplicationPackage {
     @Override
     public List<NamedReader> getSchemas() {
         List<NamedReader> schemas = new ArrayList<>();
-        for (String sd : zkApplication.getChildren(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR)) {
+        for (String sd : zkApplication.getChildren(Path.fromString(USERAPP_ZK_SUBPATH).append(SCHEMAS_DIR))) {
             if (sd.endsWith(SD_NAME_SUFFIX))
-                schemas.add(new NamedReader(sd, new StringReader(zkApplication.getData(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR, sd))));
+                schemas.add(zkApplication.getNamedReader(sd, Path.fromString(USERAPP_ZK_SUBPATH).append(SCHEMAS_DIR).append(sd)));
         }
         return schemas;
     }
@@ -150,9 +161,9 @@ public class ZKApplicationPackage implements ApplicationPackage {
         return Collections.unmodifiableMap(fileRegistryMap);
     }
 
-    private Optional<PreGeneratedFileRegistry> getPreGeneratedFileRegistry(Version vespaVersion) {
+    private Optional<FileRegistry> getFileRegistry(Version vespaVersion) {
         // Assumes at least one file registry, which we always have.
-        Optional<PreGeneratedFileRegistry> fileRegistry = Optional.ofNullable(fileRegistryMap.get(vespaVersion));
+        Optional<FileRegistry> fileRegistry = Optional.ofNullable(fileRegistryMap.get(vespaVersion));
         if (fileRegistry.isEmpty()) {
             fileRegistry = Optional.of(fileRegistryMap.values().iterator().next());
         }
@@ -161,7 +172,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
 
     private Reader retrieveConfigDefReader(String def) {
         try {
-            return zkApplication.getDataReader(ConfigCurator.DEFCONFIGS_ZK_SUBPATH, def);
+            return zkApplication.getNamedReader("configdefinition", Path.fromString(DEFCONFIGS_ZK_SUBPATH).append(def));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Could not retrieve config definition " + def, e);
         }
@@ -171,7 +182,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     public Map<ConfigDefinitionKey, UnparsedConfigDefinition> getAllExistingConfigDefs() {
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> ret = new LinkedHashMap<>();
 
-        List<String> allDefs = zkApplication.getChildren(ConfigCurator.DEFCONFIGS_ZK_SUBPATH);
+        List<String> allDefs = zkApplication.getChildren(Path.fromString(DEFCONFIGS_ZK_SUBPATH));
 
         for (String nodeName : allDefs) {
             ConfigDefinitionKey key = ConfigUtils.createConfigDefinitionKeyFromZKString(nodeName);
@@ -201,7 +212,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
      */
     @Override
     public List<NamedReader> getFiles(Path relativePath, String suffix, boolean recurse) {
-        return zkApplication.getAllDataFromDirectory(ConfigCurator.USERAPP_ZK_SUBPATH + '/' + relativePath.getRelative(), suffix, recurse);
+        return zkApplication.getAllDataFromDirectory(Path.fromString(USERAPP_ZK_SUBPATH).append(relativePath), suffix, recurse);
     }
 
     @Override
@@ -226,17 +237,27 @@ public class ZKApplicationPackage implements ApplicationPackage {
     public Optional<Reader> getValidationOverrides() { return optionalFile(VALIDATION_OVERRIDES.getName()); }
 
     private Optional<Reader> optionalFile(String file) {
-        if (zkApplication.exists(ConfigCurator.USERAPP_ZK_SUBPATH, file))
+        if (zkApplication.exists(Path.fromString(USERAPP_ZK_SUBPATH).append(file)))
             return Optional.of(getUserAppData(file));
         else
             return Optional.empty();
     }
 
+    private static Set<String> getPaths(FileRegistry fileRegistry) {
+        Set<String> paths = new LinkedHashSet<>();
+        synchronized (fileRegistry) {
+            for (FileRegistry.Entry e : fileRegistry.export()) {
+                paths.add(e.relativePath);
+            }
+        }
+        return paths;
+    }
+
     @Override
     public List<ComponentInfo> getComponentsInfo(Version vespaVersion) {
         List<ComponentInfo> components = new ArrayList<>();
-        PreGeneratedFileRegistry fileRegistry = getPreGeneratedFileRegistry(vespaVersion).get();
-        for (String path : fileRegistry.getPaths()) {
+        FileRegistry fileRegistry = getFileRegistry(vespaVersion).get();
+        for (String path : getPaths(fileRegistry)) {
             if (path.startsWith(COMPONENT_DIR + File.separator) && path.endsWith(".jar")) {
                 ComponentInfo component = new ComponentInfo(path);
                 components.add(component);
@@ -246,17 +267,17 @@ public class ZKApplicationPackage implements ApplicationPackage {
     }
 
     private Reader getUserAppData(String node) {
-        return zkApplication.getDataReader(ConfigCurator.USERAPP_ZK_SUBPATH, node);
+        return zkApplication.getDataReader(Path.fromString(USERAPP_ZK_SUBPATH).append(node));
     }
 
     @Override
     public Reader getRankingExpression(String name) {
-        return zkApplication.getDataReader(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR, name);
+        return zkApplication.getDataReader(Path.fromString(USERAPP_ZK_SUBPATH).append(SCHEMAS_DIR).append(name));
     }
 
     @Override
     public File getFileReference(Path pathRelativeToAppDir) {
-        String path = ConfigCurator.USERAPP_ZK_SUBPATH + "/" + pathRelativeToAppDir.getRelative();
+        Path path = Path.fromString(USERAPP_ZK_SUBPATH).append(pathRelativeToAppDir);
 
         // File does not exist: Manufacture a non-existing file
         if ( ! zkApplication.exists(path)) return new File(pathRelativeToAppDir.getRelative());
@@ -266,8 +287,8 @@ public class ZKApplicationPackage implements ApplicationPackage {
 
     @Override
     public void validateIncludeDir(String dirName) {
-        String fullPath = ConfigCurator.USERAPP_ZK_SUBPATH + "/" + dirName;
-        if ( ! zkApplication.exists(fullPath)) {
+        Path path = Path.fromString(USERAPP_ZK_SUBPATH).append(dirName);
+        if ( ! zkApplication.exists(path)) {
             throw new IllegalArgumentException("Cannot include directory '" + dirName +
                                                "', as it does not exist in ZooKeeper!");
         }

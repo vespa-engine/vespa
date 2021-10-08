@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.opennlp;
 
 import com.yahoo.language.Language;
@@ -19,7 +19,6 @@ import opennlp.tools.stemmer.Stemmer;
 import opennlp.tools.stemmer.snowball.SnowballStemmer;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -52,7 +51,7 @@ public class OpenNlpTokenizer implements Tokenizer {
 
     @Override
     public Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents) {
-        if (input.isEmpty()) return Collections.emptyList();
+        if (input.isEmpty()) return List.of();
         Stemmer stemmer = stemmerFor(language, stemMode);
         if (stemmer == null) return simpleTokenizer.tokenize(input, language, stemMode, removeAccents);
 

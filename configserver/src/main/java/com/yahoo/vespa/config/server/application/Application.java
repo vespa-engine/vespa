@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.collections.Pair;
@@ -8,8 +8,6 @@ import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
-import java.util.logging.Level;
-
 import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -31,6 +29,7 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.yolean.Exceptions;
 
+import java.util.logging.Level;
 import java.util.Objects;
 import java.util.Set;
 
@@ -103,42 +102,39 @@ public class Application implements ModelResult {
         long start = System.currentTimeMillis();
         metricUpdater.incrementRequests();
         ConfigKey<?> configKey = req.getConfigKey();
-        String defMd5 = configKey.getMd5();
+        String defMd5 = req.getRequestDefMd5();
         if (defMd5 == null || defMd5.isEmpty()) {
             defMd5 = ConfigUtils.getDefMd5(req.getDefContent().asList());
         }
         ConfigCacheKey cacheKey = new ConfigCacheKey(configKey, defMd5);
         log.log(Level.FINE, () -> TenantRepository.logPre(getId()) + ("Resolving config " + cacheKey));
 
+        ConfigResponse config;
         if (useCache(req)) {
-            ConfigResponse config = cache.get(cacheKey);
-            if (config != null) {
-                log.log(Level.FINE, () -> TenantRepository.logPre(getId()) + ("Found config " + cacheKey + " in cache"));
-                metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
-                return config;
-            }
+            config = cache.computeIfAbsent(cacheKey, (ConfigCacheKey key) -> {
+                var response = createConfigResponse(configKey, req, responseFactory);
+                metricUpdater.setCacheConfigElems(cache.configElems());
+                metricUpdater.setCacheChecksumElems(cache.checkSumElems());
+                return response;
+            });
+        } else {
+            config = createConfigResponse(configKey, req, responseFactory);
         }
+        metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
+        return config;
+    }
 
+    private ConfigResponse createConfigResponse(ConfigKey<?> configKey, GetConfigRequest req, ConfigResponseFactory responseFactory) {
         ConfigDefinition def = getTargetDef(req);
         if (def == null) {
             metricUpdater.incrementFailedRequests();
             throw new UnknownConfigDefinitionException("Unable to find config definition for '" + configKey.getNamespace() + "." + configKey.getName());
         }
-        log.log(Level.FINE, () -> TenantRepository.logPre(getId()) + ("Resolving " + configKey + " with config definition " + def));
-
-
+        log.log(Level.FINE, () -> TenantRepository.logPre(getId()) + "Resolving " + configKey + " with config definition " + def);
 
         var payload = createPayload(configKey, def);
-        ConfigResponse configResponse = responseFactory.createResponse(payload.getFirst(),
-                                                                       applicationGeneration,
-                                                                       payload.getSecond());
-        metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
-        if (useCache(req)) {
-            cache.put(cacheKey, configResponse, configResponse.getConfigMd5());
-            metricUpdater.setCacheConfigElems(cache.configElems());
-            metricUpdater.setCacheChecksumElems(cache.checkSumElems());
-        }
-        return configResponse;
+
+        return responseFactory.createResponse(payload.getFirst(), applicationGeneration, payload.getSecond(), req.configPayloadChecksums());
     }
 
     private Pair<AbstractUtf8Array, Boolean> createPayload(ConfigKey<?> configKey, ConfigDefinition def) {

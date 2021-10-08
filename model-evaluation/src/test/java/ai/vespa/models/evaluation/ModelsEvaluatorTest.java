@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
 import com.yahoo.config.subscription.ConfigGetter;
@@ -137,7 +137,8 @@ public class ModelsEvaluatorTest {
                                                                         RankingExpressionsConfig.class).getConfig("");
         OnnxModelsConfig onnxModelsConfig = new ConfigGetter<>(new FileSource(configDir.append("onnx-models.cfg").toFile()),
                                                                OnnxModelsConfig.class).getConfig("");
-        return new ModelsEvaluator(config, constantsConfig, expressionsConfig, onnxModelsConfig, MockFileAcquirer.returnFile(null));
+        return new ModelsEvaluator(new RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"), MockFileAcquirer.returnFile(null)),
+                config, constantsConfig, expressionsConfig, onnxModelsConfig);
     }
 
 }

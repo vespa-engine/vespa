@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi;
 
 import com.yahoo.document.Document;
@@ -14,12 +14,11 @@ import java.util.List;
  * Retrieving the list is not thread safe, so wait until visitor is done. This
  * is a simple class merely meant for testing.
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
+ * @author Håkon Humberset
  */
 public class SimpleVisitorDocumentQueue extends DumpVisitorDataHandler {
-    private final List<Document> documents = new LinkedList<Document>();
+    private final List<Document> documents = new LinkedList<>();
 
-    // Inherit doc from VisitorDataHandler
     public void reset() {
         super.reset();
         documents.clear();

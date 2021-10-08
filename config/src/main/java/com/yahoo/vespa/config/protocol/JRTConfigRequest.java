@@ -1,6 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigKey;
 
@@ -14,14 +15,14 @@ import java.util.Optional;
 public interface JRTConfigRequest {
 
     /**
-     * Get the config key of the config request.
+     * Returns the config key of the config request.
      *
      * @return a {@link ConfigKey}.
      */
     ConfigKey<?> getConfigKey();
 
     /**
-     * Perform request parameter validation of this config request. This method should be called before fetching
+     * Performs request parameter validation of this config request. This method should be called before fetching
      * any kind of config protocol-specific parameter.
      *
      * @return true if valid, false if not.
@@ -29,21 +30,36 @@ public interface JRTConfigRequest {
     boolean validateParameters();
 
     /**
-     * Get the config md5 of the config request. Return an empty string if no response has been returned.
+     * Returns the config md5 of the config request. Return an empty string if no response has been returned.
      *
      * @return a config md5.
      */
     String getRequestConfigMd5();
 
     /**
-     * Get the generation of the requested config. If none has been given, 0 should be returned.
+     * Returns the md5 of the config definition in the request.
+     *
+     * @return an md5 of config definition in request.
+     */
+    String getRequestDefMd5();
+
+    /**
+     * Returns the generation of the requested config. If none has been given, 0 should be returned.
+     * Returns the checksum of the config request. Return an empty string if no response has been returned.
+     *
+     * @return a config checksum.
+     */
+    PayloadChecksums getRequestConfigChecksums();
+
+    /**
+     * Returns the generation of the requested config. If none has been given, 0 should be returned.
      *
      * @return the generation in the request.
      */
     long getRequestGeneration();
 
     /**
-     * Get the JRT request object for this config request.
+     * Returns the JRT request object for this config request.
      * TODO: This method leaks the internal jrt stuff :(
      *
      * @return a {@link Request} object.
@@ -51,14 +67,14 @@ public interface JRTConfigRequest {
     Request getRequest();
 
     /**
-     * Get a short hand description of this request.
+     * Returns a short hand description of this request.
      *
      * @return a short description
      */
     String getShortDescription();
 
     /**
-     * Get the error code of this request
+     * Returns the error code of this request
      *
      * @return the error code as defined in {@link com.yahoo.vespa.config.ErrorCode}.
      */
@@ -72,27 +88,27 @@ public interface JRTConfigRequest {
     String errorMessage();
 
     /**
-     * Get the server timeout of this request.
+     * Returns the server timeout of this request.
      *
      * @return the timeout given to the server
      */
     long getTimeout();
 
     /**
-     * Get the config protocol version
+     * Returns the config protocol version
      *
      * @return a protocol version number.
      */
     long getProtocolVersion();
 
     /**
-     * Get the host name of the client that is requesting config.
+     * Returns the host name of the client that is requesting config.
      * @return hostname of the client.
      */
     String getClientHostName();
 
     /**
-     * Get the Vespa version of the client that initiated the request
+     * Returns the Vespa version of the client that initiated the request
      *
      * @return Vespa version of the client
      */

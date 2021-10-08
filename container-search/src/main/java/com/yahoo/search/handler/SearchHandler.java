@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
 import com.google.inject.Inject;
@@ -23,6 +23,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.query.parser.ParseException;
@@ -87,7 +88,7 @@ public class SearchHandler extends LoggingRequestHandler {
 
     /** Event name for number of connections to the search subsystem */
     private static final String SEARCH_CONNECTIONS = "search_connections";
-    static final String RENDER_LATENCY_METRIC = "jdisc.search.render_latency";
+    static final String RENDER_LATENCY_METRIC = "jdisc.render.latency";
     static final String MIME_DIMENSION = "mime";
     static final String RENDERER_DIMENSION = "renderer";
 
@@ -104,6 +105,8 @@ public class SearchHandler extends LoggingRequestHandler {
     private final Optional<String> hostResponseHeaderKey;
     
     private final String selfHostname = HostName.getLocalhost();
+
+    private final Embedder embedder;
 
     private final ExecutionFactory executionFactory;
 
@@ -129,6 +132,22 @@ public class SearchHandler extends LoggingRequestHandler {
     public SearchHandler(Statistics statistics,
                          Metric metric,
                          ContainerThreadPool threadpool,
+                         CompiledQueryProfileRegistry queryProfileRegistry,
+                         ContainerHttpConfig config,
+                         Embedder embedder,
+                         ExecutionFactory executionFactory) {
+        this(statistics, metric, threadpool.executor(), queryProfileRegistry, embedder, executionFactory,
+             config.numQueriesToTraceOnDebugAfterConstruction(),
+             config.hostResponseHeaderKey().equals("") ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()));
+    }
+
+    /**
+     * @deprecated Use the @Inject annotated constructor instead.
+     */
+    @Deprecated // Vespa 8
+    public SearchHandler(Statistics statistics,
+                         Metric metric,
+                         ContainerThreadPool threadpool,
                          AccessLog ignored,
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ContainerHttpConfig config,
@@ -136,6 +155,10 @@ public class SearchHandler extends LoggingRequestHandler {
         this(statistics, metric, threadpool.executor(), ignored, queryProfileRegistry, config, executionFactory);
     }
 
+    /**
+     * @deprecated Use the @Inject annotated constructor instead.
+     */
+    @Deprecated // Vespa 8
     public SearchHandler(Statistics statistics,
                          Metric metric,
                          Executor executor,
@@ -147,6 +170,7 @@ public class SearchHandler extends LoggingRequestHandler {
              metric,
              executor,
              queryProfileRegistry,
+             Embedder.throwsOnUse,
              executionFactory,
              containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
              containerHttpConfig.hostResponseHeaderKey().equals("") ?
@@ -168,12 +192,17 @@ public class SearchHandler extends LoggingRequestHandler {
              metric,
              executor,
              QueryProfileConfigurer.createFromConfig(queryProfileConfig).compile(),
+             Embedder.throwsOnUse,
              executionFactory,
              containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
              containerHttpConfig.hostResponseHeaderKey().equals("") ?
                      Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey()));
     }
 
+    /**
+     * @deprecated Use the @Inject annotated constructor instead.
+     */
+    @Deprecated // Vespa 8
     public SearchHandler(Statistics statistics,
                          Metric metric,
                          Executor executor,
@@ -181,19 +210,22 @@ public class SearchHandler extends LoggingRequestHandler {
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ExecutionFactory executionFactory,
                          Optional<String> hostResponseHeaderKey) {
-        this(statistics, metric, executor, queryProfileRegistry, executionFactory, 0, hostResponseHeaderKey);
+        this(statistics, metric, executor, queryProfileRegistry, Embedder.throwsOnUse,
+             executionFactory, 0, hostResponseHeaderKey);
     }
 
     private SearchHandler(Statistics statistics,
                          Metric metric,
                          Executor executor,
                          CompiledQueryProfileRegistry queryProfileRegistry,
+                         Embedder embedder,
                          ExecutionFactory executionFactory,
                          long numQueriesToTraceOnDebugAfterStartup,
                          Optional<String> hostResponseHeaderKey) {
         super(executor, metric, true);
         log.log(Level.FINE, () -> "SearchHandler.init " + System.identityHashCode(this));
         this.queryProfileRegistry = queryProfileRegistry;
+        this.embedder = embedder;
         this.executionFactory = executionFactory;
 
         this.maxThreads = examineExecutor(executor);
@@ -297,7 +329,11 @@ public class SearchHandler extends LoggingRequestHandler {
         String queryProfileName = requestMap.getOrDefault("queryProfile", null);
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
 
-        Query query = new Query(request, requestMap, queryProfile);
+        Query query = new Query.Builder().setRequest(request)
+                                         .setRequestMap(requestMap)
+                                         .setQueryProfile(queryProfile)
+                                         .setEmbedder(embedder)
+                                         .build();
 
         boolean benchmarking = VespaHeaders.benchmarkOutput(request);
         boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarking, request.getJDiscRequest().headers());

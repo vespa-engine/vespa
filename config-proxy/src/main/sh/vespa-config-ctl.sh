@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # BEGIN environment bootstrap section
 # Do not edit between here and END as this section should stay identical in all scripts
@@ -109,7 +109,7 @@ case $1 in
         nohup sbin/vespa-retention-enforcer > ${LOGDIR}/vre-start.log 2>&1 </dev/null &
         configsources=`bin/vespa-print-default configservers_rpc`
         userargs=$VESPA_CONFIGPROXY_JVMARGS
-        jvmopts="-Xms32M -Xmx256M -XX:CompressedClassSpaceSize=32m -XX:MaxDirectMemorySize=32m -XX:ThreadStackSize=256 -XX:MaxJavaStackTraceDepth=1000 -XX:-OmitStackTraceInFastThrow"
+        jvmopts="-Xms32M -Xmx128M -XX:CompressedClassSpaceSize=32m -XX:MaxDirectMemorySize=32m -XX:ThreadStackSize=256 -XX:MaxJavaStackTraceDepth=1000 -XX:-OmitStackTraceInFastThrow"
 
         VESPA_SERVICE_NAME=configproxy
         export VESPA_SERVICE_NAME

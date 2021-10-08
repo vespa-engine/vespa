@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.yahoo.config.provision.HostName;
@@ -51,8 +51,7 @@ public class LoadBalancerSerializer {
         Cursor root = slime.setObject();
 
         root.setString(idField, loadBalancer.id().serializedForm());
-        // TODO(mpolden): Stop writing this field for empty instance after 2021-06-01
-        root.setString(hostnameField, loadBalancer.instance().map(instance -> instance.hostname().value()).orElse(""));
+        loadBalancer.instance().ifPresent(instance -> root.setString(hostnameField, instance.hostname().value()));
         root.setString(stateField, asString(loadBalancer.state()));
         root.setLong(changedAtField, loadBalancer.changedAt().toEpochMilli());
         loadBalancer.instance().flatMap(LoadBalancerInstance::dnsZone).ifPresent(dnsZone -> root.setString(dnsZoneField, dnsZone.id()));

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -68,12 +68,10 @@ public:
      * @param sampler if given, this object will be used to obtain the
      *                time when the @ref CheckTasks method is invoked. If a
      *                sampler is not given, time sampling will be
-     *                handled internally.
-     * @param now if given, indicates the current time. This value is
-     *            used by the constructor to init internal variables.
+     *                handled internally. The sampler will also be used by
+     *                the constructor to init internal variables.
      **/
-    FNET_Scheduler(vespalib::steady_time *sampler = nullptr,
-                   vespalib::steady_time *now = nullptr);
+    FNET_Scheduler(vespalib::steady_time *sampler = nullptr);
     virtual ~FNET_Scheduler();
 
 

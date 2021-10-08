@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_define_module(
     DEPENDS
     fastos
@@ -209,7 +209,6 @@ vespa_define_module(
     src/tests/queryeval/weak_and_scorers
     src/tests/queryeval/weighted_set_term
     src/tests/queryeval/wrappers
-    src/tests/rankingexpression/feature_name_extractor
     src/tests/rankingexpression/intrinsic_blueprint_adapter
     src/tests/ranksetup
     src/tests/ranksetup/verify_feature
@@ -234,7 +233,6 @@ vespa_define_module(
 )
 
 install_java_artifact(searchlib)
-install_fat_java_artifact(searchlib)
 
 vespa_install_script(src/main/sh/vespa-gbdt-converter bin)
 vespa_install_script(src/main/sh/vespa-treenet-converter bin)

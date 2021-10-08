@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network;
 
 import com.yahoo.messagebus.Message;
@@ -24,7 +24,7 @@ public interface NetworkOwner {
      * @param name The name of the protocol to return.
      * @return The named protocol.
      */
-    public Protocol getProtocol(Utf8Array name);
+    Protocol getProtocol(Utf8Array name);
 
     /**
      * All messages that arrive in the network layer is passed to its owner through this function.
@@ -32,13 +32,6 @@ public interface NetworkOwner {
      * @param message The message that just arrived from the network.
      * @param session The name of the session that is the recipient of the request.
      */
-    public void deliverMessage(Message message, String session);
+    void deliverMessage(Message message, String session);
 
-    /**
-     * All replies that arrive in the network layer is passed through this to unentangle it from the network thread.
-     *
-     * @param reply   The reply that just arrived from the network.
-     * @param handler The handler that is to receive the reply.
-     */
-    public void deliverReply(Reply reply, ReplyHandler handler);
 }

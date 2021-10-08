@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_features_store.h"
 #include "predicate_range_expander.h"
@@ -113,8 +113,7 @@ DocumentFeaturesStore::insert(uint64_t featureId, uint32_t docId) {
     if (_currDocId != docId) {
         auto docsItr = _docs.find(docId);
         if (docsItr == _docs.end()) {
-            docsItr =
-                _docs.insert(std::make_pair(docId, FeatureVector())).first;
+            docsItr = _docs.insert(std::make_pair(docId, FeatureVector())).first;
         }
         setCurrent(docId, &docsItr->second);
     }
@@ -191,7 +190,7 @@ DocumentFeaturesStore::remove(uint32_t doc_id) {
         _ranges.erase(range_itr);
     }
     if (_currDocId == doc_id) {
-        setCurrent(0, NULL);
+        setCurrent(0, nullptr);
     }
 }
 

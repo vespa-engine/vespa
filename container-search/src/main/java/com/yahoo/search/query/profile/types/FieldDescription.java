@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.types;
 
 import com.google.common.collect.ImmutableList;
@@ -33,7 +33,7 @@ public class FieldDescription implements Comparable<FieldDescription> {
     }
 
     public FieldDescription(String name, String type) {
-        this(name,FieldType.fromString(type,null));
+        this(name,FieldType.fromString(type, null));
     }
 
     public FieldDescription(String name, FieldType type, boolean mandatory) {
@@ -60,7 +60,7 @@ public class FieldDescription implements Comparable<FieldDescription> {
      * @param overridable whether this can be overridden when first set in a profile. Default: true
      */
     public FieldDescription(String name, String typeString, String aliases, boolean mandatory, boolean overridable) {
-        this(name,FieldType.fromString(typeString,null),aliases,mandatory,overridable);
+        this(name,FieldType.fromString(typeString, null), aliases, mandatory, overridable);
     }
 
     public FieldDescription(String name, FieldType type, boolean mandatory, boolean overridable) {

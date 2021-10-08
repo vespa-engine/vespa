@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -7,6 +7,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
+import com.yahoo.yolean.concurrent.Sleeper;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpCoreContext;
 import org.junit.Rule;
@@ -38,7 +39,7 @@ public class ConfigServerRestExecutorImplTest {
     public void proxy_with_retries() throws Exception {
         var connectionReuseStrategy = new CountingConnectionReuseStrategy(Set.of("127.0.0.1"));
         var proxy = new ConfigServerRestExecutorImpl(new ZoneRegistryMock(SystemName.cd), SSLContext.getDefault(),
-                                                     (duration) -> {}, connectionReuseStrategy);
+                                                     Sleeper.NOOP, connectionReuseStrategy);
 
         URI url = url();
         String path = url.getPath();

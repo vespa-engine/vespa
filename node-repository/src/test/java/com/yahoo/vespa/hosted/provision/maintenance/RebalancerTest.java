@@ -89,12 +89,13 @@ public class RebalancerTest {
         tester.nodeRepository().nodes().deactivate(List.of(cpuSkewedNode),
                                                    new ApplicationTransaction(new ProvisionLock(cpuApp, () -> {}), tx));
         tx.commit();
+        assertEquals(1, tester.getNodes(Node.State.dirty).size());
 
         //     ... if activation fails when trying, we clean up the state
         tester.deployer().setFailActivate(true);
         tester.maintain();
         assertTrue("Want to retire is reset", tester.getNodes(Node.State.active).stream().noneMatch(node -> node.status().wantToRetire()));
-        assertEquals("Reserved node was moved to dirty", 1, tester.getNodes(Node.State.dirty).size());
+        assertEquals("Reserved node was moved to dirty", 2, tester.getNodes(Node.State.dirty).size());
         String reservedHostname = tester.getNodes(Node.State.dirty).first().get().hostname();
         tester.nodeRepository().nodes().setReady(reservedHostname, Agent.system, "Cleanup");
         tester.nodeRepository().nodes().removeRecursively(reservedHostname);
@@ -163,12 +164,12 @@ public class RebalancerTest {
 
     static class RebalancerTester {
 
-        static ApplicationId cpuApp = makeApplicationId("t1", "a1");
-        static ApplicationId memoryApp = makeApplicationId("t2", "a2");
-        private static NodeResources cpuResources = new NodeResources(8, 4, 10, 0.1);
-        private static NodeResources memResources = new NodeResources(4, 9, 10, 0.1);
-        private TestMetric metric = new TestMetric();
-        private ProvisioningTester tester = new ProvisioningTester.Builder()
+        static final ApplicationId cpuApp = makeApplicationId("t1", "a1");
+        static final ApplicationId memoryApp = makeApplicationId("t2", "a2");
+        private static final NodeResources cpuResources = new NodeResources(8, 4, 10, 0.1);
+        private static final NodeResources memResources = new NodeResources(4, 9, 10, 0.1);
+        private final TestMetric metric = new TestMetric();
+        private final ProvisioningTester tester = new ProvisioningTester.Builder()
                 .zone(new Zone(Environment.perf, RegionName.from("us-east")))
                 .flavorsConfig(flavorsConfig())
                 .build();

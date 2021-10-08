@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
@@ -116,9 +116,6 @@ public class HostEncrypter extends NodeRepositoryMaintainer {
     }
 
     private boolean encryptHost(Node host, NodeList allNodes, Set<ApplicationId> deferredApplications) {
-        // TODO: Require a minimum number of proxies in Orchestrator. For now skip proxy hosts.
-        if (host.type() == NodeType.proxyhost) return false;
-
         Set<ApplicationId> applicationsOnHost = allNodes.childrenOf(host).stream()
                                                         .filter(node -> node.allocation().isPresent())
                                                         .map(node -> node.allocation().get().owner())

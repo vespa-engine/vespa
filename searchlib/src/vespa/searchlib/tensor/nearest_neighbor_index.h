@@ -10,14 +10,21 @@
 #include <memory>
 #include <vector>
 
+class FastOS_FileInterface;
+
 namespace vespalib::slime { struct Inserter; }
 
 namespace search::fileutil { class LoadedBuffer; }
 
-namespace search { class BitVector; }
+namespace search {
+class AddressSpaceUsage;
+class BitVector;
+class CompactionStrategy;
+}
 
 namespace search::tensor {
 
+class NearestNeighborIndexLoader;
 class NearestNeighborIndexSaver;
 
 /**
@@ -59,8 +66,12 @@ public:
     virtual void remove_document(uint32_t docid) = 0;
     virtual void transfer_hold_lists(generation_t current_gen) = 0;
     virtual void trim_hold_lists(generation_t first_used_gen) = 0;
+    virtual bool consider_compact(const CompactionStrategy& compaction_strategy) = 0;
+    virtual vespalib::MemoryUsage update_stat() = 0;
     virtual vespalib::MemoryUsage memory_usage() const = 0;
+    virtual void populate_address_space_usage(search::AddressSpaceUsage& usage) const = 0;
     virtual void get_state(const vespalib::slime::Inserter& inserter) const = 0;
+    virtual void shrink_lid_space(uint32_t doc_id_limit) = 0;
 
     /**
      * Creates a saver that is used to save the index to binary form.
@@ -69,7 +80,13 @@ public:
      * and the caller ensures that an attribute read guard is held during the lifetime of the saver.
      */
     virtual std::unique_ptr<NearestNeighborIndexSaver> make_saver() const = 0;
-    virtual bool load(const fileutil::LoadedBuffer& buf) = 0;
+
+    /**
+     * Creates a loader that is used to load the index from the given file.
+     *
+     * This might throw std::runtime_error.
+     */
+    virtual std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface& file) = 0;
 
     virtual std::vector<Neighbor> find_top_k(uint32_t k,
                                              vespalib::eval::TypedCells vector,

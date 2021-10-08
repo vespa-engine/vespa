@@ -103,6 +103,7 @@ enum PathGroup {
     applicationInfo(Matcher.tenant,
                     Matcher.application,
                     "/application/v4/tenant/{tenant}/application/{application}/package",
+                    "/application/v4/tenant/{tenant}/application/{application}/diff/{number}",
                     "/application/v4/tenant/{tenant}/application/{application}/compile-version",
                     "/application/v4/tenant/{tenant}/application/{application}/deployment",
                     "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
@@ -152,6 +153,10 @@ enum PathGroup {
                Matcher.application,
                "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/{environment}/region/{region}/reindex",
                "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/{environment}/region/{region}/reindexing"),
+
+    serviceDump(Matcher.tenant,
+                Matcher.application,
+                "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/{environment}/region/{region}/node/{node}/service-dump"),
 
     /** Paths used for development deployments. */
     developmentDeployment(Matcher.tenant,

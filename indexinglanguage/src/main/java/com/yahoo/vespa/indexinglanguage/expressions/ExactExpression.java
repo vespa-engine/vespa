@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -25,12 +25,12 @@ public final class ExactExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        StringFieldValue input = (StringFieldValue)ctx.getValue();
+    protected void doExecute(ExecutionContext context) {
+        StringFieldValue input = (StringFieldValue) context.getValue();
         if (input.getString().isEmpty()) return;
 
         StringFieldValue output = input.clone();
-        ctx.setValue(output);
+        context.setValue(output);
 
         String prev = output.getString();
         String next = toLowerCase(prev);

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.service;
 
 import com.yahoo.jdisc.Container;
@@ -37,7 +37,7 @@ public interface ServerProvider extends SharedResource {
      * {@link Container} does <em>not</em> call this method, instead it is a required step in the {@link Application}
      * initialization code.</p>
      */
-    public void start();
+    void start();
 
     /**
      * <p>This is a synchronous method to close the listen port (or equivalent) of this ServerProvider and flush any
@@ -48,5 +48,5 @@ public interface ServerProvider extends SharedResource {
      * <p>The {@link Container} does <em>not</em> call this method, instead it is a required step in the {@link
      * Application} shutdown code.</p>
      */
-    public void close();
+    void close();
 }

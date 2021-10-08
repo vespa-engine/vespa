@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <iostream>
 #include <vector>
 #include <thread>
+#include <functional>
 
 using namespace vespalib;
 using vespalib::hwaccelrated::IAccelrated;
@@ -106,6 +107,8 @@ SparseBenchmark::SparseBenchmark(size_t numDocs, size_t numValues, size_t numQue
 }
 SparseBenchmark::~SparseBenchmark() = default;
 
+std::function<void(int64_t)> use_sum = [](int64_t) noexcept { };
+
 class UnorderedSparseBenchmark : public SparseBenchmark
 {
 private:
@@ -124,6 +127,7 @@ private:
                 sum += static_cast<int64_t>(_values[offset + i]._value) * it->second;
             }
         }
+        use_sum(sum);
     }
     map _query;
 };
@@ -154,6 +158,7 @@ private:
                 sum += static_cast<int64_t>(_values[offset + b]._value) * _query[a]._value;
             }
         }
+        use_sum(sum);
     }
     std::vector<P> _query;
 };

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.jdisc;
 
 import com.google.inject.Inject;
@@ -9,6 +9,8 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestDeniedException;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.ClientProvider;
+
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
@@ -29,9 +31,10 @@ import java.util.logging.Logger;
 public final class MbusClient extends AbstractResource implements ClientProvider, ReplyHandler {
 
     private static final Logger log = Logger.getLogger(MbusClient.class.getName());
+    private static final AtomicInteger threadId = new AtomicInteger(0);
     private final BlockingQueue<MbusRequest> queue = new LinkedBlockingQueue<>();
     private final ClientSession session;
-    private final Thread thread = new Thread(new SenderTask(), "MbusClient");
+    private final Thread thread;
     private volatile boolean done = false;
     private final ResourceReference sessionReference;
 
@@ -39,6 +42,7 @@ public final class MbusClient extends AbstractResource implements ClientProvider
     public MbusClient(ClientSession session) {
         this.session = session;
         this.sessionReference = session.refer();
+        thread = new Thread(new SenderTask(), "mbus-client-" + threadId.getAndIncrement());
     }
 
     @Override

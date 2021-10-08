@@ -1,6 +1,8 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric;
 
+import ai.vespa.metricsproxy.metric.model.MetricId;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -65,7 +67,7 @@ public class Metrics {
      * @param key metric name
      * @return the metric, or null
      */
-    public Metric getMetric(String key) {
+    public Metric getMetric(MetricId key) {
         isFrozen = true;
         for (Metric m: metrics) {
             if (m.getName().equals(key)) {

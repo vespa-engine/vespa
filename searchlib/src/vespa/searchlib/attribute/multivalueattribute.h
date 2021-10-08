@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -48,7 +48,7 @@ protected:
      **/
     bool onAddDoc(DocId doc) override { (void) doc; return false; }
 
-    vespalib::AddressSpace getMultiValueAddressSpaceUsage() const override;
+    void populate_address_space_usage(AddressSpaceUsage& usage) const override;
 
 public:
     MultiValueAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);

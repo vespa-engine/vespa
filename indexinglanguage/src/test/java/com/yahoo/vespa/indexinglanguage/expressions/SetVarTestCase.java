@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -39,7 +39,7 @@ public class SetVarTestCase {
         assertVerifyThrows(null, exp, "Expected any input, got null.");
 
         try {
-            new VerificationContext().setVariable("foo", DataType.INT).setValue(DataType.STRING).execute(exp);
+            new VerificationContext().setVariable("foo", DataType.INT).setValueType(DataType.STRING).execute(exp);
             fail();
         } catch (VerificationException e) {
             assertEquals("Attempting to assign conflicting types to variable 'foo', int vs string.", e.getMessage());
@@ -60,11 +60,11 @@ public class SetVarTestCase {
     @Test
     public void requireThatVariableTypeCanNotChange() {
         VerificationContext ctx = new VerificationContext(new SimpleTestAdapter());
-        ctx.setValue(DataType.INT);
+        ctx.setValueType(DataType.INT);
         new SetVarExpression("out").verify(ctx);
 
         try {
-            ctx.setValue(DataType.STRING);
+            ctx.setValueType(DataType.STRING);
             new SetVarExpression("out").verify(ctx);
             fail();
         } catch (VerificationException e) {

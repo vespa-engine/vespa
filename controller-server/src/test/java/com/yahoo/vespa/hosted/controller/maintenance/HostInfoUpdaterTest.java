@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.HostName;
@@ -6,6 +6,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.NodeEntity;
 import org.junit.Test;
 
@@ -83,12 +84,12 @@ public class HostInfoUpdaterTest {
         // Updates node registered under a different hostname
         ZoneId zone = tester.zoneRegistry().zones().controllerUpgraded().all().ids().get(0);
         String hostnameSuffix = ".prod." + zone.value();
-        Node configNode = new Node.Builder().hostname(HostName.from("cfg3" + hostnameSuffix))
-                                            .type(NodeType.config)
-                                            .build();
-        Node configHost = new Node.Builder().hostname(HostName.from("cfghost3" + hostnameSuffix))
-                                            .type(NodeType.confighost)
-                                            .build();
+        Node configNode = Node.builder().hostname(HostName.from("cfg3" + hostnameSuffix))
+                              .type(NodeType.config)
+                              .build();
+        Node configHost = Node.builder().hostname(HostName.from("cfghost3" + hostnameSuffix))
+                              .type(NodeType.confighost)
+                              .build();
         tester.serviceRegistry().configServer().nodeRepository().putNodes(zone, List.of(configNode, configHost));
         String switchHostname = switchHostname(configHost);
         NodeEntity configNodeEntity = new NodeEntity("cfg3"  + hostnameSuffix, "RD350G", "Lenovo", switchHostname);
@@ -108,7 +109,7 @@ public class HostInfoUpdaterTest {
     private static List<Node> allNodes(ControllerTester tester) {
         List<Node> nodes = new ArrayList<>();
         for (var zone : tester.zoneRegistry().zones().controllerUpgraded().all().ids()) {
-            nodes.addAll(tester.serviceRegistry().configServer().nodeRepository().list(zone, false));
+            nodes.addAll(tester.serviceRegistry().configServer().nodeRepository().list(zone, NodeFilter.all()));
         }
         return nodes;
     }

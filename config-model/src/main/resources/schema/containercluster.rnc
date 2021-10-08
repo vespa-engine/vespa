@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 ContainerCluster = element container | jdisc {
     attribute version { "1.0" } &
     attribute id { xsd:NCName }? &
@@ -105,7 +105,16 @@ ZooKeeper = element zookeeper {
 }
 
 ModelEvaluation = element model-evaluation {
-    empty
+    element onnx {
+        element models {
+            element model {
+                attribute name { string } &
+                element intraop-threads { xsd:nonNegativeInteger }? &
+                element interop-threads { xsd:nonNegativeInteger }? &
+                element execution-mode { string "sequential" | string "parallel" }?
+            }*
+        }?
+    }?
 }
 
 Ssl = element ssl {

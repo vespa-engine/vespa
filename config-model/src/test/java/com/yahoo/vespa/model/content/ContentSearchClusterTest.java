@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.deploy.DeployState;
@@ -99,7 +99,7 @@ public class ContentSearchClusterTest {
 
     private static void assertClusterControllerResourceLimits(double expDiskLimit, double expMemoryLimit, ContentCluster cluster) {
         var limits = getFleetcontrollerConfig(cluster).cluster_feed_block_limit();
-        assertEquals(4, limits.size());
+        assertEquals(3, limits.size());
         assertEquals(expDiskLimit, limits.get("disk"), EPSILON);
         assertEquals(expMemoryLimit, limits.get("memory"), EPSILON);
     }

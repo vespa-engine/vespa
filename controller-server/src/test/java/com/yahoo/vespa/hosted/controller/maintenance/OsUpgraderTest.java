@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
@@ -8,6 +8,7 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
@@ -261,19 +262,19 @@ public class OsUpgraderTest {
     }
 
     private List<Node> nodesRequiredToUpgrade(ZoneApi zone, SystemApplication application) {
-        return nodeRepository().list(zone.getVirtualId(), application.id())
+        return nodeRepository().list(zone.getVirtualId(), NodeFilter.all().applications(application.id()))
                                .stream()
                                .filter(OsUpgrader::canUpgrade)
                                .collect(Collectors.toList());
     }
 
     private void failNodeIn(ZoneApi zone, SystemApplication application) {
-        List<Node> nodes = nodeRepository().list(zone.getVirtualId(), application.id());
+        List<Node> nodes = nodeRepository().list(zone.getVirtualId(), NodeFilter.all().applications(application.id()));
         if (nodes.isEmpty()) {
             throw new IllegalArgumentException("No nodes allocated to " + application.id());
         }
         Node node = nodes.get(0);
-        nodeRepository().putNodes(zone.getVirtualId(), new Node.Builder(node).state(Node.State.failed).build());
+        nodeRepository().putNodes(zone.getVirtualId(), Node.builder(node).state(Node.State.failed).build());
     }
 
     /** Simulate OS upgrade of nodes allocated to application. In a real system this is done by the node itself */
@@ -285,9 +286,9 @@ public class OsUpgraderTest {
         assertWanted(wantedVersion, application, zones);
         for (ZoneApi zone : zones) {
             for (Node node : nodesRequiredToUpgrade(zone, application)) {
-                nodeRepository().putNodes(zone.getVirtualId(), new Node.Builder(node).wantedOsVersion(version)
-                                                                                     .currentOsVersion(version)
-                                                                                     .build());
+                nodeRepository().putNodes(zone.getVirtualId(), Node.builder(node).wantedOsVersion(version)
+                                                                   .currentOsVersion(version)
+                                                                   .build());
             }
             assertCurrent(version, application, zone);
         }

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
@@ -38,7 +38,6 @@
         <org.lz4.version>1.7.1</org.lz4.version>
         <org.json.version>20090211</org.json.version><!-- TODO Vespa 8: remove as provided dependency -->
         <slf4j.version>1.7.30</slf4j.version>
-        <tensorflow.version>1.12.0</tensorflow.version>
         <xml-apis.version>1.4.01</xml-apis.version>
 
         <hk2.version>2.5.0-b32</hk2.version>
@@ -120,14 +119,11 @@
                                         <include>org.glassfish.hk2:hk2-utils:[${hk2.version}]:jar:provided</include>
                                         <include>org.glassfish.hk2:osgi-resource-locator:[${hk2.osgi-resource-locator.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.bundles.repackaged:jersey-guava:[${jersey2.version}]:jar:provided</include>
-                                        <include>org.glassfish.jersey.containers:jersey-container-servlet-core:[${jersey2.version}]:jar:provided</include>
-                                        <include>org.glassfish.jersey.containers:jersey-container-servlet:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.core:jersey-client:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.core:jersey-common:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.core:jersey-server:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.ext:jersey-entity-filtering:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.ext:jersey-proxy-client:[${jersey2.version}]:jar:provided</include>
-                                        <include>org.glassfish.jersey.media:jersey-media-jaxb:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.media:jersey-media-json-jackson:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.media:jersey-media-multipart:[${jersey2.version}]:jar:provided</include>
                                         <include>org.javassist:javassist:[${javassist.version}]:jar:provided</include>
@@ -163,7 +159,6 @@
                                         <include>com.yahoo.vespa:fileacquirer:*:jar:provided</include>
                                         <include>com.yahoo.vespa:fsa:*:jar:provided</include>
                                         <include>com.yahoo.vespa:hosted-zone-api:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:http-utils:*:jar:provided</include>
                                         <include>com.yahoo.vespa:jdisc_core:*:jar:provided</include>
                                         <include>com.yahoo.vespa:jrt:*:jar:provided</include>
                                         <include>com.yahoo.vespa:linguistics:*:jar:provided</include>
@@ -272,10 +267,6 @@
                                         <include>org.junit.vintage:junit-vintage-engine:[${junit5.version}]:jar:test</include>
                                         <include>org.kohsuke:libpam4j:1.11:jar:test</include>
                                         <include>org.opentest4j:opentest4j:1.2.0:jar:test</include>
-                                        <include>org.tensorflow:libtensorflow:[${tensorflow.version}]:jar:test</include>
-                                        <include>org.tensorflow:libtensorflow_jni:[${tensorflow.version}]:jar:test</include>
-                                        <include>org.tensorflow:proto:[${tensorflow.version}]:jar:test</include>
-                                        <include>org.tensorflow:tensorflow:[${tensorflow.version}]:jar:test</include>
                                         <include>software.amazon.ion:ion-java:1.0.2:jar:test</include>
                                         <include>xerces:xercesImpl:2.12.0:jar:test</include>
                                     </includes>

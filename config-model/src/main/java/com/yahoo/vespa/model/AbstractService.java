@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
 import com.yahoo.config.FileReference;
@@ -8,7 +8,6 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.defaults.Defaults;
 
-import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -400,7 +399,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     public void setVespaMallocDebugStackTrace(String s) { vespaMallocDebugStackTrace = s; }
 
     public String getMMapNoCoreEnvVariable() {
-        return (getMMapNoCoreLimit() >= 0l)
+        return (getMMapNoCoreLimit() >= 0L)
                 ? "VESPA_MMAP_NOCORE_LIMIT=" + getMMapNoCoreLimit() + " "
                 : "";
     }
@@ -457,22 +456,10 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     /**
      * Add the given file to the application's file distributor.
      *
-     * @param relativePath path to the file, relative to the app package
-     * @return the file reference hash
+     * @param reference file reference (hash)
      */
-    public FileReference sendFile(String relativePath) {
-        Host host = null;
-        if (getHost() != null) // false when running application tests without hosts
-            host = getHost().getHost();
-        return getRoot().getFileDistributor().sendFileToHost(relativePath, host);
-    }
-
-    public FileReference sendUri(String uri) {
-        return getRoot().getFileDistributor().sendUriToHost(uri, getHost().getHost());
-    }
-
-    public FileReference sendBlob(ByteBuffer blob) {
-        return getRoot().getFileDistributor().sendBlobToHost(blob, getHost().getHost());
+    public void send(FileReference reference) {
+        getRoot().fileReferencesRepository().add(reference);
     }
 
     /** The service HTTP port for health status */

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.collections.CollectionUtil;
@@ -94,7 +94,7 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         assertTrue(a.getPersistence() instanceof ProtonEngine.Factory);
 
-        assertEquals(1, a.getStorageNodes().getChildren().size());
+        assertEquals(1, a.getStorageCluster().getChildren().size());
     }
 
     @Test
@@ -119,7 +119,7 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         assertTrue(a.getPersistence() instanceof ProtonEngine.Factory);
 
-        assertEquals(1, a.getStorageNodes().getChildren().size());
+        assertEquals(1, a.getStorageCluster().getChildren().size());
     }
 
     @Test
@@ -147,7 +147,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals("node0", a.getRootGroup().getNodes().get(0).getHostName());
 
         assertTrue(a.getPersistence() instanceof  ProtonEngine.Factory);
-        assertEquals(1, a.getStorageNodes().getChildren().size());
+        assertEquals(1, a.getStorageCluster().getChildren().size());
         assertEquals("a", a.getConfigId());
     }
 
@@ -164,7 +164,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(7.3, s.getIndexed().getQueryTimeout(), 0.0);
 
         assertTrue(c.getPersistence() instanceof ProtonEngine.Factory);
-        assertEquals(1, c.getStorageNodes().getChildren().size());
+        assertEquals(1, c.getStorageCluster().getChildren().size());
         assertEquals("clu", c.getConfigId());
         //assertEquals("content/a/0", a.getRootGroup().getNodes().get(0).getConfigId()); // This is how it should look like in an ideal world.
         assertEquals("clu/storage/0", c.getRootGroup().getNodes().get(0).getConfigId()); // Due to reuse.
@@ -211,7 +211,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(musicClusterId, ((StreamingSearchCluster)sc).getStorageRouteSpec());
 
         assertTrue(cluster.getPersistence() instanceof ProtonEngine.Factory);
-        assertEquals(1, cluster.getStorageNodes().getChildren().size());
+        assertEquals(1, cluster.getStorageCluster().getChildren().size());
 
         assertEquals(musicClusterId, cluster.getConfigId());
         //assertEquals("content/a/0", a.getRootGroup().getNodes().get(0).getConfigId());
@@ -269,7 +269,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         }
 
         assertTrue(cluster.getPersistence() instanceof ProtonEngine.Factory);
-        assertEquals(1, cluster.getStorageNodes().getChildren().size());
+        assertEquals(1, cluster.getStorageCluster().getChildren().size());
 
         assertEquals(musicClusterId, cluster.getConfigId());
     }
@@ -295,7 +295,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals("b", s.getIndexed().getClusterName());
 
         assertTrue(b.getPersistence() instanceof ProtonEngine.Factory);
-        assertEquals(1, b.getStorageNodes().getChildren().size());
+        assertEquals(1, b.getStorageCluster().getChildren().size());
 
         assertEquals("b", b.getConfigId());
         //assertEquals("content/a/0", a.getRootGroup().getNodes().get(0).getConfigId());
@@ -323,7 +323,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
-        assertEquals(2, b.getStorageNodes().getChildren().size());
+        assertEquals(2, b.getStorageCluster().getChildren().size());
         assertTrue(b.getRootGroup().getMmapNoCoreLimit().isPresent());
         assertEquals(200000, b.getRootGroup().getMmapNoCoreLimit().get().longValue());
 
@@ -352,7 +352,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
-        assertEquals(2, b.getStorageNodes().getChildren().size());
+        assertEquals(2, b.getStorageCluster().getChildren().size());
         assertTrue(b.getRootGroup().getCoreOnOOM().isPresent());
         assertTrue(b.getRootGroup().getCoreOnOOM().get());
 
@@ -379,7 +379,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
-        assertEquals(2, b.getStorageNodes().getChildren().size());
+        assertEquals(2, b.getStorageCluster().getChildren().size());
         assertFalse(b.getRootGroup().getCoreOnOOM().isPresent());
 
         assertThat(s.getSearchNodes().size(), is(2));
@@ -405,7 +405,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
-        assertEquals(2, b.getStorageNodes().getChildren().size());
+        assertEquals(2, b.getStorageCluster().getChildren().size());
         assertFalse(b.getRootGroup().getMmapNoCoreLimit().isPresent());
 
         assertThat(s.getSearchNodes().size(), is(2));
@@ -431,7 +431,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
-        assertEquals(2, b.getStorageNodes().getChildren().size());
+        assertEquals(2, b.getStorageCluster().getChildren().size());
         assertFalse(b.getRootGroup().getCoreOnOOM().isPresent());
 
         assertThat(s.getSearchNodes().size(), is(2));
@@ -459,7 +459,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
-        assertEquals(4, b.getStorageNodes().getChildren().size());
+        assertEquals(4, b.getStorageCluster().getChildren().size());
         assertTrue(b.getRootGroup().getNoVespaMalloc().isPresent());
         assertEquals("proton", b.getRootGroup().getNoVespaMalloc().get());
         assertTrue(b.getRootGroup().getVespaMalloc().isPresent());
@@ -501,7 +501,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
-        assertEquals(4, b.getStorageNodes().getChildren().size());
+        assertEquals(4, b.getStorageCluster().getChildren().size());
         assertFalse(b.getRootGroup().getNoVespaMalloc().isPresent());
         assertFalse(b.getRootGroup().getVespaMalloc().isPresent());
         assertFalse(b.getRootGroup().getVespaMallocDebug().isPresent());
@@ -532,11 +532,11 @@ public class ContentBuilderTest extends DomBuilderTest {
         s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
-        assertEquals(2, b.getStorageNodes().getChildren().size());
-        assertTrue(b.getStorageNodes().getChildren().get("0").getAffinity().isPresent());
-        assertThat(b.getStorageNodes().getChildren().get("0").getAffinity().get().cpuSocket(), is(0));
-        assertTrue(b.getStorageNodes().getChildren().get("1").getAffinity().isPresent());
-        assertThat(b.getStorageNodes().getChildren().get("1").getAffinity().get().cpuSocket(), is(1));
+        assertEquals(2, b.getStorageCluster().getChildren().size());
+        assertTrue(b.getStorageCluster().getChildren().get("0").getAffinity().isPresent());
+        assertThat(b.getStorageCluster().getChildren().get("0").getAffinity().get().cpuSocket(), is(0));
+        assertTrue(b.getStorageCluster().getChildren().get("1").getAffinity().isPresent());
+        assertThat(b.getStorageCluster().getChildren().get("1").getAffinity().get().cpuSocket(), is(1));
 
         assertThat(s.getSearchNodes().size(), is(2));
         assertTrue(s.getSearchNodes().get(0).getAffinity().isPresent());
@@ -567,7 +567,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
-        assertEquals(6, b.getStorageNodes().getChildren().size());
+        assertEquals(6, b.getStorageCluster().getChildren().size());
         assertTrue(b.getRootGroup().useCpuSocketAffinity());
 
         assertThat(s.getSearchNodes().size(), is(6));
@@ -585,12 +585,12 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertThat(s.getSearchNodes().get(5).getAffinity().get().cpuSocket(),is (0));
 
         // TODO: Only needed for the search nodes anyway?
-        assertFalse(b.getStorageNodes().getChildren().get("0").getAffinity().isPresent());
-        assertFalse(b.getStorageNodes().getChildren().get("1").getAffinity().isPresent());
-        assertFalse(b.getStorageNodes().getChildren().get("2").getAffinity().isPresent());
-        assertFalse(b.getStorageNodes().getChildren().get("3").getAffinity().isPresent());
-        assertFalse(b.getStorageNodes().getChildren().get("4").getAffinity().isPresent());
-        assertFalse(b.getStorageNodes().getChildren().get("5").getAffinity().isPresent());
+        assertFalse(b.getStorageCluster().getChildren().get("0").getAffinity().isPresent());
+        assertFalse(b.getStorageCluster().getChildren().get("1").getAffinity().isPresent());
+        assertFalse(b.getStorageCluster().getChildren().get("2").getAffinity().isPresent());
+        assertFalse(b.getStorageCluster().getChildren().get("3").getAffinity().isPresent());
+        assertFalse(b.getStorageCluster().getChildren().get("4").getAffinity().isPresent());
+        assertFalse(b.getStorageCluster().getChildren().get("5").getAffinity().isPresent());
         //assertThat(b.getStorageNodes().getChildren().get("0").getAffinity().get().cpuSocket(), is(0));
         //assertThat(b.getStorageNodes().getChildren().get("1").getAffinity().get().cpuSocket(), is(1));
         //assertThat(b.getStorageNodes().getChildren().get("2").getAffinity().get().cpuSocket(), is(2));

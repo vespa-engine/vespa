@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.google.common.collect.ImmutableMap;
@@ -38,12 +38,16 @@ public class FunctionReferenceContext {
 
     /** Create a context for a single serialization task */
     public FunctionReferenceContext(Map<String, ExpressionFunction> functions) {
-        this(functions.values());
+        this(functions, null);
     }
 
     /** Create a context for a single serialization task */
     public FunctionReferenceContext(Map<String, ExpressionFunction> functions, Map<String, String> bindings) {
-        this.functions = ImmutableMap.copyOf(functions);
+        this(ImmutableMap.copyOf(functions), bindings);
+    }
+
+    protected FunctionReferenceContext(ImmutableMap<String, ExpressionFunction> functions, Map<String, String> bindings) {
+        this.functions = functions;
         if (bindings != null)
             this.bindings.putAll(bindings);
     }

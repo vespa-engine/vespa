@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.horizon;
 
 /**
@@ -10,16 +10,8 @@ public interface HorizonClient {
 
     HorizonResponse getUser();
 
-    HorizonResponse getDashboard(String dashboardId);
-
-    HorizonResponse getFavorite(String userId);
+    HorizonResponse getDashboard();
 
     HorizonResponse getTopFolders();
-
-    HorizonResponse getRecent(String userId);
-
-    HorizonResponse getClipboard(String dashboardId);
-
-    HorizonResponse getMetaData(byte[] query);
 
 }

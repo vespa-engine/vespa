@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 
@@ -6,7 +6,6 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -36,7 +35,7 @@ public class ErrorResponseContentCreatorTest {
         byte[] rawContent = c.createErrorContent(
                 "http://foo.bar",
                 HttpServletResponse.SC_OK,
-                Optional.of("My custom error message"));
+                "My custom error message");
         String actualHtml = new String(rawContent, StandardCharsets.ISO_8859_1);
         assertEquals(expectedHtml, actualHtml);
     }

@@ -1,14 +1,15 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib.state;
 import com.yahoo.text.StringUtilities;
 
 import java.text.ParseException;
-import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
  * Be careful about changing this class, as it mirrors the ClusterState in C++.
@@ -18,23 +19,181 @@ public class ClusterState implements Cloneable {
 
     private static final NodeState DEFAULT_STORAGE_UP_NODE_STATE = new NodeState(NodeType.STORAGE, State.UP);
     private static final NodeState DEFAULT_DISTRIBUTOR_UP_NODE_STATE = new NodeState(NodeType.DISTRIBUTOR, State.UP);
+    private static final NodeState DEFAULT_STORAGE_DOWN_NODE_STATE = new NodeState(NodeType.STORAGE, State.DOWN);
+    private static final NodeState DEFAULT_DISTRIBUTOR_DOWN_NODE_STATE = new NodeState(NodeType.DISTRIBUTOR, State.DOWN);
+
+    /**
+     * Maintains a bitset where all non-down nodes have a bit set. All nodes that differs from defaultUp
+     * and defaultDown are store explicit in a hash map.
+     */
+    private static class Nodes {
+        private int logicalNodeCount;
+        private final NodeType type;
+        private final BitSet upNodes;
+        private final Map<Integer, NodeState> nodeStates = new HashMap<>();
+        Nodes(NodeType type) {
+            this.type = type;
+            upNodes = new BitSet();
+        }
+        Nodes(Nodes b) {
+            logicalNodeCount = b.logicalNodeCount;
+            type = b.type;
+            upNodes = (BitSet) b.upNodes.clone();
+            b.nodeStates.forEach((key, value) -> nodeStates.put(key, value.clone()));
+        }
+
+        void updateMaxIndex(int index) {
+            if (index > logicalNodeCount) {
+                upNodes.set(logicalNodeCount, index);
+                logicalNodeCount = index;
+            }
+        }
+
+        int getLogicalNodeCount() { return logicalNodeCount; }
+
+        NodeState getNodeState(int index) {
+            NodeState ns = nodeStates.get(index);
+            if (ns != null) return ns;
+            return (index >= getLogicalNodeCount() || ! upNodes.get(index))
+                    ? new NodeState(type, State.DOWN)
+                    : new NodeState(type, State.UP);
+        }
+
+        private void validateInput(Node node, NodeState ns) {
+            ns.verifyValidInSystemState(node.getType());
+            if (node.getType() != type) {
+                throw new IllegalArgumentException("NodeType '" + node.getType() + "' differs from '" + type + "'");
+            }
+        }
+
+        void setNodeState(Node node, NodeState ns) {
+            validateInput(node, ns);
+            int index = node.getIndex();
+            if (index >= logicalNodeCount) {
+                logicalNodeCount = index + 1;
+            }
+            setNodeStateInternal(index, ns);
+        }
+
+        void addNodeState(Node node, NodeState ns) {
+            validateInput(node, ns);
+            int index = node.getIndex();
+            updateMaxIndex(index + 1);
+            setNodeStateInternal(index, ns);
+        }
+
+        private static boolean equalsWithDescription(NodeState a, NodeState b) {
+            // This is due to NodeState.equals considers semantic equality, and description is not part of that.
+            return a.equals(b) && ((a.getState() != State.DOWN) || a.getDescription().equals(b.getDescription()));
+        }
+
+        private void setNodeStateInternal(int index, NodeState ns) {
+            nodeStates.remove(index);
+            if (ns.getState() == State.DOWN) {
+                upNodes.clear(index);
+                if ( ! equalsWithDescription(defaultDown(), ns)) {
+                    nodeStates.put(index, ns);
+                }
+            } else {
+                upNodes.set(index);
+                if ( ! equalsWithDescription(defaultUp(), ns)) {
+                    nodeStates.put(index, ns);
+                }
+            }
+        }
+
+        boolean similarToImpl(Nodes other, final NodeStateCmp nodeStateCmp) {
+            // TODO verify behavior of C++ impl against this
+            if (logicalNodeCount != other.logicalNodeCount) return false;
+            if (type != other.type) return false;
+            if ( ! upNodes.equals(other.upNodes)) return false;
+            for (Integer node : unionNodeSetWith(other.nodeStates.keySet())) {
+                final NodeState lhs = nodeStates.get(node);
+                final NodeState rhs = other.nodeStates.get(node);
+                if (!nodeStateCmp.similar(type, lhs, rhs)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private Set<Integer> unionNodeSetWith(final Set<Integer> otherNodes) {
+            final Set<Integer> unionNodeSet = new HashSet<>(nodeStates.keySet());
+            unionNodeSet.addAll(otherNodes);
+            return unionNodeSet;
+        }
+
+        @Override
+        public String toString() { return toString(false); }
+
+        String toString(boolean verbose) {
+            StringBuilder sb = new StringBuilder();
+
+            int nodeCount = verbose ? getLogicalNodeCount() : upNodes.length();
+            if ( nodeCount > 0 ) {
+                sb.append(type == NodeType.DISTRIBUTOR ? " distributor:" : " storage:").append(nodeCount);
+                for (int i = 0; i < nodeCount; i++) {
+                    String nodeState = getNodeState(i).serialize(i, verbose);
+                    if (!nodeState.isEmpty()) {
+                        sb.append(' ').append(nodeState);
+                    }
+                }
+            }
+            return sb.toString();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (! (obj instanceof Nodes)) return false;
+            Nodes b = (Nodes) obj;
+            if (logicalNodeCount != b.logicalNodeCount) return false;
+            if (type != b.type) return false;
+            if (!upNodes.equals(b.upNodes)) return false;
+            if (!nodeStates.equals(b.nodeStates)) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(logicalNodeCount, type, nodeStates, upNodes);
+        }
+        private NodeState defaultDown() {
+            return type == NodeType.STORAGE
+                    ? DEFAULT_STORAGE_DOWN_NODE_STATE
+                    : DEFAULT_DISTRIBUTOR_DOWN_NODE_STATE;
+        }
+        private NodeState defaultUp() {
+            return defaultUpNodeState(type);
+        }
+    }
 
     private int version = 0;
     private State state = State.DOWN;
-    // nodeStates maps each of the non-up nodes that have an index <= the node count for its type.
-    private Map<Node, NodeState> nodeStates = new TreeMap<>();
-
-    // TODO: Change to one count for distributor and one for storage, rather than an array
-    // TODO: RenameFunction, this is not the highest node count but the highest index
-    private ArrayList<Integer> nodeCount = new ArrayList<>(2);
-
     private String description = "";
     private int distributionBits = 16;
 
+    private final Nodes distributorNodes;
+    private final Nodes storageNodes;
+
     public ClusterState(String serialized) throws ParseException {
-        nodeCount.add(0);
-        nodeCount.add(0);
+        distributorNodes = new Nodes(NodeType.DISTRIBUTOR);
+        storageNodes = new Nodes(NodeType.STORAGE);
         deserialize(serialized);
+    }
+
+    public ClusterState(ClusterState b) {
+        version = b.version;
+        state = b.state;
+        description = b.description;
+        distributionBits = b.distributionBits;
+        distributorNodes = new Nodes(b.distributorNodes);
+        storageNodes = new Nodes(b.storageNodes);
+    }
+
+    private Nodes getNodes(NodeType type) {
+        return (type == NodeType.STORAGE)
+                ? storageNodes
+                : (type == NodeType.DISTRIBUTOR) ? distributorNodes : null;
     }
 
     /**
@@ -54,20 +213,7 @@ public class ClusterState implements Cloneable {
     }
 
     public ClusterState clone() {
-        try{
-            ClusterState state = (ClusterState) super.clone();
-            state.nodeStates = new TreeMap<>();
-            for (Map.Entry<Node, NodeState> entry : nodeStates.entrySet()) {
-                state.nodeStates.put(entry.getKey(), entry.getValue().clone());
-            }
-            state.nodeCount = new ArrayList<>(2);
-            state.nodeCount.add(nodeCount.get(0));
-            state.nodeCount.add(nodeCount.get(1));
-            return state;
-        } catch (CloneNotSupportedException e) {
-            assert(false); // Should never happen
-            return null;
-        }
+        return new ClusterState(this);
     }
 
     @Override
@@ -77,8 +223,8 @@ public class ClusterState implements Cloneable {
         if (version != other.version
             || !state.equals(other.state)
             || distributionBits != other.distributionBits
-            || !nodeCount.equals(other.nodeCount)
-            || !nodeStates.equals(other.nodeStates))
+            || !distributorNodes.equals(other.distributorNodes)
+            || !storageNodes.equals(other.storageNodes))
         {
             return false;
         }
@@ -87,7 +233,7 @@ public class ClusterState implements Cloneable {
 
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(version, state, distributionBits, nodeCount, nodeStates);
+        return java.util.Objects.hash(version, state, distributionBits, distributorNodes, storageNodes);
     }
 
     @FunctionalInterface
@@ -106,7 +252,7 @@ public class ClusterState implements Cloneable {
         return similarToImpl(other, this::normalizedNodeStateSimilarToIgnoringInitProgress);
     }
 
-    private boolean similarToImpl(final ClusterState other, final NodeStateCmp nodeStateCmp) {
+    private boolean similarToImpl(ClusterState other, final NodeStateCmp nodeStateCmp) {
         if (other == this) {
             return true; // We're definitely similar to ourselves.
         }
@@ -119,21 +265,9 @@ public class ClusterState implements Cloneable {
         if (!metaInformationSimilarTo(other)) {
             return false;
         }
-        // TODO verify behavior of C++ impl against this
-        for (Node node : unionNodeSetWith(other.nodeStates.keySet())) {
-            final NodeState lhs = nodeStates.get(node);
-            final NodeState rhs = other.nodeStates.get(node);
-            if (!nodeStateCmp.similar(node.getType(), lhs, rhs)) {
-                return false;
-            }
-        }
+        if ( !distributorNodes.similarToImpl(other.distributorNodes, nodeStateCmp)) return false;
+        if ( !storageNodes.similarToImpl(other.storageNodes, nodeStateCmp)) return false;
         return true;
-    }
-
-    private Set<Node> unionNodeSetWith(final Set<Node> otherNodes) {
-        final Set<Node> unionNodeSet = new TreeSet<>(nodeStates.keySet());
-        unionNodeSet.addAll(otherNodes);
-        return unionNodeSet;
     }
 
     private boolean metaInformationSimilarTo(final ClusterState other) {
@@ -143,7 +277,7 @@ public class ClusterState implements Cloneable {
         if (distributionBits != other.distributionBits) {
             return false;
         }
-        return nodeCount.equals(other.nodeCount);
+        return true;
     }
 
     private boolean normalizedNodeStateSimilarTo(final NodeType nodeType, final NodeState lhs, final NodeState rhs) {
@@ -178,12 +312,7 @@ public class ClusterState implements Cloneable {
         void addNodeState() throws ParseException {
             if (!empty) {
                 NodeState ns = NodeState.deserialize(node.getType(), sb.toString());
-                if (!ns.equals(defaultUpNodeState(node.getType()))) {
-                    nodeStates.put(node, ns);
-                }
-                if (nodeCount.get(node.getType().ordinal()) <= node.getIndex()) {
-                    nodeCount.set(node.getType().ordinal(), node.getIndex() + 1);
-                }
+                getNodes(node.getType()).addNodeState(node, ns);
             }
             empty = true;
             sb = new StringBuilder();
@@ -257,9 +386,7 @@ public class ClusterState implements Cloneable {
                     } catch (Exception e) {
                         throw new ParseException("Illegal node count '" + value + "' in state: " + serialized, 0);
                     }
-                    if (nodeCount > this.nodeCount.get(nodeType.ordinal())) {
-                        this.nodeCount.set(nodeType.ordinal(), nodeCount);
-                    }
+                    getNodes(nodeType).updateMaxIndex(nodeCount);
                     continue;
                 }
                 int dot2 = key.indexOf('.', dot + 1);
@@ -269,8 +396,8 @@ public class ClusterState implements Cloneable {
                 } else {
                     node = new Node(nodeType, Integer.valueOf(key.substring(dot + 1, dot2)));
                 }
-                if (node.getIndex() >= this.nodeCount.get(nodeType.ordinal())) {
-                    throw new ParseException("Cannot index " + nodeType + " node " + node.getIndex() + " of " + this.nodeCount.get(nodeType.ordinal()) + " in state: " + serialized, 0);
+                if (node.getIndex() >= getNodeCount(nodeType)) {
+                    throw new ParseException("Cannot index " + nodeType + " node " + node.getIndex() + " of " + getNodeCount(nodeType) + " in state: " + serialized, 0);
                 }
                 if (!nodeData.node.equals(node)) {
                     nodeData.addNodeState();
@@ -289,7 +416,6 @@ public class ClusterState implements Cloneable {
             // Ignore unknown nodeStates
         }
         nodeData.addNodeState();
-        removeLastNodesDownWithoutReason();
     }
 
     public String getTextualDifference(ClusterState other) {
@@ -363,7 +489,7 @@ public class ClusterState implements Cloneable {
      * E.g. if node X is down and without description, but nodex X-1 is up, then Y is 1.
      * The node count for distributors is then X + 1 - Y.
      */
-    public int getNodeCount(NodeType type) { return nodeCount.get(type.ordinal()); }
+    public int getNodeCount(NodeType type) { return getNodes(type).getLogicalNodeCount(); }
 
     /**
      * Returns the state of a node.
@@ -371,9 +497,7 @@ public class ClusterState implements Cloneable {
      * and DOWN otherwise.
      */
     public NodeState getNodeState(Node node) {
-        if (node.getIndex() >= nodeCount.get(node.getType().ordinal()))
-            return new NodeState(node.getType(), State.DOWN);
-        return nodeStates.getOrDefault(node, new NodeState(node.getType(), State.UP));
+        return getNodes(node.getType()).getNodeState(node.getIndex());
     }
 
     /**
@@ -383,35 +507,7 @@ public class ClusterState implements Cloneable {
      */
     public void setNodeState(Node node, NodeState newState) {
         newState.verifyValidInSystemState(node.getType());
-        if (node.getIndex() >= nodeCount.get(node.getType().ordinal())) {
-            for (int i= nodeCount.get(node.getType().ordinal()); i<node.getIndex(); ++i) {
-                nodeStates.put(new Node(node.getType(), i), new NodeState(node.getType(), State.DOWN));
-            }
-            nodeCount.set(node.getType().ordinal(), node.getIndex() + 1);
-        }
-        if (newState.equals(new NodeState(node.getType(), State.UP))) {
-            nodeStates.remove(node);
-        } else {
-            nodeStates.put(node, newState);
-        }
-        if (newState.getState().equals(State.DOWN)) {
-            // We might be setting the last node down, so we can remove some states
-            removeLastNodesDownWithoutReason();
-        }
-    }
-
-    private void removeLastNodesDownWithoutReason() {
-        for (NodeType nodeType : NodeType.values()) {
-            for (int index = nodeCount.get(nodeType.ordinal()) - 1; index >= 0; --index) {
-                Node node = new Node(nodeType, index);
-                NodeState nodeState = nodeStates.get(node);
-                if (nodeState == null) break; // Node not existing is up
-                if ( ! nodeState.getState().equals(State.DOWN)) break; // Node not down can not be removed
-                if (nodeState.hasDescription()) break; // Node have reason to be down. Don't remove node as we will forget reason
-                nodeStates.remove(node);
-                nodeCount.set(nodeType.ordinal(), node.getIndex());
-            }
-        }
+        getNodes(node.getType()).setNodeState(node, newState);
     }
 
     public String getDescription() { return description; }
@@ -440,35 +536,9 @@ public class ClusterState implements Cloneable {
             sb.append(" bits:").append(distributionBits);
         }
 
-        int distributorNodeCount = getNodeCount(NodeType.DISTRIBUTOR);
-        int storageNodeCount = getNodeCount(NodeType.STORAGE);
-        // If not printing verbose, we're not printing descriptions, so we can remove tailing nodes that are down that has descriptions too
-        if (!verbose) {
-            while (distributorNodeCount > 0 && getNodeState(new Node(NodeType.DISTRIBUTOR, distributorNodeCount - 1)).getState().equals(State.DOWN)) --distributorNodeCount;
-            while (storageNodeCount > 0 && getNodeState(new Node(NodeType.STORAGE, storageNodeCount - 1)).getState().equals(State.DOWN)) --storageNodeCount;
-        }
-        if (distributorNodeCount > 0){
-            sb.append(" distributor:").append(distributorNodeCount);
-            for (Map.Entry<Node, NodeState> entry : nodeStates.entrySet()) {
-                if (entry.getKey().getType().equals(NodeType.DISTRIBUTOR) && entry.getKey().getIndex() < distributorNodeCount) {
-                    String nodeState = entry.getValue().serialize(entry.getKey().getIndex(), verbose);
-                    if (!nodeState.isEmpty()) {
-                        sb.append(' ').append(nodeState);
-                    }
-                }
-            }
-        }
-        if (storageNodeCount > 0){
-            sb.append(" storage:").append(storageNodeCount);
-            for (Map.Entry<Node, NodeState> entry : nodeStates.entrySet()) {
-                if (entry.getKey().getType().equals(NodeType.STORAGE) && entry.getKey().getIndex() < storageNodeCount) {
-                    String nodeState = entry.getValue().serialize(entry.getKey().getIndex(), verbose);
-                    if (!nodeState.isEmpty()) {
-                        sb.append(' ').append(nodeState);
-                    }
-                }
-            }
-        }
+        sb.append(distributorNodes.toString(verbose));
+        sb.append(storageNodes.toString(verbose));
+
         if (sb.length() > 0) { // Remove first space if not empty
             sb.deleteCharAt(0);
         }

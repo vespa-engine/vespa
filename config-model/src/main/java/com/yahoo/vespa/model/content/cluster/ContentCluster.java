@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.cluster;
 
 import com.google.common.base.Preconditions;
@@ -123,8 +123,6 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             boolean enableFeedBlockInDistributor = deployState.getProperties().featureFlags().enableFeedBlockInDistributor();
             var resourceLimits = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor,
                                                                    stateIsHosted(deployState),
-                                                                   deployState.featureFlags().throwIfResourceLimitsSpecified(),
-                                                                   deployState.getDeployLogger(),
                                                                    deployState.featureFlags().resourceLimitDisk(),
                                                                    deployState.featureFlags().resourceLimitMemory())
                     .build(contentElement);
@@ -289,14 +287,14 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             }
             else if (admin.multitenant()) { // system tests: Put on logserver
                 if (admin.getClusterControllers() == null) {
-                    // TODO: logserver== null only obtains in unit tests, disallow it
+                    // TODO: logserver == null only obtains in unit tests, disallow it
                     List<HostResource> host = admin.getLogserver() == null ? List.of() : List.of(admin.getLogserver().getHostResource());
                     admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
                                                                          host,
                                                                          "cluster-controllers",
                                                                          true,
                                                                          deployState),
-                                                deployState.getDeployLogger());
+                                                deployState);
                 }
                 clusterControllers = admin.getClusterControllers();
             }
@@ -313,7 +311,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
                                                                          "cluster-controllers",
                                                                          false,
                                                                          deployState),
-                                                deployState.getDeployLogger());
+                                                deployState);
                 }
                 clusterControllers = admin.getClusterControllers();
             }
@@ -325,13 +323,13 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             }
         }
 
-        public static final NodeResources clusterControllerResources = new NodeResources(0.5, 2, 10, 0.3, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
+        public static final NodeResources clusterControllerResources = new NodeResources(0.25, 1, 10, 0.3, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
 
         private ClusterControllerContainerCluster getDedicatedSharedControllers(ModelElement contentElement, Admin admin,
                                                                                 ConfigModelContext context, DeployState deployState) {
             if (admin.getClusterControllers() == null) {
                 NodesSpecification spec = NodesSpecification.requiredFromSharedParents(deployState.zone().environment().isProduction() ? 3 : 1,
-                                                                                       deployState.featureFlags().dedicatedClusterControllerFlavor().orElse(clusterControllerResources),
+                                                                                       clusterControllerResources,
                                                                                        contentElement,
                                                                                        context);
 
@@ -347,7 +345,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
                                                                      "cluster-controllers",
                                                                      true,
                                                                      context.getDeployState()),
-                                            deployState.getDeployLogger());
+                                            deployState);
             }
             return admin.getClusterControllers();
         }
@@ -430,7 +428,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
 
     public DistributorCluster getDistributorNodes() { return distributorNodes; }
 
-    public StorageCluster getStorageNodes() { return storageNodes; }
+    public StorageCluster getStorageCluster() { return storageNodes; }
 
     public ClusterControllerConfig getClusterControllerConfig() { return clusterControllerConfig; }
 

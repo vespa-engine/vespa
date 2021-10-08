@@ -1,10 +1,11 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.modelfactory;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.HostInfo;
@@ -26,7 +27,6 @@ import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
-import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -38,6 +38,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -53,15 +54,17 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final HostValidator<ApplicationId> hostValidator;
     private final PrepareParams params;
-    private final FileDistributionProvider fileDistributionProvider;
+    private final FileRegistry fileRegistry;
     private final Optional<ApplicationSet> currentActiveApplicationSet;
     private final ModelContext.Properties properties;
     private final Curator curator;
+    private final ExecutorService executor;
 
     public PreparedModelsBuilder(ModelFactoryRegistry modelFactoryRegistry,
                                  PermanentApplicationPackage permanentApplicationPackage,
                                  ConfigDefinitionRepo configDefinitionRepo,
-                                 FileDistributionProvider fileDistributionProvider,
+                                 FileRegistry fileRegistry,
+                                 ExecutorService executor,
                                  HostProvisionerProvider hostProvisionerProvider,
                                  Curator curator,
                                  HostValidator<ApplicationId> hostValidator,
@@ -73,12 +76,13 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         super(modelFactoryRegistry, configserverConfig, properties.zone(), hostProvisionerProvider, deployLogger);
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
-        this.fileDistributionProvider = fileDistributionProvider;
+        this.fileRegistry = fileRegistry;
         this.hostValidator = hostValidator;
         this.curator = curator;
         this.params = params;
         this.currentActiveApplicationSet = currentActiveApplicationSet;
         this.properties = properties;
+        this.executor = executor;
     }
 
     @Override
@@ -99,7 +103,8 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 permanentApplicationPackage.applicationPackage(),
                 deployLogger(),
                 configDefinitionRepo,
-                fileDistributionProvider.getFileRegistry(),
+                fileRegistry,
+                executor,
                 new ApplicationCuratorDatabase(applicationId.tenant(), curator).readReindexingStatus(applicationId),
                 createHostProvisioner(applicationPackage, provisioned),
                 provisioned,
@@ -110,7 +115,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 wantedNodeVespaVersion);
 
         ModelCreateResult result = createAndValidateModel(modelFactory, applicationId, modelVersion, modelContext);
-        return new PreparedModelResult(modelVersion, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());
+        return new PreparedModelResult(modelVersion, result.getModel(), fileRegistry, result.getConfigChangeActions());
     }
 
     private ModelCreateResult createAndValidateModel(ModelFactory modelFactory, ApplicationId applicationId, Version modelVersion, ModelContext modelContext) {
@@ -185,16 +190,16 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
 
         public final Version version;
         public final Model model;
-        public final FileDistributionProvider fileDistributionProvider;
+        public final FileRegistry fileRegistry;
         public final List<ConfigChangeAction> actions;
 
         public PreparedModelResult(Version version,
                                    Model model,
-                                   FileDistributionProvider fileDistributionProvider,
+                                   FileRegistry fileRegistry,
                                    List<ConfigChangeAction> actions) {
             this.version = version;
             this.model = model;
-            this.fileDistributionProvider = fileDistributionProvider;
+            this.fileRegistry = fileRegistry;
             this.actions = actions;
         }
 

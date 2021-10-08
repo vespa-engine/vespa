@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
@@ -89,6 +89,7 @@ class RunSerializer {
     private static final String branchField = "branch";
     private static final String commitField = "commit";
     private static final String authorEmailField = "authorEmail";
+    private static final String deployedDirectlyField = "deployedDirectly";
     private static final String compileVersionField = "compileVersion";
     private static final String buildTimeField = "buildTime";
     private static final String sourceUrlField = "sourceUrl";
@@ -99,6 +100,7 @@ class RunSerializer {
     private static final String noNodesDownSinceField = "noNodesDownSince";
     private static final String convergenceSummaryField = "convergenceSummaryV2";
     private static final String testerCertificateField = "testerCertificate";
+    private static final String isDryRunField = "isDryRun";
 
     Run runFromSlime(Slime slime) {
         return runFromSlime(slime.get());
@@ -142,7 +144,8 @@ class RunSerializer {
                        convergenceSummaryFrom(runObject.field(convergenceSummaryField)),
                        Optional.of(runObject.field(testerCertificateField))
                                .filter(Inspector::valid)
-                               .map(certificate -> X509CertificateUtils.fromPem(certificate.asString())));
+                               .map(certificate -> X509CertificateUtils.fromPem(certificate.asString())),
+                       runObject.field(isDryRunField).valid() && runObject.field(isDryRunField).asBool());
     }
 
     private Versions versionsFromSlime(Inspector versionsObject) {
@@ -175,8 +178,12 @@ class RunSerializer {
         Optional<String> sourceUrl = SlimeUtils.optionalString(versionObject.field(sourceUrlField));
         Optional<String> commit = SlimeUtils.optionalString(versionObject.field(commitField));
 
+        // TODO (freva): Simplify once this has rolled out everywhere
+        Inspector deployedDirectlyInspector = versionObject.field(deployedDirectlyField);
+        boolean deployedDirectly = deployedDirectlyInspector.valid() && deployedDirectlyInspector.asBool();
+
         return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail,
-                                      compileVersion, buildTime, sourceUrl, commit);
+                                      compileVersion, buildTime, sourceUrl, commit, deployedDirectly);
     }
 
     // Don't change this — introduce a separate array instead.
@@ -245,6 +252,7 @@ class RunSerializer {
                        .orElseThrow(() -> new IllegalArgumentException("Source versions must be both present or absent.")),
                     versionsObject.setObject(sourceField));
         });
+        runObject.setBool(isDryRunField, run.isDryRun());
     }
 
     private void toSlime(Version platformVersion, ApplicationVersion applicationVersion, Cursor versionsObject) {
@@ -259,6 +267,7 @@ class RunSerializer {
         applicationVersion.buildTime().ifPresent(time -> versionsObject.setLong(buildTimeField, time.toEpochMilli()));
         applicationVersion.sourceUrl().ifPresent(url -> versionsObject.setString(sourceUrlField, url));
         applicationVersion.commit().ifPresent(commit -> versionsObject.setString(commitField, commit));
+        versionsObject.setBool(deployedDirectlyField, applicationVersion.isDeployedDirectly());
     }
 
     // Don't change this - introduce a separate array with new values if needed.

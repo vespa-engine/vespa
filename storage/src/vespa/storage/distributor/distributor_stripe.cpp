@@ -1,14 +1,15 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "blockingoperationstarter.h"
-#include "distributor_stripe.h"
-#include "distributor_status.h"
 #include "distributor_bucket_space.h"
+#include "distributor_status.h"
+#include "distributor_stripe.h"
 #include "distributormetricsset.h"
 #include "idealstatemetricsset.h"
-#include "stripe_host_info_notifier.h"
 #include "operation_sequencer.h"
 #include "ownership_transfer_safe_time_point_calculator.h"
+#include "storage_node_up_states.h"
+#include "stripe_host_info_notifier.h"
 #include "throttlingoperationstarter.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>
@@ -28,24 +29,15 @@ using namespace std::chrono_literals;
 
 namespace storage::distributor {
 
-/* TODO STRIPE
- *  - need a DistributorStripeComponent per stripe
- *    - or better, remove entirely!
- *    - probably also DistributorStripeInterface since it's used to send
- *  - metrics aggregation
- */
 DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
                                      DistributorMetricSet& metrics,
                                      IdealStateMetricSet& ideal_state_metrics,
                                      const NodeIdentity& node_identity,
-                                     framework::TickingThreadPool& threadPool,
-                                     DoneInitializeHandler& doneInitHandler,
                                      ChainedMessageSender& messageSender,
                                      StripeHostInfoNotifier& stripe_host_info_notifier,
-                                     bool use_legacy_mode,
+                                     const bool& done_initializing_ref,
                                      uint32_t stripe_index)
     : DistributorStripeInterface(),
-      framework::StatusReporter("distributor", "Distributor"),
       _clusterStateBundle(lib::ClusterState()),
       _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
       _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
@@ -55,10 +47,8 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
       _operation_sequencer(std::make_unique<OperationSequencer>()),
-      _pendingMessageTracker(compReg),
-      _bucketDBUpdater(_component, _component, *this, *this, use_legacy_mode),
-      _distributorStatusDelegate(compReg, *this, *this),
-      _bucketDBStatusDelegate(compReg, *this, _bucketDBUpdater),
+      _pendingMessageTracker(compReg, stripe_index),
+      _bucketDBUpdater(_component, _component, *this, *this),
       _idealStateManager(_component, _component, ideal_state_metrics),
       _messageSender(messageSender),
       _stripe_host_info_notifier(stripe_host_info_notifier),
@@ -66,9 +56,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
                                 *_operation_sequencer, *this, _component,
                                 _idealStateManager, _operationOwner),
       _external_message_mutex(),
-      _threadPool(threadPool),
-      _doneInitializeHandler(doneInitHandler),
-      _doneInitializing(false),
+      _done_initializing_ref(done_initializing_ref),
       _bucketPriorityDb(std::make_unique<SimpleBucketPriorityDatabase>()),
       _scanner(std::make_unique<SimpleMaintenanceScanner>(*_bucketPriorityDb, _idealStateManager, *_bucketSpaceRepo)),
       _throttlingStarter(std::make_unique<ThrottlingOperationStarter>(_maintenanceOperationOwner)),
@@ -87,14 +75,10 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _db_memory_sample_interval(30s),
       _last_db_memory_sample_time_point(),
       _inhibited_maintenance_tick_count(0),
-      _must_send_updated_host_info(false),
-      _use_legacy_mode(use_legacy_mode),
-      _stripe_index(stripe_index)
+      _stripe_index(stripe_index),
+      _non_activation_maintenance_is_inhibited(false),
+      _must_send_updated_host_info(false)
 {
-    if (use_legacy_mode) {
-        _distributorStatusDelegate.registerStatusPage();
-        _bucketDBStatusDelegate.registerStatusPage();
-    }
     propagateDefaultDistribution(_component.getDistribution());
     propagateClusterStates();
 };
@@ -178,15 +162,8 @@ DistributorStripe::handle_or_enqueue_message(const std::shared_ptr<api::StorageM
     if (_externalOperationHandler.try_handle_message_outside_main_thread(msg)) {
         return true;
     }
-    MBUS_TRACE(msg->getTrace(), 9,
-               vespalib::make_string("DistributorStripe[%u]: Added to message queue. Thread state: ", _stripe_index)
-               + _threadPool.getStatus());
-    if (_use_legacy_mode) {
-        // TODO STRIPE remove
-        framework::TickingLockGuard guard(_threadPool.freezeCriticalTicks());
-        _messageQueue.push_back(msg);
-        guard.broadcast();
-    } else {
+    MBUS_TRACE(msg->getTrace(), 9, vespalib::make_string("DistributorStripe[%u]: Added to message queue.", _stripe_index));
+    {
         std::lock_guard lock(_external_message_mutex);
         _messageQueue.push_back(msg);
         // Caller has the responsibility to wake up correct stripe
@@ -299,10 +276,6 @@ DistributorStripe::enableClusterStateBundle(const lib::ClusterStateBundle& state
     propagateClusterStates();
 
     const auto& baseline_state = *state.getBaselineClusterState();
-    if (!_doneInitializing && (baseline_state.getNodeState(my_node).getState() == lib::State::UP)) {
-        _doneInitializing = true;
-        _doneInitializeHandler.notifyDoneInitializing();
-    }
     enterRecoveryMode();
 
     // Clear all active messages on nodes that are down.
@@ -318,17 +291,6 @@ DistributorStripe::enableClusterStateBundle(const lib::ClusterStateBundle& state
                 _maintenanceOperationOwner.erase(msgIds[j]);
             }
         }
-    }
-
-    if (_bucketDBUpdater.bucketOwnershipHasChanged()) {
-        using TimePoint = OwnershipTransferSafeTimePointCalculator::TimePoint;
-        // Note: this assumes that std::chrono::system_clock and the framework
-        // system clock have the same epoch, which should be a reasonable
-        // assumption.
-        const auto now = TimePoint(std::chrono::milliseconds(
-                _component.getClock().getTimeInMillis().getTime()));
-        _externalOperationHandler.rejectFeedBeforeTimeReached(
-                _ownershipSafeTimeCalc->safeTimePoint(now));
     }
 }
 
@@ -364,9 +326,8 @@ DistributorStripe::leaveRecoveryMode()
     if (isInRecoveryMode()) {
         LOG(debug, "Leaving recovery mode");
         // FIXME don't use shared metric for this
-        _metrics.recoveryModeTime.addValue(
-                _recoveryTimeStarted.getElapsedTimeAsDouble());
-        if (_doneInitializing) {
+        _metrics.recoveryModeTime.addValue(_recoveryTimeStarted.getElapsedTimeAsDouble());
+        if (_done_initializing_ref) {
             _must_send_updated_host_info = true;
         }
     }
@@ -402,28 +363,6 @@ void DistributorStripe::invalidate_bucket_spaces_stats() {
     for_each_available_content_node_in(baseline, [this, &invalid_space_stats](const lib::Node& node) {
         _bucketSpacesStats[node.getIndex()] = invalid_space_stats;
     });
-}
-
-void
-DistributorStripe::storage_distribution_changed()
-{
-    assert(_use_legacy_mode);
-    if (!_distribution.get()
-        || *_component.getDistribution() != *_distribution)
-    {
-        LOG(debug,
-            "Distribution changed to %s, must refetch bucket information",
-            _component.getDistribution()->toString().c_str());
-
-        // FIXME this is not thread safe
-        _nextDistribution = _component.getDistribution();
-    } else {
-        LOG(debug,
-            "Got distribution change, but the distribution %s was the same as "
-            "before: %s",
-            _component.getDistribution()->toString().c_str(),
-            _distribution->toString().c_str());
-    }
 }
 
 void
@@ -484,21 +423,6 @@ DistributorStripe::checkBucketForSplit(document::BucketSpace bucketSpace,
     }
 }
 
-// TODO STRIPE must only be called when operating in legacy single stripe mode!
-//   In other cases, distribution config switching is controlled by top-level distributor, not via framework(tm).
-void
-DistributorStripe::enableNextDistribution()
-{
-    assert(_use_legacy_mode);
-    if (_nextDistribution.get()) {
-        _distribution = _nextDistribution;
-        propagateDefaultDistribution(_distribution);
-        _nextDistribution = std::shared_ptr<lib::Distribution>();
-        // TODO conditional on whether top-level DB updater is in charge
-        _bucketDBUpdater.storageDistributionChanged();
-    }
-}
-
 // TODO STRIPE must be invoked by top-level bucket db updater probably
 void
 DistributorStripe::propagateDefaultDistribution(
@@ -514,7 +438,6 @@ DistributorStripe::propagateDefaultDistribution(
 // Only called when stripe is in rendezvous freeze
 void
 DistributorStripe::update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) {
-    assert(!_use_legacy_mode);
     auto default_distr = new_configs.get_or_nullptr(document::FixedBucketSpaces::default_space());
     auto global_distr  = new_configs.get_or_nullptr(document::FixedBucketSpaces::global_space());
     assert(default_distr && global_distr);
@@ -635,8 +558,14 @@ DistributorStripe::propagateInternalScanMetricsToExternal()
 
     // All shared values are written when _metricLock is held, so no races.
     if (_bucketDBMetricUpdater.hasCompletedRound()) {
-        _bucketDbStats.propagateMetrics(_idealStateManager.getMetrics(), getMetrics());
-        _idealStateManager.getMetrics().setPendingOperations(_maintenanceStats.global.pending);
+        auto& ideal_state_metrics = _idealStateManager.getMetrics();
+        _bucketDbStats.propagateMetrics(ideal_state_metrics, getMetrics());
+        ideal_state_metrics.setPendingOperations(_maintenanceStats.global.pending);
+        const auto& total_stats = _maintenanceStats.perNodeStats.total_replica_stats();
+        ideal_state_metrics.buckets_replicas_moving_out.set(total_stats.movingOut);
+        ideal_state_metrics.buckets_replicas_copying_out.set(total_stats.copyingOut);
+        ideal_state_metrics.buckets_replicas_copying_in.set(total_stats.copyingIn);
+        ideal_state_metrics.buckets_replicas_syncing.set(total_stats.syncing);
     }
 }
 
@@ -746,11 +675,7 @@ DistributorStripe::scanNextBucket()
 
 void DistributorStripe::send_updated_host_info_if_required() {
     if (_must_send_updated_host_info) {
-        if (_use_legacy_mode) {
-            _component.getStateUpdater().immediately_send_get_node_state_replies();
-        } else {
-            _stripe_host_info_notifier.notify_stripe_wants_to_send_host_info(_stripe_index);
-        }
+        _stripe_host_info_notifier.notify_stripe_wants_to_send_host_info(_stripe_index);
         _must_send_updated_host_info = false;
     }
 }
@@ -760,32 +685,20 @@ DistributorStripe::startNextMaintenanceOperation()
 {
     _throttlingStarter->setMaxPendingRange(getConfig().getMinPendingMaintenanceOps(),
                                            getConfig().getMaxPendingMaintenanceOps());
-    _scheduler->tick(_schedulingMode);
-}
-
-// TODO STRIPE begone with this!
-framework::ThreadWaitInfo
-DistributorStripe::doCriticalTick(framework::ThreadIndex)
-{
-    _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
-    assert(_use_legacy_mode);
-    enableNextDistribution();
-    enableNextConfig();
-    fetchStatusRequests();
-    fetchExternalMessages();
-    return _tickResult;
+    auto effective_scheduling_mode = ((_schedulingMode == MaintenanceScheduler::RECOVERY_SCHEDULING_MODE) ||
+                                      non_activation_maintenance_is_inhibited())
+                                              ? MaintenanceScheduler::RECOVERY_SCHEDULING_MODE
+                                              : MaintenanceScheduler::NORMAL_SCHEDULING_MODE;
+    _scheduler->tick(effective_scheduling_mode);
 }
 
 framework::ThreadWaitInfo
 DistributorStripe::doNonCriticalTick(framework::ThreadIndex)
 {
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
-    if (!_use_legacy_mode) {
+    {
         std::lock_guard lock(_external_message_mutex);
         fetchExternalMessages();
-    }
-    if (_use_legacy_mode) {
-        handleStatusRequests();
     }
     startExternalOperations();
     if (initializing()) {
@@ -809,7 +722,6 @@ DistributorStripe::doNonCriticalTick(framework::ThreadIndex)
 }
 
 bool DistributorStripe::tick() {
-    assert(!_use_legacy_mode);
     auto wait_info = doNonCriticalTick(framework::ThreadIndex(0));
     return !wait_info.waitWanted(); // If we don't want to wait, we presumably did some useful stuff.
 }
@@ -825,14 +737,6 @@ void DistributorStripe::mark_current_maintenance_tick_as_inhibited() noexcept {
 
 void DistributorStripe::mark_maintenance_tick_as_no_longer_inhibited() noexcept {
     _inhibited_maintenance_tick_count = 0;
-}
-
-void
-DistributorStripe::enableNextConfig()
-{
-    assert(_use_legacy_mode);
-    propagate_config_snapshot_to_internal_components();
-
 }
 
 void
@@ -856,50 +760,10 @@ DistributorStripe::propagate_config_snapshot_to_internal_components()
 }
 
 void
-DistributorStripe::fetchStatusRequests()
-{
-    assert(_use_legacy_mode);
-    if (_fetchedStatusRequests.empty()) {
-        _fetchedStatusRequests.swap(_statusToDo);
-    }
-}
-
-void
 DistributorStripe::fetchExternalMessages()
 {
     assert(_fetchedMessages.empty());
     _fetchedMessages.swap(_messageQueue);
-}
-
-void
-DistributorStripe::handleStatusRequests()
-{
-    assert(_use_legacy_mode);
-    uint32_t sz = _fetchedStatusRequests.size();
-    for (uint32_t i = 0; i < sz; ++i) {
-        auto& s = *_fetchedStatusRequests[i];
-        s.getReporter().reportStatus(s.getStream(), s.getPath());
-        s.notifyCompleted();
-    }
-    _fetchedStatusRequests.clear();
-    if (sz > 0) {
-        signalWorkWasDone();
-    }
-}
-
-vespalib::string
-DistributorStripe::getReportContentType(const framework::HttpUrlPath& path) const
-{
-    assert(_use_legacy_mode);
-    if (path.hasAttribute("page")) {
-        if (path.getAttribute("page") == "buckets") {
-            return "text/html";
-        } else {
-            return "application/xml";
-        }
-    } else {
-        return "text/html";
-    }
 }
 
 std::string
@@ -912,54 +776,6 @@ std::string
 DistributorStripe::getActiveOperations() const
 {
     return _operationOwner.toString();
-}
-
-// TODO STRIPE remove this; delegated to top-level Distributor only
-bool
-DistributorStripe::reportStatus(std::ostream& out,
-                          const framework::HttpUrlPath& path) const
-{
-    assert(_use_legacy_mode);
-    if (!path.hasAttribute("page") || path.getAttribute("page") == "buckets") {
-        framework::PartlyHtmlStatusReporter htmlReporter(*this);
-        htmlReporter.reportHtmlHeader(out, path);
-        if (!path.hasAttribute("page")) {
-            out << "<a href=\"?page=pending\">Count of pending messages to storage nodes</a><br>\n"
-                << "<a href=\"?page=buckets\">List all buckets, highlight non-ideal state</a><br>\n";
-        } else {
-            const_cast<IdealStateManager&>(_idealStateManager)
-                .getBucketStatus(out);
-        }
-        htmlReporter.reportHtmlFooter(out, path);
-    } else {
-        framework::PartlyXmlStatusReporter xmlReporter(*this, out, path);
-        using namespace vespalib::xml;
-        std::string page(path.getAttribute("page"));
-
-        if (page == "pending") {
-            xmlReporter << XmlTag("pending")
-                        << XmlAttribute("externalload", _operationOwner.size())
-                        << XmlAttribute("maintenance",_maintenanceOperationOwner.size())
-                        << XmlEndTag();
-        }
-    }
-
-    return true;
-}
-
-// TODO STRIPE remove this; delegated to top-level Distributor only
-bool
-DistributorStripe::handleStatusRequest(const DelegatedStatusRequest& request) const
-{
-    assert(_use_legacy_mode);
-    auto wrappedRequest = std::make_shared<DistributorStatus>(request);
-    {
-        framework::TickingLockGuard guard(_threadPool.freezeCriticalTicks());
-        _statusToDo.push_back(wrappedRequest);
-        guard.broadcast();
-    }
-    wrappedRequest->waitForCompletion();
-    return true;
 }
 
 StripeAccessGuard::PendingOperationStats
@@ -981,10 +797,20 @@ DistributorStripe::clear_pending_cluster_state_bundle()
 }
 
 void
-DistributorStripe::enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state)
+DistributorStripe::enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,
+                                               bool has_bucket_ownership_change)
 {
     // TODO STRIPE replace legacy func
     enableClusterStateBundle(new_state);
+    if (has_bucket_ownership_change) {
+        using TimePoint = OwnershipTransferSafeTimePointCalculator::TimePoint;
+        // Note: this assumes that std::chrono::system_clock and the framework
+        // system clock have the same epoch, which should be a reasonable
+        // assumption.
+        const auto now = TimePoint(std::chrono::milliseconds(_component.getClock().getTimeInMillis().getTime()));
+        _externalOperationHandler.rejectFeedBeforeTimeReached(_ownershipSafeTimeCalc->safeTimePoint(now));
+    }
+    _bucketDBUpdater.handle_activated_cluster_state_bundle(); // Triggers resending of queued requests
 }
 
 void

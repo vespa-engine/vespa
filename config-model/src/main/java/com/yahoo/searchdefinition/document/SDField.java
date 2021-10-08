@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.document;
 
 import com.yahoo.document.CollectionDataType;
@@ -9,6 +9,7 @@ import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Search;
@@ -292,7 +293,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
                 for (Field field : subType.fieldSet()) {
                     SDField subField = new SDField(sdoc, name.concat(".").concat(field.getName()), field.getDataType(),
                                                    subType, new Matching(), true, recursion + 1);
-                    structFields.put(field.getName(), subField);
+                    structFields.putIfAbsent(field.getName(), subField);
                 }
             }
         }
@@ -425,12 +426,12 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
 
     /** Parse an indexing expression which will use the simple linguistics implementatino suitable for testing */
     public void parseIndexingScript(String script) {
-        parseIndexingScript(script, new SimpleLinguistics());
+        parseIndexingScript(script, new SimpleLinguistics(), Embedder.throwsOnUse);
     }
 
-    public void parseIndexingScript(String script, Linguistics linguistics) {
+    public void parseIndexingScript(String script, Linguistics linguistics, Embedder embedder) {
         try {
-            ScriptParserContext config = new ScriptParserContext(linguistics);
+            ScriptParserContext config = new ScriptParserContext(linguistics, embedder);
             config.setInputStream(new IndexingInput(script));
             setIndexingScript(ScriptExpression.newInstance(config));
         } catch (ParseException e) {

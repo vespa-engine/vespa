@@ -1,5 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
+
+import com.yahoo.compress.Compressor;
+
+import java.nio.charset.Charset;
 
 final class BufferedOutput {
 
@@ -7,16 +11,16 @@ final class BufferedOutput {
     private int capacity;
     private int pos;
 
-    public BufferedOutput(int cap) {
-        capacity = (cap < 64) ? 64 : cap;
+    BufferedOutput(int cap) {
+        capacity = Math.max(cap, 64);
         buf = new byte[capacity];
     }
 
-    public BufferedOutput() {
+    BufferedOutput() {
         this(4096);
     }
 
-    public void reset() {
+    void reset() {
         pos = 0;
     }
 
@@ -31,27 +35,33 @@ final class BufferedOutput {
         }
     }
 
-    public int position() { return pos; }
+    int position() { return pos; }
 
-    final void put(byte b) {
+    void put(byte b) {
         reserve(1);
         buf[pos++] = b;
     }
 
-    final void absolutePut(int position, byte b) {
+    void absolutePut(int position, byte b) {
         buf[position] = b;
     }
 
-    final void put(byte[] bytes) {
+    void put(byte[] bytes) {
         reserve(bytes.length);
         for (byte b : bytes) {
             buf[pos++] = b;
         }
     }
 
-    public byte[] toArray() {
+    byte[] toArray() {
         byte[] ret = new byte[pos];
         System.arraycopy(buf, 0, ret, 0, pos);
         return ret;
+    }
+    public String toString(Charset charset) {
+        return new String(buf, 0, pos, charset);
+    }
+    Compressor.Compression compress(Compressor compressor) {
+        return compressor.compress(buf, pos);
     }
 }

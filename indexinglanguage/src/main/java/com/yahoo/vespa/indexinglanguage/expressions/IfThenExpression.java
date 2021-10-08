@@ -1,8 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.vespa.objects.ObjectOperation;
@@ -54,6 +55,14 @@ public final class IfThenExpression extends CompositeExpression {
         this.ifFalse = ifFalse;
     }
 
+    @Override
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        lhs.setStatementOutput(documentType, field);
+        rhs.setStatementOutput(documentType, field);
+        ifTrue.setStatementOutput(documentType, field);
+        ifFalse.setStatementOutput(documentType, field);
+    }
+
     public Expression getLeftHandSide() {
         return lhs;
     }
@@ -75,34 +84,34 @@ public final class IfThenExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
-        FieldValue lhsVal = ctx.setValue(input).execute(lhs).getValue();
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getValue();
+        FieldValue lhsVal = context.setValue(input).execute(lhs).getValue();
         if (lhsVal == null) {
-            ctx.setValue(null);
+            context.setValue(null);
             return;
         }
-        FieldValue rhsVal = ctx.setValue(input).execute(rhs).getValue();
+        FieldValue rhsVal = context.setValue(input).execute(rhs).getValue();
         if (rhsVal == null) {
-            ctx.setValue(null);
+            context.setValue(null);
             return;
         }
-        ctx.setValue(input);
+        context.setValue(input);
         if (isTrue(lhsVal, cmp, rhsVal)) {
-            ifTrue.execute(ctx);
+            ifTrue.execute(context);
         } else if (ifFalse != null) {
-            ifFalse.execute(ctx);
+            ifFalse.execute(context);
         }
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
-        context.setValue(input).execute(lhs);
-        context.setValue(input).execute(rhs);
-        context.setValue(input).execute(ifTrue);
-        context.setValue(input).execute(ifFalse);
-        context.setValue(input);
+        DataType input = context.getValueType();
+        context.setValueType(input).execute(lhs);
+        context.setValueType(input).execute(rhs);
+        context.setValueType(input).execute(ifTrue);
+        context.setValueType(input).execute(ifFalse);
+        context.setValueType(input);
     }
 
     @Override

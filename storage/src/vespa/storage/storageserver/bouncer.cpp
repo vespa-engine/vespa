@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bouncer.h"
 #include "bouncer_metrics.h"
@@ -132,7 +132,7 @@ Bouncer::rejectCommandWithTooHighClockSkew(api::StorageMessage& msg,
     auto& as_cmd = dynamic_cast<api::StorageCommand&>(msg);
     std::ostringstream ost;
     ost << "Message " << msg.getType() << " is more than "
-        << maxClockSkewInSeconds << " seconds in the future";
+        << maxClockSkewInSeconds << " seconds in the future, set up NTP.";
     append_node_identity(ost);
     LOGBP(warning, "Rejecting operation from distributor %u: %s",
           as_cmd.getSourceIndex(), ost.str().c_str());

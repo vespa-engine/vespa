@@ -14,7 +14,8 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -28,7 +29,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -301,7 +301,7 @@ public class MetricsReporterTest {
         var version0 = Version.fromString("7.0");
         tester.upgradeSystem(version0);
         reporter.maintain();
-        var hosts = tester.configServer().nodeRepository().list(zone, SystemApplication.configServer.id());
+        var hosts = tester.configServer().nodeRepository().list(zone, NodeFilter.all().applications(SystemApplication.configServer.id()));
         assertPlatformChangeDuration(Duration.ZERO, hosts);
 
         var targets = List.of(Version.fromString("7.1"), Version.fromString("7.2"));
@@ -362,7 +362,7 @@ public class MetricsReporterTest {
         tester.configServer().setOsVersion(version0, SystemApplication.tenantHost.id(), zone);
         tester.configServer().setOsVersion(version0, SystemApplication.configServerHost.id(), zone);
         runAll(statusUpdater, reporter);
-        List<Node> hosts = tester.configServer().nodeRepository().list(zone, false);
+        List<Node> hosts = tester.configServer().nodeRepository().list(zone, NodeFilter.all());
         assertOsChangeDuration(Duration.ZERO, hosts);
 
         var targets = List.of(Version.fromString("8.1"), Version.fromString("8.2"));
@@ -383,10 +383,10 @@ public class MetricsReporterTest {
 
             // Nodes are told to upgrade, but do not suspend yet
             assertEquals("Wanted OS version is raised for all nodes", nextVersion,
-                         tester.configServer().nodeRepository().list(zone, SystemApplication.tenantHost.id()).stream()
+                         tester.configServer().nodeRepository().list(zone, NodeFilter.all().applications(SystemApplication.tenantHost.id())).stream()
                                .map(Node::wantedOsVersion).min(Comparator.naturalOrder()).get());
             assertTrue("No nodes are suspended", tester.controller().serviceRegistry().configServer()
-                                                       .nodeRepository().list(zone, false).stream()
+                                                       .nodeRepository().list(zone, NodeFilter.all()).stream()
                                                        .noneMatch(node -> node.serviceState() == Node.ServiceState.allowedDown));
 
             // Another 30 minutes pass
@@ -537,16 +537,16 @@ public class MetricsReporterTest {
     }
 
     private List<Node> getNodes(ZoneId zone, List<Node> nodes, ControllerTester tester) {
-        return tester.configServer().nodeRepository().list(zone, nodes.stream()
-                                                                      .map(Node::hostname)
-                                                                      .collect(Collectors.toList()));
+        return tester.configServer().nodeRepository().list(zone, NodeFilter.all().hostnames(nodes.stream()
+                                                                                                 .map(Node::hostname)
+                                                                                                 .collect(Collectors.toSet())));
     }
 
     private void updateNodes(List<Node> nodes, UnaryOperator<Node.Builder> builderOps, ZoneId zone,
                              ControllerTester tester) {
         var currentNodes = getNodes(zone, nodes, tester);
         var updatedNodes = currentNodes.stream()
-                                       .map(node -> builderOps.apply(new Node.Builder(node)).build())
+                                       .map(node -> builderOps.apply(Node.builder(node)).build())
                                        .collect(Collectors.toList());
         tester.configServer().nodeRepository().putNodes(zone, updatedNodes);
     }

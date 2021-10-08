@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "service.h"
 #include "output-connection.h"
@@ -125,7 +125,7 @@ Service::terminate(bool catchable, bool dumpState)
             return 0;
         } else {
             if (dumpState && _state != KILLING) {
-                vespalib::string pstackCmd = make_string("pstack %d > %s/%s.pstack.%d 2>&1",
+                vespalib::string pstackCmd = make_string("ulimit -c 0; pstack %d > %s/%s.pstack.%d 2>&1",
                                                          _pid, getVespaTempDir().c_str(), name().c_str(), _pid);
                 LOG(info, "%s:%d failed to stop. Stack dumping with %s", name().c_str(), _pid, pstackCmd.c_str());
                 int pstackRet = system(pstackCmd.c_str());

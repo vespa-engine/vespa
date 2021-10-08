@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
 
@@ -35,7 +36,7 @@ public interface ImmutableSearch {
     LargeRankExpressions rankExpressionFiles();
     OnnxModels onnxModels();
     Stream<ImmutableSDField> allImportedFields();
-
+    SDDocumentType getDocument();
     ImmutableSDField getField(String name);
 
     default Stream<ImmutableSDField> allFields() {

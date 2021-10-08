@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.container.logging.ConnectionLog;
@@ -119,7 +119,6 @@ class ProxyProtocolTest {
             Path certificateFile, Path privateKeyFile, RequestLog requestLog,
             ConnectionLog connectionLog, boolean mixedMode) {
         ConnectorConfig.Builder connectorConfig = new ConnectorConfig.Builder()
-                .http2Enabled(true)
                 .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder()
                         .enabled(true)
                         .mixedMode(mixedMode))

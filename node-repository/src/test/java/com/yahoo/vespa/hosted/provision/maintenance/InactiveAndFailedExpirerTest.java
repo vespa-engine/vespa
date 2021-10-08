@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Vtag;
@@ -63,7 +63,7 @@ public class InactiveAndFailedExpirerTest {
         List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.from(new ClusterResources(2, 1, nodeResources)));
         tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
-        tester.deactivate(applicationId);
+        tester.activate(applicationId, List.of());
         List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();
         assertEquals(2, inactiveNodes.size());
 
@@ -149,7 +149,7 @@ public class InactiveAndFailedExpirerTest {
         List<HostSpec> preparedNodes = tester.prepare(testerId, cluster, Capacity.from(new ClusterResources(2, 1, nodeResources)));
         tester.activate(testerId, new HashSet<>(preparedNodes));
         assertEquals(1, tester.getNodes(testerId, Node.State.active).size());
-        tester.deactivate(testerId);
+        tester.activate(testerId, List.of());
         List<Node> inactiveNodes = tester.getNodes(testerId, Node.State.inactive).asList();
         assertEquals(1, inactiveNodes.size());
 
@@ -171,7 +171,7 @@ public class InactiveAndFailedExpirerTest {
         List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromRequiredNodeType(NodeType.host));
         tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
-        tester.deactivate(applicationId);
+        tester.activate(applicationId, List.of());
         List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();
         assertEquals(2, inactiveNodes.size());
 

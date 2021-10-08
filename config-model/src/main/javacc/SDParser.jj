@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // --------------------------------------------------------------------------------
 //
 // JavaCC options. When this file is changed, run "mvn generate-sources" to rebuild
@@ -55,8 +55,10 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.query.ranking.Diversity;
 import java.util.Map;
@@ -75,6 +77,7 @@ public class SDParser {
 
     private DocumentTypeManager docMan = null;
     private ApplicationPackage app;
+    private FileRegistry fileRegistry;
     private DeployLogger deployLogger;
     private ModelContext.Properties properties;
     private RankProfileRegistry rankProfileRegistry;
@@ -86,12 +89,14 @@ public class SDParser {
      * @param documentsOnly true to only parse the document aspect of a search definition (e.g skip rank profiles)
      */
     public SDParser(SimpleCharStream stream,
+                    FileRegistry fileRegistry,
                     DeployLogger deployLogger,
                     ModelContext.Properties properties,
                     ApplicationPackage applicationPackage,
                     RankProfileRegistry rankProfileRegistry,
                     boolean documentsOnly) {
         this(stream);
+        this.fileRegistry = fileRegistry;
         this.deployLogger = deployLogger;
         this.properties = properties;
         this.app = applicationPackage;
@@ -107,7 +112,7 @@ public class SDParser {
      */
     @SuppressWarnings("deprecation")
     private IndexingOperation newIndexingOperation(boolean multiline) throws ParseException {
-        return newIndexingOperation(multiline, new SimpleLinguistics());
+        return newIndexingOperation(multiline, new SimpleLinguistics(), Embedder.throwsOnUse);
     }
 
     /**
@@ -116,13 +121,13 @@ public class SDParser {
      * @param multiline Whether or not to allow multi-line expressions.
      * @param linguistics What to use for tokenizing.
      */
-    private IndexingOperation newIndexingOperation(boolean multiline, Linguistics linguistics) throws ParseException {
+    private IndexingOperation newIndexingOperation(boolean multiline, Linguistics linguistics, Embedder embedder) throws ParseException {
         SimpleCharStream input = (SimpleCharStream)token_source.input_stream;
         if (token.next != null) {
             input.backup(token.next.image.length());
         }
         try {
-            return IndexingOperation.fromStream(input, multiline, linguistics);
+            return IndexingOperation.fromStream(input, multiline, linguistics, embedder);
         } finally {
             token.next = null;
             jj_ntk = -1;
@@ -299,6 +304,7 @@ TOKEN :
 | < ENABLEONLYBITVECTOR: "enable-only-bit-vector" >
 | < FASTACCESS: "fast-access" >
 | < MUTABLE: "mutable" >
+| < PAGED: "paged" >
 | < FASTSEARCH: "fast-search" >
 | < HUGE: "huge" >
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])+ ")" >
@@ -429,9 +435,10 @@ Search rootSchema(String dir) :
     Search search;
 }
 {
-    ( ( <SCHEMA> | <SEARCH> ) name = identifier() { search = new Search(name, app, deployLogger, properties);
-                                     rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry));
-                                     rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry));}
+    ( ( <SCHEMA> | <SEARCH> ) name = identifier() {
+        search = new Search(name, app, fileRegistry,deployLogger, properties);
+        rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry, search.rankingConstants()));
+        rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry, search.rankingConstants()));}
       lbrace() (rootSchemaItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
     { return search; }
 }
@@ -470,7 +477,7 @@ Object rootSchemaItem(Search search) : { }
  */
 Search rootDocument(String dir) :
 {
-    Search search = new DocumentOnlySearch(app, deployLogger, properties);
+    Search search = new DocumentOnlySearch(app, fileRegistry, deployLogger, properties);
 }
 {
     ( (rootDocumentItem(search) (<NL>)*)*<EOF> )
@@ -1229,12 +1236,13 @@ Object attributeSetting(FieldOperationContainer field, AttributeOperation attrib
 }
 {
     (
-        <HUGE>                { attribute.setHuge(true); }
-      | <FASTSEARCH>          { attribute.setFastSearch(true); }
-      | <FASTACCESS>          { attribute.setFastAccess(true); }
-      | <MUTABLE>             { attribute.setMutable(true); }
-      | <ENABLEBITVECTORS>    { attribute.setEnableBitVectors(true); }
-      | <ENABLEONLYBITVECTOR> { attribute.setEnableOnlyBitVector(true); }
+        <HUGE>                 { attribute.setHuge(true); }
+      | <FASTSEARCH>           { attribute.setFastSearch(true); }
+      | <FASTACCESS>           { attribute.setFastAccess(true); }
+      | <MUTABLE>              { attribute.setMutable(true); }
+      | <PAGED>                { attribute.setPaged(true); }
+      | <ENABLEBITVECTORS>     { attribute.setEnableBitVectors(true); }
+      | <ENABLEONLYBITVECTOR>  { attribute.setEnableOnlyBitVector(true); }
       | sorting(field, attributeName)
       | <ALIAS> { String alias; String aliasedName=attributeName; } [aliasedName = identifier()] <COLON> alias = identifierWithDash() {
           attribute.setDoAlias(true);
@@ -2020,12 +2028,12 @@ void rankProfile(Search search) :
     ( ( <MODEL> | <RANKPROFILE> ) name = identifierWithDash()
         {
             if (documentsOnly) {
-                profile = new DocumentsOnlyRankProfile(name, search, rankProfileRegistry);
+                profile = new DocumentsOnlyRankProfile(name, search, rankProfileRegistry, search.rankingConstants());
             }
             else if ("default".equals(name)) {
                 profile = rankProfileRegistry.get(search, "default");
             } else {
-                profile = new RankProfile(name, search, rankProfileRegistry);
+                profile = new RankProfile(name, search, rankProfileRegistry, search.rankingConstants());
             }
         }
       [inheritsRankProfile(profile)]
@@ -2736,6 +2744,7 @@ String identifier() : { }
       | <SECONDPHASE>
       | <SORTING>
       | <SOURCE>
+      | <PAGED>
       | <SSCONTEXTUAL>
       | <SSOVERRIDE>
       | <SSTITLE>

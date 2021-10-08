@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
@@ -9,7 +9,7 @@
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>security-utils</artifactId>
-  <packaging>container-plugin</packaging>
+  <packaging>bundle</packaging>
   <version>7-SNAPSHOT</version>
 
   <properties>
@@ -23,13 +23,6 @@
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>annotations</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <!-- required for bundle-plugin to generate import-package statements for Java's standard library -->
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>jdisc_core</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -77,11 +70,6 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>com.yahoo.vespa</groupId>
-        <artifactId>bundle-plugin</artifactId>
-        <extensions>true</extensions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
@@ -96,6 +84,33 @@
             <arg>-Xlint:-serial</arg>
             <arg>-Werror</arg>
           </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>parse-version</id>
+            <goals>
+              <goal>parse-version</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <!-- Build with maven-bundle-plugin to avoid depending on jdisc_core to get the correct Import-Packages -->
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+            <Bundle-Version>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}</Bundle-Version>
+            <Export-Package>com.yahoo.security.*;version=1.0.0;-noimport:=true</Export-Package>
+            <_nouses>true</_nouses> <!-- Don't include 'uses' directives for package exports -->
+            <_fixupmessages>"Classes found in the wrong directory"</_fixupmessages> <!-- Hide warnings for bouncycastle multi-release jars -->
+          </instructions>
         </configuration>
       </plugin>
     </plugins>

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
 import java.util.Map;
@@ -53,46 +53,57 @@ public class OperationStats {
                                   bytesReceived - initial.bytesReceived);
     }
 
+    /** Number of HTTP requests attempted. */
     public long requests() {
         return requests;
     }
 
+    /** Number of HTTP responses received. */
     public long responses() {
-        return requests - inflight;
+        return requests - inflight - exceptions;
     }
 
+    /** Number of 200 OK HTTP responses received. */
     public long successes() {
         return responsesByCode.getOrDefault(200, 0L);
     }
 
+    /** Number of HTTP responses by status code. */
     public Map<Integer, Long> responsesByCode() {
         return responsesByCode;
     }
 
+    /** Number of exceptions (instead of responses). */
     public long exceptions() {
         return exceptions;
     }
 
+    /** Number of attempted requests which haven't yielded a response or exception yet. */
     public long inflight() {
         return inflight;
     }
 
+    /** Average request-response latency, or -1.  */
     public long averageLatencyMillis() {
         return averageLatencyMillis;
     }
 
+    /** Minimum request-response latency, or -1.  */
     public long minLatencyMillis() {
         return minLatencyMillis;
     }
 
+    /** Maximum request-response latency, or -1.  */
     public long maxLatencyMillis() {
         return maxLatencyMillis;
     }
 
+    /** Number of bytes sent, for HTTP requests with a response. */
     public long bytesSent() {
         return bytesSent;
     }
 
+    /** Number of bytes received in HTTP responses. */
     public long bytesReceived() {
         return bytesReceived;
     }

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.config.ConfigInstance;
@@ -12,13 +12,19 @@ import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.JRTMethods;
+import com.yahoo.vespa.config.PayloadChecksum;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
+import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 
 /**
  * Represents version 3 config request for config clients. Provides methods for inspecting request and response
@@ -38,7 +44,7 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
     protected JRTClientConfigRequestV3(ConfigKey<?> key,
                                        String hostname,
                                        DefContent defSchema,
-                                       String configMd5,
+                                       PayloadChecksums payloadChecksums,
                                        long generation,
                                        long timeout,
                                        Trace trace,
@@ -47,7 +53,7 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         Slime data = SlimeRequestData.encodeRequest(key,
                                                     hostname,
                                                     defSchema,
-                                                    configMd5,
+                                                    payloadChecksums,
                                                     generation,
                                                     timeout,
                                                     trace,
@@ -97,7 +103,7 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         return new JRTClientConfigRequestV3(getConfigKey(),
                 getClientHostName(),
                 getDefContent(),
-                isError() ? getRequestConfigMd5() : newConfMd5(),
+                isError() ? getRequestConfigChecksums() : newConfigChecksums(),
                 isError() ? getRequestGeneration() : newGen(),
                 timeout,
                 Trace.createNew(),
@@ -110,11 +116,10 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
                                                                                   CompressionType compressionType,
                                                                                   Optional<VespaVersion> vespaVersion) {
         ConfigSubscription.ConfigState<T> configState = sub.getConfigState();
-        T config = configState.getConfig();
         return createWithParams(sub.getKey(),
                                 sub.getDefContent(),
                                 ConfigUtils.getCanonicalHostName(),
-                                config != null ? config.getConfigMd5() : "",
+                                configState.getChecksums(),
                                 configState.getGeneration(),
                                 sub.timingValues().getSubscribeTimeout(),
                                 trace,
@@ -129,34 +134,34 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
                                                        Optional<VespaVersion> vespaVersion) {
         String hostname = ConfigUtils.getCanonicalHostName();
         return createWithParams(config.getKey(),
-                DefContent.fromList(config.getDefContent()),
-                hostname,
-                config.getConfigMd5(),
-                config.getGeneration(),
-                serverTimeout,
-                trace,
-                compressionType,
-                vespaVersion);
+                                DefContent.fromList(config.getDefContent()),
+                                hostname,
+                                config.getPayloadChecksums(),
+                                config.getGeneration(),
+                                serverTimeout,
+                                trace,
+                                compressionType,
+                                vespaVersion);
     }
 
     public static JRTClientConfigRequest createWithParams(ConfigKey<?> reqKey,
                                                           DefContent defContent,
                                                           String hostname,
-                                                          String configMd5,
+                                                          PayloadChecksums payloadChecksums,
                                                           long generation,
                                                           long serverTimeout,
                                                           Trace trace,
                                                           CompressionType compressionType,
                                                           Optional<VespaVersion> vespaVersion) {
         return new JRTClientConfigRequestV3(reqKey,
-                hostname,
-                defContent,
-                configMd5,
-                generation,
-                serverTimeout,
-                trace,
-                compressionType,
-                vespaVersion);
+                                            hostname,
+                                            defContent,
+                                            payloadChecksums,
+                                            generation,
+                                            serverTimeout,
+                                            trace,
+                                            compressionType,
+                                            vespaVersion);
     }
 
     @Override
@@ -173,12 +178,12 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         StringBuilder sb = new StringBuilder();
         sb.append("request='").append(getConfigKey())
                 .append(",").append(getClientHostName())
-                .append(",").append(getRequestConfigMd5())
+                .append(",").append(getRequestConfigChecksums())
                 .append(",").append(getRequestGeneration())
                 .append(",").append(getTimeout())
                 .append(",").append(getVespaVersion().map(VespaVersion::toString).orElse(""))
                 .append("'\n");
-        sb.append("response='").append(getNewConfigMd5())
+                 sb.append("response='").append(getNewChecksums())
                 .append(",").append(getNewGeneration())
                 .append(",").append(responseIsApplyOnRestart())
                 .append("'\n");
@@ -222,10 +227,10 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         return requestData.getTimeout();
     }
 
-    protected String newConfMd5() {
-        String newMd5 = getNewConfigMd5();
-        if ("".equals(newMd5)) return getRequestConfigMd5();
-        return newMd5;
+    protected PayloadChecksums newConfigChecksums() {
+        PayloadChecksums newChecksum = getNewChecksums();
+        if (PayloadChecksums.empty().equals(newChecksum)) return getRequestConfigChecksums();
+        return newChecksum;
     }
 
     protected long newGen() {
@@ -246,8 +251,20 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
 
     @Override
     public boolean hasUpdatedConfig() {
-        String respMd5 = getNewConfigMd5();
-        return !respMd5.equals("") && !getRequestConfigMd5().equals(respMd5);
+        PayloadChecksums requestConfigChecksums = getRequestConfigChecksums();
+        log.log(Level.FINE, () -> "request checksums for " + getConfigKey() + ":"  + requestConfigChecksums);
+
+        PayloadChecksums newChecksums = getNewChecksums();
+        log.log(Level.FINE, () -> "new checksums for " + getConfigKey() + ": " + newChecksums);
+        if (newChecksums.isEmpty()) return false;
+
+        PayloadChecksum respMd5 = newChecksums.getForType(MD5);
+        boolean updated = respMd5 != null && ! requestConfigChecksums.getForType(MD5).equals(respMd5);
+
+        if (updated) return true;
+
+        PayloadChecksum respXxhash64 = newChecksums.getForType(XXHASH64);
+        return respXxhash64 != null &&  ! requestConfigChecksums.getForType(XXHASH64).equals(respXxhash64);
     }
 
     @Override
@@ -258,6 +275,15 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
     @Override
     public String getRequestConfigMd5() {
         return requestData.getRequestConfigMd5();
+    }
+
+    @Override
+    public String getRequestDefMd5() {
+        return requestData.getRequestDefMd5();
+    }
+
+    public PayloadChecksums getRequestConfigChecksums() {
+        return requestData.getRequestConfigChecksums();
     }
 
     @Override
@@ -280,8 +306,8 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
     }
 
     @Override
-    public String getNewConfigMd5() {
-        return responseData.getResponseConfigMd5();
+    public PayloadChecksums getNewChecksums() {
+        return responseData.getResponseConfigChecksums();
     }
 
     @Override

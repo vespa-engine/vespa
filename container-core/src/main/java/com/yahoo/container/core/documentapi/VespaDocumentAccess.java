@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.core.documentapi;
 
 import com.yahoo.cloud.config.SlobroksConfig;
@@ -41,7 +41,7 @@ public class VespaDocumentAccess extends DocumentAccess {
 
     VespaDocumentAccess(DocumentmanagerConfig documentmanagerConfig,
                         LoadTypeConfig loadTypeConfig,
-                        SlobroksConfig slobroksConfig,
+                        String slobroksConfigId,
                         MessagebusConfig messagebusConfig,
                         DocumentProtocolPoliciesConfig policiesConfig,
                         DistributionConfig distributionConfig) {
@@ -49,7 +49,7 @@ public class VespaDocumentAccess extends DocumentAccess {
         this.parameters = new MessageBusParams(new LoadTypeSet(loadTypeConfig))
                 .setDocumentProtocolPoliciesConfig(policiesConfig, distributionConfig);
         this.parameters.setDocumentmanagerConfig(documentmanagerConfig);
-        this.parameters.getRPCNetworkParams().setSlobroksConfig(slobroksConfig);
+        this.parameters.getRPCNetworkParams().setSlobrokConfigId(slobroksConfigId);
         this.parameters.getMessageBusParams().setMessageBusConfig(messagebusConfig);
     }
 

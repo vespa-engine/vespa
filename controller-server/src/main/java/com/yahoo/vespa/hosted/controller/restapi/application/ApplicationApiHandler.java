@@ -25,6 +25,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
+import com.yahoo.restapi.ByteArrayResponse;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
@@ -37,6 +38,8 @@ import com.yahoo.slime.JsonParseException;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Text;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -49,6 +52,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.TenantRoles;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
@@ -57,6 +61,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -71,7 +77,6 @@ import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.application.ActivateResult;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -81,6 +86,7 @@ import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
@@ -102,6 +108,7 @@ import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
@@ -145,6 +152,7 @@ import java.util.stream.Stream;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.CONFLICT;
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -165,6 +173,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private final Controller controller;
     private final AccessControlRequests accessControlRequests;
     private final TestConfigSerializer testConfigSerializer;
+    private final ListFlag<String> allowedServiceViewProxy;
 
     @Inject
     public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
@@ -174,6 +183,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         this.controller = controller;
         this.accessControlRequests = accessControlRequests;
         this.testConfigSerializer = new TestConfigSerializer(controller.system());
+        allowedServiceViewProxy = Flags.ALLOWED_SERVICE_VIEW_APIS.bindTo(controller.flagSource());
     }
 
     @Override
@@ -237,6 +247,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/compile-version")) return compileVersion(path.get("tenant"), path.get("application"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deployment")) return JobControllerApiHandlerHelper.overviewResponse(controller, TenantAndApplicationId.from(path.get("tenant"), path.get("application")), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/package")) return applicationPackage(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/diff/{number}")) return applicationPackageDiff(path.get("tenant"), path.get("application"), path.get("number"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/metering")) return metering(path.get("tenant"), path.get("application"), request);
@@ -245,8 +256,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return deploying(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job")) return JobControllerApiHandlerHelper.jobTypeResponse(controller, appIdFromPath(path), request.getUri());
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), Optional.ofNullable(request.getProperty("limit")), request.getUri());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)).descendingMap(), Optional.ofNullable(request.getProperty("limit")), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/package")) return devApplicationPackage(appIdFromPath(path), jobTypeFromPath(path));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/diff/{number}")) return devApplicationPackageDiff(runIdFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/test-config")) return testConfig(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/run/{number}")) return JobControllerApiHandlerHelper.runDetailsResponse(controller.jobController(), runIdFromPath(path), request.getProperty("after"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -259,6 +271,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/content/{*}")) return content(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.getRest(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/access/support")) return supportAccess(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/node/{node}/service-dump")) return getServiceDump(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("node"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/metrics")) return metrics(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation")) return rotationStatus(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), Optional.ofNullable(request.getProperty("endpointId")));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return getGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
@@ -309,6 +322,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/suspend")) return suspend(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/access/support")) return allowSupportAccess(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/node/{node}/service-dump")) return requestServiceDump(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("node"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -358,7 +372,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Slime slime = new Slime();
         Cursor tenantArray = slime.setArray();
         List<Application> applications = controller.applications().asList();
-        for (Tenant tenant : controller.tenants().asList())
+        for (Tenant tenant : controller.tenants().asList(includeDeleted(request)))
             toSlime(tenantArray.addObject(),
                     tenant,
                     applications.stream().filter(app -> app.id().tenant().equals(tenant.name())).collect(toList()),
@@ -375,13 +389,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse tenants(HttpRequest request) {
         Slime slime = new Slime();
         Cursor response = slime.setArray();
-        for (Tenant tenant : controller.tenants().asList())
+        for (Tenant tenant : controller.tenants().asList(includeDeleted(request)))
             tenantInTenantsListToSlime(tenant, request.getUri(), response.addObject());
         return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse tenant(String tenantName, HttpRequest request) {
-        return controller.tenants().get(TenantName.from(tenantName))
+        return controller.tenants().get(TenantName.from(tenantName), includeDeleted(request))
                          .map(tenant -> tenant(tenant, request))
                          .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
     }
@@ -543,8 +557,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse applications(String tenantName, Optional<String> applicationName, HttpRequest request) {
         TenantName tenant = TenantName.from(tenantName);
-        if (controller.tenants().get(tenantName).isEmpty())
-            return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
+        getTenantOrThrow(tenantName);
 
         List<Application> applications = applicationName.isEmpty() ?
                 controller.applications().asList(tenant) :
@@ -582,13 +595,20 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             throw new IllegalArgumentException("Only manually deployed zones have dev packages");
 
         ZoneId zone = type.zone(controller.system());
-        byte[] applicationPackage = controller.applications().applicationStore().getDev(id, zone);
+        ApplicationVersion version = controller.jobController().last(id, type).get().versions().targetApplication();
+        byte[] applicationPackage = controller.applications().applicationStore().get(new DeploymentId(id, zone), version);
         return new ZipResponse(id.toFullString() + "." + zone.value() + ".zip", applicationPackage);
+    }
+
+    private HttpResponse devApplicationPackageDiff(RunId runId) {
+        DeploymentId deploymentId = new DeploymentId(runId.application(), runId.job().type().zone(controller.system()));
+        return controller.applications().applicationStore().getDevDiff(deploymentId, runId.number())
+                .map(ByteArrayResponse::new)
+                .orElseThrow(() -> new NotExistsException("No application package diff found for " + runId));
     }
 
     private HttpResponse applicationPackage(String tenantName, String applicationName, HttpRequest request) {
         var tenantAndApplication = TenantAndApplicationId.from(tenantName, applicationName);
-        var applicationId = ApplicationId.from(tenantName, applicationName, InstanceName.defaultName().value());
 
         long buildNumber;
         var requestedBuild = Optional.ofNullable(request.getProperty("build")).map(build -> {
@@ -616,6 +636,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                          "' with build number " + buildNumber);
         }
         return new ZipResponse(filename, applicationPackage.get());
+    }
+
+    private HttpResponse applicationPackageDiff(String tenant, String application, String number) {
+        TenantAndApplicationId tenantAndApplication = TenantAndApplicationId.from(tenant, application);
+        return controller.applications().applicationStore().getDiff(tenantAndApplication.tenant(), tenantAndApplication.application(), Long.parseLong(number))
+                .map(ByteArrayResponse::new)
+                .orElseThrow(() -> new NotExistsException("No application package diff found for '" + tenantAndApplication + "' with build number " + number));
     }
 
     private HttpResponse application(String tenantName, String applicationName, HttpRequest request) {
@@ -865,7 +892,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse nodes(String tenantName, String applicationName, String instanceName, String environment, String region) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = requireZone(environment, region);
-        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone, id);
+        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone, NodeFilter.all().applications(id));
 
         Slime slime = new Slime();
         Cursor nodesArray = slime.setObject().setArray("nodes");
@@ -876,11 +903,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             node.reservedTo().ifPresent(tenant -> nodeObject.setString("reservedTo", tenant.value()));
             nodeObject.setString("orchestration", valueOf(node.serviceState()));
             nodeObject.setString("version", node.currentVersion().toString());
-            nodeObject.setString("flavor", node.flavor());
+            node.flavor().ifPresent(flavor -> nodeObject.setString("flavor", flavor));
             toSlime(node.resources(), nodeObject);
             nodeObject.setString("clusterId", node.clusterId());
             nodeObject.setString("clusterType", valueOf(node.clusterType()));
-            nodeObject.setBool("down", node.history().stream().anyMatch(event -> "down".equals(event.getEvent())));
+            nodeObject.setBool("down", node.history().stream().anyMatch(event -> "down".equals(event.name())));
             nodeObject.setBool("retired", node.retired() || node.wantToRetire());
             nodeObject.setBool("restarting", node.wantedRestartGeneration() > node.restartGeneration());
             nodeObject.setBool("rebooting", node.wantedRebootGeneration() > node.rebootGeneration());
@@ -1414,6 +1441,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                 response.setString("status", "pending");
                             else response.setString("status", "running");
                         });
+            } else {
+                var deploymentRun = JobType.from(controller.system(), deploymentId.zoneId())
+                        .flatMap(jobType -> controller.jobController().last(deploymentId.applicationId(), jobType));
+
+                deploymentRun.ifPresent(run -> {
+                    response.setString("status", run.hasEnded() ? "complete" : "running");
+                });
             }
         }
 
@@ -1684,6 +1718,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             return new HtmlResponse(result);
         }
 
+        String normalizedRestPath = URI.create(restPath).normalize().toString();
+        if (allowedServiceViewProxy.value().stream().noneMatch(normalizedRestPath::startsWith)) {
+            return ErrorResponse.forbidden("Access denied");
+        }
+
         Map<?,?> result = controller.serviceRegistry().configServer().getServiceApiResponse(deploymentId, serviceName, restPath);
         ServiceApiResponse response = new ServiceApiResponse(deploymentId.zoneId(),
                                                              deploymentId.applicationId(),
@@ -1928,7 +1967,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                             .flatMap(options -> optional("vespaVersion", options))
                                             .map(Version::fromString);
 
-        controller.jobController().deploy(id, type, version, applicationPackage);
+        ensureApplicationExists(TenantAndApplicationId.from(id), request);
+
+        boolean dryRun = Optional.ofNullable(dataParts.get("deployOptions"))
+                                 .map(json -> SlimeUtils.jsonToSlime(json).get())
+                                 .flatMap(options -> optional("dryRun", options))
+                                 .map(Boolean::valueOf)
+                                 .orElse(false);
+
+        controller.jobController().deploy(id, type, version, applicationPackage, dryRun);
         RunId runId = controller.jobController().last(id, type).get().id();
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();
@@ -1976,17 +2023,17 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse deleteTenant(String tenantName, HttpRequest request) {
-        Optional<Tenant> tenant = controller.tenants().get(tenantName);
-        if (tenant.isEmpty())
-            return ErrorResponse.notFoundError("Could not delete tenant '" + tenantName + "': Tenant not found");
+        boolean forget = request.getBooleanProperty("forget");
+        if (forget && !isOperator(request))
+            return ErrorResponse.forbidden("Only operators can forget a tenant");
 
-        controller.tenants().delete(tenant.get().name(),
-                                    accessControlRequests.credentials(tenant.get().name(),
+        controller.tenants().delete(TenantName.from(tenantName),
+                                    () -> accessControlRequests.credentials(TenantName.from(tenantName),
                                                                       toSlime(request.getData()).get(),
-                                                                      request.getJDiscRequest()));
+                                                                      request.getJDiscRequest()),
+                                    forget);
 
-        // TODO: Change to a message response saying the tenant was deleted
-        return tenant(tenant.get(), request);
+        return new MessageResponse("Deleted tenant " + tenantName);
     }
 
     private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
@@ -2035,6 +2082,106 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                                       false,
                                                                       controller.routing().zoneEndpointsOf(deployments),
                                                                       controller.applications().reachableContentClustersByZone(deployments)));
+    }
+
+    private HttpResponse requestServiceDump(String tenant, String application, String instance, String environment,
+                                            String region, String hostname, HttpRequest request) {
+        NodeRepository nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
+        ZoneId zone = requireZone(environment, region);
+
+        // Check that no other service dump is in progress
+        Slime report = getReport(nodeRepository, zone, tenant, application, instance, hostname).orElse(null);
+        if (report != null) {
+            Cursor cursor = report.get();
+            // Note: same behaviour for both value '0' and missing value.
+            boolean force = request.getBooleanProperty("force");
+            if (!force && cursor.field("failedAt").asLong() == 0 && cursor.field("completedAt").asLong() == 0) {
+                throw new IllegalArgumentException("Service dump already in progress for " + cursor.field("configId").asString());
+            }
+        }
+        Slime requestPayload;
+        try {
+            requestPayload = SlimeUtils.jsonToSlimeOrThrow(request.getData().readAllBytes());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Missing or invalid JSON in request content", e);
+        }
+        Cursor requestPayloadCursor = requestPayload.get();
+        String configId = requestPayloadCursor.field("configId").asString();
+        long expiresAt = requestPayloadCursor.field("expiresAt").asLong();
+        if (configId.isEmpty()) {
+            throw new IllegalArgumentException("Missing configId");
+        }
+        Cursor artifactsCursor = requestPayloadCursor.field("artifacts");
+        int artifactEntries = artifactsCursor.entries();
+        if (artifactEntries == 0) {
+            throw new IllegalArgumentException("Missing or empty 'artifacts'");
+        }
+
+        Slime dumpRequest = new Slime();
+        Cursor dumpRequestCursor = dumpRequest.setObject();
+        dumpRequestCursor.setLong("createdMillis", controller.clock().millis());
+        dumpRequestCursor.setString("configId", configId);
+        Cursor dumpRequestArtifactsCursor = dumpRequestCursor.setArray("artifacts");
+        for (int i = 0; i < artifactEntries; i++) {
+            dumpRequestArtifactsCursor.addString(artifactsCursor.entry(i).asString());
+        }
+        if (expiresAt > 0) {
+            dumpRequestCursor.setLong("expiresAt", expiresAt);
+        }
+        Cursor dumpOptionsCursor = requestPayloadCursor.field("dumpOptions");
+        if (dumpOptionsCursor.children() > 0) {
+            SlimeUtils.copyObject(dumpOptionsCursor, dumpRequestCursor.setObject("dumpOptions"));
+        }
+        var reportsUpdate = Map.of("serviceDump", new String(uncheck(() -> SlimeUtils.toJsonBytes(dumpRequest))));
+        nodeRepository.updateReports(zone, hostname, reportsUpdate);
+        boolean wait = request.getBooleanProperty("wait");
+        if (!wait) return new MessageResponse("Request created");
+        return waitForServiceDumpResult(nodeRepository, zone, tenant, application, instance, hostname);
+    }
+
+    private HttpResponse getServiceDump(String tenant, String application, String instance, String environment,
+                                        String region, String hostname, HttpRequest request) {
+        NodeRepository nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
+        ZoneId zone = requireZone(environment, region);
+        Slime report = getReport(nodeRepository, zone, tenant, application, instance, hostname)
+            .orElseThrow(() -> new NotExistsException("No service dump for node " + hostname));
+        return new SlimeJsonResponse(report);
+    }
+
+    private HttpResponse waitForServiceDumpResult(NodeRepository nodeRepository, ZoneId zone, String tenant,
+                                                  String application, String instance, String hostname) {
+        int pollInterval = 2;
+        Slime report;
+        while (true) {
+            report = getReport(nodeRepository, zone, tenant, application, instance, hostname).get();
+            Cursor cursor = report.get();
+            if (cursor.field("completedAt").asLong() > 0 || cursor.field("failedAt").asLong() > 0) {
+                break;
+            }
+            final Slime copyForLambda = report;
+            log.fine(() -> uncheck(() -> new String(SlimeUtils.toJsonBytes(copyForLambda))));
+            log.fine("Sleeping " + pollInterval + " seconds before checking report status again");
+            controller.sleeper().sleep(Duration.ofSeconds(pollInterval));
+        }
+        return new SlimeJsonResponse(report);
+    }
+
+    private Optional<Slime> getReport(NodeRepository nodeRepository, ZoneId zone, String tenant,
+                                      String application, String instance, String hostname) {
+        Node node;
+        try {
+            node = nodeRepository.getNode(zone, hostname);
+        } catch (IllegalArgumentException e) {
+            throw new NotExistsException(new Hostname(hostname));
+        }
+        ApplicationId app = ApplicationId.from(tenant, application, instance);
+        ApplicationId owner = node.owner().orElseThrow(() -> new IllegalArgumentException("Node has no owner"));
+        if (!app.equals(owner)) {
+            throw new IllegalArgumentException("Node is not owned by " + app.toFullString());
+        }
+        String json = node.reports().get("serviceDump");
+        if (json == null) return Optional.empty();
+        return Optional.of(SlimeUtils.jsonToSlimeOrThrow(json));
     }
 
     private static SourceRevision toSourceRevision(Inspector object) {
@@ -2106,6 +2253,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
                 break;
             }
+            case deleted: break;
             default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
         // TODO jonmv: This should list applications, not instances.
@@ -2195,6 +2343,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 metaData.setString("property", athenzTenant.property().id());
                 break;
             case cloud: break;
+            case deleted: break;
             default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
         object.setString("url", withPath("/application/v4/tenant/" + tenant.name().value(), requestURI).toString());
@@ -2218,6 +2367,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                        .flatMap(app -> app.latestVersion().flatMap(ApplicationVersion::buildTime).stream())
                                                        .max(Comparator.naturalOrder());
         object.setLong("createdAtMillis", tenant.createdAt().toEpochMilli());
+        if (tenant.type() == Tenant.Type.deleted)
+            object.setLong("deletedAtMillis", ((DeletedTenant) tenant).deletedAt().toEpochMilli());
         lastDev.ifPresent(instant -> object.setLong("lastDeploymentToDevMillis", instant.toEpochMilli()));
         lastSubmission.ifPresent(instant -> object.setLong("lastSubmissionToProdMillis", instant.toEpochMilli()));
 
@@ -2422,10 +2573,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return "true".equals(request.getProperty("activeInstances"));
     }
 
+    private static boolean includeDeleted(HttpRequest request) {
+        return "true".equals(request.getProperty("includeDeleted"));
+    }
+
     private static String tenantType(Tenant tenant) {
         switch (tenant.type()) {
             case athenz: return "ATHENS";
             case cloud: return "CLOUD";
+            case deleted: return "DELETED";
             default: throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());
         }
     }
@@ -2468,6 +2624,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                                          Optional.empty(),
                                                                          applicationPackage,
                                                                          Optional.of(requireUserPrincipal(request)));
+
+        ensureApplicationExists(TenantAndApplicationId.from(tenant, application), request);
 
         return JobControllerApiHandlerHelper.submitResponse(controller.jobController(),
                                                             tenant,
@@ -2568,6 +2726,14 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return securityContext.roles().stream()
                               .map(Role::definition)
                               .anyMatch(definition -> definition == RoleDefinition.hostedOperator);
+    }
+
+    private void ensureApplicationExists(TenantAndApplicationId id, HttpRequest request) {
+        if (controller.applications().getApplication(id).isEmpty()) {
+            log.fine("Application does not exist in public, creating: " + id);
+            var credentials = accessControlRequests.credentials(id.tenant(), null /* not used on public */ , request.getJDiscRequest());
+            controller.applications().createApplication(id, credentials);
+        }
     }
 
 }

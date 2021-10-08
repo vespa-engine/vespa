@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -13,7 +13,6 @@ namespace vespalib {
  */
 template <typename T>
 class allocator_large {
-    using PtrAndSize = alloc::MemoryAllocator::PtrAndSize;
 public:
     allocator_large() noexcept : _allocator(alloc::MemoryAllocator::select_allocator()) {}
     using value_type = T;

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
@@ -41,32 +41,6 @@
           </Import-Package>
           <WebInfUrl>/WEB-INF/web.xml</WebInfUrl>
         </configuration>
-      </plugin>
-      <plugin>
-        <!-- Trick to copy bundle-plugin.bundle-classpath-mappings.json from target/test-classes to target/classes -->
-        <artifactId>maven-resources-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy-bundle-classpath-mappings-from-test-to-main</id>
-            <!-- NOTE: Must be done after generating classpath-mappings and before assembling the bundle (see the test-bundles pom) -->
-            <phase>process-test-sources</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-              <overwrite>true</overwrite>
-              <resources>
-                <resource>
-                  <directory>${project.build.testOutputDirectory}</directory>
-                  <includes>
-                    <include>bundle-plugin.bundle-classpath-mappings.json</include>
-                  </includes>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>

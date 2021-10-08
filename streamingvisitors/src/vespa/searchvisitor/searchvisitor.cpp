@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "querytermdata.h"
 #include "searchenvironment.h"
@@ -180,7 +180,7 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
     _hitCount(0),
     _hitsRejectedCount(0),
     _query(),
-    _queryResult(new documentapi::QueryResultMessage()),
+    _queryResult(std::make_unique<documentapi::QueryResultMessage>()),
     _fieldSearcherMap(),
     _docTypeMapping(),
     _fieldSearchSpecMap(),
@@ -192,10 +192,10 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
     _groupingList(),
     _attributeFields(),
     _sortList(),
-    _searchBuffer(new vsm::SearcherBuf()),
+    _searchBuffer(std::make_shared<vsm::SearcherBuf>()),
     _tmpSortBuffer(256),
-    _documentIdAttributeBacking(new search::SingleStringExtAttribute("[docid]") ),
-    _rankAttributeBacking(new search::SingleFloatExtAttribute("[rank]") ),
+    _documentIdAttributeBacking(std::make_shared<search::SingleStringExtAttribute>("[docid]") ),
+    _rankAttributeBacking(std::make_shared<search::SingleFloatExtAttribute>("[rank]") ),
     _documentIdAttribute(dynamic_cast<search::SingleStringExtAttribute &>(*_documentIdAttributeBacking)),
     _rankAttribute(dynamic_cast<search::SingleFloatExtAttribute &>(*_rankAttributeBacking)),
     _shouldFillRankAttribute(false),
@@ -680,8 +680,8 @@ SearchVisitor::setupScratchDocument(const StringFieldIdTMap & fieldsInQuery)
 void
 SearchVisitor::setupDocsumObjects()
 {
-    std::unique_ptr<DocsumFilter> docsumFilter(new DocsumFilter(_vsmAdapter->getDocsumTools(),
-                                                                _rankController.getRankProcessor()->getHitCollector()));
+    auto docsumFilter = std::make_unique<DocsumFilter>(_vsmAdapter->getDocsumTools(),
+                                                       _rankController.getRankProcessor()->getHitCollector());
     docsumFilter->init(_fieldSearchSpecMap.nameIdMap(), *_fieldPathMap);
     docsumFilter->setSnippetModifiers(_snippetModifierManager.getModifiers());
     _summaryGenerator.setFilter(std::move(docsumFilter));
@@ -815,7 +815,7 @@ SearchVisitor::setupGrouping(const std::vector<char> & groupingBlob)
     uint32_t numGroupings(0);
     is >> numGroupings;
     for(size_t i(0); i < numGroupings; i++) {
-        std::unique_ptr<Grouping> ag(new Grouping());
+        auto ag = std::make_unique<Grouping>();
         ag->deserialize(is);
         GroupingList::value_type groupingPtr(ag.release());
         Grouping & grouping = *groupingPtr;
@@ -882,7 +882,7 @@ SearchVisitor::handleDocuments(const document::BucketId&,
     const document::DocumentType* defaultDocType = _docTypeMapping.getDefaultDocumentType();
     assert(defaultDocType);
     for (const auto & entry : entries) {
-        StorageDocument::UP document(new StorageDocument(entry->releaseDocument(), _fieldPathMap, highestFieldNo));
+        auto document = std::make_unique<StorageDocument>(entry->releaseDocument(), _fieldPathMap, highestFieldNo);
 
         try {
             if (defaultDocType != nullptr

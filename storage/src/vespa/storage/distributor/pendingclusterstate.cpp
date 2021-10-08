@@ -1,13 +1,12 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "pendingclusterstate.h"
+#include "bucket_space_state_map.h"
 #include "pending_bucket_space_db_transition.h"
-#include "bucketdbupdater.h"
-#include "distributor_bucket_space_repo.h"
-#include "distributor_bucket_space.h"
-#include <vespa/storageframework/defaultimplementation/clock/realclock.h>
-#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
+#include "pendingclusterstate.h"
+#include "top_level_bucket_db_updater.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
+#include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/xmlstream.hpp>
 #include <climits>
@@ -27,7 +26,7 @@ PendingClusterState::PendingClusterState(
         const framework::Clock& clock,
         const ClusterInformation::CSP& clusterInfo,
         DistributorMessageSender& sender,
-        DistributorBucketSpaceRepo& bucketSpaceRepo,
+        const BucketSpaceStateMap& bucket_space_states,
         const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
         const OutdatedNodesMap &outdatedNodesMap,
         api::Timestamp creationTimestamp)
@@ -41,7 +40,7 @@ PendingClusterState::PendingClusterState(
       _clusterInfo(clusterInfo),
       _creationTimestamp(creationTimestamp),
       _sender(sender),
-      _bucketSpaceRepo(bucketSpaceRepo),
+      _bucket_space_states(bucket_space_states),
       _clusterStateVersion(_cmd->getClusterStateBundle().getVersion()),
       _isVersionedTransition(true),
       _bucketOwnershipTransfer(false),
@@ -55,7 +54,7 @@ PendingClusterState::PendingClusterState(
         const framework::Clock& clock,
         const ClusterInformation::CSP& clusterInfo,
         DistributorMessageSender& sender,
-        DistributorBucketSpaceRepo& bucketSpaceRepo,
+        const BucketSpaceStateMap& bucket_space_states,
         api::Timestamp creationTimestamp)
     : _requestedNodes(clusterInfo->getStorageNodeCount()),
       _prevClusterStateBundle(clusterInfo->getClusterStateBundle()),
@@ -64,7 +63,7 @@ PendingClusterState::PendingClusterState(
       _clusterInfo(clusterInfo),
       _creationTimestamp(creationTimestamp),
       _sender(sender),
-      _bucketSpaceRepo(bucketSpaceRepo),
+      _bucket_space_states(bucket_space_states),
       _clusterStateVersion(0),
       _isVersionedTransition(false),
       _bucketOwnershipTransfer(true),
@@ -80,7 +79,7 @@ void
 PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, const OutdatedNodesMap &outdatedNodesMap)
 {
     OutdatedNodes emptyOutdatedNodes;
-    for (auto &elem : _bucketSpaceRepo) {
+    for (const auto &elem : _bucket_space_states) {
         auto onItr = outdatedNodesMap.find(elem.first);
         const auto &outdatedNodes = (onItr == outdatedNodesMap.end()) ? emptyOutdatedNodes : onItr->second;
         auto pendingTransition =
@@ -100,8 +99,7 @@ PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, 
 void
 PendingClusterState::logConstructionInformation() const
 {
-    const auto &distributorBucketSpace(_bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()));
-    const auto &distribution(distributorBucketSpace.getDistribution());
+    const auto &distribution = _bucket_space_states.get(document::FixedBucketSpaces::default_space()).get_distribution();
     LOG(debug,
         "New PendingClusterState constructed with previous cluster "
         "state '%s', new cluster state '%s', distribution config "
@@ -190,8 +188,7 @@ PendingClusterState::requestBucketInfoFromStorageNodesWithChangedState()
 void
 PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
 {
-    const auto &distributorBucketSpace(_bucketSpaceRepo.get(bucketSpaceAndNode.bucketSpace));
-    const auto &distribution(distributorBucketSpace.getDistribution());
+    const auto &distribution = _bucket_space_states.get(bucketSpaceAndNode.bucketSpace).get_distribution();
     vespalib::string distributionHash;
     // TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
     bool sendLegacyHash = false;
@@ -207,10 +204,10 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
     if (!sendLegacyHash) {
         distributionHash = distribution.getNodeGraph().getDistributionConfigHash();
     } else {
-        const auto& defaultSpace = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space());
+        const auto& defaultSpace = _bucket_space_states.get(document::FixedBucketSpaces::default_space());
         // Generate legacy distribution hash explicitly.
         auto legacyGlobalDistr = GlobalBucketSpaceDistributionConverter::convert_to_global(
-                defaultSpace.getDistribution(), true/*use legacy mode*/);
+                defaultSpace.get_distribution(), true/*use legacy mode*/);
         distributionHash = legacyGlobalDistr->getNodeGraph().getDistributionConfigHash();
         LOG(debug, "Falling back to sending legacy hash to node %u: %s",
             bucketSpaceAndNode.node, distributionHash.c_str());
@@ -320,14 +317,6 @@ PendingClusterState::requestNodesToString() const
         }
     }
     return ost.str();
-}
-
-void
-PendingClusterState::mergeIntoBucketDatabases()
-{
-    for (auto &elem : _pendingTransitions) {
-        elem.second->mergeIntoBucketDatabase();
-    }
 }
 
 void

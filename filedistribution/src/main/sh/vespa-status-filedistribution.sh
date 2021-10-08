@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # BEGIN environment bootstrap section
 # Do not edit between here and END as this section should stay identical in all scripts
@@ -76,11 +76,11 @@ findhost
 
 ROOT=${VESPA_HOME%/}
 
-if [ "$cloudconfig_server__environment" != "" ]; then
-    environment="--environment $cloudconfig_server__environment"
+if [ "$VESPA_ENVIRONMENT" != "" ]; then
+    environment="--environment $VESPA_ENVIRONMENT"
 fi
-if [ "$cloudconfig_server__region" != "" ]; then
-    region="--region $cloudconfig_server__region"
+if [ "$VESPA_REGION" != "" ]; then
+    region="--region $VESPA_REGION"
 fi
 
 defaults="--tenant default --application default --instance default"

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.yahoo.component.Version;
@@ -14,6 +14,8 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.config.server.filedistribution.MockFileManager;
+import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
 import org.junit.Rule;
@@ -31,10 +33,10 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import static com.yahoo.config.provision.serialization.AllocatedHostsSerializer.toJson;
-import static org.hamcrest.CoreMatchers.is;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.META_ZK_PATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class ZKApplicationPackageTest {
@@ -59,20 +61,20 @@ public class ZKApplicationPackageTest {
                                     Optional.of(DockerImage.fromString(dockerImage)))));
     }
 
-    private ConfigCurator configCurator;
+    private Curator curator;
 
     @Rule
     public TemporaryFolder tmpDir = new TemporaryFolder();
 
     @Before
     public void setup() {
-        configCurator = ConfigCurator.create(new MockCurator());
+        curator = new MockCurator();
     }
 
     @Test
     public void testBasicZKFeed() throws IOException {
-        feed(configCurator, new File(APP));
-        ZKApplicationPackage zkApp = new ZKApplicationPackage(configCurator, Path.fromString("/0"));
+        feed(curator, new File(APP));
+        ZKApplicationPackage zkApp = new ZKApplicationPackage(new MockFileManager(), curator, Path.fromString("/0"));
         assertTrue(Pattern.compile(".*<slobroks>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getServices())).matches());
         assertTrue(Pattern.compile(".*<alias>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getHosts())).matches());
         assertTrue(Pattern.compile(".*<slobroks>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getFile(Path.fromString("services.xml")).createReader())).matches());
@@ -93,7 +95,6 @@ public class ZKApplicationPackageTest {
         Version goodVersion = new Version(3, 0, 0);
         assertTrue(zkApp.getFileRegistries().containsKey(goodVersion));
         assertFalse(zkApp.getFileRegistries().containsKey(new Version(0, 0, 0)));
-        assertThat(zkApp.getFileRegistries().get(goodVersion).fileSourceHost(), is("dummyfiles"));
         AllocatedHosts readInfo = zkApp.getAllocatedHosts().get();
         assertEquals(Utf8.toString(toJson(ALLOCATED_HOSTS)), Utf8.toString(toJson(readInfo)));
         assertEquals(TEST_FLAVOR.get().resources(), readInfo.getHosts().iterator().next().advertisedResources());
@@ -103,13 +104,14 @@ public class ZKApplicationPackageTest {
         assertEquals("mydisc", DeploymentSpec.fromXml(zkApp.getDeployment().get()).requireInstance("default").globalServiceId().get());
     }
 
-    private void feed(ConfigCurator zk, File dirToFeed) throws IOException {
+    private void feed(com.yahoo.vespa.curator.Curator zk, File dirToFeed) throws IOException {
         assertTrue(dirToFeed.isDirectory());
-        feedZooKeeper(zk, dirToFeed, "/0" + ConfigCurator.USERAPP_ZK_SUBPATH, null, true);
+        Path sessionPath = Path.fromString("/0");
+        feedZooKeeper(zk, dirToFeed, sessionPath.append(USERAPP_ZK_SUBPATH), null, true);
         String metaData = "{\"deploy\":{\"user\":\"foo\",\"from\":\"bar\",\"timestamp\":1},\"application\":{\"id\":\"foo:foo:default\",\"checksum\":\"abc\",\"generation\":4,\"previousActiveGeneration\":3}}";
-        zk.putData("/0", ConfigCurator.META_ZK_PATH, metaData);
-        zk.putData("/0/" + ZKApplicationPackage.fileRegistryNode + "/3.0.0", "dummyfiles");
-        zk.putData("/0/" + ZKApplicationPackage.allocatedHostsNode, toJson(ALLOCATED_HOSTS));
+        zk.set(sessionPath.append(META_ZK_PATH), Utf8.toBytes(metaData));
+        zk.set(sessionPath.append(ZKApplicationPackage.fileRegistryNode).append("/3.0.0"), Utf8.toBytes("dummyfiles"));
+        zk.set(sessionPath.append(ZKApplicationPackage.allocatedHostsNode), toJson(ALLOCATED_HOSTS));
     }
 
     private static class MockNodeFlavors extends NodeFlavors{
@@ -131,7 +133,7 @@ public class ZKApplicationPackageTest {
      * @param filenameFilter A FilenameFilter which decides which files in dir are fed to zookeeper
      * @param recurse        recurse subdirectories
      */
-    static void feedZooKeeper(ConfigCurator zk, File dir, String path, FilenameFilter filenameFilter, boolean recurse) {
+    static void feedZooKeeper(com.yahoo.vespa.curator.Curator zk, File dir, Path path, FilenameFilter filenameFilter, boolean recurse) {
         try {
             if (filenameFilter == null) {
                 filenameFilter = acceptsAllFileNameFilter;
@@ -141,12 +143,13 @@ public class ZKApplicationPackageTest {
             }
             for (File file : listFiles(dir, filenameFilter)) {
                 if (file.getName().startsWith(".")) continue; //.svn , .git ...
+                Path filePath = path.append(file.getName());
                 if (file.isFile()) {
-                    String contents = IOUtils.readFile(file);
-                    zk.putData(path, file.getName(), contents);
+                    byte[] contents = IOUtils.readFileBytes(file);
+                    zk.set(filePath, contents);
                 } else if (recurse && file.isDirectory()) {
-                    zk.createNode(path, file.getName());
-                    feedZooKeeper(zk, file, path + '/' + file.getName(), filenameFilter, recurse);
+                    zk.create(filePath);
+                    feedZooKeeper(zk, file, filePath, filenameFilter, recurse);
                 }
             }
         }

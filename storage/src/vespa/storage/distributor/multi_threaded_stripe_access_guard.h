@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "stripe_access_guard.h"
@@ -34,7 +34,8 @@ public:
     void update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) override;
     void set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state) override;
     void clear_pending_cluster_state_bundle() override;
-    void enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state) override;
+    void enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,
+                                     bool has_bucket_ownership_change) override;
     void notify_distribution_change_enabled() override;
 
     PotentialDataLossReport remove_superfluous_buckets(document::BucketSpace bucket_space,
@@ -59,10 +60,6 @@ public:
     void report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const override;
 
 private:
-    // TODO STRIPE remove once multi threaded stripe support is implemented
-    TickableStripe& first_stripe() noexcept;
-    const TickableStripe& first_stripe() const noexcept;
-
     template <typename Func>
     void for_each_stripe(Func&& f);
 

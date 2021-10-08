@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
@@ -22,7 +22,7 @@ public class Yum {
     }
 
     public Optional<YumPackageName> queryInstalled(TaskContext context, String packageName) {
-        return YumCommand.queryInstalled(terminal, context, packageName);
+        return YumCommand.queryInstalled(terminal, context, YumPackageName.fromString(packageName));
     }
 
     /** Lock and install, or if necessary downgrade, a package to a given version. */

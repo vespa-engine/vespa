@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
 import com.yahoo.component.Version;
@@ -6,7 +6,6 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
 import java.time.Instant;
@@ -38,13 +37,6 @@ public interface Model {
 
     /** Returns all the config ids available for this model. */
     Set<String> allConfigIds();
-
-    /**
-     * Asks the {@link Model} instance to distribute files using provided filedistribution instance.
-     *
-     * @param fileDistribution instance that can be called to distribute files
-     */
-    void distributeFiles(FileDistribution fileDistribution);
 
     /** The set of files that should be distributed to the hosts in this model. */
     Set<FileReference> fileReferences();

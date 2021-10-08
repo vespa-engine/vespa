@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -92,7 +92,7 @@ private:
     void onGenerationChange(generation_t generation) override;
     void removeOldGenerations(generation_t firstUsed) override;
     std::unique_ptr<search::AttributeSaver> onInitSave(vespalib::stringref fileName) override;
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
 
     template <typename TreeView>
     typename TreeView::Iterator

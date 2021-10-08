@@ -1,9 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.types;
 
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.yql.YqlQuery;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -41,7 +40,7 @@ public abstract class FieldType {
     public abstract Object convertFrom(Object o, QueryProfileRegistry registry);
 
     /** Converts the given type to an instance of this type, if possible. Returns null if not possible. */
-    public abstract Object convertFrom(Object o, CompiledQueryProfileRegistry registry);
+    public abstract Object convertFrom(Object o, ConversionContext context);
 
     /**
      * Returns this type as a tensor type: The true tensor type is this is a tensor field an an empty type -
@@ -77,7 +76,7 @@ public abstract class FieldType {
         if ("query-profile".equals(typeString))
             return genericQueryProfileType;
         if (typeString.startsWith("query-profile:"))
-            return QueryProfileFieldType.fromString(typeString.substring("query-profile:".length()),registry);
+            return QueryProfileFieldType.fromString(typeString.substring("query-profile:".length()), registry);
         throw new IllegalArgumentException("Unknown type '" + typeString + "'");
     }
 

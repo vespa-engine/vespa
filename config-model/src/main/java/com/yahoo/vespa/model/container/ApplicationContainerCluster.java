@@ -34,7 +34,6 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
-import com.yahoo.vespa.model.container.xml.PlatformBundles;
 import com.yahoo.vespa.model.utils.FileSender;
 
 import java.util.ArrayList;
@@ -71,8 +70,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_1 = SystemBindingPattern.fromHttpPath(PrometheusV1Handler.V1_PATH);
     private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_2 = SystemBindingPattern.fromHttpPath(PrometheusV1Handler.V1_PATH + "/*");
 
-    public static final int heapSizePercentageOfTotalNodeMemory = 60;
-    public static final int heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster = 17;
+    public static final int heapSizePercentageOfTotalNodeMemory = 70;
+    public static final int heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster = 18;
 
 
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
@@ -100,13 +99,14 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                    .map(HostSpec::hostname)
                                    .collect(Collectors.toUnmodifiableSet());
 
-        addSimpleComponent(DEFAULT_LINGUISTICS_PROVIDER);
+        addSimpleComponent("com.yahoo.language.provider.DefaultLinguisticsProvider");
+        addSimpleComponent("com.yahoo.language.provider.DefaultEmbedderProvider");
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.DeprecatedSecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.AthenzIdentityProviderProvider");
-        addSimpleComponent("com.yahoo.container.jdisc.SystemInfoProvider");
         addSimpleComponent(com.yahoo.container.core.documentapi.DocumentAccessProvider.class.getName());
+
         addMetricsHandlers();
         addTestrunnerComponentsIfTester(deployState);
     }
@@ -121,15 +121,17 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private void addAndSendApplicationBundles(DeployState deployState) {
         for (ComponentInfo component : deployState.getApplicationPackage().getComponentsInfo(deployState.getVespaVersion())) {
-            FileReference reference = FileSender.sendFileToServices(component.getPathRelativeToAppDir(), containers);
+            FileReference reference = deployState.getFileRegistry().addFile(component.getPathRelativeToAppDir());
+            FileSender.send(reference, containers);
             applicationBundles.add(reference);
         }
     }
 
     private void sendUserConfiguredFiles(DeployState deployState) {
         // Files referenced from user configs to all components.
+        FileSender fileSender = new FileSender(containers, deployState.getFileRegistry(), deployState.getDeployLogger());
         for (Component<?, ?> component : getAllComponents()) {
-            FileSender.sendUserConfiguredFiles(component, containers, deployState.getDeployLogger());
+            fileSender.sendUserConfiguredFiles(component);
         }
     }
 

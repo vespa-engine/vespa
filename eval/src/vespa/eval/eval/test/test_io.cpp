@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "test_io.h"
 #include <vespa/vespalib/util/require.h>
@@ -62,6 +62,39 @@ StdOut::commit(size_t bytes)
 }
 
 //-----------------------------------------------------------------------------
+
+bool
+LineReader::read_line(vespalib::string &line)
+{
+    line.clear();
+    for (auto mem = _input.obtain(); mem.size > 0; mem = _input.obtain()) {
+        for (size_t i = 0; i < mem.size; ++i) {
+            if (mem.data[i] == '\n') {
+                _input.evict(i + 1);
+                return true;
+            } else {
+                line.push_back(mem.data[i]);
+            }
+        }
+        _input.evict(mem.size);
+    }
+    return !line.empty();
+}
+
+//-----------------------------------------------------------------------------
+
+bool look_for_eof(Input &input) {
+    for (auto mem = input.obtain(); mem.size > 0; mem = input.obtain()) {
+        for (size_t i = 0; i < mem.size; ++i) {
+            if (!isspace(mem.data[i])) {
+                input.evict(i);
+                return false;
+            }
+        }
+        input.evict(mem.size);
+    }
+    return true;
+}
 
 void write_compact(const Slime &slime, Output &out) {
     JsonFormat::encode(slime, out, true);

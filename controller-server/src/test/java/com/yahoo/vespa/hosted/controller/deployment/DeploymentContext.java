@@ -1,4 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.base.Supplier;
@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -27,7 +28,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -192,7 +193,8 @@ public class DeploymentContext {
         for (var spec : application().deploymentSpec().instances())
             for (JobType type : new DeploymentSteps(spec, tester.controller()::system).productionJobs())
                 assertTrue(tester.configServer().nodeRepository()
-                                 .list(type.zone(tester.controller().system()), applicationId.defaultInstance()).stream() // TODO jonmv: support more
+                                 .list(type.zone(tester.controller().system()),
+                                       NodeFilter.all().applications(applicationId.defaultInstance())).stream() // TODO jonmv: support more
                                  .allMatch(node -> node.currentVersion().equals(version)));
 
         assertFalse(instance().change().hasTargets());
@@ -321,7 +323,7 @@ public class DeploymentContext {
 
     /** Runs a deployment of the given package to the given dev/perf job, on the given version. */
     public DeploymentContext runJob(JobType type, ApplicationPackage applicationPackage, Version vespaVersion) {
-        jobs.deploy(instanceId, type, Optional.ofNullable(vespaVersion), applicationPackage);
+        jobs.deploy(instanceId, type, Optional.ofNullable(vespaVersion), applicationPackage, false);
         return runJob(type);
     }
 
@@ -490,8 +492,8 @@ public class DeploymentContext {
         Run run = jobs.last(job)
                       .filter(r -> r.id().type() == job.type())
                       .orElseThrow(() -> new AssertionError(job.type() + " is not among the active: " + jobs.active()));
-        assertFalse(run.id() + " should not have failed yet", run.hasFailed());
-        assertFalse(run.id() + " should not have ended yet", run.hasEnded());
+        assertFalse(run.id() + " should not have failed yet: " + run, run.hasFailed());
+        assertFalse(run.id() + " should not have ended yet: " + run, run.hasEnded());
         return run;
     }
 
@@ -543,7 +545,7 @@ public class DeploymentContext {
         assertTrue(jobs.run(id).get().hasEnded());
         assertFalse(jobs.run(id).get().hasFailed());
         assertEquals(job.type().isProduction(), instance().deployments().containsKey(zone));
-        assertTrue(configServer().nodeRepository().list(zone, TesterId.of(id.application()).id()).isEmpty());
+        assertTrue(configServer().nodeRepository().list(zone, NodeFilter.all().applications(TesterId.of(id.application()).id())).isEmpty());
     }
 
     private JobId jobId(JobType type) {

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "simple_index.h"
@@ -118,8 +118,7 @@ SimpleIndex<Posting, Key, DocId>::deserialize(vespalib::DataBuffer &buffer, Post
             postings.emplace_back(doc_id, deserializer.deserialize(buffer));
         }
         vespalib::datastore::EntryRef ref;
-        _btree_posting_lists.apply(ref, &postings[0], &postings[postings.size()],
-                                   0, 0);
+        _btree_posting_lists.apply(ref, &postings[0], &postings[postings.size()], 0, 0);
         builder.insert(key, ref);
     }
     _dictionary.assign(builder);

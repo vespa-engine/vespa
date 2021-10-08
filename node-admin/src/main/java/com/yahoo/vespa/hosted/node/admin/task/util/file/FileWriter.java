@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
@@ -43,13 +43,13 @@ public class FileWriter {
 
     public Path path() { return path; }
 
-    public FileWriter withOwner(String owner) {
-        fileDataBuilder.withOwner(owner);
+    public FileWriter withOwnerId(int ownerId) {
+        fileDataBuilder.withOwnerId(ownerId);
         return this;
     }
 
-    public FileWriter withGroup(String group) {
-        fileDataBuilder.withGroup(group);
+    public FileWriter withGroupId(int groupId) {
+        fileDataBuilder.withGroupId(groupId);
         return this;
     }
 

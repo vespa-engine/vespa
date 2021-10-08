@@ -38,7 +38,7 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
-import com.yahoo.vespa.model.container.xml.PlatformBundles;
+import com.yahoo.vespa.model.container.PlatformBundles;
 
 import java.nio.file.Path;
 import java.util.Collections;
@@ -158,7 +158,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     @Override
     public void getConfig(ConsumersConfig.Builder builder) {
         var amendedVespaConsumer = addMetrics(MetricsConsumer.vespa, getAdditionalDefaultMetrics().getMetrics());
-        builder.consumer.addAll(generateConsumers(amendedVespaConsumer, getUserMetricsConsumers()));
+        builder.consumer.addAll(generateConsumers(amendedVespaConsumer, getUserMetricsConsumers(), getZone().system()));
 
         builder.consumer.add(toConsumerBuilder(MetricsConsumer.defaultConsumer));
     }

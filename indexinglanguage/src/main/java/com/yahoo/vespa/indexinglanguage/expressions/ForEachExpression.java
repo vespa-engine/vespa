@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.*;
@@ -27,18 +27,23 @@ public final class ForEachExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doExecute(final ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        exp.setStatementOutput(documentType, field);
+    }
+
+    @Override
+    protected void doExecute(final ExecutionContext context) {
+        FieldValue input = context.getValue();
         if (input instanceof Array || input instanceof WeightedSet) {
-            FieldValue next = new MyConverter(ctx, exp).convert(input);
+            FieldValue next = new MyConverter(context, exp).convert(input);
             if (next == null) {
-                VerificationContext vctx = new VerificationContext(ctx);
-                vctx.setValue(input.getDataType()).execute(this);
-                next = vctx.getValue().createFieldValue();
+                VerificationContext vctx = new VerificationContext(context);
+                vctx.setValueType(input.getDataType()).execute(this);
+                next = vctx.getValueType().createFieldValue();
             }
-            ctx.setValue(next);
+            context.setValue(next);
         } else if (input instanceof Struct) {
-            ctx.setValue(new MyConverter(ctx, exp).convert(input));
+            context.setValue(new MyConverter(context, exp).convert(input));
         } else {
             throw new IllegalArgumentException("Expected Array, Struct or WeightedSet input, got " +
                                                input.getDataType().getName() + ".");
@@ -47,25 +52,25 @@ public final class ForEachExpression extends CompositeExpression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+        DataType input = context.getValueType();
         if (input instanceof ArrayDataType || input instanceof WeightedSetDataType) {
-            context.setValue(((CollectionDataType)input).getNestedType()).execute(exp);
+            context.setValueType(((CollectionDataType)input).getNestedType()).execute(exp);
             if (input instanceof ArrayDataType) {
-                context.setValue(DataType.getArray(context.getValue()));
+                context.setValueType(DataType.getArray(context.getValueType()));
             } else {
                 WeightedSetDataType wset = (WeightedSetDataType)input;
-                context.setValue(DataType.getWeightedSet(context.getValue(), wset.createIfNonExistent(), wset.removeIfZero()));
+                context.setValueType(DataType.getWeightedSet(context.getValueType(), wset.createIfNonExistent(), wset.removeIfZero()));
             }
         } else if (input instanceof StructDataType) {
             for (Field field : ((StructDataType)input).getFields()) {
                 DataType fieldType = field.getDataType();
-                DataType valueType = context.setValue(fieldType).execute(exp).getValue();
+                DataType valueType = context.setValueType(fieldType).execute(exp).getValueType();
                 if (!fieldType.isAssignableFrom(valueType)) {
                     throw new VerificationException(this, "Expected " + fieldType.getName() + " output, got " +
                                                           valueType.getName() + ".");
                 }
             }
-            context.setValue(input);
+            context.setValueType(input);
         } else {
             throw new VerificationException(this, "Expected Array, Struct or WeightedSet input, got " +
                                                   input.getName() + ".");

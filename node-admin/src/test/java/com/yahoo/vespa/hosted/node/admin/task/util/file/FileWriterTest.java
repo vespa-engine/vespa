@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
@@ -27,14 +27,14 @@ public class FileWriterTest {
     public void testWrite() {
         final String content = "content";
         final String permissions = "rwxr-xr-x";
-        final String owner = "owner";
-        final String group = "group";
+        final int owner = 123;
+        final int group = 456;
 
         Path path = fileSystem.getPath("/opt/vespa/tmp/file.txt");
         FileWriter writer = new FileWriter(path, () -> content)
                 .withPermissions(permissions)
-                .withOwner(owner)
-                .withGroup(group)
+                .withOwnerId(owner)
+                .withGroupId(group)
                 .onlyIfFileDoesNotAlreadyExist();
         assertTrue(writer.converge(context));
         verify(context, times(1)).recordSystemModification(any(), eq("Creating file " + path));
@@ -42,8 +42,8 @@ public class FileWriterTest {
         UnixPath unixPath = new UnixPath(path);
         assertEquals(content, unixPath.readUtf8File());
         assertEquals(permissions, unixPath.getPermissions());
-        assertEquals(owner, unixPath.getOwner());
-        assertEquals(group, unixPath.getGroup());
+        assertEquals(owner, unixPath.getOwnerId());
+        assertEquals(group, unixPath.getGroupId());
         Instant fileTime = unixPath.getLastModifiedTime();
 
         // Second time is a no-op.

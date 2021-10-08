@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "config-foo.h"
 #include "config-bar.h"
 #include "config-baz.h"
@@ -20,7 +20,7 @@ namespace {
     {
         std::vector< vespalib::string > lines;
         lines.push_back(value);
-        return ConfigValue(lines, calculateContentMd5(lines));
+        return ConfigValue(lines, calculateContentXxhash64(lines));
     }
 
     ConfigValue createFooValue(const std::string & value)

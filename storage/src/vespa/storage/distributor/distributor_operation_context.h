@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -6,10 +6,10 @@
 #include <vespa/storageapi/defs.h>
 
 namespace storage { class DistributorConfiguration; }
-namespace storage::lib { class ClusterStateBundle; }
 
 namespace storage::distributor {
 
+class BucketSpaceStateMap;
 class DistributorBucketSpaceRepo;
 
 /**
@@ -19,11 +19,8 @@ class DistributorOperationContext {
 public:
     virtual ~DistributorOperationContext() {}
     virtual api::Timestamp generate_unique_timestamp() = 0;
-    // TODO STRIPE: Access to bucket space repos is only temporary at this level.
-    virtual const DistributorBucketSpaceRepo& bucket_space_repo() const noexcept = 0;
-    virtual DistributorBucketSpaceRepo& bucket_space_repo() noexcept = 0;
-    virtual const DistributorBucketSpaceRepo& read_only_bucket_space_repo() const noexcept = 0;
-    virtual DistributorBucketSpaceRepo& read_only_bucket_space_repo() noexcept = 0;
+    virtual const BucketSpaceStateMap& bucket_space_states() const noexcept = 0;
+    virtual BucketSpaceStateMap& bucket_space_states() noexcept = 0;
     virtual const DistributorConfiguration& distributor_config() const noexcept = 0;
 };
 

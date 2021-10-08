@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.vespa.indexinglanguage.expressions.*;
@@ -12,6 +12,7 @@ import java.util.List;
  * generates a new execution value without regard for the existing one.
  */
 public class ExpressionOptimizer extends ExpressionConverter {
+
     @Override
     protected boolean shouldConvert(Expression exp) {
         return exp instanceof StatementExpression;
@@ -111,4 +112,5 @@ public class ExpressionOptimizer extends ExpressionConverter {
         }
 
     }
+
 }

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fileconfigreader.h"
 #include <vespa/config/common/exceptions.h>
@@ -44,7 +44,7 @@ FileConfigReader<ConfigType>::read()
     for (std::getline(f, line); f; std::getline(f, line)) {
         lines.push_back(line);
     }
-    return std::unique_ptr<ConfigType>(new ConfigType(ConfigValue(lines, calculateContentMd5(lines))));
+    return std::unique_ptr<ConfigType>(new ConfigType(ConfigValue(lines, calculateContentXxhash64(lines))));
 }
 
 } // namespace config

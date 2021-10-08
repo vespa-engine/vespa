@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.codegen;
 
 import java.io.File;
@@ -86,7 +86,7 @@ public class JavaClassBuilder implements ClassBuilder {
                 "  public final static String CONFIG_DEF_MD5 = \"" + root.getMd5() + "\";\n" + //
                 "  public final static String CONFIG_DEF_NAME = \"" + root.getName() + "\";\n" + //
                 "  public final static String CONFIG_DEF_NAMESPACE = \"" + root.getNamespace() + "\";\n" + //
-                "  public final static String CONFIG_DEF_VERSION = \"" + root.getVersion() + "\";\n" + // TODO: Remove in Vespa 8
+                "  public final static String CONFIG_DEF_VERSION = \"\";\n" + // TODO: Remove in Vespa 8
                 "  public final static String[] CONFIG_DEF_SCHEMA = {\n" + //
                 "" + indentCode(INDENTATION + INDENTATION, getDefSchema()) + "\n" + //
                 "  };\n" + //

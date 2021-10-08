@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.policy;
 
 
@@ -36,7 +36,7 @@ public class HostedVespaPolicyTest {
     private final ClusterControllerClientFactory clientFactory = mock(ClusterControllerClientFactory.class);
     private final ClusterControllerClient client = mock(ClusterControllerClient.class);
     private final ManualClock clock = new ManualClock();
-    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, clock);
+    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, 5, clock);
 
     @Before
     public void setUp() {

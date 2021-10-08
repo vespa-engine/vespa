@@ -1,9 +1,12 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.shared;
 
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.jdisc.AbstractResource;
+
+import java.util.Objects;
 import java.util.logging.Level;
+
 import com.yahoo.messagebus.DestinationSessionParams;
 import com.yahoo.messagebus.IntermediateSessionParams;
 import com.yahoo.messagebus.MessageBus;
@@ -25,8 +28,7 @@ public class SharedMessageBus extends AbstractResource {
     private final MessageBus mbus;
 
     public SharedMessageBus(MessageBus mbus) {
-        mbus.getClass(); // throws NullPointerException
-        this.mbus = mbus;
+        this.mbus = Objects.requireNonNull(mbus);
     }
 
     public MessageBus messageBus() {
@@ -65,4 +67,6 @@ public class SharedMessageBus extends AbstractResource {
         }
         return new RPCNetwork(params);
     }
+
+
 }

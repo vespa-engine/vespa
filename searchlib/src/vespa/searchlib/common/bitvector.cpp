@@ -1,9 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bitvector.h"
 #include "allocatedbitvector.h"
 #include "growablebitvector.h"
 #include "partialbitvector.h"
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -33,8 +34,7 @@ void verifyInclusiveStart(const search::BitVector & a, const search::BitVector &
     }
 }
 
-constexpr size_t MMAP_LIMIT = 32_Mi;
-constexpr size_t DIRECTIO_ALIGNMENT = 4_Ki;
+constexpr size_t MMAP_LIMIT = 256_Mi;
 
 }
 
@@ -341,7 +341,8 @@ BitVector::create(Index numberOfElements, FastOS_FileInterface &file,
         size_t vectorsize = getFileBytes(numberOfElements);
         file.DirectIOPadding(offset, vectorsize, padbefore, padafter);
         assert((padbefore & (getAlignment() - 1)) == 0);
-        AllocatedBitVector::Alloc alloc = Alloc::alloc(padbefore + vectorsize + padafter, MMAP_LIMIT, DIRECTIO_ALIGNMENT);
+        AllocatedBitVector::Alloc alloc = Alloc::alloc(padbefore + vectorsize + padafter,
+                                                       MMAP_LIMIT, FileSettings::DIRECTIO_ALIGNMENT);
         void * alignedBuffer = alloc.get();
         file.ReadBuf(alignedBuffer, alloc.size(), offset - padbefore);
         bv = std::make_unique<AllocatedBitVector>(numberOfElements, std::move(alloc), padbefore);

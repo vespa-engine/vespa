@@ -1,13 +1,13 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
-import java.util.logging.Level;
-import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
-import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.RawConfig;
+import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
+import com.yahoo.yolean.Exceptions;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -44,7 +44,7 @@ public class DelayedResponseHandler implements Runnable {
             AtomicInteger i = new AtomicInteger(0);
             while ((response = delayedResponses.responses().poll()) != null) {
                 JRTServerConfigRequest request = response.getRequest();
-                ConfigCacheKey cacheKey = new ConfigCacheKey(request.getConfigKey(), request.getConfigKey().getMd5());
+                ConfigCacheKey cacheKey = new ConfigCacheKey(request.getConfigKey(), request.getRequestDefMd5());
                 RawConfig config = memoryCache.get(cacheKey);
                 if (config != null) {
                     rpcServer.returnOkResponse(request, config);

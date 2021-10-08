@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.fieldoperation;
 
 import com.yahoo.searchdefinition.document.Attribute;
@@ -18,9 +18,10 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
     private Boolean fastSearch;
     private Boolean fastAccess;
     private Boolean mutable;
+    private Boolean paged;
     private Boolean enableBitVectors;
     private Boolean enableOnlyBitVector;
-    //TODO: Husk sorting!!
+    //TODO: Remember sorting!!
     private boolean doAlias = false;
     private String alias;
     private String aliasedName;
@@ -72,6 +73,9 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
     }
     public void setMutable(Boolean mutable) {
         this.mutable = mutable;
+    }
+    public void setPaged(Boolean paged) {
+        this.paged = paged;
     }
 
     public Boolean getEnableBitVectors() {
@@ -130,6 +134,9 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
 
         if (huge != null) {
             attribute.setHuge(huge);
+        }
+        if (paged != null) {
+            attribute.setPaged(paged);
         }
         if (fastSearch != null) {
             attribute.setFastSearch(fastSearch);

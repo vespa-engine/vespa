@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
 import javax.net.ssl.HostnameVerifier;
@@ -37,7 +37,7 @@ public class FeedClientBuilder {
     int connectionsPerEndpoint = 4;
     int maxStreamsPerConnection = 4096;
     FeedClient.RetryStrategy retryStrategy = defaultRetryStrategy;
-    FeedClient.CircuitBreaker circuitBreaker = new GracePeriodCircuitBreaker(Duration.ofSeconds(1), Duration.ofMinutes(10));
+    FeedClient.CircuitBreaker circuitBreaker = new GracePeriodCircuitBreaker(Duration.ofSeconds(10), Duration.ofMinutes(10));
     Path certificateFile;
     Path privateKeyFile;
     Path caCertificatesFile;

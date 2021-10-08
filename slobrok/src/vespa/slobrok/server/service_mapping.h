@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -12,6 +12,16 @@ struct ServiceMapping {
     vespalib::string spec;
     ServiceMapping(const vespalib::string & name_, const vespalib::string & spec_) noexcept : name(name_), spec(spec_) { }
     ~ServiceMapping();
+
+    bool operator== (const ServiceMapping &other) const {
+        return name == other.name && spec == other.spec;
+    }
+
+    bool operator< (const ServiceMapping &other) const noexcept {
+        if (name < other.name) return true;
+        if (other.name < name) return false;
+        return spec < other.spec;
+    }
 };
 
 typedef std::vector<ServiceMapping> ServiceMappingList;

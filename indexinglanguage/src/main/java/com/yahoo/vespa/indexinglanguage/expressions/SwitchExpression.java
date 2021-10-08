@@ -1,8 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.text.StringUtilities;
@@ -46,8 +47,15 @@ public final class SwitchExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        defaultExp.setStatementOutput(documentType, field);
+        for (var expression : cases.values())
+            expression.setStatementOutput(documentType, field);
+    }
+
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getValue();
         Expression exp = null;
         if (input != null) {
             if (!(input instanceof StringFieldValue)) {
@@ -60,9 +68,9 @@ public final class SwitchExpression extends CompositeExpression {
             exp = defaultExp;
         }
         if (exp != null) {
-            exp.execute(ctx);
+            exp.execute(context);
         }
-        ctx.setValue(input);
+        context.setValue(input);
     }
 
     @Override
@@ -75,7 +83,7 @@ public final class SwitchExpression extends CompositeExpression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+        DataType input = context.getValueType();
         if (input == null) {
             throw new VerificationException(this, "Expected " + DataType.STRING.getName() + " input, got null.");
         }
@@ -84,10 +92,10 @@ public final class SwitchExpression extends CompositeExpression {
                                                   input.getName() + ".");
         }
         for (Expression exp : cases.values()) {
-            context.setValue(input).execute(exp);
+            context.setValueType(input).execute(exp);
         }
-        context.setValue(input).execute(defaultExp);
-        context.setValue(input);
+        context.setValueType(input).execute(defaultExp);
+        context.setValueType(input);
     }
 
     @Override

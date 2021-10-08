@@ -1,4 +1,4 @@
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 # List of possible future enhancements and features
 
 This lists some possible improvements to Vespa which have been considered or requested, can be developed relatively 

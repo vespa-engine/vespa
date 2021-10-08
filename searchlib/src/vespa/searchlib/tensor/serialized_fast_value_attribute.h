@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -24,7 +24,7 @@ public:
     ~SerializedFastValueAttribute() override;
     void setTensor(DocId docId, const vespalib::eval::Value &tensor) override;
     std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
     std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     void compactWorst() override;
 };

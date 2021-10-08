@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.impl;
 
 import com.google.common.cache.CacheBuilder;
@@ -164,9 +164,20 @@ public class AthenzFacade implements AccessControl {
     @Override
     public void deleteTenant(TenantName tenant, Credentials credentials) {
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
-
-        log("deleteTenancy(tenantDomain=%s, service=%s)", athenzCredentials.domain(), service);
-        zmsClient.deleteTenancy(athenzCredentials.domain(), service, athenzCredentials.identityToken(), athenzCredentials.accessToken());
+        AthenzDomain tenantDomain = athenzCredentials.domain();
+        log("deleteTenancy(tenantDomain=%s, service=%s)", tenantDomain, service);
+        try {
+            zmsClient.deleteTenancy(tenantDomain, service, athenzCredentials.identityToken(), athenzCredentials.accessToken());
+        } catch (ZmsClientException e) {
+            if (e.getErrorCode() == 404) {
+                log.log(Level.WARNING,
+                        "Failed to cleanup tenant " + tenant.value() + " with domain '" + tenantDomain.getName()
+                                + "' in Athenz due to non-existing tenant domain",
+                        e);
+            } else {
+                throw e;
+            }
+        }
     }
 
     @Override
@@ -196,8 +207,19 @@ public class AthenzFacade implements AccessControl {
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
         log("deleteProviderResourceGroup(tenantDomain=%s, providerDomain=%s, service=%s, resourceGroup=%s)",
             athenzCredentials.domain(), service.getDomain().getName(), service.getName(), id.application());
-        zmsClient.deleteProviderResourceGroup(athenzCredentials.domain(), service, id.application().value(),
-                                              athenzCredentials.identityToken(), athenzCredentials.accessToken());
+        try {
+            zmsClient.deleteProviderResourceGroup(athenzCredentials.domain(), service, id.application().value(),
+                    athenzCredentials.identityToken(), athenzCredentials.accessToken());
+        } catch (ZmsClientException e) {
+            if (e.getErrorCode() == 404) {
+                log.log(Level.WARNING,
+                        "Failed to cleanup application '" + id.serialized()
+                                + "' in Athenz due to non-existing tenant domain or resource group",
+                        e);
+            } else {
+                throw e;
+            }
+        }
     }
 
     /**

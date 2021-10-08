@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -209,7 +209,7 @@ public class ForEachTestCase {
         type.addField(new Field("my_int", DataType.INT));
 
         VerificationContext ctx = new VerificationContext(new SimpleTestAdapter());
-        ctx.setValue(type);
+        ctx.setValueType(type);
 
         try {
             new ForEachExpression(new ToArrayExpression()).verify(ctx);
@@ -246,8 +246,8 @@ public class ForEachTestCase {
             super(null);
         }
         @Override
-        protected void doExecute(ExecutionContext ctx) {
-            lst.add(ctx.getValue());
+        protected void doExecute(ExecutionContext context) {
+            lst.add(context.getValue());
         }
 
         @Override

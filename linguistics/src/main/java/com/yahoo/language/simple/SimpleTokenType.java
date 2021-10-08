@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.simple;
 
 import com.yahoo.language.process.TokenType;
@@ -65,4 +65,5 @@ public class SimpleTokenType {
         }
         throw new UnsupportedOperationException(String.valueOf(Character.getType(codePoint)));
     }
+
 }

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.inject.Module;
@@ -9,6 +9,10 @@ import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.Pkcs10CsrBuilder;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
+import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
+import org.apache.hc.client5.http.impl.async.H2AsyncClientBuilder;
+import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
+import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
@@ -65,4 +69,17 @@ class Utils {
                 .build();
         Files.writeString(certificateFile, X509CertificateUtils.toPem(certificate));
     }
+
+    static CloseableHttpAsyncClient createHttp2Client(JettyTestDriver driver) {
+        TlsStrategy tlsStrategy = ClientTlsStrategyBuilder.create()
+                .setSslContext(driver.sslContext())
+                .build();
+        var client = H2AsyncClientBuilder.create()
+                .disableAutomaticRetries()
+                .setTlsStrategy(tlsStrategy)
+                .build();
+        client.start();
+        return client;
+    }
+
 }

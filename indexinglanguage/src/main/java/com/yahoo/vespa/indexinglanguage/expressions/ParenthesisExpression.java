@@ -1,8 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
@@ -23,8 +24,13 @@ public class ParenthesisExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        innerExp.execute(ctx);
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        innerExp.setStatementOutput(documentType, field);
+    }
+
+    @Override
+    protected void doExecute(ExecutionContext context) {
+        innerExp.execute(context);
     }
 
     @Override

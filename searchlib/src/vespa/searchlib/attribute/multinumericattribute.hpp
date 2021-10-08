@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "multinumericattribute.h"
@@ -128,7 +128,7 @@ MultiValueNumericAttribute<B, M>::onLoadEnumerated(ReaderBase & attrReader)
 
 template <typename B, typename M>
 bool
-MultiValueNumericAttribute<B, M>::onLoad()
+MultiValueNumericAttribute<B, M>::onLoad(vespalib::Executor *)
 {
     PrimitiveReader<MValueType> attrReader(*this);
     bool ok(attrReader.getHasLoadData());

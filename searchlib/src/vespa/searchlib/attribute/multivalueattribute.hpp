@@ -1,7 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
+#include "address_space_components.h"
 #include <vespa/searchlib/attribute/multivalueattribute.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -200,12 +201,12 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docVa
 }
 
 template <typename B, typename M>
-vespalib::AddressSpace
-MultiValueAttribute<B, M>::getMultiValueAddressSpaceUsage() const
+void
+MultiValueAttribute<B, M>::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
-    return _mvMapping.getAddressSpaceUsage();
+    B::populate_address_space_usage(usage);
+    usage.set(AddressSpaceComponents::multi_value, _mvMapping.getAddressSpaceUsage());
 }
-
 
 template <typename B, typename M>
 bool

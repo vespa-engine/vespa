@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  */
 public abstract class ClientBase implements AutoCloseable {
 
-    private static final Logger logger = Logger.getLogger(ClientBase.class.getName());
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 
     private static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 

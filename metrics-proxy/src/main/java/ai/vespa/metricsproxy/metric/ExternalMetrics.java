@@ -1,8 +1,8 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric;
 
+import ai.vespa.metricsproxy.core.ConfiguredMetric;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
-import ai.vespa.metricsproxy.core.ConsumersConfig.Consumer;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
@@ -19,8 +19,6 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
-import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
-import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static java.util.logging.Level.FINE;
 import static java.util.stream.Collectors.toCollection;
 
@@ -34,7 +32,7 @@ public class ExternalMetrics {
     private static final Logger log = Logger.getLogger(ExternalMetrics.class.getName());
 
     // NOTE: node service id must be kept in sync with the same constant _value_ used in node-admin:Metrics.java
-    public static final ServiceId VESPA_NODE_SERVICE_ID = toServiceId("vespa.node");
+    public static final ServiceId VESPA_NODE_SERVICE_ID = ServiceId.toServiceId("vespa.node");
 
     public static final DimensionId ROLE_DIMENSION = toDimensionId("role");
     public static final DimensionId STATE_DIMENSION = toDimensionId("state");
@@ -56,17 +54,15 @@ public class ExternalMetrics {
         //       Split each packet per metric, and re-aggregate based on the metrics each consumer wants.
         //       Then filter out all packages with no consumers.
         log.log(FINE, () -> "Setting new external metrics with " + externalPackets.size() + " metrics packets.");
-        externalPackets.forEach(packet -> {
-            packet.addConsumers(consumers.getAllConsumers())
-                    .retainMetrics(metricsToRetain())
-                    .applyOutputNames(outputNamesById());
-        });
+        externalPackets.forEach(packet -> packet.addConsumers(consumers.getAllConsumers())
+                .retainMetrics(metricsToRetain())
+                .applyOutputNames(outputNamesById()));
         metrics = List.copyOf(externalPackets);
     }
 
     private Set<MetricId> metricsToRetain() {
         return consumers.getConsumersByMetric().keySet().stream()
-                .map(configuredMetric -> toMetricId(configuredMetric.name()))
+                .map(configuredMetric -> configuredMetric.id())
                 .collect(toCollection(LinkedHashSet::new));
     }
 
@@ -74,11 +70,10 @@ public class ExternalMetrics {
      * Returns a mapping from metric id to a list of the metric's output names.
      * Metrics that only have their id as output name are included in the output.
      */
-    private Map<MetricId, List<String>> outputNamesById() {
-        Map<MetricId, List<String>> outputNamesById = new LinkedHashMap<>();
-        for (Consumer.Metric metric : consumers.getConsumersByMetric().keySet()) {
-            MetricId id = toMetricId(metric.name());
-            outputNamesById.computeIfAbsent(id, unused -> new ArrayList<>())
+    private Map<MetricId, List<MetricId>> outputNamesById() {
+        Map<MetricId, List<MetricId>> outputNamesById = new LinkedHashMap<>();
+        for (ConfiguredMetric metric : consumers.getConsumersByMetric().keySet()) {
+            outputNamesById.computeIfAbsent(metric.id(), unused -> new ArrayList<>())
                     .add(metric.outputname());
         }
         return outputNamesById;

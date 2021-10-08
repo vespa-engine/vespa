@@ -38,9 +38,9 @@ struct MessageSenderStub : MessageSender {
     std::string getReplies(bool includeAddress = false,
                            bool verbose = false) const;
 
-    std::string dumpMessage(const api::StorageMessage& msg,
-                            bool includeAddress,
-                            bool verbose) const;
+    static std::string dumpMessage(const api::StorageMessage& msg,
+                                   bool includeAddress,
+                                   bool verbose);
 };
 
 

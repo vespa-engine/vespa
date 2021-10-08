@@ -1,7 +1,6 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
-import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.functions.Argmax;
 import com.yahoo.tensor.functions.Argmin;
 import com.yahoo.tensor.functions.CellCast;
@@ -20,7 +19,7 @@ import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.Softmax;
 import com.yahoo.tensor.functions.XwPlusB;
-import com.yahoo.text.Ascii7BitMatcher;
+import com.yahoo.tensor.functions.Expand;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,7 +34,7 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.yahoo.text.Ascii7BitMatcher.charsAndNumbers;
+import static com.yahoo.tensor.functions.ScalarFunctions.Hamming;
 
 /**
  * A multidimensional array which can be used in computations.
@@ -209,6 +208,10 @@ public interface Tensor {
         return new XwPlusB<>(new ConstantTensor<>(this), new ConstantTensor<>(w), new ConstantTensor<>(b), dimension).evaluate();
     }
 
+    default Tensor expand(String dimension) {
+        return new Expand<>(new ConstantTensor<>(this), dimension).evaluate();
+    }
+
     default Tensor argmax(String dimension) {
         return new Argmax<>(new ConstantTensor<>(this), dimension).evaluate();
     }
@@ -241,6 +244,7 @@ public interface Tensor {
     default Tensor notEqual(Tensor argument) { return join(argument, (a, b) -> ( a != b ? 1.0 : 0.0)); }
     default Tensor approxEqual(Tensor argument) { return join(argument, (a, b) -> ( approxEquals(a,b) ? 1.0 : 0.0)); }
     default Tensor bit(Tensor argument) { return join(argument, (a,b) -> ((int)b < 8 && (int)b >= 0 && ((int)a & (1 << (int)b)) != 0) ? 1.0 : 0.0); }
+    default Tensor hamming(Tensor argument) { return join(argument, (a,b) -> Hamming.hamming(a,b)); }
 
     default Tensor avg() { return avg(Collections.emptyList()); }
     default Tensor avg(String dimension) { return avg(Collections.singletonList(dimension)); }

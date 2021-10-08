@@ -80,6 +80,10 @@ protected:
     RandomLevelGenerator::UP _level_generator;
     Config _cfg;
     mutable vespalib::ReusableSetPool _visited_set_pool;
+    vespalib::MemoryUsage  _cached_level_arrays_memory_usage;
+    vespalib::AddressSpace _cached_level_arrays_address_space_usage;
+    vespalib::MemoryUsage  _cached_link_arrays_memory_usage;
+    vespalib::AddressSpace _cached_link_arrays_address_space_usage;
 
     uint32_t max_links_for_level(uint32_t level) const;
     void add_link_to(uint32_t docid, uint32_t level, const LinkArrayRef& old_links, uint32_t new_link) {
@@ -115,11 +119,17 @@ protected:
 
     double calc_distance(uint32_t lhs_docid, uint32_t rhs_docid) const;
     double calc_distance(const TypedCells& lhs, uint32_t rhs_docid) const;
+    uint32_t estimate_visited_nodes(uint32_t level, uint32_t doc_id_limit, uint32_t neighbors_to_find, const search::BitVector* filter) const;
 
     /**
      * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
      */
     HnswCandidate find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level) const;
+    template <class VisitedTracker>
+    void search_layer_helper(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors,
+                             uint32_t level, const search::BitVector *filter,
+                             uint32_t doc_id_limit,
+                             uint32_t estimated_visited_nodes) const;
     void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors,
                       uint32_t level, const search::BitVector *filter = nullptr) const;
     std::vector<Neighbor> top_k_by_docid(uint32_t k, TypedCells vector,
@@ -161,11 +171,19 @@ public:
     void remove_document(uint32_t docid) override;
     void transfer_hold_lists(generation_t current_gen) override;
     void trim_hold_lists(generation_t first_used_gen) override;
+    void compact_level_arrays(bool compact_memory, bool compact_addreess_space);
+    void compact_link_arrays(bool compact_memory, bool compact_address_space);
+    bool consider_compact_level_arrays(const CompactionStrategy& compaction_strategy);
+    bool consider_compact_link_arrays(const CompactionStrategy& compaction_strategy);
+    bool consider_compact(const CompactionStrategy& compaction_strategy) override;
+    vespalib::MemoryUsage update_stat() override;
     vespalib::MemoryUsage memory_usage() const override;
+    void populate_address_space_usage(search::AddressSpaceUsage& usage) const override;
     void get_state(const vespalib::slime::Inserter& inserter) const override;
+    void shrink_lid_space(uint32_t doc_id_limit) override;
 
     std::unique_ptr<NearestNeighborIndexSaver> make_saver() const override;
-    bool load(const fileutil::LoadedBuffer& buf) override;
+    std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface& file) override;
 
     std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k,
                                      double distance_threshold) const override;
@@ -183,7 +201,9 @@ public:
     HnswNode get_node(uint32_t docid) const;
     void set_node(uint32_t docid, const HnswNode &node);
     bool check_link_symmetry() const;
-    uint32_t count_reachable_nodes() const;
+    std::pair<uint32_t, bool> count_reachable_nodes() const;
+    HnswGraph& get_graph() { return _graph; }
+    vespalib::ReusableSetPool& get_visited_set_pool() const noexcept { return _visited_set_pool; }
 
     static vespalib::datastore::ArrayStoreConfig make_default_node_store_config();
     static vespalib::datastore::ArrayStoreConfig make_default_link_store_config();

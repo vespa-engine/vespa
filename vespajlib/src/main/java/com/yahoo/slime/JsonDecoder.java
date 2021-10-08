@@ -1,11 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
 import com.yahoo.text.Text;
-import com.yahoo.text.Utf8;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * A port of the C++ json decoder intended to be fast.
@@ -20,7 +19,7 @@ public class JsonDecoder {
     private final SlimeInserter slimeInserter = new SlimeInserter(null);
     private final ArrayInserter arrayInserter = new ArrayInserter(null);
     private final ObjectInserter objectInserter = new ObjectInserter(null, null);
-    private final ByteArrayOutputStream buf = new ByteArrayOutputStream();
+    private final BufferedOutput buf = new BufferedOutput();
 
     private static final byte[] TRUE = {'t', 'r', 'u', 'e'};
     private static final byte[] FALSE = {'f', 'a', 'l', 's', 'e'};
@@ -86,15 +85,15 @@ public class JsonDecoder {
                 case '0': case '1': case '2': case '3': case '4':
                 case '5': case '6': case '7': case '8': case '9':
                 case '+': case '-':
-                    buf.write(c);
+                    buf.put(c);
                     next();
                     break;
                 default:
                     if (likelyFloatingPoint) {
-                        double num = Double.parseDouble(Utf8.toString(buf.toByteArray()));
+                        double num = Double.parseDouble(buf.toString(StandardCharsets.UTF_8));
                         inserter.insertDOUBLE(num);
                     } else {
-                        long num = Long.parseLong(Utf8.toString(buf.toByteArray()));
+                        long num = Long.parseLong(buf.toString(StandardCharsets.UTF_8));
                         inserter.insertLONG(num);
                     }
                     return;
@@ -103,8 +102,8 @@ public class JsonDecoder {
     }
 
     private void expect(byte[] expected) {
-        for (int i = 0; i < expected.length; i++) {
-            if ( ! skip(expected[i])) {
+        for (byte b : expected) {
+            if ( ! skip(b)) {
                 in.fail("Unexpected " + characterToReadableString(c));
                 return;
             }
@@ -150,9 +149,9 @@ public class JsonDecoder {
         default:
             for (;;) {
                 switch (c) {
-                case ':': case ' ': case '\t': case '\n': case '\r': case '\0': return Utf8.toString(buf.toByteArray());
+                case ':': case ' ': case '\t': case '\n': case '\r': case '\0': return buf.toString(StandardCharsets.UTF_8);
                 default:
-                    buf.write(c);
+                    buf.put(c);
                     next();
                     break;
                 }
@@ -176,13 +175,13 @@ public class JsonDecoder {
                 next();
                 switch (c) {
                 case '"': case '\\': case '/': case '\'':
-                    buf.write(c);
+                    buf.put(c);
                     break;
-                case 'b': buf.write((byte) '\b'); break;
-                case 'f': buf.write((byte) '\f'); break;
-                case 'n': buf.write((byte) '\n'); break;
-                case 'r': buf.write((byte) '\r'); break;
-                case 't': buf.write((byte) '\t'); break;
+                case 'b': buf.put((byte) '\b'); break;
+                case 'f': buf.put((byte) '\f'); break;
+                case 'n': buf.put((byte) '\n'); break;
+                case 'r': buf.put((byte) '\r'); break;
+                case 't': buf.put((byte) '\t'); break;
                 case 'u': writeUtf8(dequoteUtf16(), buf, 0xffffff80); continue;
                 default:
                     in.fail("Invalid quoted char(" + c + ")");
@@ -193,34 +192,34 @@ public class JsonDecoder {
             case '"': case '\'':
                 if (c == quote) {
                     next();
-                    return Utf8.toString(buf.toByteArray());
+                    return buf.toString(StandardCharsets.UTF_8);
                 } else {
-                    buf.write(c);
+                    buf.put(c);
                     next();
                 }
                 break;
             case '\0':
                 in.fail("Unterminated string");
-                return Utf8.toString(buf.toByteArray());
+                return buf.toString(StandardCharsets.UTF_8);
             default:
-                buf.write(c);
+                buf.put(c);
                 next();
                 break;
             }
         }
     }
 
-    private static void writeUtf8(long codepoint, ByteArrayOutputStream buf, long mask) {
+    private static void writeUtf8(long codepoint, BufferedOutput buf, long mask) {
         if ((codepoint & mask) == 0) {
-            buf.write((byte) ((mask << 1) | codepoint));
+            buf.put((byte) ((mask << 1) | codepoint));
         } else {
             writeUtf8(codepoint >> 6, buf, mask >> (2 - ((mask >> 6) & 0x1)));
-            buf.write((byte) (0x80 | (codepoint & 0x3f)));
+            buf.put((byte) (0x80 | (codepoint & 0x3f)));
         }
 
     }
 
-    private static byte[] unicodeStart = {'\\', 'u'};
+    private final static byte[] unicodeStart = {'\\', 'u'};
     private long dequoteUtf16() {
         next();
         long codepoint = readHexValue(4);

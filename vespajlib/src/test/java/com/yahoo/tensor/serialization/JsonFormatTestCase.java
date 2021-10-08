@@ -1,6 +1,7 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.serialization;
 
+import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
@@ -67,6 +68,21 @@ public class JsonFormatTestCase {
     }
 
     @Test
+    public void testDisallowedEmptyDenseTensor() {
+        TensorType type = TensorType.fromSpec("tensor(x[3])");
+        assertDecodeFails(type, "{\"values\":[]}", "The 'values' array does not contain any values");
+        assertDecodeFails(type, "{\"values\":\"\"}", "The 'values' string does not contain any values");
+    }
+
+    @Test
+    public void testDisallowedEmptyMixedTensor() {
+        TensorType type = TensorType.fromSpec("tensor(x{},y[3])");
+        assertDecodeFails(type, "{\"blocks\":{ \"a\": [] } }", "The 'block' value array does not contain any values");
+        assertDecodeFails(type, "{\"blocks\":[ {\"address\":{\"x\":\"a\"}, \"values\": [] } ] }",
+                "The 'block' value array does not contain any values");
+    }
+
+    @Test
     public void testDenseTensorInDenseForm() {
         Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x[2],y[3])"));
         builder.cell().label("x", 0).label("y", 0).value(2.0);
@@ -79,6 +95,65 @@ public class JsonFormatTestCase {
         String denseJson = "{\"values\":[2.0, 3.0, 4.0, 5.0, 6.0, 7.0]}";
         Tensor decoded = JsonFormat.decode(expected.type(), denseJson.getBytes(StandardCharsets.UTF_8));
         assertEquals(expected, decoded);
+    }
+
+    @Test
+    public void testEncodeIndexedShortForm() {
+        assertEncodeShortForm("tensor(x[]):[1.0, 2.0]",
+                              "{\"type\":\"tensor(x[])\",\"values\":[1.0,2.0]}");
+        assertEncodeShortForm("tensor<float>(x[]):[1.0, 2.0]",
+                              "{\"type\":\"tensor<float>(x[])\",\"values\":[1.0,2.0]}");
+        assertEncodeShortForm("tensor(x[],y[]):[[1,2,3,4]]",
+                              "{\"type\":\"tensor(x[],y[])\",\"values\":[[1.0,2.0,3.0,4.0]]}");
+        assertEncodeShortForm("tensor(x[],y[]):[[1,2],[3,4]]",
+                              "{\"type\":\"tensor(x[],y[])\",\"values\":[[1.0,2.0],[3.0,4.0]]}");
+        assertEncodeShortForm("tensor(x[],y[]):[[1],[2],[3],[4]]",
+                              "{\"type\":\"tensor(x[],y[])\",\"values\":[[1.0],[2.0],[3.0],[4.0]]}");
+        assertEncodeShortForm("tensor(x[],y[],z[]):[[[1,2],[3,4]]]",
+                              "{\"type\":\"tensor(x[],y[],z[])\",\"values\":[[[1.0,2.0],[3.0,4.0]]]}");
+        assertEncodeShortForm("tensor(x[],y[],z[]):[[[1],[2],[3],[4]]]",
+                              "{\"type\":\"tensor(x[],y[],z[])\",\"values\":[[[1.0],[2.0],[3.0],[4.0]]]}");
+        assertEncodeShortForm("tensor(x[],y[],z[]):[[[1,2,3,4]]]",
+                              "{\"type\":\"tensor(x[],y[],z[])\",\"values\":[[[1.0,2.0,3.0,4.0]]]}");
+        assertEncodeShortForm("tensor(x[],y[],z[]):[[[1]],[[2]],[[3]],[[4]]]",
+                              "{\"type\":\"tensor(x[],y[],z[])\",\"values\":[[[1.0]],[[2.0]],[[3.0]],[[4.0]]]}");
+        assertEncodeShortForm("tensor(x[],y[],z[2]):[[[1, 2]],[[3, 4]]]",
+                              "{\"type\":\"tensor(x[],y[],z[2])\",\"values\":[[[1.0,2.0]],[[3.0,4.0]]]}");
+    }
+
+    @Test
+    public void testEncodeMappedSingleDimensionShortForm() {
+        assertEncodeShortForm("tensor(x{}):{}",
+                              "{\"type\":\"tensor(x{})\",\"cells\":{}}");
+        assertEncodeShortForm("tensor(x{}):{a:1,b:2}",
+                              "{\"type\":\"tensor(x{})\",\"cells\":{\"a\":1.0,\"b\":2.0}}");
+        // Multiple mapped dimensions: no short form available
+        assertEncodeShortForm("tensor(x{},y{}):{{x:a,y:b}:1,{x:c,y:d}:2}",
+                              "{\"type\":\"tensor(x{},y{})\",\"cells\":[{\"address\":{\"x\":\"a\",\"y\":\"b\"},\"value\":1.0},{\"address\":{\"x\":\"c\",\"y\":\"d\"},\"value\":2.0}]}");
+    }
+
+    @Test
+    public void testEncodeMixedShortForm() {
+        assertEncodeShortForm("tensor(x{},y[2]):{a:[1,2], b:[3,4] }",
+                              "{\"type\":\"tensor(x{},y[2])\",\"blocks\":{\"a\":[1.0,2.0],\"b\":[3.0,4.0]}}");
+        assertEncodeShortForm("tensor(x[2],y{}):{a:[1,2], b:[3,4] }",
+                              "{\"type\":\"tensor(x[2],y{})\",\"blocks\":{\"a\":[1.0,2.0],\"b\":[3.0,4.0]}}");
+        assertEncodeShortForm("tensor(x{},y[2],z[2]):{a:[[1,2],[3,4]], b:[[5,6],[7,8]] }",
+                              "{\"type\":\"tensor(x{},y[2],z[2])\",\"blocks\":{\"a\":[[1.0,2.0],[3.0,4.0]],\"b\":[[5.0,6.0],[7.0,8.0]]}}");
+        assertEncodeShortForm("tensor(x[1],y{},z[4]):{a:[[1,2,3,4]], b:[[5,6,7,8]] }",
+                              "{\"type\":\"tensor(x[1],y{},z[4])\",\"blocks\":{\"a\":[[1.0,2.0,3.0,4.0]],\"b\":[[5.0,6.0,7.0,8.0]]}}");
+        assertEncodeShortForm("tensor(x[4],y[1],z{}):{a:[[1],[2],[3],[4]], b:[[5],[6],[7],[8]] }",
+                              "{\"type\":\"tensor(x[4],y[1],z{})\",\"blocks\":{\"a\":[[1.0],[2.0],[3.0],[4.0]],\"b\":[[5.0],[6.0],[7.0],[8.0]]}}");
+        assertEncodeShortForm("tensor(a[2],b[2],c{},d[2]):{a:[[[1,2], [3,4]], [[5,6], [7,8]]], b:[[[1,2], [3,4]], [[5,6], [7,8]]] }",
+                              "{\"type\":\"tensor(a[2],b[2],c{},d[2])\",\"blocks\":{" +
+                                    "\"a\":[[[1.0,2.0],[3.0,4.0]],[[5.0,6.0],[7.0,8.0]]]," +
+                                    "\"b\":[[[1.0,2.0],[3.0,4.0]],[[5.0,6.0],[7.0,8.0]]]}}");
+
+        // Multiple mapped dimensions
+        assertEncodeShortForm("tensor(x{},y{},z[2]):{{x:a,y:0,z:0}:1, {x:a,y:0,z:1}:2, {x:b,y:1,z:0}:3, {x:b,y:1,z:1}:4 }",
+                              "{\"type\":\"tensor(x{},y{},z[2])\",\"blocks\":[{\"address\":{\"x\":\"a\",\"y\":\"0\"},\"values\":[1.0,2.0]},{\"address\":{\"x\":\"b\",\"y\":\"1\"},\"values\":[3.0,4.0]}]}");
+        assertEncodeShortForm("tensor(x{},y[2],z{}):{{x:a,y:0,z:0}:1, {x:a,y:1,z:0}:2, {x:b,y:0,z:1}:3, {x:b,y:1,z:1}:4 }",
+                              "{\"type\":\"tensor(x{},y[2],z{})\",\"blocks\":[{\"address\":{\"x\":\"a\",\"z\":\"0\"},\"values\":[1.0,2.0]},{\"address\":{\"x\":\"b\",\"z\":\"1\"},\"values\":[3.0,4.0]}]}");
     }
 
     @Test
@@ -272,6 +347,20 @@ public class JsonFormatTestCase {
         assertEncodeDecode(Tensor.from("tensor<float>(x[2],y[2]):[2.0, 3.0, 5.0 ,8.0]"));
         assertEncodeDecode(Tensor.from("tensor<bfloat16>(x[2],y[2]):[2.0, 3.0, 5.0 ,8.0]"));
         assertEncodeDecode(Tensor.from("tensor<int8>(x[2],y[2]):[2,3,5,8]"));
+    }
+
+    private void assertEncodeShortForm(String tensor, String expected) {
+        byte[] json = JsonFormat.encodeShortForm(Tensor.from(tensor));
+        assertEquals(expected, new String(json, StandardCharsets.UTF_8));
+    }
+
+    private void assertDecodeFails(TensorType type, String format, String msg) {
+        try {
+            Tensor decoded = JsonFormat.decode(type, format.getBytes(StandardCharsets.UTF_8));
+            fail("Did not get exception as expected, decoded as: " + decoded);
+        } catch (IllegalArgumentException e) {
+            assertEquals(e.getMessage(), msg);
+        }
     }
 
 }

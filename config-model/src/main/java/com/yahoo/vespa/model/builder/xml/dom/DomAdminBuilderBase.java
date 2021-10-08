@@ -1,8 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
@@ -20,11 +19,11 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets;
 import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
-import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A base class for admin model builders, to support common functionality across versions.
@@ -34,20 +33,14 @@ import java.util.List;
  */
 public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProducerBuilder<Admin> {
 
-    private static final int DEFAULT_INTERVAL = 1; // in minutes
-    private static final String DEFAULT_CLUSTER_NAME = "vespa";
-
     private final ApplicationType applicationType;
     protected final List<ConfigServerSpec> configServerSpecs;
-    private final FileRegistry fileRegistry;
     protected final boolean multitenant;
 
     DomAdminBuilderBase(ApplicationType applicationType,
-                        FileRegistry fileRegistry,
                         boolean multitenant,
                         List<ConfigServerSpec> configServerSpecs) {
         this.applicationType = applicationType;
-        this.fileRegistry = fileRegistry;
         this.multitenant = multitenant;
         this.configServerSpecs = configServerSpecs;
     }
@@ -68,48 +61,41 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     }
 
     @Override
-    protected Admin doBuild(DeployState deployState, AbstractConfigProducer parent, Element adminElement) {
+    protected Admin doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element adminElement) {
         Monitoring monitoring = getMonitoring(XML.getChild(adminElement,"monitoring"), deployState.isHosted());
         Metrics metrics = new MetricsBuilder(applicationType, PredefinedMetricSets.get())
                                   .buildMetrics(XML.getChild(adminElement, "metrics"));
-        FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent, deployState.isHosted());
-
-        Admin admin = new Admin(parent, monitoring, metrics, multitenant, fileDistributionConfigProducer, deployState.isHosted());
-        admin.setApplicationType(applicationType);
+        Admin admin = new Admin(parent, monitoring, metrics, multitenant, deployState.isHosted(), applicationType);
         doBuildAdmin(deployState, admin, adminElement);
         new ModelConfigProvider(admin);
 
         return admin;
     }
 
-    private FileDistributionConfigProducer getFileDistributionConfigProducer(AbstractConfigProducer parent, boolean isHosted) {
-        return new FileDistributionConfigProducer(parent, fileRegistry, configServerSpecs, isHosted);
-    }
-
     protected abstract void doBuildAdmin(DeployState deployState, Admin admin, Element adminE);
 
     private Monitoring getMonitoring(Element monitoringElement, boolean isHosted) {
-        if (monitoringElement == null) return new DefaultMonitoring(DEFAULT_CLUSTER_NAME, DEFAULT_INTERVAL);
+        if (monitoringElement == null) return new DefaultMonitoring();
+
         if (isHosted && applicationType.equals(ApplicationType.DEFAULT))
             throw new IllegalArgumentException("The 'monitoring' element cannot be used on hosted Vespa.");
 
-        Integer minutes = getMonitoringInterval(monitoringElement);
-        if (minutes == null)
-            minutes = DEFAULT_INTERVAL;
+        Optional<Integer> minutes = getMonitoringInterval(monitoringElement);
         return new DefaultMonitoring(monitoringElement.getAttribute("systemname"), minutes);
     }
 
-    private Integer getMonitoringInterval(Element monitoringE) {
-        Integer minutes = null;
+    private Optional<Integer> getMonitoringInterval(Element monitoringE) {
         String seconds = monitoringE.getAttribute("interval").trim();
         if ( ! seconds.isEmpty()) {
-            minutes = Integer.parseInt(seconds) / 60;
-            if (!(minutes == 1 || minutes == 5)) {
-                throw new IllegalArgumentException("The only allowed values for 'interval' attribute in '" + monitoringE.getTagName() +
-                                                   "' element is 60 or 300.");
+            int m = Integer.parseInt(seconds) / 60;
+            if ( ! List.of(1, 5).contains(m)) {
+                throw new IllegalArgumentException("The only allowed values for 'interval' attribute in '" +
+                                                   monitoringE.getTagName() + "' element is 60 or 300.");
             }
+            return Optional.of(m);
         }
-        return minutes;
+
+        return Optional.empty();
     }
 
     void addLogForwarders(ModelElement logForwardingElement, Admin admin) {

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -26,13 +26,12 @@ class ResourceUsageTracker : public std::enable_shared_from_this<ResourceUsageTr
 {
     class ListenerGuard;
     class AttributeUsageListener;
-    std::mutex                  _lock;
+    mutable std::mutex          _lock;
     storage::spi::ResourceUsage _resource_usage;
     storage::spi::IResourceUsageListener* _listener;
     IDiskMemUsageNotifier&      _disk_mem_usage_notifier;
     vespalib::hash_map<vespalib::string, AttributeUsageStats> _attribute_usage;
-    vespalib::string            _attribute_enum_store_max_document_type;
-    vespalib::string            _attribute_multivalue_max_document_type;
+    vespalib::string            _attribute_address_space_max_document_type;
     void remove_listener();
     void remove_document_type(const vespalib::string &document_type);
     void notify_attribute_usage(const vespalib::string &document_type, const AttributeUsageStats &attribute_usage);
@@ -40,6 +39,7 @@ class ResourceUsageTracker : public std::enable_shared_from_this<ResourceUsageTr
 public:
     ResourceUsageTracker(IDiskMemUsageNotifier& notifier);
     ~ResourceUsageTracker() override;
+    storage::spi::ResourceUsage get_resource_usage() const;
     void notifyDiskMemUsage(DiskMemUsageState state) override;
     std::unique_ptr<vespalib::IDestructorCallback> set_listener(storage::spi::IResourceUsageListener& listener);
     std::unique_ptr<IAttributeUsageListener> make_attribute_usage_listener(const vespalib::string &document_type);

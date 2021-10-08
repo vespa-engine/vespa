@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import com.yahoo.config.provision.Environment;
@@ -22,13 +22,13 @@ public enum JobType {
 //     | enum name ------------| job name ------------------| Zone in main system ---------------------------------------| Zone in CD system -------------------------------------------
     systemTest             ("system-test",
                             Map.of(main    , ZoneId.from("test", "us-east-1"),
-                                   cd      , ZoneId.from("test", "cd-us-central-1"),
+                                   cd      , ZoneId.from("test", "cd-us-west-1"),
                                    PublicCd, ZoneId.from("test", "aws-us-east-1c"),
                                    Public  , ZoneId.from("test", "aws-us-east-1c"))),
 
     stagingTest            ("staging-test",
                             Map.of(main    , ZoneId.from("staging", "us-east-3"),
-                                   cd      , ZoneId.from("staging", "cd-us-central-1"),
+                                   cd      , ZoneId.from("staging", "cd-us-west-1"),
                                    PublicCd, ZoneId.from("staging", "aws-us-east-1c"),
                                    Public  , ZoneId.from("staging", "aws-us-east-1c"))),
 
@@ -138,6 +138,12 @@ public enum JobType {
 
     testCdUsCentral2       ("test-cd-us-central-2",
                             Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-2")), true),
+
+    productionCdUsEast1    ("production-cd-us-east-1",
+                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-east-1"))),
+
+    testCdUsEast1          ("test-cd-us-east-1",
+                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-east-1")), true),
 
     productionCdUsWest1    ("production-cd-us-west-1",
                             Map.of(cd  , ZoneId.from("prod"   , "cd-us-west-1"))),

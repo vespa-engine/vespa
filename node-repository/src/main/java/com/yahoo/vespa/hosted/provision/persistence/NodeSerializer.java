@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.cache.Cache;
@@ -10,6 +10,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.InstanceName;
@@ -35,6 +36,7 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.OsVersion;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
+import com.yahoo.vespa.hosted.provision.node.TrustStoreItem;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -91,8 +93,10 @@ public class NodeSerializer {
     private static final String reportsKey = "reports";
     private static final String modelNameKey = "modelName";
     private static final String reservedToKey = "reservedTo";
-    private static final String exclusiveToKey = "exclusiveTo";
+    private static final String exclusiveToApplicationIdKey = "exclusiveTo";
+    private static final String exclusiveToClusterTypeKey = "exclusiveToClusterType";
     private static final String switchHostnameKey = "switchHostname";
+    private static final String trustedCertificatesKey = "trustedCertificates";
 
     // Node resource fields
     private static final String flavorKey = "flavor";
@@ -119,6 +123,10 @@ public class NodeSerializer {
 
     // Network port fields
     private static final String networkPortsKey = "networkPorts";
+
+    // Trusted certificates fields
+    private static final String fingerprintKey = "fingerprint";
+    private static final String expiresKey = "expires";
 
     // A cache of deserialized Node objects. The cache is keyed on the hash of serialized node data.
     //
@@ -178,7 +186,9 @@ public class NodeSerializer {
         node.reports().toSlime(object, reportsKey);
         node.modelName().ifPresent(modelName -> object.setString(modelNameKey, modelName));
         node.reservedTo().ifPresent(tenant -> object.setString(reservedToKey, tenant.value()));
-        node.exclusiveTo().ifPresent(applicationId -> object.setString(exclusiveToKey, applicationId.serializedForm()));
+        node.exclusiveToApplicationId().ifPresent(applicationId -> object.setString(exclusiveToApplicationIdKey, applicationId.serializedForm()));
+        node.exclusiveToClusterType().ifPresent(clusterType -> object.setString(exclusiveToClusterTypeKey, clusterType.name()));
+        trustedCertificatesToSlime(node.trustedCertificates(), object.setArray(trustedCertificatesKey));
     }
 
     private void toSlime(Flavor flavor, Cursor object) {
@@ -233,6 +243,14 @@ public class NodeSerializer {
         });
     }
 
+    private void trustedCertificatesToSlime(List<TrustStoreItem> trustStoreItems, Cursor array) {
+        trustStoreItems.forEach(cert -> {
+            Cursor object = array.addObject();
+            object.setString(fingerprintKey, cert.fingerprint());
+            object.setLong(expiresKey, cert.expiry().toEpochMilli());
+        });
+    }
+
     // ---------------- Deserialization --------------------------------------------------
 
     public Node fromJson(Node.State state, byte[] data) {
@@ -264,8 +282,10 @@ public class NodeSerializer {
                         Reports.fromSlime(object.field(reportsKey)),
                         modelNameFromSlime(object),
                         reservedToFromSlime(object.field(reservedToKey)),
-                        exclusiveToFromSlime(object.field(exclusiveToKey)),
-                        switchHostnameFromSlime(object.field(switchHostnameKey)));
+                        exclusiveToApplicationIdFromSlime(object.field(exclusiveToApplicationIdKey)),
+                        exclusiveToClusterTypeFromSlime(object.field(exclusiveToClusterTypeKey)),
+                        switchHostnameFromSlime(object.field(switchHostnameKey)),
+                        trustedCertificatesFromSlime(object));
     }
 
     private Status statusFromSlime(Inspector object) {
@@ -401,11 +421,25 @@ public class NodeSerializer {
         return Optional.of(TenantName.from(object.asString()));
     }
 
-    private Optional<ApplicationId> exclusiveToFromSlime(Inspector object) {
+    private Optional<ApplicationId> exclusiveToApplicationIdFromSlime(Inspector object) {
         if (! object.valid()) return Optional.empty();
         if (object.type() != Type.STRING)
             throw new IllegalArgumentException("Expected 'exclusiveTo' to be a string but is " + object);
         return Optional.of(ApplicationId.fromSerializedForm(object.asString()));
+    }
+
+    private Optional<ClusterSpec.Type> exclusiveToClusterTypeFromSlime(Inspector object) {
+        if (! object.valid()) return Optional.empty();
+        if (object.type() != Type.STRING)
+            throw new IllegalArgumentException("Expected 'exclusiveToClusterType' to be a string but is " + object);
+        return Optional.of(ClusterSpec.Type.from(object.asString()));
+    }
+
+    private List<TrustStoreItem> trustedCertificatesFromSlime(Inspector object) {
+        return SlimeUtils.entriesStream(object.field(trustedCertificatesKey))
+                .map(elem -> new TrustStoreItem(elem.field(fingerprintKey).asString(),
+                                                Instant.ofEpochMilli(elem.field(expiresKey).asLong())))
+                .collect(Collectors.toList());
     }
 
     // ----------------- Enum <-> string mappings ----------------------------------------

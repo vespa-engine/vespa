@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.cloud;
 
 import java.util.Objects;
@@ -16,6 +16,8 @@ public class Zone {
     private final String region;
 
     public Zone(Environment environment, String region) {
+        Objects.requireNonNull(environment, "Environment cannot be null!");
+        Objects.requireNonNull(region, "Region cannot be null!");
         this.environment = environment;
         this.region = region;
     }

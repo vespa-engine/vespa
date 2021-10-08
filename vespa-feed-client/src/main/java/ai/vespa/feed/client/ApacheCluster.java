@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
@@ -18,12 +18,14 @@ import org.apache.hc.core5.util.Timeout;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeH2Blacklisted;
 import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeWeak;
 
@@ -159,6 +161,12 @@ class ApacheCluster implements Cluster {
         @Override
         public byte[] body() {
             return wrapped.getBodyBytes();
+        }
+
+        @Override
+        public String toString() {
+            return "HTTP response with code " + code() +
+                   (body() != null ? " and body '" + new String(body(), UTF_8) + "'" : "");
         }
 
     }

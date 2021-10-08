@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/config/frt/protocol.h>
@@ -21,8 +21,8 @@ typedef std::shared_ptr<const protocol::Payload> PayloadPtr;
 class ConfigValue {
 public:
     typedef std::unique_ptr<ConfigValue> UP;
-    ConfigValue(const std::vector<vespalib::string> & lines, const vespalib::string & md5sum);
-    ConfigValue(PayloadPtr data, const vespalib::string & md5sum);
+    ConfigValue(const std::vector<vespalib::string> & lines, const vespalib::string & xxhash);
+    ConfigValue(PayloadPtr data, const vespalib::string & xxhash);
     ConfigValue();
     ConfigValue(const ConfigValue &);
     ConfigValue & operator = (const ConfigValue &);
@@ -36,7 +36,7 @@ public:
     const std::vector<vespalib::string> & getLines() const { return _lines;  }
     std::vector<vespalib::string> getLegacyFormat() const;
     const vespalib::string asJson() const;
-    const vespalib::string getMd5() const { return _md5sum; }
+    const vespalib::string getXxhash64() const { return _xxhash64; }
 
     void serializeV1(::vespalib::slime::Cursor & cursor) const;
     void serializeV2(::vespalib::slime::Cursor & cursor) const;
@@ -47,7 +47,7 @@ public:
 private:
     PayloadPtr _payload;
     std::vector<vespalib::string> _lines;
-    vespalib::string _md5sum;
+    vespalib::string _xxhash64;
 };
 
 } //namespace config

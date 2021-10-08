@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.policy;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
@@ -22,6 +22,7 @@ public class HostedVespaPolicy implements Policy {
 
     public static final String APPLICATION_SUSPENDED_CONSTRAINT = "application-suspended";
     public static final String ENOUGH_SERVICES_UP_CONSTRAINT = "enough-services-up";
+    public static final String UNKNOWN_SERVICE_STATUS = "unknown-service-status";
     public static final String SET_NODE_STATE_CONSTRAINT = "controller-set-node-state";
     public static final String CLUSTER_CONTROLLER_AVAILABLE_CONSTRAINT = "controller-available";
     public static final String DEADLINE_CONSTRAINT = "deadline";

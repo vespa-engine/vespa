@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -82,7 +82,7 @@ public class CuratorDatabaseClient {
         this.nodeSerializer = new NodeSerializer(flavors, nodeCacheSize);
         this.db = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
-        this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter").getAbsolute());
+        this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter"));
         initZK();
     }
 
@@ -210,7 +210,7 @@ public class CuratorDatabaseClient {
                                     toState.isAllocated() ? node.allocation() : Optional.empty(),
                                     node.history().recordStateTransition(node.state(), toState, agent, clock.instant()),
                                     node.type(), node.reports(), node.modelName(), node.reservedTo(),
-                                    node.exclusiveTo(), node.switchHostname());
+                                    node.exclusiveToApplicationId(), node.exclusiveToClusterType(), node.switchHostname(), node.trustedCertificates());
             writeNode(toState, curatorTransaction, node, newNode);
             writtenNodes.add(newNode);
         }

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -60,7 +60,8 @@ private:
     double                   _softTimeoutTailCost;
     double                   _softTimeoutFactor;
     double                   _nearest_neighbor_brute_force_limit;
-    double                   _global_filter_limit;
+    double                   _global_filter_lower_limit;
+    double                   _global_filter_upper_limit;
 
 
 public:
@@ -370,8 +371,10 @@ public:
     void set_nearest_neighbor_brute_force_limit(double v) { _nearest_neighbor_brute_force_limit = v; }
     double get_nearest_neighbor_brute_force_limit() const { return _nearest_neighbor_brute_force_limit; }
 
-    void set_global_filter_limit(double v) { _global_filter_limit = v; }
-    double get_global_filter_limit() const { return _global_filter_limit; }
+    void set_global_filter_lower_limit(double v) { _global_filter_lower_limit = v; }
+    double get_global_filter_lower_limit() const { return _global_filter_lower_limit; }
+    void set_global_filter_upper_limit(double v) { _global_filter_upper_limit = v; }
+    double get_global_filter_upper_limit() const { return _global_filter_upper_limit; }
 
     /**
      * This method may be used to indicate that certain features

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -16,20 +16,20 @@ public final class Base64EncodeExpression extends Expression {
         super(DataType.LONG);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        long input = ((LongFieldValue)ctx.getValue()).getLong();
+    protected void doExecute(ExecutionContext context) {
+        long input = ((LongFieldValue) context.getValue()).getLong();
         byte[] output = new byte[8];
         for (int i = 0; i < output.length; ++i) {
             output[i] = (byte)(input & 0xffL);
             input >>>= 8;
         }
         String encoded = Base64.getEncoder().encodeToString(output);
-        ctx.setValue(new StringFieldValue(encoded));
+        context.setValue(new StringFieldValue(encoded));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

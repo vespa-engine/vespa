@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.inject.Module;
@@ -75,7 +75,6 @@ public class JettyTestDriver {
                 requestHandler,
                 new ServerConfig.Builder().connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true)),
                 new ConnectorConfig.Builder()
-                        .http2Enabled(true)
                         .ssl(new ConnectorConfig.Ssl.Builder()
                                 .enabled(true)
                                 .clientAuth(tlsClientAuth == TlsClientAuth.NEED

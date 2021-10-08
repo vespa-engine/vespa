@@ -1,6 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.properties;
 
+import com.yahoo.language.process.Embedder;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
@@ -11,6 +12,7 @@ import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.Select;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
+import com.yahoo.search.query.profile.types.ConversionContext;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
@@ -32,10 +34,12 @@ public class QueryProperties extends Properties {
 
     private Query query;
     private final CompiledQueryProfileRegistry profileRegistry;
+    private final Embedder embedder;
 
-    public QueryProperties(Query query, CompiledQueryProfileRegistry profileRegistry) {
+    public QueryProperties(Query query, CompiledQueryProfileRegistry profileRegistry, Embedder embedder) {
         this.query = query;
         this.profileRegistry = profileRegistry;
+        this.embedder = embedder;
     }
 
     public void setParentQuery(Query query) {
@@ -256,9 +260,15 @@ public class QueryProperties extends Properties {
                 else if (key.size() > 2) {
                     String restKey = key.rest().rest().toString();
                     if (key.get(1).equals(Ranking.FEATURES))
-                        setRankingFeature(query, restKey, toSpecifiedType(restKey, value, profileRegistry.getTypeRegistry().getComponent("features")));
+                        setRankingFeature(query, restKey, toSpecifiedType(restKey,
+                                                                          value,
+                                                                          profileRegistry.getTypeRegistry().getComponent("features"),
+                                                                          context));
                     else if (key.get(1).equals(Ranking.PROPERTIES))
-                        ranking.getProperties().put(restKey, toSpecifiedType(restKey, value, profileRegistry.getTypeRegistry().getComponent("properties")));
+                        ranking.getProperties().put(restKey, toSpecifiedType(restKey,
+                                                                             value,
+                                                                             profileRegistry.getTypeRegistry().getComponent("properties"),
+                                                                             context));
                     else
                         throwIllegalParameter(key.rest().toString(), Ranking.RANKING);
                 }
@@ -294,9 +304,15 @@ public class QueryProperties extends Properties {
                 }
             }
             else if (key.first().equals("rankfeature") || key.first().equals("featureoverride") ) { // featureoverride is deprecated
-                setRankingFeature(query, key.rest().toString(), toSpecifiedType(key.rest().toString(), value, profileRegistry.getTypeRegistry().getComponent("features")));
+                setRankingFeature(query, key.rest().toString(), toSpecifiedType(key.rest().toString(),
+                                                                                value,
+                                                                                profileRegistry.getTypeRegistry().getComponent("features"),
+                                                                                context));
             } else if (key.first().equals("rankproperty")) {
-                query.getRanking().getProperties().put(key.rest().toString(), toSpecifiedType(key.rest().toString(), value, profileRegistry.getTypeRegistry().getComponent("properties")));
+                query.getRanking().getProperties().put(key.rest().toString(), toSpecifiedType(key.rest().toString(),
+                                                                                              value,
+                                                                                              profileRegistry.getTypeRegistry().getComponent("properties"),
+                                                                                              context));
             } else if (key.size()==1) {
                 if (key.equals(Query.HITS))
                     query.setHits(asInteger(value,10));
@@ -359,12 +375,12 @@ public class QueryProperties extends Properties {
         }
     }
 
-    private Object toSpecifiedType(String key, Object value, QueryProfileType type) {
+    private Object toSpecifiedType(String key, Object value, QueryProfileType type, Map<String,String> context) {
         if ( ! ( value instanceof String)) return value; // already typed
         if (type == null) return value; // no type info -> keep as string
         FieldDescription field = type.getField(key);
         if (field == null) return value; // ditto
-        return field.getType().convertFrom(value, profileRegistry);
+        return field.getType().convertFrom(value, new ConversionContext(key, profileRegistry, embedder, context));
     }
 
     private void throwIllegalParameter(String key,String namespace) {

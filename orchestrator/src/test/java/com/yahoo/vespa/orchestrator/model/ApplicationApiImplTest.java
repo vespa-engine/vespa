@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
@@ -165,9 +165,11 @@ public class ApplicationApiImplTest {
         verifyNoRemarksConditionWith(HostStatus.NO_REMARKS, ServiceStatus.UP, true);
         verifyNoRemarksConditionWith(HostStatus.NO_REMARKS, ServiceStatus.NOT_CHECKED, true);
         verifyNoRemarksConditionWith(HostStatus.NO_REMARKS, ServiceStatus.DOWN, true);
+        verifyNoRemarksConditionWith(HostStatus.NO_REMARKS, ServiceStatus.UNKNOWN, true);
         verifyNoRemarksConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.UP, false);
         verifyNoRemarksConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.NOT_CHECKED, false);
         verifyNoRemarksConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.DOWN, false);
+        verifyNoRemarksConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.UNKNOWN, false);
     }
 
     private void verifyNoRemarksConditionWith(HostStatus hostStatus, ServiceStatus serviceStatus, boolean expectUp) {

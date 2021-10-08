@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "rawsource.h"
 #include <vespa/config/common/misc.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -16,7 +16,7 @@ void
 RawSource::getConfig()
 {
     auto lines(readConfig());
-    ConfigValue value(lines, calculateContentMd5(lines));
+    ConfigValue value(lines, calculateContentXxhash64(lines));
     _holder->handle(ConfigUpdate::UP(new ConfigUpdate(value, true, 1)));
 }
 

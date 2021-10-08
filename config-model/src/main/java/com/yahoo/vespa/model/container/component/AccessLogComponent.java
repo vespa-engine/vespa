@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.container.core.AccessLogConfig;
@@ -8,8 +8,6 @@ import com.yahoo.container.logging.VespaAccessLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
-
-import java.util.OptionalInt;
 
 /**
  * @author Tony Vaagenes
@@ -32,11 +30,10 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
 
     public AccessLogComponent(ContainerCluster<?> cluster, AccessLogType logType, CompressionType compressionType, String clusterName, boolean isHostedVespa)
     {
-        this(cluster, logType, compressionType,
+        this(logType, compressionType,
                 String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName, "%Y%m%d%H%M%S"),
                 null, null, isHostedVespa,
-                capitalize(logType.name()) + "." + clusterName,
-                queueSize(cluster).orElse(-1),
+                capitalize(logType.name()) + "." + clusterName, -1,
                 ((cluster instanceof ApplicationContainerCluster) ? 4*1024*1024 : null));
     }
 
@@ -44,8 +41,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
-    public AccessLogComponent(ContainerCluster<?> cluster,
-                              AccessLogType logType,
+    public AccessLogComponent(AccessLogType logType,
                               CompressionType compressionType,
                               String fileNamePattern,
                               String rotationInterval,
@@ -67,13 +63,6 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
 
         if (fileNamePattern == null)
             throw new RuntimeException("File name pattern required when configuring access log.");
-    }
-
-    private static OptionalInt queueSize(ContainerCluster<?> cluster) {
-        if (cluster == null) return OptionalInt.empty();
-        double vcpu = cluster.vcpu().orElse(0);
-        if (vcpu <= 0) return OptionalInt.empty();
-        return OptionalInt.of((int) Math.max(4096, Math.ceil(vcpu * 256.0)));
     }
 
     private static String accessLogClass(AccessLogType logType) {
@@ -105,9 +94,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         } else if (isHostedVespa) {
             builder.compressOnRotation(true);
         }
-        if (queueSize >= 0) {
-            builder.queueSize(queueSize);
-        }
+        builder.queueSize(queueSize);
         if (bufferSize != null) {
             builder.bufferSize(bufferSize);
         }

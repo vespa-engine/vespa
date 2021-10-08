@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.deploy.DeployState;
@@ -35,7 +35,7 @@ public class ClusterControllerConfig extends AbstractConfigProducer<ClusterContr
 
             ModelElement clusterTuning = clusterElement.child("tuning");
             Integer bucketSplittingMinimumBits = null;
-            Double minNodeRatioPerGroup = null;
+            Double minNodeRatioPerGroup = deployState.getProperties().featureFlags().minNodeRatioPerGroup();
             if (clusterTuning != null) {
                 tuning = clusterTuning.child("cluster-controller");
                 minNodeRatioPerGroup = clusterTuning.childAsDouble("min-node-ratio-per-group");

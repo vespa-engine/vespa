@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucket_stripe_utils.h"
 #include <vespa/vespalib/util/alloc.h>
@@ -39,7 +39,8 @@ calc_num_stripe_bits(uint32_t n_stripes) noexcept
     return result;
 }
 
-uint32_t adjusted_num_stripes(uint32_t n_stripes) noexcept
+uint32_t
+adjusted_num_stripes(uint32_t n_stripes) noexcept
 {
     if (n_stripes > 1) {
         if (n_stripes > MaxStripes) {
@@ -48,6 +49,20 @@ uint32_t adjusted_num_stripes(uint32_t n_stripes) noexcept
         return vespalib::roundUp2inN(n_stripes);
     }
     return n_stripes;
+}
+
+uint32_t
+tune_num_stripes_based_on_cpu_cores(uint32_t cpu_cores) noexcept
+{
+    // This should match the calculation used when node flavor is available:
+    // config-model/src/main/java/com/yahoo/vespa/model/content/Distributor.java
+    if (cpu_cores <= 16) {
+        return 1;
+    } else if (cpu_cores <= 64) {
+        return 2;
+    } else {
+        return 4;
+    }
 }
 
 }

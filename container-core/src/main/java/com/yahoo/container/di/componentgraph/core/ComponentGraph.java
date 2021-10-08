@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di.componentgraph.core;
 
 import com.google.common.collect.Iterables;
@@ -258,7 +258,10 @@ public class ComponentGraph {
         if (component.isEmpty()) {
             Object instance;
             try {
-                log.log(Level.FINE, () -> "Trying the fallback injector to create" + messageForNoGlobalComponent(clazz, node));
+                // This is an indication that you have not set up your components correctly in the model
+                // And tit will cause unnecessary reconstruction of your components.
+                // TODO: this should perhaps bee a warning.
+                log.log(Level.INFO, () -> "Trying the fallback injector to create" + messageForNoGlobalComponent(clazz, node));
                 instance = fallbackInjector.getInstance(key);
             } catch (ConfigurationException e) {
                 throw removeStackTrace(new IllegalStateException(

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.messagebus;
 
 import com.yahoo.container.jdisc.messagebus.SessionCache.DynamicThrottlePolicySignature;
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Check the completeness of the mbus session key classes.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class MbusSessionKeyTestCase {
 

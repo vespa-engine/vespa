@@ -1,8 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.service;
 
-import ai.vespa.metricsproxy.metric.Metrics;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.ExecutionException;
@@ -23,32 +21,26 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
     /**
      * Connect to remote service over http and fetch metrics
      */
-    public Metrics getMetrics(int fetchCount) {
-        try {
-            return createMetrics(getJson(), fetchCount);
+    public void getMetrics(MetricsParser.Consumer consumer, int fetchCount) {
+        try (InputStream stream = getJson()) {
+            createMetrics(stream, consumer, fetchCount);
         } catch (IOException | InterruptedException | ExecutionException e) {
-            return new Metrics();
         }
     }
 
-    Metrics createMetrics(String data, int fetchCount) {
-        Metrics remoteMetrics = new Metrics();
+    void createMetrics(String data, MetricsParser.Consumer consumer, int fetchCount) {
         try {
-            remoteMetrics = MetricsParser.parse(data);
+            MetricsParser.parse(data, consumer);
         } catch (Exception e) {
             handleException(e, data, fetchCount);
         }
-
-        return remoteMetrics;
     }
-    Metrics createMetrics(InputStream data, int fetchCount) {
-        Metrics remoteMetrics = new Metrics();
+    private void createMetrics(InputStream data, MetricsParser.Consumer consumer, int fetchCount) throws IOException {
         try {
-            remoteMetrics = MetricsParser.parse(data);
+            MetricsParser.parse(data, consumer);
         } catch (Exception e) {
             handleException(e, data, fetchCount);
+            while (data.read() != -1) {}
         }
-
-        return remoteMetrics;
     }
 }

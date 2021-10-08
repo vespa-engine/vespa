@@ -12,6 +12,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
@@ -142,7 +143,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         return controller().zoneRegistry().zones()
                 .reachable().zones().stream()
                 .map(ZoneApi::getId)
-                .map(zoneId -> createResourceSnapshotsFromNodes(zoneId, nodeRepository.list(zoneId, false)))
+                .map(zoneId -> createResourceSnapshotsFromNodes(zoneId, nodeRepository.list(zoneId, NodeFilter.all())))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }

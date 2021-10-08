@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -106,8 +106,10 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         HttpUriRequest createRequest(URI configServerUri) throws JsonProcessingException, UnsupportedEncodingException;
     }
 
-    private <T> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) {
+    private <T> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType, Params<T> params) {
+        T lastResult = null;
         Exception lastException = null;
+
         for (URI configServer : configServers) {
             var request = Exceptions.uncheck(() -> requestFactory.createRequest(configServer));
             try (CloseableHttpResponse response = client.execute(request)) {
@@ -115,15 +117,26 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                 HttpException.handleStatusCode(response.getStatusLine().getStatusCode(),
                                                request.getMethod() + " " + request.getURI() +
                                                " failed with response '" + responseBody + "'");
+
+                T result;
                 try {
-                    return mapper.readValue(responseBody, wantedReturnType);
+                    result = mapper.readValue(responseBody, wantedReturnType);
                 } catch (IOException e) {
                     throw new UncheckedIOException("Failed parse response from config server", e);
                 }
+
+                if (params.getRetryPolicy().tryNextConfigServer(configServer, result)) {
+                    lastResult = result;
+                    lastException = null;
+                } else {
+                    return result;
+                }
             } catch (HttpException e) {
                 if (!e.isRetryable()) throw e;
+                lastResult = null;
                 lastException = e;
             } catch (Exception e) {
+                lastResult = null;
                 lastException = e;
                 if (configServers.size() == 1) break;
 
@@ -136,6 +149,11 @@ public class ConfigServerApiImpl implements ConfigServerApi {
             }
         }
 
+        if (lastResult != null) {
+            logger.warning("Giving up after trying all config servers: returning result: " + lastResult);
+            return lastResult;
+        }
+
         String prefix = configServers.size() == 1 ?
                 "Request against " + configServers.get(0) + " failed: " :
                 "All requests against the config servers (" + configServers + ") failed, last as follows: ";
@@ -143,8 +161,8 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     }
 
     @Override
-    public <T> T put(String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType, Params paramsOrNull) {
-        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(paramsOrNull);
+    public <T> T put(String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType, Params<T> params) {
+        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(params);
         return tryAllConfigServers(configServer -> {
             HttpPut put = new HttpPut(configServer.resolve(path));
             requestConfigOverride.ifPresent(put::setConfig);
@@ -153,51 +171,51 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                 put.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo.get())));
             }
             return put;
-        }, wantedReturnType);
+        }, wantedReturnType, params);
     }
 
     @Override
-    public <T> T patch(String path, Object bodyJsonPojo, Class<T> wantedReturnType, Params paramsOrNull) {
-        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(paramsOrNull);
+    public <T> T patch(String path, Object bodyJsonPojo, Class<T> wantedReturnType, Params<T> params) {
+        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(params);
         return tryAllConfigServers(configServer -> {
             HttpPatch patch = new HttpPatch(configServer.resolve(path));
             requestConfigOverride.ifPresent(patch::setConfig);
             setContentTypeToApplicationJson(patch);
             patch.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo)));
             return patch;
-        }, wantedReturnType);
+        }, wantedReturnType, params);
     }
 
     @Override
-    public <T> T delete(String path, Class<T> wantedReturnType, Params paramsOrNull) {
-        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(paramsOrNull);
+    public <T> T delete(String path, Class<T> wantedReturnType, Params<T> params) {
+        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(params);
         return tryAllConfigServers(configServer -> {
             HttpDelete delete = new HttpDelete(configServer.resolve(path));
             requestConfigOverride.ifPresent(delete::setConfig);
             return delete;
-        }, wantedReturnType);
+        }, wantedReturnType, params);
     }
 
     @Override
-    public <T> T get(String path, Class<T> wantedReturnType, Params paramsOrNull) {
-        Optional<RequestConfig> requestConfig = getRequestConfigOverride(paramsOrNull);
+    public <T> T get(String path, Class<T> wantedReturnType, Params<T> params) {
+        Optional<RequestConfig> requestConfig = getRequestConfigOverride(params);
         return tryAllConfigServers(configServer -> {
             HttpGet get = new HttpGet(configServer.resolve(path));
             requestConfig.ifPresent(get::setConfig);
             return get;
-        }, wantedReturnType);
+        }, wantedReturnType, params);
     }
 
     @Override
-    public <T> T post(String path, Object bodyJsonPojo, Class<T> wantedReturnType, Params paramsOrNull) {
-        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(paramsOrNull);
+    public <T> T post(String path, Object bodyJsonPojo, Class<T> wantedReturnType, Params<T> params) {
+        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(params);
         return tryAllConfigServers(configServer -> {
             HttpPost post = new HttpPost(configServer.resolve(path));
             requestConfigOverride.ifPresent(post::setConfig);
             setContentTypeToApplicationJson(post);
             post.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo)));
             return post;
-        }, wantedReturnType);
+        }, wantedReturnType, params);
     }
 
     @Override
@@ -235,12 +253,12 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                 .build();
     }
 
-    private static Optional<RequestConfig> getRequestConfigOverride(Params paramsOrNull) {
-        if (paramsOrNull == null) return Optional.empty();
+    private static <T> Optional<RequestConfig> getRequestConfigOverride(Params<T> params) {
+        if (params.getConnectionTimeout().isEmpty()) return Optional.empty();
 
         RequestConfig.Builder builder = RequestConfig.copy(DEFAULT_REQUEST_CONFIG);
 
-        paramsOrNull.getConnectionTimeout().ifPresent(connectionTimeout -> {
+        params.getConnectionTimeout().ifPresent(connectionTimeout -> {
             builder.setConnectTimeout((int) connectionTimeout.toMillis());
             builder.setSocketTimeout((int) connectionTimeout.toMillis());
         });

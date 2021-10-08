@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -163,7 +163,7 @@ public:
     void removeOldGenerations(generation_t firstUsed) override;
 
     void onGenerationChange(generation_t generation) override;
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
     virtual bool onLoadEnumerated(ReaderBase &attrReader);
 
     AttributeVector::SearchContext::UP

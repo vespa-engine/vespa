@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.cloud.config.ClusterInfoConfig;
@@ -70,7 +70,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalDouble;
 import java.util.Set;
 
 /**
@@ -115,7 +114,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public static final String APPLICATION_STATUS_HANDLER_CLASS = "com.yahoo.container.handler.observability.ApplicationStatusHandler";
     public static final String BINDINGS_OVERVIEW_HANDLER_CLASS = BindingsOverviewHandler.class.getName();
     public static final String LOG_HANDLER_CLASS = com.yahoo.container.handler.LogHandler.class.getName();
-    public static final String DEFAULT_LINGUISTICS_PROVIDER = "com.yahoo.language.provider.DefaultLinguisticsProvider";
     public static final String CMS = "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1";
     public static final String G1GC = "-XX:+UseG1GC -XX:MaxTenuringThreshold=15";
 
@@ -172,9 +170,11 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
         componentGroup = new ComponentGroup<>(this, "component");
 
+        addCommonVespaBundles();
+
         addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);
-        addComponent(new DefaultThreadpoolProvider(this));
+        addComponent(new DefaultThreadpoolProvider(this, deployState.featureFlags().metricsproxyNumThreads()));
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent(SecurityFilterInvoker.class);
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricConsumerProviderProvider");
@@ -460,6 +460,13 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     /**
+     * Adds the Vespa bundles that are necessary for all container types.
+     */
+    public void addCommonVespaBundles() {
+        PlatformBundles.commonVespaBundles().forEach(this::addPlatformBundle);
+    }
+
+    /**
      * Adds a bundle present at a known location at the target container nodes.
      * Note that the set of platform bundles cannot change during the jdisc container's lifetime.
      *
@@ -548,6 +555,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void getConfig(ClusterInfoConfig.Builder builder) {
         builder.clusterId(name);
         builder.nodeCount(containers.size());
+        containers.forEach(c -> builder.nodeIndices(c.index()));
 
         for (Service service : getDescendantServices()) {
             builder.services.add(new ClusterInfoConfig.Services.Builder()
@@ -643,13 +651,5 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public boolean getDeferChangesUntilRestart() { return deferChangesUntilRestart; }
-
-    /** Effective vcpu for the containers in cluster. Use this value as scale factor for performance/resource tuning. **/
-    public OptionalDouble vcpu() {
-        return getContainers().stream()
-                .filter(c -> c.getHostResource() != null && c.getHostResource().realResources() != null)
-                .mapToDouble(c -> c.getHostResource().realResources().vcpu())
-                .max(); // Use highest vcpu as scale factor
-    }
 
 }

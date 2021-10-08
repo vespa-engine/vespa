@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.test;
 
 import com.google.common.collect.ImmutableList;
@@ -182,7 +182,7 @@ public class VespaModelTester {
                                       new SingleNodeProvisioner();
 
         TestProperties properties = new TestProperties()
-                .setMultitenant(true)
+                .setMultitenant(hosted) // Note: system tests are multitenant but not hosted
                 .setHostedVespa(hosted)
                 .setApplicationId(applicationId)
                 .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver);

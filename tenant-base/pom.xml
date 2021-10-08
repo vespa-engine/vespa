@@ -291,6 +291,17 @@
                 <vespaVersion>${vespa.runtime.version}</vespaVersion>
             </properties>
         </profile>
+        <profile>
+            <id>ossrh-deploy-vespa</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <maven.deploy.skip>true</maven.deploy.skip>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
+            </properties>
+        </profile>
     </profiles>
 
     <build>

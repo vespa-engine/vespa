@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/distributor/maintenancemocks.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
@@ -292,6 +292,14 @@ TEST_F(SimpleMaintenanceScannerTest, merge_pending_maintenance_stats) {
     exp.perNodeStats.incSyncing(7, global_space);
     EXPECT_EQ(exp.global, result.global);
     EXPECT_EQ(exp.perNodeStats, result.perNodeStats);
+}
+
+TEST_F(SimpleMaintenanceScannerTest, empty_bucket_db_is_immediately_done_by_default) {
+    auto res = _scanner->scanNext();
+    EXPECT_TRUE(res.isDone());
+    _scanner->reset();
+    res = _scanner->scanNext();
+    EXPECT_TRUE(res.isDone());
 }
 
 }

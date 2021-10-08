@@ -196,13 +196,11 @@ public class NodeRepository extends AbstractComponent {
                              .collect(Collectors.toUnmodifiableList());
     }
 
-    /** Removes this application: Active nodes are deactivated while all non-active nodes are set dirty. */
+    /** Removes this application: all nodes are set dirty. */
     public void remove(ApplicationTransaction transaction) {
         NodeList applicationNodes = nodes().list().owner(transaction.application());
-        NodeList activeNodes = applicationNodes.state(State.active);
-        nodes().deactivate(activeNodes.asList(), transaction);
         db.writeTo(State.dirty,
-                   applicationNodes.except(activeNodes.asSet()).asList(),
+                   applicationNodes.asList(),
                    Agent.system,
                    Optional.of("Application is removed"),
                    transaction.nested());

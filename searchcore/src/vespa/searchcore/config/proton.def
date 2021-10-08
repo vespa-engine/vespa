@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=vespa.config.search.core
 
 ## Base directory. The default is ignored as it is assigned by the model
@@ -431,13 +431,9 @@ visit.ignoremaxbytes bool default=true
 ## When set to 0 (default) we use 1 separate thread per document database.
 initialize.threads int default = 0
 
-## Portion of enumstore address space that can be used before put and update
-## portion of feed is blocked.
-writefilter.attribute.enumstorelimit double default = 0.9
-
-## Portion of attribute multivalue mapping address space that can be used
-## before put and update portion of feed is blocked.
-writefilter.attribute.multivaluelimit double default = 0.9
+## Portion of max address space used in components in attribute vectors
+## before put and update operations in feed is blocked.
+writefilter.attribute.address_space_limit double default = 0.9
 
 ## Portion of physical memory that can be resident memory in anonymous mapping
 ## by the proton process before put and update portion of feed is blocked.

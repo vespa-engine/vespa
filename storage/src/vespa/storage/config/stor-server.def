@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=vespa.config.content.core
 
 ## Root directory for all files related to this storage node.
@@ -44,6 +44,14 @@ max_merge_queue_size int default=1024
 ## Note: this does not affect merges where the current node is marked as
 ## "source only", as merges do not cause mutations on such nodes.
 resource_exhaustion_merge_back_pressure_duration_secs double default=30.0
+
+## If true, received merges that have already been accepted into the pending
+## merge window on at least one node will not be restricted by the configured
+## max_merge_queue_size limit. They will be allowed to enqueue regardless of
+## the current queue size. This avoids wasting the time spent being accepted
+## into merge windows, which would happen if the merge were to be bounced with
+## a busy-reply that would subsequently be unwound through the entire merge chain.
+disable_queue_limits_for_chained_merges bool default=false
 
 ## Whether the deadlock detector should be enabled or not. If disabled, it will
 ## still run, but it will never actually abort the process it is running in.

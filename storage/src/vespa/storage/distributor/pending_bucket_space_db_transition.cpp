@@ -1,9 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "pending_bucket_space_db_transition.h"
+#include "bucket_space_state_map.h"
 #include "clusterinformation.h"
+#include "pending_bucket_space_db_transition.h"
 #include "pendingclusterstate.h"
-#include "distributor_bucket_space.h"
 #include "stripe_access_guard.h"
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
@@ -19,7 +19,7 @@ using lib::NodeType;
 using lib::NodeState;
 
 PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(document::BucketSpace bucket_space,
-                                                               DistributorBucketSpace &distributorBucketSpace,
+                                                               const BucketSpaceState &bucket_space_state,
                                                                bool distributionChanged,
                                                                const OutdatedNodes &outdatedNodes,
                                                                std::shared_ptr<const ClusterInformation> clusterInfo,
@@ -31,10 +31,10 @@ PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(document::BucketS
       _missingEntries(),
       _clusterInfo(std::move(clusterInfo)),
       _outdatedNodes(newClusterState.getNodeCount(NodeType::STORAGE)),
-      _prevClusterState(distributorBucketSpace.getClusterState()),
+      _prevClusterState(bucket_space_state.get_cluster_state()),
       _newClusterState(newClusterState),
       _creationTimestamp(creationTimestamp),
-      _distributorBucketSpace(distributorBucketSpace),
+      _bucket_space_state(bucket_space_state),
       _distributorIndex(_clusterInfo->getDistributorIndex()),
       _bucketOwnershipTransfer(distributionChanged),
       _rejectedRequests()
@@ -217,24 +217,11 @@ PendingBucketSpaceDbTransition::DbMerger::addToInserter(BucketDatabase::Trailing
     inserter.insert_at_end(bucket_id, e);
 }
 
-// TODO STRIPE remove legacy single stripe stuff
-void
-PendingBucketSpaceDbTransition::mergeIntoBucketDatabase()
-{
-    BucketDatabase &db(_distributorBucketSpace.getBucketDatabase());
-    std::sort(_entries.begin(), _entries.end());
-
-    const auto& dist = _distributorBucketSpace.getDistribution();
-    DbMerger merger(_creationTimestamp, dist, _newClusterState, _clusterInfo->getStorageUpStates(), _outdatedNodes, _entries);
-
-    db.merge(merger);
-}
-
 void
 PendingBucketSpaceDbTransition::merge_into_bucket_databases(StripeAccessGuard& guard)
 {
     std::sort(_entries.begin(), _entries.end());
-    const auto& dist = _distributorBucketSpace.getDistribution();
+    const auto& dist = _bucket_space_state.get_distribution();
     guard.merge_entries_into_db(_bucket_space, _creationTimestamp, dist, _newClusterState,
                                 _clusterInfo->getStorageUpStates(), _outdatedNodes, _entries);
 }
@@ -296,7 +283,7 @@ PendingBucketSpaceDbTransition::nodeWasUpButNowIsDown(const lib::State& old,
 bool
 PendingBucketSpaceDbTransition::nodeInSameGroupAsSelf(uint16_t index) const
 {
-    const auto &dist(_distributorBucketSpace.getDistribution());
+    const auto &dist(_bucket_space_state.get_distribution());
     if (dist.getNodeGraph().getGroupForNode(index) ==
         dist.getNodeGraph().getGroupForNode(_distributorIndex)) {
         LOG(debug,
@@ -317,7 +304,7 @@ PendingBucketSpaceDbTransition::nodeNeedsOwnershipTransferFromGroupDown(
         uint16_t nodeIndex,
         const lib::ClusterState& state) const
 {
-    const auto &dist(_distributorBucketSpace.getDistribution());
+    const auto &dist(_bucket_space_state.get_distribution());
     if (!dist.distributorAutoOwnershipTransferOnWholeGroupDown()) {
         return false; // Not doing anything for downed groups.
     }

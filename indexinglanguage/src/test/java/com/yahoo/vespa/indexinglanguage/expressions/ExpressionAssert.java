@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -18,18 +18,18 @@ class ExpressionAssert {
     }
 
     public static void assertVerify(DataType valueBefore, Expression exp, DataType expectedValueAfter) {
-        assertVerifyCtx(new VerificationContext().setValue(valueBefore), exp, expectedValueAfter);
+        assertVerifyCtx(new VerificationContext().setValueType(valueBefore), exp, expectedValueAfter);
     }
 
     public static void assertVerifyThrows(DataType valueBefore, Expression exp, String expectedException) {
-        assertVerifyCtxThrows(new VerificationContext().setValue(valueBefore), exp, expectedException);
+        assertVerifyCtxThrows(new VerificationContext().setValueType(valueBefore), exp, expectedException);
     }
 
     interface CreateExpression {
         Expression create();
     }
     public static void assertVerifyThrows(DataType valueBefore, CreateExpression createExp, String expectedException) {
-        assertVerifyCtxThrows(new VerificationContext().setValue(valueBefore), createExp, expectedException);
+        assertVerifyCtxThrows(new VerificationContext().setValueType(valueBefore), createExp, expectedException);
     }
 
     public static void assertVerifyCtxThrows(VerificationContext ctx, CreateExpression createExp, String expectedException) {

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -14,14 +14,14 @@ public final class HexEncodeExpression extends Expression {
         super(DataType.LONG);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        long input = ((LongFieldValue)ctx.getValue()).getLong();
-        ctx.setValue(new StringFieldValue(Long.toHexString(input)));
+    protected void doExecute(ExecutionContext context) {
+        long input = ((LongFieldValue) context.getValue()).getLong();
+        context.setValue(new StringFieldValue(Long.toHexString(input)));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

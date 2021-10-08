@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.config.model.api.ApplicationRoles;
@@ -14,9 +14,9 @@ import java.util.Optional;
 
 /**
  * Stores application roles for an application.
- *
  * @author mortent
  */
+ // TODO: Remove and clean up zk after 7.458
 public class ApplicationRolesStore {
 
     private final Path path;

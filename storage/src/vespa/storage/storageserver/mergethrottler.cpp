@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mergethrottler.h"
 #include <vespa/storage/common/nodestateupdater.h>
@@ -171,21 +171,6 @@ MergeThrottler::MergeNodeSequence::chainContainsIndex(uint16_t idx) const
     return false;
 }
 
-std::string
-MergeThrottler::MergeNodeSequence::getSequenceString() const
-{
-    std::ostringstream oss;
-    oss << '[';
-    for (std::size_t i = 0; i < _cmd.getNodes().size(); ++i) {
-        if (i > 0) {
-            oss << ", ";
-        }
-        oss << _cmd.getNodes()[i].index;
-    }
-    oss << ']';
-    return oss.str();
-}
-
 MergeThrottler::MergeThrottler(
         const config::ConfigUri & configUri,
         StorageComponentRegister& compReg)
@@ -194,17 +179,18 @@ MergeThrottler::MergeThrottler(
       _merges(),
       _queue(),
       _maxQueueSize(1024),
-      _throttlePolicy(new mbus::StaticThrottlePolicy()),
+      _throttlePolicy(std::make_unique<mbus::StaticThrottlePolicy>()),
       _queueSequence(0),
       _messageLock(),
       _stateLock(),
       _configFetcher(configUri.getContext()),
-      _metrics(new Metrics),
+      _metrics(std::make_unique<Metrics>()),
       _component(compReg, "mergethrottler"),
       _thread(),
       _rendezvous(RENDEZVOUS_NONE),
       _throttle_until_time(),
       _backpressure_duration(std::chrono::seconds(30)),
+      _disable_queue_limits_for_chained_merges(false),
       _closing(false)
 {
     _throttlePolicy->setMaxPendingCount(20);
@@ -240,6 +226,7 @@ MergeThrottler::configure(std::unique_ptr<vespa::config::content::core::StorServ
     _maxQueueSize = newConfig->maxMergeQueueSize;
     _backpressure_duration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
             std::chrono::duration<double>(newConfig->resourceExhaustionMergeBackPressureDurationSecs));
+    _disable_queue_limits_for_chained_merges = newConfig->disableQueueLimitsForChainedMerges;
 }
 
 MergeThrottler::~MergeThrottler()
@@ -299,29 +286,26 @@ MergeThrottler::onFlush(bool /*downwards*/)
     // Abort active merges, queued and up/down pending
     std::vector<api::StorageMessage::SP> flushable;
 
-    ActiveMergeMap::iterator mergeEnd = _merges.end();
-    for (ActiveMergeMap::iterator i = _merges.begin(); i != mergeEnd; ++i) {
+    for (auto& merge : _merges) {
         // Only generate a reply if the throttler owns the command
-        if (i->second.getMergeCmd().get()) {
-            flushable.push_back(i->second.getMergeCmd());
+        if (merge.second.getMergeCmd().get()) {
+            flushable.push_back(merge.second.getMergeCmd());
         } else {
             LOG(debug, "Not generating flush-reply for %s since we don't "
-                "own the command", i->first.toString().c_str());
+                "own the command", merge.first.toString().c_str());
         }
 
         DummyMbusMessage<mbus::Reply> dummyReply;
         _throttlePolicy->processReply(dummyReply);
     }
-    MergePriorityQueue::iterator queueEnd = _queue.end();
-    for (MergePriorityQueue::iterator i = _queue.begin(); i != queueEnd; ++i) {
-        flushable.push_back(i->_msg);
+    for (auto& entry : _queue) {
+        flushable.push_back(entry._msg);
     }
-
     // Just pass-through everything in the up-queue, since the messages
     // are either replies or commands _we_ have sent and thus cannot
     // send a meaningful reply for
-    for (std::size_t i = 0; i < _messagesUp.size(); ++i) {
-        msgGuard.sendUp(_messagesUp[i]);
+    for (auto& msg : _messagesUp) {
+        msgGuard.sendUp(msg);
     }
 
     std::back_insert_iterator<
@@ -329,28 +313,21 @@ MergeThrottler::onFlush(bool /*downwards*/)
     > inserter(flushable);
     std::copy(_messagesDown.begin(), _messagesDown.end(), inserter);
 
-    for (std::size_t i = 0; i < flushable.size(); ++i) {
+    for (auto& msg : flushable) {
         // Down-bound merge may be a reply, in which case we ignore it
         // since we can't actually do anything with it now
-        if (flushable[i]->getType() == api::MessageType::MERGEBUCKET) {
-            std::shared_ptr<api::MergeBucketReply> reply(
-                    std::make_shared<api::MergeBucketReply>(
-                            static_cast<const api::MergeBucketCommand&>(
-                                    *flushable[i])));
-            reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED,
-                                     "Storage node is shutting down"));
-            LOG(debug, "Aborted merge since we're flushing: %s",
-                flushable[i]->toString().c_str());
+        if (msg->getType() == api::MessageType::MERGEBUCKET) {
+            auto reply = std::make_shared<api::MergeBucketReply>(static_cast<const api::MergeBucketCommand&>(*msg));
+            reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Storage node is shutting down"));
+            LOG(debug, "Aborted merge since we're flushing: %s", msg->toString().c_str());
             msgGuard.sendUp(reply);
         } else {
-            assert(flushable[i]->getType() == api::MessageType::MERGEBUCKET_REPLY);
-            LOG(debug, "Ignored merge reply since we're flushing: %s",
-                flushable[i]->toString().c_str());
+            assert(msg->getType() == api::MessageType::MERGEBUCKET_REPLY);
+            LOG(debug, "Ignored merge reply since we're flushing: %s", msg->toString().c_str());
         }
     }
 
-    LOG(debug, "Flushed %zu unfinished or pending merge operations",
-        flushable.size());
+    LOG(debug, "Flushed %zu unfinished or pending merge operations", flushable.size());
 
     _merges.clear();
     _queue.clear();
@@ -398,8 +375,8 @@ MergeThrottler::getNextQueuedMerge()
         return api::StorageMessage::SP();
     }
 
-    MergePriorityQueue::iterator iter = _queue.begin();
-    MergePriorityQueue::value_type entry = *iter;
+    auto iter = _queue.begin();
+    auto entry = *iter;
     entry._startTimer.stop(_metrics->averageQueueWaitingTime);
     _queue.erase(iter);
     return entry._msg;
@@ -416,7 +393,7 @@ MergeThrottler::enqueueMerge(
     if (!validateNewMerge(mergeCmd, nodeSeq, msgGuard)) {
         return;
     }
-    _queue.insert(MergePriorityQueue::value_type(msg, _queueSequence++));
+    _queue.emplace(msg, _queueSequence++);
     _metrics->queueSize.set(_queue.size());
 }
 
@@ -450,7 +427,7 @@ MergeThrottler::rejectMergeIfOutdated(
     {
         return false;
     }
-    std::ostringstream oss;
+    vespalib::asciistream oss;
     oss << "Rejected merge due to outdated cluster state; merge has "
         << "version " << cmd.getClusterStateVersion()
         << ", storage node has version "
@@ -555,10 +532,10 @@ MergeThrottler::attemptProcessNextQueuedMerge(
             LOG(spam, "Processing queued merge %s", msg->toString().c_str());
             processNewMergeCommand(msg, msgGuard);
         } else {
-            std::stringstream oss;
-            oss << "Queued merge " << *msg << " is out of date; it has already "
-                "been started by someone else since it was queued";
-            LOG(debug, "%s", oss.str().c_str());
+            vespalib::asciistream oss;
+            oss << "Queued merge " << msg->toString() << " is out of date; it has already "
+                   "been started by someone else since it was queued";
+            LOG(debug, "%s", oss.c_str());
             sendReply(dynamic_cast<const api::MergeBucketCommand&>(*msg),
                       api::ReturnCode(api::ReturnCode::BUSY, oss.str()),
                       msgGuard, _metrics->chaining);
@@ -568,8 +545,7 @@ MergeThrottler::attemptProcessNextQueuedMerge(
         if (_queue.empty()) {
             LOG(spam, "Queue empty - no merges to process");
         } else {
-            LOG(spam, "Merges queued, but throttle policy disallows further "
-                "merges at this time");
+            LOG(spam, "Merges queued, but throttle policy disallows further merges at this time");
         }
     }
     return false;
@@ -703,6 +679,13 @@ bool MergeThrottler::backpressure_mode_active() const {
     return backpressure_mode_active_no_lock();
 }
 
+bool MergeThrottler::allow_merge_with_queue_full(const api::MergeBucketCommand& cmd) const noexcept {
+    // We let any merge through that has already passed through at least one other node's merge
+    // window, as that has already taken up a logical resource slot on all those nodes. Busy-bouncing
+    // a merge at that point would undo a great amount of thumb-twiddling and waiting.
+    return (_disable_queue_limits_for_chained_merges && !cmd.getChain().empty());
+}
+
 // Must be run from worker thread
 void
 MergeThrottler::handleMessageDown(
@@ -732,7 +715,7 @@ MergeThrottler::handleMessageDown(
             processCycledMergeCommand(msg, msgGuard);
         } else if (canProcessNewMerge()) {
             processNewMergeCommand(msg, msgGuard);
-        } else if (_queue.size() < _maxQueueSize) {
+        } else if ((_queue.size() < _maxQueueSize) || allow_merge_with_queue_full(mergeCmd)) {
             enqueueMerge(msg, msgGuard); // Queue for later processing
         } else {
             // No more room at the inn. Return BUSY so that the
@@ -1255,6 +1238,12 @@ MergeThrottler::markActiveMergesAsAborted(uint32_t minimumStateVersion)
             activeMerge.second.setAborted(true);
         }
     }
+}
+
+void
+MergeThrottler::set_disable_queue_limits_for_chained_merges(bool disable_limits) noexcept {
+    std::lock_guard lock(_stateLock);
+    _disable_queue_limits_for_chained_merges = disable_limits;
 }
 
 void

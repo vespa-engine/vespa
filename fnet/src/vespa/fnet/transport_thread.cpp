@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "transport_thread.h"
 #include "iexecutable.h"
@@ -207,7 +207,7 @@ extern "C" {
 
 FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
     : _owner(owner_in),
-      _now(steady_clock ::now()),
+      _now(owner_in.time_tools().current_time()),
       _scheduler(&_now),
       _componentsHead(nullptr),
       _timeOutHead(nullptr),
@@ -244,6 +244,12 @@ FNET_TransportThread::~FNET_TransportThread()
 const FNET_Config &
 FNET_TransportThread::getConfig() const {
     return _owner.getConfig();
+}
+
+const fnet::TimeTools &
+FNET_TransportThread::time_tools() const
+{
+    return _owner.time_tools();
 }
 
 bool
@@ -388,7 +394,7 @@ FNET_TransportThread::InitEventLoop()
         LOG(error, "Transport: InitEventLoop: object already active!");
         return false;
     }
-    _now = steady_clock::now();
+    _now = time_tools().current_time();
     return true;
 }
 
@@ -465,12 +471,12 @@ bool
 FNET_TransportThread::EventLoopIteration() {
 
     if (!IsShutDown()) {
-        int msTimeout = FNET_Scheduler::tick_ms.count();
+        int msTimeout = vespalib::count_ms(time_tools().event_timeout());
         // obtain I/O events
         _selector.poll(msTimeout);
 
         // sample current time (performed once per event loop iteration)
-        _now = steady_clock::now();
+        _now = time_tools().current_time();
 
         // handle io-events
         auto dispatchResult = _selector.dispatch(*this);

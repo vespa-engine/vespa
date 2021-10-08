@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
 import com.yahoo.security.KeyAlgorithm;
@@ -211,7 +211,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                             EntityBindingsMapper.toAttestationData(signedIdentityDocument),
                             csr);
             EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
-            writePrivateKeyAndCertificate(context.vespaUserOnHost(), privateKeyFile, keyPair.getPrivate(),
+            writePrivateKeyAndCertificate(context.userNamespace().vespaUserIdOnHost(), privateKeyFile, keyPair.getPrivate(),
                     certificateFile, instanceIdentity.certificate());
             context.log(logger, "Instance successfully registered and credentials written to file");
         }
@@ -239,7 +239,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                 context.identity(),
                                 identityDocument.providerUniqueId().asDottedString(),
                                 csr);
-                writePrivateKeyAndCertificate(context.vespaUserOnHost(), privateKeyFile, keyPair.getPrivate(),
+                writePrivateKeyAndCertificate(context.userNamespace().vespaUserIdOnHost(), privateKeyFile, keyPair.getPrivate(),
                         certificateFile, instanceIdentity.certificate());
                 context.log(logger, "Instance successfully refreshed and credentials written to file");
             } catch (ZtsClientException e) {
@@ -256,20 +256,20 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     }
 
 
-    private static void writePrivateKeyAndCertificate(String vespaUserOnHost,
+    private static void writePrivateKeyAndCertificate(int vespaUidOnHost,
                                                       Path privateKeyFile,
                                                       PrivateKey privateKey,
                                                       Path certificateFile,
                                                       X509Certificate certificate) {
-        writeFile(privateKeyFile, vespaUserOnHost, KeyUtils.toPem(privateKey));
-        writeFile(certificateFile, vespaUserOnHost, X509CertificateUtils.toPem(certificate));
+        writeFile(privateKeyFile, vespaUidOnHost, KeyUtils.toPem(privateKey));
+        writeFile(certificateFile, vespaUidOnHost, X509CertificateUtils.toPem(certificate));
     }
 
-    private static void writeFile(Path path, String vespaUserOnHost, String utf8Content) {
+    private static void writeFile(Path path, int vespaUidOnHost, String utf8Content) {
         new UnixPath(path.toString() + ".tmp")
                 .deleteIfExists()
                 .createNewFile("r--------")
-                .setOwner(vespaUserOnHost)
+                .setOwnerId(vespaUidOnHost)
                 .writeUtf8File(utf8Content)
                 .atomicMove(path);
     }

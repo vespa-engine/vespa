@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
 import com.yahoo.searchdefinition.document.ImmutableSDField;
@@ -19,8 +19,8 @@ public class DefaultRankProfile extends RankProfile {
      *
      * @param rankProfileRegistry The {@link com.yahoo.searchdefinition.RankProfileRegistry} to use for storing and looking up rank profiles.
      */
-    public DefaultRankProfile(Search search, RankProfileRegistry rankProfileRegistry) {
-        super("default", search, rankProfileRegistry);
+    public DefaultRankProfile(Search search, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants) {
+        super("default", search, rankProfileRegistry, rankingConstants);
     }
 
     /**

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchchain;
 
 import com.yahoo.component.chain.Chain;
@@ -148,7 +148,11 @@ public class AsyncExecution {
 
     private static <T> Future<T> getFuture(Callable<T> callable) {
         FutureTask<T> future = new FutureTask<>(callable);
-        getExecutor().execute(future);
+        try {
+            getExecutor().execute(future);
+        } catch (RejectedExecutionException e) {
+            future.run();
+        }
         return future;
     }
 
@@ -161,7 +165,11 @@ public class AsyncExecution {
 
     private FutureResult getFutureResult(Callable<Result> callable, Query query) {
         FutureResult future = new FutureResult(callable, execution, query);
-        getExecutor().execute(future);
+        try {
+            getExecutor().execute(future);
+        } catch (RejectedExecutionException e) {
+            future.run();
+        }
         return future;
     }
 

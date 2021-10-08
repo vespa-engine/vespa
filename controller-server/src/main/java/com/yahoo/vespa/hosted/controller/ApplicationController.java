@@ -27,7 +27,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
-import com.yahoo.vespa.hosted.controller.api.integration.aws.TenantRoles;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
@@ -36,6 +35,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
@@ -44,8 +44,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.application.ActivateResult;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackageValidator;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageValidator;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.DeploymentQuotaCalculator;
@@ -80,7 +80,6 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -277,8 +276,9 @@ public class ApplicationController {
     /** Reads the oldest installed platform for the given application and zone from the node repo of that zone. */
     private Optional<Version> oldestInstalledPlatform(JobId job) {
         return configServer.nodeRepository().list(job.type().zone(controller.system()),
-                                                  job.application(),
-                                                  EnumSet.of(active, reserved))
+                                                  NodeFilter.all()
+                                                            .applications(job.application())
+                                                            .states(active, reserved))
                            .stream()
                            .map(Node::currentVersion)
                            .filter(version -> ! version.isEmpty())
@@ -331,11 +331,6 @@ public class ApplicationController {
         });
     }
 
-    /** Fetches the requested application package from the artifact store(s). */
-    public ApplicationPackage getApplicationPackage(ApplicationId id, ApplicationVersion version) {
-        return new ApplicationPackage(applicationStore.get(id.tenant(), id.application(), version));
-    }
-
     /** Returns given application with a new instance */
     public LockedApplication withNewInstance(LockedApplication application, ApplicationId instance) {
         if (instance.instance().isTester())
@@ -362,7 +357,6 @@ public class ApplicationController {
         try (Lock deploymentLock = lockForDeployment(job.application(), zone)) {
             Set<ContainerEndpoint> containerEndpoints;
             Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
-            Optional<TenantRoles> tenantRoles = Optional.empty();
 
             Run run = controller.jobController().last(job)
                                 .orElseThrow(() -> new IllegalStateException("No known run of '" + job + "'"));
@@ -372,7 +366,7 @@ public class ApplicationController {
 
             Version platform = run.versions().sourcePlatform().filter(__ -> deploySourceVersions).orElse(run.versions().targetPlatform());
             ApplicationVersion revision = run.versions().sourceApplication().filter(__ -> deploySourceVersions).orElse(run.versions().targetApplication());
-            ApplicationPackage applicationPackage = getApplicationPackage(job.application(), zone, revision);
+            ApplicationPackage applicationPackage = new ApplicationPackage(applicationStore.get(new DeploymentId(job.application(), zone), revision));
 
             try (Lock lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
@@ -390,7 +384,8 @@ public class ApplicationController {
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
-            ActivateResult result = deploy(job.application(), applicationPackage, zone, platform, containerEndpoints, endpointCertificateMetadata, tenantRoles);
+            ActivateResult result = deploy(job.application(), applicationPackage, zone, platform, containerEndpoints,
+                                           endpointCertificateMetadata, run.isDryRun());
 
             // Record the quota usage for this application
             var quotaUsage = deploymentQuotaUsage(zone, job.application());
@@ -472,7 +467,7 @@ public class ApplicationController {
             ApplicationPackage applicationPackage = new ApplicationPackage(
                     artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
             );
-            return deploy(application.id(), applicationPackage, zone, version, Set.of(), /* No application cert */ Optional.empty(), Optional.empty());
+            return deploy(application.id(), applicationPackage, zone, version, Set.of(), /* No application cert */ Optional.empty(), false);
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }
@@ -480,13 +475,13 @@ public class ApplicationController {
 
     /** Deploys the given tester application to the given zone. */
     public ActivateResult deployTester(TesterId tester, ApplicationPackage applicationPackage, ZoneId zone, Version platform) {
-        return deploy(tester.id(), applicationPackage, zone, platform, Set.of(), /* No application cert for tester*/ Optional.empty(), Optional.empty());
+        return deploy(tester.id(), applicationPackage, zone, platform, Set.of(), /* No application cert for tester*/ Optional.empty(), false);
     }
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
                                   ZoneId zone, Version platform, Set<ContainerEndpoint> endpoints,
                                   Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
-                                  Optional<TenantRoles> tenantRoles) {
+                                  boolean dryRun) {
         try {
             Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
                     dockerImageRepoFlag
@@ -520,7 +515,8 @@ public class ApplicationController {
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
-                                                           tenantRoles, deploymentQuota, tenantSecretStores, operatorCertificates));
+                                                           deploymentQuota, tenantSecretStores, operatorCertificates,
+                                                           dryRun));
 
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
@@ -827,11 +823,6 @@ public class ApplicationController {
     private QuotaUsage deploymentQuotaUsage(ZoneId zoneId, ApplicationId applicationId) {
         var application = configServer.nodeRepository().getApplication(zoneId, applicationId);
         return DeploymentQuotaCalculator.calculateQuotaUsage(application);
-    }
-
-    private ApplicationPackage getApplicationPackage(ApplicationId application, ZoneId zone, ApplicationVersion revision) {
-        return new ApplicationPackage(revision.isUnknown() ? applicationStore.getDev(application, zone)
-                                              : applicationStore.get(application.tenant(), application.application(), revision));
     }
 
     /*

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -243,6 +243,6 @@ public class CatTestCase {
         SimpleTestAdapter adapter = new SimpleTestAdapter(new Field("a", typeA), new Field("b", typeB));
         VerificationContext ctx = new VerificationContext(adapter);
         new CatExpression(new InputExpression("a"), new InputExpression("b")).verify(ctx);
-        return ctx.getValue();
+        return ctx.getValueType();
     }
 }

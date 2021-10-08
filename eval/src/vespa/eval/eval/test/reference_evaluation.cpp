@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "reference_evaluation.h"
 #include "reference_operations.h"
@@ -337,6 +337,9 @@ struct EvalNode : public NodeVisitor {
     }
     void visit(const Bit &node) override {
         eval_join(node.get_child(0), node.get_child(1), operation::Bit::f);
+    }
+    void visit(const Hamming &node) override {
+        eval_join(node.get_child(0), node.get_child(1), operation::Hamming::f);
     }
 };
 

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.component.Version;
@@ -77,7 +77,7 @@ public abstract class Session implements Comparable<Session>  {
      * The status of this session.
      */
     public enum Status {
-        NEW, PREPARE, ACTIVATE, DEACTIVATE, NONE, DELETE;
+        NEW, PREPARE, ACTIVATE, DEACTIVATE, UNKNOWN, DELETE;
 
         public static Status parse(String data) {
             for (Status status : Status.values()) {

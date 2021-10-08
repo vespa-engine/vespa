@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
@@ -18,7 +18,6 @@ import java.util.logging.Logger;
  * The current connection is chosen randomly when calling {#link {@link #switchConnection()}}
  * (it will continue to use the same connection if there is only one source).
  * The current connection is available with {@link #getCurrent()}.
- * When calling {@link #setError(Connection, int)}, {@link #switchConnection()} will always be called.
  *
  * @author Gunnar Gauslaa Bergem
  * @author hmusum
@@ -38,17 +37,13 @@ public class JRTConnectionPool implements ConnectionPool {
     private volatile JRTConnection currentConnection;
 
     public JRTConnectionPool(ConfigSourceSet sourceSet) {
-        this(sourceSet, "config-jrt-pool-" + sourceSet.hashCode());
+        this(sourceSet, new Supervisor(new Transport("config-pool-" + sourceSet.hashCode())).setDropEmptyBuffers(true));
     }
 
-    public JRTConnectionPool(ConfigSourceSet sourceSet, String poolName) {
-        this.poolName = poolName;
-        supervisor = new Supervisor(new Transport(poolName)).setDropEmptyBuffers(true);
+    public JRTConnectionPool(ConfigSourceSet sourceSet, Supervisor supervisor) {
+        this.supervisor = supervisor;
+        this.poolName = supervisor.transport().getName();
         addSources(sourceSet);
-    }
-
-    JRTConnectionPool(List<String> addresses) {
-        this(new ConfigSourceSet(addresses));
     }
 
     public void addSources(ConfigSourceSet sourceSet) {
@@ -91,7 +86,7 @@ public class JRTConnectionPool implements ConnectionPool {
         List<JRTConnection> sourceCandidates = getSources();
         sourceCandidates.remove(currentConnection);
         JRTConnection newConnection = pickNewConnectionRandomly(sourceCandidates);
-        log.log(Level.INFO, () -> "Switching from " + currentConnection + " to " + newConnection);
+        log.log(Level.INFO, () -> poolName + ": Switching from " + currentConnection + " to " + newConnection);
         return currentConnection = newConnection;
     }
 
@@ -113,11 +108,6 @@ public class JRTConnectionPool implements ConnectionPool {
 
     ConfigSourceSet getSourceSet() {
         return sourceSet;
-    }
-
-    @Override
-    public void setError(Connection connection, int errorCode) {
-        switchConnection(connection);
     }
 
     public JRTConnectionPool updateSources(List<String> addresses) {

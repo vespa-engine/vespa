@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -232,6 +232,7 @@ public:
      */
     void switch_primary_buffer(uint32_t typeId, size_t elemsNeeded);
 
+    bool consider_grow_active_buffer(uint32_t type_id, size_t elems_needed);
     void switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded);
 
     vespalib::MemoryUsage getMemoryUsage() const;

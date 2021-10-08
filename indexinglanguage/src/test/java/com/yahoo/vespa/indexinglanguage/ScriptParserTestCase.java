@@ -1,6 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.expressions.EchoExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
@@ -95,7 +96,7 @@ public class ScriptParserTestCase {
     }
 
     private static ScriptParserContext newContext(String input) {
-        return new ScriptParserContext(new SimpleLinguistics()).setInputStream(new IndexingInput(input));
+        return new ScriptParserContext(new SimpleLinguistics(), Embedder.throwsOnUse).setInputStream(new IndexingInput(input));
     }
 
 }

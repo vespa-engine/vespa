@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(eval_eval OBJECT
     SOURCES
     aggr.cpp
@@ -13,6 +13,7 @@ vespa_add_library(eval_eval OBJECT
     fast_addr_map.cpp
     fast_forest.cpp
     fast_value.cpp
+    feature_name_extractor.cpp
     function.cpp
     gbdt.cpp
     int8float.cpp

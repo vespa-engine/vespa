@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
@@ -169,6 +169,13 @@ public class PermanentFlags {
             APPLICATION_ID
     );
 
+    public static final UnboundStringFlag ENDPOINT_CERTIFICATE_ALGORITHM = defineStringFlag(
+            "endpoint-certificate-algorithm", "",
+            // Acceptable values are: "rsa_2048", "rsa_4096", "ecdsa_p256"
+            "Selects algorithm used for an applications endpoint certificate, or use provider default if blank",
+            "Takes effect when a new endpoint certificate is requested (first deployment of new application/instance)",
+            APPLICATION_ID);
+
     public static final UnboundDoubleFlag RESOURCE_LIMIT_DISK = defineDoubleFlag(
             "resource-limit-disk", 0.8,
             "Resource limit (between 0.0 and 1.0) for disk used by cluster controller for when to block feed",
@@ -182,6 +189,19 @@ public class PermanentFlags {
             "Takes effect on next deployment",
             APPLICATION_ID
     );
+
+    public static final UnboundListFlag<String> LOGCTL_OVERRIDE = defineListFlag(
+            "logctl-override", List.of(), String.class,
+            "Run vespa-logctl statements on container startup. Should be on the form <service>:<component> <level>=on",
+            "Takes effect on container restart",
+            APPLICATION_ID, HOSTNAME
+    );
+
+    public static final UnboundStringFlag CONFIG_PROXY_JVM_ARGS = defineStringFlag(
+            "config-proxy-jvm-args", "",
+            "Sets jvm args for config proxy (added at the end of startup command, will override existing ones)",
+            "Takes effect on restart of Docker container",
+            ZONE_ID, APPLICATION_ID);
 
     private PermanentFlags() {}
 

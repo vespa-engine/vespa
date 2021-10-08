@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -151,6 +151,15 @@ public class RealNodeRepository implements NodeRepository {
         Optional<NodeMembership> membership = Optional.ofNullable(node.membership)
                 .map(m -> new NodeMembership(m.clusterType, m.clusterId, m.group, m.index, m.retired));
         NodeReports reports = NodeReports.fromMap(Optional.ofNullable(node.reports).orElseGet(Map::of));
+        List<Event> events = node.history.stream()
+                .map(event -> new Event(event.agent, event.event, Optional.ofNullable(event.at).map(Instant::ofEpochMilli).orElse(Instant.EPOCH)))
+                .collect(Collectors.toUnmodifiableList());
+
+        List<TrustStoreItem> trustStore = Optional.ofNullable(node.trustStore).orElse(List.of()).stream()
+                .map(item -> new TrustStoreItem(item.fingerprint, Instant.ofEpochMilli(item.expiry)))
+                .collect(Collectors.toList());
+
+
         return new NodeSpec(
                 node.hostname,
                 Optional.ofNullable(node.openStackId),
@@ -173,19 +182,26 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.wantedFirmwareCheck).map(Instant::ofEpochMilli),
                 Optional.ofNullable(node.currentFirmwareCheck).map(Instant::ofEpochMilli),
                 Optional.ofNullable(node.modelName),
-                new NodeResources(
-                        node.resources.vcpu,
-                        node.resources.memoryGb,
-                        node.resources.diskGb,
-                        node.resources.bandwidthGbps,
-                        diskSpeedFromString(node.resources.diskSpeed),
-                        storageTypeFromString(node.resources.storageType)),
+                nodeResources(node.resources),
+                nodeResources(node.realResources),
                 node.ipAddresses,
                 node.additionalIpAddresses,
                 reports,
+                events,
                 Optional.ofNullable(node.parentHostname),
                 Optional.ofNullable(node.archiveUri).map(URI::create),
-                Optional.ofNullable(node.exclusiveTo).map(ApplicationId::fromSerializedForm));
+                Optional.ofNullable(node.exclusiveTo).map(ApplicationId::fromSerializedForm),
+                trustStore);
+    }
+
+    private static NodeResources nodeResources(NodeRepositoryNode.NodeResources nodeResources) {
+        return new NodeResources(
+                nodeResources.vcpu,
+                nodeResources.memoryGb,
+                nodeResources.diskGb,
+                nodeResources.bandwidthGbps,
+                diskSpeedFromString(nodeResources.diskSpeed),
+                storageTypeFromString(nodeResources.storageType));
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromString(String diskSpeed) {
@@ -260,7 +276,9 @@ public class RealNodeRepository implements NodeRepository {
         node.vespaVersion = nodeAttributes.getVespaVersion().map(Version::toFullString).orElse(null);
         node.currentOsVersion = nodeAttributes.getCurrentOsVersion().map(Version::toFullString).orElse(null);
         node.currentFirmwareCheck = nodeAttributes.getCurrentFirmwareCheck().map(Instant::toEpochMilli).orElse(null);
-
+        node.trustStore = nodeAttributes.getTrustStore().stream()
+                .map(item -> new NodeRepositoryNode.TrustStoreItem(item.fingerprint(), item.expiry().toEpochMilli()))
+                .collect(Collectors.toList());
         Map<String, JsonNode> reports = nodeAttributes.getReports();
         node.reports = reports == null || reports.isEmpty() ? null : new TreeMap<>(reports);
 

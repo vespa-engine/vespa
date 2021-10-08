@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributesconfigscout.h"
 #include "attribute_type_matcher.h"
@@ -28,6 +28,7 @@ AttributesConfigScout::adjust(AttributesConfig::Attribute &attr,
     attr.enableonlybitvector = liveAttr.enableonlybitvector;
     attr.fastsearch = liveAttr.fastsearch;
     attr.huge = liveAttr.huge;
+    attr.paged = liveAttr.paged;
     // Note: Predicate attributes only handle changes for the dense-posting-list-threshold config.
     attr.densepostinglistthreshold = liveAttr.densepostinglistthreshold;
     attr.distancemetric = liveAttr.distancemetric;

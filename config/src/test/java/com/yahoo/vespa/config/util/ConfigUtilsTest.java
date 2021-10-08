@@ -1,9 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.util;
 
 import com.yahoo.collections.Tuple2;
 import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.io.IOUtils;
+import com.yahoo.text.Utf8;
+import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import org.junit.Test;
@@ -14,9 +16,8 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -39,7 +40,7 @@ public class ConfigUtilsTest {
         lines.add("double b default=1.0 range = [,]");
         lines.add("collectiontype      enum { SINGLE, ARRAY, WEIGHTEDSET } default=SINGLE");
 
-        assertThat(ConfigUtils.getDefMd5(lines), is(expectedMd5));
+        assertEquals(expectedMd5, ConfigUtils.getDefMd5(lines));
 
         lines.clear();
 
@@ -55,79 +56,90 @@ public class ConfigUtilsTest {
                 "100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]");
         // check that space before commas are treated correctly
         lines.add("collectiontype      enum { SINGLE , ARRAY , WEIGHTEDSET } default=SINGLE");
-        assertThat(ConfigUtils.getDefMd5(lines), is(expectedMd5));
+        assertEquals(expectedMd5, ConfigUtils.getDefMd5(lines));
     }
 
     @Test
-    public void testGetMd5WithComment() {
+    public void testGetChecksumWithComment() {
         String expectedMd5 = "4395db1dfbd977c4d74190d2d23396e2";
+        String expectedXxhash64 = "4395db1dfbd977c4d74190d2d23396e2";
         List<String> lines = new ArrayList<>();
 
         // Create normalized lines
         lines.add("foo=\"1#hello\"");
         lines.add(""); //empty line should not affect md5sum
 
-        assertThat(getMd5(lines), is(expectedMd5));
+        assertEquals(expectedMd5, getMd5(lines));
+        assertEquals(expectedXxhash64, getMd5(lines));
 
         lines.clear();
 
         // Check that comment character in string leads to a different md5 than the original
         lines.add("foo=\"1#hello and some more\"");
         String md5 = getMd5(lines);
-        assertThat(md5, is(not(expectedMd5)));
+        String xxhash64 = getXxhash64(lines);
+        assertNotEquals(expectedMd5, md5);
+        assertNotEquals(expectedXxhash64, xxhash64);
 
-        // Check that added characters aft comment character in string leads to a different md5 than above
+        // Check that added characters after comment character in string leads to a different md5 than above
         lines.add("foo=\"1#hello and some more and even more\"");
-        assertThat(getMd5(lines), is(not(md5)));
+        assertNotEquals(md5, getMd5(lines));
+        assertNotEquals(xxhash64, getXxhash64(lines));
     }
 
     @Test
     public void testGetMd5OfPayload() {
         String expectedMd5 = "c9246ed8c8ab55b1c463c501c84075e6";
+        String expectedXxhash64 = "b89f402d53626490";
         String expectedChangedMd5 = "f6f81062ef5f024f1912798490ba7dfc";
+        String expectedChangedXxhash64 = "e8c361d384889610";
+
         ConfigPayload payload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
-        System.out.println(payload);
-        assertThat(ConfigUtils.getMd5(payload), is(expectedMd5));
+        assertEquals(expectedMd5, ConfigUtils.getMd5(payload));
+        assertEquals(expectedXxhash64, ConfigUtils.getXxhash64(payload));
         payload.getSlime().get().setString("fabio", "bar");
-        System.out.println(payload);
-        assertThat(ConfigUtils.getMd5(payload), is(expectedChangedMd5));
+        assertEquals(expectedChangedMd5, ConfigUtils.getMd5(payload));
+        assertEquals(expectedChangedXxhash64, ConfigUtils.getXxhash64(payload));
     }
 
     @Test
     public void testGetMd5OfString() {
         String expectedMd5 = "c9246ed8c8ab55b1c463c501c84075e6";
+        String expectedXxhash64 = "b89f402d53626490";
         String expectedChangedMd5 = "f6f81062ef5f024f1912798490ba7dfc";
+        String expectedChangedXxhash64 = "e8c361d384889610";
+
         ConfigPayload payload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
-        System.out.println(payload);
-        assertThat(ConfigUtils.getMd5(payload.toString(true)), is(expectedMd5));
+        assertEquals(expectedMd5, ConfigUtils.getMd5(payload.toString(true)));
+        assertEquals(expectedXxhash64, ConfigUtils.getXxhash64(new Utf8Array(Utf8.toBytes(payload.toString(true)))));
         payload.getSlime().get().setString("fabio", "bar");
-        System.out.println(payload);
-        assertThat(ConfigUtils.getMd5(payload.toString(true)), is(expectedChangedMd5));
+        assertEquals(expectedChangedMd5, ConfigUtils.getMd5(payload.toString(true)));
+        assertEquals(expectedChangedXxhash64, ConfigUtils.getXxhash64(new Utf8Array(Utf8.toBytes(payload.toString(true)))));
     }
 
     @Test
     public void testStripSpaces() {
-        assertThat(ConfigUtils.stripSpaces("a   b"), is("a b"));
-        assertThat(ConfigUtils.stripSpaces("\"a   b\""), is("\"a   b\""));
-        assertThat(ConfigUtils.stripSpaces("a   b   \"a   b\""), is("a b \"a   b\""));
-        assertThat(ConfigUtils.stripSpaces("a b"), is("a b"));
+        assertEquals("a b", ConfigUtils.stripSpaces("a   b"));
+        assertEquals("\"a   b\"", ConfigUtils.stripSpaces("\"a   b\""));
+        assertEquals("a b \"a   b\"", ConfigUtils.stripSpaces("a   b   \"a   b\""));
+        assertEquals("a b", ConfigUtils.stripSpaces("a b"));
     }
 
     @Test
     public void testGetNamespace() {
         StringReader reader = new StringReader("version=1\nnamespace=a\nint a default=0");
-        assertThat(ConfigUtils.getDefNamespace(reader), is("a"));
+        assertEquals("a", ConfigUtils.getDefNamespace(reader));
         // namespace first
         reader = new StringReader("namespace=a\nversion=1\nint a default=0");
-        assertThat(ConfigUtils.getDefNamespace(reader), is("a"));
+        assertEquals("a", ConfigUtils.getDefNamespace(reader));
 
         // No namespace
         reader = new StringReader("version=1\nint a default=0");
-        assertThat(ConfigUtils.getDefNamespace(reader), is(""));
+        assertEquals("", ConfigUtils.getDefNamespace(reader));
 
         // comment lines
         reader = new StringReader("#comment\nversion=1\n#comment2\nint a default=0");
-        assertThat(ConfigUtils.getDefNamespace(reader), is(""));
+        assertEquals("", ConfigUtils.getDefNamespace(reader));
 
         try {
             ConfigUtils.getDefNamespace(null);
@@ -141,46 +153,46 @@ public class ConfigUtilsTest {
     public void testNamespaceDotNames() {
         String namespaceDotName = "foo.bar";
         Tuple2<String, String> tuple = ConfigUtils.getNameAndNamespaceFromString(namespaceDotName);
-        assertThat(tuple.first, is("bar"));
-        assertThat(tuple.second, is("foo"));
+        assertEquals("bar", tuple.first);
+        assertEquals("foo", tuple.second);
 
         namespaceDotName = "foo.baz.bar";
         tuple = ConfigUtils.getNameAndNamespaceFromString(namespaceDotName);
-        assertThat(tuple.first, is("bar"));
-        assertThat(tuple.second, is("foo.baz"));
+        assertEquals("bar", tuple.first);
+        assertEquals("foo.baz", tuple.second);
 
         // no namespace
         namespaceDotName = "bar";
         tuple = ConfigUtils.getNameAndNamespaceFromString(namespaceDotName);
-        assertThat(tuple.first, is("bar"));
-        assertThat(tuple.second, is(""));
+        assertEquals("bar", tuple.first);
+        assertEquals("", tuple.second);
 
         // no name
         namespaceDotName = "foo.";
         tuple = ConfigUtils.getNameAndNamespaceFromString(namespaceDotName);
-        assertThat(tuple.first, is(""));
-        assertThat(tuple.second, is("foo"));
+        assertEquals("", tuple.first);
+        assertEquals("foo", tuple.second);
 
         // no namespace
         namespaceDotName = ".bar";
         tuple = ConfigUtils.getNameAndNamespaceFromString(namespaceDotName);
-        assertThat(tuple.first, is("bar"));
-        assertThat(tuple.second, is(""));
+        assertEquals("bar", tuple.first);
+        assertEquals("", tuple.second);
     }
 
     @Test
     public void testCreateConfigDefinitionKeyFromZKString() {
         ConfigDefinitionKey def1 = ConfigUtils.createConfigDefinitionKeyFromZKString("bar.foo,1");
-        assertThat(def1.getName(), is("foo"));
-        assertThat(def1.getNamespace(), is("bar"));
+        assertEquals("foo", def1.getName());
+        assertEquals("bar", def1.getNamespace());
 
         ConfigDefinitionKey def2 = ConfigUtils.createConfigDefinitionKeyFromZKString("bar.foo,");
-        assertThat(def2.getName(), is("foo"));
-        assertThat(def2.getNamespace(), is("bar"));
+        assertEquals("foo", def2.getName());
+        assertEquals("bar", def2.getNamespace());
 
         ConfigDefinitionKey def3 = ConfigUtils.createConfigDefinitionKeyFromZKString("bar.foo");
-        assertThat(def3.getName(), is("foo"));
-        assertThat(def3.getNamespace(), is("bar"));
+        assertEquals("foo", def3.getName());
+        assertEquals("bar", def3.getNamespace());
     }
 
     @Test
@@ -192,8 +204,8 @@ public class ConfigUtilsTest {
             e.printStackTrace();
             fail();
         }
-        assertThat(def.getName(), is("app"));
-        assertThat(def.getNamespace(), is("foo"));
+        assertEquals("app", def.getName());
+        assertEquals("foo", def.getNamespace());
 
         try {
             def = ConfigUtils.createConfigDefinitionKeyFromDefFile(new File("src/test/resources/configs/def-files/testnamespace.def"));
@@ -201,8 +213,8 @@ public class ConfigUtilsTest {
             e.printStackTrace();
             fail();
         }
-        assertThat(def.getName(), is("testnamespace"));
-        assertThat(def.getNamespace(), is("foo"));
+        assertEquals("testnamespace", def.getName());
+        assertEquals("foo", def.getNamespace());
 
         try {
             byte[] content = IOUtils.readFileBytes(new File("src/test/resources/configs/def-files/app.def"));
@@ -210,8 +222,8 @@ public class ConfigUtilsTest {
         } catch (IOException e) {
             fail();
         }
-        assertThat(def.getName(), is("app"));
-        assertThat(def.getNamespace(), is("foo"));
+        assertEquals("app", def.getName());
+        assertEquals("foo", def.getNamespace());
 
         try {
             byte[] content = IOUtils.readFileBytes(new File("src/test/resources/configs/def-files-nogen/app.def"));
@@ -219,8 +231,8 @@ public class ConfigUtilsTest {
         } catch (IOException e) {
             fail();
         }
-        assertThat(def.getName(), is("app"));
-        assertThat(def.getNamespace(), is("mynamespace"));
+        assertEquals("app", def.getName());
+        assertEquals("mynamespace", def.getNamespace());
     }
 
     /**
@@ -231,6 +243,21 @@ public class ConfigUtilsTest {
      * @return the Md5 hash of the list, with lowercase letters
      */
     private static String getMd5(List<String> lines) {
+        return ConfigUtils.getMd5(skipEmptyLines(lines));
+    }
+
+    /**
+     * Computes xxhash64 of a list of strings. The only change to input lines before
+     * computing xxhash64 is to skip empty lines.
+     *
+     * @param lines A list of lines
+     * @return the xxhash64 of the list, with lowercase letters
+     */
+    private static String getXxhash64(List<String> lines) {
+        return ConfigUtils.getXxhash64(new Utf8Array(Utf8.toBytes(skipEmptyLines(lines))));
+    }
+
+    private static String skipEmptyLines(List<String> lines) {
         StringBuilder sb = new StringBuilder();
         for (String line : lines) {
             // Remove empty lines
@@ -239,7 +266,7 @@ public class ConfigUtilsTest {
                 sb.append(line).append("\n");
             }
         }
-        return ConfigUtils.getMd5(sb.toString());
+        return sb.toString();
     }
 
 }

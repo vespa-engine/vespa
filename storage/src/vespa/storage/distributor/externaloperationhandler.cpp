@@ -1,8 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucket_space_distribution_context.h"
 #include "crypto_uuid_generator.h"
-#include "distributor.h"
+#include "top_level_distributor.h"
 #include "distributor_bucket_space.h"
 #include "distributor_bucket_space_repo.h"
 #include "externaloperationhandler.h"

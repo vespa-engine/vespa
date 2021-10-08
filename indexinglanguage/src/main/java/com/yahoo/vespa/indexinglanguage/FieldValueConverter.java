@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.DataType;
@@ -127,6 +127,7 @@ public abstract class FieldValueConverter {
         }
         WeightedSet ret = DataType.getWeightedSet(nextType, val.getDataType().createIfNonExistent(),
                                                   val.getDataType().removeIfZero()).createFieldValue();
+
         for (Map.Entry<FieldValue, Integer> entry : next.entrySet()) {
             ret.put(entry.getKey(), entry.getValue());
         }
@@ -151,8 +152,8 @@ public abstract class FieldValueConverter {
      * Returns whether or not the given {@link FieldValue} should be converted. If this method returns <em>false</em>,
      * the converter will proceed to traverse the value itself to see if its internal can be converted.
      *
-     * @param value The value to check.
-     * @return True to convert, false to traverse.
+     * @param value the value to check
+     * @return true to convert, false to traverse
      */
     protected abstract boolean shouldConvert(FieldValue value);
 
@@ -160,8 +161,9 @@ public abstract class FieldValueConverter {
      * Converts the given value. It is IMPERATIVE that the implementation of this method DOES NOT mutate the given
      * {@link FieldValue} in place, as that can cause SERIOUS inconsistencies in the parent structures.
      *
-     * @param value The value to convert.
-     * @return The value to replace the old.
+     * @param value the value to convert
+     * @return the value to replace the old
      */
     protected abstract FieldValue doConvert(FieldValue value);
+
 }

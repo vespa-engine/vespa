@@ -1,7 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
@@ -34,7 +36,7 @@ public abstract class AbstractExportingTestCase extends SchemaTestCase {
         toDir.mkdirs();
         deleteContent(toDir);
 
-        SearchBuilder builder = SearchBuilder.createFromDirectory(searchDefRoot + dirName + "/", logger, properties);
+        SearchBuilder builder = SearchBuilder.createFromDirectory(searchDefRoot + dirName + "/", new MockFileRegistry(), logger, properties);
         return derive(dirName, searchDefinitionName, properties, builder, logger);
     }
 
@@ -48,15 +50,14 @@ public abstract class AbstractExportingTestCase extends SchemaTestCase {
                                                                properties,
                                                                builder.getRankProfileRegistry(),
                                                                builder.getQueryProfileRegistry(),
-                                                               new ImportedMlModels());
+                                                               new ImportedMlModels(), new InThreadExecutorService());
         return export(dirName, builder, config);
     }
 
     DerivedConfiguration derive(String dirName, SearchBuilder builder, Search search) throws IOException {
         DerivedConfiguration config = new DerivedConfiguration(search,
                                                                builder.getRankProfileRegistry(),
-                                                               builder.getQueryProfileRegistry(),
-                                                               new ImportedMlModels());
+                                                               builder.getQueryProfileRegistry());
         return export(dirName, builder, config);
     }
 

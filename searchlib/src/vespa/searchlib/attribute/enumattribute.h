@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -64,7 +64,7 @@ protected:
     void insertNewUniqueValues(EnumStoreBatchUpdater& updater);
     virtual void considerAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter) = 0;
     vespalib::MemoryUsage getEnumStoreValuesMemoryUsage() const override;
-    vespalib::AddressSpace getEnumStoreAddressSpaceUsage() const override;
+    void populate_address_space_usage(AddressSpaceUsage& usage) const override;
 public:
     EnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
     ~EnumAttribute();

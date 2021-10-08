@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Request;
@@ -71,6 +71,11 @@ class ReferenceCountingRequestHandler implements DelegatedRequestHandler {
     }
 
     @Override
+    public ResourceReference refer(Object context) {
+        return delegate.refer(context);
+    }
+
+    @Override
     public void release() {
         delegate.release();
     }
@@ -97,7 +102,7 @@ class ReferenceCountingRequestHandler implements DelegatedRequestHandler {
             Objects.requireNonNull(delegate, "delegate");
             this.request = request;
             this.delegate = delegate;
-            this.requestReference = request.refer();
+            this.requestReference = request.refer(this);
         }
 
         @Override
@@ -143,7 +148,7 @@ class ReferenceCountingRequestHandler implements DelegatedRequestHandler {
             Objects.requireNonNull(delegate, "delegate");
             this.request = request;
             this.delegate = delegate;
-            this.requestReference = request.refer();
+            this.requestReference = request.refer(this);
         }
 
         @Override
@@ -200,7 +205,7 @@ class ReferenceCountingRequestHandler implements DelegatedRequestHandler {
 
         public ReferenceCountingCompletionHandler(SharedResource request, CompletionHandler delegate) {
             this.delegate = delegate;
-            this.requestReference = request.refer();
+            this.requestReference = request.refer(this);
         }
 
         @Override

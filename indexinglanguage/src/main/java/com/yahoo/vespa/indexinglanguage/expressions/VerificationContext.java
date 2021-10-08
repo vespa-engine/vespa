@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -14,6 +14,7 @@ public class VerificationContext implements FieldTypeAdapter, Cloneable {
     private final Map<String, DataType> variables = new HashMap<String, DataType>();
     private final FieldTypeAdapter adapter;
     private DataType value;
+    private String outputField;
 
     public VerificationContext() {
         this.adapter = null;
@@ -49,19 +50,30 @@ public class VerificationContext implements FieldTypeAdapter, Cloneable {
         return this;
     }
 
-    public DataType getValue() {
+    public DataType getValueType() {
         return value;
     }
 
-    public VerificationContext setValue(DataType value) {
+    /** Sets the output value type */
+    public VerificationContext setValueType(DataType value) {
         this.value = value;
         return this;
     }
+
+    /** Sets the name of the (last) output field of the statement this is executed as a part of */
+    public void setOutputField(String outputField) { this.outputField = outputField; }
+
+    /**
+     * Returns the name of the (last) output field of the statement this is executed as a part of,
+     * or null if none or not yet verified
+     */
+    public String getOutputField() { return outputField; }
 
     public VerificationContext clear() {
         variables.clear();
         value = null;
         return this;
     }
+
 }
 

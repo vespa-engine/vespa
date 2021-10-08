@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentdb_tagged_metrics.h"
 #include <vespa/vespalib/util/stringfmt.h>
@@ -91,11 +91,9 @@ DocumentDBTaggedMetrics::AttributeMetrics::AttributeMetrics(MetricSet *parent)
 DocumentDBTaggedMetrics::AttributeMetrics::~AttributeMetrics() = default;
 
 DocumentDBTaggedMetrics::AttributeMetrics::ResourceUsageMetrics::ResourceUsageMetrics(MetricSet *parent)
-    : MetricSet("resource_usage", {}, "Usage metrics for various attribute vector resources", parent),
-      enumStore("enum_store", {}, "The highest relative amount of enum store address space used among "
-              "all enumerated attribute vectors in this document db (value in the range [0, 1])", this),
-      multiValue("multi_value", {}, "The highest relative amount of multi-value address space used among "
-              "all multi-value attribute vectors in this document db (value in the range [0, 1])", this),
+    : MetricSet("resource_usage", {}, "Metrics for various attribute vector resources usage", parent),
+      address_space("address_space", {}, "The max relative address space used among "
+              "components in all attribute vectors in this document db (value in the range [0, 1])", this),
       feedingBlocked("feeding_blocked", {}, "Whether feeding is blocked due to attribute resource limits being reached (value is either 0 or 1)", this)
 {
 }

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.text.Utf8;
@@ -45,9 +45,10 @@ public class SessionStateWatcher {
 
     private synchronized void sessionStatusChanged(Status newStatus) {
         long sessionId = session.getSessionId();
+
         switch (newStatus) {
             case NEW:
-            case NONE:
+            case UNKNOWN:
                 break;
             case DELETE:
                 sessionRepository.deactivateAndUpdateCache(session);
@@ -86,15 +87,21 @@ public class SessionStateWatcher {
 
     private void nodeChanged() {
         zkWatcherExecutor.execute(() -> {
-            Status newStatus = Status.NONE;
+            Status newStatus = Status.UNKNOWN;
             try {
                 ChildData node = fileCache.getCurrentData();
                 if (node != null) {
                     newStatus = Status.parse(Utf8.toString(node.getData()));
-                    if (log.isLoggable(Level.FINE))
-                        log.log(Level.FINE, session.logPre() + "Session change: Session "
-                                            + session.getSessionId() + " changed status to " + newStatus.name());
+
+                    String debugMessage = log.isLoggable(Level.FINE) ?
+                            session.logPre() + "Session " + session.getSessionId()
+                            + " changed status to " + newStatus.name() :
+                            null;
+                    if (debugMessage != null) log.fine(debugMessage);
+
                     sessionStatusChanged(newStatus);
+
+                    if (debugMessage != null) log.fine(debugMessage + ": Done");
                 }
             } catch (Exception e) {
                 log.log(Level.WARNING, session.logPre() + "Error handling session change to " +

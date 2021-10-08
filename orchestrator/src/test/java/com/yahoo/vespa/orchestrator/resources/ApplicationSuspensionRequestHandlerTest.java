@@ -1,4 +1,4 @@
-package com.yahoo.vespa.orchestrator.resources;// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.orchestrator.resources;// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -44,11 +44,9 @@ class ApplicationSuspensionRequestHandlerTest {
     void createHandler() {
         DummyServiceMonitor serviceMonitor = new DummyServiceMonitor();
         Orchestrator orchestrator = new OrchestratorImpl(
-                new ClusterControllerClientFactoryMock(),
+                new OrchestratorConfig(new OrchestratorConfig.Builder()), new ConfigserverConfig(new ConfigserverConfig.Builder()), new ClusterControllerClientFactoryMock(),
                 new ZkStatusService(new MockCurator(), new MockMetric(), new SystemTimer(), serviceMonitor),
-                new OrchestratorConfig(new OrchestratorConfig.Builder()),
                 serviceMonitor,
-                new ConfigserverConfig(new ConfigserverConfig.Builder()),
                 new InMemoryFlagSource(),
                 Zone.defaultZone());
         var handler = new ApplicationSuspensionRequestHandler(RestApiTestDriver.createHandlerTestContext(), orchestrator);

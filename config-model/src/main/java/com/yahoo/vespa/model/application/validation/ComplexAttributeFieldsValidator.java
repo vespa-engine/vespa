@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.deploy.DeployState;
@@ -48,7 +48,8 @@ public class ComplexAttributeFieldsValidator extends Validator {
         if (!unsupportedFields.isEmpty()) {
             throw new IllegalArgumentException(
                     String.format("For cluster '%s', search '%s': The following complex fields do not support using struct field attributes: %s. " +
-                                  "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types",
+                                  "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types. " +
+                                  "The supported primitive types are: byte, int, long, float, double and string",
                             clusterName, search.getName(), unsupportedFields));
         }
     }

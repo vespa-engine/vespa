@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -24,8 +24,8 @@ public final class GetFieldExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getValue();
         if (!(input instanceof StructuredFieldValue)) {
             throw new IllegalArgumentException("Expected structured input, got " + input.getDataType().getName() + ".");
         }
@@ -35,12 +35,12 @@ public final class GetFieldExpression extends Expression {
             throw new IllegalArgumentException("Field '" + fieldName + "' not found in struct type '" +
                                                struct.getDataType().getName() + "'");
         }
-        ctx.setValue(struct.getFieldValue(field));
+        context.setValue(struct.getFieldValue(field));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+        DataType input = context.getValueType();
         if (!(input instanceof StructuredDataType)) {
             throw new VerificationException(this, "Expected structured input, got " + input.getName() + ".");
         }
@@ -49,7 +49,7 @@ public final class GetFieldExpression extends Expression {
             throw new VerificationException(this, "Field '" + fieldName + "' not found in struct type '" +
                                                   input.getName() + "'");
         }
-        context.setValue(field.getDataType());
+        context.setValueType(field.getDataType());
     }
 
     @Override

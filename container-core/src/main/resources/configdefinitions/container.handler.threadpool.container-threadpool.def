@@ -1,19 +1,22 @@
-# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 namespace=container.handler.threadpool
 
 ## Maximum number of thread in the thread pool
 ## 0 is translated to vcpu*4
+## Negative value is interpreted as scale factor ( vcpu*abs(maxThreads) )
 maxThreads int default=0
 
 ## Minimum number of thread in the thread pool
 ## 0 is translated to vcpu*2
+## Negative value is interpreted as scale factor ( vcpu*abs(minThreads) )
 minThreads int default=0
 
 ## The number of seconds that excess idle threads will wait for new tasks before terminating
 keepAliveTime double default=5.0
 
 ## Max queue size
+## Negative value is interpreted as scale factor ( effectiveMaxThreads*abs(queueSize) )
 queueSize int default=0
 
 ## The max time the container tolerates having no threads available before it shuts down to

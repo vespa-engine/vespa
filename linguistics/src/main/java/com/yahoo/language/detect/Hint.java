@@ -1,10 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.detect;
 
 /**
- * <p>A hint that can be given to a {@link Detector}.</p>
+ * A hint that can be given to a {@link Detector}.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class Hint {
 
@@ -35,4 +35,5 @@ public class Hint {
     public static Hint newInstance(String market, String country) {
         return new Hint(market, country);
     }
+
 }

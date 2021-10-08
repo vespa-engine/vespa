@@ -6,7 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -167,7 +167,7 @@ public class UpgraderTest {
         // --- Failing application is repaired by changing the application, causing confidence to move above 'high' threshold
         // Deploy application change
         default0.submit(applicationPackage("default"));
-        default0.jobAborted(stagingTest);
+        default0.triggerJobs().jobAborted(stagingTest);
         default0.deploy();
 
         tester.controllerTester().computeVersionStatus();
@@ -232,7 +232,7 @@ public class UpgraderTest {
         // State: Default applications started upgrading to version5
         tester.clock().advance(Duration.ofHours(1));
         tester.upgrader().maintain();
-        default3.failDeployment(stagingTest);
+        default3.triggerJobs().jobAborted(stagingTest);
         default0.runJob(systemTest)
                 .failDeployment(stagingTest);
         default1.runJob(systemTest)

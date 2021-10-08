@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.deploy.DeployState;
@@ -93,7 +93,8 @@ public class QuotaValidator extends Validator {
 
     private void throwIfBudgetExceeded(double spend, BigDecimal budget, SystemName systemName) {
         if (budget.doubleValue() < spend) {
-            throwBudgetException("Please free up some capacity! This deployment's quota use ($%.2f) exceeds reserved quota ($%.2f)!", spend, budget, systemName);
+            throw new IllegalArgumentException((systemName.equals(SystemName.Public) ? "" : systemName.value() + ": ") +
+                    "Deployment would make your tenant exceed its quota and has been blocked!  Please contact support to update your plan.");
         }
     }
 

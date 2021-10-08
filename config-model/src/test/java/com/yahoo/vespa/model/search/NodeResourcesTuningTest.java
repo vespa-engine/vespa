@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.collections.Pair;
@@ -21,7 +21,7 @@ import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
 public class NodeResourcesTuningTest {
 
     private static final double delta = 0.00001;
-    private static final double combinedFactor = 1 - 17.0/100;
+    private static final double combinedFactor = 1 - 18.0/100;
 
     @Test
     public void require_that_hwinfo_disk_size_is_set() {

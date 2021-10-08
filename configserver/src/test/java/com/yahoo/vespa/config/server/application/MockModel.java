@@ -1,17 +1,15 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
-import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
 import java.util.Arrays;
@@ -90,11 +88,6 @@ public class MockModel implements Model {
 
     @Override
     public Set<String> allConfigIds() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void distributeFiles(FileDistribution fileDistribution) {
         throw new UnsupportedOperationException();
     }
 

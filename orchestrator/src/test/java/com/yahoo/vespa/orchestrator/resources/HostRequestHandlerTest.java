@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.resources;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -79,7 +79,7 @@ class HostRequestHandlerTest {
     private static final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
     private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = new ZkStatusService(
             new MockCurator(), mock(Metric.class), new TestTimer(), new DummyAntiServiceMonitor());
-    private static final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, clock);
+    private static final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, 5, clock);
 
     static {
         when(serviceMonitor.getApplication(any(HostName.class)))

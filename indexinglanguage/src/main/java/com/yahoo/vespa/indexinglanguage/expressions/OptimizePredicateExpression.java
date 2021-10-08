@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
@@ -30,16 +30,16 @@ public final class OptimizePredicateExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        PredicateFieldValue predicate = ((PredicateFieldValue)ctx.getValue()).clone();
-        IntegerFieldValue arity = (IntegerFieldValue)ctx.getVariable("arity");
-        LongFieldValue lower_bound = (LongFieldValue)ctx.getVariable("lower_bound");
-        LongFieldValue upper_bound = (LongFieldValue)ctx.getVariable("upper_bound");
+    protected void doExecute(ExecutionContext context) {
+        PredicateFieldValue predicate = ((PredicateFieldValue) context.getValue()).clone();
+        IntegerFieldValue arity = (IntegerFieldValue) context.getVariable("arity");
+        LongFieldValue lower_bound = (LongFieldValue) context.getVariable("lower_bound");
+        LongFieldValue upper_bound = (LongFieldValue) context.getVariable("upper_bound");
         Long lower = lower_bound != null? lower_bound.getLong() : null;
         Long upper = upper_bound != null? upper_bound.getLong() : null;
         PredicateOptions options = new PredicateOptions(arity.getInteger(), lower, upper);
         predicate.setPredicate(optimizer.process(predicate.getPredicate(), options));
-        ctx.setValue(predicate);
+        context.setValue(predicate);
     }
 
     @Override
@@ -47,7 +47,7 @@ public final class OptimizePredicateExpression extends Expression {
         checkVariable(context, "arity", DataType.INT, true);
         checkVariable(context, "lower_bound", DataType.LONG, false);
         checkVariable(context, "upper_bound", DataType.LONG, false);
-        context.setValue(DataType.PREDICATE);
+        context.setValueType(DataType.PREDICATE);
     }
 
     private void checkVariable(VerificationContext ctx, String var, DataType type, boolean required) {

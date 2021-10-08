@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -8,6 +8,7 @@
 #include <vector>
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/util/time.h>
 
 class FNET_TransportThread;
 class FastOS_ThreadPool;
@@ -17,6 +18,29 @@ class FNET_IServerAdapter;
 class FNET_IPacketHandler;
 class FNET_Scheduler;
 
+namespace fnet {
+
+/**
+ * Low-level abstraction for event-loop time management. The
+ * event_timeout function returns the timeout to be used when waiting
+ * for io-events. The current_time function returns the current
+ * time. This interface may be implemented to control both how time is
+ * spent (event_timeout) as well as how time is observed
+ * (current_time). The default implementation will use
+ * FNET_Scheduler::tick_ms as event timeout and
+ * vespalib::steady_clock::now() as current time.
+ **/
+struct TimeTools {
+    using SP = std::shared_ptr<TimeTools>;
+    virtual vespalib::duration event_timeout() const = 0;
+    virtual vespalib::steady_time current_time() const = 0;
+    virtual ~TimeTools() = default;
+    static TimeTools::SP make_debug(vespalib::duration event_timeout,
+                                    std::function<vespalib::steady_time()> current_time);
+};
+
+} // fnet
+
 class TransportConfig {
 public:
     TransportConfig() : TransportConfig(1) {}
@@ -24,6 +48,7 @@ public:
     ~TransportConfig();
     vespalib::AsyncResolver::SP resolver() const;
     vespalib::CryptoEngine::SP crypto() const;
+    fnet::TimeTools::SP time_tools() const;
     TransportConfig & resolver(vespalib::AsyncResolver::SP resolver_in) {
         _resolver = std::move(resolver_in);
         return *this;
@@ -32,6 +57,11 @@ public:
         _crypto = std::move(crypto_in);
         return *this;
     }
+    TransportConfig &time_tools(fnet::TimeTools::SP time_tools_in) {
+        _time_tools = std::move(time_tools_in);
+        return *this;
+    }
+
     const FNET_Config & config() const { return _config; }
     uint32_t num_threads() const { return _num_threads; }
 
@@ -62,8 +92,10 @@ private:
     FNET_Config                 _config;
     vespalib::AsyncResolver::SP _resolver;
     vespalib::CryptoEngine::SP  _crypto;
+    fnet::TimeTools::SP          _time_tools;
     uint32_t                    _num_threads;
 };
+
 /**
  * This class represents the transport layer and handles a collection
  * of transport threads. Note: remember to shut down your transport
@@ -77,6 +109,7 @@ private:
 
     vespalib::AsyncResolver::SP _async_resolver;
     vespalib::CryptoEngine::SP  _crypto_engine;
+    fnet::TimeTools::SP _time_tools;
     std::unique_ptr<vespalib::SyncableThreadExecutor> _work_pool;
     Threads            _threads;
     const FNET_Config  _config;
@@ -91,7 +124,7 @@ public:
      * the current thread become the transport thread. Main may only
      * be called for single-threaded transports.
      **/
-    explicit FNET_Transport(TransportConfig config);
+    explicit FNET_Transport(const TransportConfig &config);
 
     explicit FNET_Transport(uint32_t num_threads)
         : FNET_Transport(TransportConfig(num_threads)) {}
@@ -100,6 +133,7 @@ public:
     ~FNET_Transport();
 
     const FNET_Config & getConfig() const { return _config; }
+    const fnet::TimeTools &time_tools() const { return *_time_tools; }
 
     /**
      * Try to execute the given task on the internal work pool
@@ -283,6 +317,26 @@ public:
      * @param pool threadpool that may be used to spawn new threads.
      **/
     bool Start(FastOS_ThreadPool *pool);
+
+    /**
+     * Capture transport threads. Used for testing purposes,
+     * preferably combined with a debug variant of TimeTools.
+     *
+     * After this function is called, the capture_hook will be called
+     * repeatedly as long as it returns true. The first time it
+     * returns false, appropriate cleanup will be performed and the
+     * capture_hook will never be called again; it detaches
+     * itself. All transport threads will be blocked while the
+     * capture_hook is called. Between calls to the capture_hook each
+     * transport thread will run its event loop exactly once, all
+     * pending work in the work pool will be performed and all pending
+     * dns lookups will be performed. Note that the capture_hook
+     * should detach itself by returning false before the transport
+     * itself is shut down.
+     *
+     * @param capture_hook called until it returns false
+     **/
+    void attach_capture_hook(std::function<bool()> capture_hook);
 
     //-------------------------------------------------------------------------
     // forward async IO Component operations to their owners

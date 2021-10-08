@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.collect.ImmutableMap;
@@ -82,13 +82,16 @@ public class RunSerializerTest {
         assertEquals(running, run.status());
         assertEquals(3, run.lastTestLogEntry());
         assertEquals(new Version(1, 2, 3), run.versions().targetPlatform());
-        ApplicationVersion applicationVersion = ApplicationVersion.from(new SourceRevision("git@github.com:user/repo.git",
-                                                                                           "master",
-                                                                                           "f00bad"),
+        ApplicationVersion applicationVersion = ApplicationVersion.from(Optional.of(new SourceRevision("git@github.com:user/repo.git",
+                                                                                                       "master",
+                                                                                                       "f00bad")),
                                                                         123,
-                                                                        "a@b",
-                                                                        Version.fromString("6.3.1"),
-                                                                        Instant.ofEpochMilli(100));
+                                                                        Optional.of("a@b"),
+                                                                        Optional.of(Version.fromString("6.3.1")),
+                                                                        Optional.of(Instant.ofEpochMilli(100)),
+                                                                        Optional.empty(),
+                                                                        Optional.empty(),
+                                                                        true);
         assertEquals(applicationVersion, run.versions().targetApplication());
         assertEquals(applicationVersion.authorEmail(), run.versions().targetApplication().authorEmail());
         assertEquals(applicationVersion.buildTime(), run.versions().targetApplication().buildTime());
@@ -148,6 +151,7 @@ public class RunSerializerTest {
         assertEquals(run.testerCertificate(), phoenix.testerCertificate());
         assertEquals(run.versions(), phoenix.versions());
         assertEquals(run.steps(), phoenix.steps());
+        assertEquals(run.isDryRun(), phoenix.isDryRun());
 
         Run initial = Run.initial(id, run.versions(), run.isRedeployment(), run.start(), JobProfile.production);
         assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial)));

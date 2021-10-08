@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
  * @class storage::MergeThrottler
  * @ingroup storageserver
@@ -172,6 +172,7 @@ private:
     RendezvousState _rendezvous;
     mutable std::chrono::steady_clock::time_point _throttle_until_time;
     std::chrono::steady_clock::duration _backpressure_duration;
+    bool _disable_queue_limits_for_chained_merges;
     bool _closing;
 public:
     /**
@@ -209,9 +210,9 @@ public:
     // For unit testing only
     const mbus::StaticThrottlePolicy& getThrottlePolicy() const { return *_throttlePolicy; }
     mbus::StaticThrottlePolicy& getThrottlePolicy() { return *_throttlePolicy; }
+    void set_disable_queue_limits_for_chained_merges(bool disable_limits) noexcept;
     // For unit testing only
-    std::mutex & getMonitor() { return _messageLock; }
-    std::mutex & getStateLock() { return _stateLock; }
+    std::mutex& getStateLock() { return _stateLock; }
 
     Metrics& getMetrics() { return *_metrics; }
     std::size_t getMaxQueueSize() const { return _maxQueueSize; }
@@ -261,7 +262,6 @@ private:
          * pairwise compares equally to the vector of sorted node indices
          */
         bool isChainCompleted() const;
-        std::string getSequenceString() const;
     };
 
     /**
@@ -347,6 +347,7 @@ private:
     bool merge_has_this_node_as_source_only_node(const api::MergeBucketCommand& cmd) const;
     bool backpressure_mode_active_no_lock() const;
     void backpressure_bounce_all_queued_merges(MessageGuard& guard);
+    bool allow_merge_with_queue_full(const api::MergeBucketCommand& cmd) const noexcept;
 
     void sendReply(const api::MergeBucketCommand& cmd,
                    const api::ReturnCode& result,

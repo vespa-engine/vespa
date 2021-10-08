@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
@@ -14,6 +14,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorStatusConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.HostResource;
@@ -30,9 +31,9 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.StorageNode;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
+import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.test.VespaModelTester;
-import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
@@ -215,7 +216,7 @@ public class ModelProvisioningTest {
         assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
         assertEquals("Nodes in container1", 1, model.getContainerClusters().get("container1").getContainers().size());
         assertEquals("Nodes in cluster without ID", 2, model.getContentClusters().get("content").getRootGroup().getNodes().size());
-        assertEquals("Heap size for container", 60, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+        assertEquals("Heap size for container", 70, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
         assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Type.content, model);
         assertProvisioned(1, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
         assertProvisioned(2, ClusterSpec.Id.from("content"), ClusterSpec.Type.content, model);
@@ -269,9 +270,9 @@ public class ModelProvisioningTest {
             assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
             assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
             assertEquals("Heap size is lowered with combined clusters",
-                         17, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+                         18, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
             assertEquals("Memory for proton is lowered to account for the jvm heap",
-                         (long)((3 - reservedMemoryGb) * (Math.pow(1024, 3)) * (1 - 0.17)), protonMemorySize(model.getContentClusters().get("content1")));
+                         (long)((3 - reservedMemoryGb) * (Math.pow(1024, 3)) * (1 - 0.18)), protonMemorySize(model.getContentClusters().get("content1")));
             assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
             assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
         }
@@ -305,7 +306,7 @@ public class ModelProvisioningTest {
             assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
             assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
             assertEquals("Heap size is normal",
-                         60, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+                         70, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
             assertEquals("Memory for proton is normal",
                          (long)((3 - reservedMemoryGb) * (Math.pow(1024, 3))), protonMemorySize(model.getContentClusters().get("content1")));
         }
@@ -1115,7 +1116,7 @@ public class ModelProvisioningTest {
         assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         ContentCluster cluster = model.getContentClusters().get("bar");
-        assertEquals(2, cluster.getStorageNodes().getChildren().size());
+        assertEquals(2, cluster.getStorageCluster().getChildren().size());
         assertEquals(1, cluster.redundancy().effectiveInitialRedundancy());
         assertEquals(1, cluster.redundancy().effectiveFinalRedundancy());
         assertEquals(1, cluster.redundancy().effectiveReadyCopies());
@@ -1618,7 +1619,11 @@ public class ModelProvisioningTest {
 
         assertEquals("Nodes in container cluster", 1, model.getContainerClusters().get("container1").getContainers().size());
         assertEquals("Nodes in content cluster (downscaled)", 1, model.getContentClusters().get("content").getRootGroup().getNodes().size());
+
         model.getConfig(new StorStatusConfig.Builder(), "default");
+        StorageCluster storage = model.getContentClusters().get("content").getStorageCluster();
+        StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
+        storage.getChildren().get("0").getConfig(builder);
     }
 
     @Test

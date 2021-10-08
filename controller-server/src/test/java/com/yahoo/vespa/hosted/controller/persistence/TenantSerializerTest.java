@@ -1,5 +1,5 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.persistence;// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.controller.persistence;// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.TenantName;
@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretSto
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfoAddress;
@@ -170,6 +171,16 @@ public class TenantSerializerTest {
         TenantInfo roundTripInfo = serializer.tenantInfoFromSlime(parentCursor.field("info"));
 
         assertEquals(fullInfo, roundTripInfo);
+    }
+
+    @Test
+    public void deleted_tenant() {
+        DeletedTenant tenant = new DeletedTenant(
+                TenantName.from("tenant1"), Instant.ofEpochMilli(1234L), Instant.ofEpochMilli(2345L));
+        DeletedTenant serialized = (DeletedTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+        assertEquals(tenant.name(), serialized.name());
+        assertEquals(tenant.createdAt(), serialized.createdAt());
+        assertEquals(tenant.deletedAt(), serialized.deletedAt());
     }
 
     private static Contact contact() {

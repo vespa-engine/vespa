@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // --------------------------------------------------------------------------------
 //
 // JavaCC options.
@@ -34,6 +34,7 @@ import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.language.process.StemMode;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.Linguistics;
 
 /**
@@ -44,6 +45,7 @@ public class IndexingParser {
 
     private String defaultFieldName;
     private Linguistics linguistics;
+    private Embedder embedder;
     private AnnotatorConfig annotatorCfg;
 
     public IndexingParser(String str) {
@@ -57,6 +59,11 @@ public class IndexingParser {
 
     public IndexingParser setLinguistics(Linguistics linguistics) {
         this.linguistics = linguistics;
+        return this;
+    }
+
+    public IndexingParser setEmbedder(Embedder embedder) {
+        this.embedder = embedder;
         return this;
     }
 
@@ -150,6 +157,7 @@ TOKEN :
     <CREATE_IF_NON_EXISTENT: "create_if_non_existent"> |
     <ECHO: "echo"> |
     <ELSE: "else"> |
+    <EMBED: "embed"> |
     <EXACT: "exact"> |
     <FLATTEN: "flatten"> |
     <FOR_EACH: "for_each"> |
@@ -275,6 +283,7 @@ Expression value() :
       val = base64EncodeExp()       |
       val = clearStateExp()         |
       val = echoExp()               |
+      val = embedExp()             |
       val = exactExp()              |
       val = flattenExp()            |
       val = forEachExp()            |
@@ -354,6 +363,12 @@ Expression echoExp() : { }
 {
     ( <ECHO> )
     { return new EchoExpression(); }
+}
+
+Expression embedExp() : { }
+{
+    ( <EMBED> )
+    { return new EmbedExpression(embedder); }
 }
 
 Expression exactExp() : { }
@@ -729,6 +744,7 @@ String identifier() :
         <ECHO>                   |
         <EXACT>                  |
         <ELSE>                   |
+        <EMBED>                 |
         <FLATTEN>                |
         <FOR_EACH>               |
         <GET_FIELD>              |
