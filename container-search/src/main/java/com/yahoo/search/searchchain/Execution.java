@@ -564,7 +564,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         }
         finally {
             previousProcessor();
-            onReturningFill(current, result, summaryClass);
+            onReturningFill(current, summaryClass);
             timer.sampleFillReturn(nextIndex(), context.getDetailedDiagnostics(), result);
         }
     }
@@ -575,7 +575,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         trace().trace("Invoke fill(" + summaryClass + ") on " + searcher, traceFillAt);
     }
 
-    private void onReturningFill(Searcher searcher, Result result, String summaryClass) {
+    private void onReturningFill(Searcher searcher, String summaryClass) {
         int traceFillAt = 5;
         if (trace().getTraceLevel() < traceFillAt) return;
         trace().trace("Return fill(" + summaryClass + ") on " + searcher, traceFillAt);
