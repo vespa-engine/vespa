@@ -49,17 +49,6 @@ public class ExecutionFactory extends AbstractComponent {
                             SpecialtokensConfig specialTokens,
                             Linguistics linguistics,
                             ComponentRegistry<Renderer> renderers,
-                            ContainerThreadPool threadpool) {
-        this(chainsConfig, indexInfo, clusters, searchers, specialTokens, linguistics, renderers, threadpool.executor());
-    }
-
-    public ExecutionFactory(ChainsConfig chainsConfig,
-                            IndexInfoConfig indexInfo,
-                            QrSearchersConfig clusters,
-                            ComponentRegistry<Searcher> searchers,
-                            SpecialtokensConfig specialTokens,
-                            Linguistics linguistics,
-                            ComponentRegistry<Renderer> renderers,
                             Executor executor) {
         this.searchChainRegistry = createSearchChainRegistry(searchers, chainsConfig);
         this.indexFacts = new IndexFacts(new IndexModel(indexInfo, clusters)).freeze();

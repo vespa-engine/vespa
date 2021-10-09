@@ -13,9 +13,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
-
-import static java.util.logging.Level.FINE;
 
 /**
  * @author Tony Vaagenes
@@ -23,8 +20,6 @@ import static java.util.logging.Level.FINE;
  * @author ollivir
  */
 public abstract class Node {
-
-    private final static Logger log = Logger.getLogger(Node.class.getName());
 
     private final ComponentId componentId;
     protected Optional<Object> instance = Optional.empty();
@@ -111,6 +106,11 @@ public abstract class Node {
             }
         }
         return !right.hasNext();
+    }
+
+    @Override
+    public String toString() {
+        return "Node{componentId=" + componentId + '}';
     }
 
     @Override
