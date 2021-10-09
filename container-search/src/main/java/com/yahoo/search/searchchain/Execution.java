@@ -123,7 +123,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             this.tokenRegistry = tokenRegistry;
             this.rendererRegistry = rendererRegistry;
             this.linguistics = linguistics;
-            this.executor = executor != null ? executor : Executors.newSingleThreadExecutor();
+            this.executor = executor;
         }
 
         /** @deprecated pass an executor */
@@ -135,7 +135,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
 
         /** Creates a context stub with no information. This is for unit testing. */
         public static Context createContextStub() {
-            return new Context(null, null, null, null, null, null);
+            return createContextStub(null);
         }
 
         /**
@@ -143,7 +143,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
          * initialized. This is for unit testing.
          */
         public static Context createContextStub(IndexFacts indexFacts) {
-            return new Context(null, indexFacts, null, null, null, null);
+            return createContextStub(null, indexFacts);
         }
 
         /**
@@ -151,7 +151,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
          * initialized. This is for unit testing.
          */
         public static Context createContextStub(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts) {
-            return new Context(searchChainRegistry, indexFacts, null, null, null, null);
+            return createContextStub(searchChainRegistry, indexFacts, null);
         }
 
         /**
@@ -159,7 +159,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
          * initialized. This is for unit testing.
          */
         public static Context createContextStub(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts, Linguistics linguistics) {
-            return new Context(searchChainRegistry, indexFacts, null, null, linguistics, null);
+            return new Context(searchChainRegistry, indexFacts, null, null, linguistics, Executors.newSingleThreadExecutor());
         }
 
         /**
