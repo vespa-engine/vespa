@@ -210,7 +210,6 @@ public class GroupingExecutor extends Searcher {
 
         // Perform multi-pass query to complete all grouping requests.
         Item origRoot = query.getModel().getQueryTree().getRoot();
-        int prePassErrors = query.errors().size();
         Result ret = null;
         Item baseRoot = origRoot;
         if (lastPass > 0) {
@@ -247,20 +246,15 @@ public class GroupingExecutor extends Searcher {
             }
             setGroupingList(query, passList);
             Result passResult = execution.search(query);
-            if (passResult.hits().getError() != null) {
-                if (firstPass) {
-                    if (passResult.hits().getErrorHit().errors().size() > prePassErrors ||
-                        passResult.hits().getErrorHit().errors().size() == 0) {
-                        return passResult;
-                    }
-                } else {
-                    return passResult;
-                }
-            }
             Map<Integer, Grouping> passGroupingMap = mergeGroupingResults(passResult);
             mergeGroupingMaps(groupingMap, passGroupingMap);
             if (firstPass) {
                 ret = passResult;
+            } else {
+                ErrorMessage err = passResult.hits().getError();
+                if (err != null) {
+                    ret.hits().addError(err);
+                }
             }
         }
         if (log.isLoggable(Level.FINE)) {
