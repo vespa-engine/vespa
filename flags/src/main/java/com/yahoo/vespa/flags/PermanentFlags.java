@@ -204,7 +204,7 @@ public class PermanentFlags {
             ZONE_ID, APPLICATION_ID
     );
 
-    // This must be set in a feature flag to avoid flickering between the new and old valud during config server upgrade
+    // This must be set in a feature flag to avoid flickering between the new and old value during config server upgrade
     public static final UnboundDoubleFlag HOST_MEMORY = defineDoubleFlag(
             "host-memory", 1.0,
             "The memory required by a hosts management processes.",
