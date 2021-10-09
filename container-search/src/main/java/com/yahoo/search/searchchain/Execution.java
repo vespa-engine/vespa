@@ -123,7 +123,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             this.tokenRegistry = tokenRegistry;
             this.rendererRegistry = rendererRegistry;
             this.linguistics = linguistics;
-            this.executor = executor != null ? executor : Executors.newSingleThreadExecutor();
+            this.executor = executor;
         }
 
         /** @deprecated pass an executor */
