@@ -201,7 +201,16 @@ public class PermanentFlags {
             "config-proxy-jvm-args", "",
             "Sets jvm args for config proxy (added at the end of startup command, will override existing ones)",
             "Takes effect on restart of Docker container",
-            ZONE_ID, APPLICATION_ID);
+            ZONE_ID, APPLICATION_ID
+    );
+
+    // This must be set in a feature flag to avoid flickering between the new and old value during config server upgrade
+    public static final UnboundDoubleFlag HOST_MEMORY = defineDoubleFlag(
+            "host-memory", 1.0,
+            "The memory required by a hosts management processes.",
+            "Takes effect immediately",
+            ZONE_ID
+    );
 
     private PermanentFlags() {}
 
