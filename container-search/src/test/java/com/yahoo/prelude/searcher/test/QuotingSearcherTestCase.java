@@ -136,10 +136,7 @@ public class QuotingSearcherTestCase {
     }
 
     private Execution createExecution(Searcher searcher, Map<Searcher, Searcher> chained) {
-        Execution.Context context = new Execution.Context(null, null, null,
-                                                          new RendererRegistry(Runnable::run), new SimpleLinguistics(),
-                                                          Runnable::run);
-        return new Execution(chainedAsSearchChain(searcher, chained), context);
+        return new Execution(chainedAsSearchChain(searcher, chained), Execution.Context.createContextStub());
     }
 
 }

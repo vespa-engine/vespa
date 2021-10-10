@@ -62,10 +62,7 @@ public class ValidatePredicateSearcherTestCase {
         index.addCommand(command);
         searchDefinition.addIndex(index);
         IndexFacts indexFacts = new IndexFacts(new IndexModel(searchDefinition));
-        Execution.Context context = new Execution.Context(null, indexFacts, null,
-                                                          new RendererRegistry(Runnable::run),
-                                                          new SimpleLinguistics(), Runnable::run);
-        return new Execution(searcher, context).search(query);
+        return new Execution(searcher, Execution.Context.createContextStub(indexFacts)).search(query);
     }
 
 }

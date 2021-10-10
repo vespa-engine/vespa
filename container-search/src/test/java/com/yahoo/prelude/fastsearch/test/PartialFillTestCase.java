@@ -146,10 +146,7 @@ public class PartialFillTestCase {
     }
 
     private Execution createExecution(Searcher searcher) {
-        Execution.Context context = new Execution.Context(null, null, null,
-                                                          new RendererRegistry(Runnable::run), new SimpleLinguistics(),
-                                                          Runnable::run);
-        return new Execution(chainedAsSearchChain(searcher), context);
+        return new Execution(chainedAsSearchChain(searcher), Execution.Context.createContextStub());
     }
 
     private void doFill(Searcher searcher, Result result, String summaryClass) {
