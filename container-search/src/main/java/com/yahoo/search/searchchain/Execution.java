@@ -138,12 +138,17 @@ public class Execution extends com.yahoo.processing.execution.Execution {
 
         /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub() {
-            return createContextStub(null);
+            return createContextStub(null, null, null);
+        }
+
+        /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
+        public static Context createContextStub(SearchChainRegistry searchChainRegistry) {
+            return createContextStub(searchChainRegistry, null, null);
         }
 
         /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(IndexFacts indexFacts) {
-            return createContextStub(null, indexFacts);
+            return createContextStub(null, indexFacts, null);
         }
 
         /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
@@ -157,7 +162,9 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         }
 
         /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
-        public static Context createContextStub(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts, Linguistics linguistics) {
+        public static Context createContextStub(SearchChainRegistry searchChainRegistry,
+                                                IndexFacts indexFacts,
+                                                Linguistics linguistics) {
             return new Context(searchChainRegistry != null ? searchChainRegistry : new SearchChainRegistry(),
                                indexFacts != null ? indexFacts : new IndexFacts(),
                                null,

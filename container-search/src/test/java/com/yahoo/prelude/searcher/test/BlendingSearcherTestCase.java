@@ -89,14 +89,14 @@ public class BlendingSearcherTestCase {
             query.setTimeout(10000);
             query.setOffset(query.getOffset());
             query.setHits(query.getHits());
-            Execution exec = new Execution(blendingChain, Execution.Context.createContextStub(chainRegistry, null));
+            Execution exec = new Execution(blendingChain, Execution.Context.createContextStub(chainRegistry));
             exec.context().populateFrom(execution.context());
             return exec.search(query);
         }
 
         @Override
         public void fill(Result result, String summaryClass, Execution execution) {
-            new Execution(blendingChain, Execution.Context.createContextStub(chainRegistry, null)).fill(result, summaryClass);
+            new Execution(blendingChain, Execution.Context.createContextStub(chainRegistry)).fill(result, summaryClass);
         }
 
         public boolean initialize() {

@@ -43,7 +43,7 @@ public class FieldFilterTestCase {
         mockBackend.addResult(query, result);
 
         searchChain = new Chain<Searcher>(new FieldFilter(), mockBackend);
-        context = Execution.Context.createContextStub(null);
+        context = Execution.Context.createContextStub();
         execution = new Execution(searchChain, context);
 
     }
