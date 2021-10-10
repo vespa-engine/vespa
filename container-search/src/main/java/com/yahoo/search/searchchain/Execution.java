@@ -154,7 +154,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         /** Create a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts, Linguistics linguistics) {
             return new Context(searchChainRegistry != null ? searchChainRegistry : new SearchChainRegistry(),
-                               indexFacts,
+                               indexFacts != null ? indexFacts : new IndexFacts(),
                                null,
                                new RendererRegistry(Runnable::run),
                                linguistics != null ? linguistics : new SimpleLinguistics(),
