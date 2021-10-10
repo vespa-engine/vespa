@@ -457,9 +457,7 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private void propagateErrors(Result source, Result destination) {
-        ErrorMessage error = source.hits().getError();
-        if (error != null)
-            destination.hits().addError(error);
+        destination.hits().addErrorsFrom(source.hits());
     }
 
     private void addResultsToFill(HitGroup hitGroup, Result result, String summaryClass,

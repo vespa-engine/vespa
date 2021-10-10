@@ -7604,6 +7604,7 @@
       "public com.yahoo.search.result.Hit remove(com.yahoo.net.URI)",
       "public com.yahoo.search.result.Hit remove(int)",
       "public void addError(com.yahoo.search.result.ErrorMessage)",
+      "public void addErrorsFrom(com.yahoo.search.result.HitGroup)",
       "public com.yahoo.search.result.ErrorHit getErrorHit()",
       "public com.yahoo.search.result.DefaultErrorHit removeErrorHit()",
       "public com.yahoo.search.result.ErrorMessage getError()",

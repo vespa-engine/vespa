@@ -123,10 +123,7 @@ public class GroupingExecutor extends Searcher {
         for (Map.Entry<String, Result> entry : summaryMap.entrySet()) {
             Result res = entry.getValue();
             execution.fill(res, entry.getKey());
-            ErrorMessage err = res.hits().getError();
-            if (err != null) {
-                result.hits().addError(err);
-            }
+            result.hits().addErrorsFrom(res.hits());
         }
         Result defaultResult = summaryMap.get(ExpressionConverter.DEFAULT_SUMMARY_NAME);
         if (defaultResult != null) {
@@ -251,10 +248,7 @@ public class GroupingExecutor extends Searcher {
             if (firstPass) {
                 ret = passResult;
             } else {
-                ErrorMessage err = passResult.hits().getError();
-                if (err != null) {
-                    ret.hits().addError(err);
-                }
+                ret.hits().addErrorsFrom(passResult.hits());
             }
         }
         if (log.isLoggable(Level.FINE)) {
