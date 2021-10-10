@@ -447,7 +447,7 @@ public class BlendingSearcherTestCase {
         BlendingSearcherWrapper searcher = setupFirstAndSecond();
         Query query = new Query("/search?query=banana&search=nonesuch");
 
-        Result result = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts())).search(query);
+        Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
         assertEquals(0, result.getConcreteHitCount());
         assertNotNull(result.hits().getError());
         ErrorMessage e = result.hits().getError();
@@ -462,7 +462,7 @@ public class BlendingSearcherTestCase {
         BlendingSearcherWrapper searcher = setupFirstAndSecond();
         Query query = new Query("/search?query=banana&search=nonesuch,orsuch");
 
-        Result result = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts())).search(query);
+        Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
         assertEquals(0, result.getConcreteHitCount());
         assertNotNull(result.hits().getError());
         ErrorMessage e = result.hits().getError();
@@ -477,7 +477,7 @@ public class BlendingSearcherTestCase {
         BlendingSearcherWrapper searcher = setupFirstAndSecond();
         Query query = new Query("/search?query=banana&search=first,nonesuch,second");
 
-        Result result = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts())).search(query);
+        Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
         assertEquals(3, result.getConcreteHitCount());
         assertEquals(300.0, result.hits().get(1).getRelevance().getScore(), delta);
         assertEquals(200.0, result.hits().get(2).getRelevance().getScore(), delta);
