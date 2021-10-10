@@ -359,8 +359,7 @@ public class QueryTestCase {
 
     private Query newQueryFromEncoded(String encodedQueryString, Language language, Linguistics linguistics) {
         Query query = new Query(encodedQueryString);
-        query.getModel().setExecution(new Execution(Execution.Context.createContextStub(null,
-                                                                                        createIndexFacts(),
+        query.getModel().setExecution(new Execution(Execution.Context.createContextStub(createIndexFacts(),
                                                                                         linguistics)));
         query.getModel().setLanguage(language);
         return query;

@@ -106,7 +106,7 @@ public class StemmingSearcherTestCase {
 
         Query q = new Query(QueryTestCase.httpEncode("?query=cars"));
         new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)),
-                      Execution.Context.createContextStub(null, indexFacts, linguistics)).search(q);
+                      Execution.Context.createContextStub(indexFacts, linguistics)).search(q);
         assertEquals("cars", q.getModel().getQueryTree().getRoot().toString());
     }
 
@@ -145,7 +145,7 @@ public class StemmingSearcherTestCase {
     }
 
     private Execution.Context newExecutionContext() {
-        return Execution.Context.createContextStub(null, indexFacts, linguistics);
+        return Execution.Context.createContextStub(indexFacts, linguistics);
     }
 
     private Execution newExecution() {

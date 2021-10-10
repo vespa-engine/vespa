@@ -124,7 +124,7 @@ public class NormalizingSearcherTestCase {
 
     private Execution createExecution() {
         return new Execution(new NormalizingSearcher(linguistics),
-                             Execution.Context.createContextStub(null, createIndexFacts(), linguistics));
+                             Execution.Context.createContextStub(createIndexFacts(), linguistics));
     }
 
     private IndexFacts createIndexFacts() {

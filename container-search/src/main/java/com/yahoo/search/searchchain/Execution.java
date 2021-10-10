@@ -136,22 +136,27 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             this(searchChainRegistry, indexFacts, tokenRegistry, rendererRegistry, linguistics, Runnable::run);
         }
 
-        /** Create a Context instance where everything except the given arguments is empty. This is for unit testing.*/
+        /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub() {
             return createContextStub(null);
         }
 
-        /** Create a Context instance where everything except the given arguments is empty. This is for unit testing.*/
+        /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(IndexFacts indexFacts) {
             return createContextStub(null, indexFacts);
         }
 
-        /** Create a Context instance where everything except the given arguments is empty. This is for unit testing.*/
+        /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts) {
             return createContextStub(searchChainRegistry, indexFacts, null);
         }
 
-        /** Create a Context instance where everything except the given arguments is empty. This is for unit testing.*/
+        /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
+        public static Context createContextStub(IndexFacts indexFacts, Linguistics linguistics) {
+            return createContextStub(null, indexFacts, linguistics);
+        }
+
+        /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts, Linguistics linguistics) {
             return new Context(searchChainRegistry != null ? searchChainRegistry : new SearchChainRegistry(),
                                indexFacts != null ? indexFacts : new IndexFacts(),

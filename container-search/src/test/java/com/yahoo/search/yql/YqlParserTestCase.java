@@ -1001,7 +1001,7 @@ public class YqlParserTestCase {
 
             // Cause parsing :-\
             Chain<Searcher> searchChain = new Chain<>(new MinimalQueryInserter());
-            Execution.Context context = Execution.Context.createContextStub(null, null, new SimpleLinguistics());
+            Execution.Context context = Execution.Context.createContextStub();
             Execution execution = new Execution(searchChain, context);
             execution.search(query);
 
@@ -1077,9 +1077,7 @@ public class YqlParserTestCase {
         test.addIndex(hostField);
 
         Chain<Searcher> searchChain = new Chain<>(new MinimalQueryInserter());
-        Execution.Context context = Execution.Context.createContextStub(null,
-                                                                        new IndexFacts(new IndexModel(test)),
-                                                                        new SimpleLinguistics());
+        Execution.Context context = Execution.Context.createContextStub(new IndexFacts(new IndexModel(test)));
         Execution execution = new Execution(searchChain, context);
         execution.search(query);
 
