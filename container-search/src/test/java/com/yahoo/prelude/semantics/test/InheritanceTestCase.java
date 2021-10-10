@@ -6,14 +6,12 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import com.yahoo.component.chain.Chain;
-import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.prelude.semantics.RuleBaseException;
 import com.yahoo.prelude.semantics.SemanticSearcher;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.test.QueryTestCase;
 import org.junit.Test;

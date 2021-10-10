@@ -4,9 +4,7 @@ package com.yahoo.search.searchers.test;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.RawSource;
-import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchers.ValidateMatchPhaseSearcher;
 import com.yahoo.search.Query;
@@ -24,7 +22,7 @@ import static org.junit.Assert.*;
  */
 public class ValidateMatchPhaseSearcherTestCase {
 
-    private ValidateMatchPhaseSearcher searcher;
+    private final ValidateMatchPhaseSearcher searcher;
 
     public ValidateMatchPhaseSearcherTestCase() {
         searcher = new ValidateMatchPhaseSearcher(

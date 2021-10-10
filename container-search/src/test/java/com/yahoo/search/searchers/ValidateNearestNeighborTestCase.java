@@ -3,7 +3,6 @@ package com.yahoo.search.searchers;
 
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.RawSource;
-import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
@@ -11,7 +10,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.query.QueryTree;
-import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;

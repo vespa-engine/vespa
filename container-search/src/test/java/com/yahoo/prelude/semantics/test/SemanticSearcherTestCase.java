@@ -2,13 +2,11 @@
 package com.yahoo.prelude.semantics.test;
 
 import com.yahoo.component.chain.Chain;
-import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.query.WeightedSetItem;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.Test;
 
