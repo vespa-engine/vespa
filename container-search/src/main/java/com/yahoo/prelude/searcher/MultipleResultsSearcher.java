@@ -153,9 +153,9 @@ public class MultipleResultsSearcher extends Searcher {
             Result result = execution.search(query);
             // ensure that field sddocname is available
             execution.fill(result); // TODO: Suffices to fill attributes
-
-            initialResult.hits().addErrorsFrom(result.hits());
-
+            if (initialResult != null) {
+                initialResult.hits().addErrorsFrom(result.hits());
+            }
             return result;
         }
     }
