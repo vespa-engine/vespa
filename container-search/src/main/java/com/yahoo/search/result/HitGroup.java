@@ -399,6 +399,16 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
             errorHit.addError(error);
     }
 
+    /** merge any errors from the other HitGroup into this */
+    public void addErrorsFrom(HitGroup other) {
+        ErrorHit otherErrorHit = other.getErrorHit();
+        if (otherErrorHit != null) {
+            for (ErrorMessage msg : otherErrorHit.errors()) {
+                addError(msg);
+            }
+        }
+    }
+
     /** Returns the error hit containing all error information, or null if no error has occurred */
     public ErrorHit getErrorHit() {
         getError(); // Make sure the error hit is updated
