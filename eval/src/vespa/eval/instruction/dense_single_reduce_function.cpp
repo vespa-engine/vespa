@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/eval/eval/value.h>
 #include <cassert>
+#include <array>
 
 namespace vespalib::eval {
 
