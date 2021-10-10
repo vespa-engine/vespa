@@ -163,7 +163,7 @@ public class ExecutionTestCase {
     @Test
     public void testBasicFill() {
         Chain<Searcher> chain = new Chain<Searcher>(new FillableResultSearcher());
-        Execution execution = new Execution(chain, Execution.Context.createContextStub(null));
+        Execution execution = new Execution(chain, Execution.Context.createContextStub());
 
         Result result = execution.search(new Query(com.yahoo.search.test.QueryTestCase.httpEncode("?presentation.summary=all")));
         assertNotNull(result.hits().get("a"));

@@ -61,7 +61,7 @@ public class SearchChainDispatcherSearcherTestCase {
 
         // Create a chain containing only the dispatcher
         Chain<Searcher> mainSearchChain = new Chain<>(searchChainDispatcher);
-        Execution execution = new Execution(mainSearchChain, Execution.Context.createContextStub(registry, null));
+        Execution execution = new Execution(mainSearchChain, Execution.Context.createContextStub(registry));
         utils = new QueryRewriteSearcherTestUtils(execution);
     }
 
@@ -152,7 +152,7 @@ public class SearchChainDispatcherSearcherTestCase {
 
         // Create a chain containing only the dispatcher
         Chain<Searcher> mainSearchChain = new Chain<>(searchers);
-        Execution execution = new Execution(mainSearchChain, Execution.Context.createContextStub(registry, null));
+        Execution execution = new Execution(mainSearchChain, Execution.Context.createContextStub(registry));
         new QueryRewriteSearcherTestUtils(execution);
 
         IntentModel intentModel = new IntentModel(

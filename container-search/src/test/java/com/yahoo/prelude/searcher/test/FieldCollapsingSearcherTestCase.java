@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.searcher.test;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.fastsearch.FastHit;
@@ -418,8 +417,7 @@ public class FieldCollapsingSearcherTestCase {
     }
 
     private Execution createExecution(Searcher searcher, Map<Searcher, Searcher> chained) {
-        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics(), null);
-        return new Execution(chainedAsSearchChain(searcher, chained), context);
+        return new Execution(chainedAsSearchChain(searcher, chained), Execution.Context.createContextStub());
     }
 
     /**

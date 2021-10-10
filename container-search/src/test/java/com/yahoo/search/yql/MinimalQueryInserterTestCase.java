@@ -42,7 +42,7 @@ public class MinimalQueryInserterTestCase {
     @Before
     public void setUp() throws Exception {
         searchChain = new Chain<>(new MinimalQueryInserter());
-        context = Execution.Context.createContextStub(null, null, new SimpleLinguistics());
+        context = Execution.Context.createContextStub();
         execution = new Execution(searchChain, context);
     }
 

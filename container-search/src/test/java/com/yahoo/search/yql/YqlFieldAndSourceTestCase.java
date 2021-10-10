@@ -61,7 +61,7 @@ public class YqlFieldAndSourceTestCase {
                                                                .documentdb(buildDocumentdbArray()));
 
         searchChain = new Chain<>(new FieldFiller(config), mockBackend);
-        context = Execution.Context.createContextStub(null);
+        context = Execution.Context.createContextStub();
         execution = new Execution(searchChain, context);
     }
 

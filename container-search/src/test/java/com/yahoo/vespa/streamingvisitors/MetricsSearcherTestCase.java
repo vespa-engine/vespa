@@ -23,7 +23,7 @@ public class MetricsSearcherTestCase {
     private MetricsSearcher metricsSearcher = new MetricsSearcher();
     private MockBackend backend = new MockBackend();
     private Chain<Searcher> chain = new Chain<>(metricsSearcher, backend);
-    private Execution.Context context = Execution.Context.createContextStub(null);
+    private Execution.Context context = Execution.Context.createContextStub();
     private MetricsSearcher.Stats expStatsLt1 = new MetricsSearcher.Stats();
     private static final String LOADTYPE1 = "lt1";
     private MetricsSearcher.Stats expStatsLt2 = new MetricsSearcher.Stats();

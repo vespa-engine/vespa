@@ -246,7 +246,7 @@ public class IndexFactsTestCase {
 
     private Query newQuery(String queryString, IndexFacts indexFacts) {
         Query query = new Query(queryString);
-        query.getModel().setExecution(new Execution(new Execution.Context(null, indexFacts, null, null, null, null)));
+        query.getModel().setExecution(new Execution(Execution.Context.createContextStub(indexFacts)));
         return query;
     }
 

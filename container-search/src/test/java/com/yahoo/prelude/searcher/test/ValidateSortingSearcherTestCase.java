@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.searcher.test;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.rendering.RendererRegistry;
@@ -26,7 +24,7 @@ import static org.junit.Assert.*;
 /**
  * Check sorting validation behaves OK.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class ValidateSortingSearcherTestCase {
 
@@ -112,8 +110,7 @@ public class ValidateSortingSearcherTestCase {
     }
 
     private Execution createExecution(Searcher searcher) {
-        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics(), null);
-        return new Execution(chainedAsSearchChain(searcher), context);
+        return new Execution(chainedAsSearchChain(searcher), Execution.Context.createContextStub());
     }
 
     private Chain<Searcher> chainedAsSearchChain(Searcher topOfChain) {

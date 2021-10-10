@@ -3,6 +3,7 @@ package com.yahoo.search.searchchain;
 
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
@@ -14,9 +15,11 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.cluster.PingableSearcher;
+import com.yahoo.search.rendering.Renderer;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.statistics.TimeTracker;
 
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -123,43 +126,51 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             this.tokenRegistry = tokenRegistry;
             this.rendererRegistry = rendererRegistry;
             this.linguistics = linguistics;
-            this.executor = executor;
+            this.executor = Objects.requireNonNull(executor, "The executor cannot be null");
         }
 
         /** @deprecated pass an executor */
         @Deprecated // TODO: Remove on Vespa 8
         public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts,
                        SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics) {
-            this(searchChainRegistry, indexFacts, tokenRegistry, rendererRegistry, linguistics, null);
+            this(searchChainRegistry, indexFacts, tokenRegistry, rendererRegistry, linguistics, Runnable::run);
         }
 
-        /** Creates a context stub with no information. This is for unit testing. */
+        /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub() {
-            return createContextStub(null);
+            return createContextStub(null, null, null);
         }
 
-        /**
-         * Create a Context instance where only the index related settings are
-         * initialized. This is for unit testing.
-         */
+        /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
+        public static Context createContextStub(SearchChainRegistry searchChainRegistry) {
+            return createContextStub(searchChainRegistry, null, null);
+        }
+
+        /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(IndexFacts indexFacts) {
-            return createContextStub(null, indexFacts);
+            return createContextStub(null, indexFacts, null);
         }
 
-        /**
-         * Create a Context instance where only the search chain registry and index facts are
-         * initialized. This is for unit testing.
-         */
+        /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts) {
             return createContextStub(searchChainRegistry, indexFacts, null);
         }
 
-        /**
-         * Create a Context instance where only the search chain registry, index facts and linguistics are
-         * initialized. This is for unit testing.
-         */
-        public static Context createContextStub(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts, Linguistics linguistics) {
-            return new Context(searchChainRegistry, indexFacts, null, null, linguistics, Executors.newSingleThreadExecutor());
+        /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
+        public static Context createContextStub(IndexFacts indexFacts, Linguistics linguistics) {
+            return createContextStub(null, indexFacts, linguistics);
+        }
+
+        /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
+        public static Context createContextStub(SearchChainRegistry searchChainRegistry,
+                                                IndexFacts indexFacts,
+                                                Linguistics linguistics) {
+            return new Context(searchChainRegistry != null ? searchChainRegistry : new SearchChainRegistry(),
+                               indexFacts != null ? indexFacts : new IndexFacts(),
+                               null,
+                               new RendererRegistry(Runnable::run),
+                               linguistics != null ? linguistics : new SimpleLinguistics(),
+                               Executors.newSingleThreadExecutor());
         }
 
         /**

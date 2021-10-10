@@ -50,7 +50,7 @@ public class FutureDataTestCase {
 
         Query query = new Query();
         query.setTimeout(5000);
-        Result result = new Execution(main, Execution.Context.createContextStub(searchChainRegistry,null)).search(query);
+        Result result = new Execution(main, Execution.Context.createContextStub(searchChainRegistry)).search(query);
         assertNotNull(result);
 
         HitGroup syncGroup = (HitGroup)result.hits().get("source:sync");

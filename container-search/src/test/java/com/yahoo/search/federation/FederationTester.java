@@ -68,7 +68,7 @@ class FederationTester {
 
     private Execution createExecution() {
         registry.freeze();
-        return new Execution(new Chain<Searcher>(buildFederationSearcher()), Execution.Context.createContextStub(registry, null));
+        return new Execution(new Chain<Searcher>(buildFederationSearcher()), Execution.Context.createContextStub(registry));
     }
 
     public void fill(Result result) {

@@ -33,7 +33,7 @@ public class InputCheckingSearcherTestCase {
     @Before
     public void setUp() {
         execution = new Execution(new Chain<Searcher>(new InputCheckingSearcher(MetricReceiver.nullImplementation)),
-                                  Execution.Context.createContextStub(new IndexFacts()));
+                                  Execution.Context.createContextStub());
     }
 
     @After

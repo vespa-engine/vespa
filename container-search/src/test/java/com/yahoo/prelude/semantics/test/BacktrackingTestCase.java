@@ -4,7 +4,6 @@ package com.yahoo.prelude.semantics.test;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
@@ -101,8 +100,7 @@ public class BacktrackingTestCase {
     }
 
     private Execution createExecution(Searcher searcher) {
-        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
-        return new Execution(chainedAsSearchChain(searcher), context);
+        return new Execution(chainedAsSearchChain(searcher), Execution.Context.createContextStub());
     }
 
     private Chain<Searcher> chainedAsSearchChain(Searcher topOfChain) {

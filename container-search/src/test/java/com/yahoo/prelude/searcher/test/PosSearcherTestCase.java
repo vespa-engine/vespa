@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.searcher.test;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
@@ -191,8 +190,7 @@ public class PosSearcherTestCase {
     }
 
     private Execution createExecution(Searcher searcher) {
-        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
-        return new Execution(chainedAsSearchChain(searcher), context);
+        return new Execution(chainedAsSearchChain(searcher), Execution.Context.createContextStub());
     }
 
     private Chain<Searcher> chainedAsSearchChain(Searcher topOfChain) {

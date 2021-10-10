@@ -71,7 +71,7 @@ public class VespaAsyncSearcherTest {
     @Test
     public void testAsyncExecution() {
         Chain<Searcher> chain = new Chain<>(new FirstSearcher(), new SecondSearcher());
-        Execution execution = new Execution(chain, Execution.Context.createContextStub(null));
+        Execution execution = new Execution(chain, Execution.Context.createContextStub());
         Query query = new Query();
         execution.search(query);
     }
