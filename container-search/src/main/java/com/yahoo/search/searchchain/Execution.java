@@ -3,6 +3,7 @@ package com.yahoo.search.searchchain;
 
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
@@ -17,6 +18,7 @@ import com.yahoo.search.cluster.PingableSearcher;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.statistics.TimeTracker;
 
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -123,14 +125,14 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             this.tokenRegistry = tokenRegistry;
             this.rendererRegistry = rendererRegistry;
             this.linguistics = linguistics;
-            this.executor = executor;
+            this.executor = Objects.requireNonNull(executor, "The executor cannot be null");
         }
 
         /** @deprecated pass an executor */
         @Deprecated // TODO: Remove on Vespa 8
         public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts,
                        SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics) {
-            this(searchChainRegistry, indexFacts, tokenRegistry, rendererRegistry, linguistics, null);
+            this(searchChainRegistry, indexFacts, tokenRegistry, rendererRegistry, linguistics, Runnable::run);
         }
 
         /** Creates a context stub with no information. This is for unit testing. */

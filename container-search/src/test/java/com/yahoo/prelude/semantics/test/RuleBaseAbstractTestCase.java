@@ -69,7 +69,10 @@ public abstract class RuleBaseAbstractTestCase {
     }
 
     private Execution createExecution(Searcher searcher) {
-        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
+        Execution.Context context = new Execution.Context(null, null, null,
+                                                          new RendererRegistry(Runnable::run),
+                                                          new SimpleLinguistics(),
+                                                          Runnable::run);
         return new Execution(chainedAsSearchChain(searcher), context);
     }
 

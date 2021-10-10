@@ -90,7 +90,8 @@ public class Model implements Cloneable {
     private Set<String> restrict = new LinkedHashSet<>();
     private String searchPath;
     private String documentDbName = null;
-    private Execution execution = new Execution(new Execution.Context(null, null, null, null, null, null));
+    private Execution execution = new Execution(new Execution.Context(null, null,
+                                                                      null, null, null, Runnable::run));
 
     public Model(Query query) {
         setParent(query);

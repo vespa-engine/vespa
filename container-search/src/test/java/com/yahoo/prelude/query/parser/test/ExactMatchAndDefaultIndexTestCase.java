@@ -32,7 +32,7 @@ public class ExactMatchAndDefaultIndexTestCase {
         IndexFacts facts = new IndexFacts(new IndexModel(sd));
 
         Query q = new Query("?query=" + enc("a/b foo.com") + "&default-index=testexact");
-        q.getModel().setExecution(new Execution(new Execution.Context(null, facts, null, null, null, null)));
+        q.getModel().setExecution(new Execution(Execution.Context.createContextStub(facts)));
         assertEquals("AND testexact:a/b testexact:foo.com", q.getModel().getQueryTree().getRoot().toString());
         q = new Query("?query=" + enc("a/b foo.com"));
         assertEquals("AND a b foo com", q.getModel().getQueryTree().getRoot().toString());

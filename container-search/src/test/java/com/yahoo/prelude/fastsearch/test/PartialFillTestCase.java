@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch.test;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.fastsearch.FastHit;
@@ -147,7 +146,9 @@ public class PartialFillTestCase {
     }
 
     private Execution createExecution(Searcher searcher) {
-        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics(), null);
+        Execution.Context context = new Execution.Context(null, null, null,
+                                                          new RendererRegistry(Runnable::run), new SimpleLinguistics(),
+                                                          Runnable::run);
         return new Execution(chainedAsSearchChain(searcher), context);
     }
 

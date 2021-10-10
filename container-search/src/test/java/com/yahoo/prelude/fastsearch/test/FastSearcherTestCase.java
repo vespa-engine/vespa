@@ -81,7 +81,9 @@ public class FastSearcherTestCase {
     }
 
     private Execution createExecution(Searcher searcher) {
-        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(Collections.emptyList()), new SimpleLinguistics(), null);
+        Execution.Context context = new Execution.Context(null, null, null,
+                                                          new RendererRegistry(Collections.emptyList()),
+                                                          new SimpleLinguistics(), Runnable::run);
         return new Execution(chainedAsSearchChain(searcher), context);
     }
 

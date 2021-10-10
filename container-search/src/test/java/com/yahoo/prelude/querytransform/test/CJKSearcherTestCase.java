@@ -65,7 +65,7 @@ public class CJKSearcherTestCase {
         query.getModel().getQueryTree().setRoot(root);
 
         new Execution(new Chain<Searcher>(new CJKSearcher()),
-                      new Execution.Context(null, indexFacts, null, null, linguistics, null)).search(query);
+                      Execution.Context.createContextStub(null, indexFacts, linguistics)).search(query);
         assertEquals(expected, query.getModel().getQueryTree().getRoot().toString());
     }
 

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.searcher.test;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
@@ -137,7 +136,9 @@ public class QuotingSearcherTestCase {
     }
 
     private Execution createExecution(Searcher searcher, Map<Searcher, Searcher> chained) {
-        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
+        Execution.Context context = new Execution.Context(null, null, null,
+                                                          new RendererRegistry(Runnable::run), new SimpleLinguistics(),
+                                                          Runnable::run);
         return new Execution(chainedAsSearchChain(searcher, chained), context);
     }
 

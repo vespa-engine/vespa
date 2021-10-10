@@ -1,8 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchers;
 
-import com.google.common.util.concurrent.MoreExecutors;
-
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.RawSource;
 import com.yahoo.language.simple.SimpleLinguistics;
@@ -232,7 +230,9 @@ public class ValidateNearestNeighborTestCase {
         query.getRanking().getFeatures().put("query(qvector)", qTensor);
         SearchDefinition searchDefinition = new SearchDefinition("document");
         IndexFacts indexFacts = new IndexFacts(new IndexModel(searchDefinition));
-        Execution.Context context = new Execution.Context(null, indexFacts, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics(), null);
+        Execution.Context context = new Execution.Context(null, indexFacts, null,
+                                                          new RendererRegistry(Runnable::run),
+                                                          new SimpleLinguistics(), Runnable::run);
         return new Execution(searcher, context).search(query);
     }
 

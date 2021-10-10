@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchers.test;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.RawSource;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.rendering.RendererRegistry;
@@ -108,7 +106,9 @@ public class ValidateMatchPhaseSearcherTestCase {
     }
 
     private Execution createExecution(Searcher searcher) {
-        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics(), null);
+        Execution.Context context = new Execution.Context(null, null, null,
+                                                          new RendererRegistry(Runnable::run),
+                                                          new SimpleLinguistics(), Runnable::run);
         return new Execution(chainedAsSearchChain(searcher), context);
     }
 

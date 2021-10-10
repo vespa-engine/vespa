@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
@@ -174,7 +173,8 @@ public class InheritanceTestCase {
 
     private Execution createExecution(Searcher searcher) {
         Execution.Context context = new Execution.Context(null, null, null,
-                                                          new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
+                                                          new RendererRegistry(Runnable::run), new SimpleLinguistics(),
+                                                          Runnable::run);
         return new Execution(chainedAsSearchChain(searcher), context);
     }
 
