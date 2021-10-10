@@ -46,7 +46,7 @@ endfunction()
 
 function(setup_vespa_default_build_settings_darwin)
   message("-- Setting up default build settings for darwin")
-  set(DEFAULT_VESPA_LLVM_VERSION "12" PARENT_SCOPE)
+  set(DEFAULT_VESPA_LLVM_VERSION "13" PARENT_SCOPE)
   set(DEFAULT_CMAKE_PREFIX_PATH "${VESPA_DEPS}" "/usr/local/opt/bison" "/usr/local/opt/flex" "/usr/local/opt/openssl@1.1" "/usr/local/opt/openblas" "/usr/local/opt/icu4c" PARENT_SCOPE)
   set(DEFAULT_EXTRA_LINK_DIRECTORY "${VESPA_DEPS}/lib" "/usr/local/opt/bison/lib" "/usr/local/opt/flex/lib" "/usr/local/opt/icu4c/lib" "/usr/local/opt/openssl@1.1/lib" "/usr/local/opt/openblas/lib")
   list(APPEND DEFAULT_EXTRA_LINK_DIRECTORY "/usr/local/lib")
