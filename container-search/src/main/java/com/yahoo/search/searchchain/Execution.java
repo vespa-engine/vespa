@@ -157,7 +157,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
                                indexFacts,
                                null,
                                new RendererRegistry(Runnable::run),
-                               linguistics,
+                               linguistics != null ? linguistics : new SimpleLinguistics(),
                                Executors.newSingleThreadExecutor());
         }
 
