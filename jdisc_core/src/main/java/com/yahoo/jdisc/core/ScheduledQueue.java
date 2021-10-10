@@ -60,6 +60,14 @@ class ScheduledQueue {
         }
     }
 
+    synchronized int queueSize() {
+        int sum = 0;
+        for (int cnt : counts) {
+            sum += cnt;
+        }
+        return sum;
+    }
+
     private synchronized void scheduleAt(Entry entry, long expireAtMillis) {
         if (entry.next != null) {
             linkOut(entry);

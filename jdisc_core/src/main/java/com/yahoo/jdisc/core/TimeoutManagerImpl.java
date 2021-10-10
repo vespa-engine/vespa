@@ -34,7 +34,6 @@ public class TimeoutManagerImpl {
     private final Thread thread;
     private final Timer timer;
     private final AtomicInteger nextScheduler = new AtomicInteger(0);
-    private final AtomicInteger queueSize = new AtomicInteger(0);
     private final AtomicBoolean done = new AtomicBoolean(false);
 
     @Inject
@@ -61,8 +60,12 @@ public class TimeoutManagerImpl {
         return new ManagedRequestHandler(handler);
     }
 
-    int queueSize() {
-        return queueSize.get(); // unstable snapshot, only for test purposes
+    synchronized int queueSize() {
+        int sum = 0;
+        for (ScheduledQueue schedule : schedules) {
+            sum += schedule.queueSize();
+        }
+        return sum;
     }
 
     Timer timer() {
@@ -198,7 +201,6 @@ public class TimeoutManagerImpl {
                 timeoutQueueEntry = schedules[(nextScheduler.incrementAndGet() & 0xffff) % schedules.length].newEntry(this);
             }
             timeoutQueueEntry.scheduleAt(request.creationTime(TimeUnit.MILLISECONDS) + request.getTimeout(TimeUnit.MILLISECONDS));
-            queueSize.incrementAndGet();
         }
 
         synchronized void unscheduleTimeout() {
@@ -208,7 +210,6 @@ public class TimeoutManagerImpl {
                 //followed by unscheduling in another thread from TimeoutHandler.handleResponse
                 timeoutQueueEntry = null;
             }
-            queueSize.decrementAndGet();
         }
 
         @Override
