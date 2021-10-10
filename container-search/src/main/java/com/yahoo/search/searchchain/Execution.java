@@ -15,6 +15,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.cluster.PingableSearcher;
+import com.yahoo.search.rendering.Renderer;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.statistics.TimeTracker;
 
@@ -135,33 +136,29 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             this(searchChainRegistry, indexFacts, tokenRegistry, rendererRegistry, linguistics, Runnable::run);
         }
 
-        /** Creates a context stub with no information. This is for unit testing. */
+        /** Create a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub() {
             return createContextStub(null);
         }
 
-        /**
-         * Create a Context instance where only the index related settings are
-         * initialized. This is for unit testing.
-         */
+        /** Create a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(IndexFacts indexFacts) {
             return createContextStub(null, indexFacts);
         }
 
-        /**
-         * Create a Context instance where only the search chain registry and index facts are
-         * initialized. This is for unit testing.
-         */
+        /** Create a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts) {
             return createContextStub(searchChainRegistry, indexFacts, null);
         }
 
-        /**
-         * Create a Context instance where only the search chain registry, index facts and linguistics are
-         * initialized. This is for unit testing.
-         */
+        /** Create a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts, Linguistics linguistics) {
-            return new Context(searchChainRegistry, indexFacts, null, null, linguistics, Executors.newSingleThreadExecutor());
+            return new Context(searchChainRegistry,
+                               indexFacts,
+                               null,
+                               new RendererRegistry(Runnable::run),
+                               linguistics,
+                               Executors.newSingleThreadExecutor());
         }
 
         /**
