@@ -35,8 +35,9 @@ class ScheduledQueue {
         if (slots[NUM_SLOTS] == null && currentTimeMillis < nextTick) {
             return;
         }
+        int queueSize = queueSize() + out.size();
         drainTo(NUM_SLOTS, 0, out);
-        for (int i = 0; currentTimeMillis >= nextTick; i++, nextTick += MILLIS_PER_SLOT) {
+        for (int i = 0; currentTimeMillis >= nextTick && (queueSize > out.size()); i++, nextTick += MILLIS_PER_SLOT) {
             if (i < NUM_SLOTS_UNDILATED) {
                 if (++currSlot >= NUM_SLOTS) {
                     currSlot = 0;

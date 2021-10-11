@@ -53,7 +53,13 @@ public class TimeoutManagerImpl {
     }
 
     public void shutdown() {
-        done.set(true);
+        synchronized (done) {
+            done.set(true);
+            done.notify();
+        }
+        try {
+            thread.join();
+        } catch (InterruptedException e) {}
     }
 
     public RequestHandler manageHandler(RequestHandler handler) {
