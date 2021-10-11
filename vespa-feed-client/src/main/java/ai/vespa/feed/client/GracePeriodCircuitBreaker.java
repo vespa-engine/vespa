@@ -61,7 +61,7 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
 
     @Override
     public void failure(Throwable cause) {
-        failure(cause.getMessage());
+        failure(cause.toString());
     }
 
     private void failure(String detail) {
