@@ -12,6 +12,12 @@ struct MyHandler : Issue::Handler {
     }
 };
 
+struct MyException : std::exception {
+    vespalib::string my_what;
+    MyException(vespalib::string what_in) : my_what(what_in) {}
+    const char *what() const noexcept override { return my_what.c_str(); }
+};
+
 std::vector<vespalib::string> make_list(std::vector<vespalib::string> list) {
     return list;
 }
@@ -63,6 +69,19 @@ TEST(IssueTest, handler_can_be_bound_multiple_times) {
     }
     Issue::report(Issue("this should also be logged"));
     EXPECT_EQ(my_handler.list, make_list({"issue1", "issue2", "issue3"}));
+}
+
+TEST(IssueTest, alternative_report_functions) {
+    MyHandler my_handler;
+    auto capture = Issue::listen(my_handler);
+    Issue::report(vespalib::string("str"));
+    Issue::report("fmt_%s_%d", "msg", 7);
+    try {
+        throw MyException("exception");
+    } catch (const std::exception &e) {
+        Issue::report(e);
+    }
+    EXPECT_EQ(my_handler.list, make_list({"str", "fmt_msg_7", "exception"}));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
