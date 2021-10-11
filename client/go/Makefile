@@ -12,7 +12,7 @@ BIN ?= $(CURDIR)/bin
 SHARE ?= $(CURDIR)/share
 DIST ?= $(CURDIR)/dist
 
-GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$(VERSION)"
+GO_FLAGS := -ldflags "-X github.com/vespa-engine/client/go/api/build.Version=$(VERSION)"
 GIT_ROOT := $(shell git rev-parse --show-toplevel)
 DIST_TARGETS := dist-mac dist-mac-arm64 dist-linux dist-win32 dist-win64
 

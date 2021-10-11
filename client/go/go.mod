@@ -1,4 +1,4 @@
-module github.com/vespa-engine/vespa/client/go
+module github.com/vespa-engine/client/go/api
 
 go 1.15
 

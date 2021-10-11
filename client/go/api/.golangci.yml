@@ -1,0 +1,43 @@
+linters-settings:
+  govet:
+    check-shadowing: false
+  gocyclo:
+    min-complexity: 20
+  maligned:
+    suggest-new: true
+  gocritic:
+    color: true
+    shorterErrLocation: true
+
+    enabled-tags:
+    - performance
+    - style
+    - experimental
+
+    disabled-checks:
+    - hugeParam
+    - rangeValCopy
+
+linters:
+  enable:
+  - golint
+  - maligned
+  - megacheck
+  - interfacer
+  - unconvert
+  - goconst
+  - misspell
+  - unparam
+  - gofmt
+  - goimports
+  - gocyclo
+  - gocritic
+  - govet
+  - unused
+  - depguard
+  disable:
+  - gas
+
+issues:
+  exclude-use-default: false
+max-same-issues: 10
