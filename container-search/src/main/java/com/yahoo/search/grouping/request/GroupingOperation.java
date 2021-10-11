@@ -14,11 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-
 /**
- * This class represents a single node in a grouping operation tree. You may manually construct this tree, or you may
+ * A single node in a grouping operation tree. You may manually construct this tree, or you may
  * use the {@link #fromString(String)} method to generate one from a query-string. To execute, assign it to a {@link
- * com.yahoo.search.grouping.GroupingRequest} using the {@link com.yahoo.search.grouping.GroupingRequest#setRootOperation(GroupingOperation)}
+ * com.yahoo.search.grouping.GroupingRequest} using the
+ * {@link com.yahoo.search.grouping.GroupingRequest#setRootOperation(GroupingOperation)}
  * method.
  *
  * @author Simon Thoresen Hult
@@ -82,9 +82,9 @@ public abstract class GroupingOperation extends GroupingNode {
      * Registers an alias with this operation. An alias is made available to expressions in both this node and all child
      * nodes.
      *
-     * @param id  The id of the alias to put.
-     * @param exp The expression to associate with the id.
-     * @return This, to allow chaining.
+     * @param id the id of the alias to put
+     * @param exp the expression to associate with the id
+     * @return this, to allow chaining
      */
     public GroupingOperation putAlias(String id, GroupingExpression exp) {
         aliases.put(id, exp);
@@ -95,8 +95,8 @@ public abstract class GroupingOperation extends GroupingNode {
      * Returns the alias associated with the given name. If no alias can be found in this node, this method queries its
      * parent grouping node. If the alias still can not be found, this method returns null.
      *
-     * @param id The id of the alias to return.
-     * @return The expression associated with the id.
+     * @param id the id of the alias to return
+     * @return the expression associated with the id
      */
     public GroupingExpression getAlias(String id) {
         if (aliases.containsKey(id)) {
@@ -113,32 +113,18 @@ public abstract class GroupingOperation extends GroupingNode {
         return aliases;
     }
 
-    /**
-     * Adds a hint to this.
-     *
-     * @param hint The hint to add.
-     * @return This, to allow chaining.
-     */
+    /** Adds a hint to this. */
     public GroupingOperation addHint(String hint) {
         hints.add(hint);
         return this;
     }
 
-    /**
-     * Returns whether or not the given hint has been added to this.
-     *
-     * @param hint The hint to check for.
-     * @return True if the hint has been added.
-     */
+    /** Returns whether the given hint has been added to this. */
     public boolean containsHint(String hint) {
         return hints.contains(hint);
     }
 
-    /**
-     * Returns an immutable view to the hint list of this node.
-     *
-     * @return The list.
-     */
+    /** Returns an immutable view to the hint list of this node. */
     public Set<String> getHints() {
         return Collections.unmodifiableSet(hints);
     }
@@ -146,8 +132,8 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Adds a child grouping node to this. This will also set the parent of the child so that it points to this node.
      *
-     * @param op The child node to add.
-     * @return This, to allow chaining.
+     * @param op the child node to add
+     * @return this, to allow chaining
      */
     public GroupingOperation addChild(GroupingOperation op) {
         op.parent = this;
@@ -158,8 +144,8 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Convenience method to call {@link #addChild(GroupingOperation)} for each element in the given list.
      *
-     * @param lst The list of operations to add.
-     * @return This, to allow chaining.
+     * @param lst the list of operations to add
+     * @return this, to allow chaining
      */
     public GroupingOperation addChildren(List<GroupingOperation> lst) {
         for (GroupingOperation op : lst) {
@@ -168,11 +154,7 @@ public abstract class GroupingOperation extends GroupingNode {
         return this;
     }
 
-    /**
-     * Returns the number of child operations of this.
-     *
-     * @return The child count.
-     */
+    /** Returns the number of child operations of this. */
     public int getNumChildren() {
         return children.size();
     }
@@ -180,19 +162,15 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Returns the child operation at the given index.
      *
-     * @param i The index of the child to return.
-     * @return The child at the given index.
-     * @throws IndexOutOfBoundsException If the index is out of range.
+     * @param i the index of the child to return
+     * @return the child at the given index
+     * @throws IndexOutOfBoundsException if the index is out of range
      */
     public GroupingOperation getChild(int i) {
         return children.get(i);
     }
 
-    /**
-     * Returns an immutable view to the child list of this node.
-     *
-     * @return The list.
-     */
+    /** Returns an immutable view to the child list of this node. */
     public List<GroupingOperation> getChildren() {
         return Collections.unmodifiableList(children);
     }
@@ -200,19 +178,15 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Assigns an expressions as the group-by clause of this operation.
      *
-     * @param exp The expression to assign to this.
-     * @return This, to allow chaining.
+     * @param exp the expression to assign to this
+     * @return this, to allow chaining
      */
     public GroupingOperation setGroupBy(GroupingExpression exp) {
         groupBy = exp;
         return this;
     }
 
-    /**
-     * Returns the expression assigned as the group-by clause of this.
-     *
-     * @return The expression.
-     */
+    /** Returns the expression assigned as the group-by clause of this. */
     public GroupingExpression getGroupBy() {
         return groupBy;
     }
@@ -220,7 +194,7 @@ public abstract class GroupingOperation extends GroupingNode {
     /**
      * Returns the conceptual level of this node.
      *
-     * @return The level, or -1 if not resolved.
+     * @return the level, or -1 if not resolved
      * @see #resolveLevel(int)
      */
     public int getLevel() {
@@ -239,16 +213,16 @@ public abstract class GroupingOperation extends GroupingNode {
     public void resolveLevel(int level) {
         if (groupBy != null) {
             if (level == 0) {
-                throw new IllegalArgumentException(
-                        "Operation '" + this + "' can not group " + getLevelDesc(level) + ".");
+                throw new IllegalArgumentException("Operation '" + this + "' can not group " +
+                                                   getLevelDesc(level) + ".");
             }
             groupBy.resolveLevel(level - 1);
             ++level;
         }
         if (hasMax()) {
             if (level == 0) {
-                throw new IllegalArgumentException(
-                        "Operation '" + this + "' can not apply max to " + getLevelDesc(level) + ".");
+                throw new IllegalArgumentException("Operation '" + this + "' can not apply max to " +
+                                                   getLevelDesc(level) + ".");
             }
         }
         this.level = level;
@@ -257,8 +231,8 @@ public abstract class GroupingOperation extends GroupingNode {
         }
         if (!orderBy.isEmpty()) {
             if (level == 0) {
-                throw new IllegalArgumentException(
-                        "Operation '" + this + "' can not order " + getLevelDesc(level) + ".");
+                throw new IllegalArgumentException("Operation '" + this + "' can not order " +
+                                                   getLevelDesc(level) + ".");
             }
             for (GroupingExpression exp : orderBy) {
                 exp.resolveLevel(level - 1);
@@ -281,33 +255,18 @@ public abstract class GroupingOperation extends GroupingNode {
         return forceSinglePass;
     }
 
-    /**
-     * Assigns the max clause of this. This is the maximum number of groups to return for this operation.
-     *
-     * @param max The expression to assign to this.
-     * @return This, to allow chaining.
-     * @see #setPrecision(int)
-     */
+    /** Sets the maximum number of groups to return for this operation. */
     public GroupingOperation setMax(int max) {
         this.max = max;
         return this;
     }
 
-    /**
-     * Returns the max clause of this.
-     *
-     * @return The expression.
-     * @see #setMax(int)
-     */
+    /** Returns the max value of this. */
     public int getMax() {
         return max;
     }
 
-    /**
-     * Indicates if the 'max' value has been set.
-     *
-     * @return true if max value is set.
-     */
+    /** Indicates if the 'max' value has been set. */
     public boolean hasMax() { return max >= 0; }
 
     /**
@@ -315,9 +274,9 @@ public abstract class GroupingOperation extends GroupingNode {
      * again determines the speed of the grouping request. A low value will make sure the grouping operation runs fast,
      * at the sacrifice if a (possible) imprecise result.
      *
-     * @param accuracy The accuracy to assign to this.
-     * @return This, to allow chaining.
-     * @throws IllegalArgumentException If the accuracy is outside the allowed value range.
+     * @param accuracy the accuracy to assign to this
+     * @return this, to allow chaining
+     * @throws IllegalArgumentException if the accuracy is outside the allowed value range
      */
     public GroupingOperation setAccuracy(double accuracy) {
         if (accuracy > 1.0 || accuracy < 0.0) {
@@ -439,8 +398,8 @@ public abstract class GroupingOperation extends GroupingNode {
     }
 
     /**
-     * Assigns the precision clause of this. This is the number of intermediate groups returned from each search-node
-     * during expression evaluation to give the dispatch-node more data to consider when selecting the N groups that are
+     * Assigns the precision clause of this. This is the number of intermediate groups returned from each content node
+     * during expression evaluation to give the container node more data to consider when selecting the N groups that are
      * to be evaluated further.
      *
      * @param precision the precision to set
@@ -452,7 +411,7 @@ public abstract class GroupingOperation extends GroupingNode {
         return this;
     }
 
-    /** Returns the precision clause of this. */
+    /** Returns the precision value of this. */
     public int getPrecision() {
         return precision;
     }
