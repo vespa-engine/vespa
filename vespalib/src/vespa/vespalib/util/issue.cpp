@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "issue.h"
+#include "stringfmt.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.issue");
@@ -13,7 +14,7 @@ using Link = Issue::Binding::Link;
 
 struct LogIssues : Issue::Handler {
     void handle(const Issue &issue) override {
-        LOG(warning, "issue not captured: %s", issue.message().c_str());
+        LOG(warning, "unhandled issue: %s", issue.message().c_str());
     }
 };
 
@@ -30,8 +31,8 @@ Link **get_head() {
 
 } // <unnamed>
 
-Issue::Issue(const vespalib::string &message)
-  : _message(message)
+Issue::Issue(vespalib::string message)
+  : _message(std::move(message))
 {
 }
 
@@ -60,6 +61,28 @@ Issue::Binding
 Issue::listen(Handler &handler)
 {
     return Binding(handler);
+}
+
+void
+Issue::report(vespalib::string msg)
+{
+    report(Issue(std::move(msg)));
+}
+
+void
+Issue::report(const std::exception &e)
+{
+    report(Issue(e.what()));
+}
+
+void
+Issue::report(const char *format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+    vespalib::string msg = make_string_va(format, ap);
+    va_end(ap);
+    report(Issue(std::move(msg)));
 }
 
 }

@@ -22,7 +22,7 @@ namespace vespalib {
  * explicitly wire all issues through them.
  *
  * An Issue object represents a single issue. The static 'report'
- * function is used to report an issue. The static 'listen' function
+ * functions are used to report an issue. The static 'listen' function
  * is used to bind an Issue::Handler to the current thread using a
  * special object that should reside on the stack and unbinds the
  * handler when destructed. Handler bindings can be nested. Issue
@@ -36,7 +36,7 @@ class Issue
 private:
     vespalib::string _message;
 public:
-    Issue(const vespalib::string &message);
+    Issue(vespalib::string message);
     const vespalib::string &message() const { return _message; }
     struct Handler {
         virtual void handle(const Issue &issue) = 0;
@@ -61,6 +61,14 @@ public:
     };
     static void report(const Issue &issue);
     static Binding listen(Handler &handler);
+    static void report(vespalib::string msg);
+    static void report(const std::exception &e);
+    static void report(const char *format, ...)
+#ifdef __GNUC__
+        // Add printf format checks with gcc
+        __attribute__ ((format (printf,1,2)))
+#endif
+    ;
 };
 
 }
