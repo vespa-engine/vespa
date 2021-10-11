@@ -41,18 +41,32 @@ public class DocumentId {
     }
 
     public static DocumentId of(String serialized) {
-        String[] parts = serialized.split(":");
-        while (parts.length >= 5 && parts[0].equals("id")) {
-            if (parts[3].startsWith("n="))
-                return DocumentId.of(parts[1], parts[2], Long.parseLong(parts[3]), parts[4]);
-            if (parts[3].startsWith("g="))
-                return DocumentId.of(parts[1], parts[2], parts[3], parts[4]);
-            else if (parts[3].isEmpty())
-                return DocumentId.of(parts[1], parts[2], parts[4]);
-        }
+        DocumentId parsed = parse(serialized);
+        if (parsed != null) return parsed;
         throw new IllegalArgumentException("Document ID must be on the form " +
-                                           "'id:<namespace>:<document-type>:[n=number|g=group]:<user-specific>', " +
+                                           "'id:<namespace>:<document-type>:[n=<number>|g=<group>]:<user-specific>', " +
                                            "but was '" + serialized + "'");
+    }
+
+    private static DocumentId parse(String serialized) {
+        int i, j = -1;
+        if ((j = serialized.indexOf(':', i = j + 1)) < i) return null;
+        if ( ! "id".equals(serialized.substring(i, j))) return null;
+        if ((j = serialized.indexOf(':', i = j + 1)) <= i) return null;
+        String namespace = serialized.substring(i, j);
+        if ((j = serialized.indexOf(':', i = j + 1)) <= i) return null;
+        String documentType = serialized.substring(i, j);
+        if ((j = serialized.indexOf(':', i = j + 1)) < i) return null;
+        String group = serialized.substring(i, j);
+        if (serialized.length() <= (i = j + 1)) return null;
+        String userSpecific = serialized.substring(i);
+        if (group.startsWith("n=") && group.length() > 2)
+            return DocumentId.of(namespace, documentType, Long.parseLong(group.substring(2)), userSpecific);
+        if (group.startsWith("g=") && group.length() > 2)
+            return DocumentId.of(namespace, documentType, group.substring(2), userSpecific);
+        if (group.isEmpty())
+            return DocumentId.of(namespace, documentType, userSpecific);
+        return null;
     }
 
     public String documentType() {
