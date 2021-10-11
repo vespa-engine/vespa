@@ -43,6 +43,17 @@ public:
 template <typename Base>
 const mbus::string DummyMbusMessage<Base>::NAME = "SkyNet";
 
+bool is_retry_merge(const api::StorageMessage& msg) {
+    auto& merge_cmd = static_cast<const api::MergeBucketCommand&>(msg);
+    switch (merge_cmd.get_merge_type()) {
+    case api::MergeBucketCommand::MergeType::RETRY:
+    case api::MergeBucketCommand::MergeType::BLOCKING_RETRY:
+        return true;
+    default:
+        return false;
+    }
+}
+
 }
 
 MergeThrottler::ChainedMergeState::ChainedMergeState()
@@ -357,6 +368,7 @@ MergeThrottler::forwardCommandToNode(
     fwdMerge->setSourceIndex(mergeCmd.getSourceIndex());
     fwdMerge->setPriority(mergeCmd.getPriority());
     fwdMerge->setTimeout(mergeCmd.getTimeout());
+    fwdMerge->set_merge_type(mergeCmd.get_merge_type());
     msgGuard.sendUp(fwdMerge);
 }
 
@@ -713,7 +725,7 @@ MergeThrottler::handleMessageDown(
 
         if (isMergeAlreadyKnown(msg)) {
             processCycledMergeCommand(msg, msgGuard);
-        } else if (canProcessNewMerge()) {
+        } else if (canProcessNewMerge() || is_retry_merge(*msg)) {
             processNewMergeCommand(msg, msgGuard);
         } else if ((_queue.size() < _maxQueueSize) || allow_merge_with_queue_full(mergeCmd)) {
             enqueueMerge(msg, msgGuard); // Queue for later processing

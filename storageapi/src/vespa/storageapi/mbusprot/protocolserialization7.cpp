@@ -759,6 +759,36 @@ std::vector<api::MergeBucketCommand::Node> get_merge_nodes(
     return nodes;
 }
 
+protobuf::MergeType map_merge_type(api::MergeBucketCommand::MergeType merge_type)
+{
+    switch (merge_type) {
+    default:
+    case api::MergeBucketCommand::MergeType::OLD_TRY:
+        return protobuf::MergeType::OLD_TRY;
+    case api::MergeBucketCommand::MergeType::TRY:
+        return protobuf::MergeType::TRY;
+    case api::MergeBucketCommand::MergeType::RETRY:
+        return protobuf::MergeType::RETRY;
+    case api::MergeBucketCommand::MergeType::BLOCKING_RETRY:
+        return protobuf::MergeType::BLOCKING_RETRY;
+    }
+}
+
+api::MergeBucketCommand::MergeType map_merge_type(protobuf::MergeType merge_type)
+{
+    switch (merge_type) {
+    default:
+    case protobuf::MergeType::OLD_TRY:
+        return api::MergeBucketCommand::MergeType::OLD_TRY;
+    case protobuf::MergeType::TRY:
+        return api::MergeBucketCommand::MergeType::TRY;
+    case protobuf::MergeType::RETRY:
+        return api::MergeBucketCommand::MergeType::RETRY;
+    case protobuf::MergeType::BLOCKING_RETRY:
+        return api::MergeBucketCommand::MergeType::BLOCKING_RETRY;
+    }
+}
+
 }
 
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::MergeBucketCommand& msg) const {
@@ -769,11 +799,14 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::MergeBucketCommand&
         for (uint16_t chain_node : msg.getChain()) {
             req.add_node_chain(chain_node);
         }
+        req.set_merge_type(map_merge_type(msg.get_merge_type()));
     });
 }
 
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::MergeBucketReply& msg) const {
-    encode_bucket_response<protobuf::MergeBucketResponse>(buf, msg, no_op_encode);
+    encode_bucket_response<protobuf::MergeBucketResponse>(buf, msg, [&](auto& req) {
+            req.set_merge_type(map_merge_type(msg.get_merge_type()));
+    });
 }
 
 api::StorageCommand::UP ProtocolSerialization7::onDecodeMergeBucketCommand(BBuf& buf) const {
@@ -787,13 +820,22 @@ api::StorageCommand::UP ProtocolSerialization7::onDecodeMergeBucketCommand(BBuf&
             chain.emplace_back(node);
         }
         cmd->setChain(std::move(chain));
+        if (req.has_merge_type()) {
+            cmd->set_merge_type(map_merge_type(req.merge_type()));
+        }
         return cmd;
     });
 }
 
 api::StorageReply::UP ProtocolSerialization7::onDecodeMergeBucketReply(const SCmd& cmd, BBuf& buf) const {
-    return decode_bucket_response<protobuf::MergeBucketResponse>(buf, [&]([[maybe_unused]] auto& res) {
-        return std::make_unique<api::MergeBucketReply>(static_cast<const api::MergeBucketCommand&>(cmd));
+    return decode_bucket_response<protobuf::MergeBucketResponse>(buf, [&](auto& res) {
+        auto reply = std::make_unique<api::MergeBucketReply>(static_cast<const api::MergeBucketCommand&>(cmd));
+        if (res.has_merge_type()) {
+            reply->set_merge_type(map_merge_type(res.merge_type()));
+        } else {
+            reply->set_merge_type(api::MergeBucketCommand::MergeType::OLD_TRY);
+        }
+        return reply;
     });
 }
 

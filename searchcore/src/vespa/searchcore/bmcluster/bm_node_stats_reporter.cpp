@@ -14,6 +14,14 @@ LOG_SETUP(".bmcluster.bm_node_stats_reporter");
 
 using vespalib::makeLambdaTask;
 
+namespace storage::distributor::mergecounts {
+
+extern std::atomic<uint64_t> source_unchanged_count;
+extern std::atomic<uint64_t> retry_merge_count;
+extern std::atomic<uint64_t> delete_after_merge_count;
+
+}
+
 namespace search::bmcluster {
 
 namespace {
@@ -30,6 +38,40 @@ bool steady_buckets_stats(const std::optional<BmBucketsStats> buckets)
     return value.get_buckets_pending() == 0u;
 }
 
+void append_merge_count(vespalib::asciistream& s, vespalib::asciistream& ns, uint64_t count, const vespalib::string& label) {
+    using Width = vespalib::asciistream::Width;
+    uint32_t success = static_cast<uint32_t>(count >> 32);
+    uint32_t attempts = static_cast<uint32_t>(count);
+    ns.clear();
+    ns << success << "/" << attempts;
+    s << " " << label << Width(12) << ns.str();
+}
+
+}
+
+BmNodeStatsReporter::MergeCounts::MergeCounts()
+    : _source_unchanged_count(0u),
+      _retry_merge_count(0u),
+      _delete_after_merge_count(0u)
+{
+}
+
+BmNodeStatsReporter::MergeCounts&
+BmNodeStatsReporter::MergeCounts::operator-=(const MergeCounts& rhs)
+{
+    _source_unchanged_count -= rhs._source_unchanged_count;
+    _retry_merge_count -= rhs._retry_merge_count;
+    _delete_after_merge_count -= rhs._delete_after_merge_count;
+    return *this;
+}
+
+void
+BmNodeStatsReporter::MergeCounts::sample()
+{
+    using namespace storage::distributor::mergecounts;
+    _source_unchanged_count = source_unchanged_count.load(std::memory_order_relaxed);
+    _retry_merge_count = retry_merge_count.load(std::memory_order_relaxed);
+    _delete_after_merge_count = delete_after_merge_count.load(std::memory_order_relaxed);
 }
 
 BmNodeStatsReporter::BmNodeStatsReporter(BmCluster &cluster, bool report_merge_stats)
@@ -42,7 +84,8 @@ BmNodeStatsReporter::BmNodeStatsReporter(BmCluster &cluster, bool report_merge_s
       _pending_report(1u),
       _report_merge_stats(report_merge_stats),
       _started(false),
-      _stop(false)
+      _stop(false),
+      _prev_merge_counts()
 {
 }
 
@@ -58,6 +101,7 @@ BmNodeStatsReporter::start(std::chrono::milliseconds interval)
 {
     if (!_started) {
         _started = true;
+        _prev_merge_counts.sample();
         _executor.execute(makeLambdaTask([this, interval]() { run_report_loop(interval); }));
         std::unique_lock<std::mutex> guard(_mutex);
         _cond.wait(guard, [this]() { return _pending_report == 0u; });
@@ -132,6 +176,18 @@ BmNodeStatsReporter::report()
                 s << Width(10) << "-";
             }
         }
+        ss = s.str();
+        LOG(info, "%s", ss.c_str());
+        s.clear();
+        s << "mcnt  stats ";
+        MergeCounts merge_counts;
+        merge_counts.sample();
+        MergeCounts delta_merge_counts = merge_counts;
+        delta_merge_counts -= _prev_merge_counts;
+        append_merge_count(s, ns, delta_merge_counts._source_unchanged_count, "srcuchg");
+        append_merge_count(s, ns, delta_merge_counts._retry_merge_count, "remerge");
+        append_merge_count(s, ns, delta_merge_counts._delete_after_merge_count, "remsrc ");
+        _prev_merge_counts = merge_counts;
         ss = s.str();
         LOG(info, "%s", ss.c_str());
     }

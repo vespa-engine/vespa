@@ -32,16 +32,25 @@ message MergeNode {
     bool   source_only = 2;
 }
 
+enum MergeType {
+     OLD_TRY = 0;
+     TRY = 1;
+     RETRY = 2;
+     BLOCKING_RETRY = 3;
+};
+
 message MergeBucketRequest {
     Bucket             bucket                = 1;
     uint32             cluster_state_version = 2;
     uint64             max_timestamp         = 3;
     repeated MergeNode nodes                 = 4;
     repeated uint32    node_chain            = 5;
+    optional MergeType merge_type            = 6;
 }
 
 message MergeBucketResponse {
     BucketId remapped_bucket_id = 1;
+    optional MergeType merge_type = 2;
 }
 
 message MetaDiffEntry {

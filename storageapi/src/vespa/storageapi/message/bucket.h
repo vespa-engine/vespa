@@ -112,12 +112,19 @@ public:
         bool operator==(const Node& n) const noexcept
             { return (index == n.index && sourceOnly == n.sourceOnly); }
     };
+    enum class MergeType {
+        OLD_TRY,
+        TRY,
+        RETRY,
+        BLOCKING_RETRY
+    };
 
 private:
     std::vector<Node> _nodes;
     Timestamp _maxTimestamp;
     uint32_t _clusterStateVersion;
     std::vector<uint16_t> _chain;
+    MergeType             _merge_type;
 
 public:
     MergeBucketCommand(const document::Bucket &bucket,
@@ -130,9 +137,11 @@ public:
     const std::vector<Node>& getNodes() const { return _nodes; }
     Timestamp getMaxTimestamp() const { return _maxTimestamp; }
     const std::vector<uint16_t>& getChain() const { return _chain; }
+    MergeType get_merge_type() const noexcept { return _merge_type; }
     uint32_t getClusterStateVersion() const { return _clusterStateVersion; }
     void setClusterStateVersion(uint32_t version) { _clusterStateVersion = version; }
     void setChain(const std::vector<uint16_t>& chain) { _chain = chain; }
+    void set_merge_type(MergeType merge_type) { _merge_type = merge_type; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGECOMMAND(MergeBucketCommand, onMergeBucket)
 };
@@ -149,12 +158,14 @@ operator<<(std::ostream& out, const MergeBucketCommand::Node& n);
 class MergeBucketReply : public BucketReply {
 public:
     typedef MergeBucketCommand::Node Node;
+    using MergeType = MergeBucketCommand::MergeType;
 
 private:
     std::vector<Node> _nodes;
     Timestamp _maxTimestamp;
     uint32_t _clusterStateVersion;
     std::vector<uint16_t> _chain;
+    MergeType             _merge_type;
 
 public:
     explicit MergeBucketReply(const MergeBucketCommand& cmd);
@@ -162,7 +173,9 @@ public:
     const std::vector<Node>& getNodes() const { return _nodes; }
     Timestamp getMaxTimestamp() const { return _maxTimestamp; }
     const std::vector<uint16_t>& getChain() const { return _chain; }
+    MergeType get_merge_type() const noexcept { return _merge_type; }
     uint32_t getClusterStateVersion() const { return _clusterStateVersion; }
+    void set_merge_type(MergeType merge_type) { _merge_type = merge_type; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(MergeBucketReply, onMergeBucketReply)

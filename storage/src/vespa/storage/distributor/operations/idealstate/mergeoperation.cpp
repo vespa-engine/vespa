@@ -11,7 +11,33 @@
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.operation.idealstate.merge");
 
+namespace {
+
+constexpr uint64_t failure_delta = 1ul;
+constexpr uint64_t success_delta = (1ul << 32) | failure_delta;
+
+bool can_retry_merge(const storage::api::MergeBucketReply& reply)
+{
+    switch (reply.get_merge_type()) {
+    case storage::api::MergeBucketCommand::MergeType::TRY:
+    case storage::api::MergeBucketCommand::MergeType::RETRY:
+        return true;
+    default:
+        return false;
+    }
+}
+
+}
+
 namespace storage::distributor {
+
+inline namespace mergecounts {
+
+std::atomic<uint64_t> source_unchanged_count(0u);
+std::atomic<uint64_t> retry_merge_count(0u);
+std::atomic<uint64_t> delete_after_merge_count(0u);
+
+}
 
 MergeOperation::~MergeOperation() = default;
 
@@ -147,6 +173,11 @@ MergeOperation::onStart(DistributorStripeMessageSender& sender)
                 _mnodes,
                 _manager->operation_context().generate_unique_timestamp(),
                 clusterState.getVersion());
+        if (_pass > 0) {
+            msg->set_merge_type(api::MergeBucketCommand::MergeType::RETRY);
+        } else {
+            msg->set_merge_type(api::MergeBucketCommand::MergeType::TRY);
+        }
 
         // Due to merge forwarding/chaining semantics, we must always send
         // the merge command to the lowest indexed storage node involved in
@@ -239,6 +270,7 @@ MergeOperation::deleteSourceOnlyNodes(
             LOG(debug, "Source only removal for %s was blocked by a pending operation",
                 getBucketId().toString().c_str());
             _ok = false;
+            delete_after_merge_count += failure_delta;
             done();
             return;
         }
@@ -248,9 +280,9 @@ MergeOperation::deleteSourceOnlyNodes(
             _ok = _removeOperation->ok();
             done();
         }
+    } else {
+        done();
     }
-    // FIXME what about the else-case here...? done() is not invoked by caller in this branch.
-    // Not calling done() doesn't leak anything, but causes metric updates to be missed.
 }
 
 void
@@ -260,6 +292,11 @@ MergeOperation::onReceive(DistributorStripeMessageSender& sender,
     if (_removeOperation.get()) {
         if (_removeOperation->onReceiveInternal(msg)) {
             _ok = _removeOperation->ok();
+            if (_ok) {
+                delete_after_merge_count += success_delta;
+            } else {
+                delete_after_merge_count += failure_delta;
+            }
             done();
         }
 
@@ -283,10 +320,24 @@ MergeOperation::onReceive(DistributorStripeMessageSender& sender,
             return;
         }
         if (sourceOnlyCopyChangedDuringMerge(entry)) {
+            source_unchanged_count += failure_delta;
+            auto merge_operation_owner_sender = dynamic_cast<OperationOwner::Sender *>(&sender);
+            if (_pass < 4u && merge_operation_owner_sender != nullptr && can_retry_merge(reply)) {
+                if (!isBlocked(_manager->operation_context(), sender.operation_sequencer())) {
+                    retry_merge_count += success_delta;
+                    auto retry_operation = std::make_unique<MergeOperation>(getBucketAndNodes(), _limiter.get_max_nodes());
+                    retry_operation->set_pass(_pass + 1);
+                    retry_operation->setIdealStateManager(_manager);
+                    merge_operation_owner_sender->getOwner().start(std::move(retry_operation), 0 /* unused priority */);
+                } else {
+                    retry_merge_count += failure_delta;
+                }
+            }
             _ok = false;
             done();
             return;
         }
+        source_unchanged_count += success_delta;
         deleteSourceOnlyNodes(entry, sender);
         return;
     } else if (result.isBusy()) {

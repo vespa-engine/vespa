@@ -338,6 +338,7 @@ api::StorageReply::UP
 ProtocolSerialization5_0::onDecodeMergeBucketReply(const SCmd& cmd, BBuf& buf) const
 {
     auto msg = std::make_unique<api::MergeBucketReply>(static_cast<const api::MergeBucketCommand&>(cmd));
+    msg->set_merge_type(api::MergeBucketCommand::MergeType::OLD_TRY);
     onDecodeBucketReply(buf, *msg);
     return msg;
 }

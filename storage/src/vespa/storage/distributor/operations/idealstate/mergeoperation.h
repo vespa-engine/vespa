@@ -22,6 +22,7 @@ protected:
     std::unique_ptr<RemoveBucketOperation> _removeOperation;
     BucketInfo _infoBefore;
     MergeLimiter _limiter;
+    uint32_t     _pass;
 
 public:
     static const int LOAD = 10;
@@ -29,7 +30,8 @@ public:
     MergeOperation(const BucketAndNodes& nodes, uint16_t maxNodes = 16)
         : IdealStateOperation(nodes),
           _sentMessageTime(0),
-          _limiter(maxNodes)
+          _limiter(maxNodes),
+          _pass(0u)
     {}
 
     ~MergeOperation();
@@ -48,6 +50,7 @@ public:
 
     bool shouldBlockThisOperation(uint32_t messageType, uint8_t pri) const override;
     bool isBlocked(const DistributorStripeOperationContext& ctx, const OperationSequencer&) const override;
+    void set_pass(uint32_t pass) { _pass = pass; }
 private:
     static void addIdealNodes(
             const std::vector<uint16_t>& idealNodes,

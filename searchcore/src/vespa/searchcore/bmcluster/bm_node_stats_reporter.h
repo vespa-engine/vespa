@@ -17,6 +17,17 @@ class BmNodeStats;
  * document redistribution.
  */
 class BmNodeStatsReporter {
+public:
+    struct MergeCounts {
+        uint64_t                  _source_unchanged_count;
+        uint64_t                  _retry_merge_count;
+        uint64_t                  _delete_after_merge_count;
+
+        MergeCounts();
+        MergeCounts& operator-=(const MergeCounts& rhs);
+        void sample();
+    };
+private:
     BmCluster&                    _cluster;
     vespalib::ThreadStackExecutor _executor;
     std::mutex                    _mutex;
@@ -27,6 +38,7 @@ class BmNodeStatsReporter {
     bool                          _report_merge_stats;
     bool                          _started;
     bool                          _stop;
+    MergeCounts                   _prev_merge_counts;
 
     void report();
     void run_report_loop(std::chrono::milliseconds interval);

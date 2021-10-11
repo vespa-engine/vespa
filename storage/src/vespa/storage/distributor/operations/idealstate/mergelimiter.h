@@ -16,6 +16,7 @@ public:
     MergeLimiter(uint16_t maxNodes);
 
     void limitMergeToMaxNodes(NodeArray&);
+    uint16_t get_max_nodes() const noexcept { return _maxNodes; }
 };
 
 } // storage::distributor

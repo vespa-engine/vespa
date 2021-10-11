@@ -17,12 +17,13 @@ struct BucketInstance : public vespalib::AsciiPrintable {
     lib::Node          _node;
     uint16_t           _idealLocationPriority;
     bool               _trusted;
+    bool               _active;
     bool               _exist;
 
     BucketInstance() : _idealLocationPriority(0xffff),
-                       _trusted(false), _exist(false) {}
+                       _trusted(false), _active(false), _exist(false) {}
     BucketInstance(const document::BucketId& id, const api::BucketInfo& info,
-                   lib::Node node, uint16_t idealLocationPriority, bool trusted,
+                   lib::Node node, uint16_t idealLocationPriority, bool trusted, bool active,
                    bool exist = true);
 
     void print(vespalib::asciistream& out, const PrintProperties&) const override;

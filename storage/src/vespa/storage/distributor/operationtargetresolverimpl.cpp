@@ -25,9 +25,9 @@ make_node_list(const std::vector<uint16_t>& nodes)
 
 BucketInstance::BucketInstance(
         const document::BucketId& id, const api::BucketInfo& info,
-        lib::Node node, uint16_t idealLocationPriority, bool trusted, bool exist)
+        lib::Node node, uint16_t idealLocationPriority, bool trusted, bool active, bool exist)
     : _bucket(id), _info(info), _node(node),
-      _idealLocationPriority(idealLocationPriority), _trusted(trusted), _exist(exist)
+      _idealLocationPriority(idealLocationPriority), _trusted(trusted), _active(active), _exist(exist)
 {
 }
 
@@ -64,7 +64,7 @@ BucketInstanceList::add(BucketDatabase::Entry& e,
         lib::Node node(lib::NodeType::STORAGE, copy.getNode());
         _instances.push_back(BucketInstance(
                 e.getBucketId(), copy.getBucketInfo(), node,
-                idealState.indexOf(node), copy.trusted()));
+                idealState.indexOf(node), copy.trusted(), copy.active()));
     }
 }
 
@@ -134,7 +134,7 @@ BucketInstanceList::extendToEnoughCopies(
         if (!contains(idealNodes[i])) {
             _instances.push_back(BucketInstance(
                     newTarget, api::BucketInfo(), idealNodes[i],
-                    i, false, false));
+                    i, false, false, false));
         }
     }
 }
@@ -158,7 +158,7 @@ BucketInstanceList::print(vespalib::asciistream& out, const PrintProperties& p) 
 namespace {
 
 /**
- * - Trusted copies should be preferred over non-trusted copies for the same bucket.
+ * - Active copies should be preferred over non-active copies for the same bucket.
  * - Buckets in ideal locations should be preferred over non-ideal locations for the
  *   same bucket across several nodes.
  * - Buckets with data should be preferred over buckets without data.
@@ -169,9 +169,9 @@ namespace {
 struct InstanceOrder {
     bool operator()(const BucketInstance& a, const BucketInstance& b) {
         if (a._bucket == b._bucket) {
-                // Trusted only makes sense within same bucket
-                // Prefer trusted buckets over non-trusted ones.
-            if (a._trusted != b._trusted) return a._trusted;
+            if (a._active != b._active) {
+                return a._active;
+            }
             if (a._idealLocationPriority != b._idealLocationPriority) {
                 return a._idealLocationPriority < b._idealLocationPriority;
             }

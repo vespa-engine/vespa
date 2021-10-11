@@ -107,7 +107,8 @@ MergeBucketCommand::MergeBucketCommand(
       _nodes(nodes),
       _maxTimestamp(maxTimestamp),
       _clusterStateVersion(clusterStateVersion),
-      _chain(chain)
+      _chain(chain),
+      _merge_type(MergeType::OLD_TRY)
 {}
 
 MergeBucketCommand::~MergeBucketCommand() = default;
@@ -146,7 +147,8 @@ MergeBucketReply::MergeBucketReply(const MergeBucketCommand& cmd)
       _nodes(cmd.getNodes()),
       _maxTimestamp(cmd.getMaxTimestamp()),
       _clusterStateVersion(cmd.getClusterStateVersion()),
-      _chain(cmd.getChain())
+      _chain(cmd.getChain()),
+      _merge_type(cmd.get_merge_type())
 {
 }
 
