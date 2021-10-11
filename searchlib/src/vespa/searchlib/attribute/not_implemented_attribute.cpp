@@ -11,8 +11,8 @@ using SearchContext = AttributeVector::SearchContext;
 
 void
 NotImplementedAttribute::notImplemented() const {
-    throw vespalib::IllegalStateException(fmt("The function is not implemented for attribute '%s' of type '%s'.",
-                                              getName().c_str(), getNativeClassName().c_str()));
+    throw vespalib::UnsupportedOperationException(fmt("The function is not implemented for attribute '%s' of type '%s'.",
+                                                      getName().c_str(), getNativeClassName().c_str()));
 }
 
 uint32_t
