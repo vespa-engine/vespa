@@ -17,6 +17,8 @@ public interface PlanRegistry {
 
     /** Get a plan give a plan ID */
     default Optional<Plan> plan(String planId) {
+        if (planId == null || planId.isBlank())
+            return Optional.empty();
         return plan(PlanId.from(planId));
     }
 
