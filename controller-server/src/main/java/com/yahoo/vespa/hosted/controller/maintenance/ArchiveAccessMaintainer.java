@@ -5,8 +5,6 @@ import com.google.common.collect.Maps;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -32,8 +30,6 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
     private final ArchiveService archiveService;
     private final ZoneRegistry zoneRegistry;
     private final Metric metric;
-    private final BooleanFlag archiveEnabled;
-    private final BooleanFlag developerRoleEnabled;
 
     public ArchiveAccessMaintainer(Controller controller, Metric metric, Duration interval) {
         super(controller, interval);
@@ -41,8 +37,6 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
         this.archiveService = controller.serviceRegistry().archiveService();
         this.zoneRegistry = controller().zoneRegistry();
         this.metric = metric;
-        this.archiveEnabled = Flags.ENABLE_ONPREM_TENANT_S3_ARCHIVE.bindTo(controller().flagSource());
-        this.developerRoleEnabled = Flags.ENABLE_TENANT_DEVELOPER_ROLE.bindTo(controller().flagSource());
     }
 
     @Override
