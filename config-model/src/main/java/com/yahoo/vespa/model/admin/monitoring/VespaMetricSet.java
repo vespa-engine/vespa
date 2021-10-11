@@ -622,6 +622,12 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergedatawritelatency.max"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergedatawritelatency.sum"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergedatawritelatency.count"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.put_latency.max"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.put_latency.sum"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.put_latency.count"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove_latency.max"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove_latency.sum"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove_latency.count"));
 
         metrics.add(new Metric("vds.visitor.allthreads.queuesize.count.max"));
         metrics.add(new Metric("vds.visitor.allthreads.queuesize.count.sum"));
