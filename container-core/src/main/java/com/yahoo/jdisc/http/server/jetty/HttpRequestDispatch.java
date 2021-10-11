@@ -85,12 +85,12 @@ class HttpRequestDispatch {
         } catch (Throwable t) {
             servletResponseController.finishedFuture()
                     .whenComplete((__, ___) -> requestCompletion.completeExceptionally(t));
-            servletResponseController.fail(t);
+            servletResponseController.trySendErrorResponse(t);
             return;
         }
 
         servletRequestReader.finishedFuture().whenComplete((__, t) -> {
-            if (t != null) servletResponseController.fail(t);
+            if (t != null) servletResponseController.trySendErrorResponse(t);
         });
         servletResponseController.finishedFuture().whenComplete((__, t) -> {
             if (t != null) servletRequestReader.fail(t);
@@ -104,7 +104,6 @@ class HttpRequestDispatch {
 
     ContentChannel dispatchFilterRequest(Response response) {
         try {
-
             CompletableFuture<Void> requestCompletion = startServletAsyncExecution();
             jettyRequest.getInputStream().close();
             ContentChannel responseContentChannel = servletResponseController.responseHandler().handleResponse(response);
@@ -140,6 +139,9 @@ class HttpRequestDispatch {
     private void onRequestFinished(AsyncContext asyncCtx, Throwable error) {
         boolean reportedError = false;
         if (error != null) {
+            // It's too late to write any error response and response writer must therefore be forcefully closed
+            servletResponseController.forceClose(error);
+
             if (isErrorOfType(error, EofException.class, IOException.class)) {
                 log.log(Level.FINE,
                         error,

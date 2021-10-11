@@ -67,10 +67,11 @@ class ServletResponseController {
         this.out = new ServletOutputStreamWriter(servletResponse.getOutputStream(), janitor, metricReporter);
     }
 
-    void fail(Throwable t) {
+    /** Try to send an error response (assuming failure is recoverable) */
+    void trySendErrorResponse(Throwable t) {
         synchronized (monitor) {
             try {
-                trySendError(t);
+                sendErrorResponseIfUncommitted(t);
             } catch (Throwable suppressed) {
                 t.addSuppressed(suppressed);
             } finally {
@@ -78,6 +79,9 @@ class ServletResponseController {
             }
         }
     }
+
+    /** Close response writer and fail out any queued response content */
+    void forceClose(Throwable t) { out.fail(t); }
 
     /**
      * When this future completes there will be no more calls against the servlet output stream or servlet response.
@@ -89,7 +93,7 @@ class ServletResponseController {
 
     ResponseHandler responseHandler() { return responseHandler; }
 
-    private void trySendError(Throwable t) {
+    private void sendErrorResponseIfUncommitted(Throwable t) {
         if (!responseCommitted) {
             responseCommitted = true;
             servletResponse.setHeader(HttpHeaders.Names.EXPIRES, null);
