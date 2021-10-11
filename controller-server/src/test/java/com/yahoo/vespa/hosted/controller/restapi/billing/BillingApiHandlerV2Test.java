@@ -43,7 +43,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
         var clock = (ManualClock) tester.controller().serviceRegistry().clock();
         clock.setInstant(Instant.parse("2021-04-13T00:00:00Z"));
         billingController = (MockBillingController) tester.serviceRegistry().billingController();
-        billingController.addBill(tenant, BillingApiHandlerTest.createBill(), true);
+        billingController.addInvoice(tenant, BillingApiHandlerTest.createInvoice(), true);
     }
 
     @Override

@@ -20,18 +20,18 @@ import java.util.function.Function;
 
 
 /**
- * An Bill is an identifier with a status (with history) and line items.  A line item is the meat and
- * potatoes of the content of the bill, and are a history of items.  Most line items are connected to
+ * An Invoice is an identifier with a status (with history) and line items.  A line item is the meat and
+ * potatoes of the content of the invoice, and are a history of items.  Most line items are connected to
  * a given deployment in Vespa Cloud, but they can also be manually added to e.g. give a discount or represent
  * support.
  * <p>
  * All line items have a Plan associated with them - which was used to map from utilization to an actual price.
  * <p>
- * The bill has a status history, but only the latest status is exposed through this API.
+ * The invoice has a status history, but only the latest status is exposed through this API.
  *
  * @author ogronnesby
  */
-public class Bill {
+public class Invoice {
     private static final BigDecimal SCALED_ZERO = new BigDecimal("0.00");
 
     private final Id id;
@@ -41,7 +41,7 @@ public class Bill {
     private final ZonedDateTime startTime;
     private final ZonedDateTime endTime;
 
-    public Bill(Id id, TenantName tenant, StatusHistory statusHistory, List<LineItem> lineItems, ZonedDateTime startTime, ZonedDateTime endTime) {
+    public Invoice(Id id, TenantName tenant, StatusHistory statusHistory, List<LineItem> lineItems, ZonedDateTime startTime, ZonedDateTime endTime) {
         this.id = id;
         this.tenant = tenant;
         this.lineItems = List.copyOf(lineItems);
@@ -141,8 +141,8 @@ public class Bill {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            Id billId = (Id) o;
-            return value.equals(billId.value);
+            Id invoiceId = (Id) o;
+            return value.equals(invoiceId.value);
         }
 
         @Override
@@ -152,14 +152,14 @@ public class Bill {
 
         @Override
         public String toString() {
-            return "BillId{" +
+            return "InvoiceId{" +
                     "value='" + value + '\'' +
                     '}';
         }
     }
 
     /**
-     * Represents a chargeable line on a bill.
+     * Represents a chargeable line on an invoice.
      */
     public static class LineItem {
         private final String id;
