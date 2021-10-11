@@ -6,7 +6,6 @@
 #include <vespa/searchlib/fef/itermfielddata.h>
 #include <vespa/searchlib/fef/objectstore.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stash.h>
 #include <cmath>
 #include <stdexcept>
@@ -24,7 +23,6 @@ using fef::ITermData;
 using fef::ITermFieldData;
 using fef::MatchDataDetails;
 using fef::objectstore::as_value;
-using vespalib::Issue;
 
 namespace {
 
@@ -107,8 +105,8 @@ Bm25Blueprint::lookup_param(const fef::Properties& props, const vespalib::string
         try {
             result = std::stod(value.get());
         } catch (const std::invalid_argument& ex) {
-            Issue::report("Not able to convert rank property '%s': '%s' to a double value",
-                          key.c_str(), value.get().c_str());
+            LOG(warning, "Not able to convert rank property '%s': '%s' to a double value",
+                key.c_str(), value.get().c_str());
             return false;
         }
     }
