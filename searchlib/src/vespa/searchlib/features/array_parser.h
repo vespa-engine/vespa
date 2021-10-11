@@ -21,9 +21,6 @@ namespace search::features {
  */
 class ArrayParser
 {
-private:
-    static void logWarning(const vespalib::string &msg);
-
 public:
     template <typename T>
     class ValueAndIndex {

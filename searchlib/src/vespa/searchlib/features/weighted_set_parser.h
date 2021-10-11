@@ -15,9 +15,6 @@ namespace search::features {
  */
 class WeightedSetParser
 {
-private:
-    static void logWarning(const vespalib::string &msg);
-
 public:
     template <typename OutputType>
     static void parse(const vespalib::string &input, OutputType &output);

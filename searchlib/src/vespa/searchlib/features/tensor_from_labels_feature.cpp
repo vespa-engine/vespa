@@ -10,6 +10,7 @@
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.tensor_from_labels_feature");
@@ -21,6 +22,7 @@ using search::attribute::WeightedStringContent;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::ValueType;
 using vespalib::eval::CellType;
+using vespalib::Issue;
 using search::fef::FeatureType;
 
 namespace search {
@@ -59,18 +61,18 @@ createAttributeExecutor(const search::fef::IQueryEnvironment &env,
 {
     const IAttributeVector *attribute = env.getAttributeContext().getAttribute(attrName);
     if (attribute == NULL) {
-        LOG(warning, "The attribute vector '%s' was not found in the attribute manager."
-                " Returning empty tensor.", attrName.c_str());
+        Issue::report("The attribute vector '%s' was not found in the attribute manager."
+                      " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }
     if (attribute->isFloatingPointType()) {
-        LOG(warning, "The attribute vector '%s' must have basic type string or integer."
-            " Returning empty tensor.", attrName.c_str());
+        Issue::report("The attribute vector '%s' must have basic type string or integer."
+                      " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }
     if (attribute->getCollectionType() == search::attribute::CollectionType::WSET) {
-        LOG(warning, "The attribute vector '%s' is a weighted set - use tensorFromWeightedSet instead."
-            " Returning empty tensor.", attrName.c_str());
+        Issue::report("The attribute vector '%s' is a weighted set - use tensorFromWeightedSet instead."
+                      " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }
     // Note that for array attribute vectors the default weight is 1.0 for all values.

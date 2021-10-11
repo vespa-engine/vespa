@@ -5,9 +5,11 @@
 #include "array_parser.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vector>
 #include <algorithm>
+
+using vespalib::Issue;
 
 namespace search::features {
 
@@ -49,16 +51,14 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
                     if ((colon == ':') && is.eof()) {
                         output.emplace_back(value, key);
                     } else {
-                        logWarning(vespalib::make_string(
-                                "Could not parse item '%s' in query vector '%s', skipping. "
-                                "Expected ':' between dimension and component.",
-                                vespalib::string(item).c_str(), input.c_str()));
+                        Issue::report("Could not parse item '%s' in query vector '%s', skipping. "
+                                      "Expected ':' between dimension and component.",
+                                      vespalib::string(item).c_str(), input.c_str());
                         return;
                     }
                 } catch (vespalib::IllegalArgumentException & e) {
-                    logWarning(vespalib::make_string(
-                            "Could not parse item '%s' in query vector '%s', skipping. "
-                            "Incorrect type of operands", vespalib::string(item).c_str(), input.c_str()));
+                    Issue::report("Could not parse item '%s' in query vector '%s', skipping. "
+                                  "Incorrect type of operands", vespalib::string(item).c_str(), input.c_str());
                     return;
                 }
                 if (commaPos != vespalib::string::npos) {
@@ -75,17 +75,14 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
                     is >> value;
                     output.emplace_back(value, index++);
                 } catch (vespalib::IllegalArgumentException & e) {
-                    logWarning(vespalib::make_string(
-                            "Could not parse item[%ld] = '%s' in query vector '%s', skipping. "
-                            "Incorrect type of operands", output.size(), is.c_str(), vespalib::string(s).c_str()));
+                    Issue::report("Could not parse item[%ld] = '%s' in query vector '%s', skipping. "
+                                  "Incorrect type of operands", output.size(), is.c_str(), vespalib::string(s).c_str());
                     return;
                 }
             }
         }
     } else {
-        logWarning(vespalib::make_string(
-                "Could not parse query vector '%s'. Expected surrounding '(' and ')' or '{' and '}'.",
-                input.c_str()));
+        Issue::report("Could not parse query vector '%s'. Expected surrounding '(' and ')' or '{' and '}'.", input.c_str());
     }
 }
 

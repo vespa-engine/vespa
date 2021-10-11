@@ -6,6 +6,7 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/vespalib/geo/zcurve.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stash.h>
 #include <cmath>
 #include <limits>
@@ -16,6 +17,7 @@ LOG_SETUP(".features.distancefeature");
 
 using namespace search::fef;
 using namespace search::index::schema;
+using vespalib::Issue;
 
 namespace search::features {
 
@@ -281,16 +283,16 @@ DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash 
         pos = env.getAttributeContext().getAttribute(_arg_string);
         if (pos != nullptr) {
             if (!pos->isIntegerType()) {
-                LOG(warning, "The position attribute '%s' is not an integer attribute. Will use default distance.",
-                    pos->getName().c_str());
+                Issue::report("The position attribute '%s' is not an integer attribute. Will use default distance.",
+                              pos->getName().c_str());
                 pos = nullptr;
             } else if (pos->getCollectionType() == attribute::CollectionType::WSET) {
-                LOG(warning, "The position attribute '%s' is a weighted set attribute. Will use default distance.",
-                    pos->getName().c_str());
+                Issue::report("The position attribute '%s' is a weighted set attribute. Will use default distance.",
+                              pos->getName().c_str());
                 pos = nullptr;
             }
         } else {
-            LOG(warning, "The position attribute '%s' was not found. Will use default distance.", _arg_string.c_str());
+            Issue::report("The position attribute '%s' was not found. Will use default distance.", _arg_string.c_str());
         }
     }
     LOG(debug, "use '%s' locations with pos=%p", matching_locs.empty() ? "other" : "matching", pos);

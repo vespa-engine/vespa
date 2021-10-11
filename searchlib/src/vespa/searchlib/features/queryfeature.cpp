@@ -15,6 +15,7 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/issue.h>
 #include <cerrno>
 
 #include <vespa/log/log.h>
@@ -24,6 +25,7 @@ using namespace search::fef;
 using namespace search::fef::indexproperties;
 using document::TensorDataType;
 using vespalib::eval::ValueType;
+using vespalib::Issue;
 using search::fef::FeatureType;
 
 namespace search::features {
@@ -124,13 +126,13 @@ createTensorExecutor(const IQueryEnvironment &env,
         try {
             auto tensor = vespalib::eval::decode_value(stream, vespalib::eval::FastValueBuilderFactory::get());
             if (!TensorDataType::isAssignableType(valueType, tensor->type())) {
-                LOG(warning, "Query feature type is '%s' but other tensor type is '%s'",
-                    valueType.to_spec().c_str(), tensor->type().to_spec().c_str());
+                Issue::report("Query feature type is '%s' but other tensor type is '%s'",
+                              valueType.to_spec().c_str(), tensor->type().to_spec().c_str());
                 return ConstantTensorExecutor::createEmpty(valueType, stash);
             }
             return ConstantTensorExecutor::create(std::move(tensor), stash);
         } catch (const vespalib::eval::DecodeValueException &e) {
-            LOG(warning, "Query feature has invalid binary format: %s", e.what());
+            Issue::report("Query feature has invalid binary format: %s", e.what());
             return ConstantTensorExecutor::createEmpty(valueType, stash);
         }
     }

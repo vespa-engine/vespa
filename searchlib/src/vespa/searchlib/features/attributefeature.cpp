@@ -16,10 +16,10 @@
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.attributefeature");
-
 
 using search::attribute::IAttributeVector;
 using search::attribute::BasicType;
@@ -35,6 +35,7 @@ using search::attribute::WeightedIntegerContent;
 using search::attribute::WeightedFloatContent;
 using search::fef::FeatureExecutor;
 using search::features::util::ConstCharPtr;
+using vespalib::Issue;
 using vespalib::eval::ValueType;
 using search::fef::FeatureType;
 using namespace search::index;
@@ -357,8 +358,8 @@ fef::FeatureExecutor &
 createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
 {
     if (attribute == nullptr) {
-        LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning default values.",
-                attrName.c_str());
+        Issue::report("The attribute vector '%s' was not found in the attribute manager, returning default values.",
+                      attrName.c_str());
         std::vector<feature_t> values(numOutputs, 0.0f);
         return stash.create<ValueExecutor>(values);
     }
@@ -445,28 +446,29 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
                               vespalib::Stash &stash)
 {
     if (attribute == nullptr) {
-        LOG(warning, "The attribute vector '%s' was not found in the attribute manager."
-                " Returning empty tensor.", attrName.c_str());
+        Issue::report("The attribute vector '%s' was not found in the attribute manager."
+                      " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
     if (attribute->getCollectionType() != attribute::CollectionType::SINGLE ||
-            attribute->getBasicType() != attribute::BasicType::TENSOR) {
-        LOG(warning, "The attribute vector '%s' is NOT of type tensor."
-                " Returning empty tensor.", attribute->getName().c_str());
+        attribute->getBasicType() != attribute::BasicType::TENSOR)
+    {
+        Issue::report("The attribute vector '%s' is NOT of type tensor."
+                      "Returning empty tensor.", attribute->getName().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
     const ITensorAttribute *tensorAttribute = attribute->asTensorAttribute();
     if (tensorAttribute == nullptr) {
-        LOG(warning, "The attribute vector '%s' could not be converted to a tensor attribute."
-                " Returning empty tensor.", attribute->getName().c_str());
+        Issue::report("The attribute vector '%s' could not be converted to a tensor attribute."
+                      " Returning empty tensor.", attribute->getName().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
     if (tensorType != tensorAttribute->getTensorType()) {
-        LOG(warning, "The tensor attribute '%s' has tensor type '%s',"
-                " while the feature executor expects type '%s'. Returning empty tensor.",
-                attribute->getName().c_str(),
-                tensorAttribute->getTensorType().to_spec().c_str(),
-                tensorType.to_spec().c_str());
+        Issue::report("The tensor attribute '%s' has tensor type '%s',"
+                      " while the feature executor expects type '%s'. Returning empty tensor.",
+                      attribute->getName().c_str(),
+                      tensorAttribute->getTensorType().to_spec().c_str(),
+                      tensorType.to_spec().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
     if (tensorAttribute->supports_extract_cells_ref()) {

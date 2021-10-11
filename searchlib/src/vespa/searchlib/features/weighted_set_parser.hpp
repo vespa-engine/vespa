@@ -3,7 +3,9 @@
 #pragma once
 
 #include "weighted_set_parser.h"
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/issue.h>
+
+using vespalib::Issue;
 
 namespace search::features {
 
@@ -27,9 +29,8 @@ WeightedSetParser::parse(const vespalib::string &input, OutputType &output)
                 vespalib::stringref value(item.substr(colonPos+1));
                 output.insert(key, value);
             } else {
-                logWarning(vespalib::make_string(
-                        "Could not parse item '%s' in input string '%s', skipping. "
-                    "Expected ':' between key and weight.", vespalib::string(item).c_str(), input.c_str()));
+                Issue::report("Could not parse item '%s' in input string '%s', skipping. "
+                              "Expected ':' between key and weight.", vespalib::string(item).c_str(), input.c_str());
             }
             if (commaPos != vespalib::string::npos) {
                 s = s.substr(commaPos+1);
@@ -38,8 +39,8 @@ WeightedSetParser::parse(const vespalib::string &input, OutputType &output)
             }
         }
     } else {
-        logWarning(vespalib::make_string("Could not parse input string '%s'. "
-                "Expected surrounding '(' and ')' or '{' and '}'.", input.c_str()));
+        Issue::report("Could not parse input string '%s'. "
+                      "Expected surrounding '(' and ')' or '{' and '}'.", input.c_str());
     }
 }
 
