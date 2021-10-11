@@ -8,6 +8,7 @@ import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
+import org.eclipse.jetty.http.HttpCompliance;
 import org.eclipse.jetty.http2.server.AbstractHTTP2ServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
@@ -86,6 +87,7 @@ public class ConnectorFactory {
         connector.setAcceptQueueSize(connectorConfig.acceptQueueSize());
         connector.setReuseAddress(connectorConfig.reuseAddress());
         connector.setIdleTimeout(toMillis(connectorConfig.idleTimeout()));
+        connector.addBean(HttpCompliance.RFC7230);
         return connector;
     }
 
