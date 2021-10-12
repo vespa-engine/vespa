@@ -262,10 +262,14 @@ public class ContentSearchClusterTest {
 
     @Test
     public void verifyControlOfDocStoreCompression() throws Exception {
-        assertEquals(9, getProtonConfig(createCluster(new ContentClusterBuilder().getXml())).summary().log().chunk().compression().level());
-        assertEquals(3, getProtonConfig(createCluster(new ContentClusterBuilder().getXml(),
-                new DeployState.Builder().properties(new TestProperties().docstoreCompressionLevel(3))
-                )).summary().log().chunk().compression().level());
+        ProtonConfig cfg = getProtonConfig(createCluster(new ContentClusterBuilder().getXml()));
+        assertEquals(9, cfg.summary().log().chunk().compression().level());
+        assertEquals(9, cfg.summary().log().compact().compression().level());
+
+        cfg = getProtonConfig(createCluster(new ContentClusterBuilder().getXml(),
+                new DeployState.Builder().properties(new TestProperties().docstoreCompressionLevel(3))));
+        assertEquals(3, cfg.summary().log().chunk().compression().level());
+        assertEquals(3, cfg.summary().log().compact().compression().level());
     }
 
     @Test

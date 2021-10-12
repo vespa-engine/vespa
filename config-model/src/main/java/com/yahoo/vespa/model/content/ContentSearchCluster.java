@@ -408,6 +408,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         builder.flush.memory.diskbloatfactor(defaultDiskBloatFactor);
         builder.flush.memory.each.diskbloatfactor(defaultDiskBloatFactor);
         builder.summary.log.chunk.compression.level(defaultDocStoreCompressionLevel);
+        builder.summary.log.compact.compression.level(defaultDocStoreCompressionLevel);
 
         int numDocumentDbs = builder.documentdb.size();
         builder.initialize(new ProtonConfig.Initialize.Builder().threads(numDocumentDbs + 1));
