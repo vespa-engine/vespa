@@ -17,6 +17,29 @@ namespace vespalib::slime {
 
 namespace {
 
+inline int fromHexDigit(char digit) {
+    switch(digit) {
+    case '0': return 0;
+    case '1': return 1;
+    case '2': return 2;
+    case '3': return 3; 
+    case '4': return 4; 
+    case '5': return 5; 
+    case '6': return 6; 
+    case '7': return 7; 
+    case '8': return 8; 
+    case '9': return 9; 
+    case 'a': case 'A': return 0xA; 
+    case 'b': case 'B': return 0xB; 
+    case 'c': case 'C': return 0xC; 
+    case 'd': case 'D': return 0xD; 
+    case 'e': case 'E': return 0xE; 
+    case 'f': case 'F': return 0xF; 
+    default:
+        return -1;
+    }
+}
+
 template <bool COMPACT>
 struct JsonEncoder : public ArrayTraverser,
                      public ObjectTraverser
@@ -223,6 +246,7 @@ struct JsonDecoder {
     void decodeObject(Inserter &inserter);
     void decodeArray(Inserter &inserter);
     void decodeNumber(Inserter &inserter);
+    void decodeData(Inserter &inserter);
     void decodeValue(Inserter &inserter) {
         skipWhiteSpace();
         switch (c) {
@@ -232,6 +256,7 @@ struct JsonDecoder {
         case 't': expect("true"); inserter.insertBool(true); return;
         case 'f': expect("false"); inserter.insertBool(false); return;
         case 'n': expect("null"); inserter.insertNix(); return;
+        case 'x': return decodeData(inserter);
         case '-': case '0': case '1': case '2': case '3': case '4': case '5':
         case '6': case '7': case '8': case '9': return decodeNumber(inserter);
         }
@@ -249,27 +274,12 @@ JsonDecoder::readHexValue(uint32_t len)
 {
     uint32_t ret = 0;
     for (uint32_t i = 0; i < len; ++i) {
-        switch (c) {
-        case '0': ret = (ret << 4) | 0; break;
-        case '1': ret = (ret << 4) | 1; break;
-        case '2': ret = (ret << 4) | 2; break;
-        case '3': ret = (ret << 4) | 3; break;
-        case '4': ret = (ret << 4) | 4; break;
-        case '5': ret = (ret << 4) | 5; break;
-        case '6': ret = (ret << 4) | 6; break;
-        case '7': ret = (ret << 4) | 7; break;
-        case '8': ret = (ret << 4) | 8; break;
-        case '9': ret = (ret << 4) | 9; break;
-        case 'a': case 'A': ret = (ret << 4) | 0xa; break;
-        case 'b': case 'B': ret = (ret << 4) | 0xb; break;
-        case 'c': case 'C': ret = (ret << 4) | 0xc; break;
-        case 'd': case 'D': ret = (ret << 4) | 0xd; break;
-        case 'e': case 'E': ret = (ret << 4) | 0xe; break;
-        case 'f': case 'F': ret = (ret << 4) | 0xf; break;
-        default:
+        int d = fromHexDigit(c);
+        if (d < 0) {
             in.fail("invalid hex character");
             return 0;
         }
+        ret = (ret << 4) | d;
         next();
     }
     return ret;
@@ -411,6 +421,31 @@ JsonDecoder::decodeArray(Inserter &inserter)
         } while (skip(','));
     }
     expect("]");
+}
+
+void JsonDecoder::decodeData(Inserter &inserter) {
+    vespalib::string data;
+    value.clear();
+    for (;;) {
+        next();
+        value.push_back(c);
+        int hi = fromHexDigit(c);
+        if (hi < 0) {
+            inserter.insertData(data);
+            return;
+        }
+        next();
+        value.push_back(c);
+        int lo = fromHexDigit(c);
+        if (lo < 0) {
+            std::stringstream ss;
+            ss << "error inserting data '" << value << "'. invalid hex dump.";
+            in.fail(ss.str());
+            return;
+        }
+        char byte = (hi << 4) | lo;
+        data.push_back(byte);
+    }
 }
 
 static int insertNumber(Inserter &inserter, bool isLong, const vespalib::string &value, char **endp);
