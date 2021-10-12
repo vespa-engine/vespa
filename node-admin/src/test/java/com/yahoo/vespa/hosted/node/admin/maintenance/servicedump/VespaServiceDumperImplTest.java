@@ -69,7 +69,7 @@ class VespaServiceDumperImplTest {
         SyncClient syncClient = createSyncClientMock();
         NodeRepoMock nodeRepository = new NodeRepoMock();
         ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
-        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, "perf-report", new ServiceDumpReport.DumpOptions(true, 45.0));
+        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, List.of("perf-report"), new ServiceDumpReport.DumpOptions(true, 45.0));
 
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
                 ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
@@ -111,7 +111,7 @@ class VespaServiceDumperImplTest {
         NodeRepoMock nodeRepository = new NodeRepoMock();
         ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
         NodeSpec nodeSpec = createNodeSpecWithDumpRequest(
-                nodeRepository, "jfr-recording", new ServiceDumpReport.DumpOptions(null, null));
+                nodeRepository, List.of("jfr-recording"), new ServiceDumpReport.DumpOptions(null, null));
 
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
                 ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
@@ -138,9 +138,42 @@ class VespaServiceDumperImplTest {
         assertSyncedFiles(context, syncClient, expectedUris);
     }
 
-    private static NodeSpec createNodeSpecWithDumpRequest(NodeRepoMock repository, String artifactName, ServiceDumpReport.DumpOptions options) {
+    @Test
+    void handles_multiple_artifact_types() {
+        // Setup mocks
+        ContainerOperations operations = mock(ContainerOperations.class);
+        when(operations.executeCommandInContainerAsRoot(any(), any()))
+                // For perf report:
+                .thenReturn(new CommandResult(null, 0, "12345"))
+                .thenReturn(new CommandResult(null, 0, ""))
+                .thenReturn(new CommandResult(null, 0, ""))
+                // For jfr recording:
+                .thenReturn(new CommandResult(null, 0, "12345"))
+                .thenReturn(new CommandResult(null, 0, "ok"))
+                .thenReturn(new CommandResult(null, 0, "name=host-admin success"));
+        SyncClient syncClient = createSyncClientMock();
+        NodeRepoMock nodeRepository = new NodeRepoMock();
+        ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
+        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, List.of("perf-report", "jfr-recording"),
+                new ServiceDumpReport.DumpOptions(true, 20.0));
+        VespaServiceDumper reporter = new VespaServiceDumperImpl(
+                ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
+        NodeAgentContextImpl context = new NodeAgentContextImpl.Builder(nodeSpec)
+                .fileSystem(fileSystem)
+                .build();
+        reporter.processServiceDumpRequest(context);
+
+        List<URI> expectedUris = List.of(
+                URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/perf-record.bin.zst"),
+                URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/perf-report.txt"),
+                URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/recording.jfr.zst"));
+        assertSyncedFiles(context, syncClient, expectedUris);
+    }
+
+    private static NodeSpec createNodeSpecWithDumpRequest(NodeRepoMock repository, List<String> artifacts,
+                                                          ServiceDumpReport.DumpOptions options) {
         ServiceDumpReport request = ServiceDumpReport.createRequestReport(
-                Instant.ofEpochMilli(1600000000000L), null, "default/container.1", List.of(artifactName), options);
+                Instant.ofEpochMilli(1600000000000L), null, "default/container.1", artifacts, options);
         NodeSpec spec = NodeSpec.Builder
                 .testSpec(HOSTNAME, NodeState.active)
                 .report(ServiceDumpReport.REPORT_ID, request.toJsonNode())
