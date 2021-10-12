@@ -10,6 +10,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchcommon/common/datatype.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stash.h>
 
 
@@ -20,6 +21,7 @@ using namespace search::attribute;
 using namespace search::fef;
 
 using search::features::dotproduct::wset::IntegerVector;
+using vespalib::Issue;
 
 namespace search::features {
 
@@ -168,8 +170,8 @@ selectExecutor(const IAttributeVector *attribute, V && vector, vespalib::Stash &
                 break;
         }
     }
-    LOG(warning, "The attribute vector '%s' is not of type "
-                 "array<int/long>, returning executor with default value.", attribute->getName().c_str());
+    Issue::report("The attribute vector '%s' is not of type "
+                  "array<int/long>, returning executor with default value.", attribute->getName().c_str());
     return stash.create<SingleZeroValueExecutor>();
 }
 
@@ -253,8 +255,8 @@ InternalMaxReduceProdJoinBlueprint::createExecutor(const IQueryEnvironment &env,
 {
     const IAttributeVector * attribute = lookupAttribute(_attrKey, _attribute, env);
     if (attribute == nullptr) {
-        LOG(warning, "The attribute vector '%s' was not found in the attribute manager, "
-                "returning executor with default value.", _attribute.c_str());
+        Issue::report("The attribute vector '%s' was not found in the attribute manager, "
+                      "returning executor with default value.", _attribute.c_str());
         return stash.create<SingleZeroValueExecutor>();
     }
     const fef::Anything * queryVectorArg = env.getObjectStore().get(_queryVectorKey);

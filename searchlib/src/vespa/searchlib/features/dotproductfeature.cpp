@@ -13,6 +13,7 @@
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stash.h>
 
 #include <vespa/log/log.h>
@@ -22,6 +23,7 @@ using namespace search::attribute;
 using namespace search::fef;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TypedCells;
+using vespalib::Issue;
 using vespalib::hwaccelrated::IAccelrated;
 
 namespace search::features {
@@ -507,10 +509,10 @@ ArrayParam<T>::ArrayParam(vespalib::nbostream & stream) {
             TypedCells cells = tensor->cells();
             typify_invoke<1,TypifyCellType,CopyCellsToVector<T>>(cells.type, cells, values);
         } else {
-            LOG(warning, "Expected dense tensor, but got type '%s'", tensor->type().to_spec().c_str());
+            Issue::report("Expected dense tensor, but got type '%s'", tensor->type().to_spec().c_str());
         }
     } catch (const vespalib::eval::DecodeValueException &e) {
-        LOG(warning, "Failed to decode tensor: %s", e.what());
+        Issue::report("Failed to decode tensor: %s", e.what());
     }
 }
 
@@ -773,8 +775,8 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
     }
     // TODO: Add support for creating executor for weighted set string / integer attribute
     //       where the query vector is represented as an object instead of a string.
-    LOG(warning, "The attribute vector '%s' is NOT of type array<int/long/float/double>"
-            ", returning executor with default value.", attribute->getName().c_str());
+    Issue::report("The attribute vector '%s' is NOT of type array<int/long/float/double>"
+                  ", returning executor with default value.", attribute->getName().c_str());
     return stash.create<SingleZeroValueExecutor>();
 }
 
@@ -880,8 +882,8 @@ createFromString(const IAttributeVector * attribute, const Property & prop, vesp
     }
 
     if (executor == nullptr) {
-        LOG(warning, "The attribute vector '%s' is not of type weighted set string/integer nor"
-                " array<int/long/float/double>, returning executor with default value.", attribute->getName().c_str());
+        Issue::report("The attribute vector '%s' is not of type weighted set string/integer nor"
+                      " array<int/long/float/double>, returning executor with default value.", attribute->getName().c_str());
         executor = &stash.create<SingleZeroValueExecutor>();
     }
     return *executor;
@@ -1107,8 +1109,8 @@ DotProductBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Sta
         attribute = upgradeIfNecessary(attribute, env);
     }
     if (attribute == nullptr) {
-        LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
-            getAttribute(env).c_str());
+        Issue::report("The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
+                      getAttribute(env).c_str());
         return stash.create<SingleZeroValueExecutor>();
     }
     vespalib::string scratchPad;

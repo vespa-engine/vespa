@@ -13,10 +13,4 @@ ArrayParser::parse(const vespalib::string &input, std::vector<int8_t> &output)
     parse<std::vector<int8_t>, int16_t>(input, output);
 }
 
-void
-ArrayParser::logWarning(const vespalib::string &msg)
-{
-    LOG(warning, "%s", msg.c_str());
-}
-
 }

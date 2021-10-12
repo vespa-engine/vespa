@@ -6,6 +6,7 @@
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stash.h>
 #include <cmath>
 
@@ -14,6 +15,7 @@ LOG_SETUP(".features.euclidean_distance_feature");
 
 using namespace search::attribute;
 using namespace search::fef;
+using vespalib::Issue;
 
 namespace search::features {
 
@@ -97,8 +99,8 @@ EuclideanDistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespali
 {
     const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_attributeName);
     if (attribute == nullptr) {
-        LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
-            _attributeName.c_str());
+        Issue::report("The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
+                      _attributeName.c_str());
         return stash.create<SingleZeroValueExecutor>();
     }
 
@@ -111,8 +113,8 @@ EuclideanDistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespali
             return create<double>(*attribute, queryVector, stash);
         }
     }
-    LOG(warning, "The attribute vector '%s' is NOT of type array<int/long/float/double>"
-            ", returning executor with default value.", attribute->getName().c_str());
+    Issue::report("The attribute vector '%s' is NOT of type array<int/long/float/double>"
+                  ", returning executor with default value.", attribute->getName().c_str());
     return stash.create<SingleZeroValueExecutor>();
 
 }
