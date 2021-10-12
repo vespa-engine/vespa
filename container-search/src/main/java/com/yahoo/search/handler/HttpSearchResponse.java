@@ -58,13 +58,10 @@ public class HttpSearchResponse extends ExtendedResponse {
     }
 
     /**
-     * Copy custom HTTP headers from the search result over to the HTTP
-     * response.
+     * Copy custom HTTP headers from the search result over to the HTTP response.
      *
-     * @param outputHeaders
-     *            the headers which will be sent to a client
-     * @param searchHeaders
-     *            the headers from the search result, or null
+     * @param outputHeaders the headers which will be sent to a client
+     * @param searchHeaders the headers from the search result, or null
      */
     private static void populateHeaders(HeaderFields outputHeaders,
             ListMap<String, String> searchHeaders) {

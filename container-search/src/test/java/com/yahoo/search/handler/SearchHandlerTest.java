@@ -15,9 +15,14 @@ import com.yahoo.net.HostName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.grouping.result.Group;
+import com.yahoo.search.grouping.result.GroupId;
+import com.yahoo.search.grouping.result.RootId;
 import com.yahoo.search.rendering.XmlRenderer;
+import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
+import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
 import org.junit.After;
@@ -27,6 +32,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -207,6 +213,7 @@ public class SearchHandlerTest {
             testInvalidQueryParam(newDriver);
         }
     }
+
     @Test
     public void testInvalidQueryParamWithoutQueryProfile() {
         testInvalidQueryParam(driver);
@@ -221,11 +228,24 @@ public class SearchHandlerTest {
     }
 
     @Test
+    public void testResultStatus() {
+        assertEquals(200, httpStatus(result().build()));
+        assertEquals(200, httpStatus(result().withHit().build()));
+        assertEquals(200, httpStatus(result().withGroups().build()));
+        assertEquals(200, httpStatus(result().withGroups().withHit().build()));
+
+        assertEquals(500, httpStatus(result().withError().build()));
+        assertEquals(200, httpStatus(result().withError().withHit().build()));
+        assertEquals(200, httpStatus(result().withError().withGroups().build()));
+        assertEquals(200, httpStatus(result().withError().withGroups().withHit().build()));
+    }
+
+    @Test
     public void testWebServiceStatus() {
         RequestHandlerTestDriver.MockResponseHandler responseHandler =
                 driver.sendRequest("http://localhost/search/?query=web_service_status_code");
         String response = responseHandler.readAll();
-        assertThat(responseHandler.getStatus(), is(406));
+        assertEquals(406, responseHandler.getStatus());
         assertThat(response, containsString("\"code\":" + 406));
     }
 
@@ -332,6 +352,19 @@ public class SearchHandlerTest {
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
         assertTrue("Should have a new instance of the search handler", searchHandler != newSearchHandler);
         return new RequestHandlerTestDriver(newSearchHandler);
+    }
+
+    private int httpStatus(Result result) {
+        var jDiscRequest = com.yahoo.jdisc.http.HttpRequest.newServerRequest(driver.jDiscDriver(),
+                                                                             URI.create("ignored"),
+                                                                             com.yahoo.jdisc.http.HttpRequest.Method.GET);
+        try {
+            var request = new HttpRequest(jDiscRequest, new ByteArrayInputStream(new byte[0]));
+            return SearchHandler.getHttpResponseStatus(request, result);
+        }
+        finally {
+            jDiscRequest.release();
+        }
     }
 
     /** Referenced from config */
@@ -500,6 +533,31 @@ public class SearchHandlerTest {
         public HttpResponse handle(HttpRequest httpRequest) {
             throw new RuntimeException();
         }
+
+    }
+
+    private ResultBuilder result() { return new ResultBuilder(); }
+
+    private static class ResultBuilder {
+
+        Result result = new Result(new Query());
+
+        public ResultBuilder withHit() {
+            result.hits().add(new Hit("regularHit:1"));
+            return this;
+        }
+
+        public ResultBuilder withGroups() {
+            result.hits().add(new Group(new RootId(1), new Relevance(1.0)));
+            return this;
+        }
+
+        public ResultBuilder withError() {
+            result.hits().addError(ErrorMessage.createUnspecifiedError("Test error"));
+            return this;
+        }
+
+        public Result build() { return result; }
 
     }
 

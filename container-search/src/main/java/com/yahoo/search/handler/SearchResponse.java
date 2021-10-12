@@ -43,8 +43,9 @@ public class SearchResponse {
 
     static boolean isSuccess(Result r) {
         if (r.hits().getErrorHit() == null) return true;
-        for (Hit hit : r.hits())
-            if ( ! hit.isMeta()) return true; // contains data : success
+        for (Hit hit : r.hits()) {
+            if (!hit.isMeta()) return true; // contains data : success
+        }
         return false;
     }
 

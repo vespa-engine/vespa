@@ -16,9 +16,10 @@ public class GroupList extends AbstractList {
     /**
      * Constructs a new instance of this class.
      *
-     * @param label The label to assign to this.
+     * @param label the label to assign to this
      */
     public GroupList(String label) {
         super("grouplist", label);
     }
+
 }
