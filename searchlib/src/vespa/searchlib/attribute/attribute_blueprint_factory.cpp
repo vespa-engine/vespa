@@ -36,6 +36,8 @@
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/issue.h>
 #include <sstream>
 #include <charconv>
 
@@ -85,6 +87,7 @@ using vespalib::geo::ZCurve;
 using vespalib::make_string;
 using vespalib::string;
 using vespalib::stringref;
+using vespalib::Issue;
 
 namespace search {
 namespace {
@@ -799,9 +802,14 @@ AttributeBlueprintFactory::createBlueprint(const IRequestContext & requestContex
     if (attr == nullptr) {
         return std::make_unique<queryeval::EmptyBlueprint>(field);
     }
-    CreateBlueprintVisitor visitor(*this, requestContext, field, *attr);
-    const_cast<Node &>(term).accept(visitor);
-    return visitor.getResult();
+    try {
+        CreateBlueprintVisitor visitor(*this, requestContext, field, *attr);
+        const_cast<Node &>(term).accept(visitor);
+        return visitor.getResult();
+    } catch (const vespalib::UnsupportedOperationException &e) {
+        Issue::report(e);
+        return std::make_unique<queryeval::EmptyBlueprint>(field);
+    }
 }
 
 }  // namespace search
