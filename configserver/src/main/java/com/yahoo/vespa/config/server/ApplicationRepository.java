@@ -1080,11 +1080,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     @Override
     public Duration serverDeployTimeout() { return Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout()); }
 
-    private static void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {
+    private void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {
         RestartActions restartActions = actions.getRestartActions();
         if ( ! restartActions.isEmpty()) {
-            logger.log(Level.WARNING, "Change(s) between active and new application that require restart:\n" +
-                                      restartActions.format());
+            if (configserverConfig().hostedVespa())
+                logger.log(Level.INFO, "Orchestrated service restart triggered due to change(s) from active to new application:\n" +
+                                       restartActions.format());
+            else
+                logger.log(Level.WARNING, "Change(s) between active and new application that require restart:\n" +
+                                          restartActions.format());
         }
         RefeedActions refeedActions = actions.getRefeedActions();
         if ( ! refeedActions.isEmpty()) {
@@ -1094,9 +1098,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
         ReindexActions reindexActions = actions.getReindexActions();
         if ( ! reindexActions.isEmpty()) {
-            logger.log(Level.WARNING,
-                       "Change(s) between active and new application that may require re-index:\n" +
-                       reindexActions.format());
+            if (configserverConfig().hostedVespa())
+                logger.log(Level.INFO, "Re-indexing triggered due to change(s) from active to new application:\n" +
+                                       reindexActions.format());
+            else
+                logger.log(Level.WARNING,
+                           "Change(s) between active and new application that may require re-index:\n" +
+                           reindexActions.format());
         }
     }
 
