@@ -47,4 +47,23 @@ TEST("test that OOMException carries message forward.") {
     EXPECT_TRUE(caught);
 }
 
+TEST("require that rethrow_if_unsafe will rethrow unsafe exception") {
+    try {
+        try {
+            throw OOMException("my message");
+        } catch (const std::exception &e) {
+            rethrow_if_unsafe(e);
+            TEST_ERROR("should not be reached");
+        }
+    } catch (const OOMException &) {}
+}
+
+TEST("require that rethrow_if_unsafe will not rethrow safe exception") {
+    try {
+        throw IllegalArgumentException("my message");
+    } catch (const std::exception &e) {
+        rethrow_if_unsafe(e);
+    }
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

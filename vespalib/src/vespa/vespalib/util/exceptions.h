@@ -154,5 +154,22 @@ private:
     std::terminate_handler _oldTerminate;
 };
 
+/**
+ * NOTE: This function must only be called from within a catch block,
+ * and the parameter must reference the caught exception.
+ * 
+ * Based on the run-time type of the exception, determine if it is
+ * safe to handle this exception and continue normal program
+ * operation. If the exception is considered safe, no additional
+ * action is taken. If the exception is considered unsafe, it will be
+ * re-thrown.
+ *
+ * Unsafe exceptions fall under two categories; exceptions that are
+ * specifically designed to end program execution and exceptions that
+ * have an elevated chance of causing issues when being thrown across
+ * code that is not completely exception safe.
+ **/
+void rethrow_if_unsafe(const std::exception &e);
+
 }
 
