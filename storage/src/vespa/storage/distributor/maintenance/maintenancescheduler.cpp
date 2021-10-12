@@ -19,7 +19,8 @@ MaintenanceScheduler::MaintenanceScheduler(
     : _operationGenerator(operationGenerator),
       _priorityDb(priorityDb),
       _pending_window_checker(pending_window_checker),
-      _operationStarter(operationStarter)
+      _operationStarter(operationStarter),
+      _implicitly_clear_priority_on_schedule(false)
 {
 }
 
@@ -41,11 +42,16 @@ MaintenanceScheduler::tick(SchedulingMode currentMode)
     if (!possibleToSchedule(mostImportant, currentMode)) {
         return WaitTimeMs(1);
     }
-    // If we can't start the operation, move on to the next bucket. Bucket will be
-    // re-prioritized when the distributor stripe next scans it.
-    clearPriority(mostImportant);
+    if (_implicitly_clear_priority_on_schedule) {
+        // If we can't start the operation, move on to the next bucket. Bucket will be
+        // re-prioritized when the distributor stripe next scans it.
+        clearPriority(mostImportant);
+    }
     if (!startOperation(mostImportant)) {
         return WaitTimeMs(1);
+    }
+    if (!_implicitly_clear_priority_on_schedule) {
+        clearPriority(mostImportant);
     }
     return WaitTimeMs(0);
 }
@@ -58,7 +64,9 @@ MaintenanceScheduler::possibleToSchedule(const PrioritizedBucket& bucket,
         return false;
     }
     // If pending window is full nothing of equal or lower priority can be scheduled, so no point in trying.
-    if (!_pending_window_checker.may_allow_operation_with_priority(convertToOperationPriority(bucket.getPriority()))) {
+    if (_implicitly_clear_priority_on_schedule &&
+        !_pending_window_checker.may_allow_operation_with_priority(convertToOperationPriority(bucket.getPriority())))
+    {
         return false;
     }
     if (currentMode == RECOVERY_SCHEDULING_MODE) {

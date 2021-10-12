@@ -179,6 +179,16 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         configure_stripe(builder);
     }
 
+    void configure_implicitly_clear_priority_on_schedule(bool implicitly_clear) {
+        ConfigBuilder builder;
+        builder.implicitlyClearBucketPriorityOnSchedule = implicitly_clear;
+        configure_stripe(builder);
+    }
+
+    bool scheduler_has_implicitly_clear_priority_on_schedule_set() const noexcept {
+        return _stripe->_scheduler->implicitly_clear_priority_on_schedule();
+    }
+
     void configureMaxClusterClockSkew(int seconds);
     void configure_mutation_sequencing(bool enabled);
     void configure_merge_busy_inhibit_duration(int seconds);
@@ -886,6 +896,17 @@ TEST_F(DistributorStripeTest, max_activation_inhibited_out_of_sync_groups_config
 
     configure_max_activation_inhibited_out_of_sync_groups(0);
     EXPECT_EQ(getConfig().max_activation_inhibited_out_of_sync_groups(), 0);
+}
+
+TEST_F(DistributorStripeTest, implicitly_clear_priority_on_schedule_config_is_propagated_to_scheduler)
+{
+    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_implicitly_clear_priority_on_schedule(true);
+    EXPECT_TRUE(scheduler_has_implicitly_clear_priority_on_schedule_set());
+
+    configure_implicitly_clear_priority_on_schedule(false);
+    EXPECT_FALSE(scheduler_has_implicitly_clear_priority_on_schedule_set());
 }
 
 TEST_F(DistributorStripeTest, wanted_split_bit_count_is_lower_bounded)

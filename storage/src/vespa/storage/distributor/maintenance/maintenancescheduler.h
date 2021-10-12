@@ -28,6 +28,13 @@ public:
 
     WaitTimeMs tick(SchedulingMode currentMode);
 
+    void set_implicitly_clear_priority_on_schedule(bool implicitly_clear) noexcept {
+        _implicitly_clear_priority_on_schedule = implicitly_clear;
+    }
+    [[nodiscard]] bool implicitly_clear_priority_on_schedule() const noexcept {
+        return _implicitly_clear_priority_on_schedule;
+    }
+
 private:
     MaintenanceScheduler(const MaintenanceScheduler&);
     MaintenanceScheduler& operator=(const MaintenanceScheduler&);
@@ -41,9 +48,10 @@ private:
             MaintenancePriority::Priority priority) const;
 
     MaintenanceOperationGenerator& _operationGenerator;
-    BucketPriorityDatabase& _priorityDb;
-    const PendingWindowChecker& _pending_window_checker;
-    OperationStarter& _operationStarter;
+    BucketPriorityDatabase&        _priorityDb;
+    const PendingWindowChecker&    _pending_window_checker;
+    OperationStarter&              _operationStarter;
+    bool                           _implicitly_clear_priority_on_schedule;
 };
 
 }
