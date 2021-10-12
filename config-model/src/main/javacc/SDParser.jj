@@ -205,6 +205,11 @@ TOKEN :
 | < LOOSE: "loose" >
 | < STRICT: "strict" >
 | < DOCUMENT: "document" >
+| < EXECUTE: "execute" >
+| < OPERATION: "operation" >
+| < ON_MATCH: "on-match" >
+| < ON_RERANK: "on-rerank" >
+| < ON_SUMMARY: "on-summary" >
 | < STRUCT: "struct" >
 | < INHERITS: "inherits" >
 | < FIELD: "field" >
@@ -2058,6 +2063,7 @@ Object rankProfileItem(RankProfile profile) : { }
       | firstPhase(profile)
       | matchPhase(profile)
       | function(profile)
+      | execute(profile)
       | ignoreRankFeatures(profile)
       | numThreadsPerSearch(profile)
       | minHitsPerThread(profile)
@@ -2084,6 +2090,43 @@ void inheritsRankProfile(RankProfile profile) :
 {
     <INHERITS> str = identifierWithDash()
     { profile.setInherited(str); }
+}
+
+/**
+ * This rule consumes an execute statement of a rank-profile.
+ *
+ * @param profile The profile to modify.
+ */
+void execute(RankProfile profile) :
+{
+}
+{
+    <EXECUTE> lbrace() (execute_operation(profile) <NL>)+ <RBRACE>
+    {  }
+}
+
+void execute_operation(RankProfile profile) :
+{
+    String attribute, operation;
+    RankProfile.ExecuteOperation.Phase phase;
+}
+{
+   ( <ON_MATCH> { phase = RankProfile.ExecuteOperation.Phase.onmatch; }
+   | <ON_RERANK> { phase = RankProfile.ExecuteOperation.Phase.onrerank; }
+   | <ON_SUMMARY> { phase = RankProfile.ExecuteOperation.Phase.onsummary; }
+   )
+   lbrace() attribute = identifier() operation = execute_expr() (<NL>)* <RBRACE>
+   { profile.addExecuteOperation(phase, attribute, operation); }
+}
+
+String execute_expr() :
+{
+     String op;
+     Number constant = null;
+}
+{
+    (("++" | "--") { op = token.image; } | ("+=" | "-=" | "*=" | "/=" | "%=" | "=") { op = token.image; } constant = consumeNumber())
+    { return constant != null ? (op + constant) : op; }
 }
 
 /**
@@ -2842,6 +2885,14 @@ long consumeLong() : { }
 double consumeFloat() : { }
 {
     <DOUBLE> { return Double.valueOf(token.image); }
+}
+
+Number consumeNumber() :
+{
+    Number num;
+}
+{
+    (num = consumeFloat() | num = consumeLong()) { return num; }
 }
 
 /**

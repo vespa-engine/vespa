@@ -673,6 +673,26 @@ public class RankProfile implements Cloneable {
         inputFeatures.put(ref, declaredType);
     }
 
+    public static class ExecuteOperation {
+        public enum Phase { onmatch, onrerank, onsummary}
+        final Phase phase;
+        final String attribute;
+        final String operation;
+        ExecuteOperation(Phase phase, String attribute, String operation) {
+            this.phase = phase;
+            this.attribute = attribute;
+            this.operation = operation;
+        }
+    }
+    private final List<ExecuteOperation> executeOperations = new ArrayList<>();
+
+    public void addExecuteOperation(ExecuteOperation.Phase phase, String attribute, String operation) {
+        executeOperations.add(new ExecuteOperation(phase, attribute, operation));
+        addRankProperty("vespa.execute." + phase + ".attribute", attribute);
+        addRankProperty("vespa.execute." + phase + ".operation", operation);
+    }
+    public List<ExecuteOperation> getExecuteOperations() { return executeOperations; }
+
     public RankingExpressionFunction findFunction(String name) {
         RankingExpressionFunction function = functions.get(name);
         return ((function == null) && (getInherited() != null))
