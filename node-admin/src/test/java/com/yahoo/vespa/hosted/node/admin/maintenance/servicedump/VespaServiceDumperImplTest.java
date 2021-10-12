@@ -1,4 +1,5 @@
-package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
 import com.yahoo.yolean.concurrent.Sleeper;
 import com.yahoo.test.ManualClock;
@@ -52,7 +53,7 @@ class VespaServiceDumperImplTest {
     void creates_valid_dump_id_from_dump_request() {
         long nowMillis = Instant.now().toEpochMilli();
         ServiceDumpReport request = new ServiceDumpReport(
-                nowMillis, null, null, null, null, "default/container.3", null, null, List.of(PerfReportProducer.NAME), null);
+                nowMillis, null, null, null, null, "default/container.3", null, null, List.of("perf-report"), null);
         String dumpId = VespaServiceDumperImpl.createDumpId(request);
         assertEquals("default-container-3-" + nowMillis, dumpId);
     }
@@ -68,9 +69,10 @@ class VespaServiceDumperImplTest {
         SyncClient syncClient = createSyncClientMock();
         NodeRepoMock nodeRepository = new NodeRepoMock();
         ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
-        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, PerfReportProducer.NAME, new ServiceDumpReport.DumpOptions(true, 45.0));
+        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, "perf-report", new ServiceDumpReport.DumpOptions(true, 45.0));
 
-        VespaServiceDumper reporter = new VespaServiceDumperImpl(operations, syncClient, nodeRepository, clock, Sleeper.NOOP);
+        VespaServiceDumper reporter = new VespaServiceDumperImpl(
+                ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
         NodeAgentContextImpl context = new NodeAgentContextImpl.Builder(nodeSpec)
                 .fileSystem(fileSystem)
                 .build();
@@ -79,11 +81,22 @@ class VespaServiceDumperImplTest {
         verify(operations).executeCommandInContainerAsRoot(
                 context, "/opt/vespa/libexec/vespa/find-pid", "default/container.1");
         verify(operations).executeCommandInContainerAsRoot(
-                context, "perf", "record", "-g", "--output=/opt/vespa/tmp/vespa-service-dump/perf-report/perf-record.bin",
+                context, "perf", "record", "-g", "--output=/opt/vespa/tmp/vespa-service-dump/perf-record.bin",
                 "--pid=12345", "sleep", "45");
         verify(operations).executeCommandInContainerAsRoot(
-                context, "bash", "-c", "perf report --input=/opt/vespa/tmp/vespa-service-dump/perf-report/perf-record.bin" +
-                        " > /opt/vespa/tmp/vespa-service-dump/perf-report/perf-report.txt");
+                context, "bash", "-c", "perf report --input=/opt/vespa/tmp/vespa-service-dump/perf-record.bin" +
+                        " > /opt/vespa/tmp/vespa-service-dump/perf-report.txt");
+
+        String expectedJson = "{\"createdMillis\":1600000000000,\"startedAt\":1600001000000,\"completedAt\":1600001000000," +
+                "\"location\":\"s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/\"," +
+                "\"configId\":\"default/container.1\",\"artifacts\":[\"perf-report\"]," +
+                "\"dumpOptions\":{\"callGraphRecording\":true,\"duration\":45.0}}";
+        assertReportEquals(nodeRepository, expectedJson);
+
+        List<URI> expectedUris = List.of(
+                URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/perf-record.bin.zst"),
+                URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/perf-report.txt"));
+        assertSyncedFiles(context, syncClient, expectedUris);
     }
 
     @Test
@@ -98,9 +111,10 @@ class VespaServiceDumperImplTest {
         NodeRepoMock nodeRepository = new NodeRepoMock();
         ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
         NodeSpec nodeSpec = createNodeSpecWithDumpRequest(
-                nodeRepository, JavaFlightRecorder.NAME, new ServiceDumpReport.DumpOptions(null, null));
+                nodeRepository, "jfr-recording", new ServiceDumpReport.DumpOptions(null, null));
 
-        VespaServiceDumper reporter = new VespaServiceDumperImpl(operations, syncClient, nodeRepository, clock, Sleeper.NOOP);
+        VespaServiceDumper reporter = new VespaServiceDumperImpl(
+                ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
         NodeAgentContextImpl context = new NodeAgentContextImpl.Builder(nodeSpec)
                 .fileSystem(fileSystem)
                 .build();
@@ -110,8 +124,18 @@ class VespaServiceDumperImplTest {
                 context, "/opt/vespa/libexec/vespa/find-pid", "default/container.1");
         verify(operations).executeCommandInContainerAsRoot(
                 context, "jcmd", "12345", "JFR.start", "name=host-admin", "path-to-gc-roots=true", "settings=profile",
-                "filename=/opt/vespa/tmp/vespa-service-dump/jfr-recording/recording.jfr", "duration=30s");
+                "filename=/opt/vespa/tmp/vespa-service-dump/recording.jfr", "duration=30s");
         verify(operations).executeCommandInContainerAsRoot(context, "jcmd", "12345", "JFR.check", "name=host-admin");
+
+        String expectedJson = "{\"createdMillis\":1600000000000,\"startedAt\":1600001000000," +
+                "\"completedAt\":1600001000000," +
+                "\"location\":\"s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/\"," +
+                "\"configId\":\"default/container.1\",\"artifacts\":[\"jfr-recording\"],\"dumpOptions\":{}}";
+        assertReportEquals(nodeRepository, expectedJson);
+
+        List<URI> expectedUris = List.of(
+                URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/recording.jfr.zst"));
+        assertSyncedFiles(context, syncClient, expectedUris);
     }
 
     private static NodeSpec createNodeSpecWithDumpRequest(NodeRepoMock repository, String artifactName, ServiceDumpReport.DumpOptions options) {

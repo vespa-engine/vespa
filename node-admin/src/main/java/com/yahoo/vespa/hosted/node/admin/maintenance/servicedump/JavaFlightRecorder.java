@@ -2,50 +2,48 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
 import com.yahoo.yolean.concurrent.Sleeper;
-import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 
-import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
+
+import static com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.Artifact.Classification.CONFIDENTIAL;
 
 /**
  * Creates a Java Flight Recorder dump.
  *
  * @author bjorncs
  */
-class JavaFlightRecorder extends AbstractProducer {
+class JavaFlightRecorder implements ArtifactProducer {
 
     private final Sleeper sleeper;
 
-    JavaFlightRecorder(ContainerOperations container, Sleeper sleeper) {
-        super(container);
-        this.sleeper = sleeper;
-    }
+    JavaFlightRecorder(Sleeper sleeper) { this.sleeper = sleeper; }
 
-    static String NAME = "jfr-recording";
-
-    @Override public String name() { return NAME; }
+    @Override public String artifactName() { return "jfr-recording"; }
+    @Override public String description() { return "Java Flight Recorder recording"; }
 
     @Override
-    public void produceArtifact(NodeAgentContext ctx, String configId, ServiceDumpReport.DumpOptions options,
-                                UnixPath resultDirectoryInNode) throws IOException {
-        int pid = findVespaServicePid(ctx, configId);
-        int seconds = (int) (duration(ctx, options, 30.0));
-        UnixPath outputFile = resultDirectoryInNode.resolve("recording.jfr");
-        List<String> startCommand = List.of("jcmd", Integer.toString(pid), "JFR.start", "name=host-admin",
+    public List<Artifact> produceArtifacts(Context ctx) {
+        int seconds = (int) (ctx.options().duration().orElse(30.0));
+        Path outputFile = ctx.outputDirectoryInNode().resolve("recording.jfr");
+        List<String> startCommand = List.of("jcmd", Integer.toString(ctx.servicePid()), "JFR.start", "name=host-admin",
                 "path-to-gc-roots=true", "settings=profile", "filename=" + outputFile, "duration=" + seconds + "s");
-        executeCommand(ctx, startCommand, true);
+        ctx.executeCommandInNode(startCommand, true);
         sleeper.sleep(Duration.ofSeconds(seconds).plusSeconds(1));
         int maxRetries = 10;
-        List<String> checkCommand = List.of("jcmd", Integer.toString(pid), "JFR.check", "name=host-admin");
+        List<String> checkCommand = List.of("jcmd", Integer.toString(ctx.servicePid()), "JFR.check", "name=host-admin");
         for (int i = 0; i < maxRetries; i++) {
-            boolean stillRunning = executeCommand(ctx, checkCommand, true).getOutputLines().stream()
+            boolean stillRunning = ctx.executeCommandInNode(checkCommand, true).getOutputLines().stream()
                     .anyMatch(l -> l.contains("name=host-admin") && l.contains("running"));
-            if (!stillRunning) return;
+            if (!stillRunning) {
+                Artifact a = Artifact.newBuilder()
+                        .classification(CONFIDENTIAL).fileInNode(outputFile).compressOnUpload().build();
+                return List.of(a);
+            }
             sleeper.sleep(Duration.ofSeconds(1));
         }
-        throw new IOException("Failed to wait for JFR dump to complete after " + maxRetries + " retries");
+        throw new RuntimeException("Failed to wait for JFR dump to complete after " + maxRetries + " retries");
     }
+
 }

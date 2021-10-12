@@ -5,7 +5,6 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -67,13 +66,10 @@ public class SyncFileInfo {
                 logFile, uri.resolve(dir + logFile.getFileName() + compression.extension), compression, expiry));
     }
 
-    public static Optional<SyncFileInfo> forServiceDump(URI directory, Path file, Instant expiry) {
+    public static SyncFileInfo forServiceDump(URI destinationDir, Path file, Instant expiry, Compression compression) {
         String filename = file.getFileName().toString();
-        List<String> filesToCompress = List.of(".bin", ".hprof", ".jfr", ".log");
-        Compression compression = filesToCompress.stream().anyMatch(filename::endsWith) ? Compression.ZSTD : Compression.NONE;
-        if (filename.startsWith(".")) return Optional.empty();
-        URI location = directory.resolve(filename + compression.extension);
-        return Optional.of(new SyncFileInfo(file, location, compression, expiry));
+        URI location = destinationDir.resolve(filename + compression.extension);
+        return new SyncFileInfo(file, location, compression, expiry);
     }
 
     public enum Compression {

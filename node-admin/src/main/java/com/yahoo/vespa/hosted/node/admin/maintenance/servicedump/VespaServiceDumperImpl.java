@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
-import com.yahoo.yolean.concurrent.Sleeper;
 import com.yahoo.text.Lowercase;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
@@ -9,18 +8,21 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncClient;
 import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo;
+import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo.Compression;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
+import com.yahoo.yolean.concurrent.Sleeper;
 
 import java.net.URI;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
+import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -40,24 +42,20 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
     private final SyncClient syncClient;
     private final NodeRepository nodeRepository;
     private final Clock clock;
-    private final Map<String, ArtifactProducer> artifactProducers;
+    private final ArtifactProducers artifactProducers;
 
     public VespaServiceDumperImpl(ContainerOperations container, SyncClient syncClient, NodeRepository nodeRepository) {
-        this(container, syncClient, nodeRepository, Clock.systemUTC(), Sleeper.DEFAULT);
+        this(ArtifactProducers.createDefault(Sleeper.DEFAULT), container, syncClient, nodeRepository, Clock.systemUTC());
     }
 
     // For unit testing
-    VespaServiceDumperImpl(ContainerOperations container, SyncClient syncClient, NodeRepository nodeRepository,
-                           Clock clock, Sleeper sleeper) {
+    VespaServiceDumperImpl(ArtifactProducers producers, ContainerOperations container, SyncClient syncClient,
+                           NodeRepository nodeRepository, Clock clock) {
         this.container = container;
         this.syncClient = syncClient;
         this.nodeRepository = nodeRepository;
         this.clock = clock;
-        List<AbstractProducer> producers = List.of(
-                new PerfReportProducer(container),
-                new JavaFlightRecorder(container, sleeper));
-        this.artifactProducers = producers.stream()
-                .collect(Collectors.toMap(ArtifactProducer::name, Function.identity()));
+        this.artifactProducers = producers;
     }
 
     @Override
@@ -84,8 +82,8 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             handleFailure(context, request, startedAt, "Request already expired");
             return;
         }
-        List<String> artifactTypes = request.artifacts();
-        if (artifactTypes == null || artifactTypes.isEmpty()) {
+        List<String> requestedArtifacts = request.artifacts();
+        if (requestedArtifacts == null || requestedArtifacts.isEmpty()) {
             handleFailure(context, request, startedAt, "No artifacts requested");
             return;
         }
@@ -103,30 +101,14 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             context.log(log, Level.INFO, "Creating '" + directoryOnHost +"'.");
             directoryOnHost.createDirectory();
             directoryOnHost.setPermissions("rwxrwxrwx");
-            List<SyncFileInfo> files = new ArrayList<>();
             URI destination = serviceDumpDestination(nodeSpec, createDumpId(request));
-            for (String artifactType : artifactTypes) {
-                ArtifactProducer producer = artifactProducers.get(artifactType);
-                if (producer == null) {
-                    String supportedValues = String.join(",", artifactProducers.keySet());
-                    handleFailure(context, request, startedAt, "No artifact producer exists for '" + artifactType + "'. " +
-                            "Following values are allowed: " + supportedValues);
-                    return;
-                }
-                context.log(log, "Producing artifact of type '" + artifactType + "'");
-                UnixPath producerDirectoryOnHost = directoryOnHost.resolve(artifactType);
-                producerDirectoryOnHost.createDirectory();
-                producerDirectoryOnHost.setPermissions("rwxrwxrwx");
-                UnixPath producerDirectoryInNode = directoryInNode.resolve(artifactType);
-                producer.produceArtifact(context, configId, request.dumpOptions(), producerDirectoryInNode);
-                collectArtifactFilesToUpload(files, producerDirectoryOnHost, destination.resolve(artifactType + '/'), expiry);
+            ProducerContext producerCtx = new ProducerContext(context, directoryInNode.toPath(), request);
+            List<Artifact> producedArtifacts = new ArrayList<>();
+            for (ArtifactProducer producer : artifactProducers.resolve(requestedArtifacts)) {
+                context.log(log, "Producing artifact of type '" + producer.artifactName() + "'");
+                producedArtifacts.addAll(producer.produceArtifacts(producerCtx));
             }
-            context.log(log, Level.INFO, "Uploading files with destination " + destination + " and expiry " + expiry);
-            if (!syncClient.sync(context, files, Integer.MAX_VALUE)) {
-                handleFailure(context, request, startedAt, "Unable to upload all files");
-                return;
-            }
-            context.log(log, Level.INFO, "Upload complete");
+            uploadArtifacts(context, destination, producedArtifacts, expiry);
             storeReport(context, ServiceDumpReport.createSuccessReport(request, startedAt, clock.instant(), destination));
         } catch (Exception e) {
             handleFailure(context, request, startedAt, e);
@@ -138,10 +120,22 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         }
     }
 
-    private void collectArtifactFilesToUpload(List<SyncFileInfo> files, UnixPath directoryOnHost, URI destination, Instant expiry) {
-        FileFinder.files(directoryOnHost.toPath()).stream()
-                .flatMap(file -> SyncFileInfo.forServiceDump(destination, file.path(), expiry).stream())
-                .forEach(files::add);
+    private void uploadArtifacts(NodeAgentContext ctx, URI destination,
+                                 List<Artifact> producedArtifacts, Instant expiry) {
+        List<SyncFileInfo> filesToUpload = producedArtifacts.stream()
+                .map(a -> {
+                    Compression compression = a.compressOnUpload() ? Compression.ZSTD : Compression.NONE;
+                    Path fileInNode = a.fileInNode().orElse(null);
+                    Path fileOnHost = fileInNode != null ? ctx.pathOnHostFromPathInNode(fileInNode) : a.fileOnHost().orElseThrow();
+                    return SyncFileInfo.forServiceDump(destination, fileOnHost, expiry, compression);
+                })
+                .collect(Collectors.toList());
+        ctx.log(log, Level.INFO,
+                "Uploading " + filesToUpload.size() + " file(s) with destination " + destination + " and expiry " + expiry);
+        if (!syncClient.sync(ctx, filesToUpload, Integer.MAX_VALUE)) {
+            throw new RuntimeException("Unable to upload all files");
+        }
+        ctx.log(log, Level.INFO, "Upload complete");
     }
 
     private static Instant expireAt(Instant startedAt, ServiceDumpReport request) {
@@ -180,5 +174,70 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         return archiveUri.resolve(targetDirectory);
     }
 
+    private class ProducerContext implements ArtifactProducer.Context, ArtifactProducer.Context.Options {
 
+        final NodeAgentContext nodeAgentCtx;
+        final Path outputDirectoryInNode;
+        final ServiceDumpReport request;
+        volatile int pid = -1;
+
+        ProducerContext(NodeAgentContext nodeAgentCtx, Path outputDirectoryInNode, ServiceDumpReport request) {
+            this.nodeAgentCtx = nodeAgentCtx;
+            this.outputDirectoryInNode = outputDirectoryInNode;
+            this.request = request;
+        }
+
+        @Override public String serviceId() { return request.configId(); }
+
+        @Override
+        public int servicePid() {
+            if (pid == -1) {
+                Path findPidBinary = nodeAgentCtx.pathInNodeUnderVespaHome("libexec/vespa/find-pid");
+                CommandResult findPidResult = executeCommandInNode(List.of(findPidBinary.toString(), serviceId()), true);
+                this.pid = Integer.parseInt(findPidResult.getOutput());
+            }
+            return pid;
+        }
+
+        @Override
+        public CommandResult executeCommandInNode(List<String> command, boolean logOutput) {
+            CommandResult result = container.executeCommandInContainerAsRoot(nodeAgentCtx, command.toArray(new String[0]));
+            String cmdString = command.stream().map(s -> "'" + s + "'").collect(Collectors.joining(" ", "\"", "\""));
+            int exitCode = result.getExitCode();
+            String output = result.getOutput().trim();
+            String prefixedOutput = output.contains("\n")
+                    ? "\n" + output
+                    : (output.isEmpty() ? "<no output>" : output);
+            if (exitCode > 0) {
+                String errorMsg = logOutput
+                        ? String.format("Failed to execute %s (exited with code %d): %s", cmdString, exitCode, prefixedOutput)
+                        : String.format("Failed to execute %s (exited with code %d)", cmdString, exitCode);
+                throw new RuntimeException(errorMsg);
+            } else {
+                String logMsg = logOutput
+                        ? String.format("Executed command %s. Exited with code %d and output: %s", cmdString, exitCode, prefixedOutput)
+                        : String.format("Executed command %s. Exited with code %d.", cmdString, exitCode);
+                nodeAgentCtx.log(log, logMsg);
+            }
+            return result;
+        }
+
+        @Override public Path outputDirectoryInNode() { return outputDirectoryInNode; }
+        @Override public Options options() { return this; }
+
+        @Override
+        public OptionalDouble duration() {
+            Double duration = dumpOptions()
+                    .map(ServiceDumpReport.DumpOptions::duration)
+                    .orElse(null);
+            return duration != null ? OptionalDouble.of(duration) : OptionalDouble.empty();
+        }
+
+        @Override
+        public boolean callGraphRecording() {
+            return dumpOptions().map(ServiceDumpReport.DumpOptions::callGraphRecording).orElse(false);
+        }
+
+        Optional<ServiceDumpReport.DumpOptions> dumpOptions() { return Optional.ofNullable(request.dumpOptions()); }
+    }
 }
