@@ -6,11 +6,9 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/ranksetup.h>
 #include <vespa/searchlib/engine/trace.h>
-#include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/attribute/diversity.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_params.h>
-#include <vespa/searchlib/common/bitvector.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_tools");
@@ -252,18 +250,18 @@ MatchToolsFactory::createTask(vespalib::stringref attribute, vespalib::stringref
 }
 std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnMatchTask() const {
-    return createTask(execute::onmatch::Attribute::lookup(_queryEnv.getProperties()),
-                      execute::onmatch::Operation::lookup(_queryEnv.getProperties()));
+    return createTask(execute::onmatch::Attribute::lookup(_queryEnv.getProperties(), _rankSetup.getExecuteOnMatch()._attribute),
+                      execute::onmatch::Operation::lookup(_queryEnv.getProperties(), _rankSetup.getExecuteOnMatch()._operation));
 }
 std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnReRankTask() const {
-    return createTask(execute::onrerank::Attribute::lookup(_queryEnv.getProperties()),
-                      execute::onrerank::Operation::lookup(_queryEnv.getProperties()));
+    return createTask(execute::onrerank::Attribute::lookup(_queryEnv.getProperties(), _rankSetup.getExecuteOnReRank()._attribute),
+                      execute::onrerank::Operation::lookup(_queryEnv.getProperties(), _rankSetup.getExecuteOnReRank()._operation));
 }
 std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnSummaryTask() const {
-    return createTask(execute::onsummary::Attribute::lookup(_queryEnv.getProperties()),
-                      execute::onsummary::Operation::lookup(_queryEnv.getProperties()));
+    return createTask(execute::onsummary::Attribute::lookup(_queryEnv.getProperties(), _rankSetup.getExecuteOnSummary()._attribute),
+                      execute::onsummary::Operation::lookup(_queryEnv.getProperties(), _rankSetup.getExecuteOnSummary()._operation));
 }
 
 bool
