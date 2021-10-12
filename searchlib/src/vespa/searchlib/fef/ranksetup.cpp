@@ -64,7 +64,10 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _softTimeoutFactor(0.5),
       _nearest_neighbor_brute_force_limit(0.05),
       _global_filter_lower_limit(0.0),
-      _global_filter_upper_limit(1.0)
+      _global_filter_upper_limit(1.0),
+      _executeOnMatch(),
+      _executeOnReRank(),
+      _executeOnSummary()
 { }
 
 RankSetup::~RankSetup() = default;
@@ -110,6 +113,12 @@ RankSetup::configure()
     set_nearest_neighbor_brute_force_limit(matching::NearestNeighborBruteForceLimit::lookup(_indexEnv.getProperties()));
     set_global_filter_lower_limit(matching::GlobalFilterLowerLimit::lookup(_indexEnv.getProperties()));
     set_global_filter_upper_limit(matching::GlobalFilterUpperLimit::lookup(_indexEnv.getProperties()));
+    _executeOnMatch._attribute = execute::onmatch::Attribute::lookup(_indexEnv.getProperties());
+    _executeOnMatch._operation = execute::onmatch::Operation::lookup(_indexEnv.getProperties());
+    _executeOnReRank._attribute = execute::onrerank::Attribute::lookup(_indexEnv.getProperties());
+    _executeOnReRank._operation = execute::onrerank::Operation::lookup(_indexEnv.getProperties());
+    _executeOnSummary._attribute = execute::onsummary::Attribute::lookup(_indexEnv.getProperties());
+    _executeOnSummary._operation = execute::onsummary::Operation::lookup(_indexEnv.getProperties());
 }
 
 void

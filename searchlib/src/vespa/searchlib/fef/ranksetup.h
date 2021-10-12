@@ -21,6 +21,17 @@ namespace search::fef {
  **/
 class RankSetup
 {
+public:
+    struct ExecuteOperation {
+    public:
+        ExecuteOperation() : ExecuteOperation("", "") {}
+        ExecuteOperation(vespalib::stringref attribute, vespalib::stringref operation)
+            : _attribute(attribute),
+              _operation(operation)
+        {}
+        vespalib::string _attribute;
+        vespalib::string _operation;
+    };
 private:
     const BlueprintFactory  &_factory;
     const IIndexEnvironment &_indexEnv;
@@ -62,8 +73,9 @@ private:
     double                   _nearest_neighbor_brute_force_limit;
     double                   _global_filter_lower_limit;
     double                   _global_filter_upper_limit;
-
-
+    ExecuteOperation         _executeOnMatch;
+    ExecuteOperation         _executeOnReRank;
+    ExecuteOperation         _executeOnSummary;
 public:
     RankSetup(const RankSetup &) = delete;
     RankSetup &operator=(const RankSetup &) = delete;
@@ -419,6 +431,10 @@ public:
      * @param queryEnv The query environment.
      */
     void prepareSharedState(const IQueryEnvironment & queryEnv, IObjectStore & objectStore) const;
+
+    const ExecuteOperation & getExecuteOnMatch() const { return _executeOnMatch; }
+    const ExecuteOperation & getExecuteOnReRank() const { return _executeOnReRank; }
+    const ExecuteOperation & getExecuteOnSummary() const { return _executeOnSummary; }
 };
 
 }
