@@ -248,9 +248,9 @@ MergeOperation::deleteSourceOnlyNodes(
             _ok = _removeOperation->ok();
             done();
         }
+    } else {
+        done();
     }
-    // FIXME what about the else-case here...? done() is not invoked by caller in this branch.
-    // Not calling done() doesn't leak anything, but causes metric updates to be missed.
 }
 
 void
