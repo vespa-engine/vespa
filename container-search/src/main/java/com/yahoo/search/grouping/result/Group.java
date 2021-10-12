@@ -24,13 +24,15 @@ public class Group extends HitGroup {
      */
     public Group(GroupId groupId, Relevance rel) {
         super(groupId.toString(), rel);
+        setMeta(false);
+        setAuxiliary(true);
         this.groupId = groupId;
     }
 
     /**
      * Returns the id of this group. This is a model of the otherwise flattened {@link #getId() hit id}.
      *
-     * @return The group id.
+     * @return the group id
      */
     public GroupId getGroupId() {
         return groupId;
@@ -41,8 +43,8 @@ public class Group extends HitGroup {
      * com.yahoo.search.grouping.request.EachOperation} that generated the list. This method returns null if no such
      * list was found.
      *
-     * @param label The label of the list to return.
-     * @return The requested list, or null.
+     * @param label the label of the list to return
+     * @return the requested list, or null
      */
     public HitList getHitList(String label) {
         for (Hit hit : this) {

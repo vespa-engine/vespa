@@ -41,4 +41,5 @@ public abstract class GroupId {
     public String toString() {
         return image;
     }
+
 }

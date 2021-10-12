@@ -293,7 +293,7 @@ public class SearchHandler extends LoggingRequestHandler {
     @Override
     public Optional<Request.RequestType> getRequestType() { return Optional.of(Request.RequestType.READ); }
 
-    private int getHttpResponseStatus(com.yahoo.container.jdisc.HttpRequest httpRequest, Result result) {
+    static int getHttpResponseStatus(com.yahoo.container.jdisc.HttpRequest httpRequest, Result result) {
         boolean benchmarkOutput = VespaHeaders.benchmarkOutput(httpRequest);
         if (benchmarkOutput) {
             return VespaHeaders.getEagerErrorStatus(result.hits().getError(),
