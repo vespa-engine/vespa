@@ -54,7 +54,6 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         this.nodeRepository = nodeRepository;
         this.clock = clock;
         List<AbstractProducer> producers = List.of(
-                new JvmDumpProducer(container),
                 new PerfReportProducer(container),
                 new JavaFlightRecorder(container, sleeper));
         this.artifactProducers = producers.stream()

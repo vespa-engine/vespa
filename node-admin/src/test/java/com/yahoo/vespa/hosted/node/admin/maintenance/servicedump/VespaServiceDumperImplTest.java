@@ -52,46 +52,9 @@ class VespaServiceDumperImplTest {
     void creates_valid_dump_id_from_dump_request() {
         long nowMillis = Instant.now().toEpochMilli();
         ServiceDumpReport request = new ServiceDumpReport(
-                nowMillis, null, null, null, null, "default/container.3", null, null, List.of(JvmDumpProducer.NAME), null);
+                nowMillis, null, null, null, null, "default/container.3", null, null, List.of(PerfReportProducer.NAME), null);
         String dumpId = VespaServiceDumperImpl.createDumpId(request);
         assertEquals("default-container-3-" + nowMillis, dumpId);
-    }
-
-    @Test
-    void generates_jvm_dump_from_request() throws IOException {
-        // Setup mocks
-        ContainerOperations operations = mock(ContainerOperations.class);
-        when(operations.executeCommandInContainerAsRoot(any(), any()))
-                .thenAnswer(invocation -> {
-                    // Create dummy files to simulate vespa-jvm-dumper
-                    Files.createFile(tmpDirectory.resolve("vespa-service-dump/" + JvmDumpProducer.NAME + "/heap.bin"));
-                    Files.createFile(tmpDirectory.resolve("vespa-service-dump/" + JvmDumpProducer.NAME + "/jstack"));
-                    return new CommandResult(null, 0, "result");
-                });
-        SyncClient syncClient = createSyncClientMock();
-        NodeRepoMock nodeRepository = new NodeRepoMock();
-        ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
-        NodeSpec initialSpec = createNodeSpecWithDumpRequest(nodeRepository, JvmDumpProducer.NAME, null);
-
-        // Create dumper and invoke tested method
-        VespaServiceDumper reporter = new VespaServiceDumperImpl(operations, syncClient, nodeRepository, clock, Sleeper.NOOP);
-        NodeAgentContextImpl context = new NodeAgentContextImpl.Builder(initialSpec)
-                .fileSystem(fileSystem)
-                .build();
-        reporter.processServiceDumpRequest(context);
-
-        // Verify
-        String expectedJson =
-                "{\"createdMillis\":1600000000000,\"startedAt\":1600001000000,\"completedAt\":1600001000000," +
-                        "\"location\":\"s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/\"," +
-                        "\"configId\":\"default/container.1\",\"artifacts\":[\"jvm-dump\"]}";
-        assertReportEquals(nodeRepository, expectedJson);
-        verify(operations).executeCommandInContainerAsRoot(
-                context, "/opt/vespa/bin/vespa-jvm-dumper", "default/container.1", "/opt/vespa/tmp/vespa-service-dump/jvm-dump");
-        List<URI> expectedUris = List.of(
-                URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/jvm-dump/heap.bin.zst"),
-                URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/jvm-dump/jstack"));
-        assertSyncedFiles(context, syncClient, expectedUris);
     }
 
     @Test
