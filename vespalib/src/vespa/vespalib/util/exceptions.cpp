@@ -186,4 +186,18 @@ IoException::getErrorType(int error) {
     }
 }
 
+template <typename T>
+bool check_type(const std::exception &e) {
+    return (dynamic_cast<const T *>(&e) != nullptr);
+}
+
+void rethrow_if_unsafe(const std::exception &e) {
+    if (check_type<std::bad_alloc>(e) ||
+        check_type<OOMException>(e) ||
+        check_type<FatalException>(e))
+    {
+        throw;
+    }
+}
+
 } // vespalib
