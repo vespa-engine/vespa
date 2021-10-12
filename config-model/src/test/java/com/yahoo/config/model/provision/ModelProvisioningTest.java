@@ -1617,8 +1617,12 @@ public class ModelProvisioningTest {
         tester.addHosts(3);
         VespaModel model = tester.createModel(xmlWithNodes, true);
 
-        assertEquals("Nodes in container cluster", 1, model.getContainerClusters().get("container1").getContainers().size());
-        assertEquals("Nodes in content cluster (downscaled)", 1, model.getContentClusters().get("content").getRootGroup().getNodes().size());
+        assertEquals("Nodes in container cluster", 1,
+                     model.getContainerClusters().get("container1").getContainers().size());
+        assertEquals("Nodes in content cluster (downscaled)", 1,
+                     model.getContentClusters().get("content").getRootGroup().getNodes().size());
+
+        assertEquals(1, model.getAdmin().getSlobroks().size());
 
         model.getConfig(new StorStatusConfig.Builder(), "default");
         StorageCluster storage = model.getContentClusters().get("content").getStorageCluster();

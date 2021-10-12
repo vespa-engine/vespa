@@ -41,6 +41,7 @@ public class JRTConnectionPool implements ConnectionPool {
     }
 
     public JRTConnectionPool(ConfigSourceSet sourceSet, Supervisor supervisor) {
+        if (sourceSet.getSources().isEmpty()) throw new IllegalArgumentException("sourceSet cannot be empty");
         this.supervisor = supervisor;
         this.poolName = supervisor.transport().getName();
         addSources(sourceSet);
