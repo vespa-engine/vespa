@@ -278,6 +278,36 @@ TEST("decode string") {
     EXPECT_EQUAL(std::string("\xf4\x8f\xbf\xbf"), json_string("\\udbff\\udfff"));
 }
 
+TEST_F("decode data", Slime) {
+    EXPECT_TRUE(parse_json("x", f));
+    EXPECT_EQUAL(vespalib::slime::DATA::ID, f.get().type().getId());
+    Memory m = f.get().asData();
+    EXPECT_EQUAL(0u, m.size);
+
+    EXPECT_TRUE(parse_json("x0000", f));
+    EXPECT_EQUAL(vespalib::slime::DATA::ID, f.get().type().getId());
+    m = f.get().asData();
+    EXPECT_EQUAL(2u, m.size);
+    EXPECT_EQUAL(0, m.data[0]);
+    EXPECT_EQUAL(0, m.data[1]);
+
+    EXPECT_TRUE(parse_json("x1234567890abcdefABCDEF", f));
+    EXPECT_EQUAL(vespalib::slime::DATA::ID, f.get().type().getId());
+    m = f.get().asData();
+    EXPECT_EQUAL(11u, m.size);
+    EXPECT_EQUAL((char)0x12, m.data[0]);
+    EXPECT_EQUAL((char)0x34, m.data[1]);
+    EXPECT_EQUAL((char)0x56, m.data[2]);
+    EXPECT_EQUAL((char)0x78, m.data[3]);
+    EXPECT_EQUAL((char)0x90, m.data[4]);
+    EXPECT_EQUAL((char)0xAB, m.data[5]);
+    EXPECT_EQUAL((char)0xCD, m.data[6]);
+    EXPECT_EQUAL((char)0xEF, m.data[7]);
+    EXPECT_EQUAL((char)0xAB, m.data[8]);
+    EXPECT_EQUAL((char)0xCD, m.data[9]);
+    EXPECT_EQUAL((char)0xEF, m.data[10]);
+}
+
 TEST_F("decode empty array", Slime) {
     EXPECT_TRUE(parse_json("[]", f));
     EXPECT_EQUAL(vespalib::slime::ARRAY::ID, f.get().type().getId());
@@ -301,13 +331,18 @@ TEST_F("decode array", Slime) {
 }
 
 TEST_F("decode object", Slime) {
-    EXPECT_TRUE(parse_json("{\"a\":123,\"b\":0.5,\"c\":\"foo\",\"d\":true}", f));
+    EXPECT_TRUE(parse_json("{\"a\":123,\"b\":0.5,\"c\":\"foo\",\"d\":true,\"e\":xff0011}", f));
     EXPECT_EQUAL(vespalib::slime::OBJECT::ID, f.get().type().getId());
-    EXPECT_EQUAL(4u, f.get().children());
+    EXPECT_EQUAL(5u, f.get().children());
     EXPECT_EQUAL(123.0, f.get()["a"].asDouble());
     EXPECT_EQUAL(0.5, f.get()["b"].asDouble());
     EXPECT_EQUAL(std::string("foo"), f.get()["c"].asString().make_string());
     EXPECT_EQUAL(true, f.get()["d"].asBool());
+    Memory m = f.get()["e"].asData();
+    EXPECT_EQUAL(3u, m.size);
+    EXPECT_EQUAL((char)255, m.data[0]);
+    EXPECT_EQUAL((char)0,   m.data[1]);
+    EXPECT_EQUAL((char)17,  m.data[2]);
 }
 
 TEST_F("decode nesting", Slime) {
