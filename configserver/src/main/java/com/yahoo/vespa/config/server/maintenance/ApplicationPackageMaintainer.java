@@ -33,13 +33,13 @@ import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUti
  * @author gjoranv
  */
 public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
+
     private static final Logger log = Logger.getLogger(ApplicationPackageMaintainer.class.getName());
 
     private final ApplicationRepository applicationRepository;
     private final File downloadDirectory;
     private final ConfigserverConfig configserverConfig;
     private final Supervisor supervisor;
-
 
     ApplicationPackageMaintainer(ApplicationRepository applicationRepository,
                                  Curator curator,
@@ -54,6 +54,8 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
 
     @Override
     protected double maintain() {
+        if (getOtherConfigServersInCluster(configserverConfig).isEmpty()) return 1.0; // Nothing to do
+
         int attempts = 0;
         int failures = 0;
 

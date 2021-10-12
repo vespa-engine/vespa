@@ -77,7 +77,7 @@ public class AdminModel extends ConfigModel {
 
         @Override
         public void doBuild(AdminModel model, Element adminElement, ConfigModelContext modelContext) {
-            if (modelContext.getDeployState().isHosted()) { // admin v2 is used on hosted: Build a default V4 instead
+            if (modelContext.getDeployState().isHosted()) { // admin v4 is used on hosted: Build a default V4 instead
                 new BuilderV4().doBuild(model, adminElement, modelContext);
                 return;
             }
@@ -87,6 +87,7 @@ public class AdminModel extends ConfigModel {
                                                                  properties.multitenant(),
                                                                  properties.configServerSpecs());
             model.admin = domBuilder.build(modelContext.getDeployState(), parent, adminElement);
+
             // TODO: Is required since other models depend on admin.
             if (parent instanceof ApplicationConfigProducerRoot) {
                 ((ApplicationConfigProducerRoot)parent).setupAdmin(model.admin);
@@ -109,7 +110,7 @@ public class AdminModel extends ConfigModel {
 
         @Override
         public void doBuild(AdminModel model, Element adminElement, ConfigModelContext modelContext) {
-            AbstractConfigProducer parent = modelContext.getParentProducer();
+            AbstractConfigProducer<?> parent = modelContext.getParentProducer();
             ModelContext.Properties properties = modelContext.getDeployState().getProperties();
             DomAdminV4Builder domBuilder = new DomAdminV4Builder(modelContext,
                                                                  properties.multitenant(),
