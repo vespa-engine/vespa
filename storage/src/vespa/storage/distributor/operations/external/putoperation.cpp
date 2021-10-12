@@ -36,55 +36,6 @@ PutOperation::PutOperation(const DistributorNodeContext& node_ctx,
 {
 }
 
-namespace {
-
-bool hasNode(const std::vector<uint16_t>& vec, uint16_t value) {
-    for (uint32_t i = 0; i < vec.size(); i++) {
-        if (vec[i] == value) {
-            return true;
-        }
-    }
-
-    return false;
-};
-
-}
-
-void
-PutOperation::getTargetNodes(const std::vector<uint16_t>& idealNodes, std::vector<uint16_t>& targetNodes,
-                             std::vector<uint16_t>& createNodes, const BucketInfo& bucketInfo, uint32_t redundancy)
-{
-    // First insert all nodes that are trusted or already in the ideal state.
-    for (uint32_t i = 0; i < bucketInfo.getNodeCount(); i++) {
-        if (bucketInfo.getNodeRef(i).trusted() || hasNode(idealNodes,bucketInfo.getNodeRef(i).getNode())) {
-            LOG(spam, "Adding target node %u with %s since it's trusted or in ideal state",
-                i, bucketInfo.getNodeRef(i).toString().c_str());
-            targetNodes.push_back(bucketInfo.getNodeRef(i).getNode());
-        }
-    }
-
-    // Then insert all nodes that already exist if we need them.
-    for (uint32_t i = 0; targetNodes.size() < redundancy && i < bucketInfo.getNodeCount(); i++) {
-        if (!hasNode(targetNodes, bucketInfo.getNodeRef(i).getNode())) {
-            LOG(spam, "Adding target node %u with %s since it already exists",
-                i, bucketInfo.getNodeRef(i).toString().c_str());
-            targetNodes.push_back(bucketInfo.getNodeRef(i).getNode());
-        }
-    }
-
-    // Then add stuff from ideal state.
-    for (uint32_t i = 0; targetNodes.size() < redundancy && i < idealNodes.size(); i++) {
-        if (!hasNode(targetNodes, idealNodes[i])) {
-            targetNodes.push_back(idealNodes[i]);
-            LOG(spam, "Adding target+create node %u it's in ideal state", idealNodes[i]);
-            createNodes.push_back(idealNodes[i]);
-        }
-    }
-
-    std::sort(targetNodes.begin(), targetNodes.end());
-    std::sort(createNodes.begin(), createNodes.end());
-}
-
 void
 PutOperation::insertDatabaseEntryAndScheduleCreateBucket(const OperationTargetList& copies, bool setOneActive,
                                                          const api::StorageCommand& originalCommand,

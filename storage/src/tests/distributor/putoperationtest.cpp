@@ -49,7 +49,6 @@ public:
     }
 
     document::BucketId createAndSendSampleDocument(vespalib::duration timeout);
-    std::string getNodes(const std::string& infoString);
 
     void sendReply(int idx = -1,
                       api::ReturnCode::Result result
@@ -453,68 +452,6 @@ TEST_F(PutOperationTest, update_correct_bucket_on_remapped_put) {
     ASSERT_EQ("BucketId(0x440000000000000d) : "
               "node(idx=0,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)",
               dumpBucket(document::BucketId(17, 13)));
-}
-
-BucketInfo
-parseBucketInfoString(const std::string& nodeList) {
-    vespalib::StringTokenizer tokenizer(nodeList, ",");
-
-    BucketInfo entry;
-    for (uint32_t i = 0; i < tokenizer.size(); i++) {
-        vespalib::StringTokenizer tokenizer2(tokenizer[i], "-");
-        int node = atoi(tokenizer2[0].data());
-        int size = atoi(tokenizer2[1].data());
-        bool trusted = (tokenizer2[2] == "true");
-
-        entry.addNode(BucketCopy(0,
-                                 node,
-                                 api::BucketInfo(size, size * 1000, size * 2000))
-                      .setTrusted(trusted),
-                      toVector<uint16_t>(0));
-    }
-
-    return entry;
-}
-
-std::string
-PutOperationTest::getNodes(const std::string& infoString) {
-    Document::SP doc(createDummyDocument("test", "uri"));
-    document::BucketId bid(operation_context().make_split_bit_constrained_bucket_id(doc->getId()));
-
-    BucketInfo entry = parseBucketInfoString(infoString);
-
-    std::ostringstream ost;
-
-    std::vector<uint16_t> targetNodes;
-    std::vector<uint16_t> createNodes;
-    PutOperation::getTargetNodes(getDistributorBucketSpace().get_ideal_service_layer_nodes_bundle(bid).get_available_nodes(),
-                                 targetNodes, createNodes, entry, 2);
-
-    ost << "target( ";
-    for (uint32_t i = 0; i < targetNodes.size(); i++) {
-        ost << targetNodes[i] << " ";
-    }
-    ost << ") create( ";
-    for (uint32_t i = 0; i < createNodes.size(); i++) {
-        ost << createNodes[i] << " ";
-    }
-    ost << ")";
-
-    return ost.str();
-}
-
-TEST_F(PutOperationTest, target_nodes) {
-    setup_stripe(2, 6, "storage:6 distributor:1");
-
-    // Ideal state of bucket is 1,2.
-    ASSERT_EQ("target( 1 2 ) create( 1 2 )", getNodes(""));
-    ASSERT_EQ("target( 1 2 ) create( 2 )",   getNodes("1-1-true"));
-    ASSERT_EQ("target( 1 2 ) create( 2 )",   getNodes("1-1-false"));
-    ASSERT_EQ("target( 3 4 5 ) create( )",   getNodes("3-1-true,4-1-true,5-1-true"));
-    ASSERT_EQ("target( 3 4 ) create( )",     getNodes("3-2-true,4-2-true,5-1-false"));
-    ASSERT_EQ("target( 1 3 4 ) create( )",   getNodes("3-2-true,4-2-true,1-1-false"));
-    ASSERT_EQ("target( 4 5 ) create( )",     getNodes("4-2-false,5-1-false"));
-    ASSERT_EQ("target( 1 4 ) create( 1 )",   getNodes("4-1-true"));
 }
 
 TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_active_state) {
