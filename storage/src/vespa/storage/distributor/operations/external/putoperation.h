@@ -36,8 +36,6 @@ public:
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
     void onClose(DistributorStripeMessageSender& sender) override;
 
-    static void getTargetNodes(const std::vector<uint16_t>& idealNodes, std::vector<uint16_t>& targetNodes,
-                               std::vector<uint16_t>& createNodes, const BucketInfo& bucketInfo, uint32_t redundancy);
 private:
     PersistenceMessageTrackerImpl _trackerInstance;
     PersistenceMessageTracker& _tracker;
