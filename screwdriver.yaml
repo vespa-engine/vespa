@@ -6,6 +6,8 @@ cache:
 
 shared:
   image: vespaengine/vespa-build-centos7:latest
+  environment:
+    USER_SHELL_BIN: bash
 
 jobs:
   build-vespa:
@@ -17,7 +19,6 @@ jobs:
       screwdriver.cd/timeout: 60
 
     environment:
-      USER_SHELL_BIN: bash
       LOCAL_MVN_REPO: "/tmp/vespa/mvnrepo"
       VESPA_MAVEN_EXTRA_OPTS: "-Dmaven.repo.local=/tmp/vespa/mvnrepo -Dmaven.javadoc.skip=true -Dmaven.source.skip=true"
       CCACHE_TMP_DIR: "/tmp/ccache_tmp"
@@ -73,9 +74,49 @@ jobs:
           ls -la /main_job_cache || true
           df -h
 
+  publish-release:
+    annotations:
+      screwdriver.cd/cpu: 7
+      screwdriver.cd/ram: 16
+      screwdriver.cd/disk: HIGH
+      screwdriver.cd/timeout: 300
+      screwdriver.cd/dockerEnabled: true
+      screwdriver.cd/dockerCpu: TURBO
+      screwdriver.cd/dockerRam: TURBO
+
+    secrets:
+      - COPR_WEBHOOK
+      - OSSRH_USER
+      - OSSRH_TOKEN
+      - GPG_KEYNAME
+      - GPG_PASSPHRASE
+      - GPG_ENCPHRASE
+      - SAMPLE_APPS_DEPLOY_KEY
+      - VESPA_DEPLOY_KEY
+      - DOCKER_HUB_DEPLOY_KEY
+
+    steps:
+      - get-vespa-version: |
+          VESPA_VERSION=$(meta get vespa.version)
+          VESPA_REF=$(meta get vespa.ref)
+          if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]]; then
+            echo "Must have valid Vespa version and reference to continue (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF)."
+            exit 1
+          fi
+      - install-docker-client: |
+          yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+          yum install -y --setopt skip_missing_names_on_install=False docker-ce docker-ce-cli containerd.io
+          docker system info
+      - release-rpms: |
+          screwdriver/release-rpms.sh $VESPA_VERSION $VESPA_REF
+      - release-container-image: |
+          screwdriver/release-container-image.sh $VESPA_VERSION
+      - release-java-artifacts: |
+          screwdriver/release-java-artifacts.sh $VESPA_VERSION $VESPA_REF
+      - update-sample-apps: |
+          screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
+
   verify-opensource-release-7days:
-    environment:
-      USER_SHELL_BIN: bash
     annotations:
       screwdriver.cd/buildPeriodically: H 0 * * *
     steps:
