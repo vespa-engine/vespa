@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/searchlib/features/rankingexpressionfeature.h>
 #include <vespa/searchlib/features/onnx_feature.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
@@ -18,6 +19,7 @@ using namespace search::fef::test;
 using namespace search::features;
 using vespalib::make_string_short::fmt;
 using vespalib::eval::TensorSpec;
+using vespalib::Issue;
 
 std::string get_source_dir() {
     const char *dir = getenv("SOURCE_DIRECTORY");
@@ -153,13 +155,25 @@ TEST_F(OnnxFeatureTest, fragile_model_can_be_evaluated) {
     EXPECT_EQ(get(3), TensorSpec::from_expr("tensor<float>(d0[2]):[6,15]"));
 }
 
+struct MyIssues : Issue::Handler {
+    std::vector<vespalib::string> list;
+    Issue::Binding capture;
+    MyIssues() : list(), capture(Issue::listen(*this)) {}
+    void handle(const Issue &issue) override { list.push_back(issue.message()); }
+};
+
 TEST_F(OnnxFeatureTest, broken_model_evaluates_to_all_zeros) {
     add_expr("in1", "tensor<float>(x[2]):[docid,5]");
     add_expr("in2", "tensor<float>(x[3]):[docid,10,31515]");
     add_onnx(OnnxModel("fragile", fragile_model).dry_run_on_setup(false));
     EXPECT_TRUE(try_compile(onnx_feature("fragile")));
+    MyIssues my_issues;
+    EXPECT_EQ(my_issues.list.size(), 0);
     EXPECT_EQ(get(1), TensorSpec::from_expr("tensor<float>(d0[2]):[0,0]"));
+    EXPECT_EQ(my_issues.list.size(), 1);
     EXPECT_EQ(get(3), TensorSpec::from_expr("tensor<float>(d0[2]):[0,0]"));
+    ASSERT_EQ(my_issues.list.size(), 2);
+    EXPECT_EQ(my_issues.list[0], my_issues.list[1]);
 }
 
 TEST_F(OnnxFeatureTest, broken_model_fails_with_dry_run) {

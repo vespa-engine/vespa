@@ -10,6 +10,7 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.onnx_feature");
@@ -28,6 +29,7 @@ using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::value_from_spec;
 using vespalib::make_string_short::fmt;
 using vespalib::eval::Onnx;
+using vespalib::Issue;
 
 namespace search::features {
 
@@ -92,7 +94,7 @@ public:
         try {
             _eval_context.eval();
         } catch (const Ort::Exception &ex) {
-            LOG(warning, "onnx model evaluation failed: %s", ex.what());
+            Issue::report("onnx model evaluation failed: %s", ex.what());
             _eval_context.clear_results();
         }
     }
