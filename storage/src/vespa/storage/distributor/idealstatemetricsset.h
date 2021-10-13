@@ -31,6 +31,16 @@ struct GcMetricSet : OperationMetricSet {
     ~GcMetricSet() override;
 };
 
+class MergeBucketMetricSet : public OperationMetricSet
+{
+public:
+    metrics::LongCountMetric source_only_copy_changed;
+    metrics::LongCountMetric source_only_copy_delete_blocked;
+    metrics::LongCountMetric source_only_copy_delete_failed;
+    MergeBucketMetricSet(const std::string& name, metrics::Metric::Tags tags, const std::string& description, MetricSet* owner);
+    ~MergeBucketMetricSet() override;
+};
+
 class IdealStateMetricSet : public metrics::MetricSet
 {
 public:
