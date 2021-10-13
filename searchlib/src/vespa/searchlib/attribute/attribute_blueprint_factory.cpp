@@ -620,7 +620,7 @@ public:
     void visitPredicate(PredicateQuery &query) {
         const PredicateAttribute *attr = dynamic_cast<const PredicateAttribute *>(&_attr);
         if (!attr) {
-            LOG(warning, "Trying to apply a PredicateQuery node to a non-predicate attribute.");
+            Issue::report("Trying to apply a PredicateQuery node to a non-predicate attribute.");
             setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
         } else {
             setResult(std::make_unique<PredicateBlueprint>( _field, *attr, query));
@@ -724,8 +724,8 @@ public:
         }
     }
     void fail_nearest_neighbor_term(query::NearestNeighborTerm&n, const vespalib::string& error_msg) {
-        LOG(warning, "NearestNeighborTerm(%s, %s): %s. Returning empty blueprint",
-            _field.getName().c_str(), n.get_query_tensor_name().c_str(), error_msg.c_str());
+        Issue::report("NearestNeighborTerm(%s, %s): %s. Returning empty blueprint",
+                      _field.getName().c_str(), n.get_query_tensor_name().c_str(), error_msg.c_str());
         setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
     }
     void visit(query::NearestNeighborTerm &n) override {
@@ -800,6 +800,7 @@ AttributeBlueprintFactory::createBlueprint(const IRequestContext & requestContex
 {
     const IAttributeVector *attr(requestContext.getAttribute(field.getName()));
     if (attr == nullptr) {
+        Issue::report("attribute not found: %s", field.getName().c_str());
         return std::make_unique<queryeval::EmptyBlueprint>(field);
     }
     try {

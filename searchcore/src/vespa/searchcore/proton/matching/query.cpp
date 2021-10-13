@@ -12,6 +12,7 @@
 #include <vespa/searchlib/common/geo_location_parser.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.query");
@@ -38,6 +39,7 @@ using search::queryeval::IRequestContext;
 using search::queryeval::SearchIterator;
 using search::query::LocationTerm;
 using vespalib::string;
+using vespalib::Issue;
 using std::vector;
 
 namespace proton::matching {
@@ -89,7 +91,7 @@ GeoLocationSpec parse_location_string(string str) {
         auto attr_name = PositionDataType::getZCurveFieldName(parser.getFieldName());
         return GeoLocationSpec{attr_name, parser.getGeoLocation()};
     } else {
-        LOG(warning, "Location parse error (location: '%s'): %s", str.c_str(), parser.getParseError());
+        Issue::report("Location parse error (location: '%s'): %s", str.c_str(), parser.getParseError());
     }
     return empty;
 }
@@ -175,7 +177,7 @@ Query::buildTree(vespalib::stringref stack, const string &location,
         _query_tree->accept(resolve_visitor);
         return true;
     } else {
-        // TODO(havardpe): log warning or pass message upwards
+        Issue::report("invalid query");
         return false;
     }
 }
