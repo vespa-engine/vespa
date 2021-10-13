@@ -256,7 +256,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         int applicationCount = deployments.size();
         Set<ApplicationId> failedDeployments = new LinkedHashSet<>();
         Set<ApplicationId> finishedDeployments = new LinkedHashSet<>();
-        Instant lastLogged = Instant.EPOCH;
+        LogState logState = new LogState(applicationCount);
 
         do {
             deployments.forEach((applicationId, future) -> {
@@ -276,19 +276,19 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                         throw new IllegalArgumentException("Unknown deployment status " + status);
                 }
             });
-            if ( ! Duration.between(lastLogged, Instant.now()).minus(Duration.ofSeconds(10)).isNegative()) {
-                logProgress(applicationCount, failedDeployments, finishedDeployments);
-                lastLogged = Instant.now();
-            }
+            logProgress(logState, failedDeployments.size(), finishedDeployments.size());
         } while (failedDeployments.size() + finishedDeployments.size() < applicationCount);
 
-        logProgress(applicationCount, failedDeployments, finishedDeployments);
         return new ArrayList<>(failedDeployments);
     }
 
-    private void logProgress(int applicationCount, Set<ApplicationId> failedDeployments, Set<ApplicationId> finishedDeployments) {
-        log.log(Level.INFO, () -> finishedDeployments.size() + " of " + applicationCount + " apps redeployed " +
-                                  "(" + failedDeployments.size() + " failed)");
+    private void logProgress(LogState logState, int failedDeployments, int finishedDeployments) {
+        if ( ! Duration.between(logState.lastLogged, Instant.now()).minus(Duration.ofSeconds(10)).isNegative()
+                && (logState.failedDeployments != failedDeployments || logState.finishedDeployments != finishedDeployments)) {
+            log.log(Level.INFO, () -> finishedDeployments + " of " + logState.applicationCount + " apps redeployed " +
+                    "(" + failedDeployments + " failed)");
+            logState.update(Instant.now(), failedDeployments, finishedDeployments);
+        }
     }
 
     private DeploymentStatus getDeploymentStatus(ApplicationId applicationId, Future<?> future) {
@@ -306,6 +306,26 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         } catch (TimeoutException e) {
             return DeploymentStatus.inProgress;
         }
+    }
+
+    private static class LogState {
+
+        private final int applicationCount;
+
+        private Instant lastLogged = Instant.EPOCH;
+        private int failedDeployments = 0;
+        private int finishedDeployments = 0;
+
+        public LogState(int applicationCount) {
+            this.applicationCount = applicationCount;
+        }
+
+        public void update(Instant lastLogged, int failedDeployments, int finishedDeployments) {
+            this.lastLogged = lastLogged;
+            this.failedDeployments = failedDeployments;
+            this.finishedDeployments = finishedDeployments;
+        }
+
     }
 
 }
