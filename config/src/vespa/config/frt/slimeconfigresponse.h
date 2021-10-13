@@ -30,7 +30,6 @@ public:
     const Trace & getTrace() const override { return _trace; }
 
     vespalib::string getHostName() const;
-    vespalib::string getConfigMd5() const;
 
     void fill() override;
 
