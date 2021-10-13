@@ -149,7 +149,7 @@ public class UnixPath {
 
     public UnixPath setGroup(String group) { return setGroup(group, "group"); }
     public UnixPath setGroupId(int gid) { return setGroup(String.valueOf(gid), "gid"); }
-    public UnixPath setGroup(String group, String type) {
+    private UnixPath setGroup(String group, String type) {
         UserPrincipalLookupService service = path.getFileSystem().getUserPrincipalLookupService();
         GroupPrincipal principal = uncheck(
                 () -> service.lookupPrincipalByGroupName(group),
