@@ -5,6 +5,7 @@ import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
@@ -48,9 +49,9 @@ public class ServerCacheTest {
 
         cache = new ServerCache(new TestConfigDefinitionRepo(), userConfigDefinitionRepo);
 
-        cache.computeIfAbsent(fooBarCacheKey, (ConfigCacheKey key) -> SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, xxhash64));
-        cache.computeIfAbsent(bazQuuxCacheKey, (ConfigCacheKey key) -> SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, xxhash64));
-        cache.computeIfAbsent(fooBarCacheKeyDifferentMd5, (ConfigCacheKey key) -> SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, xxhash64_2));
+        cache.computeIfAbsent(fooBarCacheKey, (ConfigCacheKey key) -> createResponse(xxhash64));
+        cache.computeIfAbsent(bazQuuxCacheKey, (ConfigCacheKey key) -> createResponse(xxhash64));
+        cache.computeIfAbsent(fooBarCacheKeyDifferentMd5, (ConfigCacheKey key) -> createResponse(xxhash64_2));
     }
 
     @Test
@@ -75,4 +76,10 @@ public class ServerCacheTest {
     public void testThatCacheWorksWithDifferentKeySameMd5() {
         assertSame(cache.get(fooBarCacheKey), cache.get(bazQuuxCacheKey));
     }
+
+    SlimeConfigResponse createResponse(String xxhash64) {
+        return SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false,
+                                                     PayloadChecksums.from("", xxhash64));
+    }
+
 }
