@@ -5,17 +5,13 @@
 namespace search::engine {
 
 DocsumRequest::DocsumRequest()
-    : DocsumRequest(false)
-{}
+    : DocsumRequest(RelativeTime(std::make_unique<SteadyClock>()))
+{
+}
 
-DocsumRequest::DocsumRequest(bool useRootSlime_)
-    : DocsumRequest(RelativeTime(std::make_unique<SteadyClock>()), useRootSlime_)
-{}
-
-DocsumRequest::DocsumRequest(RelativeTime relativeTime, bool useRootSlime_)
+DocsumRequest::DocsumRequest(RelativeTime relativeTime)
     : Request(std::move(relativeTime)),
       resultClassName(),
-      _useRootSlime(useRootSlime_),
       hits()
 {
 }
