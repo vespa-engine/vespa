@@ -44,8 +44,8 @@ private:
     bool possibleToScheduleInEmergency(const PrioritizedBucket& bucket) const;
     void clearPriority(const PrioritizedBucket& bucket);
     bool startOperation(const PrioritizedBucket& bucket);
-    OperationStarter::Priority convertToOperationPriority(
-            MaintenancePriority::Priority priority) const;
+    OperationStarter::Priority convertToOperationPriority(MaintenancePriority::Priority priority) const;
+    bool has_bucket_activation_priority(const PrioritizedBucket&) const noexcept;
 
     MaintenanceOperationGenerator& _operationGenerator;
     BucketPriorityDatabase&        _priorityDb;

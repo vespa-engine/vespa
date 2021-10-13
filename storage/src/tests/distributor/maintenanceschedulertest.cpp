@@ -103,6 +103,15 @@ TEST_P(MaintenanceSchedulerTest, priority_cleared_if_operation_not_started_insid
     EXPECT_EQ("", _priority_db.toString());
 }
 
+TEST_P(MaintenanceSchedulerTest, priority_not_cleared_if_operation_not_started_inside_pending_window_for_highest_pri) {
+    _priority_db.setPriority(PrioritizedBucket(makeDocumentBucket(BucketId(16, 1)), Priority::HIGHEST));
+    _operation_starter.setShouldStartOperations(false);
+    WaitTimeMs waitMs(_scheduler.tick(MaintenanceScheduler::NORMAL_SCHEDULING_MODE));
+    EXPECT_EQ(WaitTimeMs(1), waitMs);
+    EXPECT_EQ("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri HIGHEST)\n",
+              _priority_db.toString());
+}
+
 TEST_P(MaintenanceSchedulerTest, priority_not_cleared_if_operation_not_started_outside_pending_window) {
     _priority_db.setPriority(PrioritizedBucket(makeDocumentBucket(BucketId(16, 1)), Priority::HIGH));
     _operation_starter.setShouldStartOperations(false);

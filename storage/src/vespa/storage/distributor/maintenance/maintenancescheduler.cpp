@@ -42,7 +42,11 @@ MaintenanceScheduler::tick(SchedulingMode currentMode)
     if (!possibleToSchedule(mostImportant, currentMode)) {
         return WaitTimeMs(1);
     }
-    if (_implicitly_clear_priority_on_schedule) {
+    // Bucket activations are so important to do ASAP that we _want_ to block further
+    // maintenance scheduling until we're able to schedule the next possible bucket.
+    // The inverse is the case for other maintenance operations.
+    const bool is_activation = has_bucket_activation_priority(mostImportant);
+    if (_implicitly_clear_priority_on_schedule && !is_activation) {
         // If we can't start the operation, move on to the next bucket. Bucket will be
         // re-prioritized when the distributor stripe next scans it.
         clearPriority(mostImportant);
@@ -50,7 +54,7 @@ MaintenanceScheduler::tick(SchedulingMode currentMode)
     if (!startOperation(mostImportant)) {
         return WaitTimeMs(1);
     }
-    if (!_implicitly_clear_priority_on_schedule) {
+    if (!_implicitly_clear_priority_on_schedule || is_activation) {
         clearPriority(mostImportant);
     }
     return WaitTimeMs(0);
@@ -121,6 +125,12 @@ MaintenanceScheduler::startOperation(const PrioritizedBucket& bucket)
     OperationStarter::Priority operationPriority(
             convertToOperationPriority(bucket.getPriority()));
     return _operationStarter.start(operation, operationPriority);
+}
+
+bool
+MaintenanceScheduler::has_bucket_activation_priority(const PrioritizedBucket& bucket) const noexcept
+{
+    return (bucket.getPriority() == MaintenancePriority::HIGHEST);
 }
 
 }
