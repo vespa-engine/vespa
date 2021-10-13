@@ -37,7 +37,25 @@ public class SystemPoller {
     private final Map<VespaService, Long> lastCpuJiffiesMetrics = new ConcurrentHashMap<>();
     private final Timer systemPollTimer;
 
-    private long lastTotalCpuJiffies = -1;
+    private JiffiesAndCpus lastTotalCpuJiffies = null;
+
+    static class JiffiesAndCpus {
+        final long jiffies;
+        final int cpus;
+        JiffiesAndCpus() { this(0,1); }
+        JiffiesAndCpus(long jiffies, int cpus) {
+            this.jiffies = jiffies;
+            this.cpus = Math.max(1, cpus);
+        }
+        long normalizedJiffies() {
+            return jiffies / cpus;
+        }
+        JiffiesAndCpus diff(JiffiesAndCpus prev) {
+            return (cpus == prev.cpus)
+                    ? new JiffiesAndCpus(jiffies - prev.jiffies, cpus)
+                    : new JiffiesAndCpus();
+        }
+    }
 
     public SystemPoller(List<VespaService> services, int pollingIntervalSecs) {
         this.services = services;
@@ -103,7 +121,7 @@ public class SystemPoller {
 
         log.log(Level.FINE, () -> "Monitoring system metrics for " + services.size() + " services");
 
-        long sysJiffies = getNormalizedSystemJiffies();
+        JiffiesAndCpus sysJiffies = getTotalSystemJiffies();
         for (VespaService s : services) {
 
 
@@ -117,16 +135,19 @@ public class SystemPoller {
             long[] size = getMemoryUsage(s);
             log.log(Level.FINE, () -> "Updating memory metric for service " + s);
 
-            metrics.add(new Metric(MetricId.toMetricId("memory_virt"), size[memoryTypeVirtual], startTime / 1000));
-            metrics.add(new Metric(MetricId.toMetricId("memory_rss"), size[memoryTypeResident], startTime / 1000));
+            long timeStamp = startTime / 1000;
+            metrics.add(new Metric(MetricId.toMetricId("memory_virt"), size[memoryTypeVirtual], timeStamp));
+            metrics.add(new Metric(MetricId.toMetricId("memory_rss"), size[memoryTypeResident], timeStamp));
 
             long procJiffies = getPidJiffies(s);
-            if (lastTotalCpuJiffies >= 0 && lastCpuJiffiesMetrics.containsKey(s)) {
+            if ((lastTotalCpuJiffies != null) && lastCpuJiffiesMetrics.containsKey(s)) {
                 long last = lastCpuJiffiesMetrics.get(s);
                 long diff = procJiffies - last;
 
                 if (diff >= 0) {
-                    metrics.add(new Metric(MetricId.toMetricId("cpu"), 100 * ((double) diff) / (sysJiffies - lastTotalCpuJiffies), startTime / 1000));
+                    JiffiesAndCpus sysJiffiesDiff = sysJiffies.diff(lastTotalCpuJiffies);
+                    metrics.add(new Metric(MetricId.toMetricId("cpu"), 100 * ((double) diff) / sysJiffiesDiff.normalizedJiffies(), timeStamp));
+                    metrics.add(new Metric(MetricId.toMetricId("cpu.util"), 100 * ((double) diff) / sysJiffiesDiff.jiffies, timeStamp));
                 }
             }
             lastCpuJiffiesMetrics.put(s, procJiffies);
@@ -171,7 +192,7 @@ public class SystemPoller {
         return Long.parseLong(elems[13]) + Long.parseLong(elems[14]);
     }
 
-    long getNormalizedSystemJiffies() {
+    private JiffiesAndCpus getTotalSystemJiffies() {
         BufferedReader in;
         String line;
         ArrayList<CpuJiffies> jiffies = new ArrayList<>();
@@ -181,7 +202,7 @@ public class SystemPoller {
             in = new BufferedReader(new FileReader("/proc/stat"));
         } catch (FileNotFoundException ex) {
             log.log(Level.SEVERE, "Unable to open stat file", ex);
-            return 0;
+            return new JiffiesAndCpus();
         }
         try {
             while ((line = in.readLine()) != null) {
@@ -195,15 +216,13 @@ public class SystemPoller {
             in.close();
         } catch (IOException ex) {
             log.log(Level.SEVERE, "Unable to read line from stat file", ex);
-            return 0;
+            return new JiffiesAndCpus();
         }
 
         /* Normalize so that a process that uses an entire CPU core will get 100% util */
-        if (total != null) {
-            return total.getTotalJiffies() / jiffies.size();
-        } else {
-            return 0;
-        }
+        return (total != null)
+                ? new JiffiesAndCpus(total.getTotalJiffies(), jiffies.size())
+                : new JiffiesAndCpus();
     }
 
     private void schedule(long time) {
@@ -215,11 +234,11 @@ public class SystemPoller {
     }
 
     public void schedule() {
-        schedule(pollingIntervalSecs * 1000);
+        schedule(pollingIntervalSecs * 1000L);
     }
 
     private void reschedule(long skew) {
-        long sleep = (pollingIntervalSecs * 1000) - skew;
+        long sleep = (pollingIntervalSecs * 1000L) - skew;
 
         // Don't sleep less than 1 min
         sleep = Math.max(60 * 1000, sleep);
