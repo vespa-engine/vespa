@@ -36,19 +36,6 @@ public class SlimeConfigResponse implements ConfigResponse {
                                        CompressionInfo.create(CompressionType.UNCOMPRESSED, data.getByteLength()));
     }
 
-    // TODO: Legacy method, remove when not used anymore
-    public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload,
-                                                        long generation,
-                                                        boolean applyOnRestart,
-                                                        String configMd5) {
-        AbstractUtf8Array data = payload.toUtf8Array(true);
-        return new SlimeConfigResponse(data,
-                                       generation,
-                                       applyOnRestart,
-                                       PayloadChecksums.from(configMd5, ""),
-                                       CompressionInfo.create(CompressionType.UNCOMPRESSED, data.getByteLength()));
-    }
-
     public SlimeConfigResponse(AbstractUtf8Array payload,
                                long generation,
                                boolean applyOnRestart,

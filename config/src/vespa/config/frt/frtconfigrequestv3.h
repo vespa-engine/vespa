@@ -17,7 +17,7 @@ class FRTConfigRequestV3 : public SlimeConfigRequest {
 public:
     FRTConfigRequestV3(Connection * connection,
                        const ConfigKey & key,
-                       const vespalib::string & configMd5,
+                       const vespalib::string & configXxhash64,
                        int64_t currentGeneration,
                        const vespalib::string & hostName,
                        int64_t serverTimeout,

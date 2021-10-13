@@ -8,7 +8,7 @@ namespace methods {
 const Method methods[] = {
     { "cache", "listCachedConfig", 0 },
     { "dumpcache", "dumpCache", 1 }, // filename
-    { "getConfig", "getConfig", 7 }, // defName defVersion defMD5 configid configMD5 timestamp timeout
+    { "getConfig", "getConfig", 7 }, // defName defVersion defMD5 configid configXXhash64 timestamp timeout
     { "getmode", "getMode", 0 },
     { "invalidatecache", "invalidateCache", 0 },
     { "cachefull", "listCachedConfigFull", 0 },

@@ -5,16 +5,17 @@ import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
+import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertSame;
 
 /**
  * @author Ulf Lilleengen
@@ -24,8 +25,8 @@ public class ServerCacheTest {
 
     private static final String defMd5 = "595f44fec1e92a71d3e9e77456ba80d1";
     private static final String defMd5_2 = "a2f8edfc965802bf6d44826f9da7e2b0";
-    private static final String configMd5 = "mymd5";
-    private static final String configMd5_2 = "mymd5_2";
+    private static final String xxhash64 = "595f44fec1e92a71d";
+    private static final String xxhash64_2 = "a2f8edfc965802bf6";
     private static final ConfigDefinition def = new ConfigDefinition("mypayload", new String[0]);
 
     private static final ConfigDefinitionKey fooBarDefKey = new ConfigDefinitionKey("foo", "bar");
@@ -48,31 +49,37 @@ public class ServerCacheTest {
 
         cache = new ServerCache(new TestConfigDefinitionRepo(), userConfigDefinitionRepo);
 
-        cache.computeIfAbsent(fooBarCacheKey, (ConfigCacheKey key) -> SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5));
-        cache.computeIfAbsent(bazQuuxCacheKey, (ConfigCacheKey key) -> SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5));
-        cache.computeIfAbsent(fooBarCacheKeyDifferentMd5, (ConfigCacheKey key) -> SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5_2));
+        cache.computeIfAbsent(fooBarCacheKey, (ConfigCacheKey key) -> createResponse(xxhash64));
+        cache.computeIfAbsent(bazQuuxCacheKey, (ConfigCacheKey key) -> createResponse(xxhash64));
+        cache.computeIfAbsent(fooBarCacheKeyDifferentMd5, (ConfigCacheKey key) -> createResponse(xxhash64_2));
     }
 
     @Test
     public void testThatCacheWorks() {
         assertNotNull(cache.getDef(fooBazDefKey));
-        assertThat(cache.getDef(fooBarDefKey), is(def));
-        assertThat(cache.getDef(fooBimDefKey).getCNode().getName(), is("mynode"));
+        assertEquals(def, cache.getDef(fooBarDefKey));
+        assertEquals("mynode", cache.getDef(fooBimDefKey).getCNode().getName());
         ConfigResponse raw = cache.get(fooBarCacheKey);
-        assertThat(raw.getConfigMd5(), is(configMd5));
+        assertEquals(xxhash64, raw.getPayloadChecksums().getForType(XXHASH64).asString());
     }
 
     @Test
     public void testThatCacheWorksWithSameKeyDifferentMd5() {
-        assertThat(cache.getDef(fooBarDefKey), is(def));
+        assertEquals(def, cache.getDef(fooBarDefKey));
         ConfigResponse raw = cache.get(fooBarCacheKey);
-        assertThat(raw.getConfigMd5(), is(configMd5));
+        assertEquals(xxhash64, raw.getPayloadChecksums().getForType(XXHASH64).asString());
         raw = cache.get(fooBarCacheKeyDifferentMd5);
-        assertThat(raw.getConfigMd5(), is(configMd5_2));
+        assertEquals(xxhash64_2, raw.getPayloadChecksums().getForType(XXHASH64).asString());
     }
 
     @Test
     public void testThatCacheWorksWithDifferentKeySameMd5() {
-        assertTrue(cache.get(fooBarCacheKey) == cache.get(bazQuuxCacheKey));
+        assertSame(cache.get(fooBarCacheKey), cache.get(bazQuuxCacheKey));
     }
+
+    SlimeConfigResponse createResponse(String xxhash64) {
+        return SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false,
+                                                     PayloadChecksums.from("", xxhash64));
+    }
+
 }
