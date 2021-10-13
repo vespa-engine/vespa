@@ -23,11 +23,14 @@ interface ArtifactProducer {
         int servicePid();
         CommandResult executeCommandInNode(List<String> command, boolean logOutput);
         Path outputDirectoryInNode();
+        Path pathInNodeUnderVespaHome(String relativePath);
+        Path pathOnHostFromPathInNode(Path pathInNode);
         Options options();
 
         interface Options {
             OptionalDouble duration();
             boolean callGraphRecording();
+            boolean sendProfilingSignal();
         }
     }
 

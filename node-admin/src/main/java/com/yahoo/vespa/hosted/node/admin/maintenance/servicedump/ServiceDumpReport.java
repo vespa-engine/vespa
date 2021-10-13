@@ -111,19 +111,24 @@ class ServiceDumpReport extends BaseReport {
 
         private static final String CALL_GRAPH_RECORDING_FIELD = "callGraphRecording";
         private static final String DURATION_FIELD = "duration";
+        private static final String SEND_PROFILING_SIGNAL_FIELD = "sendProfilingSignal";
 
         private final Boolean callGraphRecording;
         private final Double duration;
+        private final Boolean sendProfilingSignal;
 
         @JsonCreator
         public DumpOptions(@JsonProperty(CALL_GRAPH_RECORDING_FIELD) Boolean callGraphRecording,
-                           @JsonProperty(DURATION_FIELD) Double duration) {
+                           @JsonProperty(DURATION_FIELD) Double duration,
+                           @JsonProperty(SEND_PROFILING_SIGNAL_FIELD) Boolean sendProfilingSignal) {
             this.callGraphRecording = callGraphRecording;
             this.duration = duration;
+            this.sendProfilingSignal = sendProfilingSignal;
         }
 
         @JsonGetter(CALL_GRAPH_RECORDING_FIELD) public Boolean callGraphRecording() { return callGraphRecording; }
         @JsonGetter(DURATION_FIELD) public Double duration() { return duration; }
+        @JsonGetter(SEND_PROFILING_SIGNAL_FIELD) public Boolean sendProfilingSignal() { return sendProfilingSignal; }
     }
 
     @JsonIgnore public boolean isCompletedOrFailed() { return !isNullTimestamp(failedAt) || !isNullTimestamp(completedAt);  }

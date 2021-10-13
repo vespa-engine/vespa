@@ -223,6 +223,17 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         }
 
         @Override public Path outputDirectoryInNode() { return outputDirectoryInNode; }
+
+        @Override
+        public Path pathInNodeUnderVespaHome(String relativePath) {
+            return nodeAgentCtx.pathInNodeUnderVespaHome(relativePath);
+        }
+
+        @Override
+        public Path pathOnHostFromPathInNode(Path pathInNode) {
+            return nodeAgentCtx.pathOnHostFromPathInNode(pathInNode);
+        }
+
         @Override public Options options() { return this; }
 
         @Override
@@ -236,6 +247,11 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         @Override
         public boolean callGraphRecording() {
             return dumpOptions().map(ServiceDumpReport.DumpOptions::callGraphRecording).orElse(false);
+        }
+
+        @Override
+        public boolean sendProfilingSignal() {
+            return dumpOptions().map(ServiceDumpReport.DumpOptions::sendProfilingSignal).orElse(false);
         }
 
         Optional<ServiceDumpReport.DumpOptions> dumpOptions() { return Optional.ofNullable(request.dumpOptions()); }
