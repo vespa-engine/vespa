@@ -230,16 +230,7 @@ verify(vespalib::stringref exp, const Slime &slime) {
     vespalib::Slime expSlime;
     size_t used = vespalib::slime::JsonFormat::decode(expMemory, expSlime);
     EXPECT_TRUE(used > 0);
-    vespalib::SimpleBuffer output;
-    vespalib::slime::JsonFormat::encode(slime, output, true);
-    Slime reSlimed;
-    used = vespalib::slime::JsonFormat::decode(output.get(), reSlimed);
-    EXPECT_TRUE(used > 0);
-    if (!EXPECT_EQUAL(expSlime, reSlimed)) {
-        fprintf(stderr, "exp -> %.*s\n", (int)exp.size(), exp.data());
-        Memory enc = output.get();
-        fprintf(stderr, "enc -> %.*s\n", (int)enc.size, enc.data);
-    }
+    EXPECT_EQUAL(expSlime, slime);
 }
 
 Slime
@@ -280,8 +271,8 @@ TEST("requireThatSlimeRequestIsConvertedCorrectly") {
     TEST_DO(verify("{"
                    "    class: 'your-summary',"
                    "    gids: ["
-                   "        '0x6162636465666768696A6B6C',"
-                   "        '0x62636465666768696A6B6C6D'"
+                   "        x6162636465666768696A6B6C,"
+                   "        x62636465666768696A6B6C6D"
                    "    ]"
                    "}", slimeRequest));
     DocsumRequest::UP r = DocsumBySlime::slimeToRequest(slimeRequest.get());
@@ -298,11 +289,11 @@ TEST("require that presence of sessionid affect both request.sessionid and enabl
     vespalib::Slime slimeRequest = createSlimeRequest("1.some.key.7", "my-rank-profile");
     TEST_DO(verify("{"
                    "    class: 'your-summary',"
-                   "    sessionid: '0x312E736F6D652E6B65792E37',"
+                   "    sessionid: x312E736F6D652E6B65792E37,"
                    "    ranking: 'my-rank-profile',"
                    "    gids: ["
-                   "        '0x6162636465666768696A6B6C',"
-                   "        '0x62636465666768696A6B6C6D'"
+                   "        x6162636465666768696A6B6C,"
+                   "        x62636465666768696A6B6C6D"
                    "    ]"
                    "}", slimeRequest));
     DocsumRequest::UP r = DocsumBySlime::slimeToRequest(slimeRequest.get());
@@ -320,12 +311,12 @@ TEST("require that 'doctype' affects DocTypeName in a good way...") {
     vespalib::Slime slimeRequest = createSlimeRequest("1.some.key.7", "my-rank-profile", "my-document-type");
     TEST_DO(verify("{"
                            "    class: 'your-summary',"
-                           "    sessionid: '0x312E736F6D652E6B65792E37',"
+                           "    sessionid: x312E736F6D652E6B65792E37,"
                            "    ranking: 'my-rank-profile',"
                            "    doctype: 'my-document-type',"
                            "    gids: ["
-                           "        '0x6162636465666768696A6B6C',"
-                           "        '0x62636465666768696A6B6C6D'"
+                           "        x6162636465666768696A6B6C,"
+                           "        x62636465666768696A6B6C6D"
                            "    ]"
                            "}", slimeRequest));
     DocsumRequest::UP r = DocsumBySlime::slimeToRequest(slimeRequest.get());
@@ -343,28 +334,7 @@ TEST("require that 'doctype' affects DocTypeName in a good way...") {
     EXPECT_EQUAL(GlobalId(GID2), r->hits[1].gid);
 }
 
-void
-createSummary(search::RawBuf &buf) {
-    vespalib::Slime summary;
-    summary.setObject().setLong("long", 982);
-    uint32_t magic = search::docsummary::SLIME_MAGIC_ID;
-    buf.append(&magic, sizeof(magic));
-    search::SlimeOutputRawBufAdapter adapter(buf);
-    BinaryFormat::encode(summary, adapter);
-}
-
-class BaseServer {
-protected:
-    BaseServer() : buf(100)
-    {
-        createSummary(buf);
-    }
-
-protected:
-    search::RawBuf buf;
-};
-
-class Server : public BaseServer {
+class Server {
 public:
     Server();
     ~Server();
@@ -378,8 +348,7 @@ public:
 };
 
 Server::Server()
-    : BaseServer(),
-      engine(2),
+    : engine(2),
       handler(std::make_shared<MySearchHandler>("slime", "some other value")),
       docsumBySlime(engine),
       docsumByRPC(docsumBySlime)

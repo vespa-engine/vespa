@@ -564,7 +564,6 @@ TEST("requireThatSummariesTimeout")
     req.resultClassName = "class2";
     req.hits.push_back(DocsumRequest::Hit(gid1));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
-    //fprintf(stderr, "SLIME:\n%s\n", rep->root().toString().c_str());
     const auto & field = rep->root()["errors"];
     EXPECT_TRUE(field.valid());
     EXPECT_EQUAL(field[0]["type"].asString(), "timeout");
