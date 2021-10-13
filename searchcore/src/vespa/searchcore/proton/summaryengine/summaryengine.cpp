@@ -39,7 +39,7 @@ uint32_t getNumDocs(const DocsumReply &reply) {
         const Inspector &root = reply._root->get();
         return root[DOCSUMS].entries();
     } else {
-        return reply.docsums.size();
+        return 0;
     }
 }
 
