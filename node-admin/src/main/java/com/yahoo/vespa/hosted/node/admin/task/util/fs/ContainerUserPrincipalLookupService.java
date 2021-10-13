@@ -97,19 +97,21 @@ class ContainerUserPrincipalLookupService extends UserPrincipalLookupService {
         public int hashCode() {
             return Objects.hash(id, baseFsPrincipal);
         }
+
+        @Override
+        public String toString() {
+            return "{id=" + id + ", baseFsPrincipal=" + baseFsPrincipal + '}';
+        }
     }
 
     static final class ContainerUserPrincipal extends NamedPrincipal {
         ContainerUserPrincipal(int id, UserPrincipal baseFsPrincipal) { super(id, baseFsPrincipal); }
-
-        @Override public String toString() { return "{id=" + id() + ", baseFsPrincipal=" + baseFsPrincipal() + '}'; }
     }
 
     static final class ContainerGroupPrincipal extends NamedPrincipal implements GroupPrincipal {
         ContainerGroupPrincipal(int id, GroupPrincipal baseFsPrincipal) { super(id, baseFsPrincipal); }
 
         @Override public GroupPrincipal baseFsPrincipal() { return (GroupPrincipal) super.baseFsPrincipal(); }
-        @Override public String toString() { return "{" + "id=" + id() + ", baseFsPrincipal=" + baseFsPrincipal() + '}'; }
     }
 
     private static int containerIdToHostId(int id, int idOffset) {
