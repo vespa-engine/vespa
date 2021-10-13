@@ -200,6 +200,14 @@ public abstract class ControllerHttpClient {
                                       tenantName);
     }
 
+    /** Returns instance info for the given application id. */
+    public InstanceInfo applicationInstance(ApplicationId applicationId) {
+        return toInstanceInfo(send(request(HttpRequest.newBuilder(instancePath(applicationId))
+                                                      .timeout(Duration.ofSeconds(20)),
+                                           GET)),
+                              applicationId);
+    }
+
     /** Follows the given deployment job until it is done, or this thread is interrupted, at which point the current status is returned. */
     public DeploymentLog followDeploymentUntilDone(ApplicationId id, ZoneId zone, long run,
                                                    Consumer<DeploymentLog.Entry> out) {
@@ -470,6 +478,15 @@ public abstract class ControllerHttpClient {
         return applicationIds;
     }
 
+    // Note: Much more data in response, only the interesting parts of response are included in InstanceInfo for now
+    private static InstanceInfo toInstanceInfo(HttpResponse<byte[]> response, ApplicationId applicationId) {
+        Set<ZoneId> zones = new HashSet<>();
+        toInspector(response).field("instances").traverse((ArrayTraverser) (___, entryObject) ->
+                zones.add(ZoneId.from(entryObject.field("environment").asString(),
+                                   entryObject.field("region").asString())));
+        return new InstanceInfo(applicationId, zones);
+    }
+
     private static Slime toSlime(byte[] data) {
         return SlimeUtils.jsonToSlime(data);
     }
@@ -539,6 +556,26 @@ public abstract class ControllerHttpClient {
             case "success":                    return DeploymentLog.Status.success;
             default: throw new IllegalArgumentException("Unexpected status '" + status + "'");
         }
+    }
+
+    public static class InstanceInfo {
+
+        private final ApplicationId applicationId;
+        private final Set<ZoneId> zones;
+
+        InstanceInfo(ApplicationId applicationId, Set<ZoneId> zones) {
+            this.applicationId = applicationId;
+            this.zones = zones;
+        }
+
+        public ApplicationId applicationId() {
+            return applicationId;
+        }
+
+        public Set<ZoneId> zones() {
+            return zones;
+        }
+
     }
 
 }
