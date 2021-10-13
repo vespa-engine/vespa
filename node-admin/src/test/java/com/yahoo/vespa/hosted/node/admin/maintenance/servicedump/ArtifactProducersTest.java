@@ -17,8 +17,10 @@ class ArtifactProducersTest {
         ArtifactProducers instance = ArtifactProducers.createDefault(Sleeper.NOOP);
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class, () -> instance.resolve(List.of("unknown-artifact")));
-        String expectedMsg = "Invalid artifact type 'unknown-artifact'. " +
-                "Valid types are ['perf-report', 'jfr-recording'] and valid aliases are []";
+        String expectedMsg =
+                "Invalid artifact type 'unknown-artifact'. Valid types are ['jvm-heap-dump', 'jvm-jfr', 'jvm-jmap', " +
+                        "'jvm-jstack', 'jvm-jstat', 'perf-report'] and valid aliases are ['jvm-dump': ['jvm-heap-dump', " +
+                        "'jvm-jmap', 'jvm-jstack', 'jvm-jstat']]";
         assertEquals(expectedMsg, exception.getMessage());
     }
 

@@ -111,7 +111,7 @@ class VespaServiceDumperImplTest {
         NodeRepoMock nodeRepository = new NodeRepoMock();
         ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
         NodeSpec nodeSpec = createNodeSpecWithDumpRequest(
-                nodeRepository, List.of("jfr-recording"), new ServiceDumpReport.DumpOptions(null, null));
+                nodeRepository, List.of("jvm-jfr"), new ServiceDumpReport.DumpOptions(null, null));
 
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
                 ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
@@ -130,7 +130,7 @@ class VespaServiceDumperImplTest {
         String expectedJson = "{\"createdMillis\":1600000000000,\"startedAt\":1600001000000," +
                 "\"completedAt\":1600001000000," +
                 "\"location\":\"s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/\"," +
-                "\"configId\":\"default/container.1\",\"artifacts\":[\"jfr-recording\"],\"dumpOptions\":{}}";
+                "\"configId\":\"default/container.1\",\"artifacts\":[\"jvm-jfr\"],\"dumpOptions\":{}}";
         assertReportEquals(nodeRepository, expectedJson);
 
         List<URI> expectedUris = List.of(
@@ -154,7 +154,7 @@ class VespaServiceDumperImplTest {
         SyncClient syncClient = createSyncClientMock();
         NodeRepoMock nodeRepository = new NodeRepoMock();
         ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
-        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, List.of("perf-report", "jfr-recording"),
+        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, List.of("perf-report", "jvm-jfr"),
                 new ServiceDumpReport.DumpOptions(true, 20.0));
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
                 ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);

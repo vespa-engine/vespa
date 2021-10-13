@@ -42,9 +42,20 @@ class ArtifactProducers {
 
     static ArtifactProducers createDefault(Sleeper sleeper) {
         var producers = Set.of(
-                new JavaFlightRecorder(sleeper),
-                new PerfReporter());
-        return new ArtifactProducers(producers, Map.of());
+                new PerfReporter(),
+                new JvmDumper.JavaFlightRecorder(sleeper),
+                new JvmDumper.HeapDump(),
+                new JvmDumper.Jmap(),
+                new JvmDumper.Jstat(),
+                new JvmDumper.Jstack());
+        var aliases =
+                Map.of(
+                        "jvm-dump",
+                        List.of(
+                                JvmDumper.HeapDump.class, JvmDumper.Jmap.class, JvmDumper.Jstat.class,
+                                JvmDumper.Jstack.class)
+                );
+        return new ArtifactProducers(producers, aliases);
     }
 
     static ArtifactProducers createCustom(Set<ArtifactProducer> producers,
@@ -74,6 +85,7 @@ class ArtifactProducers {
     private IllegalArgumentException createInvalidArtifactException(String artifact) {
         String producersString = producers.keySet().stream()
                 .map(a -> "'" + a + "'")
+                .sorted()
                 .collect(Collectors.joining(", ", "[", "]"));
         String aliasesString = aliases.entrySet().stream()
                 .map(e -> String.format(
@@ -81,6 +93,7 @@ class ArtifactProducers {
                         e.getKey(),
                         e.getValue().stream()
                                 .map(p -> "'" + p.artifactName() + "'")
+                                .sorted()
                                 .collect(Collectors.joining(", ", "[", "]")))
                 )
                 .collect(Collectors.joining(", ", "[", "]"));
