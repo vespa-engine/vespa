@@ -22,6 +22,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.SecretStoreProvider;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -486,7 +487,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     // Config generation is equal to session id, and config generation must be a monotonically increasing number
     static void checkIfActiveIsNewerThanSessionToBeActivated(long sessionId, long currentActiveSessionId) {
         if (sessionId < currentActiveSessionId) {
-            throw new ActivationConflictException("It is not possible to activate session " + sessionId +
+            throw new ActivationConflictException("Cannot activate session " + sessionId +
                                                   ", because it is older than current active session (" +
                                                   currentActiveSessionId + ")");
         }

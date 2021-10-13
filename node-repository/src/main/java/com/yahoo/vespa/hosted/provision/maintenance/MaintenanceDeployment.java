@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.TransientException;
+import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -95,7 +96,7 @@ class MaintenanceDeployment implements Closeable {
         if ( ! isValid()) return Optional.empty();
         try {
             return Optional.of(step.get());
-        } catch (TransientException e) {
+        } catch (TransientException | ActivationConflictException e) {
             metric.add("maintenanceDeployment.transientFailure", 1, metric.createContext(Map.of()));
             log.log(Level.INFO, "Failed to maintenance deploy " + application + " with a transient error: " +
                                    Exceptions.toMessageString(e));
