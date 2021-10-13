@@ -34,7 +34,7 @@ class VespaLogDumper implements ArtifactProducer {
             sleeper.sleep(Duration.ofSeconds(3));
         }
         Path vespaLogFile = ctx.pathOnHostFromPathInNode(ctx.pathInNodeUnderVespaHome("logs/vespa/vespa.log"));
-        Path destination = ctx.pathOnHostFromPathInNode(ctx.outputDirectoryInNode());
+        Path destination = ctx.pathOnHostFromPathInNode(ctx.outputDirectoryInNode()).resolve("vespa.log");
         if (Files.exists(vespaLogFile)) {
             uncheck(() -> Files.copy(vespaLogFile, destination));
             return List.of(
