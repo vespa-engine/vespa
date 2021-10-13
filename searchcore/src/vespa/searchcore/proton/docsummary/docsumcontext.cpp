@@ -62,37 +62,6 @@ DocsumContext::initState()
     }
 }
 
-DocsumReply::UP
-DocsumContext::createReply()
-{
-    auto reply = std::make_unique<DocsumReply>();
-    search::RawBuf buf(4_Ki);
-    _docsumWriter.InitState(_attrMgr, &_docsumState);
-    reply->docsums.resize(_docsumState._docsumcnt);
-    SymbolTable::UP symbols = std::make_unique<SymbolTable>();
-    IDocsumWriter::ResolveClassInfo rci = _docsumWriter.resolveClassInfo(_docsumState._args.getResultClassName(), _docsumStore.getSummaryClassId());
-    _docsumState._omit_summary_features = rci.outputClass->omit_summary_features();
-    for (uint32_t i = 0; i < _docsumState._docsumcnt; ++i) {
-        buf.reset();
-        uint32_t docId = _docsumState._docsumbuf[i];
-        if (docId != search::endDocId && !rci.mustSkip) {
-            Slime slime(Slime::Params(std::move(symbols)));
-            vespalib::slime::SlimeInserter inserter(slime);
-            if (_request.expired()) {
-                inserter.insertString(make_string("Timed out with %" PRId64 "us left.", vespalib::count_us(_request.getTimeLeft())));
-            } else {
-                _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, slime, inserter);
-            }
-            uint32_t docsumLen = (slime.get().type().getId() != NIX::ID)
-                                   ? IDocsumWriter::slime2RawBuf(slime, buf)
-                                   : 0;
-            reply->docsums[i].setData(buf.GetDrainPos(), docsumLen);
-            symbols = Slime::reclaimSymbols(std::move(slime));
-        }
-    }
-    return reply;
-}
-
 namespace {
 
 vespalib::Slime::Params
@@ -156,10 +125,7 @@ DocsumContext::DocsumContext(const DocsumRequest & request, IDocsumWriter & docs
 DocsumReply::UP
 DocsumContext::getDocsums()
 {
-    if (_request.useRootSlime()) {
-        return std::make_unique<DocsumReply>(createSlimeReply());
-    }
-    return createReply();
+    return std::make_unique<DocsumReply>(createSlimeReply());
 }
 
 void

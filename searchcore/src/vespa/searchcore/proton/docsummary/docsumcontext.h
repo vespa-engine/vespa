@@ -32,7 +32,6 @@ private:
     matching::SessionManager             & _sessionMgr;
 
     void initState();
-    search::engine::DocsumReply::UP createReply();
     std::unique_ptr<vespalib::Slime> createSlimeReply();
 
 public:
