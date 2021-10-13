@@ -14,7 +14,7 @@ using Link = Issue::Binding::Link;
 
 struct LogIssues : Issue::Handler {
     void handle(const Issue &issue) override {
-        LOG(warning, "unhandled issue: %s", issue.message().c_str());
+        LOG(warning, "%s", issue.message().c_str());
     }
 };
 
