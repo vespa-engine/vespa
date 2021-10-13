@@ -61,6 +61,7 @@ public:
     void handleListActiveBuckets(IBucketIdListResultHandler &resultHandler);
     void handlePopulateActiveBuckets(document::BucketId::List &buckets,
                                      IGenericResultHandler &resultHandler);
+    bool hasBucket(const storage::spi::Bucket &bucket);
 
     // Implements IClusterStateChangedHandler
     void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override;

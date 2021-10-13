@@ -83,8 +83,10 @@ PersistenceHandlerProxy::handleGetBucketInfo(const Bucket &bucket, IBucketInfoRe
 void
 PersistenceHandlerProxy::handleCreateBucket(FeedToken token, const Bucket &bucket)
 {
-    auto op = std::make_unique<CreateBucketOperation>(bucket.getBucketId().stripUnused());
-    _feedHandler.handleOperation(std::move(token), std::move(op));
+    if ( ! _bucketHandler.hasBucket(bucket)) {
+        auto op = std::make_unique<CreateBucketOperation>(bucket.getBucketId().stripUnused());
+        _feedHandler.handleOperation(std::move(token), std::move(op));
+    }
 }
 
 void

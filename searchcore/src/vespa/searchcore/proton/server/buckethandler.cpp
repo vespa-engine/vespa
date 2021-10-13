@@ -118,6 +118,11 @@ BucketHandler::handleGetBucketInfo(const Bucket &bucket,
     resultHandler.handle(BucketInfoResult(bucketInfo));
 }
 
+bool
+BucketHandler::hasBucket(const storage::spi::Bucket &bucket) {
+    return _ready->getBucketDB().takeGuard()->hasBucket(bucket);
+}
+
 void
 BucketHandler::handleListActiveBuckets(IBucketIdListResultHandler &resultHandler)
 {
