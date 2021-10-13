@@ -29,7 +29,7 @@ all: test checkfmt install
 # $ git checkout vX.Y.Z
 # $ make dist-homebrew
 dist-homebrew: dist-version
-	brew bump-formula-pr --tag v$(VERSION) vespa-cli
+	brew bump-formula-pr --version $(VERSION) vespa-cli
 
 # Create a GitHub release draft for all platforms. Note that this only creates a
 # draft, which is not publicly visible until it's explicitly published.
