@@ -66,21 +66,14 @@ public class CloudSubscriber  implements Subscriber {
         // default value in the def-file. There is a new 'components' config underway, where the
         // component is removed, so this old config generation will soon be replaced by a new one.
         boolean gotNextGen = false;
-        int numExceptions = 0;
         while ( ! gotNextGen) {
             try {
                 if (subscriber.nextGeneration(isInitializing)) {
                     gotNextGen = true;
                     log.log(FINE, () -> this + " got next config generation " + subscriber.getGeneration() + "\n" + subscriber.toString());
                 }
-            }
-            catch (IllegalArgumentException e) {
-                numExceptions++;
-                log.log(Level.WARNING, this + " got exception from the config system (ignore if you just removed a " +
-                        "component from your application that used the mentioned config) Subscriber info: " +
-                        subscriber.toString(), e);
-                if (numExceptions >= 5)
-                    throw new IllegalArgumentException("Failed retrieving the next config generation", e);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Failed retrieving the next config generation", e);
             }
         }
 
