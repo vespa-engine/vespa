@@ -156,6 +156,11 @@ TEST_F("require that handleListBuckets() returns buckets from all sub dbs", Fixt
     EXPECT_EQUAL(f._notReady.bucket(4), f._bucketList.getList()[2]);
 }
 
+TEST_F("test hasBucket", Fixture) {
+    EXPECT_FALSE(f._handler.hasBucket(makeSpiBucket(BUCKET_1)));
+    EXPECT_TRUE(f._handler.hasBucket(makeSpiBucket(f._ready.bucket(2))));
+}
+
 
 TEST_F("require that bucket is reported in handleGetBucketInfo()", Fixture)
 {
