@@ -32,38 +32,51 @@ class ExecutorServiceWrapper extends ForwardingExecutorService {
                            ThreadPoolMetric metric,
                            ProcessTerminator processTerminator,
                            long maxThreadExecutionTimeMillis,
-                           String name,
-                           int queueCapacity) {
+                           String name) {
         this.wrapped = wrapped;
         this.metric = metric;
         this.processTerminator = processTerminator;
         this.maxThreadExecutionTimeMillis = maxThreadExecutionTimeMillis;
-        this.queueCapacity = queueCapacity;
+        this.queueCapacity = wrapped.getMaximumPoolSize() + wrapped.getQueue().remainingCapacity() + wrapped.getQueue().size();
 
         metric.reportThreadPoolSize(wrapped.getPoolSize());
         metric.reportActiveThreads(wrapped.getActiveCount());
         metricReporter = new Thread(this::reportMetrics);
         metricReporter.setName(name + "-threadpool-metric-reporter");
-        metricReporter.setDaemon(true);
         metricReporter.start();
     }
 
     private void reportMetrics() {
-        try {
-            while (!closed.get()) {
-                metric.reportThreadPoolSize(wrapped.getPoolSize());
-                metric.reportActiveThreads(wrapped.getActiveCount());
-                metric.reportWorkQueueSize(wrapped.getQueue().size());
-                metric.reportWorkQueueCapacity(queueCapacity);
-                Thread.sleep(100);
+        while (timeToReportMetricsAgain(100)) {
+            metric.reportThreadPoolSize(wrapped.getPoolSize());
+            metric.reportActiveThreads(wrapped.getActiveCount());
+            metric.reportWorkQueueSize(wrapped.getQueue().size());
+            metric.reportWorkQueueCapacity(queueCapacity);
+        }
+    }
+    private boolean timeToReportMetricsAgain(int timeoutMS) {
+        synchronized (closed) {
+            if (!closed.get()) {
+                try {
+                    closed.wait(timeoutMS);
+                } catch (InterruptedException e) {
+                    return false;
+                }
             }
-        } catch (InterruptedException e) { }
+        }
+        return !closed.get();
     }
 
     @Override
     public void shutdown() {
         super.shutdown();
-        closed.set(true);
+        synchronized (closed) {
+            closed.set(true);
+            closed.notify();
+        }
+        try {
+            metricReporter.join();
+        } catch (InterruptedException e) {}
     }
 
     /**
