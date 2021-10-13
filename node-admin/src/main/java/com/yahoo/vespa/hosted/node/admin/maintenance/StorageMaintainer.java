@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
@@ -82,12 +83,13 @@ public class StorageMaintainer {
     public boolean syncLogs(NodeAgentContext context, boolean throttle) {
         Optional<URI> archiveUri = context.node().archiveUri();
         if (archiveUri.isEmpty()) return false;
+        ApplicationId owner = context.node().owner().orElseThrow();
 
         List<SyncFileInfo> syncFileInfos = FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/vespa"))
                 .maxDepth(2)
                 .stream()
                 .sorted(Comparator.comparing(FileFinder.FileAttributes::lastModifiedTime))
-                .flatMap(fa -> SyncFileInfo.forLogFile(archiveUri.get(), fa.path(), throttle).stream())
+                .flatMap(fa -> SyncFileInfo.forLogFile(archiveUri.get(), fa.path(), throttle, owner).stream())
                 .collect(Collectors.toList());
 
         return syncClient.sync(context, syncFileInfos, throttle ? 1 : 100);

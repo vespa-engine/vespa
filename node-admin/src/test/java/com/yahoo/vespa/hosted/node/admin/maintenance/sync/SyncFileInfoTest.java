@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.sync;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
@@ -64,7 +65,7 @@ public class SyncFileInfoTest {
     }
 
     private static void assertForLogFile(Path srcPath, String destination, SyncFileInfo.Compression compression, boolean rotatedOnly) {
-        Optional<SyncFileInfo> sfi = SyncFileInfo.forLogFile(nodeArchiveUri, srcPath, rotatedOnly);
+        Optional<SyncFileInfo> sfi = SyncFileInfo.forLogFile(nodeArchiveUri, srcPath, rotatedOnly, ApplicationId.defaultId());
         assertEquals(destination, sfi.map(SyncFileInfo::destination).map(URI::toString).orElse(null));
         assertEquals(compression, sfi.map(SyncFileInfo::uploadCompression).orElse(null));
     }

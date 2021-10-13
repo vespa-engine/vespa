@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.text.Lowercase;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
@@ -122,12 +123,13 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
 
     private void uploadArtifacts(NodeAgentContext ctx, URI destination,
                                  List<Artifact> producedArtifacts, Instant expiry) {
+        ApplicationId owner = ctx.node().owner().orElseThrow();
         List<SyncFileInfo> filesToUpload = producedArtifacts.stream()
                 .map(a -> {
                     Compression compression = a.compressOnUpload() ? Compression.ZSTD : Compression.NONE;
                     Path fileInNode = a.fileInNode().orElse(null);
                     Path fileOnHost = fileInNode != null ? ctx.pathOnHostFromPathInNode(fileInNode) : a.fileOnHost().orElseThrow();
-                    return SyncFileInfo.forServiceDump(destination, fileOnHost, expiry, compression);
+                    return SyncFileInfo.forServiceDump(destination, fileOnHost, expiry, compression, owner);
                 })
                 .collect(Collectors.toList());
         ctx.log(log, Level.INFO,

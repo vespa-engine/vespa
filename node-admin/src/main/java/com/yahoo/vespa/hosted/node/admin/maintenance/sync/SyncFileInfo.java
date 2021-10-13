@@ -1,10 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.sync;
 
+import com.yahoo.config.provision.ApplicationId;
+
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -16,12 +19,15 @@ public class SyncFileInfo {
     private final URI destination;
     private final Compression uploadCompression;
     private final Instant expiry;
+    private final Map<String, String> tags;
 
-    private SyncFileInfo(Path source, URI destination, Compression uploadCompression, Instant expiry) {
+    private SyncFileInfo(Path source, URI destination, Compression uploadCompression, Instant expiry,
+                         Map<String, String> tags) {
         this.source = source;
         this.destination = destination;
         this.uploadCompression = uploadCompression;
         this.expiry = expiry;
+        this.tags = Map.copyOf(tags);
     }
 
     /** Source path of the file to sync */
@@ -42,7 +48,9 @@ public class SyncFileInfo {
     /** File expiry */
     public Optional<Instant> expiry() { return Optional.ofNullable(expiry); }
 
-    public static Optional<SyncFileInfo> forLogFile(URI uri, Path logFile, boolean rotatedOnly) {
+    public Map<String, String> tags() { return tags; }
+
+    public static Optional<SyncFileInfo> forLogFile(URI uri, Path logFile, boolean rotatedOnly, ApplicationId owner) {
         String filename = logFile.getFileName().toString();
         Compression compression;
         String dir = null;
@@ -63,13 +71,18 @@ public class SyncFileInfo {
         if (dir == null) return Optional.empty();
         Instant expiry = Instant.now().plus(30, ChronoUnit.DAYS);
         return Optional.of(new SyncFileInfo(
-                logFile, uri.resolve(dir + logFile.getFileName() + compression.extension), compression, expiry));
+                logFile, uri.resolve(dir + logFile.getFileName() + compression.extension), compression, expiry, defaultTags(owner)));
     }
 
-    public static SyncFileInfo forServiceDump(URI destinationDir, Path file, Instant expiry, Compression compression) {
+    public static SyncFileInfo forServiceDump(URI destinationDir, Path file, Instant expiry, Compression compression,
+                                              ApplicationId owner) {
         String filename = file.getFileName().toString();
         URI location = destinationDir.resolve(filename + compression.extension);
-        return new SyncFileInfo(file, location, compression, expiry);
+        return new SyncFileInfo(file, location, compression, expiry, defaultTags(owner));
+    }
+
+    private static Map<String, String> defaultTags(ApplicationId owner) {
+        return Map.of("corp:Application", owner.toFullString());
     }
 
     public enum Compression {
