@@ -18,9 +18,11 @@ class ArtifactProducersTest {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class, () -> instance.resolve(List.of("unknown-artifact")));
         String expectedMsg =
-                "Invalid artifact type 'unknown-artifact'. Valid types are ['jvm-heap-dump', 'jvm-jfr', 'jvm-jmap', " +
-                        "'jvm-jstack', 'jvm-jstat', 'perf-report'] and valid aliases are ['jvm-dump': ['jvm-heap-dump', " +
-                        "'jvm-jmap', 'jvm-jstack', 'jvm-jstat']]";
+                "Invalid artifact type 'unknown-artifact'. Valid types are " +
+                        "['jvm-heap-dump', 'jvm-jfr', 'jvm-jmap', 'jvm-jstack', 'jvm-jstat', 'perf-report', 'pmap', " +
+                        "'vespa-log'] " +
+                        "and valid aliases are " +
+                        "['jvm-dump': ['jvm-heap-dump', 'jvm-jmap', 'jvm-jstack', 'jvm-jstat', 'vespa-log']]";
         assertEquals(expectedMsg, exception.getMessage());
     }
 

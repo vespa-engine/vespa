@@ -47,13 +47,15 @@ class ArtifactProducers {
                 new JvmDumper.HeapDump(),
                 new JvmDumper.Jmap(),
                 new JvmDumper.Jstat(),
-                new JvmDumper.Jstack());
+                new JvmDumper.Jstack(),
+                new PmapReporter(),
+                new VespaLogDumper(sleeper));
         var aliases =
                 Map.of(
                         "jvm-dump",
                         List.of(
                                 JvmDumper.HeapDump.class, JvmDumper.Jmap.class, JvmDumper.Jstat.class,
-                                JvmDumper.Jstack.class)
+                                JvmDumper.Jstack.class, VespaLogDumper.class)
                 );
         return new ArtifactProducers(producers, aliases);
     }

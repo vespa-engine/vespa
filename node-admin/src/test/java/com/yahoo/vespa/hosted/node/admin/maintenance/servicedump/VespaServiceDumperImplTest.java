@@ -69,7 +69,7 @@ class VespaServiceDumperImplTest {
         SyncClient syncClient = createSyncClientMock();
         NodeRepoMock nodeRepository = new NodeRepoMock();
         ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
-        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, List.of("perf-report"), new ServiceDumpReport.DumpOptions(true, 45.0));
+        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, List.of("perf-report"), new ServiceDumpReport.DumpOptions(true, 45.0, null));
 
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
                 ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
@@ -111,7 +111,7 @@ class VespaServiceDumperImplTest {
         NodeRepoMock nodeRepository = new NodeRepoMock();
         ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
         NodeSpec nodeSpec = createNodeSpecWithDumpRequest(
-                nodeRepository, List.of("jvm-jfr"), new ServiceDumpReport.DumpOptions(null, null));
+                nodeRepository, List.of("jvm-jfr"), new ServiceDumpReport.DumpOptions(null, null, null));
 
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
                 ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
@@ -155,7 +155,7 @@ class VespaServiceDumperImplTest {
         NodeRepoMock nodeRepository = new NodeRepoMock();
         ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
         NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, List.of("perf-report", "jvm-jfr"),
-                new ServiceDumpReport.DumpOptions(true, 20.0));
+                new ServiceDumpReport.DumpOptions(true, 20.0, null));
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
                 ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
         NodeAgentContextImpl context = new NodeAgentContextImpl.Builder(nodeSpec)
