@@ -4,12 +4,15 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
+import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+
+import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 
 /**
  * Cache that holds configs and config definitions (builtin and user config definitions).
@@ -22,8 +25,8 @@ public class ServerCache {
     private final ConfigDefinitionRepo userConfigDefinitions;
 
     // NOTE: The reason we do a double mapping here is to de-dupe configs that have the same md5.
-    private final Map<ConfigCacheKey, String> md5Sums = new ConcurrentHashMap<>();
-    private final Map<String, ConfigResponse> md5ToConfig = new ConcurrentHashMap<>();
+    private final Map<ConfigCacheKey, PayloadChecksum> checksums = new ConcurrentHashMap<>();
+    private final Map<PayloadChecksum, ConfigResponse> checksumToConfig = new ConcurrentHashMap<>();
     private final Object [] stripedLocks = new Object[113];
 
     public ServerCache(ConfigDefinitionRepo builtinConfigDefinitions, ConfigDefinitionRepo userConfigDefinitions) {
@@ -40,15 +43,15 @@ public class ServerCache {
     }
 
     private void put(ConfigCacheKey key, ConfigResponse config) {
-        String configMd5 = config.getConfigMd5();
-        md5Sums.put(key, configMd5);
-        md5ToConfig.put(configMd5, config);
+        PayloadChecksum xxhash64 = config.getPayloadChecksums().getForType(XXHASH64);
+        checksums.put(key, xxhash64);
+        checksumToConfig.put(xxhash64, config);
     }
 
     ConfigResponse get(ConfigCacheKey key) {
-        String md5 = md5Sums.get(key);
-        if (md5 == null) return null;
-        return md5ToConfig.get(md5);
+        PayloadChecksum xxhash64 = checksums.get(key);
+        if (xxhash64 == null) return null;
+        return checksumToConfig.get(xxhash64);
     }
 
     public ConfigResponse computeIfAbsent(ConfigCacheKey key, Function<ConfigCacheKey, ConfigResponse> mappingFunction) {
@@ -57,13 +60,13 @@ public class ServerCache {
             return config;
         }
         synchronized (stripedLocks[Math.abs(key.hashCode()%stripedLocks.length)]) {
-            String md5 = md5Sums.get(key);
-            if (md5 == null) {
+            PayloadChecksum xxhash64 = checksums.get(key);
+            if (xxhash64 == null) {
                 config = mappingFunction.apply(key);
                 put(key, config);
                 return config;
             }
-            return md5ToConfig.get(md5);
+            return checksumToConfig.get(xxhash64);
         }
     }
 
@@ -73,8 +76,8 @@ public class ServerCache {
         sb.append("Cache\n");
         sb.append("builtin defs: ").append(builtinConfigDefinitions.getConfigDefinitions().size()).append("\n");
         sb.append("user defs:    ").append(userConfigDefinitions.getConfigDefinitions().size()).append("\n");
-        sb.append("md5sums:      ").append(md5Sums.size()).append("\n");
-        sb.append("md5ToConfig:  ").append(md5ToConfig.size()).append("\n");
+        sb.append("md5sums:      ").append(checksums.size()).append("\n");
+        sb.append("md5ToConfig:  ").append(checksumToConfig.size()).append("\n");
 
         return sb.toString();
     }
@@ -89,7 +92,7 @@ public class ServerCache {
      * @return elems
      */
     public int configElems() {
-        return md5ToConfig.size();
+        return checksumToConfig.size();
     }
     
     /**
@@ -97,7 +100,7 @@ public class ServerCache {
      * @return elems
      */
     public int checkSumElems() {
-        return md5Sums.size();
+        return checksums.size();
     }
 
 }

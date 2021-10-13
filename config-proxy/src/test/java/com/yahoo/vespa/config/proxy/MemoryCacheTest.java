@@ -34,7 +34,7 @@ public class MemoryCacheTest {
     private final String configId2 = "clients/gateways/gateway/component/com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation";
     private static final String defMd52 = "a2";
     private static final String differentDefMd5 = "09ef";
-    private static final PayloadChecksums configMd5 = PayloadChecksums.from("b", "");
+    private static final PayloadChecksums checksums = PayloadChecksums.from("b", "");
     private final ConfigKey<?> configKey = new ConfigKey<>(defName, configId, namespace);
     private final ConfigKey<?> configKey2 = new ConfigKey<>(defName2, configId2, namespace2);
     private ConfigCacheKey cacheKey;
@@ -64,9 +64,9 @@ public class MemoryCacheTest {
         slime.setString("bar \"value2\"");
         payloadDifferentMd5 = Payload.from(new ConfigPayload(slime));
 
-        config = new RawConfig(configKey, defMd5, payload, configMd5, generation, false, defContent, Optional.empty());
-        config2 = new RawConfig(configKey2, defMd52, payload2, configMd5, generation, false, defContent, Optional.empty());
-        configDifferentMd5 = new RawConfig(configKey, differentDefMd5, payloadDifferentMd5, configMd5, generation, false, defContent, Optional.empty());
+        config = new RawConfig(configKey, defMd5, payload, checksums, generation, false, defContent, Optional.empty());
+        config2 = new RawConfig(configKey2, defMd52, payload2, checksums, generation, false, defContent, Optional.empty());
+        configDifferentMd5 = new RawConfig(configKey, differentDefMd5, payloadDifferentMd5, checksums, generation, false, defContent, Optional.empty());
 
         cacheKey = new ConfigCacheKey(configKey, config.getDefMd5());
         cacheKey2 = new ConfigCacheKey(configKey2, config2.getDefMd5());

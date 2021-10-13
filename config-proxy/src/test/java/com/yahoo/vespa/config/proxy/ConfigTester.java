@@ -47,13 +47,13 @@ public class ConfigTester {
 
         long generation = 1;
         String defMd5 = ConfigUtils.getDefMd5(defContent);
-        PayloadChecksums configMd5 = PayloadChecksums.from(new PayloadChecksum(ConfigUtils.getMd5(fooConfigPayload), MD5),
+        PayloadChecksums payloadChecksums = PayloadChecksums.from(new PayloadChecksum(ConfigUtils.getMd5(fooConfigPayload), MD5),
                                                                                PayloadChecksum.empty(XXHASH64));
-        fooConfig = new RawConfig(configKey, defMd5, fooPayload, configMd5,
+        fooConfig = new RawConfig(configKey, defMd5, fooPayload, payloadChecksums,
                                   generation, false, defContent, Optional.empty());
 
         String defName2 = "bar";
-        barConfig = new RawConfig(new ConfigKey<>(defName2, configId, namespace), defMd5, fooPayload, configMd5,
+        barConfig = new RawConfig(new ConfigKey<>(defName2, configId, namespace), defMd5, fooPayload, payloadChecksums,
                                   generation, false, defContent, Optional.empty());
     }
 
