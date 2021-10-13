@@ -23,12 +23,12 @@ class ContainerUserPrincipalLookupServiceTest {
     @Test
     public void correctly_resolves_ids() throws IOException {
         ContainerUserPrincipal user = userPrincipalLookupService.lookupPrincipalByName("1000");
-        assertEquals("1000", user.getName());
+        assertEquals("vespa", user.getName());
         assertEquals("2000", user.baseFsPrincipal().getName());
         assertEquals(user, userPrincipalLookupService.lookupPrincipalByName("vespa"));
 
         ContainerGroupPrincipal group = userPrincipalLookupService.lookupPrincipalByGroupName("1000");
-        assertEquals("1000", group.getName());
+        assertEquals("vespa", group.getName());
         assertEquals("3000", group.baseFsPrincipal().getName());
         assertEquals(group, userPrincipalLookupService.lookupPrincipalByGroupName("vespa"));
 

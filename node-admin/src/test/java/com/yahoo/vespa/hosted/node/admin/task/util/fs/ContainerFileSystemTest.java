@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.UserPrincipal;
 import java.util.Map;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerUserPrincipalLookupService.OVERFLOW_ID;
@@ -79,7 +78,5 @@ class ContainerFileSystemTest {
         Map<String, Object> attrs = Files.readAttributes(path, "unix:*");
         assertEquals(uid, attrs.get("uid"));
         assertEquals(gid, attrs.get("gid"));
-        assertEquals(String.valueOf(uid), ((UserPrincipal) attrs.get("owner")).getName());
-        assertEquals(String.valueOf(gid), ((UserPrincipal) attrs.get("group")).getName());
     }
 }

@@ -1,12 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
+import com.google.common.collect.ImmutableBiMap;
+
 import java.io.IOException;
 import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.attribute.UserPrincipalNotFoundException;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @author valerijf
@@ -20,6 +23,11 @@ class ContainerUserPrincipalLookupService extends UserPrincipalLookupService {
      * IDs outside the ID range are translated to the overflow ID before being written to disk:
      * https://github.com/torvalds/linux/blob/5bfc75d92efd494db37f5c4c173d3639d4772966/Documentation/admin-guide/sysctl/fs.rst#overflowgid--overflowuid */
     static final int OVERFLOW_ID = 65_534;
+
+    private static final ImmutableBiMap<String, Integer> CONTAINER_IDS_BY_NAME = ImmutableBiMap.<String, Integer>builder()
+            .put("root", 0)
+            .put("vespa", 1000)
+            .build();
 
     private final UserPrincipalLookupService baseFsUserPrincipalLookupService;
     private final int uidOffset;
@@ -51,8 +59,8 @@ class ContainerUserPrincipalLookupService extends UserPrincipalLookupService {
     }
 
     private static int resolve(String name) throws UserPrincipalNotFoundException {
-        if (name.equals("root")) return 0;
-        if (name.equals("vespa")) return 1000;
+        Integer id = CONTAINER_IDS_BY_NAME.get(name);
+        if (id != null) return id;
 
         try {
             return Integer.parseInt(name);
@@ -68,7 +76,7 @@ class ContainerUserPrincipalLookupService extends UserPrincipalLookupService {
 
         private NamedPrincipal(int id, UserPrincipal baseFsPrincipal) {
             this.id = id;
-            this.name = Integer.toString(id);
+            this.name = Optional.ofNullable(CONTAINER_IDS_BY_NAME.inverse().get(id)).orElseGet(() -> Integer.toString(id));
             this.baseFsPrincipal = Objects.requireNonNull(baseFsPrincipal);
         }
 
