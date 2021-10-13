@@ -7,6 +7,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -75,14 +76,20 @@ public class SyncFileInfo {
     }
 
     public static SyncFileInfo forServiceDump(URI destinationDir, Path file, Instant expiry, Compression compression,
-                                              ApplicationId owner) {
+                                              ApplicationId owner, String assetClassification) {
         String filename = file.getFileName().toString();
         URI location = destinationDir.resolve(filename + compression.extension);
-        return new SyncFileInfo(file, location, compression, expiry, defaultTags(owner));
+        Map<String, String> tags = defaultTags(owner);
+        if (assetClassification != null) {
+            tags.put("vespa:AssetClassification", assetClassification);
+        }
+        return new SyncFileInfo(file, location, compression, expiry, tags);
     }
 
     private static Map<String, String> defaultTags(ApplicationId owner) {
-        return Map.of("corp:Application", owner.toFullString());
+        var tags = new HashMap<String, String>();
+        tags.put("corp:Application", owner.toFullString());
+        return tags;
     }
 
     public enum Compression {

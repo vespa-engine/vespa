@@ -129,7 +129,8 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
                     Compression compression = a.compressOnUpload() ? Compression.ZSTD : Compression.NONE;
                     Path fileInNode = a.fileInNode().orElse(null);
                     Path fileOnHost = fileInNode != null ? ctx.pathOnHostFromPathInNode(fileInNode) : a.fileOnHost().orElseThrow();
-                    return SyncFileInfo.forServiceDump(destination, fileOnHost, expiry, compression, owner);
+                    String classification = a.classification().map(Artifact.Classification::value).orElse(null);
+                    return SyncFileInfo.forServiceDump(destination, fileOnHost, expiry, compression, owner, classification);
                 })
                 .collect(Collectors.toList());
         ctx.log(log, Level.INFO,
