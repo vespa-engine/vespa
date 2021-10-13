@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.sync;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,8 +62,9 @@ public class SyncFileInfo {
         }
 
         if (dir == null) return Optional.empty();
+        Instant expiry = Instant.now().plus(30, ChronoUnit.DAYS);
         return Optional.of(new SyncFileInfo(
-                logFile, uri.resolve(dir + logFile.getFileName() + compression.extension), compression, null));
+                logFile, uri.resolve(dir + logFile.getFileName() + compression.extension), compression, expiry));
     }
 
     public static Optional<SyncFileInfo> forServiceDump(URI directory, Path file, Instant expiry) {
