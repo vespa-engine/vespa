@@ -8,7 +8,6 @@ import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -53,15 +52,13 @@ public final class ConfigRetriever {
         while (true) {
             Optional<ConfigSnapshot> maybeSnapshot = getConfigsOnce(componentConfigKeys, leastGeneration, isInitializing);
             if (maybeSnapshot.isPresent()) {
-                var configSnapshot = maybeSnapshot.get();
-                resetComponentSubscriberIfBootstrap(configSnapshot);
-                return configSnapshot;
+                return maybeSnapshot.get();
             }
         }
     }
 
-    Optional<ConfigSnapshot> getConfigsOnce(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
-                                            long leastGeneration, boolean isInitializing) {
+    private Optional<ConfigSnapshot> getConfigsOnce(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
+                                                    long leastGeneration, boolean isInitializing) {
         if (!Sets.intersection(componentConfigKeys, bootstrapKeys).isEmpty()) {
             throw new IllegalArgumentException(
                     "Component config keys [" + componentConfigKeys + "] overlaps with bootstrap config keys [" + bootstrapKeys + "]");
@@ -76,33 +73,35 @@ public final class ConfigRetriever {
     }
 
     private Optional<ConfigSnapshot> getConfigsOptional(long leastGeneration, boolean isInitializing) {
-        long newestComponentGeneration = componentSubscriber.waitNextGeneration(isInitializing);
-        log.log(FINE, () -> "getConfigsOptional: new component generation: " + newestComponentGeneration);
+        if (componentSubscriber.generation() < bootstrapSubscriber.generation()) {
+            return getComponentsSnapshot(leastGeneration, isInitializing);
+        }
+        long newestBootstrapGeneration = bootstrapSubscriber.waitNextGeneration(isInitializing);
+        log.log(FINE, () -> "getConfigsOptional: new bootstrap generation: " + newestBootstrapGeneration);
 
-        // leastGeneration is only used to ensure newer generation (than the latest bootstrap or component gen)
+        // leastGeneration is used to ensure newer generation (than the latest bootstrap or component gen)
         // when the previous generation was invalidated due to an exception upon creating the component graph.
-        if (newestComponentGeneration < leastGeneration) {
+        if (newestBootstrapGeneration < leastGeneration) {
             return Optional.empty();
-        } else if (bootstrapSubscriber.generation() < newestComponentGeneration) {
-            long newestBootstrapGeneration = bootstrapSubscriber.waitNextGeneration(isInitializing);
-            log.log(FINE, () -> "getConfigsOptional: new bootstrap generation: " + bootstrapSubscriber.generation());
-            Optional<ConfigSnapshot> bootstrapConfig = bootstrapConfigIfChanged();
-            if (bootstrapConfig.isPresent()) {
-                return bootstrapConfig;
-            } else {
-                if (newestBootstrapGeneration == newestComponentGeneration) {
-                    log.log(FINE, () -> this + " got new components configs with unchanged bootstrap configs.");
-                    return componentsConfigIfChanged();
-                } else {
-                    // This should not be a normal case, and hence a warning to allow investigation.
-                    log.warning("Did not get same generation for bootstrap (" + newestBootstrapGeneration +
-                                ") and components configs (" + newestComponentGeneration + ").");
-                    return Optional.empty();
-                }
-            }
-        } else {
-            // bootstrapGen==componentGen (happens only when a new component subscriber returns first config after bootstrap)
+        }
+        return bootstrapConfigIfChanged();
+    }
+
+    private Optional<ConfigSnapshot> getComponentsSnapshot(long leastGeneration, boolean isInitializing) {
+        long newestBootstrapGeneration = bootstrapSubscriber.generation();
+        long newestComponentGeneration = componentSubscriber.waitNextGeneration(isInitializing);
+        if (newestComponentGeneration < leastGeneration) {
+            log.log(FINE, () -> "Component generation too old: " + componentSubscriber.generation() + " < " + leastGeneration);
+            return Optional.empty();
+        }
+        if (newestComponentGeneration == newestBootstrapGeneration) {
+            log.log(FINE, () -> "getConfigsOptional: new component generation: " + componentSubscriber.generation());
             return componentsConfigIfChanged();
+        } else {
+            // Should not be a normal case, and hence a warning to allow investigation.
+            log.warning("Did not get same generation for bootstrap (" + newestBootstrapGeneration +
+                                ") and components configs (" + newestComponentGeneration + ").");
+            return Optional.empty();
         }
     }
 
@@ -120,12 +119,6 @@ public final class ConfigRetriever {
             return Optional.of(constructor.apply(Keys.covariantCopy(subscriber.config())));
         } else {
             return Optional.empty();
-        }
-    }
-
-    private void resetComponentSubscriberIfBootstrap(ConfigSnapshot snapshot) {
-        if (snapshot instanceof BootstrapConfigs) {
-            setupComponentSubscriber(Collections.emptySet());
         }
     }
 
