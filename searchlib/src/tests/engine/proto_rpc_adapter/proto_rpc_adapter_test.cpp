@@ -52,7 +52,7 @@ struct MyDocsumServer : DocsumServer {
         auto reply = std::make_unique<DocsumReply>();
         reply->_root = std::make_unique<Slime>();
         auto &list = reply->_root->setArray();
-        list.addObject().setBool("use_root_slime", req->useRootSlime());
+        list.addObject().setBool("use_root_slime", true);
         list.addObject().setString("ranking", req->ranking);
         reply->request = std::move(req);
         std::this_thread::sleep_for(std::chrono::milliseconds(5));

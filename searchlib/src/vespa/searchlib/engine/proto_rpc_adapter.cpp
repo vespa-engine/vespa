@@ -138,7 +138,7 @@ struct DocsumRequestDecoder : DocsumRequest::Source::Decoder {
             return std::unique_ptr<DocsumRequest>(nullptr);
         }
         stats.requested_documents = msg.global_ids_size();
-        auto req = std::make_unique<DocsumRequest>(std::move(relative_time), true);
+        auto req = std::make_unique<DocsumRequest>(std::move(relative_time));
         ProtoConverter::docsum_request_from_proto(msg, *req);
         return req;
     }
