@@ -94,6 +94,22 @@ IdealStateOperation::done()
     }
 }
 
+void
+IdealStateOperation::on_blocked()
+{
+    if (_manager) {
+        _manager->getMetrics().operations[getType()]->blocked.inc(1);
+    }
+}
+
+void
+IdealStateOperation::on_throttled()
+{
+    if (_manager) {
+        _manager->getMetrics().operations[getType()]->throttled.inc(1);
+    }
+}
+
 uint32_t
 IdealStateOperation::memorySize() const
 {

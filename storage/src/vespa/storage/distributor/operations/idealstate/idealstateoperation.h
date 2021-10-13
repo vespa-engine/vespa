@@ -159,6 +159,10 @@ public:
     */
     virtual void done();
 
+    void on_blocked() override;
+
+    void on_throttled() override;
+
     /**
        Called by IdealStateManager to allow the operation to call back its
        OperationFinished() method when done.

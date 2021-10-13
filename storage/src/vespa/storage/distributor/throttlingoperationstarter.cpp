@@ -24,6 +24,7 @@ ThrottlingOperationStarter::start(const std::shared_ptr<Operation>& operation,
                                  Priority priority)
 {
     if (!canStart(_pendingCount, priority)) {
+        operation->on_throttled();
         return false;
     }
     auto wrappedOp = std::make_shared<ThrottlingOperation>(operation, *this);

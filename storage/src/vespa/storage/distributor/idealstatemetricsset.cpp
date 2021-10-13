@@ -15,7 +15,13 @@ OperationMetricSet::OperationMetricSet(const std::string& name, metrics::Metric:
          "The number of operations successfully performed", this),
       failed("done_failed",
              {{"logdefault"},{"yamasdefault"}},
-             "The number of operations that failed", this)
+             "The number of operations that failed", this),
+      blocked("blocked",
+              {{"logdefault"},{"yamasdefault"}},
+              "The number of operations blocked by blocking operation starter", this),
+      throttled("throttled",
+                {{"logdefault"},{"yamasdefault"}},
+                "The number of operations throttled by throttling operation starter", this)
 {}
 
 OperationMetricSet::~OperationMetricSet() = default;

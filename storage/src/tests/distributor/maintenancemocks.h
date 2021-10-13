@@ -34,10 +34,14 @@ class MockOperation : public MaintenanceOperation
     document::Bucket _bucket;
     std::string _reason;
     bool _shouldBlock;
+    bool _was_blocked;
+    bool _was_throttled;
 public:
     MockOperation(const document::Bucket &bucket)
         : _bucket(bucket),
-          _shouldBlock(false)
+          _shouldBlock(false),
+          _was_blocked(false),
+          _was_throttled(false)
     {}
 
     std::string toString() const override {
@@ -51,12 +55,16 @@ public:
     }
     void onStart(DistributorStripeMessageSender&) override {}
     void onReceive(DistributorStripeMessageSender&, const std::shared_ptr<api::StorageReply>&) override {}
+    void on_blocked() override { _was_blocked = true; }
+    void on_throttled() override { _was_throttled = true; }
     bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const override {
         return _shouldBlock;
     }
     void setShouldBlock(bool shouldBlock) {
         _shouldBlock = shouldBlock;
     }
+    bool get_was_blocked() const noexcept { return _was_blocked; }
+    bool get_was_throttled() const noexcept { return _was_throttled; }
 };
 
 class MockMaintenanceOperationGenerator

@@ -14,6 +14,14 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
+namespace {
+
+const MockOperation& as_mock_operation(const Operation& operation) {
+    return dynamic_cast<const MockOperation&>(operation);
+}
+
+}
+
 struct FakeDistributorStripeOperationContext : public DistributorStripeOperationContext {
 
     PendingMessageTracker& _message_tracker;
@@ -129,15 +137,19 @@ BlockingOperationStarterTest::SetUp()
 }
 
 TEST_F(BlockingOperationStarterTest, operation_not_blocked_when_no_messages_pending) {
-    ASSERT_TRUE(_operationStarter->start(createMockOperation(), OperationStarter::Priority(0)));
+    auto operation = createMockOperation();
+    ASSERT_TRUE(_operationStarter->start(operation, OperationStarter::Priority(0)));
     EXPECT_EQ("Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri 0\n",
               _starterImpl->toString());
+    EXPECT_FALSE(as_mock_operation(*operation).get_was_blocked());
 }
 
 TEST_F(BlockingOperationStarterTest, operation_blocked_when_messages_pending) {
     // start should return true but not forward message to underlying starter.
-    ASSERT_TRUE(_operationStarter->start(createBlockingMockOperation(), OperationStarter::Priority(0)));
+    auto operation = createBlockingMockOperation();
+    ASSERT_TRUE(_operationStarter->start(operation, OperationStarter::Priority(0)));
     EXPECT_EQ("", _starterImpl->toString());
+    EXPECT_TRUE(as_mock_operation(*operation).get_was_blocked());
 }
 
 }
