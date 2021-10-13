@@ -60,7 +60,7 @@ public class DefaultContainerThreadpool extends AbstractComponent implements Aut
         executor.prestartAllCoreThreads();
         threadpool = new ExecutorServiceWrapper(
                 executor, threadPoolMetric, processTerminator, config.maxThreadExecutionTimeSeconds() * 1000L,
-                name, queueSize);
+                name);
     }
 
     @Override public Executor executor() { return threadpool; }
