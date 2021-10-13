@@ -205,17 +205,19 @@ public class ContainerPath implements Path {
         return resolve(containerFs, new String[0], pathInContainer);
     }
 
-    static ContainerPath fromPathOnHost(ContainerFileSystem containerFs, Path pathOnHost) {
-        pathOnHost = pathOnHost.normalize();
-        Path containerRootOnHost = containerFs.provider().containerRootOnHost();
-        Path pathUnderContainerStore = containerRootOnHost.relativize(pathOnHost);
-        List<String> parts = new ArrayList<>();
-        for (int i = 0; i < pathUnderContainerStore.getNameCount(); i++) {
-            String part = pathUnderContainerStore.getName(i).toString();
-            if (part.isEmpty() || part.equals(".")) continue;
-            if (part.equals("..")) throw new IllegalArgumentException("Path " + pathOnHost + " is not under container root " + containerRootOnHost);
-            parts.add(part);
-        }
-        return new ContainerPath(containerFs, pathOnHost, parts.toArray(String[]::new));
-    }
+static ContainerPath fromPathOnHost(ContainerFileSystem containerFs, Path pathOnHost) {
+    pathOnHost = pathOnHost.normalize();
+    Path containerRootOnHost = containerFs.provider().containerRootOnHost();
+    Path pathUnderContainerStorage = containerRootOnHost.relativize(pathOnHost);
+
+    if (pathUnderContainerStorage.getNameCount() == 0 || pathUnderContainerStorage.getName(0).toString().isEmpty())
+        return new ContainerPath(containerFs, pathOnHost, new String[0]);
+    if (pathUnderContainerStorage.getName(0).toString().equals(".."))
+        throw new IllegalArgumentException("Path " + pathOnHost + " is not under container root " + containerRootOnHost);
+
+    List<String> parts = new ArrayList<>();
+    for (int i = 0; i < pathUnderContainerStorage.getNameCount(); i++)
+        parts.add(pathUnderContainerStorage.getName(i).toString());
+    return new ContainerPath(containerFs, pathOnHost, parts.toArray(String[]::new));
+}
 }
