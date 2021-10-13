@@ -72,7 +72,8 @@ public class UnixUidGidAttributeProvider extends AttributeProvider {
     }
 
     private int getUniqueId(UserPrincipal user) {
-        return idCache.computeIfAbsent(user, id -> maybeNumber(id.getName()).orElseGet(uidGenerator::incrementAndGet));
+        return maybeNumber(user.getName())
+                .orElseGet(() -> idCache.computeIfAbsent(user, id -> uidGenerator.incrementAndGet()));
     }
 
     @SuppressWarnings("unchecked")
@@ -106,6 +107,14 @@ public class UnixUidGidAttributeProvider extends AttributeProvider {
 
     @Override
     public void set(File file, String view, String attribute, Object value, boolean create) {
+        switch (attribute) {
+            case "uid":
+                file.setAttribute("owner", "owner", new BasicUserPrincipal(String.valueOf(value)));
+                return;
+            case "gid":
+                file.setAttribute("posix", "group", new BasicGroupPrincipal(String.valueOf(value)));
+                return;
+        }
         throw unsettable(view, attribute);
     }
 
@@ -157,5 +166,17 @@ public class UnixUidGidAttributeProvider extends AttributeProvider {
         } catch (NumberFormatException e) {
             return Optional.empty();
         }
+    }
+
+    private static class BasicUserPrincipal implements UserPrincipal {
+        private final String name;
+        private BasicUserPrincipal(String name) { this.name = name; }
+
+        @Override public String getName() { return name; }
+        @Override public String toString() { return name; }
+    }
+
+    private static class BasicGroupPrincipal extends BasicUserPrincipal implements GroupPrincipal {
+        private BasicGroupPrincipal(String name) { super(name); }
     }
 }
