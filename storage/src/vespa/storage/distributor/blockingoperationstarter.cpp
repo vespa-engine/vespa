@@ -8,6 +8,7 @@ bool
 BlockingOperationStarter::start(const std::shared_ptr<Operation>& operation, Priority priority)
 {
     if (operation->isBlocked(_operation_context, _operation_sequencer)) {
+        operation->on_blocked();
         return true;
     }
     return _starterImpl.start(operation, priority);

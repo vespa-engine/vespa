@@ -11,6 +11,14 @@ using document::BucketId;
 using document::test::makeDocumentBucket;
 using namespace ::testing;
 
+namespace {
+
+const MockOperation& as_mock_operation(const Operation& operation) {
+    return dynamic_cast<const MockOperation&>(operation);
+}
+
+}
+
 struct ThrottlingOperationStarterTest : Test {
     std::shared_ptr<Operation> createMockOperation() {
         return std::shared_ptr<Operation>(new MockOperation(makeDocumentBucket(BucketId(16, 1))));
@@ -39,8 +47,10 @@ ThrottlingOperationStarterTest::TearDown()
 }
 
 TEST_F(ThrottlingOperationStarterTest, operation_not_throttled_when_slot_available) {
-    EXPECT_TRUE(_operationStarter->start(createMockOperation(),
+    auto operation = createMockOperation();
+    EXPECT_TRUE(_operationStarter->start(operation,
                                          OperationStarter::Priority(0)));
+    EXPECT_FALSE(as_mock_operation(*operation).get_was_throttled());
 }
 
 TEST_F(ThrottlingOperationStarterTest, operation_starting_is_forwarded_to_implementation) {
@@ -52,8 +62,10 @@ TEST_F(ThrottlingOperationStarterTest, operation_starting_is_forwarded_to_implem
 
 TEST_F(ThrottlingOperationStarterTest, operation_throttled_when_no_available_slots) {
     _operationStarter->setMaxPendingRange(0, 0);
-    EXPECT_FALSE(_operationStarter->start(createMockOperation(),
+    auto operation = createMockOperation();
+    EXPECT_FALSE(_operationStarter->start(operation,
                                           OperationStarter::Priority(0)));
+    EXPECT_TRUE(as_mock_operation(*operation).get_was_throttled());
 }
 
 TEST_F(ThrottlingOperationStarterTest, throttling_with_max_pending_range) {

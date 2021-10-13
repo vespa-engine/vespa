@@ -66,6 +66,16 @@ public:
         return false;
     }
 
+    /*
+     * Called by blocking operation starter if operation was blocked
+     */
+    virtual void on_blocked();
+
+    /*
+     * Called by throttling operation starter if operation was throttled
+     */
+    virtual void on_throttled();
+
     /**
        Returns the timestamp on which the first message was sent from this callback.
     */

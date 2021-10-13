@@ -16,6 +16,8 @@ public:
     metrics::LongValueMetric pending;
     metrics::LongCountMetric ok;
     metrics::LongCountMetric failed;
+    metrics::LongCountMetric blocked;
+    metrics::LongCountMetric throttled;
 
     OperationMetricSet(const std::string& name, metrics::Metric::Tags tags, const std::string& description, MetricSet* owner);
     ~OperationMetricSet() override;

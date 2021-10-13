@@ -41,5 +41,15 @@ Operation::copyMessageSettings(const api::StorageCommand& source, api::StorageCo
     target.setPriority(source.getPriority());
 }
 
+void
+Operation::on_blocked()
+{
+}
+
+void
+Operation::on_throttled()
+{
+}
+
 }
 
