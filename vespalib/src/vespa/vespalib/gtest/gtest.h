@@ -3,6 +3,15 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <iostream>
+
+namespace vespalib {
+// Tell google test how to print vespalib::string values:
+static inline void PrintTo(const vespalib::string & value, std::ostream * os) {
+    *os << value;
+}
+}
 
 /**
  * Macro for creating a main function that runs all gtests.
