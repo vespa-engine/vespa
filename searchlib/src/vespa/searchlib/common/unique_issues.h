@@ -23,6 +23,7 @@ public:
             fun(msg);
         }
     }
+    size_t size() const { return _messages.size(); }
 };
 
 }

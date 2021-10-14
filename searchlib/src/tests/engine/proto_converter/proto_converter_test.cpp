@@ -501,7 +501,6 @@ TEST_F(DocsumReplyTest, require_that_missing_root_slime_gives_empty_payload) {
 }
 
 TEST_F(DocsumReplyTest, require_that_issues_are_converted_to_errors) {
-    reply.setIssues(std::make_unique<UniqueIssues>());
     reply.issues().handle(vespalib::Issue("a"));
     reply.issues().handle(vespalib::Issue("b"));
     reply.issues().handle(vespalib::Issue("c"));

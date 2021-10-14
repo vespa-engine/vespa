@@ -145,10 +145,7 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
         }
         updateDocsumMetrics(vespalib::to_s(req->getTimeUsed()), getNumDocs(*reply));
     }
-    reply->setRequest(std::move(req));
-    reply->setIssues(std::move(my_issues));
-
-    return reply;
+    return std::make_unique<DocsumReply>(reply->releaseSlime(), std::move(req), std::move(my_issues));
 }
 
 void

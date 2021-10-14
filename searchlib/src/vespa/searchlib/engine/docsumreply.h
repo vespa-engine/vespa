@@ -16,29 +16,39 @@ namespace search::engine {
 
 class DocsumReply {
 private:
-    DocsumRequest::UP _request;
     std::unique_ptr<vespalib::Slime> _slime;
+    DocsumRequest::UP _request;
     UniqueIssues::UP _issues;
 public:
     using UP = std::unique_ptr<DocsumReply>;
 
-    DocsumReply();
+    DocsumReply(std::unique_ptr<vespalib::Slime> root,
+                DocsumRequest::UP request,
+                UniqueIssues::UP issues);
+
+    DocsumReply(std::unique_ptr<vespalib::Slime> root,
+                DocsumRequest::UP request);
+
     DocsumReply(std::unique_ptr<vespalib::Slime> root);
 
-    bool hasSlime() const { return _slime.get() != nullptr; }
-    bool hasRequest() const { return _request.get() != nullptr; }
-    bool hasIssues() const { return _issues.get() != nullptr; }
+    DocsumReply();
 
-    vespalib::Slime & slime() const { assert(hasSlime()); return *_slime; }
+    bool hasResults() const;
+    bool hasRequest() const { return (_request.get() != nullptr); }
+    bool hasIssues() const { return _issues && (_issues->size() > 0); }
+
+    vespalib::Slime & slime() const { assert(_slime.get()); return *_slime; }
     DocsumRequest& request() const { assert(hasRequest()); return *_request; }
-    UniqueIssues & issues() const { assert(hasIssues()); return *_issues; }
+    UniqueIssues & issues() const { return *_issues; }
 
+/*
     void setRequest(DocsumRequest::UP request) {
         _request = std::move(request);
     }
     void setIssues(UniqueIssues::UP issues) {
         _issues = std::move(issues);
     }
+*/
 
     std::unique_ptr<vespalib::Slime> releaseSlime();
 
