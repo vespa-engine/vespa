@@ -95,9 +95,9 @@ MergeOperationTest::get_merge_metrics()
 
 TEST_F(MergeOperationTest, simple) {
     auto op = setup_simple_merge_op();
-    assert_simple_merge_bucket_command();
+    ASSERT_NO_FATAL_FAILURE(assert_simple_merge_bucket_command());
     sendReply(*op);
-    assert_simple_delete_bucket_command();
+    ASSERT_NO_FATAL_FAILURE(assert_simple_delete_bucket_command());
     EXPECT_EQ(0, get_merge_metrics().ok.getValue());
     sendReply(*op);
     EXPECT_EQ(1, get_merge_metrics().ok.getValue());
@@ -105,7 +105,7 @@ TEST_F(MergeOperationTest, simple) {
 
 TEST_F(MergeOperationTest, fail_if_source_only_copies_changed) {
     auto op = setup_simple_merge_op();
-    assert_simple_merge_bucket_command();
+    ASSERT_NO_FATAL_FAILURE(assert_simple_merge_bucket_command());
     {
         auto& cmd = dynamic_cast<api::MergeBucketCommand&>(*_sender.command(0));
         EXPECT_EQ(0, cmd.getSourceIndex());
@@ -118,7 +118,7 @@ TEST_F(MergeOperationTest, fail_if_source_only_copies_changed) {
                        "2=10/1/1/t");
     sendReply(*op);
     // Should not be a remove here!
-    assert_simple_merge_bucket_command();
+    ASSERT_NO_FATAL_FAILURE(assert_simple_merge_bucket_command());
     EXPECT_FALSE(op->ok());
     EXPECT_EQ(1, get_merge_metrics().failed.getValue());
     EXPECT_EQ(1, get_merge_metrics().source_only_copy_changed.getValue());
@@ -126,9 +126,9 @@ TEST_F(MergeOperationTest, fail_if_source_only_copies_changed) {
 
 TEST_F(MergeOperationTest, fail_if_delete_bucket_fails) {
     auto op = setup_simple_merge_op();
-    assert_simple_merge_bucket_command();
+    ASSERT_NO_FATAL_FAILURE(assert_simple_merge_bucket_command());
     sendReply(*op);
-    assert_simple_delete_bucket_command();
+    ASSERT_NO_FATAL_FAILURE(assert_simple_delete_bucket_command());
     sendReply(*op, -1, api::ReturnCode::ABORTED);
     EXPECT_EQ(1, get_merge_metrics().failed.getValue());
     EXPECT_EQ(1, get_merge_metrics().source_only_copy_delete_failed.getValue());
