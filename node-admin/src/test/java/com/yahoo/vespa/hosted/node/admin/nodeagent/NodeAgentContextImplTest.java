@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class NodeAgentContextImplTest {
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-1.domain.tld")
+    private final NodeAgentContext context = NodeAgentContextImpl.builder("container-1.domain.tld")
             .fileSystem(fileSystem).build();
 
     @Test
@@ -89,6 +89,6 @@ public class NodeAgentContextImplTest {
     private static NodeAgentContext createContextWithDisabledTasks(String... tasks) {
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
         flagSource.withListFlag(PermanentFlags.DISABLED_HOST_ADMIN_TASKS.id(), List.of(tasks), String.class);
-        return new NodeAgentContextImpl.Builder("node123").flagSource(flagSource).build();
+        return NodeAgentContextImpl.builder("node123").flagSource(flagSource).build();
     }
 }

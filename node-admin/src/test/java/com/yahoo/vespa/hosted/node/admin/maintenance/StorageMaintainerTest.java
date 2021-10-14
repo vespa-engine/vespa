@@ -51,7 +51,7 @@ public class StorageMaintainerTest {
 
     @Test
     public void testDiskUsed() throws IOException {
-        NodeAgentContext context = new NodeAgentContextImpl.Builder("host-1.domain.tld").fileSystem(fileSystem).build();
+        NodeAgentContext context = NodeAgentContextImpl.builder("host-1.domain.tld").fileSystem(fileSystem).build();
         Files.createDirectories(context.pathOnHostFromPathInNode("/"));
 
         terminal.expectCommand("du -xsk /home/docker/container-storage/host-1 2>&1", 0, "321\t/home/docker/container-storage/host-1/");
@@ -112,7 +112,7 @@ public class StorageMaintainerTest {
     }
 
     private static NodeAgentContext createNodeAgentContextAndContainerStorage(FileSystem fileSystem, String containerName) throws IOException {
-        NodeAgentContext context = new NodeAgentContextImpl.Builder(containerName + ".domain.tld")
+        NodeAgentContext context = NodeAgentContextImpl.builder(containerName + ".domain.tld")
                 .fileSystem(fileSystem).build();
 
         Path containerVespaHomeOnHost = context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome(""));
@@ -142,7 +142,7 @@ public class StorageMaintainerTest {
 
     @Test
     public void not_run_if_not_enough_used() throws IOException {
-        NodeAgentContext context = new NodeAgentContextImpl.Builder(
+        NodeAgentContext context = NodeAgentContextImpl.builder(
                 NodeSpec.Builder.testSpec("h123a.domain.tld").realResources(new NodeResources(1, 1, 1, 1)).build())
                 .fileSystem(fileSystem).build();
         Files.createDirectories(context.pathOnHostFromPathInNode("/"));
@@ -154,7 +154,7 @@ public class StorageMaintainerTest {
 
     @Test
     public void deletes_correct_amount() throws IOException {
-        NodeAgentContext context = new NodeAgentContextImpl.Builder(
+        NodeAgentContext context = NodeAgentContextImpl.builder(
                 NodeSpec.Builder.testSpec("h123a.domain.tld").realResources(new NodeResources(1, 1, 1, 1)).build())
                 .fileSystem(fileSystem).build();
 

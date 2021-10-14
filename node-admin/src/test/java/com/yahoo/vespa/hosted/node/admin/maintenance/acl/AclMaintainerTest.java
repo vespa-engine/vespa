@@ -41,7 +41,7 @@ public class AclMaintainerTest {
 
     private final FileSystem fileSystem = TestFileSystem.create();
     private final Function<Acl, NodeAgentContext> contextGenerator =
-            acl -> new NodeAgentContextImpl.Builder("container1.host.com").fileSystem(fileSystem).acl(acl).build();
+            acl -> NodeAgentContextImpl.builder("container1.host.com").fileSystem(fileSystem).acl(acl).build();
     private final List<String> writtenFileContents = new ArrayList<>();
 
     @Test

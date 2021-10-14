@@ -28,7 +28,7 @@ public class CoreCollectorTest {
     private final String JDK_PATH = "/path/to/jdk/java";
     private final ContainerOperations docker = mock(ContainerOperations.class);
     private final CoreCollector coreCollector = new CoreCollector(docker);
-    private final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld").build();
+    private final NodeAgentContext context = NodeAgentContextImpl.builder("container-123.domain.tld").build();
 
     private final Path TEST_CORE_PATH = Paths.get("/tmp/core.1234");
     private final Path TEST_BIN_PATH = Paths.get("/usr/bin/program");
