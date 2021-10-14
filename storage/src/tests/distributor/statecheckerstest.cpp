@@ -20,6 +20,7 @@
 using document::test::makeBucketSpace;
 using document::test::makeDocumentBucket;
 using namespace ::testing;
+using namespace std::chrono_literals;
 
 namespace storage::distributor {
 
@@ -1564,6 +1565,18 @@ public:
         return *this;
     }
 
+    StateCheckerRunner& time_now(uint32_t secs_since_epoch) {
+        _fixture.getClock().setAbsoluteTimeInSeconds(secs_since_epoch);
+        return *this;
+    }
+
+    StateCheckerRunner& last_gc_at_time(const document::BucketId& bucket, uint32_t secs_since_epoch) {
+        auto entry = _fixture.getBucket(bucket);
+        entry->setLastGarbageCollectionTime(secs_since_epoch);
+        _fixture.getBucketDatabase(makeBucketSpace()).update(entry);
+        return *this;
+    }
+
     // Run the templated state checker with the provided parameters, updating
     // _result with the ideal state operations triggered.
     // NOTE: resets the bucket database!
@@ -1648,6 +1661,24 @@ TEST_F(StateCheckersTest, stats_updated_when_merging_due_to_out_of_sync_copies) 
         EXPECT_EQ(wanted, runner.stats().forNode(1, makeBucketSpace()));
         EXPECT_EQ(wanted, runner.stats().forNode(3, makeBucketSpace()));
     }
+}
+
+TEST_F(StateCheckersTest, stats_updates_for_maximum_time_since_gc_run) {
+    setup_stripe(1, 1, "distributor:1 storage:1");
+
+    auto cfg = make_config();
+    cfg->setGarbageCollection("music", 1000s);
+    cfg->setLastGarbageCollectionChangeTime(vespalib::steady_time(vespalib::duration::zero()));
+    configure_stripe(cfg);
+
+    StateCheckerRunner<GarbageCollectionStateChecker> runner(*this);
+    runner.addToDb({17, 0}, "1=1,3=2")
+          .clusterState("distributor:1 storage:4")
+          .time_now(2000)
+          .last_gc_at_time({17, 0}, 100)
+          .runFor({17, 0});
+
+    EXPECT_EQ(runner.stats().max_observed_time_since_last_gc().count(), 1900);
 }
 
 }
