@@ -126,7 +126,11 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     static protected FleetControllerOptions defaultOptions(String clusterName) {
-        return defaultOptions(clusterName, IntStream.range(0, DEFAULT_NODE_COUNT)
+        return defaultOptions(clusterName, DEFAULT_NODE_COUNT);
+    }
+
+    static protected FleetControllerOptions defaultOptions(String clusterName, int nodeCount) {
+        return defaultOptions(clusterName, IntStream.range(0, nodeCount)
                                                     .mapToObj(i -> new ConfiguredNode(i, false))
                                                     .collect(Collectors.toSet()));
     }
