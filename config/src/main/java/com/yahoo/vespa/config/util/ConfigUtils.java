@@ -33,7 +33,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Utilities for mangling config text, finding md5sums, finding name and namespace in .def files etc.
+ * Utilities for mangling config text, finding checksums, finding name and namespace in .def files etc.
  */
 public class ConfigUtils {
 
@@ -46,11 +46,7 @@ public class ConfigUtils {
     private static final String doubleFormattedMax = new DecimalFormat("#.#").format(1e308);
     private static final String doubleFormattedMin = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.ENGLISH)).format(-1e308);
 
-    public static String getMd5(ConfigPayload payload) {
-        return getMd5(getByteBuffer(payload));
-    }
-
-  public static String getMd5(String input) {
+    public static String getMd5(String input) {
         return getMd5(ByteBuffer.wrap(input.getBytes(StandardCharsets.UTF_8)));
     }
 
@@ -58,7 +54,7 @@ public class ConfigUtils {
         return getMd5(input.wrap());
     }
 
-    public static String getMd5(ByteBuffer input) {
+    private static String getMd5(ByteBuffer input) {
         MessageDigest md5 = getMd5Instance();
         md5.update(input);
         return HexDump.toHexString(md5.digest()).toLowerCase();
@@ -81,6 +77,7 @@ public class ConfigUtils {
         return Long.toHexString(hasher.hash(input, 0)).toLowerCase();
     }
 
+    @SuppressWarnings("unused") // Used by config integration test in system-test module
     public static String getXxhash64(ConfigPayload payload) {
         return getXxhash64(getByteBuffer(payload));
     }
@@ -94,7 +91,6 @@ public class ConfigUtils {
         }
         return ByteBuffer.wrap(baos.toByteArray());
     }
-
 
     /**
      * Replaces sequences of spaces with 1 space, unless inside quotes. Public for testing;
@@ -378,4 +374,5 @@ public class ConfigUtils {
     public static boolean isGenerationNewer(long newGen, long oldGen) {
         return (oldGen < newGen) || (newGen == 0);
     }
+
 }
