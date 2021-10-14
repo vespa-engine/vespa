@@ -47,8 +47,8 @@ public class ConfigTester {
 
         long generation = 1;
         String defMd5 = ConfigUtils.getDefMd5(defContent);
-        PayloadChecksums payloadChecksums = PayloadChecksums.from(new PayloadChecksum(ConfigUtils.getMd5(fooConfigPayload), MD5),
-                                                                               PayloadChecksum.empty(XXHASH64));
+        PayloadChecksums payloadChecksums = PayloadChecksums.from(PayloadChecksum.empty(MD5),
+                                                                  PayloadChecksum.fromPayload(Payload.from(fooConfigPayload), XXHASH64));
         fooConfig = new RawConfig(configKey, defMd5, fooPayload, payloadChecksums,
                                   generation, false, defContent, Optional.empty());
 

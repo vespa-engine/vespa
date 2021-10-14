@@ -88,21 +88,6 @@ public class ConfigUtilsTest {
     }
 
     @Test
-    public void testGetMd5OfPayload() {
-        String expectedMd5 = "c9246ed8c8ab55b1c463c501c84075e6";
-        String expectedXxhash64 = "b89f402d53626490";
-        String expectedChangedMd5 = "f6f81062ef5f024f1912798490ba7dfc";
-        String expectedChangedXxhash64 = "e8c361d384889610";
-
-        ConfigPayload payload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
-        assertEquals(expectedMd5, ConfigUtils.getMd5(payload));
-        assertEquals(expectedXxhash64, ConfigUtils.getXxhash64(payload));
-        payload.getSlime().get().setString("fabio", "bar");
-        assertEquals(expectedChangedMd5, ConfigUtils.getMd5(payload));
-        assertEquals(expectedChangedXxhash64, ConfigUtils.getXxhash64(payload));
-    }
-
-    @Test
     public void testGetMd5OfString() {
         String expectedMd5 = "c9246ed8c8ab55b1c463c501c84075e6";
         String expectedXxhash64 = "b89f402d53626490";
