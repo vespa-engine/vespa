@@ -51,7 +51,7 @@ public class SystemPoller {
             this.jiffies = jiffies;
             this.cpus = Math.max(1, cpus);
         }
-        /** 1.0 = 1 busy core Ranke = [0.0, #cores] */
+        /** 1.0 = 1 busy core Range = [0.0, #cores] */
         double ratioSingleCoreJiffies(long partJiffies) {
             return (double)(partJiffies * cpus) / Math.max(1.0, jiffies);
         }
