@@ -24,8 +24,6 @@ public interface ConfigResponse {
 
     boolean applyOnRestart();
 
-    String getConfigMd5();
-
     void serialize(OutputStream os, CompressionType uncompressed) throws IOException;
 
     default boolean hasEqualConfig(JRTServerConfigRequest request) {
