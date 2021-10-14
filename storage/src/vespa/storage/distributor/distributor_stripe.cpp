@@ -567,6 +567,8 @@ DistributorStripe::propagateInternalScanMetricsToExternal()
         ideal_state_metrics.buckets_replicas_copying_out.set(total_stats.copyingOut);
         ideal_state_metrics.buckets_replicas_copying_in.set(total_stats.copyingIn);
         ideal_state_metrics.buckets_replicas_syncing.set(total_stats.syncing);
+        ideal_state_metrics.max_observed_time_since_last_gc_sec.set(
+                _maintenanceStats.perNodeStats.max_observed_time_since_last_gc().count());
     }
 }
 

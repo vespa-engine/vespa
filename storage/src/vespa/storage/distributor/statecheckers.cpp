@@ -1127,25 +1127,35 @@ BucketStateStateChecker::check(StateChecker::Context& c)
 }
 
 bool
-GarbageCollectionStateChecker::needsGarbageCollection(const Context& c) const
+GarbageCollectionStateChecker::garbage_collection_disabled(const Context& c) const noexcept
 {
-    if (c.entry->getNodeCount() == 0 || c.distributorConfig.getGarbageCollectionInterval() == vespalib::duration::zero()) {
+    return (c.distributorConfig.getGarbageCollectionInterval() == vespalib::duration::zero());
+}
+
+bool
+GarbageCollectionStateChecker::needs_garbage_collection(const Context& c, std::chrono::seconds time_since_epoch) const
+{
+    if (c.entry->getNodeCount() == 0) {
         return false;
     }
     if (containsMaintenanceNode(c.idealState, c)) {
         return false;
     }
     std::chrono::seconds lastRunAt(c.entry->getLastGarbageCollectionTime());
-    std::chrono::seconds currentTime(
-            c.node_ctx.clock().getTimeInSeconds().getTime());
-
-    return c.gcTimeCalculator.shouldGc(c.getBucketId(), currentTime, lastRunAt);
+    return c.gcTimeCalculator.shouldGc(c.getBucketId(), time_since_epoch, lastRunAt);
 }
 
 StateChecker::Result
 GarbageCollectionStateChecker::check(Context& c)
 {
-    if (needsGarbageCollection(c)) {
+    if (garbage_collection_disabled(c)) {
+        return Result::noMaintenanceNeeded();
+    }
+    const std::chrono::seconds now(c.node_ctx.clock().getTimeInSeconds().getTime());
+    const std::chrono::seconds last_run_at(c.entry->getLastGarbageCollectionTime());
+    c.stats.update_observed_time_since_last_gc(now - last_run_at);
+
+    if (needs_garbage_collection(c, now)) {
         auto op = std::make_unique<GarbageCollectionOperation>(
                         c.node_ctx,
                         BucketAndNodes(c.getBucket(), c.entry->getNodes()));
@@ -1154,7 +1164,7 @@ GarbageCollectionStateChecker::check(Context& c)
         reason << "[Needs garbage collection: Last check at "
                << c.entry->getLastGarbageCollectionTime()
                << ", current time "
-               << c.node_ctx.clock().getTimeInSeconds().getTime()
+               << now.count()
                << ", configured interval "
                << vespalib::to_s(c.distributorConfig.getGarbageCollectionInterval()) << "]";
 

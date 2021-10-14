@@ -16,6 +16,7 @@ using document::BucketId;
 using document::test::makeBucketSpace;
 using Priority = MaintenancePriority;
 using namespace ::testing;
+using namespace std::chrono_literals;
 
 struct SimpleMaintenanceScannerTest : Test {
     using PendingStats = SimpleMaintenanceScanner::PendingMaintenanceStats;
@@ -255,6 +256,7 @@ TEST_F(SimpleMaintenanceScannerTest, merge_pending_maintenance_stats) {
     stats_a.perNodeStats.incCopyingIn(5, default_space);
     stats_a.perNodeStats.incCopyingOut(5, global_space);
     stats_a.perNodeStats.incTotal(5, default_space);
+    stats_a.perNodeStats.update_observed_time_since_last_gc(100s);
 
     PendingStats stats_b;
     stats_b.global.pending[MaintenanceOperation::DELETE_BUCKET] = 10;
@@ -268,6 +270,7 @@ TEST_F(SimpleMaintenanceScannerTest, merge_pending_maintenance_stats) {
     stats_b.perNodeStats.incCopyingIn(5, default_space);
     stats_b.perNodeStats.incCopyingOut(5, global_space);
     stats_b.perNodeStats.incTotal(5, default_space);
+    stats_b.perNodeStats.update_observed_time_since_last_gc(300s);
 
     PendingStats result;
     result.merge(stats_a);
@@ -290,6 +293,7 @@ TEST_F(SimpleMaintenanceScannerTest, merge_pending_maintenance_stats) {
     exp.perNodeStats.incTotal(5, default_space);
     exp.perNodeStats.incMovingOut(7, default_space);
     exp.perNodeStats.incSyncing(7, global_space);
+    exp.perNodeStats.update_observed_time_since_last_gc(300s);
     EXPECT_EQ(exp.global, result.global);
     EXPECT_EQ(exp.perNodeStats, result.perNodeStats);
 }

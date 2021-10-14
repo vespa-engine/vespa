@@ -55,6 +55,7 @@ public:
     metrics::LongValueMetric buckets_replicas_copying_in;
     metrics::LongValueMetric buckets_replicas_copying_out;
     metrics::LongValueMetric buckets_replicas_syncing;
+    metrics::LongValueMetric max_observed_time_since_last_gc_sec;
     metrics::DoubleAverageMetric nodesPerMerge;
 
     void createOperationMetrics();

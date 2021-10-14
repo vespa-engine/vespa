@@ -10,11 +10,11 @@ const NodeMaintenanceStats NodeMaintenanceStatsTracker::_emptyNodeMaintenanceSta
 void
 NodeMaintenanceStats::merge(const NodeMaintenanceStats& rhs)
 {
-    movingOut += rhs.movingOut;
-    syncing += rhs.syncing;
-    copyingIn += rhs.copyingIn;
+    movingOut  += rhs.movingOut;
+    syncing    += rhs.syncing;
+    copyingIn  += rhs.copyingIn;
     copyingOut += rhs.copyingOut;
-    total += rhs.total;
+    total      += rhs.total;
 }
 
 namespace {
@@ -38,6 +38,8 @@ NodeMaintenanceStatsTracker::merge(const NodeMaintenanceStatsTracker& rhs)
         auto node_index = entry.first;
         merge_bucket_spaces_stats(_node_stats[node_index], entry.second);
     }
+    _max_observed_time_since_last_gc = std::max(_max_observed_time_since_last_gc,
+                                                rhs._max_observed_time_since_last_gc);
 }
 
 std::ostream&
@@ -53,7 +55,12 @@ operator<<(std::ostream& os, const NodeMaintenanceStats& stats)
     return os;
 }
 
-NodeMaintenanceStatsTracker::NodeMaintenanceStatsTracker() = default;
+NodeMaintenanceStatsTracker::NodeMaintenanceStatsTracker()
+    : _node_stats(),
+      _total_stats(),
+      _max_observed_time_since_last_gc(0)
+{}
+
 NodeMaintenanceStatsTracker::~NodeMaintenanceStatsTracker() = default;
 
 }

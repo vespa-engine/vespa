@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <chrono>
 #include <unordered_map>
 #include <iosfwd>
 #include <stdint.h>
@@ -50,8 +51,10 @@ public:
     using PerNodeStats = std::unordered_map<uint16_t, BucketSpacesStats>;
 
 private:
-    PerNodeStats _node_stats;
+    PerNodeStats         _node_stats;
     NodeMaintenanceStats _total_stats;
+    std::chrono::seconds _max_observed_time_since_last_gc;
+
     static const NodeMaintenanceStats _emptyNodeMaintenanceStats;
 
 public:
@@ -83,6 +86,10 @@ public:
         ++_total_stats.total;
     }
 
+    void update_observed_time_since_last_gc(std::chrono::seconds time_since_gc) noexcept {
+        _max_observed_time_since_last_gc = std::max(time_since_gc, _max_observed_time_since_last_gc);
+    }
+
     /**
      * Returned statistics for a given node index and bucket space, or all zero statistics
      * if none have been recorded yet
@@ -109,8 +116,13 @@ public:
         return _total_stats;
     }
 
+    std::chrono::seconds max_observed_time_since_last_gc() const noexcept {
+        return _max_observed_time_since_last_gc;
+    }
+
     bool operator==(const NodeMaintenanceStatsTracker& rhs) const {
-        return _node_stats == rhs._node_stats;
+        return ((_node_stats == rhs._node_stats) &&
+                (_max_observed_time_since_last_gc == rhs._max_observed_time_since_last_gc));
     }
     void merge(const NodeMaintenanceStatsTracker& rhs);
 };

@@ -108,9 +108,11 @@ class GarbageCollectionStateChecker : public StateChecker
 {
 public:
     std::string getStatusText() const override { return "Garbage collection"; }
-    bool needsGarbageCollection(const Context& c) const;
     Result check(Context& c) override;
     const char* getName() const override { return "GarbageCollection"; }
+private:
+    [[nodiscard]] bool garbage_collection_disabled(const Context& c) const noexcept;
+    [[nodiscard]] bool needs_garbage_collection(const Context& c, std::chrono::seconds time_since_epoch) const;
 };
 
 }

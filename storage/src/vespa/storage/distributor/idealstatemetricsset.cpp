@@ -123,6 +123,10 @@ IdealStateMetricSet::IdealStateMetricSet()
       buckets_replicas_syncing("bucket_replicas_syncing",
             {{"logdefault"},{"yamasdefault"}},
             "Bucket replicas that need syncing due to mismatching metadata", this),
+      max_observed_time_since_last_gc_sec("max_observed_time_since_last_gc_sec",
+            {{"logdefault"},{"yamasdefault"}},
+            "Maximum time (in seconds) since GC was last successfully run for a bucket. "
+            "Aggregated max value across all buckets on the distributor.", this),
       nodesPerMerge("nodes_per_merge", {}, "The number of nodes involved in a single merge operation.", this)
 {
     createOperationMetrics();
