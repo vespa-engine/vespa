@@ -16,6 +16,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.filedistribution.Downloads;
 import com.yahoo.vespa.filedistribution.FileDownloader;
+import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.flags.FlagSource;
 
 import java.io.File;
@@ -74,7 +75,10 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                     if (! fileReferenceExistsOnDisk(downloadDirectory, applicationPackage)) {
                         log.fine(() -> "Downloading missing application package for application " + applicationId + " (session " + sessionId + ")");
 
-                        if (fileDownloader.getFile(applicationPackage).isEmpty()) {
+                        FileReferenceDownload download = new FileReferenceDownload(applicationPackage,
+                                                                                   false,
+                                                                                   this.getClass().getSimpleName());
+                        if (fileDownloader.getFile(download).isEmpty()) {
                             failures++;
                             log.warning("Failed to download application package for application " + applicationId + " (session " + sessionId + ")");
                             continue;

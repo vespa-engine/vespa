@@ -41,8 +41,8 @@ public class FileDownloader implements AutoCloseable {
     private final FileReferenceDownloader fileReferenceDownloader;
     private final Downloads downloads;
 
-    public FileDownloader(List<String> configservers, Supervisor supervisor) {
-        this(getConnectionPool(configservers, supervisor), supervisor);
+    public FileDownloader(List<String> configServers, Supervisor supervisor) {
+        this(getConnectionPool(configServers, supervisor), supervisor);
     }
 
     public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor) {

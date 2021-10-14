@@ -13,7 +13,7 @@ public class FileReferenceDownload {
     private final FileReference fileReference;
     private final CompletableFuture<Optional<File>> future;
     // If a config server wants to download from another config server (because it does not have the
-    // file itself) we set this flag to true to avoid an eternal loop
+    // file itself) we set this flag to false to avoid an eternal loop
     private final boolean downloadFromOtherSourceIfNotFound;
     private final String client;
 
