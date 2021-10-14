@@ -28,20 +28,16 @@ import java.util.logging.Logger;
 public class SystemPoller {
 
     private static final Logger log = Logger.getLogger(SystemPoller.class.getName());
-    private static final int memoryTypeVirtual = 0;
-    private static final int memoryTypeResident = 1;
-    private static final MetricId CPU = MetricId.toMetricId("cpu");
-    private static final MetricId CPU_UTIL = MetricId.toMetricId("cpu_util");
-    private static final MetricId MEMORY_VIRT = MetricId.toMetricId("memory_virt");
-    private static final MetricId MEMORY_RSS = MetricId.toMetricId("memory_rss");
 
     private final int pollingIntervalSecs;
     private final List<VespaService> services;
+
+    private final int memoryTypeVirtual = 0;
+    private final int memoryTypeResident = 1;
     private final Map<VespaService, Long> lastCpuJiffiesMetrics = new ConcurrentHashMap<>();
     private final Timer systemPollTimer;
-    private final GetJiffies jiffiesInterface;
 
-    private JiffiesAndCpus lastTotalCpuJiffies;
+    private JiffiesAndCpus lastTotalCpuJiffies = null;
 
     static class JiffiesAndCpus {
         final long jiffies;
@@ -60,30 +56,11 @@ public class SystemPoller {
                     : new JiffiesAndCpus();
         }
     }
-    interface GetJiffies {
-        JiffiesAndCpus getTotalSystemJiffies();
-        long getJiffies(VespaService service);
-    }
 
     public SystemPoller(List<VespaService> services, int pollingIntervalSecs) {
         this.services = services;
         this.pollingIntervalSecs = pollingIntervalSecs;
         systemPollTimer = new Timer("systemPollTimer", true);
-        jiffiesInterface = new GetJiffies() {
-            @Override
-            public JiffiesAndCpus getTotalSystemJiffies() {
-                return SystemPoller.getTotalSystemJiffies();
-            }
-
-            @Override
-            public long getJiffies(VespaService service) {
-                return SystemPoller.getPidJiffies(service);
-            }
-        };
-        lastTotalCpuJiffies = jiffiesInterface.getTotalSystemJiffies();
-        for (VespaService s : services) {
-            lastCpuJiffiesMetrics.put(s, jiffiesInterface.getJiffies(s));
-        }
     }
 
     void stop() {
@@ -97,7 +74,7 @@ public class SystemPoller {
      * @param service The instance to get memory usage for
      * @return array[0] = memoryResident, array[1] = memoryVirtual (kB units)
      */
-    static long[] getMemoryUsage(VespaService service) {
+    long[] getMemoryUsage(VespaService service) {
         long[] size = new long[2];
         BufferedReader br;
         int pid = service.getPid();
@@ -134,6 +111,7 @@ public class SystemPoller {
      */
     void poll() {
         long startTime = System.currentTimeMillis();
+        boolean someAlive = false;
 
         /* Don't do any work if there are no known services */
         if (services.isEmpty()) {
@@ -143,8 +121,40 @@ public class SystemPoller {
 
         log.log(Level.FINE, () -> "Monitoring system metrics for " + services.size() + " services");
 
-        boolean someAlive = services.stream().anyMatch(VespaService::isAlive);
-        lastTotalCpuJiffies = updateMetrics(lastTotalCpuJiffies, startTime/1000, jiffiesInterface, services, lastCpuJiffiesMetrics);
+        JiffiesAndCpus sysJiffies = getTotalSystemJiffies();
+        for (VespaService s : services) {
+
+
+            if(s.isAlive()) {
+                someAlive = true;
+            }
+
+            Metrics metrics = new Metrics();
+            log.log(Level.FINE, () -> "Current size of system metrics for service  " + s + " is " + metrics.size());
+
+            long[] size = getMemoryUsage(s);
+            log.log(Level.FINE, () -> "Updating memory metric for service " + s);
+
+            long timeStamp = startTime / 1000;
+            metrics.add(new Metric(MetricId.toMetricId("memory_virt"), size[memoryTypeVirtual], timeStamp));
+            metrics.add(new Metric(MetricId.toMetricId("memory_rss"), size[memoryTypeResident], timeStamp));
+
+            long procJiffies = getPidJiffies(s);
+            if ((lastTotalCpuJiffies != null) && lastCpuJiffiesMetrics.containsKey(s)) {
+                long last = lastCpuJiffiesMetrics.get(s);
+                long diff = procJiffies - last;
+
+                if (diff >= 0) {
+                    JiffiesAndCpus sysJiffiesDiff = sysJiffies.diff(lastTotalCpuJiffies);
+                    metrics.add(new Metric(MetricId.toMetricId("cpu"), 100 * ((double) diff) / sysJiffiesDiff.normalizedJiffies(), timeStamp));
+                    metrics.add(new Metric(MetricId.toMetricId("cpu.util"), 100 * ((double) diff) / sysJiffiesDiff.jiffies, timeStamp));
+                }
+            }
+            lastCpuJiffiesMetrics.put(s, procJiffies);
+            s.setSystemMetrics(metrics);
+        }
+
+        lastTotalCpuJiffies = sysJiffies;
 
         // If none of the services were alive, reschedule in a short time
         if (!someAlive) {
@@ -154,48 +164,19 @@ public class SystemPoller {
         }
     }
 
-    static JiffiesAndCpus updateMetrics(JiffiesAndCpus prevTotalJiffies, long timeStamp, GetJiffies getJiffies,
-                                        List<VespaService> services, Map<VespaService, Long> lastCpuJiffiesMetrics) {
-        JiffiesAndCpus sysJiffies = getJiffies.getTotalSystemJiffies();
-        JiffiesAndCpus sysJiffiesDiff = sysJiffies.diff(prevTotalJiffies);
-        for (VespaService s : services) {
-            Metrics metrics = new Metrics();
-            log.log(Level.FINE, () -> "Current size of system metrics for service  " + s + " is " + metrics.size());
-
-            long[] size = getMemoryUsage(s);
-            log.log(Level.FINE, () -> "Updating memory metric for service " + s);
-
-            metrics.add(new Metric(MEMORY_VIRT, size[memoryTypeVirtual], timeStamp));
-            metrics.add(new Metric(MEMORY_RSS, size[memoryTypeResident], timeStamp));
-
-            long procJiffies = getJiffies.getJiffies(s);
-            long last = lastCpuJiffiesMetrics.get(s);
-            long diff = procJiffies - last;
-
-            if (diff >= 0) {
-                metrics.add(new Metric(CPU, 100 * ((double) diff) / sysJiffiesDiff.normalizedJiffies(), timeStamp));
-                metrics.add(new Metric(CPU_UTIL, 100 * ((double) diff) / sysJiffiesDiff.jiffies, timeStamp));
-            }
-            lastCpuJiffiesMetrics.put(s, procJiffies);
-            s.setSystemMetrics(metrics);
-        }
-        return sysJiffies;
-    }
-
-    static long getPidJiffies(VespaService service) {
+    long getPidJiffies(VespaService service) {
+        BufferedReader in;
+        String line;
+        String[] elems;
         int pid = service.getPid();
+
         try {
-            BufferedReader in = new BufferedReader(new FileReader("/proc/" + pid + "/stat"));
-            return getPidJiffies(in);
+            in = new BufferedReader(new FileReader("/proc/" + pid + "/stat"));
         } catch (FileNotFoundException ex) {
             log.log(Level.FINE, () -> "Unable to find pid " + pid + " in proc directory, for service " + service.getInstanceName());
             service.setAlive(false);
             return 0;
         }
-    }
-    static long getPidJiffies(BufferedReader in) {
-        String line;
-        String[] elems;
 
         try {
             line = in.readLine();
@@ -211,21 +192,19 @@ public class SystemPoller {
         return Long.parseLong(elems[13]) + Long.parseLong(elems[14]);
     }
 
-    private static JiffiesAndCpus getTotalSystemJiffies() {
-        try {
-            BufferedReader in = new BufferedReader(new FileReader("/proc/stat"));
-            return getTotalSystemJiffies(in);
-        } catch (FileNotFoundException ex) {
-            log.log(Level.SEVERE, "Unable to open stat file", ex);
-            return new JiffiesAndCpus();
-        }
-    }
-    static JiffiesAndCpus getTotalSystemJiffies(BufferedReader in) {
+    private JiffiesAndCpus getTotalSystemJiffies() {
+        BufferedReader in;
+        String line;
         ArrayList<CpuJiffies> jiffies = new ArrayList<>();
         CpuJiffies total = null;
 
         try {
-            String line;
+            in = new BufferedReader(new FileReader("/proc/stat"));
+        } catch (FileNotFoundException ex) {
+            log.log(Level.SEVERE, "Unable to open stat file", ex);
+            return new JiffiesAndCpus();
+        }
+        try {
             while ((line = in.readLine()) != null) {
                 if (line.startsWith("cpu ")) {
                     total = new CpuJiffies(line);

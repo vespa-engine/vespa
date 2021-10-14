@@ -10,7 +10,6 @@ import ai.vespa.metricsproxy.metric.model.ServiceId;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 
 /**
@@ -35,7 +34,7 @@ public class VespaService implements Comparable<VespaService> {
     private volatile boolean isAlive;
 
     // Used to keep the last polled system metrics for service
-    private final AtomicReference<Metrics> systemMetrics = new AtomicReference<>();
+    private Metrics systemMetrics;
 
     private final int statePort;
 
@@ -74,7 +73,7 @@ public class VespaService implements Comparable<VespaService> {
         this.configId = configId;
         this.statePort = statePort;
         this.dimensions = dimensions;
-        this.systemMetrics.set(new Metrics());
+        this.systemMetrics = new Metrics();
         this.isAlive = false;
         this.remoteMetricsFetcher = (this.statePort> 0) ? new RemoteMetricsFetcher(this, this.statePort) : new DummyMetricsFetcher(this);
         this.remoteHealthMetricFetcher = (this.statePort > 0) ? new RemoteHealthMetricFetcher(this, this.statePort) : new DummyHealthMetricFetcher(this);
@@ -129,8 +128,8 @@ public class VespaService implements Comparable<VespaService> {
      *
      * @return System metrics
      */
-    public Metrics getSystemMetrics() {
-        return systemMetrics.get();
+    public synchronized Metrics getSystemMetrics() {
+        return this.systemMetrics;
     }
 
     /**
@@ -218,8 +217,8 @@ public class VespaService implements Comparable<VespaService> {
         this.isAlive = alive;
     }
 
-    public synchronized void setSystemMetrics(Metrics metrics) {
-        systemMetrics.set(metrics);
+    public synchronized void setSystemMetrics(Metrics systemMetrics) {
+        this.systemMetrics = systemMetrics;
     }
 
 }
