@@ -57,7 +57,7 @@ public class FileServerTest {
     public void requireThatNonExistingFileWillBeDownloaded() throws IOException {
         String dir = "123";
         assertFalse(fileServer.hasFile(dir));
-        FileReferenceDownload foo = new FileReferenceDownload(new FileReference(dir), true, "foo");
+        FileReferenceDownload foo = new FileReferenceDownload(new FileReference(dir));
         assertFalse(fileServer.hasFileDownloadIfNeeded(foo));
         writeFile(dir);
         assertTrue(fileServer.hasFileDownloadIfNeeded(foo));
