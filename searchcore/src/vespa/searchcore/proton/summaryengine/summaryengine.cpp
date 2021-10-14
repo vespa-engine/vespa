@@ -35,12 +35,8 @@ public:
 };
 
 uint32_t getNumDocs(const DocsumReply &reply) {
-    if (reply._root) {
-        const Inspector &root = reply._root->get();
-        return root[DOCSUMS].entries();
-    } else {
-        return 0;
-    }
+    const Inspector &root = reply.root();
+    return root[DOCSUMS].entries();
 }
 
 VESPA_THREAD_STACK_TAG(summary_engine_executor)
@@ -149,8 +145,8 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
         }
         updateDocsumMetrics(vespalib::to_s(req->getTimeUsed()), getNumDocs(*reply));
     }
-    reply->request = std::move(req);
-    reply->my_issues = std::move(my_issues);
+    reply->setRequest(std::move(req));
+    reply->setIssues(std::move(my_issues));
 
     return reply;
 }

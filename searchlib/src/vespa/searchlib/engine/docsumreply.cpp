@@ -6,18 +6,19 @@
 
 namespace search::engine {
 
-DocsumReply::DocsumReply() : DocsumReply(vespalib::Slime::UP(nullptr)) { }
+DocsumReply::DocsumReply() { }
 
-DocsumReply::DocsumReply(vespalib::Slime::UP root)
-    : _root(std::move(root))
-{ }
-
-DocsumReply::~DocsumReply() { }
+DocsumReply::DocsumReply(vespalib::Slime::UP root) : _slime(std::move(root)) { }
 
 vespalib::slime::Inspector & DocsumReply::root() const {
-    assert(_root);
-    return _root->get();
+    return _slime ? _slime->get() : *vespalib::slime::NixValue::invalid();
 }
+
+std::unique_ptr<vespalib::Slime> DocsumReply::releaseSlime() {
+    return std::move(_slime);
+}
+
+DocsumReply::~DocsumReply() { }
 
 }
 

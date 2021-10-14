@@ -135,7 +135,8 @@ void assertSlime(const std::string &exp, const DocsumReply &reply) {
     vespalib::Slime expSlime;
     size_t used = JsonFormat::decode(exp, expSlime);
     EXPECT_TRUE(used > 0);
-    EXPECT_EQUAL(expSlime.get(), reply.root());
+    ASSERT_TRUE(reply.hasSlime());
+    EXPECT_EQUAL(expSlime, reply.slime());
 }
 
 TEST("requireThatGetDocsumsExecute") {
@@ -159,7 +160,7 @@ TEST("requireThatGetDocsumsExecute") {
         DocsumRequest::Source request(createRequest());
         DocsumReply::UP reply = engine.getDocsums(std::move(request), client);
         EXPECT_TRUE(reply);
-        EXPECT_FALSE(reply->_root);
+        EXPECT_FALSE(reply->hasSlime());
     }
 }
 

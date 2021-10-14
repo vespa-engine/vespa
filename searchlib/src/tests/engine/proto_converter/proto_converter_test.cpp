@@ -478,14 +478,13 @@ TEST_F(DocsumRequestTest, require_that_global_ids_are_converted) {
 //-----------------------------------------------------------------------------
 
 struct DocsumReplyTest : ::testing::Test {
-    DocsumReply reply;
+    DocsumReply reply{std::make_unique<vespalib::Slime>()};
     Converter::ProtoDocsumReply proto;
     void convert() { Converter::docsum_reply_to_proto(reply, proto); }
 };
 
 TEST_F(DocsumReplyTest, require_that_slime_summaries_are_converted) {
-    reply._root = std::make_unique<Slime>();
-    auto &list = reply._root->setArray();
+    auto &list = reply.slime().setArray();
     auto &doc0 = list.addObject();
     doc0.setLong("my_field", 42);
     convert();
@@ -496,18 +495,18 @@ TEST_F(DocsumReplyTest, require_that_slime_summaries_are_converted) {
 }
 
 TEST_F(DocsumReplyTest, require_that_missing_root_slime_gives_empty_payload) {
-    reply._root.reset();
+    reply.releaseSlime();
     convert();
     EXPECT_EQ(proto.slime_summaries().size(), 0);
 }
 
 TEST_F(DocsumReplyTest, require_that_issues_are_converted_to_errors) {
-    reply.my_issues = std::make_unique<UniqueIssues>();
-    reply.my_issues->handle(vespalib::Issue("a"));
-    reply.my_issues->handle(vespalib::Issue("b"));
-    reply.my_issues->handle(vespalib::Issue("c"));
-    reply.my_issues->handle(vespalib::Issue("a"));
-    reply.my_issues->handle(vespalib::Issue("b"));
+    reply.setIssues(std::make_unique<UniqueIssues>());
+    reply.issues().handle(vespalib::Issue("a"));
+    reply.issues().handle(vespalib::Issue("b"));
+    reply.issues().handle(vespalib::Issue("c"));
+    reply.issues().handle(vespalib::Issue("a"));
+    reply.issues().handle(vespalib::Issue("b"));
     convert();
     ASSERT_EQ(proto.errors_size(), 3);
     EXPECT_EQ(proto.errors(0).message(), "a");

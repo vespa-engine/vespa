@@ -324,18 +324,19 @@ void
 assertTensor(const vespalib::eval::Value::UP & exp, const std::string & fieldName,
              const DocsumReply & reply, uint32_t id)
 {
+    const auto & root = reply.root();
     if (exp) {
-        EXPECT_TRUE(reply.root()["docsums"].valid());
-        EXPECT_TRUE(reply.root()["docsums"][id].valid());
-        EXPECT_TRUE(reply.root()["docsums"][id]["docsum"].valid());
-        EXPECT_TRUE(reply.root()["docsums"][id]["docsum"][fieldName].valid());
-        vespalib::Memory data = reply.root()["docsums"][id]["docsum"][fieldName].asData();
+        EXPECT_TRUE(root["docsums"].valid());
+        EXPECT_TRUE(root["docsums"][id].valid());
+        EXPECT_TRUE(root["docsums"][id]["docsum"].valid());
+        EXPECT_TRUE(root["docsums"][id]["docsum"][fieldName].valid());
+        vespalib::Memory data = root["docsums"][id]["docsum"][fieldName].asData();
         vespalib::nbostream x(data.data, data.size);
         auto tensor = SimpleValue::from_stream(x);
         EXPECT_TRUE(tensor.get() != nullptr);
         EXPECT_EQUAL(*exp, *tensor);
     } else {
-        EXPECT_FALSE(reply.root()["docsums"][id][fieldName].valid());
+        EXPECT_FALSE(root["docsums"][id][fieldName].valid());
     }
 }
 
@@ -343,7 +344,8 @@ bool assertSlime(const std::string &exp, const DocsumReply &reply) {
     vespalib::Slime expSlime;
     size_t used = JsonFormat::decode(exp, expSlime);
     EXPECT_TRUE(used > 0);
-    return (EXPECT_EQUAL(expSlime.get(), reply.root()));
+    ASSERT_TRUE(reply.hasSlime());
+    return (EXPECT_EQUAL(expSlime, reply.slime()));
 }
 
 TEST_F("requireThatAdapterHandlesAllFieldTypes", Fixture)
@@ -564,7 +566,8 @@ TEST("requireThatSummariesTimeout")
     req.resultClassName = "class2";
     req.hits.push_back(DocsumRequest::Hit(gid1));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
-    const auto & field = rep->root()["errors"];
+    const auto & root = rep->root();
+    const auto & field = root["errors"];
     EXPECT_TRUE(field.valid());
     EXPECT_EQUAL(field[0]["type"].asString(), "timeout");
     auto bufstring = field[0]["message"].asString();
