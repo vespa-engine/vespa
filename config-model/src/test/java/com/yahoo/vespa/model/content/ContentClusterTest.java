@@ -1102,6 +1102,23 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
+    public void distributor_enhanced_maintenance_scheduling_controlled_by_properties() throws Exception {
+        assertFalse(resolveDistributorEnhancedSchedulingConfig(false));
+        assertTrue(resolveDistributorEnhancedSchedulingConfig(true));
+    }
+
+    private boolean resolveDistributorEnhancedSchedulingConfig(boolean enhancedScheduling) throws Exception {
+        var props = new TestProperties();
+        if (enhancedScheduling) {
+            props.distributorEnhancedMaintenanceScheduling(enhancedScheduling);
+        }
+        var cluster = createOneNodeCluster(props);
+        var builder = new StorDistributormanagerConfig.Builder();
+        cluster.getDistributorNodes().getConfig(builder);
+        return (new StorDistributormanagerConfig(builder)).implicitly_clear_bucket_priority_on_schedule();
+    }
+
+    @Test
     public void testDedicatedClusterControllers() {
         VespaModel noContentModel = createEnd2EndOneNode(new TestProperties().setHostedVespa(true)
                                                                              .setMultitenant(true),

@@ -99,6 +99,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default boolean newLocationBrokerLogic() { return true; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default int maxConnectionLifeInHosted() { return 45; }
         @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default int distributorMergeBusyWait() { return 10; }
+        @ModelFeatureFlag(owners = {"vekterli", "geirst"}) default boolean distributorEnhancedMaintenanceScheduling() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
