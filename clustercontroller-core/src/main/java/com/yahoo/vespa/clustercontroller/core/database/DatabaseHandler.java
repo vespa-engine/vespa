@@ -89,7 +89,7 @@ public class DatabaseHandler {
     private final Data pendingStore = new Data();
     private int lastKnownStateBundleVersionWrittenBySelf = -1;
     private long lastZooKeeperConnectionAttempt = 0;
-    private static final int minimumWaitBetweenFailedConnectionAttempts = 10000;
+    private int minimumWaitBetweenFailedConnectionAttempts = 10000;
     private boolean lostZooKeeperConnectionEvent = false;
     private boolean connectionEstablishmentIsAllowed = false;
     private Map<Integer, Integer> masterDataEvent = null;
@@ -119,6 +119,10 @@ public class DatabaseHandler {
 
     public int getLastKnownStateBundleVersionWrittenBySelf() {
         return lastKnownStateBundleVersionWrittenBySelf;
+    }
+
+    public void setMinimumWaitBetweenFailedConnectionAttempts(int minimumWaitBetweenFailedConnectionAttempts) {
+        this.minimumWaitBetweenFailedConnectionAttempts = minimumWaitBetweenFailedConnectionAttempts;
     }
 
     public void reset(Context context) {
