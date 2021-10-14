@@ -19,7 +19,6 @@ import org.junit.rules.ExpectedException;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -108,11 +107,11 @@ public class ConfigRetrieverTest {
 
     private ConfigRetriever createConfigRetriever() {
         String configId = dirConfigSource.configId();
-        CloudSubscriberFactory subscriber = new CloudSubscriberFactory(dirConfigSource.configSource());
+        CloudSubscriberFactory subscriberFactory = new CloudSubscriberFactory(dirConfigSource.configSource());
         Set<ConfigKey<? extends ConfigInstance>> keys = new HashSet<>();
         keys.add(new ConfigKey<>(Bootstrap1Config.class, configId));
         keys.add(new ConfigKey<>(Bootstrap2Config.class, configId));
-        return new ConfigRetriever(keys, keySet -> subscriber.getSubscriber(keySet));
+        return new ConfigRetriever(keys, subscriberFactory);
     }
 
     private void writeConfig(String name, String contents) {

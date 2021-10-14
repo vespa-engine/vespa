@@ -65,7 +65,7 @@ public class HandlersConfigurerTestWrapper {
             "query-profiles.cfg"
     };
     private final Set<File> createdFiles = new LinkedHashSet<>();
-    private int lastGeneration = 0;
+    private int lastGeneration = 1;
     private final Container container;
 
     private void createFiles(String configId) {

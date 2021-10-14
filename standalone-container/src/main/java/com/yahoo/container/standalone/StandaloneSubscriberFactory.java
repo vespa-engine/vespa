@@ -83,7 +83,7 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Subscriber getSubscriber(Set<? extends ConfigKey<?>> configKeys) {
+    public Subscriber getSubscriber(Set<? extends ConfigKey<?>> configKeys, String name) {
         return new StandaloneSubscriber((Set<ConfigKey<ConfigInstance>>) configKeys);
     }
 
