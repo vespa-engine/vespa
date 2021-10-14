@@ -100,8 +100,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
                 directoryOnHost.deleteRecursively();
             }
             context.log(log, Level.INFO, "Creating '" + directoryOnHost +"'.");
-            directoryOnHost.createDirectory();
-            directoryOnHost.setPermissions("rwxrwxrwx");
+            directoryOnHost.createDirectory("rwxrwxrwx");
             URI destination = serviceDumpDestination(nodeSpec, createDumpId(request));
             ProducerContext producerCtx = new ProducerContext(context, directoryInNode.toPath(), request);
             List<Artifact> producedArtifacts = new ArrayList<>();

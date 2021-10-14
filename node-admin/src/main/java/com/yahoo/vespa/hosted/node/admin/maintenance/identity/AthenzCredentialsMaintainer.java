@@ -266,11 +266,9 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     }
 
     private static void writeFile(Path path, int vespaUidOnHost, String utf8Content) {
-        new UnixPath(path.toString() + ".tmp")
-                .deleteIfExists()
-                .createNewFile("r--------")
+        new UnixPath(path.resolveSibling(path.getFileName() + ".tmp"))
+                .writeUtf8File(utf8Content, "r--------")
                 .setOwnerId(vespaUidOnHost)
-                .writeUtf8File(utf8Content)
                 .atomicMove(path);
     }
 
