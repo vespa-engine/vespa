@@ -718,6 +718,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.idealstate.bucket_replicas_copying_out.average"));
         metrics.add(new Metric("vds.idealstate.bucket_replicas_copying_in.average"));
         metrics.add(new Metric("vds.idealstate.bucket_replicas_syncing.average"));
+        metrics.add(new Metric("vds.idealstate.max_observed_time_since_last_gc_sec.average"));
         metrics.add(new Metric("vds.idealstate.delete_bucket.done_ok.rate"));
         metrics.add(new Metric("vds.idealstate.delete_bucket.done_failed.rate"));
         metrics.add(new Metric("vds.idealstate.delete_bucket.pending.average"));
