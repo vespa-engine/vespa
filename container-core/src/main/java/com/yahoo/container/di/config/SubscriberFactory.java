@@ -14,7 +14,7 @@ import java.util.Set;
 @ProvidedBy(CloudSubscriberFactory.Provider.class)
 public interface SubscriberFactory {
 
-    Subscriber getSubscriber(Set<? extends ConfigKey<?>> configKeys, String name);
+    Subscriber getSubscriber(Set<? extends ConfigKey<?>> configKeys);
     void reloadActiveSubscribers(long generation);
 
 }
