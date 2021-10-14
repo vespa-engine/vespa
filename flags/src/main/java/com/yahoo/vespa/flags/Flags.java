@@ -60,7 +60,14 @@ public class Flags {
     public static final UnboundStringFlag FEED_SEQUENCER_TYPE = defineStringFlag(
             "feed-sequencer-type", "LATENCY",
             List.of("baldersheim"), "2020-12-02", "2022-01-01",
-            "Selects type of sequenced executor used for feeding, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
+            "Selects type of sequenced executor used for feeding in proton, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
+            "Takes effect at redeployment (requires restart)",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundIntFlag FEED_TASK_LIMIT = defineIntFlag(
+            "feed-task-limit", 1000,
+            List.of("geirst, baldersheim"), "2021-10-14", "2022-01-01",
+            "The task limit used by the executors handling feed in proton",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 

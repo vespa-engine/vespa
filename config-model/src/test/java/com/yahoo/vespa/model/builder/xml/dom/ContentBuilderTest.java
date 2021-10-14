@@ -777,21 +777,24 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "</services>";
     }
 
-    private void verifyFeedSequencer(String input, String expected) {
-        verifyFeedSequencer(input, expected, 0);
-    }
-    private void verifyFeedSequencer(String input, String expected, double visibilityDelay) {
-        String hostedXml = xmlWithVisibilityDelay(visibilityDelay);
-
-        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setFeedSequencerType(input));
-        VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
+    private ProtonConfig resolveProtonConfig(TestProperties props, String hostedXml) {
+        var deployStateBuilder = new DeployState.Builder().properties(props);
+        var model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                 .withServices(hostedXml)
                 .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
                 .build())
                 .create(deployStateBuilder);
-        ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
-        assertEquals(expected, config.indexing().optimize().toString());
+        return getProtonConfig(model.getContentClusters().values().iterator().next());
+    }
 
+    private void verifyFeedSequencer(String input, String expected) {
+        verifyFeedSequencer(input, expected, 0);
+    }
+
+    private void verifyFeedSequencer(String input, String expected, double visibilityDelay) {
+        String hostedXml = xmlWithVisibilityDelay(visibilityDelay);
+        var config = resolveProtonConfig(new TestProperties().setFeedSequencerType(input), hostedXml);
+        assertEquals(expected, config.indexing().optimize().toString());
     }
 
     @Test
@@ -806,17 +809,26 @@ public class ContentBuilderTest extends DomBuilderTest {
 
     }
 
+    @Test
+    public void feed_task_limit_is_controlled_by_feature_flag() {
+        assertEquals(1000, resolveFeedTaskLimitConfigWithFeatureFlag(null));
+        assertEquals(2000, resolveFeedTaskLimitConfigWithFeatureFlag(2000));
+    }
+
+    private int resolveFeedTaskLimitConfigWithFeatureFlag(Integer value) {
+        var props = new TestProperties();
+        if (value != null) {
+            props.setFeedTaskLimit(value);
+        }
+        return resolveProtonConfig(props, singleNodeContentXml()).indexing().tasklimit();
+    }
+
     private void verifyThatFeatureFlagControlsVisibilityDelayDefault(Double xmlOverride, double expected) {
         String hostedXml = xmlWithVisibilityDelay(xmlOverride);
-        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties());
-        VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
-                .withServices(hostedXml)
-                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
-                .build())
-                .create(deployStateBuilder);
-        ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
+        var config = resolveProtonConfig(new TestProperties(), hostedXml);
         assertEquals(expected, config.documentdb(0).visibilitydelay(), 0.0);
     }
+
     @Test
     public void verifyThatFeatureFlagControlsVisibilityDelayDefault() {
         verifyThatFeatureFlagControlsVisibilityDelayDefault(null, 0.0);
