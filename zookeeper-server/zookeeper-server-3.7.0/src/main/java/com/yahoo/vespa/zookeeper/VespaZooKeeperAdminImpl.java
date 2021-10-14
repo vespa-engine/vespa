@@ -20,38 +20,25 @@ public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
 
     @Override
     public void reconfigure(String connectionSpec, String joiningServers, String leavingServers) throws ReconfigException {
-        ZooKeeperAdmin zooKeeperAdmin = null;
-        try {
-            zooKeeperAdmin = createAdmin(connectionSpec);
+        try (ZooKeeperAdmin zooKeeperAdmin = createAdmin(connectionSpec)) {
             long fromConfig = -1;
             // Using string parameters because the List variant of reconfigure fails to join empty lists (observed on 3.5.6, fixed in 3.7.0)
             byte[] appliedConfig = zooKeeperAdmin.reconfigure(joiningServers, leavingServers, null, fromConfig, null);
             log.log(Level.INFO, "Applied ZooKeeper config: " + new String(appliedConfig, StandardCharsets.UTF_8));
-        } catch (KeeperException e) {
-            if (retryOn(e))
-                throw new ReconfigException(e);
-            else
-                throw new RuntimeException(e);
-        } catch (IOException | InterruptedException e) {
+        }
+        catch (   KeeperException.ReconfigInProgress
+                | KeeperException.ConnectionLossException
+                | KeeperException.NewConfigNoQuorum  e) {
+            throw new ReconfigException(e);
+        }
+        catch (KeeperException | IOException | InterruptedException e) {
             throw new RuntimeException(e);
-        } finally {
-            if (zooKeeperAdmin != null) {
-                try {
-                    zooKeeperAdmin.close();
-                } catch (InterruptedException e) { /* ignore */}
-            }
         }
     }
 
     private ZooKeeperAdmin createAdmin(String connectionSpec) throws IOException {
         return new ZooKeeperAdmin(connectionSpec, (int) sessionTimeout().toMillis(),
                                   (event) -> log.log(Level.INFO, event.toString()), new ZkClientConfigBuilder().toConfig());
-    }
-
-    private static boolean retryOn(KeeperException e) {
-        return e instanceof KeeperException.ReconfigInProgress ||
-               e instanceof KeeperException.ConnectionLossException ||
-               e instanceof KeeperException.NewConfigNoQuorum;
     }
 
 }

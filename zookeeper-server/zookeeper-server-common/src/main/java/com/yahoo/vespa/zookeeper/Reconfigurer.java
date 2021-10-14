@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -50,17 +49,17 @@ public class Reconfigurer extends AbstractComponent {
         this.sleeper = Objects.requireNonNull(sleeper);
     }
 
-    void startOrReconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server,
-                            Supplier<QuorumPeer> quorumPeerGetter, Consumer<QuorumPeer> quorumPeerSetter) {
+    QuorumPeer startOrReconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server,
+                            Supplier<QuorumPeer> quorumPeerCreator) {
         if (zooKeeperRunner == null) {
-            peer = quorumPeerGetter.get(); // Obtain the peer from the server. This will be shared with later servers.
+            peer = quorumPeerCreator.get(); // Obtain the peer from the server. This will be shared with later servers.
             zooKeeperRunner = startServer(newConfig, server);
         }
-        quorumPeerSetter.accept(peer);
 
         if (shouldReconfigure(newConfig)) {
             reconfigure(newConfig);
         }
+        return peer;
     }
 
     ZookeeperServerConfig activeConfig() {
@@ -76,7 +75,7 @@ public class Reconfigurer extends AbstractComponent {
     private boolean shouldReconfigure(ZookeeperServerConfig newConfig) {
         if (!newConfig.dynamicReconfiguration()) return false;
         if (activeConfig == null) return false;
-        return !newConfig.equals(activeConfig());
+        return ! newConfig.equals(activeConfig());
     }
 
     private ZooKeeperRunner startServer(ZookeeperServerConfig zookeeperServerConfig, VespaZooKeeperServer server) {
