@@ -45,10 +45,6 @@ set +x
 ssh-add <(echo $SAMPLE_APPS_DEPLOY_KEY | base64 -d)
 set -x
 
-# Supported from git 2.3
-export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-git --version
-
 git clone git@github.com:vespa-engine/sample-apps.git
 cd sample-apps
 

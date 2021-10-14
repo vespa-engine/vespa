@@ -95,6 +95,9 @@ jobs:
       - VESPA_DEPLOY_KEY
       - DOCKER_HUB_DEPLOY_KEY
 
+    environment:
+       GIT_SSH_COMMAND: "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+
     steps:
       - get-vespa-version: |
           VESPA_VERSION=$(meta get vespa.version)
@@ -103,10 +106,11 @@ jobs:
             echo "Must have valid Vespa version and reference to continue (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF)."
             exit 1
           fi
-      - install-docker-client: |
+      - install-dependencies: |
           yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-          yum install -y --setopt skip_missing_names_on_install=False docker-ce docker-ce-cli containerd.io
+          yum install -y --setopt skip_missing_names_on_install=False docker-ce docker-ce-cli containerd.io rh-git227
           docker system info
+          source /opt/rh/rh-git227/enable
       - release-rpms: |
           screwdriver/release-rpms.sh $VESPA_VERSION $VESPA_REF
       - release-container-image: |
