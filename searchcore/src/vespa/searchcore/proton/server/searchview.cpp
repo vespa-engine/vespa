@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/docsummary/docsumcontext.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.searchview");
@@ -18,6 +19,7 @@ using search::engine::DocsumReply;
 using search::engine::DocsumRequest;
 using search::engine::SearchReply;
 using vespalib::ThreadBundle;
+using vespalib::Issue;
 
 namespace proton {
 
@@ -104,7 +106,7 @@ SearchView::getDocsums(const DocsumRequest & req)
 {
     LOG(spam, "getDocsums(): resultClass(%s), numHits(%zu)", req.resultClassName.c_str(), req.hits.size());
     if (_summarySetup->getResultConfig().  LookupResultClassId(req.resultClassName.c_str()) == ResultConfig::NoClassID()) {
-        LOG(warning, "There is no summary class with name '%s' in the summary config. Returning empty document summary for %zu hit(s)",
+        Issue::report("There is no summary class with name '%s' in the summary config. Returning empty document summary for %zu hit(s)",
                      req.resultClassName.c_str(), req.hits.size());
         return createEmptyReply(req);
     }

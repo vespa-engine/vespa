@@ -3,6 +3,7 @@
 #include "struct_fields_resolver.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
+#include <vespa/vespalib/util/issue.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -10,6 +11,7 @@ LOG_SETUP(".searchsummary.docsummary.struct_fields_resolver");
 
 using search::attribute::CollectionType;
 using search::attribute::IAttributeContext;
+using vespalib::Issue;
 
 namespace search::docsummary {
 
@@ -37,7 +39,7 @@ StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, c
             continue;
         }
         if (attr->getCollectionType() != CollectionType::Type::ARRAY) {
-            LOG(warning, "Attribute '%s' is not an array attribute", name.c_str());
+            Issue::report("StructFieldsResolver: Attribute '%s' is not an array attribute", name.c_str());
             _error = true;
             break;
         }
@@ -65,10 +67,10 @@ StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, c
 
         if (require_all_struct_fields_as_attribute && !_map_value_fields.empty()) {
             if (!_has_map_key) {
-                LOG(warning, "Missing key attribute '%s', have value attributes for map", _map_key_attribute.c_str());
+                Issue::report("StructFieldsResolver: Missing key attribute '%s', have value attributes for map", _map_key_attribute.c_str());
                 _error = true;
             } else if (_array_fields.size() != 1u) {
-                LOG(warning, "Could not determine if field '%s' is array or map of struct", field_name.c_str());
+                Issue::report("StructFieldsResolver: Could not determine if field '%s' is array or map of struct", field_name.c_str());
                 _error = true;
             }
         }

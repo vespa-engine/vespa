@@ -14,6 +14,7 @@
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.attributedfw");
@@ -27,6 +28,7 @@ using vespalib::slime::Cursor;
 using vespalib::slime::Inserter;
 using vespalib::slime::Symbol;
 using vespalib::eval::Value;
+using vespalib::Issue;
 
 namespace search::docsummary {
 
@@ -296,7 +298,7 @@ AttributeDFWFactory::create(IAttributeManager& attr_mgr,
     auto ctx = attr_mgr.createContext();
     const auto* attr = ctx->getAttribute(attr_name);
     if (attr == nullptr) {
-        LOG(warning, "No valid attribute vector found: '%s'", attr_name.c_str());
+        Issue::report("No valid attribute vector found: '%s'", attr_name.c_str());
         return std::unique_ptr<IDocsumFieldWriter>();
     }
     if (attr->hasMultiValue()) {

@@ -9,6 +9,7 @@
 #include <vespa/searchlib/attribute/diversity.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_params.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_tools");
@@ -19,6 +20,7 @@ using search::queryeval::IDiversifier;
 using search::attribute::diversity::DiversityFilter;
 using search::attribute::BasicType;
 using search::attribute::AttributeBlueprintParams;
+using vespalib::Issue;
 
 using namespace search::fef;
 using namespace search::fef::indexproperties::matchphase;
@@ -234,7 +236,7 @@ MatchToolsFactory::createDiversifier(uint32_t heapSize) const
     }
     auto attr = _requestContext.getAttribute(_diversityParams.attribute);
     if ( !attr) {
-        LOG(warning, "Skipping diversity due to no %s attribute.", _diversityParams.attribute.c_str());
+        Issue::report("Skipping diversity due to no %s attribute.", _diversityParams.attribute.c_str());
         return std::unique_ptr<IDiversifier>();
     }
     size_t max_per_group = heapSize/_diversityParams.min_groups;
