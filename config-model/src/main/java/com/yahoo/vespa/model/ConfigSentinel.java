@@ -85,10 +85,7 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
 
     private SentinelConfig.Connectivity.Builder getConnectivityConfig(boolean enable) {
         var builder = new SentinelConfig.Connectivity.Builder();
-        if (enable) {
-            builder.minOkPercent(50);
-            builder.maxBadCount(1);
-        } else {
+        if (! enable) {
             builder.minOkPercent(0);
             builder.maxBadCount(Integer.MAX_VALUE);
         }
