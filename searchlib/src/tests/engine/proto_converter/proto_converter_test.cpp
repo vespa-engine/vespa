@@ -321,13 +321,9 @@ TEST_F(SearchReplyTest, require_that_issues_are_converted_to_errors) {
 struct DocsumRequestTest : ::testing::Test {
     Converter::ProtoDocsumRequest proto;
     DocsumRequest request;
-    DocsumRequestTest() : proto(), request(true) {} // <- use root slime
+    DocsumRequestTest() : proto(), request() {}
     void convert() { Converter::docsum_request_from_proto(proto, request); }
 };
-
-TEST_F(DocsumRequestTest, require_that_root_slime_is_used) {
-    EXPECT_TRUE(request.useRootSlime());
-}
 
 TEST_F(DocsumRequestTest, require_that_timeout_is_converted) {
     proto.set_timeout(500);

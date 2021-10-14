@@ -28,18 +28,13 @@ public:
 
 public:
     vespalib::string  resultClassName;
-private:
-    const bool        _useRootSlime;
 public:
     std::vector<Hit>  hits;
     std::vector<char> sessionId;
 
     DocsumRequest();
-    explicit DocsumRequest(bool useRootSlime_);
-    DocsumRequest(RelativeTime relativeTime, bool useRootSlime_);
+    DocsumRequest(RelativeTime relativeTime);
     ~DocsumRequest() override;
-
-    bool useRootSlime() const { return _useRootSlime; }
 };
 
 }

@@ -63,7 +63,7 @@ getCompressionConfig()
 DocsumRequest::UP
 DocsumBySlime::slimeToRequest(const Inspector & request)
 {
-    DocsumRequest::UP docsumRequest(std::make_unique<DocsumRequest>(true));
+    DocsumRequest::UP docsumRequest(std::make_unique<DocsumRequest>());
 
     docsumRequest->resultClassName = request[SUMMARYCLASS].asString().make_string();
 
