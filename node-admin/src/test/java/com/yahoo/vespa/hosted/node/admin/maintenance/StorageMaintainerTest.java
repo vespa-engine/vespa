@@ -47,14 +47,14 @@ public class StorageMaintainerTest {
     private final ManualClock clock = new ManualClock(Instant.ofEpochSecond(1234567890));
     private final FileSystem fileSystem = TestFileSystem.create();
     private final StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, coredumpHandler, diskCleanup, syncClient, clock,
-            fileSystem.getPath("/home/docker/container-storage/container-archive"));
+            fileSystem.getPath("/data/vespa/storage/container-archive"));
 
     @Test
     public void testDiskUsed() throws IOException {
         NodeAgentContext context = NodeAgentContextImpl.builder("host-1.domain.tld").fileSystem(fileSystem).build();
         Files.createDirectories(context.pathOnHostFromPathInNode("/"));
 
-        terminal.expectCommand("du -xsk /home/docker/container-storage/host-1 2>&1", 0, "321\t/home/docker/container-storage/host-1/");
+        terminal.expectCommand("du -xsk /data/vespa/storage/host-1 2>&1", 0, "321\t/data/vespa/storage/host-1/");
         assertEquals(Optional.of(DiskSize.of(328_704)), storageMaintainer.diskUsageFor(context));
 
         // Value should still be cached, no new execution against the terminal
@@ -73,7 +73,7 @@ public class StorageMaintainerTest {
         NodeAgentContext context1 = createNodeAgentContextAndContainerStorage(fileSystem, "container-1");
         createNodeAgentContextAndContainerStorage(fileSystem, "container-2");
 
-        Path pathToArchiveDir = fileSystem.getPath("/home/docker/container-storage/container-archive");
+        Path pathToArchiveDir = fileSystem.getPath("/data/vespa/storage/container-archive");
         Files.createDirectories(pathToArchiveDir);
 
         Path containerStorageRoot = context1.pathOnHostFromPathInNode("/").getParent();
@@ -172,6 +172,6 @@ public class StorageMaintainerTest {
     }
 
     private void mockDiskUsage(long kBytes) {
-        terminal.expectCommand("du -xsk /home/docker/container-storage/h123a 2>&1", 0, kBytes + "\t/path");
+        terminal.expectCommand("du -xsk /data/vespa/storage/h123a 2>&1", 0, kBytes + "\t/path");
     }
 }

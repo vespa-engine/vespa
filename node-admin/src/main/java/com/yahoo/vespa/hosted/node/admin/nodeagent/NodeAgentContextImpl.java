@@ -320,7 +320,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                     }),
                     fileSystem,
                     Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new),
-                    Optional.ofNullable(containerStorage).orElseGet(() -> fileSystem.getPath("/home/docker/container-storage")),
+                    Optional.ofNullable(containerStorage).orElseGet(() -> fileSystem.getPath("/data/vespa/storage")),
                     fileSystem.getPath("/opt/vespa"),
                     Optional.ofNullable(userNamespace).orElseGet(() -> new UserNamespace(10000, 10000, "vespa", "users", 1000, 100)),
                     cpuSpeedUp, hostExclusiveTo);

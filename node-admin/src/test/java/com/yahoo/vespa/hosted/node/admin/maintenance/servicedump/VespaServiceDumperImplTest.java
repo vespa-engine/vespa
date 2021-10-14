@@ -40,8 +40,8 @@ class VespaServiceDumperImplTest {
 
     private static final String HOSTNAME = "host-1.domain.tld";
 
-    private final FileSystem fileSystem = TestFileSystem.create();;
-    private final Path tmpDirectory = fileSystem.getPath("/home/docker/container-storage/host-1/opt/vespa/tmp");
+    private final FileSystem fileSystem = TestFileSystem.create();
+    private final Path tmpDirectory = fileSystem.getPath("/data/vespa/storage/host-1/opt/vespa/tmp");
 
     @BeforeEach
     void create_tmp_directory() throws IOException {

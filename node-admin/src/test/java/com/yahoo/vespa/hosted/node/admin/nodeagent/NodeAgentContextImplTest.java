@@ -24,11 +24,11 @@ public class NodeAgentContextImplTest {
     @Test
     public void path_on_host_from_path_in_node_test() {
         assertEquals(
-                "/home/docker/container-storage/container-1",
+                "/data/vespa/storage/container-1",
                 context.pathOnHostFromPathInNode("/").toString());
 
         assertEquals(
-                "/home/docker/container-storage/container-1/dev/null",
+                "/data/vespa/storage/container-1/dev/null",
                 context.pathOnHostFromPathInNode("/dev/null").toString());
     }
 
@@ -41,7 +41,7 @@ public class NodeAgentContextImplTest {
     public void path_in_node_from_path_on_host_test() {
         assertEquals(
                 "/dev/null",
-                context.pathInNodeFromPathOnHost(fileSystem.getPath("/home/docker/container-storage/container-1/dev/null")).toString());
+                context.pathInNodeFromPathOnHost(fileSystem.getPath("/data/vespa/storage/container-1/dev/null")).toString());
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -51,7 +51,7 @@ public class NodeAgentContextImplTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void path_on_host_must_be_inside_container_storage_of_context() {
-        context.pathInNodeFromPathOnHost(fileSystem.getPath("/home/docker/container-storage/container-2/dev/null"));
+        context.pathInNodeFromPathOnHost(fileSystem.getPath("/data/vespa/storage/container-2/dev/null"));
     }
 
     @Test(expected=IllegalArgumentException.class)
