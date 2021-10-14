@@ -156,7 +156,7 @@ public class ReconfigurerTest {
         }
 
         void startOrReconfigure(ZookeeperServerConfig newConfig) {
-            startOrReconfigure(newConfig, this, MockQuorumPeer::new, peer -> serverPeer = peer);
+            serverPeer = startOrReconfigure(newConfig, this, MockQuorumPeer::new);
         }
 
         String connectionSpec() {
