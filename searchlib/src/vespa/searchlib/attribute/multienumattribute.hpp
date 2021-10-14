@@ -28,7 +28,7 @@ MultiValueEnumAttribute<B, M>::extractChangeData(const Change & c, EnumIndex & i
     if ( ! c.isEnumValid() ) {
         return this->_enumStore.find_index(c._data.raw(), idx);
     }
-    idx = EnumIndex(vespalib::datastore::EntryRef(c._enumScratchPad));
+    idx = EnumIndex(vespalib::datastore::EntryRef(c.getEnum()));
     return true;
 }
 
@@ -42,9 +42,9 @@ MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, EnumSto
     {
         EnumIndex idx;
         if (!this->_enumStore.find_index(c._data.raw(), idx)) {
-            c._enumScratchPad = inserter.insert(c._data.raw()).ref();
+            c.setEnum(inserter.insert(c._data.raw()).ref());
         } else {
-            c._enumScratchPad = idx.ref();
+            c.setEnum(idx.ref());
         }
     }
 }

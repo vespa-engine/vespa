@@ -38,9 +38,9 @@ SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Chan
 
     EnumIndex idx;
     if (!this->_enumStore.find_index(newValue, idx)) {
-        c._enumScratchPad = inserter.insert(newValue).ref();
+        c.setEnum(inserter.insert(newValue).ref());
     } else {
-        c._enumScratchPad = idx.ref();
+        c.setEnum(idx.ref());
     }
 
     _currDocValues[c._doc] = newValue;

@@ -139,9 +139,9 @@ SingleValueEnumAttribute<B>::considerUpdateAttributeChange(const Change & c, Enu
 {
     EnumIndex idx;
     if (!this->_enumStore.find_index(c._data.raw(), idx)) {
-        c._enumScratchPad = inserter.insert(c._data.raw()).ref();
+        c.setEnum(inserter.insert(c._data.raw()).ref());
     } else {
-        c._enumScratchPad = idx.ref();
+        c.setEnum(idx.ref());
     }
     considerUpdateAttributeChange(c); // for numeric
 }
@@ -166,7 +166,11 @@ SingleValueEnumAttribute<B>::applyUpdateValueChange(const Change& c, EnumStoreBa
 {
     EnumIndex oldIdx = _enumIndices[c._doc];
     EnumIndex newIdx;
-    this->_enumStore.find_index(c._data.raw(), newIdx);
+    if (c.isEnumValid()) {
+        newIdx = EnumIndex(vespalib::datastore::EntryRef(c.getEnum()));
+    } else {
+        this->_enumStore.find_index(c._data.raw(), newIdx);
+    }
     updateEnumRefCounts(c, newIdx, oldIdx, updater);
 }
 
