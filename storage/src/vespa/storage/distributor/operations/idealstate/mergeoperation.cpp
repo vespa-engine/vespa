@@ -2,6 +2,7 @@
 #include "mergeoperation.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
+#include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/vdslib/distribution/distribution.h>
@@ -239,6 +240,10 @@ MergeOperation::deleteSourceOnlyNodes(
             LOG(debug, "Source only removal for %s was blocked by a pending operation",
                 getBucketId().toString().c_str());
             _ok = false;
+            auto merge_metrics = get_merge_metrics();
+            if (merge_metrics) {
+                merge_metrics->source_only_copy_delete_blocked.inc(1);
+            }
             done();
             return;
         }
@@ -260,6 +265,12 @@ MergeOperation::onReceive(DistributorStripeMessageSender& sender,
     if (_removeOperation.get()) {
         if (_removeOperation->onReceiveInternal(msg)) {
             _ok = _removeOperation->ok();
+            if (!_ok) {
+                auto merge_metrics = get_merge_metrics();
+                if (merge_metrics) {
+                    merge_metrics->source_only_copy_delete_failed.inc(1);
+                }
+            }
             done();
         }
 
@@ -284,6 +295,10 @@ MergeOperation::onReceive(DistributorStripeMessageSender& sender,
         }
         if (sourceOnlyCopyChangedDuringMerge(entry)) {
             _ok = false;
+            auto merge_metrics = get_merge_metrics();
+            if (merge_metrics) {
+                merge_metrics->source_only_copy_changed.inc(1);
+            }
             done();
             return;
         }
@@ -350,6 +365,16 @@ bool MergeOperation::isBlocked(const DistributorStripeOperationContext& ctx,
 
 bool MergeOperation::is_global_bucket_merge() const noexcept {
     return getBucket().getBucketSpace() == document::FixedBucketSpaces::global_space();
+}
+
+MergeBucketMetricSet*
+MergeOperation::get_merge_metrics()
+{
+    if (_manager) {
+        return dynamic_cast<MergeBucketMetricSet *>(_manager->getMetrics().operations[getType()].get());
+    } else {
+        return nullptr;
+    }
 }
 
 }

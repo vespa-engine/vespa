@@ -12,6 +12,8 @@
 namespace storage::lib { class Distribution; }
 namespace storage::distributor {
 
+class MergeBucketMetricSet;
+
 class MergeOperation : public IdealStateOperation
 {
 protected:
@@ -62,6 +64,7 @@ private:
     void deleteSourceOnlyNodes(const BucketDatabase::Entry& currentState,
                                DistributorStripeMessageSender& sender);
     bool is_global_bucket_merge() const noexcept;
+    MergeBucketMetricSet* get_merge_metrics();
 };
 
 }

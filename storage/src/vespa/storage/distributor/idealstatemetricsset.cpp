@@ -35,6 +35,22 @@ GcMetricSet::GcMetricSet(const std::string& name, metrics::Metric::Tags tags, co
 
 GcMetricSet::~GcMetricSet() = default;
 
+MergeBucketMetricSet::MergeBucketMetricSet(const std::string& name, metrics::Metric::Tags tags, const std::string& description, MetricSet* owner)
+    : OperationMetricSet(name, std::move(tags), description, owner),
+      source_only_copy_changed("source_only_copy_changed",
+                               {{"logdefault"},{"yamasdefault"}},
+                               "The number of merge operations where source-only copy changed"),
+      source_only_copy_delete_blocked("source_only_copy_delete_blocked",
+                                      {{"logdefault"},{"yamasdefault"}},
+                                      "The number of merge operations where delete of unchanged source-only copies was blocked"),
+      source_only_copy_delete_failed("source_only_copy_delete_failed",
+                                      {{"logdefault"},{"yamasdefault"}},
+                                      "The number of merge operations where delete of unchanged source-only copies failed")
+{
+}
+
+MergeBucketMetricSet::~MergeBucketMetricSet() = default;
+
 void
 IdealStateMetricSet::createOperationMetrics() {
     typedef IdealStateOperation ISO;
@@ -45,10 +61,10 @@ IdealStateMetricSet::createOperationMetrics() {
             new OperationMetricSet("delete_bucket",
                                    {{"logdefault"},{"yamasdefault"}},
                                    "Operations to delete excess buckets on storage nodes", this));
-    operations[ISO::MERGE_BUCKET] = std::shared_ptr<OperationMetricSet>(
-            new OperationMetricSet("merge_bucket",
-                                   {{"logdefault"},{"yamasdefault"}},
-                                   "Operations to merge buckets that are out of sync", this));
+    operations[ISO::MERGE_BUCKET] = std::make_shared<MergeBucketMetricSet>
+                                    ("merge_bucket",
+                                     metrics::Metric::Tags{{"logdefault"},{"yamasdefault"}},
+                                     "Operations to merge buckets that are out of sync", this);
     operations[ISO::SPLIT_BUCKET] = std::shared_ptr<OperationMetricSet>(
             new OperationMetricSet("split_bucket",
                                    {{"logdefault"},{"yamasdefault"}},
