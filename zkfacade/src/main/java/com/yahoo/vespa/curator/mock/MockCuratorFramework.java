@@ -961,6 +961,9 @@ public class MockCuratorFramework implements CuratorFramework  {
             return this;
         }
 
+        @Override
+        public CreateBuilder2 idempotent() { return null; }
+
     }
 
     private static class MockBackgroundPathableBuilder<T> implements BackgroundPathable<T>, Watchable<BackgroundPathable<T>> {
@@ -1085,6 +1088,10 @@ public class MockCuratorFramework implements CuratorFramework  {
         public DeleteBuilderMain quietly() {
             return this;
         }
+
+        @Override
+        public DeleteBuilderMain idempotent() { return this; }
+
     }
 
     private class MockGetDataBuilder extends MockBackgroundPathableBuilder<byte[]> implements GetDataBuilder {
@@ -1187,6 +1194,10 @@ public class MockCuratorFramework implements CuratorFramework  {
         public ErrorListenerPathAndBytesable<Stat> inBackground(BackgroundCallback backgroundCallback, Object o, Executor executor) {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
+
+        @Override
+        public SetDataBuilder idempotent() { return this; }
+
     }
 
     /** Allows addition of directoryListeners which are never called */
