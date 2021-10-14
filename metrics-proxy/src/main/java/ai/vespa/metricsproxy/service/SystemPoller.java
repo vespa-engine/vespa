@@ -30,6 +30,10 @@ public class SystemPoller {
     private static final Logger log = Logger.getLogger(SystemPoller.class.getName());
     private static final int memoryTypeVirtual = 0;
     private static final int memoryTypeResident = 1;
+    private static final MetricId CPU = MetricId.toMetricId("cpu");
+    private static final MetricId CPU_UTIL = MetricId.toMetricId("cpu_util");
+    private static final MetricId MEMORY_VIRT = MetricId.toMetricId("memory_virt");
+    private static final MetricId MEMORY_RSS = MetricId.toMetricId("memory_rss");
 
     private final int pollingIntervalSecs;
     private final List<VespaService> services;
@@ -161,16 +165,16 @@ public class SystemPoller {
             long[] size = getMemoryUsage(s);
             log.log(Level.FINE, () -> "Updating memory metric for service " + s);
 
-            metrics.add(new Metric(MetricId.toMetricId("memory_virt"), size[memoryTypeVirtual], timeStamp));
-            metrics.add(new Metric(MetricId.toMetricId("memory_rss"), size[memoryTypeResident], timeStamp));
+            metrics.add(new Metric(MEMORY_VIRT, size[memoryTypeVirtual], timeStamp));
+            metrics.add(new Metric(MEMORY_RSS, size[memoryTypeResident], timeStamp));
 
             long procJiffies = getJiffies.getJiffies(s);
             long last = lastCpuJiffiesMetrics.get(s);
             long diff = procJiffies - last;
 
             if (diff >= 0) {
-                metrics.add(new Metric(MetricId.toMetricId("cpu"), 100 * ((double) diff) / sysJiffiesDiff.normalizedJiffies(), timeStamp));
-                metrics.add(new Metric(MetricId.toMetricId("cpu.util"), 100 * ((double) diff) / sysJiffiesDiff.jiffies, timeStamp));
+                metrics.add(new Metric(CPU, 100 * ((double) diff) / sysJiffiesDiff.normalizedJiffies(), timeStamp));
+                metrics.add(new Metric(CPU_UTIL, 100 * ((double) diff) / sysJiffiesDiff.jiffies, timeStamp));
             }
             lastCpuJiffiesMetrics.put(s, procJiffies);
             s.setSystemMetrics(metrics);

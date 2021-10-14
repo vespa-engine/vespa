@@ -150,7 +150,7 @@ public class SystemPollerTest {
         double expected_util = 100.0*diffProcJiffies/diff.jiffies;
         assertEquals(0.3908945442609743, expected_util, 0.0000000000001);
         assertEquals(new Metric(MetricId.toMetricId("cpu"), expected, 1), metricList.get(2));
-        assertEquals(new Metric(MetricId.toMetricId("cpu.util"), expected_util, 1), metricList.get(3));
+        assertEquals(new Metric(MetricId.toMetricId("cpu_util"), expected_util, 1), metricList.get(3));
     }
 
 }
