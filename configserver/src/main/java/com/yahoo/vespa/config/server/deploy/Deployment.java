@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.deploy;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ActivationContext;
@@ -121,11 +122,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
             Activation activation = applicationRepository.activate(session, applicationId, tenant, params.force());
             activation.awaitCompletion(timeoutBudget.timeLeft());
-            log.log(Level.INFO, session.logPre() + "Session " + session.getSessionId() + " activated successfully using " +
-                                provisioner.map(provisioner -> provisioner.getClass().getSimpleName()).orElse("no host provisioner") +
-                                ". Config generation " + session.getMetaData().getGeneration() +
-                                activation.sourceSessionId().stream().mapToObj(id -> ". Based on session " + id).findFirst().orElse("") +
-                                ". File references: " + applicationRepository.getFileReferences(applicationId));
+            logActivatedMessage(applicationId, activation);
 
             if (provisioner.isPresent() && configChangeActions != null)
                 restartServices(applicationId);
@@ -134,6 +131,18 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
             return session.getMetaData().getGeneration();
         }
+    }
+
+    private void logActivatedMessage(ApplicationId applicationId, Activation activation) {
+        Set<FileReference> fileReferences = applicationRepository.getFileReferences(applicationId);
+        String fileReferencesText = fileReferences.size() > 10
+                ? " " + fileReferences.size() + " file references"
+                : "File references: " + fileReferences;
+        log.log(Level.INFO, session.logPre() + "Session " + session.getSessionId() + " activated successfully using " +
+                provisioner.map(provisioner -> provisioner.getClass().getSimpleName()).orElse("no host provisioner") +
+                ". Config generation " + session.getMetaData().getGeneration() +
+                activation.sourceSessionId().stream().mapToObj(id -> ". Based on session " + id).findFirst().orElse("") +
+                ". " + fileReferencesText);
     }
 
     private void restartServices(ApplicationId applicationId) {
