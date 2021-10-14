@@ -33,7 +33,7 @@ public class ContainerFailTest {
                     .build();
             tester.addChildNodeRepositoryNode(nodeSpec);
 
-            NodeAgentContext context = new NodeAgentContextImpl.Builder(nodeSpec).build();
+            NodeAgentContext context = NodeAgentContextImpl.builder(nodeSpec).build();
 
             tester.inOrder(tester.containerOperations).createContainer(containerMatcher(containerName), any(), any());
             tester.inOrder(tester.containerOperations).resumeNode(containerMatcher(containerName));

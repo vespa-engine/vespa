@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
  */
 public class CoredumpHandlerTest {
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld")
+    private final NodeAgentContext context = NodeAgentContextImpl.builder("container-123.domain.tld")
             .fileSystem(fileSystem).build();
     private final Path crashPathInContainer = fileSystem.getPath("/var/crash");
     private final Path doneCoredumpsPath = fileSystem.getPath("/home/docker/dumps");
@@ -58,7 +58,7 @@ public class CoredumpHandlerTest {
     @SuppressWarnings("unchecked")
     private final Supplier<String> coredumpIdSupplier = mock(Supplier.class);
     private final CoredumpHandler coredumpHandler = new CoredumpHandler(terminal, coreCollector, coredumpReporter,
-            crashPathInContainer, doneCoredumpsPath, 100, metrics, clock, coredumpIdSupplier);
+            crashPathInContainer.toString(), doneCoredumpsPath, 100, metrics, clock, coredumpIdSupplier);
 
 
     @Test

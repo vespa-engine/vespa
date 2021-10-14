@@ -40,8 +40,8 @@ class VespaServiceDumperImplTest {
 
     private static final String HOSTNAME = "host-1.domain.tld";
 
-    private final FileSystem fileSystem = TestFileSystem.create();;
-    private final Path tmpDirectory = fileSystem.getPath("/home/docker/container-storage/host-1/opt/vespa/tmp");
+    private final FileSystem fileSystem = TestFileSystem.create();
+    private final Path tmpDirectory = fileSystem.getPath("/data/vespa/storage/host-1/opt/vespa/tmp");
 
     @BeforeEach
     void create_tmp_directory() throws IOException {
@@ -73,7 +73,7 @@ class VespaServiceDumperImplTest {
 
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
                 ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
-        NodeAgentContextImpl context = new NodeAgentContextImpl.Builder(nodeSpec)
+        NodeAgentContextImpl context = NodeAgentContextImpl.builder(nodeSpec)
                 .fileSystem(fileSystem)
                 .build();
         reporter.processServiceDumpRequest(context);
@@ -115,7 +115,7 @@ class VespaServiceDumperImplTest {
 
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
                 ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
-        NodeAgentContextImpl context = new NodeAgentContextImpl.Builder(nodeSpec)
+        NodeAgentContextImpl context = NodeAgentContextImpl.builder(nodeSpec)
                 .fileSystem(fileSystem)
                 .build();
         reporter.processServiceDumpRequest(context);
@@ -158,7 +158,7 @@ class VespaServiceDumperImplTest {
                 new ServiceDumpReport.DumpOptions(true, 20.0, null));
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
                 ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
-        NodeAgentContextImpl context = new NodeAgentContextImpl.Builder(nodeSpec)
+        NodeAgentContextImpl context = NodeAgentContextImpl.builder(nodeSpec)
                 .fileSystem(fileSystem)
                 .build();
         reporter.processServiceDumpRequest(context);

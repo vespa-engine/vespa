@@ -1,13 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container;
 
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 
@@ -22,7 +20,7 @@ public class ContainerStatsCollectorTest {
     private final FileSystem fileSystem = TestFileSystem.create();
 
     @Test
-    public void collect() throws Exception {
+    public void collect() {
         ContainerStatsCollector collector = new ContainerStatsCollector(fileSystem);
         ContainerId containerId = new ContainerId("id1");
         int containerPid = 42;
@@ -44,22 +42,21 @@ public class ContainerStatsCollectorTest {
                      stats.get().getNetworks());
     }
 
-    private void mockNetworkStats(int pid) throws IOException {
-        Path dev = fileSystem.getPath("/proc/" + pid + "/net/dev");
-        Files.createDirectories(dev.getParent());
-        Files.writeString(dev, "Inter-|   Receive                                                |  Transmit\n" +
+    private void mockNetworkStats(int pid) {
+        UnixPath dev = new UnixPath(fileSystem.getPath("/proc/" + pid + "/net/dev"));
+        dev.createParents().writeUtf8File("Inter-|   Receive                                                |  Transmit\n" +
                                " face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed\n" +
                                "    lo: 36289258  149700    0    0    0     0          0         0 36289258  149700    0    0    0     0       0          0\n" +
                                "  eth0: 22280813  118083    3    4    0     0          0         0 19859383  115415    5    6    0     0       0          0\n");
     }
 
-    private void mockMemoryStats(ContainerId containerId) throws IOException {
-        Path root = fileSystem.getPath("/sys/fs/cgroup/memory/machine.slice/libpod-" + containerId + ".scope");
-        Files.createDirectories(root);
+    private void mockMemoryStats(ContainerId containerId) {
+        UnixPath root = new UnixPath(fileSystem.getPath("/sys/fs/cgroup/memory/machine.slice/libpod-" + containerId + ".scope"));
+        root.createDirectories();
 
-        Files.writeString(root.resolve("memory.limit_in_bytes"), "2147483648\n");
-        Files.writeString(root.resolve("memory.usage_in_bytes"), "1228017664\n");
-        Files.writeString(root.resolve("memory.stat"), "cache 470790144\n" +
+        root.resolve("memory.limit_in_bytes").writeUtf8File("2147483648\n");
+        root.resolve("memory.usage_in_bytes").writeUtf8File("1228017664\n");
+        root.resolve("memory.stat").writeUtf8File("cache 470790144\n" +
                                                        "rss 698699776\n" +
                                                        "rss_huge 526385152\n" +
                                                        "shmem 0\n" +
@@ -97,24 +94,25 @@ public class ContainerStatsCollectorTest {
                                                        "total_unevictable 0\n");
     }
 
-    private void mockCpuStats(ContainerId containerId) throws IOException {
-        Path root = fileSystem.getPath("/sys/fs/cgroup/cpuacct/machine.slice/libpod-" + containerId + ".scope");
-        Path proc = fileSystem.getPath("/proc");
-        Files.createDirectories(root);
-        Files.createDirectories(proc);
-        Files.writeString(root.resolve("cpu.stat"), "nr_periods 1\n" +
+    private void mockCpuStats(ContainerId containerId) {
+        UnixPath root = new UnixPath(fileSystem.getPath("/sys/fs/cgroup/cpuacct/machine.slice/libpod-" + containerId + ".scope"));
+        UnixPath proc = new UnixPath(fileSystem.getPath("/proc"));
+        root.createDirectories();
+        proc.createDirectories();
+
+        root.resolve("cpu.stat").writeUtf8File("nr_periods 1\n" +
                                                     "nr_throttled 2\n" +
                                                     "throttled_time 3\n");
-        Files.writeString(root.resolve("cpuacct.usage_percpu"), "25801608855 22529436415 25293652376 26212081533 " +
+        root.resolve("cpuacct.usage_percpu").writeUtf8File("25801608855 22529436415 25293652376 26212081533 " +
                                                                 "27545883290 25357818592 33464821448 32568003867 " +
                                                                 "28916742231 31771772292 34418037242 38417072233 " +
                                                                 "26069101127 24568838237 23683334366 26824607997 " +
                                                                 "24289870206 22249389818 32683986446 32444831154 " +
                                                                 "30488394217 26840956322 31633747261 30838696584\n");
-        Files.writeString(root.resolve("cpuacct.usage"), "691675615472\n");
-        Files.writeString(root.resolve("cpuacct.stat"), "user 40900\n" +
+        root.resolve("cpuacct.usage").writeUtf8File("691675615472\n");
+        root.resolve("cpuacct.stat").writeUtf8File("user 40900\n" +
                                                         "system 26219\n");
-        Files.writeString(proc.resolve("stat"), "cpu  7991366 978222 2346238 565556517 1935450 25514479 615206 0 0 0\n" +
+        proc.resolve("stat").writeUtf8File("cpu  7991366 978222 2346238 565556517 1935450 25514479 615206 0 0 0\n" +
                                                 "cpu0 387906 61529 99088 23516506 42258 1063359 29882 0 0 0\n" +
                                                 "cpu1 271253 49383 86149 23655234 41703 1061416 31885 0 0 0\n" +
                                                 "cpu2 349420 50987 93560 23571695 59437 1051977 24461 0 0 0\n" +

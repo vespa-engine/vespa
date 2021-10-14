@@ -6,6 +6,7 @@ import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.ComparisonFailure;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -147,7 +148,7 @@ public class UnixPathTest {
         var path = new UnixPath(fs.getPath("/dir/foo"));
         path.createParents();
         path.writeUtf8File("bar");
-        path.atomicWriteUt8("bar v2");
+        path.atomicWriteBytes("bar v2".getBytes(StandardCharsets.UTF_8));
         assertEquals("bar v2", path.readUtf8File());
     }
 

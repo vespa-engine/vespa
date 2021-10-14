@@ -21,7 +21,7 @@ class ContainerFileSystemTest {
 
     private final FileSystem fileSystem = TestFileSystem.create();
     private final UnixPath containerRootOnHost = new UnixPath(fileSystem.getPath("/data/storage/ctr1"));
-    private final ContainerFileSystem containerFs = new ContainerFileSystemProvider(containerRootOnHost.createDirectories().toPath(), 10_000, 11_000).getFileSystem(null);
+    private final ContainerFileSystem containerFs = ContainerFileSystem.create(containerRootOnHost.createDirectories().toPath(), 10_000, 11_000);
 
     @Test
     public void creates_files_and_directories_with_container_root_as_owner() throws IOException {

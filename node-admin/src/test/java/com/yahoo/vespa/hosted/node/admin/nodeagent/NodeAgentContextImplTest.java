@@ -18,17 +18,17 @@ import static org.junit.Assert.assertTrue;
  */
 public class NodeAgentContextImplTest {
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-1.domain.tld")
+    private final NodeAgentContext context = NodeAgentContextImpl.builder("container-1.domain.tld")
             .fileSystem(fileSystem).build();
 
     @Test
     public void path_on_host_from_path_in_node_test() {
         assertEquals(
-                "/home/docker/container-storage/container-1",
+                "/data/vespa/storage/container-1",
                 context.pathOnHostFromPathInNode("/").toString());
 
         assertEquals(
-                "/home/docker/container-storage/container-1/dev/null",
+                "/data/vespa/storage/container-1/dev/null",
                 context.pathOnHostFromPathInNode("/dev/null").toString());
     }
 
@@ -41,7 +41,7 @@ public class NodeAgentContextImplTest {
     public void path_in_node_from_path_on_host_test() {
         assertEquals(
                 "/dev/null",
-                context.pathInNodeFromPathOnHost(fileSystem.getPath("/home/docker/container-storage/container-1/dev/null")).toString());
+                context.pathInNodeFromPathOnHost(fileSystem.getPath("/data/vespa/storage/container-1/dev/null")).toString());
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -51,7 +51,7 @@ public class NodeAgentContextImplTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void path_on_host_must_be_inside_container_storage_of_context() {
-        context.pathInNodeFromPathOnHost(fileSystem.getPath("/home/docker/container-storage/container-2/dev/null"));
+        context.pathInNodeFromPathOnHost(fileSystem.getPath("/data/vespa/storage/container-2/dev/null"));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -89,6 +89,6 @@ public class NodeAgentContextImplTest {
     private static NodeAgentContext createContextWithDisabledTasks(String... tasks) {
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
         flagSource.withListFlag(PermanentFlags.DISABLED_HOST_ADMIN_TASKS.id(), List.of(tasks), String.class);
-        return new NodeAgentContextImpl.Builder("node123").flagSource(flagSource).build();
+        return NodeAgentContextImpl.builder("node123").flagSource(flagSource).build();
     }
 }

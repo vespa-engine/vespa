@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.FileSystem;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
@@ -17,6 +16,8 @@ import java.util.Objects;
 import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerFileSystemProvider.toContainerPath;
 
 /**
+ * Represents a path in container that is mapped in from the host. ContainerPaths are always normalized and absolute.
+ *
  * @author valerijf
  */
 public class ContainerPath implements Path {
@@ -36,12 +37,11 @@ public class ContainerPath implements Path {
             throw new IllegalArgumentException("Path on host (" + pathOnHost + ") must start with container root on host (" + containerRootOnHost + ")");
     }
 
-    public Path pathOnHost() {
-        return pathOnHost;
-    }
+    public Path pathOnHost() { return pathOnHost; }
+    public String pathInContainer() { return '/' + String.join("/", parts); }
 
     @Override
-    public FileSystem getFileSystem() {
+    public ContainerFileSystem getFileSystem() {
         return containerFs;
     }
 
@@ -83,15 +83,9 @@ public class ContainerPath implements Path {
         return Path.of(parts[beginIndex], rest);
     }
 
-    @Override
-    public ContainerPath resolve(Path other) {
-        return resolve(containerFs, parts, other);
-    }
-
-    @Override
-    public ContainerPath resolveSibling(String other) {
-        return resolve(Path.of("..", other));
-    }
+    @Override public ContainerPath resolve(Path other) { return resolve(containerFs, parts, other); }
+    @Override public ContainerPath resolve(String other) { return resolve(Path.of(other)); }
+    @Override public ContainerPath resolveSibling(String other) { return resolve(Path.of("..", other)); }
 
     @Override
     public boolean startsWith(Path other) {
@@ -179,7 +173,7 @@ public class ContainerPath implements Path {
 
     @Override
     public String toString() {
-        return '/' + String.join("/", parts);
+        return containerFs.provider().containerRootOnHost().getFileName() + ":" + pathInContainer();
     }
 
     private static ContainerPath resolve(ContainerFileSystem containerFs, String[] currentParts, Path other) {
@@ -199,25 +193,25 @@ public class ContainerPath implements Path {
                 parts.toArray(String[]::new));
     }
 
-    static ContainerPath fromPathInContainer(ContainerFileSystem containerFs, Path pathInContainer) {
+    public static ContainerPath fromPathInContainer(ContainerFileSystem containerFs, Path pathInContainer) {
         if (!pathInContainer.isAbsolute())
             throw new IllegalArgumentException("Path in container must be absolute: " + pathInContainer);
         return resolve(containerFs, new String[0], pathInContainer);
     }
 
-static ContainerPath fromPathOnHost(ContainerFileSystem containerFs, Path pathOnHost) {
-    pathOnHost = pathOnHost.normalize();
-    Path containerRootOnHost = containerFs.provider().containerRootOnHost();
-    Path pathUnderContainerStorage = containerRootOnHost.relativize(pathOnHost);
+    public static ContainerPath fromPathOnHost(ContainerFileSystem containerFs, Path pathOnHost) {
+        pathOnHost = pathOnHost.normalize();
+        Path containerRootOnHost = containerFs.provider().containerRootOnHost();
+        Path pathUnderContainerStorage = containerRootOnHost.relativize(pathOnHost);
 
-    if (pathUnderContainerStorage.getNameCount() == 0 || pathUnderContainerStorage.getName(0).toString().isEmpty())
-        return new ContainerPath(containerFs, pathOnHost, new String[0]);
-    if (pathUnderContainerStorage.getName(0).toString().equals(".."))
-        throw new IllegalArgumentException("Path " + pathOnHost + " is not under container root " + containerRootOnHost);
+        if (pathUnderContainerStorage.getNameCount() == 0 || pathUnderContainerStorage.getName(0).toString().isEmpty())
+            return new ContainerPath(containerFs, pathOnHost, new String[0]);
+        if (pathUnderContainerStorage.getName(0).toString().equals(".."))
+            throw new IllegalArgumentException("Path " + pathOnHost + " is not under container root " + containerRootOnHost);
 
-    List<String> parts = new ArrayList<>();
-    for (int i = 0; i < pathUnderContainerStorage.getNameCount(); i++)
-        parts.add(pathUnderContainerStorage.getName(i).toString());
-    return new ContainerPath(containerFs, pathOnHost, parts.toArray(String[]::new));
-}
+        List<String> parts = new ArrayList<>();
+        for (int i = 0; i < pathUnderContainerStorage.getNameCount(); i++)
+            parts.add(pathUnderContainerStorage.getName(i).toString());
+        return new ContainerPath(containerFs, pathOnHost, parts.toArray(String[]::new));
+    }
 }

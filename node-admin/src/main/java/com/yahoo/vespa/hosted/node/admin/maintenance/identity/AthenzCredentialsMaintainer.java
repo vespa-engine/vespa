@@ -62,14 +62,13 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private static final Duration REFRESH_PERIOD = Duration.ofDays(1);
     private static final Duration REFRESH_BACKOFF = Duration.ofHours(1); // Backoff when refresh fails to ensure ZTS is not DDoS'ed.
 
-    private static final Path CONTAINER_SIA_DIRECTORY = Paths.get("/var/lib/sia");
+    private static final String CONTAINER_SIA_DIRECTORY = "/var/lib/sia";
 
     private final URI ztsEndpoint;
     private final Path trustStorePath;
     private final AthenzIdentity configserverIdentity;
     private final Clock clock;
     private final ServiceIdentityProvider hostIdentityProvider;
-    private final FileSystem fileSystem;
     private final IdentityDocumentClient identityDocumentClient;
     private final CsrGenerator csrGenerator;
     private final boolean useInternalZts;
@@ -83,7 +82,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                        String certificateDnsSuffix,
                                        ServiceIdentityProvider hostIdentityProvider,
                                        boolean useInternalZts) {
-        this(ztsEndpoint, trustStorePath, configServerInfo, certificateDnsSuffix, hostIdentityProvider, useInternalZts, Clock.systemUTC(), FileSystems.getDefault());
+        this(ztsEndpoint, trustStorePath, configServerInfo, certificateDnsSuffix, hostIdentityProvider, useInternalZts, Clock.systemUTC());
     }
 
     public AthenzCredentialsMaintainer(URI ztsEndpoint,
@@ -92,14 +91,12 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                        String certificateDnsSuffix,
                                        ServiceIdentityProvider hostIdentityProvider,
                                        boolean useInternalZts,
-                                       Clock clock,
-                                       FileSystem fileSystem) {
+                                       Clock clock) {
         this.ztsEndpoint = ztsEndpoint;
         this.trustStorePath = trustStorePath;
         this.configserverIdentity = configServerInfo.getConfigServerIdentity();
         this.csrGenerator = new CsrGenerator(certificateDnsSuffix, configserverIdentity.getFullName());
         this.hostIdentityProvider = hostIdentityProvider;
-        this.fileSystem = fileSystem;
         this.identityDocumentClient = new DefaultIdentityDocumentClient(
                 configServerInfo.getLoadBalancerEndpoint(),
                 hostIdentityProvider,
@@ -164,7 +161,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     @Override
     public Duration certificateLifetime(NodeAgentContext context) {
-        Path containerSiaDirectory = fileSystem.getPath(context.pathOnHostFromPathInNode(CONTAINER_SIA_DIRECTORY).toString());
+        Path containerSiaDirectory = context.pathOnHostFromPathInNode(CONTAINER_SIA_DIRECTORY);
         Path certificateFile = SiaUtils.getCertificateFile(containerSiaDirectory, context.identity());
         try {
             X509Certificate certificate = readCertificateFromFile(certificateFile);
@@ -266,11 +263,9 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     }
 
     private static void writeFile(Path path, int vespaUidOnHost, String utf8Content) {
-        new UnixPath(path.toString() + ".tmp")
-                .deleteIfExists()
-                .createNewFile("r--------")
+        new UnixPath(path.resolveSibling(path.getFileName() + ".tmp"))
+                .writeUtf8File(utf8Content, "r--------")
                 .setOwnerId(vespaUidOnHost)
-                .writeUtf8File(utf8Content)
                 .atomicMove(path);
     }
 

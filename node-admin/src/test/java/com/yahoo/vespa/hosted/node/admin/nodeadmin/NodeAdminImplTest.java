@@ -154,7 +154,7 @@ public class NodeAdminImplTest {
     }
 
     private NodeAgentContext createNodeAgentContext(String hostname) {
-        return new NodeAgentContextImpl.Builder(hostname).build();
+        return NodeAgentContextImpl.builder(hostname).build();
     }
 
     private NodeAgentWithScheduler mockNodeAgentWithSchedulerFactory(NodeAgentContext context) {

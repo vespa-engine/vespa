@@ -142,7 +142,7 @@ public class NodeAgentContextManagerTest {
     }
 
     private static NodeAgentContext generateContext() {
-        return new NodeAgentContextImpl.Builder("container-123.domain.tld").build();
+        return NodeAgentContextImpl.builder("container-123.domain.tld").build();
     }
 
     private static class AsyncExecutor<T> {
