@@ -725,6 +725,11 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.idealstate.merge_bucket.done_ok.rate"));
         metrics.add(new Metric("vds.idealstate.merge_bucket.done_failed.rate"));
         metrics.add(new Metric("vds.idealstate.merge_bucket.pending.average"));
+        metrics.add(new Metric("vds.idealstate.merge_bucket.blocked.rate"));
+        metrics.add(new Metric("vds.idealstate.merge_bucket.throttled.rate"));
+        metrics.add(new Metric("vds.idealstate.merge_bucket.source_only_copy_changed.rate"));
+        metrics.add(new Metric("vds.idealstate.merge_bucket.source_only_copy_delete_blocked.rate"));
+        metrics.add(new Metric("vds.idealstate.merge_bucket.source_only_copy_delete_failed.rate"));
         metrics.add(new Metric("vds.idealstate.split_bucket.done_ok.rate"));
         metrics.add(new Metric("vds.idealstate.split_bucket.done_failed.rate"));
         metrics.add(new Metric("vds.idealstate.split_bucket.pending.average"));
