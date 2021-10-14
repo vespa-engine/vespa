@@ -144,16 +144,6 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         });
     }
 
-    private void reportUnmanagedCertificates() {
-        Set<String> managedRequestIds = curator.readAllEndpointCertificateMetadata().values().stream().map(EndpointCertificateMetadata::requestId).collect(Collectors.toSet());
-
-        for (EndpointCertificateMetadata cameoCertificateMetadata : endpointCertificateProvider.listCertificates()) {
-            if (!managedRequestIds.contains(cameoCertificateMetadata.requestId())) {
-                log.info("Certificate metadata exists with provider but is not managed by controller: " + cameoCertificateMetadata.requestId() + ", " + cameoCertificateMetadata.issuer() + ", " + cameoCertificateMetadata.requestedDnsSans());
-            }
-        }
-    }
-
     private Lock lock(ApplicationId applicationId) {
         return curator.lock(TenantAndApplicationId.from(applicationId));
     }
