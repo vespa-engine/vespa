@@ -3,8 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -14,7 +12,6 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.GroupPrincipal;
@@ -38,10 +35,6 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  */
 // @Immutable
 public class UnixPath {
-
-    private static final Set<OpenOption> DEFAULT_OPEN_OPTIONS =
-            Set.of(StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
-
     private final Path path;
 
     public UnixPath(Path path) { this.path = path; }
@@ -104,29 +97,13 @@ public class UnixPath {
         return writeBytes(content.getBytes(StandardCharsets.UTF_8), options);
     }
 
-    public UnixPath writeUtf8File(String content, String permissions, OpenOption... options) {
-        return writeBytes(content.getBytes(StandardCharsets.UTF_8), permissions, options);
-    }
-
     public UnixPath writeBytes(byte[] content, OpenOption... options) {
-        return writeBytes(content, null, options);
+        uncheck(() -> Files.write(path, content, options));
+        return this;
     }
 
-    public UnixPath writeBytes(byte[] content, String permissions, OpenOption... options) {
-        FileAttribute<?>[] attributes = Optional.ofNullable(permissions)
-                .map(this::getPosixFilePermissionsFromString)
-                .map(PosixFilePermissions::asFileAttribute)
-                .map(attribute -> new FileAttribute<?>[]{attribute})
-                .orElseGet(() -> new FileAttribute<?>[0]);
-
-        Set<OpenOption> optionsSet = options.length == 0 ? DEFAULT_OPEN_OPTIONS : Set.of(options);
-
-        try (SeekableByteChannel channel = Files.newByteChannel(path, optionsSet, attributes)) {
-            channel.write(ByteBuffer.wrap(content));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return this;
+    public UnixPath atomicWriteUt8(String content) {
+        return atomicWriteBytes(content.getBytes(StandardCharsets.UTF_8));
     }
 
     /** Write a file to the same dir as this, and then atomically move it to this' path. */
@@ -207,8 +184,18 @@ public class UnixPath {
         return this;
     }
 
+    public UnixPath createNewFile(String permissions) {
+        FileAttribute<?> attribute = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(permissions));
+        uncheck(() -> Files.createFile(path, attribute));
+        return this;
+    }
+
     public UnixPath createParents() {
-        uncheck(() -> Files.createDirectories(path.getParent()));
+        Path parent = path.getParent();
+        if (!Files.isDirectory(parent)) {
+            uncheck(() -> Files.createDirectories(parent));
+        }
+
         return this;
     }
 
@@ -288,7 +275,7 @@ public class UnixPath {
         } catch (NoSuchFileException ignored) {
             return Stream.empty();
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to list contents of directory " + path.toAbsolutePath(), e);
+            throw new RuntimeException("Failed to list contents of directory " + path.toAbsolutePath(), e);
         }
     }
 

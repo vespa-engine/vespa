@@ -204,19 +204,6 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         return path;
     }
 
-    public static NodeAgentContextImpl.Builder builder(NodeSpec node) {
-        return new Builder(new NodeSpec.Builder(node));
-    }
-
-    /**
-     * Creates a NodeAgentContext.Builder with a NodeSpec that has the given hostname and some
-     * reasonable values for the remaining required NodeSpec fields. Use {@link #builder(NodeSpec)}
-     * if you want to control the entire NodeSpec.
-     */
-    public static NodeAgentContextImpl.Builder builder(String hostname) {
-        return new Builder(NodeSpec.Builder.testSpec(hostname));
-    }
-
     /** For testing only! */
     public static class Builder {
         private NodeSpec.Builder nodeSpecBuilder;
@@ -231,8 +218,17 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private Path containerStorage;
         private Optional<ApplicationId> hostExclusiveTo = Optional.empty();
 
-        private Builder(NodeSpec.Builder nodeSpecBuilder) {
-            this.nodeSpecBuilder = nodeSpecBuilder;
+        public Builder(NodeSpec node) {
+            this.nodeSpecBuilder = new NodeSpec.Builder(node);
+        }
+
+        /**
+         * Creates a NodeAgentContext.Builder with a NodeSpec that has the given hostname and some
+         * reasonable values for the remaining required NodeSpec fields. Use {@link #Builder(NodeSpec)}
+         * if you want to control the entire NodeSpec.
+         */
+        public Builder(String hostname) {
+            this.nodeSpecBuilder = NodeSpec.Builder.testSpec(hostname);
         }
 
         public Builder nodeSpecBuilder(Function<NodeSpec.Builder, NodeSpec.Builder> nodeSpecBuilderModifier) {
@@ -320,7 +316,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                     }),
                     fileSystem,
                     Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new),
-                    Optional.ofNullable(containerStorage).orElseGet(() -> fileSystem.getPath("/data/vespa/storage")),
+                    Optional.ofNullable(containerStorage).orElseGet(() -> fileSystem.getPath("/home/docker/container-storage")),
                     fileSystem.getPath("/opt/vespa"),
                     Optional.ofNullable(userNamespace).orElseGet(() -> new UserNamespace(10000, 10000, "vespa", "users", 1000, 100)),
                     cpuSpeedUp, hostExclusiveTo);

@@ -25,7 +25,7 @@ import java.nio.file.Path;
 class ContainerPathTest {
 
     private final FileSystem baseFs = TestFileSystem.create();
-    private final ContainerFileSystem containerFs = ContainerFileSystem.create(baseFs.getPath("/data/storage/ctr1"), 0, 0);
+    private final ContainerFileSystem containerFs = new ContainerFileSystemProvider(baseFs.getPath("/data/storage/ctr1"), 0, 0).getFileSystem(null);
 
     @Test
     public void create_new_container_path() {
@@ -62,7 +62,7 @@ class ContainerPathTest {
         assertFalse(parent.startsWith(path));
         assertFalse(path.startsWith(Path.of(path.toString())));
 
-        assertTrue(path.endsWith(Path.of(path.pathInContainer())));
+        assertTrue(path.endsWith(Path.of(path.toString())));
         assertTrue(path.endsWith(Path.of("logs/file")));
         assertFalse(path.endsWith(Path.of("/logs/file")));
     }
@@ -102,7 +102,7 @@ class ContainerPathTest {
 
     private static void assertPaths(ContainerPath actual, String expectedPathOnHost, String expectedPathInContainer) {
         assertEquals(expectedPathOnHost, actual.pathOnHost().toString());
-        assertEquals(expectedPathInContainer, actual.pathInContainer());
+        assertEquals(expectedPathInContainer, actual.toString());
     }
 
     private static void assertThrows(Executable executable, String expectedMsg) {

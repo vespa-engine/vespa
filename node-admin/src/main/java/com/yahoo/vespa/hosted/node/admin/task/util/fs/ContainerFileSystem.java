@@ -17,7 +17,7 @@ public class ContainerFileSystem extends FileSystem {
 
     private final ContainerFileSystemProvider containerFsProvider;
 
-    ContainerFileSystem(ContainerFileSystemProvider containerFsProvider) {
+    public ContainerFileSystem(ContainerFileSystemProvider containerFsProvider) {
         this.containerFsProvider = containerFsProvider;
     }
 
@@ -81,7 +81,4 @@ public class ContainerFileSystem extends FileSystem {
         throw new UnsupportedOperationException();
     }
 
-    public static ContainerFileSystem create(Path containerStorageRoot, int uidOffset, int gidOffset) {
-        return new ContainerFileSystemProvider(containerStorageRoot, uidOffset, gidOffset).getFileSystem(null);
-    }
 }

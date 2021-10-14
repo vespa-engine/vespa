@@ -5,7 +5,12 @@ package com.yahoo.vespa.hosted.node.admin.container;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.OptionalInt;
 import java.util.logging.Logger;
@@ -80,9 +85,17 @@ public class Cgroup {
     }
 
     private OptionalInt readCgroupsCpuInt(UnixPath unixPath) {
-        return unixPath.readUtf8FileIfExists()
-                .map(s -> OptionalInt.of(Integer.parseInt(s.strip())))
-                .orElseGet(OptionalInt::empty);
+        final byte[] currentContentBytes;
+        try {
+            currentContentBytes = Files.readAllBytes(unixPath.toPath());
+        } catch (NoSuchFileException e) {
+            return OptionalInt.empty();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
+        String currentContent = new String(currentContentBytes, StandardCharsets.UTF_8).strip();
+        return OptionalInt.of(Integer.parseInt(currentContent));
     }
 
     private boolean writeCgroupsCpuInt(NodeAgentContext context, UnixPath unixPath, int value) {
