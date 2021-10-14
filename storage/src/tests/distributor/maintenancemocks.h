@@ -4,6 +4,7 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
+#include <vespa/storage/distributor/maintenance/pending_window_checker.h>
 #include <vespa/storage/distributor/operationstarter.h>
 #include <vespa/storage/distributor/operations/operation.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
@@ -119,6 +120,18 @@ public:
 
     std::string toString() const {
         return _started.str();
+    }
+};
+
+class MockPendingWindowChecker : public PendingWindowChecker {
+    bool _allow = true;
+public:
+    void allow_operations(bool allow) noexcept {
+        _allow = allow;
+    }
+
+    bool may_allow_operation_with_priority(OperationStarter::Priority) const noexcept override {
+        return _allow;
     }
 };
 

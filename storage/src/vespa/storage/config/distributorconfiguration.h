@@ -264,6 +264,9 @@ public:
     bool enable_revert() const noexcept {
         return _enable_revert;
     }
+    [[nodiscard]] bool implicitly_clear_priority_on_schedule() const noexcept {
+        return _implicitly_clear_priority_on_schedule;
+    }
 
     uint32_t num_distributor_stripes() const noexcept { return _num_distributor_stripes; }
 
@@ -320,6 +323,7 @@ private:
     bool _enable_metadata_only_fetch_phase_for_inconsistent_updates;
     bool _prioritize_global_bucket_merges;
     bool _enable_revert;
+    bool _implicitly_clear_priority_on_schedule;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
 
