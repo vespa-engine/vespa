@@ -280,34 +280,34 @@ public class RpcServerTest extends FleetControllerTest {
     public void testGetNodeStateWithConfiguredRetired() throws Exception {
         startingTest("RpcServerTest::testGetNodeStateWithConfiguredRetired");
         List<ConfiguredNode> configuredNodes = new ArrayList<>();
-        for (int i = 0; i < 9; i++)
+        for (int i = 0; i < 4; i++)
             configuredNodes.add(new ConfiguredNode(i, false));
-        configuredNodes.add(new ConfiguredNode(9, true)); // Last node is configured retired
+        configuredNodes.add(new ConfiguredNode(4, true)); // Last node is configured retired
         FleetControllerOptions options = defaultOptions("mycluster", configuredNodes);
         options.minRatioOfStorageNodesUp = 0;
         options.maxInitProgressTime = 30000;
         options.stableStateTimePeriod = 60000;
         setUpFleetController(true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions(), false, configuredNodes);
-        waitForState("version:\\d+ distributor:10 storage:10 .9.s:r");
+        waitForState("version:\\d+ distributor:5 storage:5 .4.s:r");
 
         setWantedNodeState(State.DOWN, NodeType.DISTRIBUTOR, 2);
         setWantedNodeState(State.RETIRED, NodeType.STORAGE, 2);
-        setWantedNodeState(State.MAINTENANCE, NodeType.STORAGE, 7);
+        setWantedNodeState(State.MAINTENANCE, NodeType.STORAGE, 3);
         waitForCompleteCycle();
         timer.advanceTime(1000000);
         waitForCompleteCycle(); // Make fleet controller notice that time has changed before any disconnects
         nodes.get(0).disconnect();
         nodes.get(3).disconnect();
         nodes.get(5).disconnect();
-        waitForState("version:\\d+ distributor:10 .0.s:d .2.s:d storage:10 .1.s:m .2.s:m .7.s:m .9.s:r");
+        waitForState("version:\\d+ distributor:5 .0.s:d .2.s:d storage:5 .1.s:m .2.s:m .3.s:m .4.s:r");
         timer.advanceTime(1000000);
-        waitForState("version:\\d+ distributor:10 .0.s:d .2.s:d storage:10 .1.s:d .2.s:d .7.s:m .9.s:r");
+        waitForState("version:\\d+ distributor:5 .0.s:d .2.s:d storage:5 .1.s:d .2.s:d .3.s:m .4.s:r");
         timer.advanceTime(1000000);
         waitForCompleteCycle(); // Make fleet controller notice that time has changed before any disconnects
         nodes.get(3).setNodeState(new NodeState(nodes.get(3).getType(), State.INITIALIZING).setInitProgress(0.2f));
         nodes.get(3).connect();
-        waitForState("version:\\d+ distributor:10 .0.s:d .2.s:d storage:10 .1.s:i .1.i:0.2 .2.s:d .7.s:m .9.s:r");
+        waitForState("version:\\d+ distributor:5 .0.s:d .2.s:d storage:5 .1.s:i .1.i:0.2 .2.s:d .3.s:m .4.s:r");
     }
 
     @Test
@@ -578,13 +578,14 @@ public class RpcServerTest extends FleetControllerTest {
     @Test
     public void testGetNodeList() throws Exception {
         startingTest("RpcServerTest::testGetNodeList");
-        setUpFleetController(true, defaultOptions("mycluster"));
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpFleetController(true, defaultOptions("mycluster", 5));
+        final int nodeCount = 5;
+        setUpVdsNodes(true, new DummyVdsNodeOptions(), false, nodeCount);
         waitForStableSystem();
 
         assertTrue(nodes.get(0).isDistributor());
         nodes.get(0).disconnect();
-        waitForState("version:\\d+ distributor:10 .0.s:d storage:10");
+        waitForState("version:\\d+ distributor:5 .0.s:d storage:5");
 
         int rpcPort = fleetController.getRpcPort();
         supervisor = new Supervisor(new Transport());
@@ -592,7 +593,7 @@ public class RpcServerTest extends FleetControllerTest {
         assertTrue(connection.isValid());
 
         // Possibly do request multiple times if we haven't lost slobrok contact first times yet.
-        for (int j=0; j<=10; ++j) {
+        for (int j = 0; j <= nodeCount; ++j) {
             Request req = new Request("getNodeList");
             connection.invokeSync(req, timeoutS);
             assertEquals(req.errorMessage(), ErrorCode.NONE, req.errorCode());
@@ -600,13 +601,13 @@ public class RpcServerTest extends FleetControllerTest {
             String[] slobrok = req.returnValues().get(0).asStringArray().clone();
             String[] rpc = req.returnValues().get(1).asStringArray().clone();
 
-            assertEquals(20, slobrok.length);
-            assertEquals(20, rpc.length);
+            assertEquals(2 * nodeCount, slobrok.length);
+            assertEquals(2 * nodeCount, rpc.length);
 
             // Verify that we can connect to all addresses returned.
-            for (int i=0; i<20; ++i) {
+            for (int i = 0; i < 2 * nodeCount; ++i) {
                 if (slobrok[i].equals("storage/cluster.mycluster/distributor/0")) {
-                    if (i < 10 && !"".equals(rpc[i])) {
+                    if (i < nodeCount && !"".equals(rpc[i])) {
                         continue;
                     }
                     assertEquals(slobrok[i], "", rpc[i]);

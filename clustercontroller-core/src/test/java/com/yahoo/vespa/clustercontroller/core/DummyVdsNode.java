@@ -9,14 +9,16 @@ import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
-import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
-import java.util.logging.Level;
-import com.yahoo.vdslib.state.*;
+import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCUtil;
 
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -104,7 +107,7 @@ public class DummyVdsNode {
                         }
                     }
                     try{
-                        timer.wait(100);
+                        timer.wait(10);
                     } catch (InterruptedException e) {
                         break;
                     }
@@ -184,7 +187,7 @@ public class DummyVdsNode {
             newState.setDescription("controlled shutdown");
             setNodeState(newState);
             // Sleep a bit in hopes of answer being written before shutting down socket
-            try{ Thread.sleep(100); } catch (InterruptedException e) { /* ignore */ }
+            try{ Thread.sleep(10); } catch (InterruptedException e) { /* ignore */ }
         }
         if (supervisor == null) return;
         register.shutdown();

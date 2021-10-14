@@ -1120,11 +1120,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         inMasterMoratorium = false;
     }
 
+    @Override
     public void run() {
         controllerThreadId = Thread.currentThread().getId();
         try {
             processingCycle = true;
-            while( isRunning() ) {
+            while (isRunning()) {
                 tick();
             }
         } catch (InterruptedException e) {
