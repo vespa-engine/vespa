@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.NodeFlavors;
@@ -358,12 +357,11 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
 
     private MessageResponse setTargetVersions(String nodeTypeS, Inspector inspector) {
         NodeType nodeType = NodeType.valueOf(nodeTypeS.toLowerCase());
-        List<String> messageParts = new ArrayList<>(4);
+        List<String> messageParts = new ArrayList<>();
 
         boolean force = inspector.field("force").asBool();
         Inspector versionField = inspector.field("version");
         Inspector osVersionField = inspector.field("osVersion");
-        Inspector containerImageField = inspector.field("dockerImage");
         Inspector upgradeBudgetField = inspector.field("upgradeBudget");
 
         if (versionField.valid()) {
@@ -396,16 +394,8 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
             }
         }
 
-        if (containerImageField.valid()) {
-            Optional<DockerImage> dockerImage = Optional.of(containerImageField.asString())
-                    .filter(s -> !s.isEmpty())
-                    .map(DockerImage::fromString);
-            nodeRepository.containerImages().setImage(nodeType, dockerImage);
-            messageParts.add("container image to " + dockerImage.map(DockerImage::asString).orElse(null));
-        }
-
         if (messageParts.isEmpty()) {
-            throw new IllegalArgumentException("At least one of 'version', 'osVersion' or 'dockerImage' must be set");
+            throw new IllegalArgumentException("At least one of 'version' or 'osVersion' must be set");
         }
 
         return new MessageResponse("Set " + String.join(", ", messageParts) +

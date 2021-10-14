@@ -146,8 +146,7 @@ class NodesResponse extends SlimeJsonResponse {
             toSlime(allocation.membership(), object.setObject("membership"));
             object.setLong("restartGeneration", allocation.restartGeneration().wanted());
             object.setLong("currentRestartGeneration", allocation.restartGeneration().current());
-            object.setString("wantedDockerImage", allocation.membership().cluster().dockerImage()
-                    .orElseGet(() -> nodeRepository.containerImages().imageFor(node.type()).withTag(allocation.membership().cluster().vespaVersion()).asString()));
+            object.setString("wantedDockerImage", nodeRepository.containerImages().get(node).withTag(allocation.membership().cluster().vespaVersion()).asString());
             object.setString("wantedVespaVersion", allocation.membership().cluster().vespaVersion().toFullString());
             NodeResourcesSerializer.toSlime(allocation.requestedResources(), object.setObject("requestedResources"));
             allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray("networkPorts")));
@@ -214,7 +213,7 @@ class NodesResponse extends SlimeJsonResponse {
                    .or(() -> Optional.of(node)
                                      .filter(n -> n.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                                      .flatMap(n -> n.status().vespaVersion()
-                                                    .map(version -> nodeRepository.containerImages().imageFor(n.type()).withTag(version))));
+                                                    .map(version -> nodeRepository.containerImages().get(n).withTag(version))));
     }
 
     private void ipAddressesToSlime(Set<String> ipAddresses, Cursor array) {

@@ -6,7 +6,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
@@ -67,7 +66,7 @@ public class CuratorDatabaseClient {
     private static final Path inactiveJobsPath = root.append("inactiveJobs");
     private static final Path infrastructureVersionsPath = root.append("infrastructureVersions");
     private static final Path osVersionsPath = root.append("osVersions");
-    private static final Path containerImagesPath = root.append("dockerImages");
+    private static final Path containerImagesPath = root.append("dockerImages"); // TODO(mpolden): Delete this path from ZK after 2021-11-01
     private static final Path firmwareCheckPath = root.append("firmwareCheck");
     private static final Path archiveUrisPath = root.append("archiveUris");
 
@@ -98,7 +97,6 @@ public class CuratorDatabaseClient {
         db.create(inactiveJobsPath);
         db.create(infrastructureVersionsPath);
         db.create(osVersionsPath);
-        db.create(containerImagesPath);
         db.create(firmwareCheckPath);
         db.create(archiveUrisPath);
         db.create(loadBalancersPath);
@@ -408,24 +406,6 @@ public class CuratorDatabaseClient {
 
     public Lock lockOsVersionChange() {
         return db.lock(lockPath.append("osVersionsLock"), defaultLockTimeout);
-    }
-
-    // Container images -----------------------------------------------------------
-
-    public Map<NodeType, DockerImage> readContainerImages() {
-        return read(containerImagesPath, NodeTypeContainerImagesSerializer::fromJson).orElseGet(TreeMap::new);
-    }
-
-    public void writeContainerImages(Map<NodeType, DockerImage> images) {
-        NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.setData(containerImagesPath.getAbsolute(),
-                                                         NodeTypeContainerImagesSerializer.toJson(images)));
-        transaction.commit();
-    }
-
-    public Lock lockContainerImages() {
-        return db.lock(lockPath.append("dockerImagesLock"), defaultLockTimeout);
     }
 
     // Firmware checks -----------------------------------------------------------

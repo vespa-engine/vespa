@@ -111,6 +111,7 @@ public class ProvisioningTester {
                                                  zone,
                                                  nameResolver,
                                                  containerImage,
+                                                 Optional.empty(),
                                                  flagSource,
                                                  new MemoryMetricsDb(clock),
                                                  true,

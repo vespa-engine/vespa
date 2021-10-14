@@ -67,6 +67,7 @@ public class MockNodeRepository extends NodeRepository {
               Zone.defaultZone(),
               new MockNameResolver().mockAnyLookup(),
               DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+              Optional.empty(),
               new InMemoryFlagSource(),
               new MemoryMetricsDb(Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z"))),
               true,

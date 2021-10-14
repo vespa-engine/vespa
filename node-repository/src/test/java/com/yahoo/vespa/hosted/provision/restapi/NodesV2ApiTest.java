@@ -228,7 +228,6 @@ public class NodesV2ApiTest {
                                    Utf8.toBytes("{\"modelName\": null}"), Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "modelName", false);
-        tester.container().handleRequest((new Request("http://localhost:8080/nodes/v2/upgrade/tenant", Utf8.toBytes("{\"dockerImage\": \"ignored-registry.example.com/my/image\"}"), Request.Method.PATCH)));
 
         ((OrchestratorMock) tester.container().components().getComponent(OrchestratorMock.class.getName()))
                 .suspend(new HostName("host4.yahoo.com"));
@@ -679,7 +678,7 @@ public class NodesV2ApiTest {
                                           Utf8.toBytes("{}"),
                                           Request.Method.PATCH),
                               400,
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"At least one of 'version', 'osVersion' or 'dockerImage' must be set\"}");
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"At least one of 'version' or 'osVersion' must be set\"}");
 
         // Downgrade without force fails
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -761,26 +760,6 @@ public class NodesV2ApiTest {
                                           Request.Method.PATCH),
                               200,
                               "{\"message\":\"Set osVersion to null for nodes of type confighost\"}");
-
-        // Set container image for config and tenant
-        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/tenant",
-                        Utf8.toBytes("{\"dockerImage\": \"my-repo.my-domain.example:1234/repo/tenant\"}"),
-                        Request.Method.PATCH),
-                "{\"message\":\"Set container image to my-repo.my-domain.example:1234/repo/tenant for nodes of type tenant\"}");
-        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/config",
-                        Utf8.toBytes("{\"dockerImage\": \"my-repo.my-domain.example:1234/repo/image\"}"),
-                        Request.Method.PATCH),
-                "{\"message\":\"Set container image to my-repo.my-domain.example:1234/repo/image for nodes of type config\"}");
-
-        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.124.42\",\"controller\":\"6.123.456\"},\"osVersions\":{\"host\":\"7.5.2\"},\"dockerImages\":{\"tenant\":\"my-repo.my-domain.example:1234/repo/tenant\",\"config\":\"my-repo.my-domain.example:1234/repo/image\"}}");
-
-        // Cannot set container image for non docker node type
-        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
-                                          Utf8.toBytes("{\"dockerImage\": \"my-repo.my-domain.example:1234/repo/image\"}"),
-                                          Request.Method.PATCH),
-                              400,
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Setting container image for confighost nodes is unsupported\"}");
     }
 
     @Test

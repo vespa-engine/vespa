@@ -32,6 +32,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -263,6 +264,7 @@ public class SpareCapacityMaintainerTest {
                                                 new Zone(Environment.prod, RegionName.from("us-east-3")),
                                                 new MockNameResolver().mockAnyLookup(),
                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                                Optional.empty(),
                                                 new InMemoryFlagSource(),
                                                 new MemoryMetricsDb(clock),
                                                 true,
