@@ -79,8 +79,7 @@ public class NodeRepository extends AbstractComponent {
              Clock.systemUTC(),
              zone,
              new DnsNameResolver(),
-             DockerImage.fromString(config.containerImage())
-                        .withReplacedBy(DockerImage.fromString(config.containerImageReplacement())),
+             DockerImage.fromString(config.containerImage()),
              flagSource,
              metricsDb,
              config.useCuratorClientCache(),

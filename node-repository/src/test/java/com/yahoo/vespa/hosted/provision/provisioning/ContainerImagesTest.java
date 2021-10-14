@@ -48,27 +48,4 @@ public class ContainerImagesTest {
         }
     }
 
-    @Test
-    public void image_replacement() {
-        var flagSource = new InMemoryFlagSource();
-        var defaultImage = DockerImage.fromString("foo.example.com/vespa/vespa");
-        var tester = new ProvisioningTester.Builder().defaultImage(defaultImage).flagSource(flagSource).build();
-        var hosts = tester.makeReadyNodes(2, "default", NodeType.host);
-        tester.activateTenantHosts();
-
-        // Default image is used when there is no replacement
-        for (var host : hosts) {
-            assertEquals(defaultImage, tester.nodeRepository().containerImages().imageFor(host.type()));
-        }
-
-        // Replacement image is preferred
-        DockerImage imageWithReplacement = defaultImage.withReplacedBy(DockerImage.fromString("bar.example.com/vespa/vespa"));
-        tester = new ProvisioningTester.Builder().defaultImage(imageWithReplacement).flagSource(flagSource).build();
-        hosts = tester.makeReadyNodes(2, "default", NodeType.host);
-        for (var host : hosts) {
-            assertEquals(imageWithReplacement.replacedBy().get().asString(),
-                         tester.nodeRepository().containerImages().imageFor(host.type()).asString());
-        }
-    }
-
 }

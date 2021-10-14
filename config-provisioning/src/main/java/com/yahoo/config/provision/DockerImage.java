@@ -14,18 +14,16 @@ import java.util.Optional;
 // TODO: Rename to ContainerImage. Compatibility with older config-models must be preserved.
 public class DockerImage {
 
-    public static final DockerImage EMPTY = new DockerImage("", "", Optional.empty(), Optional.empty());
+    public static final DockerImage EMPTY = new DockerImage("", "", Optional.empty());
 
     private final String registry;
     private final String repository;
     private final Optional<String> tag;
-    private final Optional<DockerImage> replacedBy;
 
-    DockerImage(String registry, String repository, Optional<String> tag, Optional<DockerImage> replacedBy) {
+    DockerImage(String registry, String repository, Optional<String> tag) {
         this.registry = Objects.requireNonNull(registry, "registry must be non-null");
         this.repository = Objects.requireNonNull(repository, "repository must be non-null");
         this.tag = Objects.requireNonNull(tag, "tag must be non-null");
-        this.replacedBy = Objects.requireNonNull(replacedBy);
     }
 
     /** Returns the registry-part of this, i.e. the host/port of the registry. */
@@ -40,7 +38,7 @@ public class DockerImage {
 
     /** Returns the registry and repository for this image, excluding its tag */
     public String untagged() {
-        return new DockerImage(registry, repository, Optional.empty(), replacedBy).asString();
+        return new DockerImage(registry, repository, Optional.empty()).asString();
     }
 
     /** Returns this image's tag, if any */
@@ -53,24 +51,14 @@ public class DockerImage {
         return tag.map(Version::new).orElse(Version.emptyVersion);
     }
 
-    /** The image that replaces this, if any */
-    public Optional<DockerImage> replacedBy() {
-        return replacedBy;
-    }
-
     /** Returns a copy of this tagged with the given version */
     public DockerImage withTag(Version version) {
-        return new DockerImage(registry, repository, Optional.of(version.toFullString()), replacedBy);
+        return new DockerImage(registry, repository, Optional.of(version.toFullString()));
     }
 
     /** Returns a copy of this with registry set to given value */
     public DockerImage withRegistry(String registry) {
-        return new DockerImage(registry, repository, tag, replacedBy);
-    }
-
-    /** Returns a copy of this with replacement image set to given value */
-    public DockerImage withReplacedBy(DockerImage image) {
-        return new DockerImage(registry, repository, tag, Optional.of(image).filter(i -> !i.equals(EMPTY)));
+        return new DockerImage(registry, repository, tag);
     }
 
     public String asString() {
@@ -90,17 +78,16 @@ public class DockerImage {
         DockerImage that = (DockerImage) o;
         return registry.equals(that.registry) &&
                repository.equals(that.repository) &&
-               tag.equals(that.tag) &&
-               replacedBy.equals(that.replacedBy);
+               tag.equals(that.tag);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(registry, repository, tag, replacedBy);
+        return Objects.hash(registry, repository, tag);
     }
 
     public static DockerImage from(String registry, String repository) {
-        return new DockerImage(registry, repository, Optional.empty(), Optional.empty());
+        return new DockerImage(registry, repository, Optional.empty());
     }
 
     public static DockerImage fromString(String s) {
@@ -114,11 +101,11 @@ public class DockerImage {
         if (repository.isEmpty()) throw new IllegalArgumentException("Repository must be non-empty in '" + s + "'");
 
         int tagStart = repository.indexOf(':');
-        if (tagStart < 0) return new DockerImage(registry, repository, Optional.empty(), Optional.empty());
+        if (tagStart < 0) return new DockerImage(registry, repository, Optional.empty());
 
         String tag = repository.substring(tagStart + 1);
         repository = repository.substring(0, tagStart);
-        return new DockerImage(registry, repository, Optional.of(tag), Optional.empty());
+        return new DockerImage(registry, repository, Optional.of(tag));
     }
 
 }

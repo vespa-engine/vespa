@@ -72,11 +72,7 @@ public class ContainerImages {
 
     /** Rewrite the registry part of given image, using this zone's default image */
     private DockerImage rewriteRegistry(DockerImage image) {
-        DockerImage zoneImage = defaultImage;
-        if (zoneImage.replacedBy().isPresent()) {
-            zoneImage = zoneImage.replacedBy().get();
-        }
-        return image.withRegistry(zoneImage.registry());
+        return image.withRegistry(defaultImage.registry());
     }
 
 }
