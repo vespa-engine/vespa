@@ -26,17 +26,15 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentTask;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -110,10 +108,10 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
         try {
             context.log(logger, Level.FINE, "Checking certificate");
-            Path containerSiaDirectory = context.pathOnHostFromPathInNode(CONTAINER_SIA_DIRECTORY);
-            Path privateKeyFile = SiaUtils.getPrivateKeyFile(containerSiaDirectory, context.identity());
-            Path certificateFile = SiaUtils.getCertificateFile(containerSiaDirectory, context.identity());
-            Path identityDocumentFile = containerSiaDirectory.resolve("vespa-node-identity-document.json");
+            ContainerPath containerSiaDirectory = context.containerPath(CONTAINER_SIA_DIRECTORY);
+            ContainerPath privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(containerSiaDirectory, context.identity());
+            ContainerPath certificateFile = (ContainerPath) SiaUtils.getCertificateFile(containerSiaDirectory, context.identity());
+            ContainerPath identityDocumentFile = containerSiaDirectory.resolve("vespa-node-identity-document.json");
             if (!Files.exists(privateKeyFile) || !Files.exists(certificateFile) || !Files.exists(identityDocumentFile)) {
                 context.log(logger, "Certificate/private key/identity document file does not exist");
                 Files.createDirectories(privateKeyFile.getParent());
@@ -154,15 +152,15 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     }
 
     public void clearCredentials(NodeAgentContext context) {
-        FileFinder.files(context.pathOnHostFromPathInNode(CONTAINER_SIA_DIRECTORY))
+        FileFinder.files(context.containerPath(CONTAINER_SIA_DIRECTORY))
                 .deleteRecursively(context);
         lastRefreshAttempt.remove(context.containerName());
     }
 
     @Override
     public Duration certificateLifetime(NodeAgentContext context) {
-        Path containerSiaDirectory = context.pathOnHostFromPathInNode(CONTAINER_SIA_DIRECTORY);
-        Path certificateFile = SiaUtils.getCertificateFile(containerSiaDirectory, context.identity());
+        ContainerPath containerSiaDirectory = context.containerPath(CONTAINER_SIA_DIRECTORY);
+        ContainerPath certificateFile = (ContainerPath) SiaUtils.getCertificateFile(containerSiaDirectory, context.identity());
         try {
             X509Certificate certificate = readCertificateFromFile(certificateFile);
             Instant now = clock.instant();
@@ -190,7 +188,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                         now)) > 0;
     }
 
-    private void registerIdentity(NodeAgentContext context, Path privateKeyFile, Path certificateFile, Path identityDocumentFile) {
+    private void registerIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile, ContainerPath identityDocumentFile) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         SignedIdentityDocument signedIdentityDocument = identityDocumentClient.getNodeIdentityDocument(context.hostname().value());
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
@@ -208,13 +206,13 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                             EntityBindingsMapper.toAttestationData(signedIdentityDocument),
                             csr);
             EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
-            writePrivateKeyAndCertificate(context.userNamespace().vespaUserIdOnHost(), privateKeyFile, keyPair.getPrivate(),
+            writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(),
                     certificateFile, instanceIdentity.certificate());
             context.log(logger, "Instance successfully registered and credentials written to file");
         }
     }
 
-    private void refreshIdentity(NodeAgentContext context, Path privateKeyFile, Path certificateFile, Path identityDocumentFile) {
+    private void refreshIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile, ContainerPath identityDocumentFile) {
         SignedIdentityDocument identityDocument = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
@@ -236,7 +234,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                 context.identity(),
                                 identityDocument.providerUniqueId().asDottedString(),
                                 csr);
-                writePrivateKeyAndCertificate(context.userNamespace().vespaUserIdOnHost(), privateKeyFile, keyPair.getPrivate(),
+                writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(),
                         certificateFile, instanceIdentity.certificate());
                 context.log(logger, "Instance successfully refreshed and credentials written to file");
             } catch (ZtsClientException e) {
@@ -253,23 +251,22 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     }
 
 
-    private static void writePrivateKeyAndCertificate(int vespaUidOnHost,
-                                                      Path privateKeyFile,
+    private static void writePrivateKeyAndCertificate(ContainerPath privateKeyFile,
                                                       PrivateKey privateKey,
-                                                      Path certificateFile,
+                                                      ContainerPath certificateFile,
                                                       X509Certificate certificate) {
-        writeFile(privateKeyFile, vespaUidOnHost, KeyUtils.toPem(privateKey));
-        writeFile(certificateFile, vespaUidOnHost, X509CertificateUtils.toPem(certificate));
+        writeFile(privateKeyFile, KeyUtils.toPem(privateKey));
+        writeFile(certificateFile, X509CertificateUtils.toPem(certificate));
     }
 
-    private static void writeFile(Path path, int vespaUidOnHost, String utf8Content) {
+    private static void writeFile(ContainerPath path, String utf8Content) {
         new UnixPath(path.resolveSibling(path.getFileName() + ".tmp"))
                 .writeUtf8File(utf8Content, "r--------")
-                .setOwnerId(vespaUidOnHost)
+                .setOwner("vespa")
                 .atomicMove(path);
     }
 
-    private static X509Certificate readCertificateFromFile(Path certificateFile) throws IOException {
+    private static X509Certificate readCertificateFromFile(ContainerPath certificateFile) throws IOException {
         String pemEncodedCertificate = new String(Files.readAllBytes(certificateFile));
         return X509CertificateUtils.fromPem(pemEncodedCertificate);
     }

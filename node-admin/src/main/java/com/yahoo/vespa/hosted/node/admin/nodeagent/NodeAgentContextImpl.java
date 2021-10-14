@@ -16,17 +16,20 @@ import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerNetworkMode;
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerFileSystem;
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 
 import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.ProviderMismatchException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author freva
@@ -40,9 +43,8 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final AthenzIdentity identity;
     private final ContainerNetworkMode containerNetworkMode;
     private final ZoneApi zone;
-    private final FileSystem fileSystem;
-    private final Path pathToNodeRootOnHost;
-    private final Path pathToVespaHome;
+    private final ContainerFileSystem containerFs;
+    private final ContainerPath pathToVespaHome;
     private final UserNamespace userNamespace;
     private final double cpuSpeedup;
     private final Set<NodeAgentTask> disabledNodeAgentTasks;
@@ -50,8 +52,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
 
     public NodeAgentContextImpl(NodeSpec node, Acl acl, AthenzIdentity identity,
                                 ContainerNetworkMode containerNetworkMode, ZoneApi zone,
-                                FileSystem fileSystem, FlagSource flagSource,
-                                Path pathToContainerStorage, Path pathToVespaHome,
+                                FlagSource flagSource, Path pathToContainerStorage, String pathToVespaHome,
                                 UserNamespace userNamespace, double cpuSpeedup,
                                 Optional<ApplicationId> hostExclusiveTo) {
         if (cpuSpeedup <= 0)
@@ -63,9 +64,8 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         this.identity = Objects.requireNonNull(identity);
         this.containerNetworkMode = Objects.requireNonNull(containerNetworkMode);
         this.zone = Objects.requireNonNull(zone);
-        this.fileSystem = Objects.requireNonNull(fileSystem);
-        this.pathToNodeRootOnHost = requireValidPath(pathToContainerStorage).resolve(containerName.asString());
-        this.pathToVespaHome = requireValidPath(pathToVespaHome);
+        this.containerFs = ContainerFileSystem.create(pathToContainerStorage.resolve(containerName.asString()), userNamespace.rootUserIdOnHost(), userNamespace.rootGroupIdOnHost());
+        this.pathToVespaHome = containerFs.getPath(pathToVespaHome);
         this.logPrefix = containerName.asString() + ": ";
         this.userNamespace = Objects.requireNonNull(userNamespace);
         this.cpuSpeedup = cpuSpeedup;
@@ -120,41 +120,21 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
-    public FileSystem fileSystem() {
-        return fileSystem;
+    public ContainerPath containerPath(String pathInNode) {
+        return containerFs.getPath(pathInNode);
     }
 
     @Override
-    public Path pathOnHostFromPathInNode(Path pathInNode) {
-        requireValidPath(pathInNode);
-
-        if (! pathInNode.isAbsolute())
-            throw new IllegalArgumentException("Expected an absolute path in the container, got: " + pathInNode);
-
-        return pathToNodeRootOnHost.resolve(pathInNode.getRoot().relativize(pathInNode));
-    }
-
-    @Override
-    public Path pathInNodeFromPathOnHost(Path pathOnHost) {
-        requireValidPath(pathOnHost);
-
-        if (! pathOnHost.isAbsolute())
-            throw new IllegalArgumentException("Expected an absolute path on the host, got: " + pathOnHost);
-
-        if (!pathOnHost.startsWith(pathToNodeRootOnHost))
-            throw new IllegalArgumentException("Path " + pathOnHost + " does not exist in the container");
-
-        return pathOnHost.getRoot().resolve(pathToNodeRootOnHost.relativize(pathOnHost));
-    }
-
-    @Override
-    public Path pathInNodeUnderVespaHome(Path relativePath) {
-        requireValidPath(relativePath);
-
-        if (relativePath.isAbsolute())
+    public ContainerPath containerPathUnderVespaHome(String relativePath) {
+        if (relativePath.startsWith("/"))
             throw new IllegalArgumentException("Expected a relative path to the Vespa home, got: " + relativePath);
 
         return pathToVespaHome.resolve(relativePath);
+    }
+
+    @Override
+    public ContainerPath containerPathFromPathOnHost(Path pathOnHost) {
+        return ContainerPath.fromPathOnHost(containerFs, pathOnHost);
     }
 
     @Override
@@ -186,22 +166,9 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                ", identity=" + identity +
                ", dockerNetworking=" + containerNetworkMode +
                ", zone=" + zone +
-               ", pathToNodeRootOnHost=" + pathToNodeRootOnHost +
                ", pathToVespaHome=" + pathToVespaHome +
                ", hostExclusiveTo='" + hostExclusiveTo + '\'' +
                '}';
-    }
-
-    private Path requireValidPath(Path path) {
-        Objects.requireNonNull(path);
-
-        Objects.requireNonNull(fileSystem); // to allow this method to be used in constructor.
-        if (!path.getFileSystem().provider().equals(fileSystem.provider())) {
-            throw new ProviderMismatchException("Expected file system provider " + fileSystem.provider() +
-                    " but " + path + " had " + path.getFileSystem().provider());
-        }
-
-        return path;
     }
 
     public static NodeAgentContextImpl.Builder builder(NodeSpec node) {
@@ -219,16 +186,17 @@ public class NodeAgentContextImpl implements NodeAgentContext {
 
     /** For testing only! */
     public static class Builder {
+        private static final Path DEFAULT_CONTAINER_STORAGE = Path.of("/data/vespa/storage");
+
         private NodeSpec.Builder nodeSpecBuilder;
         private Acl acl;
         private AthenzIdentity identity;
         private ContainerNetworkMode containerNetworkMode;
         private ZoneApi zone;
         private UserNamespace userNamespace;
-        private FileSystem fileSystem = FileSystems.getDefault();
+        private Path containerStorage;
         private FlagSource flagSource;
         private double cpuSpeedUp = 1;
-        private Path containerStorage;
         private Optional<ApplicationId> hostExclusiveTo = Optional.empty();
 
         private Builder(NodeSpec.Builder nodeSpecBuilder) {
@@ -267,8 +235,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
 
         /** Sets the file system to use for paths. */
         public Builder fileSystem(FileSystem fileSystem) {
-            this.fileSystem = fileSystem;
-            return this;
+            return containerStorage(fileSystem.getPath(DEFAULT_CONTAINER_STORAGE.toString()));
         }
 
         public Builder flagSource(FlagSource flagSource) {
@@ -292,7 +259,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         }
 
         public NodeAgentContextImpl build() {
-            return new NodeAgentContextImpl(
+            NodeAgentContextImpl context = new NodeAgentContextImpl(
                     nodeSpecBuilder.build(),
                     Optional.ofNullable(acl).orElse(Acl.EMPTY),
                     Optional.ofNullable(identity).orElseGet(() -> new AthenzService("domain", "service")),
@@ -318,12 +285,16 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                             return getId().region().value();
                         }
                     }),
-                    fileSystem,
                     Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new),
-                    Optional.ofNullable(containerStorage).orElseGet(() -> fileSystem.getPath("/data/vespa/storage")),
-                    fileSystem.getPath("/opt/vespa"),
-                    Optional.ofNullable(userNamespace).orElseGet(() -> new UserNamespace(10000, 10000, "vespa", "users", 1000, 100)),
+                    Optional.ofNullable(containerStorage).orElseGet(() -> Path.of("/data/vespa/storage")),
+                    "/opt/vespa",
+                    Optional.ofNullable(userNamespace).orElseGet(() -> new UserNamespace(100000, 100000, "vespa", "vespa", 1000, 100)),
                     cpuSpeedUp, hostExclusiveTo);
+
+            if (containerStorage != null)
+                uncheck(() -> Files.createDirectories(context.containerPath("/").pathOnHost()));
+
+            return context;
         }
     }
 }
