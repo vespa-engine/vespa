@@ -37,14 +37,12 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 /**
  * @author valerijf
  */
-public class ContainerFileSystemProvider extends FileSystemProvider {
-
+class ContainerFileSystemProvider extends FileSystemProvider {
     private final ContainerFileSystem containerFs;
     private final ContainerUserPrincipalLookupService userPrincipalLookupService;
     private final Path containerRootOnHost;
 
-
-    public ContainerFileSystemProvider(Path containerRootOnHost, int uidOffset, int gidOffset) {
+    ContainerFileSystemProvider(Path containerRootOnHost, int uidOffset, int gidOffset) {
         this.containerFs = new ContainerFileSystem(this);
         this.userPrincipalLookupService = new ContainerUserPrincipalLookupService(
                 containerRootOnHost.getFileSystem().getUserPrincipalLookupService(), uidOffset, gidOffset);
