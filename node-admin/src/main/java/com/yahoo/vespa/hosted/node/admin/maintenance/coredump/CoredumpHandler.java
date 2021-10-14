@@ -52,7 +52,7 @@ public class CoredumpHandler {
     private final Terminal terminal;
     private final CoreCollector coreCollector;
     private final CoredumpReporter coredumpReporter;
-    private final Path crashPatchInContainer;
+    private final String crashPatchInContainer;
     private final Path doneCoredumpsPath;
     private final int operatorGroupId;
     private final Metrics metrics;
@@ -65,13 +65,13 @@ public class CoredumpHandler {
      * @param operatorGroupId group ID of the group that will be set as the owner of the processed coredump
      */
     public CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                           Path crashPathInContainer, Path doneCoredumpsPath, int operatorGroupId, Metrics metrics) {
+                           String crashPathInContainer, Path doneCoredumpsPath, int operatorGroupId, Metrics metrics) {
         this(terminal, coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
                 operatorGroupId, metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString());
     }
 
     CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                    Path crashPathInContainer, Path doneCoredumpsPath, int operatorGroupId, Metrics metrics,
+                    String crashPathInContainer, Path doneCoredumpsPath, int operatorGroupId, Metrics metrics,
                     Clock clock, Supplier<String> coredumpIdSupplier) {
         this.terminal = terminal;
         this.coreCollector = coreCollector;
