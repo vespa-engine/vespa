@@ -87,9 +87,9 @@ public class NodeAgentContextImplTest {
         assertTrue(context2.isDisabled(NodeAgentTask.CoreDumps));
     }
 
-    private static NodeAgentContext createContextWithDisabledTasks(String... tasks) {
+    private NodeAgentContext createContextWithDisabledTasks(String... tasks) {
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
         flagSource.withListFlag(PermanentFlags.DISABLED_HOST_ADMIN_TASKS.id(), List.of(tasks), String.class);
-        return NodeAgentContextImpl.builder("node123").flagSource(flagSource).build();
+        return NodeAgentContextImpl.builder("node123").fileSystem(fileSystem).flagSource(flagSource).build();
     }
 }

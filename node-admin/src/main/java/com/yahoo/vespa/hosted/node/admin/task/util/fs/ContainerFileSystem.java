@@ -4,11 +4,14 @@ package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 import java.io.IOException;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.util.Set;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author valerijf
@@ -82,6 +85,7 @@ public class ContainerFileSystem extends FileSystem {
     }
 
     public static ContainerFileSystem create(Path containerStorageRoot, int uidOffset, int gidOffset) {
+        uncheck(() -> Files.createDirectories(containerStorageRoot));
         return new ContainerFileSystemProvider(containerStorageRoot, uidOffset, gidOffset).getFileSystem(null);
     }
 }

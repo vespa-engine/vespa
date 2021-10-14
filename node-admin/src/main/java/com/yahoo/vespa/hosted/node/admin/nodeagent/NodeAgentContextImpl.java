@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerFileSystem;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 
 import java.nio.file.FileSystem;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
@@ -28,8 +27,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author freva
@@ -259,7 +256,9 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         }
 
         public NodeAgentContextImpl build() {
-            NodeAgentContextImpl context = new NodeAgentContextImpl(
+            Objects.requireNonNull(containerStorage, "Must set one of containerStorage or fileSystem");
+
+            return new NodeAgentContextImpl(
                     nodeSpecBuilder.build(),
                     Optional.ofNullable(acl).orElse(Acl.EMPTY),
                     Optional.ofNullable(identity).orElseGet(() -> new AthenzService("domain", "service")),
@@ -286,15 +285,10 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                         }
                     }),
                     Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new),
-                    Optional.ofNullable(containerStorage).orElseGet(() -> Path.of("/data/vespa/storage")),
+                    containerStorage,
                     "/opt/vespa",
                     Optional.ofNullable(userNamespace).orElseGet(() -> new UserNamespace(100000, 100000, "vespa", "vespa", 1000, 100)),
                     cpuSpeedUp, hostExclusiveTo);
-
-            if (containerStorage != null)
-                uncheck(() -> Files.createDirectories(context.containerPath("/").pathOnHost()));
-
-            return context;
         }
     }
 }

@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
+import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
 import java.util.List;
@@ -27,7 +28,8 @@ public class CoreCollectorTest {
     private final String JDK_PATH = "/path/to/jdk/java";
     private final ContainerOperations docker = mock(ContainerOperations.class);
     private final CoreCollector coreCollector = new CoreCollector(docker);
-    private final NodeAgentContext context = NodeAgentContextImpl.builder("container-123.domain.tld").build();
+    private final NodeAgentContext context = NodeAgentContextImpl.builder("container-123.domain.tld")
+            .fileSystem(TestFileSystem.create()).build();
 
     private final ContainerPath TEST_CORE_PATH = context.containerPath("/tmp/core.1234");
     private final String TEST_BIN_PATH = "/usr/bin/program";
