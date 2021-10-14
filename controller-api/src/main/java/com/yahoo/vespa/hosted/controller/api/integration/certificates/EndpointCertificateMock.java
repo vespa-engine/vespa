@@ -10,9 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * @author tokle
+ * @author andreer
  */
 public class EndpointCertificateMock implements EndpointCertificateProvider {
 
@@ -38,14 +40,31 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
     }
 
     @Override
-    public List<EndpointCertificateMetadata> listCertificates() {
-        return List.copyOf(providerMetadata.values());
+    public List<EndpointCertificateRequestMetadata> listCertificates() {
+
+        return providerMetadata.values().stream()
+                .map(p -> new EndpointCertificateRequestMetadata(
+                        p.requestId(),
+                        "mock",
+                        "mock",
+                        "mock",
+                        p.requestedDnsSans().stream()
+                                .map(san -> new EndpointCertificateRequestMetadata.DnsNameStatus(san, "done"))
+                                .collect(Collectors.toUnmodifiableList()),
+                        3600,
+                        "ok",
+                        "2021-09-28T00:14:31.946562037Z",
+                        p.expiry().orElseThrow(),
+                        p.issuer(),
+                        "rsa_2048"
+                ))
+                .collect(Collectors.toUnmodifiableList());
     }
 
     @Override
-    public void deleteCertificate(ApplicationId applicationId, EndpointCertificateMetadata endpointCertificateMetadata) {
+    public void deleteCertificate(ApplicationId applicationId, String requestId) {
         dnsNames.remove(applicationId);
-        providerMetadata.remove(endpointCertificateMetadata.requestId());
+        providerMetadata.remove(requestId);
     }
 
 }

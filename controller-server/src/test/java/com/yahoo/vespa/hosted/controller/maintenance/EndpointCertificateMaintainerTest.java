@@ -31,7 +31,7 @@ public class EndpointCertificateMaintainerTest {
 
     private final ControllerTester tester = new ControllerTester();
     private final SecretStoreMock secretStore = (SecretStoreMock) tester.controller().secretStore();
-    private final EndpointCertificateMaintainer maintainer = new EndpointCertificateMaintainer(tester.controller(), Duration.ofHours(1), Sleeper.NOOP);
+    private final EndpointCertificateMaintainer maintainer = new EndpointCertificateMaintainer(tester.controller(), Duration.ofHours(1));
     private final EndpointCertificateMetadata exampleMetadata = new EndpointCertificateMetadata("keyName", "certName", 0, 0, "uuid", List.of(), "issuer", Optional.empty(), Optional.empty());
     {
         ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.DELETE_UNMAINTAINED_CERTIFICATES.id(), true);
@@ -127,7 +127,7 @@ public class EndpointCertificateMaintainerTest {
     public void unmaintained_cert_is_deleted() {
         EndpointCertificateMock endpointCertificateProvider = (EndpointCertificateMock) tester.controller().serviceRegistry().endpointCertificateProvider();
 
-        ApplicationId unknown = ApplicationId.from("applicationid", "is", "unknown");
+        ApplicationId unknown = ApplicationId.fromSerializedForm("applicationid:is:unknown");
         endpointCertificateProvider.requestCaSignedCertificate(unknown, List.of("a", "b", "c"), Optional.empty()); // Unknown to controller!
 
         assertEquals(1.0, maintainer.maintain(), 0.0000001);

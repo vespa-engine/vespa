@@ -15,11 +15,11 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequestMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.yolean.concurrent.Sleeper;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 
 /**
  * Updates refreshed endpoint certificates and triggers redeployment, and deletes unused certificates.
- *
+ * <p>
  * See also EndpointCertificateManager, which provisions, reprovisions and validates certificates on deploy
  *
  * @author andreer
@@ -50,7 +50,6 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     private final CuratorDb curator;
     private final SecretStore secretStore;
     private final EndpointCertificateProvider endpointCertificateProvider;
-    private Sleeper sleeper = Sleeper.DEFAULT;
     private final BooleanFlag deleteUnmaintainedCertificates = Flags.DELETE_UNMAINTAINED_CERTIFICATES.bindTo(controller().flagSource());
 
     @Inject
@@ -61,11 +60,6 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         this.secretStore = controller.secretStore();
         this.curator = controller().curator();
         this.endpointCertificateProvider = controller.serviceRegistry().endpointCertificateProvider();
-    }
-
-    EndpointCertificateMaintainer(Controller controller, Duration interval, Sleeper sleeper) {
-        this(controller, interval);
-        this.sleeper = sleeper;
     }
 
     @Override
@@ -107,20 +101,20 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     private void deployRefreshedCertificates() {
         var now = clock.instant();
         curator.readAllEndpointCertificateMetadata().forEach((applicationId, endpointCertificateMetadata) ->
-                                                                     endpointCertificateMetadata.lastRefreshed().ifPresent(lastRefreshTime -> {
-                                                                         Instant refreshTime = Instant.ofEpochSecond(lastRefreshTime);
-                                                                         if (now.isAfter(refreshTime.plus(4, ChronoUnit.DAYS))) {
-                                                                             controller().applications().getInstance(applicationId)
-                                                                                         .ifPresent(instance -> instance.productionDeployments().forEach((zone, deployment) -> {
-                                                                                             if (deployment.at().isBefore(refreshTime)) {
-                                                                                                 JobType job = JobType.from(controller().system(), zone).orElseThrow();
-                                                                                                 deploymentTrigger.reTrigger(applicationId, job);
-                                                                                                 log.info("Re-triggering deployment job " + job.jobName() + " for instance " +
-                                                                                                          applicationId.serializedForm() + " to roll out refreshed endpoint certificate");
-                                                                                             }
-                                                                                         }));
-                                                                         }
-                                                                     }));
+                endpointCertificateMetadata.lastRefreshed().ifPresent(lastRefreshTime -> {
+                    Instant refreshTime = Instant.ofEpochSecond(lastRefreshTime);
+                    if (now.isAfter(refreshTime.plus(4, ChronoUnit.DAYS))) {
+                        controller().applications().getInstance(applicationId)
+                                .ifPresent(instance -> instance.productionDeployments().forEach((zone, deployment) -> {
+                                    if (deployment.at().isBefore(refreshTime)) {
+                                        JobType job = JobType.from(controller().system(), zone).orElseThrow();
+                                        deploymentTrigger.reTrigger(applicationId, job);
+                                        log.info("Re-triggering deployment job " + job.jobName() + " for instance " +
+                                                applicationId.serializedForm() + " to roll out refreshed endpoint certificate");
+                                    }
+                                }));
+                    }
+                }));
     }
 
     private OptionalInt latestVersionInSecretStore(EndpointCertificateMetadata originalCertificateMetadata) {
@@ -142,7 +136,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                     if (Optional.of(storedMetaData).equals(curator.readEndpointCertificateMetadata(applicationId))) {
                         log.log(Level.INFO, "Cert for app " + applicationId.serializedForm()
                                 + " has not been requested in a month and app has no deployments, deleting from provider and ZK");
-                        endpointCertificateProvider.deleteCertificate(applicationId, storedMetaData);
+                        endpointCertificateProvider.deleteCertificate(applicationId, storedMetaData.requestId());
                         curator.deleteEndpointCertificateMetadata(applicationId);
                     }
                 }
@@ -163,26 +157,21 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     }
 
     private void deleteOrReportUnmanagedCertificates() {
-        List<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateProvider.listCertificates();
+        List<EndpointCertificateRequestMetadata> endpointCertificateMetadata = endpointCertificateProvider.listCertificates();
         Set<String> managedRequestIds = curator.readAllEndpointCertificateMetadata().values().stream().map(EndpointCertificateMetadata::requestId).collect(Collectors.toSet());
 
         for (var cameoCertificateMetadata : endpointCertificateMetadata) {
             if (!managedRequestIds.contains(cameoCertificateMetadata.requestId())) {
                 if (deleteUnmaintainedCertificates.value()) {
                     // The certificate is not known - however it could be in the process of being requested by us or another controller.
-                    // We don't know what application id this cert might be related to, so we can't use the application lock to avoid this.
-                    // Instead we sleep for longer than the timeout set for a provider request, and check again before issuing a delete.
-                    try { sleeper.sleepChecked(300_000); } catch (InterruptedException e) { return; } // (timeout / retries are defined in EndpointCertificateProvider implementation)
-                    if (curator.readAllEndpointCertificateMetadata().values().stream().map(EndpointCertificateMetadata::requestId).noneMatch(s -> s.equals(cameoCertificateMetadata.requestId()))) {
-                        log.info("Deleting unknown certificate from provider with request id \"" + cameoCertificateMetadata.requestId() + "\" and SANs: " + cameoCertificateMetadata.requestedDnsSans());
-                        endpointCertificateProvider.deleteCertificate(ApplicationId.from("applicationid", "is", "unknown"), cameoCertificateMetadata);
+                    // So we only delete if it was requested more than 7 days ago.
+                    if (Instant.parse(cameoCertificateMetadata.createTime()).isBefore(Instant.now().minus(7, ChronoUnit.DAYS))) {
+                        endpointCertificateProvider.deleteCertificate(ApplicationId.fromSerializedForm("applicationid:is:unknown"), cameoCertificateMetadata.requestId());
                     }
-                    return; // After all that waiting we did, we better return so the maintainer can finish. We'll get a chance to clean up more on the next run
                 } else {
-                    log.info("Certificate metadata exists with provider but is not managed by controller: " + cameoCertificateMetadata.requestId() + ", " + cameoCertificateMetadata.requestedDnsSans());
+                    log.info("Certificate metadata exists with provider but is not managed by controller: " + cameoCertificateMetadata);
                 }
             }
         }
     }
-
 }
