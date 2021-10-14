@@ -64,6 +64,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final Map<StorageGroup, NodeSpec> groupToSpecMap = new LinkedHashMap<>();
     private Optional<ResourceLimits> resourceLimits = Optional.empty();
     private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
+    private final int feedTaskLimit;
     private final double defaultFeedConcurrency;
     private final double defaultDiskBloatFactor;
     private final int defaultDocStoreCompressionLevel;
@@ -210,6 +211,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
 
         this.combined = combined;
         feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
+        feedTaskLimit = featureFlags.feedTaskLimit();
         defaultFeedConcurrency = featureFlags.feedConcurrency();
         defaultDocStoreCompressionLevel = featureFlags.docstoreCompressionLevel();
         defaultDiskBloatFactor = featureFlags.diskBloatFactor();
@@ -429,6 +431,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         } else {
             builder.indexing.optimize(feedSequencerType);
         }
+        builder.indexing.tasklimit(feedTaskLimit);
     }
 
     private boolean isGloballyDistributed(NewDocumentType docType) {
