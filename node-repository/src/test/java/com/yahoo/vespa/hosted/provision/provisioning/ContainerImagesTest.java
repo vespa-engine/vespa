@@ -1,13 +1,22 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
+import com.yahoo.vespa.hosted.provision.node.Generation;
+import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
 import org.junit.Test;
 
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -18,57 +27,46 @@ public class ContainerImagesTest {
 
     @Test
     public void image_selection() {
-        var flagSource = new InMemoryFlagSource();
-        var tester = new ProvisioningTester.Builder().flagSource(flagSource).build();
+        DockerImage defaultImage = DockerImage.fromString("registry.example.com/vespa/default");
+        DockerImage tenantImage = DockerImage.fromString("registry.example.com/vespa/tenant");
+        ContainerImages images = new ContainerImages(defaultImage, Optional.of(tenantImage));
 
-        var proxyImage = DockerImage.fromString("docker-registry.domain.tld:8080/dist/proxy");
-        tester.nodeRepository().containerImages().setImage(NodeType.proxy, Optional.of(proxyImage));
+        assertEquals(defaultImage, images.get(node(NodeType.confighost)));  // For preload purposes
+        assertEquals(defaultImage, images.get(node(NodeType.config)));
 
-        // Host uses tenant default image (for preload purposes)
-        var defaultImage = DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa");
-        var hosts = tester.makeReadyNodes(2, "default", NodeType.host);
-        tester.activateTenantHosts();
-        for (var host : hosts) {
-            assertEquals(defaultImage, tester.nodeRepository().containerImages().imageFor(host.type()));
-        }
+        assertEquals(tenantImage, images.get(node(NodeType.host))); // For preload purposes
+        assertEquals(tenantImage, images.get(node(NodeType.tenant)));
 
-        // Tenant node uses tenant default image
-        var resources = new NodeResources(2, 8, 50, 1);
-        for (var host : hosts) {
-            var nodes = tester.makeReadyChildren(2, resources, host.hostname());
-            for (var node : nodes) {
-                assertEquals(defaultImage, tester.nodeRepository().containerImages().imageFor(node.type()));
-            }
-        }
+        assertEquals(defaultImage, images.get(node(NodeType.proxyhost))); // For preload purposes
+        assertEquals(defaultImage, images.get(node(NodeType.proxy)));
 
-        // Proxy host uses image used by child nodes (proxy nodes), which is overridden in this case (for preload purposes)
-        var proxyHosts = tester.makeReadyNodes(2, "default", NodeType.proxyhost, 1);
-        for (var host : proxyHosts) {
-            assertEquals(proxyImage, tester.nodeRepository().containerImages().imageFor(host.type()));
-        }
+        // Tenant node requesting a special image
+        DockerImage requested = DockerImage.fromString("registry.example.com/vespa/special");
+        assertEquals(requested, images.get(node(NodeType.tenant, requested)));
+
+        // When there is no custom tenant image, the default one is used
+        images = new ContainerImages(defaultImage, Optional.empty());
+        assertEquals(defaultImage, images.get(node(NodeType.host)));
+        assertEquals(defaultImage, images.get(node(NodeType.tenant)));
     }
 
-    @Test
-    public void image_replacement() {
-        var flagSource = new InMemoryFlagSource();
-        var defaultImage = DockerImage.fromString("foo.example.com/vespa/vespa");
-        var tester = new ProvisioningTester.Builder().defaultImage(defaultImage).flagSource(flagSource).build();
-        var hosts = tester.makeReadyNodes(2, "default", NodeType.host);
-        tester.activateTenantHosts();
+    private static Node node(NodeType type) {
+        return node(type, null);
+    }
 
-        // Default image is used when there is no replacement
-        for (var host : hosts) {
-            assertEquals(defaultImage, tester.nodeRepository().containerImages().imageFor(host.type()));
+    private static Node node(NodeType type, DockerImage requested) {
+        Flavor flavor = new MockNodeFlavors().getFlavorOrThrow("default");
+        Node.Builder b = Node.create(type + "1", new IP.Config(Set.of(), Set.of()), type + "1.example.com", flavor, type);
+        if (requested != null) {
+            b.allocation(new Allocation(ApplicationId.defaultId(),
+                                        ClusterMembership.from("container/id1/4/37",
+                                                               Version.fromString("1.2.3"),
+                                                               Optional.of(requested)),
+                                        NodeResources.unspecified(),
+                                        Generation.initial(),
+                                        false));
         }
-
-        // Replacement image is preferred
-        DockerImage imageWithReplacement = defaultImage.withReplacedBy(DockerImage.fromString("bar.example.com/vespa/vespa"));
-        tester = new ProvisioningTester.Builder().defaultImage(imageWithReplacement).flagSource(flagSource).build();
-        hosts = tester.makeReadyNodes(2, "default", NodeType.host);
-        for (var host : hosts) {
-            assertEquals(imageWithReplacement.replacedBy().get().asString(),
-                         tester.nodeRepository().containerImages().imageFor(host.type()).asString());
-        }
+        return b.build();
     }
 
 }

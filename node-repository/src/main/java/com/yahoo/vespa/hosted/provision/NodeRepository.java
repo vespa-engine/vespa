@@ -79,8 +79,8 @@ public class NodeRepository extends AbstractComponent {
              Clock.systemUTC(),
              zone,
              new DnsNameResolver(),
-             DockerImage.fromString(config.containerImage())
-                        .withReplacedBy(DockerImage.fromString(config.containerImageReplacement())),
+             DockerImage.fromString(config.containerImage()),
+             Optional.of(config.tenantContainerImage()).filter(s -> !s.isEmpty()).map(DockerImage::fromString),
              flagSource,
              metricsDb,
              config.useCuratorClientCache(),
@@ -99,6 +99,7 @@ public class NodeRepository extends AbstractComponent {
                           Zone zone,
                           NameResolver nameResolver,
                           DockerImage containerImage,
+                          Optional<DockerImage> tenantContainerImage,
                           FlagSource flagSource,
                           MetricsDb metricsDb,
                           boolean useCuratorClientCache,
@@ -119,7 +120,7 @@ public class NodeRepository extends AbstractComponent {
         this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
-        this.containerImages = new ContainerImages(db, containerImage);
+        this.containerImages = new ContainerImages(containerImage, tenantContainerImage);
         this.archiveUris = new ArchiveUris(db);
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.applications = new Applications(db);

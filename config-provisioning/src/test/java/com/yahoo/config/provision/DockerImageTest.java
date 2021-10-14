@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -20,10 +19,10 @@ public class DockerImageTest {
     public void parse() {
         Map<String, DockerImage> tests = Map.of(
                 "", DockerImage.EMPTY,
-                "registry.example.com:9999/vespa/vespa:7.42", new DockerImage("registry.example.com:9999", "vespa/vespa", Optional.of("7.42"), Optional.empty()),
-                "registry.example.com/vespa/vespa:7.42", new DockerImage("registry.example.com", "vespa/vespa", Optional.of("7.42"), Optional.empty()),
-                "registry.example.com:9999/vespa/vespa", new DockerImage("registry.example.com:9999", "vespa/vespa", Optional.empty(), Optional.empty()),
-                "registry.example.com/vespa/vespa", new DockerImage("registry.example.com", "vespa/vespa", Optional.empty(), Optional.empty())
+                "registry.example.com:9999/vespa/vespa:7.42", new DockerImage("registry.example.com:9999", "vespa/vespa", Optional.of("7.42")),
+                "registry.example.com/vespa/vespa:7.42", new DockerImage("registry.example.com", "vespa/vespa", Optional.of("7.42")),
+                "registry.example.com:9999/vespa/vespa", new DockerImage("registry.example.com:9999", "vespa/vespa", Optional.empty()),
+                "registry.example.com/vespa/vespa", new DockerImage("registry.example.com", "vespa/vespa", Optional.empty())
         );
         tests.forEach((value, expected) -> {
             DockerImage parsed = DockerImage.fromString(value);
@@ -51,12 +50,6 @@ public class DockerImageTest {
             } catch (IllegalArgumentException ignored) {
             }
         }
-    }
-
-    @Test
-    public void empty_replacement() {
-        DockerImage image = new DockerImage("foo.example.com", "vespa/vespa", Optional.of("7.42"), Optional.empty());
-        assertTrue(image.withReplacedBy(DockerImage.EMPTY).replacedBy().isEmpty());
     }
 
 }
