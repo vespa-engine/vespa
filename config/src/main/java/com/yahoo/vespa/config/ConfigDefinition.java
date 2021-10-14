@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 
 /**
  * Represents one legal def file, or (internally) one array or inner array definition in a def file.
- * @author vegardh
+ * @author Vegard Balgaard Havdal
  *
  */
 public class ConfigDefinition {

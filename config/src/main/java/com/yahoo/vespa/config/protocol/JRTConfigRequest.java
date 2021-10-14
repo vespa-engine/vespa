@@ -30,13 +30,6 @@ public interface JRTConfigRequest {
     boolean validateParameters();
 
     /**
-     * Returns the config md5 of the config request. Return an empty string if no response has been returned.
-     *
-     * @return a config md5.
-     */
-    String getRequestConfigMd5();
-
-    /**
      * Returns the md5 of the config definition in the request.
      *
      * @return an md5 of config definition in request.

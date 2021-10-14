@@ -171,11 +171,6 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     }
 
     @Override
-    public String getRequestConfigMd5() {
-        return requestData.getRequestConfigMd5();
-    }
-
-    @Override
     public String getRequestDefMd5() { return requestData.getRequestDefMd5(); }
 
     public PayloadChecksums getRequestConfigChecksums() { return requestData.getRequestConfigChecksums(); }
