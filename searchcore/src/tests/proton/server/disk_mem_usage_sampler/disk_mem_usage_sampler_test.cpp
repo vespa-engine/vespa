@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
@@ -62,7 +62,13 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
         std::this_thread::sleep_for(50ms);
     }
     LOG(info, "Polled %zu times (%zu ms) to get a sample", i, i * 50);
+#ifdef __linux__
+    // Anonymous resident memory used by current process is sampled.
     EXPECT_GT(filter().getMemoryStats().getAnonymousRss(), 0);
+#else
+    // Anonymous resident memory used by current process is not sampled.
+    EXPECT_EQ(filter().getMemoryStats().getAnonymousRss(), 0);
+#endif
     EXPECT_GT(filter().getDiskUsedSize(), 0);
     EXPECT_EQ(100, filter().get_transient_memory_usage());
     EXPECT_EQ(100.0 / memory_size_bytes, filter().get_relative_transient_memory_usage());

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network.rpc;
 
 import com.yahoo.jrt.ListenFailedException;
@@ -83,11 +83,11 @@ public class ServiceAddressTestCase {
     }
 
     private void assertNullAddress(String pattern) {
-        assertNull(new RPCService(network.getMirror(), pattern).resolve());
+        assertNull(RPCService.create(network.getMirror(), pattern).resolve());
     }
 
     private void assertAddress(String pattern, String expectedSpec, String expectedSession) {
-        RPCService service = new RPCService(network.getMirror(), pattern);
+        RPCService service = RPCService.create(network.getMirror(), pattern);
         RPCServiceAddress obj = service.resolve();
         assertNotNull(obj);
         assertNotNull(obj.getConnectionSpec());

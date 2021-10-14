@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -22,6 +22,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
+#include <atomic>
 #include <mutex>
 #include <queue>
 #include <unordered_map>
@@ -180,6 +181,14 @@ public:
 
     std::chrono::steady_clock::duration db_memory_sample_interval() const noexcept {
         return _db_memory_sample_interval;
+    }
+
+    void inhibit_non_activation_maintenance_operations(bool inhibit) noexcept {
+        _non_activation_maintenance_is_inhibited.store(inhibit, std::memory_order_relaxed);
+    }
+
+    bool non_activation_maintenance_is_inhibited() const noexcept {
+        return _non_activation_maintenance_is_inhibited.load(std::memory_order_relaxed);
     }
 
     bool tick() override;
@@ -342,8 +351,9 @@ private:
     std::chrono::steady_clock::duration _db_memory_sample_interval;
     std::chrono::steady_clock::time_point _last_db_memory_sample_time_point;
     size_t _inhibited_maintenance_tick_count;
-    bool _must_send_updated_host_info;
     uint32_t _stripe_index;
+    std::atomic<bool> _non_activation_maintenance_is_inhibited;
+    bool _must_send_updated_host_info;
 };
 
 }

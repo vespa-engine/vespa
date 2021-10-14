@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 if (( ${#BASH_SOURCE[@]} == 1 )); then
     echo "This script must be sourced."
@@ -27,6 +27,8 @@ elif ! grep -v -E "(\.h|\.hh|\.hxx|\.c|\.cpp|\.cxx)$" <<< "$FILES" &> /dev/null;
   SHOULD_BUILD=cpp
 elif ! grep -v -E "(\.java)$" <<< "$FILES" &> /dev/null; then
   SHOULD_BUILD=java
+elif ! grep -v -E "(\.go)$" <<< "$FILES" &> /dev/null; then
+  SHOULD_BUILD=go
 else
   SHOULD_BUILD=all
 fi

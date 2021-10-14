@@ -16,6 +16,7 @@
 #include <vespa/searchcore/bmcluster/bm_node_stats.h>
 #include <vespa/searchcore/bmcluster/bm_node_stats_reporter.h>
 #include <vespa/searchcore/bmcluster/bm_range.h>
+#include <vespa/searchcore/bmcluster/bucket_db_snapshot_vector.h>
 #include <vespa/searchcore/bmcluster/bucket_selector.h>
 #include <vespa/searchcore/bmcluster/spi_bm_feed_handler.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -53,6 +54,7 @@ using search::bmcluster::BmRange;
 using search::bmcluster::BucketSelector;
 using search::index::DummyFileHeaderContext;
 using storage::lib::State;
+using vespalib::makeLambdaTask;
 
 namespace {
 
@@ -73,7 +75,7 @@ enum class Mode {
     PERM_CRASH,
     TEMP_CRASH,
     REPLACE,
-    BAD,
+    BAD
 };
 
 std::vector<vespalib::string> mode_names = {
@@ -100,74 +102,26 @@ vespalib::string& get_mode_name(Mode mode) {
     return (i < mode_names.size()) ? mode_names[i] : bad_mode_name;
 }
 
-double
-estimate_lost_docs_base_ratio(uint32_t redundancy, uint32_t lost_nodes, uint32_t num_nodes)
-{
-    if (redundancy > lost_nodes) {
-        return 0.0;
+enum ReFeedMode {
+    NONE,
+    PUT,
+    UPDATE,
+    BAD
+};
+
+std::vector<vespalib::string> refeed_mode_names = {
+    "none",
+    "put",
+    "update"
+};
+
+ReFeedMode get_refeed_mode(const vespalib::string& refeed_mode_name) {
+    for (uint32_t i = 0; i < refeed_mode_names.size(); ++i) {
+        if (refeed_mode_name == refeed_mode_names[i]) {
+            return static_cast<ReFeedMode>(i);
+        }
     }
-    double loss_ratio = 1.0;
-    for (uint32_t i = 0; i < redundancy; ++i) {
-        loss_ratio *= ((double) (lost_nodes - i)) / (num_nodes - i);
-    }
-    LOG(info, "estimated lost docs base ratio: %4.2f", loss_ratio);
-    return loss_ratio;
-}
-
-double
-estimate_moved_docs_ratio_grow(uint32_t redundancy, uint32_t added_nodes, uint32_t num_nodes)
-{
-    double new_redundancy = redundancy;
-    double new_per_node_doc_ratio = new_redundancy / num_nodes;
-    double moved_ratio = new_per_node_doc_ratio * added_nodes;
-    LOG(info, "estimated_moved_docs_ratio_grow(%u,%u,%u)=%4.2f", redundancy, added_nodes, num_nodes, moved_ratio);
-    return moved_ratio;
-}
-
-double
-estimate_moved_docs_ratio_shrink(uint32_t redundancy, uint32_t retired_nodes, uint32_t num_nodes)
-{
-    double old_redundancy = redundancy;
-    double old_per_node_doc_ratio = old_redundancy / num_nodes;
-    uint32_t new_nodes = num_nodes - retired_nodes;
-    double new_redundancy = std::min(redundancy, new_nodes);
-    double new_per_node_doc_ratio = new_redundancy / new_nodes;
-    double moved_ratio = (new_per_node_doc_ratio - old_per_node_doc_ratio) * new_nodes;
-    LOG(info, "estimated_moved_docs_ratio_shrink(%u,%u,%u)=%4.2f", redundancy, retired_nodes, num_nodes, moved_ratio);
-    return moved_ratio;
-}
-
-double
-estimate_moved_docs_ratio_crash(uint32_t redundancy, uint32_t crashed_nodes, uint32_t num_nodes)
-{
-    double old_redundancy = redundancy;
-    double old_per_node_doc_ratio = old_redundancy / num_nodes;
-    uint32_t new_nodes = num_nodes - crashed_nodes;
-    double new_redundancy = std::min(redundancy, new_nodes);
-    double new_per_node_doc_ratio = new_redundancy / new_nodes;
-    double lost_docs_ratio = estimate_lost_docs_base_ratio(redundancy, crashed_nodes, num_nodes) * new_redundancy;
-    double moved_ratio = (new_per_node_doc_ratio - old_per_node_doc_ratio) * new_nodes - lost_docs_ratio;
-    LOG(info, "estimated_moved_docs_ratio_crash(%u,%u,%u)=%4.2f", redundancy, crashed_nodes, num_nodes, moved_ratio);
-    return moved_ratio;
-}
-
-double
-estimate_moved_docs_ratio_replace(uint32_t redundancy, uint32_t added_nodes, uint32_t retired_nodes, uint32_t num_nodes)
-{
-    uint32_t old_nodes = num_nodes - added_nodes;
-    double old_redundancy = std::min(redundancy, old_nodes);
-    double old_per_node_doc_ratio = old_redundancy / old_nodes;
-    uint32_t new_nodes = num_nodes - retired_nodes;
-    double new_redundancy = std::min(redundancy, new_nodes);
-    double new_per_node_doc_ratio = new_redundancy / new_nodes;
-    double moved_ratio = new_per_node_doc_ratio * added_nodes;
-    uint32_t stable_nodes = num_nodes - added_nodes - retired_nodes;
-    // Account for extra documents moved from retired nodes to stable nodes
-    double extra_per_stable_node_doc_ratio = new_per_node_doc_ratio * added_nodes / old_nodes;
-    double extra_moved_ratio = (std::min(1.0, new_per_node_doc_ratio + extra_per_stable_node_doc_ratio) - old_per_node_doc_ratio) * stable_nodes;
-    moved_ratio += extra_moved_ratio;
-    LOG(info, "estimated_moved_docs_ratio_replace(%u,%u,%u,%u)=%4.2f, (of which %4.2f extra)", redundancy, added_nodes, retired_nodes, num_nodes, moved_ratio, extra_moved_ratio);
-    return moved_ratio;
+    return ReFeedMode::BAD;
 }
 
 class BMParams : public BmClusterParams,
@@ -175,14 +129,17 @@ class BMParams : public BmClusterParams,
 {
     uint32_t _flip_nodes;
     Mode     _mode;
+    ReFeedMode _refeed_mode;
     bool     _use_feed_settle;
 public:
     BMParams();
     uint32_t get_flip_nodes() const noexcept { return _flip_nodes; }
     Mode get_mode() const noexcept { return _mode; }
+    ReFeedMode get_refeed_mode() const noexcept { return _refeed_mode; }
     bool get_use_feed_settle() const noexcept { return _use_feed_settle; }
     void set_flip_nodes(uint32_t value) { _flip_nodes = value; }
     void set_mode(Mode value) { _mode = value; }
+    void set_refeed_mode(ReFeedMode value) { _refeed_mode = value; }
     void set_use_feed_settle(bool value) { _use_feed_settle = value; }
     bool check() const;
 };
@@ -192,12 +149,13 @@ BMParams::BMParams()
           BmFeedParams(),
           _flip_nodes(1u),
           _mode(Mode::GROW),
+          _refeed_mode(ReFeedMode::NONE),
           _use_feed_settle(false)
 {
     set_enable_service_layer(true);
     set_enable_distributor(true);
     set_use_document_api(true);
-    set_num_nodes(4);
+    set_nodes_per_group(4);
 }
 
 
@@ -229,7 +187,53 @@ BMParams::check() const
         std::cerr << "Bad mode" << std::endl;
         return false;
     }
+    if (_refeed_mode == ReFeedMode::BAD) {
+        std::cerr << "Bad refeed-mode" << std::endl;
+        return false;
+    }
     return true;
+}
+
+class ReFeed {
+    vespalib::ThreadStackExecutor           _top_executor;
+    vespalib::ThreadStackExecutor           _executor;
+    BmFeeder                                _feeder;
+    const vespalib::string                  _op_name;
+    const BMParams&                         _params;
+    int64_t&                                _time_bias;
+    const std::vector<vespalib::nbostream>& _feed;
+
+    void run();
+public:
+    ReFeed(const BMParams& params, std::shared_ptr<const DocumentTypeRepo> repo, IBmFeedHandler& feed_handler, int64_t& time_bias, const std::vector<vespalib::nbostream>& feed, const vespalib::string& op_name);
+    ~ReFeed();
+};
+
+ReFeed::ReFeed(const BMParams& params, std::shared_ptr<const DocumentTypeRepo> repo, IBmFeedHandler& feed_handler, int64_t& time_bias, const std::vector<vespalib::nbostream>& feed, const vespalib::string& op_name)
+    : _top_executor(1, 128_Ki),
+      _executor(params.get_client_threads(), 128_Ki),
+      _feeder(repo, feed_handler, _executor),
+      _op_name(op_name),
+      _params(params),
+      _time_bias(time_bias),
+      _feed(feed)
+{
+    _top_executor.execute(makeLambdaTask([this]()
+                                         { run(); }));
+}
+
+ReFeed::~ReFeed()
+{
+    _feeder.stop();
+    _top_executor.sync();
+    _top_executor.shutdown();
+}
+
+void
+ReFeed::run()
+{
+    std::this_thread::sleep_for(2s);
+    _feeder.run_feed_tasks_loop(_time_bias, _feed, _params, _op_name);
 }
 
 }
@@ -240,12 +244,14 @@ class Benchmark {
     std::shared_ptr<const DocumentTypeRepo>    _repo;
     std::unique_ptr<BmCluster>                 _cluster;
     BmFeed                                     _feed;
+    std::vector<vespalib::nbostream>           _put_feed;
+    std::vector<vespalib::nbostream>           _update_feed;
+    int64_t                                    _time_bias;
 
     void adjust_cluster_state_before_feed();
     void adjust_cluster_state_after_feed();
     void adjust_cluster_state_after_first_redistribution();
-    double estimate_lost_docs();
-    double estimate_moved_docs();
+    void make_feed();
     void feed();
     std::chrono::duration<double> redistribute();
 
@@ -260,7 +266,10 @@ Benchmark::Benchmark(const BMParams& params)
       _document_types(make_document_types()),
       _repo(document::DocumentTypeRepoFactory::make(*_document_types)),
       _cluster(std::make_unique<BmCluster>(base_dir, base_port, _params, _document_types, _repo)),
-      _feed(_repo)
+      _feed(_repo),
+      _put_feed(),
+      _update_feed(),
+      _time_bias(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch() - 24h).count())
 {
     _cluster->make_nodes();
 }
@@ -345,17 +354,25 @@ Benchmark::adjust_cluster_state_after_first_redistribution()
 }
 
 void
+Benchmark::make_feed()
+{
+    vespalib::ThreadStackExecutor executor(_params.get_client_threads(), 128_Ki);
+    _put_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_put_feed(range, bucket_selector); }, _feed.num_buckets(), "put");
+    if (_params.get_refeed_mode() == ReFeedMode::UPDATE) {
+        _update_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_update_feed(range, bucket_selector); }, _feed.num_buckets(), "update");
+    }
+}
+
+void
 Benchmark::feed()
 {
     vespalib::ThreadStackExecutor executor(_params.get_client_threads(), 128_Ki);
     BmFeeder feeder(_repo, *_cluster->get_feed_handler(), executor);
-    auto put_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_put_feed(range, bucket_selector); }, _feed.num_buckets(), "put");
-    BmNodeStatsReporter reporter(*_cluster);
+    BmNodeStatsReporter reporter(*_cluster, false);
     reporter.start(500ms);
-    int64_t time_bias = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch() - 24h).count();
     LOG(info, "Feed handler is '%s'", feeder.get_feed_handler().get_name().c_str());
     AvgSampler sampler;
-    feeder.run_feed_tasks(0, time_bias, put_feed, _params, sampler, "put");
+    feeder.run_feed_tasks(0, _time_bias, _put_feed, _params, sampler, "put");
     reporter.report_now();
     if (_params.get_use_feed_settle()) {
         LOG(info, "Settling feed");
@@ -368,11 +385,22 @@ Benchmark::feed()
 std::chrono::duration<double>
 Benchmark::redistribute()
 {
-    BmNodeStatsReporter reporter(*_cluster);
+    BmNodeStatsReporter reporter(*_cluster, true);
     auto before = std::chrono::steady_clock::now();
     reporter.start(500ms);
     _cluster->propagate_cluster_state();
     reporter.report_now();
+    std::unique_ptr<ReFeed> refeed;
+    switch (_params.get_refeed_mode()) {
+    case ReFeedMode::PUT:
+        refeed = std::make_unique<ReFeed>(_params, _repo, *_cluster->get_feed_handler(), _time_bias, _put_feed, "put");
+        break;
+    case ReFeedMode::UPDATE:
+        refeed = std::make_unique<ReFeed>(_params, _repo, *_cluster->get_feed_handler(), _time_bias, _update_feed, "update");
+        break;
+    default:
+        ;
+    }
     for (;;) {
         auto duration = std::chrono::steady_clock::now() - reporter.get_change_time();
         if (duration >= 6s) {
@@ -380,41 +408,8 @@ Benchmark::redistribute()
         }
         std::this_thread::sleep_for(100ms);
     }
+    refeed.reset();
     return reporter.get_change_time() - before;
-}
-
-double
-Benchmark::estimate_lost_docs()
-{
-    switch (_params.get_mode()) {
-    case Mode::PERM_CRASH:
-    case Mode::TEMP_CRASH:
-    {
-        double new_redundancy = std::min(_params.get_redundancy(), _params.get_num_nodes() - _params.get_flip_nodes());
-        auto lost_docs_ratio = estimate_lost_docs_base_ratio(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes()) * new_redundancy;
-        return _params.get_documents() * lost_docs_ratio;
-    }
-    default:
-        return 0.0;
-    }
-}
-
-double
-Benchmark::estimate_moved_docs()
-{
-    switch(_params.get_mode()) {
-    case Mode::GROW:
-        return _params.get_documents() * estimate_moved_docs_ratio_grow(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
-    case Mode::SHRINK:
-        return _params.get_documents() * estimate_moved_docs_ratio_shrink(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
-    case Mode::PERM_CRASH:
-    case Mode::TEMP_CRASH:
-        return _params.get_documents() * estimate_moved_docs_ratio_crash(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
-    case Mode::REPLACE:
-        return _params.get_documents() * estimate_moved_docs_ratio_replace(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_flip_nodes(), _params.get_num_nodes());
-    default:
-        return 0.0;
-    }
 }
 
 void
@@ -422,13 +417,16 @@ Benchmark::run()
 {
     adjust_cluster_state_before_feed();
     _cluster->start(_feed);
+    make_feed();
     feed();
     LOG(info, "--------------------------------");
+    auto old_snapshot = _cluster->get_bucket_db_snapshots();
     adjust_cluster_state_after_feed();
     auto elapsed = redistribute();
-    double moved_docs = estimate_moved_docs();
-    double lost_docs = estimate_lost_docs();
-    LOG(info, "Redistributed estimated %4.2f docs in %5.3f seconds, %4.2f docs/s, estimated %4.2f lost docs", moved_docs, elapsed.count(), moved_docs / elapsed.count(), lost_docs);
+    auto new_snapshot = _cluster->get_bucket_db_snapshots();
+    uint32_t moved_docs = new_snapshot.count_moved_documents(old_snapshot);
+    uint32_t lost_unique_docs = new_snapshot.count_lost_unique_documents(old_snapshot);
+    LOG(info, "Redistributed %u docs in %5.3f seconds, %4.2f docs/s, %u lost unique docs", moved_docs, elapsed.count(), moved_docs / elapsed.count(), lost_unique_docs);
     if (_params.get_mode() == Mode::TEMP_CRASH) {
         if (_params.get_use_feed_settle()) {
             LOG(info, "Settling redistribution");
@@ -436,7 +434,7 @@ Benchmark::run()
         }
         adjust_cluster_state_after_first_redistribution();
         elapsed = redistribute();
-        LOG(info, "Cleanup of %4.2f docs in %5.3f seconds, %4.2f docs/s, estimated %4.2f refound docs", moved_docs, elapsed.count(), moved_docs / elapsed.count(), lost_docs);
+        LOG(info, "Cleanup of %u docs in %5.3f seconds, %4.2f docs/s, %u refound unique docs", moved_docs, elapsed.count(), moved_docs / elapsed.count(), lost_unique_docs);
     }
     _cluster->stop();
 }
@@ -470,14 +468,24 @@ App::usage()
         "vespa-redistribute-bm\n"
         "[--bucket-db-stripe-bits bits]\n"
         "[--client-threads threads]\n"
+        "[--distributor-merge-busy-wait distributor-merge-busy-wait]\n"
         "[--distributor-stripes stripes]\n"
+        "[--doc-store-chunk-compression-level level]\n"
+        "[--doc-store-chunk-maxbytes maxbytes]\n"
         "[--documents documents]\n"
         "[--flip-nodes flip-nodes]\n"
+        "[--groups groups]\n"
+        "[--ignore-merge-queue-limit]\n"
         "[--indexing-sequencer [latency,throughput,adaptive]]\n"
+        "[--max-merges-per-node max-merges-per-node]\n"
+        "[--max-merge-queue-size max-merge-queue-size]\n"
         "[--max-pending max-pending]\n"
+        "[--max-pending-idealstate-operations max-pending-idealstate-operations]\n"
+        "[--mbus-distributor-node-max-pending-count] count\n"
         "[--mode [grow, shrink, perm-crash, temp-crash, replace]\n"
-        "[--nodes nodes]\n"
+        "[--nodes-per-group nodes-per-group]\n"
         "[--redundancy redundancy]\n"
+        "[--refeed-mode [none, put, update]\n"
         "[--rpc-events-before-wakeup events]\n"
         "[--rpc-network-threads threads]\n"
         "[--rpc-targets-per-node targets]\n"
@@ -496,33 +504,54 @@ App::get_options()
     static struct option long_opts[] = {
         { "bucket-db-stripe-bits", 1, nullptr, 0 },
         { "client-threads", 1, nullptr, 0 },
+        { "distributor-merge-busy-wait", 1, nullptr, 0 },
         { "distributor-stripes", 1, nullptr, 0 },
+        { "doc-store-chunk-compression-level", 1, nullptr, 0 },
+        { "doc-store-chunk-maxbytes", 1, nullptr, 0 },
         { "documents", 1, nullptr, 0 },
         { "flip-nodes", 1, nullptr, 0 },
+        { "groups", 1, nullptr, 0 },
+        { "ignore-merge-queue-limit", 0, nullptr, 0 },
         { "indexing-sequencer", 1, nullptr, 0 },
+        { "max-merges-per-node", 1, nullptr, 0 },
+        { "max-merge-queue-size", 1, nullptr, 0 },
         { "max-pending", 1, nullptr, 0 },
+        { "max-pending-idealstate-operations", 1, nullptr, 0 },
+        { "mbus-distributor-node-max-pending-count", 1, nullptr, 0 },
         { "mode", 1, nullptr, 0 },
-        { "nodes", 1, nullptr, 0 },
+        { "nodes-per-group", 1, nullptr, 0 },
         { "redundancy", 1, nullptr, 0 },
+        { "refeed-mode", 1, nullptr, 0 },
         { "response-threads", 1, nullptr, 0 },
         { "rpc-events-before-wakeup", 1, nullptr, 0 },
         { "rpc-network-threads", 1, nullptr, 0 },
         { "rpc-targets-per-node", 1, nullptr, 0 },
         { "skip-communicationmanager-thread", 0, nullptr, 0 },
         { "use-async-message-handling", 0, nullptr, 0 },
-        { "use-feed-settle", 0, nullptr, 0 }
+        { "use-feed-settle", 0, nullptr, 0 },
+        { nullptr, 0, nullptr, 0 }
     };
     enum longopts_enum {
         LONGOPT_BUCKET_DB_STRIPE_BITS,
         LONGOPT_CLIENT_THREADS,
+        LONGOPT_DISTRIBUTOR_MERGE_BUSY_WAIT,
         LONGOPT_DISTRIBUTOR_STRIPES,
+        LONGOPT_DOC_STORE_CHUNK_COMPRESSION_LEVEL,
+        LONGOPT_DOC_STORE_CHUNK_MAXBYTES,
         LONGOPT_DOCUMENTS,
         LONGOPT_FLIP_NODES,
+        LONGOPT_GROUPS,
+        LONGOPT_IGNORE_MERGE_QUEUE_LIMIT,
         LONGOPT_INDEXING_SEQUENCER,
+        LONGOPT_MAX_MERGES_PER_NODE,
+        LONGOPT_MAX_MERGE_QUEUE_SIZE,
         LONGOPT_MAX_PENDING,
+        LONGOPT_MAX_PENDING_IDEALSTATE_OPERATIONS,
+        LONGOPT_MBUS_DISTRIBUTOR_NODE_MAX_PENDING_COUNT,
         LONGOPT_MODE,
-        LONGOPT_NODES,
+        LONGOPT_NODES_PER_GROUP,
         LONGOPT_REDUNDANCY,
+        LONGOPT_REFEED,
         LONGOPT_RESPONSE_THREADS,
         LONGOPT_RPC_EVENTS_BEFORE_WAKEUP,
         LONGOPT_RPC_NETWORK_THREADS,
@@ -543,8 +572,17 @@ App::get_options()
             case LONGOPT_CLIENT_THREADS:
                 _bm_params.set_client_threads(atoi(opt_argument));
                 break;
+            case LONGOPT_DISTRIBUTOR_MERGE_BUSY_WAIT:
+                _bm_params.set_distributor_merge_busy_wait(atoi(opt_argument));
+                break;
             case LONGOPT_DISTRIBUTOR_STRIPES:
                 _bm_params.set_distributor_stripes(atoi(opt_argument));
+                break;
+            case LONGOPT_DOC_STORE_CHUNK_COMPRESSION_LEVEL:
+                _bm_params.set_doc_store_chunk_compression_level(atoi(opt_argument));
+                break;
+            case LONGOPT_DOC_STORE_CHUNK_MAXBYTES:
+                _bm_params.set_doc_store_chunk_maxbytes(atoi(opt_argument));
                 break;
             case LONGOPT_DOCUMENTS:
                 _bm_params.set_documents(atoi(opt_argument));
@@ -552,11 +590,29 @@ App::get_options()
             case LONGOPT_FLIP_NODES:
                 _bm_params.set_flip_nodes(atoi(opt_argument));
                 break;
+            case LONGOPT_GROUPS:
+                _bm_params.set_groups(atoi(opt_argument));
+                break;
+            case LONGOPT_IGNORE_MERGE_QUEUE_LIMIT:
+                _bm_params.set_disable_queue_limits_for_chained_merges(true);
+                break;
             case LONGOPT_INDEXING_SEQUENCER:
                 _bm_params.set_indexing_sequencer(opt_argument);
                 break;
+            case LONGOPT_MAX_MERGES_PER_NODE:
+                _bm_params.set_max_merges_per_node(atoi(opt_argument));
+                break;
+            case LONGOPT_MAX_MERGE_QUEUE_SIZE:
+                _bm_params.set_max_merge_queue_size(atoi(opt_argument));
+                break;
             case LONGOPT_MAX_PENDING:
                 _bm_params.set_max_pending(atoi(opt_argument));
+                break;
+            case LONGOPT_MAX_PENDING_IDEALSTATE_OPERATIONS:
+                _bm_params.set_max_pending_idealstate_operations(atoi(opt_argument));
+                break;
+            case LONGOPT_MBUS_DISTRIBUTOR_NODE_MAX_PENDING_COUNT:
+                _bm_params.set_mbus_distributor_node_max_pending_count(atoi(opt_argument));
                 break;
             case LONGOPT_MODE:
                 _bm_params.set_mode(get_mode(opt_argument));
@@ -564,11 +620,17 @@ App::get_options()
                     std::cerr << "Unknown mode name " << opt_argument << std::endl;
                 }
                 break;
-            case LONGOPT_NODES:
-                _bm_params.set_num_nodes(atoi(opt_argument));
+            case LONGOPT_NODES_PER_GROUP:
+                _bm_params.set_nodes_per_group(atoi(opt_argument));
                 break;
             case LONGOPT_REDUNDANCY:
                 _bm_params.set_redundancy(atoi(opt_argument));
+                break;
+            case LONGOPT_REFEED:
+                _bm_params.set_refeed_mode(get_refeed_mode(opt_argument));
+                if (_bm_params.get_refeed_mode() == ReFeedMode::BAD) {
+                    std::cerr << "Unknown refeed-mode name " << opt_argument << std::endl;
+                }
                 break;
             case LONGOPT_RESPONSE_THREADS:
                 _bm_params.set_response_threads(atoi(opt_argument));

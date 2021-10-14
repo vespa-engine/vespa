@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.document.DocumentId;
@@ -14,13 +14,6 @@ public class GetDocumentMessage extends DocumentMessage {
     final static String DEFAULT_FIELD_SET = AllFields.NAME;
     private DocumentId documentId = null;
     private String fieldSet = DEFAULT_FIELD_SET;
-
-    /**
-     * Constructs a new message for deserialization.
-     */
-    GetDocumentMessage() {
-        // empty
-    }
 
     /**
      * Constructs a new document get message.

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/fnet/task.h>
@@ -20,17 +20,12 @@ class ExchangeManager;
 class RemoteCheck : public FNET_Task
 {
 private:
-    RpcServerMap &_rpcsrvmap;
-    RpcServerManager &_rpcsrvmanager;
     ExchangeManager &_exchanger;
 
     RemoteCheck(const RemoteCheck &);            // Not used
     RemoteCheck &operator=(const RemoteCheck &); // Not used
 public:
-    explicit RemoteCheck(FNET_Scheduler *sched,
-                         RpcServerMap& rpcsrvmap,
-                         RpcServerManager& rpcsrvman,
-                         ExchangeManager& exchanger);
+    explicit RemoteCheck(FNET_Scheduler *sched, ExchangeManager& exchanger);
     ~RemoteCheck();
 private:
     void PerformTask() override;

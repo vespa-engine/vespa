@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.test.MockRoot;
@@ -32,9 +32,9 @@ public class StorageGroupTest {
                         "</content>"
         );
 
-        assertEquals("content", cluster.getStorageNodes().getChildren().get("0").getServicePropertyString("clustertype"));
-        assertEquals("storage", cluster.getStorageNodes().getChildren().get("0").getServicePropertyString("clustername"));
-        assertEquals("0", cluster.getStorageNodes().getChildren().get("0").getServicePropertyString("index"));
+        assertEquals("content", cluster.getStorageCluster().getChildren().get("0").getServicePropertyString("clustertype"));
+        assertEquals("storage", cluster.getStorageCluster().getChildren().get("0").getServicePropertyString("clustername"));
+        assertEquals("0", cluster.getStorageCluster().getChildren().get("0").getServicePropertyString("index"));
 
         assertEquals("content", cluster.getDistributorNodes().getChildren().get("0").getServicePropertyString("clustertype"));
         assertEquals("storage", cluster.getDistributorNodes().getChildren().get("0").getServicePropertyString("clustername"));

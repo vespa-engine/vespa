@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "array_parser.hpp"
 
@@ -11,12 +11,6 @@ void
 ArrayParser::parse(const vespalib::string &input, std::vector<int8_t> &output)
 {
     parse<std::vector<int8_t>, int16_t>(input, output);
-}
-
-void
-ArrayParser::logWarning(const vespalib::string &msg)
-{
-    LOG(warning, "%s", msg.c_str());
 }
 
 }

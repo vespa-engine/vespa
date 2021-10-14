@@ -1,8 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "ok_state.h"
-#include "cmd.h"
 #include "i_rpc_server_manager.h"
 #include "managed_rpc_server.h"
 #include "service_map_mirror.h"
@@ -12,7 +11,6 @@ namespace slobrok {
 
 //-----------------------------------------------------------------------------
 
-class RpcServerManager;
 class ExchangeManager;
 
 //-----------------------------------------------------------------------------
@@ -43,7 +41,6 @@ private:
     };
 
     ExchangeManager     &_exchanger;
-    RpcServerManager    &_rpcsrvmanager;
     FRT_Target          *_remote;
     ServiceMapMirror     _serviceMapMirror;
     ManagedRpcServer     _rpcserver;
@@ -53,14 +50,8 @@ private:
     std::unique_ptr<MapSubscription> _consensusSubscription;
 
     FRT_RPCRequest      *_remAddPeerReq;
-    FRT_RPCRequest      *_remListReq;
-    FRT_RPCRequest      *_remAddReq;
-    FRT_RPCRequest      *_remRemReq;
     FRT_RPCRequest      *_remFetchReq;
 
-    std::deque<std::unique_ptr<NamedService>> _pending;
-    void pushMine();
-    void doPending();
     void handleFetchResult();
 
 public:
@@ -72,7 +63,6 @@ public:
     void fail();
     bool isConnected() const { return (_remote != nullptr); }
     void tryConnect();
-    void maybePushMine();
     void maybeStartFetch();
     void invokeAsync(FRT_RPCRequest *req, double timeout, FRT_IRequestWait *rwaiter);
     const std::string & getName() const { return _rpcserver.getName(); }

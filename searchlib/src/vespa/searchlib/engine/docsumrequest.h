@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -28,18 +28,13 @@ public:
 
 public:
     vespalib::string  resultClassName;
-private:
-    const bool        _useRootSlime;
 public:
     std::vector<Hit>  hits;
     std::vector<char> sessionId;
 
     DocsumRequest();
-    explicit DocsumRequest(bool useRootSlime_);
-    DocsumRequest(RelativeTime relativeTime, bool useRootSlime_);
+    DocsumRequest(RelativeTime relativeTime);
     ~DocsumRequest() override;
-
-    bool useRootSlime() const { return _useRootSlime; }
 };
 
 }

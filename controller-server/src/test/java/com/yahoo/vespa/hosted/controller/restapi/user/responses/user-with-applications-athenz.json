@@ -1,7 +1,6 @@
 {
   "isPublic": false,
   "isCd": false,
-  "enable-public-signup-flow": (ignore),
   "hasTrialCapacity": (ignore),
   "user": {
     "name": "Joe Developer",
@@ -31,5 +30,6 @@
         "reader"
       ]
     }
-  }
+  },
+  "flags": [{"id":"enable-public-signup-flow","rules":[{"value":false}]}]
 }

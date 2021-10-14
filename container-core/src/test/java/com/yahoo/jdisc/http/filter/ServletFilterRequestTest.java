@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter;
 
 import com.yahoo.jdisc.http.Cookie;
@@ -86,6 +86,7 @@ public class ServletFilterRequestTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void uri_can_be_set() throws Exception {
         URI newUri = new URI("http", null, host, port + 1, path, paramName + "=" + paramValue, null);
         filterRequest.setUri(newUri);

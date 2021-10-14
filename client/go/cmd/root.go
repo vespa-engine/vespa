@@ -6,17 +6,18 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
 
-	"github.com/logrusorgru/aurora"
+	"github.com/logrusorgru/aurora/v3"
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 )
 
 var (
-	// TODO: add timeout flag
 	rootCmd = &cobra.Command{
 		Use:   "vespa command-name",
 		Short: "The command-line tool for Vespa.ai",
@@ -36,6 +37,8 @@ Vespa documentation: https://docs.vespa.ai`,
 	applicationArg string
 	waitSecsArg    int
 	colorArg       string
+	quietArg       bool
+	stdin          io.ReadWriter = os.Stdin
 
 	color  = aurora.NewAurora(false)
 	stdout = colorable.NewColorableStdout()
@@ -47,17 +50,23 @@ const (
 	targetFlag      = "target"
 	waitFlag        = "wait"
 	colorFlag       = "color"
+	quietFlag       = "quiet"
 )
 
 func isTerminal() bool {
-	file, ok := stdout.(*os.File)
-	if ok {
-		return isatty.IsTerminal(file.Fd())
+	if f, ok := stdout.(*os.File); ok {
+		return isatty.IsTerminal(f.Fd())
+	}
+	if f, ok := stderr.(*os.File); ok {
+		return isatty.IsTerminal(f.Fd())
 	}
 	return false
 }
 
 func configureOutput() {
+	if quietArg {
+		stdout = ioutil.Discard
+	}
 	log.SetFlags(0) // No timestamps
 	log.SetOutput(stdout)
 
@@ -88,10 +97,12 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&applicationArg, applicationFlag, "a", "", "The application to manage")
 	rootCmd.PersistentFlags().IntVarP(&waitSecsArg, waitFlag, "w", 0, "Number of seconds to wait for a service to become ready")
 	rootCmd.PersistentFlags().StringVarP(&colorArg, colorFlag, "c", "auto", "Whether to use colors in output. Can be \"auto\", \"never\" or \"always\"")
+	rootCmd.PersistentFlags().BoolVarP(&quietArg, quietFlag, "q", false, "Quiet mode. Only errors are printed.")
 	bindFlagToConfig(targetFlag, rootCmd)
 	bindFlagToConfig(applicationFlag, rootCmd)
 	bindFlagToConfig(waitFlag, rootCmd)
 	bindFlagToConfig(colorFlag, rootCmd)
+	bindFlagToConfig(quietFlag, rootCmd)
 }
 
 // Execute executes the root command.

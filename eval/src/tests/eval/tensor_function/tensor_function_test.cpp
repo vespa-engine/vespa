@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/simple_value.h>
@@ -508,6 +508,20 @@ TEST("require that tensor function can be dumped for debugging") {
     const auto &root = if_node(merged_double, joined_x5, concat_x5, stash);
     EXPECT_EQUAL(root.result_type(), ValueType::from_spec("tensor(x[5])"));
     fprintf(stderr, "function dump -->[[%s]]<-- function dump\n", root.as_string().c_str());
+}
+
+TEST("require that full tensor reduce expands dimension list") {
+    Stash stash;
+    const auto &num = inject(ValueType::from_spec("double"), 0, stash);
+    const auto &mat = inject(ValueType::from_spec("tensor(x[5],y[5])"), 1, stash);
+    const auto *reduce_num = as<Reduce>(reduce(num, Aggr::SUM, {}, stash));
+    const auto *reduce_mat = as<Reduce>(reduce(mat, Aggr::SUM, {}, stash));
+    ASSERT_TRUE(reduce_num);
+    ASSERT_TRUE(reduce_mat);
+    EXPECT_EQUAL(reduce_num->dimensions().size(), 0u);
+    ASSERT_EQUAL(reduce_mat->dimensions().size(), 2u);
+    EXPECT_EQUAL(reduce_mat->dimensions()[0], "x");
+    EXPECT_EQUAL(reduce_mat->dimensions()[1], "y");
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

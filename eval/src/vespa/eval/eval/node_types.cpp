@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "check_type.h"
 #include "node_traverser.h"
@@ -279,6 +279,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     void visit(const Elu &node) override { resolve_op1(node); }
     void visit(const Erf &node) override { resolve_op1(node); }
     void visit(const Bit &node) override { resolve_op2(node); }
+    void visit(const Hamming &node) override { resolve_op2(node); }
 
     //-------------------------------------------------------------------------
 

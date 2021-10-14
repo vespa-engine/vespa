@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
 import com.google.common.collect.ImmutableList;
@@ -33,6 +33,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.rendering.RendererRegistry;
+import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.text.XML;
@@ -59,6 +60,7 @@ import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.ContainerThreadpool;
 import com.yahoo.vespa.model.container.IdentityProvider;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.BindingPattern;
@@ -90,6 +92,7 @@ import org.w3c.dom.Node;
 
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -434,6 +437,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // If the deployment contains certificate/private key reference, setup TLS port
         HostedSslConnectorFactory connectorFactory;
         Collection<String> tlsCiphersOverride = deployState.getProperties().tlsCiphersOverride();
+        Duration maxConnectionLife = Duration.ofSeconds(deployState.featureFlags().maxConnectionLifeInHosted());
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
             if (authorizeClient && deployState.tlsClientAuthority().isEmpty()) {
@@ -448,11 +452,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             connectorFactory = authorizeClient
                     ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(
-                            serverName, endpointCertificateSecrets,  getTlsClientAuthorities(deployState), tlsCiphersOverride)
+                            serverName, endpointCertificateSecrets,  getTlsClientAuthorities(deployState), tlsCiphersOverride, maxConnectionLife)
                     : HostedSslConnectorFactory.withProvidedCertificate(
-                            serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride);
+                            serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride, maxConnectionLife);
         } else {
-            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName, tlsCiphersOverride);
+            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName, tlsCiphersOverride, maxConnectionLife);
         }
         cluster.getHttp().getAccessControl().ifPresent(accessControl -> accessControl.configureHostedConnector(connectorFactory));
         server.addConnector(connectorFactory);
@@ -556,7 +560,29 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         RankProfileList profiles =
                 context.vespaModel() != null ? context.vespaModel().rankProfileList() : RankProfileList.empty;
+
+        Element onnxElement = XML.getChild(modelEvaluationElement, "onnx");
+        Element modelsElement = XML.getChild(onnxElement, "models");
+        for (Element modelElement : XML.getChildren(modelsElement, "model") ) {
+            OnnxModel onnxModel = profiles.getOnnxModels().get(modelElement.getAttribute("name"));
+            if (onnxModel == null)
+                continue; // Skip if model is not found
+            onnxModel.setStatelessExecutionMode(getStringValue(modelElement, "execution-mode", null));
+            onnxModel.setStatelessInterOpThreads(getIntValue(modelElement, "interop-threads", -1));
+            onnxModel.setStatelessIntraOpThreads(getIntValue(modelElement, "intraop-threads", -1));
+        }
+
         cluster.setModelEvaluation(new ContainerModelEvaluation(cluster, profiles));
+    }
+
+    private String getStringValue(Element element, String name, String defaultValue) {
+        Element child = XML.getChild(element, name);
+        return (child != null) ? child.getTextContent() : defaultValue;
+    }
+
+    private int getIntValue(Element element, String name, int defaultValue) {
+        Element child = XML.getChild(element, name);
+        return (child != null) ? Integer.parseInt(child.getTextContent()) : defaultValue;
     }
 
     protected void addModelEvaluationBundles(ApplicationContainerCluster cluster) {

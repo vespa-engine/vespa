@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_function.h>
@@ -115,11 +115,9 @@ TEST(SumMaxDotProduct, similar_expressions_are_not_optimized) {
     vespalib::string max_sum_expr = "reduce(reduce(reduce(a*b,sum,z),sum,y),max,x)";
     vespalib::string not_dp_expr1 = "reduce(reduce(reduce(a+b,sum,z),max,y),sum,x)";
     vespalib::string not_dp_expr2 = "reduce(reduce(reduce(a*b,min,z),max,y),sum,x)";
-    vespalib::string sum_all_expr = "reduce(reduce(reduce(a*b,sum,z),max,y),sum)";
     assert_not_optimized(query, document, max_sum_expr);
     assert_not_optimized(query, document, not_dp_expr1);
     assert_not_optimized(query, document, not_dp_expr2);
-    assert_not_optimized(query, document, sum_all_expr);
 }
 
 //-----------------------------------------------------------------------------

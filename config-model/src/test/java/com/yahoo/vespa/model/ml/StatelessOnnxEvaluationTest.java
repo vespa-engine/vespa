@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.ml;
 
 import ai.vespa.models.evaluation.FunctionEvaluator;
@@ -123,6 +123,10 @@ public class StatelessOnnxEvaluationTest {
         Tensor output = evaluator.bind("input1", input1).bind("input2", input2).evaluate();
         assertEquals(6.0, output.sum().asDouble(), 1e-9);
 
+        OnnxModelsConfig.Model mulModel = onnxModelsConfig.model().get(0);
+        assertEquals(2, mulModel.stateless_intraop_threads());
+        assertEquals(-1, mulModel.stateless_interop_threads());
+        assertEquals("", mulModel.stateless_execution_mode());
     }
 
 }

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.archive;
 
 import com.yahoo.config.provision.TenantName;
@@ -16,7 +16,7 @@ public class MockArchiveService implements ArchiveService {
     public Map<ArchiveBucket, Map<TenantName, String>> authorizedIamRoles = new HashMap<>();
 
     @Override
-    public ArchiveBucket createArchiveBucketFor(ZoneId zoneId) {
+    public ArchiveBucket createArchiveBucketFor(ZoneId zoneId, boolean sharded) {
         return new ArchiveBucket("bucketName", "keyArn");
     }
 

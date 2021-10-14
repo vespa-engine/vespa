@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.jdisc;
 
 import com.yahoo.jdisc.Request;
@@ -15,7 +15,10 @@ public class MbusRequest extends Request {
     private final Message message;
 
     public MbusRequest(CurrentContainer current, URI uri, Message msg) {
-        super(current, uri);
+        this(current, uri, msg, true);
+    }
+    public MbusRequest(CurrentContainer current, URI uri, Message msg, boolean isServerRequest) {
+        super(current, uri, isServerRequest);
         this.message = validateMessage(msg);
     }
 

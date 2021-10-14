@@ -1,11 +1,10 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,7 +26,8 @@ import static org.junit.Assert.assertTrue;
  * @author hmusum
  */
 public class JRTConnectionPoolTest {
-    private static final List<String> sources = new ArrayList<>((Arrays.asList("host0", "host1", "host2")));
+
+    private static final ConfigSourceSet sources = new ConfigSourceSet(List.of("host0", "host1", "host2"));
 
     @Test
     public void test_random_selection_of_source() {
@@ -57,7 +57,7 @@ public class JRTConnectionPoolTest {
     public void testManySources() {
         Map<String, Integer> timesUsed = new LinkedHashMap<>();
 
-        List<String> twoSources = List.of("host0", "host1");
+        ConfigSourceSet twoSources = new ConfigSourceSet(List.of("host0", "host1"));
         JRTConnectionPool sourcePool = new JRTConnectionPool(twoSources);
 
         int count = 1000;
@@ -93,8 +93,7 @@ public class JRTConnectionPoolTest {
      */
     @Test
     public void updateSources() {
-        List<String> twoSources = List.of("host0", "host1");
-
+        ConfigSourceSet twoSources = new ConfigSourceSet(List.of("host0", "host1"));
         JRTConnectionPool sourcePool = new JRTConnectionPool(twoSources);
 
         ConfigSourceSet sourcesBefore = sourcePool.getSourceSet();
@@ -130,7 +129,7 @@ public class JRTConnectionPoolTest {
 
     @Test
     public void testFailingSources() {
-        List<String> sources = List.of("host0", "host1", "host2");
+        ConfigSourceSet sources = new ConfigSourceSet(List.of("host0", "host1"));
         JRTConnectionPool connectionPool = new JRTConnectionPool(sources);
 
         Connection firstConnection = connectionPool.getCurrent();
@@ -160,7 +159,7 @@ public class JRTConnectionPoolTest {
     }
 
     private JRTConnection failAndGetNewConnection(JRTConnectionPool connectionPool, Connection failingConnection) {
-        connectionPool.setError(failingConnection, 123);
+        connectionPool.switchConnection(failingConnection);
         return connectionPool.getCurrent();
     }
 

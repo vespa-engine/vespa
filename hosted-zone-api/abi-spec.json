@@ -6,8 +6,11 @@
       "public"
     ],
     "methods": [
-      "public void <init>(int)",
-      "public int size()"
+      "public void <init>(int, java.util.List)",
+      "public int size()",
+      "public java.util.List indices()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },

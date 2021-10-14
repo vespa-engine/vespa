@@ -1,9 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.process.Encoder;
-import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.vespa.indexinglanguage.parser.CharStream;
 
@@ -14,13 +13,13 @@ public class ScriptParserContext {
 
     private AnnotatorConfig annotatorConfig = new AnnotatorConfig();
     private Linguistics linguistics;
-    private final Encoder encoder;
+    private final Embedder embedder;
     private String defaultFieldName = null;
     private CharStream inputStream = null;
 
-    public ScriptParserContext(Linguistics linguistics, Encoder encoder) {
+    public ScriptParserContext(Linguistics linguistics, Embedder embedder) {
         this.linguistics = linguistics;
-        this.encoder = encoder;
+        this.embedder = embedder;
     }
 
     public AnnotatorConfig getAnnotatorConfig() {
@@ -41,8 +40,8 @@ public class ScriptParserContext {
         return this;
     }
 
-    public Encoder getEncoder() {
-        return encoder;
+    public Embedder getEmbedder() {
+        return embedder;
     }
 
     public String getDefaultFieldName() {

@@ -1801,8 +1801,8 @@
       "public java.util.Map getRequestMap()",
       "public com.yahoo.search.Query$Builder setQueryProfile(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile getQueryProfile()",
-      "public com.yahoo.search.Query$Builder setEncoder(com.yahoo.language.process.Encoder)",
-      "public com.yahoo.language.process.Encoder getEncoder()",
+      "public com.yahoo.search.Query$Builder setEmbedder(com.yahoo.language.process.Embedder)",
+      "public com.yahoo.language.process.Embedder getEmbedder()",
       "public com.yahoo.search.Query build()"
     ],
     "fields": []
@@ -4258,7 +4258,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, com.yahoo.container.handler.threadpool.ContainerThreadPool, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.language.process.Encoder, com.yahoo.search.searchchain.ExecutionFactory)",
+      "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, com.yahoo.container.handler.threadpool.ContainerThreadPool, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.language.process.Embedder, com.yahoo.search.searchchain.ExecutionFactory)",
       "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, com.yahoo.container.handler.threadpool.ContainerThreadPool, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.search.searchchain.ExecutionFactory)",
       "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.search.searchchain.ExecutionFactory)",
       "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.config.QueryProfilesConfig, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.search.searchchain.ExecutionFactory)",
@@ -5885,7 +5885,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
-      "public void <init>(com.yahoo.search.query.profile.compiled.CompiledQueryProfile, com.yahoo.language.process.Encoder)",
+      "public void <init>(com.yahoo.search.query.profile.compiled.CompiledQueryProfile, com.yahoo.language.process.Embedder)",
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile getQueryProfile()",
       "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
       "public void set(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",
@@ -6259,7 +6259,8 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.language.process.Encoder, java.util.Map)",
+      "public void <init>(java.lang.String, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.language.process.Embedder, java.util.Map)",
+      "public java.lang.String destination()",
       "public static com.yahoo.search.query.profile.types.ConversionContext empty()"
     ],
     "fields": []
@@ -6531,7 +6532,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.Query, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.language.process.Encoder)",
+      "public void <init>(com.yahoo.search.Query, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.language.process.Embedder)",
       "public void setParentQuery(com.yahoo.search.Query)",
       "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
       "public void set(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",
@@ -7074,6 +7075,8 @@
     ],
     "methods": [
       "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean)",
+      "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean, boolean)",
+      "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean, boolean, boolean)",
       "public void accept(java.lang.String, java.lang.Object)",
       "public void accept(java.lang.String, byte[], int, int)",
       "protected boolean shouldRender(java.lang.String, java.lang.Object)",
@@ -7409,6 +7412,8 @@
       "public static com.yahoo.search.result.ErrorMessage createNotFound(java.lang.String)",
       "public static com.yahoo.search.result.ErrorMessage createBadRequest(java.lang.String)",
       "public static com.yahoo.search.result.ErrorMessage createInternalServerError(java.lang.String)",
+      "public static com.yahoo.search.result.ErrorMessage createSearchReplyError(java.lang.String)",
+      "public static com.yahoo.search.result.ErrorMessage createDocsumReplyError(java.lang.String)",
       "public void setSource(java.lang.String)",
       "public java.lang.String getSource()",
       "public int hashCode()",
@@ -7439,6 +7444,7 @@
       "public static com.yahoo.search.result.FeatureData empty()",
       "public com.yahoo.data.access.Inspector inspect()",
       "public java.lang.String toJson()",
+      "public java.lang.String toJson(boolean)",
       "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
       "public java.lang.Double getDouble(java.lang.String)",
       "public com.yahoo.tensor.Tensor getTensor(java.lang.String)",
@@ -7598,6 +7604,7 @@
       "public com.yahoo.search.result.Hit remove(com.yahoo.net.URI)",
       "public com.yahoo.search.result.Hit remove(int)",
       "public void addError(com.yahoo.search.result.ErrorMessage)",
+      "public void addErrorsFrom(com.yahoo.search.result.HitGroup)",
       "public com.yahoo.search.result.ErrorHit getErrorHit()",
       "public com.yahoo.search.result.DefaultErrorHit removeErrorHit()",
       "public com.yahoo.search.result.ErrorMessage getError()",
@@ -7812,10 +7819,13 @@
       "final"
     ],
     "methods": [
+      "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub()",
+      "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.prelude.IndexFacts)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts)",
+      "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.prelude.IndexFacts, com.yahoo.language.Linguistics)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.Linguistics)",
       "public void populateFrom(com.yahoo.search.searchchain.Execution$Context)",
       "public boolean equals(com.yahoo.search.searchchain.Execution$Context)",
@@ -7833,7 +7843,8 @@
       "public boolean getBreakdown()",
       "public void setBreakdown(boolean)",
       "public com.yahoo.language.Linguistics getLinguistics()",
-      "public void setLinguistics(com.yahoo.language.Linguistics)"
+      "public void setLinguistics(com.yahoo.language.Linguistics)",
+      "public java.util.concurrent.Executor executor()"
     ],
     "fields": []
   },
@@ -7874,6 +7885,7 @@
       "public"
     ],
     "methods": [
+      "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry)",
       "public com.yahoo.search.searchchain.Execution newExecution(com.yahoo.component.chain.Chain)",
       "public com.yahoo.search.searchchain.Execution newExecution(java.lang.String)",
@@ -7923,6 +7935,7 @@
       "public com.yahoo.search.Result get(long, java.util.concurrent.TimeUnit)",
       "public java.util.Optional getIfAvailable(long, java.util.concurrent.TimeUnit)",
       "public com.yahoo.search.Query getQuery()",
+      "public com.yahoo.search.searchchain.Execution getExecution()",
       "public com.yahoo.search.result.ErrorMessage createTimeoutError()",
       "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
       "public bridge synthetic java.lang.Object get()"

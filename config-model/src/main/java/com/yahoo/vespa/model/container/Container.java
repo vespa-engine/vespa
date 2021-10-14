@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.config.application.api.DeployLogger;
@@ -74,6 +74,8 @@ public abstract class Container extends AbstractService implements
     private final boolean retired;
     /** The unique index of this node */
     private final int index;
+    private final boolean dumpHeapOnShutdownTimeout;
+    private final double shutdownTimeoutS;
 
     private final ComponentGroup<Handler<?>> handlers = new ComponentGroup<>(this, "handler");
     private final ComponentGroup<Component<?, ?>> components = new ComponentGroup<>(this, "components");
@@ -90,6 +92,8 @@ public abstract class Container extends AbstractService implements
         this.parent = parent;
         this.retired = retired;
         this.index = index;
+        dumpHeapOnShutdownTimeout = deployState.featureFlags().containerDumpHeapOnShutdownTimeout();
+        shutdownTimeoutS = deployState.featureFlags().containerShutdownTimeout();
         this.defaultHttpServer = new JettyHttpServer("DefaultHttpServer", containerClusterOrNull(parent), deployState.isHosted());
         if (getHttp() == null) {
             addChild(defaultHttpServer);
@@ -315,7 +319,9 @@ public abstract class Container extends AbstractService implements
                             .slobrokId(serviceSlobrokId()))
                 .filedistributor(filedistributorConfig())
                 .discriminator((clusterName != null ? clusterName + "." : "" ) + name)
-                .nodeIndex(index);
+                .nodeIndex(index)
+                .shutdown.dumpHeapOnTimeout(dumpHeapOnShutdownTimeout)
+                         .timeout(shutdownTimeoutS);
     }
 
     /** Returns the jvm args set explicitly for this node */

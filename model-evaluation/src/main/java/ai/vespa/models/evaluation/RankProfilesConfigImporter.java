@@ -1,6 +1,7 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.FileReference;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
@@ -182,7 +183,13 @@ public class RankProfilesConfigImporter {
         try {
             String name = onnxModelConfig.name();
             File file = fileAcquirer.waitFor(onnxModelConfig.fileref(), 7, TimeUnit.DAYS);
-            return new OnnxModel(name, file);
+
+            OnnxEvaluatorOptions options = new OnnxEvaluatorOptions();
+            options.setExecutionMode(onnxModelConfig.stateless_execution_mode());
+            options.setInterOpThreads(onnxModelConfig.stateless_interop_threads());
+            options.setIntraOpThreads(onnxModelConfig.stateless_intraop_threads());
+
+            return new OnnxModel(name, file, options);
         } catch (InterruptedException e) {
             throw new IllegalStateException("Gave up waiting for ONNX model " + onnxModelConfig.name());
         }

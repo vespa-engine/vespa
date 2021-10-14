@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.messagebus;
 
 import com.google.inject.Inject;
@@ -177,7 +177,7 @@ public final class SessionCache extends AbstractComponent {
                     sessionReference = References.fromResource(session);
                 } else {
                     try {
-                        sessionReference = session.refer();
+                        sessionReference = session.refer(this);
                         logReuse(session);
                     } catch (final IllegalStateException e) {
                         session = createAndStore(registry, p, key);

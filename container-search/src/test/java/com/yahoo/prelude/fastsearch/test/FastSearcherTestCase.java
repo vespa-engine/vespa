@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch.test;
 
 import com.google.common.collect.ImmutableList;
@@ -81,8 +81,7 @@ public class FastSearcherTestCase {
     }
 
     private Execution createExecution(Searcher searcher) {
-        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(Collections.emptyList()), new SimpleLinguistics());
-        return new Execution(chainedAsSearchChain(searcher), context);
+        return new Execution(chainedAsSearchChain(searcher), Execution.Context.createContextStub());
     }
 
     @Test

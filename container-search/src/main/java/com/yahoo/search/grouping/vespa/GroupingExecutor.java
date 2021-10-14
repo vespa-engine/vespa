@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.vespa;
 
 import java.util.ArrayList;
@@ -123,10 +123,7 @@ public class GroupingExecutor extends Searcher {
         for (Map.Entry<String, Result> entry : summaryMap.entrySet()) {
             Result res = entry.getValue();
             execution.fill(res, entry.getKey());
-            ErrorMessage err = res.hits().getError();
-            if (err != null) {
-                result.hits().addError(err);
-            }
+            result.hits().addErrorsFrom(res.hits());
         }
         Result defaultResult = summaryMap.get(ExpressionConverter.DEFAULT_SUMMARY_NAME);
         if (defaultResult != null) {
@@ -210,7 +207,6 @@ public class GroupingExecutor extends Searcher {
 
         // Perform multi-pass query to complete all grouping requests.
         Item origRoot = query.getModel().getQueryTree().getRoot();
-        int prePassErrors = query.errors().size();
         Result ret = null;
         Item baseRoot = origRoot;
         if (lastPass > 0) {
@@ -247,20 +243,12 @@ public class GroupingExecutor extends Searcher {
             }
             setGroupingList(query, passList);
             Result passResult = execution.search(query);
-            if (passResult.hits().getError() != null) {
-                if (firstPass) {
-                    if (passResult.hits().getErrorHit().errors().size() > prePassErrors ||
-                        passResult.hits().getErrorHit().errors().size() == 0) {
-                        return passResult;
-                    }
-                } else {
-                    return passResult;
-                }
-            }
             Map<Integer, Grouping> passGroupingMap = mergeGroupingResults(passResult);
             mergeGroupingMaps(groupingMap, passGroupingMap);
             if (firstPass) {
                 ret = passResult;
+            } else {
+                ret.hits().addErrorsFrom(passResult.hits());
             }
         }
         if (log.isLoggable(Level.FINE)) {

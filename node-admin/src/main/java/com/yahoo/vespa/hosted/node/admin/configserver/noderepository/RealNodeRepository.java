@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -155,6 +155,11 @@ public class RealNodeRepository implements NodeRepository {
                 .map(event -> new Event(event.agent, event.event, Optional.ofNullable(event.at).map(Instant::ofEpochMilli).orElse(Instant.EPOCH)))
                 .collect(Collectors.toUnmodifiableList());
 
+        List<TrustStoreItem> trustStore = Optional.ofNullable(node.trustStore).orElse(List.of()).stream()
+                .map(item -> new TrustStoreItem(item.fingerprint, Instant.ofEpochMilli(item.expiry)))
+                .collect(Collectors.toList());
+
+
         return new NodeSpec(
                 node.hostname,
                 Optional.ofNullable(node.openStackId),
@@ -185,7 +190,8 @@ public class RealNodeRepository implements NodeRepository {
                 events,
                 Optional.ofNullable(node.parentHostname),
                 Optional.ofNullable(node.archiveUri).map(URI::create),
-                Optional.ofNullable(node.exclusiveTo).map(ApplicationId::fromSerializedForm));
+                Optional.ofNullable(node.exclusiveTo).map(ApplicationId::fromSerializedForm),
+                trustStore);
     }
 
     private static NodeResources nodeResources(NodeRepositoryNode.NodeResources nodeResources) {
@@ -270,7 +276,9 @@ public class RealNodeRepository implements NodeRepository {
         node.vespaVersion = nodeAttributes.getVespaVersion().map(Version::toFullString).orElse(null);
         node.currentOsVersion = nodeAttributes.getCurrentOsVersion().map(Version::toFullString).orElse(null);
         node.currentFirmwareCheck = nodeAttributes.getCurrentFirmwareCheck().map(Instant::toEpochMilli).orElse(null);
-
+        node.trustStore = nodeAttributes.getTrustStore().stream()
+                .map(item -> new NodeRepositoryNode.TrustStoreItem(item.fingerprint(), item.expiry().toEpochMilli()))
+                .collect(Collectors.toList());
         Map<String, JsonNode> reports = nodeAttributes.getReports();
         node.reports = reports == null || reports.isEmpty() ? null : new TreeMap<>(reports);
 

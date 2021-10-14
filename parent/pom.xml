@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>parent</artifactId>
@@ -315,11 +315,35 @@
             </build>
         </profile>
         <profile>
+            <id>custom-javadoc</id>
+            <activation>
+                <file><exists>src/main/javadoc</exists></file>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>javadoc</classifier>
+                                    <classesDirectory>${project.basedir}/src/main/javadoc</classesDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>generate-javadoc</id>
             <activation>
-                <property>
-                    <name>!skipJavadoc</name>
-                </property>
+                <file><missing>src/main/javadoc</missing></file>
             </activation>
             <build>
                 <plugins>
@@ -541,18 +565,6 @@
                 <groupId>io.prometheus</groupId>
                 <artifactId>simpleclient_common</artifactId>
                 <version>${prometheus.client.version}</version>
-            </dependency>
-            <dependency>
-                <!-- TODO: Try to remove, as this overlaps with javax.activation. -->
-                <groupId>jakarta.activation</groupId>
-                <artifactId>jakarta.activation-api</artifactId>
-                <version>1.2.1</version>
-            </dependency>
-            <dependency>
-                <!-- TODO: Try to remove, as this conflicts with javax.xml.bind:jaxb-api -->
-                <groupId>jakarta.xml.bind</groupId>
-                <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>2.3.2</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -811,16 +823,6 @@
                 <version>${asm.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.tensorflow</groupId>
-                <artifactId>proto</artifactId>
-                <version>${tensorflow.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.tensorflow</groupId>
-                <artifactId>tensorflow</artifactId>
-                <version>${tensorflow.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.twdata.maven</groupId>
                 <artifactId>mojo-executor</artifactId>
                 <version>2.3.0</version>
@@ -886,7 +888,6 @@
         <protobuf.version>3.11.4</protobuf.version>
         <spifly.version>1.3.3</spifly.version>
         <surefire.version>2.22.0</surefire.version>
-        <tensorflow.version>1.12.0</tensorflow.version>
         <zookeeper.client.version>3.6.3</zookeeper.client.version>
 
         <doclint>all</doclint>

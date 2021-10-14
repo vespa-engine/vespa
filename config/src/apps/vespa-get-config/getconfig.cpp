@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
@@ -55,7 +55,6 @@ GetConfig::usage()
     fprintf(stderr, "-a schema         (config def schema file, optional)\n");
     fprintf(stderr, "-v defVersion     (config definition version, optional, deprecated)\n");
     fprintf(stderr, "-m defMd5         (definition md5sum, optional)\n");
-    fprintf(stderr, "-c configMd5      (config md5sum, optional)\n");
     fprintf(stderr, "-t serverTimeout  (server timeout in seconds, default 3)\n");
     fprintf(stderr, "-w timeout        (timeout in seconds, default 10)\n");
     fprintf(stderr, "-s server         (server hostname, default localhost)\n");
@@ -108,7 +107,7 @@ GetConfig::Main()
     if (configId == nullptr) {
         configId = "";
     }
-    const char *configMD5 = "";
+    const char *configXxhash64 = "";
     int serverTimeout = 3;
     int clientTimeout = 10;
 
@@ -141,9 +140,6 @@ GetConfig::Main()
             break;
         case 'm':
             defMD5 = optArg;
-            break;
-        case 'c':
-            configMD5 = optArg;
             break;
         case 't':
             serverTimeout = atoi(optArg);
@@ -219,7 +215,7 @@ GetConfig::Main()
     FRTConfigRequestFactory requestFactory(traceLevel, vespaVersion, config::protocol::readProtocolCompressionType());
     FRTConnection connection(spec, _server->supervisor(), TimingValues());
     ConfigKey key(configId, defName, defNamespace, defMD5, defSchema);
-    ConfigState state(configMD5, generation, false);
+    ConfigState state(configXxhash64, generation, false);
     FRTConfigRequest::UP request = requestFactory.createConfigRequest(key, &connection, state, serverTimeout * 1000);
 
     _target->InvokeSync(request->getRequest(), clientTimeout); // seconds
@@ -240,7 +236,7 @@ GetConfig::Main()
             printf("defNamespace %s\n", rKey.getDefNamespace().c_str());
 
             printf("configID   %s\n", rKey.getConfigId().c_str());
-            printf("configMD5  %s\n", rState.md5.c_str());
+            printf("configXxhash64  %s\n", rState.xxhash64.c_str());
 
             printf("generation  %" PRId64 "\n", rState.generation);
             printf("trace       %s\n", response->getTrace().toString().c_str());

@@ -18,27 +18,58 @@ using DistributionConfigBuilder = BmDistribution::DistributionConfigBuilder;
 
 namespace {
 
+void
+add_nodes_to_group(DistributionConfigBuilder::Group &group, uint32_t first_node_idx, uint32_t nodes_per_group)
+{
+    for (uint32_t i = 0; i < nodes_per_group; ++i) {
+        DistributionConfigBuilder::Group::Nodes node;
+        node.index = first_node_idx + i;
+        group.nodes.push_back(std::move(node));
+    }
+}
+
 BmDistribution::DistributionConfig
-make_distribution_config(uint32_t num_nodes, uint32_t redundancy)
+make_distribution_config(uint32_t nodes_per_group, uint32_t groups, uint32_t redundancy)
 {
     DistributionConfigBuilder dc;
     {
-        DistributionConfigBuilder::Group group;
         {
-            for (uint32_t i = 0; i < num_nodes; ++i) {
-                DistributionConfigBuilder::Group::Nodes node;
-                node.index = i;
-                group.nodes.push_back(std::move(node));
+            DistributionConfigBuilder::Group group;
+            group.index = "invalid";
+            group.name = "invalid";
+            group.capacity = 1.0;
+            if (groups == 0u) {
+                add_nodes_to_group(group, 0, nodes_per_group);
+                group.partitions = "";
+                dc.redundancy = redundancy;
+                dc.readyCopies = redundancy;
+            } else {
+                vespalib::asciistream partitions;
+                for (uint32_t group_idx = 0; group_idx < groups; ++group_idx) {
+                    if (group_idx + 1< groups) {
+                        partitions << redundancy << '|';
+                    } else {
+                        partitions << '*';
+                    }
+                }
+                group.partitions = partitions.str();
+                dc.redundancy = redundancy * groups;
+                dc.readyCopies = redundancy * groups;
             }
+            dc.group.push_back(std::move(group));
         }
-        group.index = "invalid";
-        group.name = "invalid";
-        group.capacity = 1.0;
-        group.partitions = "";
-        dc.group.push_back(std::move(group));
+        uint32_t node_idx = 0;
+        for (uint32_t group_idx = 0; group_idx < groups; ++group_idx) {
+            DistributionConfigBuilder::Group group;
+            group.index = std::to_string(group_idx);
+            group.name = "group_" + group.index;
+            group.capacity = 1.0;
+            group.partitions = "";
+            add_nodes_to_group(group, node_idx, nodes_per_group);
+            node_idx += nodes_per_group;
+            dc.group.push_back(std::move(group));
+        }
     }
-    dc.redundancy = redundancy;
-    dc.readyCopies = redundancy;
     return dc;
 }
 
@@ -52,11 +83,11 @@ make_cluster_state(uint32_t num_nodes)
 
 }
 
-BmDistribution::BmDistribution(uint32_t num_nodes, uint32_t redundancy)
-    : _num_nodes(num_nodes),
-      _distribution_config(make_distribution_config(num_nodes, redundancy)),
+BmDistribution::BmDistribution(uint32_t groups, uint32_t nodes_per_group, uint32_t redundancy)
+    : _num_nodes(std::max(1u, groups) * nodes_per_group),
+      _distribution_config(make_distribution_config(nodes_per_group, groups, redundancy)),
       _distribution(_distribution_config),
-      _pending_cluster_state(make_cluster_state(num_nodes)),
+      _pending_cluster_state(make_cluster_state(_num_nodes)),
       _cluster_state_bundle(_pending_cluster_state),
       _has_pending_cluster_state(false)
 {

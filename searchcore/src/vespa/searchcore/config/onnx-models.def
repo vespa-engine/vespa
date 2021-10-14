@@ -1,10 +1,13 @@
-# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=vespa.config.search.core
 
-model[].name            string
-model[].fileref         file
-model[].input[].name    string
-model[].input[].source  string
-model[].output[].name   string
-model[].output[].as     string
-model[].dry_run_on_setup bool default=false
+model[].name                        string
+model[].fileref                     file
+model[].input[].name                string
+model[].input[].source              string
+model[].output[].name               string
+model[].output[].as                 string
+model[].dry_run_on_setup            bool default=false
+model[].stateless_execution_mode    string default=""
+model[].stateless_interop_threads   int default=-1
+model[].stateless_intraop_threads   int default=-1

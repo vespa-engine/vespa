@@ -78,7 +78,7 @@ class SystemFlagsDeployer  {
         return SystemFlagsDeployResult.merge(results);
     }
 
-    private SystemFlagsDeployResult deployFlags(FlagsTarget target, Set<FlagData> flagData, boolean dryRun) {
+    private SystemFlagsDeployResult deployFlags(FlagsTarget target, List<FlagData> flagData, boolean dryRun) {
         Map<FlagId, FlagData> wantedFlagData = lookupTable(flagData);
         Map<FlagId, FlagData> currentFlagData;
         List<FlagId> definedFlags;
@@ -98,7 +98,7 @@ class SystemFlagsDeployer  {
         updateExistingFlagData(target, dryRun, wantedFlagData, currentFlagData, results, errors);
         removeOldFlagData(target, dryRun, wantedFlagData, currentFlagData, results, errors);
         failOnNewFlagDataForUndefinedFlags(target, wantedFlagData, currentFlagData, definedFlags, errors);
-        warnOnExistingFlagDataForUndefinedFlags(target, wantedFlagData, currentFlagData, definedFlags, warnings);
+        failOnFlagDataForUndefinedFlags(target, wantedFlagData, currentFlagData, definedFlags, errors);
         return new SystemFlagsDeployResult(results, errors, warnings);
     }
 
@@ -191,14 +191,14 @@ class SystemFlagsDeployer  {
         }
     }
 
-    private static void warnOnExistingFlagDataForUndefinedFlags(FlagsTarget target,
-                                                                Map<FlagId, FlagData> wantedFlagData,
-                                                                Map<FlagId, FlagData> currentFlagData,
-                                                                List<FlagId> definedFlags,
-                                                                List<Warning> warnings) {
+    private static void failOnFlagDataForUndefinedFlags(FlagsTarget target,
+                                                        Map<FlagId, FlagData> wantedFlagData,
+                                                        Map<FlagId, FlagData> currentFlagData,
+                                                        List<FlagId> definedFlags,
+                                                        List<OperationError> errors) {
         for (FlagId flagId : currentFlagData.keySet()) {
             if (wantedFlagData.containsKey(flagId) && !definedFlags.contains(flagId)) {
-                warnings.add(Warning.dataForUndefinedFlag(target, flagId));
+                errors.add(OperationError.dataForUndefinedFlag(target, flagId));
             }
         }
     }

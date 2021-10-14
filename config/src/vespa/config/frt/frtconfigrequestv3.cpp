@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "frtconfigrequestv3.h"
 #include "frtconfigresponsev3.h"
 #include "connection.h"
@@ -11,14 +11,14 @@ namespace config {
 
 FRTConfigRequestV3::FRTConfigRequestV3(Connection * connection,
                                        const ConfigKey & key,
-                                       const vespalib::string & configMd5,
+                                       const vespalib::string & configXxhash64,
                                        int64_t currentGeneration,
                                        const vespalib::string & hostName,
                                        int64_t serverTimeout,
                                        const Trace & trace,
                                        const VespaVersion & vespaVersion,
                                        const CompressionType & compressionType)
-    : SlimeConfigRequest(connection, key, configMd5, currentGeneration, hostName, serverTimeout, trace, vespaVersion, 3, compressionType, "config.v3.getConfig")
+    : SlimeConfigRequest(connection, key, configXxhash64, currentGeneration, hostName, serverTimeout, trace, vespaVersion, 3, compressionType, "config.v3.getConfig")
 {
 }
 

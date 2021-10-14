@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
@@ -46,13 +46,8 @@ class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolCon
             return;
         }
 
-        double vcpu = cluster.vcpu().orElse(0);
-        if (vcpu == 0) return;
-
-        // Configuration is currently identical to the search handler's threadpool
-        int workerThreads = Math.max(8, (int)Math.ceil(vcpu * 2.0));
-        builder.maxthreads(workerThreads);
-        builder.corePoolSize(workerThreads);
-        builder.queueSize((int)(workerThreads * 40.0));
+        // Core pool size of 2xcores, and max of 100xcores and using a synchronous Q
+        // This is the deafault pool used by both federation and generally when you ask for an Executor.
+        builder.corePoolSize(-2).maxthreads(-100).queueSize(0);
     }
 }

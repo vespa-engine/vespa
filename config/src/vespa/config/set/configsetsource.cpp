@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configsetsource.h"
 #include <vespa/config/print/asciiconfigwriter.h>
@@ -30,16 +30,16 @@ ConfigSetSource::getConfig()
     AsciiConfigWriter writer(ss);
     writer.write(*instance);
     std::vector<vespalib::string> lines(ss.getlines());
-    std::string currentMd5(calculateContentMd5(lines));
+    std::string currentXxhash64(calculateContentXxhash64(lines));
 
-    if (isGenerationNewer(_generation, _lastState.generation) && currentMd5.compare(_lastState.md5) != 0) {
+    if (isGenerationNewer(_generation, _lastState.generation) && currentXxhash64.compare(_lastState.xxhash64) != 0) {
         LOG(debug, "New generation, updating");
-        _holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(lines, currentMd5), true, _generation)));
-        _lastState.md5 = currentMd5;
+        _holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(lines, currentXxhash64), true, _generation)));
+        _lastState.xxhash64 = currentXxhash64;
         _lastState.generation = _generation;
     } else {
         LOG(debug, "Sending timestamp update");
-        _holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(lines, currentMd5), false, _generation)));
+        _holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(lines, currentXxhash64), false, _generation)));
         _lastState.generation = _generation;
     }
 }

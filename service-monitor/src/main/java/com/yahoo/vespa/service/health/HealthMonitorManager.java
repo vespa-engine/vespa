@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
 import com.google.inject.Inject;
@@ -9,8 +9,6 @@ import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.service.duper.DuperModelManager;
 import com.yahoo.vespa.service.executor.RunletExecutorImpl;
 import com.yahoo.vespa.service.manager.HealthMonitorApi;
@@ -56,14 +54,11 @@ public class HealthMonitorManager implements MonitorManager, HealthMonitorApi {
     private final ApplicationHealthMonitorFactory applicationHealthMonitorFactory;
 
     @Inject
-    public HealthMonitorManager(DuperModelManager duperModel, FlagSource flagSource) {
-        this(duperModel,
-                new StateV1HealthModel(
-                        TARGET_HEALTH_STALENESS,
-                        HEALTH_REQUEST_TIMEOUT,
-                        KEEP_ALIVE,
-                        new RunletExecutorImpl(THREAD_POOL_SIZE),
-                        Flags.USE_UNKNOWN_SERVICE_STATUS.bindTo(flagSource).value()));
+    public HealthMonitorManager(DuperModelManager duperModel) {
+        this(duperModel, new StateV1HealthModel(TARGET_HEALTH_STALENESS,
+                                                HEALTH_REQUEST_TIMEOUT,
+                                                KEEP_ALIVE,
+                                                new RunletExecutorImpl(THREAD_POOL_SIZE)));
     }
 
     private HealthMonitorManager(DuperModelManager duperModel, StateV1HealthModel healthModel) {

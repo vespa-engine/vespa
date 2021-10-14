@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
@@ -22,6 +22,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.SecretStoreProvider;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -350,7 +351,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
         Deployment deployment = prepare(sessionId, prepareParams, logger);
 
-        deployment.activate();
+        if ( ! prepareParams.isDryRun())
+            deployment.activate();
 
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
@@ -485,7 +487,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     // Config generation is equal to session id, and config generation must be a monotonically increasing number
     static void checkIfActiveIsNewerThanSessionToBeActivated(long sessionId, long currentActiveSessionId) {
         if (sessionId < currentActiveSessionId) {
-            throw new ActivationConflictException("It is not possible to activate session " + sessionId +
+            throw new ActivationConflictException("Cannot activate session " + sessionId +
                                                   ", because it is older than current active session (" +
                                                   currentActiveSessionId + ")");
         }
@@ -1079,11 +1081,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     @Override
     public Duration serverDeployTimeout() { return Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout()); }
 
-    private static void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {
+    private void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {
         RestartActions restartActions = actions.getRestartActions();
         if ( ! restartActions.isEmpty()) {
-            logger.log(Level.WARNING, "Change(s) between active and new application that require restart:\n" +
-                                      restartActions.format());
+            if (configserverConfig().hostedVespa())
+                logger.log(Level.INFO, "Orchestrated service restart triggered due to change(s) from active to new application:\n" +
+                                       restartActions.format());
+            else
+                logger.log(Level.WARNING, "Change(s) between active and new application that require restart:\n" +
+                                          restartActions.format());
         }
         RefeedActions refeedActions = actions.getRefeedActions();
         if ( ! refeedActions.isEmpty()) {
@@ -1093,9 +1099,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
         ReindexActions reindexActions = actions.getReindexActions();
         if ( ! reindexActions.isEmpty()) {
-            logger.log(Level.WARNING,
-                       "Change(s) between active and new application that may require re-index:\n" +
-                       reindexActions.format());
+            if (configserverConfig().hostedVespa())
+                logger.log(Level.INFO, "Re-indexing triggered due to change(s) from active to new application:\n" +
+                                       reindexActions.format());
+            else
+                logger.log(Level.WARNING,
+                           "Change(s) between active and new application that may require re-index:\n" +
+                           reindexActions.format());
         }
     }
 

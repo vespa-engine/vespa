@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "idealstateoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
@@ -91,6 +91,22 @@ IdealStateOperation::done()
         } else {
             _manager->getMetrics().operations[getType()]->failed.inc(1);
         }
+    }
+}
+
+void
+IdealStateOperation::on_blocked()
+{
+    if (_manager) {
+        _manager->getMetrics().operations[getType()]->blocked.inc(1);
+    }
+}
+
+void
+IdealStateOperation::on_throttled()
+{
+    if (_manager) {
+        _manager->getMetrics().operations[getType()]->throttled.inc(1);
     }
 }
 

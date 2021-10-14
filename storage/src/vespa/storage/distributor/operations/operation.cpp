@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "operation.h"
 #include <vespa/storage/common/distributorcomponent.h>
@@ -39,6 +39,16 @@ Operation::copyMessageSettings(const api::StorageCommand& source, api::StorageCo
     target.getTrace().setLevel(source.getTrace().getLevel());
     target.setTimeout(source.getTimeout());
     target.setPriority(source.getPriority());
+}
+
+void
+Operation::on_blocked()
+{
+}
+
+void
+Operation::on_throttled()
+{
 }
 
 }

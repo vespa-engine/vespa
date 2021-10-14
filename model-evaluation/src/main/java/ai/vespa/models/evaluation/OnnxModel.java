@@ -1,7 +1,8 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -17,12 +18,14 @@ class OnnxModel {
 
     private final String name;
     private final File modelFile;
+    private final OnnxEvaluatorOptions options;
 
     private OnnxEvaluator evaluator;
 
-    OnnxModel(String name, File modelFile) {
+    OnnxModel(String name, File modelFile, OnnxEvaluatorOptions options) {
         this.name = name;
         this.modelFile = modelFile;
+        this.options = options;
     }
 
     public String name() {
@@ -31,7 +34,7 @@ class OnnxModel {
 
     public void load() {
         if (evaluator == null) {
-            evaluator = new OnnxEvaluator(modelFile.getPath());
+            evaluator = new OnnxEvaluator(modelFile.getPath(), options);
         }
     }
 

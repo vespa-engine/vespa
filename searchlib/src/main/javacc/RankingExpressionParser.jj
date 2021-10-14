@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
  * When this file is changed, do "mvn generate-sources" to rebuild the parser.
  *
@@ -124,6 +124,7 @@ TOKEN :
     // MIN
     <POW: "pow"> |
     <BIT: "bit"> |
+    <HAMMING: "hamming"> |
 
     <MAP: "map"> |
     <REDUCE: "reduce"> |
@@ -143,6 +144,7 @@ TOKEN :
     <ARGMAX: "argmax"> |
     <ARGMIN: "argmin"> |
     <CELL_CAST: "cell_cast"> |
+    <EXPAND: "expand"> |
 
     <AVG: "avg" > |
     <COUNT: "count"> |
@@ -383,7 +385,8 @@ TensorFunctionNode tensorFunction() :
         tensorExpression = tensorXwPlusB() |
         tensorExpression = tensorArgmax() |
         tensorExpression = tensorArgmin() |
-        tensorExpression = tensorCellCast()
+        tensorExpression = tensorCellCast() |
+        tensorExpression = tensorExpand()
     )
     { return tensorExpression; }
 }
@@ -580,6 +583,16 @@ TensorFunctionNode tensorXwPlusB() :
                                                 dimension)); }
 }
 
+TensorFunctionNode tensorExpand() :
+{
+    ExpressionNode argument;
+    String dimension;
+}
+{
+    <EXPAND> <LBRACE> argument = expression() <COMMA> dimension = identifier() <RBRACE>
+    { return new TensorFunctionNode(new Expand(TensorFunctionNode.wrap(argument), dimension)); }
+}
+
 TensorFunctionNode tensorArgmax() :
 {
     ExpressionNode tensor;
@@ -695,6 +708,7 @@ String tensorFunctionName() :
     ( <ARGMAX>       { return token.image; } ) |
     ( <ARGMIN>       { return token.image; } ) |
     ( <CELL_CAST>    { return token.image; } ) |
+    ( <EXPAND>       { return token.image; } ) |
     ( aggregator = tensorReduceAggregator() { return aggregator.toString(); } )
 }
 
@@ -735,7 +749,8 @@ Function binaryFunctionName() : { }
     <MAX>   { return Function.max;   } |
     <MIN>   { return Function.min;   } |
     <POW>   { return Function.pow;   } |
-    <BIT>   { return Function.bit;   }
+    <BIT>   { return Function.bit;   } |
+    <HAMMING> { return Function.hamming; }
 }
 
 List<ExpressionNode> expressionList() :

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.collections.Pair;
@@ -216,7 +216,6 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                 .ifPresent(info -> {
                     int suspended = info.status().isSuspended() ? 1 : 0;
                     metric.set("suspended", suspended, context);
-                    metric.set("allowedToBeDown", suspended, context); // remove summer 2020.
                     long suspendedSeconds = info.suspendedSince()
                             .map(suspendedSince -> Duration.between(suspendedSince, clock().instant()).getSeconds())
                             .orElse(0L);

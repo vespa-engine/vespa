@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
@@ -215,6 +216,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     public URI apiUrl() {
         return URI.create("https://api.tld:4443/");
     }
+
+    @Override public Optional<String> tenantDeveloperRoleArn(TenantName tenant) { return Optional.empty(); }
 
     @Override
     public boolean hasZone(ZoneId zoneId) {

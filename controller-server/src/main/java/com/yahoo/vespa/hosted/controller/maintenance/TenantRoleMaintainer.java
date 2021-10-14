@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package com.yahoo.vespa.hosted.controller.maintenance;
 
@@ -27,9 +27,7 @@ public class TenantRoleMaintainer extends ControllerMaintainer {
         var tenants = controller().tenants().asList();
 
         // Create separate athenz service for all tenants
-        tenants.stream()
-                .map(Tenant::name)
-                .forEach(roleService::createTenantRole);
+        tenants.forEach(roleService::createTenantRole);
 
         // Until we have moved to separate athenz service per tenant, make sure we update the shared policy
         // to allow ssh logins for hosts in prod/perf with a separate tenant iam role.

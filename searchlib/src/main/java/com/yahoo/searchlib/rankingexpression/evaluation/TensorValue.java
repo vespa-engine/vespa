@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.google.common.annotations.Beta;
@@ -157,6 +157,7 @@ public class TensorValue extends Value {
             case fmod: return value.fmod(argument);
             case ldexp: return value.ldexp(argument);
             case bit: return value.bit(argument);
+            case hamming: return value.hamming(argument);
             default: throw new UnsupportedOperationException("Cannot combine two tensors using " + function);
         }
     }

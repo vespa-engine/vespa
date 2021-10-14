@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
@@ -681,36 +682,47 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void qrconfig_is_produced() throws IOException, SAXException {
+        QrConfig qr = getQrConfig(new TestProperties());
+        String hostname = HostName.getLocalhost();  // Using the same way of getting hostname as filedistribution model
+        assertEquals("default.container.0", qr.discriminator());
+        assertEquals(19102, qr.rpc().port());
+        assertEquals("vespa/service/default/container.0", qr.rpc().slobrokId());
+        assertTrue(qr.rpc().enabled());
+        assertEquals("", qr.rpc().host());
+        assertFalse(qr.restartOnDeploy());
+        assertEquals("filedistribution/" + hostname, qr.filedistributor().configid());
+        assertEquals(50.0, qr.shutdown().timeout(), 0.00000000000001);
+        assertFalse(qr.shutdown().dumpHeapOnTimeout());
+    }
+    private QrConfig getQrConfig(ModelContext.Properties properties) throws IOException, SAXException {
         String servicesXml =
                 "<services>" +
-                        "<admin version='3.0'>" +
-                        "    <nodes count='2'/>" +
-                        "</admin>" +
-                        "<container id ='default' version='1.0'>" +
-                        "  <nodes>" +
-                        "    <node hostalias='node1' />" +
-                        "  </nodes>" +
-                        "</container>" +
-                        "</services>";
+                "  <admin version='3.0'>" +
+                "    <nodes count='2'/>" +
+                "  </admin>" +
+                "  <container id ='default' version='1.0'>" +
+                "    <nodes>" +
+                "      <node hostalias='node1' />" +
+                "    </nodes>" +
+                "  </container>" +
+                "</services>";
 
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
-                .properties(new TestProperties())
+                .properties(properties)
                 .build());
 
-        String hostname = HostName.getLocalhost();  // Using the same way of getting hostname as filedistribution model
+        return model.getConfig(QrConfig.class, "default/container.0");
+    }
 
-        QrConfig config = model.getConfig(QrConfig.class, "default/container.0");
-        assertEquals("default.container.0", config.discriminator());
-        assertEquals(19102, config.rpc().port());
-        assertEquals("vespa/service/default/container.0", config.rpc().slobrokId());
-        assertTrue(config.rpc().enabled());
-        assertEquals("", config.rpc().host());
-        assertFalse(config.restartOnDeploy());
-        assertEquals("filedistribution/" + hostname, config.filedistributor().configid());
+    @Test
+    public void control_container_shutdown() throws IOException, SAXException {
+        QrConfig qr = getQrConfig(new TestProperties().containerShutdownTimeout(133).containerDumpHeapOnShutdownTimeout(true));
+        assertEquals(133.0, qr.shutdown().timeout(), 0.00000000000001);
+        assertTrue(qr.shutdown().dumpHeapOnTimeout());
     }
 
     @Test

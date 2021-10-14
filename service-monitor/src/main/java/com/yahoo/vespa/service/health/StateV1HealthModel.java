@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
 import com.yahoo.config.model.api.ApplicationInfo;
@@ -30,18 +30,15 @@ public class StateV1HealthModel implements AutoCloseable {
     private final Duration requestTimeout;
     private final Duration connectionKeepAlive;
     private final RunletExecutor executor;
-    private final boolean useUnknownServiceStatus;
 
     StateV1HealthModel(Duration targetHealthStaleness,
                        Duration requestTimeout,
                        Duration connectionKeepAlive,
-                       RunletExecutor executor,
-                       boolean useUnknownServiceStatus) {
+                       RunletExecutor executor) {
         this.targetHealthStaleness = targetHealthStaleness;
         this.requestTimeout = requestTimeout;
         this.connectionKeepAlive = connectionKeepAlive;
         this.executor = executor;
-        this.useUnknownServiceStatus = useUnknownServiceStatus;
     }
 
     Map<ServiceId, HealthEndpoint> extractHealthEndpoints(ApplicationInfo application) {
@@ -60,8 +57,7 @@ public class StateV1HealthModel implements AutoCloseable {
                                 targetHealthStaleness,
                                 requestTimeout,
                                 connectionKeepAlive,
-                                executor,
-                                useUnknownServiceStatus);
+                                executor);
                         endpoints.put(serviceId, endpoint);
                         break; // Avoid >1 endpoints per serviceId
                     }

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "persistencehandlerproxy.h"
 #include "documentdb.h"
@@ -83,8 +83,10 @@ PersistenceHandlerProxy::handleGetBucketInfo(const Bucket &bucket, IBucketInfoRe
 void
 PersistenceHandlerProxy::handleCreateBucket(FeedToken token, const Bucket &bucket)
 {
-    auto op = std::make_unique<CreateBucketOperation>(bucket.getBucketId().stripUnused());
-    _feedHandler.handleOperation(std::move(token), std::move(op));
+    if ( ! _bucketHandler.hasBucket(bucket)) {
+        auto op = std::make_unique<CreateBucketOperation>(bucket.getBucketId().stripUnused());
+        _feedHandler.handleOperation(std::move(token), std::move(op));
+    }
 }
 
 void

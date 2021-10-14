@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.config.ConfigInstance;
@@ -11,9 +11,12 @@ import static com.yahoo.vespa.config.ConfigPayloadApplier.IdentityPathAcquirer;
 /**
  * A utility class that can be used to transform config from one format to another.
  *
- * @author Ulf Lilleengen, hmusum, Tony Vaagenes
+ * @author Ulf Lilleengen
+ * @author hmusum
+ * @author Tony Vaagenes
  */
 public class ConfigTransformer<T extends ConfigInstance> {
+
     /**
      * Workaround since FileAcquirer is in a separate module that depends on config.
      * Consider moving FileAcquirer into config instead.
@@ -52,7 +55,7 @@ public class ConfigTransformer<T extends ConfigInstance> {
     /**
      * Create a ConfigBuilder from a payload, based on the <code>clazz</code> supplied.
      *
-     * @param payload a Payload to be transformed to builder.
+     * @param payload a Payload to be transformed to builder
      * @return a ConfigBuilder
      */
     public ConfigInstance.Builder toConfigBuilder(ConfigPayload payload) {
@@ -80,4 +83,5 @@ public class ConfigTransformer<T extends ConfigInstance> {
             return builder;
         }
     }
+
 }

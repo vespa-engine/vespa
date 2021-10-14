@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.federation;
 
 import com.yahoo.component.ComponentSpecification;
@@ -20,7 +20,6 @@ import com.yahoo.search.searchchain.Execution;
  * semantics are not necessary for the application.
  *
  * @see FederationSearcher
- * @since 5.0.13
  * @author Steinar Knutsen
  */
 @After("*")

@@ -50,19 +50,23 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useAsyncMessageHandlingOnSchedule = false;
     private double feedConcurrency = 0.5;
     private boolean enableFeedBlockInDistributor = true;
-    private boolean enforceRankProfileInheritance = true;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
-    private int numDistributorStripes = 0;
     private int maxConcurrentMergesPerNode = 16;
     private int maxMergeQueueSize = 1024;
+    private boolean ignoreMergeQueueLimit = false;
     private int largeRankExpressionLimit = 8192;
     private boolean allowDisableMtls = true;
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
     private double resourceLimitDisk = 0.8;
     private double resourceLimitMemory = 0.8;
     private double minNodeRatioPerGroup = 0.0;
+    private boolean containerDumpHeapOnShutdownTimeout = false;
+    private double containerShutdownTimeout = 50.0;
+    private int distributorMergeBusyWait = 10;
+    private int docstoreCompressionLevel = 9;
+    private double diskBloatFactor = 0.2;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -95,20 +99,38 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
     @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
     @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
-    @Override public int numDistributorStripes() { return numDistributorStripes; }
     @Override public boolean allowDisableMtls() { return allowDisableMtls; }
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
     @Override public int largeRankExpressionLimit() { return largeRankExpressionLimit; }
     @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerNode; }
     @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
+    @Override public boolean ignoreMergeQueueLimit() { return ignoreMergeQueueLimit; }
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
     @Override public int metricsproxyNumThreads() { return 1; }
-    @Override public boolean enforceRankProfileInheritance() { return enforceRankProfileInheritance; }
+    @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
+    @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
+    @Override public int distributorMergeBusyWait() { return distributorMergeBusyWait; }
+    @Override public double diskBloatFactor() { return diskBloatFactor; }
+    @Override public int docstoreCompressionLevel() { return docstoreCompressionLevel; }
 
-    public TestProperties enforceRankProfileInheritance(boolean value) {
-        enforceRankProfileInheritance = value;
+    public TestProperties docstoreCompressionLevel(int docstoreCompressionLevel) {
+        this.docstoreCompressionLevel = docstoreCompressionLevel;
+        return this;
+    }
+
+    public TestProperties diskBloatFactor(double diskBloatFactor) {
+        this.diskBloatFactor = diskBloatFactor;
+        return this;
+    }
+
+    public TestProperties containerDumpHeapOnShutdownTimeout(boolean value) {
+        containerDumpHeapOnShutdownTimeout = value;
+        return this;
+    }
+    public TestProperties containerShutdownTimeout(double value) {
+        containerShutdownTimeout = value;
         return this;
     }
     public TestProperties largeRankExpressionLimit(int value) {
@@ -152,6 +174,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     public TestProperties setMaxMergeQueueSize(int maxMergeQueueSize) {
         this.maxMergeQueueSize = maxMergeQueueSize;
+        return this;
+    }
+
+    public TestProperties setIgnoreMergeQueueLimit(boolean ignoreMergeQueueLimit) {
+        this.ignoreMergeQueueLimit = ignoreMergeQueueLimit;
         return this;
     }
 
@@ -230,11 +257,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setNumDistributorStripes(int value) {
-        this.numDistributorStripes = value;
-        return this;
-    }
-
     public TestProperties allowDisableMtls(boolean value) {
         this.allowDisableMtls = value;
         return this;
@@ -257,6 +279,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setMinNodeRatioPerGroup(double value) {
         this.minNodeRatioPerGroup = value;
+        return this;
+    }
+
+    public TestProperties setDistributorMergeBusyWait(int value) {
+        distributorMergeBusyWait = value;
         return this;
     }
 

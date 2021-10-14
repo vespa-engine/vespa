@@ -7,20 +7,21 @@
 namespace search::bmcluster {
 
 /*
- * Class used to calculate average value of samples.
+ * Class used to calculate average feed rate.
  */
 class AvgSampler {
 private:
-    double _total;
-    size_t _samples;
+    uint64_t _ops;
+    double   _elapsed;
 
 public:
-    AvgSampler() : _total(0), _samples(0) {}
-    void sample(double val) {
-        _total += val;
-        ++_samples;
+    AvgSampler() : _ops(0), _elapsed(0.0) {}
+    void sample(uint64_t ops, double elapsed) {
+        _ops += ops;
+        _elapsed += elapsed;
     }
-    double avg() const { return _total / (double)_samples; }
+    double avg() const { return valid() ? (_ops / _elapsed) : 0.0; }
+    bool valid() const { return _elapsed != 0.0; }
 };
 
 }

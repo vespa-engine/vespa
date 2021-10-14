@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors;
 
 import com.yahoo.config.subscription.ConfigGetter;
@@ -157,7 +157,7 @@ public class VdsStreamingSearcherTestCase {
     }
 
     private static Result executeQuery(VdsStreamingSearcher searcher, Query query) {
-        Execution execution = new Execution(new Execution.Context(null, null, null, null, null));
+        Execution execution = new Execution(Execution.Context.createContextStub());
         return searcher.doSearch2(query, execution);
     }
 

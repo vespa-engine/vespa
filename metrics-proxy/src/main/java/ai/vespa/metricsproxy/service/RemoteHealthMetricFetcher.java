@@ -5,7 +5,6 @@ import ai.vespa.metricsproxy.metric.HealthMetric;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
@@ -36,19 +35,19 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
             return createHealthMetrics(stream, fetchCount);
         } catch (IOException | InterruptedException | ExecutionException e) {
             logMessageNoResponse(errMsgNoResponse(e), fetchCount);
-            byte [] empty = {'{','}'};
-            return createHealthMetrics(new ByteArrayInputStream(empty), fetchCount);
+            return HealthMetric.getUnknown("Failed fetching metrics for service: " + service.getMonitoringName());
         }
     }
 
     /**
      * Connect to remote service over http and fetch metrics
      */
-    private HealthMetric createHealthMetrics(InputStream data, int fetchCount) {
+    private HealthMetric createHealthMetrics(InputStream data, int fetchCount) throws IOException {
         try {
             return parse(data);
         } catch (Exception e) {
             handleException(e, data, fetchCount);
+            while (data.read() != -1) {}
             return HealthMetric.getDown("Failed fetching status page for service");
         }
     }

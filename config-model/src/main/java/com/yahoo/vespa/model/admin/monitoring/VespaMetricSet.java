@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
 import java.util.Collections;
@@ -76,6 +76,9 @@ public class VespaMetricSet {
 
         // C++ Fnet metrics
         metrics.add(new Metric("vds.server.fnet.num-connections"));
+
+        // Node certificate
+        metrics.add(new Metric("node-certificate.expiry.seconds"));
 
         return metrics;
     }
@@ -181,6 +184,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.deactivated_containers.with_retained_refs.last"));
 
         metrics.add(new Metric("athenz-tenant-cert.expiry.seconds.last"));
+        metrics.add(new Metric("container-iam-role.expiry.seconds"));
 
         metrics.add(new Metric("jdisc.http.request.prematurely_closed.rate"));
         addMetric(metrics, "jdisc.http.request.requests_per_connection", List.of("sum", "count", "min", "max", "average"));
@@ -618,6 +622,12 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergedatawritelatency.max"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergedatawritelatency.sum"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergedatawritelatency.count"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.put_latency.max"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.put_latency.sum"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.put_latency.count"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove_latency.max"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove_latency.sum"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove_latency.count"));
 
         metrics.add(new Metric("vds.visitor.allthreads.queuesize.count.max"));
         metrics.add(new Metric("vds.visitor.allthreads.queuesize.count.sum"));
@@ -704,6 +714,10 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.idealstate.buckets_toomanycopies.average"));
         metrics.add(new Metric("vds.idealstate.buckets.average"));
         metrics.add(new Metric("vds.idealstate.buckets_notrusted.average"));
+        metrics.add(new Metric("vds.idealstate.bucket_replicas_moving_out.average"));
+        metrics.add(new Metric("vds.idealstate.bucket_replicas_copying_out.average"));
+        metrics.add(new Metric("vds.idealstate.bucket_replicas_copying_in.average"));
+        metrics.add(new Metric("vds.idealstate.bucket_replicas_syncing.average"));
         metrics.add(new Metric("vds.idealstate.delete_bucket.done_ok.rate"));
         metrics.add(new Metric("vds.idealstate.delete_bucket.done_failed.rate"));
         metrics.add(new Metric("vds.idealstate.delete_bucket.pending.average"));

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package ai.vespa.modelintegration.evaluator;
 
@@ -26,14 +26,16 @@ public class OnnxEvaluator {
     private final OrtSession session;
 
     public OnnxEvaluator(String modelPath) {
+        this(modelPath, null);
+    }
+
+    public OnnxEvaluator(String modelPath, OnnxEvaluatorOptions options) {
         try {
+            if (options == null) {
+                options = new OnnxEvaluatorOptions();
+            }
             environment = OrtEnvironment.getEnvironment();
-            OrtSession.SessionOptions options = new OrtSession.SessionOptions();
-            options.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT);
-            options.setIntraOpNumThreads(Math.max(1, Runtime.getRuntime().availableProcessors() / 4));
-            options.setInterOpNumThreads(1);
-            options.setExecutionMode(OrtSession.SessionOptions.ExecutionMode.SEQUENTIAL);
-            session = environment.createSession(modelPath, options);
+            session = environment.createSession(modelPath, options.getOptions());
         } catch (OrtException e) {
             throw new RuntimeException("ONNX Runtime exception", e);
         }

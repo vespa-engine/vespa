@@ -117,6 +117,13 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
     proto.set_grouping_blob(&reply.groupResult[0], reply.groupResult.size());
     const auto &slime_trace = reply.propertiesMap.trace().lookup("slime");
     proto.set_slime_trace(slime_trace.get().data(), slime_trace.get().size());
+    if (reply.my_issues) {
+        reply.my_issues->for_each_message([&](const vespalib::string &err_msg)
+                                          {
+                                              auto *err_obj = proto.add_errors();
+                                              err_obj->set_message(err_msg);
+                                          });
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -165,6 +172,13 @@ ProtoConverter::docsum_reply_to_proto(const DocsumReply &reply, ProtoDocsumReply
         vespalib::SmartBuffer buf(4_Ki);
         vespalib::slime::BinaryFormat::encode(*reply._root, buf);
         proto.set_slime_summaries(buf.obtain().data, buf.obtain().size);
+    }
+    if (reply.my_issues) {
+        reply.my_issues->for_each_message([&](const vespalib::string &err_msg)
+                                          {
+                                              auto *err_obj = proto.add_errors();
+                                              err_obj->set_message(err_msg);
+                                          });
     }
 }
 

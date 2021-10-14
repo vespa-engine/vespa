@@ -1,10 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
-import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.OptionalDouble;
 
 /**
  * Produces service dump artifacts.
@@ -13,10 +14,25 @@ import java.io.IOException;
  */
 interface ArtifactProducer {
 
-    String name();
+    String artifactName();
+    String description();
+    List<Artifact> produceArtifacts(Context ctx);
 
-    void produceArtifact(NodeAgentContext context, String configId, ServiceDumpReport.DumpOptions options,
-                         UnixPath resultDirectoryInNode) throws IOException;
+    interface Context {
+        String serviceId();
+        int servicePid();
+        CommandResult executeCommandInNode(List<String> command, boolean logOutput);
+        Path outputDirectoryInNode();
+        Path pathInNodeUnderVespaHome(String relativePath);
+        Path pathOnHostFromPathInNode(Path pathInNode);
+        Options options();
+
+        interface Options {
+            OptionalDouble duration();
+            boolean callGraphRecording();
+            boolean sendProfilingSignal();
+        }
+    }
 
 
 }

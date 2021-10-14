@@ -1,10 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.cluster;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.ClustersStatus;
@@ -264,9 +264,10 @@ public class ClusterSearcherTestCase {
 
     private Execution createExecution(List<String> docTypesList, boolean expectAttributePrefetch) {
         Set<String> documentTypes = new LinkedHashSet<>(docTypesList);
-        ClusterSearcher cluster = new ClusterSearcher(documentTypes);
+        ClusterSearcher cluster = new ClusterSearcher(documentTypes,
+                                                      new MyMockSearcher(expectAttributePrefetch),
+                                                      new InThreadExecutorService());
         try {
-            cluster.addBackendSearcher(new MyMockSearcher(expectAttributePrefetch));
             cluster.setValidRankProfile("default", documentTypes);
             cluster.addValidRankProfile("testprofile", "type1");
             return new Execution(cluster, Execution.Context.createContextStub());
@@ -518,13 +519,13 @@ public class ClusterSearcherTestCase {
         Dispatcher dispatcher = new Dispatcher(new RpcResourcePool(dispatchConfig),
                                                ComponentId.createAnonymousComponentId("test-id"),
                                                dispatchConfig,
-                                               createClusterInfoConfig(),
                                                vipStatus,
                                                new MockMetric());
         ComponentRegistry<Dispatcher> dispatchers = new ComponentRegistry<>();
         dispatchers.register(new ComponentId("dispatcher." + clusterName), dispatcher);
 
         return new ClusterSearcher(new ComponentId("test-id"),
+                                   new InThreadExecutorService(),
                                    qrSearchersConfig.build(),
                                    clusterConfig.build(),
                                    documentDbConfig.build(),
@@ -532,13 +533,6 @@ public class ClusterSearcherTestCase {
                                    new QrConfig.Builder().build(),
                                    vipStatus,
                                    null);
-    }
-
-    private static ClusterInfoConfig createClusterInfoConfig() {
-        ClusterInfoConfig.Builder clusterInfoConfigBuilder = new ClusterInfoConfig.Builder();
-        clusterInfoConfigBuilder.clusterId("containerCluster1");
-        clusterInfoConfigBuilder.nodeCount(1);
-        return new ClusterInfoConfig(clusterInfoConfigBuilder);
     }
 
     private static class QueryTimeoutFixture {

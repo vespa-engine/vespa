@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.vespa.applicationmodel.ClusterId;
@@ -19,7 +19,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -41,9 +40,10 @@ class ClusterApiImpl implements ClusterApi {
     private final ClusterControllerClientFactory clusterControllerClientFactory;
     private final Clock clock;
     private final Set<ServiceInstance> servicesInGroup;
-    private final Set<ServiceInstance> servicesDownInGroup;
     private final Set<ServiceInstance> servicesNotInGroup;
-    private final Set<ServiceInstance> servicesDownAndNotInGroup;
+
+    /** Lazily initialized in servicesDownAndNotInGroup(), do not access directly. */
+    private Set<ServiceInstance> servicesDownAndNotInGroup = null;
 
     /*
      * There are two sources for the number of config servers in a cluster. The config server config and the node
@@ -81,9 +81,6 @@ class ClusterApiImpl implements ClusterApi {
         servicesInGroup = serviceInstancesByLocality.getOrDefault(true, Collections.emptySet());
         servicesNotInGroup = serviceInstancesByLocality.getOrDefault(false, Collections.emptySet());
 
-        servicesDownInGroup = servicesInGroup.stream().filter(this::serviceEffectivelyDown).collect(Collectors.toSet());
-        servicesDownAndNotInGroup = servicesNotInGroup.stream().filter(this::serviceEffectivelyDown).collect(Collectors.toSet());
-
         int serviceInstances = serviceCluster.serviceInstances().size();
         if (clusterParams.size().isPresent() && serviceInstances < clusterParams.size().getAsInt()) {
             missingServices = clusterParams.size().getAsInt() - serviceInstances;
@@ -110,6 +107,11 @@ class ClusterApiImpl implements ClusterApi {
     }
 
     @Override
+    public String serviceDescription(boolean plural) {
+        return serviceCluster.serviceDescription(plural);
+    }
+
+    @Override
     public boolean isStorageCluster() {
         return VespaModelUtil.isStorage(serviceCluster);
     }
@@ -120,7 +122,12 @@ class ClusterApiImpl implements ClusterApi {
     }
 
     @Override
-    public Optional<SuspensionReasons> reasonsForNoServicesInGroupIsUp() {
+    public boolean isConfigServerLike() {
+        return serviceCluster.isConfigServerLike();
+    }
+
+    @Override
+    public Optional<SuspensionReasons> allServicesDown() {
         SuspensionReasons reasons = new SuspensionReasons();
 
         for (ServiceInstance service : servicesInGroup) {
@@ -156,29 +163,18 @@ class ClusterApiImpl implements ClusterApi {
 
     @Override
     public boolean noServicesOutsideGroupIsDown() throws HostStateChangeDeniedException {
-        Optional<ServiceInstance> serviceWithUnknownStatus = servicesNotInGroup
-                .stream()
-                .filter(serviceInstance -> serviceInstance.serviceStatus() == ServiceStatus.UNKNOWN)
-                .min(Comparator.comparing(ServiceInstance::descriptiveName));
-        if (serviceWithUnknownStatus.isPresent()) {
-            throw new HostStateChangeDeniedException(
-                    nodeGroup,
-                    HostedVespaPolicy.UNKNOWN_SERVICE_STATUS,
-                    "Service status of " + serviceWithUnknownStatus.get().descriptiveName() + " is not yet known");
-        }
-
-        return servicesDownAndNotInGroup.size() + missingServices == 0;
+        return servicesDownAndNotInGroup().size() + missingServices == 0;
     }
 
     @Override
-    public int percentageOfServicesDown() {
-        int numberOfServicesDown = servicesDownAndNotInGroup.size() + missingServices + servicesDownInGroup.size();
+    public int percentageOfServicesDownOutsideGroup() {
+        int numberOfServicesDown = servicesDownAndNotInGroup().size() + missingServices;
         return numberOfServicesDown * 100 / (serviceCluster.serviceInstances().size() + missingServices);
     }
 
     @Override
     public int percentageOfServicesDownIfGroupIsAllowedToBeDown() {
-        int numberOfServicesDown = servicesDownAndNotInGroup.size() + missingServices + servicesInGroup.size();
+        int numberOfServicesDown = servicesDownAndNotInGroup().size() + missingServices + servicesInGroup.size();
         return numberOfServicesDown * 100 / (serviceCluster.serviceInstances().size() + missingServices);
     }
 
@@ -200,15 +196,14 @@ class ClusterApiImpl implements ClusterApi {
             description.append(" ");
 
             final int nodeLimit = 3;
-            description.append("Suspended hosts: ");
             description.append(suspended.stream().sorted().distinct().limit(nodeLimit).collect(Collectors.toList()).toString());
             if (suspended.size() > nodeLimit) {
-                description.append(", and " + (suspended.size() - nodeLimit) + " more");
+                description.append(" and " + (suspended.size() - nodeLimit) + " others");
             }
-            description.append(".");
+            description.append(" are suspended.");
         }
 
-        Set<ServiceInstance> downElsewhere = servicesDownAndNotInGroup.stream()
+        Set<ServiceInstance> downElsewhere = servicesDownAndNotInGroup().stream()
                 .filter(serviceInstance -> !suspended.contains(serviceInstance.hostName()))
                 .collect(Collectors.toSet());
 
@@ -217,7 +212,6 @@ class ClusterApiImpl implements ClusterApi {
             description.append(" ");
 
             final int serviceLimit = 2; // services info is verbose
-            description.append("Services down on resumed hosts: ");
             description.append(Stream.concat(
                     downElsewhere.stream().map(ServiceInstance::toString).sorted(),
                     missingServices > 0 ? Stream.of(descriptionOfMissingServices) : Stream.of())
@@ -226,9 +220,9 @@ class ClusterApiImpl implements ClusterApi {
                     .toString());
 
             if (downElsewhereTotal > serviceLimit) {
-                description.append(", and " + (downElsewhereTotal - serviceLimit) + " more");
+                description.append(" and " + (downElsewhereTotal - serviceLimit) + " others");
             }
-            description.append(".");
+            description.append(" are down.");
         }
 
         return description.toString();
@@ -288,19 +282,31 @@ class ClusterApiImpl implements ClusterApi {
         return "{ clusterId=" + clusterId() + ", serviceType=" + serviceType() + " }";
     }
 
+    private Set<ServiceInstance> servicesDownAndNotInGroup() {
+        if (servicesDownAndNotInGroup == null) {
+            servicesDownAndNotInGroup = servicesNotInGroup.stream().filter(this::serviceEffectivelyDown).collect(Collectors.toSet());
+        }
+        return servicesDownAndNotInGroup;
+    }
+
     private HostStatus hostStatus(HostName hostName) {
         return hostInfos.getOrNoRemarks(hostName).status();
     }
 
-    private boolean serviceEffectivelyDown(ServiceInstance service) {
+    private boolean serviceEffectivelyDown(ServiceInstance service) throws HostStateChangeDeniedException {
         if (hostStatus(service.hostName()).isSuspended()) {
             return true;
         }
 
-        if (service.serviceStatus() == ServiceStatus.DOWN) {
-            return true;
+        switch (service.serviceStatus()) {
+            case DOWN: return true;
+            case UNKNOWN:
+                throw new HostStateChangeDeniedException(
+                        nodeGroup,
+                        HostedVespaPolicy.UNKNOWN_SERVICE_STATUS,
+                        "Service status of " + service.descriptiveName() + " is not yet known");
+            default:
+                return false;
         }
-
-        return false;
     }
 }

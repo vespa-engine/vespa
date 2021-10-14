@@ -1,7 +1,6 @@
 {
   "isPublic": true,
   "isCd": false,
-  "enable-public-signup-flow": (ignore),
   "hasTrialCapacity": true,
   "user": {
     "name": "Joe Developer",
@@ -14,20 +13,18 @@
       "roles": [
         "developer",
         "reader"
-      ],
-      "enabled-horizon-dashboard":false
+      ]
     },
     "tenant1": {
       "roles": [
         "administrator"
-      ],
-      "enabled-horizon-dashboard":false
+      ]
     },
     "tenant2": {
       "roles": [
         "developer"
-      ],
-      "enabled-horizon-dashboard":false
+      ]
     }
-  }
+  },
+  "flags": [{"id":"enable-public-signup-flow","rules":[{"value":false}]}]
 }

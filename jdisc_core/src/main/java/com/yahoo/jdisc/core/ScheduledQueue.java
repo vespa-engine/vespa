@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
 import java.util.Objects;
@@ -35,8 +35,9 @@ class ScheduledQueue {
         if (slots[NUM_SLOTS] == null && currentTimeMillis < nextTick) {
             return;
         }
+        int queueSize = queueSize() + out.size();
         drainTo(NUM_SLOTS, 0, out);
-        for (int i = 0; currentTimeMillis >= nextTick; i++, nextTick += MILLIS_PER_SLOT) {
+        for (int i = 0; currentTimeMillis >= nextTick && (queueSize > out.size()); i++, nextTick += MILLIS_PER_SLOT) {
             if (i < NUM_SLOTS_UNDILATED) {
                 if (++currSlot >= NUM_SLOTS) {
                     currSlot = 0;
@@ -58,6 +59,14 @@ class ScheduledQueue {
             }
             entry = next;
         }
+    }
+
+    synchronized int queueSize() {
+        int sum = 0;
+        for (int cnt : counts) {
+            sum += cnt;
+        }
+        return sum;
     }
 
     private synchronized void scheduleAt(Entry entry, long expireAtMillis) {

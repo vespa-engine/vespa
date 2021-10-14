@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "buckethandler.h"
 #include "ibucketstatechangedhandler.h"
@@ -116,6 +116,11 @@ BucketHandler::handleGetBucketInfo(const Bucket &bucket,
     LOG(spam, "handleGetBucketInfo(%s): %s",
         bucket.toString().c_str(), bucketInfo.toString().c_str());
     resultHandler.handle(BucketInfoResult(bucketInfo));
+}
+
+bool
+BucketHandler::hasBucket(const storage::spi::Bucket &bucket) {
+    return _ready->getBucketDB().takeGuard()->hasBucket(bucket);
 }
 
 void

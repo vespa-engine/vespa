@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/metrics/metricset.h>
@@ -16,6 +16,8 @@ public:
     metrics::LongValueMetric pending;
     metrics::LongCountMetric ok;
     metrics::LongCountMetric failed;
+    metrics::LongCountMetric blocked;
+    metrics::LongCountMetric throttled;
 
     OperationMetricSet(const std::string& name, metrics::Metric::Tags tags, const std::string& description, MetricSet* owner);
     ~OperationMetricSet() override;
@@ -38,8 +40,11 @@ public:
     metrics::LongValueMetric buckets_toomanycopies;
     metrics::LongValueMetric buckets;
     metrics::LongValueMetric buckets_notrusted;
-    metrics::LongValueMetric buckets_rechecking;
-    metrics::LongAverageMetric startOperationsLatency;
+    metrics::LongValueMetric buckets_rechecking; // TODO remove, not used (but exposed by VespaMetricSet)
+    metrics::LongValueMetric buckets_replicas_moving_out;
+    metrics::LongValueMetric buckets_replicas_copying_in;
+    metrics::LongValueMetric buckets_replicas_copying_out;
+    metrics::LongValueMetric buckets_replicas_syncing;
     metrics::DoubleAverageMetric nodesPerMerge;
 
     void createOperationMetrics();

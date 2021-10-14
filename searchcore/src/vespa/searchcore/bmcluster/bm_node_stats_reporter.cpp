@@ -32,7 +32,7 @@ bool steady_buckets_stats(const std::optional<BmBucketsStats> buckets)
 
 }
 
-BmNodeStatsReporter::BmNodeStatsReporter(BmCluster &cluster)
+BmNodeStatsReporter::BmNodeStatsReporter(BmCluster &cluster, bool report_merge_stats)
     : _cluster(cluster),
       _executor(1, 128_Ki),
       _mutex(),
@@ -40,6 +40,7 @@ BmNodeStatsReporter::BmNodeStatsReporter(BmCluster &cluster)
       _change_time(),
       _prev_node_stats(),
       _pending_report(1u),
+      _report_merge_stats(report_merge_stats),
       _started(false),
       _stop(false)
 {
@@ -95,16 +96,16 @@ BmNodeStatsReporter::report()
     for (auto &node : node_stats) {
         auto& document_db = node.get_document_db_stats();
         if (document_db.has_value()) {
-            s << Width(8) << document_db.value().get_total_docs();
+            s << Width(10) << document_db.value().get_total_docs();
         } else {
-            s << Width(8) << "-";
+            s << Width(10) << "-";
         }
         totals += node;
     }
     if (totals.get_document_db_stats().has_value()) {
-        s << Width(8) << totals.get_document_db_stats().value().get_total_docs();
+        s << Width(10) << totals.get_document_db_stats().value().get_total_docs();
     } else {
-        s << Width(8) << "-";
+        s << Width(10) << "-";
     }
     auto& total_buckets = totals.get_buckets_stats();
     if (total_buckets.has_value()) {
@@ -117,6 +118,23 @@ BmNodeStatsReporter::report()
     }
     vespalib::string ss(s.str());
     LOG(info, "%s", ss.c_str());
+    if (_report_merge_stats) {
+        s.clear();
+        vespalib::asciistream ns;
+        s << "merge stats ";
+        for (auto& node : node_stats) {
+            auto &merges = node.get_merge_stats();
+            if (merges.has_value()) {
+                ns.clear();
+                ns << merges.value().get_active() << "/" << merges.value().get_queued();
+                s << Width(10) << ns.str();
+            } else {
+                s << Width(10) << "-";
+            }
+        }
+        ss = s.str();
+        LOG(info, "%s", ss.c_str());
+    }
     if (!(node_stats == _prev_node_stats) || !steady_buckets_stats(total_buckets)) {
         _change_time = std::chrono::steady_clock::now();
         _prev_node_stats = node_stats;

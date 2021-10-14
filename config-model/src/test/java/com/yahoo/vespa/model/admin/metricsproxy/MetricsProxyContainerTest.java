@@ -37,7 +37,7 @@ public class MetricsProxyContainerTest {
         var tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
 
-        VespaModel model = tester.createModel(servicesWithManyNodes(), true);
+        VespaModel model = tester.createModel(hostedServicesWithManyNodes(), true);
         assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         for (var host : model.hostSystem().getHosts()) {
@@ -56,7 +56,7 @@ public class MetricsProxyContainerTest {
         var tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
 
-        VespaModel model = tester.createModel(servicesWithManyNodes(), true);
+        VespaModel model = tester.createModel(hostedServicesWithManyNodes(), true);
         assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         for (var host : model.hostSystem().getHosts()) {
@@ -71,7 +71,7 @@ public class MetricsProxyContainerTest {
 
     @Test
     public void http_server_is_running_on_expected_port() {
-        VespaModel model = getModel(servicesWithContent(), self_hosted);
+        VespaModel model = getModel(hostedServicesWithContent(), self_hosted);
         MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
         assertEquals(19092, container.getSearchPort());
         assertEquals(19092, container.getHealthPort());
@@ -82,7 +82,7 @@ public class MetricsProxyContainerTest {
 
     @Test
     public void metrics_rpc_server_is_running_on_expected_port() {
-        VespaModel model = getModel(servicesWithContent(), self_hosted);
+        VespaModel model = getModel(hostedServicesWithContent(), self_hosted);
         MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
 
         int offset = 3;
@@ -96,7 +96,7 @@ public class MetricsProxyContainerTest {
 
     @Test
     public void admin_rpc_server_is_running() {
-        VespaModel model = getModel(servicesWithContent(), self_hosted);
+        VespaModel model = getModel(hostedServicesWithContent(), self_hosted);
         MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
 
         int offset = 2;
@@ -107,7 +107,7 @@ public class MetricsProxyContainerTest {
 
     @Test
     public void preload_is_empty() {
-        VespaModel model = getModel(servicesWithContent(), self_hosted);
+        VespaModel model = getModel(hostedServicesWithContent(), self_hosted);
         MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
 
         assertEquals("", container.getPreLoad());
@@ -115,7 +115,7 @@ public class MetricsProxyContainerTest {
 
     @Test
     public void hosted_application_propagates_node_dimensions() {
-        String services = servicesWithContent();
+        String services = hostedServicesWithContent();
         VespaModel hostedModel = getModel(services, hosted);
         assertEquals(4, hostedModel.getHosts().size());
         String configId = containerConfigId(hostedModel, hosted);
@@ -127,7 +127,7 @@ public class MetricsProxyContainerTest {
 
     @Test
     public void metrics_v2_handler_is_set_up_with_node_info_config() {
-        String services = servicesWithContent();
+        String services = hostedServicesWithContent();
         VespaModel hostedModel = getModel(services, hosted);
 
         var container = (MetricsProxyContainer)hostedModel.id2producer().get(containerConfigId(hostedModel, hosted));
@@ -143,8 +143,8 @@ public class MetricsProxyContainerTest {
 
     @Test
     public void vespa_services_config_has_all_services() {
-        VespaServicesConfig vespaServicesConfig = getVespaServicesConfig(servicesWithContent());
-        assertEquals(7, vespaServicesConfig.service().size());
+        VespaServicesConfig vespaServicesConfig = getVespaServicesConfig(hostedServicesWithContent());
+        assertEquals(9, vespaServicesConfig.service().size());
 
         for (var service : vespaServicesConfig.service()) {
             if (service.configId().equals("admin/cluster-controllers/0")) {
@@ -158,7 +158,7 @@ public class MetricsProxyContainerTest {
 
     @Test
     public void vespa_services_config_has_service_dimensions() {
-        VespaServicesConfig vespaServicesConfig = getVespaServicesConfig(servicesWithContent());
+        VespaServicesConfig vespaServicesConfig = getVespaServicesConfig(hostedServicesWithContent());
         for (var service : vespaServicesConfig.service()) {
             if (service.configId().equals("admin/cluster-controllers/0")) {
                 assertEquals(1, service.dimension().size());
@@ -169,7 +169,7 @@ public class MetricsProxyContainerTest {
     }
 
 
-    private static String servicesWithManyNodes() {
+    private static String hostedServicesWithManyNodes() {
         return String.join("\n",
                            "<services>",
                            "    <container version='1.0' id='foo'>",
@@ -182,12 +182,9 @@ public class MetricsProxyContainerTest {
                            "</services>");
     }
 
-    private static String servicesWithContent() {
+    private static String hostedServicesWithContent() {
         return String.join("\n",
                            "<services>",
-                           "    <admin version='2.0'>",
-                           "        <adminserver hostalias='node1'/>",
-                           "    </admin>",
                            "    <content version='1.0' id='my-content'>",
                            "        <documents />",
                            "        <nodes count='1' />",

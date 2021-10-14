@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # Hack to speed up jar packing for now
 %define __jar_repack %{nil}
@@ -78,7 +78,8 @@ BuildRequires: glibc-langpack-en
 BuildRequires: cmake3
 BuildRequires: llvm7.0-devel
 BuildRequires: vespa-boost-devel >= 1.76.0-1
-BuildRequires: vespa-gtest >= 1.8.1-1
+BuildRequires: vespa-gtest = 1.11.0
+%define _use_vespa_gtest 1
 BuildRequires: vespa-icu-devel >= 65.1.0-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
@@ -107,7 +108,8 @@ BuildRequires: (llvm-devel >= 10.0.1 and llvm-devel < 11)
 BuildRequires: vespa-boost-devel >= 1.76.0-1
 BuildRequires: vespa-openssl-devel >= 1.1.1l-1
 %define _use_vespa_openssl 1
-BuildRequires: vespa-gtest >= 1.8.1-1
+BuildRequires: vespa-gtest = 1.11.0
+%define _use_vespa_gtest 1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
 BuildRequires: vespa-protobuf-devel = 3.17.3
@@ -233,6 +235,7 @@ Requires: llvm7.0
 Requires: vespa-telegraf >= 1.1.1-1
 Requires: vespa-valgrind >= 3.17.0-1
 %endif
+Requires: vespa-gtest = 1.11.0
 %define _vespa_llvm_version 7
 %define _extra_link_directory /usr/lib64/llvm7.0/lib;%{_vespa_deps_prefix}/lib64
 %define _extra_include_directory /usr/include/llvm7.0;%{_vespa_deps_prefix}/include
@@ -247,10 +250,12 @@ Requires: vespa-valgrind >= 3.17.0-1
 %else
 %define _vespa_llvm_version 10
 %endif
+Requires: vespa-gtest = 1.11.0
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include
 %endif
 %if 0%{?fedora}
+Requires: gtest
 %if 0%{?fc32}
 %define _vespa_llvm_version 10
 %endif
@@ -285,7 +290,7 @@ Requires: %{name}-tools = %{version}-%{release}
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
 # _dl_sym function.
 # Exclude automated requires for libraries in /opt/vespa-deps/lib64.
-%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(icui18n|icuuc|lz4|protobuf|zstd|onnxruntime%{?_use_vespa_openssl:|crypto|ssl}%{?_use_vespa_openblas:|openblas}%{?_use_vespa_re2:|re2}%{?_use_vespa_xxhash:|xxhash})\\.so\\.[0-9.]*\\([A-Za-z._0-9]*\\))\\(64bit\\)$
+%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(icui18n|icuuc|lz4|protobuf|zstd|onnxruntime%{?_use_vespa_openssl:|crypto|ssl}%{?_use_vespa_openblas:|openblas}%{?_use_vespa_re2:|re2}%{?_use_vespa_xxhash:|xxhash}%{?_use_vespa_gtest:|(gtest|gmock)(_main)?})\\.so\\.[0-9.]*\\([A-Za-z._0-9]*\\))\\(64bit\\)$
 
 
 %description
@@ -652,7 +657,6 @@ fi
 %{_prefix}/lib/jars/orchestrator-jar-with-dependencies.jar
 %{_prefix}/lib/jars/predicate-search-jar-with-dependencies.jar
 %{_prefix}/lib/jars/searchlib.jar
-%{_prefix}/lib/jars/searchlib-jar-with-dependencies.jar
 %{_prefix}/lib/jars/service-monitor-jar-with-dependencies.jar
 %{_prefix}/lib/jars/tenant-cd-api-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespa_feed_perf-jar-with-dependencies.jar
@@ -791,7 +795,6 @@ fi
 %{_prefix}/lib/jars/bcprov-jdk15on-*.jar
 %{_prefix}/lib/jars/config-bundle-jar-with-dependencies.jar
 %{_prefix}/lib/jars/configdefinitions-jar-with-dependencies.jar
-%{_prefix}/lib/jars/configgen.jar
 %{_prefix}/lib/jars/config-model-api-jar-with-dependencies.jar
 %{_prefix}/lib/jars/config-model-jar-with-dependencies.jar
 %{_prefix}/lib/jars/config-provisioning-jar-with-dependencies.jar
@@ -799,7 +802,6 @@ fi
 %{_prefix}/lib/jars/container-disc-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-search-and-docproc-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-search-gui-jar-with-dependencies.jar
-%{_prefix}/lib/jars/defaults-jar-with-dependencies.jar
 %{_prefix}/lib/jars/docprocs-jar-with-dependencies.jar
 %{_prefix}/lib/jars/flags-jar-with-dependencies.jar
 %{_prefix}/lib/jars/hk2-*.jar
@@ -811,6 +813,7 @@ fi
 %{_prefix}/lib/jars/jdisc_core-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc-security-filters-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jersey-*.jar
+%{_prefix}/lib/jars/linguistics-components-jar-with-dependencies.jar
 %{_prefix}/lib/jars/alpn-*.jar
 %{_prefix}/lib/jars/http2-*.jar
 %{_prefix}/lib/jars/jetty-*.jar
@@ -819,7 +822,7 @@ fi
 %{_prefix}/lib/jars/model-integration-jar-with-dependencies.jar
 %{_prefix}/lib/jars/org.apache.aries.spifly.dynamic.bundle-*.jar
 %{_prefix}/lib/jars/osgi-resource-locator-*.jar
-%{_prefix}/lib/jars/security-utils-jar-with-dependencies.jar
+%{_prefix}/lib/jars/security-utils.jar
 %{_prefix}/lib/jars/standalone-container-jar-with-dependencies.jar
 %{_prefix}/lib/jars/validation-api-*.jar
 %{_prefix}/lib/jars/vespa-athenz-jar-with-dependencies.jar

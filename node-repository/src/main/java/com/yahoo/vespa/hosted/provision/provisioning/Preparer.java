@@ -1,13 +1,15 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.node.Nodes;
 
 import java.util.ArrayList;
@@ -57,23 +59,23 @@ class Preparer {
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
     private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
-        List<Node> surplusNodes = findNodesInRemovableGroups(application, cluster, wantedGroups);
+        NodesAndHosts<LockedNodeList> allNodesAndHosts = groupPreparer.createNodesAndHostUnlocked();
+        NodeList appNodes = allNodesAndHosts.nodes().owner(application);
+        List<Node> surplusNodes = findNodesInRemovableGroups(appNodes, cluster, wantedGroups);
 
-        List<Integer> usedIndices = nodeRepository.nodes().list()
-                                                  .owner(application)
-                                                  .cluster(cluster.id())
-                                                  .mapToList(node -> node.allocation().get().membership().index());
+        List<Integer> usedIndices = appNodes.cluster(cluster.id()).mapToList(node -> node.allocation().get().membership().index());
         NodeIndices indices = new NodeIndices(usedIndices, ! cluster.type().isContent());
         List<Node> acceptedNodes = new ArrayList<>();
+
         for (int groupIndex = 0; groupIndex < wantedGroups; groupIndex++) {
             ClusterSpec clusterGroup = cluster.with(Optional.of(ClusterSpec.Group.from(groupIndex)));
-            List<Node> accepted = groupPreparer.prepare(application, clusterGroup,
-                                                        requestedNodes.fraction(wantedGroups), surplusNodes,
-                                                        indices, wantedGroups);
-
+            GroupPreparer.PrepareResult result = groupPreparer.prepare(
+                    application, clusterGroup, requestedNodes.fraction(wantedGroups),
+                    surplusNodes, indices, wantedGroups, allNodesAndHosts);
+            allNodesAndHosts = result.allNodesAndHosts; // Might have changed
+            List<Node> accepted = result.prepared;
             if (requestedNodes.rejectNonActiveParent()) {
-                Nodes nodes = nodeRepository.nodes();
-                NodeList activeHosts = nodes.list(Node.State.active).parents().nodeType(requestedNodes.type().hostType());
+                NodeList activeHosts = allNodesAndHosts.nodes().state(Node.State.active).parents().nodeType(requestedNodes.type().hostType());
                 accepted = accepted.stream()
                         .filter(node -> node.parentHostname().isEmpty() || activeHosts.parentOf(node).isPresent())
                         .collect(Collectors.toList());
@@ -95,9 +97,9 @@ class Preparer {
      * Returns a list of the nodes which are
      * in groups with index number above or equal the group count
      */
-    private List<Node> findNodesInRemovableGroups(ApplicationId application, ClusterSpec requestedCluster, int wantedGroups) {
+    private List<Node> findNodesInRemovableGroups(NodeList appNodes, ClusterSpec requestedCluster, int wantedGroups) {
         List<Node> surplusNodes = new ArrayList<>(0);
-        for (Node node : nodeRepository.nodes().list(Node.State.active).owner(application)) {
+        for (Node node : appNodes.state(Node.State.active)) {
             ClusterSpec nodeCluster = node.allocation().get().membership().cluster();
             if ( ! nodeCluster.id().equals(requestedCluster.id())) continue;
             if ( ! nodeCluster.type().equals(requestedCluster.type())) continue;

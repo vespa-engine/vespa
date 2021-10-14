@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "value_codec.h"
 #include "tensor_spec.h"
@@ -324,9 +324,8 @@ std::unique_ptr<Value> decode_value(nbostream &input, const ValueBuilderFactory 
         const size_t num_blocks = maybe_decode_num_blocks(input, (num_mapped_dims > 0), format);
         DecodeState state{type, dense_subspace_size, num_blocks, num_mapped_dims};
         return typify_invoke<1,TypifyCellType,ContentDecoder>(type.cell_type(), input, state, factory);
-    } catch (const OOMException &) {
-        throw;
     } catch (const Exception &e) {
+        rethrow_if_unsafe(e);
         throw DecodeValueException("failed to decode value", e);
     }
 }

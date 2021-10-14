@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.component.ComponentId;
@@ -117,7 +117,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         assertNotNull(connectionLogComponent);
         ConnectionLogConfig config = root.getConfig(ConnectionLogConfig.class, "default/component/com.yahoo.container.logging.FileConnectionLog");
         assertEquals("default", config.cluster());
-        assertEquals(10000, config.queueSize());
+        assertEquals(-1, config.queueSize());
         assertEquals(256*1024, config.bufferSize());
     }
 

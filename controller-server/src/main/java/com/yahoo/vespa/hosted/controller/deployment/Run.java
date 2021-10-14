@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableList;
@@ -39,11 +39,12 @@ public class Run {
     private final Optional<Instant> noNodesDownSince;
     private final Optional<ConvergenceSummary> convergenceSummary;
     private final Optional<X509Certificate> testerCertificate;
+    private final boolean dryRun;
 
     // For deserialisation only -- do not use!
     public Run(RunId id, Map<Step, StepInfo> steps, Versions versions, boolean isRedeployment, Instant start, Optional<Instant> end,
                RunStatus status, long lastTestRecord, Instant lastVespaLogTimestamp, Optional<Instant> noNodesDownSince,
-               Optional<ConvergenceSummary> convergenceSummary, Optional<X509Certificate> testerCertificate) {
+               Optional<ConvergenceSummary> convergenceSummary, Optional<X509Certificate> testerCertificate, boolean dryRun) {
         this.id = id;
         this.steps = Collections.unmodifiableMap(new EnumMap<>(steps));
         this.versions = versions;
@@ -56,13 +57,14 @@ public class Run {
         this.noNodesDownSince = noNodesDownSince;
         this.convergenceSummary = convergenceSummary;
         this.testerCertificate = testerCertificate;
+        this.dryRun = dryRun;
     }
 
     public static Run initial(RunId id, Versions versions, boolean isRedeployment, Instant now, JobProfile profile) {
         EnumMap<Step, StepInfo> steps = new EnumMap<>(Step.class);
         profile.steps().forEach(step -> steps.put(step, StepInfo.initial(step)));
         return new Run(id, steps, requireNonNull(versions), isRedeployment, requireNonNull(now), Optional.empty(), running,
-                       -1, Instant.EPOCH, Optional.empty(), Optional.empty(), Optional.empty());
+                       -1, Instant.EPOCH, Optional.empty(), Optional.empty(), Optional.empty(), profile == JobProfile.developmentDryRun);
     }
 
     /** Returns a new Run with the status of the given completed step set accordingly. */
@@ -76,7 +78,7 @@ public class Run {
         EnumMap<Step, StepInfo> steps = new EnumMap<>(this.steps);
         steps.put(step.get(), stepInfo.with(Step.Status.of(status)));
         return new Run(id, steps, versions, isRedeployment, start, end, this.status == running ? status : this.status,
-                       lastTestRecord, lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate);
+                       lastTestRecord, lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate, dryRun);
     }
 
     /** Returns a new Run with a new start time*/
@@ -91,49 +93,49 @@ public class Run {
         steps.put(step.get(), stepInfo.with(startTime));
 
         return new Run(id, steps, versions, isRedeployment, start, end, status, lastTestRecord, lastVespaLogTimestamp,
-                       noNodesDownSince, convergenceSummary, testerCertificate);
+                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun);
     }
 
     public Run finished(Instant now) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, Optional.of(now), status == running ? success : status,
-                       lastTestRecord, lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, Optional.empty());
+                       lastTestRecord, lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, Optional.empty(), dryRun);
     }
 
     public Run aborted() {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, aborted, lastTestRecord, lastVespaLogTimestamp,
-                       noNodesDownSince, convergenceSummary, testerCertificate);
+                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun);
     }
 
     public Run with(long lastTestRecord) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, status, lastTestRecord, lastVespaLogTimestamp,
-                       noNodesDownSince, convergenceSummary, testerCertificate);
+                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun);
     }
 
     public Run with(Instant lastVespaLogTimestamp) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, status, lastTestRecord, lastVespaLogTimestamp,
-                       noNodesDownSince, convergenceSummary, testerCertificate);
+                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun);
     }
 
     public Run noNodesDownSince(Instant noNodesDownSince) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, status, lastTestRecord, lastVespaLogTimestamp,
-                       Optional.ofNullable(noNodesDownSince), convergenceSummary, testerCertificate);
+                       Optional.ofNullable(noNodesDownSince), convergenceSummary, testerCertificate, dryRun);
     }
 
     public Run withSummary(ConvergenceSummary convergenceSummary) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, status, lastTestRecord, lastVespaLogTimestamp,
-                       noNodesDownSince, Optional.ofNullable(convergenceSummary), testerCertificate);
+                       noNodesDownSince, Optional.ofNullable(convergenceSummary), testerCertificate, dryRun);
     }
 
     public Run with(X509Certificate testerCertificate) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, status, lastTestRecord, lastVespaLogTimestamp,
-                       noNodesDownSince, convergenceSummary, Optional.of(testerCertificate));
+                       noNodesDownSince, convergenceSummary, Optional.of(testerCertificate), dryRun);
     }
 
     /** Returns the id of this run. */
@@ -228,6 +230,9 @@ public class Run {
     public boolean isRedeployment() {
         return isRedeployment;
     }
+
+    /** Whether this is a dry run deployment. */
+    public boolean isDryRun() { return dryRun; }
 
     @Override
     public boolean equals(Object o) {

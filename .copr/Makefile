@@ -1,21 +1,22 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 TOP = $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
-# Version
-VESPA_VERSION := $(shell git tag --points-at HEAD | grep -oP "\d+\.\d+\.\d+" | sort -V | tail -1)
-
 RPMTOPDIR := $(HOME)/rpmbuild
 SOURCEDIR := $(RPMTOPDIR)/SOURCES
 SPECDIR := $(RPMTOPDIR)/SPECS
 SPECFILE := $(SPECDIR)/vespa-$(VESPA_VERSION).spec
 
-srpm:
-	dnf install -y rpmdevtools
+deps:
+	dnf install -y git rpmdevtools
+
+srpm: VESPA_VERSION = $$(git tag --points-at HEAD | grep -oP "\d+\.\d+\.\d+" | sort -V | tail -1)
+srpm: deps
 	$(TOP)/../dist.sh $(VESPA_VERSION)
-	spectool -g -C $(SOURCEDIR) $(SPECFILE)
-	rpmbuild -bs --define "_topdir $(RPMTOPDIR)" $(SPECFILE)
+	spectool -g -C $(SOURCEDIR) $(SPECDIR)/vespa-$(VESPA_VERSION).spec
+	rpmbuild -bs --define "_topdir $(RPMTOPDIR)" $(SPECDIR)/vespa-$(VESPA_VERSION).spec
 	cp -a $(RPMTOPDIR)/SRPMS/* $(outdir)
+
 clean:
 	-rm -rf $(RPMTOPDIR)
 
-.PHONY: srpm clean
+.PHONY: clean deps srpm

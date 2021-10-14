@@ -1,30 +1,24 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
-import com.yahoo.document.FieldPath;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.BoolFieldValue;
-import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.language.Language;
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -106,16 +100,18 @@ public class ScriptTestCase {
     }
 
     @Test
-    public void testEncode() throws ParseException {
+    public void testEmbed() throws ParseException {
         TensorType tensorType = TensorType.fromSpec("tensor(d[4])");
-        var expression = Expression.fromString("input myText | encode | attribute 'myTensor'",
+        var expression = Expression.fromString("input myText | embed | attribute 'myTensor'",
                                                new SimpleLinguistics(),
-                                               new MockEncoder());
+                                               new MockEmbedder("myDocument.myTensor"));
 
         SimpleTestAdapter adapter = new SimpleTestAdapter();
         adapter.createField(new Field("myText", DataType.STRING));
-        adapter.createField(new Field("myTensor", new TensorDataType(tensorType)));
+        var tensorField = new Field("myTensor", new TensorDataType(tensorType));
+        adapter.createField(tensorField);
         adapter.setValue("myText", new StringFieldValue("input text"));
+        expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
         // Necessary to resolve output type
         VerificationContext verificationContext = new VerificationContext(adapter);
@@ -125,21 +121,27 @@ public class ScriptTestCase {
         context.setValue(new StringFieldValue("input text"));
         expression.execute(context);
         assertNotNull(context);
-        //assertTrue(context.getOutputType() instanceof TensorDataType);
         assertTrue(adapter.values.containsKey("myTensor"));
         assertEquals(Tensor.from(tensorType, "[7,3,0,0]"),
                      ((TensorFieldValue)adapter.values.get("myTensor")).getTensor().get());
     }
 
-    private static class MockEncoder implements Encoder {
+    private static class MockEmbedder implements Embedder {
+
+        private final String expectedDestination;
+
+        public MockEmbedder(String expectedDestination) {
+            this.expectedDestination = expectedDestination;
+        }
 
         @Override
-        public List<Integer> encode(String text, Language language) {
+        public List<Integer> embed(String text, Embedder.Context context) {
             return null;
         }
 
         @Override
-        public Tensor encode(String text, Language language, TensorType tensorType) {
+        public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
+            assertEquals(expectedDestination, context.getDestination());
             return Tensor.from(tensorType, "[7,3,0,0]");
         }
 

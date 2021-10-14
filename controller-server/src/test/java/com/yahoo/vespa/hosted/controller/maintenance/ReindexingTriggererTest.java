@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -43,7 +43,8 @@ public class ReindexingTriggererTest {
             }
             now = now.plus(interval);
         }
-        assertEquals("Should be in window of opportunity exactly four times each period", 4, triggered);
+        // Summer/winter time :'(
+        assertTrue("Should be in window of opportunity three to five times each period", 3 <= triggered && triggered <= 5);
     }
 
     @Test

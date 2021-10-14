@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors;
 
 import com.yahoo.component.chain.Chain;
@@ -23,7 +23,7 @@ public class MetricsSearcherTestCase {
     private MetricsSearcher metricsSearcher = new MetricsSearcher();
     private MockBackend backend = new MockBackend();
     private Chain<Searcher> chain = new Chain<>(metricsSearcher, backend);
-    private Execution.Context context = Execution.Context.createContextStub(null);
+    private Execution.Context context = Execution.Context.createContextStub();
     private MetricsSearcher.Stats expStatsLt1 = new MetricsSearcher.Stats();
     private static final String LOADTYPE1 = "lt1";
     private MetricsSearcher.Stats expStatsLt2 = new MetricsSearcher.Stats();

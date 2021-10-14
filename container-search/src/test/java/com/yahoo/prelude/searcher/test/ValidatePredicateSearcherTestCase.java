@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.searcher.test;
 
 import com.google.common.util.concurrent.MoreExecutors;
@@ -62,8 +62,7 @@ public class ValidatePredicateSearcherTestCase {
         index.addCommand(command);
         searchDefinition.addIndex(index);
         IndexFacts indexFacts = new IndexFacts(new IndexModel(searchDefinition));
-        Execution.Context context = new Execution.Context(null, indexFacts, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
-        return new Execution(searcher, context).search(query);
+        return new Execution(searcher, Execution.Context.createContextStub(indexFacts)).search(query);
     }
 
 }

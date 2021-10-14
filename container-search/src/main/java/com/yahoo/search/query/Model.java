@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
 import com.yahoo.language.Language;
@@ -90,7 +90,8 @@ public class Model implements Cloneable {
     private Set<String> restrict = new LinkedHashSet<>();
     private String searchPath;
     private String documentDbName = null;
-    private Execution execution = new Execution(new Execution.Context(null, null, null, null, null));
+    private Execution execution = new Execution(new Execution.Context(null, null,
+                                                                      null, null, null, Runnable::run));
 
     public Model(Query query) {
         setParent(query);

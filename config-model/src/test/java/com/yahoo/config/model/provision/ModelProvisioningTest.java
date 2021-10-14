@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
@@ -14,6 +14,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorStatusConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.HostResource;
@@ -30,9 +31,9 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.StorageNode;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
+import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.test.VespaModelTester;
-import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
@@ -1115,7 +1116,7 @@ public class ModelProvisioningTest {
         assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         ContentCluster cluster = model.getContentClusters().get("bar");
-        assertEquals(2, cluster.getStorageNodes().getChildren().size());
+        assertEquals(2, cluster.getStorageCluster().getChildren().size());
         assertEquals(1, cluster.redundancy().effectiveInitialRedundancy());
         assertEquals(1, cluster.redundancy().effectiveFinalRedundancy());
         assertEquals(1, cluster.redundancy().effectiveReadyCopies());
@@ -1616,9 +1617,17 @@ public class ModelProvisioningTest {
         tester.addHosts(3);
         VespaModel model = tester.createModel(xmlWithNodes, true);
 
-        assertEquals("Nodes in container cluster", 1, model.getContainerClusters().get("container1").getContainers().size());
-        assertEquals("Nodes in content cluster (downscaled)", 1, model.getContentClusters().get("content").getRootGroup().getNodes().size());
+        assertEquals("Nodes in container cluster", 1,
+                     model.getContainerClusters().get("container1").getContainers().size());
+        assertEquals("Nodes in content cluster (downscaled)", 1,
+                     model.getContentClusters().get("content").getRootGroup().getNodes().size());
+
+        assertEquals(1, model.getAdmin().getSlobroks().size());
+
         model.getConfig(new StorStatusConfig.Builder(), "default");
+        StorageCluster storage = model.getContentClusters().get("content").getStorageCluster();
+        StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
+        storage.getChildren().get("0").getConfig(builder);
     }
 
     @Test

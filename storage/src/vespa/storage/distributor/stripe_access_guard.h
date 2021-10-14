@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "bucket_space_distribution_configs.h"
@@ -61,7 +61,7 @@ public:
         size_t external_load_operations;
         size_t maintenance_operations;
         PendingOperationStats(size_t external_load_operations_in,
-                              size_t maintenance_operations_in)
+                              size_t maintenance_operations_in) noexcept
             : external_load_operations(external_load_operations_in),
               maintenance_operations(maintenance_operations_in) {}
 

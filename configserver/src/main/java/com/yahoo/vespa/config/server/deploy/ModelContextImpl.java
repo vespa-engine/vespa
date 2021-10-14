@@ -178,17 +178,22 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> allowedAthenzProxyIdentities;
         private final int maxActivationInhibitedOutOfSyncGroups;
         private final ToIntFunction<ClusterSpec.Type> jvmOmitStackTraceInFastThrow;
-        private final int numDistributorStripes;
         private final boolean requireConnectivityCheck;
         private final int maxConcurrentMergesPerContentNode;
         private final int maxMergeQueueSize;
+        private final boolean ignoreMergeQueueLimit;
         private final int largeRankExpressionLimit;
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
         private final double minNodeRatioPerGroup;
         private final int metricsproxyNumThreads;
-        private final boolean enforceRankProfileInheritance;
         private final boolean newLocationBrokerLogic;
+        private final boolean containerDumpHeapOnShutdownTimeout;
+        private final double containerShutdownTimeout;
+        private final int maxConnectionLifeInHosted;
+        private final int distributorMergeBusyWait;
+        private final int docstoreCompressionLevel;
+        private final double diskBloatFactor;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -205,17 +210,22 @@ public class ModelContextImpl implements ModelContext {
             this.allowedAthenzProxyIdentities = flagValue(source, appId, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
             this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
             this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
-            this.numDistributorStripes = flagValue(source, appId, Flags.NUM_DISTRIBUTOR_STRIPES);
             this.largeRankExpressionLimit = flagValue(source, appId, Flags.LARGE_RANK_EXPRESSION_LIMIT);
             this.requireConnectivityCheck = flagValue(source, appId, Flags.REQUIRE_CONNECTIVITY_CHECK);
             this.maxConcurrentMergesPerContentNode = flagValue(source, appId, Flags.MAX_CONCURRENT_MERGES_PER_NODE);
             this.maxMergeQueueSize = flagValue(source, appId, Flags.MAX_MERGE_QUEUE_SIZE);
+            this.ignoreMergeQueueLimit = flagValue(source, appId, Flags.IGNORE_MERGE_QUEUE_LIMIT);
             this.resourceLimitDisk = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_DISK);
             this.resourceLimitMemory = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_MEMORY);
             this.minNodeRatioPerGroup = flagValue(source, appId, Flags.MIN_NODE_RATIO_PER_GROUP);
             this.metricsproxyNumThreads = flagValue(source, appId, Flags.METRICSPROXY_NUM_THREADS);
-            this.enforceRankProfileInheritance = flagValue(source, appId, Flags.ENFORCE_RANK_PROFILE_INHERITANCE);
             this.newLocationBrokerLogic = flagValue(source, appId, Flags.NEW_LOCATION_BROKER_LOGIC);
+            this.containerDumpHeapOnShutdownTimeout = flagValue(source, appId, Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT);
+            this.containerShutdownTimeout = flagValue(source, appId,Flags.CONTAINER_SHUTDOWN_TIMEOUT);
+            this.maxConnectionLifeInHosted = flagValue(source, appId, Flags.MAX_CONNECTION_LIFE_IN_HOSTED);
+            this.distributorMergeBusyWait = flagValue(source, appId, Flags.DISTRIBUTOR_MERGE_BUSY_WAIT);
+            this.docstoreCompressionLevel = flagValue(source, appId, Flags.DOCSTORE_COMPRESSION_LEVEL);
+            this.diskBloatFactor = flagValue(source, appId, Flags.DISK_BLOAT_FACTOR);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -234,19 +244,22 @@ public class ModelContextImpl implements ModelContext {
         @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) {
             return translateJvmOmitStackTraceInFastThrowIntToString(jvmOmitStackTraceInFastThrow, type);
         }
-        @Override public int numDistributorStripes() { return numDistributorStripes; }
         @Override public int largeRankExpressionLimit() { return largeRankExpressionLimit; }
         @Override public boolean requireConnectivityCheck() { return requireConnectivityCheck; }
         @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerContentNode; }
         @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
-        @Override public boolean throwIfResourceLimitsSpecified() { return true; }
+        @Override public boolean ignoreMergeQueueLimit() { return ignoreMergeQueueLimit; }
         @Override public double resourceLimitDisk() { return resourceLimitDisk; }
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
         @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
         @Override public int metricsproxyNumThreads() { return metricsproxyNumThreads; }
         @Override public boolean newLocationBrokerLogic() { return newLocationBrokerLogic; }
-
-        @Override public boolean enforceRankProfileInheritance() { return enforceRankProfileInheritance; }
+        @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
+        @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
+        @Override public int maxConnectionLifeInHosted() { return maxConnectionLifeInHosted; }
+        @Override public int distributorMergeBusyWait() { return distributorMergeBusyWait; }
+        @Override public double diskBloatFactor() { return diskBloatFactor; }
+        @Override public int docstoreCompressionLevel() { return docstoreCompressionLevel; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

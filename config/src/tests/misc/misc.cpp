@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/configupdate.h>
 #include <vespa/config/common/misc.h>
@@ -15,11 +15,11 @@ TEST("requireThatConfigUpdateWorks") {
     std::vector<vespalib::string> lines;
     lines.push_back("foo");
 
-    ConfigUpdate up(ConfigValue(lines, "mymd5"), true, 1337);
+    ConfigUpdate up(ConfigValue(lines, "myxxhash"), true, 1337);
     ASSERT_EQUAL(1337, up.getGeneration());
     ASSERT_TRUE(up.hasChanged());
 
-    ConfigUpdate up2(ConfigValue(lines, "mymd52"), false, 1338);
+    ConfigUpdate up2(ConfigValue(lines, "myxxhash2"), false, 1338);
     ASSERT_EQUAL(1338, up2.getGeneration());
     ASSERT_FALSE(up2.hasChanged());
 }
@@ -27,22 +27,22 @@ TEST("requireThatConfigUpdateWorks") {
 TEST("requireThatConfigValueWorks") {
     std::vector<vespalib::string> lines;
     lines.push_back("myFooField \"bar\"");
-    ConfigValue v1(lines, calculateContentMd5(lines));
-    ConfigValue v2(lines, calculateContentMd5(lines));
-    ConfigValue v3(lines, calculateContentMd5(lines));
+    ConfigValue v1(lines, calculateContentXxhash64(lines));
+    ConfigValue v2(lines, calculateContentXxhash64(lines));
+    ConfigValue v3(lines, calculateContentXxhash64(lines));
     lines.push_back("myFooField \"bar2\"");
-    ConfigValue v4(lines, calculateContentMd5(lines));
+    ConfigValue v4(lines, calculateContentXxhash64(lines));
     ASSERT_TRUE(v1 == v2);
     ASSERT_TRUE(v1 == v3);
 }
 
 TEST("requireThatConfigKeyWorks") {
-    ConfigKey key1("id1", "def1", "namespace1", "md51");
-    ConfigKey key2("id1", "def1", "namespace1", "md51");
-    ConfigKey key3("id2", "def1", "namespace1", "md51");
-    ConfigKey key4("id1", "def2", "namespace1", "md51");
-    ConfigKey key5("id1", "def1", "namespace2", "md51");
-    ConfigKey key6("id1", "def1", "namespace1", "md52"); // Special case. Md5 does not matter, so should be qual to key1 and key2
+    ConfigKey key1("id1", "def1", "namespace1", "xxhash1");
+    ConfigKey key2("id1", "def1", "namespace1", "xxhash1");
+    ConfigKey key3("id2", "def1", "namespace1", "xxhash1");
+    ConfigKey key4("id1", "def2", "namespace1", "xxhash1");
+    ConfigKey key5("id1", "def1", "namespace2", "xxhash1");
+    ConfigKey key6("id1", "def1", "namespace1", "xxhash2"); // Special case. xxhash64 does not matter, so should be qual to key1 and key2
 
     ASSERT_TRUE(key1 == key2);
 
@@ -111,7 +111,7 @@ TEST("require that config key initializes schema")
     std::vector<vespalib::string> schema;
     schema.push_back("foo");
     schema.push_back("bar");
-    ConfigKey key("id1", "def1", "namespace1", "md51", schema);
+    ConfigKey key("id1", "def1", "namespace1", "xxhash1", schema);
     const std::vector<vespalib::string> &vref(key.getDefSchema());
     for (size_t i = 0; i < schema.size(); i++) {
         ASSERT_EQUAL(schema[i], vref[i]);
@@ -131,6 +131,7 @@ TEST("require that error codes are correctly translated to strings") {
     ASSERT_CONFIG(ILLEGAL_CONFIGID);
     ASSERT_CONFIG(ILLEGAL_DEF_MD5);
     ASSERT_CONFIG(ILLEGAL_CONFIG_MD5);
+    ASSERT_CONFIG(ILLEGAL_CONFIG_MD5);    
     ASSERT_CONFIG(ILLEGAL_TIMEOUT);
     ASSERT_CONFIG(ILLEGAL_TIMESTAMP);
     ASSERT_CONFIG(ILLEGAL_NAME_SPACE);

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #set -x
 
@@ -212,7 +212,6 @@ exec $numactlcmd $envcmd java \
         -Djdisc.config.file="$cfpfile" \
         -Djdisc.export.packages=${jdisc_export_packages} \
         -Djdisc.cache.path="$bundlecachedir" \
-        -Djdisc.debug.resources=false \
         -Djdisc.bundle.path="${VESPA_HOME}/lib/jars" \
         -Djdisc.logger.enabled=false \
         -Djdisc.logger.level=ALL \

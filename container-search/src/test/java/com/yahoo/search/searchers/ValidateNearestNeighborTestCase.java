@@ -1,11 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchers;
 
-import com.google.common.util.concurrent.MoreExecutors;
-
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.RawSource;
-import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
@@ -13,7 +10,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.query.QueryTree;
-import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
@@ -232,8 +228,7 @@ public class ValidateNearestNeighborTestCase {
         query.getRanking().getFeatures().put("query(qvector)", qTensor);
         SearchDefinition searchDefinition = new SearchDefinition("document");
         IndexFacts indexFacts = new IndexFacts(new IndexModel(searchDefinition));
-        Execution.Context context = new Execution.Context(null, indexFacts, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
-        return new Execution(searcher, context).search(query);
+        return new Execution(searcher, Execution.Context.createContextStub(indexFacts)).search(query);
     }
 
 }

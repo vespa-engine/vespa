@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "exceptions.h"
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -183,6 +183,20 @@ IoException::getErrorType(int error) {
         case ENOBUFS:         // Too few system resources
         default:
             return IoException::INTERNAL_FAILURE;
+    }
+}
+
+template <typename T>
+bool check_type(const std::exception &e) {
+    return (dynamic_cast<const T *>(&e) != nullptr);
+}
+
+void rethrow_if_unsafe(const std::exception &e) {
+    if (check_type<std::bad_alloc>(e) ||
+        check_type<OOMException>(e) ||
+        check_type<FatalException>(e))
+    {
+        throw;
     }
 }
 

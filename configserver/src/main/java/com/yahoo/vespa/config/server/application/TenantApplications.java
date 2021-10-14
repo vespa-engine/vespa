@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -205,9 +205,8 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     @Override
     public ConfigResponse resolveConfig(ApplicationId appId, GetConfigRequest req, Optional<Version> vespaVersion) {
         Application application = getApplication(appId, vespaVersion);
-        if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, TenantRepository.logPre(appId) + "Resolving for tenant '" + tenant + "' with handler for application '" + application + "'");
-        }
+        log.log(Level.FINE, () -> TenantRepository.logPre(appId) + "Resolving for tenant '" + tenant +
+                                  "' with handler for application '" + application + "'");
         return application.resolveConfig(req, responseFactory);
     }
 

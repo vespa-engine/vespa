@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # BEGIN environment bootstrap section
 # Do not edit between here and END as this section should stay identical in all scripts
@@ -79,13 +79,13 @@ cd $ROOT || { echo "Cannot cd to $ROOT" 1>&2; exit 1; }
 
 usage() {
     (
-	echo "This script will remove cloudconfig_server state on this node."
-        echo "It will refuse to execute if cloudconfig_server is running."
+        echo "This script will remove config server state on this node."
+        echo "It will refuse to execute if config server is running."
         echo "The following options are recognized:"
         echo ""
 
         echo "-h|-help)              print this help text"
-        echo "-nosudo                do not use sudo when running command"
+        echo "-nosudo                do not use sudo when running command (default)"
         echo "-sudo                  use sudo when running command"
         echo "-force                 do not ask for confirmation before removal"
     ) >&2
@@ -112,11 +112,11 @@ while [ $# -gt 0 ]; do
         *)               echo "Unrecognized option '$1'" >&2; usage; exit 1;;
     esac
 done
-# Will first check if cloudconfig_server is running on this node
+# Will first check if config server is running on this node
 P_CONFIGSERVER=var/run/configserver.pid
 if [ -f $P_CONFIGSERVER ] && $sudo kill -0 `cat $P_CONFIGSERVER` 2>/dev/null; then
-  echo "[ERROR] Will not remove state while cloudconfig_server is running" 1>&2
-  echo "[ERROR] 'stop cloudconfig_server' and 'ps xgauww' to check for cloudconfig_server process" 1>&2
+  echo "[ERROR] Will not remove state while config server is running" 1>&2
+  echo "[ERROR] Do 'vespa-stop-configserver' and 'ps xgauww' to check for running config server process" 1>&2
   exit 1
 fi
 
@@ -128,7 +128,7 @@ removedata() {
 
 confirm() {
     confirmed=false
-    echo -n 'Really remove state for cloudconfig_server in '$ROOT/$1'? Type "yes" if you are sure ==> ' 1>&2
+    echo -n 'Really remove state for config server in '$ROOT/$1'? Type "yes" if you are sure ==> ' 1>&2
     answer=no
     read answer
     if [ "$answer" = "yes" ]; then

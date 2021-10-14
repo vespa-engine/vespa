@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -690,11 +690,11 @@ public class AutoscalingTest {
                                5, 1, 9.5,  100, 100,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
 
-        tester.addCpuMeasurements(0.4f, 1f, 100, application1);
+        tester.addCpuMeasurements(0.3f, 1f, 100, application1);
         tester.clock().advance(Duration.ofMinutes(-100 * 5));
         tester.addLoadMeasurements(application1, cluster1.id(), 100, t -> t == 0 ? 20.0 : 10.0, t -> 100.0);
         tester.assertResources("Write load is 10x query load -> scale down",
-                               5, 1, 3.8,  100, 100,
+                               5, 1, 2.9,  100, 100,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
 
         tester.addCpuMeasurements(0.4f, 1f, 100, application1);

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http;
 
 import com.yahoo.jdisc.HeaderFields;
@@ -52,7 +52,7 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
 
         private final String str;
 
-        private Version(String str) {
+        Version(String str) {
             this.str = str;
         }
 
@@ -96,7 +96,7 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
             } else {
                 this.connectedAt = creationTime(TimeUnit.MILLISECONDS);
             }
-        } catch (RuntimeException e) {
+        } catch (Throwable e) {
             release();
             throw e;
         }
@@ -110,7 +110,7 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
             this.remoteAddress = null;
             this.parameters.putAll(getUriQueryParameters(uri));
             this.connectedAt = creationTime(TimeUnit.MILLISECONDS);
-        } catch (RuntimeException e) {
+        } catch (Throwable e) {
             release();
             throw e;
         }

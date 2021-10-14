@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -86,6 +86,7 @@ struct NodeVisitor {
     virtual void visit(const nodes::Elu            &) = 0;
     virtual void visit(const nodes::Erf            &) = 0;
     virtual void visit(const nodes::Bit            &) = 0;
+    virtual void visit(const nodes::Hamming        &) = 0;
 
     virtual ~NodeVisitor() {}
 };
@@ -156,6 +157,7 @@ struct EmptyNodeVisitor : NodeVisitor {
     void visit(const nodes::Elu            &) override {}
     void visit(const nodes::Erf            &) override {}
     void visit(const nodes::Bit            &) override {}
+    void visit(const nodes::Hamming        &) override {}
 };
 
 } // namespace vespalib::eval

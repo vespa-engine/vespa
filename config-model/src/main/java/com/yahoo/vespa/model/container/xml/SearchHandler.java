@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
@@ -48,23 +48,7 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
 
             // User options overrides below configuration
             if (hasUserOptions()) return;
-
-            double vcpu = cluster.vcpu().orElse(0);
-            if (vcpu == 0) {
-                builder.maxThreads(500);
-                builder.minThreads(500);
-                builder.queueSize(0);
-            } else {
-                // Controls max number of concurrent requests per container
-                int workerThreads = Math.max(8, (int)Math.ceil(vcpu * 2.0));
-                builder.maxThreads(workerThreads);
-                builder.minThreads(workerThreads);
-
-                // This controls your burst handling capability.
-                // 0 => No extra burst handling beyond you max concurrent requests (maxthreads).
-                // N => N times max concurrent requests as a buffer for handling bursts
-                builder.queueSize((int)(workerThreads * 40.0));
-            }
+            builder.maxThreads(-2).minThreads(-2).queueSize(-40);
         }
 
 

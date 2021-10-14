@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/storage/distributor/maintenance/maintenanceoperation.h>
@@ -158,6 +158,10 @@ public:
        state won't be updated correctly.
     */
     virtual void done();
+
+    void on_blocked() override;
+
+    void on_throttled() override;
 
     /**
        Called by IdealStateManager to allow the operation to call back its

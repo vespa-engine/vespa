@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "intermediate_blueprints.h"
 #include "andnotsearch.h"
@@ -19,7 +19,7 @@ namespace search::queryeval {
 namespace {
 
 template <typename CombineType>
-size_t lookup_create_source(std::vector<std::unique_ptr<CombineType> > &sources, uint32_t child_source) {
+size_t lookup_create_source(std::vector<std::unique_ptr<CombineType> > &sources, uint32_t child_source, uint32_t docid_limit) {
     for (size_t i = 0; i < sources.size(); ++i) {
         if (sources[i]->getSourceId() == child_source) {
             return i;
@@ -27,6 +27,7 @@ size_t lookup_create_source(std::vector<std::unique_ptr<CombineType> > &sources,
     }
     sources.push_back(std::unique_ptr<CombineType>(new CombineType()));
     sources.back()->setSourceId(child_source);
+    sources.back()->setDocIdLimit(docid_limit);
     return (sources.size() - 1);
 }
 
@@ -53,7 +54,7 @@ void optimize_source_blenders(IntermediateBlueprint &self, size_t begin_idx) {
             auto *blender = static_cast<SourceBlenderBlueprint *>(blender_up.get());
             while (blender->childCnt() > 0) {
                 Blueprint::UP child_up = blender->removeChild(blender->childCnt() - 1);
-                size_t source_idx = lookup_create_source(sources, child_up->getSourceId());
+                size_t source_idx = lookup_create_source(sources, child_up->getSourceId(), self.get_docid_limit());
                 sources[source_idx]->addChild(std::move(child_up));
             }
         }
@@ -298,7 +299,7 @@ AndBlueprint::computeNextHitRate(const Blueprint & child, double hitRate) const 
 Blueprint::HitEstimate
 OrBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
-    return max(data);
+    return sat_sum(data, get_docid_limit());
 }
 
 FieldSpecBaseList

@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
 import com.yahoo.config.provision.HostName;
@@ -20,7 +20,6 @@ class StateV1HealthEndpoint implements HealthEndpoint {
     private final Duration connectionKeepAlive;
     private final Duration delay;
     private final RunletExecutor executor;
-    private boolean useUnknownServiceStatus;
 
     StateV1HealthEndpoint(ServiceId serviceId,
                           HostName hostname,
@@ -28,12 +27,10 @@ class StateV1HealthEndpoint implements HealthEndpoint {
                           Duration delay,
                           Duration requestTimeout,
                           Duration connectionKeepAlive,
-                          RunletExecutor executor,
-                          boolean useUnknownServiceStatus) {
+                          RunletExecutor executor) {
         this.serviceId = serviceId;
         this.delay = delay;
         this.executor = executor;
-        this.useUnknownServiceStatus = useUnknownServiceStatus;
         this.url = uncheck(() -> new URL("http", hostname.value(), port, "/state/v1/health"));
         this.requestTimeout = requestTimeout;
         this.connectionKeepAlive = connectionKeepAlive;
@@ -46,7 +43,7 @@ class StateV1HealthEndpoint implements HealthEndpoint {
 
     @Override
     public HealthMonitor startMonitoring() {
-        var updater = new StateV1HealthUpdater(url, requestTimeout, connectionKeepAlive, useUnknownServiceStatus);
+        var updater = new StateV1HealthUpdater(url, requestTimeout, connectionKeepAlive);
         return new StateV1HealthMonitor(updater, executor, delay);
     }
 

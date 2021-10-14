@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http;
 
 import com.yahoo.jdisc.Container;
@@ -73,6 +73,7 @@ public class HttpRequestTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void requireThatAccessorsWork() {
         URI uri = URI.create("http://localhost/path?foo=bar&foo=baz&cox=69");
         InetSocketAddress address = new InetSocketAddress("remotehost", 69);
@@ -201,6 +202,7 @@ public class HttpRequestTestCase {
     private static CurrentContainer mockContainer() {
         final CurrentContainer currentContainer = mock(CurrentContainer.class);
         when(currentContainer.newReference(any(URI.class))).thenReturn(mock(Container.class));
+        when(currentContainer.newReference(any(URI.class), any(Object.class))).thenReturn(mock(Container.class));
         return currentContainer;
     }
 }

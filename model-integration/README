@@ -4,5 +4,3 @@ This has two purposes
 - Make converters (importers) available to config models while loading them in just a single instance even when
   there are multiple config models.
 - Make third party models directly available to the container.
-
-TensorFlow depends on JNI code which necessitates using a separate bundle to achieve the above.

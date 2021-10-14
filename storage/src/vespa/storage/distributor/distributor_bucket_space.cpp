@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distributor_bucket_space.h"
 #include "bucketownership.h"
@@ -50,7 +50,7 @@ DistributorBucketSpace::enumerate_available_nodes()
     _distribution_bits = _clusterState->getDistributionBitCount();
     auto node_count = _clusterState->getNodeCount(lib::NodeType::STORAGE);
     if (_pending_cluster_state) {
-        _distribution_bits = std::min(_distribution_bits, _pending_cluster_state->getDistributionBitCount());
+        _distribution_bits = std::max(_distribution_bits, _pending_cluster_state->getDistributionBitCount());
         node_count = std::min(node_count, _pending_cluster_state->getNodeCount(lib::NodeType::STORAGE));
     }
     std::vector<bool> nodes(node_count);

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docprocs.indexing;
 
 import com.yahoo.document.DocumentType;
@@ -6,17 +6,17 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.language.Linguistics;
 import java.util.logging.Level;
 
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
 import java.util.*;
-import java.util.logging.Level;
 
 /**
  * @author Simon Thoresen Hult
@@ -28,9 +28,9 @@ public class ScriptManager {
     private final Map<String, Map<String, DocumentScript>> documentFieldScripts;
     private final DocumentTypeManager docTypeMgr;
 
-    public ScriptManager(DocumentTypeManager docTypeMgr, IlscriptsConfig config, Linguistics linguistics, Encoder encoder) {
+    public ScriptManager(DocumentTypeManager docTypeMgr, IlscriptsConfig config, Linguistics linguistics, Embedder embedder) {
         this.docTypeMgr = docTypeMgr;
-        documentFieldScripts = createScriptsMap(docTypeMgr, config, linguistics, encoder);
+        documentFieldScripts = createScriptsMap(docTypeMgr, config, linguistics, embedder);
     }
 
 
@@ -75,22 +75,29 @@ public class ScriptManager {
     private static Map<String, Map<String, DocumentScript>>  createScriptsMap(DocumentTypeManager docTypeMgr,
                                                                               IlscriptsConfig config,
                                                                               Linguistics linguistics,
-                                                                              Encoder encoder) {
+                                                                              Embedder embedder) {
         Map<String, Map<String, DocumentScript>> documentFieldScripts = new HashMap<>(config.ilscript().size());
-        ScriptParserContext parserContext = new ScriptParserContext(linguistics, encoder);
+        ScriptParserContext parserContext = new ScriptParserContext(linguistics, embedder);
         parserContext.getAnnotatorConfig().setMaxTermOccurrences(config.maxtermoccurrences());
         parserContext.getAnnotatorConfig().setMaxTokenLength(config.fieldmatchmaxlength());
 
         for (IlscriptsConfig.Ilscript ilscript : config.ilscript()) {
-            InputExpression.FieldPathOptimizer fieldPathOptimizer = new InputExpression.FieldPathOptimizer(docTypeMgr.getDocumentType(ilscript.doctype()));
+            DocumentType documentType = docTypeMgr.getDocumentType(ilscript.doctype());
+            InputExpression.FieldPathOptimizer fieldPathOptimizer = new InputExpression.FieldPathOptimizer(documentType);
             List<StatementExpression> expressions = new ArrayList<>(ilscript.content().size());
             Map<String, DocumentScript> fieldScripts = new HashMap<>(ilscript.content().size());
             for (String content : ilscript.content()) {
-                expressions.add(parse(ilscript.doctype(), parserContext, content));
                 StatementExpression statement = parse(ilscript.doctype(), parserContext, content);
+                expressions.add(statement);
                 InputExpression.InputFieldNameExtractor inputFieldNameExtractor = new InputExpression.InputFieldNameExtractor();
                 statement.select(inputFieldNameExtractor, inputFieldNameExtractor);
+                OutputExpression.OutputFieldNameExtractor outputFieldNameExtractor = new OutputExpression.OutputFieldNameExtractor();
+                statement.select(outputFieldNameExtractor, outputFieldNameExtractor);
                 statement.select(fieldPathOptimizer, fieldPathOptimizer);
+                if ( ! outputFieldNameExtractor.getOutputFieldNames().isEmpty()) {
+                    String outputFieldName = outputFieldNameExtractor.getOutputFieldNames().get(0);
+                    statement.setStatementOutput(documentType, documentType.getField(outputFieldName));
+                }
                 if (inputFieldNameExtractor.getInputFieldNames().size() == 1) {
                     String fieldName = inputFieldNameExtractor.getInputFieldNames().get(0);
                     ScriptExpression script;

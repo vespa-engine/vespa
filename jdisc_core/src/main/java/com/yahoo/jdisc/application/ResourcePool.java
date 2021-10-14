@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.application;
 
 import com.google.inject.Key;
@@ -151,7 +151,7 @@ public final class ResourcePool extends AbstractResource implements AutoCloseabl
      * @return The parameter <code>t</code>, to allow inlined calls to this function.
      */
     public <T extends SharedResource> T retain(T t) {
-        resources.add(t.refer());
+        resources.add(t.refer(this));
         return t;
     }
 

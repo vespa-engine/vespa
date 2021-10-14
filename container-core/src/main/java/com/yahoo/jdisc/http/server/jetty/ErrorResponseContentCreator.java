@@ -1,11 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import org.eclipse.jetty.util.ByteArrayISO8859Writer;
 import org.eclipse.jetty.util.StringUtil;
 
 import java.io.IOException;
-import java.util.Optional;
 
 /**
  * Creates HTML body having the status code, error message and request uri.
@@ -14,12 +13,12 @@ import java.util.Optional;
  *
  * @author bjorncs
  */
-public class ErrorResponseContentCreator {
+class ErrorResponseContentCreator {
 
     private final ByteArrayISO8859Writer writer = new ByteArrayISO8859Writer(2048);
 
-    public byte[] createErrorContent(String requestUri, int statusCode, Optional<String> message) {
-        String sanitizedString = message.map(StringUtil::sanitizeXmlString).orElse("");
+    byte[] createErrorContent(String requestUri, int statusCode, String message) {
+        String sanitizedString = message != null ? StringUtil.sanitizeXmlString(message) : "";
         String statusCodeString = Integer.toString(statusCode);
         writer.resetWriter();
         try {

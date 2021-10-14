@@ -1,8 +1,6 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "cmd.h"
-#include "managed_rpc_server.h"
 #include "map_listener.h"
 #include "map_source.h"
 #include "mapping_monitor.h"
@@ -11,6 +9,8 @@
 #include "request_completion_handler.h"
 #include "service_map_history.h"
 #include "service_mapping.h"
+
+#include <vespa/fnet/task.h>
 
 #include <vector>
 #include <memory>

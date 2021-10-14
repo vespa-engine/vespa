@@ -1,10 +1,11 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zms;
 
-import com.yahoo.io.IOUtils;
+import com.yahoo.vespa.athenz.api.AthenzAssertion;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPolicy;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -18,7 +19,7 @@ import com.yahoo.vespa.athenz.client.zms.bindings.AssertionEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.DomainListResponseEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.MembershipEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.PolicyEntity;
-import com.yahoo.vespa.athenz.client.zms.bindings.ProviderResourceGroupRolesRequestEntity;
+import com.yahoo.vespa.athenz.client.zms.bindings.ResourceGroupRolesEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.ResponseListEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.RoleEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.ServiceEntity;
@@ -33,17 +34,14 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
 
 import javax.net.ssl.SSLContext;
-import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -104,7 +102,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
         HttpUriRequest request = RequestBuilder.put()
                 .setUri(uri)
                 .addHeader(createCookieHeaderWithOktaTokens(identityToken, accessToken))
-                .setEntity(toJsonStringEntity(new ProviderResourceGroupRolesRequestEntity(providerService, tenantDomain, roleActions, resourceGroup)))
+                .setEntity(toJsonStringEntity(new ResourceGroupRolesEntity(providerService, tenantDomain, roleActions, resourceGroup)))
                 .build();
         execute(request, response -> readEntity(response, Void.class)); // Note: The ZMS API will actually return a json object that is similar to ProviderResourceGroupRolesRequestEntity
     }
@@ -118,6 +116,31 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .addHeader(createCookieHeaderWithOktaTokens(identityToken, accessToken))
                 .build();
         execute(request, response -> readEntity(response, Void.class));
+    }
+
+    @Override
+    public void createTenantResourceGroup(AthenzDomain tenantDomain, AthenzIdentity provider, String resourceGroup,
+                                          Set<RoleAction> roleActions) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/service/%s/tenant/%s/resourceGroup/%s",
+                provider.getDomainName(), provider.getName(), tenantDomain.getName(), resourceGroup));
+        HttpUriRequest request = RequestBuilder.put()
+                .setUri(uri)
+                .setEntity(toJsonStringEntity(
+                        new ResourceGroupRolesEntity(provider, tenantDomain, roleActions, resourceGroup)))
+                .build();
+        execute(request, response -> readEntity(response, Void.class));
+    }
+
+    @Override
+    public Set<RoleAction> getTenantResourceGroups(AthenzDomain tenantDomain, AthenzIdentity provider,
+                                                   String resourceGroup) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/service/%s/tenant/%s/resourceGroup/%s",
+                provider.getDomainName(), provider.getName(), tenantDomain.getName(), resourceGroup));
+        HttpUriRequest request = RequestBuilder.get()
+                .setUri(uri)
+                .build();
+        ResourceGroupRolesEntity result = execute(request, response -> readEntity(response, ResourceGroupRolesEntity.class));
+        return result.roles.stream().map(rgr -> new RoleAction(rgr.role, rgr.action)).collect(Collectors.toSet());
     }
 
     @Override
@@ -221,18 +244,18 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .build();
         PolicyEntity policyEntity =  execute(request, response -> readEntity(response, PolicyEntity.class));
 
-        OptionalInt assertionId = policyEntity.getAssertions().stream()
+        OptionalLong assertionId = policyEntity.getAssertions().stream()
                 .filter(assertionEntity -> assertionEntity.getAction().equals(action) &&
                         assertionEntity.getResource().equals(resourceName.toResourceNameString()) &&
                         assertionEntity.getRole().equals(athenzRole.toResourceNameString()))
-                .mapToInt(AssertionEntity::getId).findFirst();
+                .mapToLong(AssertionEntity::getId).findFirst();
 
         if (assertionId.isEmpty()) {
             return false;
         }
 
         uri = zmsUrl.resolve(String.format("domain/%s/policy/%s/assertion/%d",
-                athenzDomain.getName(), athenzPolicy, assertionId.getAsInt()));
+                athenzDomain.getName(), athenzPolicy, assertionId.getAsLong()));
 
         request = RequestBuilder.delete()
                 .setUri(uri)
@@ -240,6 +263,28 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
 
         execute(request, response -> readEntity(response, Void.class));
         return true;
+    }
+
+    @Override
+    public Optional<AthenzPolicy> getPolicy(AthenzDomain domain, String name) {
+        var uri = zmsUrl.resolve(String.format("domain/%s/policy/%s", domain.getName(), name));
+        HttpUriRequest request = RequestBuilder.get().setUri(uri).build();
+        PolicyEntity entity;
+        try {
+            entity = execute(request, response -> readEntity(response, PolicyEntity.class));
+        } catch (ZmsClientException e) {
+            if (e.getErrorCode() == 404) return Optional.empty();
+            throw e;
+        }
+        List<AthenzAssertion> assertions = entity.getAssertions().stream()
+                .map(a -> AthenzAssertion.newBuilder(
+                        AthenzRole.fromResourceNameString(a.getRole()),
+                        AthenzResourceName.fromString(a.getResource()),
+                        a.getAction())
+                        .id(a.getId())
+                        .build())
+                .collect(toList());
+        return Optional.of(new AthenzPolicy(entity.getName(), assertions));
     }
 
     @Override

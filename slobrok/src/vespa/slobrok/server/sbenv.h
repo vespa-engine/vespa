@@ -1,10 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "named_service.h"
 #include "rpc_mapping_monitor.h"
-#include "rpc_server_map.h"
-#include "rpc_server_manager.h"
 #include "remote_slobrok.h"
 #include "exchange_manager.h"
 #include "configshim.h"
@@ -44,7 +42,6 @@ private:
     ConfigShim         _configShim;
     Configurator::UP   _configurator;
     bool               _shuttingDown;
-    const bool         _useNewLogic;
 
     SBEnv(const SBEnv &);            // Not used
     SBEnv &operator=(const SBEnv &); // Not used
@@ -62,9 +59,7 @@ private:
     UnionServiceMap                            _consensusMap;
     ServiceMapHistory                          _globalVisibleHistory;
 
-    RpcServerManager                           _rpcsrvmanager;
     ExchangeManager                            _exchanger;
-    RpcServerMap                               _rpcsrvmap;
 
     std::unique_ptr<MapSubscription>           _localMonitorSubscription;
     std::unique_ptr<MapSubscription>           _consensusSubscription;
@@ -72,7 +67,6 @@ private:
 
 public:
     explicit SBEnv(const ConfigShim &shim);
-    SBEnv(const ConfigShim &shim, bool useNewConsensusLogic);
     ~SBEnv();
 
     FNET_Transport *getTransport() { return _transport.get(); }
@@ -83,9 +77,7 @@ public:
     void suspend();
     void resume();
 
-    RpcServerManager& rpcServerManager() { return _rpcsrvmanager; }
     ExchangeManager& exchangeManager() { return _exchanger; }
-    RpcServerMap& rpcServerMap() { return _rpcsrvmap; }
 
     ServiceMapHistory& globalHistory() {
         return _globalVisibleHistory;
@@ -107,12 +99,11 @@ public:
 
     bool isSuspended() const { return false; }
     bool isShuttingDown() const { return _shuttingDown; }
-    bool useNewLogic() const { return _useNewLogic; }
 
     int MainLoop();
 
-    OkState addPeer(const std::string& name, const std::string &spec);
-    OkState removePeer(const std::string& name, const std::string &spec);
+    OkState addPeer(const std::string& name, const std::string& spec);
+    OkState removePeer(const std::string& name, const std::string& spec);
 
     void countFailedHeartbeat() { _rpcHooks.countFailedHeartbeat(); }
 };

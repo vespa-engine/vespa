@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.protect;
 
 import com.sun.management.HotSpotDiagnosticMXBean;
@@ -74,9 +74,13 @@ public final class Process {
         }
     }
 
-    public static void dumpHeap(String filePath, boolean live) throws IOException {
+    public static void dumpHeap(String filePath, boolean live) {
         log.log(Level.INFO, "Will dump the heap to '" + filePath + "', with the live = " + live);
-        getHotspotMXBean().dumpHeap(filePath, live);
+        try {
+            getHotspotMXBean().dumpHeap(filePath, live);
+        } catch (IOException e) {
+            log.log(Level.WARNING, "Failed writing heap dump:", e);
+        }
     }
 
     private static HotSpotDiagnosticMXBean getHotspotMXBean() throws IOException {

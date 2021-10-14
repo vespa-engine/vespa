@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.javacc.UnicodeUtilities;
@@ -288,6 +288,8 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {h:0}:1.5, {h:1}:1.5 }", "0.5 + tensor0", "{ {h:0}:1.0,{h:1}:1.0 }");
         tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:0 }",
                                "atan2(tensor0, tensor1)", "{ {x:0}:0, {x:1}:0 }", "{ {y:0}:1 }");
+        tester.assertEvaluates("{ {x:0,y:0}:2, {x:1,y:0}:7 }",
+                               "hamming(tensor0, tensor1)", "{ {x:0}:97, {x:1}:-1 }", "{ {y:0}:1 }");
         tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:1 }",
                                "tensor0 > tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
         tester.assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0 }",
@@ -496,7 +498,6 @@ public class EvaluationTestCase {
                 "tensor(d0[3],d1[2],d2[1],d3[1])(tensor0{a0:0, a1:((d0 * 2 + d1) / 3), a2:((d0 * 2 + d1) % 3) })",
                 "tensor(a0[1],a1[2],a2[3]):[1,2,3,4,5,6]",
                 "tensor(d0[4]):[3,2,-1,1]");
-
     }
 
     @Test
@@ -723,6 +724,13 @@ public class EvaluationTestCase {
         tester.assertEvaluates("tensor(d0[1], d1[3]):[1, 2, 3]",
                                "tensor0 * tensor(d0[1])(1)",
                                "tensor(d1[3]):[1, 2, 3]");
+        // Add using the "expand" non-primitive function
+        tester.assertEvaluates("tensor(d0[1],d1[3]):[[1,2,3]]",
+                               "expand(tensor0, d0)",
+                               "tensor(d1[3]):[1, 2, 3]");
+        tester.assertEvaluates("tensor<float>(d0[1],d1[3]):[[1,2,3]]",
+                               "expand(tensor0, d0)",
+                               "tensor<float>(d1[3]):[1, 2, 3]");
     }
 
     @Test

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc;
 
 import com.google.inject.AbstractModule;
@@ -34,6 +34,7 @@ import static org.junit.Assert.fail;
 public class RequestTestCase {
 
     @Test
+    @SuppressWarnings("deprecation")
     public void requireThatAccessorsWork() throws BindingSetNotFoundException {
         MyTimer timer = new MyTimer();
         timer.currentTime = 69;
@@ -249,6 +250,7 @@ public class RequestTestCase {
         assertTrue(driver.close());
     }
 
+    @SuppressWarnings("deprecation")
     private static void assertUri(CurrentContainer container, String requestUri, String expectedUri) {
         Request serverReq = new Request(container, URI.create(requestUri));
         assertEquals(expectedUri, serverReq.getUri().toString());

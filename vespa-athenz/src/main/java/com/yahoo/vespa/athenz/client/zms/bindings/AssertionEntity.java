@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zms.bindings;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -16,7 +16,7 @@ public class AssertionEntity {
     private final String role;
     private final String resource;
     private final String action;
-    private final Integer id;
+    private final Long id;
 
 
     public AssertionEntity(String role, String resource, String action) {
@@ -26,7 +26,7 @@ public class AssertionEntity {
     public AssertionEntity(@JsonProperty("role") String role,
                            @JsonProperty("resource") String resource,
                            @JsonProperty("action") String action,
-                           @JsonProperty("id") Integer id) {
+                           @JsonProperty("id") Long id) {
         this.role = role;
         this.resource = resource;
         this.action = action;
@@ -46,7 +46,7 @@ public class AssertionEntity {
     }
 
     @JsonIgnore
-    public int getId() {
+    public long getId() {
         return id;
     }
 }

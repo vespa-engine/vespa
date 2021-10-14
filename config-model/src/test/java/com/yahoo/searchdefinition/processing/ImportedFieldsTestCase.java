@@ -1,8 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.document.ImportedComplexField;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -14,6 +15,7 @@ import static org.junit.Assert.assertEquals;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author geirst
@@ -459,4 +461,66 @@ public class ImportedFieldsTestCase {
             assertSearchNotContainsImportedField(fieldName, search);
         }
     }
-}
+
+    @Test
+    public void field_with_struct_field_attributes_can_be_imported_from_parents_that_use_inheritance() throws ParseException {
+        var builder = buildParentsUsingInheritance();
+
+        assertParentContainsEntriesAttributes(builder.getSearch("parent_a"));
+        assertParentContainsEntriesAttributes(builder.getSearch("parent_b"));
+
+        var child = builder.getSearch("child");
+        checkImportedField("entries_from_a", "ref_parent_a", "parent_a", "entries", child, true);
+        checkImportedField("entries_from_a.key", "ref_parent_a", "parent_a", "entries.key", child, true);
+        checkImportedField("entries_from_a.value", "ref_parent_a", "parent_a", "entries.value", child, true);
+
+        checkImportedField("entries_from_b", "ref_parent_b", "parent_b", "entries", child, true);
+        checkImportedField("entries_from_b.key", "ref_parent_b", "parent_b", "entries.key", child, true);
+        checkImportedField("entries_from_b.value", "ref_parent_b", "parent_b", "entries.value", child, true);
+    }
+
+    private void assertParentContainsEntriesAttributes(Search parent) {
+        var attrs = new AttributeFields(parent);
+        assertTrue(attrs.containsAttribute("entries.key"));
+        assertTrue(attrs.containsAttribute("entries.value"));
+    }
+
+    private SearchBuilder buildParentsUsingInheritance() throws ParseException {
+        var builder = new SearchBuilder();
+        builder.importString(joinLines("schema parent_a {",
+                "document parent_a {",
+                "  struct Entry {",
+                "    field key type string {}",
+                "    field value type string {}",
+                "  }",
+                "  field entries type array<Entry> {",
+                "    indexing: summary",
+                "    struct-field key { indexing: attribute }",
+                "    struct-field value { indexing: attribute }",
+                "  }",
+                "}",
+                "}"));
+
+        builder.importString(joinLines("schema parent_b {",
+                "document parent_b inherits parent_a {",
+                "}",
+                "}"));
+
+        builder.importString(joinLines("schema child {",
+                "document child {",
+                "  field ref_parent_a type reference<parent_a> {",
+                "    indexing: attribute",
+                "  }",
+                "  field ref_parent_b type reference<parent_b> {",
+                "    indexing: attribute",
+                "  }",
+                "}",
+                "import field ref_parent_a.entries as entries_from_a {}",
+                "import field ref_parent_b.entries as entries_from_b {}",
+                "}"));
+
+        builder.build();
+        return builder;
+    }
+
+    }

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributorconfiguration.h"
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/traversingvisitor.h>
@@ -49,6 +49,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _enable_metadata_only_fetch_phase_for_inconsistent_updates(false),
       _prioritize_global_bucket_merges(true),
       _enable_revert(true),
+      _implicitly_clear_priority_on_schedule(false),
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
 {
 }
@@ -169,6 +170,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _prioritize_global_bucket_merges = config.prioritizeGlobalBucketMerges;
     _max_activation_inhibited_out_of_sync_groups = config.maxActivationInhibitedOutOfSyncGroups;
     _enable_revert = config.enableRevert;
+    _implicitly_clear_priority_on_schedule = config.implicitlyClearBucketPriorityOnSchedule;
 
     _minimumReplicaCountingMode = config.minimumReplicaCountingMode;
 

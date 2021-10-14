@@ -1,10 +1,10 @@
-<!-- Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <!-- Component which can import some ml model.
      This is included into the config server services.xml to enable it to translate
      model pseudo features in ranking expressions during config model building.
      The importers are order by the cost of their probing method, from cheap to expensive.
      It is provided as separate bundles instead of being included in the config model
-     because some of these (TensorFlow) includes
+     because some of these includes
      JNI code, and so can only exist in one instance in the server. -->
 <component id="ai.vespa.rankingexpression.importer.vespa.VespaImporter" bundle="model-integration" />
 <component id="ai.vespa.rankingexpression.importer.onnx.OnnxImporter" bundle="model-integration" />

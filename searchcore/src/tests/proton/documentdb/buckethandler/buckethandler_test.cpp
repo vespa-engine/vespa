@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchcore/proton/server/buckethandler.h>
 #include <vespa/searchcore/proton/server/ibucketstatechangedhandler.h>
 #include <vespa/searchcore/proton/server/ibucketmodifiedhandler.h>
@@ -154,6 +154,11 @@ TEST_F("require that handleListBuckets() returns buckets from all sub dbs", Fixt
     EXPECT_EQUAL(f._ready.bucket(7), f._bucketList.getList()[3]);
     EXPECT_EQUAL(f._removed.bucket(2), f._bucketList.getList()[0]);
     EXPECT_EQUAL(f._notReady.bucket(4), f._bucketList.getList()[2]);
+}
+
+TEST_F("test hasBucket", Fixture) {
+    EXPECT_FALSE(f._handler.hasBucket(makeSpiBucket(BUCKET_1)));
+    EXPECT_TRUE(f._handler.hasBucket(makeSpiBucket(f._ready.bucket(2))));
 }
 
 

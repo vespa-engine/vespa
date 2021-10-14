@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // vespa deploy API
 // Author: bratseth
 
@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -49,7 +50,8 @@ type DeploymentOpts struct {
 }
 
 type ApplicationPackage struct {
-	Path string
+	Path     string
+	TestPath string
 }
 
 func (a ApplicationID) String() string {
@@ -71,7 +73,7 @@ func (d DeploymentOpts) String() string {
 func (d *DeploymentOpts) IsCloud() bool { return d.Target.Type() == cloudTargetType }
 
 func (d *DeploymentOpts) url(path string) (*url.URL, error) {
-	service, err := d.Target.Service("deploy")
+	service, err := d.Target.Service(deployService, 0, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -79,6 +81,15 @@ func (d *DeploymentOpts) url(path string) (*url.URL, error) {
 }
 
 func (ap *ApplicationPackage) HasCertificate() bool {
+	return ap.hasFile(filepath.Join("security", "clients.pem"), "security/clients.pem")
+}
+
+func (ap *ApplicationPackage) HasDeployment() bool { return ap.hasFile("deployment.xml", "") }
+
+func (ap *ApplicationPackage) hasFile(filename, zipName string) bool {
+	if zipName == "" {
+		zipName = filename
+	}
 	if ap.IsZip() {
 		r, err := zip.OpenReader(ap.Path)
 		if err != nil {
@@ -86,35 +97,58 @@ func (ap *ApplicationPackage) HasCertificate() bool {
 		}
 		defer r.Close()
 		for _, f := range r.File {
-			if f.Name == "security/clients.pem" {
+			if f.Name == zipName {
 				return true
 			}
 		}
 		return false
 	}
-	return util.PathExists(filepath.Join(ap.Path, "security", "clients.pem"))
+	return util.PathExists(filepath.Join(ap.Path, filename))
 }
 
 func (ap *ApplicationPackage) IsZip() bool { return isZip(ap.Path) }
 
-func (ap *ApplicationPackage) zipReader() (io.ReadCloser, error) {
-	zipFile := ap.Path
-	if !ap.IsZip() {
-		tempZip, error := ioutil.TempFile("", "application.zip")
-		if error != nil {
-			return nil, fmt.Errorf("Could not create a temporary zip file for the application package: %w", error)
+func (ap *ApplicationPackage) IsJava() bool {
+	if ap.IsZip() {
+		r, err := zip.OpenReader(ap.Path)
+		if err != nil {
+			return false
 		}
+		defer r.Close()
+		for _, f := range r.File {
+			if filepath.Ext(f.Name) == ".jar" {
+				return true
+			}
+		}
+		return false
+	}
+	return util.PathExists(filepath.Join(ap.Path, "pom.xml"))
+}
+
+func (ap *ApplicationPackage) zipReader(test bool) (io.ReadCloser, error) {
+	zipFile := ap.Path
+	if test {
+		zipFile = ap.TestPath
+	}
+	if !ap.IsZip() {
+		tempZip, err := ioutil.TempFile("", "vespa")
+		if err != nil {
+			return nil, fmt.Errorf("Could not create a temporary zip file for the application package: %w", err)
+		}
+		defer func() {
+			tempZip.Close()
+			os.Remove(tempZip.Name())
+		}()
 		if err := zipDir(ap.Path, tempZip.Name()); err != nil {
 			return nil, err
 		}
-		defer os.Remove(tempZip.Name())
 		zipFile = tempZip.Name()
 	}
-	r, err := os.Open(zipFile)
+	f, err := os.Open(zipFile)
 	if err != nil {
 		return nil, fmt.Errorf("Could not open application package at %s: %w", ap.Path, err)
 	}
-	return r, nil
+	return f, nil
 }
 
 // FindApplicationPackage finds the path to an application package from the zip file or directory zipOrDir.
@@ -125,7 +159,8 @@ func FindApplicationPackage(zipOrDir string, requirePackaging bool) (Application
 	if util.PathExists(filepath.Join(zipOrDir, "pom.xml")) {
 		zip := filepath.Join(zipOrDir, "target", "application.zip")
 		if util.PathExists(zip) {
-			return ApplicationPackage{Path: zip}, nil
+			testZip := filepath.Join(zipOrDir, "target", "application-test.zip")
+			return ApplicationPackage{Path: zip, TestPath: testZip}, nil
 		}
 		if requirePackaging {
 			return ApplicationPackage{}, errors.New("pom.xml exists but no target/application.zip. Run mvn package first")
@@ -214,11 +249,8 @@ func Activate(sessionID int64, deployment DeploymentOpts) error {
 func Deploy(opts DeploymentOpts) (int64, error) {
 	path := "/application/v2/tenant/default/prepareandactivate"
 	if opts.IsCloud() {
-		if !opts.ApplicationPackage.HasCertificate() {
-			return 0, fmt.Errorf("%s: missing certificate in package", opts)
-		}
-		if opts.APIKey == nil {
-			return 0, fmt.Errorf("%s: missing api key", opts.String())
+		if err := checkDeploymentOpts(opts); err != nil {
+			return 0, err
 		}
 		if opts.Deployment.Zone.Environment == "" || opts.Deployment.Zone.Region == "" {
 			return 0, fmt.Errorf("%s: missing zone", opts)
@@ -237,8 +269,89 @@ func Deploy(opts DeploymentOpts) (int64, error) {
 	return uploadApplicationPackage(u, opts)
 }
 
+func copyToPart(dst *multipart.Writer, src io.Reader, fieldname, filename string) error {
+	var part io.Writer
+	var err error
+	if filename == "" {
+		part, err = dst.CreateFormField(fieldname)
+	} else {
+		part, err = dst.CreateFormFile(fieldname, filename)
+	}
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(part, src); err != nil {
+		return err
+	}
+	return nil
+}
+
+func Submit(opts DeploymentOpts) error {
+	if !opts.IsCloud() {
+		return fmt.Errorf("%s: submit is unsupported", opts)
+	}
+	if err := checkDeploymentOpts(opts); err != nil {
+		return err
+	}
+	path := fmt.Sprintf("/application/v4/tenant/%s/application/%s/submit", opts.Deployment.Application.Tenant, opts.Deployment.Application.Application)
+	u, err := opts.url(path)
+	if err != nil {
+		return err
+	}
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	if err := copyToPart(writer, strings.NewReader("{}"), "submitOptions", ""); err != nil {
+		return err
+	}
+	applicationZip, err := opts.ApplicationPackage.zipReader(false)
+	if err != nil {
+		return err
+	}
+	if err := copyToPart(writer, applicationZip, "applicationZip", "application.zip"); err != nil {
+		return err
+	}
+	testApplicationZip, err := opts.ApplicationPackage.zipReader(true)
+	if err != nil {
+		return err
+	}
+	if err := copyToPart(writer, testApplicationZip, "applicationTestZip", "application-test.zip"); err != nil {
+		return err
+	}
+	if err := writer.Close(); err != nil {
+		return err
+	}
+	request := &http.Request{
+		URL:    u,
+		Method: "POST",
+		Body:   ioutil.NopCloser(&body),
+		Header: make(http.Header),
+	}
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+	signer := NewRequestSigner(opts.Deployment.Application.SerializedForm(), opts.APIKey)
+	if err := signer.SignRequest(request); err != nil {
+		return err
+	}
+	serviceDescription := "Submit service"
+	response, err := util.HttpDo(request, time.Minute*10, serviceDescription)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	return checkResponse(request, response, serviceDescription)
+}
+
+func checkDeploymentOpts(opts DeploymentOpts) error {
+	if !opts.ApplicationPackage.HasCertificate() {
+		return fmt.Errorf("%s: missing certificate in package", opts)
+	}
+	if opts.APIKey == nil {
+		return fmt.Errorf("%s: missing api key", opts.String())
+	}
+	return nil
+}
+
 func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) {
-	zipReader, err := opts.ApplicationPackage.zipReader()
+	zipReader, err := opts.ApplicationPackage.zipReader(false)
 	if err != nil {
 		return 0, err
 	}
@@ -344,7 +457,7 @@ func zipDir(dir string, destination string) error {
 
 // Returns the error message in the given JSON, or the entire content if it could not be extracted
 func extractError(reader io.Reader) string {
-	responseData := util.ReaderToBytes(reader)
+	responseData, _ := ioutil.ReadAll(reader)
 	var response map[string]interface{}
 	json.Unmarshal(responseData, &response)
 	if response["error-code"] == "INVALID_APPLICATION_PACKAGE" {

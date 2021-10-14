@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.Request;
@@ -173,6 +173,12 @@ public abstract class FleetControllerTest implements Waiter {
         lookUp.setSlobrokConnectionSpecs(new String[0]);
         RpcServer rpcServer = new RpcServer(timer, timer, options.clusterName, options.fleetControllerIndex, options.slobrokBackOffPolicy);
         DatabaseHandler database = new DatabaseHandler(new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, options.fleetControllerIndex, timer);
+
+        // Setting this <1000 ms causes ECONNREFUSED on socket trying to connect to ZK server, in ZooKeeper,
+        // after creating a new ZooKeeper (session).  This causes ~10s extra time to connect after connection loss.
+        // Reasons unknown.  Larger values like the default 10_000 causes that much additional running time for some tests.
+        database.setMinimumWaitBetweenFailedConnectionAttempts(2_000);
+
         StateChangeHandler stateGenerator = new StateChangeHandler(timer, log);
         SystemStateBroadcaster stateBroadcaster = new SystemStateBroadcaster(timer, timer);
         MasterElectionHandler masterElectionHandler = new MasterElectionHandler(options.fleetControllerIndex, options.fleetControllerCount, timer, timer);

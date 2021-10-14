@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -121,6 +121,12 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
 
     void assert_single_ok_remove_reply_present() {
         assert_single_reply_present_with_return_code(api::ReturnCode::OK);
+    }
+
+    void assert_all_stripes_are_maintenance_inhibited(bool inhibited) const {
+        for (auto* stripe : distributor_stripes()) {
+            EXPECT_EQ(stripe->non_activation_maintenance_is_inhibited(), inhibited);
+        }
     }
 };
 
@@ -533,7 +539,7 @@ TEST_F(TopLevelDistributorTest, leaving_recovery_mode_immediately_sends_getnodes
 // TODO refactor this to set proper highest timestamp as part of bucket info
 // reply once we have the "highest timestamp across all owned buckets" feature
 // in place.
-TEST_F(TopLevelDistributorTest, configured_safe_time_point_rejection_works_end_to_end) {
+TEST_F(TopLevelDistributorTest, configured_feed_safe_time_point_rejection_works_end_to_end) {
     setup_distributor(Redundancy(2), NodeCount(2), "storage:1 distributor:2");
     fake_clock().setAbsoluteTimeInSeconds(1000);
 
@@ -556,6 +562,44 @@ TEST_F(TopLevelDistributorTest, configured_safe_time_point_rejection_works_end_t
     tick_distributor_and_stripes_n_times(1); // Process queued message
     // We don't have any buckets in our DB so we'll get an OK remove reply back (nothing to remove!)
     ASSERT_NO_FATAL_FAILURE(assert_single_ok_remove_reply_present());
+}
+
+TEST_F(TopLevelDistributorTest, configured_maintenance_safe_time_point_inhibition_works_end_to_end) {
+    setup_distributor(Redundancy(2), NodeCount(2), "storage:1 distributor:2");
+    fake_clock().setAbsoluteTimeInSeconds(1000);
+
+    auto cfg = current_distributor_config();
+    cfg.maxClusterClockSkewSec = 10;
+    reconfigure(cfg);
+
+    ASSERT_NO_FATAL_FAILURE(assert_all_stripes_are_maintenance_inhibited(false));
+
+    enable_distributor_cluster_state("storage:1 distributor:1", true);
+    tick_distributor_and_stripes_n_times(1);
+    ASSERT_NO_FATAL_FAILURE(assert_all_stripes_are_maintenance_inhibited(true));
+
+    fake_clock().setAbsoluteTimeInSeconds(1010); // Safe period still not expired
+    tick_distributor_and_stripes_n_times(1);
+    ASSERT_NO_FATAL_FAILURE(assert_all_stripes_are_maintenance_inhibited(true));
+
+    fake_clock().setAbsoluteTimeInSeconds(1011); // Safe period now expired
+    tick_distributor_and_stripes_n_times(1);
+    ASSERT_NO_FATAL_FAILURE(assert_all_stripes_are_maintenance_inhibited(false));
+}
+
+TEST_F(TopLevelDistributorTest, maintenance_safe_time_not_triggered_if_state_transition_does_not_have_ownership_transfer) {
+    setup_distributor(Redundancy(2), NodeCount(2), "storage:1 distributor:2");
+    fake_clock().setAbsoluteTimeInSeconds(1000);
+
+    auto cfg = current_distributor_config();
+    cfg.maxClusterClockSkewSec = 10;
+    reconfigure(cfg);
+
+    ASSERT_NO_FATAL_FAILURE(assert_all_stripes_are_maintenance_inhibited(false));
+
+    enable_distributor_cluster_state("storage:1 distributor:1", false);
+    tick_distributor_and_stripes_n_times(1);
+    ASSERT_NO_FATAL_FAILURE(assert_all_stripes_are_maintenance_inhibited(false));
 }
 
 }

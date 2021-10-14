@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <cmath>
 #include "llvm_wrapper.h"
 #include <vespa/eval/eval/node_visitor.h>
 #include <vespa/eval/eval/node_traverser.h>
 #include <vespa/eval/eval/extract_bit.h>
+#include <vespa/eval/eval/hamming_distance.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/IR/IRBuilder.h>
@@ -31,6 +32,7 @@ double vespalib_eval_relu(double a) { return std::max(a, 0.0); }
 double vespalib_eval_sigmoid(double a) { return 1.0 / (1.0 + std::exp(-1.0 * a)); }
 double vespalib_eval_elu(double a) { return (a < 0) ? std::exp(a) - 1.0 : a; }
 double vespalib_eval_bit(double a, double b) { return vespalib::eval::extract_bit(a, b); }
+double vespalib_eval_hamming(double a, double b) { return vespalib::eval::hamming_distance(a, b); }
 
 using vespalib::eval::gbdt::Forest;
 using resolve_function = double (*)(void *ctx, size_t idx);
@@ -650,6 +652,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
     void visit(const Bit &) override {
         make_call_2("vespalib_eval_bit");
+    }
+    void visit(const Hamming &) override {
+        make_call_2("vespalib_eval_hamming");
     }
 };
 

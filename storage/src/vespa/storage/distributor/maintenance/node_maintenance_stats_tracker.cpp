@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "node_maintenance_stats_tracker.h"
 #include <ostream>
@@ -34,9 +34,9 @@ merge_bucket_spaces_stats(NodeMaintenanceStatsTracker::BucketSpacesStats& dest,
 void
 NodeMaintenanceStatsTracker::merge(const NodeMaintenanceStatsTracker& rhs)
 {
-    for (const auto& entry : rhs._stats) {
+    for (const auto& entry : rhs._node_stats) {
         auto node_index = entry.first;
-        merge_bucket_spaces_stats(_stats[node_index], entry.second);
+        merge_bucket_spaces_stats(_node_stats[node_index], entry.second);
     }
 }
 

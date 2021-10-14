@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.ConfigModelContext;
@@ -6,7 +6,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
-import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.ConnectionLogComponent;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
@@ -48,7 +47,7 @@ public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
         if (isHosted()){
             cluster.addComponent(
                     new AccessLogComponent(
-                            cluster, AccessLogComponent.AccessLogType.jsonAccessLog, AccessLogComponent.CompressionType.ZSTD,
+                            AccessLogComponent.AccessLogType.jsonAccessLog, AccessLogComponent.CompressionType.ZSTD,
                             "logs/vespa/configserver/access-json.log.%Y%m%d%H%M%S", null, true, true, "access-json.log", 1024,256*1024));
             cluster.addComponent(new ConnectionLogComponent(cluster, FileConnectionLog.class, "configserver"));
         } else {

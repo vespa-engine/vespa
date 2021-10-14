@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.test;
 
 import com.yahoo.component.chain.Chain;
@@ -1094,7 +1094,7 @@ public class QueryTestCase {
         }
         IndexFacts indexFacts = new IndexFacts(new IndexModel(sd));
         MockLinguistics mockLinguistics = new MockLinguistics();
-        q.getModel().setExecution(new Execution(Execution.Context.createContextStub(null, indexFacts, mockLinguistics)));
+        q.getModel().setExecution(new Execution(Execution.Context.createContextStub(indexFacts, mockLinguistics)));
         q.getModel().getQueryTree(); // cause parsing
         assertEquals(expectedDetectionText, mockLinguistics.detector.lastDetectionText);
     }

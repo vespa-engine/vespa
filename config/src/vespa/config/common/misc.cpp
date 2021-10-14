@@ -1,7 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "misc.h"
-#include <vespa/vespalib/util/md5.h>
+#include <iostream>
+#include <sstream>
+#include <xxhash.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -12,12 +14,12 @@ using vespalib::Memory;
 namespace config {
 
 vespalib::string
-calculateContentMd5(const std::vector<vespalib::string> & fileContents)
+calculateContentXxhash64(const std::vector<vespalib::string> & fileContents)
 {
     vespalib::string normalizedLines;
-    int compact_md5size = 16;
-    unsigned char md5sum[compact_md5size];
+    XXH64_hash_t xxhash64;
     vespalib::asciistream s;
+    std::stringstream ss;
 
     // remove comments, trailing spaces and empty lines
     // TODO: Remove multiple spaces and space before comma, like in Java
@@ -30,16 +32,11 @@ calculateContentMd5(const std::vector<vespalib::string> & fileContents)
             normalizedLines += line;
         }
     }
-    fastc_md5sum((const unsigned char*)normalizedLines.c_str(), normalizedLines.size(), md5sum);
+    xxhash64 = XXH64((const unsigned char*)normalizedLines.c_str(), normalizedLines.size(), 0);
 
-    // convert to 32 character hex string
-    for (int i = 0; i < compact_md5size; i++) {
-        if (md5sum[i] < 16) {
-            s << "0";
-        }
-        s << vespalib::hex << (int)md5sum[i];
-    }
-    return s.str();
+    ss << std::hex << xxhash64;
+    ss << std::endl;
+    return ss.str();
 }
 
 bool

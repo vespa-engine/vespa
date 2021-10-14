@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.querytransform.test;
 
 import com.yahoo.component.chain.Chain;
@@ -106,7 +106,7 @@ public class StemmingSearcherTestCase {
 
         Query q = new Query(QueryTestCase.httpEncode("?query=cars"));
         new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)),
-                      new Execution.Context(null, indexFacts, null, null, linguistics)).search(q);
+                      Execution.Context.createContextStub(indexFacts, linguistics)).search(q);
         assertEquals("cars", q.getModel().getQueryTree().getRoot().toString());
     }
 
@@ -145,7 +145,7 @@ public class StemmingSearcherTestCase {
     }
 
     private Execution.Context newExecutionContext() {
-        return new Execution.Context(null, indexFacts, null, null, linguistics);
+        return Execution.Context.createContextStub(indexFacts, linguistics);
     }
 
     private Execution newExecution() {

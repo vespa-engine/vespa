@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc;
 
 /**
@@ -10,6 +10,10 @@ package com.yahoo.jdisc;
 public class NoopSharedResource implements SharedResource {
     @Override
     public final ResourceReference refer() {
+        return References.NOOP_REFERENCE;
+    }
+    @Override
+    public final ResourceReference refer(Object context) {
         return References.NOOP_REFERENCE;
     }
 

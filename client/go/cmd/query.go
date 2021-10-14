@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // vespa query command
 // author: bratseth
 
@@ -15,8 +15,11 @@ import (
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
+var queryTimeoutSecs int
+
 func init() {
 	rootCmd.AddCommand(queryCmd)
+	queryCmd.Flags().IntVarP(&queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query request in seconds")
 }
 
 var queryCmd = &cobra.Command{
@@ -45,9 +48,9 @@ func query(arguments []string) {
 	}
 	url.RawQuery = urlQuery.Encode()
 
-	response, err := service.Do(&http.Request{URL: url}, time.Second*10)
+	response, err := service.Do(&http.Request{URL: url}, time.Second*time.Duration(queryTimeoutSecs))
 	if err != nil {
-		log.Print(color.Red("Error: "), "Request failed: ", err)
+		fatalErr(nil, "Request failed: ", err)
 		return
 	}
 	defer response.Body.Close()
@@ -55,11 +58,9 @@ func query(arguments []string) {
 	if response.StatusCode == 200 {
 		log.Print(util.ReaderToJSON(response.Body))
 	} else if response.StatusCode/100 == 4 {
-		log.Print(color.Red("Error: "), "Invalid query: ", response.Status, "\n")
-		log.Print(util.ReaderToJSON(response.Body))
+		fatalErr(nil, "Invalid query: ", response.Status, "\n", util.ReaderToJSON(response.Body))
 	} else {
-		log.Print(color.Red("Error: "), response.Status, " from container at ", color.Cyan(url.Host), "\n")
-		log.Print(util.ReaderToJSON(response.Body))
+		fatalErr(nil, response.Status, " from container at ", color.Cyan(url.Host), "\n", util.ReaderToJSON(response.Body))
 	}
 }
 

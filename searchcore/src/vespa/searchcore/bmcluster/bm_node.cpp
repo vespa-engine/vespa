@@ -66,6 +66,7 @@
 #include <vespa/storage/config/config-stor-status.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/storage/distributor/bucket_spaces_stats_provider.h>
+#include <vespa/storage/storageserver/mergethrottler.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
 #include <vespa/storage/visiting/config-stor-visitor.h>
 #include <vespa/storageserver/app/distributorprocess.h>
@@ -98,6 +99,7 @@ using proton::HwInfo;
 using search::index::Schema;
 using search::index::SchemaBuilder;
 using search::transactionlog::TransLogServer;
+using storage::MergeThrottler;
 using storage::distributor::BucketSpacesStatsProvider;
 using storage::rpc::SharedRpcResources;
 using storage::rpc::StorageApiRpcService;
@@ -154,15 +156,16 @@ int port_number(int base_port, PortBias bias)
 
 storage::spi::Context context(storage::spi::Priority(0), 0);
 
-BucketSpacesStatsProvider* extract_bucket_spaces_stats_provider(storage::DistributorProcess& distributor)
+template <class ChainLink, class Process>
+ChainLink* extract_chain_link(Process &process)
 {
-    auto& node = distributor.getNode();
+    auto& node = process.getNode();
     auto *link = node.getChain();
     while (link != nullptr) {
         link = link->getNextLink();
-        auto provider = dynamic_cast<BucketSpacesStatsProvider*>(link);
-        if (provider != nullptr) {
-            return provider;
+        auto chain_link = dynamic_cast<ChainLink*>(link);
+        if (chain_link != nullptr) {
+            return chain_link;
         }
     }
     return nullptr;
@@ -317,6 +320,7 @@ struct StorageConfigSet
           messagebus()
     {
         stor_distribution = distribution.get_distribution_config();
+        stor_server.disableQueueLimitsForChainedMerges = params.get_disable_queue_limits_for_chained_merges();
         stor_server.nodeIndex = node_idx;
         stor_server.isDistributor = distributor;
         stor_server.contentNodeBucketDbStripeBits = params.get_bucket_db_stripe_bits();
@@ -325,10 +329,15 @@ struct StorageConfigSet
         } else {
             stor_server.rootFolder = base_dir + "/storage";
         }
+        stor_server.maxMergesPerNode = params.get_max_merges_per_node();
+        stor_server.maxMergeQueueSize = params.get_max_merge_queue_size();
         make_slobroks_config(slobroks, slobrok_port);
         stor_communicationmanager.rpc.numNetworkThreads = params.get_rpc_network_threads();
         stor_communicationmanager.rpc.eventsBeforeWakeup = params.get_rpc_events_before_wakeup();
         stor_communicationmanager.rpc.numTargetsPerNode = params.get_rpc_targets_per_node();
+        if (params.get_mbus_distributor_node_max_pending_count().has_value()) {
+            stor_communicationmanager.mbusDistributorNodeMaxPendingCount = params.get_mbus_distributor_node_max_pending_count().value();
+        }
         stor_communicationmanager.mbusport = mbus_port;
         stor_communicationmanager.rpcport = rpc_port;
         stor_communicationmanager.skipThread = params.get_skip_communicationmanager_thread();
@@ -402,6 +411,8 @@ struct DistributorConfigSet : public StorageConfigSet
           stor_distributormanager(),
           stor_visitordispatcher()
     {
+        stor_distributormanager.inhibitMergeSendingOnBusyNodeDurationSec = params.get_distributor_merge_busy_wait();
+        stor_distributormanager.maxpendingidealstateoperations = params.get_max_pending_idealstate_operations();
         stor_distributormanager.numDistributorStripes = params.get_distributor_stripes();
     }
 
@@ -459,6 +470,7 @@ class MyBmNode : public BmNode
     std::unique_ptr<mbus::Slobrok>             _slobrok;
     std::shared_ptr<BmStorageLinkContext>      _service_layer_chain_context;
     std::unique_ptr<MyServiceLayerProcess>     _service_layer;
+    MergeThrottler*                            _merge_throttler;
     std::shared_ptr<BmStorageLinkContext>      _distributor_chain_context;
     std::unique_ptr<storage::DistributorProcess> _distributor;
     BucketSpacesStatsProvider*                 _bucket_spaces_stats_provider;
@@ -522,6 +534,7 @@ MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, uint32_t nod
       _slobrok(),
       _service_layer_chain_context(),
       _service_layer(),
+      _merge_throttler(nullptr),
       _distributor_chain_context(),
       _distributor(),
       _bucket_spaces_stats_provider(nullptr),
@@ -565,6 +578,8 @@ MyBmNode::create_document_db(const BmClusterParams& params)
         std::transform(sequencer.begin(), sequencer.end(), sequencer.begin(), [](unsigned char c){ return std::toupper(c); });
         protonCfg->indexing.optimize = ProtonConfig::Indexing::getOptimize(sequencer);
     }
+    protonCfg->summary.log.chunk.compression.level = params.get_doc_store_chunk_compression_level();
+    protonCfg->summary.log.chunk.maxbytes = params.get_doc_store_chunk_maxbytes();
     auto bootstrap_config = std::make_shared<BootstrapConfig>(1,
                                                               _document_types,
                                                               _repo,
@@ -610,6 +625,9 @@ MyBmNode::start_service_layer(const BmClusterParams& params)
                                                              std::move(chain_builder));
     _service_layer->setupConfig(100ms);
     _service_layer->createNode();
+    auto merge_throttler = extract_chain_link<MergeThrottler>(*_service_layer);
+    std::lock_guard<std::mutex> guard(_lock);
+    _merge_throttler = merge_throttler;
 }
 
 void
@@ -633,7 +651,7 @@ MyBmNode::start_distributor(const BmClusterParams& params)
     }
     _distributor->setupConfig(100ms);
     _distributor->createNode();
-    auto bucket_spaces_stats_provider = extract_bucket_spaces_stats_provider(*_distributor);
+    auto bucket_spaces_stats_provider = extract_chain_link<BucketSpacesStatsProvider>(*_distributor);
     std::lock_guard<std::mutex> guard(_lock);
     _bucket_spaces_stats_provider = bucket_spaces_stats_provider;
 }
@@ -657,6 +675,10 @@ MyBmNode::shutdown_service_layer()
 {
     if (_service_layer) {
         LOG(info, "stop service layer");
+        {
+            std::lock_guard guard(_lock);
+            _merge_throttler = nullptr;
+        }
         _service_layer->getNode().requestShutdown("controlled shutdown");
         _service_layer->shutdown();
     }
@@ -711,7 +733,6 @@ MyBmNode::merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::C
 {
     auto& storage_node_state = baseline_state.getNodeState(storage::lib::Node(storage::lib::NodeType::STORAGE, _node_idx));
     if (storage_node_state.getState().oneOf("uir")) {
-        // TODO: Check cluster state and ignore nodes that are down.
         if (_document_db) {
             proton::DocumentMetaStoreReadGuards dmss(_document_db->getDocumentSubDBs());
             uint32_t active_docs = dmss.numActiveDocs();
@@ -721,6 +742,22 @@ MyBmNode::merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::C
             
             if (_node_idx < node_stats.size()) {
                 node_stats[_node_idx].set_document_db_stats(BmDocumentDbStats(active_docs, ready_docs, total_docs, removed_docs));
+            }
+        }
+        std::lock_guard<std::mutex> guard(_lock);
+        if (_merge_throttler) {
+            auto& state_lock = _merge_throttler->getStateLock();
+            auto& active_merges = _merge_throttler->getActiveMerges();
+            auto& merge_queue = _merge_throttler->getMergeQueue();
+            uint32_t active_merges_size = 0;
+            uint32_t merge_queue_size = 0;
+            {
+                std::lock_guard mt_guard(state_lock);
+                active_merges_size = active_merges.size();
+                merge_queue_size = merge_queue.size();
+            }
+            if (_node_idx < node_stats.size()) {
+                node_stats[_node_idx].set_merge_stats(BmMergeStats(active_merges_size, merge_queue_size));
             }
         }
     }

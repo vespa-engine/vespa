@@ -1,7 +1,6 @@
 {
   "isPublic": true,
   "isCd": false,
-  "enable-public-signup-flow": true,
   "hasTrialCapacity": false,
   "user": {
     "name": "Joe Developer",
@@ -9,5 +8,6 @@
     "nickname": "dev",
     "verified":false
   },
-  "tenants": {}
+  "tenants": {},
+  "flags": [{"id":"enable-public-signup-flow","rules":[{"value":false}]}]
 }

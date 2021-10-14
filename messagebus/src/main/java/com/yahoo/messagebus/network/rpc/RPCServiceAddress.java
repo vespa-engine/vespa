@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network.rpc;
 
 import com.yahoo.messagebus.network.ServiceAddress;
@@ -34,6 +34,13 @@ public class RPCServiceAddress implements ServiceAddress {
     public RPCServiceAddress(String serviceName, String connectionSpec) {
         this(serviceName, new Spec(connectionSpec));
     }
+    public RPCServiceAddress(RPCServiceAddress blueprint) {
+        serviceName = blueprint.serviceName;
+        sessionName = blueprint.sessionName;
+        connectionSpec = blueprint.connectionSpec;
+        target = null;
+    }
+
 
     @Override
     public boolean equals(Object obj) {

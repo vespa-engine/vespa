@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.Spliterator;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -110,6 +111,11 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
     @Override
     public Iterator<Type> iterator() {
         return items.iterator();
+    }
+
+    @Override
+    public Spliterator<Type> spliterator() {
+        return items.spliterator();
     }
 
     /** Returns the items in this shuffled using random as source of randomness */

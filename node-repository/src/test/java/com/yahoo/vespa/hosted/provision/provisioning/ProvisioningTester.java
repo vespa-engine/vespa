@@ -43,7 +43,6 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
-import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 
@@ -112,6 +111,7 @@ public class ProvisioningTester {
                                                  zone,
                                                  nameResolver,
                                                  containerImage,
+                                                 Optional.empty(),
                                                  flagSource,
                                                  new MemoryMetricsDb(clock),
                                                  true,
@@ -687,11 +687,7 @@ public class ProvisioningTester {
             Orchestrator orchestrator = Optional.ofNullable(this.orchestrator)
                     .orElseGet(() -> {
                         Orchestrator orch = mock(Orchestrator.class);
-                        try {
-                            doThrow(new RuntimeException()).when(orch).acquirePermissionToRemove(any());
-                        } catch (OrchestrationException e) {
-                            throw new RuntimeException(e);
-                        }
+                        doThrow(new RuntimeException()).when(orch).acquirePermissionToRemove(any());
                         return orch;
                     });
 

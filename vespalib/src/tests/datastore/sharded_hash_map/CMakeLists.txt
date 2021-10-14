@@ -1,4 +1,4 @@
-# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_executable(vespalib_sharded_hash_map_test_app
     SOURCES
     sharded_hash_map_test.cpp

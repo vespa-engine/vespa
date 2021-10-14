@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
 import java.util.Arrays;
@@ -91,7 +91,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         return b.toString();
     }
 
-    /** Returns a label as a string with approriate quoting/escaping when necessary */
+    /** Returns a label as a string with appropriate quoting/escaping when necessary */
     public static String labelToString(String label) {
         if (TensorType.labelMatcher.matches(label)) return label; // no quoting
         if (label.contains("'")) return "\"" + label + "\"";

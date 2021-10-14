@@ -34,7 +34,6 @@
     "diskSpeed": "fast",
     "storageType": "remote"
   },
-  "allowedToBeDown": false,
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,
   "failCount": 0,

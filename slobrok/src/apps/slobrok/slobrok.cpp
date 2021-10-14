@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/slobrok/server/sbenv.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -50,7 +50,6 @@ App::Main()
 {
     uint32_t portnum = 2773;
     vespalib::string cfgId;
-    bool useNewLogic = false;
 
     int argi = 1;
     const char* optArg;
@@ -64,7 +63,7 @@ App::Main()
             portnum = atoi(optArg);
             break;
         case 'N':
-            useNewLogic = true;
+            // ignored
             break;
         default:
             LOG(error, "unknown option letter '%c'", c);
@@ -76,11 +75,11 @@ App::Main()
         if (cfgId.empty()) {
             LOG(debug, "no config id specified");
             ConfigShim shim(portnum);
-            mainobj = std::make_unique<SBEnv>(shim, useNewLogic);
+            mainobj = std::make_unique<SBEnv>(shim);
         } else {
             ConfigShim shim(portnum, cfgId);
             shim.enableStateServer(true);
-            mainobj = std::make_unique<SBEnv>(shim, useNewLogic);
+            mainobj = std::make_unique<SBEnv>(shim);
         }
         hook_sigterm();
         res = mainobj->MainLoop();

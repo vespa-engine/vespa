@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
@@ -30,7 +30,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionApSoutheast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionAwsUsEast1a;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionCdAwsUsEast1a;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionCdUsCentral1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionCdUsEast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionEuWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
@@ -1079,12 +1079,12 @@ public class DeploymentTriggerTest {
 
     @Test
     public void mixedDirectAndPipelineJobsInProduction() {
-        ApplicationPackage cdPackage = new ApplicationPackageBuilder().region("cd-us-central-1")
+        ApplicationPackage cdPackage = new ApplicationPackageBuilder().region("cd-us-east-1")
                                                                       .region("cd-aws-us-east-1a")
                                                                       .build();
-        var zones = List.of(ZoneId.from("test.cd-us-central-1"),
-                            ZoneId.from("staging.cd-us-central-1"),
-                            ZoneId.from("prod.cd-us-central-1"),
+        var zones = List.of(ZoneId.from("test.cd-us-west-1"),
+                            ZoneId.from("staging.cd-us-west-1"),
+                            ZoneId.from("prod.cd-us-east-1"),
                             ZoneId.from("prod.cd-aws-us-east-1a"));
         tester.controllerTester()
               .setZones(zones, SystemName.cd)
@@ -1093,36 +1093,36 @@ public class DeploymentTriggerTest {
         tester.controllerTester().computeVersionStatus();
         var app = tester.newDeploymentContext();
 
-        app.runJob(productionCdUsCentral1, cdPackage);
+        app.runJob(productionCdUsEast1, cdPackage);
         app.submit(cdPackage);
         app.runJob(systemTest);
         // Staging test requires unknown initial version, and is broken.
-        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsCentral1, "user", false);
-        app.runJob(productionCdUsCentral1)
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
+        app.runJob(productionCdUsEast1)
            .abortJob(stagingTest) // Complete failing run.
            .runJob(stagingTest)
            .runJob(productionCdAwsUsEast1a);
 
-        app.runJob(productionCdUsCentral1, cdPackage);
+        app.runJob(productionCdUsEast1, cdPackage);
         var version = new Version("7.1");
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
         // System and staging tests both require unknown versions, and are broken.
-        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsCentral1, "user", false);
-        app.runJob(productionCdUsCentral1)
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
+        app.runJob(productionCdUsEast1)
            .jobAborted(systemTest)
            .jobAborted(stagingTest)
            .runJob(systemTest)
            .runJob(stagingTest)
            .runJob(productionCdAwsUsEast1a);
 
-        app.runJob(productionCdUsCentral1, cdPackage);
+        app.runJob(productionCdUsEast1, cdPackage);
         app.submit(cdPackage);
         app.jobAborted(systemTest)
            .runJob(systemTest);
         // Staging test requires unknown initial version, and is broken.
-        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsCentral1, "user", false);
-        app.runJob(productionCdUsCentral1)
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
+        app.runJob(productionCdUsEast1)
            .jobAborted(stagingTest)
            .runJob(stagingTest)
            .runJob(productionCdAwsUsEast1a);

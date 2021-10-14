@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.querytransform.test;
 
 import java.util.ArrayList;
@@ -41,7 +41,7 @@ public class RecallSearcherTestCase {
     public void testDenyRankItems() {
         RecallSearcher searcher = new RecallSearcher();
         Query query = new Query("?recall=foo");
-        Result result = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts())).search(query);
+        Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
         assertNotNull(result.hits().getError());
     }
 
@@ -60,7 +60,7 @@ public class RecallSearcherTestCase {
     private static void assertQueryTree(String query, List<String> ranked, List<String> unranked) {
         RecallSearcher searcher = new RecallSearcher();
         Query obj = new Query(query);
-        Result result = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts())).search(obj);
+        Result result = new Execution(searcher, Execution.Context.createContextStub()).search(obj);
         if (result.hits().getError() != null) {
             fail(result.hits().getError().toString());
         }

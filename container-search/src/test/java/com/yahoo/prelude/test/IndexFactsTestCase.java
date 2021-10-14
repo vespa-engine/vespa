@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.test;
 
 import java.util.ArrayList;
@@ -246,7 +246,7 @@ public class IndexFactsTestCase {
 
     private Query newQuery(String queryString, IndexFacts indexFacts) {
         Query query = new Query(queryString);
-        query.getModel().setExecution(new Execution(new Execution.Context(null, indexFacts, null, null, null)));
+        query.getModel().setExecution(new Execution(Execution.Context.createContextStub(indexFacts)));
         return query;
     }
 

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
@@ -49,6 +49,12 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>security-utils</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
     </dependency>
@@ -71,6 +77,10 @@
         <exclusion>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>config</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -167,7 +177,6 @@
             <buildLegacyVespaPlatformBundle>true</buildLegacyVespaPlatformBundle>
             <discPreInstallBundle>
                 <!-- Vespa bundles -->
-                configgen.jar,
                 config-bundle-jar-with-dependencies.jar,
                 configdefinitions-jar-with-dependencies.jar,
                 container-search-and-docproc-jar-with-dependencies.jar,
@@ -175,15 +184,17 @@
                 docprocs-jar-with-dependencies.jar,
                 hosted-zone-api-jar-with-dependencies.jar,
                 jdisc-security-filters-jar-with-dependencies.jar,
+                linguistics-components-jar-with-dependencies.jar,
                 vespaclient-container-plugin-jar-with-dependencies.jar,
                 vespa-athenz-jar-with-dependencies.jar,
-                security-utils-jar-with-dependencies.jar,
-                defaults-jar-with-dependencies.jar,
-                zkfacade-jar-with-dependencies.jar,
-                zookeeper-server-jar-with-dependencies.jar,
-                <!-- Apache http client repackaged as bundle -->
-                container-apache-http-client-bundle-jar-with-dependencies.jar,
-                <!-- Jetty -->
+                container-apache-http-client-bundle-jar-with-dependencies.jar, <!-- Apache http client repackaged as bundle -->
+
+                <!-- Vespa security utils with necessary 3rd party bundles -->
+                security-utils.jar,
+                bcpkix-jdk15on-${bouncycastle.version}.jar,
+                bcprov-jdk15on-${bouncycastle.version}.jar,
+
+               <!-- Jetty -->
                 alpn-api-${jetty-alpn.version}.jar,
                 http2-server-${jetty.version}.jar,
                 http2-common-${jetty.version}.jar,
@@ -200,6 +211,8 @@
                 jetty-servlets-${jetty.version}.jar,
                 jetty-util-${jetty.version}.jar,
                 jetty-util-ajax-${jetty.version}.jar,
+                javax.servlet-api-3.1.0.jar,
+
                 <!-- Spifly (required for OSGi service loader used by Jetty)  -->
                 org.apache.aries.spifly.dynamic.bundle-${spifly.version}.jar,
                 asm-${asm.version}.jar,
@@ -208,10 +221,7 @@
                 asm-tree-${asm.version}.jar,
                 asm-util-${asm.version}.jar,
                 <!-- Spifly end -->
-                <!-- Misc 3rd party bundles -->
-                bcpkix-jdk15on-${bouncycastle.version}.jar,
-                bcprov-jdk15on-${bouncycastle.version}.jar,
-                javax.servlet-api-3.1.0.jar,
+
                 <!-- Jersey 2 + Jackson 2 -->
                 aopalliance-repackaged-${hk2.version}.jar,
                 hk2-api-${hk2.version}.jar,

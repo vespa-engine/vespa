@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.database;
 
 import com.yahoo.vdslib.state.Node;
@@ -89,7 +89,7 @@ public class DatabaseHandler {
     private final Data pendingStore = new Data();
     private int lastKnownStateBundleVersionWrittenBySelf = -1;
     private long lastZooKeeperConnectionAttempt = 0;
-    private static final int minimumWaitBetweenFailedConnectionAttempts = 10000;
+    private int minimumWaitBetweenFailedConnectionAttempts = 10000;
     private boolean lostZooKeeperConnectionEvent = false;
     private boolean connectionEstablishmentIsAllowed = false;
     private Map<Integer, Integer> masterDataEvent = null;
@@ -119,6 +119,10 @@ public class DatabaseHandler {
 
     public int getLastKnownStateBundleVersionWrittenBySelf() {
         return lastKnownStateBundleVersionWrittenBySelf;
+    }
+
+    public void setMinimumWaitBetweenFailedConnectionAttempts(int minimumWaitBetweenFailedConnectionAttempts) {
+        this.minimumWaitBetweenFailedConnectionAttempts = minimumWaitBetweenFailedConnectionAttempts;
     }
 
     public void reset(Context context) {

@@ -1,12 +1,10 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
 import com.yahoo.vespa.flags.json.DimensionHelper;
 
 import javax.annotation.concurrent.Immutable;
-import java.util.Collections;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -72,15 +70,15 @@ public class FetchVector {
     private final Map<Dimension, String> map;
 
     public FetchVector() {
-        this.map = Collections.emptyMap();
+        this.map = Map.of();
     }
 
     public static FetchVector fromMap(Map<Dimension, String> map) {
-        return new FetchVector(new HashMap<>(map));
+        return new FetchVector(map);
     }
 
     private FetchVector(Map<Dimension, String> map) {
-        this.map = Collections.unmodifiableMap(map);
+        this.map = Map.copyOf(map);
     }
 
     public Optional<String> getValue(Dimension dimension) {
@@ -92,6 +90,10 @@ public class FetchVector {
     }
 
     public boolean isEmpty() { return map.isEmpty(); }
+
+    public boolean hasDimension(FetchVector.Dimension dimension) {
+        return map.containsKey(dimension);
+    }
 
     /**
      * Returns a new FetchVector, identical to {@code this} except for its value in {@code dimension}.

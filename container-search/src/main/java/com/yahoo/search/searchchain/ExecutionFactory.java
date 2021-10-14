@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchchain;
 
+import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.chain.ChainsConfigurer;
@@ -9,6 +10,7 @@ import com.yahoo.component.chain.model.ChainsModelBuilder;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
+import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.IndexFacts;
@@ -19,6 +21,9 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Provides creation of fully configured query Execution instances.
@@ -34,7 +39,27 @@ public class ExecutionFactory extends AbstractComponent {
     private final SpecialTokenRegistry specialTokens;
     private final Linguistics linguistics;
     private final RendererRegistry rendererRegistry;
+    private final Executor executor;
 
+    @Inject
+    public ExecutionFactory(ChainsConfig chainsConfig,
+                            IndexInfoConfig indexInfo,
+                            QrSearchersConfig clusters,
+                            ComponentRegistry<Searcher> searchers,
+                            SpecialtokensConfig specialTokens,
+                            Linguistics linguistics,
+                            ComponentRegistry<Renderer> renderers,
+                            Executor executor) {
+        this.searchChainRegistry = createSearchChainRegistry(searchers, chainsConfig);
+        this.indexFacts = new IndexFacts(new IndexModel(indexInfo, clusters)).freeze();
+        this.specialTokens = new SpecialTokenRegistry(specialTokens);
+        this.linguistics = linguistics;
+        this.rendererRegistry = new RendererRegistry(renderers.allComponents());
+        this.executor = executor != null ? executor : Executors.newSingleThreadExecutor();
+    }
+
+    /** @deprecated pass the container threadpool */
+    @Deprecated // TODO: Remove on Vespa 8
     public ExecutionFactory(ChainsConfig chainsConfig,
                             IndexInfoConfig indexInfo,
                             QrSearchersConfig clusters,
@@ -42,11 +67,7 @@ public class ExecutionFactory extends AbstractComponent {
                             SpecialtokensConfig specialTokens,
                             Linguistics linguistics,
                             ComponentRegistry<Renderer> renderers) {
-        this.searchChainRegistry = createSearchChainRegistry(searchers, chainsConfig);
-        this.indexFacts = new IndexFacts(new IndexModel(indexInfo, clusters)).freeze();
-        this.specialTokens = new SpecialTokenRegistry(specialTokens);
-        this.linguistics = linguistics;
-        this.rendererRegistry = new RendererRegistry(renderers.allComponents());
+        this(chainsConfig, indexInfo, clusters, searchers, specialTokens, linguistics, renderers, (Executor)null);
     }
 
     private SearchChainRegistry createSearchChainRegistry(ComponentRegistry<Searcher> searchers, ChainsConfig chainsConfig) {
@@ -63,7 +84,7 @@ public class ExecutionFactory extends AbstractComponent {
      */
     public Execution newExecution(Chain<? extends Searcher> searchChain) {
         return new Execution(searchChain,
-                             new Execution.Context(searchChainRegistry, indexFacts, specialTokens, rendererRegistry, linguistics));
+                             new Execution.Context(searchChainRegistry, indexFacts, specialTokens, rendererRegistry, linguistics, executor));
     }
 
     /**
@@ -72,7 +93,7 @@ public class ExecutionFactory extends AbstractComponent {
      */
     public Execution newExecution(String searchChainId) {
         return new Execution(searchChainRegistry().getChain(searchChainId),
-                             new Execution.Context(searchChainRegistry, indexFacts, specialTokens, rendererRegistry, linguistics));
+                             new Execution.Context(searchChainRegistry, indexFacts, specialTokens, rendererRegistry, linguistics, executor));
     }
 
     /** Returns the search chain registry used by this */
@@ -93,7 +114,8 @@ public class ExecutionFactory extends AbstractComponent {
                                     new ComponentRegistry<>(),
                                     new SpecialtokensConfig.Builder().build(),
                                     new SimpleLinguistics(),
-                                    new ComponentRegistry<>());
+                                    new ComponentRegistry<>(),
+                                    (Executor)null);
     }
 
 }

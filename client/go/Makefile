@@ -1,8 +1,8 @@
-# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # The version to release. Defaults to the current tag or revision.
 # Use env VERSION=X.Y.Z make ... to override
-VERSION ?= $(shell git describe --tags 2> /dev/null | sed -E "s/^vespa-|-1$$//g")
+VERSION ?= $(shell git describe --tags --exact-match 2> /dev/null | sed "s/^v//")
 DEVEL_VERSION := $(shell echo "0.0.0-`git rev-parse --short HEAD`")
 ifeq ($(VERSION),)
 	VERSION = $(DEVEL_VERSION)
@@ -14,7 +14,7 @@ DIST ?= $(CURDIR)/dist
 
 GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$(VERSION)"
 GIT_ROOT := $(shell git rev-parse --show-toplevel)
-DIST_TARGETS := dist-mac dist-linux dist-win32 dist-win64
+DIST_TARGETS := dist-mac dist-mac-arm64 dist-linux dist-win32 dist-win64
 
 all: test checkfmt install
 
@@ -26,10 +26,10 @@ all: test checkfmt install
 #
 # Example:
 #
-# $ git checkout vespa-X.Y.Z-1
-# $ make dist-github
+# $ git checkout vX.Y.Z
+# $ make dist-homebrew
 dist-homebrew: dist-version
-	brew bump-formula-pr --tag vespa-$(VERSION)-1 --version $(VERSION) vespa-cli
+	brew bump-formula-pr --version $(VERSION) vespa-cli
 
 # Create a GitHub release draft for all platforms. Note that this only creates a
 # draft, which is not publicly visible until it's explicitly published.
@@ -40,7 +40,7 @@ dist-homebrew: dist-version
 #
 # Example:
 #
-# $ git checkout vespa-X.Y.Z-1
+# $ git checkout vX.Y.Z
 # $ make dist-github
 dist-github: dist
 	gh release create v$(VERSION) --repo vespa-engine/vespa --notes-file $(CURDIR)/README.md --draft --title "Vespa CLI $(VERSION)" \
@@ -55,6 +55,9 @@ dist: $(DIST_TARGETS) dist-sha256sums
 
 dist-mac: GOOS=darwin
 dist-mac: GOARCH=amd64
+
+dist-mac-arm64: GOOS=darwin
+dist-mac-arm64: GOARCH=arm64
 
 dist-linux: GOOS=linux
 dist-linux: GOARCH=amd64
@@ -83,7 +86,7 @@ dist-sha256sums:
 
 dist-version:
 ifeq ($(VERSION),$(DEVEL_VERSION))
-	$(error Invalid release version: $(VERSION). Try 'git checkout vespa-X.Y.Z-1' or 'env VERSION=X.Y.Z make ...')
+	$(error Invalid release version: $(VERSION). Try 'git checkout vX.Y.Z' or 'env VERSION=X.Y.Z make ...')
 endif
 
 #

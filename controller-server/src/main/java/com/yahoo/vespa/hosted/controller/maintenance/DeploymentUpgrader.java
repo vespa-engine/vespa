@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
@@ -46,7 +46,6 @@ public class DeploymentUpgrader extends ControllerMaintainer {
                         Run last = controller().jobController().last(job).get();
                         Versions target = new Versions(systemVersion, last.versions().targetApplication(), Optional.of(last.versions().targetPlatform()), Optional.of(last.versions().targetApplication()));
                         if ( ! deployment.version().isBefore(target.targetPlatform())) continue;
-                        if (   controller().clock().instant().isBefore(last.start().plus(Duration.ofDays(1)))) continue;
                         if ( ! isLikelyNightFor(job)) continue;
 
                         log.log(Level.FINE, "Upgrading deployment of " + instance.id() + " in " + deployment.zone());

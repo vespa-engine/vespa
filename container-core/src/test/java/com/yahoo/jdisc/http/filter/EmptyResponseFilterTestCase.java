@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter;
 
 import com.yahoo.jdisc.Container;
@@ -40,6 +40,7 @@ public class EmptyResponseFilterTestCase {
     private static HttpRequest newRequest(final Method method, final String uri, final Version version) {
         final CurrentContainer currentContainer = mock(CurrentContainer.class);
         when(currentContainer.newReference(any(URI.class))).thenReturn(mock(Container.class));
+        when(currentContainer.newReference(any(URI.class), any(Object.class))).thenReturn(mock(Container.class));
         return HttpRequest.newServerRequest(currentContainer, URI.create(uri), method, version);
     }
 }

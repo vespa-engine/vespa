@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -45,6 +45,25 @@ TEST("test that OOMException carries message forward.") {
         caught = true;
     }
     EXPECT_TRUE(caught);
+}
+
+TEST("require that rethrow_if_unsafe will rethrow unsafe exception") {
+    try {
+        try {
+            throw OOMException("my message");
+        } catch (const std::exception &e) {
+            rethrow_if_unsafe(e);
+            TEST_ERROR("should not be reached");
+        }
+    } catch (const OOMException &) {}
+}
+
+TEST("require that rethrow_if_unsafe will not rethrow safe exception") {
+    try {
+        throw IllegalArgumentException("my message");
+    } catch (const std::exception &e) {
+        rethrow_if_unsafe(e);
+    }
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

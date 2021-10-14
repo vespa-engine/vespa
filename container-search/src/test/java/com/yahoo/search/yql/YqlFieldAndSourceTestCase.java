@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
 import static org.junit.Assert.assertEquals;
@@ -61,7 +61,7 @@ public class YqlFieldAndSourceTestCase {
                                                                .documentdb(buildDocumentdbArray()));
 
         searchChain = new Chain<>(new FieldFiller(config), mockBackend);
-        context = Execution.Context.createContextStub(null);
+        context = Execution.Context.createContextStub();
         execution = new Execution(searchChain, context);
     }
 

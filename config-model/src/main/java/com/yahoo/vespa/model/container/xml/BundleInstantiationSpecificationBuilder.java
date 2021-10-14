@@ -1,9 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import org.w3c.dom.Element;
 
 import java.util.Arrays;

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser.test;
 
 import com.yahoo.prelude.Index;
@@ -32,7 +32,7 @@ public class ExactMatchAndDefaultIndexTestCase {
         IndexFacts facts = new IndexFacts(new IndexModel(sd));
 
         Query q = new Query("?query=" + enc("a/b foo.com") + "&default-index=testexact");
-        q.getModel().setExecution(new Execution(new Execution.Context(null, facts, null, null, null)));
+        q.getModel().setExecution(new Execution(Execution.Context.createContextStub(facts)));
         assertEquals("AND testexact:a/b testexact:foo.com", q.getModel().getQueryTree().getRoot().toString());
         q = new Query("?query=" + enc("a/b foo.com"));
         assertEquals("AND a b foo com", q.getModel().getQueryTree().getRoot().toString());

@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.cache.Cache;
@@ -36,6 +36,7 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.OsVersion;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
+import com.yahoo.vespa.hosted.provision.node.TrustStoreItem;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -95,6 +96,7 @@ public class NodeSerializer {
     private static final String exclusiveToApplicationIdKey = "exclusiveTo";
     private static final String exclusiveToClusterTypeKey = "exclusiveToClusterType";
     private static final String switchHostnameKey = "switchHostname";
+    private static final String trustedCertificatesKey = "trustedCertificates";
 
     // Node resource fields
     private static final String flavorKey = "flavor";
@@ -121,6 +123,10 @@ public class NodeSerializer {
 
     // Network port fields
     private static final String networkPortsKey = "networkPorts";
+
+    // Trusted certificates fields
+    private static final String fingerprintKey = "fingerprint";
+    private static final String expiresKey = "expires";
 
     // A cache of deserialized Node objects. The cache is keyed on the hash of serialized node data.
     //
@@ -182,6 +188,7 @@ public class NodeSerializer {
         node.reservedTo().ifPresent(tenant -> object.setString(reservedToKey, tenant.value()));
         node.exclusiveToApplicationId().ifPresent(applicationId -> object.setString(exclusiveToApplicationIdKey, applicationId.serializedForm()));
         node.exclusiveToClusterType().ifPresent(clusterType -> object.setString(exclusiveToClusterTypeKey, clusterType.name()));
+        trustedCertificatesToSlime(node.trustedCertificates(), object.setArray(trustedCertificatesKey));
     }
 
     private void toSlime(Flavor flavor, Cursor object) {
@@ -236,6 +243,14 @@ public class NodeSerializer {
         });
     }
 
+    private void trustedCertificatesToSlime(List<TrustStoreItem> trustStoreItems, Cursor array) {
+        trustStoreItems.forEach(cert -> {
+            Cursor object = array.addObject();
+            object.setString(fingerprintKey, cert.fingerprint());
+            object.setLong(expiresKey, cert.expiry().toEpochMilli());
+        });
+    }
+
     // ---------------- Deserialization --------------------------------------------------
 
     public Node fromJson(Node.State state, byte[] data) {
@@ -269,7 +284,8 @@ public class NodeSerializer {
                         reservedToFromSlime(object.field(reservedToKey)),
                         exclusiveToApplicationIdFromSlime(object.field(exclusiveToApplicationIdKey)),
                         exclusiveToClusterTypeFromSlime(object.field(exclusiveToClusterTypeKey)),
-                        switchHostnameFromSlime(object.field(switchHostnameKey)));
+                        switchHostnameFromSlime(object.field(switchHostnameKey)),
+                        trustedCertificatesFromSlime(object));
     }
 
     private Status statusFromSlime(Inspector object) {
@@ -417,6 +433,13 @@ public class NodeSerializer {
         if (object.type() != Type.STRING)
             throw new IllegalArgumentException("Expected 'exclusiveToClusterType' to be a string but is " + object);
         return Optional.of(ClusterSpec.Type.from(object.asString()));
+    }
+
+    private List<TrustStoreItem> trustedCertificatesFromSlime(Inspector object) {
+        return SlimeUtils.entriesStream(object.field(trustedCertificatesKey))
+                .map(elem -> new TrustStoreItem(elem.field(fingerprintKey).asString(),
+                                                Instant.ofEpochMilli(elem.field(expiresKey).asLong())))
+                .collect(Collectors.toList());
     }
 
     // ----------------- Enum <-> string mappings ----------------------------------------

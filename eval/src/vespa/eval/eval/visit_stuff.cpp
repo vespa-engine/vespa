@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visit_stuff.h"
 #include "tensor_function.h"
@@ -60,6 +60,7 @@ vespalib::string name_of(join_fun_t fun) {
     if (fun == operation::Min::f) return "min";
     if (fun == operation::Max::f) return "max";
     if (fun == operation::Bit::f) return "bit";
+    if (fun == operation::Hamming::f) return "hamming";
     return "[other join function]";
 }
 

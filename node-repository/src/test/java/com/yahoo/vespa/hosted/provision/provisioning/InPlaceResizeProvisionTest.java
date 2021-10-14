@@ -29,20 +29,17 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * If there is no change in cluster size or topology, any increase in node resource allocation is fine as long as:
- * a. We have the necessary spare resources available on the all hosts used in the cluster
- * b. We have the necessary spare resources available on a subset of the hosts used in the cluster AND
- *    also have available capacity to migrate the remaining nodes to different hosts.
- * c. Any decrease in node resource allocation is fine.
+ * Node resources can be increased in-place if
+ *  1. No change to topology
+ *  2. No reduction to cluster size
+ *  3. There is enough spare capacity on host
  *
- * If there is an increase in cluster size, this can be combined with increase in resource allocations given there is
- * available resources and new nodes.
+ * Node resources can be decreased in-place if
+ *  1. No change to topology
+ *  2. No reduction to cluster size
+ *  3. For content/combined nodes: No increase to cluster size
  *
- * No other changes should be supported at this time, due to risks in complexity and possibly unknowns.
- * Specifically, the following is intentionally not supported by the above changes:
- *  a. Decrease in resource allocation combined with cluster size increase
- *  b. Change in resource allocation combined with cluster size reduction
- *  c. Change in resource allocation combined with cluster topology changes
+ * Node resources are increased if at least one of the components (vcpu, memory, disk, bandwidth) is increased.
  *
  * @author freva
  */
@@ -218,10 +215,10 @@ public class InPlaceResizeProvisionTest {
     public void cannot_inplace_decrease_resources_while_increasing_cluster_size() {
         addParentHosts(6, mediumResources.with(fast).with(local));
 
-        new PrepareHelper(tester, app).prepare(container1, 4, 1, mediumResources).activate();
-        assertSizeAndResources(container1, 4, new NodeResources(4, 8, 160, 1, fast, local));
+        new PrepareHelper(tester, app).prepare(content1, 4, 1, mediumResources).activate();
+        assertSizeAndResources(content1, 4, new NodeResources(4, 8, 160, 1, fast, local));
 
-        new PrepareHelper(tester, app).prepare(container1, 6, 1, smallResources);
+        new PrepareHelper(tester, app).prepare(content1, 6, 1, smallResources);
     }
 
     @Test(expected = OutOfCapacityException.class)

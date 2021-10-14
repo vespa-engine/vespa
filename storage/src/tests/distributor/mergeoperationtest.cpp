@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <tests/common/dummystoragelink.h>
 #include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_bucket_space.h>
@@ -35,7 +35,18 @@ struct MergeOperationTest : Test, DistributorStripeTestUtil {
     void TearDown() override {
         close();
     }
+
+    std::shared_ptr<MergeOperation> setup_minimal_merge_op();
 };
+
+std::shared_ptr<MergeOperation> 
+MergeOperationTest::setup_minimal_merge_op()
+{
+    document::BucketId bucket_id(16, 1);
+    auto op = std::make_shared<MergeOperation>(BucketAndNodes(makeDocumentBucket(bucket_id), toVector<uint16_t>(0, 1, 2)));
+    op->setIdealStateManager(&getIdealStateManager());
+    return op;
+}
 
 TEST_F(MergeOperationTest, simple) {
     getClock().setAbsoluteTimeInSeconds(10);
@@ -498,6 +509,24 @@ TEST_F(MergeOperationTest, merge_operation_is_not_blocked_by_request_bucket_info
 
     // Not blocked; bucket info request is for another bucket
     EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer));
+}
+
+TEST_F(MergeOperationTest, on_blocked_updates_metrics)
+{
+    auto op = setup_minimal_merge_op();
+    auto metrics = getIdealStateManager().getMetrics().operations[IdealStateOperation::MERGE_BUCKET];
+    EXPECT_EQ(0, metrics->blocked.getValue());
+    op->on_blocked();
+    EXPECT_EQ(1, metrics->blocked.getValue());
+}
+
+TEST_F(MergeOperationTest, on_throttled_updates_metrics)
+{
+    auto op = setup_minimal_merge_op();
+    auto metrics = getIdealStateManager().getMetrics().operations[IdealStateOperation::MERGE_BUCKET];
+    EXPECT_EQ(0, metrics->throttled.getValue());
+    op->on_throttled();
+    EXPECT_EQ(1, metrics->throttled.getValue());
 }
 
 } // storage::distributor

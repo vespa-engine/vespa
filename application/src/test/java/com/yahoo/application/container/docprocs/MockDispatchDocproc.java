@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application.container.docprocs;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -54,7 +54,7 @@ public class MockDispatchDocproc extends DocumentProcessor {
         return new RequestDispatch() {
             @Override
             protected Request newRequest() {
-                return new MbusRequest(currentContainer, uri, message.setRoute(route)).setServerRequest(false);
+                return new MbusRequest(currentContainer, uri, message.setRoute(route), false);
             }
         };
     }

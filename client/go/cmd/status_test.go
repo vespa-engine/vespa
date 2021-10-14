@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // status command tests
 // Author: bratseth
 
@@ -44,7 +44,6 @@ func TestStatusErrorResponse(t *testing.T) {
 
 func assertDeployStatus(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{}
-	convergeServices(client)
 	assert.Equal(t,
 		"Deploy API at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status", "deploy"}, args),
@@ -54,14 +53,12 @@ func assertDeployStatus(target string, args []string, t *testing.T) {
 
 func assertQueryStatus(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{}
-	convergeServices(client)
 	assert.Equal(t,
 		"Container (query API) at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status", "query"}, args),
 		"vespa status container")
 	assert.Equal(t, target+"/ApplicationStatus", client.lastRequest.URL.String())
 
-	convergeServices(client)
 	assert.Equal(t,
 		"Container (query API) at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status"}, args),
@@ -71,7 +68,6 @@ func assertQueryStatus(target string, args []string, t *testing.T) {
 
 func assertDocumentStatus(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{}
-	convergeServices(client)
 	assert.Equal(t,
 		"Container (document API) at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status", "document"}, args),
@@ -81,10 +77,12 @@ func assertDocumentStatus(target string, args []string, t *testing.T) {
 
 func assertQueryStatusError(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{}
-	convergeServices(client)
 	client.NextStatus(500)
+	cmd := []string{"status", "container"}
+	cmd = append(cmd, args...)
+	_, outErr := execute(command{args: cmd}, t, client)
 	assert.Equal(t,
-		"Container (query API) at "+target+" is not ready\nStatus 500\n",
-		executeCommand(t, client, []string{"status", "container"}, args),
+		"Error: Container (query API) at "+target+" is not ready\nStatus 500\n",
+		outErr,
 		"vespa status container")
 }

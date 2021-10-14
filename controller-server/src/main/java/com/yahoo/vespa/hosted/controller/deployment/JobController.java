@@ -491,8 +491,14 @@ public class JobController {
         });
     }
 
+
     /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment. */
     public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage) {
+        deploy(id, type, platform, applicationPackage, false);
+    }
+
+    /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment.*/
+    public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage, boolean dryRun) {
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             if ( ! application.get().instances().containsKey(id.instance()))
                 application = controller.applications().withNewInstance(application, id);
@@ -518,12 +524,14 @@ public class JobController {
                   type,
                   new Versions(platform.orElse(applicationPackage.deploymentSpec().majorVersion()
                                                                  .flatMap(controller.applications()::lastCompatibleVersion)
+                                                                 .or(() -> lastRun.map(run -> run.versions().targetPlatform())
+                                                                                  .filter(controller.readVersionStatus()::isActive))
                                                                  .orElseGet(controller::readSystemVersion)),
                                version,
                                lastRun.map(run -> run.versions().targetPlatform()),
                                lastRun.map(run -> run.versions().targetApplication())),
                   false,
-                  JobProfile.development);
+                  dryRun ? JobProfile.developmentDryRun : JobProfile.development);
         });
 
         locked(id, type, __ -> {

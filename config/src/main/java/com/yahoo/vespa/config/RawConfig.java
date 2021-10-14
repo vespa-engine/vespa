@@ -194,7 +194,7 @@ public class RawConfig extends ConfigInstance {
         }
         hash = 31 * hash + errorCode;
         if (! isError()) {
-            // configMd5 and generation only matter when the RawConfig is not an error.
+            // checksum and generation only matter when the RawConfig is not an error.
             hash = 31 * hash + (int)(generation ^(generation >>>32));
             hash = 31 * hash + payloadChecksums.hashCode();
         }

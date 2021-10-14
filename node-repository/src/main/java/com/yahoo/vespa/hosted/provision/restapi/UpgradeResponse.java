@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.container.jdisc.HttpResponse;
@@ -21,13 +21,11 @@ public class UpgradeResponse extends HttpResponse {
 
     private final InfrastructureVersions infrastructureVersions;
     private final OsVersions osVersions;
-    private final ContainerImages containerImages;
 
     public UpgradeResponse(InfrastructureVersions infrastructureVersions, OsVersions osVersions, ContainerImages containerImages) {
         super(200);
         this.infrastructureVersions = infrastructureVersions;
         this.osVersions = osVersions;
-        this.containerImages = containerImages;
     }
 
     @Override
@@ -41,9 +39,7 @@ public class UpgradeResponse extends HttpResponse {
         Cursor osVersionsObject = root.setObject("osVersions");
         osVersions.readChange().targets().forEach((nodeType, target) -> osVersionsObject.setString(nodeType.name(), target.version().toFullString()));
 
-
-        Cursor dockerImagesObject = root.setObject("dockerImages");
-        containerImages.getImages().forEach((nodeType, image) -> dockerImagesObject.setString(nodeType.name(), image.asString()));
+        root.setObject("dockerImages"); // Unused, but present to avoid breaking API
 
         new JsonFormat(true).encode(stream, slime);
     }

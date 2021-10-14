@@ -1,10 +1,12 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.yahoo.cloud.config.SlobroksConfig;
+import com.yahoo.component.Vtag;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.ConfigInstance;
@@ -43,7 +45,6 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -54,6 +55,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -66,6 +68,7 @@ public final class ConfiguredApplication implements Application {
 
     private static final Logger log = Logger.getLogger(ConfiguredApplication.class.getName());
     private static final Set<ClientProvider> startedClients = Collections.newSetFromMap(new WeakHashMap<>());
+    static final String SANITIZE_FILENAME = "[/,;]";
 
     private static final Set<ServerProvider> startedServers = Collections.newSetFromMap(new IdentityHashMap<>());
     private final SubscriberFactory subscriberFactory;
@@ -74,6 +77,8 @@ public final class ConfiguredApplication implements Application {
     private final String configId;
     private final OsgiFramework osgiFramework;
     private final com.yahoo.jdisc.Timer timerSingleton;
+    private final AtomicBoolean dumpHeapOnShutdownTimeout = new AtomicBoolean(false);
+    private final AtomicDouble shudownTimeoutS = new AtomicDouble(50.0);
     // Subscriber that is used when this is not a standalone-container. Subscribes
     // to config to make sure that container will be registered in slobrok (by {@link com.yahoo.jrt.slobrok.api.Register})
     // if slobrok config changes (typically slobroks moving to other nodes)
@@ -99,7 +104,7 @@ public final class ConfiguredApplication implements Application {
 
     static {
         LogSetup.initVespaLogging("Container");
-        log.log(Level.INFO, "Starting container");
+        log.log(Level.INFO, "Starting jdisc" + (Vtag.currentVersion.isEmpty() ? "" : " at version " + Vtag.currentVersion));
     }
 
     /**
@@ -133,7 +138,7 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void start() {
         qrConfig = getConfig(QrConfig.class, true);
-
+        reconfigure(qrConfig);
         hackToInitializeServer(qrConfig);
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
@@ -222,6 +227,7 @@ public final class ConfiguredApplication implements Application {
             while (true) {
                 subscriber.waitNextGeneration(false);
                 QrConfig newConfig = QrConfig.class.cast(first(subscriber.config().values()));
+                reconfigure(qrConfig);
                 if (qrConfig.rpc().port() != newConfig.rpc().port()) {
                     com.yahoo.protect.Process.logAndDie(
                             "Rpc port config has changed from " +
@@ -233,6 +239,11 @@ public final class ConfiguredApplication implements Application {
         } finally {
             subscriber.close();
         }
+    }
+
+    void reconfigure(QrConfig qrConfig) {
+        dumpHeapOnShutdownTimeout.set(qrConfig.shutdown().dumpHeapOnTimeout());
+        shudownTimeoutS.set(qrConfig.shutdown().timeout());
     }
 
     private void initializeAndActivateContainer(ContainerBuilder builder) {
@@ -397,17 +408,21 @@ public final class ConfiguredApplication implements Application {
         }
     }
 
+    static String santizeFileName(String s) {
+        return s.trim()
+                .replace('\\', '.')
+                .replaceAll(SANITIZE_FILENAME, ".");
+    }
+
     // Workaround for ApplicationLoader.stop not being able to shutdown
     private void startShutdownDeadlineExecutor() {
         shutdownDeadlineExecutor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("Shutdown deadline timer"));
         shutdownDeadlineExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
-        long delayMillis = 50 * 1000;
+        long delayMillis = (long)(shudownTimeoutS.get() * 1000.0);
         shutdownDeadlineExecutor.schedule(() -> {
-            String heapDumpName = Defaults.getDefaults().underVespaHome("var/crash/java_pid.") + ProcessHandle.current().pid() + ".hprof";
-            try {
+            if (dumpHeapOnShutdownTimeout.get()) {
+                String heapDumpName = Defaults.getDefaults().underVespaHome("var/crash/java_pid.") + santizeFileName(configId) + "." + ProcessHandle.current().pid() + ".hprof";
                 com.yahoo.protect.Process.dumpHeap(heapDumpName, true);
-            } catch (IOException e) {
-                log.log(Level.WARNING, "Failed writing heap dump:", e);
             }
             com.yahoo.protect.Process.logAndDie(
                     "Timed out waiting for application shutdown. Please check that all your request handlers " +

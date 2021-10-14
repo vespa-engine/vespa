@@ -1,12 +1,14 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
+import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.*;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
@@ -30,6 +32,9 @@ public abstract class Expression extends Selectable {
     protected Expression(DataType inputType) {
         this.inputType = inputType;
     }
+
+    /** Sets the document type and field the statement this expression is part of will write to */
+    public void setStatementOutput(DocumentType documentType, Field field) {}
 
     public final FieldValue execute(FieldValue val) {
         return execute(new ExecutionContext().setValue(val));
@@ -186,11 +191,11 @@ public abstract class Expression extends Selectable {
 
     /** Creates an expression with simple lingustics for testing */
     public static Expression fromString(String expression) throws ParseException {
-        return fromString(expression, new SimpleLinguistics(), Encoder.throwsOnUse);
+        return fromString(expression, new SimpleLinguistics(), Embedder.throwsOnUse);
     }
 
-    public static Expression fromString(String expression, Linguistics linguistics, Encoder encoder) throws ParseException {
-        return newInstance(new ScriptParserContext(linguistics, encoder).setInputStream(new IndexingInput(expression)));
+    public static Expression fromString(String expression, Linguistics linguistics, Embedder embedder) throws ParseException {
+        return newInstance(new ScriptParserContext(linguistics, embedder).setInputStream(new IndexingInput(expression)));
     }
 
     public static Expression newInstance(ScriptParserContext context) throws ParseException {

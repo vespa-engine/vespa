@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "slimeconfigrequest.h"
 #include "connection.h"
 #include <vespa/config/common/configkey.h>
@@ -23,7 +23,7 @@ const vespalib::string SlimeConfigRequest::REQUEST_TYPES = "s";
 
 SlimeConfigRequest::SlimeConfigRequest(Connection * connection,
                                        const ConfigKey & key,
-                                       const vespalib::string & configMd5,
+                                       const vespalib::string & configXxhash64,
                                        int64_t currentGeneration,
                                        const vespalib::string & hostName,
                                        int64_t serverTimeout,
@@ -35,7 +35,7 @@ SlimeConfigRequest::SlimeConfigRequest(Connection * connection,
     : FRTConfigRequest(connection, key),
       _data()
 {
-    populateSlimeRequest(key, configMd5, currentGeneration, hostName, serverTimeout, trace, vespaVersion, protocolVersion, compressionType);
+    populateSlimeRequest(key, configXxhash64, currentGeneration, hostName, serverTimeout, trace, vespaVersion, protocolVersion, compressionType);
     _request->SetMethodName(methodName.c_str());
     _parameters.AddString(createJsonFromSlime(_data).c_str());
 }
@@ -43,13 +43,13 @@ SlimeConfigRequest::SlimeConfigRequest(Connection * connection,
 bool
 SlimeConfigRequest::verifyState(const ConfigState & state) const
 {
-    return (state.md5.compare(_data[REQUEST_CONFIG_MD5].asString().make_stringref()) == 0 &&
+    return (state.xxhash64.compare(_data[REQUEST_CONFIG_XXHASH64].asString().make_stringref()) == 0 &&
             state.generation == _data[REQUEST_CURRENT_GENERATION].asLong());
 }
 
 void
 SlimeConfigRequest::populateSlimeRequest(const ConfigKey & key,
-                                         const vespalib::string & configMd5,
+                                         const vespalib::string & configXxhash64,
                                          int64_t currentGeneration,
                                          const vespalib::string & hostName,
                                          int64_t serverTimeout,
@@ -67,7 +67,7 @@ SlimeConfigRequest::populateSlimeRequest(const ConfigKey & key,
     def.serialize(root.setArray(REQUEST_DEF_CONTENT));
     root.setString(REQUEST_CLIENT_CONFIGID, Memory(key.getConfigId()));
     root.setString(REQUEST_CLIENT_HOSTNAME, Memory(hostName));
-    root.setString(REQUEST_CONFIG_MD5, Memory(configMd5));
+    root.setString(REQUEST_CONFIG_XXHASH64, Memory(configXxhash64));
     root.setLong(REQUEST_CURRENT_GENERATION, currentGeneration);
     root.setLong(REQUEST_TIMEOUT, serverTimeout);
     trace.serialize(root.setObject(REQUEST_TRACE));

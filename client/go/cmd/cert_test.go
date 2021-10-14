@@ -14,7 +14,7 @@ import (
 )
 
 func TestCert(t *testing.T) {
-	homeDir := t.TempDir()
+	homeDir := filepath.Join(t.TempDir(), ".vespa")
 	pkgDir := mockApplicationPackage(t, false)
 	out, _ := execute(command{args: []string{"cert", "-a", "t1.a1.i1", pkgDir}, homeDir: homeDir}, t, nil)
 
@@ -23,17 +23,17 @@ func TestCert(t *testing.T) {
 
 	appDir := filepath.Join(pkgDir, "src", "main", "application")
 	pkgCertificate := filepath.Join(appDir, "security", "clients.pem")
-	certificate := filepath.Join(homeDir, ".vespa", app.String(), "data-plane-public-cert.pem")
-	privateKey := filepath.Join(homeDir, ".vespa", app.String(), "data-plane-private-key.pem")
+	certificate := filepath.Join(homeDir, app.String(), "data-plane-public-cert.pem")
+	privateKey := filepath.Join(homeDir, app.String(), "data-plane-private-key.pem")
 
 	assert.Equal(t, fmt.Sprintf("Success: Certificate written to %s\nSuccess: Certificate written to %s\nSuccess: Private key written to %s\n", pkgCertificate, certificate, privateKey), out)
 
-	out, _ = execute(command{args: []string{"cert", "-a", "t1.a1.i1", pkgDir}, homeDir: homeDir}, t, nil)
-	assert.Contains(t, out, fmt.Sprintf("Error: Application package %s already contains a certificate", appDir))
+	_, outErr := execute(command{args: []string{"cert", "-a", "t1.a1.i1", pkgDir}, homeDir: homeDir}, t, nil)
+	assert.Contains(t, outErr, fmt.Sprintf("Error: Application package %s already contains a certificate", appDir))
 }
 
 func TestCertCompressedPackage(t *testing.T) {
-	homeDir := t.TempDir()
+	homeDir := filepath.Join(t.TempDir(), ".vespa")
 	pkgDir := mockApplicationPackage(t, true)
 	zipFile := filepath.Join(pkgDir, "target", "application.zip")
 	err := os.MkdirAll(filepath.Dir(zipFile), 0755)
@@ -41,13 +41,13 @@ func TestCertCompressedPackage(t *testing.T) {
 	_, err = os.Create(zipFile)
 	assert.Nil(t, err)
 
-	out, _ := execute(command{args: []string{"cert", "-a", "t1.a1.i1", pkgDir}, homeDir: homeDir}, t, nil)
-	assert.Contains(t, out, "Error: Cannot add certificate to compressed application package")
+	_, outErr := execute(command{args: []string{"cert", "-a", "t1.a1.i1", pkgDir}, homeDir: homeDir}, t, nil)
+	assert.Contains(t, outErr, "Error: Cannot add certificate to compressed application package")
 
 	err = os.Remove(zipFile)
 	assert.Nil(t, err)
 
-	out, _ = execute(command{args: []string{"cert", "-f", "-a", "t1.a1.i1", pkgDir}, homeDir: homeDir}, t, nil)
+	out, _ := execute(command{args: []string{"cert", "-f", "-a", "t1.a1.i1", pkgDir}, homeDir: homeDir}, t, nil)
 	assert.Contains(t, out, "Success: Certificate written to")
 	assert.Contains(t, out, "Success: Private key written to")
 }

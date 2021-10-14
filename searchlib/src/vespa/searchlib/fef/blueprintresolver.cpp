@@ -1,10 +1,12 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "blueprintresolver.h"
 #include "blueprintfactory.h"
 #include "featurenameparser.h"
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <stack>
 #include <cassert>
 #include <set>
@@ -14,6 +16,8 @@
 LOG_SETUP(".fef.blueprintresolver");
 
 using vespalib::make_string_short::fmt;
+using vespalib::ThreadStackExecutor;
+using vespalib::makeLambdaTask;
 
 namespace search::fef {
 
@@ -271,8 +275,7 @@ BlueprintResolver::compile()
 {
     assert(_executorSpecs.empty()); // only one compilation allowed
     Compiler compiler(_factory, _indexEnv, _executorSpecs, _featureMap);
-    std::thread compile_thread([&]()
-                               {
+    auto compile_task = makeLambdaTask([&]() {
                                    compiler.probe_stack();
                                    for (const auto &seed: _seeds) {
                                        auto ref = compiler.resolve_feature(seed, Blueprint::AcceptInput::ANY);
@@ -282,7 +285,10 @@ BlueprintResolver::compile()
                                        _seedMap.emplace(FeatureNameParser(seed).featureName(), ref);
                                    }
                                });
-    compile_thread.join();
+    ThreadStackExecutor executor(1, 8_Mi);
+    executor.execute(std::move(compile_task));
+    executor.sync();
+    executor.shutdown();
     size_t stack_usage = compiler.stack_usage();
     if (stack_usage > (128_Ki)) {
         LOG(warning, "high stack usage: %zu bytes", stack_usage);

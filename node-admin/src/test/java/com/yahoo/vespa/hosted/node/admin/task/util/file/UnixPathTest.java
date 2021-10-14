@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
@@ -63,11 +63,11 @@ public class UnixPathTest {
         UnixPath unixPath = new UnixPath(path);
         unixPath.writeUtf8File("foo");
 
-        unixPath.setOwner("owner");
-        assertEquals("owner", unixPath.getOwner());
+        unixPath.setOwnerId(123);
+        assertEquals(123, unixPath.getOwnerId());
 
-        unixPath.setGroup("group");
-        assertEquals("group", unixPath.getGroup());
+        unixPath.setGroupId(456);
+        assertEquals(456, unixPath.getGroupId());
     }
 
     @Test
@@ -124,6 +124,22 @@ public class UnixPathTest {
         assertFalse(dir1 + " deleted recursively", Files.exists(file1));
         assertFalse(dir1 + " deleted recursively", Files.exists(dir2));
         assertFalse(dir1 + " deleted recursively", Files.exists(dir1));
+    }
+
+    @Test
+    public void isEmptyDirectory() {
+        var path = new UnixPath((fs.getPath("/foo")));
+        assertFalse(path.isEmptyDirectory());
+
+        path.writeUtf8File("");
+        assertFalse(path.isEmptyDirectory());
+
+        path.deleteIfExists();
+        path.createDirectory();
+        assertTrue(path.isEmptyDirectory());
+
+        path.resolve("bar").writeUtf8File("");
+        assertFalse(path.isEmptyDirectory());
     }
 
     @Test

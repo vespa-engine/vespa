@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "top_level_bucket_db_updater.h"
 #include "bucket_db_prune_elision.h"
@@ -50,19 +50,19 @@ TopLevelBucketDBUpdater::TopLevelBucketDBUpdater(const DistributorNodeContext& n
       _stale_reads_enabled(false)
 {
     // FIXME STRIPE top-level Distributor needs a proper way to track the current cluster state bundle!
-    propagate_active_state_bundle_internally();
+    propagate_active_state_bundle_internally(true); // We're just starting up so assume ownership transfer.
     bootstrap_distribution_config(bootstrap_distribution);
 }
 
 TopLevelBucketDBUpdater::~TopLevelBucketDBUpdater() = default;
 
 void
-TopLevelBucketDBUpdater::propagate_active_state_bundle_internally() {
+TopLevelBucketDBUpdater::propagate_active_state_bundle_internally(bool has_bucket_ownership_transfer) {
     for (auto& elem : _op_ctx.bucket_space_states()) {
         elem.second->set_cluster_state(_active_state_bundle.getDerivedClusterState(elem.first));
     }
     if (_state_activation_listener) {
-        _state_activation_listener->on_cluster_state_bundle_activated(_active_state_bundle);
+        _state_activation_listener->on_cluster_state_bundle_activated(_active_state_bundle, has_bucket_ownership_transfer);
     }
 }
 
@@ -412,7 +412,7 @@ TopLevelBucketDBUpdater::enable_current_cluster_state_bundle_in_distributor_and_
     _active_state_bundle = _pending_cluster_state->getNewClusterStateBundle();
 
     guard.enable_cluster_state_bundle(state, _pending_cluster_state->hasBucketOwnershipTransfer());
-    propagate_active_state_bundle_internally();
+    propagate_active_state_bundle_internally(_pending_cluster_state->hasBucketOwnershipTransfer());
 
     LOG(debug, "TopLevelBucketDBUpdater finished processing state %s",
         state.getBaselineClusterState()->toString().c_str());
@@ -425,7 +425,7 @@ void TopLevelBucketDBUpdater::simulate_cluster_state_bundle_activation(const lib
     guard->enable_cluster_state_bundle(activated_state, has_bucket_ownership_transfer);
 
     _active_state_bundle = activated_state;
-    propagate_active_state_bundle_internally();
+    propagate_active_state_bundle_internally(has_bucket_ownership_transfer);
 }
 
 void

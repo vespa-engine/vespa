@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
@@ -17,7 +17,7 @@ public class StateV1HealthMonitorTest {
     public void downThenUpThenDown() throws Exception {
         StateV1HealthClient client = mock(StateV1HealthClient.class);
 
-        StateV1HealthUpdater updater = new StateV1HealthUpdater("https://foo/state/v1/health", client, true);
+        StateV1HealthUpdater updater = new StateV1HealthUpdater("https://foo/state/v1/health", client);
         RunletExecutor executor = new RunletExecutorImpl(2);
         try (StateV1HealthMonitor monitor = new StateV1HealthMonitor(updater, executor, Duration.ofMillis(10))) {
             assertEquals(ServiceStatus.UNKNOWN, monitor.getStatus().serviceStatus());

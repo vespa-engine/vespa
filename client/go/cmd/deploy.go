@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // vespa deploy command
 // Author: bratseth
 
@@ -39,8 +39,15 @@ When this returns successfully the application package has been validated
 and activated on config servers. The process of applying it on individual nodes
 has started but may not have completed.
 
-If application directory is not specified, it defaults to working directory.`,
-	Example:           "$ vespa deploy .",
+If application directory is not specified, it defaults to working directory.
+
+When deploying to Vespa Cloud the system can be overridden by setting the
+environment variable VESPA_CLI_CLOUD_SYSTEM. This is intended for internal use
+only.`,
+	Example: `$ vespa deploy .
+$ vespa deploy -t cloud
+$ vespa deploy -t cloud -z dev.aws-us-east-1c  # -z can be omitted here as this zone is the default
+$ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 	Args:              cobra.MaximumNArgs(1),
 	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -55,20 +62,7 @@ If application directory is not specified, it defaults to working directory.`,
 			return
 		}
 		target := getTarget()
-		opts := vespa.DeploymentOpts{ApplicationPackage: pkg, Target: target}
-		if opts.IsCloud() {
-			deployment := deploymentFromArgs()
-			if !opts.ApplicationPackage.HasCertificate() {
-				fatalErrHint(fmt.Errorf("Missing certificate in application package"), "Applications in Vespa Cloud require a certificate", "Try 'vespa cert'")
-				return
-			}
-			opts.APIKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
-			if err != nil {
-				fatalErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
-				return
-			}
-			opts.Deployment = deployment
-		}
+		opts := getDeploymentOpts(cfg, pkg, target)
 		if sessionOrRunID, err := vespa.Deploy(opts); err == nil {
 			if opts.IsCloud() {
 				printSuccess("Triggered deployment of ", color.Cyan(pkg.Path), " with run ID ", color.Cyan(sessionOrRunID))
@@ -78,7 +72,7 @@ If application directory is not specified, it defaults to working directory.`,
 			if opts.IsCloud() {
 				log.Printf("\nUse %s for deployment status, or follow this deployment at", color.Cyan("vespa status"))
 				log.Print(color.Cyan(fmt.Sprintf("%s/tenant/%s/application/%s/dev/instance/%s/job/%s-%s/run/%d",
-					defaultConsoleURL,
+					getConsoleURL(),
 					opts.Deployment.Application.Tenant, opts.Deployment.Application.Application, opts.Deployment.Application.Instance,
 					opts.Deployment.Zone.Environment, opts.Deployment.Zone.Region,
 					sessionOrRunID)))

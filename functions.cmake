@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # @author Vegard Sjonfjell
 # @author Arnstein Ressem
 
@@ -125,16 +125,12 @@ function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
         get_filename_component(CONFIG_NAME ${RELATIVE_CONFIG_DEF_PATH} NAME_WE)
     endif()
 
-    # configgen.jar takes the parent dir of the destination dir and the destination dirname as separate parameters
-    # so it can produce the correct include statements within the generated .cpp-file (silent cry)
     # Make config path an absolute_path
     set(CONFIG_DEF_PATH ${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_CONFIG_DEF_PATH})
 
-    # Config destination is the 
+    # Config destination is the current source directory (or parallel in build tree)
+    # configgen.jar takes the destination dirname as a property parameter
     set(CONFIG_DEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
-
-    # Get parent of destination directory
-    set(CONFIG_DEST_PARENT_DIR ${CONFIG_DEST_DIR}/..)
 
     # Get destination dirname
     get_filename_component(CONFIG_DEST_DIRNAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
@@ -144,8 +140,8 @@ function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
 
     add_custom_command(
         OUTPUT ${CONFIG_H_PATH} ${CONFIG_CPP_PATH}
-        COMMAND java -Dconfig.spec=${CONFIG_DEF_PATH} -Dconfig.dest=${CONFIG_DEST_PARENT_DIR} -Dconfig.lang=cpp -Dconfig.subdir=${CONFIG_DEST_DIRNAME} -Dconfig.dumpTree=false -Xms64m -Xmx64m -jar ${PROJECT_SOURCE_DIR}/configgen/target/configgen.jar
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+        COMMAND java -Dconfig.spec=${CONFIG_DEF_PATH} -Dconfig.dest=${CONFIG_DEST_DIR} -Dconfig.lang=cpp -Dconfig.dumpTree=false -Xms64m -Xmx64m -jar ${PROJECT_SOURCE_DIR}/configgen/target/configgen.jar
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Generating cpp config for ${CONFIG_NAME} in ${CMAKE_CURRENT_SOURCE_DIR}"
         MAIN_DEPENDENCY ${CONFIG_DEF_PATH}
         )
@@ -156,11 +152,6 @@ function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
     endif()
     # Add generated to sources for target
     target_sources(${TARGET} PRIVATE ${CONFIG_H_PATH} ${CONFIG_CPP_PATH})
-
-    # Needed to be able to do a #include <CONFIG_DEST_DIRNAME/config-<name>.h> for this target
-    # This is used within the generated config-<name>.cpp
-    # TODO: Should modify configgen to use #include <vespa/<modulename>/config-<name>.h> instead
-    target_include_directories(${TARGET} PRIVATE ${CONFIG_DEST_PARENT_DIR})
 
     # Needed to be able to do a #include <config-<name>.h> for this target
     # This is used within some unit tests

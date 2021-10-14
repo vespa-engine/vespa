@@ -1,11 +1,13 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -21,15 +23,18 @@ import java.util.stream.Collectors;
  */
 public class HostCapacity {
 
-    private final NodeList allNodes;
+    private final NodesAndHosts<? extends NodeList> allNodes;
     private final HostResourcesCalculator hostResourcesCalculator;
 
     public HostCapacity(NodeList allNodes, HostResourcesCalculator hostResourcesCalculator) {
+        this(NodesAndHosts.create(Objects.requireNonNull(allNodes, "allNodes must be non-null")), hostResourcesCalculator);
+    }
+    public HostCapacity(NodesAndHosts<? extends NodeList> allNodes, HostResourcesCalculator hostResourcesCalculator) {
         this.allNodes = Objects.requireNonNull(allNodes, "allNodes must be non-null");
         this.hostResourcesCalculator = Objects.requireNonNull(hostResourcesCalculator, "hostResourcesCalculator must be non-null");
     }
 
-    public NodeList allNodes() { return allNodes; }
+    public NodeList allNodes() { return allNodes.nodes(); }
 
     /**
      * Spare hosts are the hosts in the system with the most free capacity. A zone may reserve a minimum number of spare
@@ -42,14 +47,33 @@ public class HostCapacity {
      * @param count the max number of spare hosts to return
      */
     public Set<Node> findSpareHosts(List<Node> candidates, int count) {
-        return candidates.stream()
-                         .filter(node -> node.type().canRun(NodeType.tenant))
-                         .filter(host -> host.state() == Node.State.active)
-                         .filter(host -> host.reservedTo().isEmpty())
-                         .filter(host -> freeIps(host) > 0)
-                         .sorted(this::compareWithoutInactive)
-                         .limit(count)
-                         .collect(Collectors.toSet());
+        ArrayList<NodeWithHostResources> nodesWithIp = new ArrayList<>(candidates.size());
+        for (Node node : candidates) {
+            if (node.type().canRun(NodeType.tenant) && (node.state() == Node.State.active) && node.reservedTo().isEmpty()) {
+                int numFreeIps = freeIps(node);
+                if (numFreeIps > 0) {
+                    nodesWithIp.add(new NodeWithHostResources(node, availableCapacityOf(node, true, false), numFreeIps));
+                }
+            }
+        }
+        return nodesWithIp.stream().sorted().limit(count).map(n -> n.node).collect(Collectors.toSet());
+    }
+    private static class NodeWithHostResources implements Comparable<NodeWithHostResources> {
+        private final Node node;
+        private final NodeResources hostResources;
+        private final int numFreeIps;
+        NodeWithHostResources(Node node, NodeResources hostResources, int freeIps) {
+            this.node = node;
+            this.hostResources = hostResources;
+            this.numFreeIps = freeIps;
+        }
+
+        @Override
+        public int compareTo(HostCapacity.NodeWithHostResources b) {
+            int result = compare(b.hostResources, hostResources);
+            if (result != 0) return result;
+            return b.numFreeIps - numFreeIps;
+        }
     }
 
     public Set<Node> findSpareHostsInDynamicallyProvisionedZones(List<Node> candidates) {
@@ -61,15 +85,7 @@ public class HostCapacity {
                 .collect(Collectors.toSet());
     }
 
-    private int compareWithoutInactive(Node a, Node b) {
-        int result = compare(availableCapacityOf(b, true, false), availableCapacityOf(a, true, false));
-        if (result != 0) return result;
-
-        // If resources are equal we want to assign to the one with the most IP addresses free
-        return freeIps(b) - freeIps(a);
-    }
-
-    private int compare(NodeResources a, NodeResources b) {
+    private static int compare(NodeResources a, NodeResources b) {
         return NodeResourceComparator.defaultOrder().compare(a, b);
     }
 
@@ -81,9 +97,9 @@ public class HostCapacity {
     /** Returns the number of available IP addresses on given host */
     int freeIps(Node host) {
         if (host.type() == NodeType.host) {
-            return host.ipConfig().pool().eventuallyUnusedAddressCount(allNodes);
+            return (allNodes.eventuallyUnusedIpAddressCount(host));
         }
-        return host.ipConfig().pool().findUnusedIpAddresses(allNodes).size();
+        return host.ipConfig().pool().findUnusedIpAddresses(allNodes.nodes()).size();
     }
 
     /** Returns the capacity of given host that is both free and usable */
@@ -110,7 +126,7 @@ public class HostCapacity {
         if (   requireIps && freeIps(host) == 0) return NodeResources.zero();
 
         NodeResources hostResources = hostResourcesCalculator.advertisedResourcesOf(host.flavor());
-        return allNodes.childrenOf(host).asList().stream()
+        return allNodes.childrenOf(host).stream()
                        .filter(node -> !(excludeInactive && inactiveOrRetired(node)))
                        .map(node -> node.flavor().resources().justNumbers())
                        .reduce(hostResources.justNumbers(), NodeResources::subtract)

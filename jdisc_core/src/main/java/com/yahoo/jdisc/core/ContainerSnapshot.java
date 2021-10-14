@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
 import com.google.inject.Key;
@@ -28,13 +28,13 @@ class ContainerSnapshot extends AbstractResource implements Container {
     private final BindingSet<RequestHandler> clientBindings;
 
     ContainerSnapshot(ActiveContainer container, BindingSet<RequestHandler> serverBindings,
-                      BindingSet<RequestHandler> clientBindings)
+                      BindingSet<RequestHandler> clientBindings, Object context)
     {
         this.timeoutMgr = container.timeoutManager();
         this.container = container;
         this.serverBindings = serverBindings;
         this.clientBindings = clientBindings;
-        this.containerReference = container.refer();
+        this.containerReference = container.refer(context);
     }
 
     @Override
@@ -98,6 +98,11 @@ class ContainerSnapshot extends AbstractResource implements Container {
         @Override
         public ResourceReference refer() {
             return delegate.refer();
+        }
+
+        @Override
+        public ResourceReference refer(Object context) {
+            return delegate.refer(context);
         }
 
         @Override

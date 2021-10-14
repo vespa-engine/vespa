@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
 import com.google.inject.Inject;
@@ -23,7 +23,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.query.parser.ParseException;
@@ -106,7 +106,7 @@ public class SearchHandler extends LoggingRequestHandler {
     
     private final String selfHostname = HostName.getLocalhost();
 
-    private final Encoder encoder;
+    private final Embedder embedder;
 
     private final ExecutionFactory executionFactory;
 
@@ -134,9 +134,9 @@ public class SearchHandler extends LoggingRequestHandler {
                          ContainerThreadPool threadpool,
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ContainerHttpConfig config,
-                         Encoder encoder,
+                         Embedder embedder,
                          ExecutionFactory executionFactory) {
-        this(statistics, metric, threadpool.executor(), queryProfileRegistry, encoder, executionFactory,
+        this(statistics, metric, threadpool.executor(), queryProfileRegistry, embedder, executionFactory,
              config.numQueriesToTraceOnDebugAfterConstruction(),
              config.hostResponseHeaderKey().equals("") ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()));
     }
@@ -170,7 +170,7 @@ public class SearchHandler extends LoggingRequestHandler {
              metric,
              executor,
              queryProfileRegistry,
-             Encoder.throwsOnUse,
+             Embedder.throwsOnUse,
              executionFactory,
              containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
              containerHttpConfig.hostResponseHeaderKey().equals("") ?
@@ -192,7 +192,7 @@ public class SearchHandler extends LoggingRequestHandler {
              metric,
              executor,
              QueryProfileConfigurer.createFromConfig(queryProfileConfig).compile(),
-             Encoder.throwsOnUse,
+             Embedder.throwsOnUse,
              executionFactory,
              containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
              containerHttpConfig.hostResponseHeaderKey().equals("") ?
@@ -210,22 +210,22 @@ public class SearchHandler extends LoggingRequestHandler {
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ExecutionFactory executionFactory,
                          Optional<String> hostResponseHeaderKey) {
-        this(statistics, metric, executor, queryProfileRegistry, Encoder.throwsOnUse,
+        this(statistics, metric, executor, queryProfileRegistry, Embedder.throwsOnUse,
              executionFactory, 0, hostResponseHeaderKey);
     }
 
     private SearchHandler(Statistics statistics,
-                         Metric metric,
-                         Executor executor,
-                         CompiledQueryProfileRegistry queryProfileRegistry,
-                         Encoder encoder,
-                         ExecutionFactory executionFactory,
-                         long numQueriesToTraceOnDebugAfterStartup,
-                         Optional<String> hostResponseHeaderKey) {
+                          Metric metric,
+                          Executor executor,
+                          CompiledQueryProfileRegistry queryProfileRegistry,
+                          Embedder embedder,
+                          ExecutionFactory executionFactory,
+                          long numQueriesToTraceOnDebugAfterStartup,
+                          Optional<String> hostResponseHeaderKey) {
         super(executor, metric, true);
         log.log(Level.FINE, () -> "SearchHandler.init " + System.identityHashCode(this));
         this.queryProfileRegistry = queryProfileRegistry;
-        this.encoder = encoder;
+        this.embedder = embedder;
         this.executionFactory = executionFactory;
 
         this.maxThreads = examineExecutor(executor);
@@ -261,7 +261,7 @@ public class SearchHandler extends LoggingRequestHandler {
              accessLog,
              queryProfileConfig,
              containerHttpConfig,
-             new ExecutionFactory(chainsConfig, indexInfo, clusters, searchers, specialtokens, linguistics, renderers));
+             new ExecutionFactory(chainsConfig, indexInfo, clusters, searchers, specialtokens, linguistics, renderers, executor));
     }
 
     Metric metric() { return metric; }
@@ -293,7 +293,7 @@ public class SearchHandler extends LoggingRequestHandler {
     @Override
     public Optional<Request.RequestType> getRequestType() { return Optional.of(Request.RequestType.READ); }
 
-    private int getHttpResponseStatus(com.yahoo.container.jdisc.HttpRequest httpRequest, Result result) {
+    static int getHttpResponseStatus(com.yahoo.container.jdisc.HttpRequest httpRequest, Result result) {
         boolean benchmarkOutput = VespaHeaders.benchmarkOutput(httpRequest);
         if (benchmarkOutput) {
             return VespaHeaders.getEagerErrorStatus(result.hits().getError(),
@@ -332,7 +332,7 @@ public class SearchHandler extends LoggingRequestHandler {
         Query query = new Query.Builder().setRequest(request)
                                          .setRequestMap(requestMap)
                                          .setQueryProfile(queryProfile)
-                                         .setEncoder(encoder)
+                                         .setEmbedder(embedder)
                                          .build();
 
         boolean benchmarking = VespaHeaders.benchmarkOutput(request);

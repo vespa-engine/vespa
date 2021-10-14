@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
 import com.yahoo.config.model.api.ApplicationInfo;
@@ -41,7 +41,7 @@ public class StateV1HealthModelTest {
     private final List<HostName> hostnames = Stream.of("host1", "host2").map(HostName::from).collect(Collectors.toList());
     private final ApplicationInfo proxyHostApplicationInfo = proxyHostApplication.makeApplicationInfo(hostnames);
 
-    private final StateV1HealthModel model = new StateV1HealthModel(healthStaleness, requestTimeout, keepAlive, executor, true);
+    private final StateV1HealthModel model = new StateV1HealthModel(healthStaleness, requestTimeout, keepAlive, executor);
 
     @Test
     public void test() {

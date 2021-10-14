@@ -1,10 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.types.test;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.Language;
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
@@ -22,7 +22,6 @@ import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -441,31 +440,38 @@ public class QueryProfileTypeTestCase {
     }
 
     @Test
-    public void testUnencodedTensorRankFeatureInRequest() {
+    public void testUnembeddedTensorRankFeatureInRequest() {
         QueryProfile profile = new QueryProfile("test");
         profile.setType(testtype);
         registry.register(profile);
 
         CompiledQueryProfileRegistry cRegistry = registry.compile();
-        String textToEncode = "text to encode as tensor";
+        String textToEmbed = "text to embed into a tensor";
+        String destinationFeature = "query(myTensor4)";
         Tensor expectedTensor = Tensor.from("tensor<float>(x[5]):[3,7,4,0,0]]");
-        Query query1 = new Query.Builder().setRequest(HttpRequest.createTestRequest("?" + urlEncode("ranking.features.query(myTensor4)") +
-                                                                                   "=" + urlEncode("encode(" + textToEncode + ")"),
+        Query query1 = new Query.Builder().setRequest(HttpRequest.createTestRequest("?" + urlEncode("ranking.features." + destinationFeature) +
+                                                                                   "=" + urlEncode("embed(" + textToEmbed + ")"),
                                                                                    com.yahoo.jdisc.http.HttpRequest.Method.GET))
                                          .setQueryProfile(cRegistry.getComponent("test"))
-                                         .setEncoder(new MockEncoder(textToEncode, Language.UNKNOWN, expectedTensor))
+                                         .setEmbedder(new MockEmbedder(textToEmbed,
+                                                                       Language.UNKNOWN,
+                                                                       destinationFeature,
+                                                                       expectedTensor))
                                          .build();
         assertEquals(0, query1.errors().size());
         assertEquals(expectedTensor, query1.properties().get("ranking.features.query(myTensor4)"));
         assertEquals(expectedTensor, query1.getRanking().getFeatures().getTensor("query(myTensor4)").get());
 
         // Explicit language
-        Query query2 = new Query.Builder().setRequest(HttpRequest.createTestRequest("?" + urlEncode("ranking.features.query(myTensor4)") +
-                                                                                   "=" + urlEncode("encode(" + textToEncode + ")") +
+        Query query2 = new Query.Builder().setRequest(HttpRequest.createTestRequest("?" + urlEncode("ranking.features." + destinationFeature) +
+                                                                                   "=" + urlEncode("embed(" + textToEmbed + ")") +
                                                                                    "&language=en",
                                                                                    com.yahoo.jdisc.http.HttpRequest.Method.GET))
                                          .setQueryProfile(cRegistry.getComponent("test"))
-                                         .setEncoder(new MockEncoder(textToEncode, Language.ENGLISH, expectedTensor))
+                                         .setEmbedder(new MockEmbedder(textToEmbed,
+                                                                       Language.ENGLISH,
+                                                                       destinationFeature,
+                                                                       expectedTensor))
                                          .build();
         assertEquals(0, query2.errors().size());
         assertEquals(expectedTensor, query2.properties().get("ranking.features.query(myTensor4)"));
@@ -723,30 +729,34 @@ public class QueryProfileTypeTestCase {
         }
     }
 
-    private static final class MockEncoder implements Encoder {
+    private static final class MockEmbedder implements Embedder {
 
         private final String expectedText;
         private final Language expectedLanguage;
+        private final String expectedDestination;
         private final Tensor tensorToReturn;
 
-        public MockEncoder(String expectedText,
-                           Language expectedLanguage,
-                           Tensor tensorToReturn) {
+        public MockEmbedder(String expectedText,
+                            Language expectedLanguage,
+                            String expectedDestination,
+                            Tensor tensorToReturn) {
             this.expectedText = expectedText;
             this.expectedLanguage = expectedLanguage;
+            this.expectedDestination = expectedDestination;
             this.tensorToReturn = tensorToReturn;
         }
 
         @Override
-        public List<Integer> encode(String text, Language language) {
+        public List<Integer> embed(String text, Embedder.Context context) {
             fail("Unexpected call");
             return null;
         }
 
         @Override
-        public Tensor encode(String text, Language language, TensorType tensorType) {
+        public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
             assertEquals(expectedText, text);
-            assertEquals(expectedLanguage, language);
+            assertEquals(expectedLanguage, context.getLanguage());
+            assertEquals(expectedDestination, context.getDestination());
             assertEquals(tensorToReturn.type(), tensorType);
             return tensorToReturn;
         }

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // vespa api-key command
 // Author: mpolden
 package cmd
@@ -77,6 +77,6 @@ func printPublicKey(apiKeyFile, tenant string) {
 	log.Printf("\nThis is your public key:\n%s", color.Green(pemPublicKey))
 	log.Printf("Its fingerprint is:\n%s\n", color.Cyan(fingerprint))
 	log.Print("\nTo use this key in Vespa Cloud click 'Add custom key' at")
-	log.Printf(color.Cyan("%s/tenant/%s/keys").String(), defaultConsoleURL, tenant)
+	log.Printf(color.Cyan("%s/tenant/%s/keys").String(), getConsoleURL(), tenant)
 	log.Print("and paste the entire public key including the BEGIN and END lines.")
 }

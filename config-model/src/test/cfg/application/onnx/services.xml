@@ -1,9 +1,21 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services version="1.0">
 
   <container version="1.0">
-    <model-evaluation/>
+    <model-evaluation>
+      <onnx>
+        <models>
+          <model name="mul">
+            <intraop-threads>2</intraop-threads>
+          </model>
+          <model name="non-existent-model">
+            <interop-threads>400</interop-threads>
+            <execution-mode>parallel</execution-mode>
+          </model>
+        </models>
+      </onnx>
+    </model-evaluation>
     <nodes>
       <node hostalias="node1" />
     </nodes>

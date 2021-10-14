@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
 import com.google.common.collect.ImmutableList;
@@ -33,6 +33,7 @@ public class ScalarFunctions {
     public static DoubleBinaryOperator pow() { return new Pow(); }
     public static DoubleBinaryOperator squareddifference() { return new SquaredDifference(); }
     public static DoubleBinaryOperator subtract() { return new Subtract(); }
+    public static DoubleBinaryOperator hamming() { return new Hamming(); }
 
     public static DoubleUnaryOperator abs() { return new Abs(); }
     public static DoubleUnaryOperator acos() { return new Acos(); }
@@ -65,6 +66,7 @@ public class ScalarFunctions {
     public static Function<List<Long>, Double> random() { return new Random(); }
     public static Function<List<Long>, Double> equal(List<String> argumentNames) { return new EqualElements(argumentNames); }
     public static Function<List<Long>, Double> sum(List<String> argumentNames) { return new SumElements(argumentNames); }
+    public static Function<List<Long>, Double> constant(double value) { return new Constant(value); }
 
     // Binary operators -----------------------------------------------------------------------------
 
@@ -150,6 +152,26 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return left - right; }
         @Override
         public String toString() { return "f(a,b)(a - b)"; }
+    }
+
+    
+    public static class Hamming implements DoubleBinaryOperator {
+        public static double hamming(double left, double right) {
+            double distance = 0;
+            byte a = (byte) left;
+            byte b = (byte) right;
+            for (int i = 0; i < 8; i++) {
+                byte bit = (byte) (1 << i);
+                if ((a & bit) != (b & bit)) {
+                    distance += 1;
+                }
+            }
+            return distance;
+        }
+        @Override
+        public double applyAsDouble(double left, double right) { return hamming(left, right); }
+        @Override
+        public String toString() { return "f(a,b)(hamming(a,b))"; }
     }
 
 
@@ -471,5 +493,20 @@ public class ScalarFunctions {
             return argumentNames.stream().collect(Collectors.joining("+"));
         }
     }
+
+    public static class Constant implements Function<List<Long>, Double> {
+        private final double value;
+
+        public Constant(double value) {
+            this.value = value;
+        }
+        @Override
+        public Double apply(List<Long> values) {
+            return value;
+        }
+        @Override
+        public String toString() { return Double.toString(value); }
+    }
+
 
 }

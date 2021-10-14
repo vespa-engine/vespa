@@ -30,8 +30,9 @@ void merge(std::optional<Stats> &lhs, const std::optional<Stats> &rhs)
 }
 
 BmNodeStats::BmNodeStats()
-    : _document_db(),
-      _buckets()
+    : _buckets(),
+      _document_db(),
+      _merges()
 {
 }
 
@@ -41,16 +42,18 @@ BmNodeStats::~BmNodeStats() = default;
 BmNodeStats&
 BmNodeStats::operator+=(const BmNodeStats& rhs)
 {
-    merge(_document_db, rhs._document_db);
     merge(_buckets, rhs._buckets);
+    merge(_document_db, rhs._document_db);
+    merge(_merges, rhs._merges);
     return *this;
 }
 
 bool
 BmNodeStats::operator==(const BmNodeStats &rhs) const
 {
-    return ((_document_db == rhs._document_db) &&
-            (_buckets == rhs._buckets));
+    return ((_buckets == rhs._buckets) &&
+            (_document_db == rhs._document_db) &&
+            (_merges == rhs._merges));
 }
 
 void
@@ -64,6 +67,13 @@ void
 BmNodeStats::merge_bucket_stats(const BmBucketsStats &buckets)
 {
     merge(_buckets, buckets);
+}
+
+void
+BmNodeStats::set_merge_stats(const BmMergeStats &merges)
+{
+    assert(!_merges);
+    _merges = merges;
 }
 
 }

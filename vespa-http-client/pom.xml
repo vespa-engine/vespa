@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -60,9 +60,28 @@
     <dependency>
       <!-- Needed for Vespa TLS configuration. Standard jar artifact -->
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>http-utils</artifactId>
+      <artifactId>vespajlib</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>
+      <exclusions>
+        <!-- Optimization: exclude artifacts that are not used by this module -->
+        <exclusion>
+          <groupId>io.airlift</groupId>
+          <artifactId>aircompressor</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.java.dev.jna</groupId>
+          <artifactId>jna</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-exec</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.lz4</groupId>
+          <artifactId>lz4-java</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <!-- Needed for Vespa TLS configuration. -->

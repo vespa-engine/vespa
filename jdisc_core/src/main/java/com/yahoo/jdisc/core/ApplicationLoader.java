@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
 import com.google.inject.AbstractModule;
@@ -81,12 +81,12 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
     }
 
     @Override
-    public ContainerSnapshot newReference(URI uri) {
+    public ContainerSnapshot newReference(URI uri, Object context) {
         ActiveContainer container = containerRef.get();
         if (container == null) {
             throw new ContainerNotReadyException();
         }
-        return container.newReference(uri);
+        return container.newReference(uri, context);
     }
 
     @Override

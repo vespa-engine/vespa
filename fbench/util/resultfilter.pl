@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # This script converts an fbench summary report read from stdin to a
 # single line containing only the numerical values written to

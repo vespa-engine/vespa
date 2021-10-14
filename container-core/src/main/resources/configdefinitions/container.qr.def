@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=container
 
 ### All params must be flagged as 'restart' because this config is manually
@@ -30,3 +30,9 @@ nodeIndex int default=0
 
 ## Force restart of container on deploy, and defer any changes until restart
 restartOnDeploy bool default=false restart
+
+## Force heapdump if process is not able to stop within shutdown.timeout
+shutdown.dumpHeapOnTimeout bool default=false
+
+## Timeout for clean shutdown
+shutdown.timeout double default=50.0

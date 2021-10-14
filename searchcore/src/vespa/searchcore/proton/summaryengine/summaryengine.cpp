@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "summaryengine.h"
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -39,7 +39,7 @@ uint32_t getNumDocs(const DocsumReply &reply) {
         const Inspector &root = reply._root->get();
         return root[DOCSUMS].entries();
     } else {
-        return reply.docsums.size();
+        return 0;
     }
 }
 
@@ -128,6 +128,9 @@ SummaryEngine::getDocsums(DocsumRequest::Source request, DocsumClient & client)
 DocsumReply::UP
 SummaryEngine::getDocsums(DocsumRequest::UP req)
 {
+    auto my_issues = std::make_unique<search::UniqueIssues>();
+    auto capture_issues = vespalib::Issue::listen(*my_issues);
+
     DocsumReply::UP reply = std::make_unique<DocsumReply>();
 
     if (req) {
@@ -147,6 +150,7 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
         updateDocsumMetrics(vespalib::to_s(req->getTimeUsed()), getNumDocs(*reply));
     }
     reply->request = std::move(req);
+    reply->my_issues = std::move(my_issues);
 
     return reply;
 }

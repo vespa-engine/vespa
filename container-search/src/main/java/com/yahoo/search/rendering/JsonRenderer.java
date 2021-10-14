@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
 import com.fasterxml.jackson.core.JsonEncoding;
@@ -45,6 +45,7 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.NanNumber;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.serialization.JsonFormat;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -58,7 +59,6 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -76,8 +76,10 @@ import static com.fasterxml.jackson.databind.SerializationFeature.FLUSH_AFTER_WR
 // NOTE: The JSON format is a public API. If new elements are added be sure to update the reference doc.
 public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
+    private static final CompoundName WRAP_ALL_MAPS = new CompoundName("renderer.json.jsonMaps");
     private static final CompoundName DEBUG_RENDERING_KEY = new CompoundName("renderer.json.debug");
     private static final CompoundName JSON_CALLBACK = new CompoundName("jsoncallback");
+    private static final CompoundName TENSOR_FORMAT = new CompoundName("format.tensors");
 
     // if this must be optimized, simply use com.fasterxml.jackson.core.SerializableString
     private static final String BUCKET_LIMITS = "limits";
@@ -124,8 +126,11 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private FieldConsumer fieldConsumer;
     private Deque<Integer> renderedChildren;
     private boolean debugRendering;
+    private boolean jsonMaps;
     private LongSupplier timeSource;
     private OutputStream stream;
+
+    private boolean tensorShortFormRendering = false;
 
     public JsonRenderer() {
         this(null);
@@ -156,6 +161,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     public void init() {
         super.init();
         debugRendering = false;
+        jsonMaps = false;
         setGenerator(null, debugRendering);
         renderedChildren = null;
         timeSource = System::currentTimeMillis;
@@ -166,6 +172,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     public void beginResponse(OutputStream stream) throws IOException {
         beginJsonCallback(stream);
         debugRendering = getDebugRendering(getResult().getQuery());
+        jsonMaps = getWrapAllMaps(getResult().getQuery());
+        tensorShortFormRendering = getTensorShortFormRendering(getResult().getQuery());
         setGenerator(generatorFactory.createGenerator(stream, JsonEncoding.UTF8), debugRendering);
         renderedChildren = new ArrayDeque<>();
         generator.writeStartObject();
@@ -196,8 +204,18 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         generator.writeEndObject();
     }
 
+    private boolean getWrapAllMaps(Query q) {
+        return q != null && q.properties().getBoolean(WRAP_ALL_MAPS, false);
+    }
+
     private boolean getDebugRendering(Query q) {
         return q != null && q.properties().getBoolean(DEBUG_RENDERING_KEY, false);
+    }
+
+    private boolean getTensorShortFormRendering(Query q) {
+        if (q == null || q.properties().get(TENSOR_FORMAT) == null)
+            return false;
+        return q.properties().getString(TENSOR_FORMAT).equalsIgnoreCase("short");
     }
 
     protected void renderTrace(Trace trace) throws IOException {
@@ -285,8 +303,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             generator.writeEndObject();
         }
         generator.writeEndArray();
-
-
     }
 
     protected void renderCoverage() throws IOException {
@@ -506,11 +522,15 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private void setGenerator(JsonGenerator generator, boolean debugRendering) {
         this.generator = generator;
-        this.fieldConsumer = generator == null ? null : createFieldConsumer(generator, debugRendering);
+        this.fieldConsumer = generator == null ? null : createFieldConsumer(generator, debugRendering, jsonMaps);
     }
 
     protected FieldConsumer createFieldConsumer(JsonGenerator generator, boolean debugRendering) {
-        return new FieldConsumer(generator, debugRendering);
+        return createFieldConsumer(generator, debugRendering, this.jsonMaps);
+    }
+
+    private FieldConsumer createFieldConsumer(JsonGenerator generator, boolean debugRendering, boolean jsonMaps) {
+        return new FieldConsumer(generator, debugRendering, tensorShortFormRendering, jsonMaps);
     }
 
     /**
@@ -529,12 +549,22 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         private final JsonGenerator generator;
         private final boolean debugRendering;
+        private final boolean jsonMaps;
+        private final boolean tensorShortForm;
 
         private MutableBoolean hasFieldsField;
 
         public FieldConsumer(JsonGenerator generator, boolean debugRendering) {
+            this(generator, debugRendering, false);
+        }
+        public FieldConsumer(JsonGenerator generator, boolean debugRendering, boolean tensorShortForm) {
+            this(generator, debugRendering, tensorShortForm, false);
+        }
+        public FieldConsumer(JsonGenerator generator, boolean debugRendering, boolean tensorShortForm, boolean jsonMaps) {
             this.generator = generator;
             this.debugRendering = debugRendering;
+            this.tensorShortForm = tensorShortForm;
+            this.jsonMaps = jsonMaps;
         }
 
         /**
@@ -604,6 +634,43 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             return true;
         }
 
+        private static Inspector deepWrapAsMap(Inspector data) {
+            if (data.type() == Type.ARRAY) {
+                var map = new Value.ObjectValue();
+                for (int i = 0; i < data.entryCount(); i++) {
+                    Inspector obj = data.entry(i);
+                    if (map != null && obj.type() == Type.OBJECT && obj.fieldCount() == 2) {
+                        Inspector key = obj.field("key");
+                        Inspector value = obj.field("value");
+                        if (key.type() == Type.STRING && value.valid()) {
+                            map.put(key.asString(), deepWrapAsMap(value));
+                        } else {
+                            map = null;
+                        }
+                    } else {
+                        map = null;
+                    }
+                }
+                if (map != null) {
+                    return map;
+                }
+                var array = new Value.ArrayValue();
+                for (int i = 0; i < data.entryCount(); i++) {
+                    Inspector obj = data.entry(i);
+                    array.add(deepWrapAsMap(obj));
+                }
+                return array;
+            }
+            if (data.type() == Type.OBJECT) {
+                var object = new Value.ObjectValue();
+                for (var entry : data.fields()) {
+                    object.put(entry.getKey(), deepWrapAsMap(entry.getValue()));
+                }
+                return object;
+            }
+            return data;
+        }
+
         private static Inspector wrapAsMap(Inspector data) {
             if (data.type() != Type.ARRAY) return null;
             if (data.entryCount() == 0) return null;
@@ -622,11 +689,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private void renderInspector(Inspector data) throws IOException {
-            Inspector asMap = wrapAsMap(data);
+            Inspector asMap = jsonMaps ? deepWrapAsMap(data) : wrapAsMap(data);
             if (asMap != null) {
-                StringBuilder intermediate = new StringBuilder();
-                JsonRender.render(asMap, intermediate, true);
-                generator.writeRawValue(intermediate.toString());
+                renderInspectorDirect(asMap);
             } else {
                 renderInspectorDirect(data);
             }
@@ -659,7 +724,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             } else if (field instanceof Tensor) {
                 renderTensor(Optional.of((Tensor)field));
             } else if (field instanceof FeatureData) {
-                generator.writeRawValue(((FeatureData)field).toJson());
+                generator.writeRawValue(((FeatureData)field).toJson(tensorShortForm));
             } else if (field instanceof Inspectable) {
                 renderInspectorDirect(((Inspectable)field).inspect());
             } else if (field instanceof JsonProducer) {
@@ -697,26 +762,18 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private void renderTensor(Optional<Tensor> tensor) throws IOException {
-            generator.writeStartObject();
-            generator.writeArrayFieldStart("cells");
-            if (tensor.isPresent()) {
-                for (Iterator<Tensor.Cell> i = tensor.get().cellIterator(); i.hasNext(); ) {
-                    Tensor.Cell cell = i.next();
-
-                    generator.writeStartObject();
-
-                    generator.writeObjectFieldStart("address");
-                    for (int d = 0; d < cell.getKey().size(); d++)
-                        generator.writeObjectField(tensor.get().type().dimensions().get(d).name(), cell.getKey().label(d));
-                    generator.writeEndObject();
-
-                    generator.writeObjectField("value", cell.getValue());
-
-                    generator.writeEndObject();
-                }
+            if (tensor.isEmpty()) {
+                generator.writeStartObject();
+                generator.writeArrayFieldStart("cells");
+                generator.writeEndArray();
+                generator.writeEndObject();
+                return;
             }
-            generator.writeEndArray();
-            generator.writeEndObject();
+            if (tensorShortForm) {
+                generator.writeRawValue(new String(JsonFormat.encodeShortForm(tensor.get()), StandardCharsets.UTF_8));
+            } else {
+                generator.writeRawValue(new String(JsonFormat.encode(tensor.get()), StandardCharsets.UTF_8));
+            }
         }
 
     }

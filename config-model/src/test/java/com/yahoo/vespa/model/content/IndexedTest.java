@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.cloud.config.ClusterListConfig;
@@ -179,8 +179,8 @@ public class IndexedTest extends ContentBaseTest {
         assertFalse(s.getSearch().hasIndexedCluster());
 
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
-        s.getStorageNodes().getConfig(builder);
-        s.getStorageNodes().getChildren().get("3").getConfig(builder);
+        s.getStorageCluster().getConfig(builder);
+        s.getStorageCluster().getChildren().get("3").getConfig(builder);
     }
 
     @Test

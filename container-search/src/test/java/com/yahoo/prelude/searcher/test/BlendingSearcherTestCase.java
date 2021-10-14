@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.searcher.test;
 
 import java.util.Arrays;
@@ -45,7 +45,7 @@ public class BlendingSearcherTestCase {
 
     private static final double delta = 0.00000001;
 
-    public static class BlendingSearcherWrapper extends Searcher {
+    public class BlendingSearcherWrapper extends Searcher {
 
         private SearchChain blendingChain;
         private final FederationConfig.Builder builder = new FederationConfig.Builder();
@@ -89,14 +89,14 @@ public class BlendingSearcherTestCase {
             query.setTimeout(10000);
             query.setOffset(query.getOffset());
             query.setHits(query.getHits());
-            Execution exec = new Execution(blendingChain, Execution.Context.createContextStub(chainRegistry, null));
+            Execution exec = new Execution(blendingChain, Execution.Context.createContextStub(chainRegistry));
             exec.context().populateFrom(execution.context());
             return exec.search(query);
         }
 
         @Override
         public void fill(Result result, String summaryClass, Execution execution) {
-            new Execution(blendingChain, Execution.Context.createContextStub(chainRegistry, null)).fill(result, summaryClass);
+            new Execution(blendingChain, Execution.Context.createContextStub(chainRegistry)).fill(result, summaryClass);
         }
 
         public boolean initialize() {
@@ -447,7 +447,7 @@ public class BlendingSearcherTestCase {
         BlendingSearcherWrapper searcher = setupFirstAndSecond();
         Query query = new Query("/search?query=banana&search=nonesuch");
 
-        Result result = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts())).search(query);
+        Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
         assertEquals(0, result.getConcreteHitCount());
         assertNotNull(result.hits().getError());
         ErrorMessage e = result.hits().getError();
@@ -462,7 +462,7 @@ public class BlendingSearcherTestCase {
         BlendingSearcherWrapper searcher = setupFirstAndSecond();
         Query query = new Query("/search?query=banana&search=nonesuch,orsuch");
 
-        Result result = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts())).search(query);
+        Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
         assertEquals(0, result.getConcreteHitCount());
         assertNotNull(result.hits().getError());
         ErrorMessage e = result.hits().getError();
@@ -477,7 +477,7 @@ public class BlendingSearcherTestCase {
         BlendingSearcherWrapper searcher = setupFirstAndSecond();
         Query query = new Query("/search?query=banana&search=first,nonesuch,second");
 
-        Result result = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts())).search(query);
+        Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
         assertEquals(3, result.getConcreteHitCount());
         assertEquals(300.0, result.hits().get(1).getRelevance().getScore(), delta);
         assertEquals(200.0, result.hits().get(2).getRelevance().getScore(), delta);

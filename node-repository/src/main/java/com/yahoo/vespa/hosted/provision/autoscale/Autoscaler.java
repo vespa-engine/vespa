@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
@@ -93,7 +93,7 @@ public class Autoscaler {
         if (bestAllocation.isEmpty())
             return Advice.dontScale(Status.insufficient, "No allocations are possible within configured limits");
 
-        if (similar(bestAllocation.get().realResources(), currentAllocation.realResources())) {
+        if (! worthRescaling(currentAllocation.realResources(), bestAllocation.get().realResources())) {
             if (bestAllocation.get().fulfilment() < 1)
                 return Advice.dontScale(Status.insufficient, "Configured limits prevents better scaling of this cluster");
             else
@@ -122,12 +122,19 @@ public class Autoscaler {
         return true;
     }
 
-    /** Returns true if both total real resources and total cost are similar */
-    public static boolean similar(ClusterResources a, ClusterResources b) {
-        return similar(a.cost(), b.cost(), costDifferenceWorthReallocation) &&
-               similar(a.totalResources().vcpu(), b.totalResources().vcpu(), resourceDifferenceWorthReallocation) &&
-               similar(a.totalResources().memoryGb(), b.totalResources().memoryGb(), resourceDifferenceWorthReallocation) &&
-               similar(a.totalResources().diskGb(), b.totalResources().diskGb(), resourceDifferenceWorthReallocation);
+    /** Returns true if it is worthwhile to make the given resource change, false if it is too insignificant */
+    public static boolean worthRescaling(ClusterResources from, ClusterResources to) {
+        // *Increase* if needed with no regard for cost difference to prevent running out of a resource
+        if (meaningfulIncrease(from.totalResources().vcpu(), to.totalResources().vcpu())) return true;
+        if (meaningfulIncrease(from.totalResources().memoryGb(), to.totalResources().memoryGb())) return true;
+        if (meaningfulIncrease(from.totalResources().diskGb(), to.totalResources().diskGb())) return true;
+
+        // Otherwise, only *decrease* if it reduces cost meaningfully
+        return ! similar(from.cost(), to.cost(), costDifferenceWorthReallocation);
+    }
+
+    private static boolean meaningfulIncrease(double from, double to) {
+        return from < to && ! similar(from, to, resourceDifferenceWorthReallocation);
     }
 
     private static boolean similar(double r1, double r2, double threshold) {

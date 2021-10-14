@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package com.yahoo.container.logging;
 
@@ -14,7 +14,13 @@ public class FileConnectionLog extends AbstractComponent implements ConnectionLo
 
     @Inject
     public FileConnectionLog(ConnectionLogConfig config) {
-        logHandler = new ConnectionLogHandler(config.logDirectoryName(), config.bufferSize(), config.cluster(), config.queueSize(), new JsonConnectionLogWriter());
+        logHandler = new ConnectionLogHandler(config.logDirectoryName(), config.bufferSize(), config.cluster(),
+                queueSize(config), new JsonConnectionLogWriter());
+    }
+
+    private static int queueSize(ConnectionLogConfig config) {
+        if (config.queueSize() != -1) return config.queueSize();
+        return Math.max(4096, Runtime.getRuntime().availableProcessors() * 512);
     }
 
     @Override

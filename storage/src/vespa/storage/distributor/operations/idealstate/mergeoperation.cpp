@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "mergeoperation.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
@@ -248,9 +248,9 @@ MergeOperation::deleteSourceOnlyNodes(
             _ok = _removeOperation->ok();
             done();
         }
+    } else {
+        done();
     }
-    // FIXME what about the else-case here...? done() is not invoked by caller in this branch.
-    // Not calling done() doesn't leak anything, but causes metric updates to be missed.
 }
 
 void

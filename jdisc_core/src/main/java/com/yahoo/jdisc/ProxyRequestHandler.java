@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc;
 
 import com.yahoo.jdisc.handler.CompletionHandler;
@@ -63,6 +63,11 @@ class ProxyRequestHandler implements DelegatedRequestHandler {
     }
 
     @Override
+    public ResourceReference refer(Object context) {
+        return delegate.refer(context);
+    }
+
+    @Override
     public void release() {
         delegate.release();
     }
@@ -89,7 +94,7 @@ class ProxyRequestHandler implements DelegatedRequestHandler {
             Objects.requireNonNull(delegate, "delegate");
             this.request = request;
             this.delegate = delegate;
-            this.requestReference = request.refer();
+            this.requestReference = request.refer(this);
         }
 
         @Override
@@ -121,7 +126,7 @@ class ProxyRequestHandler implements DelegatedRequestHandler {
             Objects.requireNonNull(delegate, "delegate");
             this.request = request;
             this.delegate = delegate;
-            this.requestReference = request.refer();
+            this.requestReference = request.refer(this);
         }
 
         @Override
@@ -169,7 +174,7 @@ class ProxyRequestHandler implements DelegatedRequestHandler {
 
         public ProxyCompletionHandler(SharedResource request, CompletionHandler delegate) {
             this.delegate = delegate;
-            this.requestReference = request.refer();
+            this.requestReference = request.refer(this);
         }
 
         @Override

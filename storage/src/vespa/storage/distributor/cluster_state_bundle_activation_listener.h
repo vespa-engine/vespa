@@ -17,7 +17,8 @@ namespace storage::distributor {
 class ClusterStateBundleActivationListener {
 public:
     virtual ~ClusterStateBundleActivationListener() = default;
-    virtual void on_cluster_state_bundle_activated(const lib::ClusterStateBundle&) = 0;
+    virtual void on_cluster_state_bundle_activated(const lib::ClusterStateBundle&,
+                                                   bool has_bucket_ownership_transfer) = 0;
 };
 
 }

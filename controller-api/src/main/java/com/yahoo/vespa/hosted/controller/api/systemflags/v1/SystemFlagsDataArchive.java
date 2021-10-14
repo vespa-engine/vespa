@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -125,9 +126,9 @@ public class SystemFlagsDataArchive {
         uncheck(zipOut::flush);
     }
 
-    public Set<FlagData> flagData(FlagsTarget target) {
+    public List<FlagData> flagData(FlagsTarget target) {
         List<String> filenames = target.flagDataFilesPrioritized();
-        Set<FlagData> targetData = new HashSet<>();
+        List<FlagData> targetData = new ArrayList<>();
         files.forEach((flagId, fileMap) -> {
             for (String filename : filenames) {
                 FlagData data = fileMap.get(filename);

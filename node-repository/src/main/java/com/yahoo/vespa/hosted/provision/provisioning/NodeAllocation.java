@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -11,6 +11,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 
@@ -40,7 +41,7 @@ class NodeAllocation {
     private static final Logger LOG = Logger.getLogger(NodeAllocation.class.getName());
 
     /** List of all nodes in node-repository */
-    private final NodeList allNodes;
+    private final NodesAndHosts<? extends NodeList> allNodesAndHosts;
 
     /** The application this list is for */
     private final ApplicationId application;
@@ -80,9 +81,9 @@ class NodeAllocation {
     private final NodeRepository nodeRepository;
     private final NodeResourceLimits nodeResourceLimits;
 
-    NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
+    NodeAllocation(NodesAndHosts<? extends NodeList> allNodesAndHosts, ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                    Supplier<Integer> nextIndex, NodeRepository nodeRepository) {
-        this.allNodes = allNodes;
+        this.allNodesAndHosts = allNodesAndHosts;
         this.application = application;
         this.cluster = cluster;
         this.requestedNodes = requestedNodes;
@@ -199,7 +200,7 @@ class NodeAllocation {
 
         // In non-dynamic provisioned zones we require that if either of the nodes on the host requires exclusivity,
         // then all the nodes on the host must have the same owner
-        for (Node nodeOnHost : allNodes.childrenOf(candidate.parentHostname().get())) {
+        for (Node nodeOnHost : allNodesAndHosts.childrenOf(candidate.parentHostname().get())) {
             if (nodeOnHost.allocation().isEmpty()) continue;
             if (requestedNodes.isExclusive() || nodeOnHost.allocation().get().membership().cluster().isExclusive()) {
                 if ( ! nodeOnHost.allocation().get().owner().equals(application)) return true;
@@ -273,7 +274,7 @@ class NodeAllocation {
     }
 
     private Node resize(Node node) {
-        NodeResources hostResources = allNodes.parentOf(node).get().flavor().resources();
+        NodeResources hostResources = allNodesAndHosts.parentOf(node).get().flavor().resources();
         return node.with(new Flavor(requestedNodes.resources().get()
                                                   .with(hostResources.diskSpeed())
                                                   .with(hostResources.storageType())),
@@ -324,7 +325,7 @@ class NodeAllocation {
         if (hostType == NodeType.host) return nodeRepository.database().readProvisionIndices(count);
 
         // Infrastructure hosts have fixed indices, starting at 1
-        Set<Integer> currentIndices = allNodes.nodeType(hostType)
+        Set<Integer> currentIndices = allNodesAndHosts.nodes().nodeType(hostType)
                                               .hostnames()
                                               .stream()
                                               // TODO(mpolden): Use cluster index instead of parsing hostname, once all
@@ -424,7 +425,7 @@ class NodeAllocation {
         if (nodeType() == NodeType.tenant) return accepted;
         // Infrastructure nodes are always allocated by type. Count all nodes as accepted so that we never exceed
         // the wanted number of nodes for the type.
-        return allNodes.nodeType(nodeType()).size();
+        return allNodesAndHosts.nodes().nodeType(nodeType()).size();
     }
 
     /** Prefer to retire nodes we want the least */

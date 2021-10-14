@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "not_implemented_attribute.h"
 #include <vespa/vespalib/util/exceptions.h>
@@ -11,8 +11,8 @@ using SearchContext = AttributeVector::SearchContext;
 
 void
 NotImplementedAttribute::notImplemented() const {
-    throw vespalib::IllegalStateException(fmt("The function is not implemented for attribute '%s' of type '%s'.",
-                                              getName().c_str(), getNativeClassName().c_str()));
+    throw vespalib::UnsupportedOperationException(fmt("The function is not implemented for attribute '%s' of type '%s'.",
+                                                      getName().c_str(), getNativeClassName().c_str()));
 }
 
 uint32_t

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib.state;
 
 import com.yahoo.text.StringUtilities;
@@ -51,6 +51,7 @@ public class NodeState implements Cloneable {
     public boolean equals(Object o) {
         if (!(o instanceof NodeState)) { return false; }
         NodeState ns = (NodeState) o;
+        // Note that 'description' is not considered as it carries semantics.
         if (state != ns.state
             || Math.abs(capacity - ns.capacity)         > 0.0000000001
             || Math.abs(initProgress - ns.initProgress) > 0.0000000001

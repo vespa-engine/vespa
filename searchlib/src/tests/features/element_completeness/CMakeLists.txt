@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_executable(searchlib_element_completeness_test_app TEST
     SOURCES
     element_completeness_test.cpp

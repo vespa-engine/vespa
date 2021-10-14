@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network;
 
 import com.yahoo.messagebus.Message;
@@ -7,10 +7,9 @@ import com.yahoo.text.Utf8Array;
 
 import java.util.Deque;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 /**
@@ -33,15 +32,16 @@ public class NetworkMultiplexer implements NetworkOwner {
     private final Network net;
     private final Deque<NetworkOwner> owners = new ConcurrentLinkedDeque<>();
     private final Map<String, Deque<NetworkOwner>> sessions = new ConcurrentHashMap<>();
-    private final boolean shared;
+    private final AtomicBoolean disowned;
 
     private NetworkMultiplexer(Network net, boolean shared) {
         net.attach(this);
         this.net = net;
-        this.shared = shared;
+        this.disowned = new AtomicBoolean( ! shared);
     }
 
-    /** Returns a network multiplexer which will be shared between several {@link NetworkOwner}s. */
+    /** Returns a network multiplexer which will be shared between several {@link NetworkOwner}s,
+     * and will shut down when all these have detached, and {@link #disown()} has been called, in any order. */
     public static NetworkMultiplexer shared(Network net) {
         return new NetworkMultiplexer(net, true);
     }
@@ -100,6 +100,7 @@ public class NetworkMultiplexer implements NetworkOwner {
             owner.deliverMessage(message, session);
     }
 
+    /** Attach the network owner to this, allowing this to forward messages to it. */
     public void attach(NetworkOwner owner) {
         if (owners.contains(owner))
             throw new IllegalArgumentException(owner + " is already attached to this");
@@ -107,23 +108,27 @@ public class NetworkMultiplexer implements NetworkOwner {
         owners.add(owner);
     }
 
+    /** Detach the network owner from this, no longer allowing messages to it, and shutting down this is ownerless. */
     public void detach(NetworkOwner owner) {
         if ( ! owners.remove(owner))
             throw new IllegalArgumentException(owner + " not attached to this");
 
-        if ( ! shared && owners.isEmpty())
-            net.shutdown();
+        destroyIfOwnerless();
     }
 
-    public void destroy() {
-        if ( ! shared)
-            throw new UnsupportedOperationException("Destroy called on a dedicated multiplexer; " +
-                                                    "this automatically shuts down when detached from");
+    /** Signal that external ownership of this is relinquished, allowing destruction on last owner detachment. */
+    public void disown() {
+        if (disowned.getAndSet(true))
+            throw new IllegalStateException("Destroy called on a dedicated multiplexer--" +
+                                            "this automatically shuts down when detached from--or " +
+                                            "called multiple times on a shared multiplexer");
 
-        if ( ! owners.isEmpty())
-            log.warning("NetworkMultiplexer destroyed before all owners detached: " + this);
+        destroyIfOwnerless();
+    }
 
-        net.shutdown();
+    private void destroyIfOwnerless() {
+        if (disowned.get() && owners.isEmpty())
+            net.shutdown();
     }
 
     public Network net() {
@@ -136,7 +141,7 @@ public class NetworkMultiplexer implements NetworkOwner {
                "net=" + net +
                ", owners=" + owners +
                ", sessions=" + sessions +
-               ", shared=" + shared +
+               ", destructible=" + disowned +
                '}';
     }
 

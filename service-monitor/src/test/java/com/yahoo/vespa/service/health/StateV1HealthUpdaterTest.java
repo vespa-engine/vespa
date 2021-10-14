@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
@@ -165,6 +165,6 @@ public class StateV1HealthUpdaterTest {
     private StateV1HealthUpdater makeUpdater(CloseableHttpClient client, Function<HttpEntity, String> getContentFunction) {
         ApacheHttpClient apacheHttpClient = new ApacheHttpClient(url, client);
         StateV1HealthClient healthClient = new StateV1HealthClient(apacheHttpClient, getContentFunction);
-        return new StateV1HealthUpdater(url.toString(), healthClient, true);
+        return new StateV1HealthUpdater(url.toString(), healthClient);
     }
 }

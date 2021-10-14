@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "call_nodes.h"
 #include "node_visitor.h"
@@ -44,6 +44,7 @@ CallRepo::CallRepo() : _map() {
     add(nodes::Elu());
     add(nodes::Erf());
     add(nodes::Bit());
+    add(nodes::Hamming());
 }
 
 } // namespace vespalib::eval::nodes

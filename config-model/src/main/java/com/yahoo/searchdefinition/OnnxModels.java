@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.FileRegistry;
@@ -22,6 +22,7 @@ public class OnnxModels {
     public OnnxModels(FileRegistry fileRegistry) {
         this.fileRegistry = fileRegistry;
     }
+
     public void add(OnnxModel model) {
         model.validate();
         model.register(fileRegistry);

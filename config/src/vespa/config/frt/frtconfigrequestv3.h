@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "slimeconfigrequest.h"
@@ -17,7 +17,7 @@ class FRTConfigRequestV3 : public SlimeConfigRequest {
 public:
     FRTConfigRequestV3(Connection * connection,
                        const ConfigKey & key,
-                       const vespalib::string & configMd5,
+                       const vespalib::string & configXxhash64,
                        int64_t currentGeneration,
                        const vespalib::string & hostName,
                        int64_t serverTimeout,

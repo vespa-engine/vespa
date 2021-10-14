@@ -9,7 +9,6 @@ import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.RealNodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.BaseReport;
-import com.yahoo.vespa.hosted.provision.node.Report;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -48,8 +47,8 @@ public class NodeRepositoryNodeTest {
 
         // Add ridTwo report to node
         ObjectNode reportJson = mapper.createObjectNode();
-        reportJson.set(Report.CREATED_FIELD, mapper.valueToTree(3));
-        reportJson.set(Report.DESCRIPTION_FIELD, mapper.valueToTree("desc"));
+        reportJson.set(BaseReport.CREATED_FIELD, mapper.valueToTree(3));
+        reportJson.set(BaseReport.DESCRIPTION_FIELD, mapper.valueToTree("desc"));
         node.reports.put("ridTwo", reportJson);
 
         // Add ridTwo report to attributes

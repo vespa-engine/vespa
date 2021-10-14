@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/searchsummary/docsummary/docsumstate.h>
@@ -32,7 +32,6 @@ private:
     matching::SessionManager             & _sessionMgr;
 
     void initState();
-    search::engine::DocsumReply::UP createReply();
     std::unique_ptr<vespalib::Slime> createSlimeReply();
 
 public:

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "idealstatemanager.h"
 #include "statecheckers.h"
@@ -21,8 +21,7 @@ using document::BucketSpace;
 using storage::lib::Node;
 using storage::lib::NodeType;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 IdealStateManager::IdealStateManager(
         const DistributorNodeContext& node_ctx,
@@ -298,5 +297,4 @@ void IdealStateManager::getBucketStatus(std::ostream& out) const {
     }
 }
 
-} // distributor
-} // storage
+} // storage::distributor

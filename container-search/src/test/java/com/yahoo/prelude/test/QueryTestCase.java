@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.test;
 
 import com.yahoo.language.Language;
@@ -359,11 +359,8 @@ public class QueryTestCase {
 
     private Query newQueryFromEncoded(String encodedQueryString, Language language, Linguistics linguistics) {
         Query query = new Query(encodedQueryString);
-        query.getModel().setExecution(new Execution(new Execution.Context(null,
-                                                                          createIndexFacts(),
-                                                                          null,
-                                                                          null,
-                                                                          linguistics)));
+        query.getModel().setExecution(new Execution(Execution.Context.createContextStub(createIndexFacts(),
+                                                                                        linguistics)));
         query.getModel().setLanguage(language);
         return query;
     }

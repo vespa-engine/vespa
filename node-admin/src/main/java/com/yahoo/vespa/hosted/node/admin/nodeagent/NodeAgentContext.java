@@ -42,11 +42,7 @@ public interface NodeAgentContext extends TaskContext {
 
     ZoneApi zone();
 
-    String vespaUser();
-
-    String vespaGroup();
-
-    String vespaUserOnHost();
+    UserNamespace userNamespace();
 
     default boolean isDisabled(NodeAgentTask task) {
         return false;

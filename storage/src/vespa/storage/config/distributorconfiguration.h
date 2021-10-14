@@ -1,8 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "config-stor-distributormanager.h"
-#include "config-stor-visitordispatcher.h"
+#include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/vespalib/util/time.h>
@@ -264,6 +264,9 @@ public:
     bool enable_revert() const noexcept {
         return _enable_revert;
     }
+    [[nodiscard]] bool implicitly_clear_priority_on_schedule() const noexcept {
+        return _implicitly_clear_priority_on_schedule;
+    }
 
     uint32_t num_distributor_stripes() const noexcept { return _num_distributor_stripes; }
 
@@ -320,6 +323,7 @@ private:
     bool _enable_metadata_only_fetch_phase_for_inconsistent_updates;
     bool _prioritize_global_bucket_merges;
     bool _enable_revert;
+    bool _implicitly_clear_priority_on_schedule;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
 

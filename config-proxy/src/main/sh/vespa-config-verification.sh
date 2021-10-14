@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # BEGIN environment bootstrap section
 # Do not edit between here and END as this section should stay identical in all scripts
@@ -79,4 +79,4 @@ export ROOT
 
 echo "# Using CLASSPATH=$CLASSPATH, args=$@"
 
-java -cp $CLASSPATH:$ROOT/lib/jars/config-proxy-jar-with-dependencies.jar com.yahoo.vespa.config.ConfigVerification "$@"
+java -cp $CLASSPATH:$ROOT/lib/jars/config-proxy-jar-with-dependencies.jar com.yahoo.vespa.config.proxy.ConfigVerification "$@"

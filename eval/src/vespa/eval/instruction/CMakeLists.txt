@@ -1,10 +1,12 @@
-# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 vespa_add_library(eval_instruction OBJECT
     SOURCES
     add_trivial_dimension_optimizer.cpp
+    best_similarity_function.cpp
     dense_cell_range_function.cpp
     dense_dot_product_function.cpp
+    dense_hamming_distance.cpp
     dense_lambda_peek_function.cpp
     dense_lambda_peek_optimizer.cpp
     dense_matmul_function.cpp

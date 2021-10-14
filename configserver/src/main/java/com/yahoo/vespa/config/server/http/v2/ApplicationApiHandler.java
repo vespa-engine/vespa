@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.inject.Inject;
@@ -75,7 +75,7 @@ public class ApplicationApiHandler extends SessionHandler {
                 .map(ContentType::parse)
                 .map(contentType -> contentType.getMimeType().equalsIgnoreCase(MULTIPART_FORM_DATA))
                 .orElse(false);
-        if(multipartRequest) {
+        if (multipartRequest) {
             try {
                 MultiPartFormInputStream multiPartFormInputStream = new MultiPartFormInputStream(request.getData(), request.getHeader(CONTENT_TYPE), /* config */null, /* contextTmpDir */null);
                 Map<String, Part> parts = multiPartFormInputStream.getParts().stream()

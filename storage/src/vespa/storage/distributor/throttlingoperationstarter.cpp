@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "throttlingoperationstarter.h"
 #include <cassert>
@@ -10,6 +10,8 @@ ThrottlingOperationStarter::ThrottlingOperation::~ThrottlingOperation()
     _operationStarter.signalOperationFinished(*this);
 }
 
+ThrottlingOperationStarter::~ThrottlingOperationStarter() = default;
+
 bool
 ThrottlingOperationStarter::canStart(uint32_t currentOperationCount, Priority priority) const
 {
@@ -20,15 +22,21 @@ ThrottlingOperationStarter::canStart(uint32_t currentOperationCount, Priority pr
 }
 
 bool
-ThrottlingOperationStarter::start(const std::shared_ptr<Operation>& operation,
-                                 Priority priority)
+ThrottlingOperationStarter::start(const std::shared_ptr<Operation>& operation, Priority priority)
 {
-    if (!canStart(_pendingCount, priority)) {
+    if (!may_allow_operation_with_priority(priority)) {
+        operation->on_throttled();
         return false;
     }
     auto wrappedOp = std::make_shared<ThrottlingOperation>(operation, *this);
     ++_pendingCount;
     return _starterImpl.start(wrappedOp, priority);
+}
+
+bool
+ThrottlingOperationStarter::may_allow_operation_with_priority(Priority priority) const noexcept
+{
+    return canStart(_pendingCount, priority);
 }
 
 void

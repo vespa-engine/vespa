@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.google.common.base.Suppliers;
@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.hosted.provision.node.Reports;
+import com.yahoo.vespa.hosted.provision.node.TrustStoreItem;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -186,6 +187,8 @@ public class NodePatcher implements AutoCloseable {
                 return node.withExclusiveToClusterType(SlimeUtils.optionalString(value).map(ClusterSpec.Type::valueOf).orElse(null));
             case "switchHostname":
                 return value.type() == Type.NIX ? node.withoutSwitchHostname() : node.withSwitchHostname(value.asString());
+            case "trustStore":
+                return nodeWithTrustStore(node, value);
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }
@@ -228,6 +231,14 @@ public class NodePatcher implements AutoCloseable {
         }
 
         return patchedNode;
+    }
+
+    private Node nodeWithTrustStore(Node node, Inspector inspector) {
+        List<TrustStoreItem> trustStoreItems =
+                SlimeUtils.entriesStream(inspector)
+                        .map(TrustStoreItem::fromSlime)
+                        .collect(Collectors.toList());
+        return node.with(trustStoreItems);
     }
 
     private Set<String> asStringSet(Inspector field) {

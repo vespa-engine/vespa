@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.common.base.Preconditions;
@@ -72,7 +72,7 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
         this.contentCharset = getCharsetByName(contentCharsetName);
         this.responseHandler = responseHandler;
         this.request = (HttpRequest) request;
-        this.requestReference = request.refer();
+        this.requestReference = request.refer(this);
 
         return this;
     }

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -58,13 +58,10 @@ public class HttpSearchResponse extends ExtendedResponse {
     }
 
     /**
-     * Copy custom HTTP headers from the search result over to the HTTP
-     * response.
+     * Copy custom HTTP headers from the search result over to the HTTP response.
      *
-     * @param outputHeaders
-     *            the headers which will be sent to a client
-     * @param searchHeaders
-     *            the headers from the search result, or null
+     * @param outputHeaders the headers which will be sent to a client
+     * @param searchHeaders the headers from the search result, or null
      */
     private static void populateHeaders(HeaderFields outputHeaders,
             ListMap<String, String> searchHeaders) {

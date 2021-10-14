@@ -28,7 +28,7 @@ BmFeedParams::check() const
         std::cerr << "Too few client threads: " << _client_threads << std::endl;
         return false;
     }
-    if (_client_threads > 256) {
+    if (_client_threads > 1024) {
         std::cerr << "Too many client threads: " << _client_threads << std::endl;
         return false;
     }

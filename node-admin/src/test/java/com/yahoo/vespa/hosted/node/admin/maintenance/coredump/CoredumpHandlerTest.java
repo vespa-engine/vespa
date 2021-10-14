@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.yahoo.test.ManualClock;
@@ -58,7 +58,7 @@ public class CoredumpHandlerTest {
     @SuppressWarnings("unchecked")
     private final Supplier<String> coredumpIdSupplier = mock(Supplier.class);
     private final CoredumpHandler coredumpHandler = new CoredumpHandler(terminal, coreCollector, coredumpReporter,
-            crashPathInContainer, doneCoredumpsPath, "users", metrics, clock, coredumpIdSupplier);
+            crashPathInContainer, doneCoredumpsPath, 100, metrics, clock, coredumpIdSupplier);
 
 
     @Test

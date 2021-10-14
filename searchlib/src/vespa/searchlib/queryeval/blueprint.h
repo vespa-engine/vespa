@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -101,7 +101,7 @@ public:
         double hit_ratio(uint32_t docid_limit) const {
             uint32_t total_hits = _estimate.estHits;
             uint32_t total_docs = std::max(total_hits, docid_limit);
-            return double(total_hits) / double(total_docs);
+            return (total_docs == 0) ? 0.0 : double(total_hits) / double(total_docs);
         }
         void tree_size(uint32_t value) { _tree_size = value; }
         uint32_t tree_size() const { return _tree_size; }
@@ -118,6 +118,12 @@ public:
 
     // utility that just takes minium estimate
     static HitEstimate min(const std::vector<HitEstimate> &data);
+
+    // utility that calculates saturated sum
+    //
+    // upper limit for estimate: docid_limit
+    // lower limit for docid_limit: max child estimate
+    static HitEstimate sat_sum(const std::vector<HitEstimate> &data, uint32_t docid_limit);
 
     // utility to get the greater estimate to sort first, higher tiers last
     struct TieredGreaterEstimate {

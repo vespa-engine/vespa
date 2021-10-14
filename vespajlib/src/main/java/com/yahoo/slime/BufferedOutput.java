@@ -1,7 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
 import com.yahoo.compress.Compressor;
+
+import java.nio.charset.Charset;
 
 final class BufferedOutput {
 
@@ -55,6 +57,9 @@ final class BufferedOutput {
         byte[] ret = new byte[pos];
         System.arraycopy(buf, 0, ret, 0, pos);
         return ret;
+    }
+    public String toString(Charset charset) {
+        return new String(buf, 0, pos, charset);
     }
     Compressor.Compression compress(Compressor compressor) {
         return compressor.compress(buf, pos);

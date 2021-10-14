@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.javacc.FastCharStream;
@@ -62,7 +62,7 @@ public final class ScriptParser {
         parser.setAnnotatorConfig(context.getAnnotatorConfig());
         parser.setDefaultFieldName(context.getDefaultFieldName());
         parser.setLinguistics(context.getLinguistcs());
-        parser.setEncoder(context.getEncoder());
+        parser.setEmbedder(context.getEmbedder());
         try {
             return method.call(parser);
         } catch (ParseException e) {

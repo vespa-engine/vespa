@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.querytransform.test;
 
 import com.yahoo.component.chain.Chain;
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 /**
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class CJKSearcherTestCase {
 
@@ -65,7 +65,7 @@ public class CJKSearcherTestCase {
         query.getModel().getQueryTree().setRoot(root);
 
         new Execution(new Chain<Searcher>(new CJKSearcher()),
-                      new Execution.Context(null, indexFacts, null, null, linguistics)).search(query);
+                      Execution.Context.createContextStub(indexFacts, linguistics)).search(query);
         assertEquals(expected, query.getModel().getQueryTree().getRoot().toString());
     }
 

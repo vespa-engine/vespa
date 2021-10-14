@@ -1,17 +1,21 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.provisioning.HostCapacity;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -36,29 +40,44 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
     }
 
     /** Returns a suggested move for given node */
-    protected abstract MOVE suggestedMove(Node node, Node fromHost, Node toHost, NodeList allNodes);
+    protected abstract MOVE suggestedMove(Node node, Node fromHost, Node toHost, NodesAndHosts<? extends NodeList> allNodes);
+
+    private static class HostWithResources {
+        private final Node node;
+        private final NodeResources hostResources;
+        HostWithResources(Node node, NodeResources hostResources) {
+            this.node = node;
+            this.hostResources = hostResources;
+        }
+        boolean hasCapacity(NodeResources requested) {
+            return hostResources.satisfies(requested);
+        }
+
+    }
 
     /** Find the best possible move */
-    protected final MOVE findBestMove(NodeList allNodes) {
+    protected final MOVE findBestMove(NodesAndHosts<? extends NodeList> allNodes) {
         HostCapacity capacity = new HostCapacity(allNodes, nodeRepository().resourcesCalculator());
         MOVE bestMove = emptyMove;
         // Shuffle nodes so we did not get stuck if the chosen move is consistently discarded. Node moves happen through
         // a soft request to retire (preferToRetire), which node allocation can disregard
-        NodeList activeNodes = allNodes.nodeType(NodeType.tenant)
+        NodeList activeNodes = allNodes.nodes().nodeType(NodeType.tenant)
                                        .state(Node.State.active)
                                        .shuffle(random);
-        Set<Node> spares = capacity.findSpareHosts(allNodes.asList(), nodeRepository().spareCount());
+        Set<Node> spares = capacity.findSpareHosts(allNodes.nodes().asList(), nodeRepository().spareCount());
+        List<HostWithResources> hostResources = new ArrayList<>();
+        allNodes.nodes().matching(nodeRepository().nodes()::canAllocateTenantNodeTo).forEach(host -> hostResources.add(new HostWithResources(host, capacity.availableCapacityOf(host))));
         for (Node node : activeNodes) {
             if (node.parentHostname().isEmpty()) continue;
             ApplicationId applicationId = node.allocation().get().owner();
             if (applicationId.instance().isTester()) continue;
             if (deployedRecently(applicationId)) continue;
-            for (Node toHost : allNodes.matching(nodeRepository().nodes()::canAllocateTenantNodeTo)) {
-                if (toHost.hostname().equals(node.parentHostname().get())) continue;
-                if (spares.contains(toHost)) continue; // Do not offer spares as a valid move as they are reserved for replacement of failed nodes
-                if ( ! capacity.hasCapacity(toHost, node.resources())) continue;
+            for (HostWithResources toHost : hostResources) {
+                if (toHost.node.hostname().equals(node.parentHostname().get())) continue;
+                if (spares.contains(toHost.node)) continue; // Do not offer spares as a valid move as they are reserved for replacement of failed nodes
+                if ( ! toHost.hasCapacity(node.resources())) continue;
 
-                MOVE suggestedMove = suggestedMove(node, allNodes.parentOf(node).get(), toHost, allNodes);
+                MOVE suggestedMove = suggestedMove(node, allNodes.parentOf(node).get(), toHost.node, allNodes);
                 bestMove = bestMoveOf(bestMove, suggestedMove);
             }
         }

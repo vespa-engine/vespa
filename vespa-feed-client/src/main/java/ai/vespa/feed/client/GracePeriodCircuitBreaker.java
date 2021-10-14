@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
 import java.time.Duration;
@@ -61,7 +61,7 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
 
     @Override
     public void failure(Throwable cause) {
-        failure(cause.getMessage());
+        failure(cause.toString());
     }
 
     private void failure(String detail) {

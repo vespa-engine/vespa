@@ -1,0 +1,189 @@
+{
+  "com.yahoo.language.sentencepiece.Scoring": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.language.sentencepiece.Scoring[] values()",
+      "public static com.yahoo.language.sentencepiece.Scoring valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.language.sentencepiece.Scoring highestScore",
+      "public static final enum com.yahoo.language.sentencepiece.Scoring fewestSegments"
+    ]
+  },
+  "com.yahoo.language.sentencepiece.SentencePieceConfig$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigInstance$Builder"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.language.sentencepiece.SentencePieceConfig)",
+      "public com.yahoo.language.sentencepiece.SentencePieceConfig$Builder collapseUnknowns(boolean)",
+      "public com.yahoo.language.sentencepiece.SentencePieceConfig$Builder scoring(com.yahoo.language.sentencepiece.SentencePieceConfig$Scoring$Enum)",
+      "public com.yahoo.language.sentencepiece.SentencePieceConfig$Builder model(com.yahoo.language.sentencepiece.SentencePieceConfig$Model$Builder)",
+      "public com.yahoo.language.sentencepiece.SentencePieceConfig$Builder model(java.util.List)",
+      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
+      "public final java.lang.String getDefMd5()",
+      "public final java.lang.String getDefName()",
+      "public final java.lang.String getDefNamespace()",
+      "public final boolean getApplyOnRestart()",
+      "public final void setApplyOnRestart(boolean)",
+      "public com.yahoo.language.sentencepiece.SentencePieceConfig build()"
+    ],
+    "fields": [
+      "public java.util.List model"
+    ]
+  },
+  "com.yahoo.language.sentencepiece.SentencePieceConfig$Model$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigBuilder"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.language.sentencepiece.SentencePieceConfig$Model)",
+      "public com.yahoo.language.sentencepiece.SentencePieceConfig$Model$Builder language(java.lang.String)",
+      "public com.yahoo.language.sentencepiece.SentencePieceConfig$Model$Builder path(com.yahoo.config.FileReference)",
+      "public com.yahoo.language.sentencepiece.SentencePieceConfig$Model build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.language.sentencepiece.SentencePieceConfig$Model": {
+    "superClass": "com.yahoo.config.InnerNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.language.sentencepiece.SentencePieceConfig$Model$Builder)",
+      "public java.lang.String language()",
+      "public java.nio.file.Path path()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.language.sentencepiece.SentencePieceConfig$Producer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigInstance$Producer"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void getConfig(com.yahoo.language.sentencepiece.SentencePieceConfig$Builder)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.language.sentencepiece.SentencePieceConfig$Scoring$Enum": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.language.sentencepiece.SentencePieceConfig$Scoring$Enum[] values()",
+      "public static com.yahoo.language.sentencepiece.SentencePieceConfig$Scoring$Enum valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.language.sentencepiece.SentencePieceConfig$Scoring$Enum highestScore",
+      "public static final enum com.yahoo.language.sentencepiece.SentencePieceConfig$Scoring$Enum fewestSegments"
+    ]
+  },
+  "com.yahoo.language.sentencepiece.SentencePieceConfig$Scoring": {
+    "superClass": "com.yahoo.config.EnumNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.language.sentencepiece.SentencePieceConfig$Scoring$Enum)"
+    ],
+    "fields": [
+      "public static final com.yahoo.language.sentencepiece.SentencePieceConfig$Scoring$Enum highestScore",
+      "public static final com.yahoo.language.sentencepiece.SentencePieceConfig$Scoring$Enum fewestSegments"
+    ]
+  },
+  "com.yahoo.language.sentencepiece.SentencePieceConfig": {
+    "superClass": "com.yahoo.config.ConfigInstance",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public static java.lang.String getDefMd5()",
+      "public static java.lang.String getDefName()",
+      "public static java.lang.String getDefNamespace()",
+      "public static java.lang.String getDefVersion()",
+      "public void <init>(com.yahoo.language.sentencepiece.SentencePieceConfig$Builder)",
+      "public boolean collapseUnknowns()",
+      "public com.yahoo.language.sentencepiece.SentencePieceConfig$Scoring$Enum scoring()",
+      "public java.util.List model()",
+      "public com.yahoo.language.sentencepiece.SentencePieceConfig$Model model(int)"
+    ],
+    "fields": [
+      "public static final java.lang.String CONFIG_DEF_MD5",
+      "public static final java.lang.String CONFIG_DEF_NAME",
+      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
+      "public static final java.lang.String CONFIG_DEF_VERSION",
+      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
+    ]
+  },
+  "com.yahoo.language.sentencepiece.SentencePieceEmbedder$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void addModel(com.yahoo.language.Language, java.nio.file.Path)",
+      "public com.yahoo.language.sentencepiece.SentencePieceEmbedder$Builder addDefaultModel(java.nio.file.Path)",
+      "public java.util.Map getModels()",
+      "public com.yahoo.language.sentencepiece.SentencePieceEmbedder$Builder setCollapseUnknowns(boolean)",
+      "public boolean getCollapseUnknowns()",
+      "public com.yahoo.language.sentencepiece.SentencePieceEmbedder$Builder setScoring(com.yahoo.language.sentencepiece.Scoring)",
+      "public com.yahoo.language.sentencepiece.Scoring getScoring()",
+      "public com.yahoo.language.sentencepiece.SentencePieceEmbedder build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.language.sentencepiece.SentencePieceEmbedder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.language.process.Segmenter",
+      "com.yahoo.language.process.Embedder"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.language.sentencepiece.SentencePieceConfig)",
+      "public void <init>(com.yahoo.language.sentencepiece.SentencePieceEmbedder$Builder)",
+      "public java.util.List segment(java.lang.String, com.yahoo.language.Language)",
+      "public java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
+      "public com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)",
+      "public java.lang.String normalize(java.lang.String)"
+    ],
+    "fields": []
+  }
+}

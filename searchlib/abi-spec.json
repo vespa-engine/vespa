@@ -898,6 +898,7 @@
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorMatmul()",
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorSoftmax()",
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorXwPlusB()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorExpand()",
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorArgmax()",
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorArgmin()",
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorCellCast()",
@@ -1034,6 +1035,7 @@
       "public static final int LDEXP",
       "public static final int POW",
       "public static final int BIT",
+      "public static final int HAMMING",
       "public static final int MAP",
       "public static final int REDUCE",
       "public static final int JOIN",
@@ -1052,6 +1054,7 @@
       "public static final int ARGMAX",
       "public static final int ARGMIN",
       "public static final int CELL_CAST",
+      "public static final int EXPAND",
       "public static final int AVG",
       "public static final int COUNT",
       "public static final int MAX",
@@ -1389,7 +1392,8 @@
       "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function max",
       "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function min",
       "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function pow",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function bit"
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function bit",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function hamming"
     ]
   },
   "com.yahoo.searchlib.rankingexpression.rule.FunctionNode": {

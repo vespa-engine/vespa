@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
 
 import com.google.common.base.Predicate;
@@ -397,6 +397,16 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
             add(new DefaultErrorHit(getSource(), error));
         else
             errorHit.addError(error);
+    }
+
+    /** merge any errors from the other HitGroup into this */
+    public void addErrorsFrom(HitGroup other) {
+        ErrorHit otherErrorHit = other.getErrorHit();
+        if (otherErrorHit != null) {
+            for (ErrorMessage msg : otherErrorHit.errors()) {
+                addError(msg);
+            }
+        }
     }
 
     /** Returns the error hit containing all error information, or null if no error has occurred */

@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.component.Version;
@@ -172,6 +172,19 @@ public class JobControllerApiHandlerHelperTest {
         var applicationPackage = new ApplicationPackageBuilder().region(region).build();
         // Deploy directly to production zone, like integration tests.
         tester.controller().jobController().deploy(tester.instance().id(), productionUsWest1, Optional.empty(), applicationPackage);
+        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root/")),
+                       "jobs-direct-deployment.json");
+    }
+
+    @Test
+    public void testResponsesWithDryRunDeployment() {
+        var tester = new DeploymentTester();
+        var app = tester.newDeploymentContext();
+        tester.clock().setInstant(Instant.EPOCH);
+        var region = "us-west-1";
+        var applicationPackage = new ApplicationPackageBuilder().region(region).build();
+        // Deploy directly to production zone, like integration tests, with dryRun.
+        tester.controller().jobController().deploy(tester.instance().id(), productionUsWest1, Optional.empty(), applicationPackage, true);
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root/")),
                        "jobs-direct-deployment.json");
     }

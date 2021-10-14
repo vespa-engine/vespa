@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
@@ -106,6 +106,10 @@ BMParams::check() const
         std::cerr << "Put passes too low: " << _put_passes << std::endl;
         return false;
     }
+    if (get_groups() > 0 && !needs_distributor()) {
+        std::cerr << "grouped distribution only allowed when using distributor" << std::endl;
+        return false;
+    }
 
     return true;
 }
@@ -163,7 +167,7 @@ Benchmark::run()
     auto update_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_update_feed(range, bucket_selector); }, _feed.num_buckets(), "update");
     auto get_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_get_feed(range, bucket_selector); }, _feed.num_buckets(), "get");
     auto remove_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_remove_feed(range, bucket_selector); }, _feed.num_buckets(), "remove");
-    BmNodeStatsReporter reporter(*_cluster);
+    BmNodeStatsReporter reporter(*_cluster, false);
     reporter.start(500ms);
     int64_t time_bias = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch() - 24h).count();
     LOG(info, "Feed handler is '%s'", feeder.get_feed_handler().get_name().c_str());
@@ -211,24 +215,25 @@ App::usage()
         "[--bucket-db-stripe-bits bits]\n"
         "[--client-threads threads]\n"
         "[--distributor-stripes stripes]\n"
+        "[--documents documents]\n"
+        "[--enable-distributor]\n"
+        "[--enable-service-layer]\n"
         "[--get-passes get-passes]\n"
+        "[--groups groups]\n"
         "[--indexing-sequencer [latency,throughput,adaptive]]\n"
         "[--max-pending max-pending]\n"
-        "[--documents documents]\n"
-        "[--nodes nodes]\n"
+        "[--nodes-per-group nodes-per-group]\n"
         "[--put-passes put-passes]\n"
-        "[--update-passes update-passes]\n"
         "[--remove-passes remove-passes]\n"
+        "[--response-threads threads]\n"
         "[--rpc-events-before-wakeup events]\n"
         "[--rpc-network-threads threads]\n"
         "[--rpc-targets-per-node targets]\n"
-        "[--response-threads threads]\n"
-        "[--enable-distributor]\n"
-        "[--enable-service-layer]\n"
         "[--skip-communicationmanager-thread]\n"
         "[--skip-get-spi-bucket-info]\n"
-        "[--use-document-api]\n"
+        "[--update-passes update-passes]\n"
         "[--use-async-message-handling]\n"
+        "[--use-document-api]\n"
         "[--use-message-bus\n"
         "[--use-storage-chain]" << std::endl;
 }
@@ -247,9 +252,10 @@ App::get_options()
         { "enable-distributor", 0, nullptr, 0 },
         { "enable-service-layer", 0, nullptr, 0 },
         { "get-passes", 1, nullptr, 0 },
+        { "groups", 1, nullptr, 0 },
         { "indexing-sequencer", 1, nullptr, 0 },
         { "max-pending", 1, nullptr, 0 },
-        { "nodes", 1, nullptr, 0 },
+        { "nodes-per-group", 1, nullptr, 0 },
         { "put-passes", 1, nullptr, 0 },
         { "remove-passes", 1, nullptr, 0 },
         { "response-threads", 1, nullptr, 0 },
@@ -262,7 +268,8 @@ App::get_options()
         { "use-async-message-handling", 0, nullptr, 0 },
         { "use-document-api", 0, nullptr, 0 },
         { "use-message-bus", 0, nullptr, 0 },
-        { "use-storage-chain", 0, nullptr, 0 }
+        { "use-storage-chain", 0, nullptr, 0 },
+        { nullptr, 0, nullptr, 0 }
     };
     enum longopts_enum {
         LONGOPT_BUCKET_DB_STRIPE_BITS,
@@ -272,9 +279,10 @@ App::get_options()
         LONGOPT_ENABLE_DISTRIBUTOR,
         LONGOPT_ENABLE_SERVICE_LAYER,
         LONGOPT_GET_PASSES,
+        LONGOPT_GROUPS,
         LONGOPT_INDEXING_SEQUENCER,
         LONGOPT_MAX_PENDING,
-        LONGOPT_NODES,
+        LONGOPT_NODES_PER_GROUP,
         LONGOPT_PUT_PASSES,
         LONGOPT_REMOVE_PASSES,
         LONGOPT_RESPONSE_THREADS,
@@ -316,14 +324,17 @@ App::get_options()
             case LONGOPT_GET_PASSES:
                 _bm_params.set_get_passes(atoi(opt_argument));
                 break;
+            case LONGOPT_GROUPS:
+                _bm_params.set_groups(atoi(opt_argument));
+                break;
             case LONGOPT_INDEXING_SEQUENCER:
                 _bm_params.set_indexing_sequencer(opt_argument);
                 break;
             case LONGOPT_MAX_PENDING:
                 _bm_params.set_max_pending(atoi(opt_argument));
                 break;
-            case LONGOPT_NODES:
-                _bm_params.set_num_nodes(atoi(opt_argument));
+            case LONGOPT_NODES_PER_GROUP:
+                _bm_params.set_nodes_per_group(atoi(opt_argument));
                 break;
             case LONGOPT_PUT_PASSES:
                 _bm_params.set_put_passes(atoi(opt_argument));

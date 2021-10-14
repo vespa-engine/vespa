@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "match_thread.h"
 #include "document_scorer.h"
@@ -413,7 +413,8 @@ MatchThread::MatchThread(size_t thread_id_in,
     match_time_s(0.0),
     wait_time_s(0.0),
     match_with_ranking(mtf.has_first_phase_rank() && mp.save_rank_scores()),
-    trace(std::make_unique<Trace>(relativeTime, traceLevel))
+    trace(std::make_unique<Trace>(relativeTime, traceLevel)),
+    my_issues()
 {
 }
 
@@ -422,6 +423,7 @@ MatchThread::run()
 {
     vespalib::Timer total_time;
     vespalib::Timer match_time(total_time);
+    auto capture_issues = vespalib::Issue::listen(my_issues);
     trace->addEvent(4, "Start MatchThread::run");
     MatchTools::UP matchTools = matchToolsFactory.createMatchTools();
     search::ResultSet::UP result = findMatches(*matchTools);

@@ -4,20 +4,20 @@
 package cmd
 
 import (
-	"strings"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAPIKey(t *testing.T) {
-	homeDir := t.TempDir()
-	keyFile := homeDir + "/.vespa/t1.api-key.pem"
+	homeDir := filepath.Join(t.TempDir(), ".vespa")
+	keyFile := filepath.Join(homeDir, "t1.api-key.pem")
 
 	out, _ := execute(command{args: []string{"api-key", "-a", "t1.a1.i1"}, homeDir: homeDir}, t, nil)
-	assert.True(t, strings.HasPrefix(out, "Success: API private key written to "+keyFile+"\n"))
+	assert.Contains(t, out, "Success: API private key written to "+keyFile+"\n")
 
-	out, _ = execute(command{args: []string{"api-key", "-a", "t1.a1.i1"}, homeDir: homeDir}, t, nil)
-	assert.True(t, strings.HasPrefix(out, "Error: File "+keyFile+" already exists\nHint: Use -f to overwrite it\n"))
-	assert.True(t, strings.Contains(out, "This is your public key"))
+	out, outErr := execute(command{args: []string{"api-key", "-a", "t1.a1.i1"}, homeDir: homeDir}, t, nil)
+	assert.Contains(t, outErr, "Error: File "+keyFile+" already exists\nHint: Use -f to overwrite it\n")
+	assert.Contains(t, out, "This is your public key")
 }

@@ -1,9 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib.state;
 
 import org.junit.Test;
 
 import java.text.ParseException;
+import java.util.BitSet;
 import java.util.function.BiFunction;
 
 import static org.junit.Assert.assertEquals;
@@ -308,6 +309,17 @@ public class ClusterStateTestCase{
         state.setNodeState(new Node(NodeType.DISTRIBUTOR, 0), new NodeState(NodeType.DISTRIBUTOR, State.DOWN));
 
         assertEquals("distributor:2 .0.s:d storage:2", state.toString());
+    }
+
+    @Test
+    public void testBitSet() {
+        BitSet b = new BitSet();
+        assertEquals(0, b.length());
+        b.set(7);
+        b.set(107);
+        assertEquals(108, b.length());
+        b.clear(107);
+        assertEquals(8, b.length());
     }
 
     @Test

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "blockingoperationstarter.h"
 #include "distributor_bucket_space.h"
@@ -62,7 +62,8 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _throttlingStarter(std::make_unique<ThrottlingOperationStarter>(_maintenanceOperationOwner)),
       _blockingStarter(std::make_unique<BlockingOperationStarter>(_component, *_operation_sequencer,
                                                                   *_throttlingStarter)),
-      _scheduler(std::make_unique<MaintenanceScheduler>(_idealStateManager, *_bucketPriorityDb, *_blockingStarter)),
+      _scheduler(std::make_unique<MaintenanceScheduler>(_idealStateManager, *_bucketPriorityDb,
+                                                        *_throttlingStarter, *_blockingStarter)),
       _schedulingMode(MaintenanceScheduler::NORMAL_SCHEDULING_MODE),
       _recoveryTimeStarted(_component.getClock()),
       _tickResult(framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN),
@@ -75,8 +76,9 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _db_memory_sample_interval(30s),
       _last_db_memory_sample_time_point(),
       _inhibited_maintenance_tick_count(0),
-      _must_send_updated_host_info(false),
-      _stripe_index(stripe_index)
+      _stripe_index(stripe_index),
+      _non_activation_maintenance_is_inhibited(false),
+      _must_send_updated_host_info(false)
 {
     propagateDefaultDistribution(_component.getDistribution());
     propagateClusterStates();
@@ -557,8 +559,14 @@ DistributorStripe::propagateInternalScanMetricsToExternal()
 
     // All shared values are written when _metricLock is held, so no races.
     if (_bucketDBMetricUpdater.hasCompletedRound()) {
-        _bucketDbStats.propagateMetrics(_idealStateManager.getMetrics(), getMetrics());
-        _idealStateManager.getMetrics().setPendingOperations(_maintenanceStats.global.pending);
+        auto& ideal_state_metrics = _idealStateManager.getMetrics();
+        _bucketDbStats.propagateMetrics(ideal_state_metrics, getMetrics());
+        ideal_state_metrics.setPendingOperations(_maintenanceStats.global.pending);
+        const auto& total_stats = _maintenanceStats.perNodeStats.total_replica_stats();
+        ideal_state_metrics.buckets_replicas_moving_out.set(total_stats.movingOut);
+        ideal_state_metrics.buckets_replicas_copying_out.set(total_stats.copyingOut);
+        ideal_state_metrics.buckets_replicas_copying_in.set(total_stats.copyingIn);
+        ideal_state_metrics.buckets_replicas_syncing.set(total_stats.syncing);
     }
 }
 
@@ -678,7 +686,11 @@ DistributorStripe::startNextMaintenanceOperation()
 {
     _throttlingStarter->setMaxPendingRange(getConfig().getMinPendingMaintenanceOps(),
                                            getConfig().getMaxPendingMaintenanceOps());
-    _scheduler->tick(_schedulingMode);
+    auto effective_scheduling_mode = ((_schedulingMode == MaintenanceScheduler::RECOVERY_SCHEDULING_MODE) ||
+                                      non_activation_maintenance_is_inhibited())
+                                              ? MaintenanceScheduler::RECOVERY_SCHEDULING_MODE
+                                              : MaintenanceScheduler::NORMAL_SCHEDULING_MODE;
+    _scheduler->tick(effective_scheduling_mode);
 }
 
 framework::ThreadWaitInfo
@@ -698,7 +710,9 @@ DistributorStripe::doNonCriticalTick(framework::ThreadIndex)
     // did any useful work with incoming data, this check must be performed _after_ the call.
     if (!should_inhibit_current_maintenance_scan_tick()) {
         scanNextBucket();
-        startNextMaintenanceOperation();
+        if (!_bucketDBUpdater.hasPendingClusterState()) {
+            startNextMaintenanceOperation();
+        }
         if (isInRecoveryMode()) {
             signalWorkWasDone();
         }
@@ -746,6 +760,7 @@ DistributorStripe::propagate_config_snapshot_to_internal_components()
             getConfig().allowStaleReadsDuringClusterStateTransitions());
     _externalOperationHandler.set_use_weak_internal_read_consistency_for_gets(
             getConfig().use_weak_internal_read_consistency_for_client_gets());
+    _scheduler->set_implicitly_clear_priority_on_schedule(getConfig().implicitly_clear_priority_on_schedule());
 }
 
 void

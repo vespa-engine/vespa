@@ -1,5 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
@@ -27,26 +26,25 @@ public class FileSyncTest {
     private final FileSync fileSync = new FileSync(path);
 
     private String content = "content";
-    private String owner = "owner"; // default is user
-    private String group = "group1"; // default is group
+    private int ownerId = 123; // default is 1
+    private int groupId = 456; // default is 2
     private String permissions = "rw-r-xr--";
 
     @Test
     public void trivial() {
         assertConvergence("Creating file /dir/file.txt",
-                "Changing owner of /dir/file.txt from user to owner",
-                "Changing group of /dir/file.txt from group to group1",
+                "Changing user ID of /dir/file.txt from 1 to 123",
+                "Changing group ID of /dir/file.txt from 2 to 456",
                 "Changing permissions of /dir/file.txt from rw-r--r-- to rw-r-xr--");
 
         content = "new-content";
         assertConvergence("Patching file /dir/file.txt");
 
-        owner = "new-owner";
-        assertConvergence("Changing owner of /dir/file.txt from owner to " +
-                        owner);
+        ownerId = 124;
+        assertConvergence("Changing user ID of /dir/file.txt from 123 to 124");
 
-        group = "new-group1";
-        assertConvergence("Changing group of /dir/file.txt from group1 to new-group1");
+        groupId = 457;
+        assertConvergence("Changing group ID of /dir/file.txt from 456 to 457");
 
         permissions = "rwxr--rwx";
         assertConvergence("Changing permissions of /dir/file.txt from rw-r-xr-- to " +
@@ -56,8 +54,8 @@ public class FileSyncTest {
     private void assertConvergence(String... systemModificationMessages) {
         PartialFileData fileData = PartialFileData.builder()
                 .withContent(content)
-                .withOwner(owner)
-                .withGroup(group)
+                .withOwnerId(ownerId)
+                .withGroupId(groupId)
                 .withPermissions(permissions)
                 .create();
         taskContext.clearSystemModificationLog();
@@ -65,8 +63,8 @@ public class FileSyncTest {
 
         assertTrue(Files.isRegularFile(path));
         fileData.getContent().ifPresent(content -> assertArrayEquals(content, unixPath.readBytes()));
-        fileData.getOwner().ifPresent(owner -> assertEquals(owner, unixPath.getOwner()));
-        fileData.getGroup().ifPresent(group -> assertEquals(group, unixPath.getGroup()));
+        fileData.getOwnerId().ifPresent(owner -> assertEquals((int) owner, unixPath.getOwnerId()));
+        fileData.getGroupId().ifPresent(group -> assertEquals((int) group, unixPath.getGroupId()));
         fileData.getPermissions().ifPresent(permissions -> assertEquals(permissions, unixPath.getPermissions()));
 
         List<String> actualMods = taskContext.getSystemModificationLog();

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.tensor.functions.ScalarFunctions;
@@ -46,7 +46,8 @@ public enum Function implements Serializable {
     max(2)    { public double evaluate(double x, double y) { return max(x,y); } },
     min(2)    { public double evaluate(double x, double y) { return min(x,y); } },
     pow(2)    { public double evaluate(double x, double y) { return pow(x,y); } },
-    bit(2)    { public double evaluate(double x, double y) { return ((int)y < 8 && (int)y >= 0 && ((int)x & (1 << (int)y)) != 0) ? 1.0 : 0.0; } };
+    bit(2)    { public double evaluate(double x, double y) { return ((int)y < 8 && (int)y >= 0 && ((int)x & (1 << (int)y)) != 0) ? 1.0 : 0.0; } },
+    hamming(2) { public double evaluate(double x, double y) { return ScalarFunctions.Hamming.hamming(x, y); } };
 
     private final int arity;
 

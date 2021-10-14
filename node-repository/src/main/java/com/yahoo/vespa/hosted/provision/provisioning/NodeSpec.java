@@ -1,6 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
@@ -72,7 +73,7 @@ public interface NodeSpec {
      * in-place to resources in this spec.
      */
     default boolean canResize(NodeResources currentNodeResources, NodeResources currentSpareHostResources,
-                              boolean hasTopologyChange, int currentClusterSize) {
+                              ClusterSpec.Type type, boolean hasTopologyChange, int currentClusterSize) {
         return false;
     }
 
@@ -153,12 +154,12 @@ public interface NodeSpec {
 
         @Override
         public boolean canResize(NodeResources currentNodeResources, NodeResources currentSpareHostResources,
-                                 boolean hasTopologyChange, int currentClusterSize) {
+                                 ClusterSpec.Type type, boolean hasTopologyChange, int currentClusterSize) {
             // Never allow in-place resize when also changing topology or decreasing cluster size
             if (hasTopologyChange || count < currentClusterSize) return false;
 
-            // Do not allow increasing cluster size and decreasing node resources at the same time
-            if (count > currentClusterSize && !requestedNodeResources.satisfies(currentNodeResources.justNumbers()))
+            // Do not allow increasing cluster size and decreasing node resources at the same time for content nodes
+            if (type.isContent() && count > currentClusterSize && !requestedNodeResources.satisfies(currentNodeResources.justNumbers()))
                 return false;
 
             // Otherwise, allowed as long as the host can satisfy the new requested resources

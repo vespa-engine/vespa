@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.horizon;
 
 import com.google.inject.Inject;
@@ -14,8 +14,6 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.horizon.HorizonClient;
 import com.yahoo.vespa.hosted.controller.api.integration.horizon.HorizonResponse;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
@@ -28,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -41,7 +38,6 @@ import java.util.stream.Collectors;
  */
 public class HorizonApiHandler extends LoggingRequestHandler {
 
-    private final BillingController billingController;
     private final SystemName systemName;
     private final HorizonClient client;
     private final BooleanFlag enabledHorizonDashboard;
@@ -52,7 +48,6 @@ public class HorizonApiHandler extends LoggingRequestHandler {
     @Inject
     public HorizonApiHandler(LoggingRequestHandler.Context parentCtx, Controller controller, FlagSource flagSource) {
         super(parentCtx);
-        this.billingController = controller.serviceRegistry().billingController();
         this.systemName = controller.system();
         this.client = controller.serviceRegistry().horizonClient();
         this.enabledHorizonDashboard = Flags.ENABLED_HORIZON_DASHBOARD.bindTo(flagSource);
@@ -123,13 +118,11 @@ public class HorizonApiHandler extends LoggingRequestHandler {
     }
 
     private Set<TenantName> getAuthorizedTenants(Set<Role> roles) {
-        var horizonEnabled = roles.stream()
+        return roles.stream()
                 .filter(TenantRole.class::isInstance)
                 .map(role -> ((TenantRole) role).tenant())
                 .filter(tenant -> enabledHorizonDashboard.with(FetchVector.Dimension.TENANT_ID, tenant.value()).value())
-                .collect(Collectors.toList());
-
-        return new HashSet<>(billingController.tenantsWithPlan(horizonEnabled, PlanId.from("pay-as-you-go")));
+                .collect(Collectors.toSet());
     }
 
     private static class JsonInputStreamResponse extends HttpResponse {

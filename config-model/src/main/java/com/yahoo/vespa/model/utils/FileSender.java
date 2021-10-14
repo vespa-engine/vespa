@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.utils;
 
 import com.yahoo.config.FileReference;
@@ -149,6 +149,7 @@ public class FileSender implements Serializable {
         String path = builder.getValue();
         FileReference reference = sentFiles.get(path);
         if (reference == null) {
+
             reference = fileRegistry.addFile(path);
             send(reference, services);
             sentFiles.put(path, reference);

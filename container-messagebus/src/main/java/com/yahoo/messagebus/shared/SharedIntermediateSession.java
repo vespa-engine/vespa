@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.shared;
 
 import com.yahoo.jdisc.AbstractResource;
@@ -37,7 +37,7 @@ public class SharedIntermediateSession extends AbstractResource
         this.msgHandler.set(params.getMessageHandler());
         this.session = mbus.messageBus().createDetachedIntermediateSession(params.setReplyHandler(this)
                                                                                  .setMessageHandler(this));
-        this.mbusReference = mbus.refer();
+        this.mbusReference = mbus.refer(this);
     }
 
     public IntermediateSession session() {

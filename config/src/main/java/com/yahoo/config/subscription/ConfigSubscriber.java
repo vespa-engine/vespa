@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription;
 
 import com.yahoo.config.ConfigInstance;
@@ -257,7 +257,7 @@ public class ConfigSubscriber implements AutoCloseable {
         return acquireSnapshot(timeoutMillis, false, isInitializing);
     }
 
-    @Deprecated // TODO: Remov4e on Vespa 8
+    @Deprecated // TODO: Remove on Vespa 8
     public boolean nextGeneration(long timeoutMillis) {
         return nextGeneration(timeoutMillis, false);
     }

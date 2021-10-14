@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchers.test;
 
 import static org.junit.Assert.*;
@@ -33,7 +33,7 @@ public class InputCheckingSearcherTestCase {
     @Before
     public void setUp() {
         execution = new Execution(new Chain<Searcher>(new InputCheckingSearcher(MetricReceiver.nullImplementation)),
-                                  Execution.Context.createContextStub(new IndexFacts()));
+                                  Execution.Context.createContextStub());
     }
 
     @After

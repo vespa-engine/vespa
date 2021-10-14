@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
@@ -6,7 +6,6 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.HostProvisionerWithCustomRealResource;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
@@ -98,7 +97,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
                 "  <document-api />",
                 nodesXml,
                 "</container>");
-        root = new MockRoot("root", new MockApplicationPackage.Builder().build(), new HostProvisionerWithCustomRealResource());
+        root = new MockRoot("root", new MockApplicationPackage.Builder().build());
         createModel(root, elem);
         Map<String, Handler<?>> handlers = getHandlers("cluster1");
         Handler<?> feedApiHandler = handlers.get("com.yahoo.vespa.http.server.FeedHandler");
@@ -107,8 +106,8 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
 
         ContainerThreadpoolConfig config = root.getConfig(
                 ContainerThreadpoolConfig.class, "cluster1/component/com.yahoo.vespa.http.server.FeedHandler/threadpool@feedapi-handler");
-        assertEquals(16, config.maxThreads());
-        assertEquals(8, config.minThreads());
+        assertEquals(-4, config.maxThreads());
+        assertEquals(-4, config.minThreads());
     }
 
     @Test

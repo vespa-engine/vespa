@@ -1,9 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
+#include <vespa/storage/distributor/maintenance/pending_window_checker.h>
 #include <vespa/storage/distributor/operationstarter.h>
 #include <vespa/storage/distributor/operations/operation.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
@@ -34,10 +35,14 @@ class MockOperation : public MaintenanceOperation
     document::Bucket _bucket;
     std::string _reason;
     bool _shouldBlock;
+    bool _was_blocked;
+    bool _was_throttled;
 public:
     MockOperation(const document::Bucket &bucket)
         : _bucket(bucket),
-          _shouldBlock(false)
+          _shouldBlock(false),
+          _was_blocked(false),
+          _was_throttled(false)
     {}
 
     std::string toString() const override {
@@ -51,12 +56,16 @@ public:
     }
     void onStart(DistributorStripeMessageSender&) override {}
     void onReceive(DistributorStripeMessageSender&, const std::shared_ptr<api::StorageReply>&) override {}
+    void on_blocked() override { _was_blocked = true; }
+    void on_throttled() override { _was_throttled = true; }
     bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const override {
         return _shouldBlock;
     }
     void setShouldBlock(bool shouldBlock) {
         _shouldBlock = shouldBlock;
     }
+    bool get_was_blocked() const noexcept { return _was_blocked; }
+    bool get_was_throttled() const noexcept { return _was_throttled; }
 };
 
 class MockMaintenanceOperationGenerator
@@ -111,6 +120,18 @@ public:
 
     std::string toString() const {
         return _started.str();
+    }
+};
+
+class MockPendingWindowChecker : public PendingWindowChecker {
+    bool _allow = true;
+public:
+    void allow_operations(bool allow) noexcept {
+        _allow = allow;
+    }
+
+    bool may_allow_operation_with_priority(OperationStarter::Priority) const noexcept override {
+        return _allow;
     }
 };
 

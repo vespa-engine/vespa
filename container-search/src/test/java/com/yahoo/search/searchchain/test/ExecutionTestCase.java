@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchchain.test;
 
 import java.util.ArrayList;
@@ -163,7 +163,7 @@ public class ExecutionTestCase {
     @Test
     public void testBasicFill() {
         Chain<Searcher> chain = new Chain<Searcher>(new FillableResultSearcher());
-        Execution execution = new Execution(chain, Execution.Context.createContextStub(null));
+        Execution execution = new Execution(chain, Execution.Context.createContextStub());
 
         Result result = execution.search(new Query(com.yahoo.search.test.QueryTestCase.httpEncode("?presentation.summary=all")));
         assertNotNull(result.hits().get("a"));

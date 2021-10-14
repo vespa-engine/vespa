@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc;
 
 import com.yahoo.jdisc.application.ContainerActivator;
@@ -28,10 +28,22 @@ import com.yahoo.jdisc.service.ServerProvider;
 public interface SharedResource {
 
     String SYSTEM_PROPERTY_NAME_DEBUG = "jdisc.debug.resources";
-    boolean DEBUG = Boolean.valueOf(System.getProperty(SYSTEM_PROPERTY_NAME_DEBUG));
+    enum Debug {NO, SIMPLE, STACK}
+    Debug DEBUG = valueOfDebug();
+    private static Debug valueOfDebug() {
+        String val = System.getProperty(SYSTEM_PROPERTY_NAME_DEBUG);
+        if (val != null) {
+            val = val.toUpperCase();
+            if (Boolean.valueOf(val)) return Debug.SIMPLE;
+            try {
+                return Debug.valueOf(val);
+            } catch (IllegalArgumentException e) { }
+        }
+        return Debug.NO;
+    }
 
     /**
-     * <p>Increments the reference count of this resource. You call this method to prevent an object from being
+     * <p>Creates a reference to this resource. You call this method to prevent an object from being
      * destroyed until you have finished using it.</p>
      *
      * <p>You MUST keep the returned {@link ResourceReference} object and release the reference by calling
@@ -40,7 +52,24 @@ public interface SharedResource {
      *
      * @see ResourceReference#close()
      */
-    ResourceReference refer();
+    default ResourceReference refer() {
+        return refer(null);
+    }
+
+    /**
+     * <p>Creates a reference to this resource. You call this method to prevent an object from being
+     * destroyed until you have finished using it. You can attach a context that will live as long as the reference.</p>
+     *
+     * @param context A context to be associated with the reference. It should give some clue as to who referenced it.
+     * <p>You MUST keep the returned {@link ResourceReference} object and release the reference by calling
+     * {@link ResourceReference#close()} on it. A reference created by this method can NOT be released by calling
+     * {@link #release()}.</p>
+     *
+     * @see ResourceReference#close()
+     */
+    default ResourceReference refer(Object context) {
+        return refer();
+    }
 
     /**
      * <p>Releases the "main" reference to this resource (the implicit reference due to creation of the object).</p>

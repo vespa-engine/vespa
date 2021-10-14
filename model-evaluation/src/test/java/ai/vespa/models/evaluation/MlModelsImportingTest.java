@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
@@ -25,7 +25,7 @@ public class MlModelsImportingTest {
     public void testImportingModels() {
         ModelTester tester = new ModelTester("src/test/resources/config/models/");
 
-        assertEquals(5, tester.models().size());
+        assertEquals(6, tester.models().size());
 
         // TODO: When we get type information in Models, replace the evaluator.context().names() check below by that
         {

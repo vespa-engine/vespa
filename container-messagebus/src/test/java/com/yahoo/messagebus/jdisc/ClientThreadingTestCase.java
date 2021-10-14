@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.jdisc;
 
 import com.yahoo.jdisc.application.ContainerBuilder;
@@ -98,10 +98,8 @@ public class ClientThreadingTestCase {
             driver.activateContainer(builder);
             delegate.start();
         }
-
         void send(final Message msg, final ResponseHandler handler) {
-            final MbusRequest request = new MbusRequest(driver, URI.create("mbus://remote/"), msg);
-            request.setServerRequest(false);
+            final MbusRequest request = new MbusRequest(driver, URI.create("mbus://remote/"), msg, false);
             request.connect(handler).close(null);
             request.release();
         }

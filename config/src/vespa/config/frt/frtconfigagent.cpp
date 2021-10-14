@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "frtconfigagent.h"
 #include "frtconfigrequestv3.h"
 #include <vespa/config/common/trace.h>
@@ -27,7 +27,7 @@ FRTConfigAgent::handleResponse(const ConfigRequest & request, ConfigResponse::UP
 {
     if (LOG_WOULD_LOG(spam)) {
         const ConfigKey & key(request.getKey());
-        LOG(spam, "current state for %s: generation %" PRId64 " md5 %s", key.toString().c_str(), _configState.generation, _configState.md5.c_str());
+        LOG(spam, "current state for %s: generation %" PRId64 " xxhash64 %s", key.toString().c_str(), _configState.generation, _configState.xxhash64.c_str());
     }
     if (response->validateResponse() && !response->isError()) {
         handleOKResponse(request, std::move(response));
@@ -57,12 +57,12 @@ void
 FRTConfigAgent::handleUpdatedGeneration(const ConfigKey & key, const ConfigState & newState, const ConfigValue & configValue)
 {
     if (LOG_WOULD_LOG(spam)) {
-        LOG(spam, "new generation %" PRId64 " md5:%s for key %s", newState.generation, newState.md5.c_str(), key.toString().c_str());
-        LOG(spam, "Old config: md5:%s \n%s", _latest.getMd5().c_str(), _latest.asJson().c_str());
-        LOG(spam, "New config: md5:%s \n%s", configValue.getMd5().c_str(), configValue.asJson().c_str());
+        LOG(spam, "new generation %" PRId64 " xxhash64:%s for key %s", newState.generation, newState.xxhash64.c_str(), key.toString().c_str());
+        LOG(spam, "Old config: xxhash64:%s \n%s", _latest.getXxhash64().c_str(), _latest.asJson().c_str());
+        LOG(spam, "New config: xxhash64:%s \n%s", configValue.getXxhash64().c_str(), configValue.asJson().c_str());
     }
     bool changed = false;
-    if (_latest.getMd5() != configValue.getMd5()) {
+    if (_latest.getXxhash64() != configValue.getXxhash64()) {
         _latest = configValue;
         changed = true;
     }

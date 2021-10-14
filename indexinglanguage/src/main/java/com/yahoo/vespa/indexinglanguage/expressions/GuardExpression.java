@@ -1,8 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.UpdateAdapter;
 import com.yahoo.vespa.objects.ObjectOperation;
@@ -24,6 +25,11 @@ public final class GuardExpression extends CompositeExpression {
 
     public Expression getInnerExpression() {
         return exp;
+    }
+
+    @Override
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        exp.setStatementOutput(documentType, field);
     }
 
     @Override

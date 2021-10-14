@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=cloud.config.log
 
 ## Port to serve status and metrics on
@@ -27,7 +27,7 @@ loglevel.error.forward bool default=true
 loglevel.warning.forward bool default=true
 loglevel.config.forward bool default=true
 loglevel.info.forward bool default=true
-loglevel.event.forward bool default=false
+loglevel.event.forward bool default=true
 loglevel.debug.forward bool default=false
 loglevel.spam.forward bool default=false
 

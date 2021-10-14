@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.cluster;
 
 import com.google.common.base.Preconditions;
@@ -287,7 +287,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             }
             else if (admin.multitenant()) { // system tests: Put on logserver
                 if (admin.getClusterControllers() == null) {
-                    // TODO: logserver== null only obtains in unit tests, disallow it
+                    // TODO: logserver == null only obtains in unit tests, disallow it
                     List<HostResource> host = admin.getLogserver() == null ? List.of() : List.of(admin.getLogserver().getHostResource());
                     admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
                                                                          host,
@@ -428,7 +428,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
 
     public DistributorCluster getDistributorNodes() { return distributorNodes; }
 
-    public StorageCluster getStorageNodes() { return storageNodes; }
+    public StorageCluster getStorageCluster() { return storageNodes; }
 
     public ClusterControllerConfig getClusterControllerConfig() { return clusterControllerConfig; }
 

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchchain.test;
 
 import com.yahoo.component.ComponentId;
@@ -50,7 +50,7 @@ public class FutureDataTestCase {
 
         Query query = new Query();
         query.setTimeout(5000);
-        Result result = new Execution(main, Execution.Context.createContextStub(searchChainRegistry,null)).search(query);
+        Result result = new Execution(main, Execution.Context.createContextStub(searchChainRegistry)).search(query);
         assertNotNull(result);
 
         HitGroup syncGroup = (HitGroup)result.hits().get("source:sync");

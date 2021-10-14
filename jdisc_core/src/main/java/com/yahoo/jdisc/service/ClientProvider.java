@@ -1,8 +1,12 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.service;
 
 import com.yahoo.jdisc.Container;
-import com.yahoo.jdisc.application.*;
+import com.yahoo.jdisc.application.BindingRepository;
+import com.yahoo.jdisc.application.ContainerActivator;
+import com.yahoo.jdisc.application.ContainerBuilder;
+import com.yahoo.jdisc.application.Application;
+import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.jdisc.handler.RequestHandler;
 
 /**

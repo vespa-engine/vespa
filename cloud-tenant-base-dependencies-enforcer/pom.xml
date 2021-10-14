@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
@@ -30,7 +30,7 @@
         <javax.inject.version>1</javax.inject.version>
         <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
         <jaxb.version>2.3.0</jaxb.version>
-        <jetty.version>9.4.41.v20210516</jetty.version>
+        <jetty.version>9.4.44.v20210927</jetty.version>
         <jetty-alpn.version>1.1.3.v20160715</jetty-alpn.version>
         <junit5.version>5.7.0</junit5.version>
         <junit5.platform.version>1.7.0</junit5.platform.version>
@@ -38,7 +38,6 @@
         <org.lz4.version>1.7.1</org.lz4.version>
         <org.json.version>20090211</org.json.version><!-- TODO Vespa 8: remove as provided dependency -->
         <slf4j.version>1.7.30</slf4j.version>
-        <tensorflow.version>1.12.0</tensorflow.version>
         <xml-apis.version>1.4.01</xml-apis.version>
 
         <hk2.version>2.5.0-b32</hk2.version>
@@ -160,7 +159,6 @@
                                         <include>com.yahoo.vespa:fileacquirer:*:jar:provided</include>
                                         <include>com.yahoo.vespa:fsa:*:jar:provided</include>
                                         <include>com.yahoo.vespa:hosted-zone-api:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:http-utils:*:jar:provided</include>
                                         <include>com.yahoo.vespa:jdisc_core:*:jar:provided</include>
                                         <include>com.yahoo.vespa:jrt:*:jar:provided</include>
                                         <include>com.yahoo.vespa:linguistics:*:jar:provided</include>
@@ -269,10 +267,6 @@
                                         <include>org.junit.vintage:junit-vintage-engine:[${junit5.version}]:jar:test</include>
                                         <include>org.kohsuke:libpam4j:1.11:jar:test</include>
                                         <include>org.opentest4j:opentest4j:1.2.0:jar:test</include>
-                                        <include>org.tensorflow:libtensorflow:[${tensorflow.version}]:jar:test</include>
-                                        <include>org.tensorflow:libtensorflow_jni:[${tensorflow.version}]:jar:test</include>
-                                        <include>org.tensorflow:proto:[${tensorflow.version}]:jar:test</include>
-                                        <include>org.tensorflow:tensorflow:[${tensorflow.version}]:jar:test</include>
                                         <include>software.amazon.ion:ion-java:1.0.2:jar:test</include>
                                         <include>xerces:xercesImpl:2.12.0:jar:test</include>
                                     </includes>

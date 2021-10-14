@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
 import com.yahoo.container.handler.Timing;
@@ -43,8 +43,9 @@ public class SearchResponse {
 
     static boolean isSuccess(Result r) {
         if (r.hits().getErrorHit() == null) return true;
-        for (Hit hit : r.hits())
-            if ( ! hit.isMeta()) return true; // contains data : success
+        for (Hit hit : r.hits()) {
+            if (!hit.isMeta()) return true; // contains data : success
+        }
         return false;
     }
 

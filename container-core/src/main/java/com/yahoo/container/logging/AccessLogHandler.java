@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
 import com.yahoo.container.core.AccessLogConfig;
@@ -13,12 +13,18 @@ class AccessLogHandler {
     AccessLogHandler(AccessLogConfig.FileHandler config, LogWriter<RequestLogEntry> logWriter) {
         logFileHandler = new LogFileHandler<>(
                 toCompression(config), config.bufferSize(), config.pattern(), config.rotation(),
-                config.symlink(), config.queueSize(), "request-logger", logWriter);
+                config.symlink(), queueSize(config), "request-logger", logWriter);
+    }
+
+    private static int queueSize(AccessLogConfig.FileHandler config) {
+        if (config.queueSize() != -1) return config.queueSize();
+        return Math.max(4096, Runtime.getRuntime().availableProcessors() * 256);
     }
 
     public void log(RequestLogEntry entry) {
         logFileHandler.publish(entry);
     }
+
 
     private LogFileHandler.Compression toCompression(AccessLogConfig.FileHandler config) {
         if (!config.compressOnRotation()) return LogFileHandler.Compression.NONE;

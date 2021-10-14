@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package vespa
 
 import (
@@ -63,4 +64,29 @@ lu+CDhkxu4ZwLbwQtKBlNF5F7TXuTapUwcTErVgqrHqogrQUzthqrhbNfg==
 		t.Fatal(err)
 	}
 	assert.Equal(t, "c5:26:6a:11:e2:b5:74:f3:73:66:9d:80:2e:fd:b7:96", fp)
+}
+
+func TestECPrivateKeyFrom(t *testing.T) {
+	rawECKey := `-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEICgU7xtZvAyxvbmJn9pm8jOBUgNfM8rT7aDvvk7nyEUUoAoGCCqGSM49
+AwEHoUQDQgAEq2kSwXAmTR9AkocfAvxi8Y64cflaGKef9Ub2m3oa8cEvRPYgazrj
+THpg65DWF0Ui8d9ga2VkjqCz2zp7Cm8MXw==
+-----END EC PRIVATE KEY-----`
+
+	k1, err := ECPrivateKeyFrom([]byte(rawECKey))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pkcs8ECKey := `-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgKBTvG1m8DLG9uYmf
+2mbyM4FSA18zytPtoO++TufIRRShRANCAASraRLBcCZNH0CShx8C/GLxjrhx+VoY
+p5/1RvabehrxwS9E9iBrOuNMemDrkNYXRSLx32BrZWSOoLPbOnsKbwxf
+-----END PRIVATE KEY-----`
+	k2, err := ECPrivateKeyFrom([]byte(pkcs8ECKey))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.True(t, k1.Equal(k2))
 }

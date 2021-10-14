@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.handler;
 
 import ai.vespa.models.evaluation.FunctionEvaluator;
@@ -10,7 +10,6 @@ import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.JsonFormat;
@@ -20,6 +19,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -89,9 +89,12 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         }
         Tensor result = evaluator.evaluate();
 
-        Optional<String> format = property(request, "format");
-        if (format.isPresent() && format.get().equalsIgnoreCase("short") && result instanceof IndexedTensor) {
-            return new Response(200, JsonFormat.encodeShortForm((IndexedTensor) result));
+        Optional<String> format = property(request, "format.tensors");
+        if (format.isPresent() && format.get().equalsIgnoreCase("short")) {
+            return new Response(200, JsonFormat.encodeShortForm(result));
+        }
+        else if (format.isPresent() && format.get().equalsIgnoreCase("string")) {
+            return new Response(200, result.toString().getBytes(StandardCharsets.UTF_8));
         }
         return new Response(200, JsonFormat.encode(result));
     }

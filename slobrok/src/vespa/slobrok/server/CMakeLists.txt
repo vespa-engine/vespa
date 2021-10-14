@@ -1,7 +1,6 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(slobrok_slobrokserver
     SOURCES
-    cmd.cpp
     configshim.cpp
     exchange_manager.cpp
     i_monitored_server.cpp
@@ -23,8 +22,6 @@ vespa_add_library(slobrok_slobrokserver
     request_completion_handler.cpp
     reserved_name.cpp
     rpc_mapping_monitor.cpp
-    rpc_server_manager.cpp
-    rpc_server_map.cpp
     rpchooks.cpp
     rpcmirror.cpp
     sbenv.cpp

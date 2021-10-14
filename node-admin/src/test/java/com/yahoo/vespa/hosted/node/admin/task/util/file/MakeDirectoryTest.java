@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
@@ -25,21 +25,21 @@ public class MakeDirectoryTest {
 
     private final String path = "/parent/dir";
     private String permissions = "rwxr----x";
-    private String owner = "test-owner";
-    private String group = "test-group";
+    private int ownerId = 123;
+    private int groupId = 456;
 
     @Test
     public void newDirectory() {
         verifySystemModifications(
                 "Creating directory " + path,
-                "Changing owner of /parent/dir from user to test-owner",
-                "Changing group of /parent/dir from group to test-group");
+                "Changing user ID of /parent/dir from 1 to 123",
+                "Changing group ID of /parent/dir from 2 to 456");
 
-        owner = "new-owner";
-        verifySystemModifications("Changing owner of /parent/dir from test-owner to new-owner");
+        ownerId = 124;
+        verifySystemModifications("Changing user ID of /parent/dir from 123 to 124");
 
-        group = "new-group";
-        verifySystemModifications("Changing group of /parent/dir from test-group to new-group");
+        groupId = 457;
+        verifySystemModifications("Changing group ID of /parent/dir from 456 to 457");
 
         permissions = "--x---r--";
         verifySystemModifications("Changing permissions of /parent/dir from rwxr----x to --x---r--");
@@ -50,8 +50,8 @@ public class MakeDirectoryTest {
         MakeDirectory makeDirectory = new MakeDirectory(fileSystem.getPath(path))
                 .createParents()
                 .withPermissions(permissions)
-                .withOwner(owner)
-                .withGroup(group);
+                .withOwnerId(ownerId)
+                .withGroupId(groupId);
         assertTrue(makeDirectory.converge(context));
 
         assertEquals(List.of(modifications), context.getSystemModificationLog());

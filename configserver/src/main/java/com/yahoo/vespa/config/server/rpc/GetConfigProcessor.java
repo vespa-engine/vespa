@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.SentinelConfig;
@@ -27,8 +27,8 @@ import java.util.logging.Logger;
 import static com.yahoo.vespa.config.protocol.SlimeConfigResponse.fromConfigPayload;
 
 /**
-* @author hmusum
-*/
+ * @author hmusum
+ */
 class GetConfigProcessor implements Runnable {
 
     private static final Logger log = Logger.getLogger(GetConfigProcessor.class.getName());
@@ -69,7 +69,7 @@ class GetConfigProcessor implements Runnable {
 
     // TODO: Increment statistics (Metrics) failed counters when requests fail
     public Pair<GetConfigContext, Long> getConfig(JRTServerConfigRequest request) {
-        //Request has already been detached
+        // Request has already been detached
         if ( ! request.validateParameters()) {
             // Error code is set in verifyParameters if parameters are not OK.
             log.log(Level.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
@@ -140,6 +140,7 @@ class GetConfigProcessor implements Runnable {
         }
         return null;
     }
+
     @Override
     public void run() {
         rpcServer.hostLivenessTracker().receivedRequestFrom(request.getClientHostName());

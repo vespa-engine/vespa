@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.messagebus;
 
 import com.yahoo.component.AbstractComponent;
@@ -39,7 +39,7 @@ public class NetworkMultiplexerHolder extends AbstractComponent {
     public void deconstruct() {
         synchronized (monitor) {
             if (net != null) {
-                net.destroy();
+                net.disown();
                 net = null;
             }
             destroyed = true;

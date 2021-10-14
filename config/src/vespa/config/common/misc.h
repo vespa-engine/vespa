@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "configkey.h"
@@ -19,7 +19,7 @@ namespace config {
 /**
  * Miscellaneous utility functions specific to config.
  */
-vespalib::string calculateContentMd5(const std::vector<vespalib::string> & fileContents);
+vespalib::string calculateContentXxhash64(const std::vector<vespalib::string> & fileContents);
 
 bool isGenerationNewer(int64_t newGen, int64_t oldGen);
 

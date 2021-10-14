@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Copyright 2021 Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -15,13 +15,6 @@
     <description>HTTP client for configserver APIs, built on Apache http client 5</description>
 
     <dependencies>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>http-utils</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>vespa-athenz</artifactId>

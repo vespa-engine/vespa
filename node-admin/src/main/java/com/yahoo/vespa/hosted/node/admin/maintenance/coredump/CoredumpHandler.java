@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,7 +54,7 @@ public class CoredumpHandler {
     private final CoredumpReporter coredumpReporter;
     private final Path crashPatchInContainer;
     private final Path doneCoredumpsPath;
-    private final String operatorGroupName;
+    private final int operatorGroupId;
     private final Metrics metrics;
     private final Clock clock;
     private final Supplier<String> coredumpIdSupplier;
@@ -62,23 +62,23 @@ public class CoredumpHandler {
     /**
      * @param crashPathInContainer path inside the container where core dump are dumped
      * @param doneCoredumpsPath path on host where processed core dumps are stored
-     * @param operatorGroupName name of the group that will be set as the owner of the processed coredump
+     * @param operatorGroupId group ID of the group that will be set as the owner of the processed coredump
      */
     public CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                           Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName, Metrics metrics) {
+                           Path crashPathInContainer, Path doneCoredumpsPath, int operatorGroupId, Metrics metrics) {
         this(terminal, coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
-                operatorGroupName, metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString());
+                operatorGroupId, metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString());
     }
 
     CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                    Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName, Metrics metrics,
+                    Path crashPathInContainer, Path doneCoredumpsPath, int operatorGroupId, Metrics metrics,
                     Clock clock, Supplier<String> coredumpIdSupplier) {
         this.terminal = terminal;
         this.coreCollector = coreCollector;
         this.coredumpReporter = coredumpReporter;
         this.crashPatchInContainer = crashPathInContainer;
         this.doneCoredumpsPath = doneCoredumpsPath;
-        this.operatorGroupName = operatorGroupName;
+        this.operatorGroupId = operatorGroupId;
         this.metrics = metrics;
         this.clock = clock;
         this.coredumpIdSupplier = coredumpIdSupplier;
@@ -198,7 +198,7 @@ public class CoredumpHandler {
                 .add(LZ4_PATH, "-f", coreFile.toString(), compressedCoreFile.toString())
                 .setTimeout(Duration.ofMinutes(30))
                 .execute();
-        new UnixPath(compressedCoreFile).setGroup(operatorGroupName).setPermissions("rw-r-----");
+        new UnixPath(compressedCoreFile).setGroupId(operatorGroupId).setPermissions("rw-r-----");
         Files.delete(coreFile);
 
         Path newCoredumpDirectory = doneCoredumpsPath.resolve(context.containerName().asString());

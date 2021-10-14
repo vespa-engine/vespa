@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # @author Vegard Sjonfjell
 # @author Eirik Nygaard
 # @author Arnstein Ressem
@@ -58,7 +58,6 @@ add_subdirectory(config)
 add_subdirectory(config-model-fat)
 add_subdirectory(configd)
 add_subdirectory(configdefinitions)
-add_subdirectory(configgen)
 add_subdirectory(configserver)
 add_subdirectory(configserver-flags)
 add_subdirectory(configutil)
@@ -96,6 +95,7 @@ add_subdirectory(jdisc_jetty)
 add_subdirectory(jrt_test)
 add_subdirectory(juniper)
 add_subdirectory(linguistics)
+add_subdirectory(linguistics-components)
 add_subdirectory(logd)
 add_subdirectory(logserver)
 add_subdirectory(logforwarder)

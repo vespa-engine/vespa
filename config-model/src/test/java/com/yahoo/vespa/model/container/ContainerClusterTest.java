@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.cloud.config.ClusterInfoConfig;
@@ -38,8 +38,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -56,6 +56,7 @@ public class ContainerClusterTest {
         ClusterInfoConfig config = getClusterInfoConfig(cluster);
         assertEquals("name", config.clusterId());
         assertEquals(2, config.nodeCount());
+        assertEquals(List.of(0, 0), config.nodeIndices());  // both containers are created with index 0
         assertEquals(2, config.services().size());
 
         Iterator<ClusterInfoConfig.Services> iterator = config.services().iterator();
@@ -239,26 +240,14 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void requireThatPoolAndQueueCanNotBeControlledByPropertiesWhenNoFlavor() {
+    public void requireThatNonHostedUsesExpectedDefaultThreadpoolConfiguration() {
         MockRoot root = new MockRoot("foo");
         ApplicationContainerCluster cluster = createContainerCluster(root, false);
         addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
         ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
-        assertEquals(500, threadpoolConfig.maxthreads());
-        assertEquals(0, threadpoolConfig.queueSize());
-    }
-
-    @Test
-    public void requireThatDefaultThreadPoolConfigIsSane() {
-        MockRoot root = new MockRoot("foo");
-        ApplicationContainerCluster cluster = createContainerCluster(root, false);
-        addContainer(root, cluster, "c1", "host-c1");
-        root.freezeModelTopology();
-
-        ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
-        assertEquals(500, threadpoolConfig.maxthreads());
+        assertEquals(-100, threadpoolConfig.maxthreads());
         assertEquals(0, threadpoolConfig.queueSize());
     }
 
@@ -277,45 +266,37 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void config_for_default_threadpool_provider_scales_with_node_resources() {
-        HostProvisionerWithCustomRealResource hostProvisioner = new HostProvisionerWithCustomRealResource();
+    public void config_for_default_threadpool_provider_scales_with_node_resources_in_hosted() {
         MockRoot root = new MockRoot(
                 "foo",
                 new DeployState.Builder()
+                        .properties(new TestProperties().setHostedVespa(true))
                         .applicationPackage(new MockApplicationPackage.Builder().build())
-                        .modelHostProvisioner(hostProvisioner)
                         .build());
         ApplicationContainerCluster cluster = createContainerCluster(root, false);
-        HostResource hostResource = new HostResource(
-                new Host(null, "host-c1"),
-                hostProvisioner.allocateHost("host-c1"));
-        addContainerWithHostResource(root, cluster, "c1", hostResource);
+        addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
         ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
-        assertEquals(8, threadpoolConfig.maxthreads());
-        assertEquals(320, threadpoolConfig.queueSize());
+        assertEquals(-100, threadpoolConfig.maxthreads());
+        assertEquals(0, threadpoolConfig.queueSize());
     }
 
     @Test
-    public void jetty_threadpool_scales_with_node_resources() {
-        HostProvisionerWithCustomRealResource hostProvisioner = new HostProvisionerWithCustomRealResource(12);
+    public void jetty_threadpool_scales_with_node_resources_in_hosted() {
         MockRoot root = new MockRoot(
                 "foo",
                 new DeployState.Builder()
+                        .properties(new TestProperties().setHostedVespa(true))
                         .applicationPackage(new MockApplicationPackage.Builder().build())
-                        .modelHostProvisioner(hostProvisioner)
                         .build());
         ApplicationContainerCluster cluster = createContainerCluster(root, false);
-        HostResource hostResource = new HostResource(
-                new Host(null, "host-c1"),
-                hostProvisioner.allocateHost("host-c1"));
-        addContainerWithHostResource(root, cluster, "c1", hostResource);
+        addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
         ServerConfig cfg = root.getConfig(ServerConfig.class, "container0/c1/DefaultHttpServer");
-        assertEquals(28, cfg.maxWorkerThreads());
-        assertEquals(28, cfg.minWorkerThreads());
+        assertEquals(-1, cfg.maxWorkerThreads()); // Scale with cpu count observed by JVM
+        assertEquals(-1, cfg.minWorkerThreads()); // Scale with cpu count observed by JVM
     }
 
     @Test
@@ -383,10 +364,7 @@ public class ContainerClusterTest {
         cluster.getConfig(bundleBuilder);
         List<String> installedBundles = bundleBuilder.build().bundlePaths();
 
-        assertEquals(expectedBundleNames.size(), installedBundles.size());
-        assertThat(installedBundles, containsInAnyOrder(
-                expectedBundleNames.stream().map(CoreMatchers::endsWith).collect(Collectors.toList())
-        ));
+        expectedBundleNames.forEach(b -> assertThat(installedBundles, hasItem(CoreMatchers.endsWith(b))));
     }
 
 

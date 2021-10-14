@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include <vespa/vdslib/state/nodetype.h>
@@ -65,6 +65,16 @@ public:
     virtual bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const {
         return false;
     }
+
+    /*
+     * Called by blocking operation starter if operation was blocked
+     */
+    virtual void on_blocked();
+
+    /*
+     * Called by throttling operation starter if operation was throttled
+     */
+    virtual void on_throttled();
 
     /**
        Returns the timestamp on which the first message was sent from this callback.

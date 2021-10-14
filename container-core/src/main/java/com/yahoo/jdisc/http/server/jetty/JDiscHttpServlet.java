@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.container.logging.AccessLogEntry;
@@ -110,7 +110,7 @@ class JDiscHttpServlet extends HttpServlet {
         try {
             switch (request.getDispatcherType()) {
                 case REQUEST:
-                    new HttpRequestDispatch(context, accessLogEntry, getMetricContext(request), request, response).dispatch();
+                    new HttpRequestDispatch(context, accessLogEntry, getMetricContext(request), request, response).dispatchRequest();
                     break;
                 default:
                     if (log.isLoggable(Level.INFO)) {

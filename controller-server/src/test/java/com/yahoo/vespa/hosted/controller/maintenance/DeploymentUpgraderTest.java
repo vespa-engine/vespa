@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
@@ -55,19 +55,13 @@ public class DeploymentUpgraderTest {
         assertEquals(start, tester.jobs().last(devApp.instanceId(), devUsEast1).get().start());
         assertEquals(start, tester.jobs().last(prodApp.instanceId(), productionUsWest1).get().start());
 
-        // 14 hours pass, but not upgraded before a day has passed since last deployment
-        tester.clock().advance(Duration.ofHours(14));
+        // 11 hours pass, but not upgraded since it's not likely in the middle of the night
+        tester.clock().advance(Duration.ofHours(11));
         upgrader.maintain();
         assertEquals(start, tester.jobs().last(devApp.instanceId(), devUsEast1).get().start());
         assertEquals(start, tester.jobs().last(prodApp.instanceId(), productionUsWest1).get().start());
 
-        // 35 hours pass, but not upgraded since it's not likely in the middle of the night
-        tester.clock().advance(Duration.ofHours(21));
-        upgrader.maintain();
-        assertEquals(start, tester.jobs().last(devApp.instanceId(), devUsEast1).get().start());
-        assertEquals(start, tester.jobs().last(prodApp.instanceId(), productionUsWest1).get().start());
-
-        // 38 hours pass, and the dev deployment, only, is upgraded
+        // 14 hours pass, and the dev deployment, only, is upgraded
         tester.clock().advance(Duration.ofHours(3));
         upgrader.maintain();
         assertEquals(tester.clock().instant().truncatedTo(MILLIS), tester.jobs().last(devApp.instanceId(), devUsEast1).get().start());

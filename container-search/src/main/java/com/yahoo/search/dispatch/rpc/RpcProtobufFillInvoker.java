@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.rpc;
 
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
@@ -185,6 +185,12 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         });
     }
 
+    private void convertErrorsFromDocsumReply(Result target, List<SearchProtocol.Error> errors) {
+        for (var error : errors) {
+            target.hits().addError(ErrorMessage.createDocsumReplyError(error.getMessage()));
+        }
+    }
+
     private int fill(Result result, List<FastHit> hits, String summaryClass, byte[] payload) {
         try {
             var protobuf = SearchProtocol.DocsumReply.parseFrom(payload);
@@ -194,6 +200,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             if (hasErrors) {
                 addErrors(result, errors);
             }
+            convertErrorsFromDocsumReply(result, protobuf.getErrorsList());
 
             Inspector summaries = new SlimeAdapter(root.field("docsums"));
             if (!summaries.valid()) {

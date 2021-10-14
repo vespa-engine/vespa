@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "docsum_by_slime.h"
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/searchlib/common/packets.h>
@@ -63,7 +63,7 @@ getCompressionConfig()
 DocsumRequest::UP
 DocsumBySlime::slimeToRequest(const Inspector & request)
 {
-    DocsumRequest::UP docsumRequest(std::make_unique<DocsumRequest>(true));
+    DocsumRequest::UP docsumRequest(std::make_unique<DocsumRequest>());
 
     docsumRequest->resultClassName = request[SUMMARYCLASS].asString().make_string();
 

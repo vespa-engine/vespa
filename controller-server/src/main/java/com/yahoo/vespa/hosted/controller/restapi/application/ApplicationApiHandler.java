@@ -1967,7 +1967,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                             .flatMap(options -> optional("vespaVersion", options))
                                             .map(Version::fromString);
 
-        controller.jobController().deploy(id, type, version, applicationPackage);
+        ensureApplicationExists(TenantAndApplicationId.from(id), request);
+
+        boolean dryRun = Optional.ofNullable(dataParts.get("deployOptions"))
+                                 .map(json -> SlimeUtils.jsonToSlime(json).get())
+                                 .flatMap(options -> optional("dryRun", options))
+                                 .map(Boolean::valueOf)
+                                 .orElse(false);
+
+        controller.jobController().deploy(id, type, version, applicationPackage, dryRun);
         RunId runId = controller.jobController().last(id, type).get().id();
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();
@@ -2617,6 +2625,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                                          applicationPackage,
                                                                          Optional.of(requireUserPrincipal(request)));
 
+        ensureApplicationExists(TenantAndApplicationId.from(tenant, application), request);
+
         return JobControllerApiHandlerHelper.submitResponse(controller.jobController(),
                                                             tenant,
                                                             application,
@@ -2716,6 +2726,14 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return securityContext.roles().stream()
                               .map(Role::definition)
                               .anyMatch(definition -> definition == RoleDefinition.hostedOperator);
+    }
+
+    private void ensureApplicationExists(TenantAndApplicationId id, HttpRequest request) {
+        if (controller.applications().getApplication(id).isEmpty()) {
+            log.fine("Application does not exist in public, creating: " + id);
+            var credentials = accessControlRequests.credentials(id.tenant(), null /* not used on public */ , request.getJDiscRequest());
+            controller.applications().createApplication(id, credentials);
+        }
     }
 
 }

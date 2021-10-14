@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -20,6 +20,7 @@ extern "C" {
     double vespalib_eval_sigmoid(double a);
     double vespalib_eval_elu(double a);
     double vespalib_eval_bit(double a, double b);
+    double vespalib_eval_hamming(double a, double b);
 };
 
 namespace vespalib::eval {

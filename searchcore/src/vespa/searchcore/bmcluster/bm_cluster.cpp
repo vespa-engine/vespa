@@ -7,6 +7,7 @@
 #include "bm_message_bus.h"
 #include "bm_node.h"
 #include "bm_node_stats.h"
+#include "bucket_db_snapshot_vector.h"
 #include "document_api_message_bus_bm_feed_handler.h"
 #include "spi_bm_feed_handler.h"
 #include "storage_api_chain_bm_feed_handler.h"
@@ -148,7 +149,7 @@ BmCluster::BmCluster(const vespalib::string& base_dir, int base_port, const BmCl
       _document_types(std::move(document_types)),
       _repo(std::move(repo)),
       _field_set_repo(std::make_unique<const document::FieldSetRepo>(*_repo)),
-      _real_distribution(std::make_shared<BmDistribution>(params.get_num_nodes(), params.get_redundancy())),
+      _real_distribution(std::make_shared<BmDistribution>(params.get_groups(), params.get_nodes_per_group(), params.get_redundancy())),
       _distribution(_real_distribution),
       _nodes(params.get_num_nodes()),
       _cluster_controller(std::make_shared<BmClusterController>(*this, *_distribution)),
@@ -443,6 +444,13 @@ void
 BmCluster::propagate_cluster_state()
 {
     _cluster_controller->propagate_cluster_state();
+}
+
+BucketDbSnapshotVector
+BmCluster::get_bucket_db_snapshots()
+{
+    auto providers = collect_persistence_providers(_nodes);
+    return BucketDbSnapshotVector(providers, _distribution->get_cluster_state_bundle());
 }
 
 }

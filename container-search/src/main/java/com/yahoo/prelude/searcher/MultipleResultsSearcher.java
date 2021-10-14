@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.searcher;
 
 import com.yahoo.search.Query;
@@ -153,12 +153,9 @@ public class MultipleResultsSearcher extends Searcher {
             Result result = execution.search(query);
             // ensure that field sddocname is available
             execution.fill(result); // TODO: Suffices to fill attributes
-
-            if (result.hits().getErrorHit() != null)
-                initialResult.hits().getErrorHit().addErrors(
-                    result.hits().getErrorHit());
-
-
+            if (initialResult != null) {
+                initialResult.hits().addErrorsFrom(result.hits());
+            }
             return result;
         }
     }

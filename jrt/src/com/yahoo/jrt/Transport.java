@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
 
@@ -90,7 +90,7 @@ public class Transport {
     boolean getTcpNoDelay() { return tcpNoDelay; }
     int getEventsBeforeWakeup() { return eventsBeforeWakeup; }
 
-    String getName() { return name; }
+    public String getName() { return name; }
 
     /**
      * Use the underlying CryptoEngine to create a CryptoSocket for

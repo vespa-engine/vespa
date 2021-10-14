@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
 
 import com.yahoo.container.protect.Error;
@@ -20,7 +20,7 @@ public class ErrorMessage extends com.yahoo.processing.request.ErrorMessage {
     private String source = null;
 
     public ErrorMessage(int code, String message) {
-        super(code,message);
+        super(code, message);
     }
 
     /**
@@ -29,7 +29,7 @@ public class ErrorMessage extends com.yahoo.processing.request.ErrorMessage {
      * can be generated using com.yahoo.protect.Exceptions.toMessageString(exception).
      */
     public ErrorMessage(int code, String message, String detailedMessage) {
-        super(code,message, detailedMessage);
+        super(code, message, detailedMessage);
     }
 
     /**
@@ -161,6 +161,16 @@ public class ErrorMessage extends com.yahoo.processing.request.ErrorMessage {
      */
     public static ErrorMessage createInternalServerError(String detailedMessage) {
         return new ErrorMessage(INTERNAL_SERVER_ERROR.code, "Internal server error.", detailedMessage);
+    }
+
+    /** Wraps an error message received in a SearchReply packet */
+    public static ErrorMessage createSearchReplyError(String detailedMessage) {
+        return new ErrorMessage(RESULT_HAS_ERRORS.code, "Error in search reply.", detailedMessage);
+    }
+
+    /** Wraps an error message received in a DocsumReply packet */
+    public static ErrorMessage createDocsumReplyError(String detailedMessage) {
+        return new ErrorMessage(RESULT_HAS_ERRORS.code, "Error in fill reply.", detailedMessage);
     }
 
     /** Sets the source producing this error */

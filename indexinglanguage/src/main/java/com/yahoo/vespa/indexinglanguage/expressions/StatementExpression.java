@@ -1,10 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.TensorDataType;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.ScriptParser;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
@@ -12,7 +11,6 @@ import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -100,11 +98,11 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
     /** Creates an expression with simple lingustics for testing */
     public static StatementExpression fromString(String expression) throws ParseException {
-        return fromString(expression, new SimpleLinguistics(), Encoder.throwsOnUse);
+        return fromString(expression, new SimpleLinguistics(), Embedder.throwsOnUse);
     }
 
-    public static StatementExpression fromString(String expression, Linguistics linguistics, Encoder encoder) throws ParseException {
-        return newInstance(new ScriptParserContext(linguistics, encoder).setInputStream(new IndexingInput(expression)));
+    public static StatementExpression fromString(String expression, Linguistics linguistics, Embedder embedder) throws ParseException {
+        return newInstance(new ScriptParserContext(linguistics, embedder).setInputStream(new IndexingInput(expression)));
     }
 
     public static StatementExpression newInstance(ScriptParserContext config) throws ParseException {

@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "make_tensor_function.h"
 #include "value_codec.h"
@@ -359,6 +359,9 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
     void visit(const Bit &node) override {
         make_join(node, operation::Bit::f);
+    }
+    void visit(const Hamming &node) override {
+        make_join(node, operation::Hamming::f);
     }
 
     //-------------------------------------------------------------------------

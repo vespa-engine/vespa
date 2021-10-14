@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <!-- Implementation of document-api in the container. -->
 <!-- TODO: Rename to container-documentapi -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -42,17 +42,34 @@
       <artifactId>vespa-http-client</artifactId>
       <version>${project.version}</version>
       <exclusions>
+        <!-- Exclude artifacts that are provided by Jdisc container -->
         <exclusion>
           <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.datatype</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.module</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>security-utils</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
+          <artifactId>*</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpcore</artifactId>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di.componentgraph.core;
 
 import com.google.inject.Inject;
@@ -178,6 +178,15 @@ public class ComponentNode extends Node {
         return component;
     }
 
+    @Override
+    public String toString() {
+        return "ComponentNode{" +
+                super.toString() +
+                ", clazz=" + clazz +
+                ", key=" + key +
+                ", configId='" + configId + '\'' +
+                '}';
+    }
 
     @Override
     public int hashCode() {

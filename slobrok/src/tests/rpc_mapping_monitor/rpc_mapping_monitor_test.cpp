@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/slobrok/server/rpc_mapping_monitor.h>
@@ -148,7 +148,7 @@ TEST_F(RpcMappingMonitorTest, hurry_means_faster) {
     EXPECT_TRUE(debugger.step_until([&]() {
                 return ((hist.map[foo_a].samples() > 0)); }));
     auto t2 = debugger.time();
-    fprintf(stderr, "hurry: ~%zu ms, normal: ~%zu ms\n", count_ms(t1-t0), count_ms(t2-t0));
+    fprintf(stderr, "hurry: ~%" PRIu64 " ms, normal: ~%" PRIu64 " ms\n", count_ms(t1-t0), count_ms(t2-t0));
     EXPECT_GT((t2 - t0), 10 * (t1 - t0));
     EXPECT_EQ(hist.map[foo_a].state(), State::UP);
     EXPECT_EQ(hist.map[baz_b].state(), State::UP);
@@ -218,7 +218,7 @@ TEST_F(RpcMappingMonitorTest, detect_ping_interval) {
     a.set_last_conn(nullptr);
     EXPECT_TRUE(debugger.step_until([&]() { return (a.last_conn); }));
     auto t2 = debugger.time();
-    fprintf(stderr, "ping interval: ~%zu ms\n", count_ms(t2-t1));    
+    fprintf(stderr, "ping interval: ~%" PRIu64 " ms\n", count_ms(t2-t1));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

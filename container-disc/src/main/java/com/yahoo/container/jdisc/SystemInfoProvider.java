@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
 import ai.vespa.cloud.Cluster;
@@ -26,7 +26,7 @@ public class SystemInfoProvider extends AbstractComponent implements Provider<Sy
     @Inject
     public SystemInfoProvider(ConfigserverConfig csConfig, QrConfig qrConfig, ClusterInfoConfig ciConfig) {
         this.instance = new SystemInfo(new Zone(Environment.valueOf(csConfig.environment()), csConfig.region()),
-                                       new Cluster(ciConfig.nodeCount()),
+                                       new Cluster(ciConfig.nodeCount(), ciConfig.nodeIndices()),
                                        new Node(qrConfig.nodeIndex()));
     }
 

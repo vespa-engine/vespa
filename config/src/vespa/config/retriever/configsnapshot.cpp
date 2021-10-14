@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configsnapshot.h"
 #include <vespa/config/subscription/configsubscription.h>
@@ -150,7 +150,7 @@ void
 ConfigSnapshot::serializeValueV2(Cursor & cursor, const Value & value) const
 {
     cursor.setDouble("lastChanged", value.first);
-    cursor.setString("md5", Memory(value.second.getMd5()));
+    cursor.setString("xxhash64", Memory(value.second.getXxhash64()));
     value.second.serializeV2(cursor.setObject("payload"));
 }
 
@@ -225,7 +225,7 @@ ConfigSnapshot::deserializeValueV1(Inspector & inspector) const
     for (size_t i = 0; i < s.children(); i++) {
         payload.push_back(s[i].asString().make_string());
     }
-    return Value(lastChanged, ConfigValue(payload, calculateContentMd5(payload)));
+    return Value(lastChanged, ConfigValue(payload, calculateContentXxhash64(payload)));
 }
 
 namespace {
@@ -247,10 +247,10 @@ std::pair<int64_t, ConfigValue>
 ConfigSnapshot::deserializeValueV2(Inspector & inspector) const
 {
     int64_t lastChanged = static_cast<int64_t>(inspector["lastChanged"].asDouble());
-    vespalib::string md5(inspector["md5"].asString().make_string());
+    vespalib::string xxhash64(inspector["xxhash64"].asString().make_string());
     auto payload = std::make_unique<FixedPayload>();
     copySlimeObject(inspector["payload"], payload->getData().setObject());
-    return Value(lastChanged, ConfigValue(std::move(payload) , md5));
+    return Value(lastChanged, ConfigValue(std::move(payload), xxhash64));
 }
 
 }

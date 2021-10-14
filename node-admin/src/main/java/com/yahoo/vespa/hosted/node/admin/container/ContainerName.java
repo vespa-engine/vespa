@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container;
 
 import java.util.Objects;
@@ -11,14 +11,14 @@ import java.util.regex.Pattern;
  */
 public class ContainerName implements Comparable<ContainerName> {
 
-    private static final Pattern LEGAL_CONTAINER_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9-]+$");
+    private static final Pattern LEGAL_CONTAINER_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
     private final String name;
 
     public ContainerName(final String name) {
         this.name = Objects.requireNonNull(name);
         if (! LEGAL_CONTAINER_NAME_PATTERN.matcher(name).matches()) {
             throw new IllegalArgumentException("Illegal container name: " + name + ". Must match " +
-                    LEGAL_CONTAINER_NAME_PATTERN.toString());
+                    LEGAL_CONTAINER_NAME_PATTERN.pattern());
         }
     }
 

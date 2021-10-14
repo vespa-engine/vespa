@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "reconfigurable_stateserver.h"
 #include "sbenv.h"
@@ -97,19 +97,16 @@ ConfigTask::PerformTask()
 
 } // namespace slobrok::<unnamed>
 
-SBEnv::SBEnv(const ConfigShim &shim) : SBEnv(shim, true) {}
-
-SBEnv::SBEnv(const ConfigShim &shim, bool)
+SBEnv::SBEnv(const ConfigShim &shim)
     : _transport(std::make_unique<FNET_Transport>(TransportConfig().drop_empty_buffers(true))),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
       _configShim(shim),
       _configurator(shim.factory().create(*this)),
       _shuttingDown(false),
-      _useNewLogic(true),
       _partnerList(),
       _me(createSpec(_configShim.portNumber())),
-      _rpcHooks(*this, _rpcsrvmap, _rpcsrvmanager),
-      _remotechecktask(std::make_unique<RemoteCheck>(getSupervisor()->GetScheduler(), _rpcsrvmap, _rpcsrvmanager, _exchanger)),
+      _rpcHooks(*this),
+      _remotechecktask(std::make_unique<RemoteCheck>(getSupervisor()->GetScheduler(), _exchanger)),
       _health(),
       _metrics(_rpcHooks, *_transport),
       _components(),
@@ -117,9 +114,7 @@ SBEnv::SBEnv(const ConfigShim &shim, bool)
                           [this] (MappingMonitorOwner &owner) {
                               return std::make_unique<RpcMappingMonitor>(*_supervisor, owner);
                           }),
-      _rpcsrvmanager(*this),
-      _exchanger(*this, _rpcsrvmap),
-      _rpcsrvmap()
+      _exchanger(*this)
 {
     srandom(time(nullptr) ^ getpid());
     // note: feedback loop between these two:
@@ -201,7 +196,6 @@ SBEnv::MainLoop()
     return 0;
 }
 
-
 void
 SBEnv::setup(const std::vector<std::string> &cfg)
 {
@@ -272,7 +266,7 @@ SBEnv::removePeer(const std::string &name, const std::string &spec)
     if (partner == nullptr) {
         return OkState(0, "remote slobrok not a partner");
     }
-    _exchanger.removePartner(name);
+    _exchanger.removePartner(spec);
     return OkState(0, "done");
 }
 

@@ -1,0 +1,18 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+# Configures com.yahoo.language.sentencepiece.SentencePieceEmbedder
+
+namespace=language.sentencepiece
+
+# Whether consecutive unknown character should be collapsed into one large unknown token (default
+# or be returned as single character tokens.
+collapseUnknowns bool default=true
+
+# The scoring strategy to use when picking a segmentation.
+scoring enum { highestScore, fewestSegments } default=fewestSegments
+
+# The language a model is for, one of the language tags in com.yahoo.language.Language.
+# Use "unknown" for models to be used with any language.
+model[].language string
+# The path to the model relative to the application package root
+model[].path path

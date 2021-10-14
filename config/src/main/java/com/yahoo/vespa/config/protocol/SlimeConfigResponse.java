@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.vespa.config.PayloadChecksums;
@@ -33,19 +33,6 @@ public class SlimeConfigResponse implements ConfigResponse {
                                        generation,
                                        applyOnRestart,
                                        payloadChecksums,
-                                       CompressionInfo.create(CompressionType.UNCOMPRESSED, data.getByteLength()));
-    }
-
-    // TODO: Legacy method, remove when not used anymore
-    public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload,
-                                                        long generation,
-                                                        boolean applyOnRestart,
-                                                        String configMd5) {
-        AbstractUtf8Array data = payload.toUtf8Array(true);
-        return new SlimeConfigResponse(data,
-                                       generation,
-                                       applyOnRestart,
-                                       PayloadChecksums.from(configMd5, ""),
                                        CompressionInfo.create(CompressionType.UNCOMPRESSED, data.getByteLength()));
     }
 

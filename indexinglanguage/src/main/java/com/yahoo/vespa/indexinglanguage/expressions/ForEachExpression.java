@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.*;
@@ -24,6 +24,11 @@ public final class ForEachExpression extends CompositeExpression {
 
     public Expression getInnerExpression() {
         return exp;
+    }
+
+    @Override
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        exp.setStatementOutput(documentType, field);
     }
 
     @Override

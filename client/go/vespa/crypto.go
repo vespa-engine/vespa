@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package vespa
 
 import (
@@ -12,21 +13,20 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"math/big"
 	"net/http"
-	"os"
 	"strings"
 	"time"
+
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 const (
 	defaultCommonName = "cloud.vespa.example"
 	certificateExpiry = 3650 * 24 * time.Hour // Approximately 10 years
-	tempFilePattern   = "vespa"
 )
 
 // PemKeyPair represents a PEM-encoded private key and X509 certificate.
@@ -37,31 +37,18 @@ type PemKeyPair struct {
 
 // WriteCertificateFile writes the certificate contained in this key pair to certificateFile.
 func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite bool) error {
-	return atomicWriteFile(certificateFile, kp.Certificate, overwrite)
+	if util.PathExists(certificateFile) && !overwrite {
+		return fmt.Errorf("cannot overwrite existing file: %s", certificateFile)
+	}
+	return util.AtomicWriteFile(certificateFile, kp.Certificate)
 }
 
 // WritePrivateKeyFile writes the private key contained in this key pair to privateKeyFile.
 func (kp *PemKeyPair) WritePrivateKeyFile(privateKeyFile string, overwrite bool) error {
-	return atomicWriteFile(privateKeyFile, kp.PrivateKey, overwrite)
-}
-
-func atomicWriteFile(filename string, data []byte, overwrite bool) error {
-	tmpFile, err := ioutil.TempFile("", tempFilePattern)
-	if err != nil {
-		return err
+	if util.PathExists(privateKeyFile) && !overwrite {
+		return fmt.Errorf("cannot overwrite existing file: %s", privateKeyFile)
 	}
-	defer os.Remove(tmpFile.Name())
-	if _, err := tmpFile.Write(data); err != nil {
-		return err
-	}
-	if err := tmpFile.Close(); err != nil {
-		return err
-	}
-	_, err = os.Stat(filename)
-	if errors.Is(err, os.ErrNotExist) || overwrite {
-		return os.Rename(tmpFile.Name(), filename)
-	}
-	return fmt.Errorf("cannot overwrite existing file: %s", filename)
+	return util.AtomicWriteFile(privateKeyFile, kp.PrivateKey)
 }
 
 // CreateKeyPair creates a key pair containing a private key and self-signed X509 certificate.
@@ -147,6 +134,9 @@ func (rs *RequestSigner) SignRequest(request *http.Request) error {
 	}
 	base64Signature := base64.StdEncoding.EncodeToString(signature)
 	request.Body = ioutil.NopCloser(body)
+	if request.Header == nil {
+		request.Header = make(http.Header)
+	}
 	request.Header.Set("X-Timestamp", timestamp)
 	request.Header.Set("X-Content-Hash", contentHash)
 	request.Header.Set("X-Key-Id", rs.KeyID)
@@ -163,13 +153,24 @@ func (rs *RequestSigner) hashAndSign(privateKey *ecdsa.PrivateKey, request *http
 	return ecdsa.SignASN1(rs.rnd, privateKey, hash)
 }
 
-// ECPrivateKeyFrom reads an EC private key from the PEM-encoded pemPrivateKey.
+// ECPrivateKeyFrom reads an EC private key (in raw or PKCS8 format) from the PEM-encoded pemPrivateKey.
 func ECPrivateKeyFrom(pemPrivateKey []byte) (*ecdsa.PrivateKey, error) {
 	privateKeyBlock, _ := pem.Decode(pemPrivateKey)
 	if privateKeyBlock == nil {
 		return nil, fmt.Errorf("invalid pem private key")
 	}
-	return x509.ParseECPrivateKey(privateKeyBlock.Bytes)
+	if privateKeyBlock.Type == "EC PRIVATE KEY" {
+		return x509.ParseECPrivateKey(privateKeyBlock.Bytes) // Raw EC private key
+	}
+	privateKey, err := x509.ParsePKCS8PrivateKey(privateKeyBlock.Bytes) // Try PKCS8 format
+	if err != nil {
+		return nil, err
+	}
+	ecKey, ok := privateKey.(*ecdsa.PrivateKey)
+	if !ok {
+		return nil, fmt.Errorf("invalid private key type: %T", ecKey)
+	}
+	return ecKey, nil
 }
 
 // PEMPublicKeyFrom extracts the public key from privateKey encoded as PEM.

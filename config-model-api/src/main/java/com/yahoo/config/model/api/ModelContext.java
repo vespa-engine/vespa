@@ -80,24 +80,25 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useAsyncMessageHandlingOnSchedule() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int metricsproxyNumThreads() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean enforceRankProfileInheritance() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int largeRankExpressionLimit() { return 8192; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "7.468") default boolean useExternalRankExpressions() { return true; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "7.468") default boolean distributeExternalRankExpressions() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxConcurrentMergesPerNode() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxMergeQueueSize() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean dryRunOnnxOnSetup() { return true; }
+        @ModelFeatureFlag(owners = {"vekterli", "geirst"}) default boolean ignoreMergeQueueLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean containerDumpHeapOnShutdownTimeout() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default double containerShutdownTimeout() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default double diskBloatFactor() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default int docstoreCompressionLevel() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"geirst"}) default boolean enableFeedBlockInDistributor() { return true; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return ""; }
-        @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default int numDistributorStripes() { return 0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean requireConnectivityCheck() { return true; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.470") default boolean throwIfResourceLimitsSpecified() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitDisk() { return 0.8; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitMemory() { return 0.8; }
         @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default double minNodeRatioPerGroup() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean newLocationBrokerLogic() { return true; }
+        @ModelFeatureFlag(owners = {"bjorncs"}) default int maxConnectionLifeInHosted() { return 45; }
+        @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default int distributorMergeBusyWait() { return 10; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

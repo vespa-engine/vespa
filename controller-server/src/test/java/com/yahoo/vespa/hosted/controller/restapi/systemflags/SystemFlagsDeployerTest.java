@@ -166,8 +166,8 @@ public class SystemFlagsDeployerTest {
                 .build();
         SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(prodUsEast3Target));
         SystemFlagsDeployResult result = deployer.deployFlags(archive, true);
-        assertThat(result.warnings())
-                .containsOnly(SystemFlagsDeployResult.Warning.dataForUndefinedFlag(prodUsEast3Target, new FlagId("my-flag")));
+        assertThat(result.errors())
+                .containsOnly(OperationError.dataForUndefinedFlag(prodUsEast3Target, new FlagId("my-flag")));
     }
 
     private static FlagData flagData(String filename) throws IOException {

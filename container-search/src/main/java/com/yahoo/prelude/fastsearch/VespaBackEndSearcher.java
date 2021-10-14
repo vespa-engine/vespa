@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.collections.TinyIdentitySet;
@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 
 /**
  * Superclass for backend searchers.
@@ -233,11 +232,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     }
 
     private void mergeErrorsInto(Result destination, Result source) {
-        ErrorHit eh = source.hits().getErrorHit();
-        if (eh != null) {
-            for (ErrorMessage error : eh.errors())
-                destination.hits().addError(error);
-        }
+        destination.hits().addErrorsFrom(source.hits());
     }
 
     void traceQuery(String sourceName, String type, Query query, int offset, int hits, int level, Optional<String> quotedSummaryClass) {

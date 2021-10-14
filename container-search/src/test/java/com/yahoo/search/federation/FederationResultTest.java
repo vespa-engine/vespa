@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.federation;
 
 import com.google.common.collect.ImmutableSet;
@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -57,7 +58,7 @@ public class FederationResultTest {
             if (expectedTimeoutNames.contains(targetResult.target.getId().toString()))
                 assertTrue(targetResult.target.getId() + " timed out", timedOut(result));
             else
-                assertTrue(targetResult.target.getId() + " did not time out", ! timedOut(result));
+                assertFalse(targetResult.target.getId() + " did not time out", timedOut(result));
         }
     }
     

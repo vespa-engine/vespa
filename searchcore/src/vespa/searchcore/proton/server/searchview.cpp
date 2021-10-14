@@ -1,8 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "searchview.h"
 #include <vespa/searchcore/proton/docsummary/docsumcontext.h>
 #include <vespa/searchlib/engine/searchreply.h>
+#include <vespa/vespalib/data/slime/slime.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.searchview");
 
@@ -75,32 +77,12 @@ hasAnyLidsMoved(const DocsumRequest & request,
 }
 
 /**
- * Maps the lids in the reply to gids using the original request.
- **/
-void
-convertLidsToGids(DocsumReply &reply, const DocsumRequest &request)
-{
-    LOG_ASSERT(reply.docsums.size() == request.hits.size());
-    for (size_t i = 0; i < reply.docsums.size(); ++i) {
-        const DocsumRequest::Hit & h = request.hits[i];
-        DocsumReply::Docsum & d = reply.docsums[i];
-        d.gid = h.gid;
-        LOG(spam, "convertLidToGid(DocsumReply): docsum[%zu]: lid(%u) -> gid(%s)", i, h.docid, d.gid.toString().c_str());
-    }
-}
-
-/**
  * Create empty docsum reply
  **/
 DocsumReply::UP
-createEmptyReply(const DocsumRequest & request)
+createEmptyReply(const DocsumRequest &)
 {
-    auto reply = std::make_unique<DocsumReply>();
-    for (size_t i = 0; i < request.hits.size(); ++i) {
-        reply->docsums.push_back(DocsumReply::Docsum());
-        reply->docsums.back().gid = request.hits[i].gid;
-    }
-    return reply;
+    return std::make_unique<DocsumReply>();
 }
 
 }
@@ -130,9 +112,6 @@ SearchView::getDocsums(const DocsumRequest & req)
     while ( ! reply.second ) {
         LOG(debug, "Must refetch docsums since the lids have moved.");
         reply = getDocsumsInternal(req);
-    }
-    if ( ! req.useRootSlime()) {
-        convertLidsToGids(*reply.first, req);
     }
     return std::move(reply.first);
 }

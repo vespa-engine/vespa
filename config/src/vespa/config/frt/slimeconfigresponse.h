@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "frtconfigresponse.h"
@@ -30,7 +30,6 @@ public:
     const Trace & getTrace() const override { return _trace; }
 
     vespalib::string getHostName() const;
-    vespalib::string getConfigMd5() const;
 
     void fill() override;
 

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
@@ -100,12 +100,6 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
             remaining.forEach((name, rank) -> {
                 if (areDependenciesReady(rank, rankProfileRegistry)) ready.add(rank);
             });
-            if (ready.isEmpty() && ! deployProperties.featureFlags().enforceRankProfileInheritance()) {
-                // Dirty fallback to allow incorrect rankprofile inheritance to pass for now.
-                // We then handle one by one.
-                // TODO remove ASAP
-                ready.add(remaining.values().iterator().next());
-            }
             processRankProfiles(ready, queryProfiles, importedModels, search, attributeFields, deployProperties, executor);
             ready.forEach(rank -> remaining.remove(rank.getName()));
         }
@@ -134,6 +128,10 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         } catch (InterruptedException | ExecutionException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    public OnnxModels getOnnxModels() {
+        return onnxModels;
     }
 
     public Map<String, RawRankProfile> getRankProfiles() {
@@ -188,6 +186,13 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                 modelBuilder.fileref(model.getFileReference());
                 model.getInputMap().forEach((name, source) -> modelBuilder.input(new OnnxModelsConfig.Model.Input.Builder().name(name).source(source)));
                 model.getOutputMap().forEach((name, as) -> modelBuilder.output(new OnnxModelsConfig.Model.Output.Builder().name(name).as(as)));
+                if (model.getStatelessExecutionMode().isPresent())
+                    modelBuilder.stateless_execution_mode(model.getStatelessExecutionMode().get());
+                if (model.getStatelessInterOpThreads().isPresent())
+                    modelBuilder.stateless_interop_threads(model.getStatelessInterOpThreads().get());
+                if (model.getStatelessIntraOpThreads().isPresent())
+                    modelBuilder.stateless_intraop_threads(model.getStatelessIntraOpThreads().get());
+
                 builder.model(modelBuilder);
             }
         }

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
@@ -227,12 +227,7 @@ public class RankProfile implements Cloneable {
                 String msg = "rank-profile '" + getName() + "' inherits '" + inheritedName +
                         "', but it does not exist anywhere in the inheritance of search '" +
                         ((getSearch() != null) ? getSearch().getName() : " global rank profiles") + "'.";
-                if (search.getDeployProperties().featureFlags().enforceRankProfileInheritance()) {
-                    throw new IllegalArgumentException(msg);
-                } else {
-                    deployLogger.logApplicationPackage(Level.WARNING, msg);
-                    inherited = resolveIndependentOfInheritance();
-                }
+                throw new IllegalArgumentException(msg);
             } else {
                 List<String> children = new ArrayList<>();
                 children.add(createFullyQualifiedName());
@@ -241,12 +236,7 @@ public class RankProfile implements Cloneable {
         }
         return inherited;
     }
-    private RankProfile resolveIndependentOfInheritance() {
-        for (RankProfile rankProfile : rankProfileRegistry.all()) {
-            if (rankProfile.getName().equals(inheritedName)) return rankProfile;
-        }
-        return null;
-    }
+
     private String createFullyQualifiedName() {
         return (search != null)
                 ? (search.getName() + "." + getName())
@@ -682,6 +672,26 @@ public class RankProfile implements Cloneable {
         }
         inputFeatures.put(ref, declaredType);
     }
+
+    public static class ExecuteOperation {
+        public enum Phase { onmatch, onrerank, onsummary}
+        final Phase phase;
+        final String attribute;
+        final String operation;
+        ExecuteOperation(Phase phase, String attribute, String operation) {
+            this.phase = phase;
+            this.attribute = attribute;
+            this.operation = operation;
+        }
+    }
+    private final List<ExecuteOperation> executeOperations = new ArrayList<>();
+
+    public void addExecuteOperation(ExecuteOperation.Phase phase, String attribute, String operation) {
+        executeOperations.add(new ExecuteOperation(phase, attribute, operation));
+        addRankProperty("vespa.execute." + phase + ".attribute", attribute);
+        addRankProperty("vespa.execute." + phase + ".operation", operation);
+    }
+    public List<ExecuteOperation> getExecuteOperations() { return executeOperations; }
 
     public RankingExpressionFunction findFunction(String name) {
         RankingExpressionFunction function = functions.get(name);

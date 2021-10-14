@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
 import com.yahoo.vespa.athenz.api.AthenzDomain;
@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -43,7 +44,7 @@ public class AthenzDbMock {
         public final Map<ApplicationId, Application> applications = new HashMap<>();
         public final Map<String, Service> services = new HashMap<>();
         public final List<Role> roles = new ArrayList<>();
-        public final List<Policy> policies = new ArrayList<>();
+        public final Map<String, Policy> policies = new HashMap<>();
         public boolean isVespaTenant = false;
 
         public Domain(AthenzDomain name) {
@@ -52,7 +53,7 @@ public class AthenzDbMock {
 
         public Domain admin(AthenzIdentity identity) {
             admins.add(identity);
-            policies.add(new Policy("admin", identity.getFullName(), ".*", ".*"));
+            policies.put("admin", new Policy("admin", identity.getFullName(), ".*", ".*"));
             return this;
         }
 
@@ -66,8 +67,8 @@ public class AthenzDbMock {
             return this;
         }
 
-        public Domain withPolicy(String principalRegex, String operation, String resource) {
-            policies.add(new Policy("admin", principalRegex, operation, resource));
+        public Domain withPolicy(String name, String principalRegex, String operation, String resource) {
+            policies.put(name, new Policy(name, principalRegex, operation, resource));
             return this;
         }
 
@@ -78,6 +79,13 @@ public class AthenzDbMock {
             isVespaTenant = true;
         }
 
+        public boolean hasRole(String name) { return roles.stream().anyMatch(r -> r.name.equals(name)); }
+
+        public boolean hasPolicy(String name) { return policies.containsKey(name); }
+
+        public boolean checkAccess(AthenzIdentity principal, String action, String resource) {
+            return policies.values().stream().anyMatch(a -> a.matches(principal, action, resource));
+        }
     }
 
     public static class Application {
@@ -107,31 +115,70 @@ public class AthenzDbMock {
 
     public static class Policy {
         private final String name;
-        private final Pattern principal;
-        private final Pattern action;
-        private final Pattern resource;
+        final List<Assertion> assertions = new ArrayList<>();
 
         public Policy(String name, String principal, String action, String resource) {
-            this.name = name;
-            this.principal = Pattern.compile(principal);
-            this.action = Pattern.compile(action);
-            this.resource = Pattern.compile(resource);
+            this(name);
+            this.assertions.add(new Assertion("grant", principal, action, resource));
         }
+
+        public Policy(String name) { this.name = name; }
 
         public String name() {
             return name;
         }
 
-        public boolean principalMatches(AthenzIdentity athenzIdentity) {
-            return this.principal.matcher(athenzIdentity.getFullName()).matches();
+        public boolean matches(String assertion) {
+            return assertions.stream().anyMatch(a -> a.matches(assertion));
         }
 
-        public boolean actionMatches(String operation) {
-            return this.action.matcher(operation).matches();
+        public boolean matches(AthenzIdentity principal, String action, String resource) {
+            return assertions.stream().anyMatch(a -> a.matches(principal, action, resource));
+        }
+    }
+
+    public static class Assertion {
+        private final String effect;
+        private final String role;
+        private final String action;
+        private final String resource;
+
+        public Assertion(String effect, String role, String action, String resource) {
+            this.effect = effect;
+            this.role = role;
+            this.action = action;
+            this.resource = resource;
         }
 
-        public boolean resourceMatches(String resource) {
-            return this.resource.matcher(resource).matches();
+        public Assertion(String role, String action, String resource) { this("allow", role, action, resource); }
+
+        public String effect() { return effect; }
+        public String role() { return role; }
+        public String action() { return action; }
+        public String resource() { return resource; }
+
+        public boolean matches(AthenzIdentity principal, String action, String resource) {
+            return Pattern.compile(this.role).matcher(principal.getFullName()).matches()
+                    &&  Pattern.compile(this.action).matcher(action).matches()
+                    && Pattern.compile(this.resource).matcher(resource).matches();
+        }
+
+        public boolean matches(String assertion) { return asString().equals(assertion); }
+
+        public String asString() { return String.format("%s %s to %s on %s", effect, action, role, resource).toLowerCase(); }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Assertion assertion = (Assertion) o;
+            return Objects.equals(effect, assertion.effect) && Objects.equals(role, assertion.role)
+                    && Objects.equals(action, assertion.action) && Objects.equals(resource, assertion.resource);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(effect, role, action, resource);
         }
     }
 

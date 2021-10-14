@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchchain;
 
 import com.yahoo.search.Query;
@@ -24,7 +24,6 @@ public class FutureResult extends FutureTask<Result> {
 
     private final Query query;
 
-    /** Only used for generating messages */
     private final Execution execution;
 
     private final static Logger log = Logger.getLogger(FutureResult.class.getName());
@@ -89,6 +88,9 @@ public class FutureResult extends FutureTask<Result> {
     public Query getQuery() {
         return query;
     }
+
+    /** Returns the execution which creates this */
+    public Execution getExecution() { return execution; }
 
     private ErrorMessage createInterruptedError(Exception e) {
         return ErrorMessage.createUnspecifiedError(execution + " was interrupted while executing: " +

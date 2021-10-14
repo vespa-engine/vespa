@@ -1,9 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
+import com.yahoo.vespa.athenz.api.AthenzAssertion;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPolicy;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -17,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -80,6 +83,25 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
+    public void createTenantResourceGroup(AthenzDomain tenantDomain, AthenzIdentity provider, String resourceGroup,
+                                          Set<RoleAction> roleActions) {
+        log("createTenantResourceGroup(tenantDomain='%s', resourceGroup='%s')", tenantDomain, resourceGroup);
+        AthenzDbMock.Domain domain = getDomainOrThrow(tenantDomain, true);
+        ApplicationId applicationId = new ApplicationId(resourceGroup);
+        if (!domain.applications.containsKey(applicationId)) {
+            domain.applications.put(applicationId, new AthenzDbMock.Application());
+        }
+    }
+
+    @Override
+    public Set<RoleAction> getTenantResourceGroups(AthenzDomain tenantDomain, AthenzIdentity provider, String resourceGroup) {
+        Set<RoleAction> result = new HashSet<>();
+        getDomainOrThrow(tenantDomain, true).applications.get(resourceGroup).acl
+                .forEach((role, roleMembers) -> result.add(new RoleAction(role.roleName, role.roleName)));
+        return result;
+    }
+
+    @Override
     public void addRoleMember(AthenzRole role, AthenzIdentity member, Optional<String> reason) {
         if ( ! role.roleName().equals("tenancy.vespa.hosting.admin"))
             throw new IllegalArgumentException("Mock only supports adding tenant admins, not " + role.roleName());
@@ -138,32 +160,43 @@ public class ZmsClientMock implements ZmsClient {
             return false;
         } else {
             AthenzDbMock.Domain domain = getDomainOrThrow(resource.getDomain(), false);
-            return domain.policies.stream()
-                    .anyMatch(policy ->
-                            policy.principalMatches(identity) &&
-                            policy.actionMatches(action) &&
-                            policy.resourceMatches(resource.getEntityName()));
+            return domain.checkAccess(identity, action, resource.getEntityName());
         }
     }
 
     @Override
     public void createPolicy(AthenzDomain athenzDomain, String athenzPolicy) {
-        List<AthenzDbMock.Policy> policies = athenz.getOrCreateDomain(athenzDomain).policies;
-        if (policies.stream().anyMatch(p -> p.name().equals(athenzPolicy))) {
+        Map<String, AthenzDbMock.Policy> policies = athenz.getOrCreateDomain(athenzDomain).policies;
+        if (policies.containsKey(athenzPolicy)) {
             throw new IllegalArgumentException("Policy already exists");
         }
-
-        // Policy will be created in the mock when an assertion is added
+        policies.put(athenzPolicy, new AthenzDbMock.Policy(athenzPolicy));
     }
 
     @Override
     public void addPolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole) {
-        athenz.getOrCreateDomain(athenzDomain).policies.add(new AthenzDbMock.Policy(athenzPolicy, athenzRole.roleName(), action, resourceName.toResourceNameString()));
+        AthenzDbMock.Policy policy = athenz.getOrCreateDomain(athenzDomain).policies.get(athenzPolicy);
+        if (policy == null) throw new IllegalArgumentException("No policy with name " + athenzPolicy);
+        policy.assertions.add(new AthenzDbMock.Assertion(athenzRole.roleName(), action, resourceName.toResourceNameString()));
     }
 
     @Override
     public boolean deletePolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole) {
         return false;
+    }
+
+    @Override
+    public Optional<AthenzPolicy> getPolicy(AthenzDomain domain, String name) {
+        AthenzDbMock.Policy policy = athenz.getOrCreateDomain(domain).policies.get(name);
+        if (policy == null) return Optional.empty();
+        List<AthenzAssertion> assertions = policy.assertions.stream()
+                .map(a -> AthenzAssertion.newBuilder(
+                        new AthenzRole(domain, a.role()),
+                        AthenzResourceName.fromString(a.resource()),
+                        a.action())
+                        .build())
+                .collect(Collectors.toList());
+        return Optional.of(new AthenzPolicy(policy.name(), assertions));
     }
 
     @Override
@@ -215,9 +248,7 @@ public class ZmsClientMock implements ZmsClient {
 
     @Override
     public Set<String> listPolicies(AthenzDomain domain) {
-        return athenz.getOrCreateDomain(domain).policies.stream()
-                .map(AthenzDbMock.Policy::name)
-                .collect(Collectors.toSet());
+        return athenz.getOrCreateDomain(domain).policies.keySet();
     }
 
     @Override

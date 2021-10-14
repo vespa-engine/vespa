@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
  * The federation layer on top of the search container. This contains
  *
@@ -13,5 +13,4 @@
 @ExportPackage
 package com.yahoo.search.federation;
 
-import com.yahoo.api.annotations.PublicApi;
 import com.yahoo.osgi.annotation.ExportPackage;

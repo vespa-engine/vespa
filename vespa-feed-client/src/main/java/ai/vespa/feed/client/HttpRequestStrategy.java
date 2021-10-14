@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
 import ai.vespa.feed.client.FeedClient.CircuitBreaker;
@@ -163,9 +163,9 @@ class HttpRequestStrategy implements RequestStrategy {
             return true;
         }
 
-        breaker.failure(response);
         logResponse(FINE, response, request, attempt);
         if (response.code() == 500 || response.code() == 502 || response.code() == 504) { // Hopefully temporary errors.
+            breaker.failure(response);
             return retry(request, attempt);
         }
 

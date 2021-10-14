@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -85,6 +85,9 @@ public class NodeRepositoryNode {
     public String exclusiveTo;
     @JsonProperty("history")
     public List<Event> history;
+    @JsonProperty("trustStore")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<TrustStoreItem> trustStore;
 
     @JsonProperty("reports")
     public Map<String, JsonNode> reports = null;
@@ -219,6 +222,19 @@ public class NodeRepositoryNode {
                     ", event=" + event +
                     ", at=" + at +
                     '}';
+        }
+    }
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class TrustStoreItem {
+        @JsonProperty ("fingerprint")
+        public String fingerprint;
+        @JsonProperty ("expiry")
+        public long expiry;
+
+        public TrustStoreItem(@JsonProperty("fingerprint") String fingerprint, @JsonProperty("expiry") long expiry) {
+            this.fingerprint = fingerprint;
+            this.expiry = expiry;
         }
     }
 }

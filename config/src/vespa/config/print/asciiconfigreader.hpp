@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 namespace config {
 
@@ -27,7 +27,7 @@ AsciiConfigReader<ConfigType>::read()
     while (getline(_is, line)) {
         lines.push_back(line);
     }
-    return std::unique_ptr<ConfigType>(new ConfigType(ConfigValue(lines, calculateContentMd5(lines))));
+    return std::unique_ptr<ConfigType>(new ConfigType(ConfigValue(lines, calculateContentXxhash64(lines))));
 }
 
 } // namespace config
