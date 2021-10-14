@@ -165,7 +165,8 @@ public class JRTConfigRequester implements RequestWaiter {
         log.log(INFO, "Failure of config subscription to " + connection.getAddress() +
                 ", clients will keep existing config until resolved: " + sub);
         connectionPool.switchConnection(connection);
-        failures++;
+        if (failures < 10)
+            failures++;
         long delay = calculateFailedRequestDelay(failures, timingValues);
         // The logging depends on whether we are configured or not.
         Level logLevel = sub.getConfigState().getConfig() == null ? Level.FINE : Level.INFO;
@@ -177,7 +178,7 @@ public class JRTConfigRequester implements RequestWaiter {
 
     static long calculateFailedRequestDelay(int failures, TimingValues timingValues) {
         long delay = timingValues.getFixedDelay() * (long)Math.pow(2, failures);
-        delay = Math.min(60_000, delay);
+        delay = Math.max(timingValues.getFixedDelay(), Math.min(60_000, delay)); // between timingValues.getFixedDelay() and 60 seconds
         delay = timingValues.getPlusMinusFractionRandom(delay, randomFraction);
 
         return delay;
