@@ -8,6 +8,7 @@ import ai.vespa.metricsproxy.metric.model.MetricId;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -104,6 +105,23 @@ public class Metric {
     @Override
     public Metric clone() {
         return new Metric(name, value, time, new LinkedHashMap<>(dimensions), getDescription());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if ( ! (obj instanceof Metric) ) return false;
+        Metric rhs = (Metric) obj;
+        return name.equals(rhs.name)
+                && description.equals(rhs.description)
+                && value.equals(rhs.value)
+                && (time == rhs.time)
+                && Objects.equals(dimensions, rhs.dimensions)
+                && Objects.equals(consumers, rhs.consumers);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, description, value, dimensions, consumers, time);
     }
 
     /**
