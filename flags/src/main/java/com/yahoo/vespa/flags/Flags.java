@@ -335,6 +335,13 @@ public class Flags {
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag DISTRIBUTOR_ENHANCED_MAINTENANCE_SCHEDULING = defineFeatureFlag(
+            "distributor-enhanced-maintenance-scheduling", false,
+            List.of("vekterli", "geirst"), "2021-10-14", "2022-01-31",
+            "Enable enhanced maintenance operation scheduling semantics on the distributor",
+            "Takes effect at redeploy",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
