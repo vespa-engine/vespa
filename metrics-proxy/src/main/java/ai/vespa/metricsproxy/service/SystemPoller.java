@@ -51,8 +51,13 @@ public class SystemPoller {
             this.jiffies = jiffies;
             this.cpus = Math.max(1, cpus);
         }
-        long normalizedJiffies() {
-            return jiffies / cpus;
+        /** 1.0 = 1 busy core Ranke = [0.0, #cores] */
+        double ratioSingleCoreJiffies(long partJiffies) {
+            return (double)(partJiffies * cpus) / Math.max(1.0, jiffies);
+        }
+        /** Range = [0.0, 1.0] */
+        double ratioJiffies(long partJiffies) {
+            return (double)(partJiffies) / Math.max(1.0, jiffies);
         }
         JiffiesAndCpus diff(JiffiesAndCpus prev) {
             return (cpus == prev.cpus)
@@ -173,8 +178,8 @@ public class SystemPoller {
             long diff = procJiffies - last;
 
             if (diff >= 0) {
-                metrics.add(new Metric(CPU, 100 * ((double) diff) / sysJiffiesDiff.normalizedJiffies(), timeStamp));
-                metrics.add(new Metric(CPU_UTIL, 100 * ((double) diff) / sysJiffiesDiff.jiffies, timeStamp));
+                metrics.add(new Metric(CPU, 100 * sysJiffiesDiff.ratioSingleCoreJiffies(diff), timeStamp));
+                metrics.add(new Metric(CPU_UTIL, 100 * sysJiffiesDiff.ratioJiffies(diff), timeStamp));
             }
             lastCpuJiffiesMetrics.put(s, procJiffies);
             s.setSystemMetrics(metrics);

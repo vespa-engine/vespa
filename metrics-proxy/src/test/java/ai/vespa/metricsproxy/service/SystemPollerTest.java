@@ -21,6 +21,7 @@ import static org.junit.Assert.assertThat;
  * @author Unknown
  */
 public class SystemPollerTest {
+    private static final double DELTA = 0.0000000000001;
 
     private static final String [] perProcStats = {
             "131 (java) S 115 115 85 34816 115 1077952512 16819285 69606636 25448 8182 1310952 380185 256300 41075 20 0 69 0 39175 16913702912 2004355 18446744073709551615 94843481096192 94843481100104 140737227872512 0 0 0 0 4096 16796879 0 0 0 17 1 0 0 2 0 0 94843483200760 94843483201552 94843503726592 140737227877827 140737227878876 140737227878876 140737227882433 0\n",
@@ -95,12 +96,13 @@ public class SystemPollerTest {
         assertEquals(first.cpus, second.cpus);
         assertEquals(142828460L, first.jiffies);
         assertEquals(143096563L, second.jiffies);
-        assertEquals(142828460L/8, first.normalizedJiffies());
-        assertEquals(143096563L/8, second.normalizedJiffies());
+        assertEquals(0.05601124593795943, first.ratioSingleCoreJiffies(1000000), DELTA);
+        assertEquals(0.05590630433241083, second.ratioSingleCoreJiffies(1000000), DELTA);
         SystemPoller.JiffiesAndCpus diff = second.diff(first);
         assertEquals(8, diff.cpus);
         assertEquals(268103L, diff.jiffies);
-        assertEquals(268103L/8, diff.normalizedJiffies());
+        assertEquals(2.9839278187860634, diff.ratioSingleCoreJiffies(100000), DELTA);
+        assertEquals(0.3729909773482579, diff.ratioJiffies(100000), DELTA);
     }
 
     @Test
@@ -145,10 +147,10 @@ public class SystemPollerTest {
         assertEquals(new Metric(MetricId.toMetricId("memory_virt"), 0L, 1), metricList.get(0));
         assertEquals(new Metric(MetricId.toMetricId("memory_rss"), 0L, 1), metricList.get(1));
         long diffProcJiffies = (PER_PROC_JIFFIES[1] - PER_PROC_JIFFIES[0]);
-        double expected = 100.0*diffProcJiffies/diff.normalizedJiffies();
-        assertEquals(3.1272380042969683, expected, 0.0000000000001);
-        double expected_util = 100.0*diffProcJiffies/diff.jiffies;
-        assertEquals(0.3908945442609743, expected_util, 0.0000000000001);
+        double expected = 100.0*diff.ratioSingleCoreJiffies(diffProcJiffies);
+        assertEquals(3.127156354087795, expected, DELTA);
+        double expected_util = 100.0*diff.ratioJiffies(diffProcJiffies);
+        assertEquals(0.3908945442609743, expected_util, DELTA);
         assertEquals(new Metric(MetricId.toMetricId("cpu"), expected, 1), metricList.get(2));
         assertEquals(new Metric(MetricId.toMetricId("cpu_util"), expected_util, 1), metricList.get(3));
     }
