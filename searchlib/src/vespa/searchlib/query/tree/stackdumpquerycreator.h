@@ -9,6 +9,7 @@
 #include <vespa/searchlib/common/geo_location_parser.h>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/issue.h>
 #include <charconv>
 
 namespace search::query {
@@ -40,9 +41,9 @@ public:
         }
         if (builder.hasError()) {
             vespalib::stringref stack = queryStack.getStack();
-            LOG(error, "Unable to create query tree from stack dump. Failed at position %ld out of %ld bytes %s",
+            vespalib::Issue::report("Unable to create query tree from stack dump. Failed at position %ld out of %ld bytes %s",
                        queryStack.getPosition(), stack.size(), builder.error().c_str());
-            LOG(error, "Raw QueryStack = %s", vespalib::HexDump(stack.data(), stack.size()).toString().c_str());
+            LOG(error, "got bad query stack: %s", vespalib::HexDump(stack.data(), stack.size()).toString().c_str());
         }
         return builder.build();
     }
@@ -177,7 +178,7 @@ private:
             } else if (type == ParseItem::ITEM_GEO_LOCATION_TERM) {
                 search::common::GeoLocationParser parser;
                 if (! parser.parseNoField(term)) {
-                    LOG(warning, "invalid geo location term '%s'", term.data());
+                    vespalib::Issue::report("query builder: invalid geo location term '%s'", term.data());
                 }
                 Location loc(parser.getGeoLocation());
                 t = &builder.addLocationTerm(loc, view, id, weight);
@@ -193,7 +194,7 @@ private:
             } else if (type == ParseItem::ITEM_REGEXP) {
                 t = &builder.addRegExpTerm(term, view, id, weight);
             } else {
-                LOG(error, "Unable to create query tree from stack dump. node type = %d.", type);
+                vespalib::Issue::report("query builder: Unable to create query tree from stack dump. node type = %d.", type);
             }
         }
         return t;

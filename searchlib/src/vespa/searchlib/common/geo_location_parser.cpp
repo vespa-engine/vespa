@@ -6,6 +6,9 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 
+#include <vespa/vespalib/util/issue.h>
+using vespalib::Issue;
+
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.common.geo_location_parser");
 
@@ -207,9 +210,9 @@ GeoLocationParser::parseJsonFormat(const std::string &str)
     vespalib::Slime slime;
     size_t decoded = vespalib::slime::JsonFormat::decode(str, slime);
     if (decoded == 0) {
-        LOG(warning, "bad location JSON: %s\n>> %s <<",
-            slime.get()["error_message"].asString().make_string().c_str(),
-            str.c_str());
+        Issue::report("GeoLocationParser: bad location JSON: %s\n>> %s <<",
+                      slime.get()["error_message"].asString().make_string().c_str(),
+                      str.c_str());
         _parseError = "Failed decoding JSON format location";
         return false;
     }

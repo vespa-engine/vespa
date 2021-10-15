@@ -156,19 +156,19 @@ DistanceToPathBlueprint::createExecutor(const search::fef::IQueryEnvironment &en
         }
         if (pos != nullptr) {
             if (!pos->isIntegerType()) {
-                Issue::report("The position attribute '%s' is not an integer attribute. Will use default distance.",
+                Issue::report("distance_to_path feature: The position attribute '%s' is not an integer attribute. Will use default distance.",
                               pos->getName().c_str());
                 pos = nullptr;
             } else if (pos->getCollectionType() == attribute::CollectionType::WSET) {
-                Issue::report("The position attribute '%s' is a weighted set attribute. Will use default distance.",
+                Issue::report("distance_to_path feature: The position attribute '%s' is a weighted set attribute. Will use default distance.",
                               pos->getName().c_str());
                 pos = nullptr;
             }
         } else {
-            Issue::report("The position attribute '%s' was not found. Will use default distance.", _posAttr.c_str());
+            Issue::report("distance_to_path feature: The position attribute '%s' was not found. Will use default distance.", _posAttr.c_str());
         }
     } else {
-        Issue::report("No path given in query. Will use default distance.");
+        Issue::report("distance_to_path feature: No path given in query. Will use default distance.");
     }
 
     // Create and return a compatible executor.

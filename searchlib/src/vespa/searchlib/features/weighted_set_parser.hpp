@@ -29,7 +29,7 @@ WeightedSetParser::parse(const vespalib::string &input, OutputType &output)
                 vespalib::stringref value(item.substr(colonPos+1));
                 output.insert(key, value);
             } else {
-                Issue::report("Could not parse item '%s' in input string '%s', skipping. "
+                Issue::report("weighted set parser: Could not parse item '%s' in input string '%s', skipping. "
                               "Expected ':' between key and weight.", vespalib::string(item).c_str(), input.c_str());
             }
             if (commaPos != vespalib::string::npos) {
@@ -39,7 +39,7 @@ WeightedSetParser::parse(const vespalib::string &input, OutputType &output)
             }
         }
     } else {
-        Issue::report("Could not parse input string '%s'. "
+        Issue::report("weighted set parser: Could not parse input string '%s'. "
                       "Expected surrounding '(' and ')' or '{' and '}'.", input.c_str());
     }
 }

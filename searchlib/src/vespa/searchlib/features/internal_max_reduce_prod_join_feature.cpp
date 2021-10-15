@@ -170,7 +170,7 @@ selectExecutor(const IAttributeVector *attribute, V && vector, vespalib::Stash &
                 break;
         }
     }
-    Issue::report("The attribute vector '%s' is not of type "
+    Issue::report("intrinsic max_reduce_prod_join feature: The attribute vector '%s' is not of type "
                   "array<int/long>, returning executor with default value.", attribute->getName().c_str());
     return stash.create<SingleZeroValueExecutor>();
 }
@@ -255,7 +255,7 @@ InternalMaxReduceProdJoinBlueprint::createExecutor(const IQueryEnvironment &env,
 {
     const IAttributeVector * attribute = lookupAttribute(_attrKey, _attribute, env);
     if (attribute == nullptr) {
-        Issue::report("The attribute vector '%s' was not found in the attribute manager, "
+        Issue::report("intrinsic max_reduce_prod_join feature: The attribute vector '%s' was not found in the attribute manager, "
                       "returning executor with default value.", _attribute.c_str());
         return stash.create<SingleZeroValueExecutor>();
     }
