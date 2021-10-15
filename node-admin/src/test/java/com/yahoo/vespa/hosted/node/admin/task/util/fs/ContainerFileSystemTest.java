@@ -6,6 +6,7 @@ import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,6 +41,21 @@ class ContainerFileSystemTest {
         ContainerPath destination = ContainerPath.fromPathInContainer(containerFs, Path.of("/copy1"));
         Files.copy(hostFile.toPath(), destination);
         assertOwnership(destination, 0, 0, 10000, 11000);
+    }
+
+    @Test
+    public void file_write_and_read() throws IOException {
+        ContainerPath containerPath = ContainerPath.fromPathInContainer(containerFs, Path.of("/file"));
+        UnixPath unixPath = new UnixPath(containerPath);
+        unixPath.writeUtf8File("hello");
+        assertOwnership(containerPath, 0, 0, 10000, 11000);
+
+        unixPath.setOwnerId(500).setGroupId(200);
+        assertOwnership(containerPath, 500, 200, 10500, 11200);
+        Files.write(containerPath, " world".getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+        assertOwnership(containerPath, 500, 200, 10500, 11200); // Owner should not have been updated as the file already existed
+
+        assertEquals("hello world", unixPath.readUtf8File());
     }
 
     @Test

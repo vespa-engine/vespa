@@ -10,6 +10,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemAlreadyExistsException;
+import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
@@ -80,8 +81,9 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     @Override
     public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
         Path pathOnHost = pathOnHost(path);
+        boolean existedBefore = Files.exists(pathOnHost);
         SeekableByteChannel seekableByteChannel = provider(pathOnHost).newByteChannel(pathOnHost, options, attrs);
-        fixOwnerToContainerRoot(toContainerPath(path));
+        if (!existedBefore) fixOwnerToContainerRoot(toContainerPath(path));
         return seekableByteChannel;
     }
 
@@ -94,8 +96,9 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     @Override
     public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
         Path pathOnHost = pathOnHost(dir);
+        boolean existedBefore = Files.exists(pathOnHost);
         provider(pathOnHost).createDirectory(pathOnHost);
-        fixOwnerToContainerRoot(toContainerPath(dir));
+        if (!existedBefore) fixOwnerToContainerRoot(toContainerPath(dir));
     }
 
     @Override
