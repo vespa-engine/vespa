@@ -4,10 +4,10 @@ package com.yahoo.container.handler.threadpool;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.concurrent.Receiver;
 import com.yahoo.container.protect.ProcessTerminator;
+import com.yahoo.container.test.MetricMock;
 import com.yahoo.jdisc.Metric;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -26,8 +26,9 @@ public class DefaultContainerThreadPoolTest {
 
     @Test
     public final void testThreadPool() throws InterruptedException {
+        Metric metrics = new MetricMock();
         ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder().maxThreads(1));
-        ContainerThreadPool threadPool = new DefaultContainerThreadpool(config, Mockito.mock(Metric.class));
+        ContainerThreadPool threadPool = new DefaultContainerThreadpool(config, metrics);
         Executor exec = threadPool.executor();
         Tuple2<Receiver.MessageState, Boolean> reply;
         FlipIt command = new FlipIt();
@@ -58,12 +59,15 @@ public class DefaultContainerThreadPoolTest {
     }
 
     private ThreadPoolExecutor createPool(int maxThreads, int queueSize) {
+        return createPool(new MetricMock(), maxThreads, queueSize);
+    }
+    private ThreadPoolExecutor createPool(Metric metric, int maxThreads, int queueSize) {
         ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder()
                 .maxThreads(maxThreads)
                 .minThreads(maxThreads)
                 .queueSize(queueSize));
         ContainerThreadPool threadPool = new DefaultContainerThreadpool(
-                config, Mockito.mock(Metric.class), new MockProcessTerminator(), CPUS);
+                config, metric, new MockProcessTerminator(), CPUS);
         ExecutorServiceWrapper wrapper = (ExecutorServiceWrapper) threadPool.executor();
         WorkerCompletionTimingThreadPoolExecutor executor = (WorkerCompletionTimingThreadPoolExecutor)wrapper.delegate();
         return executor;
@@ -71,15 +75,27 @@ public class DefaultContainerThreadPoolTest {
 
     @Test
     public void testThatThreadPoolSizeFollowsConfig() {
-        ThreadPoolExecutor executor = createPool(3, 1200);
+        MetricMock metrics = new MetricMock();
+        ThreadPoolExecutor executor = createPool(metrics, 3, 1200);
         assertEquals(3, executor.getMaximumPoolSize());
         assertEquals(1200, executor.getQueue().remainingCapacity());
+        assertEquals(4, metrics.innvocations().size());
+        assertEquals(3L, metrics.innvocations().get("serverThreadPoolSize").val);
+        assertEquals(0L, metrics.innvocations().get("serverActiveThreads").val);
+        assertEquals(1200L, metrics.innvocations().get("jdisc.thread_pool.work_queue.capacity").val);
+        assertEquals(0L, metrics.innvocations().get("jdisc.thread_pool.work_queue.size").val);
     }
     @Test
     public void testThatThreadPoolSizeAutoDetected() {
-        ThreadPoolExecutor executor = createPool(0, 0);
+        MetricMock metrics = new MetricMock();
+        ThreadPoolExecutor executor = createPool(metrics, 0, 0);
         assertEquals(CPUS*4, executor.getMaximumPoolSize());
         assertEquals(0, executor.getQueue().remainingCapacity());
+        assertEquals(4, metrics.innvocations().size());
+        assertEquals(64L, metrics.innvocations().get("serverThreadPoolSize").val);
+        assertEquals(0L, metrics.innvocations().get("serverActiveThreads").val);
+        assertEquals(64L, metrics.innvocations().get("jdisc.thread_pool.work_queue.capacity").val);
+        assertEquals(0L, metrics.innvocations().get("jdisc.thread_pool.work_queue.size").val);
     }
     @Test
     public void testThatQueueSizeAutoDetected() {
@@ -111,7 +127,8 @@ public class DefaultContainerThreadPoolTest {
                         .maxThreads(2)
                         .maxThreadExecutionTimeSeconds(1));
         MockProcessTerminator terminator = new MockProcessTerminator();
-        ContainerThreadPool threadPool = new DefaultContainerThreadpool(config, Mockito.mock(Metric.class), terminator);
+        Metric metrics = new MetricMock();
+        ContainerThreadPool threadPool = new DefaultContainerThreadpool(config, metrics, terminator);
 
         // No dying when threads hang shorter than max thread execution time
         threadPool.executor().execute(new Hang(500));
