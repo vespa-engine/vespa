@@ -144,10 +144,11 @@ jobs:
       - verify-rpm-build: |
           cd $WORKDIR
           time rpmbuild --rebuild --define="_topdir $WORKDIR/vespa-rpmbuild" \
-                        --define "debug_package %{nil}" --define "_debugsource_template %{nil}" \
+                        --define "_debugsource_template %{nil}" \
                         --define "installdir $WORKDIR/vespa-install" *.src.rpm
           mkdir -p $WORKDIR/system-test/docker/rpms
           mv $WORKDIR/vespa-rpmbuild/RPMS/x86_64/*.rpm $WORKDIR/system-test/docker/rpms
+          rm -f $WORKDIR/system-test/docker/rpms/*debuginfo*rpm
           ls -la $WORKDIR/system-test/docker/rpms
       - build-test-image: |
           cd $WORKDIR/system-test
