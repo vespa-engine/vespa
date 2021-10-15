@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
-import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
-
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,15 +25,15 @@ class PerfReporter implements ArtifactProducer {
         if (ctx.options().callGraphRecording()) {
             perfRecordCommand.add("-g");
         }
-        ContainerPath recordFile = ctx.outputContainerPath().resolve("perf-record.bin");
+        Path recordFile = ctx.outputDirectoryInNode().resolve("perf-record.bin");
         perfRecordCommand.addAll(
-                List.of("--output=" + recordFile.pathInContainer(),
+                List.of("--output=" + recordFile,
                         "--pid=" + ctx.servicePid(), "sleep", Integer.toString(duration)));
         ctx.executeCommandInNode(perfRecordCommand, true);
-        ContainerPath reportFile = ctx.outputContainerPath().resolve("perf-report.txt");
-        ctx.executeCommandInNode(List.of("bash", "-c", "perf report --input=" + recordFile.pathInContainer() + " > " + reportFile.pathInContainer()), true);
+        Path reportFile = ctx.outputDirectoryInNode().resolve("perf-report.txt");
+        ctx.executeCommandInNode(List.of("bash", "-c", "perf report --input=" + recordFile + " > " + reportFile), true);
         return List.of(
-                Artifact.newBuilder().classification(CONFIDENTIAL).file(recordFile).compressOnUpload().build(),
-                Artifact.newBuilder().classification(INTERNAL).file(reportFile).build());
+                Artifact.newBuilder().classification(CONFIDENTIAL).fileInNode(recordFile).compressOnUpload().build(),
+                Artifact.newBuilder().classification(INTERNAL).fileInNode(reportFile).build());
     }
 }
