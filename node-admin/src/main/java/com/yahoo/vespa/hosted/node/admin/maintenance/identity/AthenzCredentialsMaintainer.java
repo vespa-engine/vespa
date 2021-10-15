@@ -206,8 +206,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                             EntityBindingsMapper.toAttestationData(signedIdentityDocument),
                             csr);
             EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
-            writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(),
-                    certificateFile, instanceIdentity.certificate());
+            writePrivateKeyAndCertificate(context.userNamespace().vespaUserId(),
+                    privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
             context.log(logger, "Instance successfully registered and credentials written to file");
         }
     }
@@ -234,8 +234,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                 context.identity(),
                                 identityDocument.providerUniqueId().asDottedString(),
                                 csr);
-                writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(),
-                        certificateFile, instanceIdentity.certificate());
+                writePrivateKeyAndCertificate(context.userNamespace().vespaUserId(),
+                        privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
                 context.log(logger, "Instance successfully refreshed and credentials written to file");
             } catch (ZtsClientException e) {
                 if (e.getErrorCode() == 403 && e.getDescription().startsWith("Certificate revoked")) {
@@ -251,18 +251,19 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     }
 
 
-    private static void writePrivateKeyAndCertificate(ContainerPath privateKeyFile,
+    private static void writePrivateKeyAndCertificate(int vespaUid,
+                                                      ContainerPath privateKeyFile,
                                                       PrivateKey privateKey,
                                                       ContainerPath certificateFile,
                                                       X509Certificate certificate) {
-        writeFile(privateKeyFile, KeyUtils.toPem(privateKey));
-        writeFile(certificateFile, X509CertificateUtils.toPem(certificate));
+        writeFile(privateKeyFile, vespaUid, KeyUtils.toPem(privateKey));
+        writeFile(certificateFile, vespaUid, X509CertificateUtils.toPem(certificate));
     }
 
-    private static void writeFile(ContainerPath path, String utf8Content) {
+    private static void writeFile(ContainerPath path, int vespaUid, String utf8Content) {
         new UnixPath(path.resolveSibling(path.getFileName() + ".tmp"))
                 .writeUtf8File(utf8Content, "r--------")
-                .setOwner("vespa")
+                .setOwnerId(vespaUid)
                 .atomicMove(path);
     }
 
