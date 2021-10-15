@@ -4,6 +4,7 @@
 #include "persistenceutil.h"
 #include "apply_bucket_diff_entry_complete.h"
 #include "apply_bucket_diff_entry_result.h"
+#include "apply_bucket_diff_state.h"
 #include <vespa/storage/persistence/filestorage/mergestatus.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -507,12 +508,13 @@ MergeHandler::applyDiffEntry(const spi::Bucket& bucket,
 /**
  * Apply the diffs needed locally.
  */
-api::BucketInfo
+void
 MergeHandler::applyDiffLocally(
         const spi::Bucket& bucket,
         std::vector<api::ApplyBucketDiffCommand::Entry>& diff,
         uint8_t nodeIndex,
-        spi::Context& context) const
+        spi::Context& context,
+        ApplyBucketDiffState& async_results) const
 {
     // Sort the data to apply by which file they should be added to
     LOG(spam, "Merge(%s): Applying data locally. Diff has %zu entries",
@@ -522,8 +524,8 @@ MergeHandler::applyDiffLocally(
     uint32_t byteCount = 0;
     uint32_t addedCount = 0;
     uint32_t notNeededByteCount = 0;
-    std::vector<ApplyBucketDiffEntryResult> async_results;
 
+    async_results.mark_stale_bucket_info();
     std::vector<spi::DocEntry::UP> entries;
     populateMetaData(bucket, MAX_TIMESTAMP, entries, context);
 
@@ -609,13 +611,6 @@ MergeHandler::applyDiffLocally(
         async_results.push_back(applyDiffEntry(bucket, e, context, repo));
         byteCount += e._headerBlob.size() + e._bodyBlob.size();
     }
-    for (auto &result_to_check : async_results) {
-        result_to_check.wait();
-    }
-    for (auto &result_to_check : async_results) {
-        result_to_check.check_result();
-    }
-
     if (byteCount + notNeededByteCount != 0) {
         _env._metrics.merge_handler_metrics.mergeAverageDataReceivedNeeded.addValue(
                 static_cast<double>(byteCount) / (byteCount + notNeededByteCount));
@@ -623,7 +618,11 @@ MergeHandler::applyDiffLocally(
     _env._metrics.merge_handler_metrics.bytesMerged.inc(byteCount);
     LOG(debug, "Merge(%s): Applied %u entries locally from ApplyBucketDiff.",
         bucket.toString().c_str(), addedCount);
+}
 
+void
+MergeHandler::sync_bucket_info(const spi::Bucket& bucket) const
+{
     spi::BucketInfoResult infoResult(_spi.getBucketInfo(bucket));
     if (infoResult.getErrorCode() != spi::Result::ErrorType::NONE) {
         LOG(warning, "Failed to get bucket info for %s: %s",
@@ -642,7 +641,6 @@ MergeHandler::applyDiffLocally(
                                  tmpInfo.isActive());
 
     _env.updateBucketDatabase(bucket.getBucket(), providerInfo);
-    return providerInfo;
 }
 
 namespace {
@@ -1204,6 +1202,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
     tracker->setMetric(_env._metrics.applyBucketDiff);
 
     spi::Bucket bucket(cmd.getBucket());
+    ApplyBucketDiffState async_results(*this, bucket);
     LOG(debug, "%s", cmd.toString().c_str());
 
     if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
@@ -1225,9 +1224,11 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
     }
     if (applyDiffHasLocallyNeededData(cmd.getDiff(), index)) {
        framework::MilliSecTimer startTime(_clock);
-       (void) applyDiffLocally(bucket, cmd.getDiff(), index, tracker->context());
+       applyDiffLocally(bucket, cmd.getDiff(), index, tracker->context(), async_results);
         _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(
                 startTime.getElapsedTimeAsDouble());
+        async_results.check();
+        async_results.sync_bucket_info();
     } else {
         LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u).",
             bucket.toString().c_str(), _env._nodeIndex, index);
@@ -1285,6 +1286,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
 {
     _env._metrics.applyBucketDiffReply.inc();
     spi::Bucket bucket(reply.getBucket());
+    ApplyBucketDiffState async_results(*this, bucket);
     std::vector<api::ApplyBucketDiffCommand::Entry>& diff(reply.getDiff());
     LOG(debug, "%s", reply.toString().c_str());
 
@@ -1318,8 +1320,10 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
             }
             if (applyDiffHasLocallyNeededData(diff, index)) {
                 framework::MilliSecTimer startTime(_clock);
-                (void) applyDiffLocally(bucket, diff, index, s.context);
+                applyDiffLocally(bucket, diff, index, s.context, async_results);
                 _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(startTime.getElapsedTimeAsDouble());
+                async_results.check();
+                async_results.sync_bucket_info();
             } else {
                 LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u)",
                     bucket.toString().c_str(),

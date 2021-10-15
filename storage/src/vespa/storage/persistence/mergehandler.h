@@ -14,6 +14,7 @@
 #pragma once
 
 #include "types.h"
+#include "merge_bucket_info_syncer.h"
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -28,9 +29,11 @@ namespace spi {
 }
 class PersistenceUtil;
 class ApplyBucketDiffEntryResult;
+class ApplyBucketDiffState;
 class MergeStatus;
 
-class MergeHandler : public Types {
+class MergeHandler : public Types,
+                     public MergeBucketInfoSyncer {
 
 public:
     enum StateFlag {
@@ -54,11 +57,12 @@ public:
                         std::vector<api::ApplyBucketDiffCommand::Entry>& diff,
                         uint8_t nodeIndex,
                         spi::Context& context) const;
-    api::BucketInfo applyDiffLocally(
-                          const spi::Bucket& bucket,
+    void applyDiffLocally(const spi::Bucket& bucket,
                           std::vector<api::ApplyBucketDiffCommand::Entry>& diff,
                           uint8_t nodeIndex,
-                          spi::Context& context) const;
+                          spi::Context& context,
+                          ApplyBucketDiffState& async_results) const;
+    void sync_bucket_info(const spi::Bucket& bucket) const override;
 
     MessageTrackerUP handleMergeBucket(api::MergeBucketCommand&, MessageTrackerUP) const;
     MessageTrackerUP handleGetBucketDiff(api::GetBucketDiffCommand&, MessageTrackerUP) const;
