@@ -217,7 +217,7 @@ public:
     /**
      * Should return true if the given message type should block this operation.
      */
-    virtual bool shouldBlockThisOperation(uint32_t messageType, uint8_t priority) const;
+    virtual bool shouldBlockThisOperation(uint32_t messageType, uint16_t node, uint8_t priority) const;
 
 protected:
     friend struct IdealStateManagerTest;

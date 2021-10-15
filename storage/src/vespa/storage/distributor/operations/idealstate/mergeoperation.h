@@ -48,7 +48,7 @@ public:
             const document::BucketId&, MergeLimiter&,
             std::vector<MergeMetaData>&);
 
-    bool shouldBlockThisOperation(uint32_t messageType, uint8_t pri) const override;
+    bool shouldBlockThisOperation(uint32_t messageType, uint16_t node, uint8_t pri) const override;
     bool isBlocked(const DistributorStripeOperationContext& ctx, const OperationSequencer&) const override;
 private:
     static void addIdealNodes(

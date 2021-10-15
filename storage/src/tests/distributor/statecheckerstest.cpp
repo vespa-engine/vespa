@@ -38,14 +38,15 @@ struct StateCheckersTest : Test, DistributorStripeTestUtil {
     struct PendingMessage
     {
         uint32_t _msgType;
+        uint16_t _node;
         uint8_t _pri;
 
-        PendingMessage() : _msgType(UINT32_MAX), _pri(0) {}
+        constexpr PendingMessage() noexcept : _msgType(UINT32_MAX), _node(0), _pri(0) {}
 
-        PendingMessage(uint32_t msgType, uint8_t pri)
-            : _msgType(msgType), _pri(pri) {}
+        constexpr PendingMessage(uint32_t msgType, uint8_t pri) noexcept
+            : _msgType(msgType), _node(0), _pri(pri) {}
 
-        bool shouldCheck() const { return _msgType != UINT32_MAX; }
+        bool shouldCheck() const noexcept { return _msgType != UINT32_MAX; }
     };
 
     void enableClusterState(const lib::ClusterState& systemState) {
@@ -97,8 +98,7 @@ struct StateCheckersTest : Test, DistributorStripeTestUtil {
                 IdealStateOperation::UP op(result.createOperation());
                 if (op.get()) {
                     if (blocker.shouldCheck()
-                        && op->shouldBlockThisOperation(blocker._msgType,
-                                                        blocker._pri))
+                        && op->shouldBlockThisOperation(blocker._msgType, blocker._node, blocker._pri))
                     {
                         return "BLOCKED";
                     }

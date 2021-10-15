@@ -86,7 +86,7 @@ void GarbageCollectionOperation::update_gc_metrics() {
 }
 
 bool
-GarbageCollectionOperation::shouldBlockThisOperation(uint32_t, uint8_t) const {
+GarbageCollectionOperation::shouldBlockThisOperation(uint32_t, uint16_t, uint8_t) const {
     return true;
 }
 

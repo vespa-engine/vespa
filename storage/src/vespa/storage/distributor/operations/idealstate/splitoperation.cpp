@@ -150,6 +150,7 @@ SplitOperation::isBlocked(const DistributorStripeOperationContext& ctx, const Op
 
 bool
 SplitOperation::shouldBlockThisOperation(uint32_t msgType,
+                                         [[maybe_unused]] uint16_t node,
                                          uint8_t pri) const
 {
     if (msgType == api::MessageType::SPLITBUCKET_ID && _priority >= pri) {

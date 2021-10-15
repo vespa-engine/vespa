@@ -21,7 +21,7 @@ public:
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
     const char* getName() const override { return "garbagecollection"; };
     Type getType() const override { return GARBAGE_COLLECTION; }
-    bool shouldBlockThisOperation(uint32_t, uint8_t) const override;
+    bool shouldBlockThisOperation(uint32_t, uint16_t, uint8_t) const override;
 
 protected:
     MessageTracker _tracker;

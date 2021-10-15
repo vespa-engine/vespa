@@ -220,8 +220,8 @@ TEST_F(IdealStateManagerTest, block_check_for_all_operations_to_specific_bucket)
         pending_message_tracker().insert(msg);
     }
     {
-        RemoveBucketOperation op(dummy_cluster_context,
-                                 BucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(7)));
+        // TODO we might not want this particular behavior for merge operations either
+        MergeOperation op(BucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(2, 3)));
         // Not blocked for exact node match.
         EXPECT_FALSE(checkBlock(op, makeDocumentBucket(bid), operation_context(), op_seq));
         // But blocked for bucket match!

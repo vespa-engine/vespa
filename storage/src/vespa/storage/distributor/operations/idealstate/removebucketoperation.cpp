@@ -61,8 +61,7 @@ RemoveBucketOperation::onStart(DistributorStripeMessageSender& sender)
 bool
 RemoveBucketOperation::onReceiveInternal(const std::shared_ptr<api::StorageReply> &msg)
 {
-    api::DeleteBucketReply* rep =
-        dynamic_cast<api::DeleteBucketReply*>(msg.get());
+    auto* rep = dynamic_cast<api::DeleteBucketReply*>(msg.get());
 
     uint16_t node = _tracker.handleReply(*rep);
 
@@ -112,8 +111,15 @@ RemoveBucketOperation::onReceive(DistributorStripeMessageSender&, const std::sha
 }
 
 bool
-RemoveBucketOperation::shouldBlockThisOperation(uint32_t, uint8_t) const
+RemoveBucketOperation::shouldBlockThisOperation(uint32_t, uint16_t target_node, uint8_t) const
 {
-    return true;
+    // Number of nodes is expected to be 1 in the vastly common case (and a highly bounded
+    // number in the worst case), so a simple linear scan suffices.
+    for (uint16_t node : getNodes()) {
+        if (target_node == node) {
+            return true;
+        }
+    }
+    return false;
 }
 

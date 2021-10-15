@@ -329,14 +329,14 @@ constexpr std::array<uint32_t, 7> WRITE_FEED_MESSAGE_TYPES {{
 
 }
 
-bool MergeOperation::shouldBlockThisOperation(uint32_t messageType, uint8_t pri) const {
+bool MergeOperation::shouldBlockThisOperation(uint32_t messageType, uint16_t node, uint8_t pri) const {
     for (auto blocking_type : WRITE_FEED_MESSAGE_TYPES) {
         if (messageType == blocking_type) {
             return true;
         }
     }
 
-    return IdealStateOperation::shouldBlockThisOperation(messageType, pri);
+    return IdealStateOperation::shouldBlockThisOperation(messageType, node, pri);
 }
 
 bool MergeOperation::isBlocked(const DistributorStripeOperationContext& ctx,
