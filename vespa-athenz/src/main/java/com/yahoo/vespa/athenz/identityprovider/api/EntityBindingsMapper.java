@@ -8,10 +8,11 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
 import static com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId.fromDottedString;
@@ -64,8 +65,8 @@ public class EntityBindingsMapper {
     }
 
     public static SignedIdentityDocument readSignedIdentityDocumentFromFile(Path file) {
-        try {
-            SignedIdentityDocumentEntity entity = mapper.readValue(file.toFile(), SignedIdentityDocumentEntity.class);
+        try (InputStream inputStream = Files.newInputStream(file)) {
+            SignedIdentityDocumentEntity entity = mapper.readValue(inputStream, SignedIdentityDocumentEntity.class);
             return EntityBindingsMapper.toSignedIdentityDocument(entity);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -75,8 +76,10 @@ public class EntityBindingsMapper {
     public static void writeSignedIdentityDocumentToFile(Path file, SignedIdentityDocument document) {
         try {
             SignedIdentityDocumentEntity entity = EntityBindingsMapper.toSignedIdentityDocumentEntity(document);
-            Path tempFile = Paths.get(file.toAbsolutePath().toString() + ".tmp");
-            mapper.writeValue(tempFile.toFile(), entity);
+            Path tempFile = file.resolveSibling(file.getFileName() + ".tmp");
+            try (OutputStream outputStream = Files.newOutputStream(tempFile)) {
+                mapper.writeValue(outputStream, entity);
+            }
             Files.move(tempFile, file, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
