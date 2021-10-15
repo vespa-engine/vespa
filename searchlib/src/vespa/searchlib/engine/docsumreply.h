@@ -33,22 +33,21 @@ public:
 
     DocsumReply();
 
-    bool hasResults() const;
+    bool hasResult() const;
     bool hasRequest() const { return (_request.get() != nullptr); }
     bool hasIssues() const { return _issues && (_issues->size() > 0); }
 
-    vespalib::Slime & slime() const { assert(_slime.get()); return *_slime; }
-    DocsumRequest& request() const { assert(hasRequest()); return *_request; }
-    UniqueIssues & issues() const { return *_issues; }
+    const vespalib::Slime & slime() const { assert(_slime.get()); return *_slime; }
+    const DocsumRequest& request() const { assert(_request.get()); return *_request; }
+    const UniqueIssues & issues() const { assert(_issues.get()); return *_issues; }
 
-/*
     void setRequest(DocsumRequest::UP request) {
         _request = std::move(request);
     }
+
     void setIssues(UniqueIssues::UP issues) {
         _issues = std::move(issues);
     }
-*/
 
     std::unique_ptr<vespalib::Slime> releaseSlime();
 

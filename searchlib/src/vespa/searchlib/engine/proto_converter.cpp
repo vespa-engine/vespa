@@ -168,7 +168,7 @@ ProtoConverter::docsum_request_from_proto(const ProtoDocsumRequest &proto, Docsu
 void
 ProtoConverter::docsum_reply_to_proto(const DocsumReply &reply, ProtoDocsumReply &proto)
 {
-    if (reply.hasResults()) {
+    if (reply.hasResult()) {
         vespalib::SmartBuffer buf(4_Ki);
         vespalib::slime::BinaryFormat::encode(reply.slime(), buf);
         proto.set_slime_summaries(buf.obtain().data, buf.obtain().size);

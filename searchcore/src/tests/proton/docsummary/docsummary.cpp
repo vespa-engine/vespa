@@ -344,7 +344,7 @@ bool assertSlime(const std::string &exp, const DocsumReply &reply) {
     vespalib::Slime expSlime;
     size_t used = JsonFormat::decode(exp, expSlime);
     EXPECT_TRUE(used > 0);
-    ASSERT_TRUE(reply.hasResults());
+    ASSERT_TRUE(reply.hasResult());
     return (EXPECT_EQUAL(expSlime, reply.slime()));
 }
 

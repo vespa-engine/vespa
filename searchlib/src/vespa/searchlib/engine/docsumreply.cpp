@@ -19,20 +19,19 @@ DocsumReply::DocsumReply(std::unique_ptr<vespalib::Slime> root,
 {}
 
 DocsumReply::DocsumReply(Slime::UP root, DocsumRequest::UP request)
-    : DocsumReply(std::move(root), std::move(request), std::make_unique<UniqueIssues>()) {}
+    : DocsumReply(std::move(root), std::move(request), {}) {}
 
 DocsumReply::DocsumReply(Slime::UP root)
-    : DocsumReply(std::move(root), {}, std::make_unique<UniqueIssues>()) {}
+    : DocsumReply(std::move(root), {}, {}) {}
 
-DocsumReply::DocsumReply()
-    : DocsumReply(std::make_unique<Slime>()) { }
+DocsumReply::DocsumReply() = default;
 
 vespalib::slime::Inspector & DocsumReply::root() const {
     return _slime ? _slime->get() : *NixValue::invalid();
 }
 
-bool DocsumReply::hasResults() const {
-    return (root().children() > 0);
+bool DocsumReply::hasResult() const {
+    return root().valid();
 }
 
 std::unique_ptr<Slime> DocsumReply::releaseSlime() {
