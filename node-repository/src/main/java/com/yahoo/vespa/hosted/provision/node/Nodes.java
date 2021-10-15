@@ -316,8 +316,7 @@ public class Nodes {
 
     public Node deallocate(Node node, Agent agent, String reason, NestedTransaction transaction) {
         if (parkOnDeallocationOf(node, agent)) {
-            boolean keepAllocation = node.reports().getReport(Report.WANT_TO_ENCRYPT_ID).isPresent();
-            return park(node.hostname(), keepAllocation, agent, reason, transaction);
+            return park(node.hostname(), false, agent, reason, transaction);
         } else {
             return db.writeTo(Node.State.dirty, List.of(node), agent, Optional.of(reason), transaction).get(0);
         }
@@ -641,11 +640,6 @@ public class Nodes {
         return decommission(hostname, DecommissionOperation.rebuild, agent, instant);
     }
 
-    /** Retire and encrypt given host and all of its children */
-    public List<Node> encrypt(String hostname, Agent agent, Instant instant) {
-        return decommission(hostname, DecommissionOperation.encrypt, agent, instant);
-    }
-
     private List<Node> decommission(String hostname, DecommissionOperation op, Agent agent, Instant instant) {
         Optional<NodeMutex> nodeMutex = lockAndGet(hostname);
         if (nodeMutex.isEmpty()) return List.of();
@@ -654,23 +648,14 @@ public class Nodes {
         List<Node> result;
         boolean wantToDeprovision = op == DecommissionOperation.deprovision;
         boolean wantToRebuild = op == DecommissionOperation.rebuild;
-        Optional<Report> wantToEncryptReport = op == DecommissionOperation.encrypt
-                ? Optional.of(Report.basicReport(Report.WANT_TO_ENCRYPT_ID, Report.Type.UNSPECIFIED, instant, ""))
-                : Optional.empty();
         try (NodeMutex lock = nodeMutex.get(); Mutex allocationLock = lockUnallocated()) {
             // This takes allocationLock to prevent any further allocation of nodes on this host
             host = lock.node();
             result = performOn(list(allocationLock).childrenOf(host), (node, nodeLock) -> {
                 Node newNode = node.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant);
-                if (wantToEncryptReport.isPresent()) {
-                    newNode = newNode.with(newNode.reports().withReport(wantToEncryptReport.get()));
-                }
                 return write(newNode, nodeLock);
             });
             Node newHost = host.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant);
-            if (wantToEncryptReport.isPresent()) {
-                newHost = newHost.with(newHost.reports().withReport(wantToEncryptReport.get()));
-            }
             result.add(write(newHost, lock));
         }
         return result;
@@ -841,7 +826,6 @@ public class Nodes {
                                                     .orElse(false);
         return node.status().wantToDeprovision() ||
                node.status().wantToRebuild() ||
-               node.reports().getReport(Report.WANT_TO_ENCRYPT_ID).isPresent() ||
                retirementRequestedByOperator;
     }
 
@@ -849,7 +833,6 @@ public class Nodes {
     private enum DecommissionOperation {
         deprovision,
         rebuild,
-        encrypt,
     }
 
 }

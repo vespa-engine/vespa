@@ -13,9 +13,6 @@
       "name": "FailedExpirer"
     },
     {
-      "name": "HostEncrypter"
-    },
-    {
       "name": "InactiveExpirer"
     },
     {
