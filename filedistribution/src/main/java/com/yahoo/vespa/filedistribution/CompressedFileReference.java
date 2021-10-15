@@ -2,7 +2,6 @@
 package com.yahoo.vespa.filedistribution;
 
 import com.google.common.io.ByteStreams;
-import java.util.logging.Level;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
@@ -18,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
@@ -106,7 +106,7 @@ public class CompressedFileReference {
     }
 
     private static void writeFileToTar(ArchiveOutputStream taos, File baseDir, File file) throws IOException {
-        log.log(Level.FINE, () -> "Adding file to tar: " + baseDir.toPath().relativize(file.toPath()).toString());
+        log.log(Level.FINEST, () -> "Adding file to tar: " + baseDir.toPath().relativize(file.toPath()).toString());
         taos.putArchiveEntry(taos.createArchiveEntry(file, baseDir.toPath().relativize(file.toPath()).toString()));
         ByteStreams.copy(new FileInputStream(file), taos);
         taos.closeArchiveEntry();
