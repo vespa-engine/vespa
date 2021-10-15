@@ -43,12 +43,8 @@ public class RpcInvokerFactory extends InvokerFactory {
         Query query = result.getQuery();
 
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(query);
-        boolean useProtoBuf = query.properties().getBoolean(Dispatcher.dispatchProtobuf, true);
-        boolean useDispatchDotSummaries = query.properties().getBoolean(dispatchSummaries, false);
 
-        return  ((useDispatchDotSummaries || !useProtoBuf) && ! summaryNeedsQuery)
-                ? new RpcFillInvoker(rpcResourcePool, searcher.getDocumentDatabase(query))
-                : new RpcProtobufFillInvoker(rpcResourcePool, searcher.getDocumentDatabase(query), searcher.getServerId(), summaryNeedsQuery);
+        return new RpcProtobufFillInvoker(rpcResourcePool, searcher.getDocumentDatabase(query), searcher.getServerId(), summaryNeedsQuery);
     }
 
     // for testing
