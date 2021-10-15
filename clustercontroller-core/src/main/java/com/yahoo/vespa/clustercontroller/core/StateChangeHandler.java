@@ -50,7 +50,7 @@ public class StateChangeHandler {
     public void handleAllDistributorsInSync(final ClusterState currentState,
                                             final Set<ConfiguredNode> nodes,
                                             final DatabaseHandler database,
-                                            final DatabaseHandler.Context dbContext) throws InterruptedException {
+                                            final DatabaseHandler.DatabaseContext dbContext) throws InterruptedException {
         int startTimestampsReset = 0;
         log.log(Level.FINE, "handleAllDistributorsInSync invoked for state version %d", currentState.getVersion());
         for (NodeType nodeType : NodeType.getTypes()) {

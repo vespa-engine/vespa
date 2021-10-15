@@ -7,7 +7,6 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import java.util.logging.Level;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
@@ -22,6 +21,7 @@ import org.junit.rules.Timeout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -296,7 +296,7 @@ public class MasterElectionTest extends FleetControllerTest {
         for (FleetController fc : fleetControllers) {
             FleetControllerOptions myoptions = fc.getOptions();
             myoptions.zooKeeperServerAddress = zooKeeperServer.getAddress();
-            fc.updateOptions(myoptions, 0);
+            fc.updateOptions(myoptions);
             log.log(Level.INFO, "Should now have sent out new zookeeper server address " + myoptions.zooKeeperServerAddress + " to fleetcontroller " + myoptions.fleetControllerIndex);
         }
         timer.advanceTime(10 * 1000); // Wait long enough for fleetcontroller wanting to retry zookeeper connection
@@ -447,7 +447,7 @@ public class MasterElectionTest extends FleetControllerTest {
         FleetControllerOptions newOptions = options.clone();
         for (int i=0; i<fleetControllers.size(); ++i) {
             FleetControllerOptions nodeOptions = adjustConfig(newOptions, i, fleetControllers.size());
-            fleetControllers.get(i).updateOptions(nodeOptions, 2);
+            fleetControllers.get(i).updateOptions(nodeOptions);
         }
         waitForMaster(0);
         log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");

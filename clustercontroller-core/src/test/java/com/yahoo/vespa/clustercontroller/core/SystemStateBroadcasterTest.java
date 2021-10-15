@@ -55,8 +55,8 @@ public class SystemStateBroadcasterTest {
         }
     }
 
-    private static DatabaseHandler.Context dbContextFrom(ContentCluster cluster) {
-        return new DatabaseHandler.Context() {
+    private static DatabaseHandler.DatabaseContext dbContextFrom(ContentCluster cluster) {
+        return new DatabaseHandler.DatabaseContext() {
             @Override
             public ContentCluster getCluster() {
                 return cluster;
