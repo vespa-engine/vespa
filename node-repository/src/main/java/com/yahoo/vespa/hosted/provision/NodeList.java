@@ -215,18 +215,6 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
                              n.allocation().get().membership().cluster().group().equals(Optional.of(ClusterSpec.Group.from(index))));
     }
 
-    // TODO(mpolden): Remove these when HostEncrypter is removed
-    /** Returns the subset of nodes which are being encrypted */
-    public NodeList encrypting() {
-        return matching(node -> node.reports().getReport(Report.WANT_TO_ENCRYPT_ID).isPresent() &&
-                                node.reports().getReport(Report.DISK_ENCRYPTED_ID).isEmpty());
-    }
-
-    /** Returns the subset of nodes which are encrypted */
-    public NodeList encrypted() {
-        return matching(node -> node.reports().getReport(Report.DISK_ENCRYPTED_ID).isPresent());
-    }
-
     /** Returns the parent node of the given child node */
     public Optional<Node> parentOf(Node child) {
         return child.parentHostname()
