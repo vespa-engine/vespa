@@ -72,6 +72,9 @@ Test::Main()
     ASSERT_TRUE(net1.start());
     ASSERT_TRUE(net2.start());
     ASSERT_TRUE(net3.start());
+    ASSERT_TRUE(net1.waitUntilReady(120s));
+    ASSERT_TRUE(net2.waitUntilReady(120s));
+    ASSERT_TRUE(net3.waitUntilReady(120s));
     string spec1 = createSpec(net1.getPort());
     string spec2 = createSpec(net2.getPort());
     string spec3 = createSpec(net3.getPort());
