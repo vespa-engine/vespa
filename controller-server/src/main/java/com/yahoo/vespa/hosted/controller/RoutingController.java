@@ -76,7 +76,8 @@ public class RoutingController {
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.routingPolicies = new RoutingPolicies(controller);
-        this.rotationRepository = new RotationRepository(rotationsConfig, controller.applications(),
+        this.rotationRepository = new RotationRepository(Objects.requireNonNull(rotationsConfig, "rotationsConfig must be non-null"),
+                                                         controller.applications(),
                                                          controller.curator());
         this.hideSharedRoutingEndpoint = Flags.HIDE_SHARED_ROUTING_ENDPOINT.bindTo(controller.flagSource());
     }

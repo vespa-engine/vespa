@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
@@ -43,11 +42,10 @@ public class TenantController {
     private final CuratorDb curator;
     private final AccessControl accessControl;
 
-    public TenantController(Controller controller, CuratorDb curator, AccessControl accessControl, FlagSource flagSource) {
+    public TenantController(Controller controller, CuratorDb curator, AccessControl accessControl) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.curator = Objects.requireNonNull(curator, "curator must be non-null");
-        this.accessControl = accessControl;
-
+        this.accessControl = Objects.requireNonNull(accessControl, "accessControl must be non-null");
 
         // Update serialization format of all tenants
         Once.after(Duration.ofMinutes(1), () -> {
