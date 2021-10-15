@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.OptionalDouble;
 
@@ -22,9 +22,8 @@ interface ArtifactProducer {
         String serviceId();
         int servicePid();
         CommandResult executeCommandInNode(List<String> command, boolean logOutput);
-        Path outputDirectoryInNode();
-        Path pathInNodeUnderVespaHome(String relativePath);
-        Path pathOnHostFromPathInNode(Path pathInNode);
+        ContainerPath outputContainerPath();
+        ContainerPath containerPathUnderVespaHome(String relativePath);
         Options options();
 
         interface Options {

@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentTask;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
 import java.net.URI;
@@ -85,7 +86,7 @@ public class StorageMaintainer {
         if (archiveUri.isEmpty()) return false;
         ApplicationId owner = context.node().owner().orElseThrow();
 
-        List<SyncFileInfo> syncFileInfos = FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/vespa"))
+        List<SyncFileInfo> syncFileInfos = FileFinder.files(context.containerPathUnderVespaHome("logs/vespa"))
                 .maxDepth(2)
                 .stream()
                 .sorted(Comparator.comparing(FileFinder.FileAttributes::lastModifiedTime))
@@ -100,7 +101,7 @@ public class StorageMaintainer {
             DiskSize cachedDiskUsage = diskUsage.getIfPresent(context.containerName());
             if (cachedDiskUsage != null) return Optional.of(cachedDiskUsage);
 
-            DiskSize diskUsageBytes = getDiskUsed(context, context.pathOnHostFromPathInNode("/"));
+            DiskSize diskUsageBytes = getDiskUsed(context, context.containerPath("/").pathOnHost());
             diskUsage.put(context.containerName(), diskUsageBytes);
             return Optional.of(diskUsageBytes);
         } catch (Exception e) {
@@ -109,11 +110,11 @@ public class StorageMaintainer {
         }
     }
 
-    DiskSize getDiskUsed(TaskContext context, Path path) {
-        if (!Files.exists(path)) return DiskSize.ZERO;
+    DiskSize getDiskUsed(TaskContext context, Path pathOnHost) {
+        if (!Files.exists(pathOnHost)) return DiskSize.ZERO;
 
         String output = terminal.newCommandLine(context)
-                .add("du", "-xsk", path.toString())
+                .add("du", "-xsk", pathOnHost.toString())
                 .setTimeout(Duration.ofSeconds(60))
                 .executeSilently()
                 .getOutput();
@@ -149,18 +150,18 @@ public class StorageMaintainer {
         Function<Instant, Double> monthNormalizer = instant -> Duration.between(instant, start).getSeconds() / oneMonthSeconds;
         List<DiskCleanupRule> rules = new ArrayList<>();
 
-        rules.add(CoredumpCleanupRule.forContainer(pathOnHostUnderContainerVespaHome(context, "var/crash")));
+        rules.add(CoredumpCleanupRule.forContainer(context.containerPathUnderVespaHome("var/crash")));
 
         if (context.node().membership().map(m -> m.type().hasContainer()).orElse(false))
-            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/vespa/qrs")).list(),
+            rules.add(new LinearCleanupRule(() -> FileFinder.files(context.containerPathUnderVespaHome("logs/vespa/qrs")).list(),
                     fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.LOWEST, Priority.HIGHEST));
 
         if (context.nodeType() == NodeType.tenant && context.node().membership().map(m -> m.type().isAdmin()).orElse(false))
-            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/vespa/logarchive")).list(),
+            rules.add(new LinearCleanupRule(() -> FileFinder.files(context.containerPathUnderVespaHome("logs/vespa/logarchive")).list(),
                     fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.LOWEST, Priority.HIGHEST));
 
         if (context.nodeType() == NodeType.proxy)
-            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/nginx")).list(),
+            rules.add(new LinearCleanupRule(() -> FileFinder.files(context.containerPathUnderVespaHome("logs/nginx")).list(),
                     fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.LOWEST, Priority.MEDIUM));
 
         return rules;
@@ -202,16 +203,17 @@ public class StorageMaintainer {
      * Removes old files, reports coredumps and archives container data, runs when container enters state "dirty"
      */
     public void archiveNodeStorage(NodeAgentContext context) {
-        Path logsDirInContainer = context.pathInNodeUnderVespaHome("logs");
+        ContainerPath logsDirInContainer = context.containerPathUnderVespaHome("logs");
         Path containerLogsInArchiveDir = archiveContainerStoragePath
-                .resolve(context.containerName().asString() + "_" + DATE_TIME_FORMATTER.format(clock.instant()) + logsDirInContainer);
-        UnixPath containerLogsOnHost = new UnixPath(context.pathOnHostFromPathInNode(logsDirInContainer));
+                .resolve(context.containerName().asString() + "_" + DATE_TIME_FORMATTER.format(clock.instant()) + logsDirInContainer.pathInContainer());
 
+        // Files.move() does not support moving non-empty directories across providers, move using host paths
+        UnixPath containerLogsOnHost = new UnixPath(logsDirInContainer.pathOnHost());
         if (containerLogsOnHost.exists()) {
             new UnixPath(containerLogsInArchiveDir).createParents();
             containerLogsOnHost.moveIfExists(containerLogsInArchiveDir);
         }
-        new UnixPath(context.pathOnHostFromPathInNode("/")).deleteRecursively();
+        new UnixPath(context.containerPath("/")).deleteRecursively();
     }
 
     private String getMicrocodeVersion() {
@@ -234,9 +236,5 @@ public class StorageMaintainer {
                         .map(DockerImage::asString)
                         .orElse("<none>")
                 );
-    }
-
-    private static Path pathOnHostUnderContainerVespaHome(NodeAgentContext context, String path) {
-        return context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome(path));
     }
 }
