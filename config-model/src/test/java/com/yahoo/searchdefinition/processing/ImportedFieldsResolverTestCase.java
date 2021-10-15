@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.TensorDataType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.ImmutableImportedSDField;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.ImportedField;
@@ -36,9 +36,9 @@ public class ImportedFieldsResolverTestCase {
         ImportedField myField = model.importedFields.fields().get(fieldName);
         assertNotNull(myField);
         assertEquals(fieldName, myField.fieldName());
-        assertSame(model.childSearch.getConcreteField("ref"), myField.reference().referenceField());
-        assertSame(model.parentSearch, myField.reference().targetSearch());
-        ImmutableSDField targetField = model.parentSearch.getField(targetFieldName);
+        assertSame(model.childSchema.getConcreteField("ref"), myField.reference().referenceField());
+        assertSame(model.parentSchema, myField.reference().targetSearch());
+        ImmutableSDField targetField = model.parentSchema.getField(targetFieldName);
         if (targetField instanceof SDField) {
             assertSame(targetField, myField.targetField());
         } else {
@@ -103,48 +103,48 @@ public class ImportedFieldsResolverTestCase {
 
     static class SearchModel extends ParentChildSearchModel {
 
-        public final Search grandParentSearch;
+        public final Schema grandParentSchema;
         public ImportedFields importedFields;
 
         public SearchModel() {
             super();
-            grandParentSearch = createSearch("grandparent");
-            grandParentSearch.getDocument().addField(createField("ancient_field", DataType.INT, "{ attribute }"));
+            grandParentSchema = createSearch("grandparent");
+            grandParentSchema.getDocument().addField(createField("ancient_field", DataType.INT, "{ attribute }"));
 
-            parentSearch.getDocument().addField(createField("attribute_field", DataType.INT, "{ attribute }"));
-            parentSearch.getDocument().addField(createField("attribute_and_index", DataType.INT, "{ attribute | index }"));
-            parentSearch.getDocument().addField(new TemporarySDField("not_attribute", DataType.INT));
-            parentSearch.getDocument().addField(createField("tensor_field", new TensorDataType(TensorType.fromSpec("tensor(x[5])")), "{ attribute }"));
-            parentSearch.getDocument().addField(createField("predicate_field", DataType.PREDICATE, "{ attribute }"));
-            addRefField(parentSearch, grandParentSearch, "ref");
-            addImportedField(parentSearch, "ancient_field", "ref", "ancient_field");
+            parentSchema.getDocument().addField(createField("attribute_field", DataType.INT, "{ attribute }"));
+            parentSchema.getDocument().addField(createField("attribute_and_index", DataType.INT, "{ attribute | index }"));
+            parentSchema.getDocument().addField(new TemporarySDField("not_attribute", DataType.INT));
+            parentSchema.getDocument().addField(createField("tensor_field", new TensorDataType(TensorType.fromSpec("tensor(x[5])")), "{ attribute }"));
+            parentSchema.getDocument().addField(createField("predicate_field", DataType.PREDICATE, "{ attribute }"));
+            addRefField(parentSchema, grandParentSchema, "ref");
+            addImportedField(parentSchema, "ancient_field", "ref", "ancient_field");
 
-            addRefField(childSearch, parentSearch, "ref");
+            addRefField(childSchema, parentSchema, "ref");
         }
 
 
         protected SearchModel addImportedField(String fieldName, String referenceFieldName, String targetFieldName) {
-            return addImportedField(childSearch, fieldName, referenceFieldName, targetFieldName);
+            return addImportedField(childSchema, fieldName, referenceFieldName, targetFieldName);
         }
 
-        protected SearchModel addImportedField(Search search, String fieldName, String referenceFieldName, String targetFieldName) {
-            super.addImportedField(search, fieldName, referenceFieldName, targetFieldName);
+        protected SearchModel addImportedField(Schema schema, String fieldName, String referenceFieldName, String targetFieldName) {
+            super.addImportedField(schema, fieldName, referenceFieldName, targetFieldName);
             return this;
         }
 
         public void resolve() {
-            resolve(grandParentSearch);
-            resolve(parentSearch);
-            importedFields = resolve(childSearch);
+            resolve(grandParentSchema);
+            resolve(parentSchema);
+            importedFields = resolve(childSchema);
         }
 
-        private static ImportedFields resolve(Search search) {
-            assertNotNull(search.temporaryImportedFields().get());
-            assertFalse(search.importedFields().isPresent());
-            new ImportedFieldsResolver(search, null, null, null).process(true, false);
-            assertFalse(search.temporaryImportedFields().isPresent());
-            assertNotNull(search.importedFields().get());
-            return search.importedFields().get();
+        private static ImportedFields resolve(Schema schema) {
+            assertNotNull(schema.temporaryImportedFields().get());
+            assertFalse(schema.importedFields().isPresent());
+            new ImportedFieldsResolver(schema, null, null, null).process(true, false);
+            assertFalse(schema.temporaryImportedFields().isPresent());
+            assertNotNull(schema.importedFields().get());
+            return schema.importedFields().get();
         }
     }
 

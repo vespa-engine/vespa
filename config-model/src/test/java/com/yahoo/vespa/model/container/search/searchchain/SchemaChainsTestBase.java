@@ -9,7 +9,7 @@ import org.w3c.dom.Element;
 /** Creates SearchChains model from xml input.
  * @author Tony Vaagenes
  */
-public abstract class SearchChainsTestBase extends DomBuilderTest {
+public abstract class SchemaChainsTestBase extends DomBuilderTest {
 
     @Before
     public void setupSearchChains() {

@@ -10,7 +10,7 @@ import static org.junit.Assert.fail;
 /**
  * @author Simon Thoresen Hult
  */
-public class SearchCoverageTest {
+public class SchemaCoverageTest {
 
     @Test
     public void requireThatAccessorWork() {

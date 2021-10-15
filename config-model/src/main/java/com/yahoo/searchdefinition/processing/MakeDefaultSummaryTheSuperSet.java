@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -29,14 +29,14 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class MakeDefaultSummaryTheSuperSet extends Processor {
 
-    public MakeDefaultSummaryTheSuperSet(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public MakeDefaultSummaryTheSuperSet(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        DocumentSummary defaultSummary=search.getSummary("default");
-        for (SummaryField summaryField : search.getUniqueNamedSummaryFields().values() ) {
+        DocumentSummary defaultSummary= schema.getSummary("default");
+        for (SummaryField summaryField : schema.getUniqueNamedSummaryFields().values() ) {
             if (defaultSummary.getSummaryField(summaryField.getName()) != null) continue;
             if (summaryField.getTransform() == SummaryTransform.ATTRIBUTE) continue;
             if (summaryField.getTransform() == SummaryTransform.ATTRIBUTECOMBINER) continue;

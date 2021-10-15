@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author geirst
  */
-public class ContentSearchClusterTest {
+public class ContentSchemaClusterTest {
 
     private static double EPSILON = 0.000001;
 

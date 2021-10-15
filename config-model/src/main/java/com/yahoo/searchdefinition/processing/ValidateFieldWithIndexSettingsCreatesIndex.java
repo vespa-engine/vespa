@@ -3,11 +3,10 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.Ranking;
 import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
@@ -17,8 +16,8 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class ValidateFieldWithIndexSettingsCreatesIndex extends Processor {
 
-    public ValidateFieldWithIndexSettingsCreatesIndex(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public ValidateFieldWithIndexSettingsCreatesIndex(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
@@ -27,15 +26,15 @@ public class ValidateFieldWithIndexSettingsCreatesIndex extends Processor {
 
         Matching defaultMatching = new Matching();
         Ranking defaultRanking = new Ranking();
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             if (field.doesIndexing()) continue;
             if (field.doesAttributing()) continue;
 
             if ( ! field.getRanking().equals(defaultRanking))
-                fail(search, field,
+                fail(schema, field,
                      "Fields which are not creating an index or attribute can not contain rank settings.");
             if ( ! field.getMatching().equals(defaultMatching))
-                fail(search, field,
+                fail(schema, field,
                      "Fields which are not creating an index or attribute can not contain match settings.");
         }
     }

@@ -21,7 +21,7 @@ import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTe
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.normalizeServicesInActions;
 import static org.junit.Assert.assertTrue;
 
-public class IndexedSearchClusterChangeValidatorTest {
+public class IndexedSchemaClusterChangeValidatorTest {
 
     static class Fixture {
         VespaModel currentModel;

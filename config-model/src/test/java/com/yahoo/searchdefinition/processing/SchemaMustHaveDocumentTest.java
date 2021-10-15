@@ -12,7 +12,7 @@ import static org.junit.Assert.fail;
 /**
  * @author hmusum
  */
-public class SearchMustHaveDocumentTest {
+public class SchemaMustHaveDocumentTest {
 
     @Test
     public void requireErrorWhenMissingDocument() throws IOException, ParseException {

@@ -11,7 +11,7 @@ import java.io.IOException;
  *
  * @author bratseth
  */
-public class CombinedAttributeAndIndexSearchTestCase extends AbstractExportingTestCase {
+public class CombinedAttributeAndIndexSchemaTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testMultipleSummaries() throws IOException, ParseException {

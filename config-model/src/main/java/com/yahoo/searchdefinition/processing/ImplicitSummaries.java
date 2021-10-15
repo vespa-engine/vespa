@@ -5,10 +5,10 @@ import java.util.logging.Level;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -23,24 +23,24 @@ import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isC
  */
 public class ImplicitSummaries extends Processor {
 
-    public ImplicitSummaries(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public ImplicitSummaries(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        DocumentSummary defaultSummary = search.getSummary("default");
+        DocumentSummary defaultSummary = schema.getSummary("default");
         if (defaultSummary == null) {
-            defaultSummary = new DocumentSummary("default", search);
+            defaultSummary = new DocumentSummary("default", schema);
             defaultSummary.setFromDisk(true);
-            search.addSummary(defaultSummary);
+            schema.addSummary(defaultSummary);
         }
 
-        for (SDField field : search.allConcreteFields()) {
-            collectSummaries(field, search, validate);
+        for (SDField field : schema.allConcreteFields()) {
+            collectSummaries(field, schema, validate);
         }
 
-        for (DocumentSummary documentSummary : search.getSummaries().values()) {
+        for (DocumentSummary documentSummary : schema.getSummaries().values()) {
             documentSummary.purgeImplicits();
         }
     }
@@ -49,7 +49,7 @@ public class ImplicitSummaries extends Processor {
         sdField.addSummaryFieldSources(summaryField);
     }
 
-    private void collectSummaries(SDField field ,Search search, boolean validate) {
+    private void collectSummaries(SDField field , Schema schema, boolean validate) {
         SummaryField addedSummaryField=null;
 
         // Implicit
@@ -65,7 +65,7 @@ public class ImplicitSummaries extends Processor {
         }
         if (fieldSummaryField != null) {
             for (String dest : fieldSummaryField.getDestinations()) {
-                DocumentSummary summary = search.getSummary(dest);
+                DocumentSummary summary = schema.getSummary(dest);
                 if (summary != null) {
                     summary.add(fieldSummaryField);
                 }
@@ -79,7 +79,7 @@ public class ImplicitSummaries extends Processor {
                     addedSummaryField.setTransform(SummaryTransform.ATTRIBUTE);
                 }
                 if (attribute.isPrefetch()) {
-                    addPrefetchAttribute(attribute, field, search);
+                    addPrefetchAttribute(attribute, field, schema);
                 }
             }
         }
@@ -92,7 +92,7 @@ public class ImplicitSummaries extends Processor {
         if (field.doesSummarying()) {
             for (Attribute attribute : field.getAttributes().values()) {
                 if ( ! attribute.isPosition()) continue;
-                DocumentSummary attributePrefetchSummary = getOrCreateAttributePrefetchSummary(search);
+                DocumentSummary attributePrefetchSummary = getOrCreateAttributePrefetchSummary(schema);
                 attributePrefetchSummary.add(field.getSummaryField(PositionDataType.getDistanceSummaryFieldName(fieldName)));
                 attributePrefetchSummary.add(field.getSummaryField(PositionDataType.getPositionSummaryFieldName(fieldName)));
             }
@@ -106,35 +106,35 @@ public class ImplicitSummaries extends Processor {
                 summaryField.setTransform(SummaryTransform.ATTRIBUTE);
             }
 
-            if (isValid(summaryField, search, validate)) {
-                addToDestinations(summaryField, search);
+            if (isValid(summaryField, schema, validate)) {
+                addToDestinations(summaryField, schema);
             }
         }
 
     }
 
-    private DocumentSummary getOrCreateAttributePrefetchSummary(Search search) {
-        DocumentSummary summary = search.getSummary("attributeprefetch");
+    private DocumentSummary getOrCreateAttributePrefetchSummary(Schema schema) {
+        DocumentSummary summary = schema.getSummary("attributeprefetch");
         if (summary == null) {
-            summary = new DocumentSummary("attributeprefetch", search);
-            search.addSummary(summary);
+            summary = new DocumentSummary("attributeprefetch", schema);
+            schema.addSummary(summary);
         }
         return summary;
     }
 
 
-    private void addPrefetchAttribute(Attribute attribute,SDField field,Search search) {
+    private void addPrefetchAttribute(Attribute attribute, SDField field, Schema schema) {
         if (attribute.getPrefetchValue() == null) { // Prefetch by default - unless any summary makes this dynamic
             // Check if there is an implicit dynamic definition
             SummaryField fieldSummaryField = field.getSummaryField(attribute.getName());
             if (fieldSummaryField != null && fieldSummaryField.getTransform().isDynamic()) return;
 
             // Check if an explicit class makes it dynamic (first is enough, as all must be the same, checked later)
-            SummaryField explicitSummaryField = search.getExplicitSummaryField(attribute.getName());
+            SummaryField explicitSummaryField = schema.getExplicitSummaryField(attribute.getName());
             if (explicitSummaryField != null && explicitSummaryField.getTransform().isDynamic()) return;
         }
 
-        DocumentSummary summary = getOrCreateAttributePrefetchSummary(search);
+        DocumentSummary summary = getOrCreateAttributePrefetchSummary(schema);
         SummaryField attributeSummaryField = new SummaryField(attribute.getName(), attribute.getDataType());
         attributeSummaryField.addSource(attribute.getName());
         attributeSummaryField.addDestination("attributeprefetch");
@@ -143,26 +143,26 @@ public class ImplicitSummaries extends Processor {
     }
 
     // Returns whether this is valid. Warns if invalid and ignorable. Throws if not ignorable.
-    private boolean isValid(SummaryField summaryField, Search search, boolean validate) {
+    private boolean isValid(SummaryField summaryField, Schema schema, boolean validate) {
         if (summaryField.getTransform() == SummaryTransform.DISTANCE ||
             summaryField.getTransform() == SummaryTransform.POSITIONS) {
             int sourceCount = summaryField.getSourceCount();
             if (validate && sourceCount != 1) {
-                throw newProcessException(search.getName(), summaryField.getName(),
+                throw newProcessException(schema.getName(), summaryField.getName(),
                                           "Expected 1 source field, got " + sourceCount + ".");
             }
             String sourceName = summaryField.getSingleSource();
-            if (validate && search.getAttribute(sourceName) == null) {
-                throw newProcessException(search.getName(), summaryField.getName(),
+            if (validate && schema.getAttribute(sourceName) == null) {
+                throw newProcessException(schema.getName(), summaryField.getName(),
                                           "Summary source attribute '" + sourceName + "' not found.");
             }
             return true;
         }
 
         String fieldName = summaryField.getSourceField();
-        SDField sourceField = search.getConcreteField(fieldName);
+        SDField sourceField = schema.getConcreteField(fieldName);
         if (validate && sourceField == null) {
-            throw newProcessException(search, summaryField, "Source field '" + fieldName + "' does not exist.");
+            throw newProcessException(schema, summaryField, "Source field '" + fieldName + "' does not exist.");
         }
         if (! sourceField.doesSummarying() &&
             ! summaryField.getTransform().equals(SummaryTransform.ATTRIBUTE) &&
@@ -199,21 +199,21 @@ public class ImplicitSummaries extends Processor {
         return true;
     }
 
-    private void addToDestinations(SummaryField summaryField,Search search) {
+    private void addToDestinations(SummaryField summaryField, Schema schema) {
         if (summaryField.getDestinations().size() == 0) {
-            addToDestination("default", summaryField, search);
+            addToDestination("default", summaryField, schema);
         }
         else {
             for (String destinationName : summaryField.getDestinations())
-                addToDestination(destinationName, summaryField, search);
+                addToDestination(destinationName, summaryField, schema);
         }
     }
 
-    private void addToDestination(String destinationName, SummaryField summaryField, Search search) {
-        DocumentSummary destination = search.getSummary(destinationName);
+    private void addToDestination(String destinationName, SummaryField summaryField, Schema schema) {
+        DocumentSummary destination = schema.getSummary(destinationName);
         if (destination == null) {
-            destination = new DocumentSummary(destinationName, search);
-            search.addSummary(destination);
+            destination = new DocumentSummary(destinationName, schema);
+            schema.addSummary(destination);
             destination.add(summaryField);
         }
         else {

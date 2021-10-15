@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.processing.multifieldresolver.RankProfileTypeSettingsProcessor;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -94,19 +94,19 @@ public class Processing {
     }
 
     /**
-     * Runs all search processors on the given {@link Search} object. These will modify the search object, <b>possibly
+     * Runs all search processors on the given {@link Schema} object. These will modify the search object, <b>possibly
      * exchanging it with another</b>, as well as its document types.
      *
-     * @param search The search to process.
+     * @param schema The search to process.
      * @param deployLogger The log to log messages and warnings for application deployment to
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
      * @param queryProfiles The query profiles contained in the application this search is part of.
      */
-    public void process(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry,
+    public void process(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry,
                         QueryProfiles queryProfiles, boolean validate, boolean documentsOnly) {
         Collection<ProcessorFactory> factories = processors();
         factories.stream()
-                .map(factory -> factory.create(search, deployLogger, rankProfileRegistry, queryProfiles))
+                .map(factory -> factory.create(schema, deployLogger, rankProfileRegistry, queryProfiles))
                 .forEach(processor -> processor.process(validate, documentsOnly));
     }
 
@@ -127,7 +127,7 @@ public class Processing {
 
     @FunctionalInterface
     public interface ProcessorFactory {
-        Processor create(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles);
+        Processor create(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles);
     }
 
 }

@@ -7,7 +7,7 @@ import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -23,29 +23,29 @@ public class UriHack extends Processor {
     private static final List<String> URL_SUFFIX =
             Arrays.asList("scheme", "host", "port", "path", "query", "fragment", "hostname");
 
-    UriHack(Search search,
-                   DeployLogger deployLogger,
-                   RankProfileRegistry rankProfileRegistry,
-                   QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    UriHack(Schema schema,
+            DeployLogger deployLogger,
+            RankProfileRegistry rankProfileRegistry,
+            QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             if (field.doesIndexing()) {
                 DataType fieldType = field.getDataType();
                 if (fieldType instanceof CollectionDataType) {
                     fieldType = ((CollectionDataType)fieldType).getNestedType();
                 }
                 if (fieldType == DataType.URI) {
-                    processField(search, field);
+                    processField(schema, field);
                 }
             }
         }
     }
 
-    private void processField(Search search, SDField uriField) {
+    private void processField(Schema schema, SDField uriField) {
         String uriName = uriField.getName();
         uriField.setStemming(Stemming.NONE);
         DataType generatedType = DataType.STRING;
@@ -69,8 +69,8 @@ public class UriHack extends Processor {
             if (uriField.getIndex(suffix) != null) {
                 partField.addIndex(uriField.getIndex(suffix));
             }
-            search.addExtraField(partField);
-            search.fieldSets().addBuiltInFieldSetItem(BuiltInFieldSets.INTERNAL_FIELDSET_NAME, partField.getName());
+            schema.addExtraField(partField);
+            schema.fieldSets().addBuiltInFieldSetItem(BuiltInFieldSets.INTERNAL_FIELDSET_NAME, partField.getName());
         }
     }
 

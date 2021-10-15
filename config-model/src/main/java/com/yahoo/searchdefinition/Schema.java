@@ -36,16 +36,14 @@ import java.util.logging.Level;
 import java.util.stream.Stream;
 
 /**
- * A search definition describes (or uses) some document types, defines how these are turned into a relevancy tuned
- * index through indexing and how data from documents should be served at search time. The identity of this
- * class is its name.
+ * A schema contains a document type, additional fields, rank profiles and document summaries.
  *
  * @author bratseth
  */
 // TODO: Make a class owned by this, for each of these responsibilities:
 // Managing indexes, managing attributes, managing summary classes.
 // Ensure that after the processing step, all implicit instances of the above types are explicitly represented
-public class Search implements ImmutableSearch {
+public class Schema implements ImmutableSearch {
 
     private static final String SD_DOC_FIELD_NAME = "sddocname";
     private static final List<String> RESERVED_NAMES = List.of(
@@ -102,11 +100,11 @@ public class Search implements ImmutableSearch {
     private final ModelContext.Properties properties;
 
     /** Testing only */
-    public Search(String name) {
+    public Schema(String name) {
         this(name, Optional.empty(), null, null, new BaseDeployLogger(), new TestProperties());
     }
 
-    public Search(String name,
+    public Schema(String name,
                   Application application,
                   FileRegistry fileRegistry,
                   DeployLogger deployLogger,
@@ -121,7 +119,7 @@ public class Search implements ImmutableSearch {
      * @param inherited the schema this inherits, if any
      * @param application the application containing this
      */
-    public Search(String name,
+    public Schema(String name,
                   Optional<String> inherited,
                   Application application,
                   FileRegistry fileRegistry,
@@ -131,11 +129,11 @@ public class Search implements ImmutableSearch {
         this.name = name;
     }
 
-    protected Search(Application application, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties) {
+    protected Schema(Application application, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties) {
         this(Optional.empty(), application, fileRegistry, deployLogger, properties, true);
     }
 
-    private Search(Optional<String> inherited,
+    private Schema(Optional<String> inherited,
                    Application application,
                    FileRegistry fileRegistry,
                    DeployLogger deployLogger,
@@ -641,11 +639,11 @@ public class Search implements ImmutableSearch {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Search)) {
+        if (!(o instanceof Schema)) {
             return false;
         }
 
-        Search other = (Search)o;
+        Schema other = (Schema)o;
         return getName().equals(other.getName());
     }
 
@@ -689,12 +687,12 @@ public class Search implements ImmutableSearch {
      * @param dt the struct to add
      * @return self, for chaining
      */
-    public Search addType(SDDocumentType dt) {
+    public Schema addType(SDDocumentType dt) {
         docType.addType(dt); // TODO This is a very very dirty thing. It must go
         return this;
     }
 
-    public Search addAnnotation(SDAnnotationType dt) {
+    public Schema addAnnotation(SDAnnotationType dt) {
         docType.addAnnotation(dt);
         return this;
     }

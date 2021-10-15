@@ -4,8 +4,8 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.document.DataTypeName;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDDocumentType;
-import com.yahoo.searchdefinition.Search;
 
 import java.util.*;
 
@@ -23,7 +23,7 @@ import java.util.*;
 public class SearchOrderer {
 
     /** A map from DataTypeName to the Search defining them */
-    private final Map<DataTypeName, Search> documentNameToSearch = new HashMap<>();
+    private final Map<DataTypeName, Schema> documentNameToSearch = new HashMap<>();
 
     /**
      * Reorders the given list of search definitions such that any supertype
@@ -32,21 +32,21 @@ public class SearchOrderer {
      *
      * @return a new list containing the same search instances in the right order
      */
-    public List<Search> order(List<Search> unordered) {
+    public List<Schema> order(List<Schema> unordered) {
         // Description above state that the original order should be preserved, except for the dependency constraint.
         // Yet we botch that guarantee by sorting the list...
-        unordered.sort(Comparator.comparing(Search::getName));
+        unordered.sort(Comparator.comparing(Schema::getName));
 
         // No, this is not a fast algorithm...
         indexOnDocumentName(unordered);
-        List<Search> ordered = new ArrayList<>(unordered.size());
-        List<Search> moveOutwards = new ArrayList<>();
-        for (Search search : unordered) {
-            if (allDependenciesAlreadyEmitted(ordered, search)) {
-                addOrdered(ordered, search, moveOutwards);
+        List<Schema> ordered = new ArrayList<>(unordered.size());
+        List<Schema> moveOutwards = new ArrayList<>();
+        for (Schema schema : unordered) {
+            if (allDependenciesAlreadyEmitted(ordered, schema)) {
+                addOrdered(ordered, schema, moveOutwards);
             }
             else {
-                moveOutwards.add(search);
+                moveOutwards.add(schema);
             }
         }
 
@@ -58,9 +58,9 @@ public class SearchOrderer {
         return ordered;
     }
 
-    private void addOrdered(List<Search> ordered, Search search, List<Search> moveOutwards) {
-        ordered.add(search);
-        Search eligibleMove;
+    private void addOrdered(List<Schema> ordered, Schema schema, List<Schema> moveOutwards) {
+        ordered.add(schema);
+        Schema eligibleMove;
         do {
             eligibleMove = removeFirstEntryWithFullyEmittedDependencies(moveOutwards, ordered);
             if (eligibleMove != null) {
@@ -70,8 +70,8 @@ public class SearchOrderer {
     }
 
     /** Removes and returns the first search from the move list which can now be added, or null if none */
-    private Search removeFirstEntryWithFullyEmittedDependencies(List<Search> moveOutwards, List<Search> ordered) {
-        for (Search move : moveOutwards) {
+    private Schema removeFirstEntryWithFullyEmittedDependencies(List<Schema> moveOutwards, List<Schema> ordered) {
+        for (Schema move : moveOutwards) {
             if (allDependenciesAlreadyEmitted(ordered, move)) {
                 moveOutwards.remove(move);
                 return move;
@@ -80,29 +80,29 @@ public class SearchOrderer {
         return null;
     }
 
-    private boolean allDependenciesAlreadyEmitted(List<Search> alreadyOrdered, Search search) {
-        if (search.getDocument() == null) {
+    private boolean allDependenciesAlreadyEmitted(List<Schema> alreadyOrdered, Schema schema) {
+        if (schema.getDocument() == null) {
             return true;
         }
-        SDDocumentType document = search.getDocument();
+        SDDocumentType document = schema.getDocument();
         return allInheritedDependenciesEmitted(alreadyOrdered, document) && allReferenceDependenciesEmitted(alreadyOrdered, document);
     }
 
-    private boolean allInheritedDependenciesEmitted(List<Search> alreadyOrdered, SDDocumentType document) {
+    private boolean allInheritedDependenciesEmitted(List<Schema> alreadyOrdered, SDDocumentType document) {
         for (SDDocumentType sdoc : document.getInheritedTypes() ) {
             DataTypeName inheritedName = sdoc.getDocumentName();
             if ("document".equals(inheritedName.getName())) {
                 continue;
             }
-            Search inheritedSearch = documentNameToSearch.get(inheritedName);
-            if (!alreadyOrdered.contains(inheritedSearch)) {
+            Schema inheritedSchema = documentNameToSearch.get(inheritedName);
+            if (!alreadyOrdered.contains(inheritedSchema)) {
                 return false;
             }
         }
         return true;
     }
 
-    private static boolean allReferenceDependenciesEmitted(List<Search> alreadyOrdered, SDDocumentType document) {
+    private static boolean allReferenceDependenciesEmitted(List<Schema> alreadyOrdered, SDDocumentType document) {
         DocumentReferences documentReferences = document.getDocumentReferences()
                 .orElseThrow(() -> new IllegalStateException("Missing document references. Should have been processed by now."));
         return documentReferences.stream()
@@ -111,11 +111,11 @@ public class SearchOrderer {
                 .allMatch(alreadyOrdered::contains);
     }
 
-    private void indexOnDocumentName(List<Search> searches) {
+    private void indexOnDocumentName(List<Schema> schemas) {
         documentNameToSearch.clear();
-        for (Search search : searches) {
-            if (search.getDocument() != null) {
-                documentNameToSearch.put(search.getDocument().getDocumentName(),search);
+        for (Schema schema : schemas) {
+            if (schema.getDocument() != null) {
+                documentNameToSearch.put(schema.getDocument().getDocumentName(), schema);
             }
         }
     }

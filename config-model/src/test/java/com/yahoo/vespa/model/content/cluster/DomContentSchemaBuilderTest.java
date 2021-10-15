@@ -15,7 +15,7 @@ import static org.junit.Assert.assertNull;
 /**
  * @author Simon Thoresen Hult
  */
-public class DomContentSearchBuilderTest {
+public class DomContentSchemaBuilderTest {
 
     @Test
     public void requireThatDefaultsAreNull() throws Exception {

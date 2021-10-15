@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.document.ImportedComplexField;
@@ -24,7 +24,7 @@ public class ImportedFieldsTestCase {
 
     @Test
     public void fields_can_be_imported_from_referenced_document_types() throws ParseException {
-        Search search = buildAdSearch(joinLines(
+        Schema schema = buildAdSearch(joinLines(
                 "search ad {",
                 "  document ad {",
                 "    field campaign_ref type reference<campaign> { indexing: attribute }",
@@ -33,9 +33,9 @@ public class ImportedFieldsTestCase {
                 "  import field campaign_ref.budget as my_budget {}",
                 "  import field person_ref.name as my_name {}",
                 "}"));
-        assertEquals(2, search.importedFields().get().fields().size());
-        assertSearchContainsImportedField("my_budget", "campaign_ref", "campaign", "budget", search);
-        assertSearchContainsImportedField("my_name", "person_ref", "person", "name", search);
+        assertEquals(2, schema.importedFields().get().fields().size());
+        assertSearchContainsImportedField("my_budget", "campaign_ref", "campaign", "budget", schema);
+        assertSearchContainsImportedField("my_name", "person_ref", "person", "name", schema);
     }
 
     @Rule
@@ -55,9 +55,9 @@ public class ImportedFieldsTestCase {
     @Test
     public void fail_duplicate_import() throws ParseException {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For search 'ad', import field as 'my_budget': Field already imported");
-        Search search = buildAdSearch(joinLines(
-                "search ad {",
+        exception.expectMessage("For schema 'ad', import field as 'my_budget': Field already imported");
+        Schema schema = buildAdSearch(joinLines(
+                "schema ad {",
                 "  document ad {",
                 "    field campaign_ref type reference<campaign> { indexing: attribute }",
                 "  }",
@@ -66,7 +66,7 @@ public class ImportedFieldsTestCase {
                 "}"));
     }
 
-    private static Search buildAdSearch(String sdContent) throws ParseException {
+    private static Schema buildAdSearch(String sdContent) throws ParseException {
         SearchBuilder builder = new SearchBuilder();
         builder.importString(joinLines("search campaign {",
                 "  document campaign {",
@@ -84,29 +84,29 @@ public class ImportedFieldsTestCase {
     }
 
     private static void checkStructImport(AncestorStructSdBuilder parentBuilder) throws ParseException {
-        Search search = buildChildSearch(parentBuilder.build(), new ChildStructSdBuilder().build());
-        checkImportedStructFields(search, parentBuilder);
+        Schema schema = buildChildSearch(parentBuilder.build(), new ChildStructSdBuilder().build());
+        checkImportedStructFields(schema, parentBuilder);
     }
 
     private static void checkNestedStructImport(AncestorStructSdBuilder grandParentBuilder) throws ParseException {
-        Search search = buildChildSearch(grandParentBuilder.build(),
-                new IntermediateParentStructSdBuilder().build(),
-                new ChildStructSdBuilder().build());
-        checkImportedStructFields(search, grandParentBuilder);
+        Schema schema = buildChildSearch(grandParentBuilder.build(),
+                                         new IntermediateParentStructSdBuilder().build(),
+                                         new ChildStructSdBuilder().build());
+        checkImportedStructFields(schema, grandParentBuilder);
     }
 
-    private static void checkImportedStructFields(Search search, AncestorStructSdBuilder ancestorBuilder) {
-        assertEquals(3, search.importedFields().get().fields().size());
-        checkImportedField("my_elem_array.name", "parent_ref", "parent", "elem_array.name", search, ancestorBuilder.elem_array_name_attr);
-        checkImportedField("my_elem_array.weight", "parent_ref", "parent", "elem_array.weight", search, ancestorBuilder.elem_array_weight_attr);
-        checkImportedField("my_elem_map.key", "parent_ref", "parent", "elem_map.key", search, ancestorBuilder.elem_map_key_attr);
-        checkImportedField("my_elem_map.value.name", "parent_ref", "parent", "elem_map.value.name", search, ancestorBuilder.elem_map_value_name_attr);
-        checkImportedField("my_elem_map.value.weight", "parent_ref", "parent", "elem_map.value.weight", search, ancestorBuilder.elem_map_value_weight_attr);
-        checkImportedField("my_str_int_map.key", "parent_ref", "parent", "str_int_map.key", search, ancestorBuilder.str_int_map_key_attr);
-        checkImportedField("my_str_int_map.value", "parent_ref", "parent", "str_int_map.value", search, ancestorBuilder.str_int_map_value_attr);
-        checkImportedField("my_elem_array", "parent_ref", "parent", "elem_array", search, true);
-        checkImportedField("my_elem_map", "parent_ref", "parent", "elem_map", search, true);
-        checkImportedField("my_str_int_map", "parent_ref", "parent", "str_int_map", search, true);
+    private static void checkImportedStructFields(Schema schema, AncestorStructSdBuilder ancestorBuilder) {
+        assertEquals(3, schema.importedFields().get().fields().size());
+        checkImportedField("my_elem_array.name", "parent_ref", "parent", "elem_array.name", schema, ancestorBuilder.elem_array_name_attr);
+        checkImportedField("my_elem_array.weight", "parent_ref", "parent", "elem_array.weight", schema, ancestorBuilder.elem_array_weight_attr);
+        checkImportedField("my_elem_map.key", "parent_ref", "parent", "elem_map.key", schema, ancestorBuilder.elem_map_key_attr);
+        checkImportedField("my_elem_map.value.name", "parent_ref", "parent", "elem_map.value.name", schema, ancestorBuilder.elem_map_value_name_attr);
+        checkImportedField("my_elem_map.value.weight", "parent_ref", "parent", "elem_map.value.weight", schema, ancestorBuilder.elem_map_value_weight_attr);
+        checkImportedField("my_str_int_map.key", "parent_ref", "parent", "str_int_map.key", schema, ancestorBuilder.str_int_map_key_attr);
+        checkImportedField("my_str_int_map.value", "parent_ref", "parent", "str_int_map.value", schema, ancestorBuilder.str_int_map_value_attr);
+        checkImportedField("my_elem_array", "parent_ref", "parent", "elem_array", schema, true);
+        checkImportedField("my_elem_map", "parent_ref", "parent", "elem_map", schema, true);
+        checkImportedField("my_str_int_map", "parent_ref", "parent", "str_int_map", schema, true);
     }
 
     @Test
@@ -308,7 +308,7 @@ public class ImportedFieldsTestCase {
         }
     }
 
-    private static Search buildChildSearch(String parentSdContent, String sdContent) throws ParseException {
+    private static Schema buildChildSearch(String parentSdContent, String sdContent) throws ParseException {
         SearchBuilder builder = new SearchBuilder();
         builder.importString(parentSdContent);
         builder.importString(sdContent);
@@ -316,7 +316,7 @@ public class ImportedFieldsTestCase {
         return builder.getSearch("child");
     }
 
-    private static Search buildChildSearch(String grandParentSdContent, String parentSdContent, String sdContent) throws ParseException {
+    private static Schema buildChildSearch(String grandParentSdContent, String parentSdContent, String sdContent) throws ParseException {
         SearchBuilder builder = new SearchBuilder();
         builder.importString(grandParentSdContent);
         builder.importString(parentSdContent);
@@ -389,19 +389,19 @@ public class ImportedFieldsTestCase {
     }
 
     private static void checkPosImport(ParentPosSdBuilder parentBuilder, DescendantPosSdBuilder childBuilder) throws ParseException {
-        Search search = buildChildSearch(parentBuilder.build(), childBuilder.build());
-        checkImportedPosFields(search);
+        Schema schema = buildChildSearch(parentBuilder.build(), childBuilder.build());
+        checkImportedPosFields(schema);
     }
 
     private static void checkNestedPosImport(GrandParentPosSdBuilder grandParentBuilder, DescendantPosSdBuilder childBuilder) throws ParseException {
-        Search search = buildChildSearch(grandParentBuilder.build(), new IntermediateParentPosSdBuilder().build(), childBuilder.build());
-        checkImportedPosFields(search);
+        Schema schema = buildChildSearch(grandParentBuilder.build(), new IntermediateParentPosSdBuilder().build(), childBuilder.build());
+        checkImportedPosFields(schema);
     }
 
-    private static void checkImportedPosFields(Search search) {
-        assertEquals(2, search.importedFields().get().fields().size());
-        assertSearchContainsImportedField("my_pos_zcurve", "parent_ref", "parent", "pos_zcurve", search);
-        assertSearchContainsImportedField("my_pos", "parent_ref", "parent", "pos", search);
+    private static void checkImportedPosFields(Schema schema) {
+        assertEquals(2, schema.importedFields().get().fields().size());
+        assertSearchContainsImportedField("my_pos_zcurve", "parent_ref", "parent", "pos_zcurve", schema);
+        assertSearchContainsImportedField("my_pos", "parent_ref", "parent", "pos", schema);
     }
 
     @Test
@@ -421,22 +421,22 @@ public class ImportedFieldsTestCase {
         checkPosImport(new ParentPosSdBuilder(), new ChildPosSdBuilder().import_pos_zcurve_before(true));
     }
 
-    private static ImportedField getImportedField(String name, Search search) {
+    private static ImportedField getImportedField(String name, Schema schema) {
         if (name.contains(".")) {
-            assertNull(search.importedFields().get().fields().get(name));
+            assertNull(schema.importedFields().get().fields().get(name));
             String superFieldName = name.substring(0,name.indexOf("."));
             String subFieldName = name.substring(name.indexOf(".")+1);
-            ImportedField superField = search.importedFields().get().fields().get(superFieldName);
+            ImportedField superField = schema.importedFields().get().fields().get(superFieldName);
             if (superField != null && superField instanceof ImportedComplexField) {
                 return ((ImportedComplexField)superField).getNestedField(subFieldName);
             }
             return null;
         }
-        return search.importedFields().get().fields().get(name);
+        return schema.importedFields().get().fields().get(name);
     }
 
-    private static void assertSearchNotContainsImportedField(String fieldName, Search search) {
-        ImportedField importedField = getImportedField(fieldName, search);
+    private static void assertSearchNotContainsImportedField(String fieldName, Schema schema) {
+        ImportedField importedField = getImportedField(fieldName, schema);
         assertNull(importedField);
     }
 
@@ -444,8 +444,8 @@ public class ImportedFieldsTestCase {
                                                           String referenceFieldName,
                                                           String referenceDocType,
                                                           String targetFieldName,
-                                                          Search search) {
-        ImportedField importedField = getImportedField(fieldName, search);
+                                                          Schema schema) {
+        ImportedField importedField = getImportedField(fieldName, schema);
         assertNotNull(importedField);
         assertEquals(fieldName, importedField.fieldName());
         assertEquals(referenceFieldName, importedField.reference().referenceField().getName());
@@ -454,11 +454,11 @@ public class ImportedFieldsTestCase {
     }
 
     private static void checkImportedField(String fieldName, String referenceFieldName, String referenceDocType,
-                                           String targetFieldName, Search search, boolean present) {
+                                           String targetFieldName, Schema schema, boolean present) {
         if (present) {
-            assertSearchContainsImportedField(fieldName, referenceFieldName, referenceDocType, targetFieldName, search);
+            assertSearchContainsImportedField(fieldName, referenceFieldName, referenceDocType, targetFieldName, schema);
         } else {
-            assertSearchNotContainsImportedField(fieldName, search);
+            assertSearchNotContainsImportedField(fieldName, schema);
         }
     }
 
@@ -479,7 +479,7 @@ public class ImportedFieldsTestCase {
         checkImportedField("entries_from_b.value", "ref_parent_b", "parent_b", "entries.value", child, true);
     }
 
-    private void assertParentContainsEntriesAttributes(Search parent) {
+    private void assertParentContainsEntriesAttributes(Schema parent) {
         var attrs = new AttributeFields(parent);
         assertTrue(attrs.containsAttribute("entries.key"));
         assertTrue(attrs.containsAttribute("entries.value"));

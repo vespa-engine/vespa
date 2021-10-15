@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author geirst
  */
-public class SearchNodeTest {
+public class SchemaNodeTest {
 
     private void assertBaseDir(String expected, SearchNode node) {
         ProtonConfig.Builder builder = new ProtonConfig.Builder();

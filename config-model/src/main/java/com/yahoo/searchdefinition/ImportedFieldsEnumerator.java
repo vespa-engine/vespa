@@ -4,7 +4,6 @@ package com.yahoo.searchdefinition;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Enumerates and emplaces a set of all imported fields into a SDDocumentType from
@@ -12,9 +11,9 @@ import java.util.List;
  */
 public class ImportedFieldsEnumerator {
 
-    private final Collection<Search> schemas;
+    private final Collection<Schema> schemas;
 
-    public ImportedFieldsEnumerator(Collection<Search> schemas) {
+    public ImportedFieldsEnumerator(Collection<Schema> schemas) {
         this.schemas = schemas;
     }
 

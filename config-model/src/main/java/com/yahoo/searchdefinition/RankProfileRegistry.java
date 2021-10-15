@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Mapping from name to {@link RankProfile} as well as a reverse mapping of {@link RankProfile} to {@link Search}.
+ * Mapping from name to {@link RankProfile} as well as a reverse mapping of {@link RankProfile} to {@link Schema}.
  * Having both of these mappings consolidated here make it easier to remove dependencies on these mappings at
  * run time, since it is essentially only used when building rank profile config at deployment time.
  *
@@ -30,10 +30,10 @@ public class RankProfileRegistry {
     /* These rank profiles can be overridden: 'default' rank profile, as that is documented to work. And 'unranked'. */
     static final Set<String> overridableRankProfileNames = new HashSet<>(Arrays.asList("default", "unranked"));
 
-    public static RankProfileRegistry createRankProfileRegistryWithBuiltinRankProfiles(Search search) {
+    public static RankProfileRegistry createRankProfileRegistryWithBuiltinRankProfiles(Schema schema) {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry, search.rankingConstants()));
-        rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry, search.rankingConstants()));
+        rankProfileRegistry.add(new DefaultRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));
+        rankProfileRegistry.add(new UnrankedRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));
         return rankProfileRegistry;
     }
 
@@ -69,7 +69,7 @@ public class RankProfileRegistry {
     /**
      * Returns a named rank profile, null if the search definition doesn't have one with the given name
      *
-     * @param search the {@link Search} that owns the rank profile.
+     * @param search the {@link Schema} that owns the rank profile.
      * @param name the name of the rank profile
      * @return the RankProfile to return.
      */

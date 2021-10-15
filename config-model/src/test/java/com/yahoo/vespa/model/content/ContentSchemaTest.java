@@ -9,7 +9,7 @@ import static org.junit.Assert.assertNull;
 /**
  * @author Simon Thoresen Hult
  */
-public class ContentSearchTest {
+public class ContentSchemaTest {
 
     @Test
     public void requireThatAccessorsWork() {

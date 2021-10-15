@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
  *
  * @author bratseth
  */
-public class SearchImporterTestCase extends SchemaTestCase {
+public class SchemaImporterTestCase extends SchemaTestCase {
 
     @Test
     @SuppressWarnings("deprecation")
@@ -39,30 +39,30 @@ public class SearchImporterTestCase extends SchemaTestCase {
         SearchBuilder sb = new SearchBuilder(rankProfileRegistry, new QueryProfileRegistry());
         sb.importFile("src/test/examples/simple.sd");
         sb.build();
-        Search search = sb.getSearch();
-        assertEquals("simple",search.getName());
-        assertTrue(search.hasDocument());
+        Schema schema = sb.getSearch();
+        assertEquals("simple", schema.getName());
+        assertTrue(schema.hasDocument());
 
-        SDDocumentType document = search.getDocument();
+        SDDocumentType document = schema.getDocument();
         assertEquals("simple", document.getName());
         assertEquals(23, document.getFieldCount());
 
         SDField field;
         Attribute attribute;
 
-        new MakeAliases(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles()).process(true, false);
+        new MakeAliases(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles()).process(true, false);
 
         // First field
         field=(SDField) document.getField("title");
         assertEquals(DataType.STRING,field.getDataType());
         assertEquals("{ input title | tokenize normalize stem:\"BEST\" | summary title | index title; }", field.getIndexingScript().toString());
-        assertFalse(search.getIndex("default").isPrefix());
-        assertTrue(search.getIndex("title").isPrefix());
-        Iterator<String> titleAliases=search.getIndex("title").aliasIterator();
+        assertFalse(schema.getIndex("default").isPrefix());
+        assertTrue(schema.getIndex("title").isPrefix());
+        Iterator<String> titleAliases= schema.getIndex("title").aliasIterator();
         assertEquals("aliaz",titleAliases.next());
         assertEquals("analias.totitle",titleAliases.next());
         assertEquals("analias.todefault",
-                     search.getIndex("default").aliasIterator().next());
+                     schema.getIndex("default").aliasIterator().next());
         assertEquals(RankType.IDENTITY, field.getRankType());
         assertEquals(0, field.getAttributes().size());
         assertNull(field.getStemming());
@@ -78,7 +78,7 @@ public class SearchImporterTestCase extends SchemaTestCase {
                      field.getSummaryField("dyndesc").getTransform());
         assertNull(field.getStemming());
         assertTrue(field.getNormalizing().doRemoveAccents());
-        assertEquals("hallo",search.getIndex("description").aliasIterator().next());
+        assertEquals("hallo", schema.getIndex("description").aliasIterator().next());
 
         // Third field
         field=(SDField) document.getField("chatter");
@@ -104,24 +104,24 @@ public class SearchImporterTestCase extends SchemaTestCase {
         assertEquals(1, field.getAttributes().size());
 
         // Seventh field
-        field= search.getConcreteField("categories");
+        field= schema.getConcreteField("categories");
         assertEquals("{ input categories_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categories; }",
                      field.getIndexingScript().toString());
         assertTrue(field.isHeader());
 
         // Eight field
-        field= search.getConcreteField("categoriesagain");
+        field= schema.getConcreteField("categoriesagain");
         assertEquals("{ input categoriesagain_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categoriesagain; }",
                      field.getIndexingScript().toString());
         assertTrue(field.isHeader());
 
         // Ninth field
-        field= search.getConcreteField("exactemento");
+        field= schema.getConcreteField("exactemento");
         assertEquals("{ input exactemento_src | lowercase | tokenize normalize stem:\"BEST\" | index exactemento | summary exactemento; }",
                      field.getIndexingScript().toString());
 
         // Tenth field
-        field = search.getConcreteField("category_arr");
+        field = schema.getConcreteField("category_arr");
         assertEquals(1, field.getAttributes().size());
         attribute = field.getAttributes().get("category_arr");
         assertNotNull(attribute);
@@ -131,7 +131,7 @@ public class SearchImporterTestCase extends SchemaTestCase {
         assertTrue(field.isHeader());
 
         // Eleventh field
-        field = search.getConcreteField("measurement_arr");
+        field = schema.getConcreteField("measurement_arr");
         assertEquals(1, field.getAttributes().size());
         attribute = field.getAttributes().get("measurement_arr");
         assertEquals("measurement_arr", attribute.getName());
@@ -139,24 +139,24 @@ public class SearchImporterTestCase extends SchemaTestCase {
         assertEquals(Attribute.CollectionType.ARRAY, attribute.getCollectionType());
 
         // Rank Profiles
-        RankProfile profile=rankProfileRegistry.get(search, "default");
+        RankProfile profile=rankProfileRegistry.get(schema, "default");
         assertNotNull(profile);
         assertNull(profile.getInheritedName());
         assertNull(profile.getDeclaredRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE));
         assertEquals(RankType.EMPTY,
                      profile.getRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE).getValue());
-        profile=rankProfileRegistry.get(search, "experimental");
+        profile=rankProfileRegistry.get(schema, "experimental");
         assertNotNull(profile);
         assertEquals("default",profile.getInheritedName());
         assertEquals(RankType.IDENTITY,
                      profile.getDeclaredRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE).getValue());
 
-        profile=rankProfileRegistry.get(search, "other");
+        profile=rankProfileRegistry.get(schema, "other");
         assertNotNull(profile);
         assertEquals("experimental",profile.getInheritedName());
 
         // The extra-document field
-        SDField exact=search.getConcreteField("exact");
+        SDField exact= schema.getConcreteField("exact");
         assertNotNull("Extra field was parsed",exact);
         assertEquals("exact",exact.getName());
         assertEquals(Stemming.NONE,exact.getStemming());
@@ -178,10 +178,10 @@ public class SearchImporterTestCase extends SchemaTestCase {
 
     @Test
     public void testIdImporting() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/strange.sd");
-        SDField idecidemyide=(SDField) search.getDocument().getField("idecidemyide");
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/strange.sd");
+        SDField idecidemyide=(SDField) schema.getDocument().getField("idecidemyide");
         assertEquals(5,idecidemyide.getId());
-        SDField sodoi=(SDField) search.getDocument().getField("sodoi");
+        SDField sodoi=(SDField) schema.getDocument().getField("sodoi");
         assertEquals(7,sodoi.getId());
     }
 

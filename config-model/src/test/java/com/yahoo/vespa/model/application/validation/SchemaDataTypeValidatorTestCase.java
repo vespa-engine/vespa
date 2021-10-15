@@ -10,7 +10,7 @@ import static org.junit.Assert.fail;
 /**
  * @author Simon Thoresen Hult
  */
-public class SearchDataTypeValidatorTestCase {
+public class SchemaDataTypeValidatorTestCase {
 
     @Test
     public void requireThatSupportedTypesAreValidated() {

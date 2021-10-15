@@ -265,7 +265,7 @@ public class SummaryTestCase {
         DeployLoggerStub logger = new DeployLoggerStub();
         SearchBuilder.createFromStrings(logger, parent, child);
         logger.entries.forEach(e -> System.out.println(e));
-        //assertTrue(logger.entries.isEmpty());
+        // assertTrue(logger.entries.isEmpty());
     }
 
     private static class TestValue {

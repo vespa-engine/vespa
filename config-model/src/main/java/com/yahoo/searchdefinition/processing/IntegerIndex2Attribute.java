@@ -6,7 +6,7 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.NumericDataType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.Index;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
@@ -25,13 +25,13 @@ import java.util.Set;
  */
 public class IntegerIndex2Attribute extends Processor {
 
-    public IntegerIndex2Attribute(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public IntegerIndex2Attribute(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             if (field.doesIndexing() && field.getDataType().getPrimitiveType() instanceof NumericDataType) {
                 if (field.getIndex(field.getName()) != null
                     && ! (field.getIndex(field.getName()).getType().equals(Index.Type.VESPA))) continue;
@@ -39,9 +39,9 @@ public class IntegerIndex2Attribute extends Processor {
                 Set<String> attributeNames = new HashSet<>();
                 new MyVisitor(attributeNames).visit(script);
                 field.setIndexingScript((ScriptExpression)new MyConverter(attributeNames).convert(script));
-                warn(search, field, "Changed to attribute because numerical indexes (field has type " +
+                warn(schema, field, "Changed to attribute because numerical indexes (field has type " +
                                     field.getDataType().getName() + ") is not currently supported." +
-                		            " Index-only settings may fail. Ignore this warning for streaming search.");
+                                    " Index-only settings may fail. Ignore this warning for streaming search.");
             }
         }
     }

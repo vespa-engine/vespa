@@ -10,7 +10,7 @@ import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.document.annotation.AnnotationTypeRegistry;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.searchdefinition.FieldSets;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.searchdefinition.processing.BuiltInFieldSets;
 
@@ -337,7 +337,7 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
         return this;
     }
 
-    /** The field sets defined for this type and its {@link Search} */
+    /** The field sets defined for this type and its {@link Schema} */
     public Set<FieldSet> getFieldSets() {
         return Collections.unmodifiableSet(fieldSets);
     }

@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.vespa.config.search.AttributesConfig;
@@ -89,11 +90,11 @@ public class StreamingSearchCluster extends SearchCluster implements
             throw new IllegalStateException("Logical indexes are not supported: Got " + local.size() + " search definitions, expected 1");
         }
     }
-    private void deriveSingleSearchDefinition(com.yahoo.searchdefinition.Search localSearch,  DeployState deployState) {
-        if (!localSearch.getName().equals(docTypeName)) {
-            throw new IllegalStateException("Mismatch between document type name (" + docTypeName + ") and name of search definition (" + localSearch.getName() + ")");
+    private void deriveSingleSearchDefinition(Schema localSchema, DeployState deployState) {
+        if (!localSchema.getName().equals(docTypeName)) {
+            throw new IllegalStateException("Mismatch between document type name (" + docTypeName + ") and name of search definition (" + localSchema.getName() + ")");
         }
-        this.sdConfig = new DerivedConfiguration(localSearch, deployState.getDeployLogger(),
+        this.sdConfig = new DerivedConfiguration(localSchema, deployState.getDeployLogger(),
                                                  deployState.getProperties(),
                                                  deployState.rankProfileRegistry(),
                                                  deployState.getQueryProfiles().getRegistry(),

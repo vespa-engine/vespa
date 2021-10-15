@@ -5,7 +5,7 @@ import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -26,33 +26,33 @@ import static org.junit.Assert.assertEquals;
  * @author bratseth
  * @author bjorncs
  */
-public class SearchOrdererTestCase extends SchemaTestCase {
+public class SchemaOrdererTestCase extends SchemaTestCase {
 
-    private static Map<String, Search> createSchemas() {
-        Map<String, Search> schemas = new HashMap<>();
+    private static Map<String, Schema> createSchemas() {
+        Map<String, Schema> schemas = new HashMap<>();
 
-        Search grandParent = createSchema("grandParent", schemas);
+        Schema grandParent = createSchema("grandParent", schemas);
 
-        Search mother = createSchema("mother", schemas);
+        Schema mother = createSchema("mother", schemas);
         inherit(mother, grandParent);
 
-        Search father = createSchema("father", schemas);
+        Schema father = createSchema("father", schemas);
         inherit(father, grandParent);
         createDocumentReference(father, mother, "wife_ref");
 
-        Search daugther = createSchema("daughter", schemas);
+        Schema daugther = createSchema("daughter", schemas);
         inherit(daugther, father);
         inherit(daugther, mother);
 
-        Search son = createSchema("son", schemas);
+        Schema son = createSchema("son", schemas);
         inherit(son, father);
         inherit(son, mother);
 
-        Search product = createSchema("product", schemas);
+        Schema product = createSchema("product", schemas);
 
-        Search pc = createSchema("pc", schemas);
+        Schema pc = createSchema("pc", schemas);
         inherit(pc, product);
-        Search pcAccessory = createSchema("accessory-pc", schemas);
+        Schema pcAccessory = createSchema("accessory-pc", schemas);
         inherit(pcAccessory, product);
         createDocumentReference(pcAccessory, pc, "pc_ref");
 
@@ -61,34 +61,34 @@ public class SearchOrdererTestCase extends SchemaTestCase {
         return schemas;
     }
 
-    private static Search createSchema(String name, Map<String, Search> schemas) {
-        Search search = new Search(name);
+    private static Schema createSchema(String name, Map<String, Schema> schemas) {
+        Schema schema = new Schema(name);
         SDDocumentType document = new SDDocumentType(name);
         document.setDocumentReferences(new DocumentReferences(emptyMap()));
-        search.addDocument(document);
-        schemas.put(search.getName(), search);
-        return search;
+        schema.addDocument(document);
+        schemas.put(schema.getName(), schema);
+        return schema;
     }
 
-    private static void inherit(Search inheritee, Search inherited) {
+    private static void inherit(Schema inheritee, Schema inherited) {
         inheritee.getDocument().inherit(inherited.getDocument());
     }
 
     private static void assertOrder(List<String> expectedSearchOrder, List<String> inputNames) {
-        Map<String, Search> schemas = createSchemas();
-        List<Search> inputSchemas = inputNames.stream()
-                .map(schemas::get)
-                .map(Objects::requireNonNull)
-                .collect(toList());
+        Map<String, Schema> schemas = createSchemas();
+        List<Schema> inputSchemas = inputNames.stream()
+                                              .map(schemas::get)
+                                              .map(Objects::requireNonNull)
+                                              .collect(toList());
         List<String> actualSearchOrder = new SearchOrderer()
                 .order(inputSchemas)
                 .stream()
-                .map(Search::getName)
+                .map(Schema::getName)
                 .collect(toList());
         assertEquals(expectedSearchOrder, actualSearchOrder);
     }
 
-    private static void createDocumentReference(Search from, Search to, String refFieldName) {
+    private static void createDocumentReference(Schema from, Schema to, String refFieldName) {
         SDField refField = new TemporarySDField(refFieldName, ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create(to.getName())));
         SDDocumentType fromDocument = from.getDocument();
         fromDocument.addField(refField);

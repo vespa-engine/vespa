@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -50,11 +50,11 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends SchemaTestCase {
 
     @Test
     public void requireThatDocumentIdIsAllowedToPass() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/documentidinsummary.sd");
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/documentidinsummary.sd");
         BaseDeployLogger deployLogger = new BaseDeployLogger();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        new SummaryFieldsMustHaveValidSource(search, deployLogger, rankProfileRegistry, new QueryProfiles()).process(true, false);
-        assertEquals("documentid", search.getSummary("withid").getSummaryField("w").getSingleSource());
+        new SummaryFieldsMustHaveValidSource(schema, deployLogger, rankProfileRegistry, new QueryProfiles()).process(true, false);
+        assertEquals("documentid", schema.getSummary("withid").getSummaryField("w").getSingleSource());
     }
 
 }

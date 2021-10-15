@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.SummaryClass;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
@@ -23,11 +23,11 @@ import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isC
  */
 public class SummaryDiskAccessValidator extends Processor {
 
-    public SummaryDiskAccessValidator(Search search,
+    public SummaryDiskAccessValidator(Schema schema,
                                       DeployLogger deployLogger,
                                       RankProfileRegistry rankProfileRegistry,
                                       QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
 
@@ -36,12 +36,12 @@ public class SummaryDiskAccessValidator extends Processor {
         if ( ! validate) return;
         if (documentsOnly) return;
 
-        for (DocumentSummary summary : search.getSummaries().values()) {
+        for (DocumentSummary summary : schema.getSummaries().values()) {
             for (SummaryField summaryField : summary.getSummaryFields()) {
                 for (SummaryField.Source source : summaryField.getSources()) {
-                    ImmutableSDField field = search.getField(source.getName());
+                    ImmutableSDField field = schema.getField(source.getName());
                     if (field == null)
-                        field = findFieldProducingSummaryField(source.getName(), search).orElse(null);
+                        field = findFieldProducingSummaryField(source.getName(), schema).orElse(null);
                     if (field == null && ! source.getName().equals(SummaryClass.DOCUMENT_ID_FIELD))
                         throw new IllegalArgumentException(summaryField + " in " + summary + " references " +
                                                            source + ", but this field does not exist");
@@ -66,8 +66,8 @@ public class SummaryDiskAccessValidator extends Processor {
         return field.doesAttributing();
     }
 
-    private Optional<ImmutableSDField> findFieldProducingSummaryField(String name, Search search) {
-        return search.allFields().filter(field -> field.getSummaryFields().get(name) != null).findAny();
+    private Optional<ImmutableSDField> findFieldProducingSummaryField(String name, Schema schema) {
+        return schema.allFields().filter(field -> field.getSummaryFields().get(name) != null).findAny();
     }
 
 }

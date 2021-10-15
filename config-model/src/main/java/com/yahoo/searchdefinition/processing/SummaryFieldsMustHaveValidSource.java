@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.SummaryClass;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -17,15 +17,15 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class SummaryFieldsMustHaveValidSource extends Processor {
 
-    SummaryFieldsMustHaveValidSource(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    SummaryFieldsMustHaveValidSource(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
-        for (DocumentSummary summary : search.getSummaries().values()) {
+        for (DocumentSummary summary : schema.getSummaries().values()) {
             for (SummaryField summaryField : summary.getSummaryFields()) {
                 if (summaryField.getSources().isEmpty()) {
                     if ((summaryField.getTransform() != SummaryTransform.RANKFEATURES) &&
@@ -56,7 +56,7 @@ public class SummaryFieldsMustHaveValidSource extends Processor {
 
     private void verifySource(String source, SummaryField summaryField, DocumentSummary summary) {
         if ( ! isValid(source, summaryField, summary) ) {
-            throw new IllegalArgumentException("For search '" + search.getName() + "', summary class '" +
+            throw new IllegalArgumentException("For search '" + schema.getName() + "', summary class '" +
                                                summary.getName() + "'," + " summary field '" + summaryField.getName() +
                                                "': there is no valid source '" + source + "'.");
         }
@@ -71,11 +71,11 @@ public class SummaryFieldsMustHaveValidSource extends Processor {
     }
 
     private boolean isDocumentField(String name) {
-        return search.getField(name) != null;
+        return schema.getField(name) != null;
     }
 
     private boolean isSummaryField(String name) {
-        return search.getSummaryField(name) != null;
+        return schema.getSummaryField(name) != null;
     }
 
 }

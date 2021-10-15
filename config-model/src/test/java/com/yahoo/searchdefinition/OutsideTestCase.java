@@ -17,9 +17,9 @@ public class OutsideTestCase extends SchemaTestCase {
 
     @Test
     public void testOutsideIndex() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/outsidedoc.sd");
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/outsidedoc.sd");
 
-        Index defaultIndex=search.getIndex("default");
+        Index defaultIndex= schema.getIndex("default");
         assertTrue(defaultIndex.isPrefix());
         assertEquals("default.default",defaultIndex.aliasIterator().next());
     }

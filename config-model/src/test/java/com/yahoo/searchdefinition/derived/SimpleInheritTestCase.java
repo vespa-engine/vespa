@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
@@ -24,14 +24,14 @@ public class SimpleInheritTestCase extends AbstractExportingTestCase {
         builder.importFile(expectedResultsDirName + "child.sd");
         builder.build();
 
-        Search search = builder.getSearch("child");
+        Schema schema = builder.getSearch("child");
 
         String toDirName = "temp/" + name;
         File toDir = new File(toDirName);
         toDir.mkdirs();
         deleteContent(toDir);
 
-        DerivedConfiguration config = new DerivedConfiguration(search, builder.getRankProfileRegistry());
+        DerivedConfiguration config = new DerivedConfiguration(schema, builder.getRankProfileRegistry());
         config.export(toDirName);
 
         checkDir(toDirName, expectedResultsDirName);

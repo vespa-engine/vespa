@@ -5,7 +5,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.searchdefinition.DocumentGraphValidator;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -50,9 +50,9 @@ public class ReferenceFieldTestCase {
         builder.importString(salespersonSdContent);
         builder.importString(adSdContent);
         builder.build();
-        Search search = builder.getSearch("ad");
-        assertSearchContainsReferenceField("campaign_ref", "campaign", search.getDocument());
-        assertSearchContainsReferenceField("salesperson_ref", "salesperson", search.getDocument());
+        Schema schema = builder.getSearch("ad");
+        assertSearchContainsReferenceField("campaign_ref", "campaign", schema.getDocument());
+        assertSearchContainsReferenceField("salesperson_ref", "salesperson", schema.getDocument());
     }
 
     @Test

@@ -3,10 +3,10 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.RankType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.RankProfile;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.Iterator;
@@ -21,23 +21,23 @@ import java.util.logging.Level;
  */
 public class FilterFieldNames extends Processor {
 
-    public FilterFieldNames(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public FilterFieldNames(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         if (documentsOnly) return;
 
-        for (SDField f : search.allConcreteFields()) {
+        for (SDField f : schema.allConcreteFields()) {
             if (f.getRanking().isFilter()) {
                 filterField(f.getName());
             }
         }
 
-        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(search)) {
+        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(schema)) {
             Set<String> filterFields = new LinkedHashSet<>();
-            findFilterFields(search, profile, filterFields);
+            findFilterFields(schema, profile, filterFields);
             for (Iterator<String> itr = filterFields.iterator(); itr.hasNext(); ) {
                 String fieldName = itr.next();
                 profile.filterFields().add(fieldName);
@@ -47,18 +47,18 @@ public class FilterFieldNames extends Processor {
     }
 
     private void filterField(String f) {
-        for (RankProfile rp : rankProfileRegistry.rankProfilesOf(search)) {
+        for (RankProfile rp : rankProfileRegistry.rankProfilesOf(schema)) {
             rp.filterFields().add(f);
         }
     }
 
-    private void findFilterFields(Search search, RankProfile profile, Set<String> filterFields) {
+    private void findFilterFields(Schema schema, RankProfile profile, Set<String> filterFields) {
         for (Iterator<RankProfile.RankSetting> itr = profile.declaredRankSettingIterator(); itr.hasNext(); ) {
             RankProfile.RankSetting setting = itr.next();
             if (setting.getType().equals(RankProfile.RankSetting.Type.PREFERBITVECTOR) && ((Boolean)setting.getValue()))
             {
                 String fieldName = setting.getFieldName();
-                if (search.getConcreteField(fieldName) != null) {
+                if (schema.getConcreteField(fieldName) != null) {
                     if ( ! profile.filterFields().contains(fieldName)) {
                         filterFields.add(fieldName);
                     }

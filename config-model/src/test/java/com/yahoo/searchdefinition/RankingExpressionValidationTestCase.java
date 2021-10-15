@@ -22,8 +22,8 @@ public class RankingExpressionValidationTestCase extends SchemaTestCase {
     private void assertFailsExpression(String expression) throws ParseException {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
-            Search search = importWithExpression(expression, registry);
-            new DerivedConfiguration(search, registry); // cause rank profile parsing
+            Schema schema = importWithExpression(expression, registry);
+            new DerivedConfiguration(schema, registry); // cause rank profile parsing
             fail("No exception on incorrect ranking expression " + expression);
         } catch (IllegalArgumentException e) {
             // Success
@@ -31,7 +31,7 @@ public class RankingExpressionValidationTestCase extends SchemaTestCase {
         }
     }
 
-    private Search importWithExpression(String expression, RankProfileRegistry registry) throws ParseException {
+    private Schema importWithExpression(String expression, RankProfileRegistry registry) throws ParseException {
         SearchBuilder builder = new SearchBuilder(registry);
         builder.importString("search test {" +
                              "    document test { " +

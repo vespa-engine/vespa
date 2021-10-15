@@ -5,7 +5,8 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.searchdefinition.DocumentOnlySearch;
+import com.yahoo.searchdefinition.DocumentOnlySchema;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.DispatchConfig;
@@ -195,10 +196,10 @@ public class IndexedSearchCluster extends SearchCluster
     @Override
     protected void deriveAllSchemas(List<SchemaSpec> localSearches, DeployState deployState) {
         for (SchemaSpec spec : localSearches) {
-            com.yahoo.searchdefinition.Search search = spec.getSearchDefinition().getSearch();
-            if ( ! (search instanceof DocumentOnlySearch)) {
-                DocumentDatabase db = new DocumentDatabase(this, search.getName(),
-                                                           new DerivedConfiguration(search,
+            Schema schema = spec.getSearchDefinition().getSearch();
+            if ( ! (schema instanceof DocumentOnlySchema)) {
+                DocumentDatabase db = new DocumentDatabase(this, schema.getName(),
+                                                           new DerivedConfiguration(schema,
                                                                                     deployState.getDeployLogger(),
                                                                                     deployState.getProperties(),
                                                                                     deployState.rankProfileRegistry(),

@@ -12,7 +12,7 @@ import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
@@ -43,7 +43,7 @@ class RankProfileSearchFixture {
                                                                               new XGBoostImporter());
     private final RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
     private final QueryProfileRegistry queryProfileRegistry;
-    private final Search search;
+    private final Schema schema;
     private final Map<String, RankProfile> compiledRankProfiles = new HashMap<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
@@ -79,7 +79,7 @@ class RankProfileSearchFixture {
                            "}";
         builder.importString(sdContent);
         builder.build();
-        search = builder.getSearch();
+        schema = builder.getSearch();
     }
 
     public void assertFirstPhaseExpression(String expExpression, String rankProfile) {
@@ -106,7 +106,7 @@ class RankProfileSearchFixture {
     }
 
     public RankProfile compileRankProfile(String rankProfile, Path applicationDir) {
-        RankProfile compiled = rankProfileRegistry.get(search, rankProfile)
+        RankProfile compiled = rankProfileRegistry.get(schema, rankProfile)
                                                   .compile(queryProfileRegistry,
                                                            new ImportedMlModels(applicationDir.toFile(), executor, importers));
         compiledRankProfiles.put(rankProfile, compiled);
@@ -115,7 +115,7 @@ class RankProfileSearchFixture {
 
     /** Returns the given uncompiled profile */
     public RankProfile rankProfile(String rankProfile) {
-        return rankProfileRegistry.get(search, rankProfile);
+        return rankProfileRegistry.get(schema, rankProfile);
     }
 
     /** Returns the given compiled profile, or null if not compiled yet or not present at all */
@@ -123,6 +123,6 @@ class RankProfileSearchFixture {
         return compiledRankProfiles.get(rankProfile);
     }
 
-    public Search search() { return search; }
+    public Schema search() { return schema; }
 
 }

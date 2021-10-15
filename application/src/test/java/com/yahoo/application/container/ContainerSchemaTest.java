@@ -18,7 +18,7 @@ import static org.junit.Assert.assertThat;
  * @author gjoranv
  * @author ollivir
  */
-public class ContainerSearchTest {
+public class ContainerSchemaTest {
 
     @Test
     public void processing_and_rendering_works() throws Exception {

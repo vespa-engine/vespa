@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
@@ -14,14 +14,14 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class ImplicitSearchFieldsTestCase extends SchemaTestCase {
+public class ImplicitSchemaFieldsTestCase extends SchemaTestCase {
 
     @Test
     public void testRequireThatExtraFieldsAreIncluded() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/nextgen/extrafield.sd");
-        assertNotNull(search);
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/nextgen/extrafield.sd");
+        assertNotNull(schema);
 
-        SDDocumentType docType = search.getDocument();
+        SDDocumentType docType = schema.getDocument();
         assertNotNull(docType);
         assertNotNull(docType.getField("foo"));
         assertNotNull(docType.getField("bar"));
@@ -30,10 +30,10 @@ public class ImplicitSearchFieldsTestCase extends SchemaTestCase {
 
     @Test
     public void testRequireThatSummaryFieldsAreIncluded() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/nextgen/summaryfield.sd");
-        assertNotNull(search);
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/nextgen/summaryfield.sd");
+        assertNotNull(schema);
 
-        SDDocumentType docType = search.getDocument();
+        SDDocumentType docType = schema.getDocument();
         assertNotNull(docType);
         assertNotNull(docType.getField("foo"));
         assertNotNull(docType.getField("bar"));
@@ -43,10 +43,10 @@ public class ImplicitSearchFieldsTestCase extends SchemaTestCase {
 
     @Test
     public void testRequireThatBoldedSummaryFieldsAreIncluded() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/nextgen/boldedsummaryfields.sd");
-        assertNotNull(search);
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/nextgen/boldedsummaryfields.sd");
+        assertNotNull(schema);
 
-        SDDocumentType docType = search.getDocument();
+        SDDocumentType docType = schema.getDocument();
         assertNotNull(docType);
         assertNotNull(docType.getField("foo"));
         assertNotNull(docType.getField("bar"));
@@ -57,10 +57,10 @@ public class ImplicitSearchFieldsTestCase extends SchemaTestCase {
 
     @Test
     public void testRequireThatUntransformedSummaryFieldsAreIgnored() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/nextgen/untransformedsummaryfields.sd");
-        assertNotNull(search);
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/nextgen/untransformedsummaryfields.sd");
+        assertNotNull(schema);
 
-        SDDocumentType docType = search.getDocument();
+        SDDocumentType docType = schema.getDocument();
         assertNotNull(docType);
         assertNotNull(docType.getField("foo"));
         assertNotNull(docType.getField("bar"));
@@ -70,10 +70,10 @@ public class ImplicitSearchFieldsTestCase extends SchemaTestCase {
 
     @Test
     public void testRequireThatDynamicSummaryFieldsAreIgnored() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/nextgen/dynamicsummaryfields.sd");
-        assertNotNull(search);
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/nextgen/dynamicsummaryfields.sd");
+        assertNotNull(schema);
 
-        SDDocumentType docType = search.getDocument();
+        SDDocumentType docType = schema.getDocument();
         assertNotNull(docType);
         assertNotNull(docType.getField("foo"));
         assertNotNull(docType.getField("bar"));

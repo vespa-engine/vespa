@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author geirst
  */
-public class DomSearchTuningBuilderTest extends DomBuilderTest {
+public class DomSchemaTuningBuilderTest extends DomBuilderTest {
 
     private static final double DELTA = 0.000001;
 

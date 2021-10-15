@@ -5,7 +5,7 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
@@ -153,9 +153,9 @@ public class IndexingScriptRewriterTestCase extends SchemaTestCase {
     private static ScriptExpression processField(SDField unprocessedField) {
         SDDocumentType sdoc = new SDDocumentType("test");
         sdoc.addField(unprocessedField);
-        Search search = new Search("test");
-        search.addDocument(sdoc);
-        new Processing().process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true, false);
+        Schema schema = new Schema("test");
+        schema.addDocument(sdoc);
+        new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true, false);
         return unprocessedField.getIndexingScript();
     }
 

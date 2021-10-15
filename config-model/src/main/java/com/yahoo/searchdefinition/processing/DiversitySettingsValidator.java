@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -13,8 +13,8 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class DiversitySettingsValidator extends Processor {
 
-    public DiversitySettingsValidator(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public DiversitySettingsValidator(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
@@ -22,7 +22,7 @@ public class DiversitySettingsValidator extends Processor {
         if ( ! validate) return;
         if (documentsOnly) return;
 
-        for (RankProfile rankProfile : rankProfileRegistry.rankProfilesOf(search.getName())) {
+        for (RankProfile rankProfile : rankProfileRegistry.rankProfilesOf(schema.getName())) {
             if (rankProfile.getMatchPhaseSettings() != null && rankProfile.getMatchPhaseSettings().getDiversity() != null) {
                 validate(rankProfile, rankProfile.getMatchPhaseSettings().getDiversity());
             }
@@ -30,8 +30,8 @@ public class DiversitySettingsValidator extends Processor {
     }
     private void validate(RankProfile rankProfile, RankProfile.DiversitySettings settings) {
         String attributeName = settings.getAttribute();
-        new AttributeValidator(search.getName(), rankProfile.getName(),
-                               search.getAttribute(attributeName), attributeName).validate();
+        new AttributeValidator(schema.getName(), rankProfile.getName(),
+                               schema.getAttribute(attributeName), attributeName).validate();
     }
 
     private static class AttributeValidator extends  MatchPhaseSettingsValidator.AttributeValidator {

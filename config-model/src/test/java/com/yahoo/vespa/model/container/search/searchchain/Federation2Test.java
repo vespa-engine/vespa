@@ -10,7 +10,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author bratseth
  */
-public class Federation2Test extends SearchChainsTestBase {
+public class Federation2Test extends SchemaChainsTestBase {
     @Override
     Element servicesXml() {
         return parse(

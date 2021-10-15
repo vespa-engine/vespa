@@ -21,7 +21,7 @@ import static org.junit.Assert.*;
  *
  * @author Tony Vaagenes
  */
-public class SearchChainsTest extends SearchChainsTestBase {
+public class SchemaChainsTest extends SchemaChainsTestBase {
 
     private ChainsConfig chainsConfig;
     private ProviderConfig providerConfig;

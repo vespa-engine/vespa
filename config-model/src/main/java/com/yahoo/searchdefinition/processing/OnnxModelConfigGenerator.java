@@ -7,7 +7,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.expressiontransforms.OnnxModelTransformer;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
@@ -36,14 +36,14 @@ import java.util.Map;
  */
 public class OnnxModelConfigGenerator extends Processor {
 
-    public OnnxModelConfigGenerator(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public OnnxModelConfigGenerator(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         if (documentsOnly) return;
-        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(search)) {
+        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(schema)) {
             if (profile.getFirstPhaseRanking() != null) {
                 process(profile.getFirstPhaseRanking().getRoot());
             }
@@ -78,17 +78,17 @@ public class OnnxModelConfigGenerator extends Processor {
                     String modelConfigName = OnnxModelTransformer.asValidIdentifier(path);
 
                     // Only add the configuration if the model can actually be found.
-                    if ( ! OnnxModelInfo.modelExists(path, search.applicationPackage())) {
+                    if ( ! OnnxModelInfo.modelExists(path, schema.applicationPackage())) {
                         path = ApplicationPackage.MODELS_DIR.append(path).toString();
-                        if ( ! OnnxModelInfo.modelExists(path, search.applicationPackage())) {
+                        if ( ! OnnxModelInfo.modelExists(path, schema.applicationPackage())) {
                             return;
                         }
                     }
 
-                    OnnxModel onnxModel = search.onnxModels().get(modelConfigName);
+                    OnnxModel onnxModel = schema.onnxModels().get(modelConfigName);
                     if (onnxModel == null) {
                         onnxModel = new OnnxModel(modelConfigName, path);
-                        search.onnxModels().add(onnxModel);
+                        schema.onnxModels().add(onnxModel);
                     }
                 }
             }

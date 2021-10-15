@@ -2,7 +2,7 @@
 package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,10 +21,10 @@ public class DocumentSummary extends FieldView {
     private boolean omitSummaryFeatures = false;
     private String inherited;
 
-    private final Search owner;
+    private final Schema owner;
 
     /** Creates a DocumentSummary with the given name. */
-    public DocumentSummary(String name, Search owner) {
+    public DocumentSummary(String name, Schema owner) {
         super(name);
         this.owner = owner;
     }

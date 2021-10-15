@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.DocumentType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.Field;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -19,8 +19,8 @@ public class BuiltInFieldSets extends Processor {
     public static final String SEARCH_FIELDSET_NAME = "[search]";     // Public due to oddities in position handling.
     public static final String INTERNAL_FIELDSET_NAME = "[internal]"; // This one populated from misc places
 
-    public BuiltInFieldSets(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public BuiltInFieldSets(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
@@ -29,21 +29,21 @@ public class BuiltInFieldSets extends Processor {
         addSearchFieldSet();
         // "Hook" the field sets on search onto the document types, since we will include them
         // on the document configs
-        search.getDocument().setFieldSets(search.fieldSets());
+        schema.getDocument().setFieldSets(schema.fieldSets());
     }
 
     private void addSearchFieldSet() {
-        for (SDField searchField : search.extraFieldList()) {
-            search.fieldSets().addBuiltInFieldSetItem(SEARCH_FIELDSET_NAME, searchField.getName());
+        for (SDField searchField : schema.extraFieldList()) {
+            schema.fieldSets().addBuiltInFieldSetItem(SEARCH_FIELDSET_NAME, searchField.getName());
         }
     }
 
     private void addDocumentFieldSet() {
-        for (Field docField : search.getDocument().fieldSet()) {
+        for (Field docField : schema.getDocument().fieldSet()) {
             if (docField instanceof SDField && ((SDField) docField).isExtraField()) {
                 continue; // skip
             }
-            search.fieldSets().addBuiltInFieldSetItem(DocumentType.DOCUMENT, docField.getName());
+            schema.fieldSets().addBuiltInFieldSetItem(DocumentType.DOCUMENT, docField.getName());
         }
     }
 

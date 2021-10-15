@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -15,8 +15,8 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class MatchPhaseSettingsValidator extends Processor {
 
-    public MatchPhaseSettingsValidator(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public MatchPhaseSettingsValidator(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
@@ -24,7 +24,7 @@ public class MatchPhaseSettingsValidator extends Processor {
         if ( ! validate) return;
         if (documentsOnly) return;
 
-        for (RankProfile rankProfile : rankProfileRegistry.rankProfilesOf(search)) {
+        for (RankProfile rankProfile : rankProfileRegistry.rankProfilesOf(schema)) {
             RankProfile.MatchPhaseSettings settings = rankProfile.getMatchPhaseSettings();
             if (settings != null) {
                 validateMatchPhaseSettings(rankProfile, settings);
@@ -34,9 +34,9 @@ public class MatchPhaseSettingsValidator extends Processor {
 
     private void validateMatchPhaseSettings(RankProfile rankProfile, RankProfile.MatchPhaseSettings settings) {
         String attributeName = settings.getAttribute();
-        new AttributeValidator(search.getName(),
+        new AttributeValidator(schema.getName(),
                                rankProfile.getName(),
-                               search.getAttribute(attributeName), attributeName).validate();
+                               schema.getAttribute(attributeName), attributeName).validate();
     }
 
     public static class AttributeValidator {

@@ -15,8 +15,8 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * An interface containing the non-mutating methods of {@link Search}.
- * For description of the methods see {@link Search}.
+ * An interface containing the non-mutating methods of {@link Schema}.
+ * For description of the methods see {@link Schema}.
  *
  * @author bjorncs
  */

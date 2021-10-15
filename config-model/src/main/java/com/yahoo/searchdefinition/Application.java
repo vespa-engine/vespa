@@ -19,7 +19,7 @@ import java.util.Map;
 public class Application {
 
     private final ApplicationPackage applicationPackage;
-    private final Map<String, Search> schemas = new LinkedHashMap<>();
+    private final Map<String, Schema> schemas = new LinkedHashMap<>();
 
     public Application(ApplicationPackage applicationPackage) {
         this.applicationPackage = applicationPackage;
@@ -27,17 +27,17 @@ public class Application {
 
     public ApplicationPackage applicationPackage() { return applicationPackage; }
 
-    public void add(Search schema) {
+    public void add(Schema schema) {
         if (schemas.containsKey(schema.getName()))
             throw new IllegalArgumentException("Duplicate schema '" + schema.getName() + "' in " + this);
         schemas.put(schema.getName(), schema);
     }
 
     /** Returns an unmodifiable list of the schemas of this application */
-    public Map<String, Search> schemas() { return Collections.unmodifiableMap(schemas); }
+    public Map<String, Schema> schemas() { return Collections.unmodifiableMap(schemas); }
 
     /** Used by SearchBuilder, for now */
-    void replaceSchemasBy(List<Search> schemas) {
+    void replaceSchemasBy(List<Schema> schemas) {
         this.schemas.clear();
         for (var schema : schemas)
             this.schemas.put(schema.getName(), schema);

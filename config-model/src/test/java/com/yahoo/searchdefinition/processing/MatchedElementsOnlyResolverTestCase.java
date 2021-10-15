@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -168,11 +168,11 @@ public class MatchedElementsOnlyResolverTestCase {
         assertEquals(expSourceField, field.getSingleSource());
     }
 
-    private Search buildSearch(String field) throws ParseException {
+    private Schema buildSearch(String field) throws ParseException {
         return buildSearch(field, "");
     }
 
-    private Search buildSearch(String field, String summary) throws ParseException {
+    private Schema buildSearch(String field, String summary) throws ParseException {
         var builder = new SearchBuilder(new RankProfileRegistry());
         builder.importString(joinLines("search test {",
                 "  document test {",

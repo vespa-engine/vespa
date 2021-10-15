@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.config.subscription.ConfigInstanceUtil;
 import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.Dictionary;
@@ -44,14 +44,14 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
 
     public static final AttributeFields empty = new AttributeFields(null);
 
-    public AttributeFields(Search search) {
-        if (search != null)
-            derive(search);
+    public AttributeFields(Schema schema) {
+        if (schema != null)
+            derive(schema);
     }
 
     /** Derives everything from a field */
     @Override
-    protected void derive(ImmutableSDField field, Search search) {
+    protected void derive(ImmutableSDField field, Schema schema) {
         if (unsupportedFieldType(field)) {
             return; // Ignore complex struct and map fields for indexed search (only supported for streaming search)
         }

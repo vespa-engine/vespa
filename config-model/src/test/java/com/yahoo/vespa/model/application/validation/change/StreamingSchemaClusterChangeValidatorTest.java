@@ -22,7 +22,7 @@ import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTe
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-public class StreamingSearchClusterChangeValidatorTest {
+public class StreamingSchemaClusterChangeValidatorTest {
 
     private static class Fixture {
         VespaModel currentModel;

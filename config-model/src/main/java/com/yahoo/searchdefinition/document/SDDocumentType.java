@@ -14,7 +14,7 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.FieldSets;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -149,13 +149,13 @@ public class SDDocumentType implements Cloneable, Serializable {
      * The document type id will be generated as a hash from the document type name.
      *
      * @param name The name of the new document type
-     * @param search check for type ID collisions in this search definition
+     * @param schema check for type ID collisions in this search definition
      */
     @SuppressWarnings("deprecation")
-    public SDDocumentType(String name, Search search) {
+    public SDDocumentType(String name, Schema schema) {
         docType = new DocumentType(name);
         docType.contentStruct().setCompressionConfig(new CompressionConfig());
-        validateId(search);
+        validateId(schema);
         inherit(VESPA_DOCUMENT);
     }
 
@@ -196,10 +196,10 @@ public class SDDocumentType implements Cloneable, Serializable {
 
     public Collection<SDDocumentType>  getInheritedTypes() { return inheritedTypes.values(); }
 
-    protected void validateId(Search search) {
-        if (search == null) return;
-        if (search.getDocument(getName()) == null) return;
-        SDDocumentType doc = search.getDocument();
+    protected void validateId(Schema schema) {
+        if (schema == null) return;
+        if (schema.getDocument(getName()) == null) return;
+        SDDocumentType doc = schema.getDocument();
         throw new IllegalArgumentException("Failed creating document type '" + getName() + "', " +
                 "document type '" + doc.getName() + "' already uses ID '" + doc.getName() + "'");
     }
@@ -312,7 +312,7 @@ public class SDDocumentType implements Cloneable, Serializable {
         return docType;
     }
     
-    /** The field sets defined for this type and its {@link Search} */
+    /** The field sets defined for this type and its {@link Schema} */
     public FieldSets getFieldSets() {
         return fieldSets;
     }

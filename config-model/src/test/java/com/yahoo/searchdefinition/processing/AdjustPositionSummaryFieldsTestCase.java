@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -73,7 +73,7 @@ public class AdjustPositionSummaryFieldsTestCase {
     public void test_pos_default_summary_no_attr_no_rename() {
         SearchModel model = new SearchModel(false, false, false);
         model.resolve();
-        assertNull(model.childSearch.getSummary("default")); // ImplicitSummaries processing not run in this test
+        assertNull(model.childSchema.getSummary("default")); // ImplicitSummaries processing not run in this test
     }
 
     @Test
@@ -175,21 +175,21 @@ public class AdjustPositionSummaryFieldsTestCase {
         SearchModel(boolean importedPos, boolean setupPosAttr, boolean setupBadAttr) {
             super();
             if (importedPos) {
-                createPositionField(parentSearch, setupPosAttr, setupBadAttr);
+                createPositionField(parentSchema, setupPosAttr, setupBadAttr);
             }
-            addRefField(childSearch, parentSearch, "ref");
+            addRefField(childSchema, parentSchema, "ref");
             if (importedPos) {
                 addImportedField("my_pos", "ref", "pos");
             } else {
-                createPositionField(childSearch, setupPosAttr, setupBadAttr);
+                createPositionField(childSchema, setupPosAttr, setupBadAttr);
             }
         }
 
-        private void createPositionField(Search search, boolean setupPosAttr, boolean setupBadAttr) {
+        private void createPositionField(Schema schema, boolean setupPosAttr, boolean setupBadAttr) {
             String ilScript = setupPosAttr ? "{ summary | attribute }" : "{ summary }";
-            search.getDocument().addField(createField("pos", PositionDataType.INSTANCE, ilScript));
+            schema.getDocument().addField(createField("pos", PositionDataType.INSTANCE, ilScript));
             if (setupBadAttr) {
-                search.getDocument().addField(createField("pos_zcurve", DataType.LONG, "{ attribute }"));
+                schema.getDocument().addField(createField("pos_zcurve", DataType.LONG, "{ attribute }"));
             }
         }
 
@@ -198,10 +198,10 @@ public class AdjustPositionSummaryFieldsTestCase {
         }
 
         public void addSummaryField(String summaryName, String fieldName, DataType dataType, SummaryTransform transform, String source) {
-            DocumentSummary summary = childSearch.getSummary(summaryName);
+            DocumentSummary summary = childSchema.getSummary(summaryName);
             if (summary == null) {
-                summary = new DocumentSummary(summaryName, childSearch);
-                childSearch.addSummary(summary);
+                summary = new DocumentSummary(summaryName, childSchema);
+                childSchema.addSummary(summary);
             }
             SummaryField summaryField = new SummaryField(fieldName, dataType);
             if (source != null) {
@@ -218,7 +218,7 @@ public class AdjustPositionSummaryFieldsTestCase {
         }
 
         public void assertNoSummaryField(String summaryName, String fieldName) {
-            DocumentSummary summary = childSearch.getSummary(summaryName);
+            DocumentSummary summary = childSchema.getSummary(summaryName);
             assertNotNull(summary);
             SummaryField summaryField = summary.getSummaryField(fieldName);
             assertNull(summaryField);
@@ -229,7 +229,7 @@ public class AdjustPositionSummaryFieldsTestCase {
         }
 
         public void assertSummaryField(String summaryName, String fieldName, DataType dataType, SummaryTransform transform, String source) {
-            DocumentSummary summary = childSearch.getSummary(summaryName);
+            DocumentSummary summary = childSchema.getSummary(summaryName);
             assertNotNull(summary);
             SummaryField summaryField = summary.getSummaryField(fieldName);
             assertNotNull(summaryField);
@@ -244,18 +244,18 @@ public class AdjustPositionSummaryFieldsTestCase {
         }
 
         public void resolve() {
-            resolve(parentSearch);
-            resolve(childSearch);
+            resolve(parentSchema);
+            resolve(childSchema);
         }
 
-        private static void resolve(Search search) {
-            new CreatePositionZCurve(search, null, null, null).process(true, false);
-            assertNotNull(search.temporaryImportedFields().get());
-            assertFalse(search.importedFields().isPresent());
-            new ImportedFieldsResolver(search, null, null, null).process(true, false);
-            assertFalse(search.temporaryImportedFields().isPresent());
-            assertNotNull(search.importedFields().get());
-            new AdjustPositionSummaryFields(search, null, null, null).process(true, false);
+        private static void resolve(Schema schema) {
+            new CreatePositionZCurve(schema, null, null, null).process(true, false);
+            assertNotNull(schema.temporaryImportedFields().get());
+            assertFalse(schema.importedFields().isPresent());
+            new ImportedFieldsResolver(schema, null, null, null).process(true, false);
+            assertFalse(schema.temporaryImportedFields().isPresent());
+            assertNotNull(schema.importedFields().get());
+            new AdjustPositionSummaryFields(schema, null, null, null).process(true, false);
         }
     }
 }

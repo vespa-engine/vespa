@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author geirst
  */
-public class IndexedSearchNodeNamingTest {
+public class IndexedSchemaNodeNamingTest {
 
     private ContentCluster getSingleNodeCluster() throws Exception {
         String groupXml = joinLines("  <group>",

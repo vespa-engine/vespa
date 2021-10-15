@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.DataType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -16,13 +16,13 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class ImplicitSummaryFields extends Processor {
 
-    public ImplicitSummaryFields(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public ImplicitSummaryFields(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (DocumentSummary docsum : search.getSummaries().values()) {
+        for (DocumentSummary docsum : schema.getSummaries().values()) {
             if (docsum.getInherited() != null) continue; // Implicit fields are added to inheriting summaries through their parent
             addField(docsum, new SummaryField("rankfeatures", DataType.STRING, SummaryTransform.RANKFEATURES), validate);
             addField(docsum, new SummaryField("summaryfeatures", DataType.STRING, SummaryTransform.SUMMARYFEATURES), validate);

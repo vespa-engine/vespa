@@ -8,7 +8,7 @@ import java.util.Map;
 import com.yahoo.searchdefinition.document.FieldSet;
 
 /**
- * The field sets owned by a {@link Search}
+ * The field sets owned by a {@link Schema}
  * Both built in and user defined.
  *
  * @author vegardh

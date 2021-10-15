@@ -35,7 +35,7 @@ import static org.junit.Assert.fail;
  *
  * @author Tony Vaagenes
  */
-public class DomSearchChainsBuilderTest extends DomBuilderTest {
+public class DomSchemaChainsBuilderTest extends DomBuilderTest {
 
     private SearchChains searchChains;
 

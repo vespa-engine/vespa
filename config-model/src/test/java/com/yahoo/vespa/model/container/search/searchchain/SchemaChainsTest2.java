@@ -15,7 +15,7 @@ import static org.junit.Assert.fail;
 /**
  * @author gjoranv
  */
-public class SearchChainsTest2 {
+public class SchemaChainsTest2 {
 
     private MockRoot root;
 
