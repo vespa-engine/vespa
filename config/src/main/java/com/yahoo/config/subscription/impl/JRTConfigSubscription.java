@@ -102,16 +102,11 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     }
 
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
-        Exception badConfigE = null;
-        T configInstance = null;
         try {
-            configInstance = toConfigInstance(jrtReq);
+            T configInstance = toConfigInstance(jrtReq);
+            setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), configInstance, jrtReq.getNewChecksums());
         } catch (IllegalArgumentException e) {
-            badConfigE = e;
-        }
-        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), configInstance, jrtReq.getNewChecksums());
-        if (badConfigE != null) {
-            throw new IllegalArgumentException("Bad config from jrt", badConfigE);
+            throw new IllegalArgumentException("Bad config in response", e);
         }
     }
 
