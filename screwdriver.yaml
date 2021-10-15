@@ -3,15 +3,51 @@
 cache:
  job:
    build-vespa: [/main_job_cache]
+   component-build: [/main_job_cache]
 
 shared:
   image: vespaengine/vespa-build-centos7:latest
   environment:
     USER_SHELL_BIN: bash
+  annotations:
+    restore-cache: &restore-cache
+      restore-cache: |
+        (cd /tmp && if [[ -f $MAIN_CACHE_FILE ]]; then tar xf $MAIN_CACHE_FILE; fi)
+
+        mkdir -p $CCACHE_DATA_DIR
+        mkdir -p $CCACHE_TMP_DIR
+
+        export CCACHE_DIR=$CCACHE_DATA_DIR
+
+        rm -f $CCACHE_DIR/ccache.conf
+        ccache -M 20G
+        ccache -o log_file=$SD_ARTIFACTS_DIR/ccache_log.txt
+        ccache -o temporary_dir=$CCACHE_TMP_DIR
+        ccache -p
+        ccache -z
+        du -sh /tmp/*
+
+    save-cache: &save-cache
+      save-cache: |
+        if [[ -z "$SD_PULL_REQUEST" ]]; then
+          # Remove what we have produced
+          rm -rf $LOCAL_MVN_REPO/com/yahoo
+          rm -rf $LOCAL_MVN_REPO/ai/vespa
+
+          # Tar toghether the /tmp/vespa folder containing ccache and cleaned mvn repo
+          mkdir -p $(dirname $MAIN_CACHE_FILE)
+          (cd /tmp && tar cf $MAIN_CACHE_FILE vespa)
+
+          # Wipe the cache if we exceed 2GB to avoid pulling and pusing too large files
+          if (( $(stat --format='%s' $MAIN_CACHE_FILE) > $(( 2*1000*1000*1000 )) )); then
+            tar cf $MAIN_CACHE_FILE --files-from=/dev/null;
+            echo "Cleaning cache file. $MAIN_CACHE_FILE is now $(stat --format='%s' $MAIN_CACHE_FILE) bytes."
+          fi
+        fi
 
 jobs:
   build-vespa:
-    requires: [~pr, ~commit]
+    requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -34,45 +70,111 @@ jobs:
           df -h
           uname -a
           rpm -qa | grep "vespa"
-      - restore-cache: |
-          (cd /tmp && if [[ -f $MAIN_CACHE_FILE ]]; then tar xf $MAIN_CACHE_FILE; fi)
-
-          mkdir -p $CCACHE_DATA_DIR
-          mkdir -p $CCACHE_TMP_DIR
-
-          export CCACHE_DIR=$CCACHE_DATA_DIR
-
-          rm -f $CCACHE_DIR/ccache.conf
-          ccache -M 20G
-          ccache -o log_file=$SD_ARTIFACTS_DIR/ccache_log.txt
-          ccache -o temporary_dir=$CCACHE_TMP_DIR
-          ccache -p
-          ccache -z
-
+      - *restore-cache
       - compile: |
           screwdriver/build-vespa.sh
-
-      - save-cache: |
-          if [[ -z "$SD_PULL_REQUEST" ]]; then
-            # Remove what we have produced
-            rm -rf $LOCAL_MVN_REPO/com/yahoo
-            rm -rf $LOCAL_MVN_REPO/ai/vespa
-
-            # Tar toghether the /tmp/vespa folder containing ccache and cleaned mvn repo
-            mkdir -p $(dirname $MAIN_CACHE_FILE)
-            (cd /tmp && tar cf $MAIN_CACHE_FILE vespa)
-
-            # Wipe the cache if we exceed 2GB to avoid pulling and pusing too large files
-            if (( $(stat --format='%s' $MAIN_CACHE_FILE) > $(( 2*1000*1000*1000 )) )); then
-              tar cf $MAIN_CACHE_FILE --files-from=/dev/null;
-              echo "Cleaning cache file. $MAIN_CACHE_FILE is now $(stat --format='%s' $MAIN_CACHE_FILE) bytes."
-            fi
-          fi
-
+      - *save-cache
       - inspect-after: |
           du -sh /tmp/vespa/*
           ls -la /main_job_cache || true
           df -h
+
+  component-build:
+    annotations:
+      screwdriver.cd/cpu: 7
+      screwdriver.cd/ram: 16
+      screwdriver.cd/disk: HIGH
+      screwdriver.cd/timeout: 90
+      screwdriver.cd/dockerEnabled: true
+      screwdriver.cd/dockerCpu: TURBO
+      screwdriver.cd/dockerRam: TURBO
+    environment:
+      LOCAL_MVN_REPO: "/tmp/vespa/mvnrepo"
+      VESPA_MAVEN_EXTRA_OPTS: "--show-version --batch-mode --no-snapshot-updates -Dmaven.repo.local=/tmp/vespa/mvnrepo"
+      CCACHE_TMP_DIR: "/tmp/ccache_tmp"
+      CCACHE_DATA_DIR: "/tmp/vespa/ccache"
+      MAIN_CACHE_FILE: "/main_job_cache/vespa.tar"
+    secrets:
+      - DOCKER_HUB_DEPLOY_KEY
+    steps:
+      - get-vespa-version: |
+          VESPA_VERSION=$(meta get vespa.version)
+          VESPA_REF=$(meta get vespa.ref)
+          SYSTEM_TEST_REF=$(meta get system-test.ref)
+
+          if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]] || [[ $SYSTEM_TEST_REF == null ]]; then
+            echo "Must have valid Vespa version and reference to continue \
+                  (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF, SYSTEM_TEST_REF=$SYSTEM_TEST_REF)."
+            exit 1
+          fi
+      - install-dependencies: |
+          yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+          yum install -y --setopt skip_missing_names_on_install=False docker-ce docker-ce-cli containerd.io
+          docker system info
+          ln -sf $(which yum) /usr/local/bin/dnf
+      - checkout: |
+          mkdir -p workdir
+          cd workdir
+          WORKDIR=$(pwd)
+          git clone -q https://github.com/vespa-engine/vespa
+          (cd vespa && git checkout $VESPA_REF && git tag v$VESPA_VERSION)
+          git clone -q https://github.com/vespa-engine/system-test
+          (cd system-test && git checkout $SYSTEM_TEST_REF)
+          # Set correct version in pom.xml files
+          (cd vespa && \
+           find . -name "pom.xml" -exec sed -i'' \
+                -e "s,<version>.*SNAPSHOT.*</version>,<version>$VESPA_VERSION</version>," \
+                -e "s,<vespaversion>.*project.version.*</vespaversion>,<vespaversion>$VESPA_VERSION</vespaversion>," \
+                -e "s,<test-framework.version>.*project.version.*</test-framework.version>,<test-framework.version>$VESPA_VERSION</test-framework.version>," \
+                {} \;)
+      - make-srpm: |
+          make -C $WORKDIR/vespa -f .copr/Makefile srpm outdir=$WORKDIR
+      - *restore-cache
+      - build: |
+          cd $WORKDIR/vespa
+          export FACTORY_VESPA_VERSION=$VESPA_VERSION
+          NUM_THREADS=$(( $(nproc) + 2 ))
+          time ./bootstrap.sh java
+          time mvn -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS install
+          cmake3 -DVESPA_UNPRIVILEGED=no .
+          time make -j ${NUM_THREADS}
+          time ctest3 --output-on-failure -j ${NUM_THREADS}
+          ccache --show-stats
+          time make -j ${NUM_THREADS} install DESTDIR=$WORKDIR/vespa-install
+      - verify-rpm-build: |
+          cd $WORKDIR
+          time rpmbuild --rebuild --define="_topdir $WORKDIR/vespa-rpmbuild" \
+                        --define "_debugsource_template %{nil}" \
+                        --define "installdir $WORKDIR/vespa-install" *.src.rpm
+          mkdir -p $WORKDIR/system-test/docker/rpms
+          mv $WORKDIR/vespa-rpmbuild/RPMS/x86_64/*.rpm $WORKDIR/system-test/docker/rpms
+          rm -f $WORKDIR/system-test/docker/rpms/*debuginfo*rpm
+          ls -la $WORKDIR/system-test/docker/rpms
+      - build-test-image: |
+          cd $WORKDIR/system-test
+          mkdir -p docker/vespa-systemtests
+          git archive HEAD --format tar | tar x -C docker/vespa-systemtests
+          cp -a $LOCAL_MVN_REPO docker/repository
+          cd docker
+          docker build --file Dockerfile.multistage \
+                       --build-arg BASE_IMAGE=centos:7 --build-arg VESPA_BASE_IMAGE=base \
+                       --build-arg SYSTEMTEST_BASE_IMAGE=vespa --build-arg SKIP_M2_POPULATE=true \
+                       --target systemtest \
+                       --tag vespaengine/vespa-systemtest-centos7:$VESPA_VERSION \
+                       --tag vespaengine/vespa-systemtest-centos7:latest .
+      - verify-test-image: |
+          docker run --rm -ti --entrypoint bash vespaengine/vespa-systemtest-centos7:$VESPA_VERSION -lc \
+          "source /opt/rh/rh-ruby27/enable; /opt/vespa-systemtests/lib/node_server.rb & sleep 3 && ruby /opt/vespa-systemtests/tests/search/basicsearch/basic_search.rb --run test_basicsearch__ELASTIC"
+      - publish-test-image: |
+          if [[ -z "$SD_PULL_REQUEST" ]]; then
+            OPT_STATE="$(set +o)"
+            set +x
+            docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
+            eval "$OPT_STATE"
+            docker push docker.io/vespaengine/vespa-systemtest-centos7:$VESPA_VERSION
+            docker push docker.io/vespaengine/vespa-systemtest-centos7:latest
+          fi
+      - *save-cache
 
   publish-release:
     annotations:
