@@ -5,7 +5,6 @@ vespa_add_library(persistence_spi OBJECT
     attribute_resource_usage.cpp
     bucket.cpp
     bucketinfo.cpp
-    catchresult.cpp
     clusterstate.cpp
     context.cpp
     docentry.cpp
