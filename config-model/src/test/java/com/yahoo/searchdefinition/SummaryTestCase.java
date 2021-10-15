@@ -238,6 +238,36 @@ public class SummaryTestCase {
         }
     }
 
+    @Test
+    public void testInheritingParentSummary() throws ParseException {
+        String parent = joinLines(
+                "schema parent {" +
+                "  document parent {" +
+                "    field pf1 type string {" +
+                "      indexing: summary" +
+                "    }" +
+                "  }" +
+                "  document-summary parent_summary {" +
+                "    summary pf1 type string {}" +
+                "  }" +
+                "}");
+        String child = joinLines(
+                "schema child inherits parent {" +
+                "  document child inherits parent {" +
+                "    field cf1 type string {" +
+                "      indexing: summary" +
+                "    }" +
+                "  }" +
+                "  document-summary child_summary inherits parent_summary {" +
+                "    summary cf1 type string {}" +
+                "  }" +
+                "}");
+        DeployLoggerStub logger = new DeployLoggerStub();
+        SearchBuilder.createFromStrings(logger, parent, child);
+        logger.entries.forEach(e -> System.out.println(e));
+        //assertTrue(logger.entries.isEmpty());
+    }
+
     private static class TestValue {
 
         private final DocumentSummary summary;

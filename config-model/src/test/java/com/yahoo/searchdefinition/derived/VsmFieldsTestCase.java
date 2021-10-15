@@ -6,6 +6,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
+import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -22,7 +23,7 @@ public class VsmFieldsTestCase {
 
     @Test
     public void reference_type_field_is_unsearchable() {
-        Search search = new Search("test", MockApplicationPackage.createEmpty(), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
+        Search search = new Search("test", new Application(MockApplicationPackage.createEmpty()), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
         search.addDocument(new SDDocumentType("test"));
         SDField refField = new TemporarySDField("ref_field", ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create("parent_type")));
         refField.parseIndexingScript("{ summary }");

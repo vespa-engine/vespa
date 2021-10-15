@@ -7,7 +7,6 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -26,7 +25,7 @@ public class DocumentReferenceResolver {
 
     private final Map<String, Search> searchMapping;
 
-    public DocumentReferenceResolver(List<Search> schemas) {
+    public DocumentReferenceResolver(Collection<Search> schemas) {
         this.searchMapping = createDocumentNameToSearchMapping(schemas);
     }
 
@@ -78,7 +77,7 @@ public class DocumentReferenceResolver {
         return sdField.doesAttributing();
     }
 
-    private static Map<String, Search> createDocumentNameToSearchMapping(List<Search> searchDefintions) {
+    private static Map<String, Search> createDocumentNameToSearchMapping(Collection<Search> searchDefintions) {
         return searchDefintions.stream()
                 .filter(search -> search.getDocument() != null)
                 .collect(toMap(search -> search.getDocument().getName(), identity()));

@@ -6,6 +6,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
+import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.derived.TestableDeployLogger;
@@ -47,7 +48,7 @@ public class AddAttributeTransformToSummaryOfImportedFieldsTest {
     }
 
     private static Search createSearch(String documentType) {
-        return new Search(documentType, MockApplicationPackage.createEmpty(), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
+        return new Search(documentType, new Application(MockApplicationPackage.createEmpty()), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
     }
 
     private static Search createSearchWithDocument(String documentName) {

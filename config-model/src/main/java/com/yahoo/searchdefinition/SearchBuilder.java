@@ -42,11 +42,12 @@ import java.util.List;
  * expressions, using the setRankXXX() methods, 3) invoke the {@link #build()} method, and 4) retrieve the built
  * search objects using the {@link #getSearch(String)} method.
  */
+// Since this was created we have added Application, and much of the content in this should probably migrate there.
 public class SearchBuilder {
 
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
     private final DocumentModel model = new DocumentModel();
-    private final ApplicationPackage app;
+    private final Application application;
     private final RankProfileRegistry rankProfileRegistry;
     private final QueryProfileRegistry queryProfileRegistry;
     private final FileRegistry fileRegistry;
@@ -109,14 +110,14 @@ public class SearchBuilder {
                          QueryProfileRegistry queryProfileRegistry) {
         this(app, fileRegistry, deployLogger, properties, rankProfileRegistry, queryProfileRegistry, false);
     }
-    private SearchBuilder(ApplicationPackage app,
+    private SearchBuilder(ApplicationPackage applicationPackage,
                           FileRegistry fileRegistry,
                           DeployLogger deployLogger,
                           ModelContext.Properties properties,
                           RankProfileRegistry rankProfileRegistry,
                           QueryProfileRegistry queryProfileRegistry,
                           boolean documentsOnly) {
-        this.app = app;
+        this.application = new Application(applicationPackage);
         this.rankProfileRegistry = rankProfileRegistry;
         this.queryProfileRegistry = queryProfileRegistry;
         this.fileRegistry = fileRegistry;
@@ -169,7 +170,7 @@ public class SearchBuilder {
     private String importString(String str, String searchDefDir) throws ParseException {
         SimpleCharStream stream = new SimpleCharStream(str);
         try {
-            return importRawSearch(new SDParser(stream, fileRegistry, deployLogger, properties, app, rankProfileRegistry, documentsOnly)
+            return importRawSearch(new SDParser(stream, fileRegistry, deployLogger, properties, application, rankProfileRegistry, documentsOnly)
                                            .search(docTypeMgr, searchDefDir));
         } catch (TokenMgrException e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
@@ -183,21 +184,16 @@ public class SearchBuilder {
      * {@link Search} object is considered to be "raw" if it has not already been processed. This is the case for most
      * programmatically constructed search objects used in unit tests.
      *
-     * @param rawSearch the object to import.
+     * @param schema the object to import.
      * @return the name of the imported object.
      * @throws IllegalArgumentException if the given search object has already been processed.
      */
-    public String importRawSearch(Search rawSearch) {
-        if (rawSearch.getName() == null)
-            throw new IllegalArgumentException("Search has no name.");
-        String rawName = rawSearch.getName();
-        for (Search search : searchList) {
-            if (rawName.equals(search.getName())) {
-                throw new IllegalArgumentException("A search definition with a search section called '" + rawName +
-                                                   "' has already been added.");
-            }
-        }
-        searchList.add(rawSearch);
+    public String importRawSearch(Search schema) {
+        if (schema.getName() == null)
+            throw new IllegalArgumentException("Schema has no name");
+        String rawName = schema.getName();
+        application.add(schema);
+        searchList.add(schema);
         return rawName;
     }
 
@@ -223,7 +219,7 @@ public class SearchBuilder {
         if (isBuilt) throw new IllegalStateException("Model already built");
 
         if (validate)
-            searchList.forEach(search -> search.validate(deployLogger));
+            application.validate(deployLogger);
 
         List<Search> built = new ArrayList<>();
         List<SDDocumentType> sdocs = new ArrayList<>();
@@ -282,10 +278,11 @@ public class SearchBuilder {
      */
     public Search getSearch() {
         if ( ! isBuilt)  throw new IllegalStateException("Searches not built.");
-        if (searchList.size() != 1)
-            throw new IllegalStateException("This call only works if we have 1 search definition. Search definitions: " + searchList);
+        if (application.schemas().size() != 1)
+            throw new IllegalStateException("This call only works if we have 1 schema. Schemas: " +
+                                            application.schemas().values());
 
-        return searchList.get(0);
+        return application.schemas().values().stream().findAny().get();
     }
 
     public DocumentModel getModel() {
@@ -304,16 +301,13 @@ public class SearchBuilder {
     public Search getSearch(String name) {
         if ( ! isBuilt)  throw new IllegalStateException("Searches not built.");
         if (name == null) return getSearch();
-
-        for (Search search : searchList)
-            if (search.getName().equals(name)) return search;
-        return null;
+        return application.schemas().get(name);
     }
 
     /**
      * Convenience method to return a list of all built {@link Search} objects.
      *
-     * @return The list of built searches.
+     * @return the list of built searches
      */
     public List<Search> getSearchList() {
         return new ArrayList<>(searchList);

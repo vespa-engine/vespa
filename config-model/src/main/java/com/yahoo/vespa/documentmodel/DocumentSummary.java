@@ -109,7 +109,7 @@ public class DocumentSummary extends FieldView {
         return owner.getSummary(inherited);
     }
 
-    /** Returns the name of the summary this was declared to inherit, or null if not sett to inherit anything */
+    /** Returns the name of the summary this was declared to inherit, or null if not set to inherit anything */
     public String getInheritedName() {
         return inherited;
     }

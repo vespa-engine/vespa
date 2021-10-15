@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.searchdefinition.document.SDDocumentType;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -11,9 +12,9 @@ import java.util.List;
  */
 public class ImportedFieldsEnumerator {
 
-    private final List<Search> schemas;
+    private final Collection<Search> schemas;
 
-    public ImportedFieldsEnumerator(List<Search> schemas) {
+    public ImportedFieldsEnumerator(Collection<Search> schemas) {
         this.schemas = schemas;
     }
 

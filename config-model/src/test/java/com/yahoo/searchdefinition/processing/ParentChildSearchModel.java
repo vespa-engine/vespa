@@ -9,6 +9,7 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
+import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.Search;
@@ -22,7 +23,8 @@ import com.yahoo.searchdefinition.document.TemporarySDField;
  * Fixture class used for ImportedFieldsResolverTestCase and AdjustPositionSummaryFieldsTestCase.
  */
 public class ParentChildSearchModel {
-    private final ApplicationPackage app = MockApplicationPackage.createEmpty();
+
+    private final Application application = new Application(MockApplicationPackage.createEmpty());
     public Search parentSearch;
     public Search childSearch;
 
@@ -32,7 +34,7 @@ public class ParentChildSearchModel {
     }
 
     protected Search createSearch(String name) {
-        Search result = new Search(name, app, new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
+        Search result = new Search(name, application, new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
         result.addDocument(new SDDocumentType(name));
         return result;
     }

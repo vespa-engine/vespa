@@ -28,6 +28,7 @@ import com.yahoo.document.*;
 import com.yahoo.documentmodel.*;
 import com.yahoo.compress.Compressor;
 import com.yahoo.compress.CompressionType;
+import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.document.*;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 import com.yahoo.searchdefinition.document.annotation.TemporaryAnnotationReferenceDataType;
@@ -61,6 +62,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.query.ranking.Diversity;
+import java.util.Optional;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
@@ -76,7 +78,7 @@ import java.util.logging.Level;
 public class SDParser {
 
     private DocumentTypeManager docMan = null;
-    private ApplicationPackage app;
+    private Application application;
     private FileRegistry fileRegistry;
     private DeployLogger deployLogger;
     private ModelContext.Properties properties;
@@ -92,14 +94,14 @@ public class SDParser {
                     FileRegistry fileRegistry,
                     DeployLogger deployLogger,
                     ModelContext.Properties properties,
-                    ApplicationPackage applicationPackage,
+                    Application application,
                     RankProfileRegistry rankProfileRegistry,
                     boolean documentsOnly) {
         this(stream);
         this.fileRegistry = fileRegistry;
         this.deployLogger = deployLogger;
         this.properties = properties;
-        this.app = applicationPackage;
+        this.application = application;
         this.rankProfileRegistry = rankProfileRegistry;
         this.documentsOnly = documentsOnly;
     }
@@ -437,11 +439,12 @@ Search search(DocumentTypeManager docMan, String dir) :
 Search rootSchema(String dir) :
 {
     String name;
+    String inherited = null;
     Search search;
 }
 {
-    ( ( <SCHEMA> | <SEARCH> ) name = identifier() {
-        search = new Search(name, app, fileRegistry,deployLogger, properties);
+    ( ( <SCHEMA> | <SEARCH> ) name = identifier() (<INHERITS> inherited = identifier() )? {
+        search = new Search(name, Optional.ofNullable(inherited), application, fileRegistry, deployLogger, properties);
         rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry, search.rankingConstants()));
         rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry, search.rankingConstants()));}
       lbrace() (rootSchemaItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
@@ -482,7 +485,7 @@ Object rootSchemaItem(Search search) : { }
  */
 Search rootDocument(String dir) :
 {
-    Search search = new DocumentOnlySearch(app, fileRegistry, deployLogger, properties);
+    Search search = new DocumentOnlySearch(application, fileRegistry, deployLogger, properties);
 }
 {
     ( (rootDocumentItem(search) (<NL>)*)*<EOF> )

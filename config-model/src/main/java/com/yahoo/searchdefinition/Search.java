@@ -59,8 +59,11 @@ public class Search implements ImmutableSearch {
 
     private final FieldSets fieldSets = new FieldSets();
 
-    /** The unique name of this search definition */
+    /** The unique name of this schema */
     private String name;
+
+    /** The name of the schema this should inherit all the content of, if any */
+    private final Optional<String> inherited;
 
     /** True if this doesn't define a search, just a document type */
     private final boolean documentsOnly;
@@ -94,31 +97,52 @@ public class Search implements ImmutableSearch {
     private Optional<TemporaryImportedFields> temporaryImportedFields = Optional.of(new TemporaryImportedFields());
     private Optional<ImportedFields> importedFields = Optional.empty();
 
-    private final ApplicationPackage applicationPackage;
+    private final Application application;
     private final DeployLogger deployLogger;
     private final ModelContext.Properties properties;
 
     /** Testing only */
     public Search(String name) {
-        this(name, null, null, new BaseDeployLogger(), new TestProperties());
+        this(name, Optional.empty(), null, null, new BaseDeployLogger(), new TestProperties());
     }
+
+    public Search(String name,
+                  Application application,
+                  FileRegistry fileRegistry,
+                  DeployLogger deployLogger,
+                  ModelContext.Properties properties) {
+        this(name, Optional.empty(), application, fileRegistry, deployLogger, properties);
+    }
+
     /**
-     * Creates a proper search definition
+     * Creates a schema
      *
-     * @param name of the the searchdefinition
-     * @param applicationPackage the application containing this
+     * @param name of the schema
+     * @param inherited the schema this inherits, if any
+     * @param application the application containing this
      */
-    public Search(String name, ApplicationPackage applicationPackage, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties) {
-        this(applicationPackage, fileRegistry, deployLogger, properties, false);
+    public Search(String name,
+                  Optional<String> inherited,
+                  Application application,
+                  FileRegistry fileRegistry,
+                  DeployLogger deployLogger,
+                  ModelContext.Properties properties) {
+        this(inherited, application, fileRegistry, deployLogger, properties, false);
         this.name = name;
     }
 
-    protected Search(ApplicationPackage applicationPackage, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties) {
-        this(applicationPackage, fileRegistry, deployLogger, properties, true);
+    protected Search(Application application, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties) {
+        this(Optional.empty(), application, fileRegistry, deployLogger, properties, true);
     }
 
-    private Search(ApplicationPackage applicationPackage, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties, boolean documentsOnly) {
-        this.applicationPackage = applicationPackage;
+    private Search(Optional<String> inherited,
+                   Application application,
+                   FileRegistry fileRegistry,
+                   DeployLogger deployLogger,
+                   ModelContext.Properties properties,
+                   boolean documentsOnly) {
+        this.inherited = inherited;
+        this.application = application;
         this.deployLogger = deployLogger;
         this.properties = properties;
         this.documentsOnly = documentsOnly;
@@ -299,11 +323,16 @@ public class Search implements ImmutableSearch {
      */
     @Override
     public Reader getRankingExpression(String fileName) {
-        return applicationPackage.getRankingExpression(fileName);
+        return application.applicationPackage().getRankingExpression(fileName);
     }
 
+    public Application application() { return application; }
+
     @Override
-    public ApplicationPackage applicationPackage() { return applicationPackage; }
+    public ApplicationPackage applicationPackage() {
+        if (application == null) return null;
+        return application.applicationPackage();
+    }
 
     @Override
     public DeployLogger getDeployLogger() { return deployLogger; }

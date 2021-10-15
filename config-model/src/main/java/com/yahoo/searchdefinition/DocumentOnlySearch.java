@@ -15,8 +15,8 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
  */
 public class DocumentOnlySearch extends Search {
 
-    public DocumentOnlySearch(ApplicationPackage applicationPackage, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties) {
-        super(applicationPackage, fileRegistry, deployLogger, properties);
+    public DocumentOnlySearch(Application application, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties) {
+        super(application, fileRegistry, deployLogger, properties);
     }
 
     @Override
