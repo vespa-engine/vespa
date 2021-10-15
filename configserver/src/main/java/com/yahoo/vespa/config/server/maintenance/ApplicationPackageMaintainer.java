@@ -14,7 +14,6 @@ import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.filedistribution.Downloads;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.flags.FlagSource;
@@ -94,8 +93,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     private FileDownloader createFileDownloader() {
         return new FileDownloader(new JRTConnectionPool(new ConfigSourceSet(getOtherConfigServersInCluster(configserverConfig)), supervisor),
                                   supervisor,
-                                  downloadDirectory,
-                                  new Downloads());
+                                  downloadDirectory);
     }
 
     @Override

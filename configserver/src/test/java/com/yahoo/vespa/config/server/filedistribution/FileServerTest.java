@@ -7,7 +7,6 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.filedistribution.Downloads;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
@@ -142,7 +141,6 @@ public class FileServerTest {
             super(FileDownloader.emptyConnectionPool(),
                   new Supervisor(new Transport("mock")).setDropEmptyBuffers(true),
                   downloadDirectory,
-                  new Downloads(),
                   Duration.ofMillis(100),
                   Duration.ofMillis(100));
         }

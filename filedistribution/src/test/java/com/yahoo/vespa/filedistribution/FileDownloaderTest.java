@@ -41,7 +41,6 @@ public class FileDownloaderTest {
     private static final Duration sleepBetweenRetries = Duration.ofMillis(10);
 
     private MockConnection connection;
-    private Downloads downloads;
     private FileDownloader fileDownloader;
     private File downloadDir;
     private Supervisor supervisor;
@@ -51,9 +50,8 @@ public class FileDownloaderTest {
         try {
             downloadDir = Files.createTempDirectory("filedistribution").toFile();
             connection = new MockConnection();
-            downloads = new Downloads();
             supervisor = new Supervisor(new Transport()).setDropEmptyBuffers(true);
-            fileDownloader = new FileDownloader(connection, supervisor, downloadDir, downloads, Duration.ofSeconds(1), sleepBetweenRetries);
+            fileDownloader = new FileDownloader(connection, supervisor, downloadDir, Duration.ofSeconds(1), sleepBetweenRetries);
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.getMessage());
@@ -124,7 +122,7 @@ public class FileDownloaderTest {
             assertEquals("some other content", IOUtils.readFile(downloadedFile.get()));
 
             // Verify download status when downloaded
-            System.out.println(downloads.downloadStatuses());
+            System.out.println(fileDownloader.downloads().downloadStatuses());
             assertDownloadStatus(fileReference, 1.0);
         }
 
@@ -166,7 +164,7 @@ public class FileDownloaderTest {
 
     @Test
     public void getFileWhenConnectionError() throws IOException {
-        fileDownloader = new FileDownloader(connection, supervisor, downloadDir, downloads, Duration.ofSeconds(2), sleepBetweenRetries);
+        fileDownloader = new FileDownloader(connection, supervisor, downloadDir, Duration.ofSeconds(2), sleepBetweenRetries);
         File downloadDir = fileDownloader.downloadDirectory();
 
         int timesToFail = 2;
@@ -200,7 +198,7 @@ public class FileDownloaderTest {
     public void getFileWhenDownloadInProgress() throws IOException, ExecutionException, InterruptedException {
         ExecutorService executor = Executors.newFixedThreadPool(2);
         String filename = "abc.jar";
-        fileDownloader = new FileDownloader(connection, supervisor, downloadDir, downloads, Duration.ofSeconds(3), sleepBetweenRetries);
+        fileDownloader = new FileDownloader(connection, supervisor, downloadDir, Duration.ofSeconds(3), sleepBetweenRetries);
         File downloadDir = fileDownloader.downloadDirectory();
 
         // Delay response so that we can make a second request while downloading the file from the first request
@@ -240,7 +238,7 @@ public class FileDownloaderTest {
         Duration timeout = Duration.ofMillis(200);
         MockConnection connectionPool = new MockConnection();
         connectionPool.setResponseHandler(new MockConnection.WaitResponseHandler(timeout.plus(Duration.ofMillis(1000))));
-        FileDownloader fileDownloader = new FileDownloader(connectionPool, supervisor, downloadDir, downloads, timeout, sleepBetweenRetries);
+        FileDownloader fileDownloader = new FileDownloader(connectionPool, supervisor, downloadDir, timeout, sleepBetweenRetries);
         FileReference xyzzy = new FileReference("xyzzy");
         // Should download since we do not have the file on disk
         fileDownloader.downloadIfNeeded(new FileReferenceDownload(xyzzy));
@@ -275,6 +273,7 @@ public class FileDownloaderTest {
     }
 
     private void assertDownloadStatus(FileReference fileReference, double expectedDownloadStatus) {
+        Downloads downloads = fileDownloader.downloads();
         double downloadStatus = downloads.downloadStatus(fileReference);
         assertEquals("Download statuses: " + downloads.downloadStatuses().toString(),
                      expectedDownloadStatus,
@@ -293,7 +292,7 @@ public class FileDownloaderTest {
                 new FileReceiver.Session(downloadDir, 1, fileReference, type, filename, content.length);
         session.addPart(0, content);
         File file = session.close(hasher.hash(ByteBuffer.wrap(content), 0));
-        downloads.completedDownloading(fileReference, file);
+        fileDownloader.downloads().completedDownloading(fileReference, file);
     }
 
     private static class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Connection {

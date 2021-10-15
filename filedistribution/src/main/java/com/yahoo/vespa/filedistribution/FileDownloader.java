@@ -39,23 +39,25 @@ public class FileDownloader implements AutoCloseable {
     private final File downloadDirectory;
     private final Duration timeout;
     private final FileReferenceDownloader fileReferenceDownloader;
-    private final Downloads downloads;
+    private final Downloads downloads = new Downloads();
 
     public FileDownloader(List<String> configServers, Supervisor supervisor) {
         this(getConnectionPool(configServers, supervisor), supervisor);
     }
 
     public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor) {
-        this(connectionPool, supervisor, defaultDownloadDirectory, new Downloads());
+        this(connectionPool, supervisor, defaultDownloadDirectory);
     }
 
-    public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor, File downloadDirectory, Downloads downloads) {
-        // TODO: Reduce timeout even more, timeout is so long that we might get starvation
-        this(connectionPool, supervisor, downloadDirectory, downloads, Duration.ofMinutes(5), Duration.ofSeconds(10));
+    public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor, File downloadDirectory) {
+        this(connectionPool, supervisor, downloadDirectory, Duration.ofMinutes(5), Duration.ofSeconds(10));
     }
 
-    public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor, File downloadDirectory, Downloads downloads,
-                          Duration timeout, Duration sleepBetweenRetries) {
+    public FileDownloader(ConnectionPool connectionPool,
+                          Supervisor supervisor,
+                          File downloadDirectory,
+                          Duration timeout,
+                          Duration sleepBetweenRetries) {
         this.connectionPool = connectionPool;
         this.supervisor = supervisor;
         this.downloadDirectory = downloadDirectory;
@@ -63,7 +65,6 @@ public class FileDownloader implements AutoCloseable {
         // Needed to receive RPC receiveFile* calls from server after asking for files
         new FileReceiver(supervisor, downloads, downloadDirectory);
         this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool, downloads, timeout, sleepBetweenRetries);
-        this.downloads = downloads;
     }
 
     public Optional<File> getFile(FileReference fileReference) {
@@ -94,6 +95,8 @@ public class FileDownloader implements AutoCloseable {
     public Map<FileReference, Double> downloadStatus() { return downloads.downloadStatus(); }
 
     public ConnectionPool connectionPool() { return connectionPool; }
+
+    public Downloads downloads() { return downloads; }
 
     File downloadDirectory() {
         return downloadDirectory;
