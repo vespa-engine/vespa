@@ -38,7 +38,7 @@ std::unique_ptr<Slime> DocsumReply::releaseSlime() {
     return std::move(_slime);
 }
 
-DocsumReply::~DocsumReply() { }
+DocsumReply::~DocsumReply() = default;
 
 }
 
