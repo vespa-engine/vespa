@@ -48,7 +48,7 @@ public class Container {
     private final ComponentDeconstructor componentDeconstructor;
     private final Osgi osgi;
 
-    private final ConfigRetriever configurer;
+    private final ConfigRetriever retriever;
     private List<String> platformBundles;  // Used to verify that platform bundles don't change.
     private long previousConfigGeneration = -1L;
     private long leastGeneration = -1L;
@@ -62,7 +62,7 @@ public class Container {
         platformBundlesConfigKey = new ConfigKey<>(PlatformBundlesConfig.class, configId);
         componentsConfigKey = new ConfigKey<>(ComponentsConfig.class, configId);
         var bootstrapKeys = Set.of(applicationBundlesConfigKey, platformBundlesConfigKey, componentsConfigKey);
-        this.configurer = new ConfigRetriever(bootstrapKeys, subscriberFactory::getSubscriber);
+        this.retriever = new ConfigRetriever(bootstrapKeys, subscriberFactory);
     }
 
     public Container(SubscriberFactory subscriberFactory, String configId, ComponentDeconstructor componentDeconstructor) {
@@ -91,10 +91,10 @@ public class Container {
     {
         ConfigSnapshot snapshot;
         while (true) {
-            snapshot = configurer.getConfigs(graph.configKeys(), leastGeneration, isInitializing);
+            snapshot = retriever.getConfigs(graph.configKeys(), leastGeneration, isInitializing);
 
             if (log.isLoggable(FINE))
-                log.log(FINE, String.format("createNewGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
+                log.log(FINE, String.format("getConfigAndCreateGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
                                             graph.configKeys(), graph.generation(), snapshot));
 
             if (snapshot instanceof BootstrapConfigs) {
@@ -127,11 +127,11 @@ public class Container {
     }
 
     private long getBootstrapGeneration() {
-        return configurer.getBootstrapGeneration();
+        return retriever.getBootstrapGeneration();
     }
 
     private long getComponentsGeneration() {
-        return configurer.getComponentsGeneration();
+        return retriever.getComponentsGeneration();
     }
 
     private String configGenerationsString() {
@@ -215,7 +215,7 @@ public class Container {
     }
 
     private void invalidateGeneration(long generation, Throwable cause) {
-        leastGeneration = Math.max(configurer.getComponentsGeneration(), configurer.getBootstrapGeneration()) + 1;
+        leastGeneration = Math.max(retriever.getComponentsGeneration(), retriever.getBootstrapGeneration()) + 1;
         if (!(cause instanceof InterruptedException) && !(cause instanceof ConfigInterruptedException)) {
             log.log(Level.WARNING, newGraphErrorMessage(generation, cause), cause);
         }
@@ -250,7 +250,7 @@ public class Container {
     }
 
     void shutdownConfigurer() {
-        configurer.shutdown();
+        retriever.shutdown();
     }
 
     // Reload config manually, when subscribing to non-configserver sources
