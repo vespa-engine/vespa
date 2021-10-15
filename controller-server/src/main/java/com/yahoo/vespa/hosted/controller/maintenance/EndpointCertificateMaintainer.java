@@ -160,16 +160,19 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         List<EndpointCertificateRequestMetadata> endpointCertificateMetadata = endpointCertificateProvider.listCertificates();
         Set<String> managedRequestIds = curator.readAllEndpointCertificateMetadata().values().stream().map(EndpointCertificateMetadata::requestId).collect(Collectors.toSet());
 
-        for (var cameoCertificateMetadata : endpointCertificateMetadata) {
-            if (!managedRequestIds.contains(cameoCertificateMetadata.requestId())) {
+        for (var providerCertificateMetadata : endpointCertificateMetadata) {
+            if (!managedRequestIds.contains(providerCertificateMetadata.requestId())) {
                 if (deleteUnmaintainedCertificates.value()) {
                     // The certificate is not known - however it could be in the process of being requested by us or another controller.
                     // So we only delete if it was requested more than 7 days ago.
-                    if (Instant.parse(cameoCertificateMetadata.createTime()).isBefore(Instant.now().minus(7, ChronoUnit.DAYS))) {
-                        endpointCertificateProvider.deleteCertificate(ApplicationId.fromSerializedForm("applicationid:is:unknown"), cameoCertificateMetadata.requestId());
+                    if (Instant.parse(providerCertificateMetadata.createTime()).isBefore(Instant.now().minus(7, ChronoUnit.DAYS))) {
+                        endpointCertificateProvider.deleteCertificate(ApplicationId.fromSerializedForm("applicationid:is:unknown"), providerCertificateMetadata.requestId());
+                        log.log(Level.INFO, "Deleting unmaintained certificate with request_id %s and SANs " +
+                                providerCertificateMetadata.dnsNames().stream().map(d -> d.dnsName).collect(Collectors.joining(", ")));
                     }
                 } else {
-                    log.info("Certificate metadata exists with provider but is not managed by controller: " + cameoCertificateMetadata);
+                    log.log(Level.INFO, "Found unmaintained certificate with request_id %s and SANs " +
+                            providerCertificateMetadata.dnsNames().stream().map(d -> d.dnsName).collect(Collectors.joining(", ")));
                 }
             }
         }
