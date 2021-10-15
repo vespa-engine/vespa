@@ -7,11 +7,13 @@
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.docsumwriter");
 
 using namespace vespalib::slime::convenience;
+using vespalib::Issue;
 
 namespace search::docsummary {
 
@@ -46,7 +48,8 @@ DynamicDocsumWriter::resolveOutputClass(vespalib::stringref summaryClass) const
     if (id != ResultConfig::NoClassID()) {
         const ResultClass *oC = _resultConfig->LookupResultClass(id);
         if (oC == nullptr) {
-            LOG(warning, "Illegal docsum class requested: %d, using empty docsum for documents", id);
+            Issue::report("Illegal docsum class requested: %s, using empty docsum for documents",
+                          vespalib::string(summaryClass).c_str());
             result.mustSkip = true;
         } else {
             result.outputClass = oC;

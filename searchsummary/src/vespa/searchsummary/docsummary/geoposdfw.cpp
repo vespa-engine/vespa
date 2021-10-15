@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/issue.h>
 #include <climits>
 
 #include <vespa/log/log.h>
@@ -16,6 +17,7 @@ namespace search::docsummary {
 
 using attribute::IAttributeVector;
 using attribute::IAttributeContext;
+using vespalib::Issue;
 
 GeoPositionDFW::GeoPositionDFW(const vespalib::string & attrName) :
     AttrDFW(attrName)
@@ -100,7 +102,7 @@ GeoPositionDFW::create(const char *attribute_name,
         }
         const IAttributeVector *attribute = context->getAttribute(attribute_name);
         if (!attribute) {
-            LOG(warning, "create: could not get attribute '%s' from context", attribute_name);
+            Issue::report("GeoPositionDFW::create: could not get attribute '%s' from context", attribute_name);
             return ret;
         }
     }

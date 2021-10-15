@@ -6,6 +6,7 @@
 #include "handlerecorder.h"
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.querynodes");
@@ -25,6 +26,7 @@ using search::queryeval::SearchIterator;
 using std::map;
 using std::vector;
 using vespalib::string;
+using vespalib::Issue;
 
 namespace proton::matching {
 
@@ -71,7 +73,7 @@ ProtonTermData::resolveFromChildren(const std::vector<Node *> &subterms)
     for (size_t i = 0; i < subterms.size(); ++i) {
         const ProtonTermData *child = termDataFromNode(*subterms[i]);
         if (child == 0) {
-            LOG(warning, "child of equiv is not a term");
+            Issue::report("child of equiv is not a term");
             continue;
         }
         for (size_t j = 0; j < child->numFields(); ++j) {

@@ -10,6 +10,7 @@
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
+#include <vespa/vespalib/util/issue.h>
 #include "docsum_field_writer_state.h"
 
 #include <vespa/log/log.h>
@@ -17,6 +18,7 @@ LOG_SETUP(".searchsummary.docsummary.docsumstate");
 
 using search::common::GeoLocationParser;
 using search::common::GeoLocationSpec;
+using vespalib::Issue;
 
 namespace search::docsummary {
 
@@ -92,8 +94,8 @@ GetDocsumsState::parse_locations()
             GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
             _parsedLocations.push_back(spec);
         } else {
-            LOG(warning, "could not parse location string '%s' from request",
-                _args.getLocation().c_str());
+            Issue::report("could not parse location string '%s' from request",
+                          _args.getLocation().c_str());
         }
     }
     auto stackdump = _args.getStackDump();
@@ -109,8 +111,8 @@ GetDocsumsState::parse_locations()
                     GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
                     _parsedLocations.push_back(spec);
                 } else {
-                    LOG(warning, "could not parse location string '%s' from stack dump",
-                        term.c_str());
+                    Issue::report("could not parse location string '%s' from stack dump",
+                                  term.c_str());
                 }
             }
         }
