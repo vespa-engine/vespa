@@ -5,11 +5,14 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
+import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
+import com.yahoo.vespa.config.ConnectionPool;
+import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.filedistribution.CompressedFileReference;
 import com.yahoo.vespa.filedistribution.EmptyFileReferenceData;
@@ -24,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -71,16 +75,12 @@ public class FileServer {
     @Inject
     public FileServer(ConfigserverConfig configserverConfig) {
         this(new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())),
-             new FileDownloader(getOtherConfigServersInCluster(configserverConfig),
-                                new Supervisor(new Transport("filedistribution-pool"))
-                                        .setDropEmptyBuffers(true)));
+             createFileDownloader(getOtherConfigServersInCluster(configserverConfig)));
     }
 
     // For testing only
     public FileServer(File rootDir) {
-        this(rootDir, new FileDownloader(FileDownloader.emptyConnectionPool(),
-                                         new Supervisor(new Transport("fileserver-for-testing"))
-                                                 .setDropEmptyBuffers(true)));
+        this(rootDir, createFileDownloader(List.of()));
     }
 
     public FileServer(File rootDir, FileDownloader fileDownloader) {
@@ -203,6 +203,20 @@ public class FileServer {
     public void close() {
         downloader.close();
         executor.shutdown();
+    }
+
+    private static FileDownloader createFileDownloader(List<String> configServers) {
+        Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
+        return new FileDownloader(configServers.isEmpty()
+                                          ? FileDownloader.emptyConnectionPool()
+                                          : getConnectionPool(configServers, supervisor),
+                                  supervisor);
+    }
+
+    private static ConnectionPool getConnectionPool(List<String> configServers, Supervisor supervisor) {
+        return configServers.size() > 0
+                ? new JRTConnectionPool(new ConfigSourceSet(configServers), supervisor)
+                : FileDownloader.emptyConnectionPool();
     }
 
 }

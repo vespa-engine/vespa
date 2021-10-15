@@ -2,17 +2,14 @@
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.config.FileReference;
-import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
-import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,31 +28,35 @@ import java.util.logging.Logger;
  */
 public class FileDownloader implements AutoCloseable {
 
-    private final static Logger log = Logger.getLogger(FileDownloader.class.getName());
-    public static File defaultDownloadDirectory = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"));
+    private static final Logger log = Logger.getLogger(FileDownloader.class.getName());
+    private static final Duration defaultTimeout = Duration.ofMinutes(3);
+    private static final Duration defaultSleepBetweenRetries = Duration.ofSeconds(10);
+    public static final File defaultDownloadDirectory = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"));
 
     private final ConnectionPool connectionPool;
     private final Supervisor supervisor;
     private final File downloadDirectory;
     private final Duration timeout;
     private final FileReferenceDownloader fileReferenceDownloader;
-    private final Downloads downloads;
-
-    public FileDownloader(List<String> configServers, Supervisor supervisor) {
-        this(getConnectionPool(configServers, supervisor), supervisor);
-    }
+    private final Downloads downloads = new Downloads();
 
     public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor) {
-        this(connectionPool, supervisor, defaultDownloadDirectory, new Downloads());
+        this(connectionPool, supervisor, defaultDownloadDirectory, defaultTimeout, defaultSleepBetweenRetries);
     }
 
-    public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor, File downloadDirectory, Downloads downloads) {
-        // TODO: Reduce timeout even more, timeout is so long that we might get starvation
-        this(connectionPool, supervisor, downloadDirectory, downloads, Duration.ofMinutes(5), Duration.ofSeconds(10));
+    public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor, Duration timeout) {
+        this(connectionPool, supervisor, defaultDownloadDirectory, timeout, defaultSleepBetweenRetries);
     }
 
-    public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor, File downloadDirectory, Downloads downloads,
-                          Duration timeout, Duration sleepBetweenRetries) {
+    public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor, File downloadDirectory) {
+        this(connectionPool, supervisor, downloadDirectory, defaultTimeout, defaultSleepBetweenRetries);
+    }
+
+    public FileDownloader(ConnectionPool connectionPool,
+                          Supervisor supervisor,
+                          File downloadDirectory,
+                          Duration timeout,
+                          Duration sleepBetweenRetries) {
         this.connectionPool = connectionPool;
         this.supervisor = supervisor;
         this.downloadDirectory = downloadDirectory;
@@ -63,7 +64,6 @@ public class FileDownloader implements AutoCloseable {
         // Needed to receive RPC receiveFile* calls from server after asking for files
         new FileReceiver(supervisor, downloads, downloadDirectory);
         this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool, downloads, timeout, sleepBetweenRetries);
-        this.downloads = downloads;
     }
 
     public Optional<File> getFile(FileReference fileReference) {
@@ -95,6 +95,8 @@ public class FileDownloader implements AutoCloseable {
 
     public ConnectionPool connectionPool() { return connectionPool; }
 
+    public Downloads downloads() { return downloads; }
+
     File downloadDirectory() {
         return downloadDirectory;
     }
@@ -121,19 +123,9 @@ public class FileDownloader implements AutoCloseable {
         return downloads.get(fileReference).isPresent();
     }
 
-    private boolean alreadyDownloaded(FileReferenceDownload fileReferenceDownload) {
-        try {
-            return getFileFromFileSystem(fileReferenceDownload.fileReference()).isPresent();
-        } catch (RuntimeException e) {
-            return false;
-        }
-    }
-
     /** Start a download, don't wait for result */
     public void downloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
-        if (alreadyDownloaded(fileReferenceDownload)) return;
-
-        download(fileReferenceDownload);
+        getFutureFile(fileReferenceDownload);
     }
 
     /** Download, the future returned will be complete()d by receiving method in {@link FileReceiver} */
@@ -144,12 +136,6 @@ public class FileDownloader implements AutoCloseable {
     public void close() {
         fileReferenceDownloader.close();
         supervisor.transport().shutdown().join();
-    }
-
-    private static ConnectionPool getConnectionPool(List<String> configServers, Supervisor supervisor) {
-        return configServers.size() > 0
-                ? new JRTConnectionPool(new ConfigSourceSet(configServers), supervisor)
-                : emptyConnectionPool();
     }
 
     public static ConnectionPool emptyConnectionPool() {
