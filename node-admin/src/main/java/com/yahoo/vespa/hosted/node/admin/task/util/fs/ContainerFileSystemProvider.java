@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
+import com.yahoo.vespa.hosted.node.admin.nodeagent.UserNamespace;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
@@ -43,10 +45,10 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     private final ContainerUserPrincipalLookupService userPrincipalLookupService;
     private final Path containerRootOnHost;
 
-    ContainerFileSystemProvider(Path containerRootOnHost, int uidOffset, int gidOffset) {
+    ContainerFileSystemProvider(Path containerRootOnHost, UserNamespace userNamespace) {
         this.containerFs = new ContainerFileSystem(this);
         this.userPrincipalLookupService = new ContainerUserPrincipalLookupService(
-                containerRootOnHost.getFileSystem().getUserPrincipalLookupService(), uidOffset, gidOffset);
+                containerRootOnHost.getFileSystem().getUserPrincipalLookupService(), userNamespace);
         this.containerRootOnHost = containerRootOnHost;
     }
 
@@ -197,12 +199,12 @@ class ContainerFileSystemProvider extends FileSystemProvider {
             return provider(pathOnHost).readAttributes(pathOnHost, attributes, options);
 
         Map<String, Object> attrs = new HashMap<>(provider(pathOnHost).readAttributes(pathOnHost, "unix:*", options));
-        int uid = userPrincipalLookupService.hostUidToContainerUid((int) attrs.get("uid"));
-        int gid = userPrincipalLookupService.hostGidToContainerGid((int) attrs.get("gid"));
+        int uid = userPrincipalLookupService.userIdInContainer((int) attrs.get("uid"));
+        int gid = userPrincipalLookupService.groupIdInContainer((int) attrs.get("gid"));
         attrs.put("uid", uid);
         attrs.put("gid", gid);
-        attrs.put("owner", new ContainerUserPrincipal(uid, (UserPrincipal) attrs.get("owner")));
-        attrs.put("group", new ContainerGroupPrincipal(gid, (GroupPrincipal) attrs.get("group")));
+        attrs.put("owner", userPrincipalLookupService.userPrincipal(uid, (UserPrincipal) attrs.get("owner")));
+        attrs.put("group", userPrincipalLookupService.groupPrincipal(gid, (GroupPrincipal) attrs.get("group")));
         return attrs;
     }
 
@@ -218,8 +220,8 @@ class ContainerFileSystemProvider extends FileSystemProvider {
             switch (attribute.substring(index + 1)) {
                 case "owner": return cast(value, ContainerUserPrincipal.class).baseFsPrincipal();
                 case "group": return cast(value, ContainerGroupPrincipal.class).baseFsPrincipal();
-                case "uid": return userPrincipalLookupService.containerUidToHostUid(cast(value, Integer.class));
-                case "gid": return userPrincipalLookupService.containerGidToHostGid(cast(value, Integer.class));
+                case "uid": return userPrincipalLookupService.userIdOnHost(cast(value, Integer.class));
+                case "gid": return userPrincipalLookupService.groupIdOnHost(cast(value, Integer.class));
             }
         } // else basic file attribute
         return value;

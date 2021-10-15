@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
+import com.yahoo.vespa.hosted.node.admin.nodeagent.UserNamespace;
+
 import java.io.IOException;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
@@ -84,8 +86,8 @@ public class ContainerFileSystem extends FileSystem {
         throw new UnsupportedOperationException();
     }
 
-    public static ContainerFileSystem create(Path containerStorageRoot, int uidOffset, int gidOffset) {
+    public static ContainerFileSystem create(Path containerStorageRoot, UserNamespace userNamespace) {
         uncheck(() -> Files.createDirectories(containerStorageRoot));
-        return new ContainerFileSystemProvider(containerStorageRoot, uidOffset, gidOffset).getFileSystem(null);
+        return new ContainerFileSystemProvider(containerStorageRoot, userNamespace).getFileSystem(null);
     }
 }

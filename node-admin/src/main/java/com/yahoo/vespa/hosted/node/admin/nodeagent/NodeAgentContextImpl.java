@@ -61,7 +61,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         this.identity = Objects.requireNonNull(identity);
         this.containerNetworkMode = Objects.requireNonNull(containerNetworkMode);
         this.zone = Objects.requireNonNull(zone);
-        this.containerFs = ContainerFileSystem.create(pathToContainerStorage.resolve(containerName.asString()), userNamespace.rootUserIdOnHost(), userNamespace.rootGroupIdOnHost());
+        this.containerFs = ContainerFileSystem.create(pathToContainerStorage.resolve(containerName.asString()), userNamespace);
         this.pathToVespaHome = containerFs.getPath(pathToVespaHome);
         this.logPrefix = containerName.asString() + ": ";
         this.userNamespace = Objects.requireNonNull(userNamespace);

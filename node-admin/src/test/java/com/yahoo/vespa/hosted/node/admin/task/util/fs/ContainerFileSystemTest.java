@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
+import com.yahoo.vespa.hosted.node.admin.nodeagent.UserNamespace;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,6 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
 
-import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerUserPrincipalLookupService.OVERFLOW_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -24,7 +24,8 @@ class ContainerFileSystemTest {
 
     private final FileSystem fileSystem = TestFileSystem.create();
     private final UnixPath containerRootOnHost = new UnixPath(fileSystem.getPath("/data/storage/ctr1"));
-    private final ContainerFileSystem containerFs = ContainerFileSystem.create(containerRootOnHost.createDirectories().toPath(), 10_000, 11_000);
+    private final UserNamespace userNamespace = new UserNamespace(10_000, 11_000, "vespa", "users", 1000, 100);
+    private final ContainerFileSystem containerFs = ContainerFileSystem.create(containerRootOnHost.createDirectories().toPath(), userNamespace);
 
     @Test
     public void creates_files_and_directories_with_container_root_as_owner() throws IOException {
@@ -65,7 +66,7 @@ class ContainerFileSystemTest {
 
         // If file is copied to JimFS path, the UID/GIDs are not fixed
         Files.copy(hostFile.toPath(), destination.pathOnHost());
-        assertEquals(String.valueOf(OVERFLOW_ID), Files.getOwner(destination).getName());
+        assertEquals(String.valueOf(userNamespace.overflowId()), Files.getOwner(destination).getName());
         Files.delete(destination);
 
         Files.copy(hostFile.toPath(), destination);
@@ -94,7 +95,7 @@ class ContainerFileSystemTest {
 
         // If file is moved to JimFS path, the UID/GIDs are not fixed
         Files.move(hostFile.toPath(), destination.pathOnHost());
-        assertEquals(String.valueOf(OVERFLOW_ID), Files.getOwner(destination).getName());
+        assertEquals(String.valueOf(userNamespace.overflowId()), Files.getOwner(destination).getName());
         Files.delete(destination);
 
         hostFile.createNewFile();
