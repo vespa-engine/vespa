@@ -99,7 +99,6 @@ public class DocumentSummary extends FieldView {
 
     /** Sets the parent of this. Both summaries must be present in the same search definition */
     public void setInherited(String inherited) {
-        System.out.println("Adding inheritance of " + inherited + " in " + this);
         this.inherited = inherited;
     }
 
