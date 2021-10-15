@@ -4,13 +4,13 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.BaseReport;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -121,6 +121,10 @@ public class NodeAttributes {
 
     public Map<String, JsonNode> getReports() {
         return reports;
+    }
+
+    public <T extends BaseReport> Optional<T> getReport(String reportId, Class<T> classInstance) {
+        return Optional.ofNullable(reports.get(reportId)).map(jn -> BaseReport.fromJsonNode(jn, classInstance));
     }
 
     @Override
