@@ -80,7 +80,7 @@ jobs:
           df -h
 
   component-build:
-     annotations:
+    annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
       screwdriver.cd/disk: HIGH
