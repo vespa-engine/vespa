@@ -48,7 +48,8 @@ DynamicDocsumWriter::resolveOutputClass(vespalib::stringref summaryClass) const
     if (id != ResultConfig::NoClassID()) {
         const ResultClass *oC = _resultConfig->LookupResultClass(id);
         if (oC == nullptr) {
-            Issue::report("Illegal docsum class requested: %d, using empty docsum for documents", id);
+            Issue::report("Illegal docsum class requested: %s, using empty docsum for documents",
+                          vespalib::string(summaryClass).c_str());
             result.mustSkip = true;
         } else {
             result.outputClass = oC;
