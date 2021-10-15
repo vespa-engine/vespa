@@ -93,8 +93,8 @@ vespalib::Slime::UP
 DocsumBySlime::getDocsums(const Inspector & req)
 {
     DocsumReply::UP reply = _docsumServer.getDocsums(slimeToRequest(req));
-    if (reply && reply->_root) {
-        return std::move(reply->_root);
+    if (reply && reply->hasResult()) {
+        return reply->releaseSlime();
     } else {
         LOG(warning, "got <null> docsum reply from back-end");
     }

@@ -478,36 +478,41 @@ TEST_F(DocsumRequestTest, require_that_global_ids_are_converted) {
 //-----------------------------------------------------------------------------
 
 struct DocsumReplyTest : ::testing::Test {
+    Slime &slime;
     DocsumReply reply;
     Converter::ProtoDocsumReply proto;
     void convert() { Converter::docsum_reply_to_proto(reply, proto); }
+    DocsumReplyTest(std::unique_ptr<Slime> slime_in)
+        : slime(*slime_in), reply(std::move(slime_in))
+    {}
+    DocsumReplyTest() : DocsumReplyTest(std::make_unique<Slime>()) {}
 };
 
 TEST_F(DocsumReplyTest, require_that_slime_summaries_are_converted) {
-    reply._root = std::make_unique<Slime>();
-    auto &list = reply._root->setArray();
+    auto &list = slime.setArray();
     auto &doc0 = list.addObject();
     doc0.setLong("my_field", 42);
     convert();
     const auto &mem = proto.slime_summaries();
-    Slime slime;
-    EXPECT_EQ(BinaryFormat::decode(Memory(mem.data(), mem.size()), slime), mem.size());
-    EXPECT_EQ(slime.get()[0]["my_field"].asLong(), 42);
+    Slime decoded;
+    EXPECT_EQ(BinaryFormat::decode(Memory(mem.data(), mem.size()), decoded), mem.size());
+    EXPECT_EQ(decoded.get()[0]["my_field"].asLong(), 42);
 }
 
 TEST_F(DocsumReplyTest, require_that_missing_root_slime_gives_empty_payload) {
-    reply._root.reset();
+    reply.releaseSlime();
     convert();
     EXPECT_EQ(proto.slime_summaries().size(), 0);
 }
 
 TEST_F(DocsumReplyTest, require_that_issues_are_converted_to_errors) {
-    reply.my_issues = std::make_unique<UniqueIssues>();
-    reply.my_issues->handle(vespalib::Issue("a"));
-    reply.my_issues->handle(vespalib::Issue("b"));
-    reply.my_issues->handle(vespalib::Issue("c"));
-    reply.my_issues->handle(vespalib::Issue("a"));
-    reply.my_issues->handle(vespalib::Issue("b"));
+    auto my_issues = std::make_unique<UniqueIssues>();
+    my_issues->handle(vespalib::Issue("a"));
+    my_issues->handle(vespalib::Issue("b"));
+    my_issues->handle(vespalib::Issue("c"));
+    my_issues->handle(vespalib::Issue("a"));
+    my_issues->handle(vespalib::Issue("b"));
+    reply.setIssues(std::move(my_issues));
     convert();
     ASSERT_EQ(proto.errors_size(), 3);
     EXPECT_EQ(proto.errors(0).message(), "a");

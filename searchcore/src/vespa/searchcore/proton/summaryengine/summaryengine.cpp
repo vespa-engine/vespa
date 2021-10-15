@@ -35,12 +35,8 @@ public:
 };
 
 uint32_t getNumDocs(const DocsumReply &reply) {
-    if (reply._root) {
-        const Inspector &root = reply._root->get();
-        return root[DOCSUMS].entries();
-    } else {
-        return 0;
-    }
+    const Inspector &root = reply.root();
+    return root[DOCSUMS].entries();
 }
 
 VESPA_THREAD_STACK_TAG(summary_engine_executor)
@@ -110,11 +106,8 @@ DocsumReply::UP
 SummaryEngine::getDocsums(DocsumRequest::Source request, DocsumClient & client)
 {
     if (_closed) {
-        LOG(warning, "Receiving docsumrequest after engine has been shutdown");
+        vespalib::Issue::report("Received docsum request after engine has been shutdown");
         auto ret = std::make_unique<DocsumReply>();
-
-        // TODO: Notify closed.
-
         return ret;
     }
     if (_async) {
@@ -131,8 +124,7 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
     auto my_issues = std::make_unique<search::UniqueIssues>();
     auto capture_issues = vespalib::Issue::listen(*my_issues);
 
-    DocsumReply::UP reply = std::make_unique<DocsumReply>();
-
+    DocsumReply::UP reply;
     if (req) {
         ISearchHandler::SP searchHandler = getSearchHandler(DocTypeName(*req));
         if (searchHandler) {
@@ -149,9 +141,11 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
         }
         updateDocsumMetrics(vespalib::to_s(req->getTimeUsed()), getNumDocs(*reply));
     }
-    reply->request = std::move(req);
-    reply->my_issues = std::move(my_issues);
-
+    if (! reply) {
+        reply = std::make_unique<DocsumReply>();
+    }
+    reply->setRequest(std::move(req));
+    reply->setIssues(std::move(my_issues));
     return reply;
 }
 

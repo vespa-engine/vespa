@@ -49,12 +49,11 @@ struct MyDocsumServer : DocsumServer {
     DocsumReply::UP getDocsums(DocsumRequest::Source src, DocsumClient &client) override {
         auto req = src.release();
         assert(req);
-        auto reply = std::make_unique<DocsumReply>();
-        reply->_root = std::make_unique<Slime>();
-        auto &list = reply->_root->setArray();
+        auto slime = std::make_unique<Slime>();
+        auto &list = slime->setArray();
         list.addObject().setBool("use_root_slime", true);
         list.addObject().setString("ranking", req->ranking);
-        reply->request = std::move(req);
+        auto reply = std::make_unique<DocsumReply>(std::move(slime), std::move(req));
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
         client.getDocsumsDone(std::move(reply)); // simplified async response
         return std::unique_ptr<DocsumReply>();

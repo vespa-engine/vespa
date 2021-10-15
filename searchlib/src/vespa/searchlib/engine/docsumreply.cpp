@@ -4,20 +4,41 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <cassert>
 
+using vespalib::Slime;
+using vespalib::slime::Inspector;
+using vespalib::slime::NixValue;
+
 namespace search::engine {
 
-DocsumReply::DocsumReply() : DocsumReply(vespalib::Slime::UP(nullptr)) { }
+DocsumReply::DocsumReply(std::unique_ptr<vespalib::Slime> root,
+                         DocsumRequest::UP request,
+                         UniqueIssues::UP issues)
+    : _slime(std::move(root)),
+      _request(std::move(request)),
+      _issues(std::move(issues))
+{}
 
-DocsumReply::DocsumReply(vespalib::Slime::UP root)
-    : _root(std::move(root))
-{ }
+DocsumReply::DocsumReply(Slime::UP root, DocsumRequest::UP request)
+    : DocsumReply(std::move(root), std::move(request), {}) {}
 
-DocsumReply::~DocsumReply() { }
+DocsumReply::DocsumReply(Slime::UP root)
+    : DocsumReply(std::move(root), {}, {}) {}
+
+DocsumReply::DocsumReply() = default;
 
 vespalib::slime::Inspector & DocsumReply::root() const {
-    assert(_root);
-    return _root->get();
+    return _slime ? _slime->get() : *NixValue::invalid();
 }
+
+bool DocsumReply::hasResult() const {
+    return root().valid();
+}
+
+std::unique_ptr<Slime> DocsumReply::releaseSlime() {
+    return std::move(_slime);
+}
+
+DocsumReply::~DocsumReply() = default;
 
 }
 

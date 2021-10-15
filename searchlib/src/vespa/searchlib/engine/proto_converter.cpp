@@ -168,17 +168,17 @@ ProtoConverter::docsum_request_from_proto(const ProtoDocsumRequest &proto, Docsu
 void
 ProtoConverter::docsum_reply_to_proto(const DocsumReply &reply, ProtoDocsumReply &proto)
 {
-    if (reply._root) {
+    if (reply.hasResult()) {
         vespalib::SmartBuffer buf(4_Ki);
-        vespalib::slime::BinaryFormat::encode(*reply._root, buf);
+        vespalib::slime::BinaryFormat::encode(reply.slime(), buf);
         proto.set_slime_summaries(buf.obtain().data, buf.obtain().size);
     }
-    if (reply.my_issues) {
-        reply.my_issues->for_each_message([&](const vespalib::string &err_msg)
-                                          {
-                                              auto *err_obj = proto.add_errors();
-                                              err_obj->set_message(err_msg);
-                                          });
+    if (reply.hasIssues()) {
+        reply.issues().for_each_message([&](const vespalib::string &err_msg)
+                                        {
+                                            auto *err_obj = proto.add_errors();
+                                            err_obj->set_message(err_msg);
+                                        });
     }
 }
 
