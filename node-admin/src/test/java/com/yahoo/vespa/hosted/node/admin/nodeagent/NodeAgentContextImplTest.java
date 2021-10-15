@@ -7,6 +7,7 @@ import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
 import java.nio.file.FileSystem;
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -25,54 +26,54 @@ public class NodeAgentContextImplTest {
     public void path_on_host_from_path_in_node_test() {
         assertEquals(
                 "/data/vespa/storage/container-1",
-                context.pathOnHostFromPathInNode("/").toString());
+                context.containerPath("/").pathOnHost().toString());
 
         assertEquals(
                 "/data/vespa/storage/container-1/dev/null",
-                context.pathOnHostFromPathInNode("/dev/null").toString());
+                context.containerPath("/dev/null").pathOnHost().toString());
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void path_in_container_must_be_absolute() {
-        context.pathOnHostFromPathInNode("some/relative/path");
+        context.containerPath("some/relative/path");
     }
 
     @Test
     public void path_in_node_from_path_on_host_test() {
         assertEquals(
                 "/dev/null",
-                context.pathInNodeFromPathOnHost(fileSystem.getPath("/data/vespa/storage/container-1/dev/null")).toString());
+                context.containerPathFromPathOnHost(fileSystem.getPath("/data/vespa/storage/container-1/dev/null")).pathInContainer());
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void path_on_host_must_be_absolute() {
-        context.pathInNodeFromPathOnHost("some/relative/path");
+        context.containerPathFromPathOnHost(Path.of("some/relative/path"));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void path_on_host_must_be_inside_container_storage_of_context() {
-        context.pathInNodeFromPathOnHost(fileSystem.getPath("/data/vespa/storage/container-2/dev/null"));
+        context.containerPathFromPathOnHost(fileSystem.getPath("/data/vespa/storage/container-2/dev/null"));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void path_on_host_must_be_inside_container_storage() {
-        context.pathInNodeFromPathOnHost(fileSystem.getPath("/home"));
+        context.containerPathFromPathOnHost(fileSystem.getPath("/home"));
     }
 
     @Test
     public void path_under_vespa_host_in_container_test() {
         assertEquals(
                 "/opt/vespa",
-                context.pathInNodeUnderVespaHome("").toString());
+                context.containerPathUnderVespaHome("").pathInContainer());
 
         assertEquals(
                 "/opt/vespa/logs/vespa/vespa.log",
-                context.pathInNodeUnderVespaHome("logs/vespa/vespa.log").toString());
+                context.containerPathUnderVespaHome("logs/vespa/vespa.log").pathInContainer());
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void path_under_vespa_home_must_be_relative() {
-        context.pathInNodeUnderVespaHome("/home");
+        context.containerPathUnderVespaHome("/home");
     }
 
     @Test
@@ -86,9 +87,9 @@ public class NodeAgentContextImplTest {
         assertTrue(context2.isDisabled(NodeAgentTask.CoreDumps));
     }
 
-    private static NodeAgentContext createContextWithDisabledTasks(String... tasks) {
+    private NodeAgentContext createContextWithDisabledTasks(String... tasks) {
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
         flagSource.withListFlag(PermanentFlags.DISABLED_HOST_ADMIN_TASKS.id(), List.of(tasks), String.class);
-        return NodeAgentContextImpl.builder("node123").flagSource(flagSource).build();
+        return NodeAgentContextImpl.builder("node123").fileSystem(fileSystem).flagSource(flagSource).build();
     }
 }
