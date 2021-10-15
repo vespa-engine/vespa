@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
-import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.yolean.concurrent.Sleeper;
 
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 
@@ -22,12 +22,12 @@ class JvmDumper {
 
         @Override
         public List<Artifact> produceArtifacts(Context ctx) {
-            ContainerPath heapDumpFile = ctx.outputContainerPath().resolve("jvm-heap-dump.bin");
+            Path heapDumpFile = ctx.outputDirectoryInNode().resolve("jvm-heap-dump.bin");
             List<String> cmd = List.of(
-                    "jmap", "-dump:live,format=b,file=" + heapDumpFile.pathInContainer(), Integer.toString(ctx.servicePid()));
+                    "jmap", "-dump:live,format=b,file=" + heapDumpFile, Integer.toString(ctx.servicePid()));
             ctx.executeCommandInNode(cmd, true);
             return List.of(
-                    Artifact.newBuilder().classification(CONFIDENTIAL).file(heapDumpFile).compressOnUpload().build());
+                    Artifact.newBuilder().classification(CONFIDENTIAL).fileInNode(heapDumpFile).compressOnUpload().build());
         }
     }
 
@@ -37,10 +37,10 @@ class JvmDumper {
 
         @Override
         public List<Artifact> produceArtifacts(Context ctx) {
-            ContainerPath jmapReport = ctx.outputContainerPath().resolve("jvm-jmap.txt");
-            List<String> cmd = List.of("bash", "-c", "jhsdb jmap --heap --pid " + ctx.servicePid() + " > " + jmapReport.pathInContainer());
+            Path jmapReport = ctx.outputDirectoryInNode().resolve("jvm-jmap.txt");
+            List<String> cmd = List.of("bash", "-c", "jhsdb jmap --heap --pid " + ctx.servicePid() + " > " + jmapReport);
             ctx.executeCommandInNode(cmd, true);
-            return List.of(Artifact.newBuilder().classification(INTERNAL).file(jmapReport).build());
+            return List.of(Artifact.newBuilder().classification(INTERNAL).fileInNode(jmapReport).build());
         }
     }
 
@@ -50,10 +50,10 @@ class JvmDumper {
 
         @Override
         public List<Artifact> produceArtifacts(Context ctx) {
-            ContainerPath jstatReport = ctx.outputContainerPath().resolve("jvm-jstat.txt");
-            List<String> cmd = List.of("bash", "-c", "jstat -gcutil " + ctx.servicePid() + " > " + jstatReport.pathInContainer());
+            Path jstatReport = ctx.outputDirectoryInNode().resolve("jvm-jstat.txt");
+            List<String> cmd = List.of("bash", "-c", "jstat -gcutil " + ctx.servicePid() + " > " + jstatReport);
             ctx.executeCommandInNode(cmd, true);
-            return List.of(Artifact.newBuilder().classification(INTERNAL).file(jstatReport).build());
+            return List.of(Artifact.newBuilder().classification(INTERNAL).fileInNode(jstatReport).build());
         }
     }
 
@@ -63,9 +63,9 @@ class JvmDumper {
 
         @Override
         public List<Artifact> produceArtifacts(Context ctx) {
-            ContainerPath jstackReport = ctx.outputContainerPath().resolve("jvm-jstack.txt");
-            ctx.executeCommandInNode(List.of("bash", "-c", "jstack " + ctx.servicePid() + " > " + jstackReport.pathInContainer()), true);
-            return List.of(Artifact.newBuilder().classification(INTERNAL).file(jstackReport).build());
+            Path jstackReport = ctx.outputDirectoryInNode().resolve("jvm-jstack.txt");
+            ctx.executeCommandInNode(List.of("bash", "-c", "jstack " + ctx.servicePid() + " > " + jstackReport), true);
+            return List.of(Artifact.newBuilder().classification(INTERNAL).fileInNode(jstackReport).build());
         }
     }
 
@@ -80,9 +80,9 @@ class JvmDumper {
         @Override
         public List<Artifact> produceArtifacts(ArtifactProducer.Context ctx) {
             int seconds = (int) (ctx.options().duration().orElse(30.0));
-            ContainerPath outputFile = ctx.outputContainerPath().resolve("recording.jfr");
+            Path outputFile = ctx.outputDirectoryInNode().resolve("recording.jfr");
             List<String> startCommand = List.of("jcmd", Integer.toString(ctx.servicePid()), "JFR.start", "name=host-admin",
-                    "path-to-gc-roots=true", "settings=profile", "filename=" + outputFile.pathInContainer(), "duration=" + seconds + "s");
+                    "path-to-gc-roots=true", "settings=profile", "filename=" + outputFile, "duration=" + seconds + "s");
             ctx.executeCommandInNode(startCommand, true);
             sleeper.sleep(Duration.ofSeconds(seconds).plusSeconds(1));
             int maxRetries = 10;
@@ -92,7 +92,7 @@ class JvmDumper {
                         .anyMatch(l -> l.contains("name=host-admin") && l.contains("running"));
                 if (!stillRunning) {
                     Artifact a = Artifact.newBuilder()
-                            .classification(CONFIDENTIAL).file(outputFile).compressOnUpload().build();
+                            .classification(CONFIDENTIAL).fileInNode(outputFile).compressOnUpload().build();
                     return List.of(a);
                 }
                 sleeper.sleep(Duration.ofSeconds(1));
