@@ -223,7 +223,7 @@ public class SearchBuilder {
         if (isBuilt) throw new IllegalStateException("Model already built");
 
         if (validate)
-            searchList.forEach(search -> search.validate());
+            searchList.forEach(search -> search.validate(deployLogger));
 
         List<Search> built = new ArrayList<>();
         List<SDDocumentType> sdocs = new ArrayList<>();

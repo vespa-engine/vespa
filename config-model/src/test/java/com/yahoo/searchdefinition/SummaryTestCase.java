@@ -228,11 +228,13 @@ public class SummaryTestCase {
                     "}");
             DeployLoggerStub logger = new DeployLoggerStub();
             SearchBuilder.createFromStrings(logger, schema);
-            fail("Expected failure");
+            assertEquals("document summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
+                         logger.entries.get(0).message);
+            // fail("Expected failure");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("document summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
-                         e.getMessage());
+            // assertEquals("document summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
+            //             e.getMessage());
         }
     }
 

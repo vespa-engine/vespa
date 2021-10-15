@@ -1,12 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.documentmodel;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.Search;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
 
 /**
  * A document summary definition - a list of summary fields.
@@ -117,11 +119,18 @@ public class DocumentSummary extends FieldView {
         return "document summary '" + getName() + "'";
     }
 
-    public void validate() {
+    public void validate(DeployLogger logger) {
         if (inherited != null) {
-            if ( ! owner.getSummaries().containsKey(inherited))
-                throw new IllegalArgumentException(this + " inherits " + inherited + " but this" +
-                                                   " is not present in " + owner);
+            if ( ! owner.getSummaries().containsKey(inherited)) {
+                logger.log(Level.WARNING,
+                           this + " inherits " + inherited + " but this" + " is not present in " + owner);
+                logger.logApplicationPackage(Level.WARNING,
+                                             this + " inherits " + inherited + " but this" + " is not present in " + owner);
+                // TODO: When safe, replace the above by
+                // throw new IllegalArgumentException(this + " inherits " + inherited + " but this" +
+                //                                   " is not present in " + owner);
+                // ... and update SummaryTestCase.testValidationOfInheritedSummary
+            }
         }
 
     }

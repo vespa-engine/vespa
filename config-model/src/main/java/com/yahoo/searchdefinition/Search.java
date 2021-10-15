@@ -670,9 +670,9 @@ public class Search implements ImmutableSearch {
         return this;
     }
 
-    public void validate() {
+    public void validate(DeployLogger logger) {
         for (var summary : summaries.values())
-            summary.validate();
+            summary.validate(logger);
     }
 
 }
