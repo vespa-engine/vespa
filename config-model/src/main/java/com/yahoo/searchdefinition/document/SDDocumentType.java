@@ -38,9 +38,9 @@ import java.util.Set;
 public class SDDocumentType implements Cloneable, Serializable {
 
     public static final SDDocumentType VESPA_DOCUMENT;
-    private Map<DataTypeName, SDDocumentType> inheritedTypes = new HashMap<>();
-    private Map<NewDocumentType.Name, SDDocumentType> ownedTypes = new HashMap<>();
-    private AnnotationTypeRegistry annotationTypes = new AnnotationTypeRegistry();
+    private final Map<DataTypeName, SDDocumentType> inheritedTypes = new HashMap<>();
+    private final Map<NewDocumentType.Name, SDDocumentType> ownedTypes = new HashMap<>();
+    private final AnnotationTypeRegistry annotationTypes = new AnnotationTypeRegistry();
     private DocumentType docType;    
     private DataType structType;
     // The field sets here are set from the processing step in SD, to ensure that the full Search and this SDDocumentType is built first.
@@ -181,16 +181,16 @@ public class SDDocumentType implements Cloneable, Serializable {
     public DocumentType getDocumentType() { return docType; }
 
     public void inherit(DataTypeName name) {
-        if ( ! inheritedTypes.containsKey(name)) {
-            inheritedTypes.put(name, new TemporarySDDocumentType(name));
-        }
+        inherit(new TemporarySDDocumentType(name));
     }
 
     public void inherit(SDDocumentType type) {
-        if (type != null) {
-            if (!inheritedTypes.containsKey(type.getDocumentName()) || (inheritedTypes.get(type.getDocumentName()) instanceof TemporarySDDocumentType)) {
-                inheritedTypes.put(type.getDocumentName(), type);
-            }
+        if (type == null) return;
+        if (type.getName().equals(this.getName()))
+            throw new IllegalArgumentException("Document type '" + getName() + "' cannot inherit itself");
+        if ( ! inheritedTypes.containsKey(type.getDocumentName()) ||
+             (inheritedTypes.get(type.getDocumentName()) instanceof TemporarySDDocumentType)) {
+            inheritedTypes.put(type.getDocumentName(), type);
         }
     }
 
@@ -208,10 +208,7 @@ public class SDDocumentType implements Cloneable, Serializable {
         field.setId(id, docType);
     }
 
-    /** Override getField, as it may need to ask inherited types that isn't registered in document type.
-     * @param name Name of field to get.
-     * @return The field found.
-     */
+    /** Override getField, as it may need to ask inherited types that isn't registered in document type. */
     public Field getField(String name) {
         if (name.contains(".")) {
             String superFieldName = name.substring(0,name.indexOf("."));
@@ -222,7 +219,7 @@ public class SDDocumentType implements Cloneable, Serializable {
                     SDField superField = (SDField)f;
                     return superField.getStructField(subFieldName);
                 } else {
-                    throw new IllegalArgumentException("Field "+f.getName()+" is not SDField");
+                    throw new IllegalArgumentException("Field " + f.getName() + " is not an SDField");
                 }
             }
         }
@@ -246,18 +243,15 @@ public class SDDocumentType implements Cloneable, Serializable {
         docType.addField(field);
     }
 
-    /**
-     * This is SD parse-time inheritance check.
-     *
-     * @param field The field being verified.
-     */
+    /** Parse-time inheritance check. */
     private void verifyInheritance(Field field) {
     	for (SDDocumentType parent : inheritedTypes.values()) {
             for (Field pField : parent.fieldSet()) {
             	if (pField.getName().equals(field.getName())) {
             		if (!pField.getDataType().equals(field.getDataType())) {
-            			throw new IllegalArgumentException("For search '"+getName()+"', field '"+field.getName()+"': " +
-            					"datatype can't be different from that of same field in supertype '"+parent.getName()+"'.");
+            			throw new IllegalArgumentException("For search '" + getName() + "', field '" + field.getName() +
+                                                           "': Datatype can not be different from that of same field " +
+                                                           "in the supertype '" + parent.getName() + "'");
             		}
             	}
             }
@@ -304,6 +298,7 @@ public class SDDocumentType implements Cloneable, Serializable {
         return docType.getFieldCount();
     }
 
+    @Override
     public String toString() {
         return "SD document type '" + docType.getName() + "'";
     }
@@ -342,4 +337,5 @@ public class SDDocumentType implements Cloneable, Serializable {
     public void setTemporaryImportedFields(TemporaryImportedFields temporaryImportedFields) {
         this.temporaryImportedFields = temporaryImportedFields;
     }
+
 }

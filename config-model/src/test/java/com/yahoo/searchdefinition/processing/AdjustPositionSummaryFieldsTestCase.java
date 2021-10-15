@@ -200,7 +200,7 @@ public class AdjustPositionSummaryFieldsTestCase {
         public void addSummaryField(String summaryName, String fieldName, DataType dataType, SummaryTransform transform, String source) {
             DocumentSummary summary = childSearch.getSummary(summaryName);
             if (summary == null) {
-                summary = new DocumentSummary(summaryName);
+                summary = new DocumentSummary(summaryName, childSearch);
                 childSearch.addSummary(summary);
             }
             SummaryField summaryField = new SummaryField(fieldName, dataType);

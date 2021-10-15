@@ -220,7 +220,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     public void fill(Result result, String summaryClass, Execution execution) {
         if (result.isFilled(summaryClass)) return; // TODO: Checked in the superclass - remove
 
-        List<Result> parts= partitionHits(result, summaryClass);
+        List<Result> parts = partitionHits(result, summaryClass);
         if (parts.size() > 0) { // anything to fill at all?
             for (Result r : parts) {
                 doPartialFill(r, summaryClass);

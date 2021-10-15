@@ -1776,7 +1776,7 @@ Object documentSummary(Search search) :
 }
 {
     ( <DOCUMENTSUMMARY>
-      name = identifierWithDash() { search.addSummary(summary = new DocumentSummary(name)); }
+      name = identifierWithDash() { search.addSummary(summary = new DocumentSummary(name, search)); }
       [inheritsDocumentSummary(summary, search)]
       lbrace()
          (
@@ -1803,7 +1803,7 @@ void inheritsDocumentSummary(DocumentSummary documentSummary, Search search) :
 {
     <INHERITS> name = identifierWithDash()
     {
-        documentSummary.setInherited(search.getSummaries().get(name));
+        documentSummary.setInherited(name);
     }
 }
 

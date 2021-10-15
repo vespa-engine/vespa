@@ -622,7 +622,7 @@ public class Search implements ImmutableSearch {
 
     @Override
     public String toString() {
-        return "search definition '" + getName() + "'";
+        return "schema '" + getName() + "'";
     }
 
     public boolean isAccessingDiskSummary(SummaryField field) {
@@ -668,6 +668,11 @@ public class Search implements ImmutableSearch {
     public Search addAnnotation(SDAnnotationType dt) {
         docType.addAnnotation(dt);
         return this;
+    }
+
+    public void validate() {
+        for (var summary : summaries.values())
+            summary.validate();
     }
 
 }

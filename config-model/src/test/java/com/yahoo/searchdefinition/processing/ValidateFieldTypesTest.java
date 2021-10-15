@@ -37,7 +37,7 @@ public class ValidateFieldTypesTest {
     public void throws_exception_if_type_of_document_field_does_not_match_summary_field() {
         Search search = createSearchWithDocument(DOCUMENT_NAME);
         search.setImportedFields(createSingleImportedField(IMPORTED_FIELD_NAME, DataType.INT));
-        search.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME, DataType.STRING));
+        search.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME, DataType.STRING, search));
 
         ValidateFieldTypes validator = new ValidateFieldTypes(search, null, null, null);
         exceptionRule.expect(IllegalArgumentException.class);
@@ -66,8 +66,8 @@ public class ValidateFieldTypesTest {
         return new ImportedFields(Collections.singletonMap(fieldName, importedField));
     }
 
-    private static DocumentSummary createDocumentSummary(String fieldName, DataType dataType) {
-        DocumentSummary summary = new DocumentSummary("mysummary");
+    private static DocumentSummary createDocumentSummary(String fieldName, DataType dataType, Search search) {
+        DocumentSummary summary = new DocumentSummary("mysummary", search);
         summary.add(new SummaryField(fieldName, dataType));
         return summary;
     }

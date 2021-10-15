@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.documentmodel;
 
+import com.yahoo.searchdefinition.Search;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -15,15 +17,14 @@ public class DocumentSummary extends FieldView {
 
     private boolean fromDisk = false;
     private boolean omitSummaryFeatures = false;
-    private DocumentSummary inherited;
+    private String inherited;
 
-    /**
-     * Creates a DocumentSummary with the given name.
-     * 
-     * @param name The name to use for this summary.
-     */
-    public DocumentSummary(String name) {
+    private final Search owner;
+
+    /** Creates a DocumentSummary with the given name. */
+    public DocumentSummary(String name, Search owner) {
         super(name);
+        this.owner = owner;
     }
 
     public void setFromDisk(boolean fromDisk) { this.fromDisk = fromDisk; }
@@ -44,7 +45,7 @@ public class DocumentSummary extends FieldView {
      * in different classes have the same summary transform, because this is
      * what is supported by the backend currently.
      * 
-     * @param summaryField The summaryfield to add
+     * @param summaryField the summaryfield to add
      */
     public void add(SummaryField summaryField) {
         summaryField.addDestination(getName());
@@ -97,18 +98,33 @@ public class DocumentSummary extends FieldView {
     }
 
     /** Sets the parent of this. Both summaries must be present in the same search definition */
-    public void setInherited(DocumentSummary inherited) {
+    public void setInherited(String inherited) {
+        System.out.println("Adding inheritance of " + inherited + " in " + this);
         this.inherited = inherited;
     }
 
     /** Returns the parent of this, or null if none is inherited */
     public DocumentSummary getInherited() {
+        return owner.getSummary(inherited);
+    }
+
+    /** Returns the name of the summary this was declared to inherit, or null if not sett to inherit anything */
+    public String getInheritedName() {
         return inherited;
     }
 
+    @Override
     public String toString() {
-        return "document summary '" + getName() + "'" +
-               (inherited == null ? "" : " inheriting from '" + inherited.getName() + "'");
+        return "document summary '" + getName() + "'";
+    }
+
+    public void validate() {
+        if (inherited != null) {
+            if ( ! owner.getSummaries().containsKey(inherited))
+                throw new IllegalArgumentException(this + " inherits " + inherited + " but this" +
+                                                   " is not present in " + owner);
+        }
+
     }
 
 }
