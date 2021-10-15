@@ -52,7 +52,7 @@ public class ContainerFileSystem extends FileSystem {
     }
 
     @Override
-    public UserPrincipalLookupService getUserPrincipalLookupService() {
+    public ContainerUserPrincipalLookupService getUserPrincipalLookupService() {
         return containerFsProvider.userPrincipalLookupService();
     }
 

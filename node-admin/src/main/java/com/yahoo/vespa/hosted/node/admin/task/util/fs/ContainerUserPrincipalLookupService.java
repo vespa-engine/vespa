@@ -13,7 +13,7 @@ import java.util.Objects;
 /**
  * @author valerijf
  */
-class ContainerUserPrincipalLookupService extends UserPrincipalLookupService {
+public class ContainerUserPrincipalLookupService extends UserPrincipalLookupService {
 
     private final UserPrincipalLookupService baseFsUserPrincipalLookupService;
     private final UserNamespace userNamespace;
@@ -22,6 +22,8 @@ class ContainerUserPrincipalLookupService extends UserPrincipalLookupService {
         this.baseFsUserPrincipalLookupService = Objects.requireNonNull(baseFsUserPrincipalLookupService);
         this.userNamespace = Objects.requireNonNull(userNamespace);
     }
+
+    public UserNamespace userNamespace() { return userNamespace; }
 
     public int userIdOnHost(int containerUid)  { return userNamespace.userIdOnHost(containerUid); }
     public int groupIdOnHost(int containerGid) { return userNamespace.groupIdOnHost(containerGid); }

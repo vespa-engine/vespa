@@ -3,8 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
@@ -50,11 +48,9 @@ public class NodeAdminStateUpdaterTest {
     private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
     private final HostName hostHostname = HostName.from("basehost1.test.yahoo.com");
-    private final ManualClock clock = new ManualClock();
-    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     private final NodeAdminStateUpdater updater = spy(new NodeAdminStateUpdater(
-            nodeAgentContextFactory, nodeRepository, orchestrator, nodeAdmin, hostHostname, clock, flagSource));
+            nodeAgentContextFactory, nodeRepository, orchestrator, nodeAdmin, hostHostname));
 
 
     @Test
