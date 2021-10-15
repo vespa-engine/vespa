@@ -52,7 +52,7 @@ public class RankingExpressionTypeResolverTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("In search definition 'test', rank profile 'my_rank_profile': The first-phase expression must produce a double (a tensor with no dimensions), but produces tensor(x[10],y[3])",
+            assertEquals("In schema 'test', rank profile 'my_rank_profile': The first-phase expression must produce a double (a tensor with no dimensions), but produces tensor(x[10],y[3])",
                          Exceptions.toMessageString(expected));
         }
     }
@@ -100,7 +100,7 @@ public class RankingExpressionTypeResolverTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("In search definition 'test', rank profile 'my_rank_profile': The first-phase expression must produce a double (a tensor with no dimensions), but produces tensor(x{},y{},z{})",
+            assertEquals("In schema 'test', rank profile 'my_rank_profile': The first-phase expression must produce a double (a tensor with no dimensions), but produces tensor(x{},y{},z{})",
                          Exceptions.toMessageString(expected));
         }
     }
@@ -132,7 +132,7 @@ public class RankingExpressionTypeResolverTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("In search definition 'test', rank profile 'my_rank_profile': The second-phase expression must produce a double (a tensor with no dimensions), but produces tensor(x[10],y[3])",
+            assertEquals("In schema 'test', rank profile 'my_rank_profile': The second-phase expression must produce a double (a tensor with no dimensions), but produces tensor(x[10],y[3])",
                          Exceptions.toMessageString(expected));
         }
     }
@@ -162,7 +162,7 @@ public class RankingExpressionTypeResolverTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("In search definition 'test', rank profile 'my_rank_profile': The first-phase expression is invalid: An if expression must produce compatible types in both alternatives, but the 'true' type is tensor(x[10],y[5]) while the 'false' type is tensor(z[10])" +
+            assertEquals("In schema 'test', rank profile 'my_rank_profile': The first-phase expression is invalid: An if expression must produce compatible types in both alternatives, but the 'true' type is tensor(x[10],y[5]) while the 'false' type is tensor(z[10])" +
                          "\n'true' branch: attribute(a)" +
                          "\n'false' branch: attribute(b)",
                          Exceptions.toMessageString(expected));

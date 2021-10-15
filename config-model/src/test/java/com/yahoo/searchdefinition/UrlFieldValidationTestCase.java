@@ -26,7 +26,7 @@ public class UrlFieldValidationTestCase {
             fail("Should have caused an exception");
             // success
         } catch (IllegalArgumentException e) {
-            assertEquals("Error in field 'a' in search definition 'test': uri type fields cannot be attributes",
+            assertEquals("Error in field 'a' in schema 'test': uri type fields cannot be attributes",
                          Exceptions.toMessageString(e));
         }
     }

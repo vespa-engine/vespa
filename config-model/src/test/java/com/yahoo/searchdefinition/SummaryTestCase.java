@@ -216,6 +216,28 @@ public class SummaryTestCase {
         }
     }
 
+    @Test
+    public void testValidationOfInheritedSummary() throws ParseException {
+        try {
+            String schema = joinLines(
+                    "schema test {" +
+                    "  document test {" +
+                    "  }" +
+                    "  document-summary test_summary inherits nonesuch {" +
+                    "  }" +
+                    "}");
+            DeployLoggerStub logger = new DeployLoggerStub();
+            SearchBuilder.createFromStrings(logger, schema);
+            assertEquals("document summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
+                         logger.entries.get(0).message);
+            // fail("Expected failure");
+        }
+        catch (IllegalArgumentException e) {
+            // assertEquals("document summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
+            //             e.getMessage());
+        }
+    }
+
     private static class TestValue {
 
         private final DocumentSummary summary;

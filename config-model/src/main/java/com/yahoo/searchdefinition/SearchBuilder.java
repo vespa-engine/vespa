@@ -128,10 +128,10 @@ public class SearchBuilder {
     /**
      * Import search definition.
      *
-     * @param fileName The name of the file to import.
-     * @return The name of the imported object.
-     * @throws IOException    Thrown if the file can not be read for some reason.
-     * @throws ParseException Thrown if the file does not contain a valid search definition.       ```
+     * @param fileName the name of the file to import
+     * @return the name of the imported object
+     * @throws IOException    thrown if the file can not be read for some reason
+     * @throws ParseException thrown if the file does not contain a valid search definition
      */
     public String importFile(String fileName) throws IOException, ParseException {
         File file = new File(fileName);
@@ -146,10 +146,10 @@ public class SearchBuilder {
      * Reads and parses the search definition string provided by the given reader. Once all search definitions have been
      * imported, call {@link #build()}.
      *
-     * @param reader       The reader whose content to import.
-     * @param searchDefDir The path to use when resolving file references.
-     * @return The name of the imported object.
-     * @throws ParseException Thrown if the file does not contain a valid search definition.
+     * @param reader       the reader whose content to import
+     * @param searchDefDir the path to use when resolving file references
+     * @return the name of the imported object
+     * @throws ParseException thrown if the file does not contain a valid search definition
      */
     public String importReader(NamedReader reader, String searchDefDir) throws IOException, ParseException {
         return importString(IOUtils.readAll(reader), searchDefDir);
@@ -222,6 +222,9 @@ public class SearchBuilder {
     public void build(boolean validate) {
         if (isBuilt) throw new IllegalStateException("Model already built");
 
+        if (validate)
+            searchList.forEach(search -> search.validate(deployLogger));
+
         List<Search> built = new ArrayList<>();
         List<SDDocumentType> sdocs = new ArrayList<>();
         sdocs.add(SDDocumentType.VESPA_DOCUMENT);
@@ -230,6 +233,7 @@ public class SearchBuilder {
                 sdocs.add(search.getDocument());
             }
         }
+
         var orderer = new SDDocumentTypeOrderer(sdocs, deployLogger);
         orderer.process();
         for (SDDocumentType sdoc : orderer.getOrdered()) {
@@ -255,7 +259,8 @@ public class SearchBuilder {
         builder.addToModel(searchList);
 
         if ( validate && ! builder.valid() )
-            throw new IllegalArgumentException("Impossible to build a correct model.");
+            throw new IllegalArgumentException("Impossible to build a correct model");
+
         searchList = built;
         isBuilt = true;
     }
@@ -328,6 +333,14 @@ public class SearchBuilder {
     public static SearchBuilder createFromString(String sd, DeployLogger logger) throws ParseException {
         SearchBuilder builder = new SearchBuilder(logger);
         builder.importString(sd);
+        builder.build(true);
+        return builder;
+    }
+
+    public static SearchBuilder createFromStrings(DeployLogger logger, String ... schemas) throws ParseException {
+        SearchBuilder builder = new SearchBuilder(logger);
+        for (var schema : schemas)
+            builder.importString(schema);
         builder.build(true);
         return builder;
     }

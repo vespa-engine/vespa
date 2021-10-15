@@ -36,7 +36,7 @@ public class AddAttributeTransformToSummaryOfImportedFieldsTest {
     public void attribute_summary_transform_applied_to_summary_field_of_imported_field() {
         Search search = createSearchWithDocument(DOCUMENT_NAME);
         search.setImportedFields(createSingleImportedField(IMPORTED_FIELD_NAME));
-        search.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME));
+        search.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME, search));
 
         AddAttributeTransformToSummaryOfImportedFields processor = new AddAttributeTransformToSummaryOfImportedFields(
                 search,null,null,null);
@@ -65,8 +65,8 @@ public class AddAttributeTransformToSummaryOfImportedFieldsTest {
         return new ImportedFields(Collections.singletonMap(fieldName, importedField));
     }
 
-    private static DocumentSummary createDocumentSummary(String fieldName) {
-        DocumentSummary summary = new DocumentSummary("mysummary");
+    private static DocumentSummary createDocumentSummary(String fieldName, Search search) {
+        DocumentSummary summary = new DocumentSummary("mysummary", search);
         summary.add(new SummaryField(fieldName, DataType.INT));
         return summary;
     }

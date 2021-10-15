@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author bjorncs
@@ -118,16 +120,21 @@ public class DocumentGraphValidatorTest {
         validator.validateDocumentGraph(documentListOf(adSearch));
     }
 
+    /**
+     * Self inheritance is checked early because it is possible, and because it otherwise
+     * produces a stack overflow before getting to graph validation.
+     */
     @Test
     public void self_inheritance_forbidden() {
-        Search adSearch = createSearchWithName("ad");
-        SDDocumentType document = adSearch.getDocument();
-        document.inherit(document);
-
-        DocumentGraphValidator validator = new DocumentGraphValidator();
-        exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
-        exceptionRule.expectMessage("Document dependency cycle detected: ad->ad.");
-        validator.validateDocumentGraph(documentListOf(adSearch));
+        try {
+            Search adSearch = createSearchWithName("ad");
+            SDDocumentType document = adSearch.getDocument();
+            document.inherit(document);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Document type 'ad' cannot inherit itself", e.getMessage());
+        }
     }
 
     private static List<SDDocumentType> documentListOf(Search... searches) {

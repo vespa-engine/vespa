@@ -31,7 +31,7 @@ public class ImplicitSummaries extends Processor {
     public void process(boolean validate, boolean documentsOnly) {
         DocumentSummary defaultSummary = search.getSummary("default");
         if (defaultSummary == null) {
-            defaultSummary = new DocumentSummary("default");
+            defaultSummary = new DocumentSummary("default", search);
             defaultSummary.setFromDisk(true);
             search.addSummary(defaultSummary);
         }
@@ -116,7 +116,7 @@ public class ImplicitSummaries extends Processor {
     private DocumentSummary getOrCreateAttributePrefetchSummary(Search search) {
         DocumentSummary summary = search.getSummary("attributeprefetch");
         if (summary == null) {
-            summary = new DocumentSummary("attributeprefetch");
+            summary = new DocumentSummary("attributeprefetch", search);
             search.addSummary(summary);
         }
         return summary;
@@ -209,10 +209,10 @@ public class ImplicitSummaries extends Processor {
         }
     }
 
-    private void addToDestination(String destinationName, SummaryField summaryField,Search search) {
+    private void addToDestination(String destinationName, SummaryField summaryField, Search search) {
         DocumentSummary destination = search.getSummary(destinationName);
         if (destination == null) {
-            destination = new DocumentSummary(destinationName);
+            destination = new DocumentSummary(destinationName, search);
             search.addSummary(destination);
             destination.add(summaryField);
         }
