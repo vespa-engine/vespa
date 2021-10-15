@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.restapi;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
@@ -166,7 +165,7 @@ class NodesResponse extends SlimeJsonResponse {
         if (node.type().isHost())
             nodeRepository.firmwareChecks().requiredAfter().ifPresent(after -> object.setLong("wantedFirmwareCheck", after.toEpochMilli()));
         node.status().vespaVersion().ifPresent(version -> object.setString("vespaVersion", version.toFullString()));
-        currentDockerImage(node).ifPresent(dockerImage -> object.setString("currentDockerImage", dockerImage.asString()));
+        currentContainerImage(node).ifPresent(image -> object.setString("currentDockerImage", image.asString()));
         object.setLong("failCount", node.status().failCount());
         object.setBool("wantToRetire", node.status().wantToRetire());
         object.setBool("preferToRetire", node.status().preferToRetire());
@@ -206,14 +205,15 @@ class NodesResponse extends SlimeJsonResponse {
         }
     }
 
-    // Hack: For non-docker nodes, return current docker image as default prefix + current Vespa version
-    // TODO: Remove current + wanted docker image from response for non-docker types
-    private Optional<DockerImage> currentDockerImage(Node node) {
-        return node.status().containerImage()
-                   .or(() -> Optional.of(node)
-                                     .filter(n -> n.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
-                                     .flatMap(n -> n.status().vespaVersion()
-                                                    .map(version -> nodeRepository.containerImages().get(n).withTag(version))));
+    private Optional<DockerImage> currentContainerImage(Node node) {
+        if (node.status().containerImage().isPresent()) {
+            return node.status().containerImage();
+        }
+        if (node.type().isHost()) {
+            // Return the image used by children of this host. This is used by host-admin to preload container images.
+            return node.status().vespaVersion().map(version -> nodeRepository.containerImages().get(node).withTag(version));
+        }
+        return Optional.empty();
     }
 
     private void ipAddressesToSlime(Set<String> ipAddresses, Cursor array) {
