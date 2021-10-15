@@ -175,7 +175,6 @@ void
 SearchableFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp)
 {
     Parent::internalDeleteBucket(delOp);
-    _writeService.sync();
 }
 
 void
