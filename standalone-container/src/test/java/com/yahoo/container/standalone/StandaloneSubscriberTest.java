@@ -39,7 +39,7 @@ public class StandaloneSubscriberTest {
             keys.add(platformBundlesKey);
             keys.add(applicationBundlesKey);
             keys.add(componentsKey);
-            Subscriber subscriber = new StandaloneSubscriberFactory(root).getSubscriber(keys);
+            Subscriber subscriber = new StandaloneSubscriberFactory(root).getSubscriber(keys, "standalone");
             Map<ConfigKey<ConfigInstance>, ConfigInstance> config = subscriber.config();
             assertEquals(2, config.size());
 

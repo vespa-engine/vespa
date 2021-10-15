@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.container.di.componentgraph.core.Keys;
 import com.yahoo.container.di.config.Subscriber;
+import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.util.Collections;
@@ -29,20 +30,21 @@ public final class ConfigRetriever {
 
     private final Set<ConfigKey<? extends ConfigInstance>> bootstrapKeys;
     private Set<ConfigKey<? extends ConfigInstance>> componentSubscriberKeys;
+
+    private final SubscriberFactory subscriberFactory;
     private final Subscriber bootstrapSubscriber;
     private Subscriber componentSubscriber;
-    private final Function<Set<ConfigKey<? extends ConfigInstance>>, Subscriber> subscribe;
+    private int componentSubscriberIndex;
 
-    public ConfigRetriever(Set<ConfigKey<? extends ConfigInstance>> bootstrapKeys,
-                           Function<Set<ConfigKey<? extends ConfigInstance>>, Subscriber> subscribe) {
+    public ConfigRetriever(Set<ConfigKey<? extends ConfigInstance>> bootstrapKeys, SubscriberFactory subscriberFactory) {
         this.bootstrapKeys = bootstrapKeys;
         this.componentSubscriberKeys = new HashSet<>();
-        this.subscribe = subscribe;
+        this.subscriberFactory = subscriberFactory;
         if (bootstrapKeys.isEmpty()) {
             throw new IllegalArgumentException("Bootstrap key set is empty");
         }
-        this.bootstrapSubscriber = subscribe.apply(bootstrapKeys);
-        this.componentSubscriber = subscribe.apply(componentSubscriberKeys);
+        this.bootstrapSubscriber = this.subscriberFactory.getSubscriber(bootstrapKeys, "bootstrap");
+        this.componentSubscriber = this.subscriberFactory.getSubscriber(componentSubscriberKeys, "component_" + ++componentSubscriberIndex);
     }
 
     public ConfigSnapshot getConfigs(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
@@ -58,48 +60,51 @@ public final class ConfigRetriever {
         }
     }
 
-    Optional<ConfigSnapshot> getConfigsOnce(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
-                                            long leastGeneration, boolean isInitializing) {
+    private Optional<ConfigSnapshot> getConfigsOnce(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
+                                                    long leastGeneration, boolean isInitializing) {
         if (!Sets.intersection(componentConfigKeys, bootstrapKeys).isEmpty()) {
             throw new IllegalArgumentException(
                     "Component config keys [" + componentConfigKeys + "] overlaps with bootstrap config keys [" + bootstrapKeys + "]");
         }
-        log.log(FINE, () -> "getConfigsOnce: " + componentConfigKeys);
-
         Set<ConfigKey<? extends ConfigInstance>> allKeys = new HashSet<>(componentConfigKeys);
         allKeys.addAll(bootstrapKeys);
         setupComponentSubscriber(allKeys);
 
-        return getConfigsOptional(leastGeneration, isInitializing);
+        var maybeSnapshot = getConfigsOptional(leastGeneration, isInitializing);
+        log.log(FINE, () -> "getConfigsOnce returning " + maybeSnapshot);
+        return maybeSnapshot;
     }
 
     private Optional<ConfigSnapshot> getConfigsOptional(long leastGeneration, boolean isInitializing) {
-        long newestComponentGeneration = componentSubscriber.waitNextGeneration(isInitializing);
-        log.log(FINE, () -> "getConfigsOptional: new component generation: " + newestComponentGeneration);
+        if (componentSubscriber.generation() < bootstrapSubscriber.generation()) {
+            return getComponentsSnapshot(leastGeneration, isInitializing);
+        }
+        long newestBootstrapGeneration = bootstrapSubscriber.waitNextGeneration(isInitializing);
+        log.log(FINE, () -> "getConfigsOptional: new bootstrap generation: " + newestBootstrapGeneration);
 
-        // leastGeneration is only used to ensure newer generation when the previous generation was invalidated due to an exception
-        if (newestComponentGeneration < leastGeneration) {
+        // leastGeneration is used to ensure newer generation (than the latest bootstrap or component gen)
+        // when the previous generation was invalidated due to an exception upon creating the component graph.
+        if (newestBootstrapGeneration < leastGeneration) {
             return Optional.empty();
-        } else if (bootstrapSubscriber.generation() < newestComponentGeneration) {
-            long newestBootstrapGeneration = bootstrapSubscriber.waitNextGeneration(isInitializing);
-            log.log(FINE, () -> "getConfigsOptional: new bootstrap generation: " + bootstrapSubscriber.generation());
-            Optional<ConfigSnapshot> bootstrapConfig = bootstrapConfigIfChanged();
-            if (bootstrapConfig.isPresent()) {
-                return bootstrapConfig;
-            } else {
-                if (newestBootstrapGeneration == newestComponentGeneration) {
-                    log.log(FINE, () -> "Got new components configs with unchanged bootstrap configs.");
-                    return componentsConfigIfChanged();
-                } else {
-                    // This should not be a normal case, and hence a warning to allow investigation.
-                    log.warning("Did not get same generation for bootstrap (" + newestBootstrapGeneration +
-                                ") and components configs (" + newestComponentGeneration + ").");
-                    return Optional.empty();
-                }
-            }
-        } else {
-            // bootstrapGen==componentGen (happens only when a new component subscriber returns first config after bootstrap)
+        }
+        return bootstrapConfigIfChanged();
+    }
+
+    private Optional<ConfigSnapshot> getComponentsSnapshot(long leastGeneration, boolean isInitializing) {
+        long newestBootstrapGeneration = bootstrapSubscriber.generation();
+        long newestComponentGeneration = componentSubscriber.waitNextGeneration(isInitializing);
+        if (newestComponentGeneration < leastGeneration) {
+            log.log(FINE, () -> "Component generation too old: " + componentSubscriber.generation() + " < " + leastGeneration);
+            return Optional.empty();
+        }
+        if (newestComponentGeneration == newestBootstrapGeneration) {
+            log.log(FINE, () -> "getConfigsOptional: new component generation: " + componentSubscriber.generation());
             return componentsConfigIfChanged();
+        } else {
+            // Should not be a normal case, and hence a warning to allow investigation.
+            log.warning("Did not get same generation for bootstrap (" + newestBootstrapGeneration +
+                                ") and components configs (" + newestComponentGeneration + ").");
+            return Optional.empty();
         }
     }
 
@@ -120,8 +125,8 @@ public final class ConfigRetriever {
         }
     }
 
-    private void resetComponentSubscriberIfBootstrap(ConfigSnapshot snapshot) {
-        if (snapshot instanceof BootstrapConfigs) {
+    private void resetComponentSubscriberIfBootstrap(ConfigSnapshot configSnapshot) {
+        if (configSnapshot instanceof BootstrapConfigs) {
             setupComponentSubscriber(Collections.emptySet());
         }
     }
@@ -129,10 +134,11 @@ public final class ConfigRetriever {
     private void setupComponentSubscriber(Set<ConfigKey<? extends ConfigInstance>> keys) {
         if (! componentSubscriberKeys.equals(keys)) {
             componentSubscriber.close();
+            log.log(FINE, () -> "Closed " + componentSubscriber);
             componentSubscriberKeys = keys;
             try {
-                log.log(FINE, () -> "Setting up new component subscriber for keys: " + keys);
-                componentSubscriber = subscribe.apply(keys);
+                componentSubscriber = subscriberFactory.getSubscriber(keys, "component_" + ++componentSubscriberIndex);
+                log.log(FINE, () -> "Set up new subscriber " + componentSubscriber + " for keys: " + keys);
             } catch (Throwable e) {
                 log.log(Level.WARNING, "Failed setting up subscriptions for component configs: " + e.getMessage());
                 log.log(Level.WARNING, "Config keys: " + keys);
