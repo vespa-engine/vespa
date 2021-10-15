@@ -303,6 +303,13 @@ public class Flags {
             APPLICATION_ID
     );
 
+    public static final UnboundBooleanFlag DELETE_UNMAINTAINED_CERTIFICATES = defineFeatureFlag(
+            "delete-unmaintained-certificates", false,
+            List.of("andreer"), "2021-09-23", "2021-11-11",
+            "Whether to delete certificates that are known by provider but not by controller",
+            "Takes effect on next run of EndpointCertificateMaintainer"
+    );
+
     public static final UnboundBooleanFlag ENABLE_TENANT_DEVELOPER_ROLE = defineFeatureFlag(
             "enable-tenant-developer-role", false,
             List.of("bjorncs"), "2021-09-23", "2021-12-31",

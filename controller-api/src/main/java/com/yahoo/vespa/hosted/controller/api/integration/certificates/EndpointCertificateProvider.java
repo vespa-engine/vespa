@@ -15,7 +15,7 @@ public interface EndpointCertificateProvider  {
 
     EndpointCertificateMetadata requestCaSignedCertificate(ApplicationId applicationId, List<String> dnsNames, Optional<EndpointCertificateMetadata> currentMetadata);
 
-    List<EndpointCertificateMetadata> listCertificates();
+    List<EndpointCertificateRequestMetadata> listCertificates();
 
-    void deleteCertificate(ApplicationId applicationId, EndpointCertificateMetadata endpointCertificateMetadata);
+    void deleteCertificate(ApplicationId applicationId, String requestId);
 }

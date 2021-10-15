@@ -2,12 +2,16 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
+import com.yahoo.yolean.concurrent.Sleeper;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -29,6 +33,9 @@ public class EndpointCertificateMaintainerTest {
     private final SecretStoreMock secretStore = (SecretStoreMock) tester.controller().secretStore();
     private final EndpointCertificateMaintainer maintainer = new EndpointCertificateMaintainer(tester.controller(), Duration.ofHours(1));
     private final EndpointCertificateMetadata exampleMetadata = new EndpointCertificateMetadata("keyName", "certName", 0, 0, "uuid", List.of(), "issuer", Optional.empty(), Optional.empty());
+    {
+        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.DELETE_UNMAINTAINED_CERTIFICATES.id(), true);
+    }
 
     @Test
     public void old_and_unused_cert_is_deleted() {
@@ -114,5 +121,18 @@ public class EndpointCertificateMaintainerTest {
         maintainer.maintain();
 
         deploymentContext.assertRunning(productionUsWest1);
+    }
+
+    @Test
+    public void unmaintained_cert_is_deleted() {
+        EndpointCertificateMock endpointCertificateProvider = (EndpointCertificateMock) tester.controller().serviceRegistry().endpointCertificateProvider();
+
+        ApplicationId unknown = ApplicationId.fromSerializedForm("applicationid:is:unknown");
+        endpointCertificateProvider.requestCaSignedCertificate(unknown, List.of("a", "b", "c"), Optional.empty()); // Unknown to controller!
+
+        assertEquals(1.0, maintainer.maintain(), 0.0000001);
+
+        assertTrue(endpointCertificateProvider.dnsNamesOf(unknown).isEmpty());
+        assertTrue(endpointCertificateProvider.listCertificates().isEmpty());
     }
 }
