@@ -121,6 +121,20 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
+    public void createSymbolicLink(Path link, Path target, FileAttribute<?>... attrs) throws IOException {
+        Path pathOnHost = pathOnHost(link);
+        if (target instanceof ContainerPath)
+            target = pathOnHost.getFileSystem().getPath(toContainerPath(target).pathInContainer());
+        provider(pathOnHost).createSymbolicLink(pathOnHost, target, attrs);
+    }
+
+    @Override
+    public Path readSymbolicLink(Path link) throws IOException {
+        Path pathOnHost = pathOnHost(link);
+        return provider(pathOnHost).readSymbolicLink(pathOnHost);
+    }
+
+    @Override
     public boolean isSameFile(Path path, Path path2) throws IOException {
         // 'path' FS provider should be 'this'
         if (path2 instanceof ContainerPath)
@@ -250,7 +264,7 @@ class ContainerFileSystemProvider extends FileSystemProvider {
 
     private static <T> T cast(Object value, Class<T> type) {
         if (type.isInstance(value)) return type.cast(value);
-        throw new ProviderMismatchException("Expected " + type.getName() + ", was " + value.getClass().getName());
+        throw new ProviderMismatchException("Expected " + type.getSimpleName() + ", was " + value.getClass().getName());
     }
 
     private static Path pathOnHost(Path path) {
