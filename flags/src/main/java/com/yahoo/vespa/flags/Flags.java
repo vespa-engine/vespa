@@ -143,7 +143,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag DOCSTORE_COMPRESSION_LEVEL = defineIntFlag(
-            "docstore-compression-level", 9,
+            "docstore-compression-level", 3,
             List.of("baldersheim"), "2021-10-08", "2022-01-01",
             "Default compression level used for document store",
             "Takes effect at redeployment",
