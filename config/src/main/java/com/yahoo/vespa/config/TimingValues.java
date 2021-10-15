@@ -16,7 +16,6 @@ public class TimingValues {
     private final long errorTimeout;
     private final long initialTimeout;
     private long subscribeTimeout = 55000;
-    private long configuredErrorTimeout = -1;  // Don't ever timeout (and do not use error response) when we are already configured
 
     private long fixedDelay = 5000;
     private final Random rand;
@@ -97,11 +96,6 @@ public class TimingValues {
         return this;
     }
 
-    public TimingValues setConfiguredErrorTimeout(long t) {
-        configuredErrorTimeout = t;
-        return this;
-    }
-
     /**
      * Returns fixed delay that is used when retrying getting config no matter if it was a success or an error
      * and independent of number of retries.
@@ -134,7 +128,6 @@ public class TimingValues {
                + ", errorTimeout=" + errorTimeout
                + ", initialTimeout=" + initialTimeout
                + ", subscribeTimeout=" + subscribeTimeout
-               + ", configuredErrorTimeout=" + configuredErrorTimeout
                + ", fixedDelay=" + fixedDelay
                + ", rand=" + rand + "]";
     }

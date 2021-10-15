@@ -40,13 +40,6 @@ public interface JRTServerConfigRequest extends JRTConfigRequest, GetConfigReque
     void addOkResponse(Payload payload, long generation, boolean applyOnRestart, PayloadChecksums payloadChecksums);
 
     /**
-     * Get the current config md5 of the client config.
-     *
-     * @return a config md5.
-     */
-    String getRequestConfigMd5();
-
-    /**
      * Returns the md5 of the config definition in the request.
      *
      * @return an md5 of config definition in request.

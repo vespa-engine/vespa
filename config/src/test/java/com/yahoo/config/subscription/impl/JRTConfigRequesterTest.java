@@ -8,14 +8,11 @@ import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.ErrorCode;
-import com.yahoo.vespa.config.ErrorType;
 import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Random;
 
 import static com.yahoo.config.subscription.impl.JRTConfigRequester.calculateFailedRequestDelay;
@@ -50,21 +47,6 @@ public class JRTConfigRequesterTest {
         // 3rd time failure
         delay = calculateFailedRequestDelay(failures, timingValues);
         assertEquals(35849, delay);
-    }
-
-    @Test
-    public void testErrorTypes() {
-        List<Integer> transientErrors = Arrays.asList(com.yahoo.jrt.ErrorCode.CONNECTION, com.yahoo.jrt.ErrorCode.TIMEOUT);
-        List<Integer> fatalErrors = Arrays.asList(ErrorCode.UNKNOWN_CONFIG, ErrorCode.UNKNOWN_DEFINITION, ErrorCode.OUTDATED_CONFIG,
-                ErrorCode.UNKNOWN_DEF_MD5, ErrorCode.ILLEGAL_NAME, ErrorCode.ILLEGAL_VERSION, ErrorCode.ILLEGAL_CONFIGID,
-                ErrorCode.ILLEGAL_DEF_MD5, ErrorCode.ILLEGAL_CONFIG_MD5, ErrorCode.ILLEGAL_TIMEOUT, ErrorCode.INTERNAL_ERROR,
-                9999); // unknown should also be fatal
-        for (Integer i : transientErrors) {
-            assertEquals(ErrorType.TRANSIENT, ErrorType.getErrorType(i));
-        }
-        for (Integer i : fatalErrors) {
-            assertEquals(ErrorType.FATAL, ErrorType.getErrorType(i));
-        }
     }
 
     @Test

@@ -216,7 +216,6 @@ public class JRTConfigRequestV3Test {
         assertTrue(sub.nextConfig(120_0000));
         sub.close();
         JRTClientConfigRequest nextReq = createReq(sub, Trace.createNew());
-        assertEquals(nextReq.getRequestConfigMd5(), sub.getConfigState().getChecksums().getForType(MD5).asString());
         assertEquals(nextReq.getRequestConfigChecksums().getForType(MD5).asString(), sub.getConfigState().getChecksums().getForType(MD5).asString());
         assertEquals(nextReq.getRequestConfigChecksums().getForType(XXHASH64).asString(), sub.getConfigState().getChecksums().getForType(XXHASH64).asString());
         assertEquals(nextReq.getRequestGeneration(), currentGeneration);

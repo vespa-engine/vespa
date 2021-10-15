@@ -258,11 +258,10 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
     private static TimingValues createTimingValues() {
         // Proxy should time out before clients upon subscription.
         double timingValuesRatio = 0.8;
-        TimingValues tv = new TimingValues();
-        tv.setFixedDelay((long) (tv.getFixedDelay() * timingValuesRatio)).
-                  setSubscribeTimeout((long) (tv.getSubscribeTimeout() * timingValuesRatio)).
-                  setConfiguredErrorTimeout(-1);  // Never cache errors
-        return tv;
+
+        return new TimingValues()
+                .setFixedDelay((long) (new TimingValues().getFixedDelay() * timingValuesRatio))
+                .setSubscribeTimeout((long) (new TimingValues().getSubscribeTimeout() * timingValuesRatio));
     }
 
 }

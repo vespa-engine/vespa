@@ -273,11 +273,6 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
     }
 
     @Override
-    public String getRequestConfigMd5() {
-        return requestData.getRequestConfigMd5();
-    }
-
-    @Override
     public String getRequestDefMd5() {
         return requestData.getRequestDefMd5();
     }

@@ -70,26 +70,23 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     }
 
     @Override
-    public void addOkResponse(Payload payload, long generation, boolean applyOnRestart, PayloadChecksums payloadChecksums) {
+    public void addOkResponse(Payload payload, long generation, boolean applyOnRestart, PayloadChecksums checksums) {
         this.applyOnRestart = applyOnRestart;
         Payload responsePayload = payload.withCompression(getCompressionType());
-        ByteArrayOutputStream byteArrayOutputStream = new NoCopyByteArrayOutputStream(4096);
+        if (responsePayload == null)
+            throw new RuntimeException("Payload is null for ' " + this + ", not able to create response");
+
+        ByteArrayOutputStream outputStream = new NoCopyByteArrayOutputStream(4096);
         try {
-            JsonGenerator jsonGenerator = createJsonGenerator(byteArrayOutputStream);
+            JsonGenerator jsonGenerator = createJsonGenerator(outputStream);
             jsonGenerator.writeStartObject();
+
             addCommonReturnValues(jsonGenerator);
-            if (payloadChecksums.getForType(MD5) != null)
-                setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_MD5, payloadChecksums.getForType(MD5).asString());
-            if (payloadChecksums.getForType(XXHASH64) != null)
-                setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_XXHASH64, payloadChecksums.getForType(XXHASH64).asString());
+            addPayloadCheckSums(jsonGenerator, checksums);
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_GENERATION, generation);
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_APPLY_ON_RESTART, applyOnRestart);
             jsonGenerator.writeObjectFieldStart(SlimeResponseData.RESPONSE_COMPRESSION_INFO);
-            if (responsePayload == null) {
-                throw new RuntimeException("Payload is null for ' " + this + ", not able to create response");
-            }
-            CompressionInfo compressionInfo = responsePayload.getCompressionInfo();
-            compressionInfo.serialize(jsonGenerator);
+            responsePayload.getCompressionInfo().serialize(jsonGenerator);
             jsonGenerator.writeEndObject();
 
             jsonGenerator.writeEndObject();
@@ -97,15 +94,7 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
         } catch (IOException e) {
             throw new IllegalArgumentException("Could not add OK response for " + this);
         }
-        request.returnValues().add(createResponseValue(byteArrayOutputStream));
-        ByteBuffer buf = responsePayload.getData().wrap();
-        if (buf.hasArray() && buf.remaining() == buf.array().length) {
-            request.returnValues().add(new DataValue(buf.array()));
-        } else {
-            byte[] dst = new byte[buf.remaining()];
-            buf.get(dst);
-            request.returnValues().add(new DataValue(dst));
-        }
+        addPayload(responsePayload, outputStream);
     }
 
     @Override
@@ -182,11 +171,6 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     }
 
     @Override
-    public String getRequestConfigMd5() {
-        return requestData.getRequestConfigMd5();
-    }
-
-    @Override
     public String getRequestDefMd5() { return requestData.getRequestDefMd5(); }
 
     public PayloadChecksums getRequestConfigChecksums() { return requestData.getRequestConfigChecksums(); }
@@ -226,6 +210,25 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
         setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CLIENT_HOSTNAME, requestData.getClientHostName());
         jsonGenerator.writeFieldName(SlimeResponseData.RESPONSE_TRACE);
         jsonGenerator.writeRawValue(getRequestTrace().toString(true));
+    }
+
+    private void addPayloadCheckSums(JsonGenerator jsonGenerator, PayloadChecksums checksums) throws IOException {
+        if (checksums.getForType(MD5) != null)
+            setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_MD5, checksums.getForType(MD5).asString());
+        if (checksums.getForType(XXHASH64) != null)
+            setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_XXHASH64, checksums.getForType(XXHASH64).asString());
+    }
+
+    private void addPayload(Payload responsePayload, ByteArrayOutputStream byteArrayOutputStream) {
+        request.returnValues().add(createResponseValue(byteArrayOutputStream));
+        ByteBuffer buf = responsePayload.getData().wrap();
+        if (buf.hasArray() && buf.remaining() == buf.array().length) {
+            request.returnValues().add(new DataValue(buf.array()));
+        } else {
+            byte[] dst = new byte[buf.remaining()];
+            buf.get(dst);
+            request.returnValues().add(new DataValue(dst));
+        }
     }
 
     @Override
