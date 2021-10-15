@@ -27,13 +27,6 @@ git pull --rebase
 git tag -a "$RELEASE_TAG" -m "Release version $VERSION" $GITREF
 git push origin "$RELEASE_TAG"
 
-# Trig the build on Copr
-curl -X POST \
-     -H "Content-type: application/json" \
-     -H "X-GitHub-Event: create" \
-     -d '{ "ref": "$RELEASE_TAG", "ref_type": "tag", "repository": { "clone_url": "https://github.com/vespa-engine/vespa.git" } }' \
-     "$COPR_WEBHOOK"
-
 git reset --hard HEAD
 git checkout $CURRENT_BRANCH
 
