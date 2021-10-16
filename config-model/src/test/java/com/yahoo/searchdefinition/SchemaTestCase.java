@@ -67,16 +67,22 @@ public class SchemaTestCase {
 
     @Test
     public void testSchemaInheritance() throws ParseException {
-        String parent = joinLines(
+        String parentLines = joinLines(
                 "schema parent {" +
                 "  document parent {" +
                 "    field pf1 type string {" +
                 "      indexing: summary" +
                 "    }" +
                 "  }" +
+                "  fieldset parent_set {" +
+                "    fields: pf1" +
+                "  }" +
                 "  stemming: none" +
+                "  index parent_index {" +
+                "    stemming: best" +
+                "  }" +
                 "}");
-        String child = joinLines(
+        String childLines = joinLines(
                 "schema child inherits parent {" +
                 "  document child inherits parent {" +
                 "    field cf1 type string {" +
@@ -84,8 +90,12 @@ public class SchemaTestCase {
                 "    }" +
                 "  }" +
                 "}");
-        var application = SearchBuilder.createFromStrings(new DeployLoggerStub(), parent, child).application();
-        assertEquals(Stemming.NONE, application.schemas().get("child").getStemming());
+        var application = SearchBuilder.createFromStrings(new DeployLoggerStub(), parentLines, childLines).application();
+        var child = application.schemas().get("child");
+
+        assertEquals("pf1", child.fieldSets().userFieldSets().get("parent_set").getFieldNames().stream().findFirst().get());
+        assertEquals(Stemming.NONE, child.getStemming());
+        assertEquals(Stemming.BEST, child.getIndex("parent_index").getStemming());
     }
 
 }

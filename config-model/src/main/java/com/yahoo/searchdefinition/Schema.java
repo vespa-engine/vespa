@@ -404,10 +404,9 @@ public class Schema implements ImmutableSearch {
     }
 
     /**
-     * <p>Returns an index, or null if no index with this name has had some <b>explicit settings</b> applied. Even if
-     * this returns null, the index may be implicitly defined by an indexing statement.</p>
-     * <p>This will return the
-     * index whether it is defined on this search or on one of its fields</p>
+     * Returns an index, or null if no index with this name has had some <b>explicit settings</b> applied. Even if
+     * this returns null, the index may be implicitly defined by an indexing statement. This will return the
+     * index whether it is defined on this schema or on one of its fields.
      *
      * @param name the name of the index to get
      * @return the index requested
@@ -415,34 +414,33 @@ public class Schema implements ImmutableSearch {
     @Override
     public Index getIndex(String name) {
         List<Index> sameIndices = new ArrayList<>(1);
-        Index searchIndex = indices.get(name);
-        if (searchIndex != null) {
-            sameIndices.add(searchIndex);
-        }
+
+        getSchemaIndex(name).ifPresent(sameIndices::add);
 
         for (ImmutableSDField field : allConcreteFields()) {
-            Index index = field.getIndex(name);
-            if (index != null) {
-                sameIndices.add(index);
-            }
+            if (field.getIndex(name) != null)
+                sameIndices.add(field.getIndex(name));
         }
-        if (sameIndices.size() == 0) {
-            return null;
-        }
-        if (sameIndices.size() == 1) {
-            return sameIndices.get(0);
-        }
+        if (sameIndices.size() == 0) return null;
+        if (sameIndices.size() == 1) return sameIndices.get(0);
         return consolidateIndices(sameIndices);
     }
 
+    /** Returns the schema level index of this name, in this or any inherited schema, if any */
+    Optional<Index> getSchemaIndex(String name) {
+        if (indices.containsKey(name)) return Optional.of(indices.get(name));
+        if (inherited.isPresent()) return inherited().getSchemaIndex(name);
+        return Optional.empty();
+    }
+
     public boolean existsIndex(String name) {
-        if (indices.get(name) != null) {
+        if (indices.get(name) != null)
             return true;
-        }
+        if (inherited.isPresent() && inherited().existsIndex(name))
+            return true;
         for (ImmutableSDField field : allConcreteFields()) {
-            if (field.existsIndex(name)) {
+            if (field.existsIndex(name))
                 return true;
-            }
         }
         return false;
     }
@@ -450,7 +448,7 @@ public class Schema implements ImmutableSearch {
     /**
      * Consolidates a set of index settings for the same index into one
      *
-     * @param indices The list of indexes to consolidate.
+     * @param indices The list of indexes to consolidate
      * @return the consolidated index
      */
     private Index consolidateIndices(List<Index> indices) {
@@ -473,8 +471,8 @@ public class Schema implements ImmutableSearch {
                     !consolidated.getRankType().equals(current.getRankType()))
                 {
                     deployLogger.logApplicationPackage(Level.WARNING, "Conflicting rank type settings for " +
-                                first.getName() + " in " + this + ", using " +
-                                consolidated.getRankType());
+                                                                      first.getName() + " in " + this + ", using " +
+                                                                      consolidated.getRankType());
                 }
             }
 
@@ -485,19 +483,24 @@ public class Schema implements ImmutableSearch {
         return consolidated;
     }
 
-    /**
-     * All explicitly defined indices, both on this search definition itself (returned first) and all its fields
-     *
-     * @return The list of explicit defined indexes.
-     */
+    /** All explicitly defined indices, both on this schema itself (returned first) and all its fields */
     @Override
     public List<Index> getExplicitIndices() {
         List<Index> allIndices = new ArrayList<>(indices.values());
+
+        if (inherited.isPresent()) {
+            for (Index inheritedIndex : inherited().getExplicitIndices()) {
+                if ( ! indices.containsKey(inheritedIndex.getName())) // child redefinitions shadows parents
+                    allIndices.add(inheritedIndex);
+            }
+        }
+
         for (ImmutableSDField field : allConcreteFields()) {
             for (Index index : field.getIndices().values()) {
                 allIndices.add(index);
             }
         }
+
         return Collections.unmodifiableList(allIndices);
     }
 
