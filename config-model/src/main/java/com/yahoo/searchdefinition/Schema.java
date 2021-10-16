@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.logging.Level;
@@ -51,13 +52,6 @@ public class Schema implements ImmutableSearch {
             "index", "index_url", "summary", "attribute", "select_input", "host", SummaryClass.DOCUMENT_ID_FIELD,
             "position", "split_foreach", "tokenize", "if", "else", "switch", "case", SD_DOC_FIELD_NAME, "relevancy");
 
-    /** Returns true if the given field name is a reserved name */
-    public static boolean isReservedName(String name) {
-        return RESERVED_NAMES.contains(name);
-    }
-
-    private final FieldSets fieldSets = new FieldSets();
-
     /** The unique name of this schema */
     private String name;
 
@@ -69,28 +63,27 @@ public class Schema implements ImmutableSearch {
 
     private boolean rawAsBase64 = false;
 
-    /** The stemming setting of this search definition. Default is BEST. */
-    private Stemming stemming = Stemming.BEST;
+    /** The stemming setting of this schema. Default is BEST. */
+    private Stemming stemming = null;
 
-    /** Documents contained in this definition */
-    private SDDocumentType docType;
+    private final FieldSets fieldSets = new FieldSets();
 
-    /** The extra fields of this search definition */
+    /** The document contained in this schema */
+    private SDDocumentType documentType;
+
+    /** The extra fields of this schema */
     private final Map<String, SDField> fields = new LinkedHashMap<>();
 
-    /** The explicitly defined indices of this search definition */
     private final Map<String, Index> indices = new LinkedHashMap<>();
 
-    /** The explicitly defined summaries of this search definition. _Must_ preserve order. */
+    /** The explicitly defined summaries of this schema. _Must_ preserve order. */
     private final Map<String, DocumentSummary> summaries = new LinkedHashMap<>();
 
     /** External rank expression files of this */
     private final LargeRankExpressions largeRankExpressions;
 
-    /** Ranking constants of this */
     private final RankingConstants rankingConstants;
 
-    /** Onnx models of this */
     private final OnnxModels onnxModels;
 
     private Optional<TemporaryImportedFields> temporaryImportedFields = Optional.of(new TemporaryImportedFields());
@@ -170,7 +163,7 @@ public class Schema implements ImmutableSearch {
 
     /**
      * Returns true if 'raw' fields shall be presented as base64 in summary
-     * Note that tis is temporary and will disappear on Vespa 8 as it will become default, and only option.
+     * Note that this is temporary and will disappear on Vespa 8 as it will become default, and only option.
      *
      * @return true if raw shall be encoded as base64 in summary
      */
@@ -185,20 +178,14 @@ public class Schema implements ImmutableSearch {
      * @throws NullPointerException if this is attempted set to null
      */
     public void setStemming(Stemming stemming) {
-        if (stemming == null) {
-            throw new NullPointerException("The stemming setting of a search definition " +
-                                           "can not be null");
-        }
-        this.stemming = stemming;
+        this.stemming = Objects.requireNonNull(stemming, "Stemming cannot be null");
     }
 
-    /**
-     * Returns whether fields should be stemmed by default or not. Default is ALL. This is never null.
-     *
-     * @return the default stemming for this searchdefinition
-     */
+    /** Returns whether fields should be stemmed by default or not. Default is BEST. This is never null. */
     public Stemming getStemming() {
-        return stemming;
+        if (stemming != null) return stemming;
+        if (inherited.isEmpty()) return Stemming.BEST;
+        return inherited().getStemming();
     }
 
     /**
@@ -207,10 +194,10 @@ public class Schema implements ImmutableSearch {
      * @param document the document type to add
      */
     public void addDocument(SDDocumentType document) {
-        if (docType != null) {
+        if (documentType != null) {
             throw new IllegalArgumentException("Searchdefinition cannot have more than one document");
         }
-        docType = document;
+        documentType = document;
     }
 
     @Override
@@ -263,7 +250,7 @@ public class Schema implements ImmutableSearch {
     public List<ImmutableSDField> allFieldsList() {
         List<ImmutableSDField> all = new ArrayList<>();
         all.addAll(extraFieldList());
-        for (Field field : docType.fieldSet()) {
+        for (Field field : documentType.fieldSet()) {
             all.add((ImmutableSDField) field);
         }
         if (importedFields.isPresent()) {
@@ -281,8 +268,8 @@ public class Schema implements ImmutableSearch {
      * @return the contained or used document type, or null if there is no such document
      */
     public SDDocumentType getDocument(String name) {
-        if (docType != null && name.equals(docType.getName())) {
-            return docType;
+        if (documentType != null && name.equals(documentType.getName())) {
+            return documentType;
         }
         return null;
     }
@@ -291,7 +278,7 @@ public class Schema implements ImmutableSearch {
      * @return true if the document has been added.
      */
     public boolean hasDocument() {
-        return docType != null;
+        return documentType != null;
     }
 
     /**
@@ -299,7 +286,7 @@ public class Schema implements ImmutableSearch {
      */
     @Override
     public SDDocumentType getDocument() {
-        return docType;
+        return documentType;
     }
 
     /**
@@ -311,7 +298,7 @@ public class Schema implements ImmutableSearch {
     public List<SDField> allConcreteFields() {
         List<SDField> allFields = new ArrayList<>();
         allFields.addAll(extraFieldList());
-        for (Field field : docType.fieldSet()) {
+        for (Field field : documentType.fieldSet()) {
             allFields.add((SDField)field);
         }
         return allFields;
@@ -352,7 +339,7 @@ public class Schema implements ImmutableSearch {
         if (field != null) {
             return field;
         }
-        return (SDField)docType.getField(name);
+        return (SDField) documentType.getField(name);
     }
 
     /**
@@ -363,7 +350,7 @@ public class Schema implements ImmutableSearch {
      * @return The named field, or null if not found.
      */
     public SDField getDocumentField(String name) {
-        return (SDField)docType.getField(name);
+        return (SDField) documentType.getField(name);
     }
 
     /**
@@ -385,7 +372,7 @@ public class Schema implements ImmutableSearch {
     }
     public Collection<SDField> allExtraFields() {
         Map<String, SDField> extraFields = new TreeMap<>();
-        for (Field field : docType.fieldSet()) {
+        for (Field field : documentType.fieldSet()) {
             SDField sdField = (SDField) field;
             if (sdField.isExtraField()) {
                 extraFields.put(sdField.getName(), sdField);
@@ -697,12 +684,12 @@ public class Schema implements ImmutableSearch {
      * @return self, for chaining
      */
     public Schema addType(SDDocumentType dt) {
-        docType.addType(dt); // TODO This is a very very dirty thing. It must go
+        documentType.addType(dt); // TODO This is a very very dirty thing. It must go
         return this;
     }
 
     public Schema addAnnotation(SDAnnotationType dt) {
-        docType.addAnnotation(dt);
+        documentType.addAnnotation(dt);
         return this;
     }
 
@@ -721,6 +708,11 @@ public class Schema implements ImmutableSearch {
         }
         for (var summary : summaries.values())
             summary.validate(logger);
+    }
+
+    /** Returns true if the given field name is a reserved name */
+    public static boolean isReservedName(String name) {
+        return RESERVED_NAMES.contains(name);
     }
 
 }

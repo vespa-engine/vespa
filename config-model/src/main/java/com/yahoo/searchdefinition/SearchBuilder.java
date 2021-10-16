@@ -304,6 +304,8 @@ public class SearchBuilder {
         return application.schemas().get(name);
     }
 
+    public Application application() { return application; }
+
     /**
      * Convenience method to return a list of all built {@link Schema} objects.
      *

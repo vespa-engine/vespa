@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Test;
@@ -55,16 +56,36 @@ public class SchemaTestCase {
                     "    }" +
                     "  }" +
                     "}");
-            DeployLoggerStub logger = new DeployLoggerStub();
-            SearchBuilder.createFromStrings(logger, parent, child);
-            logger.entries.forEach(e -> System.out.println(e));
-            assertTrue(logger.entries.isEmpty());
+            SearchBuilder.createFromStrings(new DeployLoggerStub(), parent, child);
         }
         catch (IllegalArgumentException e) {
             assertEquals("schema 'child' inherits 'parent', " +
                          "but its document type does not inherit the parent's document type"
                          , e.getMessage());
         }
+    }
+
+    @Test
+    public void testSchemaInheritance() throws ParseException {
+        String parent = joinLines(
+                "schema parent {" +
+                "  document parent {" +
+                "    field pf1 type string {" +
+                "      indexing: summary" +
+                "    }" +
+                "  }" +
+                "  stemming: none" +
+                "}");
+        String child = joinLines(
+                "schema child inherits parent {" +
+                "  document child inherits parent {" +
+                "    field cf1 type string {" +
+                "      indexing: summary" +
+                "    }" +
+                "  }" +
+                "}");
+        var application = SearchBuilder.createFromStrings(new DeployLoggerStub(), parent, child).application();
+        assertEquals(Stemming.NONE, application.schemas().get("child").getStemming());
     }
 
 }
