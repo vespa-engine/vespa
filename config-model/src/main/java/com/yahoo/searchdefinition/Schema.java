@@ -679,8 +679,16 @@ public class Schema implements ImmutableSearch {
         return false;
     }
 
-    /** The field set settings for this search */
-    public FieldSets fieldSets() { return fieldSets; }
+    public FieldSets fieldSets() {
+        if (inherited.isEmpty()) return fieldSets;
+
+        var fieldSets = new FieldSets(inherited().fieldSets());
+        fieldSets.add(this.fieldSets);
+        return fieldSets;
+    }
+
+    /** Returns the schema inherited by this, or throws if none */
+    private Schema inherited() { return owner.schemas().get(inherited.get()); }
 
     /**
      * For adding structs defined in document scope

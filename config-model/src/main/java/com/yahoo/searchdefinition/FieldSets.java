@@ -15,8 +15,23 @@ import com.yahoo.searchdefinition.document.FieldSet;
  */
 public class FieldSets {
 
-    private final Map<String, FieldSet> userFieldSets = new LinkedHashMap<>();
-    private final Map<String, FieldSet> builtInFieldSets = new LinkedHashMap<>();
+    private final Map<String, FieldSet> userFieldSets;
+    private final Map<String, FieldSet> builtInFieldSets;
+
+    public FieldSets() {
+        userFieldSets = new LinkedHashMap<>();
+        builtInFieldSets = new LinkedHashMap<>();
+    }
+
+    FieldSets(FieldSets other) {
+        userFieldSets = new LinkedHashMap<>(other.userFieldSets);
+        builtInFieldSets = new LinkedHashMap<>(other.builtInFieldSets);
+    }
+
+    void add(FieldSets other) {
+        userFieldSets.putAll(other.userFieldSets);
+        builtInFieldSets.putAll(other.builtInFieldSets);
+    }
 
     /**
      * Adds an entry to user field sets, creating entries as needed
