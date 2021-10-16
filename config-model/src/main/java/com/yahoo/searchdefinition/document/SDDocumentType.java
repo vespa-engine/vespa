@@ -196,6 +196,8 @@ public class SDDocumentType implements Cloneable, Serializable {
 
     public Collection<SDDocumentType>  getInheritedTypes() { return inheritedTypes.values(); }
 
+    public Map<DataTypeName, SDDocumentType>  inheritedTypes() { return inheritedTypes; }
+
     protected void validateId(Schema schema) {
         if (schema == null) return;
         if (schema.getDocument(getName()) == null) return;
@@ -297,6 +299,8 @@ public class SDDocumentType implements Cloneable, Serializable {
     public int getFieldCount() {
         return docType.getFieldCount();
     }
+
+
 
     @Override
     public String toString() {

@@ -39,7 +39,7 @@ import static org.junit.Assert.fail;
  *
  * @author bratseth
  */
-public class RankProfileTestCase extends SchemaTestCase {
+public class RankProfileTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRankProfileInheritance() {

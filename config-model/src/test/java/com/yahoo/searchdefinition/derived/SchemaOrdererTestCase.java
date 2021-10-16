@@ -6,7 +6,7 @@ import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.TemporarySDField;
@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
  * @author bratseth
  * @author bjorncs
  */
-public class SchemaOrdererTestCase extends SchemaTestCase {
+public class SchemaOrdererTestCase extends AbstractSchemaTestCase {
 
     private static Map<String, Schema> createSchemas() {
         Map<String, Schema> schemas = new HashMap<>();

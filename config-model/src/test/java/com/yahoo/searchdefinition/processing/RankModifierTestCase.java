@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -14,7 +14,7 @@ import java.io.IOException;
  * @author vegardh
  *
  */
-public class RankModifierTestCase extends SchemaTestCase {
+public class RankModifierTestCase extends AbstractSchemaTestCase {
     @Test
     public void testLiteral() throws IOException, ParseException {
         Schema schema = SearchBuilder.buildFromFile("src/test/examples/rankmodifier/literal.sd");

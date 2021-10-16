@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author bratseth
  */
-public class IndexSettingsTestCase extends SchemaTestCase {
+public class IndexSettingsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testStemmingSettings() throws IOException, ParseException {

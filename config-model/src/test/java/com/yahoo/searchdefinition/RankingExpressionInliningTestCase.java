@@ -23,7 +23,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author bratseth
  */
-public class RankingExpressionInliningTestCase extends SchemaTestCase {
+public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testFunctionInliningPreserveArithmeticOrdering() throws ParseException {

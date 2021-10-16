@@ -5,7 +5,7 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author baldersheim
  */
-public class IntegerIndex2AttributeTestCase extends SchemaTestCase {
+public class IntegerIndex2AttributeTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testIntegerIndex2Attribute() throws IOException, ParseException {

@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import org.junit.Test;
@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author bratseth
  */
-public class SummaryTestCase extends SchemaTestCase {
+public class SummaryTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void deriveRawAsBase64() throws ParseException {

@@ -5,7 +5,7 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.processing.Processing;
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertFalse;
  *
  * @author bratseth
  */
-public class TypeConversionTestCase extends SchemaTestCase {
+public class TypeConversionTestCase extends AbstractSchemaTestCase {
 
     /** Tests that exact-string stuff is not spilled over to the default index */
     @Test

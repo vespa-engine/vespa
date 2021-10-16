@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author  bratseth
  */
-public class SummaryMapTestCase extends SchemaTestCase {
+public class SummaryMapTestCase extends AbstractSchemaTestCase {
     @Test
     public void testDeriving() throws IOException, ParseException {
         Schema schema = SearchBuilder.buildFromFile("src/test/examples/simple.sd");

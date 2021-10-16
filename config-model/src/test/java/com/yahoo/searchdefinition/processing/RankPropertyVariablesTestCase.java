@@ -7,7 +7,7 @@ import com.yahoo.searchdefinition.RankProfile.RankProperty;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -16,7 +16,7 @@ import java.util.List;
 
 import static org.junit.Assert.fail;
 
-public class RankPropertyVariablesTestCase extends SchemaTestCase {
+public class RankPropertyVariablesTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRankPropVariables() throws IOException, ParseException {

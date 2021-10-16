@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.document.DataTypeName;
 import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.derived.SummaryClass;
 import com.yahoo.searchdefinition.document.Attribute;
@@ -95,7 +96,7 @@ public class Schema implements ImmutableSearch {
     private Optional<TemporaryImportedFields> temporaryImportedFields = Optional.of(new TemporaryImportedFields());
     private Optional<ImportedFields> importedFields = Optional.empty();
 
-    private final Application application;
+    private final Application owner;
     private final DeployLogger deployLogger;
     private final ModelContext.Properties properties;
 
@@ -140,7 +141,7 @@ public class Schema implements ImmutableSearch {
                    ModelContext.Properties properties,
                    boolean documentsOnly) {
         this.inherited = inherited;
-        this.application = application;
+        this.owner = application;
         this.deployLogger = deployLogger;
         this.properties = properties;
         this.documentsOnly = documentsOnly;
@@ -321,15 +322,15 @@ public class Schema implements ImmutableSearch {
      */
     @Override
     public Reader getRankingExpression(String fileName) {
-        return application.applicationPackage().getRankingExpression(fileName);
+        return owner.applicationPackage().getRankingExpression(fileName);
     }
 
-    public Application application() { return application; }
+    public Application application() { return owner; }
 
     @Override
     public ApplicationPackage applicationPackage() {
-        if (application == null) return null;
-        return application.applicationPackage();
+        if (owner == null) return null;
+        return owner.applicationPackage();
     }
 
     @Override
@@ -698,6 +699,18 @@ public class Schema implements ImmutableSearch {
     }
 
     public void validate(DeployLogger logger) {
+        if (inherited.isPresent()) {
+            if (! owner.schemas().containsKey(inherited.get()))
+                throw new IllegalArgumentException(this + " inherits '" + inherited.get() +
+                                                   "', but this schema does not exist");
+
+            // Require schema and document type inheritance to be consistent to keep things simple
+            // And require it to be explicit so we have the option to support other possibilities later
+            var parentDocument = owner.schemas().get(inherited.get()).getDocument();
+            if ( ! getDocument().inheritedTypes().containsKey(new DataTypeName(parentDocument.getName())))
+                throw new IllegalArgumentException(this + " inherits '" + inherited.get() +
+                                                   "', but its document type does not inherit the parent's document type");
+        }
         for (var summary : summaries.values())
             summary.validate(logger);
     }

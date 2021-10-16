@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
  *
  * @author bratseth
  */
-public class SchemaImporterTestCase extends SchemaTestCase {
+public class SchemaImporterTestCase extends AbstractSchemaTestCase {
 
     @Test
     @SuppressWarnings("deprecation")

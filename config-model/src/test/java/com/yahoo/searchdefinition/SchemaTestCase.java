@@ -1,78 +1,70 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import com.yahoo.io.IOUtils;
+import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
+import org.junit.Test;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
+import static com.yahoo.config.model.test.TestUtil.joinLines;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import static helpers.CompareConfigTestHelper.assertSerializedConfigEquals;
-import static helpers.CompareConfigTestHelper.assertSerializedConfigFileEquals;
+/**
+ * Schema tests that don't depend on files.
+ *
+ * @author bratseth
+ */
+public class SchemaTestCase {
 
-public abstract class SchemaTestCase {
-
-    protected static void assertConfigFile(String filename, String cfg) throws IOException {
-        assertSerializedConfigFileEquals(filename, cfg);
-    }
-
-    protected static void assertConfigFiles(String expectedFile,
-                                            String cfgFile,
-                                            boolean orderMatters,
-                                            boolean updateOnAssert) throws IOException {
+    @Test
+    public void testValidationOfInheritedSchema() throws ParseException {
         try {
-            assertSerializedConfigEquals(readAndCensorIndexes(expectedFile), readAndCensorIndexes(cfgFile), orderMatters);
-        } catch (AssertionError e) {
-            if (updateOnAssert) {
-                BufferedWriter writer = IOUtils.createWriter(expectedFile, false);
-                writer.write(readAndCensorIndexes(cfgFile));
-                writer.newLine();
-                writer.flush();
-                writer.close();
-                System.err.println(e.getMessage() + " [not equal files: >>>"+expectedFile+"<<< and >>>"+cfgFile+"<<< in assertConfigFiles]");
-                return;
-            }
-            throw new AssertionError(e.getMessage() + " [not equal files: >>>"+expectedFile+"<<< and >>>"+cfgFile+"<<< in assertConfigFiles]", e);
+            String schema = joinLines(
+                    "schema test inherits nonesuch {" +
+                    "  document test inherits nonesuch {" +
+                    "  }" +
+                    "}");
+            DeployLoggerStub logger = new DeployLoggerStub();
+            SearchBuilder.createFromStrings(logger, schema);
+            assertEquals("schema 'test' inherits 'nonesuch', but this schema does not exist",
+                         logger.entries.get(0).message);
+            fail("Expected failure");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("schema 'test' inherits 'nonesuch', but this schema does not exist", e.getMessage());
         }
     }
-    /**
-     * This is to avoid having to keep those pesky array index numbers in the config format up to date
-     * as new entries are added and removed.
-     */
-    private static String readAndCensorIndexes(String file) throws IOException {
-        StringBuilder b = new StringBuilder();
-        try (BufferedReader r = IOUtils.createReader(file)) {
-            int character;
-            boolean lastWasNewline = false;
-            boolean inBrackets = false;
-            while (-1 != (character = r.read())) {
-                // skip empty lines
-                if (character == '\n') {
-                    if (lastWasNewline) continue;
-                    lastWasNewline = true;
-                }
-                else {
-                    lastWasNewline = false;
-                }
 
-                // skip quoted strings
-                if (character == '"') {
-                    b.appendCodePoint(character);
-                    while (-1 != (character = r.read()) && character != '"') {
-                        b.appendCodePoint(character);
-                    }
-                }
-
-                // skip bracket content
-                if (character == ']')
-                    inBrackets = false;
-                if (! inBrackets)
-                    b.appendCodePoint(character);
-                if (character == '[')
-                    inBrackets = true;
-            }
+    @Test
+    public void testValidationOfSchemaAndDocumentInheritanceConsistency() throws ParseException {
+        try {
+            String parent = joinLines(
+                    "schema parent {" +
+                    "  document parent {" +
+                    "    field pf1 type string {" +
+                    "      indexing: summary" +
+                    "    }" +
+                    "  }" +
+                    "}");
+            String child = joinLines(
+                    "schema child inherits parent {" +
+                    "  document child {" +
+                    "    field cf1 type string {" +
+                    "      indexing: summary" +
+                    "    }" +
+                    "  }" +
+                    "}");
+            DeployLoggerStub logger = new DeployLoggerStub();
+            SearchBuilder.createFromStrings(logger, parent, child);
+            logger.entries.forEach(e -> System.out.println(e));
+            assertTrue(logger.entries.isEmpty());
         }
-        return b.toString();
+        catch (IllegalArgumentException e) {
+            assertEquals("schema 'child' inherits 'parent', " +
+                         "but its document type does not inherit the parent's document type"
+                         , e.getMessage());
+        }
     }
 
 }

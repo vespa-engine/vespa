@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author bratseth
  */
-public class RankPropertiesTestCase extends SchemaTestCase {
+public class RankPropertiesTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRankPropertyInheritance() throws ParseException {

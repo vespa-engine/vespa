@@ -19,7 +19,7 @@ import static org.junit.Assert.*;
 /**
  * @author bratseth
  */
-public class RankingExpressionConstantsTestCase extends SchemaTestCase {
+public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testConstants() throws ParseException {
