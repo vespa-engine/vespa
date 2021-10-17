@@ -31,6 +31,9 @@ shared:
       save-cache: |
         ls -lart /tmp/vespa
         du -sh /tmp/vespa/*
+        (cd /tmp && tar cf $MAIN_CACHE_FILE vespa)
+        (cd /tmp && tar zcf ${MAIN_CACHE_FILE}.gz vespa)
+        du -sh /tmp/*
 
         if [[ -z "$SD_PULL_REQUEST" ]]; then
           # Remove what we have produced
