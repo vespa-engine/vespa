@@ -342,7 +342,8 @@ struct PersistenceProvider
      * After this operation has succeeded, a restart of the provider should
      * not yield the bucket in getBucketList().
      */
-    virtual Result deleteBucket(const Bucket&, Context&) = 0;
+    Result deleteBucket(const Bucket&, Context&);
+    virtual void deleteBucketAsync(const Bucket&, Context&, OperationComplete::UP) = 0;
 
     /**
      * This function is called continuously by the service layer. It allows the

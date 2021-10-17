@@ -169,7 +169,7 @@ public:
     Result destroyIterator(IteratorId, Context&) override;
 
     Result createBucket(const Bucket&, Context&) override;
-    Result deleteBucket(const Bucket&, Context&) override;
+    void deleteBucketAsync(const Bucket&, Context&, OperationComplete::UP) override;
 
     Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
 

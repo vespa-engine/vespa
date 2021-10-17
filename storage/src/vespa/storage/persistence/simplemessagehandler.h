@@ -23,13 +23,11 @@ public:
     MessageTrackerUP handleGet(api::GetCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleRevert(api::RevertCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleCreateBucket(api::CreateBucketCommand& cmd, MessageTrackerUP tracker) const;
-    MessageTrackerUP handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleCreateIterator(CreateIteratorCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleGetIter(GetIterCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleReadBucketList(ReadBucketList& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleReadBucketInfo(ReadBucketInfo& cmd, MessageTrackerUP tracker) const;
 private:
-    bool checkProviderBucketInfoMatches(const spi::Bucket&, const api::BucketInfo&) const;
     const PersistenceUtil    & _env;
     spi::PersistenceProvider & _spi;
 };

@@ -50,21 +50,22 @@ private:
  */
 class OwningState : public State {
 public:
-    OwningState(std::unique_ptr<ITransport> transport)
+    OwningState(std::shared_ptr<ITransport> transport)
         : State(*transport),
           _owned(std::move(transport))
     {}
     ~OwningState() override;
 private:
-    std::unique_ptr<ITransport> _owned;
+    std::shared_ptr<ITransport> _owned;
 };
 
 inline std::shared_ptr<State>
 make(ITransport & latch) {
     return std::make_shared<State>(latch);
 }
+
 inline std::shared_ptr<State>
-make(std::unique_ptr<ITransport> transport) {
+make(std::shared_ptr<ITransport> transport) {
     return std::make_shared<OwningState>(std::move(transport));
 }
 

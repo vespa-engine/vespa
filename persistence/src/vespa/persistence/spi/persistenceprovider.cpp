@@ -17,6 +17,14 @@ PersistenceProvider::setActiveState(const Bucket& bucket, BucketInfo::ActiveStat
 }
 
 Result
+PersistenceProvider::deleteBucket(const Bucket& bucket, Context& context) {
+    auto catcher = std::make_unique<CatchResult>();
+    auto future = catcher->future_result();
+    deleteBucketAsync(bucket, context, std::move(catcher));
+    return *future.get();
+}
+
+Result
 PersistenceProvider::put(const Bucket& bucket, Timestamp timestamp, DocumentSP doc, Context& context) {
     auto catcher = std::make_unique<CatchResult>();
     auto future = catcher->future_result();

@@ -43,16 +43,6 @@ getFieldSet(const document::FieldSetRepo & repo, vespalib::stringref name, Messa
     return document::FieldSet::SP();
 }
 
-bool
-bucketStatesAreSemanticallyEqual(const api::BucketInfo& a, const api::BucketInfo& b) {
-    // Don't check document sizes, as background moving of documents in Proton
-    // may trigger a change in size without any mutations taking place. This will
-    // only take place when a document being moved was fed _prior_ to the change
-    // where Proton starts reporting actual document sizes, and will eventually
-    // converge to a stable value. But for now, ignore it to prevent false positive
-    // error logs and non-deleted buckets.
-    return ((a.getChecksum() == b.getChecksum()) && (a.getDocumentCount() == b.getDocumentCount()));
-}
 }
 SimpleMessageHandler::SimpleMessageHandler(const PersistenceUtil& env, spi::PersistenceProvider& spi)
     : _env(env),
@@ -109,70 +99,6 @@ SimpleMessageHandler::handleCreateBucket(api::CreateBucketCommand& cmd, MessageT
     _spi.createBucket(spiBucket, tracker->context());
     if (cmd.getActive()) {
         _spi.setActiveState(spiBucket, spi::BucketInfo::ACTIVE);
-    }
-    return tracker;
-}
-
-bool
-SimpleMessageHandler::checkProviderBucketInfoMatches(const spi::Bucket& bucket, const api::BucketInfo& info) const
-{
-    spi::BucketInfoResult result(_spi.getBucketInfo(bucket));
-    if (result.hasError()) {
-        LOG(error, "getBucketInfo(%s) failed before deleting bucket; got error '%s'",
-            bucket.toString().c_str(), result.getErrorMessage().c_str());
-        return false;
-    }
-    api::BucketInfo providerInfo(PersistenceUtil::convertBucketInfo(result.getBucketInfo()));
-    // Don't check meta fields or active/ready fields since these are not
-    // that important and ready may change under the hood in a race with
-    // getModifiedBuckets(). If bucket is empty it means it has already
-    // been deleted by a racing split/join.
-    if (!bucketStatesAreSemanticallyEqual(info, providerInfo) && !providerInfo.empty()) {
-        LOG(error,
-            "Service layer bucket database and provider out of sync before "
-            "deleting bucket %s! Service layer db had %s while provider says "
-            "bucket has %s. Deletion has been rejected to ensure data is not "
-            "lost, but bucket may remain out of sync until service has been "
-            "restarted.",
-            bucket.toString().c_str(), info.toString().c_str(), providerInfo.toString().c_str());
-        return false;
-    }
-    return true;
-}
-
-MessageTracker::UP
-SimpleMessageHandler::handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTracker::UP tracker) const
-{
-    tracker->setMetric(_env._metrics.deleteBuckets);
-    LOG(debug, "DeletingBucket(%s)", cmd.getBucketId().toString().c_str());
-    if (_env._fileStorHandler.isMerging(cmd.getBucket())) {
-        _env._fileStorHandler.clearMergeStatus(cmd.getBucket(),
-                                               api::ReturnCode(api::ReturnCode::ABORTED, "Bucket was deleted during the merge"));
-    }
-    spi::Bucket bucket(cmd.getBucket());
-    if (!checkProviderBucketInfoMatches(bucket, cmd.getBucketInfo())) {
-        return tracker;
-    }
-    _spi.deleteBucket(bucket, tracker->context());
-    StorBucketDatabase& db(_env.getBucketDatabase(cmd.getBucket().getBucketSpace()));
-    {
-        StorBucketDatabase::WrappedEntry entry(db.get(cmd.getBucketId(), "FileStorThread::onDeleteBucket"));
-        if (entry.exist() && entry->getMetaCount() > 0) {
-            LOG(debug, "onDeleteBucket(%s): Bucket DB entry existed. Likely "
-                       "active operation when delete bucket was queued. "
-                       "Updating bucket database to keep it in sync with file. "
-                       "Cannot delete bucket from bucket database at this "
-                       "point, as it can have been intentionally recreated "
-                       "after delete bucket had been sent",
-                cmd.getBucketId().toString().c_str());
-            api::BucketInfo info(0, 0, 0);
-            // Only set document counts/size; retain ready/active state.
-            info.setReady(entry->getBucketInfo().isReady());
-            info.setActive(entry->getBucketInfo().isActive());
-
-            entry->setBucketInfo(info);
-            entry.write();
-        }
     }
     return tracker;
 }
