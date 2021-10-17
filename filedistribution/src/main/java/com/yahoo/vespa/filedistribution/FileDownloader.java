@@ -11,7 +11,6 @@ import com.yahoo.yolean.Exceptions;
 import java.io.File;
 import java.time.Duration;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -83,7 +82,6 @@ public class FileDownloader implements AutoCloseable {
 
     Future<Optional<File>> getFutureFile(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
-        Objects.requireNonNull(fileReference, "file reference cannot be null");
 
         Optional<File> file = getFileFromFileSystem(fileReference);
         return (file.isPresent())
