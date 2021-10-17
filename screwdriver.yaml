@@ -31,9 +31,6 @@ shared:
       save-cache: |
         ls -lart /tmp/vespa
         du -sh /tmp/vespa/*
-        (cd /tmp && tar cf $MAIN_CACHE_FILE vespa)
-        (cd /tmp && tar zcf ${MAIN_CACHE_FILE}.gz vespa)
-        du -sh /tmp/*
 
         if [[ -z "$SD_PULL_REQUEST" ]]; then
           # Remove what we have produced
@@ -53,7 +50,7 @@ shared:
 
 jobs:
   build-vespa:
-    #requires: [~pr]
+    requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -86,7 +83,6 @@ jobs:
           df -h
 
   component-build:
-    requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -185,6 +181,9 @@ jobs:
             docker push docker.io/vespaengine/vespa-systemtest-centos7:$VESPA_VERSION
             docker push docker.io/vespaengine/vespa-systemtest-centos7:latest
           fi
+      - remove-ccache: |
+          # TODO: Investigate the abnormal size of this cache. Remove it for now so we cache the Maven artifacts.
+          rm -rf $CCACHE_DATA_DIR
       - *save-cache
 
   publish-release:
