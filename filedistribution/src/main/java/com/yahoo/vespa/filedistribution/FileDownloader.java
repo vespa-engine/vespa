@@ -119,13 +119,19 @@ public class FileDownloader implements AutoCloseable {
         }
     }
 
+    boolean fileReferenceExists(FileReference fileReference) {
+        return getFileFromFileSystem(fileReference).isPresent();
+    }
+
     boolean isDownloading(FileReference fileReference) {
         return downloads.get(fileReference).isPresent();
     }
 
     /** Start a download, don't wait for result */
     public void downloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
-        getFutureFile(fileReferenceDownload);
+        if (fileReferenceExists(fileReferenceDownload.fileReference())) return;
+
+        download(fileReferenceDownload);
     }
 
     /** Download, the future returned will be complete()d by receiving method in {@link FileReceiver} */
