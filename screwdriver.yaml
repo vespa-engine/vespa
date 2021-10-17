@@ -50,7 +50,7 @@ shared:
 
 jobs:
   build-vespa:
-    requires: [~pr]
+    #requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -83,6 +83,7 @@ jobs:
           df -h
 
   component-build:
+    requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -97,6 +98,7 @@ jobs:
       CCACHE_TMP_DIR: "/tmp/ccache_tmp"
       CCACHE_DATA_DIR: "/tmp/vespa/ccache"
       MAIN_CACHE_FILE: "/main_job_cache/vespa.tar"
+      CCACHE_COMPRESS: "1"
     secrets:
       - DOCKER_HUB_DEPLOY_KEY
     steps:
@@ -181,9 +183,6 @@ jobs:
             docker push docker.io/vespaengine/vespa-systemtest-centos7:$VESPA_VERSION
             docker push docker.io/vespaengine/vespa-systemtest-centos7:latest
           fi
-      - remove-ccache: |
-          # TODO: Investigate the abnormal size of this cache. Remove it for now so we cache the Maven artifacts.
-          rm -rf $CCACHE_DATA_DIR
       - *save-cache
 
   publish-release:
