@@ -40,7 +40,7 @@ public:
     void handleSetClusterState(const storage::spi::ClusterState &calc, IGenericResultHandler &resultHandler) override;
 
     void handleSetActiveState(const storage::spi::Bucket &bucket, storage::spi::BucketInfo::ActiveState newState,
-                              IGenericResultHandler &resultHandler) override;
+                              std::shared_ptr<IGenericResultHandler>  resultHandler) override;
 
     void handleGetBucketInfo(const storage::spi::Bucket &bucket, IBucketInfoResultHandler &resultHandler) override;
     void handleCreateBucket(FeedToken token, const storage::spi::Bucket &bucket) override;

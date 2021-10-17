@@ -53,7 +53,7 @@ public:
 
     virtual void handleSetActiveState(const storage::spi::Bucket &bucket,
                                       storage::spi::BucketInfo::ActiveState newState,
-                                      IGenericResultHandler &resultHandler) = 0;
+                                      std::shared_ptr<IGenericResultHandler> resultHandler) = 0;
 
     virtual void handleGetBucketInfo(const storage::spi::Bucket &bucket, IBucketInfoResultHandler &resultHandler) = 0;
     virtual void handleCreateBucket(FeedToken token, const storage::spi::Bucket &bucket) = 0;

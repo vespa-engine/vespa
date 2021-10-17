@@ -227,10 +227,10 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
     }
 
     void handleSetActiveState(const Bucket &bucket, storage::spi::BucketInfo::ActiveState newState,
-                              IGenericResultHandler &resultHandler) override {
+                              std::shared_ptr<IGenericResultHandler> resultHandler) override {
         lastBucket = bucket;
         lastBucketState = newState;
-        resultHandler.handle(bucketStateResult);
+        resultHandler->handle(bucketStateResult);
     }
 
     void handleGetBucketInfo(const Bucket &, IBucketInfoResultHandler &resultHandler) override {

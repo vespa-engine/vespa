@@ -103,7 +103,7 @@ public:
     Result initialize() override;
     BucketIdListResult listBuckets(BucketSpace bucketSpace) const override;
     Result setClusterState(BucketSpace bucketSpace, const ClusterState& calc) override;
-    Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
+    void setActiveStateAsync(const Bucket&, BucketInfo::ActiveState, OperationComplete::UP) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
     void putAsync(const Bucket &, Timestamp, storage::spi::DocumentSP, Context &context, OperationComplete::UP) override;
     void removeAsync(const Bucket&, Timestamp, const document::DocumentId&, Context&, OperationComplete::UP) override;

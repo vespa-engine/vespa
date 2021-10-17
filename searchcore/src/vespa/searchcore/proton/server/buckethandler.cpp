@@ -98,10 +98,10 @@ BucketHandler::handleListBuckets(IBucketIdListResultHandler &resultHandler)
 void
 BucketHandler::handleSetCurrentState(const BucketId &bucketId,
                                      storage::spi::BucketInfo::ActiveState newState,
-                                     IGenericResultHandler &resultHandler)
+                                     std::shared_ptr<IGenericResultHandler> resultHandlerSP)
 {
-    _executor.execute(makeLambdaTask([this, bucketId, newState, resultHandlerP = &resultHandler]() {
-        performSetCurrentState(bucketId, newState, resultHandlerP);
+    _executor.execute(makeLambdaTask([this, bucketId, newState, resultHandler = std::move(resultHandlerSP)]() {
+        performSetCurrentState(bucketId, newState, resultHandler.get());
     }));
 }
 

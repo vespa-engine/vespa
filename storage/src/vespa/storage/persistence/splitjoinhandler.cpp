@@ -5,7 +5,6 @@
 #include "bucketownershipnotifier.h"
 #include "splitbitdetector.h"
 #include "messages.h"
-#include <vespa/storage/common/bucketmessages.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storageapi/message/bucket.h>
 
@@ -141,37 +140,6 @@ SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker
         // Delete the old entry.
         sourceEntry.remove();
     }
-    return tracker;
-}
-
-MessageTracker::UP
-SplitJoinHandler::handleSetBucketState(api::SetBucketStateCommand& cmd, MessageTracker::UP tracker) const
-{
-    tracker->setMetric(_env._metrics.setBucketStates);
-    NotificationGuard notifyGuard(_bucketOwnershipNotifier);
-
-    LOG(debug, "handleSetBucketState(): %s", cmd.toString().c_str());
-    spi::Bucket bucket(cmd.getBucket());
-    bool shouldBeActive(cmd.getState() == api::SetBucketStateCommand::ACTIVE);
-    spi::BucketInfo::ActiveState newState(shouldBeActive ? spi::BucketInfo::ACTIVE : spi::BucketInfo::NOT_ACTIVE);
-
-    spi::Result result(_spi.setActiveState(bucket, newState));
-    if (tracker->checkForError(result)) {
-        StorBucketDatabase::WrappedEntry
-                entry = _env.getBucketDatabase(bucket.getBucket().getBucketSpace()).get(cmd.getBucketId(), "handleSetBucketState");
-        if (entry.exist()) {
-            entry->info.setActive(newState == spi::BucketInfo::ACTIVE);
-            notifyGuard.notifyIfOwnershipChanged(cmd.getBucket(), cmd.getSourceIndex(), entry->info);
-            entry.write();
-        } else {
-            LOG(warning, "Got OK setCurrentState result from provider for %s, "
-                         "but bucket has disappeared from service layer database",
-                cmd.getBucketId().toString().c_str());
-        }
-
-        tracker->setReply(std::make_shared<api::SetBucketStateReply>(cmd));
-    }
-
     return tracker;
 }
 

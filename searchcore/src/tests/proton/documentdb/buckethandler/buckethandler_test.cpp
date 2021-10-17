@@ -96,7 +96,7 @@ struct Fixture
     BucketStateCalculator::SP       _calc;
     test::BucketIdListResultHandler _bucketList;
     test::BucketInfoResultHandler   _bucketInfo;
-    test::GenericResultHandler      _genResult;
+    std::shared_ptr<test::GenericResultHandler>      _genResult;
     Fixture()
         : _builder(),
           _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
@@ -107,7 +107,8 @@ struct Fixture
           _handler(_exec),
           _changedHandler(),
           _calc(new BucketStateCalculator()),
-          _bucketList(), _bucketInfo(), _genResult()
+          _bucketList(), _bucketInfo(),
+          _genResult(std::make_shared<test::GenericResultHandler>())
     {
         // bucket 2 & 3 & 4 & 7 in ready
         _ready.insertDocs(_builder.createDocs(2, 1, 3).  // 2 docs

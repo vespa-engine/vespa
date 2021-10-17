@@ -405,9 +405,8 @@ DummyPersistence::setClusterState(BucketSpace bucketSpace, const ClusterState& c
     return Result();
 }
 
-Result
-DummyPersistence::setActiveState(const Bucket& b,
-                                 BucketInfo::ActiveState newState)
+void
+DummyPersistence::setActiveStateAsync(const Bucket& b, BucketInfo::ActiveState newState, OperationComplete::UP onComplete)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "setCurrentState(%s, %s)",
@@ -416,11 +415,12 @@ DummyPersistence::setActiveState(const Bucket& b,
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
 
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
-    if (!bc.get()) {
-        return BucketInfoResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
+    if ( ! bc ) {
+        onComplete->onComplete(std::make_unique<BucketInfoResult>(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found"));
+    } else {
+        (*bc)->setActive(newState == BucketInfo::ACTIVE);
+        onComplete->onComplete(std::make_unique<Result>());
     }
-    (*bc)->setActive(newState == BucketInfo::ACTIVE);
-    return Result();
 }
 
 BucketInfoResult
