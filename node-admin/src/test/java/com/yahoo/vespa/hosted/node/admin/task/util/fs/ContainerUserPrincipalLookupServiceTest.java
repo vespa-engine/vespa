@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
+import com.yahoo.vespa.hosted.node.admin.nodeagent.UserNamespace;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.jupiter.api.Test;
 
@@ -17,35 +18,22 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class ContainerUserPrincipalLookupServiceTest {
 
+    private final UserNamespace userNamespace = new UserNamespace(10_000, 11_000, "vespa", "users", 1000, 100);
     private final ContainerUserPrincipalLookupService userPrincipalLookupService =
-            new ContainerUserPrincipalLookupService(TestFileSystem.create().getUserPrincipalLookupService(), 1000, 2000);
+            new ContainerUserPrincipalLookupService(TestFileSystem.create().getUserPrincipalLookupService(), userNamespace);
 
     @Test
     public void correctly_resolves_ids() throws IOException {
         ContainerUserPrincipal user = userPrincipalLookupService.lookupPrincipalByName("1000");
         assertEquals("vespa", user.getName());
-        assertEquals("2000", user.baseFsPrincipal().getName());
+        assertEquals("11000", user.baseFsPrincipal().getName());
         assertEquals(user, userPrincipalLookupService.lookupPrincipalByName("vespa"));
 
-        ContainerGroupPrincipal group = userPrincipalLookupService.lookupPrincipalByGroupName("1000");
-        assertEquals("vespa", group.getName());
-        assertEquals("3000", group.baseFsPrincipal().getName());
-        assertEquals(group, userPrincipalLookupService.lookupPrincipalByGroupName("vespa"));
+        ContainerGroupPrincipal group = userPrincipalLookupService.lookupPrincipalByGroupName("100");
+        assertEquals("users", group.getName());
+        assertEquals("11100", group.baseFsPrincipal().getName());
+        assertEquals(group, userPrincipalLookupService.lookupPrincipalByGroupName("users"));
 
         assertThrows(UserPrincipalNotFoundException.class, () -> userPrincipalLookupService.lookupPrincipalByName("test"));
-    }
-
-    @Test
-    public void translates_between_ids() {
-        assertEquals(1001, userPrincipalLookupService.containerUidToHostUid(1));
-        assertEquals(2001, userPrincipalLookupService.containerGidToHostGid(1));
-        assertEquals(1, userPrincipalLookupService.hostUidToContainerUid(1001));
-        assertEquals(1, userPrincipalLookupService.hostGidToContainerGid(2001));
-
-        assertEquals(65_534, userPrincipalLookupService.hostUidToContainerUid(1));
-        assertEquals(65_534, userPrincipalLookupService.hostUidToContainerUid(999999));
-
-        assertThrows(IllegalArgumentException.class, () -> userPrincipalLookupService.containerUidToHostUid(-1));
-        assertThrows(IllegalArgumentException.class, () -> userPrincipalLookupService.containerUidToHostUid(70_000));
     }
 }

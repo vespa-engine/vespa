@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestChildProcess2;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import com.yahoo.vespa.test.file.TestFileSystem;
@@ -47,7 +48,7 @@ public class CoredumpHandlerTest {
     private final FileSystem fileSystem = TestFileSystem.create();
     private final NodeAgentContext context = NodeAgentContextImpl.builder("container-123.domain.tld")
             .fileSystem(fileSystem).build();
-    private final Path crashPathInContainer = fileSystem.getPath("/var/crash");
+    private final ContainerPath containerCrashPath = context.containerPath("/var/crash");
     private final Path doneCoredumpsPath = fileSystem.getPath("/home/docker/dumps");
 
     private final TestTerminal terminal = new TestTerminal();
@@ -58,38 +59,38 @@ public class CoredumpHandlerTest {
     @SuppressWarnings("unchecked")
     private final Supplier<String> coredumpIdSupplier = mock(Supplier.class);
     private final CoredumpHandler coredumpHandler = new CoredumpHandler(terminal, coreCollector, coredumpReporter,
-            crashPathInContainer.toString(), doneCoredumpsPath, 100, metrics, clock, coredumpIdSupplier);
+            containerCrashPath.pathInContainer(), doneCoredumpsPath, 100, metrics, clock, coredumpIdSupplier);
 
 
     @Test
     public void coredump_enqueue_test() throws IOException {
-        final Path crashPathOnHost = fileSystem.getPath("/home/docker/container-1/some/crash/path");
-        final Path processingDir = fileSystem.getPath("/home/docker/container-1/some/other/processing");
+        ContainerPath crashPath = context.containerPath("/some/crash/path");
+        ContainerPath processingDir = context.containerPath("/some/other/processing");
 
-        Files.createDirectories(crashPathOnHost);
-        createFileAged(crashPathOnHost.resolve("bash.core.431"), Duration.ZERO);
+        Files.createDirectories(crashPath);
+        createFileAged(crashPath.resolve("bash.core.431"), Duration.ZERO);
 
-        assertFolderContents(crashPathOnHost, "bash.core.431");
-        Optional<Path> enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
+        assertFolderContents(crashPath, "bash.core.431");
+        Optional<ContainerPath> enqueuedPath = coredumpHandler.enqueueCoredump(crashPath, processingDir);
         assertEquals(Optional.empty(), enqueuedPath);
 
         // bash.core.431 finished writing... and 2 more have since been written
         clock.advance(Duration.ofMinutes(3));
-        createFileAged(crashPathOnHost.resolve("vespa-proton.core.119"), Duration.ofMinutes(10));
-        createFileAged(crashPathOnHost.resolve("vespa-slobrok.core.673"), Duration.ofMinutes(5));
+        createFileAged(crashPath.resolve("vespa-proton.core.119"), Duration.ofMinutes(10));
+        createFileAged(crashPath.resolve("vespa-slobrok.core.673"), Duration.ofMinutes(5));
 
         when(coredumpIdSupplier.get()).thenReturn("id-123").thenReturn("id-321");
-        enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
+        enqueuedPath = coredumpHandler.enqueueCoredump(crashPath, processingDir);
         assertEquals(Optional.of(processingDir.resolve("id-123")), enqueuedPath);
-        assertFolderContents(crashPathOnHost, "bash.core.431", "vespa-slobrok.core.673");
+        assertFolderContents(crashPath, "bash.core.431", "vespa-slobrok.core.673");
         assertFolderContents(processingDir, "id-123");
         assertFolderContents(processingDir.resolve("id-123"), "dump_vespa-proton.core.119");
         verify(coredumpIdSupplier, times(1)).get();
 
         // Enqueue another
-        enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
+        enqueuedPath = coredumpHandler.enqueueCoredump(crashPath, processingDir);
         assertEquals(Optional.of(processingDir.resolve("id-321")), enqueuedPath);
-        assertFolderContents(crashPathOnHost, "bash.core.431");
+        assertFolderContents(crashPath, "bash.core.431");
         assertFolderContents(processingDir, "id-123", "id-321");
         assertFolderContents(processingDir.resolve("id-321"), "dump_vespa-slobrok.core.673");
         verify(coredumpIdSupplier, times(2)).get();
@@ -97,46 +98,45 @@ public class CoredumpHandlerTest {
 
     @Test
     public void enqueue_with_hs_err_files() throws IOException {
-        final Path crashPathOnHost = fileSystem.getPath("/home/docker/container-1/some/crash/path");
-        final Path processingDir = fileSystem.getPath("/home/docker/container-1/some/other/processing");
-        Files.createDirectories(crashPathOnHost);
+        ContainerPath crashPath = context.containerPath("/some/crash/path");
+        ContainerPath processingDir = context.containerPath("/some/other/processing");
+        Files.createDirectories(crashPath);
 
-        createFileAged(crashPathOnHost.resolve("java.core.69"), Duration.ofSeconds(515));
-        createFileAged(crashPathOnHost.resolve("hs_err_pid69.log"), Duration.ofSeconds(520));
+        createFileAged(crashPath.resolve("java.core.69"), Duration.ofSeconds(515));
+        createFileAged(crashPath.resolve("hs_err_pid69.log"), Duration.ofSeconds(520));
 
-        createFileAged(crashPathOnHost.resolve("java.core.2420"), Duration.ofSeconds(540));
-        createFileAged(crashPathOnHost.resolve("hs_err_pid2420.log"), Duration.ofSeconds(549));
-        createFileAged(crashPathOnHost.resolve("hs_err_pid2421.log"), Duration.ofSeconds(550));
+        createFileAged(crashPath.resolve("java.core.2420"), Duration.ofSeconds(540));
+        createFileAged(crashPath.resolve("hs_err_pid2420.log"), Duration.ofSeconds(549));
+        createFileAged(crashPath.resolve("hs_err_pid2421.log"), Duration.ofSeconds(550));
 
         when(coredumpIdSupplier.get()).thenReturn("id-123").thenReturn("id-321");
-        Optional<Path> enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
+        Optional<ContainerPath> enqueuedPath = coredumpHandler.enqueueCoredump(crashPath, processingDir);
         assertEquals(Optional.of(processingDir.resolve("id-123")), enqueuedPath);
-        assertFolderContents(crashPathOnHost, "hs_err_pid69.log", "java.core.69");
+        assertFolderContents(crashPath, "hs_err_pid69.log", "java.core.69");
         assertFolderContents(processingDir, "id-123");
         assertFolderContents(processingDir.resolve("id-123"), "hs_err_pid2420.log", "hs_err_pid2421.log", "dump_java.core.2420");
     }
 
     @Test
     public void coredump_to_process_test() throws IOException {
-        final Path crashPathOnHost = fileSystem.getPath("/home/docker/container-1/some/crash/path");
-        final Path processingDir = fileSystem.getPath("/home/docker/container-1/some/other/processing");
+        ContainerPath processingDir = context.containerPath("/some/other/processing");
 
         // Initially there are no core dumps
-        Optional<Path> enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
+        Optional<ContainerPath> enqueuedPath = coredumpHandler.enqueueCoredump(containerCrashPath, processingDir);
         assertEquals(Optional.empty(), enqueuedPath);
 
         // 3 core dumps occur
-        Files.createDirectories(crashPathOnHost);
-        createFileAged(crashPathOnHost.resolve("bash.core.431"), Duration.ZERO);
-        createFileAged(crashPathOnHost.resolve("vespa-proton.core.119"), Duration.ofMinutes(10));
-        createFileAged(crashPathOnHost.resolve("vespa-slobrok.core.673"), Duration.ofMinutes(5));
+        Files.createDirectories(containerCrashPath);
+        createFileAged(containerCrashPath.resolve("bash.core.431"), Duration.ZERO);
+        createFileAged(containerCrashPath.resolve("vespa-proton.core.119"), Duration.ofMinutes(10));
+        createFileAged(containerCrashPath.resolve("vespa-slobrok.core.673"), Duration.ofMinutes(5));
 
         when(coredumpIdSupplier.get()).thenReturn("id-123");
-        enqueuedPath = coredumpHandler.getCoredumpToProcess(crashPathOnHost, processingDir);
+        enqueuedPath = coredumpHandler.getCoredumpToProcess(containerCrashPath, processingDir);
         assertEquals(Optional.of(processingDir.resolve("id-123")), enqueuedPath);
 
         // Running this again wont enqueue new core dumps as we are still processing the one enqueued previously
-        enqueuedPath = coredumpHandler.getCoredumpToProcess(crashPathOnHost, processingDir);
+        enqueuedPath = coredumpHandler.getCoredumpToProcess(containerCrashPath, processingDir);
         assertEquals(Optional.of(processingDir.resolve("id-123")), enqueuedPath);
         verify(coredumpIdSupplier, times(1)).get();
     }
@@ -164,11 +164,10 @@ public class CoredumpHandlerTest {
                 "}}";
 
 
-        Path coredumpDirectoryInContainer = fileSystem.getPath("/var/crash/id-123");
-        Path coredumpDirectory = context.pathOnHostFromPathInNode(coredumpDirectoryInContainer);
-        Files.createDirectories(coredumpDirectory);
+        ContainerPath coredumpDirectory = context.containerPath("/var/crash/id-123");
+        Files.createDirectories(coredumpDirectory.pathOnHost());
         Files.createFile(coredumpDirectory.resolve("dump_core.456"));
-        when(coreCollector.collect(eq(context), eq(coredumpDirectoryInContainer.resolve("dump_core.456"))))
+        when(coreCollector.collect(eq(context), eq(coredumpDirectory.resolve("dump_core.456"))))
                 .thenReturn(metadata);
 
         assertEquals(expectedMetadataStr, coredumpHandler.getMetadata(context, coredumpDirectory, () -> attributes));
@@ -181,12 +180,12 @@ public class CoredumpHandlerTest {
 
     @Test(expected = IllegalStateException.class)
     public void cant_get_metadata_if_no_core_file() throws IOException {
-        coredumpHandler.getMetadata(context, fileSystem.getPath("/fake/path"), Map::of);
+        coredumpHandler.getMetadata(context, context.containerPath("/fake/path"), Map::of);
     }
 
     @Test(expected = IllegalStateException.class)
     public void fails_to_get_core_file_if_only_compressed() throws IOException {
-        Path coredumpDirectory = fileSystem.getPath("/path/to/coredump/proccessing/id-123");
+        ContainerPath coredumpDirectory = context.containerPath("/path/to/coredump/proccessing/id-123");
         Files.createDirectories(coredumpDirectory);
         Files.createFile(coredumpDirectory.resolve("dump_bash.core.431.lz4"));
         coredumpHandler.findCoredumpFileInProcessingDirectory(coredumpDirectory);
@@ -194,14 +193,14 @@ public class CoredumpHandlerTest {
 
     @Test
     public void process_single_coredump_test() throws IOException {
-        Path coredumpDirectory = fileSystem.getPath("/path/to/coredump/proccessing/id-123");
+        ContainerPath coredumpDirectory = context.containerPath("/path/to/coredump/proccessing/id-123");
         Files.createDirectories(coredumpDirectory);
         Files.write(coredumpDirectory.resolve("metadata.json"), "metadata".getBytes());
         Files.createFile(coredumpDirectory.resolve("dump_bash.core.431"));
         assertFolderContents(coredumpDirectory, "metadata.json", "dump_bash.core.431");
 
-        terminal.interceptCommand("/usr/bin/lz4 -f /path/to/coredump/proccessing/id-123/dump_bash.core.431 " +
-                "/path/to/coredump/proccessing/id-123/dump_bash.core.431.lz4 2>&1",
+        terminal.interceptCommand("/usr/bin/lz4 -f /data/vespa/storage/container-123/path/to/coredump/proccessing/id-123/dump_bash.core.431 " +
+                "/data/vespa/storage/container-123/path/to/coredump/proccessing/id-123/dump_bash.core.431.lz4 2>&1",
                 commandLine -> {
                     uncheck(() -> Files.createFile(fileSystem.getPath(commandLine.getArguments().get(3))));
                     return new TestChildProcess2(0, "");
@@ -216,10 +215,10 @@ public class CoredumpHandlerTest {
 
     @Test
     public void report_enqueued_and_processed_metrics() throws IOException {
-        Path processingPath = crashPathInContainer.resolve("processing");
-        Files.createFile(crashPathInContainer.resolve("dump-1"));
-        Files.createFile(crashPathInContainer.resolve("dump-2"));
-        Files.createFile(crashPathInContainer.resolve("hs_err_pid2.log"));
+        Path processingPath = containerCrashPath.resolve("processing");
+        Files.createFile(containerCrashPath.resolve("dump-1"));
+        Files.createFile(containerCrashPath.resolve("dump-2"));
+        Files.createFile(containerCrashPath.resolve("hs_err_pid2.log"));
         Files.createDirectory(processingPath);
         Files.createFile(processingPath.resolve("metadata.json"));
         Files.createFile(processingPath.resolve("dump-3"));
@@ -228,7 +227,7 @@ public class CoredumpHandlerTest {
                 .createParents()
                 .createNewFile();
 
-        coredumpHandler.updateMetrics(context, crashPathInContainer);
+        coredumpHandler.updateMetrics(context, containerCrashPath);
         List<DimensionMetrics> updatedMetrics = metrics.getMetricsByType(Metrics.DimensionType.PRETAGGED);
         assertEquals(1, updatedMetrics.size());
         Map<String, Number> values = updatedMetrics.get(0).getMetrics();
@@ -238,7 +237,7 @@ public class CoredumpHandlerTest {
 
     @Before
     public void setup() throws IOException {
-        Files.createDirectories(crashPathInContainer);
+        Files.createDirectories(containerCrashPath.pathOnHost());
     }
 
     @After

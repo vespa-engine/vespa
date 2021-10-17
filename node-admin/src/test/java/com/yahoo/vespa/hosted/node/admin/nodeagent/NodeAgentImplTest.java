@@ -27,10 +27,12 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
+import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import java.nio.file.FileSystem;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -72,6 +74,7 @@ public class NodeAgentImplTest {
     private final CredentialsMaintainer credentialsMaintainer = mock(CredentialsMaintainer.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final ManualClock clock = new ManualClock(Instant.now());
+    private final FileSystem fileSystem = TestFileSystem.create();
 
     @Before
     public void setUp() {
@@ -233,7 +236,7 @@ public class NodeAgentImplTest {
         nodeAgent.doConverge(secondContext);
         inOrder.verify(orchestrator, never()).resume(any(String.class));
 
-        NodeAgentContext thirdContext = NodeAgentContextImpl.builder(specBuilder.vcpu(5).build()).cpuSpeedUp(1.25).build();
+        NodeAgentContext thirdContext = NodeAgentContextImpl.builder(specBuilder.vcpu(5).build()).fileSystem(fileSystem).cpuSpeedUp(1.25).build();
         nodeAgent.doConverge(thirdContext);
         ContainerResources resourcesAfterThird = ContainerResources.from(0, 4, 16);
         mockGetContainer(dockerImage, resourcesAfterThird, true);
@@ -777,7 +780,7 @@ public class NodeAgentImplTest {
     }
     
     private NodeAgentContext createContext(NodeSpec nodeSpec) {
-        return NodeAgentContextImpl.builder(nodeSpec).build();
+        return NodeAgentContextImpl.builder(nodeSpec).fileSystem(fileSystem).build();
     }
 
     private NodeSpec.Builder nodeBuilder(NodeState state) {
