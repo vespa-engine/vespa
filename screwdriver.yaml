@@ -29,6 +29,9 @@ shared:
 
     save-cache: &save-cache
       save-cache: |
+        ls -lart /tmp/vespa
+        du -sh /tmp/vespa/*
+
         if [[ -z "$SD_PULL_REQUEST" ]]; then
           # Remove what we have produced
           rm -rf $LOCAL_MVN_REPO/com/yahoo
@@ -47,7 +50,7 @@ shared:
 
 jobs:
   build-vespa:
-    requires: [~pr]
+    #requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -80,6 +83,7 @@ jobs:
           df -h
 
   component-build:
+    requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -101,6 +105,10 @@ jobs:
           VESPA_VERSION=$(meta get vespa.version)
           VESPA_REF=$(meta get vespa.ref)
           SYSTEM_TEST_REF=$(meta get system-test.ref)
+
+          VESPA_VERSION=7.484.46
+          VESPA_REF=4d60d2845dba1fcfb2b68bd64a616d50578bf88c
+          SYSTEM_TEST_REF=eefa08e9fe8dc578ebb60da6079e716c19ba9692
 
           if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]] || [[ $SYSTEM_TEST_REF == null ]]; then
             echo "Must have valid Vespa version and reference to continue \
