@@ -42,7 +42,7 @@ shared:
           (cd /tmp && tar cf $MAIN_CACHE_FILE vespa)
 
           # Wipe the cache if we exceed 2GB to avoid pulling and pusing too large files
-          if (( $(stat --format='%s' $MAIN_CACHE_FILE) > $(( 2*1000*1000*1000 )) )); then
+          if (( $(stat --format='%s' $MAIN_CACHE_FILE) > $(( 2200*1000*1000 )) )); then
             tar cf $MAIN_CACHE_FILE --files-from=/dev/null;
             echo "Cleaning cache file. $MAIN_CACHE_FILE is now $(stat --format='%s' $MAIN_CACHE_FILE) bytes."
           fi
@@ -50,7 +50,7 @@ shared:
 
 jobs:
   build-vespa:
-    #requires: [~pr]
+    requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -83,7 +83,6 @@ jobs:
           df -h
 
   component-build:
-    requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -106,10 +105,6 @@ jobs:
           VESPA_VERSION=$(meta get vespa.version)
           VESPA_REF=$(meta get vespa.ref)
           SYSTEM_TEST_REF=$(meta get system-test.ref)
-
-          VESPA_VERSION=7.484.46
-          VESPA_REF=4d60d2845dba1fcfb2b68bd64a616d50578bf88c
-          SYSTEM_TEST_REF=eefa08e9fe8dc578ebb60da6079e716c19ba9692
 
           if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]] || [[ $SYSTEM_TEST_REF == null ]]; then
             echo "Must have valid Vespa version and reference to continue \
