@@ -1,17 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
+import com.yahoo.vespa.hosted.node.admin.nodeagent.UserNamespace;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Map;
 
-import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerUserPrincipalLookupService.OVERFLOW_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -21,7 +24,8 @@ class ContainerFileSystemTest {
 
     private final FileSystem fileSystem = TestFileSystem.create();
     private final UnixPath containerRootOnHost = new UnixPath(fileSystem.getPath("/data/storage/ctr1"));
-    private final ContainerFileSystem containerFs = ContainerFileSystem.create(containerRootOnHost.createDirectories().toPath(), 10_000, 11_000);
+    private final UserNamespace userNamespace = new UserNamespace(10_000, 11_000, "vespa", "users", 1000, 100);
+    private final ContainerFileSystem containerFs = ContainerFileSystem.create(containerRootOnHost.createDirectories().toPath(), userNamespace);
 
     @Test
     public void creates_files_and_directories_with_container_root_as_owner() throws IOException {
@@ -41,17 +45,47 @@ class ContainerFileSystemTest {
     }
 
     @Test
+    public void file_write_and_read() throws IOException {
+        ContainerPath containerPath = ContainerPath.fromPathInContainer(containerFs, Path.of("/file"));
+        UnixPath unixPath = new UnixPath(containerPath);
+        unixPath.writeUtf8File("hello");
+        assertOwnership(containerPath, 0, 0, 10000, 11000);
+
+        unixPath.setOwnerId(500).setGroupId(200);
+        assertOwnership(containerPath, 500, 200, 10500, 11200);
+        Files.write(containerPath, " world".getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+        assertOwnership(containerPath, 500, 200, 10500, 11200); // Owner should not have been updated as the file already existed
+
+        assertEquals("hello world", unixPath.readUtf8File());
+    }
+
+    @Test
     public void copy() throws IOException {
         UnixPath hostFile = new UnixPath(fileSystem.getPath("/file")).createNewFile();
         ContainerPath destination = ContainerPath.fromPathInContainer(containerFs, Path.of("/dest"));
 
         // If file is copied to JimFS path, the UID/GIDs are not fixed
         Files.copy(hostFile.toPath(), destination.pathOnHost());
-        assertEquals(String.valueOf(OVERFLOW_ID), Files.getOwner(destination).getName());
+        assertEquals(String.valueOf(userNamespace.overflowId()), Files.getOwner(destination).getName());
         Files.delete(destination);
 
         Files.copy(hostFile.toPath(), destination);
         assertOwnership(destination, 0, 0, 10000, 11000);
+
+        // Set owner + group on both source host file and destination container file
+        hostFile.setOwnerId(5).setGroupId(10);
+        new UnixPath(destination).setOwnerId(500).setGroupId(200);
+        assertOwnership(destination, 500, 200, 10500, 11200);
+        // Copy the host file to destination again with COPY_ATTRIBUTES and REPLACE_EXISTING
+        Files.copy(hostFile.toPath(), destination, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
+        // The destination is recreated, so the owner should be root
+        assertOwnership(destination, 0, 0, 10000, 11000);
+
+        // Set owner + group and copy within ContainerFS
+        new UnixPath(destination).setOwnerId(500).setGroupId(200);
+        ContainerPath destination2 = ContainerPath.fromPathInContainer(containerFs, Path.of("/dest2"));
+        Files.copy(destination, destination2, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
+        assertOwnership(destination2, 0, 0, 10000, 11000);
     }
 
     @Test
@@ -61,12 +95,41 @@ class ContainerFileSystemTest {
 
         // If file is moved to JimFS path, the UID/GIDs are not fixed
         Files.move(hostFile.toPath(), destination.pathOnHost());
-        assertEquals(String.valueOf(OVERFLOW_ID), Files.getOwner(destination).getName());
+        assertEquals(String.valueOf(userNamespace.overflowId()), Files.getOwner(destination).getName());
         Files.delete(destination);
 
         hostFile.createNewFile();
         Files.move(hostFile.toPath(), destination);
         assertOwnership(destination, 0, 0, 10000, 11000);
+
+        // Set owner + group on both source host file and destination container file
+        hostFile.createNewFile();
+        hostFile.setOwnerId(5).setGroupId(10);
+        new UnixPath(destination).setOwnerId(500).setGroupId(200);
+        assertOwnership(destination, 500, 200, 10500, 11200);
+        // Move the host file to destination again with COPY_ATTRIBUTES and REPLACE_EXISTING
+        Files.move(hostFile.toPath(), destination, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
+        // The destination is recreated, so the owner should be root
+        assertOwnership(destination, 0, 0, 10000, 11000);
+
+        // Set owner + group and move within ContainerFS
+        new UnixPath(destination).setOwnerId(500).setGroupId(200);
+        ContainerPath destination2 = ContainerPath.fromPathInContainer(containerFs, Path.of("/dest2"));
+        Files.move(destination, destination2, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
+        assertOwnership(destination2, 0, 0, 10000, 11000);
+    }
+
+    @Test
+    public void symlink() throws IOException {
+        ContainerPath source = ContainerPath.fromPathInContainer(containerFs, Path.of("/src"));
+        // Symlink from ContainerPath to some relative path (different FS provider)
+        Files.createSymbolicLink(source, fileSystem.getPath("../relative/target"));
+        assertEquals(fileSystem.getPath("../relative/target"), Files.readSymbolicLink(source));
+        Files.delete(source);
+
+        // Symlinks from ContainerPath to a ContainerPath: Target is resolved within container with base FS provider
+        Files.createSymbolicLink(source, ContainerPath.fromPathInContainer(containerFs, Path.of("/path/in/container")));
+        assertEquals(fileSystem.getPath("/path/in/container"), Files.readSymbolicLink(source));
     }
 
     private static void assertOwnership(ContainerPath path, int contUid, int contGid, int hostUid, int hostGid) throws IOException {

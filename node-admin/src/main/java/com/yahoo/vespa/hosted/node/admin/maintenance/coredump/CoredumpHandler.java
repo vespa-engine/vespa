@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
 import java.io.IOException;
@@ -86,13 +87,13 @@ public class CoredumpHandler {
 
 
     public void converge(NodeAgentContext context, Supplier<Map<String, Object>> nodeAttributesSupplier, boolean throwIfCoreBeingWritten) {
-        Path containerCrashPathOnHost = context.pathOnHostFromPathInNode(crashPatchInContainer);
-        Path containerProcessingPathOnHost = containerCrashPathOnHost.resolve(PROCESSING_DIRECTORY_NAME);
+        ContainerPath containerCrashPath = context.containerPath(crashPatchInContainer);
+        ContainerPath containerProcessingPath = containerCrashPath.resolve(PROCESSING_DIRECTORY_NAME);
 
-        updateMetrics(context, containerCrashPathOnHost);
+        updateMetrics(context, containerCrashPath);
 
         if (throwIfCoreBeingWritten) {
-            List<String> pendingCores = FileFinder.files(containerCrashPathOnHost)
+            List<String> pendingCores = FileFinder.files(containerCrashPath)
                     .match(fileAttributes -> !isReadyForProcessing(fileAttributes))
                     .maxDepth(1).stream()
                     .map(FileFinder.FileAttributes::filename)
@@ -103,16 +104,17 @@ public class CoredumpHandler {
         }
 
         // Check if we have already started to process a core dump or we can enqueue a new core one
-        getCoredumpToProcess(containerCrashPathOnHost, containerProcessingPathOnHost)
+        getCoredumpToProcess(containerCrashPath, containerProcessingPath)
                 .ifPresent(path -> processAndReportSingleCoredump(context, path, nodeAttributesSupplier));
     }
 
     /** @return path to directory inside processing directory that contains a core dump file to process */
-    Optional<Path> getCoredumpToProcess(Path containerCrashPathOnHost, Path containerProcessingPathOnHost) {
-        return FileFinder.directories(containerProcessingPathOnHost).stream()
+    Optional<ContainerPath> getCoredumpToProcess(ContainerPath containerCrashPath, ContainerPath containerProcessingPath) {
+        return FileFinder.directories(containerProcessingPath).stream()
                 .map(FileFinder.FileAttributes::path)
                 .findAny()
-                .or(() -> enqueueCoredump(containerCrashPathOnHost, containerProcessingPathOnHost));
+                .map(ContainerPath.class::cast)
+                .or(() -> enqueueCoredump(containerCrashPath, containerProcessingPath));
     }
 
     /**
@@ -124,8 +126,8 @@ public class CoredumpHandler {
      *
      * @return path to directory inside processing directory which contains the enqueued core dump file
      */
-    Optional<Path> enqueueCoredump(Path containerCrashPathOnHost, Path containerProcessingPathOnHost) {
-        List<Path> toProcess = FileFinder.files(containerCrashPathOnHost)
+    Optional<ContainerPath> enqueueCoredump(ContainerPath containerCrashPath, ContainerPath containerProcessingPath) {
+        List<Path> toProcess = FileFinder.files(containerCrashPath)
                 .match(this::isReadyForProcessing)
                 .maxDepth(1)
                 .stream()
@@ -141,7 +143,7 @@ public class CoredumpHandler {
         // Either there are no files in crash directory, or all the files are hs_err files.
         if (coredumpIndex == -1) return Optional.empty();
 
-        Path enqueuedDir = uncheck(() -> Files.createDirectories(containerProcessingPathOnHost.resolve(coredumpIdSupplier.get())));
+        ContainerPath enqueuedDir = (ContainerPath) uncheck(() -> Files.createDirectories(containerProcessingPath.resolve(coredumpIdSupplier.get())));
         IntStream.range(0, coredumpIndex + 1)
                 .forEach(i -> {
                     Path path = toProcess.get(i);
@@ -151,7 +153,7 @@ public class CoredumpHandler {
         return Optional.of(enqueuedDir);
     }
 
-    void processAndReportSingleCoredump(NodeAgentContext context, Path coredumpDirectory, Supplier<Map<String, Object>> nodeAttributesSupplier) {
+    void processAndReportSingleCoredump(NodeAgentContext context, ContainerPath coredumpDirectory, Supplier<Map<String, Object>> nodeAttributesSupplier) {
         try {
             String metadata = getMetadata(context, coredumpDirectory, nodeAttributesSupplier);
             String coredumpId = coredumpDirectory.getFileName().toString();
@@ -167,17 +169,16 @@ public class CoredumpHandler {
      * @return coredump metadata from metadata.json if present, otherwise attempts to get metadata using
      * {@link CoreCollector} and stores it to metadata.json
      */
-    String getMetadata(NodeAgentContext context, Path coredumpDirectory, Supplier<Map<String, Object>> nodeAttributesSupplier) throws IOException {
+    String getMetadata(NodeAgentContext context, ContainerPath coredumpDirectory, Supplier<Map<String, Object>> nodeAttributesSupplier) throws IOException {
         UnixPath metadataPath = new UnixPath(coredumpDirectory.resolve(METADATA_FILE_NAME));
         if (!Files.exists(metadataPath.toPath())) {
-            Path coredumpFilePathOnHost = findCoredumpFileInProcessingDirectory(coredumpDirectory);
-            Path coredumpFilePathInContainer = context.pathInNodeFromPathOnHost(coredumpFilePathOnHost);
-            Map<String, Object> metadata = new HashMap<>(coreCollector.collect(context, coredumpFilePathInContainer));
+            ContainerPath coredumpFile = findCoredumpFileInProcessingDirectory(coredumpDirectory);
+            Map<String, Object> metadata = new HashMap<>(coreCollector.collect(context, coredumpFile));
             metadata.putAll(nodeAttributesSupplier.get());
             metadata.put("coredump_path", doneCoredumpsPath
                     .resolve(context.containerName().asString())
-                    .resolve(coredumpDirectory.getFileName())
-                    .resolve(coredumpFilePathOnHost.getFileName()).toString());
+                    .resolve(coredumpDirectory.getFileName().toString())
+                    .resolve(coredumpFile.getFileName().toString()).toString());
 
             String metadataFields = objectMapper.writeValueAsString(Map.of("fields", metadata));
             metadataPath.writeUtf8File(metadataFields);
@@ -191,23 +192,24 @@ public class CoredumpHandler {
      * Compresses core file (and deletes the uncompressed core), then moves the entire core dump processing
      * directory to {@link #doneCoredumpsPath} for archive
      */
-    private void finishProcessing(NodeAgentContext context, Path coredumpDirectory) throws IOException {
-        Path coreFile = findCoredumpFileInProcessingDirectory(coredumpDirectory);
-        Path compressedCoreFile = coreFile.getParent().resolve(coreFile.getFileName() + ".lz4");
+    private void finishProcessing(NodeAgentContext context, ContainerPath coredumpDirectory) throws IOException {
+        ContainerPath coreFile = findCoredumpFileInProcessingDirectory(coredumpDirectory);
+        ContainerPath compressedCoreFile = coreFile.resolveSibling(coreFile.getFileName() + ".lz4");
         terminal.newCommandLine(context)
-                .add(LZ4_PATH, "-f", coreFile.toString(), compressedCoreFile.toString())
+                .add(LZ4_PATH, "-f", coreFile.pathOnHost().toString(), compressedCoreFile.pathOnHost().toString())
                 .setTimeout(Duration.ofMinutes(30))
                 .execute();
-        new UnixPath(compressedCoreFile).setGroupId(operatorGroupId).setPermissions("rw-r-----");
+        new UnixPath(compressedCoreFile.pathOnHost()).setGroupId(operatorGroupId).setPermissions("rw-r-----");
         Files.delete(coreFile);
 
         Path newCoredumpDirectory = doneCoredumpsPath.resolve(context.containerName().asString());
         uncheck(() -> Files.createDirectories(newCoredumpDirectory));
-        Files.move(coredumpDirectory, newCoredumpDirectory.resolve(coredumpDirectory.getFileName()));
+        // Files.move() does not support moving non-empty directories across providers, move using host paths
+        Files.move(coredumpDirectory.pathOnHost(), newCoredumpDirectory.resolve(coredumpDirectory.getFileName().toString()));
     }
 
-    Path findCoredumpFileInProcessingDirectory(Path coredumpProccessingDirectory) {
-        return FileFinder.files(coredumpProccessingDirectory)
+    ContainerPath findCoredumpFileInProcessingDirectory(ContainerPath coredumpProccessingDirectory) {
+        return (ContainerPath) FileFinder.files(coredumpProccessingDirectory)
                 .match(nameStartsWith(COREDUMP_FILENAME_PREFIX).and(nameEndsWith(".lz4").negate()))
                 .maxDepth(1)
                 .stream()
@@ -217,11 +219,11 @@ public class CoredumpHandler {
                         "No coredump file found in processing directory " + coredumpProccessingDirectory));
     }
 
-    void updateMetrics(NodeAgentContext context, Path containerCrashPathOnHost) {
+    void updateMetrics(NodeAgentContext context, ContainerPath containerCrashPath) {
         Dimensions dimensions = generateDimensions(context);
 
         // Unprocessed coredumps
-        int numberOfUnprocessedCoredumps = FileFinder.files(containerCrashPathOnHost)
+        int numberOfUnprocessedCoredumps = FileFinder.files(containerCrashPath)
                 .match(nameStartsWith(".").negate())
                 .match(nameMatches(HS_ERR_PATTERN).negate())
                 .match(nameEndsWith(".lz4").negate())

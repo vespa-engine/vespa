@@ -3,10 +3,10 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,8 +48,8 @@ abstract class AbstractProducer implements ArtifactProducer {
     }
 
     protected int findVespaServicePid(NodeAgentContext ctx, String configId) throws IOException {
-        Path findPidBinary = ctx.pathInNodeUnderVespaHome("libexec/vespa/find-pid");
-        CommandResult findPidResult = executeCommand(ctx, List.of(findPidBinary.toString(), configId), true);
+        ContainerPath findPidBinary = ctx.containerPathUnderVespaHome("libexec/vespa/find-pid");
+        CommandResult findPidResult = executeCommand(ctx, List.of(findPidBinary.pathInContainer(), configId), true);
         return Integer.parseInt(findPidResult.getOutput());
     }
 
