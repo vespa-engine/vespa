@@ -470,10 +470,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         TenantInfo mergedInfo = TenantInfo.EMPTY
                 .withName(getString(insp.field("name"), oldInfo.name()))
                 .withEmail(getString(insp.field("email"),  oldInfo.email()))
-                .withWebsite(getString(insp.field("website"),  oldInfo.email()))
+                .withWebsite(getString(insp.field("website"),  oldInfo.website()))
                 .withInvoiceEmail(getString(insp.field("invoiceEmail"), oldInfo.invoiceEmail()))
                 .withContactName(getString(insp.field("contactName"), oldInfo.contactName()))
-                .withContactEmail(getString(insp.field("contactEmail"), oldInfo.contactName()))
+                .withContactEmail(getString(insp.field("contactEmail"), oldInfo.contactEmail()))
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldInfo.address()))
                 .withBillingContact(updateTenantInfoBillingContact(insp.field("billingContact"), oldInfo.billingContact()));
 
