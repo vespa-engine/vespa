@@ -60,7 +60,7 @@ GroupingManager::init(const IAttributeContext &attrCtx)
             grouping.configureStaticStuff(stuff);
             list.push_back(groupingList[i]);
         } catch (const std::exception & e) {
-            Issue::report("Could not locate attribute for grouping number %ld : %s. Ignoring grouping '%s'", i, e.what(), grouping.asString().c_str());
+            Issue::report("Could not locate attribute for grouping number %ld : %s. Ignoring this grouping.", i, e.what());
         }
     }
     std::swap(list, groupingList);
