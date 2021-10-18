@@ -3,24 +3,25 @@ search annotationsreference {
 
   document annotationsreference {
 
-  annotation banana {
-    field brand type string { }
+    annotation banana {
+      field brand type string { }
+    }
+
+    annotation food {
+      field what type annotationreference<banana> { }
+    }
+
+    annotation cyclic {
+      field blah type annotationreference<cyclic> { }
+    }
+
+    annotation a {
+      field foo type annotationreference<b> { }
+    }
+
+    annotation b {
+    }
+
   }
 
-  annotation food {
-    field what type annotationreference<banana> { }
-  }
-
-  annotation cyclic {
-    field blah type annotationreference<cyclic> { }
-  }
-
-  annotation a {
-    field foo type annotationreference<b> { }
-  }
-
-  annotation b {
-  }
-
-  }
 }

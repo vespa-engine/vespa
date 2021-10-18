@@ -178,7 +178,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         version = deployState.getVespaVersion();
         fileRegistry = deployState.getFileRegistry();
         largeRankExpressions = new LargeRankExpressions(deployState.getFileRegistry());
-        rankingConstants = new RankingConstants(deployState.getFileRegistry());
+        rankingConstants = new RankingConstants(deployState.getFileRegistry(), Optional.empty());
         validationOverrides = deployState.validationOverrides();
         applicationPackage = deployState.getApplicationPackage();
         provisioned = deployState.provisioned();

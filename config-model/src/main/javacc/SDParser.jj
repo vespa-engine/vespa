@@ -738,7 +738,7 @@ void annotationOutside(Schema schema) :
 }
 
 /**
- * This rule consumes a annotation block from within either a document element.
+ * Consumes a annotation block from within either a document element.
  *
  * @param document the document object to add content to
  */
@@ -761,9 +761,9 @@ void annotation(Schema schema, SDDocumentType document) :
 
 
 /**
- * This rule consumes a single element of an annotation body block.
+ * Consumes a single element of an annotation body block.
  *
- * @param schema   the seaschemarch object to add content to
+ * @param schema   the schema object to add content to
  * @param type     the type being built
  * @return a modified or new AnnotationType instance
  */

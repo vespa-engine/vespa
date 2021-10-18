@@ -140,7 +140,7 @@ public class Schema implements ImmutableSearch {
         this.properties = properties;
         this.documentsOnly = documentsOnly;
         largeRankExpressions = new LargeRankExpressions(fileRegistry);
-        rankingConstants = new RankingConstants(fileRegistry);
+        rankingConstants = new RankingConstants(fileRegistry, Optional.of(this));
         onnxModels = new OnnxModels(fileRegistry);
     }
 

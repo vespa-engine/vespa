@@ -23,13 +23,14 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 /**
- * The derived rank profiles of a search definition
+ * The derived rank profiles of a schema
  *
  * @author bratseth
  */
@@ -45,7 +46,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     public static RankProfileList empty = new RankProfileList();
 
     private RankProfileList() {
-        rankingConstants = new RankingConstants(null);
+        rankingConstants = new RankingConstants(null, Optional.empty());
         largeRankExpressions = new LargeRankExpressions(null);
         onnxModels = new OnnxModels(null);
     }
@@ -53,7 +54,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     /**
      * Creates a rank profile
      *
-     * @param schema the search definition this is a rank profile from
+     * @param schema the schema this is a rank profile from
      * @param attributeFields the attribute fields to create a ranking for
      */
     public RankProfileList(Schema schema,

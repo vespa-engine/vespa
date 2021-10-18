@@ -87,6 +87,10 @@ public class SchemaTestCase {
                 "  }" +
                 "  rank-profile parent_profile {" +
                 "  }" +
+                "  constant parent_constant {" +
+                "    file: constants/my_constant_tensor_file.json" +
+                "    type: tensor<float>(x{},y{})" +
+                "  }" +
                 "}");
         String childLines = joinLines(
                 "schema child inherits parent {" +
@@ -104,6 +108,8 @@ public class SchemaTestCase {
         assertNotNull(child.getField("parent_field"));
         assertNotNull(child.getExtraField("parent_field"));
         assertNotNull(application.rankProfileRegistry().get(child, "parent_profile"));
+        assertNotNull(child.rankingConstants().get("parent_constant"));
+        assertTrue(child.rankingConstants().asMap().containsKey("parent_constant"));
     }
 
 }
