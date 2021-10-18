@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
-
 import java.nio.file.Path;
 
 /**
@@ -11,18 +9,27 @@ import java.nio.file.Path;
  * @author hakon
  */
 public interface ContainerData {
+    /**
+     * Add or overwrite file in container at path.
+     *
+     * @param pathInContainer The path to the file inside the container, absolute or relative root /.
+     * @param data            The content of the file.
+     */
+    void addFile(Path pathInContainer, String data);
 
-    /** Add or overwrite file in container at path. */
-    void addFile(ContainerPath path, String data);
-
-    /** Add directory in container at path. */
-    void addDirectory(ContainerPath path);
+    /**
+     * Add directory in container at path.
+     *
+     * @param pathInContainer The path to the directory inside the container, absolute or relative root /.
+     */
+    void addDirectory(Path pathInContainer);
 
     /**
      * Symlink to a file in container at path.
-     * @param symlink The path to the symlink inside the container
-     * @param target The path to the target file for the symbolic link inside the container
+     *
+     * @param symlink The path to the symlink inside the container, absolute or relative root /.
+     * @param target The path to the target file for the symbolic link inside the container, absolute or relative root /.
      */
-    void createSymlink(ContainerPath symlink, Path target);
+    void createSymlink(Path symlink, Path target);
 }
 
