@@ -259,7 +259,7 @@ public class ComponentGraph {
             Object instance;
             try {
                 Level level = hasExplicitBinding(fallbackInjector, key) ? Level.FINE : Level.WARNING;
-                log.log(level, () ->"Trying the fallback injector to create" + messageForNoGlobalComponent(clazz, node));
+                log.log(level, () -> "Trying the fallback injector to create" + messageForNoGlobalComponent(clazz, node));
                 if (level.intValue() > Level.INFO.intValue()) {
                     log.log(level, "A component of type " + key.getTypeLiteral() + " should probably be declared in services.xml. " +
                             "Not doing so may cause resource leaks and unnecessary reconstruction of components.");
