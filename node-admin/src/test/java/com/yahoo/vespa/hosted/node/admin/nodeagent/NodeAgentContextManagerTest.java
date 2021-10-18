@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
 import java.time.Clock;
@@ -142,7 +143,7 @@ public class NodeAgentContextManagerTest {
     }
 
     private static NodeAgentContext generateContext() {
-        return NodeAgentContextImpl.builder("container-123.domain.tld").build();
+        return NodeAgentContextImpl.builder("container-123.domain.tld").fileSystem(TestFileSystem.create()).build();
     }
 
     private static class AsyncExecutor<T> {

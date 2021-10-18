@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 
 import java.nio.file.Path;
 import java.time.Clock;
@@ -597,17 +598,17 @@ public class NodeAgentImpl implements NodeAgent {
     protected ContainerData createContainerData(NodeAgentContext context) {
         return new ContainerData() {
             @Override
-            public void addFile(Path pathInContainer, String data) {
+            public void addFile(ContainerPath path, String data) {
                 throw new UnsupportedOperationException("addFile not implemented");
             }
 
             @Override
-            public void addDirectory(Path pathInContainer) {
+            public void addDirectory(ContainerPath path) {
                 throw new UnsupportedOperationException("addDirectory not implemented");
             }
 
             @Override
-            public void createSymlink(Path symlink, Path target) {
+            public void createSymlink(ContainerPath symlink, Path target) {
                 throw new UnsupportedOperationException("createSymlink not implemented");
             }
         };
