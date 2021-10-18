@@ -67,6 +67,8 @@ struct DumpQuery : QueryVisitor {
     void visit(PredicateQuery &) override {}
     void visit(RegExpTerm &) override {}
     void visit(NearestNeighborTerm &) override {}
+    void visit(search::query::TrueQueryNode &) override {}
+    void visit(search::query::FalseQueryNode &) override {}
 };
 
 std::string dump_query(Node &root) {

@@ -53,8 +53,10 @@ public:
         ITEM_REGEXP                =   24,
         ITEM_WORD_ALTERNATIVES     =   25,
         ITEM_NEAREST_NEIGHBOR      =   26,
-        ITEM_GEO_LOCATION_TERM         =   27,
-        ITEM_MAX                   =   28,  // Indicates how long tables must be.
+        ITEM_GEO_LOCATION_TERM     =   27,
+        ITEM_TRUE                  =   28,
+        ITEM_FALSE                 =   29,
+        ITEM_MAX                   =   30,  // Indicates how long tables must be.
         ITEM_UNDEF                 =   31,
     };
 

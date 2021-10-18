@@ -242,6 +242,14 @@ class QueryNodeConverter : public QueryVisitor {
         createTerm(node, ParseItem::ITEM_GEO_LOCATION_TERM);
     }
 
+    void visit(TrueQueryNode &) override {
+        appendByte(ParseItem::ITEM_TRUE);
+    }
+
+    void visit(FalseQueryNode &) override {
+        appendByte(ParseItem::ITEM_FALSE);
+    }
+
     void visit(PrefixTerm &node) override {
         createTerm(node, ParseItem::ITEM_PREFIXTERM);
     }

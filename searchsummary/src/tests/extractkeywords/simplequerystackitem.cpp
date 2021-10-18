@@ -163,6 +163,10 @@ SimpleQueryStackItem::AppendBuffer(RawBuf *buf) const
         buf->appendCompressedPositiveNumber(termLen);
         buf->append(_term.c_str(), termLen);
         break;
+    case ITEM_TRUE:
+    case ITEM_FALSE:
+        // no content
+        break;
     case ITEM_PURE_WEIGHTED_STRING:
         buf->appendCompressedPositiveNumber(termLen);
         buf->append(_term.c_str(), termLen);

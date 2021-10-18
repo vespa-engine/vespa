@@ -64,6 +64,12 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
         }
     }
     break;
+    case ParseItem::ITEM_TRUE:
+        qn = std::make_unique<TrueNode>();
+        break;
+    case ParseItem::ITEM_FALSE:
+        qn = std::make_unique<FalseNode>();
+        break;
     case ParseItem::ITEM_GEO_LOCATION_TERM:
         // TODO implement this:
         // vespalib::string field = queryRep.getIndexName();

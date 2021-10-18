@@ -7,6 +7,7 @@
 #include "querynodemixin.h"
 #include "range.h"
 #include "term.h"
+#include "const_bool_nodes.h"
 
 namespace search::query {
 

@@ -21,6 +21,7 @@
 
 #include "predicate_query_term.h"
 #include "node.h"
+#include "const_bool_nodes.h"
 #include <vespa/searchlib/query/weight.h>
 #include <stack>
 
@@ -328,6 +329,8 @@ public:
         adjustWeight(weight);
         return addTerm(create_nearest_neighbor_term<NodeTypes>(query_tensor_name, field_name, id, weight, target_num_hits, allow_approximate, explore_additional_hits, distance_threshold));
     }
+    void add_true_node() { addTerm(new TrueQueryNode()); }
+    void add_false_node() { addTerm(new TrueQueryNode()); }
 };
 
 }

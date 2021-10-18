@@ -47,6 +47,8 @@ public:
     void visit(PredicateQuery &) override { isVisited<PredicateQuery>() = true; }
     void visit(RegExpTerm &) override { isVisited<RegExpTerm>() = true; }
     void visit(NearestNeighborTerm &) override { isVisited<NearestNeighborTerm>() = true; }
+    void visit(TrueQueryNode &) override { isVisited<TrueQueryNode>() = true; }
+    void visit(FalseQueryNode &) override { isVisited<FalseQueryNode>() = true; }
 };
 
 template <class T>

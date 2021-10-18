@@ -104,6 +104,8 @@ public:
     void visit(MyPredicateQuery &) override { setVisited<MyPredicateQuery>(); }
     void visit(MyRegExpTerm &) override { setVisited<MyRegExpTerm>(); }
     void visit(MyNearestNeighborTerm &) override { setVisited<MyNearestNeighborTerm>(); }
+    void visit(TrueQueryNode &) override {}
+    void visit(FalseQueryNode &) override {}
 };
 
 template <class T>

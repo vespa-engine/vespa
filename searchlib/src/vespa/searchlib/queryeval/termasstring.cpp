@@ -16,6 +16,7 @@ using search::query::And;
 using search::query::AndNot;
 using search::query::DotProduct;
 using search::query::Equiv;
+using search::query::FalseQueryNode;
 using search::query::LocationTerm;
 using search::query::Near;
 using search::query::NearestNeighborTerm;
@@ -34,6 +35,7 @@ using search::query::SameElement;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
+using search::query::TrueQueryNode;
 using search::query::WandTerm;
 using search::query::WeakAnd;
 using search::query::WeightedSetTerm;
@@ -105,6 +107,8 @@ struct TermAsStringVisitor : public QueryVisitor {
     void visit(RegExpTerm &n) override {visitTerm(n); }
     void visit(PredicateQuery &) override {illegalVisit(); }
     void visit(NearestNeighborTerm &) override { illegalVisit(); }
+    void visit(TrueQueryNode &) override { illegalVisit(); }
+    void visit(FalseQueryNode &) override { illegalVisit(); }
 };
 
 void throwFailure(const search::query::Node &term_node) __attribute((noinline));

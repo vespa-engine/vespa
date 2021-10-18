@@ -37,6 +37,8 @@ using query::RegExpTerm;
 using query::StringTerm;
 using query::SubstringTerm;
 using query::SuffixTerm;
+using query::TrueQueryNode;
+using query::FalseQueryNode;
 using queryeval::Blueprint;
 using queryeval::CreateBlueprintVisitorHelper;
 using queryeval::EmptyBlueprint;

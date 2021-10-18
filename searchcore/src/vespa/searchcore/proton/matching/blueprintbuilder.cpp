@@ -144,7 +144,6 @@ protected:
     void visit(ProtonONear &n)       override { buildIntermediate(new ONearBlueprint(n.getDistance()), n); }
     void visit(ProtonSameElement &n) override { buildSameElement(n); }
 
-
     void visit(ProtonWeightedSetTerm &n) override { buildTerm(n); }
     void visit(ProtonDotProduct &n)      override { buildTerm(n); }
     void visit(ProtonWandTerm &n)        override { buildTerm(n); }
@@ -160,6 +159,13 @@ protected:
     void visit(ProtonPredicateQuery &n)  override { buildTerm(n); }
     void visit(ProtonRegExpTerm &n)      override { buildTerm(n); }
     void visit(ProtonNearestNeighborTerm &n) override { buildTerm(n); }
+
+    void visit(search::query::TrueQueryNode &) override {
+        _result = std::make_unique<AlwaysTrueBlueprint>();
+    }
+    void visit(search::query::FalseQueryNode &) override {
+        _result = std::make_unique<EmptyBlueprint>();
+    }
 
 public:
     BlueprintBuilderVisitor(const IRequestContext & requestContext, ISearchContext &context) :
