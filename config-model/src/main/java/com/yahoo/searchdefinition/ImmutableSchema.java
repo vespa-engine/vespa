@@ -21,10 +21,10 @@ import java.util.stream.Stream;
  *
  * @author bjorncs
  */
-public interface ImmutableSearch {
+public interface ImmutableSchema {
 
     String getName();
-    Optional<? extends ImmutableSearch> inherited();
+    Optional<? extends ImmutableSchema> inherited();
     Index getIndex(String name);
     ImmutableSDField getConcreteField(String name);
     //TODO split in mutating/immutable by returning List<ImmutableSDField>

@@ -46,7 +46,7 @@ import java.util.stream.Stream;
 // TODO: Make a class owned by this, for each of these responsibilities:
 // Managing indexes, managing attributes, managing summary classes.
 // Ensure that after the processing step, all implicit instances of the above types are explicitly represented
-public class Schema implements ImmutableSearch {
+public class Schema implements ImmutableSchema {
 
     private static final String SD_DOC_FIELD_NAME = "sddocname";
     private static final List<String> RESERVED_NAMES = List.of(

@@ -41,7 +41,7 @@ public class RankProfileRegistry {
         return rankProfileRegistry;
     }
 
-    private String extractName(ImmutableSearch search) {
+    private String extractName(ImmutableSchema search) {
         return search != null ? search.getName() : MAGIC_GLOBAL_RANKPROFILES;
     }
 
@@ -83,7 +83,7 @@ public class RankProfileRegistry {
         return profiles.get(name);
     }
 
-    public RankProfile get(ImmutableSearch schema, String name) {
+    public RankProfile get(ImmutableSchema schema, String name) {
         var profile = get(schema.getName(), name);
         if (profile != null) return profile;
         if (schema.inherited().isPresent()) return get(schema.inherited().get(), name);
@@ -137,7 +137,7 @@ public class RankProfileRegistry {
      * @param search search definition to fetch rank profiles for, or null for the global ones
      * @return Collection of RankProfiles
      */
-    public Collection<RankProfile> rankProfilesOf(ImmutableSearch search) {
+    public Collection<RankProfile> rankProfilesOf(ImmutableSchema search) {
         return rankProfilesOf(extractName(search));
     }
 

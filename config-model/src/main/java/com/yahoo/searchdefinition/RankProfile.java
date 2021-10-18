@@ -61,7 +61,7 @@ public class RankProfile implements Cloneable {
     private final String name;
 
     /** The search definition owning this profile, or null if global (owned by a model) */
-    private final ImmutableSearch search;
+    private final ImmutableSchema search;
 
     /** The name of the rank profile inherited by this */
     private String inheritedName = null;
@@ -180,7 +180,7 @@ public class RankProfile implements Cloneable {
     public String getName() { return name; }
 
     /** Returns the search definition owning this, or null if it is global */
-    public ImmutableSearch getSearch() { return search; }
+    public ImmutableSchema getSearch() { return search; }
 
     /** Returns the application this is part of */
     public ApplicationPackage applicationPackage() {
@@ -255,7 +255,7 @@ public class RankProfile implements Cloneable {
         }
     }
 
-    private RankProfile resolveInherited(ImmutableSearch schema) {
+    private RankProfile resolveInherited(ImmutableSchema schema) {
         SDDocumentType documentType = schema.getDocument();
         if (documentType != null) {
             if (name.equals(inheritedName)) {
