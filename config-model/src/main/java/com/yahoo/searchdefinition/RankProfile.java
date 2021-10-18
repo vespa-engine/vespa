@@ -166,7 +166,8 @@ public class RankProfile implements Cloneable {
      *
      * @param name  the name of the new profile
      */
-    public RankProfile(String name, ApplicationPackage applicationPackage, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants, OnnxModels onnxModels) {
+    public RankProfile(String name, ApplicationPackage applicationPackage, DeployLogger deployLogger,
+                       RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants, OnnxModels onnxModels) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.search = null;
         this.rankProfileRegistry = rankProfileRegistry;
@@ -254,8 +255,8 @@ public class RankProfile implements Cloneable {
         }
     }
 
-    private RankProfile resolveInherited(ImmutableSearch search) {
-        SDDocumentType documentType = search.getDocument();
+    private RankProfile resolveInherited(ImmutableSearch schema) {
+        SDDocumentType documentType = schema.getDocument();
         if (documentType != null) {
             if (name.equals(inheritedName)) {
                 // If you seemingly inherit yourself, you are actually referencing a rank-profile in one of your inherited schemas
@@ -266,7 +267,7 @@ public class RankProfile implements Cloneable {
             }
             return rankProfileRegistry.resolve(documentType, inheritedName);
         }
-        return rankProfileRegistry.get(search.getName(), inheritedName);
+        return rankProfileRegistry.get(schema.getName(), inheritedName);
     }
 
     private RankProfile resolveInherited() {

@@ -85,6 +85,8 @@ public class SchemaTestCase {
                 "  field parent_field type string {" +
                 "      indexing: input pf1 | lowercase | index | attribute | summary" +
                 "  }" +
+                "  rank-profile parent_profile {" +
+                "  }" +
                 "}");
         String childLines = joinLines(
                 "schema child inherits parent {" +
@@ -101,6 +103,7 @@ public class SchemaTestCase {
         assertEquals(Stemming.BEST, child.getIndex("parent_index").getStemming());
         assertNotNull(child.getField("parent_field"));
         assertNotNull(child.getExtraField("parent_field"));
+        assertNotNull(application.rankProfileRegistry().get(child, "parent_profile"));
     }
 
 }

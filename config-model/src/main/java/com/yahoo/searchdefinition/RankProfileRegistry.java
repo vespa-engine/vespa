@@ -30,6 +30,10 @@ public class RankProfileRegistry {
     /* These rank profiles can be overridden: 'default' rank profile, as that is documented to work. And 'unranked'. */
     static final Set<String> overridableRankProfileNames = new HashSet<>(Arrays.asList("default", "unranked"));
 
+    public RankProfileRegistry() {
+
+    }
+
     public static RankProfileRegistry createRankProfileRegistryWithBuiltinRankProfiles(Schema schema) {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         rankProfileRegistry.add(new DefaultRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));
@@ -69,17 +73,21 @@ public class RankProfileRegistry {
     /**
      * Returns a named rank profile, null if the search definition doesn't have one with the given name
      *
-     * @param search the {@link Schema} that owns the rank profile.
+     * @param schema the {@link Schema} that owns the rank profile
      * @param name the name of the rank profile
      * @return the RankProfile to return.
      */
-    public RankProfile get(String search, String name) {
-        Map<String, RankProfile> profiles = rankProfiles.get(search);
+    public RankProfile get(String schema, String name) {
+        Map<String, RankProfile> profiles = rankProfiles.get(schema);
         if (profiles == null) return null;
         return profiles.get(name);
     }
-    public RankProfile get(ImmutableSearch search, String name) {
-        return get(search.getName(), name);
+
+    public RankProfile get(ImmutableSearch schema, String name) {
+        var profile = get(schema.getName(), name);
+        if (profile != null) return profile;
+        if (schema.inherited().isPresent()) return get(schema.inherited().get(), name);
+        return null;
     }
 
     public RankProfile getGlobal(String name) {

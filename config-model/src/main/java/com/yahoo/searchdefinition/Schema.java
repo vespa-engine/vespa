@@ -153,13 +153,14 @@ public class Schema implements ImmutableSearch {
         return name;
     }
 
-    /**
-     * Returns true if this doesn't define a search, just some documents
-     *
-     * @return if the searchdefinition only has documents
-     */
+    /** Returns true if this only defines a document type, not a full schema */
     public boolean isDocumentsOnly() {
         return documentsOnly;
+    }
+
+    @Override
+    public Optional<Schema> inherited() {
+        return inherited.map(name -> owner.schemas().get(name));
     }
 
     /**
@@ -186,7 +187,7 @@ public class Schema implements ImmutableSearch {
     public Stemming getStemming() {
         if (stemming != null) return stemming;
         if (inherited.isEmpty()) return Stemming.BEST;
-        return inherited().getStemming();
+        return requireInherited().getStemming();
     }
 
     /**
@@ -369,7 +370,7 @@ public class Schema implements ImmutableSearch {
 
     public Collection<SDField> extraFieldList() {
         if (inherited.isEmpty()) return fields.values();
-        var fields = new HashSet<>(inherited().extraFieldList());
+        var fields = new HashSet<>(requireInherited().extraFieldList());
         fields.addAll(this.fields.values());
         return fields;
     }
@@ -377,7 +378,7 @@ public class Schema implements ImmutableSearch {
     public Collection<SDField> allExtraFields() {
         Map<String, SDField> extraFields = new TreeMap<>();
         if (inherited.isPresent())
-            inherited().allExtraFields().forEach(field -> extraFields.put(field.getName(), field));
+            requireInherited().allExtraFields().forEach(field -> extraFields.put(field.getName(), field));
         for (Field field : documentType.fieldSet()) {
             SDField sdField = (SDField) field;
             if (sdField.isExtraField()) {
@@ -400,7 +401,7 @@ public class Schema implements ImmutableSearch {
         SDField field = fields.get(fieldName);
         if (field != null) return field;
         if (inherited.isEmpty()) return null;
-        return inherited().getExtraField(fieldName);
+        return requireInherited().getExtraField(fieldName);
     }
 
     /**
@@ -438,14 +439,14 @@ public class Schema implements ImmutableSearch {
     /** Returns the schema level index of this name, in this or any inherited schema, if any */
     Optional<Index> getSchemaIndex(String name) {
         if (indices.containsKey(name)) return Optional.of(indices.get(name));
-        if (inherited.isPresent()) return inherited().getSchemaIndex(name);
+        if (inherited.isPresent()) return requireInherited().getSchemaIndex(name);
         return Optional.empty();
     }
 
     public boolean existsIndex(String name) {
         if (indices.get(name) != null)
             return true;
-        if (inherited.isPresent() && inherited().existsIndex(name))
+        if (inherited.isPresent() && requireInherited().existsIndex(name))
             return true;
         for (ImmutableSDField field : allConcreteFields()) {
             if (field.existsIndex(name))
@@ -498,7 +499,7 @@ public class Schema implements ImmutableSearch {
         List<Index> allIndices = new ArrayList<>(indices.values());
 
         if (inherited.isPresent()) {
-            for (Index inheritedIndex : inherited().getExplicitIndices()) {
+            for (Index inheritedIndex : requireInherited().getExplicitIndices()) {
                 if ( ! indices.containsKey(inheritedIndex.getName())) // child redefinitions shadows parents
                     allIndices.add(inheritedIndex);
             }
@@ -681,13 +682,13 @@ public class Schema implements ImmutableSearch {
     public FieldSets fieldSets() {
         if (inherited.isEmpty()) return fieldSets;
 
-        var fieldSets = new FieldSets(inherited().fieldSets());
+        var fieldSets = new FieldSets(requireInherited().fieldSets());
         fieldSets.add(this.fieldSets);
         return fieldSets;
     }
 
     /** Returns the schema inherited by this, or throws if none */
-    private Schema inherited() { return owner.schemas().get(inherited.get()); }
+    private Schema requireInherited() { return owner.schemas().get(inherited.get()); }
 
     /**
      * For adding structs defined in document scope

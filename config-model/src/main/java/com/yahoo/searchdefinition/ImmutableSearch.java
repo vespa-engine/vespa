@@ -12,6 +12,7 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import java.io.Reader;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -23,6 +24,7 @@ import java.util.stream.Stream;
 public interface ImmutableSearch {
 
     String getName();
+    Optional<? extends ImmutableSearch> inherited();
     Index getIndex(String name);
     ImmutableSDField getConcreteField(String name);
     //TODO split in mutating/immutable by returning List<ImmutableSDField>
@@ -45,4 +47,5 @@ public interface ImmutableSearch {
     List<ImmutableSDField> allFieldsList();
 
     Map<String, SummaryField> getSummaryFields(ImmutableSDField field);
+
 }

@@ -48,7 +48,6 @@ public class SearchBuilder {
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
     private final DocumentModel model = new DocumentModel();
     private final Application application;
-    private final RankProfileRegistry rankProfileRegistry;
     private final QueryProfileRegistry queryProfileRegistry;
     private final FileRegistry fileRegistry;
     private final DeployLogger deployLogger;
@@ -117,8 +116,7 @@ public class SearchBuilder {
                           RankProfileRegistry rankProfileRegistry,
                           QueryProfileRegistry queryProfileRegistry,
                           boolean documentsOnly) {
-        this.application = new Application(applicationPackage);
-        this.rankProfileRegistry = rankProfileRegistry;
+        this.application = new Application(applicationPackage, rankProfileRegistry);
         this.queryProfileRegistry = queryProfileRegistry;
         this.fileRegistry = fileRegistry;
         this.deployLogger = deployLogger;
@@ -170,7 +168,8 @@ public class SearchBuilder {
     private String importString(String str, String searchDefDir) throws ParseException {
         SimpleCharStream stream = new SimpleCharStream(str);
         try {
-            return importRawSearch(new SDParser(stream, fileRegistry, deployLogger, properties, application, rankProfileRegistry, documentsOnly)
+            return importRawSearch(new SDParser(stream, fileRegistry, deployLogger, properties, application,
+                                                application.rankProfileRegistry(), documentsOnly)
                                            .schema(docTypeMgr, searchDefDir));
         } catch (TokenMgrException e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
@@ -266,7 +265,7 @@ public class SearchBuilder {
      * #build()} method so that subclasses can choose not to build anything.
      */
     private void process(Schema schema, QueryProfiles queryProfiles, boolean validate) {
-        new Processing().process(schema, deployLogger, rankProfileRegistry, queryProfiles, validate, documentsOnly);
+        new Processing().process(schema, deployLogger, application.rankProfileRegistry(), queryProfiles, validate, documentsOnly);
     }
 
     /**
@@ -533,7 +532,7 @@ public class SearchBuilder {
     }
 
     public RankProfileRegistry getRankProfileRegistry() {
-        return rankProfileRegistry;
+        return application.rankProfileRegistry();
     }
 
     public QueryProfileRegistry getQueryProfileRegistry() {
