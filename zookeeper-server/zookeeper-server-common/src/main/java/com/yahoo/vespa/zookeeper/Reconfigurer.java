@@ -57,7 +57,7 @@ public class Reconfigurer extends AbstractComponent {
             zooKeeperRunner = startServer(newConfig, server);
         }
 
-        if (shouldReconfigure(newConfig)) {
+        if (newConfig.dynamicReconfiguration()) {
             reconfigure(newConfig);
         }
         return peer;
@@ -73,23 +73,14 @@ public class Reconfigurer extends AbstractComponent {
         }
     }
 
-    private boolean shouldReconfigure(ZookeeperServerConfig newConfig) {
-        if (!newConfig.dynamicReconfiguration()) return false;
-        if (activeConfig == null) return false;
-        return ! newConfig.equals(activeConfig());
-    }
-
     private ZooKeeperRunner startServer(ZookeeperServerConfig zookeeperServerConfig, VespaZooKeeperServer server) {
         ZooKeeperRunner runner = new ZooKeeperRunner(zookeeperServerConfig, server);
         activeConfig = zookeeperServerConfig;
         return runner;
     }
 
-    // TODO jonmv: unify server config writing here and in Configurator
     // TODO jonmv: read dynamic file, discard if old quorum impossible (config file + .dynamic.<id>)
     // TODO jonmv: if dynamic file, all unlisted servers are observers; otherwise joiners are observers
-    // TODO jonmv: use bulk mode, i.e., supply only new servers
-    // TODO jonmv: always reconfigure when dynamic config is used, and to only non-retired nodes
     // TODO jonmv: verify reconfig by issuing a dummy write
     // TODO jonmv: wrap Curator in Provider, for Curator shutdown
     // TODO jonmv: scale down to 1 server as well
@@ -153,6 +144,7 @@ public class Reconfigurer extends AbstractComponent {
 
     private static List<String> servers(ZookeeperServerConfig config) {
         return config.server().stream()
+                     .filter(server -> ! server.retired())
                      .map(server -> serverSpec(server, config.clientPort(), false))
                      .collect(toList());
     }

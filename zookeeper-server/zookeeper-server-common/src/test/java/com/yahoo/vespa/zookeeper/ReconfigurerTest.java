@@ -53,18 +53,13 @@ public class ReconfigurerTest {
         assertEquals("node1:2181", reconfigurer.connectionSpec());
         assertEquals("server.0=node0:2182:2183;2181,server.1=node1:2182:2183;2181,server.2=node2:2182:2183;2181,server.3=node3:2182:2183;2181,server.4=node4:2182:2183;2181",
                      reconfigurer.servers());
-        assertEquals(1, reconfigurer.reconfigurations());
-        assertSame(nextConfig, reconfigurer.activeConfig());
-
-        // No reconfiguration happens with same config
-        reconfigurer.startOrReconfigure(nextConfig);
-        assertEquals(1, reconfigurer.reconfigurations());
+        assertEquals(2, reconfigurer.reconfigurations());
         assertSame(nextConfig, reconfigurer.activeConfig());
 
         // Cluster shrinks
         nextConfig = createConfig(3, true);
         reconfigurer.startOrReconfigure(nextConfig);
-        assertEquals(2, reconfigurer.reconfigurations());
+        assertEquals(3, reconfigurer.reconfigurations());
         assertEquals("node1:2181", reconfigurer.connectionSpec());
         assertEquals("server.0=node0:2182:2183;2181,server.1=node1:2182:2183;2181,server.2=node2:2182:2183;2181",
                      reconfigurer.servers());
@@ -73,7 +68,7 @@ public class ReconfigurerTest {
         // Cluster loses node1, but node3 joins. Indices are shuffled.
         nextConfig = createConfig(3, true, 1);
         reconfigurer.startOrReconfigure(nextConfig);
-        assertEquals(3, reconfigurer.reconfigurations());
+        assertEquals(4, reconfigurer.reconfigurations());
         assertEquals("server.0=node0:2182:2183;2181,server.1=node2:2182:2183;2181,server.2=node3:2182:2183;2181",
                      reconfigurer.servers());
         assertSame(nextConfig, reconfigurer.activeConfig());
@@ -91,7 +86,7 @@ public class ReconfigurerTest {
         assertEquals("node1:2181", reconfigurer.connectionSpec());
         assertEquals("server.0=node0:2182:2183;2181,server.1=node1:2182:2183;2181,server.2=node2:2182:2183;2181,server.3=node3:2182:2183;2181,server.4=node4:2182:2183;2181",
                      reconfigurer.servers());
-        assertEquals(1, reconfigurer.reconfigurations());
+        assertEquals(2, reconfigurer.reconfigurations());
         assertSame(nextConfig, reconfigurer.activeConfig());
     }
 
@@ -112,24 +107,27 @@ public class ReconfigurerTest {
        reconfigurer.shutdown();
     }
 
-    private ZookeeperServerConfig createConfig(int numberOfServers, boolean dynamicReconfiguration, int... skipIndices) {
-        Arrays.sort(skipIndices);
+    private ZookeeperServerConfig createConfig(int numberOfServers, boolean dynamicReconfiguration, int... retiredIndices) {
+        Arrays.sort(retiredIndices);
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
         builder.myidFile(idFile.getAbsolutePath());
         for (int i = 0, index = 0; i < numberOfServers; i++, index++) {
-            while (Arrays.binarySearch(skipIndices, index) >= 0) index++;
-            builder.server(newServer(i, "node" + index));
+            boolean retired = Arrays.binarySearch(retiredIndices, index) >= 0;
+            if (retired) i--;
+            builder.server(newServer(i, "node" + index, retired));
         }
+
         builder.myid(0);
         builder.dynamicReconfiguration(dynamicReconfiguration);
         return builder.build();
     }
 
-    private ZookeeperServerConfig.Server.Builder newServer(int id, String hostName) {
+    private ZookeeperServerConfig.Server.Builder newServer(int id, String hostName, boolean retired) {
         ZookeeperServerConfig.Server.Builder builder = new ZookeeperServerConfig.Server.Builder();
         builder.id(id);
         builder.hostname(hostName);
+        builder.retired(retired);
         return builder;
     }
 
@@ -142,6 +140,7 @@ public class ReconfigurerTest {
     private static class TestableReconfigurer extends Reconfigurer implements VespaZooKeeperServer {
 
         private final TestableVespaZooKeeperAdmin zooKeeperAdmin;
+        private final Phaser phaser = new Phaser(2);
         private QuorumPeer serverPeer;
 
         TestableReconfigurer(TestableVespaZooKeeperAdmin zooKeeperAdmin) {
@@ -157,6 +156,7 @@ public class ReconfigurerTest {
 
         void startOrReconfigure(ZookeeperServerConfig newConfig) {
             serverPeer = startOrReconfigure(newConfig, this, MockQuorumPeer::new);
+            phaser.arriveAndDeregister();
         }
 
         String connectionSpec() {
@@ -173,10 +173,14 @@ public class ReconfigurerTest {
 
         @Override
         public void shutdown() {
+            phaser.arriveAndAwaitAdvance();
             serverPeer.shutdown(Duration.ofSeconds(1)); }
 
         @Override
-        public void start(Path configFilePath) { serverPeer.start(configFilePath); }
+        public void start(Path configFilePath) {
+            phaser.arriveAndAwaitAdvance();
+            serverPeer.start(configFilePath);
+        }
 
         @Override
         public boolean reconfigurable() {
