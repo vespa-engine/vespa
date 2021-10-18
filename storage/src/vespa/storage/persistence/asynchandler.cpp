@@ -167,7 +167,9 @@ AsyncHandler::handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTracker::
         return tracker;
     }
 
-    auto task = makeResultTask([this, tracker = std::move(tracker), bucket=cmd.getBucket()](spi::Result::UP ) {
+    auto task = makeResultTask([this, tracker = std::move(tracker), bucket=cmd.getBucket()](spi::Result::UP ignored) {
+        // TODO Even if an non OK response can not be handled sanely we might probably log a message, or increment a metric
+        (void) ignored;
         StorBucketDatabase &db(_env.getBucketDatabase(bucket.getBucketSpace()));
         StorBucketDatabase::WrappedEntry entry = db.get(bucket.getBucketId(), "onDeleteBucket");
         if (entry.exist() && entry->getMetaCount() > 0) {
