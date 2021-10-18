@@ -86,7 +86,7 @@ public class Configurator {
         sb.append("reconfigEnabled=true").append("\n");
         sb.append("skipACL=yes").append("\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
-        config.server().forEach(server -> addServerToCfg(sb, server, config.clientPort()));
+        config.server().forEach(server -> sb.append(serverSpec(server, config.clientPort(), server.joining())).append("\n"));
         sb.append(new TlsQuorumConfig().createConfig(vespaTlsConfig));
         sb.append(new TlsClientServerConfig().createConfig(vespaTlsConfig));
         return sb.toString();
@@ -111,7 +111,8 @@ public class Configurator {
         }
     }
 
-    private void addServerToCfg(StringBuilder sb, ZookeeperServerConfig.Server server, int clientPort) {
+    static String serverSpec(ZookeeperServerConfig.Server server, int clientPort, boolean joining) {
+        StringBuilder sb = new StringBuilder();
         sb.append("server.")
           .append(server.id())
           .append("=")
@@ -120,7 +121,7 @@ public class Configurator {
           .append(server.quorumPort())
           .append(":")
           .append(server.electionPort());
-        if (server.joining()) {
+        if (joining) {
             // Servers that are joining an existing cluster must be marked as observers. Note that this will NOT
             // actually make the server an observer, but prevent it from forming an ensemble independently of the
             // existing cluster.
@@ -130,8 +131,8 @@ public class Configurator {
               .append("observer");
         }
         sb.append(";")
-          .append(clientPort)
-          .append("\n");
+          .append(clientPort);
+        return sb.toString();
     }
 
     static List<String> zookeeperServerHostnames(ZookeeperServerConfig zookeeperServerConfig) {

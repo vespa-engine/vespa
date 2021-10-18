@@ -19,11 +19,11 @@ public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
     private static final Logger log = java.util.logging.Logger.getLogger(VespaZooKeeperAdminImpl.class.getName());
 
     @Override
-    public void reconfigure(String connectionSpec, String joiningServers, String leavingServers) throws ReconfigException {
+    public void reconfigure(String connectionSpec, String servers) throws ReconfigException {
         try (ZooKeeperAdmin zooKeeperAdmin = createAdmin(connectionSpec)) {
             long fromConfig = -1;
             // Using string parameters because the List variant of reconfigure fails to join empty lists (observed on 3.5.6, fixed in 3.7.0)
-            byte[] appliedConfig = zooKeeperAdmin.reconfigure(joiningServers, leavingServers, null, fromConfig, null);
+            byte[] appliedConfig = zooKeeperAdmin.reconfigure(null, null, servers, fromConfig, null);
             log.log(Level.INFO, "Applied ZooKeeper config: " + new String(appliedConfig, StandardCharsets.UTF_8));
         }
         catch (   KeeperException.ReconfigInProgress
