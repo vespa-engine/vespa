@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
-import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
 import java.util.List;
@@ -34,7 +33,7 @@ public class ContainerFailTest {
                     .build();
             tester.addChildNodeRepositoryNode(nodeSpec);
 
-            NodeAgentContext context = NodeAgentContextImpl.builder(nodeSpec).fileSystem(TestFileSystem.create()).build();
+            NodeAgentContext context = NodeAgentContextImpl.builder(nodeSpec).build();
 
             tester.inOrder(tester.containerOperations).createContainer(containerMatcher(containerName), any(), any());
             tester.inOrder(tester.containerOperations).resumeNode(containerMatcher(containerName));
