@@ -138,8 +138,7 @@ public:
 
     bool check(uint32_t messageType, uint16_t node, uint8_t priority) override
     {
-        (void) node;
-        if (op.shouldBlockThisOperation(messageType, priority)) {
+        if (op.shouldBlockThisOperation(messageType, node, priority)) {
             blocked = true;
             return false;
         }
@@ -232,6 +231,7 @@ IdealStateOperation::toString() const
 
 bool
 IdealStateOperation::shouldBlockThisOperation(uint32_t messageType,
+                                              [[maybe_unused]] uint16_t node,
                                               uint8_t) const
 {
     for (uint32_t i = 0; MAINTENANCE_MESSAGE_TYPES[i] != 0; ++i) {

@@ -119,4 +119,16 @@ TEST_F(RemoveBucketOperationTest, fail_with_invalid_bucket_info) {
     EXPECT_EQ("NONEXISTING", dumpBucket(document::BucketId(16, 1)));
 }
 
+TEST_F(RemoveBucketOperationTest, operation_blocked_when_pending_message_to_target_node) {
+    RemoveBucketOperation op(dummy_cluster_context,
+                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
+                                            toVector<uint16_t>(1, 3)));
+    // In node target set
+    EXPECT_TRUE(op.shouldBlockThisOperation(api::MessageType::PUT_ID, 1, 120));
+    EXPECT_TRUE(op.shouldBlockThisOperation(api::MessageType::PUT_ID, 3, 120));
+    // Not in node target set
+    EXPECT_FALSE(op.shouldBlockThisOperation(api::MessageType::PUT_ID, 0, 120));
+    EXPECT_FALSE(op.shouldBlockThisOperation(api::MessageType::PUT_ID, 2, 120));
+}
+
 } // storage::distributor

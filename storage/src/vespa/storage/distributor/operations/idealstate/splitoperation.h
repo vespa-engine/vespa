@@ -21,7 +21,7 @@ public:
     const char* getName() const override { return "split"; };
     Type getType() const override { return SPLIT_BUCKET; }
     bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const override;
-    bool shouldBlockThisOperation(uint32_t, uint8_t) const override;
+    bool shouldBlockThisOperation(uint32_t, uint16_t, uint8_t) const override;
 protected:
     MessageTracker _tracker;
 
