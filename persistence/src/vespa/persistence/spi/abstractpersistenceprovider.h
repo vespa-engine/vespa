@@ -17,11 +17,8 @@ public:
     Result initialize() override { return Result(); };
     Result createBucket(const Bucket&, Context&) override { return Result(); }
     Result removeEntry(const Bucket&, Timestamp, Context&) override { return Result(); }
-    RemoveResult removeIfFound(const Bucket&, Timestamp, const DocumentId&, Context&) override;
     void removeIfFoundAsync(const Bucket&, Timestamp, const DocumentId&, Context&, OperationComplete::UP) override;
     Result setClusterState(BucketSpace, const ClusterState&) override { return Result(); }
-    void setActiveStateAsync(const Bucket &, BucketInfo::ActiveState, OperationComplete::UP ) override;
-    void deleteBucketAsync(const Bucket&, Context&, OperationComplete::UP) override;
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
 };
 

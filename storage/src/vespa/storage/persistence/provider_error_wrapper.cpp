@@ -73,32 +73,6 @@ ProviderErrorWrapper::getBucketInfo(const spi::Bucket& bucket) const
     return checkResult(_impl.getBucketInfo(bucket));
 }
 
-spi::Result
-ProviderErrorWrapper::put(const spi::Bucket& bucket, spi::Timestamp ts, spi::DocumentSP doc, spi::Context& context)
-{
-    return checkResult(_impl.put(bucket, ts, std::move(doc), context));
-}
-
-spi::RemoveResult
-ProviderErrorWrapper::remove(const spi::Bucket& bucket, spi::Timestamp ts, const document::DocumentId& docId, spi::Context& context)
-{
-    return checkResult(_impl.remove(bucket, ts, docId, context));
-}
-
-spi::RemoveResult
-ProviderErrorWrapper::removeIfFound(const spi::Bucket& bucket, spi::Timestamp ts,
-                                    const document::DocumentId& docId, spi::Context& context)
-{
-    return checkResult(_impl.removeIfFound(bucket, ts, docId, context));
-}
-
-spi::UpdateResult
-ProviderErrorWrapper::update(const spi::Bucket& bucket, spi::Timestamp ts,
-                             spi::DocumentUpdateSP docUpdate, spi::Context& context)
-{
-    return checkResult(_impl.update(bucket, ts, std::move(docUpdate), context));
-}
-
 spi::GetResult
 ProviderErrorWrapper::get(const spi::Bucket& bucket, const document::FieldSet& fieldSet,
                           const document::DocumentId& docId, spi::Context& context) const

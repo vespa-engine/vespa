@@ -46,14 +46,15 @@ public:
           _deleteBucketInvocations(0)
     {}
 
-    spi::Result put(const spi::Bucket&, spi::Timestamp, document::Document::SP, spi::Context&) override
+    void
+    putAsync(const spi::Bucket&, spi::Timestamp, document::Document::SP, spi::Context&, spi::OperationComplete::UP onComplete) override
     {
         _queueBarrier.await();
         // message abort stage with active opertion in disk queue
         std::this_thread::sleep_for(75ms);
         _completionBarrier.await();
         // test finished
-        return spi::Result();
+        onComplete->onComplete(std::make_unique<spi::Result>());
     }
 
     spi::BucketInfoResult getBucketInfo(const spi::Bucket& bucket) const override {
@@ -66,7 +67,8 @@ public:
         return PersistenceProviderWrapper::createBucket(bucket, ctx);
     }
 
-    void deleteBucketAsync(const spi::Bucket& bucket, spi::Context& ctx, spi::OperationComplete::UP onComplete) override {
+    void
+    deleteBucketAsync(const spi::Bucket& bucket, spi::Context& ctx, spi::OperationComplete::UP onComplete) override {
         ++_deleteBucketInvocations;
         PersistenceProviderWrapper::deleteBucketAsync(bucket, ctx, std::move(onComplete));
     }
