@@ -85,7 +85,7 @@ class ContainerFileSystemTest {
         new UnixPath(destination).setOwnerId(500).setGroupId(200);
         ContainerPath destination2 = ContainerPath.fromPathInContainer(containerFs, Path.of("/dest2"));
         Files.copy(destination, destination2, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
-        assertOwnership(destination2, 0, 0, 10000, 11000);
+        assertOwnership(destination2, 500, 200, 10500, 11200);
     }
 
     @Test
@@ -116,7 +116,7 @@ class ContainerFileSystemTest {
         new UnixPath(destination).setOwnerId(500).setGroupId(200);
         ContainerPath destination2 = ContainerPath.fromPathInContainer(containerFs, Path.of("/dest2"));
         Files.move(destination, destination2, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
-        assertOwnership(destination2, 0, 0, 10000, 11000);
+        assertOwnership(destination2, 500, 200, 10500, 11200);
     }
 
     @Test

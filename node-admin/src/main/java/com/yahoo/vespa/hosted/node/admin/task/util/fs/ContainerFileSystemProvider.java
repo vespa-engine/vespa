@@ -114,7 +114,6 @@ class ContainerFileSystemProvider extends FileSystemProvider {
         // Only called when both 'source' and 'target' have 'this' as the FS provider
         Path targetPathOnHost = pathOnHost(target);
         provider(targetPathOnHost).copy(pathOnHost(source), targetPathOnHost, options);
-        fixOwnerToContainerRoot(toContainerPath(target));
     }
 
     @Override
@@ -122,7 +121,6 @@ class ContainerFileSystemProvider extends FileSystemProvider {
         // Only called when both 'source' and 'target' have 'this' as the FS provider
         Path targetPathOnHost = pathOnHost(target);
         provider(targetPathOnHost).move(pathOnHost(source), targetPathOnHost, options);
-        fixOwnerToContainerRoot(toContainerPath(target));
     }
 
     @Override
