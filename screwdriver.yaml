@@ -29,6 +29,9 @@ shared:
 
     save-cache: &save-cache
       save-cache: |
+        ls -lart /tmp/vespa
+        du -sh /tmp/vespa/*
+
         if [[ -z "$SD_PULL_REQUEST" ]]; then
           # Remove what we have produced
           rm -rf $LOCAL_MVN_REPO/com/yahoo
@@ -39,7 +42,7 @@ shared:
           (cd /tmp && tar cf $MAIN_CACHE_FILE vespa)
 
           # Wipe the cache if we exceed 2GB to avoid pulling and pusing too large files
-          if (( $(stat --format='%s' $MAIN_CACHE_FILE) > $(( 2*1000*1000*1000 )) )); then
+          if (( $(stat --format='%s' $MAIN_CACHE_FILE) > $(( 2200*1000*1000 )) )); then
             tar cf $MAIN_CACHE_FILE --files-from=/dev/null;
             echo "Cleaning cache file. $MAIN_CACHE_FILE is now $(stat --format='%s' $MAIN_CACHE_FILE) bytes."
           fi
@@ -94,6 +97,7 @@ jobs:
       CCACHE_TMP_DIR: "/tmp/ccache_tmp"
       CCACHE_DATA_DIR: "/tmp/vespa/ccache"
       MAIN_CACHE_FILE: "/main_job_cache/vespa.tar"
+      CCACHE_COMPRESS: "1"
     secrets:
       - DOCKER_HUB_DEPLOY_KEY
     steps:
