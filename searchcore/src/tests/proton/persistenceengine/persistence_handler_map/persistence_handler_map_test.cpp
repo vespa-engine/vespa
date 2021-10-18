@@ -20,7 +20,7 @@ struct DummyPersistenceHandler : public IPersistenceHandler {
     void handleRemove(FeedToken, const storage::spi::Bucket &, storage::spi::Timestamp, const document::DocumentId &) override {}
     void handleListBuckets(IBucketIdListResultHandler &) override {}
     void handleSetClusterState(const storage::spi::ClusterState &, IGenericResultHandler &) override {}
-    void handleSetActiveState(const storage::spi::Bucket &, storage::spi::BucketInfo::ActiveState, IGenericResultHandler &) override {}
+    void handleSetActiveState(const storage::spi::Bucket &, storage::spi::BucketInfo::ActiveState, std::shared_ptr<IGenericResultHandler>) override {}
     void handleGetBucketInfo(const storage::spi::Bucket &, IBucketInfoResultHandler &) override {}
     void handleCreateBucket(FeedToken, const storage::spi::Bucket &) override {}
     void handleDeleteBucket(FeedToken, const storage::spi::Bucket &) override {}
@@ -43,8 +43,6 @@ DummyPersistenceHandler::SP handler_a(std::make_shared<DummyPersistenceHandler>(
 DummyPersistenceHandler::SP handler_b(std::make_shared<DummyPersistenceHandler>());
 DummyPersistenceHandler::SP handler_c(std::make_shared<DummyPersistenceHandler>());
 DummyPersistenceHandler::SP handler_a_new(std::make_shared<DummyPersistenceHandler>());
-
-
 
 void
 assertHandler(const IPersistenceHandler::SP & lhs, const IPersistenceHandler * rhs)

@@ -306,20 +306,21 @@ PersistenceEngine::setClusterState(BucketSpace bucketSpace, const ClusterState &
 }
 
 
-Result
-PersistenceEngine::setActiveState(const Bucket& bucket,
-                                  storage::spi::BucketInfo::ActiveState newState)
+void
+PersistenceEngine::setActiveStateAsync(const Bucket & bucket, BucketInfo::ActiveState newState, OperationComplete::UP onComplete)
 {
     ReadGuard rguard(_rwMutex);
     HandlerSnapshot snap = getHandlerSnapshot(rguard, bucket.getBucketSpace());
-    auto catchResult = std::make_unique<storage::spi::CatchResult>();
-    auto futureResult = catchResult->future_result();
-    GenericResultHandler resultHandler(snap.size(), std::move(catchResult));
-    for (; snap.handlers().valid(); snap.handlers().next()) {
+    auto resultHandler = std::make_shared<GenericResultHandler>(snap.size(), std::move(onComplete));
+    while (snap.handlers().valid()) {
         IPersistenceHandler *handler = snap.handlers().get();
-        handler->handleSetActiveState(bucket, newState, resultHandler);
+        snap.handlers().next();
+        if (snap.handlers().valid()) {
+            handler->handleSetActiveState(bucket, newState, resultHandler);
+        } else {
+            handler->handleSetActiveState(bucket, newState, std::move(resultHandler));
+        }
     }
-    return *futureResult.get();
 }
 
 

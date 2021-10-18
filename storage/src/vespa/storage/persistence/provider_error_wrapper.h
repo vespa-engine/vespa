@@ -41,7 +41,7 @@ public:
     spi::Result initialize() override;
     spi::BucketIdListResult listBuckets(BucketSpace bucketSpace) const override;
     spi::Result setClusterState(BucketSpace bucketSpace, const spi::ClusterState&)  override;
-    spi::Result setActiveState(const spi::Bucket& bucket, spi::BucketInfo::ActiveState newState) override;
+    void setActiveStateAsync(const spi::Bucket& b, spi::BucketInfo::ActiveState newState, spi::OperationComplete::UP onComplete) override;
     spi::BucketInfoResult getBucketInfo(const spi::Bucket&) const override;
     spi::Result put(const spi::Bucket&, spi::Timestamp, spi::DocumentSP, spi::Context&) override;
     spi::RemoveResult remove(const spi::Bucket&, spi::Timestamp, const document::DocumentId&, spi::Context&) override;

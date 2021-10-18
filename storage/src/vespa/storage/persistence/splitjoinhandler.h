@@ -21,7 +21,6 @@ public:
     SplitJoinHandler(PersistenceUtil &, spi::PersistenceProvider &,
                      BucketOwnershipNotifier &, bool enableMultibitSplitOptimalization);
     MessageTrackerUP handleSplitBucket(api::SplitBucketCommand& cmd, MessageTrackerUP tracker) const;
-    MessageTrackerUP handleSetBucketState(api::SetBucketStateCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTrackerUP tracker) const;
 private:

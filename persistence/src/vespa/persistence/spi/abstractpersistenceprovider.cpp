@@ -30,4 +30,9 @@ AbstractPersistenceProvider::getModifiedBuckets(BucketSpace) const
     return BucketIdListResult(list);
 }
 
+void
+AbstractPersistenceProvider::setActiveStateAsync(const Bucket &, BucketInfo::ActiveState, OperationComplete::UP op) {
+    op->onComplete(std::make_unique<Result>());
+}
+
 }

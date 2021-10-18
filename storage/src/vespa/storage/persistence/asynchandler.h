@@ -14,6 +14,7 @@ namespace spi {
     class Context;
 }
 class PersistenceUtil;
+class BucketOwnershipNotifier;
 
 /**
  * Handle async operations that uses a sequenced executor.
@@ -21,12 +22,13 @@ class PersistenceUtil;
  */
 class AsyncHandler : public Types {
 public:
-    AsyncHandler(const PersistenceUtil&, spi::PersistenceProvider&, vespalib::ISequencedTaskExecutor & executor,
-                 const document::BucketIdFactory & bucketIdFactory);
+    AsyncHandler(const PersistenceUtil&, spi::PersistenceProvider&, BucketOwnershipNotifier  &,
+                 vespalib::ISequencedTaskExecutor & executor, const document::BucketIdFactory & bucketIdFactory);
     MessageTrackerUP handlePut(api::PutCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleRemove(api::RemoveCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleUpdate(api::UpdateCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleRunTask(RunTaskCommand & cmd, MessageTrackerUP tracker) const;
+    MessageTrackerUP handleSetBucketState(api::SetBucketStateCommand& cmd, MessageTrackerUP tracker) const;
     static bool is_async_message(api::MessageType::Id type_id) noexcept;
 private:
     static bool tasConditionExists(const api::TestAndSetCommand & cmd);
@@ -34,6 +36,7 @@ private:
                              spi::Context & context, bool missingDocumentImpliesMatch = false) const;
     const PersistenceUtil            & _env;
     spi::PersistenceProvider         & _spi;
+    BucketOwnershipNotifier          & _bucketOwnershipNotifier;
     vespalib::ISequencedTaskExecutor & _sequencedExecutor;
     const document::BucketIdFactory  & _bucketIdFactory;
 };

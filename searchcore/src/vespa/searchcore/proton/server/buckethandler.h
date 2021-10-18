@@ -55,7 +55,7 @@ public:
     void handleListBuckets(IBucketIdListResultHandler &resultHandler);
     void handleSetCurrentState(const document::BucketId &bucketId,
                                storage::spi::BucketInfo::ActiveState newState,
-                               IGenericResultHandler &resultHandler);
+                               std::shared_ptr<IGenericResultHandler> resultHandler);
     void handleGetBucketInfo(const storage::spi::Bucket &bucket,
                              IBucketInfoResultHandler &resultHandler);
     void handleListActiveBuckets(IBucketIdListResultHandler &resultHandler);

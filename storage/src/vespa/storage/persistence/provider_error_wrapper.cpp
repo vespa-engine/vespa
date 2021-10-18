@@ -60,10 +60,11 @@ ProviderErrorWrapper::setClusterState(BucketSpace bucketSpace, const spi::Cluste
     return checkResult(_impl.setClusterState(bucketSpace, state));
 }
 
-spi::Result
-ProviderErrorWrapper::setActiveState(const spi::Bucket& bucket, spi::BucketInfo::ActiveState newState)
+void
+ProviderErrorWrapper::setActiveStateAsync(const spi::Bucket& bucket, spi::BucketInfo::ActiveState newState, spi::OperationComplete::UP onComplete)
 {
-    return checkResult(_impl.setActiveState(bucket, newState));
+    onComplete->addResultHandler(this);
+    _impl.setActiveStateAsync(bucket, newState, std::move(onComplete));
 }
 
 spi::BucketInfoResult

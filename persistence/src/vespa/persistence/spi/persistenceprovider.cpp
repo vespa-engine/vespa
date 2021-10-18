@@ -9,6 +9,14 @@ namespace storage::spi {
 PersistenceProvider::~PersistenceProvider() = default;
 
 Result
+PersistenceProvider::setActiveState(const Bucket& bucket, BucketInfo::ActiveState activeState) {
+    auto catcher = std::make_unique<CatchResult>();
+    auto future = catcher->future_result();
+    setActiveStateAsync(bucket, activeState, std::move(catcher));
+    return *future.get();
+}
+
+Result
 PersistenceProvider::put(const Bucket& bucket, Timestamp timestamp, DocumentSP doc, Context& context) {
     auto catcher = std::make_unique<CatchResult>();
     auto future = catcher->future_result();

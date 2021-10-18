@@ -155,7 +155,7 @@ public:
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
 
     Result setClusterState(BucketSpace bucketSpace, const ClusterState& newState) override;
-    Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
+    void setActiveStateAsync(const Bucket&, BucketInfo::ActiveState, OperationComplete::UP) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
     Result put(const Bucket&, Timestamp, DocumentSP, Context&) override;
     GetResult get(const Bucket&, const document::FieldSet&, const DocumentId&, Context&) const override;

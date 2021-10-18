@@ -86,7 +86,8 @@ struct PersistenceProvider
      * other buckets may be deactivated, so the node must be able to serve
      * the data from its secondary index or get reduced coverage.
      */
-    virtual Result setActiveState(const Bucket&, BucketInfo::ActiveState) = 0;
+    Result setActiveState(const Bucket&, BucketInfo::ActiveState);
+    virtual void setActiveStateAsync(const Bucket &, BucketInfo::ActiveState, OperationComplete::UP ) = 0;
 
     /**
      * Retrieve metadata for a bucket, previously returned in listBuckets(),

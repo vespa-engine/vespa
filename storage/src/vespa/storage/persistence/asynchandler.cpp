@@ -3,10 +3,15 @@
 #include "asynchandler.h"
 #include "persistenceutil.h"
 #include "testandsethelper.h"
+#include "bucketownershipnotifier.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".storage.persistence.asynchandler");
 
 namespace storage {
 
@@ -88,10 +93,12 @@ private:
 
 }
 AsyncHandler::AsyncHandler(const PersistenceUtil & env, spi::PersistenceProvider & spi,
+                           BucketOwnershipNotifier &bucketOwnershipNotifier,
                            vespalib::ISequencedTaskExecutor & executor,
                            const document::BucketIdFactory & bucketIdFactory)
     : _env(env),
       _spi(spi),
+      _bucketOwnershipNotifier(bucketOwnershipNotifier),
       _sequencedExecutor(executor),
       _bucketIdFactory(bucketIdFactory)
 {}
@@ -131,6 +138,39 @@ AsyncHandler::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP) cons
     _spi.putAsync(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getDocument()), tracker.context(),
                   std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
 
+    return trackerUP;
+}
+
+MessageTracker::UP
+AsyncHandler::handleSetBucketState(api::SetBucketStateCommand& cmd, MessageTracker::UP trackerUP) const
+{
+    trackerUP->setMetric(_env._metrics.setBucketStates);
+
+    //LOG(debug, "handleSetBucketState(): %s", cmd.toString().c_str());
+    spi::Bucket bucket(cmd.getBucket());
+    bool shouldBeActive(cmd.getState() == api::SetBucketStateCommand::ACTIVE);
+    spi::BucketInfo::ActiveState newState(shouldBeActive ? spi::BucketInfo::ACTIVE : spi::BucketInfo::NOT_ACTIVE);
+
+    auto task = makeResultTask([this, &cmd, newState, tracker = std::move(trackerUP), bucket,
+                                notifyGuard = std::make_unique<NotificationGuard>(_bucketOwnershipNotifier)](spi::Result::UP response) mutable {
+        if (tracker->checkForError(*response)) {
+            StorBucketDatabase::WrappedEntry
+                    entry = _env.getBucketDatabase(bucket.getBucket().getBucketSpace()).get(bucket.getBucketId(),
+                                                                                            "handleSetBucketState");
+            if (entry.exist()) {
+                entry->info.setActive(newState == spi::BucketInfo::ACTIVE);
+                notifyGuard->notifyIfOwnershipChanged(cmd.getBucket(), cmd.getSourceIndex(), entry->info);
+                entry.write();
+            } else {
+                LOG(warning, "Got OK setCurrentState result from provider for %s, "
+                             "but bucket has disappeared from service layer database",
+                    cmd.getBucketId().toString().c_str());
+            }
+            tracker->setReply(std::make_shared<api::SetBucketStateReply>(cmd));
+        }
+        tracker->sendReply();
+    });
+    _spi.setActiveStateAsync(bucket, newState, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
     return trackerUP;
 }
 

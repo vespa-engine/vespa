@@ -43,7 +43,7 @@ public:
     /**
      * Default impl empty.
      */
-    Result setActiveState(const Bucket&, BucketInfo::ActiveState) override { return Result(); } 
+    void setActiveStateAsync(const Bucket &, BucketInfo::ActiveState, OperationComplete::UP ) override;
     /**
      * Default impl empty.
      */
