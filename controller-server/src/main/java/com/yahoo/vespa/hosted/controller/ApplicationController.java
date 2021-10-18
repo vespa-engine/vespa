@@ -127,17 +127,16 @@ public class ApplicationController {
 
     ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
                           FlagSource flagSource, BillingController billingController) {
-
-        this.controller = controller;
-        this.curator = curator;
-        this.accessControl = accessControl;
+        this.controller = Objects.requireNonNull(controller);
+        this.curator = Objects.requireNonNull(curator);
+        this.accessControl = Objects.requireNonNull(accessControl);
         this.configServer = controller.serviceRegistry().configServer();
-        this.clock = clock;
-        this.artifactRepository = controller.serviceRegistry().artifactRepository();
-        this.applicationStore = controller.serviceRegistry().applicationStore();
-        this.dockerImageRepoFlag = PermanentFlags.DOCKER_IMAGE_REPO.bindTo(flagSource);
-        this.billingController = billingController;
+        this.clock = Objects.requireNonNull(clock);
+        this.billingController = Objects.requireNonNull(billingController);
 
+        artifactRepository = controller.serviceRegistry().artifactRepository();
+        applicationStore = controller.serviceRegistry().applicationStore();
+        dockerImageRepoFlag = PermanentFlags.DOCKER_IMAGE_REPO.bindTo(flagSource);
         deploymentTrigger = new DeploymentTrigger(controller, clock);
         applicationPackageValidator = new ApplicationPackageValidator(controller);
         endpointCertificates = new EndpointCertificates(controller,

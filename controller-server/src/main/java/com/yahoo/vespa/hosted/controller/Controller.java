@@ -106,29 +106,28 @@ public class Controller extends AbstractComponent {
                       Supplier<String> hostnameSupplier, FlagSource flagSource, MavenRepository mavenRepository,
                       ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore,
                       ControllerConfig controllerConfig, Sleeper sleeper) {
-
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
         this.serviceRegistry = Objects.requireNonNull(serviceRegistry, "ServiceRegistry cannot be null");
         this.zoneRegistry = Objects.requireNonNull(serviceRegistry.zoneRegistry(), "ZoneRegistry cannot be null");
         this.clock = Objects.requireNonNull(serviceRegistry.clock(), "Clock cannot be null");
-        this.sleeper = Objects.requireNonNull(sleeper);
+        this.sleeper = Objects.requireNonNull(sleeper, "Sleeper cannot be null");
         this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
         this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
         this.metric = Objects.requireNonNull(metric, "Metric cannot be null");
+        this.controllerConfig = Objects.requireNonNull(controllerConfig, "ControllerConfig cannot be null");
+        this.secretStore = Objects.requireNonNull(secretStore, "SecretStore cannot be null");
 
         nameServiceForwarder = new NameServiceForwarder(curator);
         jobController = new JobController(this);
         applicationController = new ApplicationController(this, curator, accessControl, clock, flagSource, serviceRegistry.billingController());
-        tenantController = new TenantController(this, curator, accessControl, flagSource);
-        routingController = new RoutingController(this, Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"));
+        tenantController = new TenantController(this, curator, accessControl);
+        routingController = new RoutingController(this, rotationsConfig);
         auditLogger = new AuditLogger(curator, clock);
         jobControl = new JobControl(new JobControlFlags(curator, flagSource));
         archiveBucketDb = new CuratorArchiveBucketDb(this);
         notificationsDb = new NotificationsDb(this);
-        this.controllerConfig = controllerConfig;
-        this.secretStore = secretStore;
-        this.supportAccessControl = new SupportAccessControl(this);
+        supportAccessControl = new SupportAccessControl(this);
 
         // Record the version of this controller
         curator().writeControllerVersion(this.hostname(), ControllerVersion.CURRENT);
