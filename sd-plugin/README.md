@@ -1,1 +1,17 @@
+This directory holds the code for an IntteliJ plugin for reading SD files.
+
+NOTE: This is the source code, not the plugin itself. In order to be able to use the plugin you'll need to download it from JetBrains Marketplace or create a zip file and load it to IntelliJ (details later).
+
+Before cloning, you should download Gradle and create a Gradle project.
+You should also download Grammar-Kit plugin from the Marketplace.
+
+The grammar is defined in 2 files:
+1. sd.bnf
+2. sd.flex
+
+After cloning, you should:
+  a) Right-click the sd.bnf file and press "Generate Parser Code" 
+  b) Right-click the sd.flex file and press "Run JFlex Generator"
+Now you should have a "gen" folder next to the "java" folder, and it contains all the parser and lexer code.
+Improtant note! After any change in one of this 2 files you'll need to generate again. The proper way is to delete the "gen" folder and then do a) and b) again.
 
