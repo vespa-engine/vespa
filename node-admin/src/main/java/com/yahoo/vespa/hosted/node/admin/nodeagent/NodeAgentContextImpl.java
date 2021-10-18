@@ -99,8 +99,8 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
-    public UserNamespace userNamespace() {
-        return containerFs.getUserPrincipalLookupService().userNamespace();
+    public VespaUser vespaUser() {
+        return containerFs.getUserPrincipalLookupService().vespaUser();
     }
 
     @Override
@@ -188,6 +188,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private ContainerNetworkMode containerNetworkMode;
         private ZoneApi zone;
         private UserNamespace userNamespace;
+        private VespaUser vespaUser;
         private Path containerStorage;
         private FlagSource flagSource;
         private double cpuSpeedUp = 1;
@@ -227,6 +228,12 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
+        public Builder vespaUser(VespaUser vespaUser) {
+            this.vespaUser = vespaUser;
+            return this;
+        }
+
+
         /** Sets the file system to use for paths. */
         public Builder fileSystem(FileSystem fileSystem) {
             return containerStorage(fileSystem.getPath(DEFAULT_CONTAINER_STORAGE.toString()));
@@ -256,9 +263,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             Objects.requireNonNull(containerStorage, "Must set one of containerStorage or fileSystem");
 
             UserNamespace userNamespace = Optional.ofNullable(this.userNamespace)
-                    .orElseGet(() -> new UserNamespace(100000, 100000, "vespa", "vespa", 1000, 100));
+                    .orElseGet(() -> new UserNamespace(100000, 100000));
+            VespaUser vespaUser = Optional.ofNullable(this.vespaUser)
+                    .orElseGet(() -> new VespaUser("vespa", "vespa", 1000, 100));
             ContainerFileSystem containerFs = ContainerFileSystem.create(containerStorage
-                    .resolve(nodeSpecBuilder.hostname().split("\\.")[0]), userNamespace);
+                    .resolve(nodeSpecBuilder.hostname().split("\\.")[0]), userNamespace, vespaUser);
 
             return new NodeAgentContextImpl(
                     nodeSpecBuilder.build(),

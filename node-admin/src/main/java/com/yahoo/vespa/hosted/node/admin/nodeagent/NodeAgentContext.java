@@ -42,7 +42,8 @@ public interface NodeAgentContext extends TaskContext {
 
     ZoneApi zone();
 
-    UserNamespace userNamespace();
+    /** @return information about the Vespa user inside the container */
+    VespaUser vespaUser();
 
     default boolean isDisabled(NodeAgentTask task) {
         return false;
