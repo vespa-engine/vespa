@@ -509,10 +509,10 @@ ArrayParam<T>::ArrayParam(vespalib::nbostream & stream) {
             TypedCells cells = tensor->cells();
             typify_invoke<1,TypifyCellType,CopyCellsToVector<T>>(cells.type, cells, values);
         } else {
-            Issue::report("Expected dense tensor, but got type '%s'", tensor->type().to_spec().c_str());
+            Issue::report("dot_product feature: Expected dense tensor, but got type '%s'", tensor->type().to_spec().c_str());
         }
     } catch (const vespalib::eval::DecodeValueException &e) {
-        Issue::report("Failed to decode tensor: %s", e.what());
+        Issue::report("dot_product feature: Failed to decode tensor: %s", e.what());
     }
 }
 
@@ -775,7 +775,7 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
     }
     // TODO: Add support for creating executor for weighted set string / integer attribute
     //       where the query vector is represented as an object instead of a string.
-    Issue::report("The attribute vector '%s' is NOT of type array<int/long/float/double>"
+    Issue::report("dot_product feature: The attribute vector '%s' is NOT of type array<int/long/float/double>"
                   ", returning executor with default value.", attribute->getName().c_str());
     return stash.create<SingleZeroValueExecutor>();
 }
@@ -882,7 +882,7 @@ createFromString(const IAttributeVector * attribute, const Property & prop, vesp
     }
 
     if (executor == nullptr) {
-        Issue::report("The attribute vector '%s' is not of type weighted set string/integer nor"
+        Issue::report("dot_product feature: The attribute vector '%s' is not of type weighted set string/integer nor"
                       " array<int/long/float/double>, returning executor with default value.", attribute->getName().c_str());
         executor = &stash.create<SingleZeroValueExecutor>();
     }
@@ -1109,7 +1109,7 @@ DotProductBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Sta
         attribute = upgradeIfNecessary(attribute, env);
     }
     if (attribute == nullptr) {
-        Issue::report("The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
+        Issue::report("dot_product feature: The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
                       getAttribute(env).c_str());
         return stash.create<SingleZeroValueExecutor>();
     }

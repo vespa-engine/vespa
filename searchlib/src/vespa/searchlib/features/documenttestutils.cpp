@@ -12,6 +12,9 @@
 #include <cmath>
 #include <ostream>
 
+#include <vespa/vespalib/util/issue.h>
+using vespalib::Issue;
+
 #include <vespa/log/log.h>
 LOG_SETUP(".features.utils");
 using namespace search::fef;
@@ -145,8 +148,8 @@ getTermByLabel(const search::fef::IQueryEnvironment &env, const vespalib::string
     }
     uint32_t uid = strToNum<uint32_t>(p.get());
     if (uid == 0) {
-        LOG(warning, "Query label '%s' was attached to invalid unique id: '%s'",
-            label.c_str(), p.get().c_str());
+        Issue::report("Query label '%s' was attached to invalid unique id: '%s'",
+                      label.c_str(), p.get().c_str());
         return 0;
     }
     for (uint32_t i(0), m(env.getNumTerms()); i < m; ++i) {
@@ -155,8 +158,8 @@ getTermByLabel(const search::fef::IQueryEnvironment &env, const vespalib::string
             return term;
         }
     }
-    LOG(warning, "Query label '%s' was attached to non-existing unique id: '%s'",
-        label.c_str(), p.get().c_str());
+    Issue::report("Query label '%s' was attached to non-existing unique id: '%s'",
+                  label.c_str(), p.get().c_str());
     return 0;
 }
 

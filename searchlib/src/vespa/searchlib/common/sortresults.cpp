@@ -8,6 +8,9 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/vespalib/util/array.hpp>
 
+#include <vespa/vespalib/util/issue.h>
+using vespalib::Issue;
+
 #include <vespa/log/log.h>
 LOG_SETUP(".search.attribute.sortresults");
 
@@ -189,7 +192,7 @@ FastS_SortSpec::Add(IAttributeContext & vecMan, const SortInfo & sInfo)
             } else  if ( vector->hasMultiValue()) {
                 err = "multivalued";
             }
-            LOG(warning, "Attribute vector '%s' is %s. Skipped in sorting", sInfo._field.c_str(), err);
+            Issue::report("sort spec: Attribute vector '%s' is %s. Skipped in sorting", sInfo._field.c_str(), err);
             return false;
         }
     }
@@ -322,7 +325,7 @@ FastS_SortSpec::Init(const string & sortStr, IAttributeContext & vecMan)
             retval = Add(vecMan, *it);
         }
     } catch (const std::exception & e) {
-        LOG(warning, "Failed parsing sortspec: %s", sortStr.c_str());
+        Issue::report("Failed parsing sortspec: %s", sortStr.c_str());
         return retval;
     }
 

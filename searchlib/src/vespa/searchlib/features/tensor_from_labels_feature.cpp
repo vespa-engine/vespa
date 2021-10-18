@@ -61,17 +61,17 @@ createAttributeExecutor(const search::fef::IQueryEnvironment &env,
 {
     const IAttributeVector *attribute = env.getAttributeContext().getAttribute(attrName);
     if (attribute == NULL) {
-        Issue::report("The attribute vector '%s' was not found in the attribute manager."
+        Issue::report("tensor_from_labels feature: The attribute vector '%s' was not found in the attribute manager."
                       " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }
     if (attribute->isFloatingPointType()) {
-        Issue::report("The attribute vector '%s' must have basic type string or integer."
+        Issue::report("tensor_from_labels feature: The attribute vector '%s' must have basic type string or integer."
                       " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }
     if (attribute->getCollectionType() == search::attribute::CollectionType::WSET) {
-        Issue::report("The attribute vector '%s' is a weighted set - use tensorFromWeightedSet instead."
+        Issue::report("tensor_from_labels feature: The attribute vector '%s' is a weighted set - use tensorFromWeightedSet instead."
                       " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }

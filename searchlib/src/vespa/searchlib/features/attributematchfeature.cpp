@@ -10,6 +10,9 @@
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/vespalib/util/stash.h>
 
+#include <vespa/vespalib/util/issue.h>
+using vespalib::Issue;
+
 #include <vespa/log/log.h>
 LOG_SETUP(".features.attributematchfeature");
 
@@ -339,7 +342,7 @@ AttributeMatchBlueprint::createExecutor(const IQueryEnvironment & env, vespalib:
 {
     const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_params.attrInfo->name());
     if (attribute == nullptr) {
-        LOG(error, "The attribute vector '%s' was not found in the attribute manager.", _params.attrInfo->name().c_str());
+        Issue::report("attribute_match feature: The attribute vector '%s' was not found in the attribute manager.", _params.attrInfo->name().c_str());
         std::vector<feature_t> values;
         values.push_back(0.0); // completeness
         values.push_back(0.0); // queryCompleteness

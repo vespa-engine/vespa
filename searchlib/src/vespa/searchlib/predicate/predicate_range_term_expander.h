@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/issue.h>
 #include <climits>
 
 namespace search::predicate {
@@ -44,7 +45,7 @@ public:
 template <typename Handler>
 void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t signed_value, Handler &handler) {
     if (signed_value < _lower_bound || signed_value > _upper_bound) {
-        LOG(warning, "Search outside bounds should have been rejected by ValidatePredicateSearcher.");
+        vespalib::Issue::report("predicate_range_term_expander: Search outside bounds should have been rejected by ValidatePredicateSearcher.");
         return;
     }
     char buffer[21 * 2 + 3 + key.size()];  // 2 numbers + punctuation + key
