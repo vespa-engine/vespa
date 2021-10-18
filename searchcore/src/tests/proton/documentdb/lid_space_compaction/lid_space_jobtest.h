@@ -2,14 +2,14 @@
 
 #include "lid_space_common.h"
 #include <vespa/searchcore/proton/server/blockable_maintenance_job.h>
-#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/persistence/spi/bucketexecutor.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
+#include <vespa/vespalib/util/monitored_refcount.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace storage::spi::dummy { class DummyBucketExecutor; }
 struct JobTestBase : public ::testing::Test {
-    MonitoredRefCount _refCount;
+    vespalib::MonitoredRefCount _refCount;
     test::ClusterStateHandler _clusterStateHandler;
     test::DiskMemUsageNotifier _diskMemUsageNotifier;
     std::unique_ptr<storage::spi::dummy::DummyBucketExecutor> _bucketExecutor;

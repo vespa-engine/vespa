@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/persistenceengine/ipersistencehandler.h>
-#include <vespa/searchcore/proton/common/monitored_refcount.h>
+#include <vespa/vespalib/util/retain_guard.h>
 
 namespace proton {
 
@@ -18,7 +18,7 @@ private:
     FeedHandler                 &_feedHandler;
     BucketHandler               &_bucketHandler;
     ClusterStateHandler         &_clusterStateHandler;
-    RetainGuard                  _retainGuard;
+    vespalib::RetainGuard        _retainGuard;
 public:
     explicit PersistenceHandlerProxy(std::shared_ptr<DocumentDB> documentDB);
 

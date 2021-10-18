@@ -21,15 +21,17 @@ namespace search::attribute {
 namespace vespa::config::search::internal { class InternalImportedFieldsType; }
 
 namespace vespalib {
-    class ISequencedTaskExecutor;
+
+class ISequencedTaskExecutor;
+class MonitoredRefCount;
 }
+
 namespace proton {
 
 class IDocumentDBReference;
 class IDocumentDBReferenceRegistry;
 class ImportedAttributesRepo;
 class GidToLidChangeRegistrator;
-class MonitoredRefCount;
 
 /**
  * Class that for a given document db resolves all references to parent document dbs:
@@ -42,7 +44,7 @@ private:
     const document::DocumentType       &_thisDocType;
     const ImportedFieldsConfig         &_importedFieldsCfg;
     const document::DocumentType       &_prevThisDocType;
-    MonitoredRefCount                  &_refCount;
+    vespalib::MonitoredRefCount        &_refCount;
     vespalib::ISequencedTaskExecutor     &_attributeFieldWriter;
     bool                                _useReferences;
     std::map<vespalib::string, std::unique_ptr<GidToLidChangeRegistrator>> _registrators;
@@ -61,7 +63,7 @@ public:
                                 const document::DocumentType &thisDocType,
                                 const ImportedFieldsConfig &importedFieldsCfg,
                                 const document::DocumentType &prevThisDocType,
-                                MonitoredRefCount &refCount,
+                                vespalib::MonitoredRefCount &refCount,
                                 vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                                 bool useReferences);
     ~DocumentDBReferenceResolver() override;

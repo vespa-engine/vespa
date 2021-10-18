@@ -25,6 +25,7 @@ using document::BucketId;
 using storage::spi::BucketInfo;
 using storage::spi::Bucket;
 using proton::bucketdb::BucketMover;
+using vespalib::RetainGuard;
 using vespalib::makeLambdaTask;
 using vespalib::Trinary;
 

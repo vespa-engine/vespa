@@ -14,6 +14,7 @@ LOG_SETUP(".proton.server.maintenancecontroller");
 
 using document::BucketId;
 using vespalib::Executor;
+using vespalib::MonitoredRefCount;
 using vespalib::makeLambdaTask;
 
 namespace proton {

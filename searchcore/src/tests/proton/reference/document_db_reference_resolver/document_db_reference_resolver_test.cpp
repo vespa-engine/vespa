@@ -6,7 +6,6 @@
 #include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/log/log.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
-#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_listener.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference.h>
@@ -19,6 +18,7 @@
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
+#include <vespa/vespalib/util/monitored_refcount.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -33,6 +33,7 @@ using proton::test::MockDocumentDBReference;
 using search::attribute::test::MockAttributeManager;
 using vespa::config::search::ImportedFieldsConfig;
 using vespa::config::search::ImportedFieldsConfigBuilder;
+using vespalib::MonitoredRefCount;
 using vespalib::SequencedTaskExecutor;
 using vespalib::ISequencedTaskExecutor;
 

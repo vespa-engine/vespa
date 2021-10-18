@@ -10,7 +10,7 @@
 #include "maintenancedocumentsubdb.h"
 #include <vespa/searchcore/proton/bucketdb/bucketscaniterator.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
-#include <vespa/searchcore/proton/common/monitored_refcount.h>
+#include <vespa/vespalib/util/retain_guard.h>
 
 
 namespace storage::spi { struct BucketExecutor; }
@@ -59,7 +59,7 @@ private:
     using Movers = std::vector<BucketMoverSP>;
     using GuardedMoveOps = BucketMover::GuardedMoveOps;
     std::shared_ptr<IBucketStateCalculator>   _calc;
-    RetainGuard                               _dbRetainer;
+    vespalib::RetainGuard                     _dbRetainer;
     IDocumentMoveHandler                     &_moveHandler;
     IBucketModifiedHandler                   &_modifiedHandler;
     IThreadService                           &_master;
@@ -80,7 +80,7 @@ private:
     IDiskMemUsageNotifier             &_diskMemUsageNotifier;
 
     BucketMoveJob(const std::shared_ptr<IBucketStateCalculator> &calc,
-                  RetainGuard dbRetainer,
+                  vespalib::RetainGuard dbRetainer,
                   IDocumentMoveHandler &moveHandler,
                   IBucketModifiedHandler &modifiedHandler,
                   IThreadService & master,
@@ -115,7 +115,7 @@ private:
 public:
     static std::shared_ptr<BucketMoveJob>
     create(const std::shared_ptr<IBucketStateCalculator> &calc,
-           RetainGuard dbRetainer,
+           vespalib::RetainGuard dbRetainer,
            IDocumentMoveHandler &moveHandler,
            IBucketModifiedHandler &modifiedHandler,
            IThreadService & master,

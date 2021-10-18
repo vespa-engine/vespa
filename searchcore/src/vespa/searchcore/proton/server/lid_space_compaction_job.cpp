@@ -26,6 +26,7 @@ using search::DocumentMetaData;
 using search::LidUsageStats;
 using storage::spi::makeBucketTask;
 using storage::spi::Bucket;
+using vespalib::RetainGuard;
 using vespalib::makeLambdaTask;
 
 namespace proton::lidspace {

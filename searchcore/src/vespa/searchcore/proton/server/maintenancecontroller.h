@@ -5,14 +5,17 @@
 #include "maintenancedocumentsubdb.h"
 #include "i_maintenance_job.h"
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/searchcore/proton/common/monitored_refcount.h>
+#include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/vespalib/util/scheduledexecutor.h>
 #include <mutex>
 
 
 namespace vespalib {
-    class Timer;
-    class Executor;
+
+class Executor;
+class MonitoredRefCount;
+class Timer;
+
 }
 namespace searchcorespi::index { struct IThreadService; }
 
@@ -20,7 +23,6 @@ namespace proton {
 
 class MaintenanceJobRunner;
 class DocumentDBMaintenanceConfig;
-class MonitoredRefCount;
 
 /**
  * Class that controls the bucket moving between ready and notready sub databases
@@ -36,7 +38,7 @@ public:
     using UP = std::unique_ptr<MaintenanceController>;
     enum class State {INITIALIZING, STARTED, PAUSED, STOPPING};
 
-    MaintenanceController(IThreadService &masterThread, vespalib::Executor & defaultExecutor, MonitoredRefCount & refCount, const DocTypeName &docTypeName);
+    MaintenanceController(IThreadService &masterThread, vespalib::Executor & defaultExecutor, vespalib::MonitoredRefCount & refCount, const DocTypeName &docTypeName);
 
     ~MaintenanceController();
     void registerJobInMasterThread(IMaintenanceJob::UP job);
@@ -70,14 +72,14 @@ public:
     const MaintenanceDocumentSubDB & getNotReadySubDB() const { return _notReadySubDB; }
     IThreadService & masterThread() { return _masterThread; }
     const DocTypeName & getDocTypeName() const { return _docTypeName; }
-    RetainGuard retainDB() { return RetainGuard(_refCount); }
+    vespalib::RetainGuard retainDB() { return vespalib::RetainGuard(_refCount); }
 private:
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
 
     IThreadService                   &_masterThread;
     vespalib::Executor               &_defaultExecutor;
-    MonitoredRefCount                &_refCount;
+    vespalib::MonitoredRefCount      &_refCount;
     MaintenanceDocumentSubDB          _readySubDB;
     MaintenanceDocumentSubDB          _remSubDB;
     MaintenanceDocumentSubDB          _notReadySubDB;

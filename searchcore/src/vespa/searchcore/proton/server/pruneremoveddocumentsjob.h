@@ -3,9 +3,9 @@
 
 #include "blockable_maintenance_job.h"
 #include "document_db_maintenance_config.h"
-#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <persistence/spi/types.h>
 #include <vespa/document/bucket/bucketspace.h>
+#include <vespa/vespalib/util/retain_guard.h>
 #include <atomic>
 
 namespace storage::spi { struct BucketExecutor; }
@@ -36,7 +36,7 @@ private:
     IThreadService                &_master;
     BucketExecutor                &_bucketExecutor;
     const vespalib::string         _docTypeName;
-    RetainGuard                    _dbRetainer;
+    vespalib::RetainGuard          _dbRetainer;
     const vespalib::duration       _cfgAgeLimit;
     const uint32_t                 _subDbId;
     const document::BucketSpace    _bucketSpace;
@@ -45,14 +45,14 @@ private:
 
     void remove(uint32_t lid, const RawDocumentMetaData & meta);
 
-    PruneRemovedDocumentsJob(const DocumentDBPruneConfig &config, RetainGuard dbRetainer, const IDocumentMetaStore &metaStore,
+    PruneRemovedDocumentsJob(const DocumentDBPruneConfig &config, vespalib::RetainGuard dbRetainer, const IDocumentMetaStore &metaStore,
                              uint32_t subDbId, document::BucketSpace bucketSpace, const vespalib::string &docTypeName,
                              IPruneRemovedDocumentsHandler &handler, IThreadService & master,
                              BucketExecutor & bucketExecutor);
     bool run() override;
 public:
     static std::shared_ptr<PruneRemovedDocumentsJob>
-    create(const Config &config, RetainGuard dbRetainer, const IDocumentMetaStore &metaStore, uint32_t subDbId,
+    create(const Config &config, vespalib::RetainGuard dbRetainer, const IDocumentMetaStore &metaStore, uint32_t subDbId,
            document::BucketSpace bucketSpace, const vespalib::string &docTypeName,
            IPruneRemovedDocumentsHandler &handler, IThreadService & master, BucketExecutor & bucketExecutor)
    {
