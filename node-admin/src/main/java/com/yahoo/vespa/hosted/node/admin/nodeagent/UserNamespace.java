@@ -14,8 +14,8 @@ public class UserNamespace {
      * https://github.com/torvalds/linux/blob/5bfc75d92efd494db37f5c4c173d3639d4772966/Documentation/admin-guide/sysctl/fs.rst#overflowgid--overflowuid */
     private static final int OVERFLOW_ID = 65_534;
 
-    private final int uidOffset;
-    private final int gidOffset;
+    private volatile int uidOffset;
+    private volatile int gidOffset;
 
     public UserNamespace(int uidOffset, int gidOffset) {
         this.uidOffset = uidOffset;
@@ -29,6 +29,12 @@ public class UserNamespace {
 
     public int idRange() { return ID_RANGE; }
     public int overflowId() { return OVERFLOW_ID; }
+
+    // Remove after migration to mapped namespaces is complete, make fields final
+    public void setOffsets(int idOffset) {
+        this.uidOffset = idOffset;
+        this.gidOffset = idOffset;
+    }
 
     private static int toHostId(int containerId, int idOffset) {
         if (containerId < 0 || containerId > ID_RANGE)
