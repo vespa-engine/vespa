@@ -311,7 +311,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_APPLICATION_LOCK_IN_MAINTENANCE_DEPLOYMENT = defineFeatureFlag(
             "use-application-lock-in-maintenance-deployment", true,
-            List.of("hmusum"), "2021-09-16", "2021-10-16",
+            List.of("hmusum"), "2021-09-16", "2021-11-01",
             "Whether to use application node repository lock when doing maintenance deployment.",
             "Takes effect immediately",
             APPLICATION_ID
