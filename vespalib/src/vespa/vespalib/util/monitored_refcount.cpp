@@ -3,7 +3,7 @@
 #include "monitored_refcount.h"
 #include <cassert>
 
-namespace proton {
+namespace vespalib {
 
 MonitoredRefCount::MonitoredRefCount()
     : _lock(),
@@ -41,4 +41,4 @@ MonitoredRefCount::waitForZeroRefCount()
     _cv.wait(guard, [this] { return (_refCount == 0u); });
 }
 
-} // namespace proton
+}

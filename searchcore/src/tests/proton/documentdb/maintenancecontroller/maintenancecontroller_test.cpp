@@ -6,7 +6,6 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchcore/proton/common/transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
@@ -42,6 +41,7 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/monitored_refcount.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/fastos/thread.h>
@@ -68,6 +68,7 @@ using search::SerialNum;
 using search::CommitParam;
 using storage::spi::BucketInfo;
 using storage::spi::Timestamp;
+using vespalib::MonitoredRefCount;
 using vespalib::Slime;
 using vespalib::makeLambdaTask;
 using vespa::config::search::AttributesConfigBuilder;

@@ -4,8 +4,8 @@
 
 #include "i_gid_to_lid_change_listener.h"
 #include <vespa/searchlib/attribute/reference_attribute.h>
+#include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
-#include <vespa/searchcore/proton/common/monitored_refcount.h>
 
 namespace proton {
 
@@ -18,14 +18,14 @@ class GidToLidChangeListener : public IGidToLidChangeListener
     vespalib::ISequencedTaskExecutor                      &_attributeFieldWriter;
     vespalib::ISequencedTaskExecutor::ExecutorId           _executorId;
     std::shared_ptr<search::attribute::ReferenceAttribute> _attr;
-    RetainGuard                                            _retainGuard;
+    vespalib::RetainGuard                                  _retainGuard;
     vespalib::string                                       _name;
     vespalib::string                                       _docTypeName;
 
 public:
     GidToLidChangeListener(vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                            std::shared_ptr<search::attribute::ReferenceAttribute> attr,
-                           RetainGuard refCount,
+                           vespalib::RetainGuard refCount,
                            const vespalib::string &name,
                            const vespalib::string &docTypeName);
     ~GidToLidChangeListener() override;

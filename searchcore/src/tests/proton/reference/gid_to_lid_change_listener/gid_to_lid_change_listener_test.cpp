@@ -2,12 +2,12 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/document/base/documentid.h>
-#include <vespa/vespalib/util/sequencedtaskexecutor.h>
-#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_listener.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/monitored_refcount.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <map>
 #include <vespa/log/log.h>
@@ -16,12 +16,13 @@ LOG_SETUP("gid_to_lid_change_listener_test");
 using document::GlobalId;
 using document::BucketId;
 using document::DocumentId;
-using vespalib::GenerationHandler;
 using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
 using search::attribute::test::MockGidToLidMapperFactory;
+using vespalib::MonitoredRefCount;
+using vespalib::GenerationHandler;
 
 namespace proton {
 

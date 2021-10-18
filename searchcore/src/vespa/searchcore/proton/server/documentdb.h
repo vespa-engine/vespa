@@ -19,13 +19,13 @@
 #include "threading_service_config.h"
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchlib/docstore/cachestats.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
+#include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <mutex>
 #include <condition_variable>
@@ -111,7 +111,7 @@ private:
     DocumentDBTaggedMetrics                         _metrics;
     std::unique_ptr<metrics::UpdateHook>            _metricsHook;
     vespalib::VarHolder<IFeedView::SP>              _feedView;
-    MonitoredRefCount                               _refCount;
+    vespalib::MonitoredRefCount                     _refCount;
     bool                                            _syncFeedViewEnabled;
     IDocumentDBOwner                               &_owner;
     storage::spi::BucketExecutor                   &_bucketExecutor;
@@ -381,7 +381,7 @@ public:
     /**
      * Reference counting
      */
-    RetainGuard retain() { return RetainGuard(_refCount); }
+    vespalib::RetainGuard retain() { return vespalib::RetainGuard(_refCount); }
 
     bool getDelayedConfig() const { return _state.getDelayedConfig(); }
     void replayConfig(SerialNum serialNum) override;

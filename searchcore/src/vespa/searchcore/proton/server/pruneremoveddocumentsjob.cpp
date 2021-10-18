@@ -16,6 +16,7 @@ using document::BucketId;
 using storage::spi::Timestamp;
 using storage::spi::Bucket;
 using vespalib::IDestructorCallback;
+using vespalib::RetainGuard;
 using vespalib::makeLambdaTask;
 
 namespace proton {

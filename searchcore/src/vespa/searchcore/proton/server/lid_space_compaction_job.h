@@ -6,9 +6,9 @@
 #include "document_db_maintenance_config.h"
 #include "i_disk_mem_usage_listener.h"
 #include "iclusterstatechangedhandler.h"
-#include <vespa/searchlib/common/idocumentmetastore.h>
-#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/document/bucket/bucketspace.h>
+#include <vespa/searchlib/common/idocumentmetastore.h>
+#include <vespa/vespalib/util/retain_guard.h>
 #include <atomic>
 
 namespace storage::spi { struct BucketExecutor; }
@@ -50,7 +50,7 @@ private:
     bool                                          _shouldCompactLidSpace;
     IThreadService                               &_master;
     BucketExecutor                               &_bucketExecutor;
-    RetainGuard                                   _dbRetainer;
+    vespalib::RetainGuard                         _dbRetainer;
     document::BucketSpace                         _bucketSpace;
 
     bool hasTooMuchLidBloat(const search::LidUsageStats &stats) const;
@@ -68,7 +68,7 @@ private:
     class MoveTask;
 
     CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
-                  RetainGuard dbRetainer,
+                  vespalib::RetainGuard dbRetainer,
                   std::shared_ptr<ILidSpaceCompactionHandler> handler,
                   IOperationStorer &opStorer,
                   IThreadService & master,
@@ -81,7 +81,7 @@ private:
 public:
     static std::shared_ptr<CompactionJob>
     create(const DocumentDBLidSpaceCompactionConfig &config,
-           RetainGuard dbRetainer,
+           vespalib::RetainGuard dbRetainer,
            std::shared_ptr<ILidSpaceCompactionHandler> handler,
            IOperationStorer &opStorer,
            IThreadService & master,

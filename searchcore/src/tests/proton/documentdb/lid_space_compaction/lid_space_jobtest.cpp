@@ -6,6 +6,8 @@
 #include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
+using vespalib::RetainGuard;
+
 using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 
 struct MyDirectJobRunner : public IMaintenanceJobRunner {

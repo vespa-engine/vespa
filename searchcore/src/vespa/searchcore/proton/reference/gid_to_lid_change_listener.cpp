@@ -3,6 +3,8 @@
 #include "gid_to_lid_change_listener.h"
 #include <future>
 
+using vespalib::RetainGuard;
+
 namespace proton {
 
 GidToLidChangeListener::GidToLidChangeListener(vespalib::ISequencedTaskExecutor &attributeFieldWriter,

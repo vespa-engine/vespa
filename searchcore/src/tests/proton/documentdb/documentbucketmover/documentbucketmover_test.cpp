@@ -23,6 +23,8 @@ using storage::spi::BucketInfo;
 using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 using MoveOperationVector = std::vector<MoveOperation>;
 using storage::spi::dummy::DummyBucketExecutor;
+using vespalib::MonitoredRefCount;
+using vespalib::RetainGuard;
 using vespalib::ThreadStackExecutor;
 
 struct ControllerFixtureBase : public ::testing::Test
