@@ -12,11 +12,11 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo;
 import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo.Compression;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.yolean.concurrent.Sleeper;
 
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -88,22 +88,22 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             handleFailure(context, request, startedAt, "No artifacts requested");
             return;
         }
-        UnixPath directoryInNode = new UnixPath(context.pathInNodeUnderVespaHome("tmp/vespa-service-dump"));
-        UnixPath directoryOnHost = new UnixPath(context.pathOnHostFromPathInNode(directoryInNode.toPath()));
+        ContainerPath directory = context.containerPathUnderVespaHome("tmp/vespa-service-dump");
+        UnixPath unixPathDirectory = new UnixPath(directory);
         try {
             context.log(log, Level.INFO,
                     "Creating service dump for " + configId + " requested at "
                             + Instant.ofEpochMilli(request.getCreatedMillisOrNull()));
             storeReport(context, ServiceDumpReport.createStartedReport(request, startedAt));
-            if (directoryOnHost.exists()) {
-                context.log(log, Level.INFO, "Removing existing directory '" + directoryOnHost +"'.");
-                directoryOnHost.deleteRecursively();
+            if (unixPathDirectory.exists()) {
+                context.log(log, Level.INFO, "Removing existing directory '" + unixPathDirectory +"'.");
+                unixPathDirectory.deleteRecursively();
             }
-            context.log(log, Level.INFO, "Creating '" + directoryOnHost +"'.");
-            directoryOnHost.createDirectory();
-            directoryOnHost.setPermissions("rwxrwxrwx");
+            context.log(log, Level.INFO, "Creating '" + unixPathDirectory +"'.");
+            unixPathDirectory.createDirectory();
+            unixPathDirectory.setPermissions("rwxrwxrwx");
             URI destination = serviceDumpDestination(nodeSpec, createDumpId(request));
-            ProducerContext producerCtx = new ProducerContext(context, directoryInNode.toPath(), request);
+            ProducerContext producerCtx = new ProducerContext(context, directory, request);
             List<Artifact> producedArtifacts = new ArrayList<>();
             for (ArtifactProducer producer : artifactProducers.resolve(requestedArtifacts)) {
                 context.log(log, "Producing artifact of type '" + producer.artifactName() + "'");
@@ -114,9 +114,9 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         } catch (Exception e) {
             handleFailure(context, request, startedAt, e);
         } finally {
-            if (directoryOnHost.exists()) {
-                context.log(log, Level.INFO, "Deleting directory '" + directoryOnHost +"'.");
-                directoryOnHost.deleteRecursively();
+            if (unixPathDirectory.exists()) {
+                context.log(log, Level.INFO, "Deleting directory '" + unixPathDirectory +"'.");
+                unixPathDirectory.deleteRecursively();
             }
         }
     }
@@ -127,10 +127,8 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         List<SyncFileInfo> filesToUpload = producedArtifacts.stream()
                 .map(a -> {
                     Compression compression = a.compressOnUpload() ? Compression.ZSTD : Compression.NONE;
-                    Path fileInNode = a.fileInNode().orElse(null);
-                    Path fileOnHost = fileInNode != null ? ctx.pathOnHostFromPathInNode(fileInNode) : a.fileOnHost().orElseThrow();
                     String classification = a.classification().map(Artifact.Classification::value).orElse(null);
-                    return SyncFileInfo.forServiceDump(destination, fileOnHost, expiry, compression, owner, classification);
+                    return SyncFileInfo.forServiceDump(destination, a.file(), expiry, compression, owner, classification);
                 })
                 .collect(Collectors.toList());
         ctx.log(log, Level.INFO,
@@ -180,13 +178,13 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
     private class ProducerContext implements ArtifactProducer.Context, ArtifactProducer.Context.Options {
 
         final NodeAgentContext nodeAgentCtx;
-        final Path outputDirectoryInNode;
+        final ContainerPath path;
         final ServiceDumpReport request;
         volatile int pid = -1;
 
-        ProducerContext(NodeAgentContext nodeAgentCtx, Path outputDirectoryInNode, ServiceDumpReport request) {
+        ProducerContext(NodeAgentContext nodeAgentCtx, ContainerPath path, ServiceDumpReport request) {
             this.nodeAgentCtx = nodeAgentCtx;
-            this.outputDirectoryInNode = outputDirectoryInNode;
+            this.path = path;
             this.request = request;
         }
 
@@ -195,8 +193,8 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         @Override
         public int servicePid() {
             if (pid == -1) {
-                Path findPidBinary = nodeAgentCtx.pathInNodeUnderVespaHome("libexec/vespa/find-pid");
-                CommandResult findPidResult = executeCommandInNode(List.of(findPidBinary.toString(), serviceId()), true);
+                ContainerPath findPidBinary = nodeAgentCtx.containerPathUnderVespaHome("libexec/vespa/find-pid");
+                CommandResult findPidResult = executeCommandInNode(List.of(findPidBinary.pathInContainer(), serviceId()), true);
                 this.pid = Integer.parseInt(findPidResult.getOutput());
             }
             return pid;
@@ -225,16 +223,11 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             return result;
         }
 
-        @Override public Path outputDirectoryInNode() { return outputDirectoryInNode; }
+        @Override public ContainerPath outputContainerPath() { return path; }
 
         @Override
-        public Path pathInNodeUnderVespaHome(String relativePath) {
-            return nodeAgentCtx.pathInNodeUnderVespaHome(relativePath);
-        }
-
-        @Override
-        public Path pathOnHostFromPathInNode(Path pathInNode) {
-            return nodeAgentCtx.pathOnHostFromPathInNode(pathInNode);
+        public ContainerPath containerPathUnderVespaHome(String relativePath) {
+            return nodeAgentCtx.containerPathUnderVespaHome(relativePath);
         }
 
         @Override public Options options() { return this; }
