@@ -1,0 +1,45 @@
+plugins {
+  id 'org.jetbrains.intellij' version '1.1.4'
+  id 'java'
+
+//    id 'java-gradle-plugin' // I added that
+//    id 'maven-publish' // to deploy the plugin into a Maven repo
+}
+
+group 'org.vz.native'
+version '1.0.5-SNAPSHOT'
+
+sourceCompatibility = 11 // I added that from Simple Plugin
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.2'
+//    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
+}
+
+sourceSets.main.java.srcDirs 'src/main/gen'
+
+// See https://github.com/JetBrains/gradle-intellij-plugin/
+intellij {
+  version = '2021.2'
+  plugins = ['com.intellij.java']
+}
+
+buildSearchableOptions {  // I added that from Simple Plugin
+  enabled = false
+}
+
+patchPluginXml {
+  version = project.version
+  sinceBuild = '203'
+  untilBuild = '212.*'
+    changeNotes = """
+      <em>fixed a casting bug in SdFindUsagesHandler</em>"""
+}
+
+test {
+  useJUnitPlatform()
+}
