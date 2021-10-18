@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
+import com.yahoo.vespa.hosted.node.admin.nodeagent.UserNamespace;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
@@ -10,6 +12,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemAlreadyExistsException;
+import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
@@ -42,10 +45,10 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     private final ContainerUserPrincipalLookupService userPrincipalLookupService;
     private final Path containerRootOnHost;
 
-    ContainerFileSystemProvider(Path containerRootOnHost, int uidOffset, int gidOffset) {
+    ContainerFileSystemProvider(Path containerRootOnHost, UserNamespace userNamespace) {
         this.containerFs = new ContainerFileSystem(this);
         this.userPrincipalLookupService = new ContainerUserPrincipalLookupService(
-                containerRootOnHost.getFileSystem().getUserPrincipalLookupService(), uidOffset, gidOffset);
+                containerRootOnHost.getFileSystem().getUserPrincipalLookupService(), userNamespace);
         this.containerRootOnHost = containerRootOnHost;
     }
 
@@ -80,8 +83,9 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     @Override
     public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
         Path pathOnHost = pathOnHost(path);
+        boolean existedBefore = Files.exists(pathOnHost);
         SeekableByteChannel seekableByteChannel = provider(pathOnHost).newByteChannel(pathOnHost, options, attrs);
-        fixOwnerToContainerRoot(toContainerPath(path));
+        if (!existedBefore) fixOwnerToContainerRoot(toContainerPath(path));
         return seekableByteChannel;
     }
 
@@ -94,8 +98,9 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     @Override
     public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
         Path pathOnHost = pathOnHost(dir);
+        boolean existedBefore = Files.exists(pathOnHost);
         provider(pathOnHost).createDirectory(pathOnHost);
-        fixOwnerToContainerRoot(toContainerPath(dir));
+        if (!existedBefore) fixOwnerToContainerRoot(toContainerPath(dir));
     }
 
     @Override
@@ -109,7 +114,6 @@ class ContainerFileSystemProvider extends FileSystemProvider {
         // Only called when both 'source' and 'target' have 'this' as the FS provider
         Path targetPathOnHost = pathOnHost(target);
         provider(targetPathOnHost).copy(pathOnHost(source), targetPathOnHost, options);
-        fixOwnerToContainerRoot(toContainerPath(target));
     }
 
     @Override
@@ -117,7 +121,20 @@ class ContainerFileSystemProvider extends FileSystemProvider {
         // Only called when both 'source' and 'target' have 'this' as the FS provider
         Path targetPathOnHost = pathOnHost(target);
         provider(targetPathOnHost).move(pathOnHost(source), targetPathOnHost, options);
-        fixOwnerToContainerRoot(toContainerPath(target));
+    }
+
+    @Override
+    public void createSymbolicLink(Path link, Path target, FileAttribute<?>... attrs) throws IOException {
+        Path pathOnHost = pathOnHost(link);
+        if (target instanceof ContainerPath)
+            target = pathOnHost.getFileSystem().getPath(toContainerPath(target).pathInContainer());
+        provider(pathOnHost).createSymbolicLink(pathOnHost, target, attrs);
+    }
+
+    @Override
+    public Path readSymbolicLink(Path link) throws IOException {
+        Path pathOnHost = pathOnHost(link);
+        return provider(pathOnHost).readSymbolicLink(pathOnHost);
     }
 
     @Override
@@ -180,12 +197,12 @@ class ContainerFileSystemProvider extends FileSystemProvider {
             return provider(pathOnHost).readAttributes(pathOnHost, attributes, options);
 
         Map<String, Object> attrs = new HashMap<>(provider(pathOnHost).readAttributes(pathOnHost, "unix:*", options));
-        int uid = userPrincipalLookupService.hostUidToContainerUid((int) attrs.get("uid"));
-        int gid = userPrincipalLookupService.hostGidToContainerGid((int) attrs.get("gid"));
+        int uid = userPrincipalLookupService.userIdInContainer((int) attrs.get("uid"));
+        int gid = userPrincipalLookupService.groupIdInContainer((int) attrs.get("gid"));
         attrs.put("uid", uid);
         attrs.put("gid", gid);
-        attrs.put("owner", new ContainerUserPrincipal(uid, (UserPrincipal) attrs.get("owner")));
-        attrs.put("group", new ContainerGroupPrincipal(gid, (GroupPrincipal) attrs.get("group")));
+        attrs.put("owner", userPrincipalLookupService.userPrincipal(uid, (UserPrincipal) attrs.get("owner")));
+        attrs.put("group", userPrincipalLookupService.groupPrincipal(gid, (GroupPrincipal) attrs.get("group")));
         return attrs;
     }
 
@@ -201,8 +218,8 @@ class ContainerFileSystemProvider extends FileSystemProvider {
             switch (attribute.substring(index + 1)) {
                 case "owner": return cast(value, ContainerUserPrincipal.class).baseFsPrincipal();
                 case "group": return cast(value, ContainerGroupPrincipal.class).baseFsPrincipal();
-                case "uid": return userPrincipalLookupService.containerUidToHostUid(cast(value, Integer.class));
-                case "gid": return userPrincipalLookupService.containerGidToHostGid(cast(value, Integer.class));
+                case "uid": return userPrincipalLookupService.userIdOnHost(cast(value, Integer.class));
+                case "gid": return userPrincipalLookupService.groupIdOnHost(cast(value, Integer.class));
             }
         } // else basic file attribute
         return value;
@@ -250,7 +267,7 @@ class ContainerFileSystemProvider extends FileSystemProvider {
 
     private static <T> T cast(Object value, Class<T> type) {
         if (type.isInstance(value)) return type.cast(value);
-        throw new ProviderMismatchException("Expected " + type.getName() + ", was " + value.getClass().getName());
+        throw new ProviderMismatchException("Expected " + type.getSimpleName() + ", was " + value.getClass().getName());
     }
 
     private static Path pathOnHost(Path path) {

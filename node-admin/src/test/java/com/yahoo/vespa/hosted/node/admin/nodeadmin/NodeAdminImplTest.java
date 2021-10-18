@@ -5,6 +5,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
+import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -154,7 +155,7 @@ public class NodeAdminImplTest {
     }
 
     private NodeAgentContext createNodeAgentContext(String hostname) {
-        return NodeAgentContextImpl.builder(hostname).build();
+        return NodeAgentContextImpl.builder(hostname).fileSystem(TestFileSystem.create()).build();
     }
 
     private NodeAgentWithScheduler mockNodeAgentWithSchedulerFactory(NodeAgentContext context) {
