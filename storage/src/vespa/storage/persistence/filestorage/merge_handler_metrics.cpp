@@ -5,7 +5,8 @@
 namespace storage {
 
 MergeHandlerMetrics::MergeHandlerMetrics(metrics::MetricSet* owner)
-    : bytesMerged("bytesmerged", {}, "Total number of bytes merged into this node.", owner),
+    : _mutex(),
+      bytesMerged("bytesmerged", {}, "Total number of bytes merged into this node.", owner),
       mergeLatencyTotal("mergelatencytotal", {},
                         "Latency of total merge operation, from master node receives "
                         "it, until merge is complete and master node replies.", owner),

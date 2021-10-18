@@ -7,12 +7,11 @@
 
 namespace storage {
 
-ApplyBucketDiffEntryResult::ApplyBucketDiffEntryResult(FutureResult future_result, spi::Bucket bucket, document::DocumentId doc_id, const char *op, metrics::DoubleAverageMetric& latency_metric)
+ApplyBucketDiffEntryResult::ApplyBucketDiffEntryResult(FutureResult future_result, spi::Bucket bucket, document::DocumentId doc_id, const char *op)
     : _future_result(std::move(future_result)),
       _bucket(bucket),
       _doc_id(std::move(doc_id)),
-      _op(op),
-      _latency_metric(latency_metric)
+      _op(op)
 {
 }
 
@@ -32,15 +31,14 @@ ApplyBucketDiffEntryResult::check_result()
 {
     assert(_future_result.valid());
     auto result = _future_result.get();
-    if (result.first->hasError()) {
+    if (result->hasError()) {
         vespalib::asciistream ss;
         ss << "Failed " << _op
            << " for " << _doc_id.toString()
            << " in " << _bucket
-           << ": " << result.first->toString();
+           << ": " << result->toString();
         throw std::runtime_error(ss.str());
     }
-    _latency_metric.addValue(result.second);
 }
 
 }

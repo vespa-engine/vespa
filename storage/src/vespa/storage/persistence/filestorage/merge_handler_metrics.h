@@ -3,6 +3,7 @@
 
 #include <vespa/metrics/valuemetric.h>
 #include <vespa/metrics/countmetric.h>
+#include <mutex>
 
 namespace metrics { class MetricSet; }
 namespace storage {
@@ -12,6 +13,7 @@ namespace storage {
 // parent. This is to prevent metric paths from changing, as external aggregation
 // depends on the existing paths.
 struct MergeHandlerMetrics {
+    std::mutex _mutex; // protect put_latency, remove_latency
     metrics::LongCountMetric bytesMerged;
     // Aggregate metrics:
     metrics::DoubleAverageMetric mergeLatencyTotal;

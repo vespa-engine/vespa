@@ -487,21 +487,21 @@ MergeHandler::applyDiffEntry(const spi::Bucket& bucket,
                              spi::Context& context,
                              const document::DocumentTypeRepo& repo) const
 {
-    std::promise<std::pair<std::unique_ptr<spi::Result>, double>> result_promise;
+    std::promise<std::unique_ptr<spi::Result>> result_promise;
     auto future_result = result_promise.get_future();
     spi::Timestamp timestamp(e._entry._timestamp);
     if (!(e._entry._flags & (DELETED | DELETED_IN_PLACE))) {
         // Regular put entry
         Document::SP doc(deserializeDiffDocument(e, repo));
         DocumentId docId = doc->getId();
-        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(result_promise), _clock);
+        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(result_promise), _clock, _env._metrics.merge_handler_metrics._mutex, _env._metrics.merge_handler_metrics.put_latency);
         _spi.putAsync(bucket, timestamp, std::move(doc), context, std::move(complete));
-        return ApplyBucketDiffEntryResult(std::move(future_result), bucket, std::move(docId), "put", _env._metrics.merge_handler_metrics.put_latency);
+        return ApplyBucketDiffEntryResult(std::move(future_result), bucket, std::move(docId), "put");
     } else {
         DocumentId docId(e._docName);
-        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(result_promise), _clock);
+        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(result_promise), _clock, _env._metrics.merge_handler_metrics._mutex, _env._metrics.merge_handler_metrics.remove_latency);
         _spi.removeAsync(bucket, timestamp, docId, context, std::move(complete));
-        return ApplyBucketDiffEntryResult(std::move(future_result), bucket, std::move(docId), "remove", _env._metrics.merge_handler_metrics.remove_latency);
+        return ApplyBucketDiffEntryResult(std::move(future_result), bucket, std::move(docId), "remove");
     }
 }
 
