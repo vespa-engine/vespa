@@ -15,6 +15,7 @@ import java.util.TreeMap;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
@@ -49,6 +50,19 @@ public class Flags {
             List.of("hakonhall"), "2021-10-01", "2021-11-01",
             "Enable new conditions for when to encrypt disk.",
             "Takes effect on next host admin tick.");
+
+    public static final UnboundBooleanFlag MAP_USER_NAMESPACE = defineFeatureFlag(
+            "map-user-namespace", false,
+            List.of("freva"), "2021-10-18", "2021-12-01",
+            "Whether host-admin should start containers with mapped UID/GID, will also chown all files under container storage.",
+            "Takes effect on next container restart.",
+            APPLICATION_ID, NODE_TYPE, HOSTNAME);
+
+    public static final UnboundBooleanFlag FAIL_ON_UNKNOWN_IDS = defineFeatureFlag(
+            "fail-on-unknown-ids", true,
+            List.of("freva"), "2021-10-18", "2021-12-01",
+            "Whether host-admin should fail if it finds UID/GIDs outside of the mapped range inside the container storage.",
+            "Takes effect on next container restart.");
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
