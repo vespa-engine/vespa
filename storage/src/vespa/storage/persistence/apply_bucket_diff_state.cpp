@@ -17,7 +17,10 @@ ApplyBucketDiffState::ApplyBucketDiffState(const MergeBucketInfoSyncer& merge_bu
 ApplyBucketDiffState::~ApplyBucketDiffState()
 {
     wait();
-    sync_bucket_info();
+    try {
+        sync_bucket_info();
+    } catch (std::exception&) {
+    } 
 }
 
 bool
@@ -29,6 +32,9 @@ ApplyBucketDiffState::empty() const
 void
 ApplyBucketDiffState::wait()
 {
+    if (!_async_results.empty()) {
+        _async_results.back().wait();
+    }
     for (auto &result_to_check : _async_results) {
         result_to_check.wait();
     }
