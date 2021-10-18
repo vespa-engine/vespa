@@ -68,7 +68,7 @@ public:
     ValueClass getValues() const;
 
     /**
-     * Get the current values from the metric. This function should not be
+     * Set the current values for the metric. This function should not be
      * called in parallel. Only call it from a single thread or use external
      * locking. If it returns false, it means the metric have just been reset.
      * In which case, redo getValues(), apply the update again, and call
