@@ -15,7 +15,8 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
- * This processor creates a {@link com.yahoo.searchdefinition.document.SDDocumentType} for each {@link Schema} object which holds all the data that search
+ * This processor creates a {@link com.yahoo.searchdefinition.document.SDDocumentType} for each {@link Schema}
+ * object which holds all the data that search
  * associates with a document described in a search definition file. This includes all extra fields, summary fields and
  * implicit fields. All non-indexed and non-summary fields are discarded.
  */
@@ -34,8 +35,8 @@ public class AddExtraFieldsToDocument extends Processor {
     public void process(boolean validate, boolean documentsOnly) {
         SDDocumentType document = schema.getDocument();
         if (document != null) {
-            for (Field field : schema.extraFieldList()) {
-                addSdField(schema, document, (SDField)field, validate);
+            for (SDField field : schema.extraFieldList()) {
+                addSdField(schema, document, field, validate);
             }
             //TODO Vespa 8 or sooner we should avoid the dirty addition of fields from dirty 'default' summary to document at all
             for (SummaryField field : schema.getSummary("default").getSummaryFields()) {
@@ -51,7 +52,7 @@ public class AddExtraFieldsToDocument extends Processor {
             return;
         }
         for (Attribute atr : field.getAttributes().values()) {
-            // TODO Vespa 8 or before: Check if this sould be removed or changed to _zcurve.
+            // TODO Vespa 8 or before: Check if this should be removed or changed to _zcurve.
             if (atr.getName().equals(field.getName() + "_position")) {
                 DataType type = PositionDataType.INSTANCE;
                 if (atr.getCollectionType().equals(Attribute.CollectionType.ARRAY)) {
@@ -65,7 +66,6 @@ public class AddExtraFieldsToDocument extends Processor {
         addField(schema, document, field, validate);
     }
 
-    @SuppressWarnings("deprecation")
     private void addSummaryField(Schema schema, SDDocumentType document, SummaryField field, boolean validate) {
         Field docField = document.getField(field.getName());
         if (docField == null) {
@@ -84,7 +84,7 @@ public class AddExtraFieldsToDocument extends Processor {
     }
 
     private void addField(Schema schema, SDDocumentType document, Field field, boolean validate) {
-        if (document.getField(field.getName()) != null) {
+        if (document.getField(field.getName()) != null && !(document.getField(field.getName()) == field)) {
             if (validate)
                 throw newProcessException(schema, field, "Field shadows another.");
         }

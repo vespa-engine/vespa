@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -81,6 +82,9 @@ public class SchemaTestCase {
                 "  index parent_index {" +
                 "    stemming: best" +
                 "  }" +
+                "  field parent_field type string {" +
+                "      indexing: input pf1 | lowercase | index | attribute | summary" +
+                "  }" +
                 "}");
         String childLines = joinLines(
                 "schema child inherits parent {" +
@@ -92,10 +96,11 @@ public class SchemaTestCase {
                 "}");
         var application = SearchBuilder.createFromStrings(new DeployLoggerStub(), parentLines, childLines).application();
         var child = application.schemas().get("child");
-
         assertEquals("pf1", child.fieldSets().userFieldSets().get("parent_set").getFieldNames().stream().findFirst().get());
         assertEquals(Stemming.NONE, child.getStemming());
         assertEquals(Stemming.BEST, child.getIndex("parent_index").getStemming());
+        assertNotNull(child.getField("parent_field"));
+        assertNotNull(child.getExtraField("parent_field"));
     }
 
 }

@@ -27,6 +27,7 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -336,9 +337,8 @@ public class Schema implements ImmutableSearch {
     @Override
     public SDField getConcreteField(String name) {
         SDField field = getExtraField(name);
-        if (field != null) {
-            return field;
-        }
+        if (field != null) return field;
+
         return (SDField) documentType.getField(name);
     }
 
@@ -368,10 +368,16 @@ public class Schema implements ImmutableSearch {
     }
 
     public Collection<SDField> extraFieldList() {
-        return fields.values();
+        if (inherited.isEmpty()) return fields.values();
+        var fields = new HashSet<>(inherited().extraFieldList());
+        fields.addAll(this.fields.values());
+        return fields;
     }
+
     public Collection<SDField> allExtraFields() {
         Map<String, SDField> extraFields = new TreeMap<>();
+        if (inherited.isPresent())
+            inherited().allExtraFields().forEach(field -> extraFields.put(field.getName(), field));
         for (Field field : documentType.fieldSet()) {
             SDField sdField = (SDField) field;
             if (sdField.isExtraField()) {
@@ -391,7 +397,10 @@ public class Schema implements ImmutableSearch {
      * @return the SDField of this name
      */
     public SDField getExtraField(String fieldName) {
-        return fields.get(fieldName);
+        SDField field = fields.get(fieldName);
+        if (field != null) return field;
+        if (inherited.isEmpty()) return null;
+        return inherited().getExtraField(fieldName);
     }
 
     /**
