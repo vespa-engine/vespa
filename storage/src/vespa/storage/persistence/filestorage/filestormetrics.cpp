@@ -11,6 +11,7 @@ using metrics::MetricSet;
 FileStorThreadMetrics::Op::Op(const std::string& id, const std::string& name, MetricSet* owner)
     : MetricSet(id, {}, name + " load in filestor thread", owner),
       _name(name),
+      _mutex(),
       count("count", {{"yamasdefault"}}, "Number of requests processed.", this),
       latency("latency", {{"yamasdefault"}}, "Latency of successful requests.", this),
       failed("failed", {{"yamasdefault"}}, "Number of failed requests.", this)
@@ -147,6 +148,7 @@ FileStorThreadMetrics::Visitor::clone(std::vector<Metric::UP>& ownerList,
 
 FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std::string& desc)
     : MetricSet(name, {{"filestor"},{"partofsum"}}, desc),
+      _mutex(),
       operations("operations", {}, "Number of operations processed.", this),
       failedOperations("failedoperations", {}, "Number of operations throwing exceptions.", this),
       put("put.sum", "Put", this),

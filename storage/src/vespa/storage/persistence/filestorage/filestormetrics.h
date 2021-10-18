@@ -13,6 +13,7 @@
 #include "merge_handler_metrics.h"
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/summetric.h>
+#include <mutex>
 
 namespace storage {
 
@@ -22,6 +23,7 @@ struct FileStorThreadMetrics : public metrics::MetricSet
 
     struct Op : metrics::MetricSet {
         std::string _name;
+        std::mutex  _mutex; // protects writes to latency and failed
         metrics::LongCountMetric count;
         metrics::DoubleAverageMetric latency;
         metrics::LongCountMetric failed;
@@ -89,6 +91,7 @@ struct FileStorThreadMetrics : public metrics::MetricSet
     using GetMetricType    = OpWithRequestSize<OpWithNotFound>;
     using RemoveMetricType = OpWithTestAndSetFailed<OpWithRequestSize<OpWithNotFound>>;
 
+    std::mutex               _mutex; // protects writes to failedOperations
     metrics::LongCountMetric operations;
     metrics::LongCountMetric failedOperations;
     PutMetricType put;

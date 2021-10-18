@@ -83,6 +83,7 @@ MessageTracker::sendReply() {
         generateReply(static_cast<api::StorageCommand &>(*_msg));
     }
     if (count_result_as_failure()) {
+        std::lock_guard guard(_env._metrics._mutex);
         _env._metrics.failedOperations.inc();
     }
     vespalib::duration duration = vespalib::from_s(_timer.getElapsedTimeAsDouble()/1000.0);
@@ -102,6 +103,7 @@ MessageTracker::sendReply() {
             }
         }
         if (getReply().getResult().success()) {
+            std::lock_guard guard(_metric->_mutex);
             _metric->latency.addValue(_timer.getElapsedTimeAsDouble());
         }
         LOG(spam, "Sending reply up: %s %" PRIu64, getReply().toString().c_str(), getReply().getMsgId());
@@ -147,6 +149,7 @@ MessageTracker::generateReply(api::StorageCommand& cmd)
         // TaS failures are tracked separately and explicitly in the put/update/remove paths,
         // so don't double-count them here.
         if (_reply->getResult().getResult() != api::ReturnCode::TEST_AND_SET_CONDITION_FAILED) {
+            std::lock_guard guard(_metric->_mutex);
             _metric->failed.inc();
         }
         LOGBP(debug, "Failed to handle command %s: %s",

@@ -140,7 +140,10 @@ void MetricsTest::createFakeLoad()
         for (uint32_t j=0; j<disk.threads.size(); ++j) {
             FileStorThreadMetrics& thread(*disk.threads[j]);
             thread.operations.inc(120 * n);
-            thread.failedOperations.inc(2 * n);
+            {
+                std::lock_guard guard(thread._mutex);
+                thread.failedOperations.inc(2 * n);
+            }
 
             thread.put.count.inc(10 * n);
             thread.put.latency.addValue(5 * n);
