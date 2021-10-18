@@ -258,10 +258,12 @@ public class ComponentGraph {
         if (component.isEmpty()) {
             Object instance;
             try {
-                // This is an indication that you have not set up your components correctly in the model
-                // And tit will cause unnecessary reconstruction of your components.
-                // TODO: this should perhaps bee a warning.
-                log.log(Level.INFO, () -> "Trying the fallback injector to create" + messageForNoGlobalComponent(clazz, node));
+                Level level = hasExplicitBinding(fallbackInjector, key) ? Level.FINE : Level.WARNING;
+                log.log(level, () -> "Trying the fallback injector to create" + messageForNoGlobalComponent(clazz, node));
+                if (level.intValue() > Level.INFO.intValue()) {
+                    log.log(level, "A component of type " + key.getTypeLiteral() + " should probably be declared in services.xml. " +
+                            "Not doing so may cause resource leaks and unnecessary reconstruction of components.");
+                }
                 instance = fallbackInjector.getInstance(key);
             } catch (ConfigurationException e) {
                 throw removeStackTrace(new IllegalStateException(
@@ -275,6 +277,11 @@ public class ComponentGraph {
             }));
         }
         return component.get();
+    }
+
+    private boolean hasExplicitBinding(Injector injector, Key<?> key) {
+        log.log(Level.FINE, () -> "Injector binding for " + key + ": " + injector.getExistingBinding(key));
+        return injector.getExistingBinding(key) != null;
     }
 
     private Node handleComponentParameter(Node node, Injector fallbackInjector, Class<?> clazz, Collection<Annotation> annotations) {
