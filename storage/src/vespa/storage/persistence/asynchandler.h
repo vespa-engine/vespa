@@ -29,8 +29,10 @@ public:
     MessageTrackerUP handleUpdate(api::UpdateCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleRunTask(RunTaskCommand & cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleSetBucketState(api::SetBucketStateCommand& cmd, MessageTrackerUP tracker) const;
+    MessageTrackerUP handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTrackerUP tracker) const;
     static bool is_async_message(api::MessageType::Id type_id) noexcept;
 private:
+    bool checkProviderBucketInfoMatches(const spi::Bucket&, const api::BucketInfo&) const;
     static bool tasConditionExists(const api::TestAndSetCommand & cmd);
     bool tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker,
                              spi::Context & context, bool missingDocumentImpliesMatch = false) const;

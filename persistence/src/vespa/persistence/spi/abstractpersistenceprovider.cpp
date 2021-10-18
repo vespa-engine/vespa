@@ -35,4 +35,9 @@ AbstractPersistenceProvider::setActiveStateAsync(const Bucket &, BucketInfo::Act
     op->onComplete(std::make_unique<Result>());
 }
 
+void
+AbstractPersistenceProvider::deleteBucketAsync(const Bucket &, Context &, OperationComplete::UP op) {
+    op->onComplete(std::make_unique<Result>());
+}
+
 }

@@ -115,7 +115,7 @@ public:
     Result destroyIterator(IteratorId, Context&) override;
 
     Result createBucket(const Bucket &bucketId, Context &) override ;
-    Result deleteBucket(const Bucket&, Context&) override;
+    void deleteBucketAsync(const Bucket&, Context&, OperationComplete::UP) override;
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
     Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
     Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;

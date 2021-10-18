@@ -22,6 +22,15 @@
         } \
     }
 
+#define CHECK_ERROR_ASYNC(className, failType, onError) \
+    { \
+        Guard guard(_lock); \
+        if (_result.getErrorCode() != spi::Result::ErrorType::NONE && (_failureMask & (failType))) { \
+            onError->onComplete(std::make_unique<className>(_result.getErrorCode(), _result.getErrorMessage())); \
+            return; \
+        } \
+    }
+
 namespace storage {
 
 namespace {
@@ -172,13 +181,13 @@ PersistenceProviderWrapper::destroyIterator(spi::IteratorId iterId,
     return _spi.destroyIterator(iterId, context);
 }
 
-spi::Result
-PersistenceProviderWrapper::deleteBucket(const spi::Bucket& bucket,
-                                         spi::Context& context)
+void
+PersistenceProviderWrapper::deleteBucketAsync(const spi::Bucket& bucket, spi::Context& context,
+                                              spi::OperationComplete::UP operationComplete)
 {
     LOG_SPI("deleteBucket(" << bucket << ")");
-    CHECK_ERROR(spi::Result, FAIL_DELETE_BUCKET);
-    return _spi.deleteBucket(bucket, context);
+    CHECK_ERROR_ASYNC(spi::Result, FAIL_DELETE_BUCKET, operationComplete);
+    _spi.deleteBucketAsync(bucket, context, std::move(operationComplete));
 }
 
 spi::Result

@@ -131,10 +131,11 @@ ProviderErrorWrapper::createBucket(const spi::Bucket& bucket, spi::Context& cont
     return checkResult(_impl.createBucket(bucket, context));
 }
 
-spi::Result
-ProviderErrorWrapper::deleteBucket(const spi::Bucket& bucket, spi::Context& context)
+void
+ProviderErrorWrapper::deleteBucketAsync(const spi::Bucket& bucket, spi::Context& context, spi::OperationComplete::UP onComplete)
 {
-    return checkResult(_impl.deleteBucket(bucket, context));
+    onComplete->addResultHandler(this);
+    _impl.deleteBucketAsync(bucket, context, std::move(onComplete));
 }
 
 spi::BucketIdListResult

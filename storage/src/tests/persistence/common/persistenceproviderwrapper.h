@@ -103,7 +103,7 @@ public:
 
     spi::IterateResult iterate(spi::IteratorId, uint64_t maxByteSize, spi::Context&) const override;
     spi::Result destroyIterator(spi::IteratorId, spi::Context&) override;
-    spi::Result deleteBucket(const spi::Bucket&, spi::Context&) override;
+    void deleteBucketAsync(const spi::Bucket&, spi::Context&, spi::OperationComplete::UP) override;
     spi::Result split(const spi::Bucket& source, const spi::Bucket& target1,
                       const spi::Bucket& target2, spi::Context&) override;
     spi::Result join(const spi::Bucket& source1, const spi::Bucket& source2,

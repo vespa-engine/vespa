@@ -66,9 +66,9 @@ public:
         return PersistenceProviderWrapper::createBucket(bucket, ctx);
     }
 
-    spi::Result deleteBucket(const spi::Bucket& bucket, spi::Context& ctx) override {
+    void deleteBucketAsync(const spi::Bucket& bucket, spi::Context& ctx, spi::OperationComplete::UP onComplete) override {
         ++_deleteBucketInvocations;
-        return PersistenceProviderWrapper::deleteBucket(bucket, ctx);
+        PersistenceProviderWrapper::deleteBucketAsync(bucket, ctx, std::move(onComplete));
     }
 };
 

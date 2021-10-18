@@ -745,8 +745,8 @@ DummyPersistence::createBucket(const Bucket& b, Context&)
     return Result();
 }
 
-Result
-DummyPersistence::deleteBucket(const Bucket& b, Context&)
+void
+DummyPersistence::deleteBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "deleteBucket(%s)", b.toString().c_str());
@@ -756,7 +756,7 @@ DummyPersistence::deleteBucket(const Bucket& b, Context&)
         assert(!_content[b]->_inUse);
     }
     _content.erase(b);
-    return Result();
+    onComplete->onComplete(std::make_unique<Result>());
 }
 
 Result
