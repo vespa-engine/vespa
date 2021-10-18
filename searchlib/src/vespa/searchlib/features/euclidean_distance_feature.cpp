@@ -99,7 +99,7 @@ EuclideanDistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespali
 {
     const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_attributeName);
     if (attribute == nullptr) {
-        Issue::report("euclidean_distance feature: The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
+        Issue::report("euclidean_distance feature: The attribute vector '%s' was not found, returning default value.",
                       _attributeName.c_str());
         return stash.create<SingleZeroValueExecutor>();
     }
@@ -114,7 +114,7 @@ EuclideanDistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespali
         }
     }
     Issue::report("euclidean_distance feature: The attribute vector '%s' is NOT of type array<int/long/float/double>"
-                  ", returning executor with default value.", attribute->getName().c_str());
+                  ", returning default value.", attribute->getName().c_str());
     return stash.create<SingleZeroValueExecutor>();
 
 }

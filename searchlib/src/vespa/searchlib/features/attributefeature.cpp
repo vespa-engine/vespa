@@ -358,7 +358,7 @@ fef::FeatureExecutor &
 createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
 {
     if (attribute == nullptr) {
-        Issue::report("attribute feature: The attribute vector '%s' was not found in the attribute manager, returning default values.",
+        Issue::report("attribute feature: The attribute vector '%s' was not found, returning default values.",
                       attrName.c_str());
         std::vector<feature_t> values(numOutputs, 0.0f);
         return stash.create<ValueExecutor>(values);
@@ -446,7 +446,7 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
                               vespalib::Stash &stash)
 {
     if (attribute == nullptr) {
-        Issue::report("attribute feature: The attribute vector '%s' was not found in the attribute manager."
+        Issue::report("attribute feature: The attribute vector '%s' was not found."
                       " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }

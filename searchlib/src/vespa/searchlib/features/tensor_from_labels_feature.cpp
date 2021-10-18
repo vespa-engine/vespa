@@ -61,7 +61,7 @@ createAttributeExecutor(const search::fef::IQueryEnvironment &env,
 {
     const IAttributeVector *attribute = env.getAttributeContext().getAttribute(attrName);
     if (attribute == NULL) {
-        Issue::report("tensor_from_labels feature: The attribute vector '%s' was not found in the attribute manager."
+        Issue::report("tensor_from_labels feature: The attribute vector '%s' was not found."
                       " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }

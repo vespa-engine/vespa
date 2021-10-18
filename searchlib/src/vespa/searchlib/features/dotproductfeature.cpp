@@ -776,7 +776,7 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
     // TODO: Add support for creating executor for weighted set string / integer attribute
     //       where the query vector is represented as an object instead of a string.
     Issue::report("dot_product feature: The attribute vector '%s' is NOT of type array<int/long/float/double>"
-                  ", returning executor with default value.", attribute->getName().c_str());
+                  ", returning default value.", attribute->getName().c_str());
     return stash.create<SingleZeroValueExecutor>();
 }
 
@@ -883,7 +883,7 @@ createFromString(const IAttributeVector * attribute, const Property & prop, vesp
 
     if (executor == nullptr) {
         Issue::report("dot_product feature: The attribute vector '%s' is not of type weighted set string/integer nor"
-                      " array<int/long/float/double>, returning executor with default value.", attribute->getName().c_str());
+                      " array<int/long/float/double>, returning default value.", attribute->getName().c_str());
         executor = &stash.create<SingleZeroValueExecutor>();
     }
     return *executor;
@@ -1109,7 +1109,7 @@ DotProductBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Sta
         attribute = upgradeIfNecessary(attribute, env);
     }
     if (attribute == nullptr) {
-        Issue::report("dot_product feature: The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
+        Issue::report("dot_product feature: The attribute vector '%s' was not found, returning default value.",
                       getAttribute(env).c_str());
         return stash.create<SingleZeroValueExecutor>();
     }
