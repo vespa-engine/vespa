@@ -51,8 +51,8 @@ public class ReconfigurerTest {
         ZookeeperServerConfig nextConfig = createConfig(5, true);
         reconfigurer.startOrReconfigure(nextConfig);
         assertEquals("node1:2181", reconfigurer.connectionSpec());
-        assertEquals("3=node3:2182:2183;2181,4=node4:2182:2183;2181", reconfigurer.joiningServers());
-        assertNull("No servers are leaving", reconfigurer.leavingServers());
+        assertEquals("server.0=node0:2182:2183;2181,server.1=node1:2182:2183;2181,server.2=node2:2182:2183;2181,server.3=node3:2182:2183;2181,server.4=node4:2182:2183;2181",
+                     reconfigurer.servers());
         assertEquals(1, reconfigurer.reconfigurations());
         assertSame(nextConfig, reconfigurer.activeConfig());
 
@@ -66,16 +66,16 @@ public class ReconfigurerTest {
         reconfigurer.startOrReconfigure(nextConfig);
         assertEquals(2, reconfigurer.reconfigurations());
         assertEquals("node1:2181", reconfigurer.connectionSpec());
-        assertNull("No servers are joining", reconfigurer.joiningServers());
-        assertEquals("3,4", reconfigurer.leavingServers());
+        assertEquals("server.0=node0:2182:2183;2181,server.1=node1:2182:2183;2181,server.2=node2:2182:2183;2181",
+                     reconfigurer.servers());
         assertSame(nextConfig, reconfigurer.activeConfig());
 
         // Cluster loses node1, but node3 joins. Indices are shuffled.
         nextConfig = createConfig(3, true, 1);
         reconfigurer.startOrReconfigure(nextConfig);
         assertEquals(3, reconfigurer.reconfigurations());
-        assertEquals("1=node2:2182:2183;2181,2=node3:2182:2183;2181", reconfigurer.joiningServers());
-        assertEquals("1,2", reconfigurer.leavingServers());
+        assertEquals("server.0=node0:2182:2183;2181,server.1=node2:2182:2183;2181,server.2=node3:2182:2183;2181",
+                     reconfigurer.servers());
         assertSame(nextConfig, reconfigurer.activeConfig());
     }
 
@@ -89,8 +89,8 @@ public class ReconfigurerTest {
         ZookeeperServerConfig nextConfig = createConfig(5, true);
         reconfigurer.startOrReconfigure(nextConfig);
         assertEquals("node1:2181", reconfigurer.connectionSpec());
-        assertEquals("3=node3:2182:2183;2181,4=node4:2182:2183;2181", reconfigurer.joiningServers());
-        assertNull("No servers are leaving", reconfigurer.leavingServers());
+        assertEquals("server.0=node0:2182:2183;2181,server.1=node1:2182:2183;2181,server.2=node2:2182:2183;2181,server.3=node3:2182:2183;2181,server.4=node4:2182:2183;2181",
+                     reconfigurer.servers());
         assertEquals(1, reconfigurer.reconfigurations());
         assertSame(nextConfig, reconfigurer.activeConfig());
     }
@@ -163,12 +163,8 @@ public class ReconfigurerTest {
             return zooKeeperAdmin.connectionSpec;
         }
 
-        String joiningServers() {
-            return zooKeeperAdmin.joiningServers;
-        }
-
-        String leavingServers() {
-            return zooKeeperAdmin.leavingServers;
+        String servers() {
+            return zooKeeperAdmin.servers;
         }
 
         int reconfigurations() {
@@ -192,8 +188,7 @@ public class ReconfigurerTest {
     private static class TestableVespaZooKeeperAdmin implements VespaZooKeeperAdmin {
 
         String connectionSpec;
-        String joiningServers;
-        String leavingServers;
+        String servers;
         int reconfigurations = 0;
 
         private int failures = 0;
@@ -205,12 +200,11 @@ public class ReconfigurerTest {
         }
 
         @Override
-        public void reconfigure(String connectionSpec, String joiningServers, String leavingServers) throws ReconfigException {
+        public void reconfigure(String connectionSpec, String servers) throws ReconfigException {
             if (++attempts < failures)
                 throw new ReconfigException("Reconfig failed");
             this.connectionSpec = connectionSpec;
-            this.joiningServers = joiningServers;
-            this.leavingServers = leavingServers;
+            this.servers = servers;
             this.reconfigurations++;
         }
 
