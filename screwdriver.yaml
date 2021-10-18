@@ -50,7 +50,7 @@ shared:
 
 jobs:
   build-vespa:
-    requires: [~pr]
+    #requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -83,6 +83,7 @@ jobs:
           df -h
 
   component-build:
+    requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -105,6 +106,10 @@ jobs:
           VESPA_VERSION=$(meta get vespa.version)
           VESPA_REF=$(meta get vespa.ref)
           SYSTEM_TEST_REF=$(meta get system-test.ref)
+
+          VESPA_VERSION=7.485.3
+          VESPA_REF=c94e21087778f47afe90d277ef95d01956e74dfc
+          SYSTEM_TEST_REF=0df46b34f600a3eb899a090f779cd8f14520503e
 
           if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]] || [[ $SYSTEM_TEST_REF == null ]]; then
             echo "Must have valid Vespa version and reference to continue \
@@ -161,7 +166,7 @@ jobs:
           cp -a $LOCAL_MVN_REPO docker/repository
           cd docker
           docker build --file Dockerfile.multistage \
-                       --build-arg BASE_IMAGE=centos:7 --build-arg VESPA_BASE_IMAGE=base \
+                       --build-arg BASE_IMAGE=notused --build-arg VESPA_BASE_IMAGE=vespaengine/vespa-systemtest-base-centos7:latest \
                        --build-arg SYSTEMTEST_BASE_IMAGE=vespa --build-arg SKIP_M2_POPULATE=true \
                        --target systemtest \
                        --tag vespaengine/vespa-systemtest-centos7:$VESPA_VERSION \
