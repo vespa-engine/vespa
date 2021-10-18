@@ -309,6 +309,7 @@ public class Flags {
             ZONE_ID, TENANT_ID
     );
 
+    // TODO: Delete when oldest model version in use is 7.486
     public static final UnboundBooleanFlag USE_APPLICATION_LOCK_IN_MAINTENANCE_DEPLOYMENT = defineFeatureFlag(
             "use-application-lock-in-maintenance-deployment", true,
             List.of("hmusum"), "2021-09-16", "2021-11-01",
