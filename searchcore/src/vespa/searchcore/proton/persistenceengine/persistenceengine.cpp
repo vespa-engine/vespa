@@ -578,7 +578,7 @@ PersistenceEngine::deleteBucketAsync(const Bucket& b, Context&, OperationComplet
         if (snap.handlers().valid()) {
             handler->handleDeleteBucket(feedtoken::make(transportContext), b);
         } else {
-            handler->handleDeleteBucket(feedtoken::make(transportContext), b);
+            handler->handleDeleteBucket(feedtoken::make(std::move(transportContext)), b);
         }
     }
 }
